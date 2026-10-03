@@ -184,6 +184,10 @@ where
             }
             (HttpMethod::Post, "/message/move") => self.handle_message_move(request, &context),
             (HttpMethod::Post, "/message/flag") => self.handle_message_flag(request, &context),
+            (HttpMethod::Post, "/message/open") => self.handle_message_open(request, &context),
+            (HttpMethod::Post, "/settings/mark-read") => {
+                self.handle_mark_read_settings(request, &context)
+            }
             (HttpMethod::Post, "/messages/move") => self.handle_bulk_move(request, &context),
             (HttpMethod::Post, "/messages/archive") => self.handle_bulk_archive(request, &context),
             (HttpMethod::Post, "/send") => self.handle_send(request, &context),

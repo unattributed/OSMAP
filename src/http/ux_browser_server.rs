@@ -43,6 +43,7 @@ fn ux_synthetic_browser_server() {
     };
     let gateway = StubGateway {
         after_archive_store: Some(crate::after_archive::Store::new(root.join("settings"))),
+        mark_read_store: Some(crate::mark_read::Store::new(root.join("settings"))),
         autosave_store: Some(crate::autosave::Store::new(root.join("settings"))),
         signature_store: Some(crate::signature::SignatureStore::new(root.join("settings"))),
         labels_store: Some(crate::labels::LabelStore::new(
@@ -74,7 +75,8 @@ fn ux_synthetic_browser_server() {
             root.join("settings"),
         )),
         browser_fixture_accounts: true,
-        browser_fixture_openpgp: std::env::var("OSMAP_UX_FIXTURE_OPENPGP").ok().as_deref() == Some("1"),
+        browser_fixture_openpgp: std::env::var("OSMAP_UX_FIXTURE_OPENPGP").ok().as_deref()
+            == Some("1"),
         preview_mailbox_tree: preview_minutes.is_some(),
         fixture_sessions: Some(fixture_sessions::FixtureSessions::new(
             root.join("sessions"),

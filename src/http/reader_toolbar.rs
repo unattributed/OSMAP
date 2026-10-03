@@ -107,7 +107,7 @@ pub(super) fn render(
         ),
     );
     let snooze = snooze.replace("<span aria-hidden=\"true\">◷</span>", &reader_icon("clock"));
-    format!("<div class=\"reader-toolbar reader-icon-toolbar\"><a href=\"{}\" aria-label=\"Back to list\" title=\"Back to list\">{}</a>{reply}{moves}{}{snooze}{labels}{}<details class=\"reader-more-actions\"><summary aria-label=\"More message actions\" title=\"More message actions\">{}</summary><div class=\"action-stack\">{}{}{more}</div></details></div>",escape_html(back),reader_icon("back"),flags.0,neighbours.controls_html(),reader_icon("more"),neighbours.scope_html(),flags.1)
+    format!("<div class=\"reader-toolbar reader-icon-toolbar\"><a href=\"{}\" aria-label=\"Back to list\" title=\"Back to list\">{}</a>{reply}{moves}{}{snooze}{labels}{}<details class=\"reader-more-actions\"><summary aria-label=\"More message actions\" title=\"More message actions\">{}</summary><div class=\"action-stack\">{}{}{more}</div></details></div>",escape_html(back),reader_icon("back"),flags.0,neighbours.controls_html_with_policy(csrf),reader_icon("more"),neighbours.scope_html(),flags.1)
 }
 
 // Inert CSS geometry keeps message main free of SVG markup.

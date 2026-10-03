@@ -1329,6 +1329,144 @@ fn isolated_openbsd_coordinated_reader_signed_helper() {
         303
     );
     assert_eq!(calls.load(Ordering::SeqCst), before_calls);
+
+    // Real account-owned policy and explicit opening use the same native Seen
+    // path as the earlier flag forms. GET, Back and policy changes never write.
+    let mark_read = crate::mark_read::Store::new(&app_config.state_layout.settings_dir);
+    assert_eq!(
+        mark_read.load(ALICE).unwrap().policy,
+        crate::mark_read::Policy::Manual
+    );
+    let open_form = |uid: u64,
+                     version: &crate::message_metadata::MessageVersion,
+                     return_to: &str,
+                     csrf: &str| {
+        BTreeMap::from([
+            ("csrf_token".into(), csrf.into()),
+            ("mailbox".into(), "INBOX".into()),
+            ("uid".into(), uid.to_string()),
+            ("mailbox_guid".into(), version.mailbox_guid.clone()),
+            ("message_guid".into(), version.message_guid.clone()),
+            ("return_to".into(), return_to.into()),
+        ])
+    };
+    let current_version = &by_subject(52).metadata.as_ref().unwrap().version;
+    let opening = open_form(
+        selected_uid,
+        current_version,
+        &selection,
+        &alice.record.csrf_token,
+    );
+    let manual = http(&app, Some(&alice), "POST", "/message/open", &opening);
+    assert_eq!(manual.response.status_code, 303);
+    assert_eq!(
+        persisted_flags(&native_list.list_messages(ALICE, &query).unwrap()),
+        persisted_flags(&initial)
+    );
+    mark_read
+        .save(ALICE, 0, crate::mark_read::Policy::OnOpen)
+        .unwrap();
+    let readonly = get(&app, &alice, &selection);
+    assert_eq!(readonly.response.status_code, 200);
+    assert!(text(&readonly).contains("ALICE_READER_ONLY_052"));
+    assert_eq!(
+        persisted_flags(&native_list.list_messages(ALICE, &query).unwrap()),
+        persisted_flags(&initial)
+    );
+    let opened = http(&app, Some(&alice), "POST", "/message/open", &opening);
+    assert_eq!(opened.response.status_code, 303);
+    let opened_target = opened
+        .response
+        .headers
+        .iter()
+        .find(|(key, _)| key.eq_ignore_ascii_case("location"))
+        .unwrap()
+        .1
+        .clone();
+    assert!(opened_target.contains("opened_read=1"));
+    let actual_seen = native_list.list_messages(ALICE, &query).unwrap();
+    assert!(crate::mail_list::has_flag(
+        &actual_seen
+            .iter()
+            .find(|row| row.uid == selected_uid)
+            .unwrap()
+            .flags,
+        "\\Seen"
+    ));
+    for row in actual_seen.iter().filter(|row| row.uid != selected_uid) {
+        assert_eq!(
+            persisted_flags(std::slice::from_ref(row)),
+            persisted_flags(std::slice::from_ref(
+                initial.iter().find(|old| old.uid == row.uid).unwrap()
+            ))
+        );
+    }
+    let retained_reader = get(&app, &alice, &opened_target);
+    assert_eq!(retained_reader.response.status_code, 200);
+    assert!(text(&retained_reader).contains("ALICE_READER_ONLY_052"));
+    assert!(!text(&retained_reader).contains(&format!("More for message #{selected_uid} in INBOX")));
+    let ordinary_unread = get(&app, &alice, &selection);
+    assert_eq!(ordinary_unread.response.status_code, 200);
+    assert!(text(&ordinary_unread).contains("Message unavailable"));
+    assert!(!text(&ordinary_unread).contains("ALICE_READER_ONLY_052"));
+    let reload = get(&app, &alice, &opened_target);
+    assert_eq!(reload.response.status_code, 200);
+    let back = get(&app, &alice, &back_href(text(&reload)));
+    assert_eq!(back.response.status_code, 200);
+    assert_eq!(
+        persisted_flags(&native_list.list_messages(ALICE, &query).unwrap()),
+        persisted_flags(&actual_seen)
+    );
+    let mut stale_opening = opening.clone();
+    stale_opening.insert("message_guid".into(), "absent-native-opening-guid".into());
+    assert_eq!(
+        http(&app, Some(&alice), "POST", "/message/open", &stale_opening)
+            .response
+            .status_code,
+        409
+    );
+    mark_read
+        .save(BOB, 0, crate::mark_read::Policy::OnOpen)
+        .unwrap();
+    let shared_uid = initial.iter().find(|row| row.uid == 1).unwrap();
+    let foreign_opening = open_form(
+        1,
+        &shared_uid.metadata.as_ref().unwrap().version,
+        "/mailbox?name=INBOX&selected_mailbox=INBOX&selected_uid=1",
+        &bob.record.csrf_token,
+    );
+    assert_eq!(
+        http(&app, Some(&bob), "POST", "/message/open", &foreign_opening)
+            .response
+            .status_code,
+        409
+    );
+    assert_eq!(
+        persisted_flags(&native_list.list_messages(BOB, &query).unwrap()),
+        persisted_flags(&foreign)
+    );
+    let unread = flag_form(text(&retained_reader), selected_uid, "seen");
+    assert_eq!(unread.get("enabled").map(String::as_str), Some("0"));
+    assert_eq!(
+        http(&app, Some(&alice), "POST", "/message/flag", &unread)
+            .response
+            .status_code,
+        303
+    );
+    mark_read
+        .save(ALICE, 1, crate::mark_read::Policy::Manual)
+        .unwrap();
+    let manual_after_change = http(&app, Some(&alice), "POST", "/message/open", &opening);
+    assert_eq!(manual_after_change.response.status_code, 303);
+    assert_eq!(
+        persisted_flags(&native_list.list_messages(ALICE, &query).unwrap()),
+        persisted_flags(&initial)
+    );
+    assert_eq!(
+        persisted_flags(&native_list.list_messages(BOB, &query).unwrap()),
+        persisted_flags(&foreign)
+    );
+
     armed.store(true, Ordering::SeqCst);
     let stale_selection = get(&app, &alice, &format!("/mailbox?name=INBOX&sort=subject&dir=asc&selected_mailbox=INBOX&selected_uid={stale_uid}"));
     assert_eq!(stale_selection.response.status_code, 200);
@@ -1349,5 +1487,5 @@ fn isolated_openbsd_coordinated_reader_signed_helper() {
     drop(fixture);
     assert!(!root.exists());
     assert_eq!(before, standard_metadata());
-    println!("native_reader_cases=PASS rows53_two_accounts=PASS classification_only=PASS page50_selected_back_search=PASS filtered_previous_next_crosspage_search_origin=PASS stale_navigation_guid_refusal=PASS native_csrf_read_star_filtered_membership_reload=PASS attachment_without_and_actual_unknown_count={unknown_attachment_records} foreign_neighbour_stale_refusal=PASS budget_reuse=PASS no_move_append_or_crypto_configuration=PASS scratch_cleanup=PASS standard_host_metadata_unchanged=PASS");
+    println!("native_reader_cases=PASS rows53_two_accounts=PASS classification_only=PASS page50_selected_back_search=PASS filtered_previous_next_crosspage_search_origin=PASS stale_navigation_guid_refusal=PASS native_csrf_read_star_filtered_membership_reload=PASS native_manual_onopen_seen_unread_reconciliation=PASS opening_stale_foreign_guid_refusal=PASS attachment_without_and_actual_unknown_count={unknown_attachment_records} foreign_neighbour_stale_refusal=PASS budget_reuse=PASS no_move_append_or_crypto_configuration=PASS scratch_cleanup=PASS standard_host_metadata_unchanged=PASS");
 }

@@ -58,6 +58,26 @@ fn list_origin(request: &HttpRequest) -> Option<String> {
     ))
 }
 
+// A standalone reader may outlive its Unread membership. This only derives
+// navigation from an already rendered owned identity; it changes no stored flag.
+fn opened_reader_view(view: &ListViewState, rendered: &RenderedMessageView) -> ListViewState {
+    let mut candidate = view.clone();
+    if view.filter == crate::mail_list::MessageFilter::Unread
+        && crate::mail_list::has_flag(&rendered.flags, "\\Seen")
+    {
+        candidate.selection = Some(crate::mail_list::ListSelection {
+            mailbox: rendered.mailbox_name.clone(),
+            uid: rendered.uid,
+        });
+        candidate.requested_version = rendered
+            .metadata
+            .as_ref()
+            .map(|metadata| metadata.version.clone());
+        candidate.opened_read = candidate.requested_version.is_some();
+    }
+    candidate
+}
+
 impl<G> BrowserApp<G>
 where
     G: BrowserGateway,
@@ -118,6 +138,10 @@ where
                 } = &mut summaries.decision
                 {
                     self.apply_snooze(session, canonical_username, mailbox_name, messages);
+                    let mut reader_view = opened_reader_view(&view, rendered);
+                    let mut filtered = messages.clone();
+                    reader_view.order_messages(&mut filtered);
+                    reader_view.recover_opened_messages(messages);
                 }
                 ReaderNeighbours::derive_messages(
                     account,
@@ -149,9 +173,16 @@ where
                     }
                 };
                 audit.push(event);
-                let outcome = self
+                let mut outcome = self
                     .gateway
                     .search_messages(context, session, mailbox, query, field);
+                if let BrowserMessageSearchDecision::Listed { results, .. } = &mut outcome.decision
+                {
+                    let mut reader_view = opened_reader_view(&view, rendered);
+                    let mut filtered = results.clone();
+                    reader_view.order_search(&mut filtered);
+                    reader_view.recover_opened_search(results);
+                }
                 audit.extend(outcome.audit_events);
                 audit.push(self.release_request_budget(guard, "message_search", context, session));
                 ReaderNeighbours::derive_search(
@@ -422,7 +453,7 @@ where
                         200,
                         "OK",
                         "Mailboxes",
-                        render_mailboxes_page(
+                        render_mailboxes_page_with_policy(
                             &canonical_username,
                             &validated_session.record.csrf_token,
                             &visible_mailboxes,
@@ -430,6 +461,11 @@ where
                             draft_count,
                             sent_count,
                             &activity.decision,
+                            self.gateway
+                                .load_mark_read_policy(&validated_session)
+                                .is_ok_and(|preference| {
+                                    preference.policy == crate::mark_read::Policy::OnOpen
+                                }),
                         ),
                     ),
                     audit_events,
@@ -533,12 +569,19 @@ where
                     &mailbox_name,
                     &mut messages,
                 );
-                let snapshot = BrowserMessageListDecision::Listed {
+                view.open_on_select = self
+                    .gateway
+                    .load_mark_read_policy(&validated_session)
+                    .is_ok_and(|preference| preference.policy == crate::mark_read::Policy::OnOpen);
+                let mut snapshot = BrowserMessageListDecision::Listed {
                     canonical_username: canonical_username.clone(),
                     mailbox_name: mailbox_name.clone(),
                     messages: messages.clone(),
                 };
                 view.apply_messages(&mut messages);
+                if let BrowserMessageListDecision::Listed { messages, .. } = &mut snapshot {
+                    view.recover_opened_messages(messages);
+                }
                 let mut reader = MailReaderContext {
                     pane: self.selected_message_pane(
                         context,
@@ -565,6 +608,7 @@ where
                         crate::reader_neighbours::ReaderLocation::Coordinated,
                     );
                 }
+                reader.neighbours.set_open_on_select(view.open_on_select);
                 let search_query = request
                     .query_params
                     .get("q")
@@ -785,13 +829,20 @@ where
                 query,
                 mut results,
             } => {
-                let snapshot = BrowserMessageSearchDecision::Listed {
+                view.open_on_select = self
+                    .gateway
+                    .load_mark_read_policy(&validated_session)
+                    .is_ok_and(|preference| preference.policy == crate::mark_read::Policy::OnOpen);
+                let mut snapshot = BrowserMessageSearchDecision::Listed {
                     canonical_username: canonical_username.clone(),
                     mailbox_name: mailbox_name.clone(),
                     query: query.clone(),
                     results: results.clone(),
                 };
                 view.apply_search(&mut results);
+                if let BrowserMessageSearchDecision::Listed { results, .. } = &mut snapshot {
+                    view.recover_opened_search(results);
+                }
                 let pane = self.selected_message_pane(
                     context,
                     &validated_session,
@@ -832,6 +883,7 @@ where
                         .collect();
                 }
 
+                reader.neighbours.set_open_on_select(view.open_on_select);
                 HandledHttpResponse {
                     response: html_response(
                         200,
@@ -989,12 +1041,19 @@ where
                     &rendered,
                 ) =>
             {
-                let neighbours = self.standalone_neighbours(
+                let mut neighbours = self.standalone_neighbours(
                     request,
                     context,
                     &validated_session,
                     &rendered,
                     &mut audit_events,
+                );
+                neighbours.set_open_on_select(
+                    self.gateway
+                        .load_mark_read_policy(&validated_session)
+                        .is_ok_and(|preference| {
+                            preference.policy == crate::mark_read::Policy::OnOpen
+                        }),
                 );
                 let archive_mailbox_name = self.validated_archive_mailbox_name(
                     context,

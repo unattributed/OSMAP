@@ -8060,3 +8060,31 @@ retain2048 bytes, query/resource prefixes and all arbitrary-field refusals. This
 is necessary supported-control composition, not an unlimited query allowance.
 On Search admission failure, retain a validated back-only origin with disabled
 arrows; do not drop the user's query or bypass admission.
+
+
+### 2026-10-03 — Apply the approved saved mark-read preference through native commands
+
+Manual/OnOpen is an actual absent control in both Reading and General. Keep
+existing Manual behaviour until an authenticated explicit save. Separate its
+account-owned bounded CAS record from presentation-only Reading v1 to preserve
+legacy saves. Use native CSRF/GUID-bound opening POST and the existing confirmed
+Seen mutation path; no implicit GET write or timer/script substitute. Confirmed
+Seen must reconcile Unread membership while keeping that exact opened owned
+reader visible, rather than immediately hiding the body the user just opened.
+Any narrow display context still requires fresh account/message identity and
+other original predicates. Refusals cannot silently retry or claim a flag write.
+
+Navigation1b0d435 is signed/synced/installed and passes authoritative singleton
+Inbox and multi-result Search cases. Retain failed two-row harness assumptions,
+record actual Inbox0/Search1 hops, and keep all human/Send acceptance open.
+
+The actual saved-policy store, native settings/opening forms, filtered-reader
+reconciliation and existing quota/helper mutation route pass17 focused tests,
+the same17 plus one distinct native disposable-mailbox test, and eight rendered
+browser workflows. Final264 native inputs are pinned; candidate6bd10429dfa5
+is not a live or human acceptance claim until signed synchronization and matching
+activation. Retain real RED/failing attempts, correct fixture collisions and
+existing evidence hashes without weakening gates. Installed checks must preserve
+operator flags/preferences; human OnOpen results and all Send outcomes stay open.
+Conversation ordering is the next actual gap, requiring public thread metadata
+and approved existing-list/arrow behaviour, not a label-only or invented-panel fix.

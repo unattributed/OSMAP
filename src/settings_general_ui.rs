@@ -1,6 +1,7 @@
 //! PAGE-11 General overview. Each writable card uses its existing native route.
 use super::*;
 
+#[cfg(test)]
 pub(crate) fn render_general_page(
     model: &SettingsPageModel<'_>,
     preferences: &crate::appearance::AppearanceSettings,
@@ -8,6 +9,26 @@ pub(crate) fn render_general_page(
     identity: Option<crate::identity_preferences::IdentityPreferencesRecord>,
     reading: Option<crate::reading_preferences::ReadingPreferences>,
     signature: Option<&crate::signature::SignatureRecord>,
+) -> TrustedHtml {
+    render_general_page_with_mark_read(
+        model,
+        preferences,
+        composition,
+        identity,
+        reading,
+        signature,
+        None,
+    )
+}
+
+pub(crate) fn render_general_page_with_mark_read(
+    model: &SettingsPageModel<'_>,
+    preferences: &crate::appearance::AppearanceSettings,
+    composition: Option<crate::composition_preferences::CompositionPreferences>,
+    identity: Option<crate::identity_preferences::IdentityPreferencesRecord>,
+    reading: Option<crate::reading_preferences::ReadingPreferences>,
+    signature: Option<&crate::signature::SignatureRecord>,
+    mark_read: Option<&crate::mark_read::Preference>,
 ) -> TrustedHtml {
     let profile_input = |id: &str, label: &str, value: Option<&str>| {
         match value {
@@ -42,15 +63,23 @@ pub(crate) fn render_general_page(
     } else {
         String::new()
     };
+    let (mark_control, mark_form, mark_button) = match mark_read {
+        Some(saved) => (
+            format!("<div class=\"general-field\"><label for=\"general-mark-read\">Mark read</label><select id=\"general-mark-read\" name=\"policy\" form=\"general-mark-read-form\" aria-describedby=\"general-mark-read-help\">{}</select></div>", select_options(saved.policy.as_str(), &[("manual", "Manual"), ("on_open", "On Open")])),
+            format!("<form id=\"general-mark-read-form\" method=\"post\" action=\"/settings/mark-read\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"expected_revision\" value=\"{}\"><input type=\"hidden\" name=\"section\" value=\"general\"></form>", escape_html(model.csrf_token), saved.revision),
+            "<button type=\"submit\" form=\"general-mark-read-form\">Save mark-read choice</button>",
+        ),
+        None => (unavailable_select("general-mark-read", "Mark read", "Unavailable"), String::new(), "<span>Saved mark-read preference unavailable. Reload settings.</span>"),
+    };
     let mailbox = format!(concat!(
-        "<section class=\"general-card\" aria-labelledby=\"general-mailbox-title\"><h2 id=\"general-mailbox-title\">Mailbox Defaults</h2>{start_form}",
+        "<section class=\"general-card\" aria-labelledby=\"general-mailbox-title\"><h2 id=\"general-mailbox-title\">Mailbox Defaults</h2>{start_form}{mark_form}",
         "<form method=\"post\" action=\"/settings\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"settings_action\" value=\"archive\">{}",
         "<div class=\"general-field\"><label for=\"general-archive\">Archive folder</label><input id=\"general-archive\" name=\"archive_mailbox_name\" value=\"{}\" autocomplete=\"off\"></div>{}{}",
-        "<p class=\"general-help\">Save each choice separately. Blank Archive uses manual moves.</p><div class=\"general-card-actions\"><button type=\"submit\">Save archive folder</button>{start_button}</div></form></section>"
+        "<p class=\"general-help\">Save each choice separately. Blank Archive uses manual moves.</p><p class=\"general-help\" id=\"general-mark-read-help\">Manual keeps the current read state when opening. On Open marks an unread message read through its opening action. Reload and Back do not mark messages read.</p><div class=\"general-card-actions\"><button type=\"submit\">Save archive folder</button>{start_button}{mark_button}</div></form></section>"
     ), escape_html(model.csrf_token),
         start_control, escape_html(model.archive_mailbox_name.unwrap_or("")),
         unavailable_select("general-delete-behaviour", "Delete behaviour", "Unavailable"),
-        unavailable_select("general-mark-read", "Mark read", "Unavailable"), start_form=start_form, start_button=if reading.is_some(){"<button type=\"submit\" form=\"general-start-form\">Save start page</button>"}else{"<span>Saved Reading preferences unavailable.</span>"});
+        mark_control, start_form=start_form, mark_form=mark_form, mark_button=mark_button, start_button=if reading.is_some(){"<button type=\"submit\" form=\"general-start-form\">Save start page</button>"}else{"<span>Saved Reading preferences unavailable.</span>"});
 
     let format_control = match composition {
         Some(value) => format!("<form id=\"general-composition-form\" method=\"post\" action=\"/settings/composition\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><div class=\"general-field\"><label for=\"general-default-format\">Default format</label><select id=\"general-default-format\" name=\"default_body_format\">{}</select></div></form>", escape_html(model.csrf_token), select_options(value.default_body_format.as_str(), &[("plain", "Plain text"), ("formatted", "Formatted text")])),
@@ -144,5 +173,69 @@ fn preserved_flag(name: &str, enabled: bool) -> String {
         format!("<input type=\"hidden\" name=\"{name}\" value=\"1\">")
     } else {
         String::new()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn model() -> SettingsPageModel<'static> {
+        SettingsPageModel {
+            canonical_username: "synthetic@example.test",
+            csrf_token: "synthetic&<csrf>",
+            success_message: None,
+            error_message: None,
+            html_display_preference: HtmlDisplayPreference::default(),
+            archive_mailbox_name: None,
+        }
+    }
+
+    #[test]
+    fn general_mark_read_uses_its_own_native_form_and_saved_revision() {
+        let saved = crate::mark_read::Preference {
+            revision: 7,
+            policy: crate::mark_read::Policy::OnOpen,
+        };
+        let html = render_general_page_with_mark_read(
+            &model(),
+            &crate::appearance::AppearanceSettings::default(),
+            None,
+            None,
+            None,
+            None,
+            Some(&saved),
+        );
+        let html = html.as_str();
+        assert!(html.contains("<option value=\"on_open\" selected>On Open</option>"));
+        assert!(html.contains("name=\"expected_revision\" value=\"7\""));
+        assert!(html.contains("name=\"section\" value=\"general\""));
+        assert!(html.contains("value=\"synthetic&amp;&lt;csrf&gt;\""));
+        assert!(html
+            .contains("id=\"general-mark-read\" name=\"policy\" form=\"general-mark-read-form\""));
+        assert!(
+            html.contains("type=\"submit\" form=\"general-mark-read-form\">Save mark-read choice")
+        );
+        let mark_start = html.find("<form id=\"general-mark-read-form\"").unwrap();
+        let mark_end = mark_start + html[mark_start..].find("</form>").unwrap();
+        assert!(!html[mark_start + 5..mark_end].contains("<form"));
+        assert!(!html[mark_start..mark_end].contains("settings_action"));
+    }
+
+    #[test]
+    fn general_unavailable_mark_read_does_not_offer_a_write_or_default_claim() {
+        let html = render_general_page(
+            &model(),
+            &crate::appearance::AppearanceSettings::default(),
+            None,
+            None,
+            None,
+            None,
+        );
+        let html = html.as_str();
+        assert!(html.contains("id=\"general-mark-read\" disabled"));
+        assert!(html.contains("Saved mark-read preference unavailable. Reload settings."));
+        assert!(!html.contains("action=\"/settings/mark-read\""));
+        assert!(!html.contains("Save mark-read choice</button>"));
     }
 }

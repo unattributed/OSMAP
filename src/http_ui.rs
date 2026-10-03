@@ -37,8 +37,8 @@ use crate::rendering::{HtmlDisplayPreference, RenderedMessageView};
 pub(crate) use settings_ui::render_openpgp_settings;
 pub(crate) use settings_ui::{
     render_appearance_page, render_composition_page_with_signature, render_copies_page,
-    render_general_page, render_identity_page, render_identity_page_with_signature,
-    render_notifications_page, render_privacy_page, render_reading_page_with_after_archive,
+    render_general_page_with_mark_read, render_identity_page, render_identity_page_with_signature,
+    render_notifications_page, render_privacy_page, render_reading_page_with_policies,
     render_security_page, IdentityPageModel,
 };
 
@@ -610,7 +610,7 @@ pub(crate) fn render_login_page(error_message: Option<&str>) -> TrustedHtml {
 
 #[path = "welcome_ui.rs"]
 mod welcome_ui;
-pub(crate) use welcome_ui::render_mailboxes_page;
+pub(crate) use welcome_ui::render_mailboxes_page_with_policy;
 
 const MESSAGE_SORT_COLUMNS: [MessageSortColumn; 6] = [
     MessageSortColumn::Uid,
@@ -772,6 +772,9 @@ fn append_list_filter_selection(href: &mut String, view: &ListViewState) {
                 url_encode(&version.mailbox_guid),
                 url_encode(&version.message_guid)
             ));
+            if view.opened_read {
+                href.push_str("&opened_read=1");
+            }
         }
     }
 }
@@ -817,6 +820,9 @@ fn list_form_state(view: &ListViewState) -> String {
         fields.push_str(&format!("<input type=\"hidden\" name=\"selected_mailbox\" value=\"{}\"><input type=\"hidden\" name=\"selected_uid\" value=\"{}\">", escape_html(&selected.mailbox), selected.uid));
         if let Some(version) = &view.requested_version {
             fields.push_str(&format!("<input type=\"hidden\" name=\"selected_mailbox_guid\" value=\"{}\"><input type=\"hidden\" name=\"selected_message_guid\" value=\"{}\">", escape_html(&version.mailbox_guid), escape_html(&version.message_guid)));
+            if view.opened_read {
+                fields.push_str("<input type=\"hidden\" name=\"opened_read\" value=\"1\">");
+            }
         }
     }
     fields
@@ -835,10 +841,209 @@ fn selected_message_href(
         uid,
     });
     selected.requested_version = version.cloned();
+    selected.opened_read = false;
     format!(
         "{}#reading-pane",
         list_navigation_href(base, &selected, view.page)
     )
+}
+
+// Template-derived destinations still require a complete bounded public identity.
+// The opening POST revalidates that identity against the authenticated mailbox.
+pub(crate) fn message_open_control(
+    csrf: &str,
+    href: &str,
+    class: &str,
+    text: &str,
+    selected: bool,
+    on_open: bool,
+    aria_label: Option<&str>,
+) -> String {
+    message_open_markup(
+        csrf,
+        href,
+        class,
+        &TrustedHtml::from_template(escape_html(text).to_string()),
+        selected,
+        on_open,
+        aria_label,
+    )
+}
+
+fn message_open_markup(
+    csrf: &str,
+    href: &str,
+    class: &str,
+    content: &TrustedHtml,
+    selected: bool,
+    on_open: bool,
+    aria_label: Option<&str>,
+) -> String {
+    let attributes = format!(
+        "{}{}",
+        if selected {
+            " aria-current=\"true\""
+        } else {
+            ""
+        },
+        aria_label
+            .map(|label| format!(" aria-label=\"{}\"", escape_html(label)))
+            .unwrap_or_default(),
+    );
+    if !on_open {
+        return format!(
+            "<a class=\"{}\" href=\"{}\"{attributes} dir=\"auto\">{content}</a>",
+            escape_html(class),
+            escape_html(href)
+        );
+    }
+    let identity = || -> Option<(String, String, String, String, String)> {
+        let target = href.strip_suffix("#reading-pane").unwrap_or(href);
+        let safe = crate::mail_navigation::safe_mail_return(target)?;
+        let (path, query) = safe.split_once('?')?;
+        let fields = crate::http_form::parse_urlencoded_form(
+            query.as_bytes(),
+            crate::mail_navigation::MAIL_RETURN_MAX_FIELDS,
+            2048,
+        )
+        .ok()?;
+        let names = match path {
+            "/mailbox" | "/search" => [
+                "selected_mailbox",
+                "selected_uid",
+                "selected_mailbox_guid",
+                "selected_message_guid",
+            ],
+            "/message" => ["mailbox", "uid", "mailbox_guid", "message_guid"],
+            _ => return None,
+        };
+        let mailbox = fields.get(names[0])?.clone();
+        MailboxEntry::new(crate::mailbox::MailboxListingPolicy::default(), &mailbox).ok()?;
+        let uid = fields.get(names[1])?.parse::<u32>().ok()?;
+        if uid == 0 {
+            return None;
+        }
+        let version = crate::message_metadata::MessageVersion::new(
+            fields.get(names[2])?.clone(),
+            fields.get(names[3])?.clone(),
+        )
+        .ok()?;
+        Some((
+            mailbox,
+            uid.to_string(),
+            version.mailbox_guid,
+            version.message_guid,
+            safe,
+        ))
+    };
+    let Some((mailbox, uid, mailbox_guid, message_guid, return_to)) = identity() else {
+        return format!("<button class=\"{}\" type=\"button\"{attributes} dir=\"auto\" disabled>{content}</button>", escape_html(class));
+    };
+    let fields: String = [
+        ("csrf_token", csrf),
+        ("mailbox", &mailbox),
+        ("uid", &uid),
+        ("mailbox_guid", &mailbox_guid),
+        ("message_guid", &message_guid),
+        ("return_to", &return_to),
+    ]
+    .into_iter()
+    .map(|(name, value)| {
+        format!(
+            "<input type=\"hidden\" name=\"{name}\" value=\"{}\">",
+            escape_html(value)
+        )
+    })
+    .collect();
+    format!("<form class=\"message-open-form\" method=\"post\" action=\"/message/open\">{fields}<button class=\"{}\" type=\"submit\"{attributes} dir=\"auto\">{content}</button></form>", escape_html(class))
+}
+
+#[cfg(test)]
+mod message_open_control_tests {
+    use super::*;
+
+    #[test]
+    fn on_open_controls_bind_complete_identity_and_escape_every_projection() {
+        for href in [
+            "/mailbox?name=INBOX&selected_mailbox=INBOX&selected_uid=7&selected_mailbox_guid=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa&selected_message_guid=message-7#reading-pane",
+            "/search?q=report&selected_mailbox=INBOX&selected_uid=7&selected_mailbox_guid=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa&selected_message_guid=message-7#reading-pane",
+            "/message?mailbox=INBOX&uid=7&mailbox_guid=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa&message_guid=message-7&return_to=%2Fsearch%3Fq%3Dreport",
+        ] {
+            let html = message_open_control("csrf<&\"", href, "message-subject-link", concat!("<", "script> & subject"), true, true, Some("Open <message>"));
+            assert!(html.contains("method=\"post\" action=\"/message/open\""));
+            assert_eq!(html.matches("type=\"hidden\"").count(), 6);
+            for (name,value) in [("mailbox","INBOX"),("uid","7"),("mailbox_guid","aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"),("message_guid","message-7")] {
+                assert!(html.contains(&format!("name=\"{name}\" value=\"{value}\"")));
+            }
+            assert!(html.contains("csrf&lt;&amp;&quot;"));
+            assert!(html.contains("&lt;script&gt; &amp; subject"));
+            assert!(html.contains("aria-current=\"true\""));
+            assert!(html.contains("aria-label=\"Open &lt;message&gt;\""));
+            assert!(!html.contains("<a "));
+            assert!(!html.contains("#reading-pane"));
+        }
+    }
+
+    #[test]
+    fn missing_or_unsafe_opening_identity_is_disabled_without_get_fallback() {
+        for href in [
+            "/message?mailbox=INBOX&uid=7",
+            "/message?mailbox=INBOX&uid=0&mailbox_guid=a&message_guid=b",
+            "/mailbox?name=INBOX&selected_mailbox=INBOX&selected_uid=7",
+            "/message?mailbox=INBOX&uid=7&mailbox_guid=a&message_guid=b&unknown=1",
+            "/message?mailbox=INBOX&uid=7&mailbox_guid=a&message_guid=b#untrusted",
+            "https://example.invalid/message?mailbox=INBOX&uid=7&mailbox_guid=a&message_guid=b",
+        ] {
+            let html = message_open_control("csrf", href, "subject", "Subject", false, true, None);
+            assert!(html.contains("disabled>Subject</button>"), "{href}");
+            assert!(!html.contains("<form"));
+            assert!(!html.contains("href="));
+        }
+        let manual = message_open_control(
+            "csrf",
+            "/message?mailbox=INBOX&uid=7",
+            "subject",
+            "Subject & text",
+            false,
+            false,
+            None,
+        );
+        assert!(manual.contains("<a class=\"subject\" href=\"/message?mailbox=INBOX&amp;uid=7\""));
+        assert!(manual.contains("Subject &amp; text</a>"));
+        assert!(!manual.contains("<form"));
+    }
+
+    #[test]
+    fn navigation_preserves_opened_identity_but_new_selection_drops_marker() {
+        let mut view = ListViewState::from_query(&std::collections::BTreeMap::new()).unwrap();
+        view.selection = Some(crate::mail_list::ListSelection {
+            mailbox: "INBOX".into(),
+            uid: 7,
+        });
+        view.requested_version = Some(
+            crate::message_metadata::MessageVersion::new("a".repeat(32), "message-7".into())
+                .unwrap(),
+        );
+        view.opened_read = true;
+        assert!(list_navigation_href("/mailbox?name=INBOX", &view, 1).contains("opened_read=1"));
+        assert!(list_form_state(&view).contains("name=\"opened_read\""));
+        let next = selected_message_href(
+            "/mailbox?name=INBOX",
+            &view,
+            "INBOX",
+            8,
+            Some(
+                &crate::message_metadata::MessageVersion::new("a".repeat(32), "message-8".into())
+                    .unwrap(),
+            ),
+        );
+        assert!(!next.contains("opened_read"));
+        view.requested_version = None;
+        assert!(!list_navigation_href("/mailbox?name=INBOX", &view, 1).contains("opened_read"));
+        assert!(!list_form_state(&view).contains("opened_read"));
+        view.selection = None;
+        assert!(!list_navigation_href("/mailbox?name=INBOX", &view, 1).contains("opened_read"));
+    }
 }
 
 fn render_coordinated_reader(
@@ -1176,6 +1381,7 @@ fn render_search_field_select(active_field: MessageSearchField) -> String {
 }
 
 struct MessageCard<'a> {
+    open_on_select: bool,
     recipient: bool,
     mailbox: &'a str,
     uid: u64,
@@ -1237,7 +1443,7 @@ fn render_message_card(
             "<li class=\"message-row message-card{}\" data-selected=\"{}\">{selection}",
             "<div class=\"message-card-main\"><span class=\"message-avatar\" aria-hidden=\"true\" title=\"{initials_hint}\">{}</span><span class=\"message-sender\" title=\"{}\" dir=\"auto\">{}</span>",
             "<span class=\"message-date\" title=\"{}\">{}</span>",
-            "<a class=\"message-subject-link\" href=\"{}\"{} dir=\"auto\">{}</a><span class=\"message-body-preview\" dir=\"auto\">{}</span></div>",
+            "{subject_control}<span class=\"message-body-preview\" dir=\"auto\">{}</span></div>",
             "<div class=\"message-card-footer message-preview-meta\"><span class=\"message-mailbox\">{}</span><div class=\"message-star-cell\">{star}</div>{}{protection}",
             "<details class=\"message-more\"><summary aria-label=\"More for message #{} in {}\"><span aria-hidden=\"true\">⋮</span><span class=\"sr-only\">More</span></summary>",
             "<div class=\"message-more-content\"><p class=\"muted\">Message #{} · {} bytes</p><p><strong>{party_label}:</strong> {}</p><p><strong>Subject:</strong> {}</p>{attachment_details}{read_action}{}</div></details></div></li>"
@@ -1249,9 +1455,6 @@ fn render_message_card(
         escape_html(&visible_party),
         escape_html(message.received),
         escape_html(message.received),
-        escape_html(href),
-        if selected { " aria-current=\"true\"" } else { "" },
-        escape_html(message.subject.unwrap_or("(No subject)")),
         escape_html(message.metadata.and_then(|metadata| metadata.preview.as_deref()).filter(|preview| crate::message_metadata::valid_message_preview(preview)).unwrap_or("No preview available")),
         escape_html(message.mailbox),
         render_attachment_count(message.metadata),
@@ -1265,6 +1468,7 @@ fn render_message_card(
         read_action = read_action,
         protection = render_public_message_protection(message.metadata),
         attachment_details = render_public_attachment_details(message.metadata),
+        subject_control = message_open_control(csrf, href, "message-subject-link", message.subject.unwrap_or("(No subject)"), selected, message.open_on_select, None),
     )
 }
 
@@ -1466,12 +1670,14 @@ pub(crate) fn render_message_list_page(
                 csrf_token,
                 &return_to,
                 sort_links.view.is_selected(mailbox_name, message.uid),
+                sort_links.view.open_on_select,
             ));
             continue;
         }
         let actions = archive_action;
         rows.push_str(&render_message_card(
             MessageCard {
+                open_on_select: sort_links.view.open_on_select,
                 mailbox: mailbox_name,
                 uid: message.uid,
                 subject: message.subject.as_deref(),
@@ -1728,13 +1934,12 @@ pub(crate) fn render_message_search_page(
                 )
             };
             rows.push_str(&format!(
-                "<li class=\"message-row search-result-row\" data-selected=\"{}\"><span class=\"search-result-type\">{}</span><div class=\"search-result-title\"><a class=\"message-subject-link\" href=\"{}\"{} dir=\"auto\">{}</a><span class=\"message-sender\" dir=\"auto\"><span class=\"sr-only\">From</span> {}{preview}</span></div><span class=\"search-result-location message-mailbox\" dir=\"auto\">{}</span><time class=\"search-result-date\">{}</time><details class=\"search-result-more\"><summary aria-label=\"More for message #{} in {}\">More</summary><div>{}</div></details></li>",
-                view.is_selected(&result.mailbox_name, result.uid), shell_icon("inbox"), escape_html(&message_href),
-                if view.is_selected(&result.mailbox_name, result.uid) { " aria-current=\"true\"" } else { "" },
-                escape_html(result.subject.as_deref().unwrap_or("(No subject)")),
+                "<li class=\"message-row search-result-row\" data-selected=\"{}\"><span class=\"search-result-type\">{}</span><div class=\"search-result-title\">{subject_control}<span class=\"message-sender\" dir=\"auto\"><span class=\"sr-only\">From</span> {}{preview}</span></div><span class=\"search-result-location message-mailbox\" dir=\"auto\">{}</span><time class=\"search-result-date\">{}</time><details class=\"search-result-more\"><summary aria-label=\"More for message #{} in {}\">More</summary><div>{}</div></details></li>",
+                view.is_selected(&result.mailbox_name, result.uid), shell_icon("inbox"),
                 escape_html(result.from.as_deref().unwrap_or("Sender unavailable")), escape_html(&result.mailbox_name), escape_html(&result.date_received),
                 result.uid, escape_html(&result.mailbox_name),
                 more_controls,
+                subject_control = message_open_control(csrf_token, &message_href, "message-subject-link", result.subject.as_deref().unwrap_or("(No subject)"), view.is_selected(&result.mailbox_name, result.uid), view.open_on_select, None),
                 preview = result.metadata.as_ref().and_then(|metadata| metadata.preview.as_deref()).filter(|preview| crate::message_metadata::valid_message_preview(preview)).map(|preview| format!(" · {}", escape_html(preview))).unwrap_or_default(),
             ));
         }
@@ -1839,7 +2044,9 @@ fn render_reader_fragment(
     neighbours: Option<&crate::reader_neighbours::ReaderNeighbours>,
 ) -> String {
     let standalone = neighbours.is_some();
-    let navigation = neighbours.map(|value| value.html()).unwrap_or_default();
+    let navigation = neighbours
+        .map(|value| value.html_with_policy(csrf_token))
+        .unwrap_or_default();
     let snooze_control=rendered.metadata.as_ref().map(|m|format!("<a class=\"reader-snooze\" aria-label=\"Snooze message\" title=\"Snooze message\" href=\"/snooze?mailbox={}&amp;uid={}&amp;mailbox_guid={}&amp;message_guid={}&amp;return_to={}\"><span aria-hidden=\"true\">◷</span></a>",escape_html(&url_encode(&rendered.mailbox_name)),rendered.uid,escape_html(&url_encode(&m.version.mailbox_guid)),escape_html(&url_encode(&m.version.message_guid)),escape_html(&url_encode(return_to)))).unwrap_or_else(||"<button class=\"reader-snooze\" aria-label=\"Snooze unavailable\" disabled><span aria-hidden=\"true\">◷</span></button>".into());
     let label_control = rendered.metadata.as_ref().map(|metadata| format!("<details class=\"reader-labels\"><summary>Labels</summary><div><p>Manage private labels for this message. Its current identity is checked before changes.</p><a class=\"button-link secondary\" href=\"/labels?mailbox={}&amp;uid={}&amp;mailbox_guid={}&amp;message_guid={}\">Edit message labels</a></div></details>", escape_html(&url_encode(&rendered.mailbox_name)), rendered.uid, escape_html(&url_encode(&metadata.version.mailbox_guid)), escape_html(&url_encode(&metadata.version.message_guid)))).unwrap_or_else(|| "<span class=\"muted\" aria-disabled=\"true\">Labels unavailable</span>".into());
     let displayed_attachments = rendered

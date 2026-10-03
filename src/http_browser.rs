@@ -53,6 +53,21 @@ pub trait BrowserGateway {
         Err(crate::after_archive::Error::Unavailable)
     }
 
+    fn load_mark_read_policy(
+        &self,
+        _session: &ValidatedSession,
+    ) -> Result<crate::mark_read::Preference, crate::mark_read::Error> {
+        Err(crate::mark_read::Error::Unavailable)
+    }
+    fn save_mark_read_policy(
+        &self,
+        _session: &ValidatedSession,
+        _revision: u64,
+        _policy: crate::mark_read::Policy,
+    ) -> Result<crate::mark_read::Preference, crate::mark_read::Error> {
+        Err(crate::mark_read::Error::Unavailable)
+    }
+
     fn load_autosave(
         &self,
         _session: &ValidatedSession,

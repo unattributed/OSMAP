@@ -57,6 +57,17 @@ by these Search tests.
 
 ## Git commit comment
 
+The S02 Manual/On Open repair adds two finite authenticated native POST routes:
+`/settings/mark-read` saves the account-owned CAS preference; `/message/open`
+verifies the current owned GUID pair and reuses the established Seen action.
+Local integrated cases exercise missing/wrong CSRF, foreign/stale identity,
+unavailable preference/view, ambiguous flag outcome and worker admission.
+GET, reload and Back never change flags; Unread reader retention does not waive
+the other original filters or search membership. Existing ATHZ, SESS, BUSL and
+INPV scenario mappings cover these component checks. Native and browser results
+are recorded in the UX ledger; they do not close full WSTG scenarios, human UAT,
+SMTP/OpenPGP or the strict release gate.
+
 ```text
 add wstg due diligence matrix
 ```

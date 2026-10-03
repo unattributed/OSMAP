@@ -742,6 +742,11 @@ body:has(.app-rail) {
 .search-results .search-result-tabs .message-sort summary { min-height:0; padding:0; }
 @media(max-width:700px) { .search-results .search-result-tabs .message-sort[open] nav { position:static; width:auto; } }
 
+.message-open-form { margin:0; min-width:0; }
+.message-card-main>.message-open-form { display:contents; }
+.message-open-form .message-subject-link,.message-open-form .archive-subject { border:0; background:transparent; color:var(--ink); text-align:start; font:inherit; border-radius:0; width:auto; margin:0; padding:0; cursor:pointer; }
+.message-open-form .message-subject-link:hover,.message-open-form .archive-subject:hover { text-decoration:underline; }
+.message-open-form .welcome-recent-link { border:0; background:transparent; width:100%; margin:0; border-radius:0; text-align:start; font-family:inherit; cursor:pointer; }
 .reader-neighbours { display:flex; align-items:center; gap:.4rem; margin-left:auto; flex-wrap:wrap; }
 .reader-neighbours a,.reader-neighbours button { margin:0; min-width:2.15rem; padding:.35rem .65rem; width:auto; }
 .reader-neighbours details { font-size:.75rem; }

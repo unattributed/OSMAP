@@ -5,7 +5,7 @@ use crate::mail_list::ListViewState;
 use crate::mailbox::{MailboxEntry, MailboxListingPolicy, MessageSearchField};
 
 // Finite mail-context allowlists plus the expected selected GUID pair.
-pub(crate) const MAIL_RETURN_MAX_FIELDS: usize = 18;
+pub(crate) const MAIL_RETURN_MAX_FIELDS: usize = 19;
 
 /// Clear action selection after a move; the next GET recomputes counts/pages.
 pub fn mail_return_after_move(value: &str, source: &str) -> Option<String> {
@@ -25,6 +25,7 @@ pub fn mail_return_after_move(value: &str, source: &str) -> Option<String> {
         "selected_uid",
         "selected_mailbox_guid",
         "selected_message_guid",
+        "opened_read",
     ] {
         fields.remove(key);
     }
@@ -69,6 +70,7 @@ pub fn safe_mail_return(value: &str) -> Option<String> {
                 "selected_uid",
                 "selected_mailbox_guid",
                 "selected_message_guid",
+                "opened_read",
                 "select",
             ]
         }
@@ -116,6 +118,7 @@ pub fn safe_mail_return(value: &str) -> Option<String> {
                 "selected_uid",
                 "selected_mailbox_guid",
                 "selected_message_guid",
+                "opened_read",
                 "select",
             ]
         }

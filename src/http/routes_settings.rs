@@ -286,7 +286,8 @@ where
                             self.gateway.load_autosave(&validated_session).ok().as_ref(),
                         )
                     } else if section == "general" {
-                        crate::http_ui::render_general_page(
+                        let mark_read = self.load_settings_mark_read_policy(context, &validated_session, &mut audit_events);
+                        crate::http_ui::render_general_page_with_mark_read(
                             &model,
                             &presentation,
                             self.gateway
@@ -297,6 +298,7 @@ where
                                 .ok(),
                             self.gateway.load_reading_preferences(context, &validated_session).ok(),
                             self.gateway.load_signature(&validated_session).ok().as_ref(),
+                            mark_read.as_ref(),
                         )
                     } else {
                         let preferences = match self.gateway.load_reading_preferences(context, &validated_session) {
@@ -310,7 +312,8 @@ where
                             }
                         };
                         let mailboxes = self.reading_mailbox_choices(context, &validated_session, &mut audit_events);
-                        crate::http_ui::render_reading_page_with_after_archive(&model, &preferences, mailboxes.as_deref(),self.gateway.load_after_archive(&validated_session).ok().as_ref())
+                        let mark_read = self.load_settings_mark_read_policy(context, &validated_session, &mut audit_events);
+                        crate::http_ui::render_reading_page_with_policies(&model, &preferences, mailboxes.as_deref(),self.gateway.load_after_archive(&validated_session).ok().as_ref(),mark_read.as_ref())
                     }
                 })
                 .with_header(
@@ -335,6 +338,25 @@ where
                 ),
                 audit_events,
             },
+        }
+    }
+
+    fn load_settings_mark_read_policy(
+        &self,
+        context: &AuthenticationContext,
+        session: &ValidatedSession,
+        audit_events: &mut Vec<LogEvent>,
+    ) -> Option<crate::mark_read::Preference> {
+        match self.gateway.load_mark_read_policy(session) {
+            Ok(value) => Some(value),
+            Err(_) => {
+                audit_events.push(build_http_warning_event(
+                    "mark_read_preference_load_failed",
+                    "stored mark-read preference could not be loaded",
+                    context,
+                ));
+                None
+            }
         }
     }
 

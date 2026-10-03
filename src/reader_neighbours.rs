@@ -24,6 +24,7 @@ pub(crate) struct ReaderNeighbours {
     previous: Option<String>,
     next: Option<String>,
     scope: Option<String>,
+    open_on_select: bool,
 }
 
 pub(crate) fn query_version_matches(
@@ -346,14 +347,29 @@ impl ReaderNeighbours {
                 let version = (*version)?;
                 match location {
                     ReaderLocation::Standalone => {
+                        let (_, path, mut fields) = origin(back)?;
+                        fields.remove("opened_read");
+                        let destination = format!(
+                            "{path}?{}",
+                            fields
+                                .iter()
+                                .map(|(key, value)| format!(
+                                    "{}={}",
+                                    url_encode(key),
+                                    url_encode(value)
+                                ))
+                                .collect::<Vec<_>>()
+                                .join("&")
+                        );
                         Some(format!(
                     "/message?mailbox={}&uid={}&mailbox_guid={}&message_guid={}&return_to={}",
                     url_encode(mailbox), uid, url_encode(&version.mailbox_guid),
-                    url_encode(&version.message_guid), url_encode(back)))
+                    url_encode(&version.message_guid), url_encode(&destination)))
                     }
                     ReaderLocation::Coordinated => {
                         let (_, path, mut fields) = origin(back)?;
                         fields.remove("select");
+                        fields.remove("opened_read");
                         fields.insert("selected_mailbox".into(), (*mailbox).clone());
                         fields.insert("selected_uid".into(), uid.to_string());
                         fields.insert("selected_mailbox_guid".into(), version.mailbox_guid.clone());
@@ -380,15 +396,28 @@ impl ReaderNeighbours {
             })
         };
         Self { back: Some(back.into()), previous: index.checked_sub(1).and_then(link),
-            next: link(index + 1), scope: Some(format!(
+            next: link(index + 1), open_on_select: false, scope: Some(format!(
                 "Previous and Next follow this request's filtered and sorted result snapshot (up to {limit} messages). Mailbox contents can change between requests.")) }
     }
 
-    pub(crate) fn controls_html(&self) -> String {
+    pub(crate) fn set_open_on_select(&mut self, value: bool) {
+        self.open_on_select = value;
+    }
+
+    pub(crate) fn controls_html_with_policy(&self, csrf: &str) -> String {
         let control = |href: &Option<String>, label: &str, symbol: &str| match href {
-            Some(href) => format!(
+            Some(href) if !self.open_on_select => format!(
                 "<a class=\"button-link\" aria-label=\"{label} message\" href=\"{}\">{symbol}</a>",
                 escape_html(href)
+            ),
+            Some(href) => crate::http_ui::message_open_control(
+                csrf,
+                href,
+                "button-link",
+                symbol,
+                false,
+                self.open_on_select,
+                Some(&format!("{label} message")),
             ),
             None => format!(
                 "<button type=\"button\" aria-label=\"{label} message\" disabled>{symbol}</button>"
@@ -404,8 +433,16 @@ impl ReaderNeighbours {
         format!("<details class=\"reader-order-scope\"><summary>Loaded mailbox order</summary><p>{}</p></details>", escape_html(self.scope.as_deref().unwrap_or(
             "Navigation unavailable: the originating results, identities or bounded ordering could not be verified. Return to the list.")))
     }
+    pub(crate) fn html_with_policy(&self, csrf: &str) -> String {
+        format!(
+            "{}{}",
+            self.controls_html_with_policy(csrf),
+            self.scope_html()
+        )
+    }
+    #[cfg(test)]
     pub(crate) fn html(&self) -> String {
-        format!("{}{}", self.controls_html(), self.scope_html())
+        self.html_with_policy("")
     }
 }
 
@@ -437,6 +474,69 @@ mod tests {
     use crate::message_metadata::{MessageMetadata, MessageProtection};
     use crate::mime::MimeBodySource;
     use crate::rendering::RenderingMode;
+
+    #[test]
+    fn neighbour_controls_follow_server_open_policy_and_require_identity() {
+        let mut neighbours = ReaderNeighbours {
+            previous: Some(
+                "/message?mailbox=INBOX&uid=7&mailbox_guid=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa&message_guid=message-7".into(),
+            ),
+            next: Some("/message?mailbox=INBOX&uid=8".into()),
+            ..ReaderNeighbours::default()
+        };
+        assert_eq!(neighbours.html().matches("<a ").count(), 2);
+        neighbours.set_open_on_select(true);
+        let html = neighbours.html_with_policy("csrf&value");
+        assert_eq!(html.matches("action=\"/message/open\"").count(), 1);
+        assert!(html.contains("aria-label=\"Previous message\""));
+        assert!(html.contains("aria-label=\"Next message\" dir=\"auto\" disabled"));
+        assert!(html.contains("csrf&amp;value"));
+        assert!(!html.contains("<a "));
+    }
+
+    #[test]
+    fn moving_to_a_neighbour_does_not_reuse_opened_read_marker() {
+        let current = row(7, "Alpha", false);
+        let next = row(8, "Beta", false);
+        let rows = vec![
+            (
+                &current.mailbox_name,
+                current.uid,
+                current.metadata.as_ref().map(|m| &m.version),
+            ),
+            (
+                &next.mailbox_name,
+                next.uid,
+                next.metadata.as_ref().map(|m| &m.version),
+            ),
+        ];
+        let back = "/mailbox?name=INBOX&filter=unread&selected_mailbox=INBOX&selected_uid=7&selected_mailbox_guid=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa&selected_message_guid=message-7&opened_read=1";
+        for location in [ReaderLocation::Standalone, ReaderLocation::Coordinated] {
+            let neighbours = ReaderNeighbours::from_ordered(
+                &rendered(&current),
+                back,
+                rows.clone(),
+                2000,
+                location,
+            );
+            let href = neighbours.next.as_ref().expect("bounded next identity");
+            let query = href
+                .strip_suffix("#reading-pane")
+                .unwrap_or(href)
+                .split_once('?')
+                .unwrap()
+                .1;
+            let fields = parse_urlencoded_form(
+                query.as_bytes(),
+                crate::mail_navigation::MAIL_RETURN_MAX_FIELDS,
+                2048,
+            )
+            .unwrap();
+            assert!(!fields.contains_key("opened_read"));
+            assert!(href.contains("message-8"));
+            assert!(neighbours.back.as_ref().unwrap().contains("opened_read=1"));
+        }
+    }
 
     fn row(uid: u64, subject: &str, starred: bool) -> MessageSummary {
         MessageSummary {

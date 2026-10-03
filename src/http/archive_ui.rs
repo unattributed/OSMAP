@@ -8,13 +8,23 @@ pub(super) fn row(
     csrf: &str,
     return_to: &str,
     selected: bool,
+    on_open: bool,
 ) -> String {
     let date = if message.date_received.is_empty() {
         "Unavailable"
     } else {
         &message.date_received
     };
-    format!("<tr data-selected=\"{selected}\"><td>{selection}</td><td data-label=\"From\" class=\"archive-sender\">{}</td><td data-label=\"Subject\"><a class=\"archive-subject\" href=\"{}\">{}</a></td><td data-label=\"Folder\">{}</td><td data-label=\"Received\">{}</td><td data-label=\"Size\">{} B</td><td><details class=\"archive-row-more\"><summary aria-label=\"Actions for message #{}\">⋮</summary><div>{}</div></details></td></tr>", escape_html(message.from.as_deref().unwrap_or("Sender unavailable")), escape_html(href), escape_html(message.subject.as_deref().unwrap_or("(No subject)")), escape_html(&message.mailbox_name), escape_html(date), message.size_virtual, message.uid, render_message_state_controls(csrf, &message.mailbox_name, message.uid, &message.flags, message.metadata.as_ref(), return_to))
+    let subject = message_open_control(
+        csrf,
+        href,
+        "archive-subject",
+        message.subject.as_deref().unwrap_or("(No subject)"),
+        selected,
+        on_open,
+        None,
+    );
+    format!("<tr data-selected=\"{selected}\"><td>{selection}</td><td data-label=\"From\" class=\"archive-sender\">{}</td><td data-label=\"Subject\">{subject}</td><td data-label=\"Folder\">{}</td><td data-label=\"Received\">{}</td><td data-label=\"Size\">{} B</td><td><details class=\"archive-row-more\"><summary aria-label=\"Actions for message #{}\">⋮</summary><div>{}</div></details></td></tr>", escape_html(message.from.as_deref().unwrap_or("Sender unavailable")), escape_html(&message.mailbox_name), escape_html(date), message.size_virtual, message.uid, render_message_state_controls(csrf, &message.mailbox_name, message.uid, &message.flags, message.metadata.as_ref(), return_to))
 }
 
 pub(super) struct Page<'a> {
@@ -110,6 +120,7 @@ mod tests {
             "csrf",
             "/mailbox?name=INBOX",
             false,
+            false,
         );
         assert!(text.contains("&lt;img src=x&gt; &amp; subject"));
         assert!(text.contains("&lt;sender@example.test&gt;"));
@@ -123,7 +134,7 @@ mod tests {
             date_received: String::new(),
             ..message
         };
-        let text = row(&unknown, "", "/message", "csrf", "/mailbox", false);
+        let text = row(&unknown, "", "/message", "csrf", "/mailbox", false, false);
         assert!(text.contains("Sender unavailable"));
         assert!(text.contains("data-label=\"Received\">Unavailable"));
     }

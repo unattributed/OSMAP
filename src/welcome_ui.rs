@@ -1,7 +1,9 @@
 //! PAGE-01 welcome surface. Only supplied mailbox identities are projected.
 use super::*;
 
-pub(crate) fn render_mailboxes_page(
+// Preserve the existing PAGE-01 input contract and add the server-owned policy.
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn render_mailboxes_page_with_policy(
     canonical_username: &str,
     csrf_token: &str,
     mailboxes: &[MailboxEntry],
@@ -9,6 +11,7 @@ pub(crate) fn render_mailboxes_page(
     draft_count: Option<usize>,
     sent_count: Option<usize>,
     activity: &crate::http::BrowserSessionListDecision,
+    open_on_select: bool,
 ) -> TrustedHtml {
     let (summaries, snooze_notice) = summaries;
     let has = |name: &str| mailboxes.iter().any(|mailbox| mailbox.name == name);
@@ -63,7 +66,7 @@ pub(crate) fn render_mailboxes_page(
                 escape_html(text)
             ))
             .unwrap_or_default(),
-        recent_rows(summaries, inbox)
+        recent_rows(summaries, inbox, csrf_token, open_on_select)
     );
     let mut shortcuts = String::new();
     for (label, description, icon, href) in [
@@ -150,7 +153,12 @@ pub(crate) fn render_mailboxes_page(
     ), header=app_header(canonical_username,csrf_token,"mailboxes"), account=escape_html(canonical_username), metrics=metrics, recent=recent, shortcuts=shortcuts, view_all=view_all, folders=folders, limit=limit, shield=shell_icon("shield"), activity_rows=activity_rows(canonical_username, activity), search_icon=shell_icon("search"), filter_icon=shell_icon("inbox"), label_icon=shell_icon("drafts"), more_icon=shell_icon("menu"), filter_target=if inbox { "/mailbox?name=INBOX&filter=unread" } else { "/search" }, filter_description=if inbox { "Unread in Inbox" } else { "Search mail" }, search=search, system=system))
 }
 
-fn recent_rows(summaries: Option<&[MessageSummary]>, inbox: bool) -> String {
+fn recent_rows(
+    summaries: Option<&[MessageSummary]>,
+    inbox: bool,
+    csrf: &str,
+    on_open: bool,
+) -> String {
     let Some(rows) = summaries else {
         return format!(
             "<p class=\"welcome-note\">{}</p>",
@@ -167,7 +175,11 @@ fn recent_rows(summaries: Option<&[MessageSummary]>, inbox: bool) -> String {
     }
     html.push_str("<ul class=\"welcome-recent\">");
     for row in rows.iter().take(5) {
-        let mut href = format!("/message?mailbox=INBOX&uid={}", row.uid);
+        let mut href = format!(
+            "/message?mailbox={}&uid={}",
+            url_encode(&row.mailbox_name),
+            row.uid
+        );
         if let Some(metadata) = &row.metadata {
             href.push_str(&format!(
                 "&mailbox_guid={}&message_guid={}",
@@ -181,7 +193,16 @@ fn recent_rows(summaries: Option<&[MessageSummary]>, inbox: bool) -> String {
             .as_deref()
             .filter(|value| !value.is_empty())
             .unwrap_or("(No subject)");
-        html.push_str(&format!("<li><a class=\"welcome-recent-link{}\" href=\"{}\"><span class=\"message-avatar\" aria-hidden=\"true\">{}</span><span class=\"welcome-recent-sender\" title=\"{}\">{}</span><span class=\"welcome-recent-subject\" title=\"{}\">{}</span><span class=\"welcome-recent-date\" title=\"{}\">{}</span><span class=\"welcome-recent-flags\"><span class=\"sr-only\">{}</span><span aria-label=\"{}\">{}</span></span></a></li>", if has_flag(&row.flags,"\\Seen") { "" } else { " welcome-unread" }, escape_html(&href), escape_html(&sender_initials(row.from.as_deref())), escape_html(sender), escape_html(sender), escape_html(subject), escape_html(subject), escape_html(&row.date_received), escape_html(row.date_received.split_whitespace().next().unwrap_or("Date unavailable")), if has_flag(&row.flags,"\\Seen") { "Read. " } else { "Unread. " }, if has_flag(&row.flags,"\\Flagged") { "Flagged" } else { "Not flagged" }, if has_flag(&row.flags,"\\Flagged") { "★" } else { "☆" }));
+        let contents = TrustedHtml::from_template(format!("<span class=\"message-avatar\" aria-hidden=\"true\">{}</span><span class=\"welcome-recent-sender\" title=\"{}\">{}</span><span class=\"welcome-recent-subject\" title=\"{}\">{}</span><span class=\"welcome-recent-date\" title=\"{}\">{}</span><span class=\"welcome-recent-flags\"><span class=\"sr-only\">{}</span><span aria-label=\"{}\">{}</span></span>", escape_html(&sender_initials(row.from.as_deref())), escape_html(sender), escape_html(sender), escape_html(subject), escape_html(subject), escape_html(&row.date_received), escape_html(row.date_received.split_whitespace().next().unwrap_or("Date unavailable")), if has_flag(&row.flags,"\\Seen") { "Read. " } else { "Unread. " }, if has_flag(&row.flags,"\\Flagged") { "Flagged" } else { "Not flagged" }, if has_flag(&row.flags,"\\Flagged") { "★" } else { "☆" }));
+        let class = if has_flag(&row.flags, "\\Seen") {
+            "welcome-recent-link"
+        } else {
+            "welcome-recent-link welcome-unread"
+        };
+        html.push_str(&format!(
+            "<li>{}</li>",
+            message_open_markup(csrf, &href, class, &contents, false, on_open, None)
+        ));
     }
     html.push_str("</ul>");
     html
@@ -216,6 +237,52 @@ fn activity_rows(account: &str, decision: &crate::http::BrowserSessionListDecisi
 mod activity_tests {
     use super::*;
     use crate::http::{BrowserSessionListDecision as Decision, BrowserVisibleSession};
+    #[test]
+    fn welcome_recent_opening_preserves_card_markup_and_public_identity() {
+        let mut message = MessageSummary {
+            mailbox_name: "INBOX".into(),
+            uid: 7,
+            flags: vec![],
+            date_received: "2026-10-03".into(),
+            size_virtual: 10,
+            subject: Some("<script> & subject".into()),
+            from: Some("Sender <sender@example.test>".into()),
+            to: None,
+            metadata: Some(crate::message_metadata::MessageMetadata {
+                version: crate::message_metadata::MessageVersion::new(
+                    "a".repeat(32),
+                    "message-7".into(),
+                )
+                .unwrap(),
+                attachment_count: None,
+                attachments: None,
+                protection: crate::message_metadata::MessageProtection::Unknown,
+                preview: None,
+            }),
+        };
+        let html = recent_rows(
+            Some(std::slice::from_ref(&message)),
+            true,
+            "csrf&token",
+            true,
+        );
+        assert!(html.contains("action=\"/message/open\""));
+        assert!(html.contains("name=\"mailbox_guid\" value=\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\""));
+        assert!(html.contains("<span class=\"welcome-recent-subject\""));
+        assert!(!html.contains("&lt;span"));
+        assert!(html.contains("&lt;script&gt; &amp; subject"));
+        assert!(!html.contains("<script>"));
+        assert!(!html.contains("<a "));
+        assert!(
+            recent_rows(Some(std::slice::from_ref(&message)), true, "csrf", false)
+                .contains("<a class=\"welcome-recent-link welcome-unread\"")
+        );
+        message.metadata = None;
+        let html = recent_rows(Some(&[message]), true, "csrf", true);
+        assert!(html.contains("disabled>"));
+        assert!(!html.contains("<form"));
+        assert!(!html.contains("<a "));
+    }
     fn decision(count: usize) -> Decision {
         Decision::Listed {
             canonical_username: "alice".into(),

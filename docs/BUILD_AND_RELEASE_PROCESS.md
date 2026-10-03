@@ -281,3 +281,12 @@ to those matches with query, field and scope retained. Record the assessed signe
 source, native test/build input hashes, installed digests, rollback paths and
 outcomes in the execution ledger. This bounded development rollout does not
 refresh historical strict-release reports or qualify Send/OpenPGP/human UAT.
+
+The S02 saved Manual/On Open preference uses a separate private 512-byte
+`osmap-mark-read-v1` account record. Missing state stays Manual without a write;
+legacy Reading preference saves cannot erase it. Confirm explicit native
+opening, persisted Seen and Unread-body reconciliation against disposable
+Dovecot mailboxes before deploying its matching application. Rendered forms and
+settings CAS must also pass the bounded no-script browser workflow. Binary
+rollback preserves the separate preference record; older binaries ignore it.
+Do not change operator flags or keys to manufacture installed acceptance.

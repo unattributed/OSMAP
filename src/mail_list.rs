@@ -306,6 +306,10 @@ pub struct ListViewState {
     /// Derived from this request's filtered backend results, never URL authority.
     pub selection_page: Option<usize>,
     pub selected_version: Option<MessageVersion>,
+    /// Loaded from the authenticated account store, never a query/cookie choice.
+    pub open_on_select: bool,
+    /// Read-only presentation of a current Seen selection after it leaves Unread.
+    pub opened_read: bool,
 }
 
 impl ListViewState {
@@ -384,6 +388,11 @@ impl ListViewState {
                 return Err("The selected message identity requires its selection and both GUIDs.")
             }
         };
+        let opened_read = match query.get("opened_read").map(String::as_str) {
+            None => false,
+            Some("1") if filter == MessageFilter::Unread && requested_version.is_some() => true,
+            _ => return Err("The opened reader context requires Unread and both selected GUIDs."),
+        };
         Ok(Self {
             dates: ReceivedDateRange::parse(query)?,
             bulk_selection,
@@ -408,6 +417,8 @@ impl ListViewState {
             requested_version,
             selection_page: None,
             selected_version: None,
+            open_on_select: false,
+            opened_read,
         })
     }
 
@@ -452,6 +463,87 @@ impl ListViewState {
     pub fn apply_search(&mut self, results: &mut Vec<MessageSearchResult>) {
         self.order_search(results);
         self.window(results);
+    }
+
+    /// Only a fresh Seen selection may stay in the reader after leaving Unread.
+    /// This temporary snapshot affects navigation, never displayed rows/counts
+    /// or stored flags. All other predicates are evaluated without alteration.
+    pub(crate) fn recover_opened_messages(&mut self, snapshot: &mut [MessageSummary]) {
+        if !self.opened_read
+            || self.filter != MessageFilter::Unread
+            || self.selection_page.is_some()
+        {
+            return;
+        }
+        let matching: Vec<_> = snapshot
+            .iter()
+            .take(DEFAULT_MAX_MESSAGES)
+            .enumerate()
+            .filter(|(_, row)| {
+                self.is_selected(&row.mailbox_name, row.uid)
+                    && row
+                        .metadata
+                        .as_ref()
+                        .is_some_and(|m| Some(&m.version) == self.requested_version.as_ref())
+                    && has_flag(&row.flags, "\\Seen")
+            })
+            .map(|(index, _)| index)
+            .collect();
+        let [index] = matching.as_slice() else {
+            return;
+        };
+        let old = snapshot[*index].flags.clone();
+        snapshot[*index]
+            .flags
+            .retain(|flag| !flag.eq_ignore_ascii_case("\\Seen"));
+        let mut rows = snapshot.to_vec();
+        let mut probe = self.clone();
+        probe.order_messages(&mut rows);
+        if probe.selected_version == self.requested_version && probe.selection_page.is_some() {
+            self.selected_version = probe.selected_version;
+            self.selection_page = Some(self.page);
+        } else {
+            snapshot[*index].flags = old;
+        }
+    }
+
+    pub(crate) fn recover_opened_search(&mut self, snapshot: &mut [MessageSearchResult]) {
+        if !self.opened_read
+            || self.filter != MessageFilter::Unread
+            || self.selection_page.is_some()
+        {
+            return;
+        }
+        let matching: Vec<_> = snapshot
+            .iter()
+            .take(DEFAULT_MAX_SEARCH_RESULTS)
+            .enumerate()
+            .filter(|(_, row)| {
+                self.is_selected(&row.mailbox_name, row.uid)
+                    && row
+                        .metadata
+                        .as_ref()
+                        .is_some_and(|m| Some(&m.version) == self.requested_version.as_ref())
+                    && has_flag(&row.flags, "\\Seen")
+            })
+            .map(|(index, _)| index)
+            .collect();
+        let [index] = matching.as_slice() else {
+            return;
+        };
+        let old = snapshot[*index].flags.clone();
+        snapshot[*index]
+            .flags
+            .retain(|flag| !flag.eq_ignore_ascii_case("\\Seen"));
+        let mut rows = snapshot.to_vec();
+        let mut probe = self.clone();
+        probe.order_search(&mut rows);
+        if probe.selected_version == self.requested_version && probe.selection_page.is_some() {
+            self.selected_version = probe.selected_version;
+            self.selection_page = Some(self.page);
+        } else {
+            snapshot[*index].flags = old;
+        }
     }
 
     /// Search neighbours come from this result prefix, never a mailbox fallback.

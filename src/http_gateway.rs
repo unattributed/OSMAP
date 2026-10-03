@@ -374,6 +374,25 @@ impl BrowserGateway for RuntimeBrowserGateway {
         )
     }
 
+    fn load_mark_read_policy(
+        &self,
+        session: &ValidatedSession,
+    ) -> Result<crate::mark_read::Preference, crate::mark_read::Error> {
+        crate::mark_read::Store::new(&self.settings_dir).load(&session.record.canonical_username)
+    }
+    fn save_mark_read_policy(
+        &self,
+        session: &ValidatedSession,
+        revision: u64,
+        policy: crate::mark_read::Policy,
+    ) -> Result<crate::mark_read::Preference, crate::mark_read::Error> {
+        crate::mark_read::Store::new(&self.settings_dir).save(
+            &session.record.canonical_username,
+            revision,
+            policy,
+        )
+    }
+
     fn load_autosave(
         &self,
         session: &ValidatedSession,

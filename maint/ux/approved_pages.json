@@ -2114,8 +2114,14 @@
         {
           "id": "R2-11-013",
           "label": "Mark-read policy",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/mark_read.rs",
+            "src/http/mark_read_tests.rs",
+            "maint/ux/mark_read_workflows.py",
+            "src/mailbox_helper_native_reader_tests.rs",
+            "docs/UX_EXECUTION_LEDGER.md (2026-10-03 Manual/OnOpen checkpoint; human acceptance OPEN)"
+          ]
         },
         {
           "id": "R2-11-014",
@@ -2532,8 +2538,14 @@
         {
           "id": "R2-14-002",
           "label": "Mark-read policy",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/mark_read.rs",
+            "src/http/mark_read_tests.rs",
+            "maint/ux/mark_read_workflows.py",
+            "src/mailbox_helper_native_reader_tests.rs",
+            "docs/UX_EXECUTION_LEDGER.md (2026-10-03 Manual/OnOpen checkpoint; human acceptance OPEN)"
+          ]
         },
         {
           "id": "R2-14-003",

@@ -39,6 +39,8 @@ mod routes_keys;
 mod routes_label_selection;
 mod routes_labels;
 mod routes_mail;
+mod routes_mark_read;
+mod routes_message_open;
 pub(crate) use folder_tree::FolderTree;
 mod routes_folder_create;
 mod routes_moves;
@@ -88,11 +90,11 @@ use crate::http_support::{
     redirect_response, session_error_label, throttle_store_error_label, url_encode,
 };
 use crate::http_ui::{
-    render_compose_page, render_draft_list_page, render_login_page, render_mailboxes_page,
-    render_message_list_page, render_message_search_page, render_message_view_page_with_neighbours,
-    render_navigation_notice, render_sessions_page, ComposePageModel, DraftListPageModel,
-    MailReaderContext, MessageListBulkActions, MessageListSortLinks, MessageSearchContext,
-    SelectedMessagePane, SettingsPageModel,
+    render_compose_page, render_draft_list_page, render_login_page,
+    render_mailboxes_page_with_policy, render_message_list_page, render_message_search_page,
+    render_message_view_page_with_neighbours, render_navigation_notice, render_sessions_page,
+    ComposePageModel, DraftListPageModel, MailReaderContext, MessageListBulkActions,
+    MessageListSortLinks, MessageSearchContext, SelectedMessagePane, SettingsPageModel,
 };
 use crate::logging::LogEvent;
 #[cfg(test)]
@@ -968,6 +970,9 @@ mod tests {
     mod flag_tests {
         include!("http/flag_tests.rs");
     }
+    mod mark_read_tests {
+        include!("http/mark_read_tests.rs");
+    }
     use crate::auth::RequiredSecondFactor;
     use crate::mailbox::MessageView;
     use crate::mime::{AttachmentDisposition, MimeBodySource};
@@ -1002,6 +1007,7 @@ mod tests {
         signature_store: Option<crate::signature::SignatureStore>,
         autosave_store: Option<crate::autosave::Store>,
         after_archive_store: Option<crate::after_archive::Store>,
+        mark_read_store: Option<crate::mark_read::Store>,
         contacts_store: Option<crate::contacts::ContactStore>,
         draft_store: Option<crate::draft::FileDraftStore>,
         fail_draft_delete: Option<String>,
@@ -1034,6 +1040,7 @@ mod tests {
                 signature_store: None,
                 autosave_store: None,
                 after_archive_store: None,
+                mark_read_store: None,
                 contacts_store: None,
                 draft_store: None,
                 send_journal: fixture_send_journal(),
@@ -1191,6 +1198,26 @@ mod tests {
                 .as_ref()
                 .ok_or(crate::after_archive::Error::Unavailable)?
                 .save(&s.record.canonical_username, revision, choice)
+        }
+        fn load_mark_read_policy(
+            &self,
+            session: &ValidatedSession,
+        ) -> Result<crate::mark_read::Preference, crate::mark_read::Error> {
+            self.mark_read_store
+                .as_ref()
+                .ok_or(crate::mark_read::Error::Unavailable)?
+                .load(&session.record.canonical_username)
+        }
+        fn save_mark_read_policy(
+            &self,
+            session: &ValidatedSession,
+            revision: u64,
+            policy: crate::mark_read::Policy,
+        ) -> Result<crate::mark_read::Preference, crate::mark_read::Error> {
+            self.mark_read_store
+                .as_ref()
+                .ok_or(crate::mark_read::Error::Unavailable)?
+                .save(&session.record.canonical_username, revision, policy)
         }
         fn load_autosave(
             &self,

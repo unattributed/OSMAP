@@ -4721,7 +4721,67 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   WholeS02-02 remains OPEN for mark-read policy, conversation ordering, exact
   selected-row/focus Back acceptance and human results; Send remains unaccepted.
 
-- Updated pre-existing reader workflow also actually PASS: three journeys/eight
+- Updated pre-existing reader workflow also actually PASS: five journeys/eight
   light/dark/mobile/forced-colour captures, saved Reading default versus explicit
   URL ordering, native read/star/theme context, missing/stale identity refusal;
   zero outside/Send. It now requires unread exclusion instead of the old bug.
+
+- Signed commit1b0d43503576f04570afa86d3b38e93a28e62cfd verified Shopkeeper
+  and promptly pushed; fetched branch/local equality0/0 clean at synchronization.
+  All260 native inputs match that signed source. Actual helper-first activation
+  on authoritative mail216.128.179.75 and frontendobsd1192.168.1.44 PASS, matching
+  binary48bb2f263b3b0b3b2393c43d84a2d7800aca577293e322909471ab1dd9e2bf95.
+  Unrelated services/config/mail/keys/policies preserved; exclusive rollback
+  backups retained under /var/backups/osmap-ux-s02-reader{-mail}-1b0d43503576-20261003.
+- Installed actual-data navigation attempt3 PASS: current owned filtered Inbox
+  has one eligible row, so both boundary arrows disabled; selected body/current
+  GUIDs, stale identity refusal and list Back work. Actual all-mailbox Subject
+  report plus outer Plain Search has46 visible rows, one executed keyboard Next
+  hop/Previous target, browser Back, stale GUID refusal and list Back PASS.
+  Inbox traversal was NOT RUN because singleton, not fabricated. Zero Send,
+  outside requests/live flag writes or retained mail content; owned synthetic
+  session cleanup and live binary repin PASS. Earlier two probes wrongly assumed
+  at least two filtered Inbox rows; retained and corrected to current-data cases.
+  No current password/TOTP, private crypto, provider/Send or whole-slice claim.
+- Next actual gap is R2-14-002/R2-11-013 Manual versus OnOpen Seen preference,
+  currently disabled. Approved references/catalogue require no timed delay.
+  Implement separate bounded private account-CAS preference so legacy Reading
+  saves cannot erase it, mirror actual PAGE11/PAGE14 native CSRF forms, and use
+  an explicit GUID-bound opening POST through existing Seen/quota/helper CAS.
+  GET/Back/reload remain read-only. Preserve an explicitly opened fresh owned
+  reader when its confirmed Seen mutation removes it from Unread, while rejecting
+  unrelated filter exclusions/changed identity. Developer owns store/tests; root
+  gateway/routes/UI and integration; independent QA/security actualnative/browser
+  proof. EntireS02-02 still OPEN; no slice completion message issued.
+
+- Manual/OnOpen functional checkpoint, 2026-10-03: separate private account-CAS
+  preference and actual General/Reading native forms implemented; current policy
+  is reloaded by GUID/CSRF-bound opening POST and the existing Seen helper path.
+  GET/reload/Back remain read-only. Confirmed opened Unread bodies are retained
+  without changing filtered rows or bypassing other predicates. Inbox, Search,
+  Archive, Welcome and reader arrows use the same explicit opening control.
+- Actual RED failures retained: missing preference persistence and unavailable
+  opening route. Focused GREEN17 PASS; final264-input native attempt3 PASS the
+  same17 plus one separate disposable Dovecot/signed-helper/BrowserApp test,
+  17.89sec, actual Seen/Unread, read-only history and stale/foreign refusal.
+  Native test20f37be6167b3bac1d0bf10c5bdce20af418c3d53b10b37aa4a7214b89cc41af;
+  application6bd10429dfa5c28e74b887062e0f772645d722241ba3ca079490757ea8a090a9.
+- Actual no-script browser workflow PASS8 checks/6 opening POSTs, including
+  both saved/mirrored settings, stale settings409, filtered body retention,
+  same-UID/different-folder Search, arrows, Archive and Welcome, and unavailable
+  GUID refusal. Four1440/360 light/dark captures pass bounded overflow/focus/text
+  checks; native-form colour/full reference parity and human UAT are not claimed.
+  Zero Send/outside/unexpected POST; owned fixtures clean. All retained evidence
+  is under osmap-ux-s02/revalidation-20261003/mark-read; human UAT.md NOT RUN.
+- Acceptance attempt4 security-check PASS; v10 then refused a stale claims hash.
+  Refreshed only existing actual scanner/register/claims (3879 assumptions,
+  refined high0) and included the two actual authenticated/CSRF routes in existing
+  WSTG inventory. Unchanged final v10/v11/v12/v13 gates PASS; actual v14-check PASS.
+  Earlier compilation, colliding test-fixture directories, legacy manual anchor
+  serialization and incorrect form selector failures remain retained and
+  corrected, not hidden.
+- Signed synchronization/matching deployment pending at this checkpoint.
+  R2-14-002 and R2-11-013 are locally implemented/verified, not human accepted.
+  Conversation ordering, exact Back row focus and remaining S02 obligations
+  remain OPEN. All current Send failures/provider/protected Sent/return acceptance
+  remain OPEN. No operator flags, key bindings, policies or Send were changed.

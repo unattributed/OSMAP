@@ -11,11 +11,22 @@ pub(crate) fn render_reading_page(
     render_reading_page_with_after_archive(model, preferences, mailboxes, None)
 }
 
+#[cfg(test)]
 pub(crate) fn render_reading_page_with_after_archive(
     model: &SettingsPageModel<'_>,
     preferences: &ReadingPreferences,
     mailboxes: Option<&[MailboxEntry]>,
     after_archive: Option<&crate::after_archive::Preference>,
+) -> TrustedHtml {
+    render_reading_page_with_policies(model, preferences, mailboxes, after_archive, None)
+}
+
+pub(crate) fn render_reading_page_with_policies(
+    model: &SettingsPageModel<'_>,
+    preferences: &ReadingPreferences,
+    mailboxes: Option<&[MailboxEntry]>,
+    after_archive: Option<&crate::after_archive::Preference>,
+    mark_read: Option<&crate::mark_read::Preference>,
 ) -> TrustedHtml {
     let csrf = escape_html(model.csrf_token);
     let start = select_options(
@@ -45,15 +56,23 @@ pub(crate) fn render_reading_page_with_after_archive(
         " disabled"
     };
     let after_revision = after_archive.map_or(0, |v| v.revision);
+    let (mark_control, mark_form, mark_button) = match mark_read {
+        Some(saved) => (
+            format!("<div class=\"general-field\"><label for=\"reading-mark-read\">Mark read</label><select id=\"reading-mark-read\" name=\"policy\" form=\"reading-mark-read-form\" aria-describedby=\"reading-mark-read-help\">{}</select></div>", select_options(saved.policy.as_str(), &[("manual", "Manual"), ("on_open", "On Open")])),
+            format!("<form id=\"reading-mark-read-form\" method=\"post\" action=\"/settings/mark-read\"><input type=\"hidden\" name=\"csrf_token\" value=\"{csrf}\"><input type=\"hidden\" name=\"expected_revision\" value=\"{}\"><input type=\"hidden\" name=\"section\" value=\"reading\"></form>", saved.revision),
+            "<button type=\"submit\" form=\"reading-mark-read-form\">Save mark-read choice</button>",
+        ),
+        None => ("<div class=\"general-field\"><label for=\"reading-mark-read\">Mark read</label><select id=\"reading-mark-read\" disabled aria-describedby=\"reading-mark-read-help\"><option>Unavailable</option></select></div>".into(), String::new(), "<span>Saved mark-read preference unavailable. Reload settings.</span>"),
+    };
     let behaviour = format!(concat!(
         "<div class=\"reading-card-column\"><section class=\"general-card\" aria-labelledby=\"reading-behaviour-title\"><h2 id=\"reading-behaviour-title\">Mailbox Behavior</h2>",
         "<div class=\"general-field\"><label for=\"reading-start-page\">Default start page</label><select id=\"reading-start-page\" form=\"reading-preferences-form\" name=\"start_page\">{start}</select></div>",
-        "<div class=\"general-field\"><label for=\"reading-mark-read\">Mark read</label><select id=\"reading-mark-read\" disabled aria-describedby=\"reading-behaviour-help\"><option>Manual controls</option></select></div>",
+        "{mark_control}",
         "<div class=\"general-field\"><label for=\"reading-after-archive\">After archive</label><select id=\"reading-after-archive\" form=\"after-archive-form\" name=\"choice\"{after_disabled} aria-describedby=\"after-archive-help\">{after_options}</select></div>",
         "<div class=\"general-field\"><label for=\"reading-date-order\">Message ordering</label><select id=\"reading-date-order\" form=\"reading-preferences-form\" name=\"date_order\">{order}</select></div></section>",
-        "<form id=\"after-archive-form\" method=\"post\" action=\"/settings/after-archive\"><input type=\"hidden\" name=\"csrf_token\" value=\"{csrf}\"><input type=\"hidden\" name=\"revision\" value=\"{after_revision}\"></form><div class=\"reading-card-actions\"><button type=\"submit\" form=\"after-archive-form\"{after_disabled}>Save after-archive choice</button><button class=\"primary-button\" type=\"submit\" form=\"reading-preferences-form\">Save reading preferences</button></div>",
-        "<details class=\"reading-help\"><summary>Reading preference details</summary><p id=\"reading-behaviour-help\">Start page applies after sign-in. Ordering applies to individual messages; explicit list choices take priority. Automatic marking and conversation grouping are unavailable.</p><p id=\"after-archive-help\">After archive applies only to a confirmed single-message Archive. Next uses verified loaded mailbox order and supported list filters; Search, last-row or unavailable context returns to the list. Save this choice separately.</p><p>This save also updates Show source shortcut and Attachment details in the Reader card.</p></details></div>"
-    ), start=start, order=order,after_options=after_options,after_disabled=after_disabled,after_revision=after_revision,csrf=csrf);
+        "{mark_form}<form id=\"after-archive-form\" method=\"post\" action=\"/settings/after-archive\"><input type=\"hidden\" name=\"csrf_token\" value=\"{csrf}\"><input type=\"hidden\" name=\"revision\" value=\"{after_revision}\"></form><div class=\"reading-card-actions\">{mark_button}<button type=\"submit\" form=\"after-archive-form\"{after_disabled}>Save after-archive choice</button><button class=\"primary-button\" type=\"submit\" form=\"reading-preferences-form\">Save reading preferences</button></div>",
+        "<details class=\"reading-help\"><summary>Reading preference details</summary><p id=\"reading-behaviour-help\">Start page applies after sign-in. Ordering applies to individual messages; explicit list choices take priority. Conversation grouping is unavailable.</p><p id=\"reading-mark-read-help\">Manual keeps the current read state when opening. On Open marks an unread message read through its opening action. Reload and Back do not mark messages read. Save this choice separately.</p><p id=\"after-archive-help\">After archive applies only to a confirmed single-message Archive. Next uses verified loaded mailbox order and supported list filters; Search, last-row or unavailable context returns to the list. Save this choice separately.</p><p>This save also updates Show source shortcut and Attachment details in the Reader card.</p></details></div>"
+    ), start=start, order=order,after_options=after_options,after_disabled=after_disabled,after_revision=after_revision,csrf=csrf,mark_control=mark_control,mark_form=mark_form,mark_button=mark_button);
     let archive_missing = model.archive_mailbox_name.is_some_and(|stored| {
         mailboxes.is_some_and(|entries| !entries.iter().any(|entry| entry.name == stored))
     });
@@ -165,6 +184,47 @@ mod tests {
             html_display_preference: HtmlDisplayPreference::default(),
             archive_mailbox_name: archive,
         }
+    }
+
+    #[test]
+    fn reading_mark_read_uses_its_own_native_form_and_saved_revision() {
+        for policy in [
+            crate::mark_read::Policy::Manual,
+            crate::mark_read::Policy::OnOpen,
+        ] {
+            let saved = crate::mark_read::Preference {
+                revision: 9,
+                policy,
+            };
+            let html = render_reading_page_with_policies(
+                &model(None),
+                &ReadingPreferences::default(),
+                Some(&[]),
+                None,
+                Some(&saved),
+            );
+            let html = html.as_str();
+            assert!(html.contains(&format!("<option value=\"{}\" selected>", policy.as_str())));
+            assert!(html.contains(
+                "id=\"reading-mark-read\" name=\"policy\" form=\"reading-mark-read-form\""
+            ));
+            assert!(html.contains("action=\"/settings/mark-read\""));
+            assert!(html.contains("name=\"expected_revision\" value=\"9\""));
+            assert!(html.contains("name=\"section\" value=\"reading\""));
+            assert!(html
+                .contains("type=\"submit\" form=\"reading-mark-read-form\">Save mark-read choice"));
+            assert!(html.contains("Reload and Back do not mark messages read."));
+        }
+    }
+
+    #[test]
+    fn reading_unavailable_mark_read_does_not_offer_a_write_or_default_claim() {
+        let html = render_reading_page(&model(None), &ReadingPreferences::default(), Some(&[]));
+        let html = html.as_str();
+        assert!(html.contains("id=\"reading-mark-read\" disabled"));
+        assert!(html.contains("Saved mark-read preference unavailable. Reload settings."));
+        assert!(!html.contains("action=\"/settings/mark-read\""));
+        assert!(!html.contains("Save mark-read choice</button>"));
     }
 
     #[test]
