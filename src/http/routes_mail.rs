@@ -298,6 +298,45 @@ where
             ),
             audit_events,
         };
+        if request.query_params.len() == 1
+            && request.query_params.get("kind").map(String::as_str) == Some("bin")
+        {
+            let Ok(bin) = self.gateway.load_bin_preference(&validated_session) else {
+                return notice(
+                    503,
+                    "Service Unavailable",
+                    "Bin Unavailable",
+                    "Your saved Bin folder could not be loaded. Reload folder settings.",
+                    audit_events,
+                );
+            };
+            return match self.bin_folder_choices(context, &validated_session, &mut audit_events) {
+                Some(choices) if choices.iter().any(|entry| entry.name == bin.mailbox_name) => {
+                    HandledHttpResponse {
+                        response: redirect_response(
+                            303,
+                            "See Other",
+                            &format!("/mailbox?name={}", url_encode(&bin.mailbox_name)),
+                        ),
+                        audit_events,
+                    }
+                }
+                Some(_) => notice(
+                    404,
+                    "Not Found",
+                    "Bin Unavailable",
+                    "Your saved Bin folder is unavailable. Choose an existing folder in Settings.",
+                    audit_events,
+                ),
+                None => notice(
+                    503,
+                    "Service Unavailable",
+                    "Bin Unavailable",
+                    "Your Bin folder could not be checked. Try loading Settings again.",
+                    audit_events,
+                ),
+            };
+        }
         if request.query_params.len() != 1
             || request.query_params.get("kind").map(String::as_str) != Some("archive")
         {
@@ -610,6 +649,11 @@ where
                         &mut audit_events,
                     ),
                     archive_mailbox_name: archive_mailbox_name.clone(),
+                    bin_mailbox_name: self
+                        .gateway
+                        .load_bin_preference(&validated_session)
+                        .ok()
+                        .map(|v| v.mailbox_name),
                     mailboxes: bulk_move_destinations
                         .iter()
                         .map(|name| MailboxEntry { name: name.clone() })
@@ -699,7 +743,11 @@ where
         let outcome = self.gateway.list_mailboxes(context, validated_session);
         audit_events.extend(outcome.audit_events);
         let mailboxes = match outcome.decision {
-            BrowserMailboxDecision::Listed { mailboxes, .. } => mailboxes,
+            BrowserMailboxDecision::Listed {
+                canonical_username,
+                mailboxes,
+            } if canonical_username == validated_session.record.canonical_username => mailboxes,
+            BrowserMailboxDecision::Listed { .. } => return Vec::new(),
             BrowserMailboxDecision::Denied { public_reason } => {
                 audit_events.push(
                     build_http_warning_event(
@@ -727,6 +775,14 @@ where
                     .any(|destination| destination == archive_mailbox_name)
             {
                 destinations.insert(0, archive_mailbox_name.to_string());
+            }
+        }
+        if let Ok(bin) = self.gateway.load_bin_preference(validated_session) {
+            if bin.mailbox_name != source_mailbox_name
+                && mailbox_name_exists(&mailboxes, &bin.mailbox_name)
+                && !destinations.contains(&bin.mailbox_name)
+            {
+                destinations.push(bin.mailbox_name);
             }
         }
         destinations
@@ -875,6 +931,11 @@ where
                 );
                 let mut reader = MailReaderContext {
                     pane,
+                    bin_mailbox_name: self
+                        .gateway
+                        .load_bin_preference(&validated_session)
+                        .ok()
+                        .map(|v| v.mailbox_name),
                     ..MailReaderContext::default()
                 };
                 if let SelectedMessagePane::Ready(rendered) = &reader.pane {
@@ -1084,50 +1145,66 @@ where
                     &validated_session,
                     &mut audit_events,
                 );
-                let visible_mailboxes =
-                    match self.gateway.list_mailboxes(context, &validated_session) {
-                        BrowserMailboxOutcome {
-                            decision:
-                                BrowserMailboxDecision::Listed {
-                                    canonical_username,
-                                    mailboxes,
-                                },
-                            audit_events: mailbox_audit_events,
-                        } => {
-                            audit_events.extend(mailbox_audit_events);
-                            if canonical_username == validated_session.record.canonical_username {
-                                filter_user_visible_mailboxes(&mailboxes)
-                            } else {
-                                Vec::new()
+                let bin_mailbox_name = self
+                    .gateway
+                    .load_bin_preference(&validated_session)
+                    .ok()
+                    .map(|v| v.mailbox_name);
+                let visible_mailboxes = match self
+                    .gateway
+                    .list_mailboxes(context, &validated_session)
+                {
+                    BrowserMailboxOutcome {
+                        decision:
+                            BrowserMailboxDecision::Listed {
+                                canonical_username,
+                                mailboxes,
+                            },
+                        audit_events: mailbox_audit_events,
+                    } => {
+                        audit_events.extend(mailbox_audit_events);
+                        if canonical_username == validated_session.record.canonical_username {
+                            let mut visible = filter_user_visible_mailboxes(&mailboxes);
+                            if let Some(bin) = bin_mailbox_name.as_deref() {
+                                if !visible.iter().any(|m| m.name == bin) {
+                                    if let Some(entry) = mailboxes.iter().find(|m| m.name == bin) {
+                                        visible.push(entry.clone());
+                                    }
+                                }
                             }
-                        }
-                        BrowserMailboxOutcome {
-                            decision: BrowserMailboxDecision::Denied { public_reason },
-                            audit_events: mailbox_audit_events,
-                        } => {
-                            audit_events.extend(mailbox_audit_events);
-                            audit_events.push(
-                                build_http_warning_event(
-                                    "message_view_move_destinations_unresolved",
-                                    "message view visible move destinations could not be resolved",
-                                    context,
-                                )
-                                .with_field("public_reason", public_reason),
-                            );
+                            visible
+                        } else {
                             Vec::new()
                         }
-                    };
+                    }
+                    BrowserMailboxOutcome {
+                        decision: BrowserMailboxDecision::Denied { public_reason },
+                        audit_events: mailbox_audit_events,
+                    } => {
+                        audit_events.extend(mailbox_audit_events);
+                        audit_events.push(
+                            build_http_warning_event(
+                                "message_view_move_destinations_unresolved",
+                                "message view visible move destinations could not be resolved",
+                                context,
+                            )
+                            .with_field("public_reason", public_reason),
+                        );
+                        Vec::new()
+                    }
+                };
 
                 HandledHttpResponse {
                     response: html_response(
                         200,
                         "OK",
                         "Message View",
-                        render_message_view_page_with_neighbours(
+                        crate::http_ui::render_message_view_page_with_folders(
                             &canonical_username,
                             &validated_session.record.csrf_token,
                             &rendered,
                             archive_mailbox_name.as_deref(),
+                            bin_mailbox_name.as_deref(),
                             &visible_mailboxes,
                             &neighbours,
                         ),

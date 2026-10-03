@@ -23,6 +23,8 @@ const NATIVE_LIMIT: Duration = Duration::from_secs(180);
 struct NativeExecutor {
     config: PathBuf,
     calls: Arc<AtomicUsize>,
+    // None retains the original reader-only no-move boundary.
+    bin_move_count: Option<Arc<AtomicUsize>>,
 }
 impl CommandExecutor for NativeExecutor {
     fn run_with_stdin_bytes(
@@ -60,8 +62,18 @@ impl CommandExecutor for NativeExecutor {
         assert!([ALICE, BOB].contains(&a[user + 1].as_str()));
         assert!(!a.iter().any(|value| matches!(
             value.as_str(),
-            "-c" | "-A" | "-F" | "save" | "move" | "expunge"
+            "-c" | "-A" | "-F" | "save" | "expunge"
         )));
+        if let Some(index) = a.iter().position(|value| value == "move") {
+            let count = self.bin_move_count.as_ref().expect("reader-only fixture forbids moves");
+            assert_eq!(a[user + 1], ALICE);
+            assert_eq!(a[index + 1], "-u");
+            let destination = &a[index + 3];
+            let source = a.iter().position(|value| value == "mailbox").unwrap();
+            assert!(matches!((a[source + 1].as_str(), destination.as_str()),
+                ("INBOX", "Deleted") | ("Deleted", "INBOX")));
+            count.fetch_add(1, Ordering::SeqCst);
+        }
         let mut isolated = vec!["-c".into(), self.config.to_string_lossy().into_owned()];
         isolated.extend_from_slice(a);
         self.calls.fetch_add(1, Ordering::SeqCst);
@@ -206,6 +218,46 @@ impl MessageAppendBackend for ForbiddenMutation {
     }
 }
 
+struct RestrictedBinMove {
+    inner: DoveadmMessageMoveBackend<NativeExecutor>,
+}
+
+// A concrete fixture dispatch keeps the production HelperBackends bounds
+// unchanged, with reader-only and restricted Bin modes explicit.
+enum FixtureMoveBackend<'a> {
+    ReaderOnly(&'a ForbiddenMutation),
+    Bin(&'a RestrictedBinMove),
+}
+impl MessageMoveBackend for FixtureMoveBackend<'_> {
+    fn move_message(&self, account: &str, request: &MessageMoveRequest) -> Result<(), MailboxBackendError> {
+        match self {
+            Self::ReaderOnly(backend) => backend.move_message(account, request),
+            Self::Bin(backend) => backend.move_message(account, request),
+        }
+    }
+}
+impl MessageMoveBackend for RestrictedBinMove {
+    fn move_message(&self, account: &str, request: &MessageMoveRequest) -> Result<(), MailboxBackendError> {
+        // The foreign Alice GUID case must reach Bob's real read-only source
+        // check. NativeExecutor independently forbids every Bob move command.
+        if account == BOB && request.source_mailbox_name == "INBOX"
+            && request.destination_mailbox_name == "Trash"
+        {
+            return self.inner.move_message(account, request);
+        }
+        if account != ALICE || !matches!(
+            (request.source_mailbox_name.as_str(), request.destination_mailbox_name.as_str()),
+            ("INBOX", "Deleted") | ("Deleted", "INBOX")
+        ) {
+            return Err(MailboxBackendError {
+                backend: "native-fixture-forbidden",
+                reason: "move outside owned Bin fixture".into(),
+            });
+        }
+        self.inner.move_message(account, request)
+    }
+}
+
 struct StaleView {
     inner: DoveadmMessageViewBackend<NativeExecutor>,
     root: PathBuf,
@@ -290,9 +342,19 @@ fn start_helper(
             armed,
             triggered,
         };
+        let bin_moves = executor.bin_move_count.is_some();
+        let restricted = RestrictedBinMove {
+            inner: DoveadmMessageMoveBackend::new(executor.clone(), "/usr/local/bin/doveadm")
+                .with_userdb_socket_path(Some(userdb.clone())),
+        };
         let flags = DoveadmMessageFlagBackend::new(executor, "/usr/local/bin/doveadm")
             .with_userdb_socket_path(Some(userdb));
         let forbidden = ForbiddenMutation(forbidden);
+        let move_backend = if bin_moves {
+            FixtureMoveBackend::Bin(&restricted)
+        } else {
+            FixtureMoveBackend::ReaderOnly(&forbidden)
+        };
         let replay = Mutex::new(BTreeMap::new());
         let deadline = Instant::now() + NATIVE_LIMIT;
         while !stop.load(Ordering::SeqCst) && Instant::now() < deadline {
@@ -310,7 +372,7 @@ fn start_helper(
                     message_list_backend: &messages,
                     message_search_backend: &search,
                     message_view_backend: &view,
-                    message_move_backend: &forbidden,
+                    message_move_backend: &move_backend,
                     message_append_backend: &forbidden,
                     message_flag_backend: &flags,
                 },
@@ -621,6 +683,7 @@ fn isolated_openbsd_coordinated_reader_signed_helper() {
     let executor = NativeExecutor {
         config,
         calls: calls.clone(),
+        bin_move_count: None,
     };
     let native_list = DoveadmMessageListBackend::new(
         MessageListPolicy::default(),
@@ -1823,4 +1886,210 @@ fn isolated_openbsd_coordinated_reader_signed_helper() {
     assert_eq!(before, standard_metadata());
     println!("native_sent_guid_recipient_star_unstar_restore=PASS bcc_not_in_sent_list=PASS same_uid_inbox_and_foreign_account_unchanged=PASS");
     println!("native_reader_cases=PASS rows53_two_accounts=PASS classification_only=PASS page50_selected_back_search=PASS filtered_previous_next_crosspage_search_origin=PASS stale_navigation_guid_refusal=PASS native_csrf_read_star_filtered_membership_reload=PASS native_manual_onopen_seen_unread_reconciliation=PASS opening_stale_foreign_guid_refusal=PASS native_conversation_headers_saved_order_reader_next_explicit_precedence=PASS conversation_excluded_parent_stale_guid_refusal=PASS attachment_without_and_actual_unknown_count={unknown_attachment_records} foreign_neighbour_stale_refusal=PASS budget_reuse=PASS no_move_append_or_crypto_configuration=PASS scratch_cleanup=PASS standard_host_metadata_unchanged=PASS");
+}
+
+fn bin_move_form(body: &str, mailbox: &str, uid: u64, action: &str) -> BTreeMap<String, String> {
+    body.split("<form ").find_map(|part| {
+        let form = part.split_once("</form>")?.0;
+        if attribute(form, "action").as_deref() != Some("/message/move") { return None; }
+        let enabled = form.split("<button ").any(|button| {
+            let Some(tag) = button.split_once('>').map(|value| value.0) else { return false; };
+            attribute(tag, "name").as_deref() == Some("action")
+                && attribute(tag, "value").as_deref() == Some(action)
+                && !tag.contains(" disabled")
+        });
+        if !enabled { return None; }
+        let mut fields: BTreeMap<_, _> = form.split("<input ").filter_map(|input| {
+            let tag = input.split_once('>')?.0;
+            Some((attribute(tag, "name")?, attribute(tag, "value")?))
+        }).collect();
+        if fields.get("mailbox").map(String::as_str) != Some(mailbox)
+            || fields.get("uid").map(String::as_str) != Some(uid.to_string().as_str())
+        { return None; }
+        fields.insert("action".into(), action.into());
+        Some(fields)
+    }).expect("actual enabled native Bin/Restore form for selected owned identity")
+}
+
+#[test]
+#[ignore = "explicit OpenBSD S02-03 Bin routes; disposable two-account Dovecot and signed helper only"]
+fn isolated_openbsd_configured_bin_browser_moves_restore() {
+    assert_eq!(std::env::consts::OS, "openbsd");
+    let host = SystemCommandExecutor.run_with_stdin_timeout(
+        "/bin/hostname", &[], "", Duration::from_secs(1),
+    ).unwrap();
+    assert_eq!(host.status_code, 0);
+    assert_eq!(host.stdout.trim(), "obsd1.blackbagsecurity.com");
+    let before = standard_metadata();
+    let root = env::temp_dir().join(format!("osmap-bin-native-{}-{}", std::process::id(),
+        SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos()));
+    fs::DirBuilder::new().mode(0o700).create(&root).unwrap();
+    let mut fixture = Fixture { root: root.clone(), stop: Arc::new(AtomicBool::new(false)), threads: vec![] };
+    let uid = fs::metadata(&root).unwrap().uid();
+    assert_ne!(uid, 0);
+    let group = SystemCommandExecutor.run_with_stdin_timeout(
+        "/usr/bin/id", &["-g".into()], "", Duration::from_secs(1),
+    ).unwrap();
+    assert_eq!(group.status_code, 0);
+    let gid = group.stdout.trim().parse::<u32>().unwrap();
+    assert_ne!(gid, 0);
+    for directory in ["run", "state", "app-state"] {
+        fs::DirBuilder::new().mode(0o700).create(root.join(directory)).unwrap();
+    }
+    for user in ["alice", "bob"] {
+        for folder in ["", ".Deleted", ".Trash"] {
+            for part in ["cur", "new", "tmp"] {
+                fs::create_dir_all(root.join(user).join("Maildir").join(folder).join(part)).unwrap();
+            }
+        }
+    }
+    for index in 0..3 { write_message(&root, "alice", index, 0); }
+    for index in 0..2 { write_message(&root, "bob", index, 0); }
+    let config = root.join("dovecot.conf");
+    fs::write(&config, format!("base_dir = {0}/run\nstate_dir = {0}/state\nmail_location = maildir:~/Maildir\nmail_uid = {uid}\nmail_gid = {gid}\nfirst_valid_uid = {uid}\nprotocols =\nlisten = 127.0.0.1\nssl = no\nmail_plugins =\nstats_writer_socket_path =\nauth_socket_path = {0}/never-default\nlog_path = {0}/native.log\ninfo_log_path = {0}/native.log\nnamespace inbox {{\n inbox = yes\n separator =\n}}\n", root.display())).unwrap();
+    fs::set_permissions(&config, fs::Permissions::from_mode(0o600)).unwrap();
+    let userdb = serve_userdb(&mut fixture, uid, gid);
+    let calls = Arc::new(AtomicUsize::new(0));
+    let move_count = Arc::new(AtomicUsize::new(0));
+    let executor = NativeExecutor { config, calls, bin_move_count: Some(move_count.clone()) };
+    let native_list = DoveadmMessageListBackend::new(
+        MessageListPolicy::default(), executor.clone(), "/usr/local/bin/doveadm",
+    ).with_userdb_socket_path(Some(userdb.clone()));
+    let query = MessageListRequest::new(MessageListPolicy::default(), "INBOX").unwrap();
+    let deleted_query = MessageListRequest::new(MessageListPolicy::default(), "Deleted").unwrap();
+    let trash_query = MessageListRequest::new(MessageListPolicy::default(), "Trash").unwrap();
+    let initial = native_list.list_messages(ALICE, &query).unwrap();
+    let foreign = native_list.list_messages(BOB, &query).unwrap();
+    assert_eq!(initial.len(), 3); assert_eq!(foreign.len(), 2);
+    assert!(native_list.list_messages(ALICE, &deleted_query).unwrap().is_empty());
+    assert!(native_list.list_messages(ALICE, &trash_query).unwrap().is_empty());
+    let target = initial.iter().find(|row| row.subject.as_deref() == Some("Native 000")).unwrap();
+    let version = target.metadata.as_ref().unwrap().version.clone();
+    let neighbours: Vec<_> = initial.iter().filter(|row| row.uid != target.uid).cloned().collect();
+    let forbidden = Arc::new(AtomicUsize::new(0));
+    let triggered = Arc::new(AtomicUsize::new(0));
+    let helper = start_helper(&mut fixture, executor, userdb, 0,
+        Arc::new(AtomicBool::new(false)), triggered.clone(), forbidden.clone());
+    let key = root.join("fixture-grant.key");
+    fs::write(&key, test_helper_grant_key()).unwrap();
+    fs::set_permissions(&key, fs::Permissions::from_mode(0o600)).unwrap();
+    let app_config = AppConfig::from_env_map(&BTreeMap::from([
+        ("OSMAP_RUN_MODE".into(), "serve".into()),
+        ("OSMAP_STATE_DIR".into(), root.join("app-state").to_string_lossy().into_owned()),
+        ("OSMAP_MAILBOX_HELPER_SOCKET_PATH".into(), helper.to_string_lossy().into_owned()),
+        ("OSMAP_MAILBOX_HELPER_GRANT_KEY_PATH".into(), key.to_string_lossy().into_owned()),
+        ("OSMAP_MAILBOX_WORKER_BUDGET".into(), "1".into()),
+    ])).unwrap();
+    assert!(app_config.state_layout.settings_dir.starts_with(&root));
+    assert!(app_config.state_layout.session_dir.starts_with(&root));
+    assert!(app_config.openpgp_crypto.is_none() && app_config.openpgp_inventory.is_none()
+        && app_config.openpgp_public_admin.is_none());
+    let context = AuthenticationContext::new(AuthenticationPolicy::default(),
+        "native-reader-session", "127.0.0.1", "OSMAP/native-reader").unwrap();
+    let sessions = SessionService::new(FileSessionStore::new(&app_config.state_layout.session_dir),
+        SystemTimeProvider, SystemRandomSource, 1800, 1800);
+    // Synthetic issuance is not a real password/TOTP login proof.
+    let alice = sessions.issue(&context, ALICE, RequiredSecondFactor::Totp).unwrap();
+    let bob = sessions.issue(&context, BOB, RequiredSecondFactor::Totp).unwrap();
+    let app = BrowserApp::new(HttpPolicy::from_config(&app_config),
+        RuntimeBrowserGateway::from_config(&app_config));
+    let store = crate::bin_folder::BinPreferencesStore::new(&app_config.state_layout.settings_dir);
+    assert_eq!(store.load(ALICE).unwrap(), crate::bin_folder::BinPreference::default());
+    let settings = BTreeMap::from([
+        ("csrf_token".into(), alice.record.csrf_token.clone()),
+        ("expected_revision".into(), "0".into()),
+        ("mailbox_name".into(), "Deleted".into()),
+        ("section".into(), "reading".into()),
+    ]);
+    let mut invalid = settings.clone(); invalid.insert("csrf_token".into(), "0".repeat(64));
+    assert_eq!(http(&app, Some(&alice), "POST", "/settings/bin-folder", &invalid).response.status_code, 403);
+    assert_eq!(store.load(ALICE).unwrap(), crate::bin_folder::BinPreference::default());
+    let saved = http(&app, Some(&alice), "POST", "/settings/bin-folder", &settings);
+    assert_eq!(saved.response.status_code, 303);
+    assert_eq!(store.load(ALICE).unwrap(), crate::bin_folder::BinPreference {
+        revision: 1, mailbox_name: "Deleted".into(),
+    });
+    assert_eq!(store.load(BOB).unwrap(), crate::bin_folder::BinPreference::default());
+    assert_eq!(http(&app, Some(&alice), "POST", "/settings/bin-folder", &settings).response.status_code, 409);
+    let reading = get(&app, &alice, "/settings?section=reading");
+    assert_eq!(reading.response.status_code, 200);
+    assert!(text(&reading).contains("value=\"Deleted\" selected"));
+    let copies = get(&app, &alice, "/settings?section=copies");
+    assert_eq!(copies.response.status_code, 200);
+    assert!(text(&copies).contains("value=\"Deleted\" selected"));
+    let select = |mailbox: &str, row: &MessageSummary| {
+        let identity = &row.metadata.as_ref().unwrap().version;
+        format!("/mailbox?name={}&sort=subject&dir=asc&selected_mailbox={}&selected_uid={}&selected_mailbox_guid={}&selected_message_guid={}",
+            encode(mailbox), encode(mailbox), row.uid, encode(&identity.mailbox_guid), encode(&identity.message_guid))
+    };
+    let selected = get(&app, &alice, &select("INBOX", target));
+    assert_eq!(selected.response.status_code, 200);
+    let bin = bin_move_form(text(&selected), "INBOX", target.uid, "bin");
+    assert_eq!(bin["mailbox_guid"], version.mailbox_guid);
+    assert_eq!(bin["message_guid"], version.message_guid);
+    let mut invalid_bin = bin.clone(); invalid_bin.insert("csrf_token".into(), "0".repeat(64));
+    assert_eq!(http(&app, Some(&alice), "POST", "/message/move", &invalid_bin).response.status_code, 403);
+    let mut foreign_bin = bin.clone(); foreign_bin.insert("csrf_token".into(), bob.record.csrf_token.clone());
+    assert_eq!(http(&app, Some(&bob), "POST", "/message/move", &foreign_bin).response.status_code, 409);
+    assert_eq!(move_count.load(Ordering::SeqCst), 0);
+    let moved = http(&app, Some(&alice), "POST", "/message/move", &bin);
+    assert_eq!(moved.response.status_code, 303);
+    assert_eq!(move_count.load(Ordering::SeqCst), 1);
+    let remaining = native_list.list_messages(ALICE, &query).unwrap();
+    assert_eq!(remaining.len(), neighbours.len());
+    assert_eq!(persisted_flags(&remaining), persisted_flags(&neighbours));
+    for row in &remaining {
+        assert_eq!(row.metadata, neighbours.iter().find(|item| item.uid == row.uid).unwrap().metadata);
+    }
+    let deleted = native_list.list_messages(ALICE, &deleted_query).unwrap();
+    assert_eq!(deleted.len(), 1);
+    assert_eq!(deleted[0].metadata.as_ref().unwrap().version.message_guid, version.message_guid);
+    assert_ne!(deleted[0].metadata.as_ref().unwrap().version.mailbox_guid, version.mailbox_guid);
+    assert_eq!(persisted_flags(&deleted)[0].1, persisted_flags(std::slice::from_ref(target))[0].1);
+    assert_eq!(persisted_flags(&deleted)[0].2, persisted_flags(std::slice::from_ref(target))[0].2);
+    assert!(native_list.list_messages(ALICE, &trash_query).unwrap().is_empty());
+    assert_eq!(http(&app, Some(&alice), "POST", "/message/move", &bin).response.status_code, 409);
+    assert_eq!(move_count.load(Ordering::SeqCst), 1);
+    let selected_bin = get(&app, &alice, &select("Deleted", &deleted[0]));
+    assert_eq!(selected_bin.response.status_code, 200);
+    let restore = bin_move_form(text(&selected_bin), "Deleted", deleted[0].uid, "restore");
+    assert_eq!(restore["mailbox_guid"], deleted[0].metadata.as_ref().unwrap().version.mailbox_guid);
+    assert_eq!(restore["message_guid"], version.message_guid);
+    assert_eq!(http(&app, Some(&alice), "POST", "/message/move", &restore).response.status_code, 303);
+    assert_eq!(move_count.load(Ordering::SeqCst), 2);
+    assert!(native_list.list_messages(ALICE, &deleted_query).unwrap().is_empty());
+    let restored = native_list.list_messages(ALICE, &query).unwrap();
+    assert_eq!(restored.len(), initial.len());
+    let restored_target = restored.iter().find(|row| row.metadata.as_ref().unwrap().version.message_guid == version.message_guid).unwrap();
+    assert_ne!(restored_target.uid, target.uid);
+    assert_eq!(restored_target.metadata.as_ref().unwrap().version, version);
+    assert_eq!(persisted_flags(std::slice::from_ref(restored_target))[0].1, persisted_flags(std::slice::from_ref(target))[0].1);
+    assert_eq!(persisted_flags(std::slice::from_ref(restored_target))[0].2, persisted_flags(std::slice::from_ref(target))[0].2);
+    for row in &neighbours {
+        let current = restored.iter().find(|item| item.uid == row.uid).unwrap();
+        assert_eq!(current.metadata, row.metadata);
+        assert_eq!(persisted_flags(std::slice::from_ref(current)), persisted_flags(std::slice::from_ref(row)));
+    }
+    assert_eq!(http(&app, Some(&alice), "POST", "/message/move", &restore).response.status_code, 409);
+    assert_eq!(move_count.load(Ordering::SeqCst), 2);
+    let reselected = get(&app, &alice, &select("INBOX", restored_target));
+    let current_bin = bin_move_form(text(&reselected), "INBOX", restored_target.uid, "bin");
+    fs::rename(root.join("alice/Maildir/.Deleted"), root.join("removed-owned-Deleted")).unwrap();
+    let absent = http(&app, Some(&alice), "POST", "/message/move", &current_bin);
+    assert!(matches!(absent.response.status_code, 400 | 503));
+    assert_eq!(move_count.load(Ordering::SeqCst), 2);
+    assert!(native_list.list_messages(ALICE, &trash_query).unwrap().is_empty());
+    fs::rename(root.join("removed-owned-Deleted"), root.join("alice/Maildir/.Deleted")).unwrap();
+    let final_inbox = native_list.list_messages(ALICE, &query).unwrap();
+    assert_eq!(persisted_flags(&final_inbox), persisted_flags(&restored));
+    assert_eq!(native_list.list_messages(BOB, &query).unwrap(), foreign);
+    assert!(native_list.list_messages(BOB, &deleted_query).unwrap().is_empty());
+    assert!(native_list.list_messages(BOB, &trash_query).unwrap().is_empty());
+    assert_eq!(store.load(BOB).unwrap(), crate::bin_folder::BinPreference::default());
+    assert_eq!(store.load(ALICE).unwrap().mailbox_name, "Deleted");
+    assert_eq!(triggered.load(Ordering::SeqCst), 0);
+    assert_eq!(forbidden.load(Ordering::SeqCst), 0);
+    fixture.finish(); drop(fixture);
+    assert!(!root.exists()); assert_eq!(before, standard_metadata());
+    println!("native_configured_bin=PASS saved_top_level_deleted=PASS owned_guid_moves=2 restored_new_uid=PASS stale_csrf_foreign_missing_refusal=PASS no_trash_fallback=PASS neighbours_foreign_unchanged=PASS no_append_expunge_crypto=PASS scratch_cleanup=PASS standard_host_metadata_unchanged=PASS");
 }

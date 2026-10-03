@@ -355,6 +355,26 @@ impl BrowserGateway for RuntimeBrowserGateway {
         }
     }
 
+    fn load_bin_preference(
+        &self,
+        session: &ValidatedSession,
+    ) -> Result<crate::bin_folder::BinPreference, crate::bin_folder::Error> {
+        crate::bin_folder::BinPreferencesStore::new(&self.settings_dir)
+            .load(&session.record.canonical_username)
+    }
+    fn update_bin_preference(
+        &self,
+        session: &ValidatedSession,
+        revision: u64,
+        mailbox_name: &str,
+    ) -> Result<crate::bin_folder::BinPreference, crate::bin_folder::Error> {
+        crate::bin_folder::BinPreferencesStore::new(&self.settings_dir).save(
+            &session.record.canonical_username,
+            revision,
+            mailbox_name,
+        )
+    }
+
     fn load_after_archive(
         &self,
         s: &ValidatedSession,

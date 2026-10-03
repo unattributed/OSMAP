@@ -210,6 +210,9 @@ where
                 self.handle_autosave_config(request, &context)
             }
             (HttpMethod::Post, "/drafts/autosave") => self.handle_draft_save(request, &context),
+            (HttpMethod::Post, "/settings/bin-folder") => {
+                self.handle_bin_folder_settings(request, &context)
+            }
             (HttpMethod::Post, "/settings/after-archive") => {
                 self.handle_after_archive_settings(request, &context)
             }

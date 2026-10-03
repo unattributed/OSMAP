@@ -8170,3 +8170,39 @@ parser and unrelated Archive/content saves stay compatible with rollback.
 Missing record retains Trash; a missing configured folder must refuse instead
 of silently redirecting mail. Validate the session's actual owned selectable
 folder, route Bin/restore to it and preserve permanent-delete refusal.
+
+### 2026-10-03 — Replace fixed Bin with a usable account-owned folder preference
+
+Reopen S02-03 against approved R2-14-010; the previous fixed Trash UI does not
+satisfy choose-then-bin. Compiled missing-selector RED precedes actual Reading/
+Copies forms, `/settings/bin-folder`, independent account-private CAS sidecar,
+consistent shortcuts/tabs/readers and saved exact Bin/Restore destination.
+Keep the strict legacy settings schema and independent content/Archive writes.
+A genuinely absent sidecar retains Trash/revision0; corrupt, inaccessible or
+missing configured folders refuse without silently resetting or redirecting.
+
+Validate actual account LIST and native selectable folder metadata independently
+of the narrower legacy navigation projection. Accept owned top-level Deleted;
+require a unique longest matching private namespace, with native NIL delimiter
+support. The shared/public guard has its own compiled RED. Duplicate namespace
+prefixes are refused by the existing native parser before a snapshot exists;
+retain that invariant instead of fabricating an invalid successful snapshot.
+
+Use a separate opt-in disposable native Bin fixture. Its explicitly restricted
+executor permits only Alice Inbox↔Deleted, real Bob GUID checking is read-only,
+and the original reader fixture retains its no-move/no-append boundary. Preserve
+all failed compile/assertion/gate attempts and exact cleanup/host fingerprints.
+Register the new finite endpoint in the actual WSTG route inventory; missing
+coverage is a real gate failure to repair, never a reason to bypass the gate.
+
+Rollback preserves the new sidecar for forward recovery; older web still uses
+its legacy fixed Trash behavior and cannot claim alternate Bin support. No
+permanent deletion or new retention policy is introduced. The operator controls
+actual mailbox UAT and the next real Send; native tests do not accept those
+outcomes or close the sprint/epic.
+
+Final route RED also catches old Trash's active Bin rail after alternate
+selection. Use current saved reader context for active Bin and treat old Trash
+as ordinary mail; explicit legacy wrappers retain default Trash. Match the
+revised native candidate and responsive native-form association proof before
+signed delivery. Do not reuse the preceding candidate's successful hashes.

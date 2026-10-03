@@ -38,6 +38,21 @@ pub trait BrowserGateway {
             audit_events: vec![],
         }
     }
+    fn load_bin_preference(
+        &self,
+        _session: &ValidatedSession,
+    ) -> Result<crate::bin_folder::BinPreference, crate::bin_folder::Error> {
+        Err(crate::bin_folder::Error::Unavailable)
+    }
+    fn update_bin_preference(
+        &self,
+        _session: &ValidatedSession,
+        _revision: u64,
+        _mailbox_name: &str,
+    ) -> Result<crate::bin_folder::BinPreference, crate::bin_folder::Error> {
+        Err(crate::bin_folder::Error::Unavailable)
+    }
+
     fn load_after_archive(
         &self,
         _session: &ValidatedSession,

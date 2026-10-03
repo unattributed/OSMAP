@@ -274,7 +274,11 @@ where
                         {
                             let status=chosen.and_then(|folder| self.folder_status(context,&validated_session,folder,&mut audit_events));
                             let creation = chosen.zip(status.as_ref()).zip(hierarchy.as_ref()).is_some_and(|((name, status), tree)| tree.can_create(&canonical_username, name, status));
-                            crate::http_ui::render_copies_page(&model, mailboxes.as_deref(), chosen, counts,status.as_ref(),hierarchy.as_ref(),creation)
+                            {
+                                let bin = self.gateway.load_bin_preference(&validated_session).ok();
+                                let bin_choices = self.bin_folder_choices(context, &validated_session, &mut audit_events);
+                                crate::http_ui::render_copies_page_with_state(&model, crate::http_ui::CopiesPageState { mailboxes: mailboxes.as_deref(), chosen, counts, status: status.as_ref(), hierarchy: hierarchy.as_ref(), creation, bin: bin.as_ref(), bin_choices: bin_choices.as_deref() })
+                            }
                         }
                     } else if section == "appearance" {
                         crate::http_ui::render_appearance_page(&model, &presentation)
@@ -313,7 +317,11 @@ where
                         };
                         let mailboxes = self.reading_mailbox_choices(context, &validated_session, &mut audit_events);
                         let mark_read = self.load_settings_mark_read_policy(context, &validated_session, &mut audit_events);
-                        crate::http_ui::render_reading_page_with_policies(&model, &preferences, mailboxes.as_deref(),self.gateway.load_after_archive(&validated_session).ok().as_ref(),mark_read.as_ref())
+                        {
+                            let bin = self.gateway.load_bin_preference(&validated_session).ok();
+                            let bin_choices = self.bin_folder_choices(context, &validated_session, &mut audit_events);
+                            crate::http_ui::render_reading_page_with_folders(&model, &preferences, mailboxes.as_deref(),self.gateway.load_after_archive(&validated_session).ok().as_ref(),mark_read.as_ref(), bin.as_ref(), bin_choices.as_deref())
+                        }
                     }
                 })
                 .with_header(
@@ -661,7 +669,7 @@ where
     }
 }
 
-fn valid_folder_listing(entries: &[MailboxEntry]) -> bool {
+pub(super) fn valid_folder_listing(entries: &[MailboxEntry]) -> bool {
     let mut names = std::collections::BTreeSet::new();
     entries.len() <= crate::mailbox::DEFAULT_MAX_MAILBOXES
         && entries.iter().all(|v| {

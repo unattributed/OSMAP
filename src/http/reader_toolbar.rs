@@ -4,8 +4,7 @@ use super::*;
 pub(super) fn render(
     csrf: &str,
     message: &RenderedMessageView,
-    archive: Option<&str>,
-    mailboxes: &[MailboxEntry],
+    folders: ReaderFolders<'_>,
     back: &str,
     return_to: &str,
     neighbours: &crate::reader_neighbours::ReaderNeighbours,
@@ -14,6 +13,11 @@ pub(super) fn render(
     snooze: &str,
     more: &str,
 ) -> String {
+    let ReaderFolders {
+        archive,
+        bin,
+        mailboxes,
+    } = folders;
     let icon_button = |label: &str, icon: &str, action: &str, enabled: bool| {
         format!("<button type=\"{}\" name=\"action\" value=\"{action}\" aria-label=\"{label}\" title=\"{label}\"{}>{}</button>", if enabled { "submit" } else { "button" }, if enabled { "" } else { " disabled" }, reader_icon(icon))
     };
@@ -28,8 +32,8 @@ pub(super) fn render(
         && archive.is_some_and(|name| {
             name != message.mailbox_name && mailboxes.iter().any(|m| m.name == name)
         });
-    let restore = message.mailbox_name == "Trash";
-    let destination = if restore { "INBOX" } else { "Trash" };
+    let restore = bin == Some(message.mailbox_name.as_str());
+    let destination = if restore { Some("INBOX") } else { bin };
     let moves = format!(
         "{}{}{}",
         fields.as_deref().unwrap_or(""),
@@ -42,7 +46,8 @@ pub(super) fn render(
             },
             if restore { "inbox" } else { "bin" },
             if restore { "restore" } else { "bin" },
-            fields.is_some() && mailboxes.iter().any(|m| m.name == destination)
+            fields.is_some()
+                && destination.is_some_and(|name| mailboxes.iter().any(|m| m.name == name))
         )
     );
     let moves = if fields.is_some() {

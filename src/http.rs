@@ -25,6 +25,7 @@ mod routes_after_archive;
 mod routes_appearance;
 mod routes_auth;
 mod routes_autosave;
+mod routes_bin_folder;
 mod routes_compose;
 mod routes_composition_preferences;
 mod routes_contacts;
@@ -92,9 +93,9 @@ use crate::http_support::{
 use crate::http_ui::{
     render_compose_page, render_draft_list_page, render_login_page,
     render_mailboxes_page_with_policy, render_message_list_page, render_message_search_page,
-    render_message_view_page_with_neighbours, render_navigation_notice, render_sessions_page,
-    ComposePageModel, DraftListPageModel, MailReaderContext, MessageListBulkActions,
-    MessageListSortLinks, MessageSearchContext, SelectedMessagePane, SettingsPageModel,
+    render_navigation_notice, render_sessions_page, ComposePageModel, DraftListPageModel,
+    MailReaderContext, MessageListBulkActions, MessageListSortLinks, MessageSearchContext,
+    SelectedMessagePane, SettingsPageModel,
 };
 use crate::logging::LogEvent;
 #[cfg(test)]
@@ -884,6 +885,9 @@ mod tests {
     mod after_archive_tests {
         include!("http/after_archive_tests.rs");
     }
+    mod bin_folder_tests {
+        include!("http/bin_folder_tests.rs");
+    }
     mod copies_tests {
         include!("http/copies_tests.rs");
     }
@@ -1010,6 +1014,7 @@ mod tests {
         signature_store: Option<crate::signature::SignatureStore>,
         autosave_store: Option<crate::autosave::Store>,
         after_archive_store: Option<crate::after_archive::Store>,
+        bin_store: Option<crate::bin_folder::BinPreferencesStore>,
         mark_read_store: Option<crate::mark_read::Store>,
         contacts_store: Option<crate::contacts::ContactStore>,
         draft_store: Option<crate::draft::FileDraftStore>,
@@ -1044,6 +1049,7 @@ mod tests {
                 signature_store: None,
                 autosave_store: None,
                 after_archive_store: None,
+                bin_store: None,
                 mark_read_store: None,
                 contacts_store: None,
                 draft_store: None,
@@ -1184,6 +1190,27 @@ mod tests {
                     recipient_binding_count: 0,
                 })
         }
+        fn load_bin_preference(
+            &self,
+            session: &ValidatedSession,
+        ) -> Result<crate::bin_folder::BinPreference, crate::bin_folder::Error> {
+            match &self.bin_store {
+                Some(store) => store.load(&session.record.canonical_username),
+                None => Ok(crate::bin_folder::BinPreference::default()),
+            }
+        }
+        fn update_bin_preference(
+            &self,
+            session: &ValidatedSession,
+            revision: u64,
+            mailbox_name: &str,
+        ) -> Result<crate::bin_folder::BinPreference, crate::bin_folder::Error> {
+            self.bin_store
+                .as_ref()
+                .ok_or(crate::bin_folder::Error::Unavailable)?
+                .save(&session.record.canonical_username, revision, mailbox_name)
+        }
+
         fn load_after_archive(
             &self,
             s: &ValidatedSession,
@@ -2327,8 +2354,13 @@ mod tests {
                             .unwrap_or_default()
                             .iter()
                             .map(|name| {
+                                let flags = match context.user_agent.as_str() {
+                                    "FolderTreeBinNoselect" if name == "Deleted" => "\\Noselect",
+                                    "FolderTreeBinAbsent" if name == "Deleted" => "\\NonExistent",
+                                    _ => "",
+                                };
                                 format!(
-                                    "* LIST () \".\" {}\r\n",
+                                    "* LIST ({flags}) \".\" {}\r\n",
                                     folder_create_fixture::wire_name(name)
                                 )
                             })
@@ -2589,7 +2621,11 @@ mod tests {
                     decision: BrowserMessageListDecision::Listed {
                         canonical_username: validated_session.record.canonical_username.clone(),
                         mailbox_name: mailbox_name.into(),
-                        messages: vec![],
+                        messages: self.fixture_reconcile_messages(
+                            &validated_session.record.canonical_username,
+                            mailbox_name,
+                            Vec::new(),
+                        ),
                     },
                     audit_events: vec![],
                 };

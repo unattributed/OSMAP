@@ -19,14 +19,14 @@ mod settings_privacy_ui;
 pub(crate) use settings_privacy_ui::render_privacy_page;
 #[path = "settings_copies_ui.rs"]
 mod settings_copies_ui;
-pub(crate) use settings_copies_ui::render_copies_page;
+pub(crate) use settings_copies_ui::{render_copies_page_with_state, CopiesPageState};
 
 #[path = "settings_general_ui.rs"]
 mod settings_general_ui;
 pub(crate) use settings_general_ui::render_general_page_with_mark_read;
 #[path = "settings_reading_ui.rs"]
 mod settings_reading_ui;
-pub(crate) use settings_reading_ui::render_reading_page_with_policies;
+pub(crate) use settings_reading_ui::render_reading_page_with_folders;
 #[path = "settings_composition_ui.rs"]
 mod settings_composition_ui;
 pub(crate) use settings_composition_ui::render_composition_page_with_signature;

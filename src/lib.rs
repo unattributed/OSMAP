@@ -9,6 +9,7 @@ pub mod appearance;
 pub mod attachment;
 pub mod auth;
 pub mod autosave;
+pub mod bin_folder;
 pub mod bootstrap;
 mod charset;
 pub mod compose_format;

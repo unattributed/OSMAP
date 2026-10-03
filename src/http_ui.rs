@@ -36,10 +36,10 @@ use crate::mime::{AttachmentMetadata, DEFAULT_MIME_PARTS_MAX};
 use crate::rendering::{HtmlDisplayPreference, RenderedMessageView};
 pub(crate) use settings_ui::render_openpgp_settings;
 pub(crate) use settings_ui::{
-    render_appearance_page, render_composition_page_with_signature, render_copies_page,
+    render_appearance_page, render_composition_page_with_signature, render_copies_page_with_state,
     render_general_page_with_mark_read, render_identity_page, render_identity_page_with_signature,
-    render_notifications_page, render_privacy_page, render_reading_page_with_policies,
-    render_security_page, IdentityPageModel,
+    render_notifications_page, render_privacy_page, render_reading_page_with_folders,
+    render_security_page, CopiesPageState, IdentityPageModel,
 };
 
 /// Defense-in-depth cap for attachment metadata rows rendered by one route.
@@ -117,12 +117,30 @@ pub(crate) enum SelectedMessagePane {
     Ready(Box<RenderedMessageView>),
 }
 
-#[derive(Default)]
 pub(crate) struct MailReaderContext {
     pub pane: SelectedMessagePane,
     pub neighbours: crate::reader_neighbours::ReaderNeighbours,
     pub archive_mailbox_name: Option<String>,
+    pub bin_mailbox_name: Option<String>,
     pub mailboxes: Vec<MailboxEntry>,
+}
+
+impl Default for MailReaderContext {
+    fn default() -> Self {
+        Self {
+            pane: SelectedMessagePane::default(),
+            neighbours: crate::reader_neighbours::ReaderNeighbours::default(),
+            archive_mailbox_name: None,
+            bin_mailbox_name: Some("Trash".into()),
+            mailboxes: Vec::new(),
+        }
+    }
+}
+#[derive(Clone, Copy)]
+struct ReaderFolders<'a> {
+    archive: Option<&'a str>,
+    bin: Option<&'a str>,
+    mailboxes: &'a [MailboxEntry],
 }
 
 pub(crate) struct MessageSearchContext<'a> {
@@ -145,6 +163,39 @@ pub(crate) struct SettingsPageModel<'a> {
     pub error_message: Option<&'a str>,
     pub html_display_preference: HtmlDisplayPreference,
     pub archive_mailbox_name: Option<&'a str>,
+}
+
+fn render_bin_folder_form(
+    model: &SettingsPageModel<'_>,
+    id: &str,
+    section: &str,
+    saved: Option<&crate::bin_folder::BinPreference>,
+    choices: Option<&[MailboxEntry]>,
+) -> String {
+    let (Some(saved), Some(choices)) = (saved, choices) else {
+        return format!("<div class=\"general-field\"><label for=\"{id}\">Bin folder</label><select id=\"{id}\" disabled><option>Unavailable</option></select></div><p>Saved Bin or available folders could not be loaded. Reload settings before changing Bin.</p>");
+    };
+    let mut options = String::new();
+    if !choices.iter().any(|m| m.name == saved.mailbox_name) {
+        options.push_str(&format!(
+            "<option value=\"{}\" selected>{} (unavailable)</option>",
+            escape_html(&saved.mailbox_name),
+            escape_html(&saved.mailbox_name)
+        ));
+    }
+    for entry in choices {
+        options.push_str(&format!(
+            "<option value=\"{}\"{}>{}</option>",
+            escape_html(&entry.name),
+            if entry.name == saved.mailbox_name {
+                " selected"
+            } else {
+                ""
+            },
+            escape_html(&entry.name)
+        ));
+    }
+    format!("<form id=\"{id}-form\" method=\"post\" action=\"/settings/bin-folder\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"expected_revision\" value=\"{}\"><input type=\"hidden\" name=\"section\" value=\"{section}\"><div class=\"general-field\"><label for=\"{id}\">Bin folder</label><select id=\"{id}\" name=\"mailbox_name\">{options}</select></div><button type=\"submit\">Save Bin folder</button></form>", escape_html(model.csrf_token), saved.revision)
 }
 
 fn logout_form(csrf_token: &str) -> String {
@@ -299,7 +350,7 @@ pub(crate) fn app_header(canonical_username: &str, csrf_token: &str, current: &s
         "<div class=\"header-search\"><form role=\"search\" method=\"get\" action=\"/search\"><input type=\"hidden\" name=\"scope\" value=\"all\"><label class=\"sr-only\" for=\"global-mail-query\">Search all mail</label><input id=\"global-mail-query\" name=\"q\" type=\"search\" placeholder=\"Search mail…\" maxlength=\"256\" autocomplete=\"off\" accesskey=\"s\" required><button type=\"submit\" aria-label=\"Search mail\">Search</button></form>",
         "<details class=\"global-search-menu\" name=\"toolbar-menu\"><summary title=\"Mail shortcuts\">Shortcuts</summary>",
         "<div class=\"account-menu-panel global-search-panel\">",
-        "<nav aria-label=\"Mail shortcuts\"><h2>Shortcuts</h2><a href=\"/compose\">Compose a message</a><a href=\"/mailbox?name=INBOX\">Open Inbox</a><a href=\"/mailbox?name=Sent\">Open Sent</a><a href=\"/mailbox/shortcut?kind=archive\">Open Archive</a><a href=\"/mailbox?name=Trash\">Open Bin</a><a href=\"/drafts\">Open Drafts</a><a href=\"/mailboxes\">Browse mailboxes</a><a href=\"/settings\">Open account settings</a></nav></div></details></div>"
+        "<nav aria-label=\"Mail shortcuts\"><h2>Shortcuts</h2><a href=\"/compose\">Compose a message</a><a href=\"/mailbox?name=INBOX\">Open Inbox</a><a href=\"/mailbox?name=Sent\">Open Sent</a><a href=\"/mailbox/shortcut?kind=archive\">Open Archive</a><a href=\"/mailbox/shortcut?kind=bin\">Open Bin</a><a href=\"/drafts\">Open Drafts</a><a href=\"/mailboxes\">Browse mailboxes</a><a href=\"/settings\">Open account settings</a></nav></div></details></div>"
     )
     };
     format!(concat!(
@@ -493,7 +544,6 @@ pub(crate) fn mailbox_nav_section(
     match mailbox_name {
         "INBOX" => "inbox",
         "Sent" => "sent",
-        "Trash" => "bin",
         value if Some(value) == archive_mailbox_name => "archive",
         _ => "mailboxes",
     }
@@ -1096,7 +1146,7 @@ fn render_coordinated_reader_with_back(
                 Some(page) if page != view.page => format!("<p class=\"reader-locate\"><a href=\"{}\">Locate selected message on page {page}</a></p>", escape_html(&list_navigation_href(base, view, page))),
                 _ => String::new(),
             };
-            format!("<div class=\"reader-column\">{locate}{}</div>", render_reader_fragment(csrf, rendered, reader.archive_mailbox_name.as_deref(), &reader.mailboxes, back, &list_navigation_href(base, view, view.page), Some(&reader.neighbours)))
+            format!("<div class=\"reader-column\">{locate}{}</div>", render_reader_fragment(csrf, rendered, ReaderFolders { archive: reader.archive_mailbox_name.as_deref(), bin: reader.bin_mailbox_name.as_deref(), mailboxes: &reader.mailboxes }, back, &list_navigation_href(base, view, view.page), Some(&reader.neighbours)))
         }
     }
 }
@@ -1549,10 +1599,14 @@ fn move_identity_fields(
 fn render_reader_move_controls(
     csrf: &str,
     rendered: &RenderedMessageView,
-    archive: Option<&str>,
-    mailboxes: &[MailboxEntry],
+    folders: ReaderFolders<'_>,
     return_to: &str,
 ) -> String {
+    let ReaderFolders {
+        archive,
+        bin,
+        mailboxes,
+    } = folders;
     let Some(fields) = move_identity_fields(
         csrf,
         &rendered.mailbox_name,
@@ -1582,11 +1636,13 @@ fn render_reader_move_controls(
     if archive.is_none() {
         buttons.push_str("<p class=\"muted\">Set an archive mailbox in Settings to enable the archive shortcut.</p>");
     }
-    if rendered.mailbox_name != "Trash" && mailboxes.iter().any(|m| m.name == "Trash") {
+    if bin.is_some_and(|name| {
+        rendered.mailbox_name != name && mailboxes.iter().any(|m| m.name == name)
+    }) {
         buttons
             .push_str("<button type=\"submit\" name=\"action\" value=\"bin\">Move to Bin</button>");
     }
-    if rendered.mailbox_name == "Trash" && mailboxes.iter().any(|m| m.name == "INBOX") {
+    if bin == Some(rendered.mailbox_name.as_str()) && mailboxes.iter().any(|m| m.name == "INBOX") {
         buttons.push_str(
             "<button type=\"submit\" name=\"action\" value=\"restore\">Restore to Inbox</button>",
         );
@@ -1596,7 +1652,7 @@ fn render_reader_move_controls(
     } else {
         format!("<label>Destination Mailbox<select name=\"destination_mailbox\">{options}</select></label><button type=\"submit\" name=\"action\" value=\"move\">Move Message</button>")
     };
-    format!("<form class=\"message-move-controls\" method=\"post\" action=\"/message/move\">{fields}<div class=\"toolbar\">{buttons}</div>{chooser}<p class=\"muted\">Bin moves mail to Trash. Restore returns it to Inbox. These controls never permanently delete mail.</p></form>")
+    format!("<form class=\"message-move-controls\" method=\"post\" action=\"/message/move\">{fields}<div class=\"toolbar\">{buttons}</div>{chooser}<p class=\"muted\">Bin moves mail to your saved folder. Restore returns it to Inbox. These controls never permanently delete mail.</p></form>")
 }
 
 fn render_bulk_selection_menu(base: &str, view: &ListViewState, eligible_count: usize) -> String {
@@ -1657,7 +1713,7 @@ pub(crate) fn render_message_list_page(
     bulk_actions: MessageListBulkActions<'_>,
     sort_links: MessageListSortLinks<'_>,
 ) -> TrustedHtml {
-    let archive_page = mailbox_name == "Trash"
+    let archive_page = sort_links.reader.bin_mailbox_name.as_deref() == Some(mailbox_name)
         || (Some(mailbox_name) == bulk_actions.archive_mailbox_name
             && !matches!(mailbox_name, "INBOX" | "Sent"));
     let list_notice_banner = match list_notice {
@@ -1783,15 +1839,21 @@ pub(crate) fn render_message_list_page(
         if archive_actions_available {
             buttons.push_str("<button type=\"submit\" name=\"action\" value=\"archive\">Archive Selected</button>");
         }
-        if mailbox_name != "Trash"
-            && bulk_actions
-                .move_destinations
-                .iter()
-                .any(|name| name == "Trash")
+        if sort_links
+            .reader
+            .bin_mailbox_name
+            .as_deref()
+            .is_some_and(|bin| {
+                bin != mailbox_name
+                    && bulk_actions
+                        .move_destinations
+                        .iter()
+                        .any(|name| name == bin)
+            })
         {
             buttons.push_str("<button type=\"submit\" name=\"action\" value=\"bin\">Move Selected to Bin</button>");
         }
-        if mailbox_name == "Trash"
+        if sort_links.reader.bin_mailbox_name.as_deref() == Some(mailbox_name)
             && bulk_actions
                 .move_destinations
                 .iter()
@@ -1799,7 +1861,7 @@ pub(crate) fn render_message_list_page(
         {
             buttons.push_str("<button type=\"submit\" name=\"action\" value=\"restore\">Restore Selected to Inbox</button>");
         }
-        format!("<form id=\"bulk-move-form\" class=\"bulk-move-controls\" method=\"post\" action=\"/messages/move\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><input type=\"hidden\" name=\"return_to\" value=\"{}\"><div class=\"toolbar\">{buttons}</div>{chooser}<p class=\"muted\">Select up to ten messages. Bin moves to Trash; restore returns to Inbox.</p></form>", escape_html(csrf_token), escape_html(mailbox_name), escape_html(&list_navigation_href(&navigation_base, sort_links.view, sort_links.view.page)))
+        format!("<form id=\"bulk-move-form\" class=\"bulk-move-controls\" method=\"post\" action=\"/messages/move\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><input type=\"hidden\" name=\"return_to\" value=\"{}\"><div class=\"toolbar\">{buttons}</div>{chooser}<p class=\"muted\">Select up to ten messages. Bin moves to your saved folder; restore returns to Inbox.</p></form>", escape_html(csrf_token), escape_html(mailbox_name), escape_html(&list_navigation_href(&navigation_base, sort_links.view, sort_links.view.page)))
     } else {
         String::new()
     };
@@ -1892,7 +1954,7 @@ pub(crate) fn render_message_list_page(
             "</section>{}",
             "</main>"
         ),
-        app_header(canonical_username, csrf_token, mailbox_nav_section(mailbox_name, bulk_actions.archive_mailbox_name)),
+        app_header(canonical_username, csrf_token, if sort_links.reader.bin_mailbox_name.as_deref() == Some(mailbox_name) { "bin" } else { mailbox_nav_section(mailbox_name, bulk_actions.archive_mailbox_name) }),
         if sort_links.view.selection.is_some() { " has-selection" } else { "" },
         escape_html(if mailbox_name == "INBOX" { "Inbox" } else { mailbox_name }),
         escape_html(mailbox_name),
@@ -2051,6 +2113,26 @@ pub(crate) fn render_message_view_page_with_neighbours(
     user_visible_mailboxes: &[MailboxEntry],
     neighbours: &crate::reader_neighbours::ReaderNeighbours,
 ) -> TrustedHtml {
+    render_message_view_page_with_folders(
+        canonical_username,
+        csrf_token,
+        rendered,
+        archive_mailbox_name,
+        Some("Trash"),
+        user_visible_mailboxes,
+        neighbours,
+    )
+}
+
+pub(crate) fn render_message_view_page_with_folders(
+    canonical_username: &str,
+    csrf_token: &str,
+    rendered: &RenderedMessageView,
+    archive_mailbox_name: Option<&str>,
+    bin_mailbox_name: Option<&str>,
+    user_visible_mailboxes: &[MailboxEntry],
+    neighbours: &crate::reader_neighbours::ReaderNeighbours,
+) -> TrustedHtml {
     let back = neighbours
         .back
         .clone()
@@ -2075,7 +2157,11 @@ pub(crate) fn render_message_view_page_with_neighbours(
     let header = app_header(
         canonical_username,
         csrf_token,
-        mailbox_nav_section(&rendered.mailbox_name, archive_mailbox_name),
+        if bin_mailbox_name == Some(rendered.mailbox_name.as_str()) {
+            "bin"
+        } else {
+            mailbox_nav_section(&rendered.mailbox_name, archive_mailbox_name)
+        },
     )
     .replace(
         "name=\"return_to\" value=\"/settings?section=appearance\" data-header-return",
@@ -2087,14 +2173,13 @@ pub(crate) fn render_message_view_page_with_neighbours(
     TrustedHtml::from_template(format!(
         "{}<main id=\"main-content\" class=\"page-shell standalone-reader\" tabindex=\"-1\"><div class=\"page-intro\"><h1>Message Reader</h1><p>Protected reading with message details, isolated attachments and source view.</p></div>{}</main>",
         header,
-        render_reader_fragment(csrf_token, rendered, archive_mailbox_name, user_visible_mailboxes, &back, &current, Some(neighbours))))
+        render_reader_fragment(csrf_token, rendered, ReaderFolders { archive: archive_mailbox_name, bin: bin_mailbox_name, mailboxes: user_visible_mailboxes }, &back, &current, Some(neighbours))))
 }
 
 fn render_reader_fragment(
     csrf_token: &str,
     rendered: &RenderedMessageView,
-    archive_mailbox_name: Option<&str>,
-    user_visible_mailboxes: &[MailboxEntry],
+    folders: ReaderFolders<'_>,
     back_href: &str,
     return_to: &str,
     neighbours: Option<&crate::reader_neighbours::ReaderNeighbours>,
@@ -2178,13 +2263,7 @@ fn render_reader_fragment(
         }
     }
 
-    let move_form = render_reader_move_controls(
-        csrf_token,
-        rendered,
-        archive_mailbox_name,
-        user_visible_mailboxes,
-        return_to,
-    );
+    let move_form = render_reader_move_controls(csrf_token, rendered, folders, return_to);
     let rendering_notice = match rendered.rendering_mode.as_str() {
         "sanitized_html" => "<div class=\"notice\"><strong>Sanitized HTML:</strong> HTML content is shown through the current allowlist sanitization policy. Active content, external fetches, and unsafe URLs are removed.</div>",
         _ => "",
@@ -2263,8 +2342,7 @@ fn render_reader_fragment(
         reader_toolbar::render(
             csrf_token,
             rendered,
-            archive_mailbox_name,
-            user_visible_mailboxes,
+            folders,
             back_href,
             return_to,
             neighbours,

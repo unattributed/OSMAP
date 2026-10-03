@@ -185,11 +185,36 @@ impl<G: BrowserGateway> BrowserApp<G> {
             + std::time::Duration::from_secs(
                 self.policy.expensive_request_timeout_secs.clamp(1, 30),
             );
+        // A sidecar is independent of legacy content/Archive settings. Only
+        // Bin/Restore require a usable Bin preference; other moves keep their
+        // existing availability when that preference cannot be loaded.
+        let bin = match self.gateway.load_bin_preference(&session) {
+            Ok(preference) => Some(preference),
+            Err(_) if matches!(action, "bin" | "restore") => {
+                return notice(
+                    503,
+                    "Service Unavailable",
+                    "Bin Unavailable",
+                    "Your saved Bin folder could not be loaded. No move was attempted.",
+                    audit_events,
+                );
+            }
+            Err(_) => None,
+        };
         let destination = match action {
             "move" => form.get("destination_mailbox").cloned(),
             "archive" => self.validated_archive_mailbox_name(context, &session, &mut audit_events),
-            "bin" if source != "Trash" => Some("Trash".into()),
-            "restore" if source == "Trash" => Some("INBOX".into()),
+            "bin" => bin
+                .as_ref()
+                .filter(|value| source != &value.mailbox_name)
+                .map(|value| value.mailbox_name.clone()),
+            "restore"
+                if bin
+                    .as_ref()
+                    .is_some_and(|value| source == &value.mailbox_name) =>
+            {
+                Some("INBOX".into())
+            }
             _ => None,
         };
         let Some(destination) = destination else {
@@ -200,6 +225,7 @@ impl<G: BrowserGateway> BrowserApp<G> {
                 .validated_archive_mailbox_name(context, &session, &mut audit_events)
                 .as_deref()
                 != Some(destination.as_str())
+            && bin.as_ref().map(|value| value.mailbox_name.as_str()) != Some(destination.as_str())
         {
             return invalid(audit_events);
         }
@@ -229,6 +255,35 @@ impl<G: BrowserGateway> BrowserApp<G> {
             || !mailboxes.iter().any(|m| m.name == destination)
         {
             return invalid(audit_events);
+        }
+        if matches!(action, "bin" | "restore") {
+            // Prove the configured folder is selectable under this same account
+            // using the already held budget, not a nested budget acquisition.
+            if std::time::Instant::now() >= deadline {
+                return notice(
+                    503,
+                    "Service Unavailable",
+                    "Bin Unavailable",
+                    "The Bin folder could not be checked in time. No move was attempted.",
+                    audit_events,
+                );
+            }
+            let hierarchy = self.gateway.folder_metadata(context, &session);
+            audit_events.extend(hierarchy.audit_events);
+            let selectable = hierarchy.canonical_username == session.record.canonical_username
+                && bin.as_ref().is_some_and(|value| {
+                    hierarchy.snapshot.as_ref().is_some_and(|snapshot| {
+                        crate::bin_folder::selectable(
+                            snapshot,
+                            &session.record.canonical_username,
+                            &value.mailbox_name,
+                        )
+                    })
+                });
+            if !selectable || std::time::Instant::now() >= deadline {
+                return notice(503, "Service Unavailable", "Bin Unavailable",
+                    "Your saved Bin folder is unavailable or cannot be checked. No move was attempted.", audit_events);
+            }
         }
         let next_after_archive = if !bulk
             && action == "archive"

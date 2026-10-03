@@ -1,15 +1,31 @@
 //! PAGE16 folder settings backed by the existing account settings store.
 use super::*;
 
-pub(crate) fn render_copies_page(
+pub(crate) struct CopiesPageState<'a> {
+    pub mailboxes: Option<&'a [MailboxEntry]>,
+    pub chosen: Option<&'a str>,
+    pub counts: Option<(usize, usize)>,
+    pub status: Option<&'a crate::mailbox_status::MailboxStatus>,
+    pub hierarchy: Option<&'a crate::http::FolderTree>,
+    pub creation: bool,
+    pub bin: Option<&'a crate::bin_folder::BinPreference>,
+    pub bin_choices: Option<&'a [MailboxEntry]>,
+}
+pub(crate) fn render_copies_page_with_state(
     model: &SettingsPageModel<'_>,
-    mailboxes: Option<&[MailboxEntry]>,
-    chosen: Option<&str>,
-    counts: Option<(usize, usize)>,
-    status: Option<&crate::mailbox_status::MailboxStatus>,
-    hierarchy: Option<&crate::http::FolderTree>,
-    creation: bool,
+    state: CopiesPageState<'_>,
 ) -> TrustedHtml {
+    let CopiesPageState {
+        mailboxes,
+        chosen,
+        counts,
+        status,
+        hierarchy,
+        creation,
+        bin,
+        bin_choices,
+    } = state;
+    let bin_form = render_bin_folder_form(model, "copies-bin", "copies", bin, bin_choices);
     let entries = mailboxes.unwrap_or(&[]);
     let has = |name: &str| entries.iter().any(|v| v.name == name);
     let missing = model.archive_mailbox_name.is_some_and(|name| !has(name));
@@ -108,10 +124,10 @@ pub(crate) fn render_copies_page(
         }
     };
     TrustedHtml::from_template(format!(concat!(
-        "{header}<main id=\"main-content\" class=\"page-shell settings-page settings-copies-page\" tabindex=\"-1\"><div class=\"page-intro\"><h1>Settings</h1><p>Review fixed storage locations and choose an Archive folder.</p></div>{notices}<div class=\"settings-layout\">{nav}<div class=\"copies-content\"><div class=\"copies-top-grid\">",
+        "{header}<main id=\"main-content\" class=\"page-shell settings-page settings-copies-page\" tabindex=\"-1\"><div class=\"page-intro\"><h1>Settings</h1><p>Review storage locations and choose Archive and Bin folders.</p></div>{notices}<div class=\"settings-layout\">{nav}<div class=\"copies-content\"><div class=\"copies-top-grid\">",
         "<section class=\"general-card\"><h2>Copies</h2><div class=\"general-field\"><span>Save sent messages</span><span>Submission workflow (fixed)</span></div><div class=\"general-field\"><label for=\"copies-sent\">Sent location</label><input id=\"copies-sent\" readonly value=\"Sent (fixed)\"></div><div class=\"general-field\"><label for=\"copies-drafts\">Draft location</label><input id=\"copies-drafts\" readonly value=\"OSMAP drafts (fixed)\"></div><div class=\"general-field\"><span>Keep Bcc private</span><span>Bcc omitted from message headers</span></div><div class=\"copies-links\">{sent}<a href=\"/drafts\">Open drafts</a></div></section>",
-        "<section class=\"general-card\"><h2>Folders</h2><form id=\"copies-archive-form\" method=\"post\" action=\"/settings\"><input type=\"hidden\" name=\"csrf_token\" value=\"{csrf}\"><input type=\"hidden\" name=\"return_section\" value=\"copies\"><input type=\"hidden\" name=\"settings_action\" value=\"archive\"><div class=\"general-field\"><label for=\"copies-archive\">Archive</label><select id=\"copies-archive\" name=\"archive_mailbox_name\"{disabled}>{options}</select></div></form><div class=\"general-field\"><label for=\"copies-bin\">Bin</label><input id=\"copies-bin\" readonly value=\"Trash (fixed)\"></div><div class=\"general-field\"><span>Delete action</span><span>Explicit message controls</span></div><div class=\"general-field\"><span>Permanent deletion</span><span>Unavailable here</span></div><div class=\"copies-links\">{bin}<button type=\"submit\" form=\"copies-archive-form\"{disabled}>Save archive folder</button></div></section></div>",
+        "<section class=\"general-card\"><h2>Folders</h2><form id=\"copies-archive-form\" method=\"post\" action=\"/settings\"><input type=\"hidden\" name=\"csrf_token\" value=\"{csrf}\"><input type=\"hidden\" name=\"return_section\" value=\"copies\"><input type=\"hidden\" name=\"settings_action\" value=\"archive\"><div class=\"general-field\"><label for=\"copies-archive\">Archive</label><select id=\"copies-archive\" name=\"archive_mailbox_name\"{disabled}>{options}</select></div></form>{bin_form}<div class=\"general-field\"><span>Delete action</span><span>Explicit message controls</span></div><div class=\"general-field\"><span>Permanent deletion</span><span>Unavailable here</span></div><div class=\"copies-links\">{bin}<button type=\"submit\" form=\"copies-archive-form\"{disabled}>Save archive folder</button></div></section></div>",
         "<section class=\"copies-management\"><div class=\"copies-management-heading\"><div><h2>Mailbox Folder Management</h2><p>Browse available mailboxes. Rename, move and deletion are unavailable.</p></div><div class=\"copies-management-actions\">{create}<button disabled>Rename</button><button disabled>Move</button><button disabled>Delete</button></div></div>",
         "<div class=\"copies-browser\"><section class=\"copies-tree\"><h3>{tree_heading}</h3><ul>{rows}</ul>{limit}{tree_notice}</section><section class=\"copies-details\"><h3>Selected folder</h3>{selected}<div class=\"copies-safety\"><h4>Folder safety</h4><p>Opening folders does not change mail. Folder rename, move and delete are unavailable.</p><p>Documents, scheduled storage and quota information are unavailable.</p></div></section></div></section><p class=\"copies-help\">{help}</p></div></div></main>"
-    ), create=create, header=app_header(model.canonical_username,model.csrf_token,"settings-copies"), nav=settings_navigation("copies"), tree_heading=if hierarchy.is_some(){"Folder hierarchy"}else{"Available folders"}, tree_notice=if hierarchy.is_some(){""}else{"<p class=\"copies-count-scope\">Hierarchy unavailable. The verified flat folder list remains available.</p>"}, notices=notices, sent=open("Sent","Open Sent"), bin=open("Trash","Open Bin"), csrf=escape_html(model.csrf_token),disabled=if unavailable {" disabled"} else {""},options=options, rows=rows, selected=selected, limit=if entries.len()>DEFAULT_RENDERED_MAILBOXES_MAX {"<p>Mailbox display limit reached.</p>"} else {""},help=if unavailable {"The mailbox list could not be loaded. Archive changes are unavailable."} else if missing {"The stored Archive folder is unavailable. Select an available folder or Not configured before saving. The saved content preference is preserved."} else {"Archive changes preserve your saved content preference. Sent and draft storage locations cannot be changed here."}))
+    ), bin_form=bin_form, create=create, header=app_header(model.canonical_username,model.csrf_token,"settings-copies"), nav=settings_navigation("copies"), tree_heading=if hierarchy.is_some(){"Folder hierarchy"}else{"Available folders"}, tree_notice=if hierarchy.is_some(){""}else{"<p class=\"copies-count-scope\">Hierarchy unavailable. The verified flat folder list remains available.</p>"}, notices=notices, sent=open("Sent","Open Sent"), bin="<a href=\"/mailbox/shortcut?kind=bin\">Open Bin</a>", csrf=escape_html(model.csrf_token),disabled=if unavailable {" disabled"} else {""},options=options, rows=rows, selected=selected, limit=if entries.len()>DEFAULT_RENDERED_MAILBOXES_MAX {"<p>Mailbox display limit reached.</p>"} else {""},help=if unavailable {"The mailbox list could not be loaded. Archive changes are unavailable."} else if missing {"The stored Archive folder is unavailable. Select an available folder or Not configured before saving. The saved content preference is preserved."} else {"Archive changes preserve your saved content preference. Sent and draft storage locations cannot be changed here."}))
 }

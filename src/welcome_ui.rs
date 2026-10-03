@@ -97,7 +97,7 @@ pub(crate) fn render_mailboxes_page_with_policy(
     ] {
         // Archive / Bin occupies its approved position between Documents and Security.
         if label == "Security" {
-            shortcuts.push_str(&format!("<details class=\"welcome-shortcut welcome-shortcut-menu\"><summary><span class=\"welcome-icon\">{}</span><span><strong>Archive / Bin</strong><span>Mailbox shortcuts</span></span></summary><div><a href=\"/mailbox/shortcut?kind=archive\">Open configured Archive</a>{}</div></details>", shell_icon("archive"), if has("Trash") { "<a href=\"/mailbox?name=Trash\">Open Bin</a>" } else { "<span>Bin mailbox unavailable</span>" }));
+            shortcuts.push_str(&format!("<details class=\"welcome-shortcut welcome-shortcut-menu\"><summary><span class=\"welcome-icon\">{}</span><span><strong>Archive / Bin</strong><span>Mailbox shortcuts</span></span></summary><div><a href=\"/mailbox/shortcut?kind=archive\">Open configured Archive</a>{}</div></details>", shell_icon("archive"), "<a href=\"/mailbox/shortcut?kind=bin\">Open Bin</a>"));
         }
         let content = format!("<span class=\"welcome-icon\">{}</span><span><strong>{label}</strong><span>{description}</span></span>", shell_icon(icon));
         shortcuts.push_str(&match href {

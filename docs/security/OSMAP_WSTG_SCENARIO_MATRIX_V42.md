@@ -81,3 +81,15 @@ ledger and do not establish full WSTG or human Send acceptance.
 ```text
 add wstg due diligence matrix
 ```
+
+The S02 configurable Bin component adds authenticated `/settings/bin-folder`
+with exact CSRF, revision, folder and return-section fields. Current account
+LIST and a unique private selectable native namespace are checked before CAS;
+stale/corrupt/foreign/unselectable states refuse without a Trash fallback.
+Existing ATHZ/SESS/BUSL/INPV mappings cover these bounded checks. Reversible
+Bin/Restore still uses the established message GUID-bound move path, one worker
+and current owned folder facts. The disposable OpenBSD proof moves exactly one
+synthetic record to Deleted and back, preserving GUID/flags, neighbours and a
+second account; it performs no append, expunge, SMTP or cryptography. Actual
+results and signed deployment pins belong in the UX ledger. This does not close
+whole WSTG scenarios, human UAT, strict release or permanent-deletion authority.

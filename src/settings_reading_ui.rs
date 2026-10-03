@@ -21,6 +21,7 @@ pub(crate) fn render_reading_page_with_after_archive(
     render_reading_page_with_policies(model, preferences, mailboxes, after_archive, None)
 }
 
+#[cfg(test)]
 pub(crate) fn render_reading_page_with_policies(
     model: &SettingsPageModel<'_>,
     preferences: &ReadingPreferences,
@@ -28,6 +29,27 @@ pub(crate) fn render_reading_page_with_policies(
     after_archive: Option<&crate::after_archive::Preference>,
     mark_read: Option<&crate::mark_read::Preference>,
 ) -> TrustedHtml {
+    render_reading_page_with_folders(
+        model,
+        preferences,
+        mailboxes,
+        after_archive,
+        mark_read,
+        None,
+        None,
+    )
+}
+
+pub(crate) fn render_reading_page_with_folders(
+    model: &SettingsPageModel<'_>,
+    preferences: &ReadingPreferences,
+    mailboxes: Option<&[MailboxEntry]>,
+    after_archive: Option<&crate::after_archive::Preference>,
+    mark_read: Option<&crate::mark_read::Preference>,
+    bin: Option<&crate::bin_folder::BinPreference>,
+    bin_choices: Option<&[MailboxEntry]>,
+) -> TrustedHtml {
+    let bin_form = render_bin_folder_form(model, "reading-bin-folder", "reading", bin, bin_choices);
     let csrf = escape_html(model.csrf_token);
     let start = select_options(
         preferences.start_page.as_str(),
@@ -139,12 +161,12 @@ pub(crate) fn render_reading_page_with_policies(
     };
     let folders = format!(concat!(
         "<div class=\"reading-card-column\"><section class=\"general-card\" aria-labelledby=\"reading-folders-title\"><h2 id=\"reading-folders-title\">Folders</h2>{archive}",
-        "<div class=\"general-field\"><label for=\"reading-bin-folder\">Bin folder</label><input id=\"reading-bin-folder\" value=\"Trash (fixed)\" readonly></div>",
+        "{bin_form}",
         "<div class=\"general-field\"><label for=\"reading-sent-folder\">Sent folder</label><input id=\"reading-sent-folder\" value=\"Sent (fixed)\" readonly></div>",
         "<div class=\"general-field\"><label for=\"reading-drafts-folder\">Drafts folder</label><input id=\"reading-drafts-folder\" value=\"OSMAP drafts (fixed)\" readonly></div></section>",
         "<div class=\"reading-card-actions\">{archive_save}</div><p class=\"reading-help\" id=\"reading-archive-help\">{archive_help}</p>",
-        "<details class=\"reading-help\"><summary>Folder details</summary><p>Bin requires an existing Trash mailbox. Sent and draft storage locations cannot be changed here.</p></details></div>"
-    ), archive=archive, archive_save=archive_save, archive_help=archive_help);
+        "<details class=\"reading-help\"><summary>Folder details</summary><p>Bin moves messages to your saved existing folder; Restore returns them to Inbox. Sent and draft storage locations cannot be changed here.</p></details></div>"
+    ), bin_form=bin_form, archive=archive, archive_save=archive_save, archive_help=archive_help);
     let notices = [
         model
             .success_message

@@ -5026,3 +5026,62 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   saves/rollback. Work order under bin-folder/work-order.json; no expunge or new
   retention policy. A test/report without the requested implementation cannot
   close that slice.
+
+### S02-01 delivery confirmation / S02-03 configurable Bin remediation — 2026-10-03
+
+- Prior signed a30242d61238c7a13e83c9d99aae2baea065a116 is synced at0/0
+  and installed web-only on obsd1 as application8873df85c4250ae2f7b5cb2e2d955d59f563ec949e35b4f662c79ed021935a7c.
+  Final installed GET-only browser probe actually opens Select messages and
+  checks visible counts: Inbox1/1; Sent10 checked from50 current-page controls.
+  Clear returns0. Recipient projection and exact owned keyboard Back PASS;
+  saved preferences unchanged, owned session removed, zero POST/Send/outside.
+  Earlier hidden-disclosure instrumentation failure remains retained; final
+  visible-menu attempt3 corrects the procedure without weakening the check.
+- Reopen S02-03 for accepted R2-14-010. Two compiled production-route RED tests
+  show absent Reading/Copies Bin selectors. Implement real CSRF/revision native
+  forms, independent typed private sidecar, exact current account LIST/native
+  selectable save and consistent shortcut/tab/list/reader Bin/Restore semantics.
+  Preserve legacy .settings schema, independent writers, defaultTrash/revision0
+  only on genuinely missing record, original GUID/action bounds and no expunge.
+- Added6 store/metadata and12 actual route/UI tests: persistence/restart/CAS/
+  account isolation, unrelated legacy settings, malformed/private-file/locking,
+  noselect/nonexistent/foreign/missing folder, unavailable/corrupt state, native
+  form association, shortcuts, top-level Bin classification and actual rendered
+  Bin/Restore form submission. Source review finds no blocker. Private namespace
+  RED initially accepts Shared; fix unique longest matching Private, retaining
+  NIL delimiter. A new duplicate-prefix test initially expected a parsable
+  snapshot; existing parser correctly refuses it. Assert that refusal instead
+  of bypassing or relaxing the parser. Genuine failed attempt remains retained.
+- Separate disposable native test preserves original reader-only mode. Actual
+  OpenBSD Dovecot→signed helper→Runtime gateway→browser save0→1 and Bin/Restore
+  commands PASS: exactly2 Alice Inbox↔Deleted native moves, same message GUID/
+  Seen/Flagged, restored new UID, neighbours/Bob unchanged, stale/CSRF/foreign/
+  removed-folder refusal, no Trash fallback, no append/expunge/SMTP/crypto,
+  owned scratch cleanup and standard service fingerprints unchanged.
+- Matching native attempt1 PASS289 pinned compile inputs,18 Bin tests,25 list
+  regressions, distinct Bin integration6.66s and original reader regression22.83s.
+  Test binary75aef810f1722808bddd817e26b8f9675109090438982e9efc0cf097dba674af;
+  application1696f6d35f35c1570d54affcb7d5bdce85bb05e89e4623a4d7193f607a6dc7e3.
+  Initial local full lib1201 PASS before last four cases; final aggregate uses
+  current cases. Initial native fixture compile rejected unsized trait-object
+  dispatch; use a concrete fixture enum with unchanged production generic
+  bounds. Initial security gate correctly rejects new endpoint missing from
+  WSTG inventory; register exact native form fields, preserve mappings/gates.
+- Retained sprint root bin-folder/ and conversation-order/native-bin-folder-*.
+  Signed commit, normal push hooks and matching installation are pending at this
+  source checkpoint. Sidecar survives rollback for forward recovery; old web
+  still uses legacy Trash and does not honour an alternate Bin. Human UAT,
+  whole S02, permanent deletion and all human Send/provider/crypto remain OPEN.
+- Final navigation RED catches old Trash still marked Bin after alternate
+  selection. Remove only the hardcoded active-section branch; actual saved Bin
+  reader context supplies active Bin, legacy renderer wrappers explicitly retain
+  defaultTrash. Current final native proof reruns289 exact inputs,19 Bin tests,
+  25 list tests and both native integrations PASS, with cleanup unchanged.
+  Final test4842787c56c1f76e028bca25abc3e5cf93ebf22e4462d71d2445532e8af1c9e3;
+  app7f118ce09ace889c684a3d9192c97ba0a8e2a4242866f12871bef91d3e2be2f3.
+  Current aggregate security/acceptance/v14 PASS1206lib/22ignored; refreshed
+  v10 scanner4106/refinedhigh0, no gate or scenario-claim relaxation. Actual
+  source-generated synthetic browser Reading/Copies controls fit1440/360 and
+  keyboard Tab reaches the native save button. This is layout/association,
+  separate from native persistence/moves and human visual acceptance.
+  Frozen plan manifest still equals accepted R2 anchor6b3ce8f; all32files PASS.
