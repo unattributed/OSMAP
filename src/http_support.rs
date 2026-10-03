@@ -483,6 +483,13 @@ pub(crate) fn public_reason_message(reason: &str) -> &'static str {
         "source_attachment_unavailable" => "The original attachment could not be fetched safely. Nothing was saved or sent. Your text is retained; try again later or clear the source selections to continue without them.",
         "draft_quota_exceeded" => "Your draft storage is full. Remove an unneeded draft, then save again. Your current text is retained here.",
         "draft_busy" => "Another draft operation is still running. Your text is retained; try saving again shortly.",
+        "openpgp_binding_unavailable" => "OpenPGP account bindings could not be checked. Nothing was sent. Open Settings > OpenPGP > Manage keys; if the problem continues, contact the mail operator.",
+        "openpgp_binding_changed" => "OpenPGP key bindings changed since this compose page opened. Nothing was sent. Keep this text, reopen Compose, review the current recipient keys and restore your protection choices before sending.",
+        "openpgp_protection_blocked" => "Current OpenPGP key or policy checks block the selected protection. Nothing was sent. Review recipient addresses, approved keys and policy in OpenPGP Key Management.",
+        "openpgp_inventory_unavailable" => "The OpenPGP public-key inventory is unavailable. Nothing was sent. Contact the mail operator and submit only after key status is restored.",
+        "openpgp_key_locked" => "A private OpenPGP key required for this message is locked. Nothing was sent. Keep this text and ask the mail operator to unlock the required key through the mail host's native key agent before sending.",
+        "openpgp_message_too_large" => "This message is too large after OpenPGP protection. Nothing was sent. Reduce its body or attachments before submitting again.",
+        "openpgp_submission_unavailable" => "OpenPGP preparation could not be completed. Nothing was sent. Keep this text and contact the mail operator if the problem continues.",
         "invalid_second_factor" => "The supplied credentials were not accepted.",
         "too_many_attempts" => "Too many login attempts were observed. Please try again later.",
         "too_many_submissions" => {
@@ -554,6 +561,57 @@ fn escape_header_quoted_string(value: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn openpgp_pre_dispatch_reasons_offer_specific_safe_next_actions() {
+        for (reason, cause, next_action) in [
+            (
+                "openpgp_binding_unavailable",
+                "bindings could not be checked",
+                "Manage keys",
+            ),
+            (
+                "openpgp_binding_changed",
+                "bindings changed",
+                "Keep this text, reopen Compose",
+            ),
+            (
+                "openpgp_protection_blocked",
+                "key or policy checks block",
+                "Review recipient addresses",
+            ),
+            (
+                "openpgp_inventory_unavailable",
+                "public-key inventory is unavailable",
+                "Contact the mail operator",
+            ),
+            (
+                "openpgp_key_locked",
+                "private OpenPGP key required for this message is locked",
+                "native key agent",
+            ),
+            (
+                "openpgp_message_too_large",
+                "too large after OpenPGP protection",
+                "Reduce its body or attachments",
+            ),
+            (
+                "openpgp_submission_unavailable",
+                "preparation could not be completed",
+                "Keep this text",
+            ),
+        ] {
+            let message = public_reason_message(reason);
+            assert!(message.contains(cause), "{reason}: {message}");
+            assert!(message.contains(next_action), "{reason}: {message}");
+            assert!(message.contains("Nothing was sent."), "{reason}: {message}");
+            assert_ne!(message, public_reason_message("unknown_openpgp_reason"));
+        }
+        assert_eq!(
+            public_reason_message("unknown_openpgp_reason"),
+            "The service could not complete the request at this time."
+        );
+    }
 
     #[test]
     fn message_html_links_visually_disclose_destinations() {

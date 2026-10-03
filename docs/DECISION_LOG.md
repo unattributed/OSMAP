@@ -7543,3 +7543,25 @@ the reviewed operator unlock precedes protected mail checks. The available
 interaction UAT, pending fresh-authenticated key mutations, and unperformed
 Proton protected exchange remain distinct outcomes; no full sprint completion is
 claimed.
+
+### Surface existing protected-send denial states while completing the real journey — 2026-10-02
+
+The gateway already produces seven typed pre-dispatch OpenPGP reasons, but the
+browser mapper treats them as an unknown service error. Map only these existing
+states to safe actionable public text and prove denied Compose preservation in
+meaningful tests. Do not change gateway authority, cryptographic policy or private
+key availability. This bounded dependency supports the actual protected send and
+verified self-readable Sent journey; error wording alone cannot close it or
+establish external Proton delivery. Preserve every existing failed/unperformed
+UAT result until an actual replacement outcome is observed.
+
+### Retain assertion-inventory failure and reconcile generated evidence — 2026-10-02
+
+The seven typed public-message mappings and meaningful locked/blocked `/send`
+preservation tests passed focused review and V14. The initial full acceptance run
+then failed its generated inventory counts after one additional test assertion.
+Refresh both existing assertion registers and their pinned claim digests instead
+of bypassing or weakening that gate. Record the final rerun only when its actual
+exit is known. These checks support pre-dispatch explanation and preservation;
+the unanswered native unlock and actual protected-send/self-readable-Sent outcome
+remain the primary unfinished work, and no sprint completion follows from copy.

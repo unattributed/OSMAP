@@ -1,6 +1,67 @@
 use super::*;
 
 #[test]
+fn typed_openpgp_denials_keep_message_and_choices_without_dispatch() {
+    for (recipient, expected_cause, expected_action) in [
+        (
+            "pgp-locked@example.test",
+            "private OpenPGP key required for this message is locked",
+            "ask the mail operator to unlock",
+        ),
+        (
+            "pgp-blocked@example.test",
+            "key or policy checks block the selected protection",
+            "Review recipient addresses",
+        ),
+    ] {
+        let mut app = app();
+        app.gateway.browser_fixture_openpgp = true;
+        app.gateway.browser_fixture_openpgp_denials = true;
+        let compose = app.handle_request(
+            &request("GET", "/compose", &authenticated_headers(), ""),
+            "127.0.0.1",
+        );
+        assert_eq!(compose.response.status_code, 200);
+        let compose_html = body_text(&compose);
+        let intent = super::send_journal_routes_tests::intent(&compose_html);
+        assert!(compose_html.contains("name=\"pgp_binding_revision\" value=\"2\""));
+        let csrf = StubGateway::validated_session().record.csrf_token;
+        let message = "Protected draft text remains available";
+        let fields = format!(
+            "csrf_token={csrf}&send_intent={intent}&from=alice%40example.com&to={}&subject=Denied%20protected%20send&body={}&pgp_sign=on&pgp_encrypt=on&pgp_self=on&pgp_binding_revision=2",
+            url_encode(recipient),
+            url_encode(message),
+        );
+        let denied = app.handle_request(
+            &request("POST", "/send", &authenticated_same_origin_headers(), &fields),
+            "127.0.0.1",
+        );
+        assert_eq!(denied.response.status_code, 503);
+        let html = body_text(&denied);
+        assert!(html.contains(expected_cause));
+        assert!(html.contains(expected_action));
+        assert!(html.contains("Nothing was sent."));
+        assert!(html.contains(&format!("name=\"to\" value=\"{recipient}\"")));
+        assert!(html.contains("Denied protected send"));
+        assert!(html.contains(message));
+        for selected in ["pgp_sign", "pgp_encrypt", "pgp_self"] {
+            assert!(html.contains(&format!("name=\"{selected}\" checked")));
+        }
+        assert!(app.gateway.submitted.lock().unwrap().is_empty());
+        let receipt = app.handle_request(
+            &request(
+                "GET",
+                &format!("/compose?receipt={intent}"),
+                &authenticated_headers(),
+                "",
+            ),
+            "127.0.0.1",
+        );
+        assert_eq!(receipt.response.status_code, 404);
+    }
+}
+
+#[test]
 fn submission_receipts_distinguish_acceptance_copy_and_uncertain_dispatch() {
     for (agent, status, retained, wording) in [
         (

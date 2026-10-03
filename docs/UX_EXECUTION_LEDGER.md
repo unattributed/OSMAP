@@ -3422,3 +3422,70 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   repair; fresh-authenticated public import/bind/remove remain NOT RUN. Protected
   Proton receipt/decryption/signature, encrypted Sent and full sprint acceptance
   remain OPEN. Root owns the signed/synced evidence-only closeout.
+
+### S07-01/S07-04 protected-send completion dependency — 2026-10-02 — IN_PROGRESS
+
+- Base: signed/synced `f677d34d201bc8972ddbcb02c737959e5417a3b0`; local/origin
+  branch equality and Shopkeeper signature verified. Deployed engineering source
+  remains `360df3216510a520a78962867fad64c5e17a8838`. Root assigned the independent
+  source reviewer a finite safe public-reason mapping dependency; no plan change.
+- Existing gateway pre-dispatch reasons already distinguish binding unavailable,
+  stale binding, blocked protection, unavailable inventory, locked key, oversized
+  protected message and unavailable submission. `public_reason_message` currently
+  drops all seven into generic service text. Allowed source edits are that mapper
+  in `src/http_support.rs`, its focused mapping assertions, and meaningful denied
+  Compose-route tests in `src/http/send_result_tests.rs` that prove
+  retained recipients/content/selections and no successful send. Root may refresh
+  existing generated assertion inventories if these tests require it.
+- The explicit test-only exception is a tiny `#[cfg(test)]` StubGateway opt-in
+  denied branch in `src/http.rs` for locked/blocked reasons, allowing real HTTP
+  route assertions of retained content and zero dispatch. It cannot alter the
+  production gateway or silently make unrelated fixture sends fail.
+- Keep the seven exact reason strings and gateway/crypto decisions unchanged.
+  Public text must describe the known pre-dispatch state, give a safe next action
+  and avoid secret values, internal paths or an automatic send retry. Unknown
+  reasons retain conservative generic handling. No policy relaxation, plaintext
+  fallback, key-agent lifetime change or direct handler crypto fallback is allowed.
+- Source reviewer waits for this work order before editing. Run focused positive
+  mappings and denial/preservation tests, then root integrates applicable mandatory
+  checks and signs/syncs. Public wording is a supporting dependency, not completion
+  of the protected-send slice. Primary acceptance remains one actual protected
+  web submission plus independently decrypted/verified self-readable authoritative
+  Sent; Proton receipt/verification and human fresh-auth key UAT remain separate
+  open results. Native operator unlock is still the real private-operation
+  prerequisite; do not replace it with a mocked success or change its custody.
+
+### Typed pre-dispatch reason dependency — 2026-10-02 — focused VERIFIED; final gates RUNNING
+
+- Source reviewer mapped the seven existing public reasons without changing
+  production gateway/crypto behavior. Focused tests
+  `openpgp_pre_dispatch_reasons_offer_specific_safe_next_actions` and
+  `typed_openpgp_denials_keep_message_and_choices_without_dispatch` passed.
+  The latter exercises locked/blocked reasons through the actual `/send` route
+  with an explicit test-only StubGateway opt-in and checks preserved content and
+  protection selections without dispatch. Root's source-diff review and V14 passed.
+- First full acceptance attempt stopped on the existing generated assertion-count
+  inventories: the new test increased total assertions from 3,332 to 3,333.
+  Record that failed check; it is not a successful gate or a reason to weaken it.
+  Root refreshed the two required existing registers
+  `maint/security/v10-rust-assumption-audit.json` and
+  `maint/security/v10-fail-closed-remediation.json`, plus their exact digest fields
+  in `maint/security/v10-claims-boundary.json`. These three files are explicitly
+  allowed for this dependency's generated evidence refresh.
+- Final full acceptance rerun is RUNNING at this checkpoint; no PASS, signed
+  delivery or deployed mapper is claimed. Protected web submission and verified
+  self-readable Sent remain unexecuted because the required native unlock has
+  not yet been supplied. Fresh-auth key mutations and provider human UAT remain
+  separate open results. Do not close the protected-send slice with these tests.
+
+### Typed-reason final engineering gates — 2026-10-02 — VERIFIED; delivery/deployment PENDING
+
+- Root's final `make acceptance-check` exited 0, including security and V10-V13:
+  1,063 library tests passed, zero failed, 19 native/live cases explicitly ignored.
+  V14 also exited 0. This supersedes the RUNNING status above while preserving
+  the initial generated-count failure and its exact register reconciliation.
+- Staged scope is three source files, three existing generated registers and these
+  two progress documents. Root owns the verified signed commit and prompt sync;
+  those and the mapper's native activation are PENDING at this checkpoint.
+  Private unlock remains unanswered, so actual protected web send/self-decrypted
+  signature/Sent and provider human UAT remain OPEN. No sprint is accepted.

@@ -1010,6 +1010,7 @@ mod tests {
         reading_preferences_store: Option<crate::reading_preferences::ReadingPreferencesStore>,
         browser_fixture_accounts: bool,
         browser_fixture_openpgp: bool,
+        browser_fixture_openpgp_denials: bool,
         preview_mailbox_tree: bool,
         fixture_sessions: Option<fixture_sessions::FixtureSessions>,
     }
@@ -1045,6 +1046,7 @@ mod tests {
                 reading_preferences_store: None,
                 browser_fixture_accounts: false,
                 browser_fixture_openpgp: false,
+                browser_fixture_openpgp_denials: false,
                 preview_mailbox_tree: false,
                 fixture_sessions: None,
             }
@@ -3162,6 +3164,22 @@ mod tests {
             _validated_session: &ValidatedSession,
             request: BrowserSendRequest<'_>,
         ) -> BrowserSendOutcome {
+            if self.browser_fixture_openpgp_denials {
+                let reason = match request.recipients {
+                    "pgp-locked@example.test" => Some("openpgp_key_locked"),
+                    "pgp-blocked@example.test" => Some("openpgp_protection_blocked"),
+                    _ => None,
+                };
+                if let Some(public_reason) = reason {
+                    return BrowserSendOutcome {
+                        decision: BrowserSendDecision::Denied {
+                            public_reason: public_reason.into(),
+                            retry_after_seconds: None,
+                        },
+                        audit_events: vec![],
+                    };
+                }
+            }
             use crate::send_journal::{AttemptOutcome, PreparedResult};
             let result = self.send_journal.execute_prepared(
                 &_validated_session.record.canonical_username,
