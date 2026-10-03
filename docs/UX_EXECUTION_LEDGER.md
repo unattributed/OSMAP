@@ -3798,3 +3798,42 @@ with later outcomes. Correct errors using a new entry referencing the old one.
 - Operator reports all actual Send paths failed. Independent read-only live
   transport/refusal diagnosis is assigned; local sink results do not establish a
   successful real-account Send. No sprint acceptance or delivery claim is made.
+
+### S07 composition protection defaults delivery — 2026-10-03 — ENGINEERING SLICE COMPLETE
+
+- Signed source `fa2ebeb69275e978612bd90c50e48fcd6ff7feff` passed normal
+  commit/push gates. Fetched UX branch equality and ahead/behind0/0 verified.
+  All308 native archive entries match that signed source. Actual installed and
+  running web binary SHA-256
+  `f4dab793ba0a084adf701b1107ffb92f0d87c263a56adafe3db0ab77df6dc1ba`
+  matches the tested native candidate; seven services and HTTPS200/TLS0 passed.
+- Independent native20/0 proof covers preference store10, routes9 and capability
+  boundary1, including fresh blank/reply/reply-all/forward inheritance. Guarded
+  actual live unique-account proof passed General and Composition save/reload/new
+  blank application, existing-draft preservation, invalid-tuple no-write refusal
+  and legacy-form merge. Its draft, original preference absence, locks/namespace
+  and synthetic120-second session were restored/removed. Duncan preferences,
+  keys, bindings, policy and agents stayed unchanged. No Send/private crypto ran.
+- Consolidated S05 repair-root `composition-defaults-live-independent-result.json`
+  SHA-256 `ab489c5c22917c756a7968b17a4ca9520f2636201a193031ed6f6ae566041efc`.
+  Native build-time result remains historical and was not rewritten after activation.
+  Actionable DEFAULTS-01–04 are engineering-qualified; human results NOT RUN.
+
+### Current all-Send operator failure diagnosis — 2026-10-03 — UAT OPEN
+
+- Independent read-only deployed-source diagnosis retained as
+  `read-only-send-diagnosis-20261003.json`, SHA-256
+  `d2fc2e62eb54345528264d0344c7d9fedb4f8467de1e1f484574deeddfcecdcc`.
+  Four historical Send400 requests lacked any submitted recipient. Twelve503s
+  were pre-dispatch refusals with no reserved/unconfirmed journal outcome; exact
+  typed refusal for each is not retained in audit, so individual cause is unknown.
+  Two earlier accepted/stored journal attempts correlate SMTP status=sent. These
+  historical deliveries and service/relay readiness do not establish current Send.
+- No normal-browser Send after current activation was observed. Operator's ALL
+  Send functions failed remains unresolved human UAT. Self-recipient fallback and
+  defaults are delivered engineering slices, not a universal Send repair claim.
+  Current revision5 Optional account/Required Proton policy stays unchanged.
+  ORDINARY-SELF and ENCRYPT-ONLY provide distinct no-private-unlock cases. Full
+  signing/Sent decryption needs existing native private readiness and actual Send.
+  Protected receipt/signature, readable authoritative Sent and provider encrypted
+  return remain OPEN; sprint/epic acceptance has not been claimed.

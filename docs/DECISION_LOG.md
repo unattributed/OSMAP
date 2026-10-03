@@ -7727,3 +7727,28 @@ operator Send and actual Proton decryption. It requires no private unlock and do
 not qualify signing or readable encrypted Sent. Full signed/self mail still needs
 native private unlocking and actual provider/Sent outcomes. No policy downgrade,
 key mutation or concurrent agent Send is authorised by this UAT sequence.
+
+### Deliver functional defaults separately from unresolved universal Send failure — 2026-10-02 (Toronto)
+
+Signed defaults sourcefa2ebeb is activated as tested binaryf4dab793. Root reports
+all308 archive bytes match signed source, acceptance1074/0/19, V14 and native20
+passed; independent installed/text mapping, seven services and HTTPS200/TLS0
+passed. The guarded live synthetic defaults workflow passed and original choices
+were restored. Binding revision5 remained unchanged; no private operation or Send
+was run. Normal push completed; final fetched equality is root's closeout step.
+Accept the bounded defaults engineering delivery, not human settings acceptance.
+
+The latest operator reports ALL Send functions fail. Preserve this broader
+unresolved failure; the confirmed Proton Required policy and earlier empty cache
+cannot explain every Send path without current evidence. Read-only transport
+review correlated two earlier Send303 responses with accepted_stored records and
+Postfix SMTP status sent, alongside twelve recent pre-dispatch503 and four form400
+responses. Historical transport evidence does not establish a successful current
+operator case. No operator Send has occurred since this defaults deployment.
+
+Keep current Send acceptance failed/open. The retained UAT defines three distinct
+current tests: fresh exact-self ordinary all-off, Proton encrypt-only with Sign off
+and self off, and full signing/encryption/self after native private readiness.
+Only the third requires private unlock; all require actual operator submission
+and appropriate recipient/Sent results. Do not submit duplicate agent mail, claim
+all Send fixed, or answer the universal report with repeated unlock-only advice.
