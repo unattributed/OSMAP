@@ -4656,8 +4656,72 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   Independent reviewers approve eight integration source pins and all260 native
   input hashes; dedicated Scrum reconciles the full40-control catalogue and
   technical writer supplies actionable READER_FILTER_UAT.md with NOT RUN results.
-- Signed synchronization and matching helper-first rollout remain pending at
-  this checkpoint. These are implemented message-control repairs; dependent
+- Signed commit25e5cb864706f3b0e4ccad397048e3dafaa7b3e6 verified with Shopkeeper
+  and promptly synced; fetched local/remote equality0/0. Matching helper-first
+  activation PASS on authoritative mail216.128.179.75 then obsd1 frontend192.168.1.44,
+  binary1bb4f2eab0ba5ba6ddfcf5d34b50e612c5a5dc79fc7db749befa74c2665a272b.
+  Installed synthetic-auth/no-JS probe PASS actual public attachment details and
+  Subject plus exact From plus outer Plain (one INBOX/three all-scope rows); empty
+  Clear retains query/field/scope. Owned session cleanup PASS; zero Send or live
+  flag writes. A rollout-script backup-name mismatch refused before mutation, and
+  the first installed harness missed a closed From disclosure; both failed
+  attempts retained, corrected and re-executed. These do not qualify human
+  authentication, current Send or unrestricted transport reliability.
+  READER_FILTER_UAT.md now contains five actionable human cases, all NOT RUN.
+  These are implemented and installed message-control repairs; dependent
   Documents/combined-category totals and human acceptance remain OPEN in their
   owning slices. Do not claim S02-01 fully accepted, current Send repaired,
   protected Proton delivery, encrypted Sent or return-mail qualification.
+
+### S02-02 filtered reader navigation remediation — 2026-10-03
+
+- Starting the next actual gap while preserving incomplete S02-01 controls and
+  human results OPEN. Two no-script browser countercases reproduce missing
+  coordinated arrows and unread navigation opening an excluded Seen row. The
+  exact model regression fails next.is_none with a starred Subject ordering,
+  demonstrating a functional failure rather than a build error.
+- Work order: shared pre-window bounded filter/sort logic; coordinated and
+  standalone neighbours from actual originating mailbox/search decisions, no
+  search-to-mailbox fallback; current GUID-bound links and fresh selected-list
+  identity refusal. Preserve mailbox2000/search250/page50 and existing budgets.
+  Developer owns neighbour model; root route/UI/tests/Git; independent reviewer
+  owns actual disposable native navigation regressions and security review;
+  Scrum tracks remaining mark-read/conversation and Back/history obligations.
+  Technical writer updated the prior scoped installed UAT without claiming
+  whole-slice or sprint acceptance. No actual Send or operator mutation.
+
+- Functional navigation repair now passes the exact previously failing model
+  and both no-script browser countercases. Seven actual loopback journeys include
+  starred/unread Subject ordering, page99->101, distinct same-UID Search folders,
+  GUID stale-body refusal, browser Back and list Back;1440/360 measured focus,
+  contrast and overflow checks pass. Zero Send/outside/unexpected POST and owned
+  server cleanup PASS. These remain synthetic authentication/gateway results.
+- Final acceptance attempt2 PASS:1140 library tests/one binary,21 ignored
+  excluded, strict Clippy/fmt and original security/supply-chain/WSTG gates.
+  Attempt1 correctly refused stale audit registers; refresh actual scanner3781
+  with refined high0, no gate waiver. Focused attempt2 initially occupied only
+  one slot of the multi-slot Search budget; corrected fixture occupies all slots
+  before proving disabled arrows, retained origin, no fallback and budget reuse.
+- Matching260-input native attempt2 PASS on isolated OpenBSD/Dovecot -> signed
+  helper -> real BrowserApp: one integration test16.19sec,53/two owned records,
+  actual filtered048->052 adjacency,003<->002 cross-page, query009->008 and
+  singleton boundaries; coordinated/standalone expected GUID staleness and foreign
+  account refusal, original actual CSRF flags/reload/membership, cleanup and
+  standard Dovecot metadata unchanged. No operator writes/private crypto/Send.
+  Attempt1 harness incorrectly rejected a successful10-test summary because
+  substring zero matched the last digit of10; retained, corrected to anchored
+  positive-count summary and rerun, no production change.
+  Native test4e8a5181a4cbb017e6c1bd05a1a9b6c25fd74b3c95b6d2ba43430de29df1113a;
+  application48bb2f263b3b0b3b2393c43d84a2d7800aca577293e322909471ab1dd9e2bf95.
+- Independent review found and repaired actual stale coordinated UID links,
+  finite composed-context overflow and lost Search Back on admission failure.
+  Updated the existing reader workflow's prior incorrect unread->Seen assertion
+  to test exclusion and saved/explicit ordering accurately. Signed synchronization
+  and matching installed navigation verification pending at this checkpoint.
+  WholeS02-02 remains OPEN for mark-read policy, conversation ordering, exact
+  selected-row/focus Back acceptance and human results; Send remains unaccepted.
+
+- Updated pre-existing reader workflow also actually PASS: three journeys/eight
+  light/dark/mobile/forced-colour captures, saved Reading default versus explicit
+  URL ordering, native read/star/theme context, missing/stale identity refusal;
+  zero outside/Send. It now requires unread exclusion instead of the old bug.

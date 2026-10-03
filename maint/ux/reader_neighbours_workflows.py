@@ -23,7 +23,13 @@ def main():
   def uid():return parse_qs(urlsplit(p.url).query)['uid'][0]
   try:
    visit('/login');p.get_by_label('Username or Email').fill('alice@example.com');p.get_by_label('Password',exact=True).fill('correct horse battery staple');p.get_by_label('TOTP Code').fill('123456');p.get_by_role('button',name='Sign In',exact=True).click();p.wait_for_url('**/mailboxes')
-   back='/mailbox?name=INBOX&filter=unread';path='/message?mailbox=INBOX&uid=10&return_to='+quote(back,safe='')
+   unread='/mailbox?name=INBOX&filter=unread'
+   assert visit('/message?mailbox=INBOX&uid=10&return_to='+quote(unread,safe='')).status==200
+   expect(p.get_by_role('button',name='Previous message',exact=True)).to_be_disabled()
+   expect(p.get_by_role('button',name='Next message',exact=True)).to_be_disabled()
+   assert p.get_by_role('link',name='Next message',exact=True).count()==0
+   report['checks'].append('Unread origin contains only UID10; both boundaries disable and excluded Seen UID9 is never a neighbour')
+   back='/mailbox?name=INBOX';path='/message?mailbox=INBOX&uid=10&return_to='+quote(back,safe='')
    assert visit(path).status==200
    expect(p.get_by_role('button',name='Previous message',exact=True)).to_be_disabled()
    link=p.get_by_role('link',name='Next message',exact=True);assert 'message_guid=' in link.get_attribute('href');link.press('Enter');p.wait_for_load_state('networkidle');assert uid()=='9'
@@ -33,11 +39,18 @@ def main():
    p.locator('.reader-more-actions > summary').click()
    p.locator('.reader-icon-toolbar form:has(input[name=flag][value=flagged]) button').click();p.wait_for_load_state('networkidle');assert 'return_to=' in p.url
    p.get_by_role('button',name='Use Dark theme',exact=True).click();p.wait_for_load_state('networkidle');assert 'return_to=' in p.url and 'message_guid=' in p.url
-   p.get_by_role('link',name='Back to list',exact=True).click();p.wait_for_load_state('networkidle');assert parse_qs(urlsplit(p.url).query)['filter']==['unread']
-   report['checks'].append('Newest-first native next/back preserves validated return filter; first and last boundaries disabled; links include verified versions')
+   p.get_by_role('link',name='Back to list',exact=True).click();p.wait_for_load_state('networkidle');assert parse_qs(urlsplit(p.url).query)['name']==['INBOX'] and 'filter' not in parse_qs(urlsplit(p.url).query)
+   report['checks'].append('Unfiltered newest-first next/back preserves validated folder context through read/star/theme actions; boundaries disabled and links include verified versions')
    visit('/settings?section=reading');p.get_by_label('Message ordering',exact=True).select_option('oldest');p.get_by_role('button',name='Save reading preferences',exact=True).click();p.wait_for_load_state('networkidle');visit(path)
    expect(p.get_by_role('button',name='Next message',exact=True)).to_be_disabled();p.get_by_role('link',name='Previous message',exact=True).click();p.wait_for_load_state('networkidle');assert uid()=='9';expect(p.get_by_role('button',name='Previous message',exact=True)).to_be_disabled()
-   report['checks'].append('Real saved Reading oldest-first preference reverses native neighbour order')
+   report['checks'].append('Saved Reading oldest-first preference orders an unfiltered origin without explicit URL sort')
+   explicit='/mailbox?name=INBOX&sort=received&dir=desc'
+   assert visit('/message?mailbox=INBOX&uid=10&return_to='+quote(explicit,safe='')).status==200
+   expect(p.get_by_role('button',name='Previous message',exact=True)).to_be_disabled()
+   p.get_by_role('link',name='Next message',exact=True).click();p.wait_for_load_state('networkidle');assert uid()=='9'
+   expect(p.get_by_role('button',name='Next message',exact=True)).to_be_disabled()
+   report['checks'].append('Explicit received-descending origin overrides saved oldest-first order without dropping origin context')
+   visit(path);p.get_by_role('link',name='Previous message',exact=True).click();p.wait_for_load_state('networkidle');assert uid()=='9'
    current=p.url.removeprefix(origin)
    for scheme in ['light','dark']:
     visit(current);p.get_by_role('button',name=f'Use {scheme.title()} theme',exact=True).click();p.wait_for_load_state('networkidle')
@@ -48,7 +61,7 @@ def main():
       name=f'reader-neighbours-{scheme}-{width}-{forced}.png';p.screenshot(path=str(args.output/name),full_page=True)
       overflow=p.evaluate('document.documentElement.scrollWidth>innerWidth');audit=p.evaluate(TEXT_AUDIT);assert not overflow and not audit['failures'] and not audit['ui_failures']
       report['captures'].append(dict(file=name,overflow=overflow,contrast=audit))
-   p.locator('.reader-more-actions > summary').click();p.get_by_text('Loaded mailbox order',exact=True).click();expect(p.locator('.reader-order-scope')).to_contain_text('do not follow list filters or search results')
+   p.locator('.reader-more-actions > summary').click();p.get_by_text('Loaded mailbox order',exact=True).click();expect(p.locator('.reader-order-scope')).to_contain_text('filtered and sorted result snapshot')
    assert visit('/message?mailbox=INBOX&uid=10&mailbox_guid=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa&message_guid=changed').status==503
    assert p.locator('#reading-pane').count()==0
    context.set_extra_http_headers({'User-Agent':'OSMAP/LegacyMetadata'});assert visit('/message?mailbox=INBOX&uid=10').status==200

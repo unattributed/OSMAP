@@ -8033,3 +8033,30 @@ parsed From mailbox exactly without identity-assurance claims. Derive descriptor
 only from already fetched bounded BODYSTRUCTURE, retaining unsupported names as
 unknown and labelling encoded MIME octets separately from decoded downloads.
 Preserve operator data, key policy, original deadlines and reply bounds.
+
+
+### 2026-10-03 — Restore reader navigation to its actual filtered origin
+
+Two actual no-script countercases show missing integrated arrows and a standalone
+reader opening a row excluded by the origin's unread filter. Derive neighbours
+from the same complete bounded filter/sort order before its display window.
+Search requires a matching current search decision; never substitute an ordinary
+mailbox snapshot on failure. Bind coordinated links to expected GUIDs and compare
+against fresh list identities before fetching a body; a UID alone cannot prove
+stale-link safety. Keep all original account, prefix, reply and worker bounds.
+Browser Back restores its previous selected URL; Back to list closes the pane.
+Their identity/history acceptance remains distinct. Preserve the demonstrated
+failures and leave unrelated mark-read/conversation/send acceptance OPEN.
+
+The preceding25e5 signed-source message controls are installed helper-first on
+mail and obsd1 and pass bounded authoritative metadata/filter checks. Current
+mail content, operator keys/policy and services are preserved. Synthetic
+post-authentication and no live flag changes do not establish human acceptance.
+
+Navigation GUIDs add two finite, typed fields to mail return context. Independent
+review reproduced rejection of a valid fully combined Search by the old16-field
+cap. Use18 consistently for the existing exact allowlists and typed GUID pairs;
+retain2048 bytes, query/resource prefixes and all arbitrary-field refusals. This
+is necessary supported-control composition, not an unlimited query allowance.
+On Search admission failure, retain a validated back-only origin with disabled
+arrows; do not drop the user's query or bypass admission.

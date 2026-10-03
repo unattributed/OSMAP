@@ -9,7 +9,12 @@ pub(super) fn safe_return(value: &str) -> Option<String> {
         return None;
     }
     let (path, query) = value.split_once('?').unwrap_or((value, ""));
-    let mut fields = parse_urlencoded_form(query.as_bytes(), 16, 2048).ok()?;
+    let mut fields = parse_urlencoded_form(
+        query.as_bytes(),
+        crate::mail_navigation::MAIL_RETURN_MAX_FIELDS,
+        2048,
+    )
+    .ok()?;
     let allowed: &[&str] = match path {
         "/settings" => &["section", "q", "folder"],
         "/settings/keys" | "/sessions" | "/mailboxes" | "/contacts" | "/snoozed" => &[],

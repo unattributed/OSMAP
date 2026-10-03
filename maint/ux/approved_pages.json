@@ -592,10 +592,15 @@
           "status": "PARTIAL_FUNCTIONAL",
           "evidence": [
             "src/reader_neighbours.rs",
+            "src/http/routes_mail.rs",
+            "src/mail_list.rs",
+            "src/http_ui.rs",
+            "src/mailbox_helper_native_reader_tests.rs",
             "maint/ux/reader_neighbours_workflows.py",
-            "S04/reader-neighbours-final-{edge,firefox}/report.json",
-            "Verified bounded mailbox order follows saved Reading date order; explicitly does not follow list filters/search results. Unknown metadata/order disables arrows; version-bound links refuse changed identity."
-          ]
+            "S02/revalidation-20261003/reader-navigation/green-result.json",
+            "S02/revalidation-20261003/all-scope-batch/native-navigation-attempt2.log"
+          ],
+          "engineering_note": "Actual filtered and sorted originating mailbox/Search prefix before paging; coordinated/standalone GUID-bound navigation, cross-page and query-bounded native/browser outcomes verified. Final matching rollout and human acceptance pending; entire owning slice remains open."
         },
         {
           "id": "R2-03-009",
@@ -603,10 +608,15 @@
           "status": "PARTIAL_FUNCTIONAL",
           "evidence": [
             "src/reader_neighbours.rs",
+            "src/http/routes_mail.rs",
+            "src/mail_list.rs",
+            "src/http_ui.rs",
+            "src/mailbox_helper_native_reader_tests.rs",
             "maint/ux/reader_neighbours_workflows.py",
-            "S04/reader-neighbours-final-{edge,firefox}/report.json",
-            "Verified bounded mailbox order follows saved Reading date order; explicitly does not follow list filters/search results. Unknown metadata/order disables arrows; version-bound links refuse changed identity."
-          ]
+            "S02/revalidation-20261003/reader-navigation/green-result.json",
+            "S02/revalidation-20261003/all-scope-batch/native-navigation-attempt2.log"
+          ],
+          "engineering_note": "Actual filtered and sorted originating mailbox/Search prefix before paging; coordinated/standalone GUID-bound navigation, cross-page and query-bounded native/browser outcomes verified. Final matching rollout and human acceptance pending; entire owning slice remains open."
         },
         {
           "id": "R2-03-010",

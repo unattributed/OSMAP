@@ -397,10 +397,10 @@ fn reader_neighbours_verify_scope_identity_order_and_refuse_ambiguous_summaries(
         Some("/mailbox?name=INBOX&filter=unread"),
     )
     .html();
-    assert!(html.contains("uid=9&amp;mailbox_guid="));
+    assert!(!html.contains("uid=9&amp;mailbox_guid="));
     assert!(html.contains("aria-label=\"Previous message\" disabled"));
-    assert!(html.contains("return_to=%2Fmailbox"));
-    assert!(html.contains("do not follow list filters or search results"));
+    assert!(html.contains("aria-label=\"Next message\" disabled"));
+    assert!(html.contains("filtered and sorted result snapshot"));
     let oldest = crate::reading_preferences::ReadingPreferences {
         date_order: crate::reading_preferences::DateOrder::Oldest,
         ..prefs
@@ -595,4 +595,75 @@ fn empty_search_clear_is_not_offered_for_unverified_search_context() {
     assert!(!body.contains("foreign-secret"));
     assert!(!body.contains("ForeignFolder"));
     assert_eq!(app.request_budgets.search_workers.active_count(), 0);
+}
+
+
+fn neighbour_href(html: &str, label: &str) -> String {
+    let marker = format!("aria-label=\"{label} message\" href=\"");
+    html.split_once(&marker).expect("enabled neighbour").1
+        .split_once('"').expect("bounded link").0.replace("&amp;", "&")
+}
+
+#[test]
+fn reader_neighbours_follow_filtered_order_across_pages_in_mailbox_and_search() {
+    for base in [
+        "/mailbox?name=INBOX&filter=unread&sort=subject&dir=asc",
+        "/search?q=reader-fixture&field=subject&mailbox=INBOX&filter=unread&sort=subject&dir=asc",
+    ] {
+        let response = mailbox_page(&format!("{base}&selected_mailbox=INBOX&selected_uid=99"));
+        assert_eq!(response.response.status_code, 200);
+        let html = body_text(&response);
+        let previous = neighbour_href(&html, "Previous");
+        let next = neighbour_href(&html, "Next");
+        assert!(previous.contains("selected_uid=97"));
+        assert!(next.contains("selected_uid=101"));
+        assert!(next.contains("page=2"));
+        assert!(next.contains("selected_mailbox_guid="));
+        assert!(next.contains("selected_message_guid="));
+        assert!(next.contains("filter=unread"));
+        let followed = mailbox_page(next.split('#').next().unwrap());
+        assert_eq!(followed.response.status_code, 200);
+        assert!(body_text(&followed).contains("Synthetic message 101 in INBOX"));
+        assert!(body_text(&followed).contains("data-selected=\"true\""));
+        let stale = next.split('#').next().unwrap().split('&')
+            .map(|part| if part.starts_with("selected_message_guid=") { "selected_message_guid=changed" } else { part })
+            .collect::<Vec<_>>().join("&");
+        let refused = mailbox_page(&stale);
+        assert!(body_text(&refused).contains("selected message identity changed"));
+        assert!(!body_text(&refused).contains("Synthetic message 101 in INBOX"));
+        assert!(!refused.audit_events.iter().any(|event| event.action == "stub_message_view"));
+    }
+}
+
+#[test]
+fn standalone_search_neighbours_use_actual_search_and_release_both_budgets() {
+    let app = app();
+    let return_to = "/search?q=reader-fixture&field=subject&mailbox=INBOX&filter=unread&sort=subject&dir=asc";
+    let mut req = request("GET", &format!("/message?mailbox=INBOX&uid=7&return_to={}", url_encode(return_to)), &authenticated_headers(), "");
+    req.headers.insert("user-agent".into(), "OSMAP/ManyMessages".into());
+    let result = app.handle_request(&req, "127.0.0.1");
+    assert_eq!(result.response.status_code, 200);
+    let html = body_text(&result);
+    assert!(neighbour_href(&html, "Previous").contains("uid=5&"));
+    assert!(neighbour_href(&html, "Next").contains("uid=9&"));
+    assert!(!result.audit_events.iter().any(|event| event.action == "stub_message_list"));
+    assert_eq!(app.request_budgets.search_workers.active_count(), 0);
+    assert_eq!(app.request_budgets.mailbox_workers.active_count(), 0);
+    let mut occupied = Vec::new();
+    while let Some(guard) = app.request_budgets.search_workers.try_acquire() {
+        occupied.push(guard);
+    }
+    assert!(!occupied.is_empty());
+    let blocked = app.handle_request(&req, "127.0.0.1");
+    assert_eq!(blocked.response.status_code, 200);
+    assert!(!body_text(&blocked).contains("aria-label=\"Next message\" href="));
+    assert!(body_text(&blocked).contains("q=reader-fixture"));
+    assert!(!blocked.audit_events.iter().any(|event| event.action == "stub_message_list"));
+    drop(occupied);
+    req.headers.insert("user-agent".into(), "OSMAP/StateFailure".into());
+    let denied = app.handle_request(&req, "127.0.0.1");
+    assert!(!body_text(&denied).contains("aria-label=\"Next message\" href="));
+    assert!(!denied.audit_events.iter().any(|event| event.action == "stub_message_list"));
+    req.headers.insert("user-agent".into(), "OSMAP/ManyMessages".into());
+    assert!(body_text(&app.handle_request(&req, "127.0.0.1")).contains("aria-label=\"Next message\" href="));
 }

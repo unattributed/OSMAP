@@ -120,6 +120,7 @@ pub(crate) enum SelectedMessagePane {
 #[derive(Default)]
 pub(crate) struct MailReaderContext {
     pub pane: SelectedMessagePane,
+    pub neighbours: crate::reader_neighbours::ReaderNeighbours,
     pub archive_mailbox_name: Option<String>,
     pub mailboxes: Vec<MailboxEntry>,
 }
@@ -765,6 +766,13 @@ fn append_list_filter_selection(href: &mut String, view: &ListViewState) {
         href.push_str(&url_encode(&selected.mailbox));
         href.push_str("&selected_uid=");
         href.push_str(&selected.uid.to_string());
+        if let Some(version) = &view.requested_version {
+            href.push_str(&format!(
+                "&selected_mailbox_guid={}&selected_message_guid={}",
+                url_encode(&version.mailbox_guid),
+                url_encode(&version.message_guid)
+            ));
+        }
     }
 }
 
@@ -807,16 +815,26 @@ fn list_form_state(view: &ListViewState) -> String {
     }
     if let Some(selected) = &view.selection {
         fields.push_str(&format!("<input type=\"hidden\" name=\"selected_mailbox\" value=\"{}\"><input type=\"hidden\" name=\"selected_uid\" value=\"{}\">", escape_html(&selected.mailbox), selected.uid));
+        if let Some(version) = &view.requested_version {
+            fields.push_str(&format!("<input type=\"hidden\" name=\"selected_mailbox_guid\" value=\"{}\"><input type=\"hidden\" name=\"selected_message_guid\" value=\"{}\">", escape_html(&version.mailbox_guid), escape_html(&version.message_guid)));
+        }
     }
     fields
 }
 
-fn selected_message_href(base: &str, view: &ListViewState, mailbox: &str, uid: u64) -> String {
+fn selected_message_href(
+    base: &str,
+    view: &ListViewState,
+    mailbox: &str,
+    uid: u64,
+    version: Option<&crate::message_metadata::MessageVersion>,
+) -> String {
     let mut selected = view.clone();
     selected.selection = Some(crate::mail_list::ListSelection {
         mailbox: mailbox.into(),
         uid,
     });
+    selected.requested_version = version.cloned();
     format!(
         "{}#reading-pane",
         list_navigation_href(base, &selected, view.page)
@@ -840,7 +858,7 @@ fn render_coordinated_reader(
                 Some(page) if page != view.page => format!("<p class=\"reader-locate\"><a href=\"{}\">Locate selected message on page {page}</a></p>", escape_html(&list_navigation_href(base, view, page))),
                 _ => String::new(),
             };
-            format!("<div class=\"reader-column\">{locate}{}</div>", render_reader_fragment(csrf, rendered, reader.archive_mailbox_name.as_deref(), &reader.mailboxes, &back, &list_navigation_href(base, view, view.page), None))
+            format!("<div class=\"reader-column\">{locate}{}</div>", render_reader_fragment(csrf, rendered, reader.archive_mailbox_name.as_deref(), &reader.mailboxes, &back, &list_navigation_href(base, view, view.page), Some(&reader.neighbours)))
         }
     }
 }
@@ -1409,7 +1427,13 @@ pub(crate) fn render_message_list_page(
     let bulk_actions_available = !bulk_actions.move_destinations.is_empty();
     for (index, message) in messages.iter().enumerate() {
         let message_href = if message.metadata.is_some() {
-            selected_message_href(&navigation_base, sort_links.view, mailbox_name, message.uid)
+            selected_message_href(
+                &navigation_base,
+                sort_links.view,
+                mailbox_name,
+                message.uid,
+                message.metadata.as_ref().map(|metadata| &metadata.version),
+            )
         } else {
             format!(
                 "/message?mailbox={}&uid={}",
@@ -1689,7 +1713,13 @@ pub(crate) fn render_message_search_page(
             );
             more_controls.push_str(&render_public_attachment_details(result.metadata.as_ref()));
             let message_href = if result.metadata.is_some() {
-                selected_message_href(&navigation_base, view, &result.mailbox_name, result.uid)
+                selected_message_href(
+                    &navigation_base,
+                    view,
+                    &result.mailbox_name,
+                    result.uid,
+                    result.metadata.as_ref().map(|metadata| &metadata.version),
+                )
             } else {
                 format!(
                     "/message?mailbox={}&uid={}",

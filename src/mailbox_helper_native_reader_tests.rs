@@ -1,4 +1,4 @@
-// Opt-in native S02-01 proof: actual owned Dovecot -> authenticated helper ->
+// Opt-in native S02 reader proof: actual owned Dovecot -> authenticated helper ->
 // runtime browser routes. Public MIME shapes are classification fixtures only.
 use super::*;
 use crate::auth::{
@@ -418,6 +418,35 @@ fn back_href(body: &str) -> String {
                 .flatten()
         })
         .expect("rendered Back to list control")
+}
+fn neighbour_href(body: &str, label: &str) -> Option<String> {
+    body.split("<a ").find_map(|part| {
+        let element = part.split_once('>')?.0;
+        (attribute(element, "aria-label").as_deref() == Some(label))
+            .then(|| attribute(element, "href"))
+            .flatten()
+    })
+}
+fn neighbour_disabled(body: &str, label: &str) -> bool {
+    body.split("<button ").any(|part| {
+        let Some((element, _)) = part.split_once('>') else {
+            return false;
+        };
+        attribute(element, "aria-label").as_deref() == Some(label)
+            && element.split_whitespace().any(|value| value == "disabled")
+    })
+}
+fn neighbour_fields(
+    app: &BrowserApp<RuntimeBrowserGateway>,
+    href: &str,
+) -> BTreeMap<String, String> {
+    let target = href.split('#').next().unwrap();
+    parse_http_request(
+        &format!("GET {target} HTTP/1.1\r\nHost: localhost\r\n\r\n"),
+        app.policy(),
+    )
+    .expect("rendered native neighbour target")
+    .query_params
 }
 fn flag_form(body: &str, uid: u64, flag: &str) -> BTreeMap<String, String> {
     body.split("<form ")
@@ -881,6 +910,220 @@ fn isolated_openbsd_coordinated_reader_signed_helper() {
             && !search_back.contains("selected_uid")
     );
     assert_eq!(get(&app, &alice, &search_back).response.status_code, 200);
+    // The singleton search must not borrow neighbours from the full mailbox.
+    assert!(neighbour_disabled(text(&search), "Previous message"));
+    assert!(neighbour_disabled(text(&search), "Next message"));
+
+    // Public MIME, attachment and sender filters compose before adjacency:
+    // 049/050/051 are protected/unknown outer MIME and cannot intervene.
+    let filtered_origin = "/mailbox?name=INBOX&filter=unread&sort=subject&dir=asc&pgp=plain&attachment=without&from=sender%40example.test";
+    let filtered_reader = get(
+        &app,
+        &alice,
+        &format!(
+            "{filtered_origin}&selected_mailbox=INBOX&selected_uid={}",
+            by_subject(48).uid
+        ),
+    );
+    assert_eq!(filtered_reader.response.status_code, 200);
+    assert!(text(&filtered_reader).contains("ALICE_READER_ONLY_048"));
+    let filtered_previous = neighbour_href(text(&filtered_reader), "Previous message").unwrap();
+    let filtered_next = neighbour_href(text(&filtered_reader), "Next message").unwrap();
+    for (href, index) in [(&filtered_previous, 47), (&filtered_next, 52)] {
+        let fields = neighbour_fields(&app, href);
+        assert_eq!(
+            fields.get("selected_uid"),
+            Some(&by_subject(index).uid.to_string())
+        );
+        assert_eq!(fields.get("pgp").map(String::as_str), Some("plain"));
+        assert_eq!(
+            fields.get("attachment").map(String::as_str),
+            Some("without")
+        );
+        assert_eq!(
+            fields.get("from").map(String::as_str),
+            Some("sender@example.test")
+        );
+        let viewed = get(&app, &alice, href.split('#').next().unwrap());
+        assert_eq!(viewed.response.status_code, 200);
+        assert!(text(&viewed).contains(&format!("ALICE_READER_ONLY_{index:03}")));
+        budget_pair(&viewed);
+    }
+
+    // Descending order places ordinary 003/002 on either side of page 1/2.
+    // Follow both actual links rather than inspecting their labels alone.
+    let cross_page = get(&app, &alice, &format!("/mailbox?name=INBOX&sort=subject&dir=desc&pgp=all&selected_mailbox=INBOX&selected_uid={}", by_subject(3).uid));
+    assert_eq!(cross_page.response.status_code, 200);
+    let cross_next = neighbour_href(text(&cross_page), "Next message").unwrap();
+    let fields = neighbour_fields(&app, &cross_next);
+    assert_eq!(fields.get("page").map(String::as_str), Some("2"));
+    assert_eq!(
+        fields.get("selected_uid"),
+        Some(&by_subject(2).uid.to_string())
+    );
+    assert_eq!(
+        fields.get("selected_mailbox_guid"),
+        Some(
+            &by_subject(2)
+                .metadata
+                .as_ref()
+                .unwrap()
+                .version
+                .mailbox_guid
+        )
+    );
+    assert_eq!(
+        fields.get("selected_message_guid"),
+        Some(
+            &by_subject(2)
+                .metadata
+                .as_ref()
+                .unwrap()
+                .version
+                .message_guid
+        )
+    );
+    let crossed = get(&app, &alice, cross_next.split('#').next().unwrap());
+    assert_eq!(crossed.response.status_code, 200);
+    assert!(text(&crossed).contains("ALICE_READER_ONLY_002"));
+    let cross_previous = neighbour_href(text(&crossed), "Previous message").unwrap();
+    let fields = neighbour_fields(&app, &cross_previous);
+    assert_eq!(fields.get("page").map(String::as_str), Some("1"));
+    assert_eq!(
+        fields.get("selected_uid"),
+        Some(&by_subject(3).uid.to_string())
+    );
+    let returned = get(&app, &alice, cross_previous.split('#').next().unwrap());
+    assert_eq!(returned.response.status_code, 200);
+    assert!(text(&returned).contains("ALICE_READER_ONLY_003"));
+    let mut stale_fields = neighbour_fields(&app, &cross_next);
+    stale_fields.insert(
+        "selected_message_guid".into(),
+        "absent-native-neighbour".into(),
+    );
+    let stale_target = format!(
+        "/mailbox?{}",
+        stale_fields
+            .iter()
+            .map(|(key, value)| format!("{}={}", encode(key), encode(value)))
+            .collect::<Vec<_>>()
+            .join("&")
+    );
+    let stale_neighbour = get(&app, &alice, &stale_target);
+    assert_eq!(stale_neighbour.response.status_code, 200);
+    assert!(text(&stale_neighbour).contains("Message unavailable"));
+    assert!(!text(&stale_neighbour).contains("ALICE_READER_ONLY_002"));
+
+    // A real query restricts the upper boundary to 009; full-mailbox order
+    // would incorrectly offer 010 as Previous. Preserve every search selector.
+    let scoped_search = "/search?mailbox=INBOX&q=Native%2000&field=subject&sort=subject&dir=desc&filter=unread&pgp=plain&attachment=without&from=sender%40example.test";
+    let scoped_reader = get(
+        &app,
+        &alice,
+        &format!(
+            "{scoped_search}&selected_mailbox=INBOX&selected_uid={}",
+            by_subject(9).uid
+        ),
+    );
+    assert_eq!(scoped_reader.response.status_code, 200);
+    assert!(text(&scoped_reader).contains("ALICE_READER_ONLY_009"));
+    assert!(neighbour_disabled(text(&scoped_reader), "Previous message"));
+    let scoped_next = neighbour_href(text(&scoped_reader), "Next message").unwrap();
+    assert!(scoped_next.starts_with("/search?"));
+    let fields = neighbour_fields(&app, &scoped_next);
+    for (key, value) in [
+        ("q", "Native 00"),
+        ("field", "subject"),
+        ("mailbox", "INBOX"),
+        ("pgp", "plain"),
+        ("attachment", "without"),
+        ("from", "sender@example.test"),
+    ] {
+        assert_eq!(fields.get(key).map(String::as_str), Some(value));
+    }
+    assert_eq!(
+        fields.get("selected_uid"),
+        Some(&by_subject(8).uid.to_string())
+    );
+    let scoped_followed = get(&app, &alice, scoped_next.split('#').next().unwrap());
+    assert_eq!(scoped_followed.response.status_code, 200);
+    assert!(text(&scoped_followed).contains("ALICE_READER_ONLY_008"));
+
+    // Standalone readers must rerun their originating search, preserving its
+    // boundary and exact public identity instead of silently listing INBOX.
+    let standalone = format!(
+        "/message?mailbox=INBOX&uid={}&mailbox_guid={}&message_guid={}&return_to={}",
+        by_subject(9).uid,
+        encode(
+            &by_subject(9)
+                .metadata
+                .as_ref()
+                .unwrap()
+                .version
+                .mailbox_guid
+        ),
+        encode(
+            &by_subject(9)
+                .metadata
+                .as_ref()
+                .unwrap()
+                .version
+                .message_guid
+        ),
+        encode(scoped_search)
+    );
+    let standalone_reader = get(&app, &alice, &standalone);
+    assert_eq!(standalone_reader.response.status_code, 200);
+    assert!(text(&standalone_reader).contains("ALICE_READER_ONLY_009"));
+    assert!(neighbour_disabled(
+        text(&standalone_reader),
+        "Previous message"
+    ));
+    let standalone_next = neighbour_href(text(&standalone_reader), "Next message").unwrap();
+    let fields = neighbour_fields(&app, &standalone_next);
+    assert!(standalone_next.starts_with("/message?"));
+    assert_eq!(fields.get("uid"), Some(&by_subject(8).uid.to_string()));
+    assert_eq!(
+        fields.get("message_guid"),
+        Some(
+            &by_subject(8)
+                .metadata
+                .as_ref()
+                .unwrap()
+                .version
+                .message_guid
+        )
+    );
+    let origin = fields.get("return_to").unwrap();
+    let origin_fields = neighbour_fields(&app, origin);
+    assert_eq!(
+        origin_fields.get("q").map(String::as_str),
+        Some("Native 00")
+    );
+    assert_eq!(
+        origin_fields.get("from").map(String::as_str),
+        Some("sender@example.test")
+    );
+    let standalone_followed = get(&app, &alice, &standalone_next);
+    assert_eq!(standalone_followed.response.status_code, 200);
+    assert!(text(&standalone_followed).contains("ALICE_READER_ONLY_008"));
+    budget_pair(&standalone_followed);
+    let mut stale_fields = fields;
+    stale_fields.insert("message_guid".into(), "absent-native-neighbour".into());
+    let stale_target = format!(
+        "/message?{}",
+        stale_fields
+            .iter()
+            .map(|(key, value)| format!("{}={}", encode(key), encode(value)))
+            .collect::<Vec<_>>()
+            .join("&")
+    );
+    let stale_standalone = get(&app, &alice, &stale_target);
+    assert_eq!(stale_standalone.response.status_code, 503);
+    assert!(!text(&stale_standalone).contains("ALICE_READER_ONLY_008"));
+    let foreign_neighbour = get(&app, &bob, &standalone_next);
+    assert_ne!(foreign_neighbour.response.status_code, 200);
+    assert!(!text(&foreign_neighbour).contains("ALICE_READER_ONLY_008"));
     let sender_selection = get(
         &app,
         &alice,
@@ -1106,5 +1349,5 @@ fn isolated_openbsd_coordinated_reader_signed_helper() {
     drop(fixture);
     assert!(!root.exists());
     assert_eq!(before, standard_metadata());
-    println!("native_reader_cases=PASS rows53_two_accounts=PASS classification_only=PASS page50_selected_back_search=PASS native_csrf_read_star_filtered_membership_reload=PASS attachment_without_and_actual_unknown_count={unknown_attachment_records} foreign_neighbour_stale_refusal=PASS budget_reuse=PASS no_move_append_or_crypto_configuration=PASS scratch_cleanup=PASS standard_host_metadata_unchanged=PASS");
+    println!("native_reader_cases=PASS rows53_two_accounts=PASS classification_only=PASS page50_selected_back_search=PASS filtered_previous_next_crosspage_search_origin=PASS stale_navigation_guid_refusal=PASS native_csrf_read_star_filtered_membership_reload=PASS attachment_without_and_actual_unknown_count={unknown_attachment_records} foreign_neighbour_stale_refusal=PASS budget_reuse=PASS no_move_append_or_crypto_configuration=PASS scratch_cleanup=PASS standard_host_metadata_unchanged=PASS");
 }

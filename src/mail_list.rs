@@ -301,6 +301,8 @@ pub struct ListViewState {
     pub backend_limit: usize,
     pub backend_truncated: bool,
     pub selection: Option<ListSelection>,
+    /// An expected identity from a navigation link; fresh summaries still grant authority.
+    pub requested_version: Option<MessageVersion>,
     /// Derived from this request's filtered backend results, never URL authority.
     pub selection_page: Option<usize>,
     pub selected_version: Option<MessageVersion>,
@@ -369,6 +371,19 @@ impl ListViewState {
             }
             _ => return Err("The selected message requires both its mailbox and UID."),
         };
+        let requested_version = match (
+            query.get("selected_mailbox_guid"),
+            query.get("selected_message_guid"),
+        ) {
+            (None, None) => None,
+            (Some(mailbox), Some(message)) if selection.is_some() => Some(
+                MessageVersion::new(mailbox.clone(), message.clone())
+                    .map_err(|_| "The selected message identity is invalid.")?,
+            ),
+            _ => {
+                return Err("The selected message identity requires its selection and both GUIDs.")
+            }
+        };
         Ok(Self {
             dates: ReceivedDateRange::parse(query)?,
             bulk_selection,
@@ -390,12 +405,19 @@ impl ListViewState {
             backend_limit: DEFAULT_MAX_MESSAGES,
             backend_truncated: false,
             selection,
+            requested_version,
             selection_page: None,
             selected_version: None,
         })
     }
 
     pub fn apply_messages(&mut self, messages: &mut Vec<MessageSummary>) {
+        self.order_messages(messages);
+        self.window(messages);
+    }
+
+    /// Keep the complete bounded, filtered order for reader navigation.
+    pub(crate) fn order_messages(&mut self, messages: &mut Vec<MessageSummary>) {
         self.backend_limit = DEFAULT_MAX_MESSAGES;
         self.backend_truncated = messages.len() > self.backend_limit;
         messages.truncate(self.backend_limit);
@@ -425,10 +447,15 @@ impl ListViewState {
                 .as_ref()
                 .map(|metadata| metadata.version.clone())
         });
-        self.window(messages);
     }
 
     pub fn apply_search(&mut self, results: &mut Vec<MessageSearchResult>) {
+        self.order_search(results);
+        self.window(results);
+    }
+
+    /// Search neighbours come from this result prefix, never a mailbox fallback.
+    pub(crate) fn order_search(&mut self, results: &mut Vec<MessageSearchResult>) {
         self.backend_limit = DEFAULT_MAX_SEARCH_RESULTS;
         self.backend_truncated = results.len() > self.backend_limit;
         results.truncate(self.backend_limit);
@@ -458,7 +485,6 @@ impl ListViewState {
                 .as_ref()
                 .map(|metadata| metadata.version.clone())
         });
-        self.window(results);
     }
 
     fn window<T>(&mut self, items: &mut Vec<T>) {

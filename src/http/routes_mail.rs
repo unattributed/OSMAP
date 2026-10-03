@@ -45,10 +45,128 @@ fn list_view_state(request: &HttpRequest) -> Result<ListViewState, HttpResponse>
     })
 }
 
+fn list_origin(request: &HttpRequest) -> Option<String> {
+    crate::mail_navigation::safe_mail_return(&format!(
+        "{}?{}",
+        request.path,
+        request
+            .query_params
+            .iter()
+            .map(|(key, value)| format!("{}={}", url_encode(key), url_encode(value)))
+            .collect::<Vec<_>>()
+            .join("&")
+    ))
+}
+
 impl<G> BrowserApp<G>
 where
     G: BrowserGateway,
 {
+    fn standalone_neighbours(
+        &self,
+        request: &HttpRequest,
+        context: &AuthenticationContext,
+        session: &ValidatedSession,
+        rendered: &RenderedMessageView,
+        audit: &mut Vec<LogEvent>,
+    ) -> crate::reader_neighbours::ReaderNeighbours {
+        use crate::reader_neighbours::{ReaderLocation, ReaderNeighbours};
+        let account = &session.record.canonical_username;
+        let Some(return_to) = request.query_params.get("return_to") else {
+            let preferences = self.gateway.load_reading_preferences(context, session).ok();
+            let summaries = self
+                .gateway
+                .list_messages(context, session, &rendered.mailbox_name);
+            audit.extend(summaries.audit_events);
+            return ReaderNeighbours::derive(
+                account,
+                rendered,
+                preferences,
+                &summaries.decision,
+                None,
+            );
+        };
+        let Some(origin) = crate::mail_navigation::safe_mail_return(return_to) else {
+            return ReaderNeighbours::default();
+        };
+        let Some((path, query)) = origin.split_once('?') else {
+            return ReaderNeighbours::unavailable(Some(origin.clone()));
+        };
+        let Ok(fields) = crate::http_form::parse_urlencoded_form(
+            query.as_bytes(),
+            crate::mail_navigation::MAIL_RETURN_MAX_FIELDS,
+            2048,
+        ) else {
+            return ReaderNeighbours::unavailable(Some(origin.clone()));
+        };
+        let mut origin_request = request.clone();
+        origin_request.query_params = fields.clone();
+        let Ok(view) = list_view_state(&origin_request) else {
+            return ReaderNeighbours::unavailable(Some(origin.clone()));
+        };
+        match path {
+            "/mailbox" => {
+                let Some(name) = fields.get("name") else {
+                    return ReaderNeighbours::unavailable(Some(origin.clone()));
+                };
+                let mut summaries = self.gateway.list_messages(context, session, name);
+                audit.append(&mut summaries.audit_events);
+                if let BrowserMessageListDecision::Listed {
+                    canonical_username,
+                    mailbox_name,
+                    messages,
+                } = &mut summaries.decision
+                {
+                    self.apply_snooze(session, canonical_username, mailbox_name, messages);
+                }
+                ReaderNeighbours::derive_messages(
+                    account,
+                    rendered,
+                    &summaries.decision,
+                    &view,
+                    &origin,
+                    ReaderLocation::Standalone,
+                )
+            }
+            "/search" if !fields.contains_key("category") => {
+                let Some(query) = fields.get("q") else {
+                    return ReaderNeighbours::unavailable(Some(origin.clone()));
+                };
+                let mailbox = if fields.get("scope").map(String::as_str) == Some("all") {
+                    None
+                } else {
+                    fields.get("mailbox").map(String::as_str)
+                };
+                let field = fields
+                    .get("field")
+                    .and_then(|field| MessageSearchField::from_query_value(field))
+                    .unwrap_or(MessageSearchField::All);
+                let (guard, event) = match self.acquire_search_budget(context, session) {
+                    Ok(value) => value,
+                    Err(response) => {
+                        audit.extend(response.audit_events);
+                        return ReaderNeighbours::unavailable(Some(origin.clone()));
+                    }
+                };
+                audit.push(event);
+                let outcome = self
+                    .gateway
+                    .search_messages(context, session, mailbox, query, field);
+                audit.extend(outcome.audit_events);
+                audit.push(self.release_request_budget(guard, "message_search", context, session));
+                ReaderNeighbours::derive_search(
+                    account,
+                    rendered,
+                    &outcome.decision,
+                    &view,
+                    &origin,
+                    ReaderLocation::Standalone,
+                )
+            }
+            _ => ReaderNeighbours::unavailable(Some(origin.clone())),
+        }
+    }
+
     /// The URL chooses a candidate, not authority. Bind this response to the
     /// fresh filtered list identity before exposing the rendered message body.
     fn selected_message_pane(
@@ -67,6 +185,15 @@ where
         let Some(version) = &view.selected_version else {
             return SelectedMessagePane::Unavailable("The selected message has no current stored identity. Refresh the list or open the standalone message view.");
         };
+        if view
+            .requested_version
+            .as_ref()
+            .is_some_and(|expected| expected != version)
+        {
+            return SelectedMessagePane::Unavailable(
+                "The selected message identity changed. Refresh the list before opening it again.",
+            );
+        }
         let (guard, event) = match self.acquire_mailbox_budget(context, session, "selected_message")
         {
             Ok(value) => value,
@@ -406,8 +533,13 @@ where
                     &mailbox_name,
                     &mut messages,
                 );
+                let snapshot = BrowserMessageListDecision::Listed {
+                    canonical_username: canonical_username.clone(),
+                    mailbox_name: mailbox_name.clone(),
+                    messages: messages.clone(),
+                };
                 view.apply_messages(&mut messages);
-                let reader = MailReaderContext {
+                let mut reader = MailReaderContext {
                     pane: self.selected_message_pane(
                         context,
                         &validated_session,
@@ -419,7 +551,20 @@ where
                         .iter()
                         .map(|name| MailboxEntry { name: name.clone() })
                         .collect(),
+                    ..MailReaderContext::default()
                 };
+                if let (SelectedMessagePane::Ready(rendered), Some(origin)) =
+                    (&reader.pane, list_origin(request))
+                {
+                    reader.neighbours = crate::reader_neighbours::ReaderNeighbours::derive_messages(
+                        &canonical_username,
+                        rendered,
+                        &snapshot,
+                        &view,
+                        &origin,
+                        crate::reader_neighbours::ReaderLocation::Coordinated,
+                    );
+                }
                 let search_query = request
                     .query_params
                     .get("q")
@@ -640,6 +785,12 @@ where
                 query,
                 mut results,
             } => {
+                let snapshot = BrowserMessageSearchDecision::Listed {
+                    canonical_username: canonical_username.clone(),
+                    mailbox_name: mailbox_name.clone(),
+                    query: query.clone(),
+                    results: results.clone(),
+                };
                 view.apply_search(&mut results);
                 let pane = self.selected_message_pane(
                     context,
@@ -652,6 +803,17 @@ where
                     ..MailReaderContext::default()
                 };
                 if let SelectedMessagePane::Ready(rendered) = &reader.pane {
+                    if let Some(origin) = list_origin(request) {
+                        reader.neighbours =
+                            crate::reader_neighbours::ReaderNeighbours::derive_search(
+                                &canonical_username,
+                                rendered,
+                                &snapshot,
+                                &view,
+                                &origin,
+                                crate::reader_neighbours::ReaderLocation::Coordinated,
+                            );
+                    }
                     reader.archive_mailbox_name = self.validated_archive_mailbox_name(
                         context,
                         &validated_session,
@@ -827,20 +989,12 @@ where
                     &rendered,
                 ) =>
             {
-                let preferences = self
-                    .gateway
-                    .load_reading_preferences(context, &validated_session)
-                    .ok();
-                let summaries =
-                    self.gateway
-                        .list_messages(context, &validated_session, &mailbox_name);
-                audit_events.extend(summaries.audit_events);
-                let neighbours = crate::reader_neighbours::ReaderNeighbours::derive(
-                    &canonical_username,
+                let neighbours = self.standalone_neighbours(
+                    request,
+                    context,
+                    &validated_session,
                     &rendered,
-                    preferences,
-                    &summaries.decision,
-                    request.query_params.get("return_to").map(String::as_str),
+                    &mut audit_events,
                 );
                 let archive_mailbox_name = self.validated_archive_mailbox_name(
                     context,

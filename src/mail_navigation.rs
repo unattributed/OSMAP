@@ -4,19 +4,28 @@ use crate::http_support::url_encode;
 use crate::mail_list::ListViewState;
 use crate::mailbox::{MailboxEntry, MailboxListingPolicy, MessageSearchField};
 
+// Finite mail-context allowlists plus the expected selected GUID pair.
+pub(crate) const MAIL_RETURN_MAX_FIELDS: usize = 18;
+
 /// Clear action selection after a move; the next GET recomputes counts/pages.
 pub fn mail_return_after_move(value: &str, source: &str) -> Option<String> {
     let safe = safe_mail_return(value)?;
     let (path, query) = safe.split_once('?')?;
     if path == "/message" {
-        let fields = parse_urlencoded_form(query.as_bytes(), 16, 2048).ok()?;
+        let fields = parse_urlencoded_form(query.as_bytes(), MAIL_RETURN_MAX_FIELDS, 2048).ok()?;
         return fields
             .get("return_to")
             .and_then(|back| mail_return_after_move(back, source))
             .or_else(|| Some(format!("/mailbox?name={}", url_encode(source))));
     }
-    let mut fields = parse_urlencoded_form(query.as_bytes(), 16, 2048).ok()?;
-    for key in ["select", "selected_mailbox", "selected_uid"] {
+    let mut fields = parse_urlencoded_form(query.as_bytes(), MAIL_RETURN_MAX_FIELDS, 2048).ok()?;
+    for key in [
+        "select",
+        "selected_mailbox",
+        "selected_uid",
+        "selected_mailbox_guid",
+        "selected_message_guid",
+    ] {
         fields.remove(key);
     }
     Some(format!(
@@ -34,7 +43,7 @@ pub fn safe_mail_return(value: &str) -> Option<String> {
         return None;
     }
     let (path, query) = value.split_once('?')?;
-    let fields = parse_urlencoded_form(query.as_bytes(), 16, 2048).ok()?;
+    let fields = parse_urlencoded_form(query.as_bytes(), MAIL_RETURN_MAX_FIELDS, 2048).ok()?;
     let mailbox_valid =
         |name: &str| MailboxEntry::new(MailboxListingPolicy::default(), name).is_ok();
     let allowed: &[&str] = match path {
@@ -58,6 +67,8 @@ pub fn safe_mail_return(value: &str) -> Option<String> {
                 "scope",
                 "selected_mailbox",
                 "selected_uid",
+                "selected_mailbox_guid",
+                "selected_message_guid",
                 "select",
             ]
         }
@@ -103,6 +114,8 @@ pub fn safe_mail_return(value: &str) -> Option<String> {
                 "page",
                 "selected_mailbox",
                 "selected_uid",
+                "selected_mailbox_guid",
+                "selected_message_guid",
                 "select",
             ]
         }
