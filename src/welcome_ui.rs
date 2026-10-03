@@ -249,6 +249,7 @@ mod activity_tests {
             from: Some("Sender <sender@example.test>".into()),
             to: None,
             metadata: Some(crate::message_metadata::MessageMetadata {
+                threading: None,
                 version: crate::message_metadata::MessageVersion::new(
                     "a".repeat(32),
                     "message-7".into(),

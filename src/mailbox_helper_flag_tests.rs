@@ -82,6 +82,7 @@ fn flag_grant_binds_every_identity_and_mutation_field() {
 #[test]
 fn metadata_survives_read_responses_and_partial_identity_fails() {
     let metadata = MessageMetadata {
+        threading: None,
         attachments: None,
             protection: crate::message_metadata::MessageProtection::Unknown,
         preview: Some("Public synthetic preview".into()),

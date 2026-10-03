@@ -70,7 +70,7 @@ impl DateOrder {
         }
     }
 
-    /// Date ordering only; never overrides an explicit URL sort or groups threads.
+    /// Received-time direction for saved conversation members or an explicit date sort.
     pub const fn sort_direction(self) -> &'static str {
         match self {
             Self::Newest => "desc",

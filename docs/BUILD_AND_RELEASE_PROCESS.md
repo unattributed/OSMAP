@@ -290,3 +290,21 @@ Dovecot mailboxes before deploying its matching application. Rendered forms and
 settings CAS must also pass the bounded no-script browser workflow. Binary
 rollback preserves the separate preference record; older binaries ignore it.
 Do not change operator flags or keys to manufacture installed acceptance.
+
+## UX S02-02 bounded conversation metadata rollout
+
+Saved Conversation ordering uses supported Message-ID, In-Reply-To and References
+from the existing bounded native summary fetch. It groups only the loaded, owned,
+filtered rows in the existing flat list and reader arrows. Explicit URL sorts
+retain precedence; missing headers, unsupported syntax, duplicate IDs, invalid
+identity/time and cyclic components stay independent. Public thread structure
+does not establish sender verification, private-key readiness or Send acceptance.
+
+The optional typed helper field is a protocol migration: the new web accepts old
+helpers without thread metadata, while old web parsers reject the new field.
+Stage matching signed-source candidates first, then activate the compatible web
+on obsd1 against the existing helper before activating the authoritative mail
+helper. Rollback restores the old helper before the old web. Preserve existing
+4 MiB native/1 MiB helper limits, commands, deadlines, routing, configuration,
+keys, policies and mail. Require actual disposable native and browser ordering,
+saved-setting and reader identity results; health checks alone cannot close UAT.

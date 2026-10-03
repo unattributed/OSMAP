@@ -893,6 +893,9 @@ mod tests {
     mod reading_preferences_tests {
         include!("http/reading_preferences_tests.rs");
     }
+    mod conversation_tests {
+        include!("http/conversation_tests.rs");
+    }
     mod ux_fixtures {
         include!("http/ux_fixtures.rs");
     }
@@ -1024,6 +1027,7 @@ mod tests {
         composition_preferences_store:
             Option<crate::composition_preferences::CompositionPreferencesStore>,
         reading_preferences_store: Option<crate::reading_preferences::ReadingPreferencesStore>,
+        message_list_override: Option<Vec<MessageSummary>>,
         browser_fixture_accounts: bool,
         browser_fixture_openpgp: bool,
         browser_fixture_openpgp_denials: bool,
@@ -1062,6 +1066,7 @@ mod tests {
                 snooze_store: None,
                 composition_preferences_store: None,
                 reading_preferences_store: None,
+                message_list_override: None,
                 browser_fixture_accounts: false,
                 browser_fixture_openpgp: false,
                 browser_fixture_openpgp_denials: false,
@@ -2557,6 +2562,20 @@ mod tests {
             validated_session: &ValidatedSession,
             mailbox_name: &str,
         ) -> BrowserMessageListOutcome {
+            if mailbox_name == "INBOX"
+                && validated_session.record.canonical_username == "alice@example.com"
+            {
+                if let Some(messages) = &self.message_list_override {
+                    return BrowserMessageListOutcome {
+                        decision: BrowserMessageListDecision::Listed {
+                            canonical_username: validated_session.record.canonical_username.clone(),
+                            mailbox_name: mailbox_name.into(),
+                            messages: messages.clone(),
+                        },
+                        audit_events: vec![],
+                    };
+                }
+            }
             if self
                 .created_folder_guid(&validated_session.record.canonical_username, mailbox_name)
                 .is_some()
@@ -2739,6 +2758,35 @@ mod tests {
             query: &str,
             field: MessageSearchField,
         ) -> BrowserMessageSearchOutcome {
+            if validated_session.record.canonical_username == "alice@example.com"
+                && mailbox_name.is_none_or(|name| name == "INBOX")
+                && query == "Shared public subject"
+                && field == MessageSearchField::Subject
+            {
+                if let Some(messages) = &self.message_list_override {
+                    return BrowserMessageSearchOutcome {
+                        decision: BrowserMessageSearchDecision::Listed {
+                            canonical_username: validated_session.record.canonical_username.clone(),
+                            mailbox_name: mailbox_name.map(str::to_string),
+                            query: query.into(),
+                            results: messages
+                                .iter()
+                                .map(|message| MessageSearchResult {
+                                    mailbox_name: message.mailbox_name.clone(),
+                                    uid: message.uid,
+                                    flags: message.flags.clone(),
+                                    date_received: message.date_received.clone(),
+                                    size_virtual: message.size_virtual,
+                                    subject: message.subject.clone(),
+                                    from: message.from.clone(),
+                                    metadata: message.metadata.clone(),
+                                })
+                                .collect(),
+                        },
+                        audit_events: Vec::new(),
+                    };
+                }
+            }
             if context.user_agent == "OSMAP/StateFailure" {
                 return BrowserMessageSearchOutcome {
                     decision: BrowserMessageSearchDecision::Denied {
@@ -3018,6 +3066,46 @@ mod tests {
             mailbox_name: &str,
             uid: u64,
         ) -> BrowserMessageViewOutcome {
+            if mailbox_name == "INBOX"
+                && validated_session.record.canonical_username == "alice@example.com"
+            {
+                if let Some(message) = self
+                    .message_list_override
+                    .as_ref()
+                    .and_then(|messages| messages.iter().find(|message| message.uid == uid))
+                {
+                    let body = format!("Synthetic message {uid} in INBOX for alice@example.com.");
+                    return BrowserMessageViewOutcome {
+                        decision: BrowserMessageViewDecision::Rendered {
+                            canonical_username: validated_session.record.canonical_username.clone(),
+                            rendered: Box::new(RenderedMessageView {
+                                openpgp: None,
+                                metadata: message.metadata.clone(),
+                                to: Some(validated_session.record.canonical_username.clone()),
+                                cc: None,
+                                reply_metadata: None,
+                                flags: message.flags.clone(),
+                                mailbox_name: message.mailbox_name.clone(),
+                                uid,
+                                subject: message.subject.clone(),
+                                from: message.from.clone(),
+                                date_received: message.date_received.clone(),
+                                mime_top_level_content_type: "text/plain".into(),
+                                body_source: MimeBodySource::SinglePartPlainText,
+                                contains_html_body: false,
+                                body_html: TrustedHtml::from_template(format!(
+                                    "<pre>{}</pre>",
+                                    escape_html(&body)
+                                )),
+                                body_text_for_compose: body,
+                                attachments: Vec::new(),
+                                rendering_mode: RenderingMode::PlainTextPreformatted,
+                            }),
+                        },
+                        audit_events: Vec::new(),
+                    };
+                }
+            }
             if uid == 900 || context.user_agent.contains("ReaderUnavailable") {
                 return BrowserMessageViewOutcome {
                     decision: BrowserMessageViewDecision::Denied {
@@ -6043,7 +6131,7 @@ mod tests {
         let body = body_text(&response);
         assert!(body.contains("<h1>Archive / Bin</h1>"));
         assert!(body
-            .contains("href=\"/mailbox?name=Archive%2F2026&amp;sort=received&amp;dir=desc\" aria-current=\"page\">Archive</a>"));
+            .contains("href=\"/mailbox?name=Archive%2F2026\" aria-current=\"page\">Archive</a>"));
         assert!(!body.contains(">Archive</button>"));
     }
 

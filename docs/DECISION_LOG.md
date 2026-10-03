@@ -8088,3 +8088,26 @@ existing evidence hashes without weakening gates. Installed checks must preserve
 operator flags/preferences; human OnOpen results and all Send outcomes stay open.
 Conversation ordering is the next actual gap, requiring public thread metadata
 and approved existing-list/arrow behaviour, not a label-only or invented-panel fix.
+
+### 2026-10-03 — Implement actual bounded conversation ordering and compatible migration
+
+The discriminating compiled RED interleaves a parent and its reply with an
+unrelated same-subject message. Carry bounded optional public threading headers
+through the existing summary/helper codec; group the currently loaded, owned,
+filtered records in the existing flat list and arrows. Saved Newest/Oldest orders
+groups and members by their appropriate received-time endpoint. Explicit URL
+sorts retain precedence. Server-stored Reading preferences override stale
+presentation cookies; implicit navigation omits derived explicit sort fields.
+
+Review exposed equal-time and missing-time fallback drift and a duplicate ID
+hidden by an undated record. Preserve existing mailbox/UID tie and unknown-time
+ordering, discover public IDs before grouping eligibility, and quarantine the
+ambiguous connected component without hiding independent messages. Keep missing,
+unsupported or cyclic ancestry unknown; do not infer threads from subjects or
+verify a sender from public headers. Preserve original fetch/frame/deadline bounds.
+
+This optional helper field requires compatible web activation before new helper
+metadata, and helper-first rollback. Actual functional, native and browser
+execution must precede matching signed-source delivery. Human tests and all
+Send/provider/protected-mail acceptance remain open; no operator mailbox data,
+private keys, binding policy or Send is changed for these fixtures.

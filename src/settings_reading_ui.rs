@@ -69,9 +69,9 @@ pub(crate) fn render_reading_page_with_policies(
         "<div class=\"general-field\"><label for=\"reading-start-page\">Default start page</label><select id=\"reading-start-page\" form=\"reading-preferences-form\" name=\"start_page\">{start}</select></div>",
         "{mark_control}",
         "<div class=\"general-field\"><label for=\"reading-after-archive\">After archive</label><select id=\"reading-after-archive\" form=\"after-archive-form\" name=\"choice\"{after_disabled} aria-describedby=\"after-archive-help\">{after_options}</select></div>",
-        "<div class=\"general-field\"><label for=\"reading-date-order\">Message ordering</label><select id=\"reading-date-order\" form=\"reading-preferences-form\" name=\"date_order\">{order}</select></div></section>",
+        "<div class=\"general-field\"><label for=\"reading-date-order\">Conversation ordering</label><select id=\"reading-date-order\" form=\"reading-preferences-form\" name=\"date_order\">{order}</select></div></section>",
         "{mark_form}<form id=\"after-archive-form\" method=\"post\" action=\"/settings/after-archive\"><input type=\"hidden\" name=\"csrf_token\" value=\"{csrf}\"><input type=\"hidden\" name=\"revision\" value=\"{after_revision}\"></form><div class=\"reading-card-actions\">{mark_button}<button type=\"submit\" form=\"after-archive-form\"{after_disabled}>Save after-archive choice</button><button class=\"primary-button\" type=\"submit\" form=\"reading-preferences-form\">Save reading preferences</button></div>",
-        "<details class=\"reading-help\"><summary>Reading preference details</summary><p id=\"reading-behaviour-help\">Start page applies after sign-in. Ordering applies to individual messages; explicit list choices take priority. Conversation grouping is unavailable.</p><p id=\"reading-mark-read-help\">Manual keeps the current read state when opening. On Open marks an unread message read through its opening action. Reload and Back do not mark messages read. Save this choice separately.</p><p id=\"after-archive-help\">After archive applies only to a confirmed single-message Archive. Next uses verified loaded mailbox order and supported list filters; Search, last-row or unavailable context returns to the list. Save this choice separately.</p><p>This save also updates Show source shortcut and Attachment details in the Reader card.</p></details></div>"
+        "<details class=\"reading-help\"><summary>Reading preference details</summary><p id=\"reading-behaviour-help\">Start page applies after sign-in. Conversation ordering keeps related messages together using available thread headers within the loaded, filtered results. Members follow received time; missing or ambiguous thread headers remain independent. Explicit list sorts take priority. Thread headers do not verify a sender.</p><p id=\"reading-mark-read-help\">Manual keeps the current read state when opening. On Open marks an unread message read through its opening action. Reload and Back do not mark messages read. Save this choice separately.</p><p id=\"after-archive-help\">After archive applies only to a confirmed single-message Archive. Next uses verified loaded mailbox order and supported list filters; Search, last-row or unavailable context returns to the list. Save this choice separately.</p><p>This save also updates Show source shortcut and Attachment details in the Reader card.</p></details></div>"
     ), start=start, order=order,after_options=after_options,after_disabled=after_disabled,after_revision=after_revision,csrf=csrf,mark_control=mark_control,mark_form=mark_form,mark_button=mark_button);
     let archive_missing = model.archive_mailbox_name.is_some_and(|stored| {
         mailboxes.is_some_and(|entries| !entries.iter().any(|entry| entry.name == stored))
@@ -259,8 +259,12 @@ mod tests {
             2
         );
         assert!(html.contains("name=\"html_display_preference\" value=\"prefer_sanitized_html\""));
-        assert!(html.contains("individual messages"));
-        assert!(!html.contains("Conversation ordering"));
+        assert!(html.contains("<label for=\"reading-date-order\">Conversation ordering</label>"));
+        assert!(html.contains(
+            "id=\"reading-date-order\" form=\"reading-preferences-form\" name=\"date_order\""
+        ));
+        assert!(html.contains("missing or ambiguous thread headers remain independent"));
+        assert!(html.contains("Explicit list sorts take priority"));
     }
 
     #[test]

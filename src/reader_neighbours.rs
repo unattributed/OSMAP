@@ -4,11 +4,11 @@ use crate::http_form::parse_urlencoded_form;
 use crate::http_support::{escape_html, url_encode};
 use crate::mail_list::{ListSelection, ListViewState, MESSAGE_PAGE_SIZE};
 use crate::mailbox::{
-    MailboxEntry, MailboxListingPolicy, MessageSearchResult, MessageSort, MessageSortColumn,
-    MessageSortDirection, DEFAULT_MAX_MESSAGES, DEFAULT_MAX_SEARCH_RESULTS,
+    MailboxEntry, MailboxListingPolicy, MessageSearchResult, DEFAULT_MAX_MESSAGES,
+    DEFAULT_MAX_SEARCH_RESULTS,
 };
 use crate::message_metadata::MessageVersion;
-use crate::reading_preferences::{DateOrder, ReadingPreferences};
+use crate::reading_preferences::ReadingPreferences;
 use crate::rendering::RenderedMessageView;
 use std::collections::{BTreeMap, HashSet};
 
@@ -142,7 +142,7 @@ impl ReaderNeighbours {
                 let Some(preferences) = preferences else {
                     return Self::unavailable(Some(back));
                 };
-                view.sort = saved_sort(preferences);
+                view.apply_saved_reading_defaults(preferences);
             }
             return Self::derive_messages(
                 account,
@@ -156,17 +156,14 @@ impl ReaderNeighbours {
         let Some(preferences) = preferences else {
             return Self::default();
         };
-        let back = format!(
-            "/mailbox?name={}&sort=received&dir={}",
-            url_encode(&rendered.mailbox_name),
-            saved_sort(preferences).direction.query_value()
-        );
+        let back = format!("/mailbox?name={}", url_encode(&rendered.mailbox_name));
         let Some((_, _, fields)) = origin(&back) else {
             return Self::default();
         };
-        let Ok(view) = ListViewState::from_query(&fields) else {
+        let Ok(mut view) = ListViewState::from_query(&fields) else {
             return Self::default();
         };
+        view.apply_saved_reading_defaults(preferences);
         let mut result = Self::derive_messages(
             account,
             rendered,
@@ -446,17 +443,6 @@ impl ReaderNeighbours {
     }
 }
 
-fn saved_sort(preferences: ReadingPreferences) -> MessageSort {
-    MessageSort {
-        column: MessageSortColumn::Received,
-        direction: if preferences.date_order == DateOrder::Newest {
-            MessageSortDirection::Desc
-        } else {
-            MessageSortDirection::Asc
-        },
-    }
-}
-
 fn selected_view(view: &ListViewState, rendered: &RenderedMessageView) -> ListViewState {
     let mut selected = view.clone();
     selected.selection = Some(ListSelection {
@@ -542,6 +528,7 @@ mod tests {
         MessageSummary {
             to: None,
             metadata: Some(MessageMetadata {
+                threading: None,
                 version: MessageVersion::new("a".repeat(32), format!("message-{uid}"))
                     .expect("fixture identity"),
                 attachment_count: Some(0),

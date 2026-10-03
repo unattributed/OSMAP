@@ -116,24 +116,17 @@ fn verified_rows(
     if path != "/mailbox" {
         return None;
     }
-    let mut fields = parse_urlencoded_form(query.as_bytes(), 16, 2048).ok()?;
+    let fields = parse_urlencoded_form(
+        query.as_bytes(),
+        crate::mail_navigation::MAIL_RETURN_MAX_FIELDS,
+        2048,
+    )
+    .ok()?;
     if fields.get("name")? != &current.source_mailbox_name
         || fields.get("q").is_some_and(|q| !q.is_empty())
         || fields.get("scope").is_some_and(|s| s != "mailbox")
     {
         return None;
-    }
-    if !fields.contains_key("sort") && !fields.contains_key("dir") {
-        fields.insert("sort".into(), "received".into());
-        fields.insert(
-            "dir".into(),
-            if prefs.date_order == crate::reading_preferences::DateOrder::Newest {
-                "desc"
-            } else {
-                "asc"
-            }
-            .into(),
-        );
     }
     let BrowserMessageListDecision::Listed {
         canonical_username,
@@ -175,7 +168,8 @@ fn verified_rows(
             return None;
         }
     }
-    let view = crate::mail_list::ListViewState::from_query(&fields).ok()?;
+    let mut view = crate::mail_list::ListViewState::from_query(&fields).ok()?;
+    view.apply_saved_reading_defaults(prefs);
     Some((messages, view))
 }
 pub(super) fn next_candidate(
@@ -214,6 +208,92 @@ pub(super) fn candidate_link(
 mod tests {
     use super::*;
     #[test]
+    fn after_archive_next_uses_saved_conversation_order_and_explicit_sort_precedence() {
+        let rows: Vec<_> = (1..=3)
+            .map(|uid| MessageSummary {
+                mailbox_name: "INBOX".into(),
+                uid,
+                flags: vec![],
+                date_received: format!("2026-10-03 0{uid}:00:00 +0000"),
+                size_virtual: 100,
+                subject: Some("Same public subject".into()),
+                from: Some("sender@example.test".into()),
+                to: None,
+                metadata: Some(crate::message_metadata::MessageMetadata {
+                    version: crate::message_metadata::MessageVersion::new(
+                        "a".repeat(32),
+                        format!("m{uid}"),
+                    )
+                    .unwrap(),
+                    attachment_count: Some(0),
+                    attachments: None,
+                    protection: crate::message_metadata::MessageProtection::Unknown,
+                    preview: None,
+                    threading: crate::conversation::ThreadingMetadata::from_headers(
+                        Some(&format!("<m{uid}@fixture.test>")),
+                        (uid == 3).then_some("<m1@fixture.test>"),
+                        (uid == 3).then_some("<m1@fixture.test>"),
+                    ),
+                }),
+            })
+            .collect();
+        for (order, back, current_uid, expected_uid) in [
+            (
+                crate::reading_preferences::DateOrder::Newest,
+                "/mailbox?name=INBOX",
+                3,
+                1,
+            ),
+            (
+                crate::reading_preferences::DateOrder::Oldest,
+                "/mailbox?name=INBOX",
+                1,
+                3,
+            ),
+            (
+                crate::reading_preferences::DateOrder::Newest,
+                "/mailbox?name=INBOX&sort=received&dir=desc",
+                3,
+                2,
+            ),
+        ] {
+            let current = MessageMoveRequest::new(
+                MessageMovePolicy::default(),
+                "INBOX",
+                "Archive",
+                current_uid,
+                rows[(current_uid - 1) as usize]
+                    .metadata
+                    .as_ref()
+                    .unwrap()
+                    .version
+                    .clone(),
+            )
+            .unwrap();
+            let (mut ordered, mut view) = verified_rows(
+                "alice@example.com",
+                &current,
+                back,
+                crate::reading_preferences::ReadingPreferences {
+                    date_order: order,
+                    ..Default::default()
+                },
+                BrowserMessageListDecision::Listed {
+                    canonical_username: "alice@example.com".into(),
+                    mailbox_name: "INBOX".into(),
+                    messages: rows.clone(),
+                },
+            )
+            .unwrap();
+            view.apply_messages(&mut ordered);
+            assert_eq!(
+                next_candidate(&ordered, &current).unwrap().uid,
+                expected_uid,
+                "confirmed ArchiveNext must project the same current list order"
+            );
+        }
+    }
+    #[test]
     fn after_archive_order_context_and_changed_neighbour() {
         let version = |uid| {
             crate::message_metadata::MessageVersion::new("a".repeat(32), format!("m{uid}")).unwrap()
@@ -230,6 +310,7 @@ mod tests {
             .map(|uid| MessageSummary {
                 to: None,
                 metadata: Some(crate::message_metadata::MessageMetadata {
+                    threading: None,
                     attachments: None,
                     protection: crate::message_metadata::MessageProtection::Unknown,
                     version: version(uid),

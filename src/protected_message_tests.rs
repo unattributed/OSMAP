@@ -105,6 +105,7 @@ pub(super) fn original(source: &[u8]) -> MessageView {
     let (headers, body) = split_entity(source).unwrap();
     MessageView {
         metadata: Some(crate::message_metadata::MessageMetadata {
+            threading: None,
             attachments: None,
             protection: crate::message_metadata::MessageProtection::Unknown,
             version: MessageVersion::new("a".repeat(32), "b".repeat(32)).unwrap(),

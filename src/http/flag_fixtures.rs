@@ -36,6 +36,7 @@ impl StubGateway {
             Sha256::digest(format!("synthetic/{username}/{mailbox}").as_bytes())
         );
         MessageMetadata {
+            threading: None,
             attachments: None,
             protection: crate::message_metadata::MessageProtection::Unknown,
             preview: if uid == 124 {

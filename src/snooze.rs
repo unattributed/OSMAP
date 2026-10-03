@@ -414,6 +414,7 @@ mod tests {
             uid,
             mailbox_name: "INBOX".into(),
             metadata: Some(crate::message_metadata::MessageMetadata {
+                threading: None,
                 attachments: None,
                 protection: crate::message_metadata::MessageProtection::Unknown,
                 version: crate::message_metadata::MessageVersion::new(

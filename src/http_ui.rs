@@ -780,11 +780,14 @@ fn append_list_filter_selection(href: &mut String, view: &ListViewState) {
 }
 
 pub(crate) fn list_navigation_href(base: &str, view: &ListViewState, page: usize) -> String {
-    let mut href = format!(
-        "{base}&sort={}&dir={}",
-        view.sort.column.query_value(),
-        view.sort.direction.query_value()
-    );
+    let mut href = base.to_string();
+    if view.conversation_order.is_none() {
+        href.push_str(&format!(
+            "&sort={}&dir={}",
+            view.sort.column.query_value(),
+            view.sort.direction.query_value()
+        ));
+    }
     append_list_filter_selection(&mut href, view);
     if page > 1 {
         href.push_str(&format!("&page={page}"));
@@ -793,7 +796,13 @@ pub(crate) fn list_navigation_href(base: &str, view: &ListViewState, page: usize
 }
 
 fn list_form_state(view: &ListViewState) -> String {
-    let mut fields = format!("<input type=\"hidden\" name=\"filter\" value=\"{}\"><input type=\"hidden\" name=\"sort\" value=\"{}\"><input type=\"hidden\" name=\"dir\" value=\"{}\">", view.filter.value(), view.sort.column.query_value(), view.sort.direction.query_value());
+    let mut fields = format!(
+        "<input type=\"hidden\" name=\"filter\" value=\"{}\">",
+        view.filter.value()
+    );
+    if view.conversation_order.is_none() {
+        fields.push_str(&format!("<input type=\"hidden\" name=\"sort\" value=\"{}\"><input type=\"hidden\" name=\"dir\" value=\"{}\">", view.sort.column.query_value(), view.sort.direction.query_value()));
+    }
     fields.push_str(&format!(
         "<input type=\"hidden\" name=\"attachment\" value=\"{}\">",
         view.attachment.value()
@@ -1482,9 +1491,19 @@ fn message_column_headings(recipient: bool) -> String {
 }
 
 fn render_sort_control_group(links: &str, view: &ListViewState) -> String {
+    let label = if view.conversation_order.is_some() {
+        "Conversation"
+    } else {
+        view.sort.column.label()
+    };
+    let help = if view.conversation_order.is_some() {
+        "<p>Related members stay together within these loaded results. Missing or ambiguous thread headers remain independent; thread headers do not verify a sender.</p>"
+    } else {
+        ""
+    };
     format!(
-        "<details class=\"message-sort\"><summary>Sorted by {} {}</summary><nav aria-label=\"Sort messages\">{links}</nav></details>",
-        view.sort.column.label(),
+        "<details class=\"message-sort\"><summary>Sorted by {} {}</summary><nav aria-label=\"Sort messages\">{links}</nav>{help}</details>",
+        label,
         sort_direction_label(view.sort.direction),
     )
 }

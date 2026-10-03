@@ -68,6 +68,16 @@ INPV scenario mappings cover these component checks. Native and browser results
 are recorded in the UX ledger; they do not close full WSTG scenarios, human UAT,
 SMTP/OpenPGP or the strict release gate.
 
+The S02 conversation-order component carries optional bounded public thread
+headers through the existing authenticated message codec. ATHZ account/GUID
+checks remain in the actual routes and reader; INPV/BUSL checks cover strict
+typed metadata, bounded references/results/frames, ambiguous duplicate and cycle
+refusal, current filtered membership and explicit-sort precedence. Unknown native
+headers retain usable independent rows, while malformed helper metadata is
+refused. This adds no helper command, body fetch, authorization or sender trust.
+Actual model, disposable native and no-script browser outcomes belong in the
+ledger and do not establish full WSTG or human Send acceptance.
+
 ```text
 add wstg due diligence matrix
 ```

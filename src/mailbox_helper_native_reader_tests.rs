@@ -349,8 +349,23 @@ fn write_message(root: &Path, user: &str, index: usize, shape: usize) {
     } else {
         "Public Sender <sender@example.test>"
     };
-    fs::write(&path, format!("From: {sender}\r\nTo: {user}@fixture.test\r\nSubject: Native {index:03}\r\nDate: Sat, 03 Oct 2026 00:00:00 +0000\r\nMessage-ID: <{user}-{index}@fixture.test>\r\nMIME-Version: 1.0\r\n{mime}")).unwrap();
-    fs::set_permissions(path, fs::Permissions::from_mode(0o600)).unwrap();
+    let threading = if user == "alice" && index == 12 {
+        "In-Reply-To: <alice-10@fixture.test>\r\nReferences: <alice-10@fixture.test>\r\n"
+    } else {
+        ""
+    };
+    fs::write(&path, format!("From: {sender}\r\nTo: {user}@fixture.test\r\nSubject: Native {index:03}\r\nDate: Sat, 03 Oct 2026 00:00:00 +0000\r\nMessage-ID: <{user}-{index}@fixture.test>\r\n{threading}MIME-Version: 1.0\r\n{mime}")).unwrap();
+    fs::set_permissions(&path, fs::Permissions::from_mode(0o600)).unwrap();
+    if user == "alice" && (10..=12).contains(&index) {
+        // Actual Maildir receipt times distinguish root1/unrelated2/reply3.
+        // Preserve the original 53 records, subjects, MIME shapes and date day.
+        let modified =
+            std::time::UNIX_EPOCH + Duration::from_secs(1_790_985_600 + (index as u64 - 9) * 3600);
+        fs::File::open(&path)
+            .unwrap()
+            .set_times(fs::FileTimes::new().set_modified(modified))
+            .unwrap();
+    }
 }
 
 fn http(
@@ -467,6 +482,12 @@ fn flag_form(body: &str, uid: u64, flag: &str) -> BTreeMap<String, String> {
             .then_some(fields)
         })
         .expect("actual rendered native flag form")
+}
+fn rendered_row_uids(body: &str) -> Vec<u64> {
+    body.split("aria-label=\"More for message #")
+        .skip(1)
+        .map(|part| part.split_once(" in INBOX\"").unwrap().0.parse().unwrap())
+        .collect()
 }
 fn budget_pair(response: &HandledHttpResponse) {
     assert_eq!(
@@ -663,6 +684,47 @@ fn isolated_openbsd_coordinated_reader_signed_helper() {
         .expect("known ordinary no attachments")
         .is_empty());
     let selected_uid = by_subject(52).uid;
+    for index in [10, 11, 12] {
+        let threading = by_subject(index)
+            .metadata
+            .as_ref()
+            .unwrap()
+            .threading
+            .as_ref()
+            .expect("actual native public Message-ID metadata");
+        assert_eq!(
+            threading.message_id(),
+            format!("<alice-{index}@fixture.test>")
+        );
+        assert_eq!(
+            threading.in_reply_to(),
+            (index == 12).then_some("<alice-10@fixture.test>")
+        );
+        assert_eq!(
+            threading.references(),
+            if index == 12 {
+                vec!["<alice-10@fixture.test>".to_string()]
+            } else {
+                vec![]
+            }
+        );
+    }
+    for (order, expected) in [
+        (crate::reading_preferences::DateOrder::Newest, [12, 10, 11]),
+        (crate::reading_preferences::DateOrder::Oldest, [10, 12, 11]),
+    ] {
+        let mut rows = [10, 11, 12].map(|index| by_subject(index).clone()).to_vec();
+        let mut view = crate::mail_list::ListViewState::from_query(&BTreeMap::new()).unwrap();
+        view.apply_saved_reading_defaults(crate::reading_preferences::ReadingPreferences {
+            date_order: order,
+            ..Default::default()
+        });
+        view.apply_messages(&mut rows);
+        assert_eq!(
+            rows.iter().map(|row| row.uid).collect::<Vec<_>>(),
+            expected.map(|index| by_subject(index).uid)
+        );
+    }
     let stale_uid = by_subject(2).uid;
     let flag_uid = by_subject(0).uid;
     let armed = Arc::new(AtomicBool::new(false));
@@ -730,6 +792,144 @@ fn isolated_openbsd_coordinated_reader_signed_helper() {
     let app = BrowserApp::new(
         HttpPolicy::from_config(&app_config),
         RuntimeBrowserGateway::from_config(&app_config),
+    );
+    let reading_store = crate::reading_preferences::ReadingPreferencesStore::new(
+        &app_config.state_layout.settings_dir,
+    );
+    let save_reading = |order: &str| {
+        BTreeMap::from([
+            ("csrf_token".into(), alice.record.csrf_token.clone()),
+            ("start_page".into(), "inbox".into()),
+            ("date_order".into(), order.into()),
+            ("show_source_shortcut".into(), "1".into()),
+            ("attachment_details".into(), "1".into()),
+        ])
+    };
+    assert_eq!(
+        http(
+            &app,
+            Some(&alice),
+            "POST",
+            "/settings/reading",
+            &save_reading("newest")
+        )
+        .response
+        .status_code,
+        303
+    );
+    let newest_threads = get(&app, &alice, "/mailbox?name=INBOX&page=2");
+    assert_eq!(newest_threads.response.status_code, 200);
+    assert_eq!(
+        rendered_row_uids(text(&newest_threads)),
+        [12, 10, 11].map(|index| by_subject(index).uid)
+    );
+    let thread_identity = &by_subject(12).metadata.as_ref().unwrap().version;
+    let thread_target = format!("/mailbox?name=INBOX&page=2&selected_mailbox=INBOX&selected_uid={}&selected_mailbox_guid={}&selected_message_guid={}", by_subject(12).uid, encode(&thread_identity.mailbox_guid), encode(&thread_identity.message_guid));
+    let thread_reader = get(&app, &alice, &thread_target);
+    assert_eq!(thread_reader.response.status_code, 200);
+    assert!(text(&thread_reader).contains("ALICE_READER_ONLY_012"));
+    let thread_next = neighbour_href(text(&thread_reader), "Next message")
+        .expect("real conversation next member");
+    let thread_fields = neighbour_fields(&app, &thread_next);
+    assert_eq!(
+        thread_fields.get("selected_uid"),
+        Some(&by_subject(10).uid.to_string())
+    );
+    assert!(!thread_fields.contains_key("sort") && !thread_fields.contains_key("dir"));
+    assert_eq!(
+        http(
+            &app,
+            Some(&alice),
+            "POST",
+            "/settings/reading",
+            &save_reading("oldest")
+        )
+        .response
+        .status_code,
+        303
+    );
+    assert_eq!(
+        reading_store.load(ALICE).unwrap().date_order,
+        crate::reading_preferences::DateOrder::Oldest
+    );
+    assert_eq!(
+        reading_store.load(BOB).unwrap().date_order,
+        crate::reading_preferences::DateOrder::Newest
+    );
+    let oldest_threads = get(&app, &alice, "/mailbox?name=INBOX");
+    assert_eq!(oldest_threads.response.status_code, 200);
+    assert_eq!(
+        &rendered_row_uids(text(&oldest_threads))[..3],
+        &[10, 12, 11].map(|index| by_subject(index).uid)
+    );
+    let reading_page = get(&app, &alice, "/settings?section=reading");
+    assert_eq!(reading_page.response.status_code, 200);
+    assert!(text(&reading_page).contains("<option value=\"oldest\" selected>"));
+    let explicit_threads = get(&app, &alice, "/mailbox?name=INBOX&sort=received&dir=asc");
+    assert_eq!(
+        &rendered_row_uids(text(&explicit_threads))[..3],
+        &[10, 11, 12].map(|index| by_subject(index).uid)
+    );
+    assert_eq!(
+        http(
+            &app,
+            Some(&alice),
+            "POST",
+            "/settings/reading",
+            &save_reading("newest")
+        )
+        .response
+        .status_code,
+        303
+    );
+    let stale_thread_target = thread_target.replace(
+        &format!(
+            "selected_message_guid={}",
+            encode(&thread_identity.message_guid)
+        ),
+        "selected_message_guid=stale-conversation-probe",
+    );
+    let stale_thread = get(&app, &alice, &stale_thread_target);
+    assert_eq!(stale_thread.response.status_code, 200);
+    assert!(text(&stale_thread).contains("Message unavailable"));
+    assert!(!text(&stale_thread).contains("ALICE_READER_ONLY_012"));
+    let root_reader = get(&app, &alice, thread_next.split('#').next().unwrap());
+    assert_eq!(root_reader.response.status_code, 200);
+    assert!(text(&root_reader).contains("ALICE_READER_ONLY_010"));
+    let parent_seen = flag_form(text(&root_reader), by_subject(10).uid, "seen");
+    assert_eq!(parent_seen.get("enabled").map(String::as_str), Some("1"));
+    assert_eq!(
+        http(&app, Some(&alice), "POST", "/message/flag", &parent_seen)
+            .response
+            .status_code,
+        303
+    );
+    let filtered_thread = get(&app, &alice, &format!("{thread_target}&filter=unread"));
+    assert_eq!(filtered_thread.response.status_code, 200);
+    assert!(text(&filtered_thread).contains("ALICE_READER_ONLY_012"));
+    assert_eq!(
+        rendered_row_uids(text(&filtered_thread)),
+        [12, 11].map(|index| by_subject(index).uid)
+    );
+    let filtered_next = neighbour_href(text(&filtered_thread), "Next message")
+        .expect("next eligible loaded member");
+    assert_eq!(
+        neighbour_fields(&app, &filtered_next).get("selected_uid"),
+        Some(&by_subject(11).uid.to_string()),
+        "excluded Seen parent cannot re-enter via conversation adjacency"
+    );
+    let parent_changed = get(&app, &alice, thread_next.split('#').next().unwrap());
+    let parent_unread = flag_form(text(&parent_changed), by_subject(10).uid, "seen");
+    assert_eq!(parent_unread.get("enabled").map(String::as_str), Some("0"));
+    assert_eq!(
+        http(&app, Some(&alice), "POST", "/message/flag", &parent_unread)
+            .response
+            .status_code,
+        303
+    );
+    assert_eq!(
+        persisted_flags(&native_list.list_messages(ALICE, &query).unwrap()),
+        persisted_flags(&initial)
     );
     let selection = format!("/mailbox?name=INBOX&filter=unread&sort=subject&dir=asc&pgp=all&attachment=all&after=2000-01-01&before=2099-12-31&selected_mailbox=INBOX&selected_uid={selected_uid}");
     let response = get(&app, &alice, &selection);
@@ -1487,5 +1687,5 @@ fn isolated_openbsd_coordinated_reader_signed_helper() {
     drop(fixture);
     assert!(!root.exists());
     assert_eq!(before, standard_metadata());
-    println!("native_reader_cases=PASS rows53_two_accounts=PASS classification_only=PASS page50_selected_back_search=PASS filtered_previous_next_crosspage_search_origin=PASS stale_navigation_guid_refusal=PASS native_csrf_read_star_filtered_membership_reload=PASS native_manual_onopen_seen_unread_reconciliation=PASS opening_stale_foreign_guid_refusal=PASS attachment_without_and_actual_unknown_count={unknown_attachment_records} foreign_neighbour_stale_refusal=PASS budget_reuse=PASS no_move_append_or_crypto_configuration=PASS scratch_cleanup=PASS standard_host_metadata_unchanged=PASS");
+    println!("native_reader_cases=PASS rows53_two_accounts=PASS classification_only=PASS page50_selected_back_search=PASS filtered_previous_next_crosspage_search_origin=PASS stale_navigation_guid_refusal=PASS native_csrf_read_star_filtered_membership_reload=PASS native_manual_onopen_seen_unread_reconciliation=PASS opening_stale_foreign_guid_refusal=PASS native_conversation_headers_saved_order_reader_next_explicit_precedence=PASS conversation_excluded_parent_stale_guid_refusal=PASS attachment_without_and_actual_unknown_count={unknown_attachment_records} foreign_neighbour_stale_refusal=PASS budget_reuse=PASS no_move_append_or_crypto_configuration=PASS scratch_cleanup=PASS standard_host_metadata_unchanged=PASS");
 }

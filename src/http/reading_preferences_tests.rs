@@ -83,7 +83,7 @@ fn reading_invalid_forms_and_csrf_never_change_saved_bytes() {
 }
 
 #[test]
-fn reading_cookie_changes_actual_default_list_order_but_explicit_sort_wins() {
+fn reading_saved_order_overrides_stale_cookie_but_explicit_sort_wins() {
     let f = Fixture::new();
     let check_order = |path: &str, cookie: &str, oldest: bool| {
         let response = f.perform("GET", path, "", Some(cookie));
@@ -92,9 +92,12 @@ fn reading_cookie_changes_actual_default_list_order_but_explicit_sort_wins() {
         assert_eq!(body.find("Quarterly report").unwrap() < body.find("Follow-up").unwrap(), oldest);
     };
     let oldest = "osmap_reading=v1.mailbox.oldest.1.1";
-    check_order("/mailbox?name=INBOX", oldest, true);
+    check_order("/mailbox?name=INBOX", oldest, false);
+    assert_eq!(f.perform("POST", "/settings/reading", &f.save_body(), None).response.status_code, 303);
+    let stale = "osmap_reading=v1.mailbox.newest.1.1";
+    check_order("/mailbox?name=INBOX", stale, true);
     check_order("/mailbox?name=INBOX&sort=received&dir=desc", oldest, false);
-    check_order("/mailbox?name=INBOX", "osmap_reading=invalid", false);
+    check_order("/mailbox?name=INBOX", "osmap_reading=invalid", true);
     check_order("/mailbox?name=INBOX&sort=subject&dir=asc", oldest, false);
 }
 

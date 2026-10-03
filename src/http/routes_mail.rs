@@ -26,7 +26,18 @@ fn mailbox_name_exists(mailboxes: &[MailboxEntry], mailbox_name: &str) -> bool {
     mailboxes.iter().any(|mailbox| mailbox.name == mailbox_name)
 }
 
-fn list_view_state(request: &HttpRequest) -> Result<ListViewState, HttpResponse> {
+fn list_view_state(
+    request: &HttpRequest,
+    saved: Option<crate::reading_preferences::ReadingPreferences>,
+) -> Result<ListViewState, HttpResponse> {
+    if let Some(preferences) = saved {
+        return ListViewState::from_query(&request.query_params)
+            .map(|mut view| {
+                view.apply_saved_reading_defaults(preferences);
+                view
+            })
+            .map_err(invalid_list_response);
+    }
     let mut query = request.query_params.clone();
     if !query.contains_key("sort") && !query.contains_key("dir") {
         let preferences = crate::reading_preferences::ReadingPreferences::from_cookie_header(
@@ -35,14 +46,18 @@ fn list_view_state(request: &HttpRequest) -> Result<ListViewState, HttpResponse>
         query.insert("sort".into(), "received".into());
         query.insert("dir".into(), preferences.date_order.sort_direction().into());
     }
-    ListViewState::from_query(&query).map_err(|message| {
-        html_response(
-            400,
-            "Bad Request",
-            "Invalid Message List Request",
-            TrustedHtml::from_template(format!("<p>{}</p>", escape_html(message))),
-        )
-    })
+    // A cookie remains only a presentation hint when storage is unavailable;
+    // it cannot establish a saved conversation preference.
+    ListViewState::from_query(&query).map_err(invalid_list_response)
+}
+
+fn invalid_list_response(message: &str) -> HttpResponse {
+    html_response(
+        400,
+        "Bad Request",
+        "Invalid Message List Request",
+        TrustedHtml::from_template(format!("<p>{}</p>", escape_html(message))),
+    )
 }
 
 fn list_origin(request: &HttpRequest) -> Option<String> {
@@ -121,7 +136,8 @@ where
         };
         let mut origin_request = request.clone();
         origin_request.query_params = fields.clone();
-        let Ok(view) = list_view_state(&origin_request) else {
+        let preferences = self.gateway.load_reading_preferences(context, session).ok();
+        let Ok(view) = list_view_state(&origin_request, preferences) else {
             return ReaderNeighbours::unavailable(Some(origin.clone()));
         };
         match path {
@@ -518,7 +534,11 @@ where
             };
         // A query parameter is not evidence that a mutation completed.
 
-        let mut view = match list_view_state(request) {
+        let saved_reading = self
+            .gateway
+            .load_reading_preferences(context, &validated_session)
+            .ok();
+        let mut view = match list_view_state(request, saved_reading) {
             Ok(view) => view,
             Err(response) => {
                 return HandledHttpResponse {
@@ -755,7 +775,11 @@ where
                 Ok(result) => result,
                 Err(response) => return response,
             };
-        let mut view = match list_view_state(request) {
+        let saved_reading = self
+            .gateway
+            .load_reading_preferences(context, &validated_session)
+            .ok();
+        let mut view = match list_view_state(request, saved_reading) {
             Ok(view) => view,
             Err(response) => {
                 return HandledHttpResponse {

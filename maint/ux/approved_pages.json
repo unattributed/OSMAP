@@ -2563,11 +2563,18 @@
         {
           "id": "R2-14-004",
           "label": "Conversation ordering",
-          "status": "PARTIAL_FUNCTIONAL",
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
           "evidence": [
-            "maint/ux/reading_workflows.py",
-            "src/http/reading_preferences_tests.rs",
-            "docs/UX_EXECUTION_LEDGER.md"
+            "src/conversation.rs",
+            "src/mailbox_json.rs",
+            "src/mailbox_helper_protocol.rs",
+            "src/http/conversation_tests.rs",
+            "src/mailbox_helper_native_reader_tests.rs",
+            "src/http/routes_mail.rs",
+            "src/reader_neighbours.rs",
+            "maint/ux/conversation_workflows.py",
+            "S02/revalidation-20261003/conversation-order/{focused-green-attempt2,threading-green,native-conversation-attempt4,browser-attempt1}/actual results",
+            "Bounded loaded filtered flat-list ancestry ordering; explicit sort precedence; absent/ambiguous metadata independent. Human UAT, full visual parity and Send remain unaccepted."
           ]
         },
         {

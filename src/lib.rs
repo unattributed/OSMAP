@@ -16,6 +16,7 @@ mod compose_result_ui;
 pub mod composition_preferences;
 pub mod config;
 pub mod contacts;
+pub mod conversation;
 pub mod draft;
 pub mod draft_content;
 mod draft_list;

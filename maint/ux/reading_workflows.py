@@ -87,7 +87,7 @@ def main():
         def state(page, start="drafts", changed=True):
             visit(page)
             expect(page.get_by_label("Default start page", exact=True)).to_have_value(start)
-            expect(page.get_by_label("Message ordering", exact=True)).to_have_value("oldest" if changed else "newest")
+            expect(page.get_by_label("Conversation ordering", exact=True)).to_have_value("oldest" if changed else "newest")
             for label in ("Show source shortcut", "Attachment details"):
                 assert page.get_by_label(label, exact=True).is_checked() == (not changed)
 
@@ -145,7 +145,7 @@ def main():
             reader(page, READER, True)
             visit(page)
             page.get_by_label("Default start page", exact=True).select_option("drafts")
-            page.get_by_label("Message ordering", exact=True).select_option("oldest")
+            page.get_by_label("Conversation ordering", exact=True).select_option("oldest")
             for label in ("Show source shortcut", "Attachment details"):
                 page.get_by_label(label, exact=True).uncheck()
             submit(page, "Save reading preferences", keyboard=True)

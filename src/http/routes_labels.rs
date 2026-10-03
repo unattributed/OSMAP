@@ -347,6 +347,7 @@ mod validation_tests {
             from: None,
             to: None,
             metadata: Some(crate::message_metadata::MessageMetadata {
+                threading: None,
                 attachments: None,
                 protection: crate::message_metadata::MessageProtection::Unknown,
                 version: crate::message_metadata::MessageVersion::new("a".repeat(32), "one".into())

@@ -291,6 +291,9 @@ pub struct ListViewState {
     pub dates: ReceivedDateRange,
     pub bulk_selection: BulkSelection,
     pub sort: MessageSort,
+    /// Saved conversation mode applies only without an explicit URL sort.
+    pub(crate) conversation_order: Option<crate::reading_preferences::DateOrder>,
+    explicit_sort: bool,
     pub filter: MessageFilter,
     pub attachment: AttachmentFilter,
     pub protection: ProtectionFilter,
@@ -419,7 +422,25 @@ impl ListViewState {
             selected_version: None,
             open_on_select: false,
             opened_read,
+            conversation_order: None,
+            explicit_sort: query.contains_key("sort") || query.contains_key("dir"),
         })
+    }
+
+    pub(crate) fn apply_saved_reading_defaults(
+        &mut self,
+        preferences: crate::reading_preferences::ReadingPreferences,
+    ) {
+        if !self.explicit_sort {
+            self.sort = MessageSort {
+                column: MessageSortColumn::Received,
+                direction: match preferences.date_order {
+                    crate::reading_preferences::DateOrder::Newest => MessageSortDirection::Desc,
+                    crate::reading_preferences::DateOrder::Oldest => MessageSortDirection::Asc,
+                },
+            };
+            self.conversation_order = Some(preferences.date_order);
+        }
     }
 
     pub fn apply_messages(&mut self, messages: &mut Vec<MessageSummary>) {
@@ -446,7 +467,11 @@ impl ListViewState {
                         .map_or(MessageProtection::Unknown, |m| m.protection),
                 )
         });
-        sort_message_summaries(messages, Some(self.sort));
+        if let Some(order) = self.conversation_order {
+            crate::conversation::order_message_summaries(messages, order);
+        } else {
+            sort_message_summaries(messages, Some(self.sort));
+        }
         let selected = messages
             .iter()
             .enumerate()
@@ -565,7 +590,11 @@ impl ListViewState {
                         .map_or(MessageProtection::Unknown, |m| m.protection),
                 )
         });
-        sort_message_search_results(results, Some(self.sort));
+        if let Some(order) = self.conversation_order {
+            crate::conversation::order_search_results(results, order);
+        } else {
+            sort_message_search_results(results, Some(self.sort));
+        }
         let selected = results
             .iter()
             .enumerate()
@@ -718,6 +747,7 @@ mod tests {
                 }
                 .into();
                 message.metadata = Some(MessageMetadata {
+                    threading: None,
                     version: MessageVersion::new("a".repeat(32), format!("synthetic-{uid}"))
                         .unwrap(),
                     attachment_count: Some(usize::from(uid % 2 == 1)),
@@ -874,6 +904,7 @@ mod tests {
             let mut message = row(index as u64 + 1, &[]);
             message.subject = Some("[signed] [encrypted] decorative header".into());
             message.metadata = Some(MessageMetadata {
+                threading: None,
                 version: MessageVersion::new("a".repeat(32), format!("synthetic-{index}")).unwrap(),
                 attachment_count: Some(0),
                 attachments: None,
@@ -920,6 +951,7 @@ mod tests {
                 }
                 .into();
                 message.metadata = Some(MessageMetadata {
+                    threading: None,
                     version: MessageVersion::new("a".repeat(32), format!("synthetic-{uid}"))
                         .unwrap(),
                     attachment_count: Some(usize::from(uid % 2 == 1)),
@@ -989,6 +1021,7 @@ mod tests {
             .map(|uid| {
                 let mut message = row(uid as u64, &[]);
                 message.metadata = Some(MessageMetadata {
+                    threading: None,
                     version: MessageVersion::new("a".repeat(32), format!("synthetic-{uid}"))
                         .unwrap(),
                     attachment_count: Some(0),
@@ -1130,6 +1163,7 @@ mod tests {
     #[test]
     fn attachment_filter_distinguishes_unknown_and_composes_before_paging() {
         let metadata = |count| crate::message_metadata::MessageMetadata {
+            threading: None,
             version: MessageVersion::new("a".repeat(32), "synthetic".into()).unwrap(),
             attachment_count: count,
             attachments: None,
@@ -1266,6 +1300,7 @@ mod tests {
         let version = MessageVersion::new("a".repeat(32), "synthetic-1".into()).expect("version");
         let mut rows = (1..=120).map(|uid| row(uid, &[])).collect::<Vec<_>>();
         rows[0].metadata = Some(crate::message_metadata::MessageMetadata {
+            threading: None,
             version: version.clone(),
             attachment_count: Some(0),
             attachments: None,

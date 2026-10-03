@@ -111,6 +111,8 @@ pub fn validate_attachment_summaries(
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MessageMetadata {
+    /// Public ancestry only; absent/malformed native headers mean unknown.
+    pub threading: Option<crate::conversation::ThreadingMetadata>,
     pub version: MessageVersion,
     /// None means unsupported/invalid/over-limit BODYSTRUCTURE, never zero.
     pub attachment_count: Option<usize>,

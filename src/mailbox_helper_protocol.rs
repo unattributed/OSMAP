@@ -1310,6 +1310,7 @@ pub(super) fn parse_response(
             | "message_attachment_count"
             | "message_protection"
             | "message_attachments_b64"
+            | "message_threading_b64"
             | "message_preview_b64"
             | "message_body_text_b64" => {
                 if current_message_fields
@@ -1346,7 +1347,8 @@ pub(super) fn parse_response(
     }
 
     if (response_field_names.contains(&"message_protection")
-        || response_field_names.contains(&"message_attachments_b64"))
+        || response_field_names.contains(&"message_attachments_b64")
+        || response_field_names.contains(&"message_threading_b64"))
         && (status.as_deref() != Some("ok")
             || !matches!(
                 operation.as_deref(),
@@ -1708,6 +1710,13 @@ fn encode_message_metadata(metadata: Option<&MessageMetadata>) -> String {
             encode_base64(&data)
         ));
     }
+    if let Some(threading) = metadata.threading.as_ref().filter(|value| value.valid()) {
+        if let Ok(data) = serde_json::to_vec(threading) {
+            if data.len() <= crate::conversation::MAX_THREAD_WIRE_BYTES {
+                encoded.push_str(&format!("message_threading_b64={}\n", encode_base64(&data)));
+            }
+        }
+    }
     encoded
 }
 
@@ -1720,12 +1729,14 @@ fn parse_message_metadata(
     let preview = fields.get("message_preview_b64");
     let protection = fields.get("message_protection");
     let attachments = fields.get("message_attachments_b64");
+    let threading = fields.get("message_threading_b64");
     if mailbox_guid.is_none()
         && message_guid.is_none()
         && count.is_none()
         && preview.is_none()
         && protection.is_none()
         && attachments.is_none()
+        && threading.is_none()
     {
         // Old helper responses can still be read, but cannot authorize flag writes.
         return Ok(None);
@@ -1751,6 +1762,21 @@ fn parse_message_metadata(
         )
     };
     Ok(Some(MessageMetadata {
+        threading: threading
+            .map(|value| -> Result<_, String> {
+                let text = decode_base64_text(
+                    value,
+                    crate::conversation::MAX_THREAD_WIRE_BYTES,
+                    "public threading metadata",
+                )?;
+                let metadata: crate::conversation::ThreadingMetadata = serde_json::from_str(&text)
+                    .map_err(|_| "helper threading metadata was malformed".to_string())?;
+                if !metadata.valid() {
+                    return Err("helper threading metadata was invalid or outside bounds".into());
+                }
+                Ok(metadata)
+            })
+            .transpose()?,
         attachments: attachments
             .map(|value| -> Result<_, String> {
                 let text = decode_base64_text(value, 8192, "public attachment descriptors")?;
@@ -2509,6 +2535,7 @@ fn parse_search_batch_response(
             | "message_attachment_count"
             | "message_protection"
             | "message_attachments_b64"
+            | "message_threading_b64"
             | "message_preview_b64" => {
                 rows_started = true;
                 if row.insert(key.to_string(), value.to_string()).is_some() {
@@ -2564,6 +2591,55 @@ fn parse_search_batch_response(
 mod batch_protocol_tests {
     use super::*;
 
+    #[test]
+    fn public_threading_roundtrips_legacy_unknown_and_refuses_invalid_typed_metadata() {
+        let legacy = response(vec![row("INBOX", 1)]);
+        let encoded = encode_response(&legacy);
+        assert!(!encoded.contains("message_threading_b64="));
+        assert_eq!(parse_batch(&encoded).unwrap(), legacy);
+        let mut message = row("INBOX", 1);
+        message.metadata.as_mut().unwrap().threading =
+            crate::conversation::ThreadingMetadata::from_headers(
+                Some("<child@example.test>"),
+                Some("<parent@example.test>"),
+                Some("<parent@example.test>"),
+            );
+        let expected = response(vec![message]);
+        let encoded = encode_response(&expected);
+        assert_eq!(parse_batch(&encoded).unwrap(), expected);
+        let token = encoded
+            .lines()
+            .find(|line| line.starts_with("message_threading_b64="))
+            .unwrap();
+        for json in [
+            r#"{"message_id":"bad","in_reply_to":null,"references":[]}"#,
+            r#"{"message_id":"<child@example.test>","in_reply_to":null,"references":[],"unknown":1}"#,
+            r#"{"message_id":"<child@example.test>","message_id":"<other@example.test>","in_reply_to":null,"references":[]}"#,
+            r#"{"message_id":"<child@example.test>","in_reply_to":null,"references":["<child@example.test>"]}"#,
+        ] {
+            assert!(parse_batch(&encoded.replace(
+                token,
+                &format!("message_threading_b64={}", encode_base64(json.as_bytes()))
+            ))
+            .is_err());
+        }
+        assert!(parse_batch(&encoded.replace(token, &format!("{token}\n{token}"))).is_err());
+        assert!(parse_batch(&encoded.replace(
+            token,
+            &format!(
+                "message_threading_b64={}",
+                encode_base64(&vec![b'x'; crate::conversation::MAX_THREAD_WIRE_BYTES + 1])
+            )
+        ))
+        .is_err());
+        for base in [
+            "status=ok\noperation=mailbox_list\nmailbox_count=0\n",
+            "status=error\nbackend_b64=Zml4dHVyZQ==\nreason_b64=cmVmdXNlZA==\n",
+        ] {
+            assert!(parse_batch(&format!("{base}{token}\n")).is_err());
+        }
+    }
+
     const KEY: &[u8] = b"batch-test-key-with-32-bytes-or-more";
 
     fn signed_batch() -> MailboxHelperRequest {
@@ -2588,6 +2664,7 @@ mod batch_protocol_tests {
             subject: Some("fixture É".into()),
             from: Some("fixture@example.com".into()),
             metadata: Some(MessageMetadata {
+                threading: None,
                 attachments: None,
                 protection: crate::message_metadata::MessageProtection::Unknown,
                 version: MessageVersion::new("a".repeat(32), format!("fixture-{uid}")).unwrap(),
@@ -2783,6 +2860,7 @@ mod batch_protocol_tests {
     fn public_protection_metadata_works_in_single_list_search_and_view_codecs() {
         use crate::message_metadata::MessageProtection;
         let metadata = MessageMetadata {
+            threading: None,
             attachments: Some(vec![crate::message_metadata::AttachmentSummary {
                 filename: Some("public.txt".into()),
                 encoded_size_bytes: 20,

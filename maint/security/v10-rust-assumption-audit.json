@@ -1988,6 +1988,62 @@
       "classification": "production_adjacent_assumption",
       "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
       "fail_closed_relevance": "high",
+      "file": "src/conversation.rs",
+      "kind": "unwrap_call",
+      "line": 368
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/conversation.rs",
+      "kind": "unwrap_call",
+      "line": 462
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/conversation.rs",
+      "kind": "unwrap_call",
+      "line": 504
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/conversation.rs",
+      "kind": "unwrap_call",
+      "line": 506
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/conversation.rs",
+      "kind": "unwrap_call",
+      "line": 555
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/conversation.rs",
+      "kind": "unwrap_call",
+      "line": 664
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/conversation.rs",
+      "kind": "unwrap_call",
+      "line": 671
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
       "file": "src/draft.rs",
       "kind": "expect_call",
       "line": 1663
@@ -3862,7 +3918,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "unwrap_call",
-      "line": 1050
+      "line": 1054
     },
     {
       "classification": "production_adjacent_assumption",
@@ -3870,7 +3926,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "unwrap_call",
-      "line": 1080
+      "line": 1085
     },
     {
       "classification": "production_adjacent_assumption",
@@ -3878,7 +3934,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 1116
+      "line": 1121
     },
     {
       "classification": "production_adjacent_assumption",
@@ -3886,7 +3942,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 1118
+      "line": 1123
     },
     {
       "classification": "production_adjacent_assumption",
@@ -3894,7 +3950,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "unwrap_call",
-      "line": 1133
+      "line": 1138
     },
     {
       "classification": "production_adjacent_assumption",
@@ -3902,7 +3958,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 1530
+      "line": 1535
     },
     {
       "classification": "production_adjacent_assumption",
@@ -3910,7 +3966,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 1563
+      "line": 1568
     },
     {
       "classification": "production_adjacent_assumption",
@@ -3918,7 +3974,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 1569
+      "line": 1574
     },
     {
       "classification": "production_adjacent_assumption",
@@ -3926,7 +3982,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 1576
+      "line": 1581
     },
     {
       "classification": "production_adjacent_assumption",
@@ -3934,7 +3990,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 2147
+      "line": 2152
     },
     {
       "classification": "production_adjacent_assumption",
@@ -3942,7 +3998,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "unwrap_call",
-      "line": 2246
+      "line": 2251
     },
     {
       "classification": "production_adjacent_assumption",
@@ -3950,7 +4006,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "unwrap_call",
-      "line": 2253
+      "line": 2258
     },
     {
       "classification": "production_adjacent_assumption",
@@ -3958,7 +4014,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "unwrap_call",
-      "line": 2282
+      "line": 2287
     },
     {
       "classification": "production_adjacent_assumption",
@@ -3966,7 +4022,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "unwrap_call",
-      "line": 2315
+      "line": 2320
     },
     {
       "classification": "production_adjacent_assumption",
@@ -3974,7 +4030,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "unwrap_call",
-      "line": 2319
+      "line": 2324
     },
     {
       "classification": "production_adjacent_assumption",
@@ -3982,7 +4038,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "unwrap_call",
-      "line": 2349
+      "line": 2354
     },
     {
       "classification": "production_adjacent_assumption",
@@ -3990,7 +4046,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "unwrap_call",
-      "line": 2355
+      "line": 2360
     },
     {
       "classification": "production_adjacent_assumption",
@@ -3998,7 +4054,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "unwrap_call",
-      "line": 2420
+      "line": 2425
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4006,7 +4062,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "unwrap_call",
-      "line": 2455
+      "line": 2460
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4014,7 +4070,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "unwrap_call",
-      "line": 2576
+      "line": 2595
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4022,7 +4078,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "unwrap_call",
-      "line": 3067
+      "line": 3155
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4030,7 +4086,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "unwrap_call",
-      "line": 3247
+      "line": 3335
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4038,7 +4094,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "unwrap_call",
-      "line": 3323
+      "line": 3411
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4046,7 +4102,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 3370
+      "line": 3458
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4054,7 +4110,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 3517
+      "line": 3605
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4062,7 +4118,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 3582
+      "line": 3670
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4070,7 +4126,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 3635
+      "line": 3723
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4078,7 +4134,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 3820
+      "line": 3908
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4086,7 +4142,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "unwrap_call",
-      "line": 3857
+      "line": 3945
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4094,7 +4150,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "unwrap_call",
-      "line": 4021
+      "line": 4109
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4102,7 +4158,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "unwrap_call",
-      "line": 4031
+      "line": 4119
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4110,7 +4166,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "unwrap_call",
-      "line": 4033
+      "line": 4121
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4118,7 +4174,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 4069
+      "line": 4157
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4126,7 +4182,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 4094
+      "line": 4182
     },
     {
       "classification": "panic_path_assumption",
@@ -4134,47 +4190,15 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "panic_macro",
-      "line": 4111
-    },
-    {
-      "classification": "panic_path_assumption",
-      "disposition": "requires_path_review_before_broader_release_claims",
-      "fail_closed_relevance": "high",
-      "file": "src/http.rs",
-      "kind": "panic_macro",
-      "line": 4114
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/http.rs",
-      "kind": "expect_call",
-      "line": 4128
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/http.rs",
-      "kind": "expect_call",
-      "line": 4179
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/http.rs",
-      "kind": "expect_call",
       "line": 4199
     },
     {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "classification": "panic_path_assumption",
+      "disposition": "requires_path_review_before_broader_release_claims",
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
-      "kind": "expect_call",
-      "line": 4217
+      "kind": "panic_macro",
+      "line": 4202
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4182,7 +4206,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 4238
+      "line": 4216
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4190,7 +4214,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 4464
+      "line": 4267
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4198,7 +4222,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 4475
+      "line": 4287
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4206,7 +4230,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 4547
+      "line": 4305
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4214,7 +4238,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 4549
+      "line": 4326
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4222,7 +4246,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 4567
+      "line": 4552
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4230,7 +4254,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 4582
+      "line": 4563
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4238,7 +4262,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 4607
+      "line": 4635
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4246,23 +4270,23 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 4625
+      "line": 4637
     },
     {
       "classification": "production_adjacent_assumption",
       "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
-      "kind": "unwrap_call",
+      "kind": "expect_call",
       "line": 4655
     },
     {
-      "classification": "panic_path_assumption",
-      "disposition": "requires_path_review_before_broader_release_claims",
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
-      "kind": "panic_macro",
-      "line": 4676
+      "kind": "expect_call",
+      "line": 4670
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4270,7 +4294,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 4693
+      "line": 4695
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4278,7 +4302,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 4711
+      "line": 4713
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4286,15 +4310,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "unwrap_call",
-      "line": 4745
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/http.rs",
-      "kind": "unwrap_call",
-      "line": 4747
+      "line": 4743
     },
     {
       "classification": "panic_path_assumption",
@@ -4302,7 +4318,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "panic_macro",
-      "line": 4757
+      "line": 4764
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4310,7 +4326,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 5138
+      "line": 4781
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4318,111 +4334,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 5207
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/http.rs",
-      "kind": "expect_call",
-      "line": 5238
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/http.rs",
-      "kind": "expect_call",
-      "line": 5287
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/http.rs",
-      "kind": "expect_call",
-      "line": 5336
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/http.rs",
-      "kind": "expect_call",
-      "line": 5385
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/http.rs",
-      "kind": "expect_call",
-      "line": 5434
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/http.rs",
-      "kind": "expect_call",
-      "line": 5482
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/http.rs",
-      "kind": "expect_call",
-      "line": 5531
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/http.rs",
-      "kind": "expect_call",
-      "line": 5585
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/http.rs",
-      "kind": "expect_call",
-      "line": 5638
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/http.rs",
-      "kind": "expect_call",
-      "line": 5889
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/http.rs",
-      "kind": "expect_call",
-      "line": 5892
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/http.rs",
-      "kind": "expect_call",
-      "line": 5959
-    },
-    {
-      "classification": "panic_path_assumption",
-      "disposition": "requires_path_review_before_broader_release_claims",
-      "fail_closed_relevance": "high",
-      "file": "src/http.rs",
-      "kind": "panic_macro",
-      "line": 5960
+      "line": 4799
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4430,7 +4342,23 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "unwrap_call",
-      "line": 6451
+      "line": 4833
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/http.rs",
+      "kind": "unwrap_call",
+      "line": 4835
+    },
+    {
+      "classification": "panic_path_assumption",
+      "disposition": "requires_path_review_before_broader_release_claims",
+      "fail_closed_relevance": "high",
+      "file": "src/http.rs",
+      "kind": "panic_macro",
+      "line": 4845
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4438,7 +4366,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 7987
+      "line": 5226
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4446,7 +4374,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8192
+      "line": 5295
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4454,7 +4382,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8206
+      "line": 5326
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4462,7 +4390,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8217
+      "line": 5375
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4470,7 +4398,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8225
+      "line": 5424
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4478,7 +4406,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8226
+      "line": 5473
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4486,7 +4414,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8228
+      "line": 5522
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4494,7 +4422,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8232
+      "line": 5570
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4502,7 +4430,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8236
+      "line": 5619
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4510,7 +4438,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8237
+      "line": 5673
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4518,7 +4446,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8243
+      "line": 5726
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4526,7 +4454,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8244
+      "line": 5977
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4534,7 +4462,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8246
+      "line": 5980
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4542,7 +4470,23 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8256
+      "line": 6047
+    },
+    {
+      "classification": "panic_path_assumption",
+      "disposition": "requires_path_review_before_broader_release_claims",
+      "fail_closed_relevance": "high",
+      "file": "src/http.rs",
+      "kind": "panic_macro",
+      "line": 6048
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/http.rs",
+      "kind": "unwrap_call",
+      "line": 6539
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4550,7 +4494,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8259
+      "line": 8075
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4558,7 +4502,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8262
+      "line": 8280
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4566,7 +4510,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8264
+      "line": 8294
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4574,7 +4518,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8286
+      "line": 8305
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4582,7 +4526,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8312
+      "line": 8313
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4590,7 +4534,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8321
+      "line": 8314
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4598,7 +4542,15 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8322
+      "line": 8316
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/http.rs",
+      "kind": "expect_call",
+      "line": 8320
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4614,6 +4566,30 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
+      "line": 8325
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/http.rs",
+      "kind": "expect_call",
+      "line": 8331
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/http.rs",
+      "kind": "expect_call",
+      "line": 8332
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/http.rs",
+      "kind": "expect_call",
       "line": 8334
     },
     {
@@ -4622,7 +4598,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8337
+      "line": 8344
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4630,7 +4606,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8340
+      "line": 8347
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4638,7 +4614,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8342
+      "line": 8350
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4646,31 +4622,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8357
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/http.rs",
-      "kind": "expect_call",
-      "line": 8365
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/http.rs",
-      "kind": "expect_call",
-      "line": 8366
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/http.rs",
-      "kind": "expect_call",
-      "line": 8368
+      "line": 8352
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4686,7 +4638,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8377
+      "line": 8400
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4694,71 +4646,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8381
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/http.rs",
-      "kind": "expect_call",
-      "line": 8383
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/http.rs",
-      "kind": "expect_call",
-      "line": 8389
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/http.rs",
-      "kind": "expect_call",
-      "line": 8390
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/http.rs",
-      "kind": "expect_call",
-      "line": 8392
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/http.rs",
-      "kind": "expect_call",
-      "line": 8398
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/http.rs",
-      "kind": "expect_call",
-      "line": 8401
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/http.rs",
-      "kind": "expect_call",
-      "line": 8404
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/http.rs",
-      "kind": "expect_call",
-      "line": 8408
+      "line": 8409
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4774,7 +4662,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8590
+      "line": 8412
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4782,7 +4670,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8591
+      "line": 8422
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4790,7 +4678,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8592
+      "line": 8425
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4798,7 +4686,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8593
+      "line": 8428
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4806,7 +4694,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8646
+      "line": 8430
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4814,7 +4702,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8647
+      "line": 8445
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4822,7 +4710,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8648
+      "line": 8453
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4830,7 +4718,175 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8649
+      "line": 8454
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/http.rs",
+      "kind": "expect_call",
+      "line": 8456
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/http.rs",
+      "kind": "expect_call",
+      "line": 8462
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/http.rs",
+      "kind": "expect_call",
+      "line": 8465
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/http.rs",
+      "kind": "expect_call",
+      "line": 8469
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/http.rs",
+      "kind": "expect_call",
+      "line": 8471
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/http.rs",
+      "kind": "expect_call",
+      "line": 8477
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/http.rs",
+      "kind": "expect_call",
+      "line": 8478
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/http.rs",
+      "kind": "expect_call",
+      "line": 8480
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/http.rs",
+      "kind": "expect_call",
+      "line": 8486
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/http.rs",
+      "kind": "expect_call",
+      "line": 8489
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/http.rs",
+      "kind": "expect_call",
+      "line": 8492
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/http.rs",
+      "kind": "expect_call",
+      "line": 8496
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/http.rs",
+      "kind": "expect_call",
+      "line": 8498
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/http.rs",
+      "kind": "expect_call",
+      "line": 8678
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/http.rs",
+      "kind": "expect_call",
+      "line": 8679
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/http.rs",
+      "kind": "expect_call",
+      "line": 8680
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/http.rs",
+      "kind": "expect_call",
+      "line": 8681
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/http.rs",
+      "kind": "expect_call",
+      "line": 8734
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/http.rs",
+      "kind": "expect_call",
+      "line": 8735
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/http.rs",
+      "kind": "expect_call",
+      "line": 8736
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/http.rs",
+      "kind": "expect_call",
+      "line": 8737
     },
     {
       "classification": "panic_path_assumption",
@@ -4838,7 +4894,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "panic_macro",
-      "line": 8661
+      "line": 8749
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4846,7 +4902,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8663
+      "line": 8751
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4854,7 +4910,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8739
+      "line": 8827
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4862,7 +4918,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8748
+      "line": 8836
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4870,7 +4926,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8773
+      "line": 8861
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -5679,6 +5735,102 @@
       "file": "src/http/content_tests.rs",
       "kind": "unwrap_call",
       "line": 137
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/http/conversation_tests.rs",
+      "kind": "unwrap_call",
+      "line": 40
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/http/conversation_tests.rs",
+      "kind": "unwrap_call",
+      "line": 47
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/http/conversation_tests.rs",
+      "kind": "unwrap_call",
+      "line": 60
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/http/conversation_tests.rs",
+      "kind": "unwrap_call",
+      "line": 73
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/http/conversation_tests.rs",
+      "kind": "unwrap_call",
+      "line": 89
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/http/conversation_tests.rs",
+      "kind": "unwrap_call",
+      "line": 103
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/http/conversation_tests.rs",
+      "kind": "unwrap_call",
+      "line": 116
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/http/conversation_tests.rs",
+      "kind": "unwrap_call",
+      "line": 193
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/http/conversation_tests.rs",
+      "kind": "unwrap_call",
+      "line": 196
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/http/conversation_tests.rs",
+      "kind": "unwrap_call",
+      "line": 206
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/http/conversation_tests.rs",
+      "kind": "unwrap_call",
+      "line": 214
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/http/conversation_tests.rs",
+      "kind": "unwrap_call",
+      "line": 221
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -6702,7 +6854,7 @@
       "fail_closed_relevance": "low",
       "file": "src/http/flag_fixtures.rs",
       "kind": "expect_call",
-      "line": 49
+      "line": 50
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -6710,7 +6862,7 @@
       "fail_closed_relevance": "low",
       "file": "src/http/flag_fixtures.rs",
       "kind": "expect_call",
-      "line": 62
+      "line": 63
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -6718,7 +6870,7 @@
       "fail_closed_relevance": "low",
       "file": "src/http/flag_fixtures.rs",
       "kind": "expect_call",
-      "line": 108
+      "line": 109
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -9678,7 +9830,7 @@
       "fail_closed_relevance": "low",
       "file": "src/http/reading_preferences_tests.rs",
       "kind": "unwrap_call",
-      "line": 124
+      "line": 127
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -9686,7 +9838,7 @@
       "fail_closed_relevance": "low",
       "file": "src/http/reading_preferences_tests.rs",
       "kind": "unwrap_call",
-      "line": 125
+      "line": 128
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -9694,7 +9846,7 @@
       "fail_closed_relevance": "low",
       "file": "src/http/reading_preferences_tests.rs",
       "kind": "unwrap_call",
-      "line": 133
+      "line": 136
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -9702,7 +9854,7 @@
       "fail_closed_relevance": "low",
       "file": "src/http/reading_preferences_tests.rs",
       "kind": "unwrap_call",
-      "line": 146
+      "line": 149
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -9806,7 +9958,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http/routes_after_archive.rs",
       "kind": "unwrap_call",
-      "line": 219
+      "line": 227
     },
     {
       "classification": "production_adjacent_assumption",
@@ -9814,7 +9966,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http/routes_after_archive.rs",
       "kind": "unwrap_call",
-      "line": 228
+      "line": 268
     },
     {
       "classification": "production_adjacent_assumption",
@@ -9822,7 +9974,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http/routes_after_archive.rs",
       "kind": "unwrap_call",
-      "line": 273
+      "line": 272
     },
     {
       "classification": "production_adjacent_assumption",
@@ -9830,7 +9982,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http/routes_after_archive.rs",
       "kind": "unwrap_call",
-      "line": 296
+      "line": 287
     },
     {
       "classification": "production_adjacent_assumption",
@@ -9838,7 +9990,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http/routes_after_archive.rs",
       "kind": "unwrap_call",
-      "line": 297
+      "line": 290
     },
     {
       "classification": "production_adjacent_assumption",
@@ -9846,7 +9998,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http/routes_after_archive.rs",
       "kind": "unwrap_call",
-      "line": 302
+      "line": 299
     },
     {
       "classification": "production_adjacent_assumption",
@@ -9854,7 +10006,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http/routes_after_archive.rs",
       "kind": "unwrap_call",
-      "line": 303
+      "line": 308
     },
     {
       "classification": "production_adjacent_assumption",
@@ -9862,7 +10014,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http/routes_after_archive.rs",
       "kind": "unwrap_call",
-      "line": 307
+      "line": 354
     },
     {
       "classification": "production_adjacent_assumption",
@@ -9870,7 +10022,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http/routes_after_archive.rs",
       "kind": "unwrap_call",
-      "line": 313
+      "line": 377
     },
     {
       "classification": "production_adjacent_assumption",
@@ -9878,7 +10030,47 @@
       "fail_closed_relevance": "high",
       "file": "src/http/routes_after_archive.rs",
       "kind": "unwrap_call",
-      "line": 316
+      "line": 378
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/http/routes_after_archive.rs",
+      "kind": "unwrap_call",
+      "line": 383
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/http/routes_after_archive.rs",
+      "kind": "unwrap_call",
+      "line": 384
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/http/routes_after_archive.rs",
+      "kind": "unwrap_call",
+      "line": 388
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/http/routes_after_archive.rs",
+      "kind": "unwrap_call",
+      "line": 394
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/http/routes_after_archive.rs",
+      "kind": "unwrap_call",
+      "line": 397
     },
     {
       "classification": "production_adjacent_assumption",
@@ -9886,7 +10078,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http/routes_labels.rs",
       "kind": "unwrap_call",
-      "line": 353
+      "line": 354
     },
     {
       "classification": "production_adjacent_assumption",
@@ -9894,7 +10086,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http/routes_labels.rs",
       "kind": "unwrap_call",
-      "line": 373
+      "line": 374
     },
     {
       "classification": "production_adjacent_assumption",
@@ -11430,7 +11622,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http/ux_browser_server.rs",
       "kind": "expect_call",
-      "line": 90
+      "line": 93
     },
     {
       "classification": "panic_path_assumption",
@@ -11438,7 +11630,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http/ux_browser_server.rs",
       "kind": "panic_macro",
-      "line": 104
+      "line": 107
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -12494,7 +12686,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http_ui.rs",
       "kind": "unwrap_call",
-      "line": 1018
+      "line": 1027
     },
     {
       "classification": "production_adjacent_assumption",
@@ -12502,7 +12694,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http_ui.rs",
       "kind": "unwrap_call",
-      "line": 1025
+      "line": 1034
     },
     {
       "classification": "production_adjacent_assumption",
@@ -12510,7 +12702,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http_ui.rs",
       "kind": "unwrap_call",
-      "line": 1037
+      "line": 1046
     },
     {
       "classification": "production_adjacent_assumption",
@@ -12518,7 +12710,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http_ui.rs",
       "kind": "expect_call",
-      "line": 2950
+      "line": 2969
     },
     {
       "classification": "production_adjacent_assumption",
@@ -12526,7 +12718,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http_ui.rs",
       "kind": "expect_call",
-      "line": 2952
+      "line": 2971
     },
     {
       "classification": "production_adjacent_assumption",
@@ -12534,7 +12726,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http_ui.rs",
       "kind": "unwrap_call",
-      "line": 3002
+      "line": 3021
     },
     {
       "classification": "production_adjacent_assumption",
@@ -12542,7 +12734,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http_ui.rs",
       "kind": "unwrap_call",
-      "line": 3038
+      "line": 3057
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13390,7 +13582,7 @@
       "fail_closed_relevance": "high",
       "file": "src/labels.rs",
       "kind": "unwrap_call",
-      "line": 926
+      "line": 927
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13398,7 +13590,7 @@
       "fail_closed_relevance": "high",
       "file": "src/labels.rs",
       "kind": "unwrap_call",
-      "line": 965
+      "line": 966
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13406,7 +13598,7 @@
       "fail_closed_relevance": "high",
       "file": "src/labels.rs",
       "kind": "unwrap_call",
-      "line": 970
+      "line": 971
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13422,7 +13614,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mail_list.rs",
       "kind": "unwrap_call",
-      "line": 625
+      "line": 654
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13430,7 +13622,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mail_list.rs",
       "kind": "unwrap_call",
-      "line": 628
+      "line": 657
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13438,7 +13630,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mail_list.rs",
       "kind": "unwrap_call",
-      "line": 636
+      "line": 665
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13446,7 +13638,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mail_list.rs",
       "kind": "unwrap_call",
-      "line": 671
+      "line": 700
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13454,7 +13646,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mail_list.rs",
       "kind": "unwrap_call",
-      "line": 722
+      "line": 752
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13462,7 +13654,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mail_list.rs",
       "kind": "unwrap_call",
-      "line": 748
+      "line": 778
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13470,7 +13662,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mail_list.rs",
       "kind": "unwrap_call",
-      "line": 754
+      "line": 784
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13478,7 +13670,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mail_list.rs",
       "kind": "unwrap_call",
-      "line": 762
+      "line": 792
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13486,7 +13678,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mail_list.rs",
       "kind": "unwrap_call",
-      "line": 773
+      "line": 803
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13494,7 +13686,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mail_list.rs",
       "kind": "unwrap_call",
-      "line": 801
+      "line": 831
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13502,7 +13694,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mail_list.rs",
       "kind": "unwrap_call",
-      "line": 808
+      "line": 838
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13510,7 +13702,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mail_list.rs",
       "kind": "unwrap_call",
-      "line": 819
+      "line": 849
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13518,7 +13710,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mail_list.rs",
       "kind": "unwrap_call",
-      "line": 834
+      "line": 864
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13526,7 +13718,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mail_list.rs",
       "kind": "unwrap_call",
-      "line": 877
+      "line": 908
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13534,7 +13726,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mail_list.rs",
       "kind": "unwrap_call",
-      "line": 898
+      "line": 929
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13542,7 +13734,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mail_list.rs",
       "kind": "unwrap_call",
-      "line": 903
+      "line": 934
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13550,39 +13742,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mail_list.rs",
       "kind": "unwrap_call",
-      "line": 924
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/mail_list.rs",
-      "kind": "unwrap_call",
-      "line": 947
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/mail_list.rs",
-      "kind": "unwrap_call",
-      "line": 953
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/mail_list.rs",
-      "kind": "unwrap_call",
-      "line": 964
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/mail_list.rs",
-      "kind": "unwrap_call",
-      "line": 969
+      "line": 956
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13598,7 +13758,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mail_list.rs",
       "kind": "unwrap_call",
-      "line": 993
+      "line": 985
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13606,7 +13766,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mail_list.rs",
       "kind": "unwrap_call",
-      "line": 1008
+      "line": 996
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13614,7 +13774,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mail_list.rs",
       "kind": "unwrap_call",
-      "line": 1020
+      "line": 1001
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13622,7 +13782,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mail_list.rs",
       "kind": "unwrap_call",
-      "line": 1022
+      "line": 1011
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13630,7 +13790,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mail_list.rs",
       "kind": "unwrap_call",
-      "line": 1077
+      "line": 1026
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13638,7 +13798,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mail_list.rs",
       "kind": "unwrap_call",
-      "line": 1111
+      "line": 1041
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13646,7 +13806,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mail_list.rs",
       "kind": "unwrap_call",
-      "line": 1133
+      "line": 1053
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13654,7 +13814,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mail_list.rs",
       "kind": "unwrap_call",
-      "line": 1161
+      "line": 1055
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13662,7 +13822,39 @@
       "fail_closed_relevance": "high",
       "file": "src/mail_list.rs",
       "kind": "unwrap_call",
-      "line": 1173
+      "line": 1110
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/mail_list.rs",
+      "kind": "unwrap_call",
+      "line": 1144
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/mail_list.rs",
+      "kind": "unwrap_call",
+      "line": 1167
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/mail_list.rs",
+      "kind": "unwrap_call",
+      "line": 1195
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/mail_list.rs",
+      "kind": "unwrap_call",
+      "line": 1207
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13670,7 +13862,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mail_list.rs",
       "kind": "expect_call",
-      "line": 1188
+      "line": 1222
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13678,7 +13870,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mail_list.rs",
       "kind": "expect_call",
-      "line": 1250
+      "line": 1284
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13686,7 +13878,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mail_list.rs",
       "kind": "expect_call",
-      "line": 1265
+      "line": 1299
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13694,7 +13886,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mail_list.rs",
       "kind": "expect_call",
-      "line": 1266
+      "line": 1300
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13702,7 +13894,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mail_list.rs",
       "kind": "expect_call",
-      "line": 1292
+      "line": 1327
     },
     {
       "classification": "production_adjacent_assumption",
@@ -16222,7 +16414,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_flag_tests.rs",
       "kind": "expect_call",
-      "line": 137
+      "line": 138
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -16230,7 +16422,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_flag_tests.rs",
       "kind": "unreachable_macro",
-      "line": 148
+      "line": 149
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -16238,15 +16430,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_flag_tests.rs",
       "kind": "expect_call",
-      "line": 150
-    },
-    {
-      "classification": "test_or_fixture_assumption",
-      "disposition": "accepted_test_or_fixture_assumption",
-      "fail_closed_relevance": "low",
-      "file": "src/mailbox_helper_flag_tests.rs",
-      "kind": "expect_call",
-      "line": 196
+      "line": 151
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -16270,7 +16454,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_flag_tests.rs",
       "kind": "expect_call",
-      "line": 205
+      "line": 199
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -16278,7 +16462,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_flag_tests.rs",
       "kind": "expect_call",
-      "line": 207
+      "line": 206
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -16286,7 +16470,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_flag_tests.rs",
       "kind": "expect_call",
-      "line": 209
+      "line": 208
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -16294,7 +16478,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_flag_tests.rs",
       "kind": "expect_call",
-      "line": 216
+      "line": 210
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -16302,7 +16486,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_flag_tests.rs",
       "kind": "expect_call",
-      "line": 228
+      "line": 217
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -16325,8 +16509,8 @@
       "disposition": "accepted_test_or_fixture_assumption",
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_flag_tests.rs",
-      "kind": "unwrap_call",
-      "line": 271
+      "kind": "expect_call",
+      "line": 231
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -16334,14 +16518,14 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_flag_tests.rs",
       "kind": "unwrap_call",
-      "line": 278
+      "line": 272
     },
     {
       "classification": "test_or_fixture_assumption",
       "disposition": "accepted_test_or_fixture_assumption",
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_flag_tests.rs",
-      "kind": "panic_macro",
+      "kind": "unwrap_call",
       "line": 279
     },
     {
@@ -16349,8 +16533,16 @@
       "disposition": "accepted_test_or_fixture_assumption",
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_flag_tests.rs",
+      "kind": "panic_macro",
+      "line": 280
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/mailbox_helper_flag_tests.rs",
       "kind": "unwrap_call",
-      "line": 285
+      "line": 286
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -17846,7 +18038,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "unwrap_call",
-      "line": 352
+      "line": 357
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -17854,7 +18046,23 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "unwrap_call",
-      "line": 353
+      "line": 358
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/mailbox_helper_native_reader_tests.rs",
+      "kind": "unwrap_call",
+      "line": 365
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/mailbox_helper_native_reader_tests.rs",
+      "kind": "unwrap_call",
+      "line": 367
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -17862,7 +18070,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "expect_call",
-      "line": 372
+      "line": 387
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -17870,7 +18078,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "unwrap_call",
-      "line": 383
+      "line": 398
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -17878,7 +18086,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "expect_call",
-      "line": 420
+      "line": 435
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -17886,7 +18094,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "unwrap_call",
-      "line": 443
+      "line": 458
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -17894,7 +18102,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "expect_call",
-      "line": 448
+      "line": 463
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -17902,7 +18110,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "expect_call",
-      "line": 469
+      "line": 484
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -17910,7 +18118,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "unwrap_call",
-      "line": 508
+      "line": 489
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -17918,39 +18126,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "unwrap_call",
-      "line": 517
-    },
-    {
-      "classification": "test_or_fixture_assumption",
-      "disposition": "accepted_test_or_fixture_assumption",
-      "fail_closed_relevance": "low",
-      "file": "src/mailbox_helper_native_reader_tests.rs",
-      "kind": "unwrap_call",
-      "line": 520
-    },
-    {
-      "classification": "test_or_fixture_assumption",
-      "disposition": "accepted_test_or_fixture_assumption",
-      "fail_closed_relevance": "low",
-      "file": "src/mailbox_helper_native_reader_tests.rs",
-      "kind": "unwrap_call",
-      "line": 526
-    },
-    {
-      "classification": "test_or_fixture_assumption",
-      "disposition": "accepted_test_or_fixture_assumption",
-      "fail_closed_relevance": "low",
-      "file": "src/mailbox_helper_native_reader_tests.rs",
-      "kind": "unwrap_call",
-      "line": 530
-    },
-    {
-      "classification": "test_or_fixture_assumption",
-      "disposition": "accepted_test_or_fixture_assumption",
-      "fail_closed_relevance": "low",
-      "file": "src/mailbox_helper_native_reader_tests.rs",
-      "kind": "unwrap_call",
-      "line": 532
+      "line": 529
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -17966,7 +18142,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "unwrap_call",
-      "line": 544
+      "line": 541
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -17974,7 +18150,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "unwrap_call",
-      "line": 566
+      "line": 547
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -17982,7 +18158,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "unwrap_call",
-      "line": 567
+      "line": 551
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -17990,7 +18166,47 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "unwrap_call",
-      "line": 580
+      "line": 553
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/mailbox_helper_native_reader_tests.rs",
+      "kind": "unwrap_call",
+      "line": 559
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/mailbox_helper_native_reader_tests.rs",
+      "kind": "unwrap_call",
+      "line": 565
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/mailbox_helper_native_reader_tests.rs",
+      "kind": "unwrap_call",
+      "line": 587
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/mailbox_helper_native_reader_tests.rs",
+      "kind": "unwrap_call",
+      "line": 588
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/mailbox_helper_native_reader_tests.rs",
+      "kind": "unwrap_call",
+      "line": 601
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -17998,7 +18214,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "expect_call",
-      "line": 583
+      "line": 604
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18006,7 +18222,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "expect_call",
-      "line": 586
+      "line": 607
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18014,7 +18230,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "unwrap_call",
-      "line": 595
+      "line": 616
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18022,7 +18238,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "unwrap_call",
-      "line": 598
+      "line": 619
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18030,7 +18246,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "unwrap_call",
-      "line": 603
+      "line": 624
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18038,7 +18254,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "unwrap_call",
-      "line": 606
+      "line": 627
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18046,7 +18262,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "unwrap_call",
-      "line": 612
+      "line": 633
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18054,7 +18270,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "unwrap_call",
-      "line": 623
+      "line": 644
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18062,7 +18278,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "unwrap_call",
-      "line": 632
+      "line": 653
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18070,7 +18286,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "unwrap_call",
-      "line": 637
+      "line": 658
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18078,7 +18294,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "unwrap_call",
-      "line": 643
+      "line": 664
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18086,23 +18302,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "expect_call",
-      "line": 646
-    },
-    {
-      "classification": "test_or_fixture_assumption",
-      "disposition": "accepted_test_or_fixture_assumption",
-      "fail_closed_relevance": "low",
-      "file": "src/mailbox_helper_native_reader_tests.rs",
-      "kind": "unwrap_call",
-      "line": 660
-    },
-    {
-      "classification": "test_or_fixture_assumption",
-      "disposition": "accepted_test_or_fixture_assumption",
-      "fail_closed_relevance": "low",
-      "file": "src/mailbox_helper_native_reader_tests.rs",
-      "kind": "expect_call",
-      "line": 663
+      "line": 667
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18117,8 +18317,8 @@
       "disposition": "accepted_test_or_fixture_assumption",
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
-      "kind": "unwrap_call",
-      "line": 682
+      "kind": "expect_call",
+      "line": 684
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18126,7 +18326,15 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "unwrap_call",
-      "line": 699
+      "line": 691
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/mailbox_helper_native_reader_tests.rs",
+      "kind": "expect_call",
+      "line": 694
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18134,7 +18342,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "unwrap_call",
-      "line": 715
+      "line": 717
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18142,7 +18350,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "unwrap_call",
-      "line": 726
+      "line": 743
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18150,7 +18358,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "unwrap_call",
-      "line": 729
+      "line": 744
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18158,7 +18366,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "unwrap_call",
-      "line": 751
+      "line": 761
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18166,7 +18374,15 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "unwrap_call",
-      "line": 766
+      "line": 777
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/mailbox_helper_native_reader_tests.rs",
+      "kind": "unwrap_call",
+      "line": 788
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18182,7 +18398,15 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "unwrap_call",
-      "line": 792
+      "line": 826
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/mailbox_helper_native_reader_tests.rs",
+      "kind": "expect_call",
+      "line": 832
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18190,7 +18414,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "unwrap_call",
-      "line": 802
+      "line": 852
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18198,7 +18422,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "unwrap_call",
-      "line": 806
+      "line": 856
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18206,7 +18430,15 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "unwrap_call",
-      "line": 878
+      "line": 896
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/mailbox_helper_native_reader_tests.rs",
+      "kind": "expect_call",
+      "line": 915
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18214,7 +18446,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "unwrap_call",
-      "line": 930
+      "line": 921
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18230,7 +18462,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "unwrap_call",
-      "line": 947
+      "line": 951
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18238,7 +18470,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "unwrap_call",
-      "line": 957
+      "line": 966
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18246,7 +18478,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "unwrap_call",
-      "line": 970
+      "line": 991
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18254,7 +18486,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "unwrap_call",
-      "line": 981
+      "line": 992
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18262,7 +18494,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "unwrap_call",
-      "line": 986
+      "line": 1002
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18270,7 +18502,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "unwrap_call",
-      "line": 989
+      "line": 1006
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18278,7 +18510,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "unwrap_call",
-      "line": 996
+      "line": 1078
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18286,7 +18518,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "unwrap_call",
-      "line": 1031
+      "line": 1130
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18294,7 +18526,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "unwrap_call",
-      "line": 1048
+      "line": 1131
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18302,7 +18534,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "unwrap_call",
-      "line": 1061
+      "line": 1147
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18310,7 +18542,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "unwrap_call",
-      "line": 1069
+      "line": 1157
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18318,7 +18550,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "unwrap_call",
-      "line": 1082
+      "line": 1170
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18326,7 +18558,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "unwrap_call",
-      "line": 1092
+      "line": 1181
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18334,7 +18566,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "unwrap_call",
-      "line": 1097
+      "line": 1186
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18342,7 +18574,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "unwrap_call",
-      "line": 1139
+      "line": 1189
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18350,7 +18582,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "unwrap_call",
-      "line": 1201
+      "line": 1196
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18358,7 +18590,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "unwrap_call",
-      "line": 1206
+      "line": 1231
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18366,7 +18598,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "unwrap_call",
-      "line": 1210
+      "line": 1248
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18374,7 +18606,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "unwrap_call",
-      "line": 1230
+      "line": 1261
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18382,7 +18614,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "unwrap_call",
-      "line": 1278
+      "line": 1269
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18390,7 +18622,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "unwrap_call",
-      "line": 1299
+      "line": 1282
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18398,7 +18630,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "unwrap_call",
-      "line": 1303
+      "line": 1292
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18406,7 +18638,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "unwrap_call",
-      "line": 1337
+      "line": 1297
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18414,7 +18646,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "unwrap_call",
-      "line": 1353
+      "line": 1339
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18422,7 +18654,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "unwrap_call",
-      "line": 1363
+      "line": 1401
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18430,7 +18662,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "unwrap_call",
-      "line": 1368
+      "line": 1406
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18438,47 +18670,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "unwrap_call",
-      "line": 1373
-    },
-    {
-      "classification": "test_or_fixture_assumption",
-      "disposition": "accepted_test_or_fixture_assumption",
-      "fail_closed_relevance": "low",
-      "file": "src/mailbox_helper_native_reader_tests.rs",
-      "kind": "unwrap_call",
-      "line": 1383
-    },
-    {
-      "classification": "test_or_fixture_assumption",
-      "disposition": "accepted_test_or_fixture_assumption",
-      "fail_closed_relevance": "low",
-      "file": "src/mailbox_helper_native_reader_tests.rs",
-      "kind": "unwrap_call",
-      "line": 1387
-    },
-    {
-      "classification": "test_or_fixture_assumption",
-      "disposition": "accepted_test_or_fixture_assumption",
-      "fail_closed_relevance": "low",
-      "file": "src/mailbox_helper_native_reader_tests.rs",
-      "kind": "unwrap_call",
-      "line": 1392
-    },
-    {
-      "classification": "test_or_fixture_assumption",
-      "disposition": "accepted_test_or_fixture_assumption",
-      "fail_closed_relevance": "low",
-      "file": "src/mailbox_helper_native_reader_tests.rs",
-      "kind": "unwrap_call",
-      "line": 1400
-    },
-    {
-      "classification": "test_or_fixture_assumption",
-      "disposition": "accepted_test_or_fixture_assumption",
-      "fail_closed_relevance": "low",
-      "file": "src/mailbox_helper_native_reader_tests.rs",
-      "kind": "unwrap_call",
-      "line": 1417
+      "line": 1410
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18494,7 +18686,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "unwrap_call",
-      "line": 1431
+      "line": 1478
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18502,7 +18694,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "unwrap_call",
-      "line": 1434
+      "line": 1499
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18510,7 +18702,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "unwrap_call",
-      "line": 1445
+      "line": 1503
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18518,7 +18710,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "unwrap_call",
-      "line": 1458
+      "line": 1537
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18526,7 +18718,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "unwrap_call",
-      "line": 1462
+      "line": 1553
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18534,7 +18726,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "unwrap_call",
-      "line": 1466
+      "line": 1563
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18542,7 +18734,119 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_reader_tests.rs",
       "kind": "unwrap_call",
-      "line": 1482
+      "line": 1568
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/mailbox_helper_native_reader_tests.rs",
+      "kind": "unwrap_call",
+      "line": 1573
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/mailbox_helper_native_reader_tests.rs",
+      "kind": "unwrap_call",
+      "line": 1583
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/mailbox_helper_native_reader_tests.rs",
+      "kind": "unwrap_call",
+      "line": 1587
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/mailbox_helper_native_reader_tests.rs",
+      "kind": "unwrap_call",
+      "line": 1592
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/mailbox_helper_native_reader_tests.rs",
+      "kind": "unwrap_call",
+      "line": 1600
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/mailbox_helper_native_reader_tests.rs",
+      "kind": "unwrap_call",
+      "line": 1617
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/mailbox_helper_native_reader_tests.rs",
+      "kind": "unwrap_call",
+      "line": 1630
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/mailbox_helper_native_reader_tests.rs",
+      "kind": "unwrap_call",
+      "line": 1631
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/mailbox_helper_native_reader_tests.rs",
+      "kind": "unwrap_call",
+      "line": 1634
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/mailbox_helper_native_reader_tests.rs",
+      "kind": "unwrap_call",
+      "line": 1645
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/mailbox_helper_native_reader_tests.rs",
+      "kind": "unwrap_call",
+      "line": 1658
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/mailbox_helper_native_reader_tests.rs",
+      "kind": "unwrap_call",
+      "line": 1662
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/mailbox_helper_native_reader_tests.rs",
+      "kind": "unwrap_call",
+      "line": 1666
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/mailbox_helper_native_reader_tests.rs",
+      "kind": "unwrap_call",
+      "line": 1682
     },
     {
       "classification": "production_adjacent_assumption",
@@ -18550,7 +18854,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_helper_protocol.rs",
       "kind": "expect_call",
-      "line": 1705
+      "line": 1707
     },
     {
       "classification": "control_flow_invariant",
@@ -18558,7 +18862,7 @@
       "fail_closed_relevance": "medium",
       "file": "src/mailbox_helper_protocol.rs",
       "kind": "unreachable_macro",
-      "line": 2282
+      "line": 2308
     },
     {
       "classification": "production_adjacent_assumption",
@@ -18566,7 +18870,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_helper_protocol.rs",
       "kind": "unwrap_call",
-      "line": 2577
+      "line": 2599
     },
     {
       "classification": "production_adjacent_assumption",
@@ -18574,7 +18878,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_helper_protocol.rs",
       "kind": "unwrap_call",
-      "line": 2593
+      "line": 2601
     },
     {
       "classification": "production_adjacent_assumption",
@@ -18582,7 +18886,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_helper_protocol.rs",
       "kind": "unwrap_call",
-      "line": 2640
+      "line": 2609
     },
     {
       "classification": "production_adjacent_assumption",
@@ -18590,7 +18894,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_helper_protocol.rs",
       "kind": "unwrap_call",
-      "line": 2642
+      "line": 2613
     },
     {
       "classification": "production_adjacent_assumption",
@@ -18598,39 +18902,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_helper_protocol.rs",
       "kind": "unwrap_call",
-      "line": 2648
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/mailbox_helper_protocol.rs",
-      "kind": "unwrap_call",
-      "line": 2650
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/mailbox_helper_protocol.rs",
-      "kind": "unwrap_call",
-      "line": 2651
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/mailbox_helper_protocol.rs",
-      "kind": "unwrap_call",
-      "line": 2660
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/mailbox_helper_protocol.rs",
-      "kind": "unwrap_call",
-      "line": 2667
+      "line": 2653
     },
     {
       "classification": "production_adjacent_assumption",
@@ -18646,31 +18918,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_helper_protocol.rs",
       "kind": "unwrap_call",
-      "line": 2673
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/mailbox_helper_protocol.rs",
-      "kind": "unwrap_call",
-      "line": 2676
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/mailbox_helper_protocol.rs",
-      "kind": "unwrap_call",
-      "line": 2679
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/mailbox_helper_protocol.rs",
-      "kind": "unwrap_call",
-      "line": 2688
+      "line": 2717
     },
     {
       "classification": "production_adjacent_assumption",
@@ -18686,7 +18934,47 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_helper_protocol.rs",
       "kind": "unwrap_call",
-      "line": 2741
+      "line": 2725
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/mailbox_helper_protocol.rs",
+      "kind": "unwrap_call",
+      "line": 2727
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/mailbox_helper_protocol.rs",
+      "kind": "unwrap_call",
+      "line": 2728
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/mailbox_helper_protocol.rs",
+      "kind": "unwrap_call",
+      "line": 2737
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/mailbox_helper_protocol.rs",
+      "kind": "unwrap_call",
+      "line": 2744
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/mailbox_helper_protocol.rs",
+      "kind": "unwrap_call",
+      "line": 2747
     },
     {
       "classification": "production_adjacent_assumption",
@@ -18710,7 +18998,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_helper_protocol.rs",
       "kind": "unwrap_call",
-      "line": 2790
+      "line": 2756
     },
     {
       "classification": "production_adjacent_assumption",
@@ -18718,7 +19006,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_helper_protocol.rs",
       "kind": "unwrap_call",
-      "line": 2833
+      "line": 2765
     },
     {
       "classification": "production_adjacent_assumption",
@@ -18726,7 +19014,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_helper_protocol.rs",
       "kind": "unwrap_call",
-      "line": 2840
+      "line": 2796
     },
     {
       "classification": "production_adjacent_assumption",
@@ -18734,7 +19022,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_helper_protocol.rs",
       "kind": "unwrap_call",
-      "line": 2842
+      "line": 2818
     },
     {
       "classification": "production_adjacent_assumption",
@@ -18742,7 +19030,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_helper_protocol.rs",
       "kind": "unwrap_call",
-      "line": 2847
+      "line": 2827
     },
     {
       "classification": "production_adjacent_assumption",
@@ -18750,15 +19038,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_helper_protocol.rs",
       "kind": "unwrap_call",
-      "line": 2851
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/mailbox_helper_protocol.rs",
-      "kind": "unwrap_call",
-      "line": 2860
+      "line": 2830
     },
     {
       "classification": "production_adjacent_assumption",
@@ -18774,7 +19054,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_helper_protocol.rs",
       "kind": "unwrap_call",
-      "line": 2869
+      "line": 2911
     },
     {
       "classification": "production_adjacent_assumption",
@@ -18782,7 +19062,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_helper_protocol.rs",
       "kind": "unwrap_call",
-      "line": 2902
+      "line": 2918
     },
     {
       "classification": "production_adjacent_assumption",
@@ -18790,7 +19070,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_helper_protocol.rs",
       "kind": "unwrap_call",
-      "line": 3011
+      "line": 2920
     },
     {
       "classification": "production_adjacent_assumption",
@@ -18798,7 +19078,63 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_helper_protocol.rs",
       "kind": "unwrap_call",
-      "line": 3019
+      "line": 2925
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/mailbox_helper_protocol.rs",
+      "kind": "unwrap_call",
+      "line": 2929
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/mailbox_helper_protocol.rs",
+      "kind": "unwrap_call",
+      "line": 2938
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/mailbox_helper_protocol.rs",
+      "kind": "unwrap_call",
+      "line": 2946
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/mailbox_helper_protocol.rs",
+      "kind": "unwrap_call",
+      "line": 2947
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/mailbox_helper_protocol.rs",
+      "kind": "unwrap_call",
+      "line": 2980
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/mailbox_helper_protocol.rs",
+      "kind": "unwrap_call",
+      "line": 3089
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/mailbox_helper_protocol.rs",
+      "kind": "unwrap_call",
+      "line": 3097
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -18917,8 +19253,8 @@
       "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
       "fail_closed_relevance": "high",
       "file": "src/mailbox_json.rs",
-      "kind": "expect_call",
-      "line": 388
+      "kind": "unwrap_call",
+      "line": 417
     },
     {
       "classification": "production_adjacent_assumption",
@@ -18926,7 +19262,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_json.rs",
       "kind": "unwrap_call",
-      "line": 403
+      "line": 421
     },
     {
       "classification": "production_adjacent_assumption",
@@ -18934,7 +19270,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_json.rs",
       "kind": "unwrap_call",
-      "line": 415
+      "line": 424
     },
     {
       "classification": "production_adjacent_assumption",
@@ -18942,7 +19278,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_json.rs",
       "kind": "unwrap_call",
-      "line": 427
+      "line": 435
     },
     {
       "classification": "production_adjacent_assumption",
@@ -18950,7 +19286,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_json.rs",
       "kind": "unwrap_call",
-      "line": 480
+      "line": 437
     },
     {
       "classification": "production_adjacent_assumption",
@@ -18958,7 +19294,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_json.rs",
       "kind": "unwrap_call",
-      "line": 488
+      "line": 439
     },
     {
       "classification": "production_adjacent_assumption",
@@ -18966,23 +19302,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_json.rs",
       "kind": "unwrap_call",
-      "line": 529
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/mailbox_json.rs",
-      "kind": "unwrap_call",
-      "line": 620
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/mailbox_json.rs",
-      "kind": "unwrap_call",
-      "line": 638
+      "line": 440
     },
     {
       "classification": "production_adjacent_assumption",
@@ -18990,7 +19310,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_json.rs",
       "kind": "expect_call",
-      "line": 653
+      "line": 446
     },
     {
       "classification": "production_adjacent_assumption",
@@ -18998,7 +19318,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_json.rs",
       "kind": "unwrap_call",
-      "line": 687
+      "line": 461
     },
     {
       "classification": "production_adjacent_assumption",
@@ -19006,7 +19326,55 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_json.rs",
       "kind": "unwrap_call",
-      "line": 688
+      "line": 473
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/mailbox_json.rs",
+      "kind": "unwrap_call",
+      "line": 485
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/mailbox_json.rs",
+      "kind": "unwrap_call",
+      "line": 538
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/mailbox_json.rs",
+      "kind": "unwrap_call",
+      "line": 546
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/mailbox_json.rs",
+      "kind": "unwrap_call",
+      "line": 587
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/mailbox_json.rs",
+      "kind": "unwrap_call",
+      "line": 678
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/mailbox_json.rs",
+      "kind": "unwrap_call",
+      "line": 696
     },
     {
       "classification": "production_adjacent_assumption",
@@ -19014,7 +19382,23 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_json.rs",
       "kind": "expect_call",
-      "line": 716
+      "line": 711
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/mailbox_json.rs",
+      "kind": "unwrap_call",
+      "line": 745
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/mailbox_json.rs",
+      "kind": "unwrap_call",
+      "line": 746
     },
     {
       "classification": "production_adjacent_assumption",
@@ -19022,7 +19406,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_json.rs",
       "kind": "expect_call",
-      "line": 738
+      "line": 774
     },
     {
       "classification": "production_adjacent_assumption",
@@ -19030,7 +19414,15 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_json.rs",
       "kind": "expect_call",
-      "line": 749
+      "line": 796
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/mailbox_json.rs",
+      "kind": "expect_call",
+      "line": 807
     },
     {
       "classification": "production_adjacent_assumption",
@@ -19566,7 +19958,7 @@
       "fail_closed_relevance": "high",
       "file": "src/message_metadata.rs",
       "kind": "unwrap_call",
-      "line": 845
+      "line": 847
     },
     {
       "classification": "production_adjacent_assumption",
@@ -19574,7 +19966,7 @@
       "fail_closed_relevance": "high",
       "file": "src/message_metadata.rs",
       "kind": "expect_call",
-      "line": 1130
+      "line": 1132
     },
     {
       "classification": "production_adjacent_assumption",
@@ -24326,7 +24718,7 @@
       "fail_closed_relevance": "low",
       "file": "src/protected_message_gateway_tests.rs",
       "kind": "unwrap_call",
-      "line": 38
+      "line": 39
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -24334,7 +24726,7 @@
       "fail_closed_relevance": "low",
       "file": "src/protected_message_gateway_tests.rs",
       "kind": "unwrap_call",
-      "line": 63
+      "line": 64
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -24342,7 +24734,7 @@
       "fail_closed_relevance": "low",
       "file": "src/protected_message_gateway_tests.rs",
       "kind": "panic_macro",
-      "line": 73
+      "line": 74
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -24350,7 +24742,7 @@
       "fail_closed_relevance": "low",
       "file": "src/protected_message_gateway_tests.rs",
       "kind": "unwrap_call",
-      "line": 78
+      "line": 79
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -24358,15 +24750,7 @@
       "fail_closed_relevance": "low",
       "file": "src/protected_message_gateway_tests.rs",
       "kind": "unwrap_call",
-      "line": 96
-    },
-    {
-      "classification": "test_or_fixture_assumption",
-      "disposition": "accepted_test_or_fixture_assumption",
-      "fail_closed_relevance": "low",
-      "file": "src/protected_message_gateway_tests.rs",
-      "kind": "unwrap_call",
-      "line": 101
+      "line": 97
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -24381,8 +24765,16 @@
       "disposition": "accepted_test_or_fixture_assumption",
       "fail_closed_relevance": "low",
       "file": "src/protected_message_gateway_tests.rs",
+      "kind": "unwrap_call",
+      "line": 103
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/protected_message_gateway_tests.rs",
       "kind": "unreachable_macro",
-      "line": 111
+      "line": 112
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -24390,7 +24782,7 @@
       "fail_closed_relevance": "low",
       "file": "src/protected_message_gateway_tests.rs",
       "kind": "unwrap_call",
-      "line": 135
+      "line": 136
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -24398,7 +24790,7 @@
       "fail_closed_relevance": "low",
       "file": "src/protected_message_gateway_tests.rs",
       "kind": "unwrap_call",
-      "line": 142
+      "line": 143
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -24406,7 +24798,7 @@
       "fail_closed_relevance": "low",
       "file": "src/protected_message_gateway_tests.rs",
       "kind": "unwrap_call",
-      "line": 145
+      "line": 146
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -24414,7 +24806,7 @@
       "fail_closed_relevance": "low",
       "file": "src/protected_message_gateway_tests.rs",
       "kind": "unwrap_call",
-      "line": 153
+      "line": 154
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -24422,7 +24814,7 @@
       "fail_closed_relevance": "low",
       "file": "src/protected_message_gateway_tests.rs",
       "kind": "unwrap_call",
-      "line": 159
+      "line": 160
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -24430,7 +24822,7 @@
       "fail_closed_relevance": "low",
       "file": "src/protected_message_gateway_tests.rs",
       "kind": "unwrap_call",
-      "line": 175
+      "line": 176
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -24438,7 +24830,7 @@
       "fail_closed_relevance": "low",
       "file": "src/protected_message_gateway_tests.rs",
       "kind": "unwrap_call",
-      "line": 188
+      "line": 189
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -24446,7 +24838,7 @@
       "fail_closed_relevance": "low",
       "file": "src/protected_message_gateway_tests.rs",
       "kind": "unwrap_call",
-      "line": 191
+      "line": 192
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -24454,7 +24846,7 @@
       "fail_closed_relevance": "low",
       "file": "src/protected_message_gateway_tests.rs",
       "kind": "unwrap_call",
-      "line": 193
+      "line": 194
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -24462,7 +24854,7 @@
       "fail_closed_relevance": "low",
       "file": "src/protected_message_gateway_tests.rs",
       "kind": "unwrap_call",
-      "line": 197
+      "line": 198
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -24470,7 +24862,7 @@
       "fail_closed_relevance": "low",
       "file": "src/protected_message_gateway_tests.rs",
       "kind": "unwrap_call",
-      "line": 200
+      "line": 201
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -24478,7 +24870,7 @@
       "fail_closed_relevance": "low",
       "file": "src/protected_message_gateway_tests.rs",
       "kind": "unwrap_call",
-      "line": 203
+      "line": 204
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -24486,7 +24878,7 @@
       "fail_closed_relevance": "low",
       "file": "src/protected_message_gateway_tests.rs",
       "kind": "unwrap_call",
-      "line": 209
+      "line": 210
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -24494,7 +24886,7 @@
       "fail_closed_relevance": "low",
       "file": "src/protected_message_gateway_tests.rs",
       "kind": "unwrap_call",
-      "line": 222
+      "line": 223
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -24502,7 +24894,7 @@
       "fail_closed_relevance": "low",
       "file": "src/protected_message_gateway_tests.rs",
       "kind": "unwrap_call",
-      "line": 239
+      "line": 240
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -24510,15 +24902,7 @@
       "fail_closed_relevance": "low",
       "file": "src/protected_message_gateway_tests.rs",
       "kind": "unwrap_call",
-      "line": 247
-    },
-    {
-      "classification": "test_or_fixture_assumption",
-      "disposition": "accepted_test_or_fixture_assumption",
-      "fail_closed_relevance": "low",
-      "file": "src/protected_message_gateway_tests.rs",
-      "kind": "unwrap_call",
-      "line": 254
+      "line": 248
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -24527,6 +24911,14 @@
       "file": "src/protected_message_gateway_tests.rs",
       "kind": "unwrap_call",
       "line": 255
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/protected_message_gateway_tests.rs",
+      "kind": "unwrap_call",
+      "line": 256
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -24686,15 +25078,7 @@
       "fail_closed_relevance": "low",
       "file": "src/protected_message_tests.rs",
       "kind": "unwrap_call",
-      "line": 110
-    },
-    {
-      "classification": "test_or_fixture_assumption",
-      "disposition": "accepted_test_or_fixture_assumption",
-      "fail_closed_relevance": "low",
-      "file": "src/protected_message_tests.rs",
-      "kind": "unwrap_call",
-      "line": 119
+      "line": 111
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -24710,7 +25094,7 @@
       "fail_closed_relevance": "low",
       "file": "src/protected_message_tests.rs",
       "kind": "unwrap_call",
-      "line": 126
+      "line": 121
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -24718,7 +25102,7 @@
       "fail_closed_relevance": "low",
       "file": "src/protected_message_tests.rs",
       "kind": "unwrap_call",
-      "line": 130
+      "line": 127
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -24726,7 +25110,7 @@
       "fail_closed_relevance": "low",
       "file": "src/protected_message_tests.rs",
       "kind": "unwrap_call",
-      "line": 144
+      "line": 131
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -24734,7 +25118,7 @@
       "fail_closed_relevance": "low",
       "file": "src/protected_message_tests.rs",
       "kind": "unwrap_call",
-      "line": 147
+      "line": 145
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -24742,7 +25126,15 @@
       "fail_closed_relevance": "low",
       "file": "src/protected_message_tests.rs",
       "kind": "unwrap_call",
-      "line": 158
+      "line": 148
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/protected_message_tests.rs",
+      "kind": "unwrap_call",
+      "line": 159
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -24750,7 +25142,7 @@
       "fail_closed_relevance": "low",
       "file": "src/protected_message_tests.rs",
       "kind": "panic_macro",
-      "line": 187
+      "line": 188
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -24758,7 +25150,7 @@
       "fail_closed_relevance": "low",
       "file": "src/protected_message_tests.rs",
       "kind": "unwrap_call",
-      "line": 200
+      "line": 201
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -24766,7 +25158,7 @@
       "fail_closed_relevance": "low",
       "file": "src/protected_message_tests.rs",
       "kind": "unwrap_call",
-      "line": 215
+      "line": 216
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -24774,7 +25166,7 @@
       "fail_closed_relevance": "low",
       "file": "src/protected_message_tests.rs",
       "kind": "unwrap_call",
-      "line": 258
+      "line": 259
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -24782,7 +25174,7 @@
       "fail_closed_relevance": "low",
       "file": "src/protected_message_tests.rs",
       "kind": "unwrap_call",
-      "line": 269
+      "line": 270
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -24790,7 +25182,7 @@
       "fail_closed_relevance": "low",
       "file": "src/protected_message_tests.rs",
       "kind": "unwrap_call",
-      "line": 275
+      "line": 276
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -24798,7 +25190,7 @@
       "fail_closed_relevance": "low",
       "file": "src/protected_message_tests.rs",
       "kind": "unwrap_call",
-      "line": 281
+      "line": 282
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -24806,7 +25198,7 @@
       "fail_closed_relevance": "low",
       "file": "src/protected_message_tests.rs",
       "kind": "unwrap_call",
-      "line": 297
+      "line": 298
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -24814,15 +25206,7 @@
       "fail_closed_relevance": "low",
       "file": "src/protected_message_tests.rs",
       "kind": "unwrap_call",
-      "line": 333
-    },
-    {
-      "classification": "test_or_fixture_assumption",
-      "disposition": "accepted_test_or_fixture_assumption",
-      "fail_closed_relevance": "low",
-      "file": "src/protected_message_tests.rs",
-      "kind": "unwrap_call",
-      "line": 377
+      "line": 334
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -24846,7 +25230,7 @@
       "fail_closed_relevance": "low",
       "file": "src/protected_message_tests.rs",
       "kind": "unwrap_call",
-      "line": 382
+      "line": 380
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -24862,7 +25246,7 @@
       "fail_closed_relevance": "low",
       "file": "src/protected_message_tests.rs",
       "kind": "unwrap_call",
-      "line": 387
+      "line": 384
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -24870,7 +25254,7 @@
       "fail_closed_relevance": "low",
       "file": "src/protected_message_tests.rs",
       "kind": "unwrap_call",
-      "line": 398
+      "line": 388
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -24878,7 +25262,7 @@
       "fail_closed_relevance": "low",
       "file": "src/protected_message_tests.rs",
       "kind": "unwrap_call",
-      "line": 438
+      "line": 399
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -24886,7 +25270,7 @@
       "fail_closed_relevance": "low",
       "file": "src/protected_message_tests.rs",
       "kind": "unwrap_call",
-      "line": 472
+      "line": 439
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -24910,7 +25294,15 @@
       "fail_closed_relevance": "low",
       "file": "src/protected_message_tests.rs",
       "kind": "unwrap_call",
-      "line": 477
+      "line": 475
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/protected_message_tests.rs",
+      "kind": "unwrap_call",
+      "line": 478
     },
     {
       "classification": "control_flow_invariant",
@@ -25494,7 +25886,7 @@
       "fail_closed_relevance": "high",
       "file": "src/reader_neighbours.rs",
       "kind": "expect_call",
-      "line": 522
+      "line": 508
     },
     {
       "classification": "production_adjacent_assumption",
@@ -25502,7 +25894,7 @@
       "fail_closed_relevance": "high",
       "file": "src/reader_neighbours.rs",
       "kind": "unwrap_call",
-      "line": 527
+      "line": 513
     },
     {
       "classification": "production_adjacent_assumption",
@@ -25510,7 +25902,7 @@
       "fail_closed_relevance": "high",
       "file": "src/reader_neighbours.rs",
       "kind": "unwrap_call",
-      "line": 534
+      "line": 520
     },
     {
       "classification": "production_adjacent_assumption",
@@ -25518,7 +25910,7 @@
       "fail_closed_relevance": "high",
       "file": "src/reader_neighbours.rs",
       "kind": "unwrap_call",
-      "line": 537
+      "line": 523
     },
     {
       "classification": "production_adjacent_assumption",
@@ -25526,7 +25918,7 @@
       "fail_closed_relevance": "high",
       "file": "src/reader_neighbours.rs",
       "kind": "expect_call",
-      "line": 546
+      "line": 533
     },
     {
       "classification": "production_adjacent_assumption",
@@ -25534,7 +25926,7 @@
       "fail_closed_relevance": "high",
       "file": "src/reader_neighbours.rs",
       "kind": "expect_call",
-      "line": 617
+      "line": 604
     },
     {
       "classification": "production_adjacent_assumption",
@@ -25542,7 +25934,7 @@
       "fail_closed_relevance": "high",
       "file": "src/reader_neighbours.rs",
       "kind": "expect_call",
-      "line": 618
+      "line": 605
     },
     {
       "classification": "production_adjacent_assumption",
@@ -25550,7 +25942,7 @@
       "fail_closed_relevance": "high",
       "file": "src/reader_neighbours.rs",
       "kind": "expect_call",
-      "line": 624
+      "line": 611
     },
     {
       "classification": "production_adjacent_assumption",
@@ -25558,7 +25950,7 @@
       "fail_closed_relevance": "high",
       "file": "src/reader_neighbours.rs",
       "kind": "unwrap_call",
-      "line": 628
+      "line": 615
     },
     {
       "classification": "production_adjacent_assumption",
@@ -25566,7 +25958,7 @@
       "fail_closed_relevance": "high",
       "file": "src/reader_neighbours.rs",
       "kind": "expect_call",
-      "line": 629
+      "line": 616
     },
     {
       "classification": "production_adjacent_assumption",
@@ -25574,7 +25966,7 @@
       "fail_closed_relevance": "high",
       "file": "src/reader_neighbours.rs",
       "kind": "expect_call",
-      "line": 652
+      "line": 639
     },
     {
       "classification": "production_adjacent_assumption",
@@ -25582,7 +25974,7 @@
       "fail_closed_relevance": "high",
       "file": "src/reader_neighbours.rs",
       "kind": "expect_call",
-      "line": 653
+      "line": 640
     },
     {
       "classification": "production_adjacent_assumption",
@@ -25590,7 +25982,7 @@
       "fail_closed_relevance": "high",
       "file": "src/reader_neighbours.rs",
       "kind": "unwrap_call",
-      "line": 668
+      "line": 655
     },
     {
       "classification": "production_adjacent_assumption",
@@ -25598,7 +25990,7 @@
       "fail_closed_relevance": "high",
       "file": "src/reader_neighbours.rs",
       "kind": "unwrap_call",
-      "line": 677
+      "line": 664
     },
     {
       "classification": "production_adjacent_assumption",
@@ -25606,7 +25998,7 @@
       "fail_closed_relevance": "high",
       "file": "src/reader_neighbours.rs",
       "kind": "unwrap_call",
-      "line": 678
+      "line": 665
     },
     {
       "classification": "production_adjacent_assumption",
@@ -25614,7 +26006,7 @@
       "fail_closed_relevance": "high",
       "file": "src/reader_neighbours.rs",
       "kind": "expect_call",
-      "line": 711
+      "line": 698
     },
     {
       "classification": "production_adjacent_assumption",
@@ -25622,7 +26014,7 @@
       "fail_closed_relevance": "high",
       "file": "src/reader_neighbours.rs",
       "kind": "unwrap_call",
-      "line": 734
+      "line": 721
     },
     {
       "classification": "production_adjacent_assumption",
@@ -25630,7 +26022,7 @@
       "fail_closed_relevance": "high",
       "file": "src/reader_neighbours.rs",
       "kind": "unwrap_call",
-      "line": 793
+      "line": 780
     },
     {
       "classification": "production_adjacent_assumption",
@@ -25638,7 +26030,7 @@
       "fail_closed_relevance": "high",
       "file": "src/reader_neighbours.rs",
       "kind": "unwrap_call",
-      "line": 801
+      "line": 788
     },
     {
       "classification": "production_adjacent_assumption",
@@ -25646,7 +26038,7 @@
       "fail_closed_relevance": "high",
       "file": "src/reader_neighbours.rs",
       "kind": "unwrap_call",
-      "line": 832
+      "line": 819
     },
     {
       "classification": "production_adjacent_assumption",
@@ -25654,7 +26046,7 @@
       "fail_closed_relevance": "high",
       "file": "src/reader_neighbours.rs",
       "kind": "expect_call",
-      "line": 893
+      "line": 880
     },
     {
       "classification": "production_adjacent_assumption",
@@ -29446,7 +29838,7 @@
       "fail_closed_relevance": "high",
       "file": "src/snooze.rs",
       "kind": "unwrap_call",
-      "line": 423
+      "line": 424
     },
     {
       "classification": "production_adjacent_assumption",
@@ -29454,7 +29846,7 @@
       "fail_closed_relevance": "high",
       "file": "src/snooze.rs",
       "kind": "unwrap_call",
-      "line": 436
+      "line": 437
     },
     {
       "classification": "production_adjacent_assumption",
@@ -29462,15 +29854,7 @@
       "fail_closed_relevance": "high",
       "file": "src/snooze.rs",
       "kind": "unwrap_call",
-      "line": 446
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/snooze.rs",
-      "kind": "unwrap_call",
-      "line": 457
+      "line": 447
     },
     {
       "classification": "production_adjacent_assumption",
@@ -29486,7 +29870,7 @@
       "fail_closed_relevance": "high",
       "file": "src/snooze.rs",
       "kind": "unwrap_call",
-      "line": 460
+      "line": 459
     },
     {
       "classification": "production_adjacent_assumption",
@@ -29494,7 +29878,7 @@
       "fail_closed_relevance": "high",
       "file": "src/snooze.rs",
       "kind": "unwrap_call",
-      "line": 495
+      "line": 461
     },
     {
       "classification": "production_adjacent_assumption",
@@ -29502,7 +29886,7 @@
       "fail_closed_relevance": "high",
       "file": "src/snooze.rs",
       "kind": "unwrap_call",
-      "line": 499
+      "line": 496
     },
     {
       "classification": "production_adjacent_assumption",
@@ -29510,7 +29894,7 @@
       "fail_closed_relevance": "high",
       "file": "src/snooze.rs",
       "kind": "unwrap_call",
-      "line": 505
+      "line": 500
     },
     {
       "classification": "production_adjacent_assumption",
@@ -29518,7 +29902,7 @@
       "fail_closed_relevance": "high",
       "file": "src/snooze.rs",
       "kind": "unwrap_call",
-      "line": 510
+      "line": 506
     },
     {
       "classification": "production_adjacent_assumption",
@@ -29526,7 +29910,7 @@
       "fail_closed_relevance": "high",
       "file": "src/snooze.rs",
       "kind": "unwrap_call",
-      "line": 516
+      "line": 511
     },
     {
       "classification": "production_adjacent_assumption",
@@ -29534,7 +29918,7 @@
       "fail_closed_relevance": "high",
       "file": "src/snooze.rs",
       "kind": "unwrap_call",
-      "line": 522
+      "line": 517
     },
     {
       "classification": "production_adjacent_assumption",
@@ -29542,7 +29926,7 @@
       "fail_closed_relevance": "high",
       "file": "src/snooze.rs",
       "kind": "unwrap_call",
-      "line": 542
+      "line": 523
     },
     {
       "classification": "production_adjacent_assumption",
@@ -29558,7 +29942,7 @@
       "fail_closed_relevance": "high",
       "file": "src/snooze.rs",
       "kind": "unwrap_call",
-      "line": 553
+      "line": 544
     },
     {
       "classification": "production_adjacent_assumption",
@@ -29590,7 +29974,7 @@
       "fail_closed_relevance": "high",
       "file": "src/snooze.rs",
       "kind": "unwrap_call",
-      "line": 570
+      "line": 557
     },
     {
       "classification": "production_adjacent_assumption",
@@ -29598,7 +29982,7 @@
       "fail_closed_relevance": "high",
       "file": "src/snooze.rs",
       "kind": "unwrap_call",
-      "line": 574
+      "line": 571
     },
     {
       "classification": "production_adjacent_assumption",
@@ -29606,7 +29990,7 @@
       "fail_closed_relevance": "high",
       "file": "src/snooze.rs",
       "kind": "unwrap_call",
-      "line": 576
+      "line": 575
     },
     {
       "classification": "production_adjacent_assumption",
@@ -29622,7 +30006,7 @@
       "fail_closed_relevance": "high",
       "file": "src/snooze.rs",
       "kind": "unwrap_call",
-      "line": 585
+      "line": 578
     },
     {
       "classification": "production_adjacent_assumption",
@@ -29630,7 +30014,7 @@
       "fail_closed_relevance": "high",
       "file": "src/snooze.rs",
       "kind": "unwrap_call",
-      "line": 589
+      "line": 586
     },
     {
       "classification": "production_adjacent_assumption",
@@ -29638,7 +30022,7 @@
       "fail_closed_relevance": "high",
       "file": "src/snooze.rs",
       "kind": "unwrap_call",
-      "line": 607
+      "line": 590
     },
     {
       "classification": "production_adjacent_assumption",
@@ -29646,7 +30030,7 @@
       "fail_closed_relevance": "high",
       "file": "src/snooze.rs",
       "kind": "unwrap_call",
-      "line": 617
+      "line": 608
     },
     {
       "classification": "production_adjacent_assumption",
@@ -29654,7 +30038,7 @@
       "fail_closed_relevance": "high",
       "file": "src/snooze.rs",
       "kind": "unwrap_call",
-      "line": 625
+      "line": 618
     },
     {
       "classification": "production_adjacent_assumption",
@@ -29670,7 +30054,7 @@
       "fail_closed_relevance": "high",
       "file": "src/snooze.rs",
       "kind": "unwrap_call",
-      "line": 630
+      "line": 627
     },
     {
       "classification": "production_adjacent_assumption",
@@ -29678,7 +30062,7 @@
       "fail_closed_relevance": "high",
       "file": "src/snooze.rs",
       "kind": "unwrap_call",
-      "line": 632
+      "line": 631
     },
     {
       "classification": "production_adjacent_assumption",
@@ -29686,7 +30070,7 @@
       "fail_closed_relevance": "high",
       "file": "src/snooze.rs",
       "kind": "unwrap_call",
-      "line": 634
+      "line": 633
     },
     {
       "classification": "production_adjacent_assumption",
@@ -29695,6 +30079,14 @@
       "file": "src/snooze.rs",
       "kind": "unwrap_call",
       "line": 635
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/snooze.rs",
+      "kind": "unwrap_call",
+      "line": 636
     },
     {
       "classification": "production_adjacent_assumption",
@@ -30374,7 +30766,7 @@
       "fail_closed_relevance": "high",
       "file": "src/welcome_ui.rs",
       "kind": "unwrap_call",
-      "line": 256
+      "line": 257
     },
     {
       "classification": "production_adjacent_assumption",
@@ -30382,7 +30774,7 @@
       "fail_closed_relevance": "high",
       "file": "src/welcome_ui.rs",
       "kind": "unwrap_call",
-      "line": 310
+      "line": 311
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -31033,7 +31425,7 @@
       "line": 521
     }
   ],
-  "generated_at_utc": "2026-10-03T18:35:40Z",
+  "generated_at_utc": "2026-10-03T19:48:04Z",
   "non_claims": [
     "This audit does not claim that all Rust assumptions are safe.",
     "This audit does not claim that production request paths are panic-free.",
@@ -31073,27 +31465,27 @@
     "by_classification": {
       "control_flow_invariant": 4,
       "panic_path_assumption": 70,
-      "production_adjacent_assumption": 1852,
+      "production_adjacent_assumption": 1875,
       "startup_or_global_invariant": 8,
-      "test_or_fixture_assumption": 1945
+      "test_or_fixture_assumption": 1971
     },
     "by_fail_closed_relevance": {
-      "high": 1922,
-      "low": 1945,
+      "high": 1945,
+      "low": 1971,
       "medium": 12
     },
     "by_kind": {
-      "expect_call": 935,
+      "expect_call": 938,
       "panic_macro": 153,
       "unreachable_macro": 9,
-      "unwrap_call": 2782
+      "unwrap_call": 2828
     },
     "classification_complete": true,
-    "inventory_sha256": "39ef8f1d1a313a0d8ac6343ff752a62b9aed30167647a713a164582f963d4953",
+    "inventory_sha256": "b382960a5cc75d143efa05d91041f26d305f8b9b5de8149184598f9238a3c366",
     "live_host_state_changed": false,
     "product_behavior_changed": false,
     "production_state_changed": false,
     "slice0_carried_forward_rust_assumption_count": 712,
-    "total_count": 3879
+    "total_count": 3928
   }
 }

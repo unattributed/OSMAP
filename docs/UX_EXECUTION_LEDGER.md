@@ -4785,3 +4785,100 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   Conversation ordering, exact Back row focus and remaining S02 obligations
   remain OPEN. All current Send failures/provider/protected Sent/return acceptance
   remain OPEN. No operator flags, key bindings, policies or Send were changed.
+
+- Mark-read signed checkpoint364381ea5ccf70e0e206bafb39935b8f9b37c397 verified
+  Shopkeeper and promptly synchronized; fetched GitHub branch equality0/0 and
+  clean at sync. All264 native inputs match the signed source. Matching binary
+  6bd10429dfa5c28e74b887062e0f772645d722241ba3ca079490757ea8a090a9 actually
+  activated helper-first on authoritative mail and frontendobsd1, with exclusive
+  rollback backups osmap-ux-s02-mark-read{-mail}-364381ea5ccf-20261003.
+- Installed GET-only actual-data probe PASS native General/Reading associated
+  forms/revision, owned current Inbox body/Seen identity, reload/list return and
+  session cleanup/binary repin; policy/flag/Send/outside writes0, retained mail
+  content0. Actual filtered Unread had0 rows: that installed reader case NOT RUN.
+  Native/synthetic controlled cases prove Seen mutation; live operator Seen and
+  all five human UAT cases remain NOT RUN. UAT.md now names exact installed
+  source/binary and results. This closes a bounded engineering checkpoint only,
+  not wholeS02-02/sprint/epic or Send acceptance.
+
+- Next S02-02 remediation work order: R2-14-004 actual conversation ordering.
+  Exact approved PAGE14 has Conversation ordering/Newest first; PAGE03 has
+  existing flat list/reader arrows, no new conversation panel/tree. Existing
+  individual-date sorting lacks public threading headers. Use bounded optional
+  Message-ID/In-Reply-To/References in the existing native summary/helper codec,
+  an owned loaded-result model, and saved newest/oldest member ordering with
+  contiguous related rows through existing list/arrows. Explicit URL sort still
+  overrides; unrelated same-subject, unknown/ambiguous/cyclic ancestry stay
+  independent rather than inventing a relationship. No additional body fetch.
+- Allowed source: conversation model/parser, message_metadata, mailbox_json and
+  strict optional helper codecs; metadata fixtures; mail_list/reader_neighbours/
+  routes_mail/settings_reading_ui/reading_preferences integration; existing
+  disposable native/browser fixtures and narrow new workflow. Root owns docs,
+  aggregate gates, signing/sync/deployment. Developer owns parser/model and
+  backend codec; independent QA/security owns discriminating tests/native proof.
+  RED parent time1/unrelated same-subject time2/actual reply time3 currently
+  interleave; GREEN saved newest yields reply,parent,unrelated, oldest reverses
+  actual members, explicit sort remains unchanged. Cover strict bounds, duplicate
+  IDs, cycles, account/GUID/filter isolation and legacy absent-field fallback.
+- Preserve4MiB fetch/1MiB helper/result-prefix/deadline limits. New web accepts
+  old helper as unknown threading; old web cannot parse new optional field.
+  Stage candidates first, activate compatible web against old helper, then
+  expose new helper metadata; rollback old helper before old web. No Send,
+  private cryptography, key/policy changes or operator mailbox fixture writes.
+
+- Conversation model/default compiled RED retained (actual reply,unrelated,parent
+  versus required reply,parent,unrelated). Implemented bounded optional native
+  public headers and strict typed helper metadata; loaded filtered component
+  ordering now uses stored Reading defaults through lists/Search/reader arrows.
+  Explicit sort wins; unknown/ambiguous/cyclic metadata remains independent.
+  Actual review corrected UID ties/missing-time fallback and duplicate IDs on
+  ineligible timestamp/GUID records, without weakening source/helper limits.
+- Focused current model/default GREEN12 PASS; threading-filter GREEN6 PASS
+  includes one overlapping model test and existing reply controls. Native
+  attempts2/3/4 PASS twelve focused plus one distinct actual disposable Dovecot,
+  signed-helper and BrowserApp integration, including actual saved order, headers,
+  Next-to-parent, explicit precedence, excluded Seen parent and stale GUID.
+  Final native refresh pending285 current Rust/build plus compile-time fixture/
+  inventory inputs; earlier266-input results remain retained scoped proof.
+- Actual current no-script browser final PASS4 workflows/3 Reading settings
+  POSTs, saved Newest3,1,2/Oldest1,3,2, explicit Received1,2,3, Search predicates,
+  arrows, stale GUID, Starred exclusion and Back. Four1440/360 light/dark captures
+  pass bounded overflow/focus/text checks; zero Send/opening/flag/outside requests
+  and owned fixture cleanup PASS. Capture review independently exposed missing
+  coordinated toolbar icon geometry: CSS is scoped only to standalone reader.
+  This real visual gap is registered for code repair; full visual parity OPEN.
+- Acceptance attempt1 refused two obsolete default-sort/old-label assertions;
+  attempt2 security tests passed but Clippy refused an indexed loop. Corrected
+  exact native-form/unknown-help tests, implicit Archive context expectation and
+  iterator code; no gate allowance or disabled assertion. Final unchanged
+  acceptance attempt3 PASS1177 library/1binary,21ignored excluded, then actual
+  v10/v11/v12/v13 PASS. Existing audit/claims refreshed3923 assumptions/refined
+  high0; actual current v14-check PASS. Earlier fixture compilation failures and
+  all attempts retained under stable conversation-order root.
+- Independent source review finds no blocking model/codec/default defect; no
+  agent-executed review is misrepresented as runtime proof. R2-14-004 is locally
+  implemented/verified, not human accepted. Signed synchronization/matching
+  web-first activation pending; wholeS02-02, exact Back focus, full visuals,
+  S02-01 remaining controls and all Send/provider/protected Sent/return remain
+  OPEN. No operator mail, keys, binding policy or Send was changed.
+
+- Cross-workflow review reproduced a real ArchiveNext regression before delivery:
+  implicit saved conversation3,1,2 projected explicit Received3,2,1 and selected
+  unrelated2. Actual compiled RED retained; verified_rows now applies the same
+  saved default after parsing the exact context, with explicit-sort precedence.
+  It uses existing shared19 fields (including opened_read)/2048 bytes, not a new
+  allowance. Independent review confirms account/GUID/full-row/confirmed-only
+  checks unchanged. GREEN implicitNewest3→1/Oldest1→3/explicitReceived3→2 PASS;
+  this is order projection proof, not a claim of new live Archive mutation.
+- Final native attempt6 PASS all285 current Rust/CSS/build and literal external
+  compile-time fixture/inventory inputs, thirteen focused cases plus one distinct
+  disposable native test; test01429beea7a7fbddd2207f6e7a0e9fd8d72ebae87dcd359e009b0f0f3cbcdbb4
+  applicationb17eb05a6a9232368977055586077890f485ecacdb1cdec601f46dce11080a6c.
+  Browser matching-final PASS4 unchanged bounded workflows and owned cleanup.
+  Final current v14 PASS; final aggregate acceptance/sign/sync/install pending.
+  Earlier native attempts/inputs remain retained; none supersedes matching final
+  evidence. WholeS02 and all human/Send acceptance stay OPEN.
+- Final aggregate acceptance PASS1178 library/1binary;21ignored excluded; current
+  v10/v11/v12/v13 gates PASS and audit3928/refinedhigh0. Matching285 source input
+  checks PASS before signing; normal repository hooks remain enabled. Signed
+  synchronization and compatible matching installation are the next operations.

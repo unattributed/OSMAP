@@ -9,7 +9,7 @@ use crate::message_metadata::{
     attachment_count, message_preview, message_protection, MessageMetadata, MessageVersion,
 };
 
-pub(super) const SUMMARY_FIELDS: &str = "uid flags date.received size.virtual mailbox mailbox-guid guid hdr.subject hdr.from hdr.to imap.bodystructure body.preview";
+pub(super) const SUMMARY_FIELDS: &str = "uid flags date.received size.virtual mailbox mailbox-guid guid hdr.subject hdr.from hdr.to hdr.message-id hdr.in-reply-to hdr.references imap.bodystructure body.preview";
 pub(super) const VIEW_FIELDS: &str =
     "uid flags date.received size.virtual mailbox mailbox-guid guid hdr body imap.bodystructure body.preview";
 const BACKEND: &str = "message-json-parser";
@@ -33,6 +33,12 @@ struct FetchRow {
     from: Option<String>,
     #[serde(rename = "hdr.to")]
     to: Option<String>,
+    #[serde(rename = "hdr.message-id")]
+    message_id: Option<String>,
+    #[serde(rename = "hdr.in-reply-to")]
+    in_reply_to: Option<String>,
+    #[serde(rename = "hdr.references")]
+    references: Option<String>,
     hdr: Option<String>,
     body: Option<String>,
     #[serde(rename = "imap.bodystructure")]
@@ -77,6 +83,23 @@ fn rows(
 }
 
 impl FetchRow {
+    fn threading(&self) -> Option<crate::conversation::ThreadingMetadata> {
+        if self.message_id.is_some() || self.in_reply_to.is_some() || self.references.is_some() {
+            return crate::conversation::ThreadingMetadata::from_headers(
+                self.message_id.as_deref(),
+                self.in_reply_to.as_deref(),
+                self.references.as_deref(),
+            );
+        }
+        // Views already carry bounded original headers; do not fetch bodies again.
+        let fields = crate::reply_thread::original_fields(self.hdr.as_deref()?).ok()?;
+        crate::conversation::ThreadingMetadata::from_headers(
+            fields.get("message-id").map(String::as_str),
+            fields.get("in-reply-to").map(String::as_str),
+            fields.get("references").map(String::as_str),
+        )
+    }
+
     fn common(
         &self,
         mailbox_max: usize,
@@ -113,6 +136,7 @@ impl FetchRow {
         )?;
         validate_bounded_string("flags", &self.flags, flags_max, BACKEND, true, false)?;
         let metadata = MessageMetadata {
+            threading: self.threading(),
             attachments: crate::message_metadata::attachment_summaries(
                 self.bodystructure.as_deref(),
             ),
@@ -381,6 +405,40 @@ pub(super) fn parse_json_view(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn native_threading_is_optional_bounded_and_never_hides_usable_messages() {
+        assert!(SUMMARY_FIELDS.contains("hdr.message-id hdr.in-reply-to hdr.references"));
+        let mut fixture = row();
+        fixture["hdr.message-id"] = "<child@example.test>".into();
+        fixture["hdr.in-reply-to"] = "<parent@example.test>".into();
+        fixture["hdr.references"] = "<root@example.test> <parent@example.test>".into();
+        let rows = parse_json_summaries(MessageListPolicy::default(), &execution(fixture.clone()))
+            .unwrap();
+        let threading = rows[0]
+            .metadata
+            .as_ref()
+            .unwrap()
+            .threading
+            .as_ref()
+            .unwrap();
+        assert_eq!(threading.message_id(), "<child@example.test>");
+        assert_eq!(threading.in_reply_to(), Some("<parent@example.test>"));
+        for invalid in [
+            "bad".to_string(),
+            "<child@example.test>\r\nInjected: value".into(),
+            "x".repeat(4097),
+        ] {
+            fixture["hdr.message-id"] = invalid.into();
+            let rows =
+                parse_json_summaries(MessageListPolicy::default(), &execution(fixture.clone()))
+                    .unwrap();
+            assert_eq!(rows[0].uid, 1);
+            assert!(rows[0].metadata.as_ref().unwrap().threading.is_none());
+        }
+        let rows = parse_json_summaries(MessageListPolicy::default(), &execution(row())).unwrap();
+        assert!(rows[0].metadata.as_ref().unwrap().threading.is_none());
+    }
 
     fn execution(row: serde_json::Value) -> CommandExecution {
         CommandExecution {
