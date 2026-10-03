@@ -4926,3 +4926,52 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   lifecycle acceptance remain OPEN. No agent Send or operator mail/key/policy
   mutation occurred. Next work requires an actual keyboard RED for Back focus,
   followed by native code repair and matching tests, not a paper closeout.
+
+### S02-02 exact originating-row Back focus remediation — 2026-10-03
+
+- Preceding toolbar source d73affa24702bb7c26d78584ff5f1a0dfe7bce4f is signed,
+  synchronized clean/0/0 and installed web-only on obsd1. Application
+  e9e9c8da074487554598e09ba6d4f9ae3199923d1b429be125039249ed1b441e passes
+  actual installed GET-only owned body/GUID and all eight painted-icon checks.
+  Authoritative helper remains the compatible signed conversation checkpoint.
+- Genuine Back-focus RED: native-fragment positive controls pass at both
+  widths; all four actual filtered Inbox/Search keyboard cases leave focus on
+  BODY, while pane-close/context/browser-history controls pass. Implemented
+  native hashed full-account/mailbox/UID/GUID row targets, unique on the actual
+  current rendered page. Ready/fresh selected identity and matching visible
+  target are required; no focus authority derives from a URL fragment.
+  Stale/unknown/off-page/duplicate/filtered-out targets use ordinary Back.
+  Original query/page and existing Locate stay intact; form return destinations,
+  query capacities and parser fragment rejection are unchanged.
+- Five focused local tests PASS: four pure/actual-renderer identity/context
+  regressions and one bounded test-only fixture-shape/version check. First test
+  compile rejected an incorrect RenderingMode conversion; fixed enum fixture
+  and retained failure. Opt-in Alice fixture supplies53 Inbox rows and one Sent
+  UID3, with existing default fixtures/capacities unchanged. The committed
+  browser instrument rejects Send and every POST except one synthetic login.
+- Final matching browser light and dark runs PASS twelve keyboard/history
+  positives and six safe-return negatives per theme, including page2 and equal
+  UIDs across owned folders. This is24 positive and12 negative executions,
+  not human UAT. Original failed negative instrumentation expected literal
+  page1, which existing navigation canonicalizes by omission; retained and
+  corrected without relaxing context/refusal checks. Independent light-theme
+  inspection of all12 captures finds correct visible exact-row focus; full-page
+  parity and human authentication are not inferred.
+- Native attempt1 PASS five focused cases but refused the fixture's raw HTTP
+  fragment. Test-only Back follower now validates the unique actual generated
+  64hex target and strips its browser-local fragment before HTTP. Production
+  parser still refuses fragment request targets. Native attempt2 PASS286 pinned
+  inputs, five focused and one distinct actual disposable Dovecot/helper/browser
+  integration. Test7a92893e788892953f2b5dd72039181b7cbf8a1025c1c20520792f21b96bb999;
+  application5191cc55fc1192018e0109fb7d0ab1432b2a28a71b51392a1e491e54e7c332e7.
+- Current Clippy/v10/v14 checks PASS; existing source audit/claim registers
+  refreshed3946/refinedhigh0 without changing gates. Normal signed commit/push
+  hooks and matching installation remain required. Evidence under stable S02
+  back-focus/ and conversation-order/native-back-focus-attempt*; failed attempts
+  are retained. No agent Send or operator mail/key/policy mutation occurred.
+- Whole S02 remains OPEN. Scrum found another concrete S02-01 defect: the
+  automatic-selection menu counts visible rows rather than eligible identity
+  controls. Mixed/legacy metadata can overstate selected tuples; all-missing
+  identities still offer selection. Prepared actual Inbox/Sent/page2 regressions
+  require a genuine compiled RED and a code fix after this checkpoint. No paper
+  closure; all human Send/provider/protected-mail/key acceptance remain OPEN.

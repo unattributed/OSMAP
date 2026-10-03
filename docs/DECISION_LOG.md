@@ -8129,3 +8129,22 @@ one Inbox row does not establish live linked-conversation grouping. Keep that
 human case NOT RUN and the full slice OPEN. Back-to-list exact keyboard focus
 is the next demonstrable source gap; Send and cryptographic acceptance remain
 separate unresolved user outcomes.
+
+### 2026-10-03 — Restore exact current-row keyboard focus through native Back
+
+Actual no-script keyboard RED leaves focus on BODY despite preserved context.
+Use a domain-separated length-prefixed hash of the authenticated account,
+mailbox, UID and both current GUIDs for a presentation-only row target. Never
+embed raw graphical GUIDs or make a fragment an authorization input. Only fresh
+Ready identity matching a unique row actually rendered on the same page may
+receive a final Back-link fragment. Missing, stale, duplicated, off-page and
+recovered Seen-with-no-Unread-row cases keep ordinary Back and the existing
+Locate action. Preserve query/page, native form fields and return allowlists.
+
+Verify actual keyboard activeElement and visible outline, not only scroll or
+:target; use native fragment positive controls and existing browser-history
+checks. The native test follower must strip browser-local fragments before
+HTTP while production parsing continues to reject fragment request targets.
+Keep failed fixture/instrument attempts and current human acceptance OPEN.
+Next remediate the discovered automatic-selection eligibility/count defect
+with actual Inbox/Sent mixed-metadata and page2 RED/GREEN source tests.

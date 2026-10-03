@@ -154,6 +154,8 @@ fn logout_form(csrf_token: &str) -> String {
     )
 }
 
+#[path = "http/back_focus.rs"]
+mod back_focus;
 /// Repository-owned vector paths; decorative, never fetched from a network.
 #[path = "http/reader_toolbar.rs"]
 mod reader_toolbar;
@@ -1064,15 +1066,37 @@ fn render_coordinated_reader(
     let mut cleared = view.clone();
     cleared.selection = None;
     let back = list_navigation_href(base, &cleared, view.page);
+    render_coordinated_reader_with_back(base, view, csrf, reader, &back)
+}
+
+fn render_coordinated_reader_with_focus(
+    base: &str,
+    view: &ListViewState,
+    csrf: &str,
+    reader: &MailReaderContext,
+    account: &str,
+    targets: &[Option<String>],
+) -> String {
+    let back = back_focus::back_href(account, base, view, reader, targets);
+    render_coordinated_reader_with_back(base, view, csrf, reader, &back)
+}
+
+fn render_coordinated_reader_with_back(
+    base: &str,
+    view: &ListViewState,
+    csrf: &str,
+    reader: &MailReaderContext,
+    back: &str,
+) -> String {
     match &reader.pane {
         SelectedMessagePane::Unselected => "<article class=\"reading-pane reader-empty\" aria-label=\"Reading pane\"><h2>Choose a message</h2><p class=\"muted\">Open a subject to read it alongside this list.</p></article>".into(),
-        SelectedMessagePane::Unavailable(message) => format!("<article id=\"reading-pane\" class=\"reading-pane\" tabindex=\"-1\" aria-labelledby=\"reading-unavailable\"><a href=\"{}\">Back to list</a><h2 id=\"reading-unavailable\">Message unavailable</h2><p role=\"status\">{}</p></article>", escape_html(&back), escape_html(message)),
+        SelectedMessagePane::Unavailable(message) => format!("<article id=\"reading-pane\" class=\"reading-pane\" tabindex=\"-1\" aria-labelledby=\"reading-unavailable\"><a href=\"{}\">Back to list</a><h2 id=\"reading-unavailable\">Message unavailable</h2><p role=\"status\">{}</p></article>", escape_html(back), escape_html(message)),
         SelectedMessagePane::Ready(rendered) => {
             let locate = match view.selection_page {
                 Some(page) if page != view.page => format!("<p class=\"reader-locate\"><a href=\"{}\">Locate selected message on page {page}</a></p>", escape_html(&list_navigation_href(base, view, page))),
                 _ => String::new(),
             };
-            format!("<div class=\"reader-column\">{locate}{}</div>", render_reader_fragment(csrf, rendered, reader.archive_mailbox_name.as_deref(), &reader.mailboxes, &back, &list_navigation_href(base, view, view.page), Some(&reader.neighbours)))
+            format!("<div class=\"reader-column\">{locate}{}</div>", render_reader_fragment(csrf, rendered, reader.archive_mailbox_name.as_deref(), &reader.mailboxes, back, &list_navigation_href(base, view, view.page), Some(&reader.neighbours)))
         }
     }
 }
@@ -1390,6 +1414,7 @@ fn render_search_field_select(active_field: MessageSearchField) -> String {
 }
 
 struct MessageCard<'a> {
+    focus_target: Option<&'a str>,
     open_on_select: bool,
     recipient: bool,
     mailbox: &'a str,
@@ -1449,7 +1474,7 @@ fn render_message_card(
     };
     format!(
         concat!(
-            "<li class=\"message-row message-card{}\" data-selected=\"{}\">{selection}",
+            "<li class=\"message-row message-card{}\" data-selected=\"{}\"{focus_attributes}>{selection}",
             "<div class=\"message-card-main\"><span class=\"message-avatar\" aria-hidden=\"true\" title=\"{initials_hint}\">{}</span><span class=\"message-sender\" title=\"{}\" dir=\"auto\">{}</span>",
             "<span class=\"message-date\" title=\"{}\">{}</span>",
             "{subject_control}<span class=\"message-body-preview\" dir=\"auto\">{}</span></div>",
@@ -1473,6 +1498,7 @@ fn render_message_card(
         initials_hint = if message.recipient { "Initials from the recipient header" } else { "Initials from the sender header" },
         party_label = if message.recipient { "To" } else { "From" },
         selection = selection,
+        focus_attributes = back_focus::attributes(message.focus_target),
         star = star,
         read_action = read_action,
         protection = render_public_message_protection(message.metadata),
@@ -1643,6 +1669,7 @@ pub(crate) fn render_message_list_page(
     if let Some(scope) = sort_links.search_scope {
         navigation_base.push_str(&format!("&scope={}", url_encode(scope)));
     }
+    let focus_targets = back_focus::summary_targets(canonical_username, messages);
     let mut rows = String::new();
     let archive_actions_available = bulk_actions
         .archive_mailbox_name
@@ -1696,6 +1723,7 @@ pub(crate) fn render_message_list_page(
         let actions = archive_action;
         rows.push_str(&render_message_card(
             MessageCard {
+                focus_target: focus_targets.get(index).and_then(Option::as_deref),
                 open_on_select: sort_links.view.open_on_select,
                 mailbox: mailbox_name,
                 uid: message.uid,
@@ -1869,7 +1897,7 @@ pub(crate) fn render_message_list_page(
         action_controls,
         message_column_headings(mailbox_name == "Sent"),
         rows,
-        render_coordinated_reader(&navigation_base, sort_links.view, csrf_token, sort_links.reader),
+        render_coordinated_reader_with_focus(&navigation_base, sort_links.view, csrf_token, sort_links.reader, canonical_username, &focus_targets),
         table_class = if mailbox_name == "INBOX" { " approved-mail-table inbox-table" } else if mailbox_name == "Sent" { " approved-mail-table sent-table" } else { "" },
         list_intro = if mailbox_name == "Sent" { "Stored Sent copies. Their presence does not confirm delivery." } else { "Search, filter, sort and work with messages without losing context." },
     ))
@@ -1914,6 +1942,7 @@ pub(crate) fn render_message_search_page(
         url_encode(query),
         search_field.query_value()
     ));
+    let focus_targets = back_focus::search_targets(canonical_username, results);
     let mut rows = String::new();
     if results.is_empty() {
         rows.push_str(&format!(
@@ -1927,7 +1956,7 @@ pub(crate) fn render_message_search_page(
             )
         ));
     } else {
-        for result in results {
+        for (index, result) in results.iter().enumerate() {
             let mut more_controls = render_message_state_controls(
                 csrf_token,
                 &result.mailbox_name,
@@ -1953,11 +1982,12 @@ pub(crate) fn render_message_search_page(
                 )
             };
             rows.push_str(&format!(
-                "<li class=\"message-row search-result-row\" data-selected=\"{}\"><span class=\"search-result-type\">{}</span><div class=\"search-result-title\">{subject_control}<span class=\"message-sender\" dir=\"auto\"><span class=\"sr-only\">From</span> {}{preview}</span></div><span class=\"search-result-location message-mailbox\" dir=\"auto\">{}</span><time class=\"search-result-date\">{}</time><details class=\"search-result-more\"><summary aria-label=\"More for message #{} in {}\">More</summary><div>{}</div></details></li>",
+                "<li class=\"message-row search-result-row\" data-selected=\"{}\"{focus_attributes}><span class=\"search-result-type\">{}</span><div class=\"search-result-title\">{subject_control}<span class=\"message-sender\" dir=\"auto\"><span class=\"sr-only\">From</span> {}{preview}</span></div><span class=\"search-result-location message-mailbox\" dir=\"auto\">{}</span><time class=\"search-result-date\">{}</time><details class=\"search-result-more\"><summary aria-label=\"More for message #{} in {}\">More</summary><div>{}</div></details></li>",
                 view.is_selected(&result.mailbox_name, result.uid), shell_icon("inbox"),
                 escape_html(result.from.as_deref().unwrap_or("Sender unavailable")), escape_html(&result.mailbox_name), escape_html(&result.date_received),
                 result.uid, escape_html(&result.mailbox_name),
                 more_controls,
+                focus_attributes = back_focus::attributes(focus_targets.get(index).and_then(Option::as_deref)),
                 subject_control = message_open_control(csrf_token, &message_href, "message-subject-link", result.subject.as_deref().unwrap_or("(No subject)"), view.is_selected(&result.mailbox_name, result.uid), view.open_on_select, None),
                 preview = result.metadata.as_ref().and_then(|metadata| metadata.preview.as_deref()).filter(|preview| crate::message_metadata::valid_message_preview(preview)).map(|preview| format!(" · {}", escape_html(preview))).unwrap_or_default(),
             ));
@@ -1983,7 +2013,7 @@ pub(crate) fn render_message_search_page(
         list_form_state(view), escape_html(query), search_field_select, mailbox_input, search_all_checked, navigation,
         if landing { String::new() } else { format!(" ({})", view.total_results) }, escape_html(search_scope),
         sort_headers, rows, pages, back_link, notices,
-        render_coordinated_reader(&navigation_base, view, csrf_token, context.reader),
+        render_coordinated_reader_with_focus(&navigation_base, view, csrf_token, context.reader, canonical_username, &focus_targets),
         people_query = escape_html(&url_encode(query)),
     ))
 }

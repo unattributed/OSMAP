@@ -753,6 +753,8 @@ body:has(.app-rail) {
 .reader-neighbours details p { position:absolute; z-index:9; right:.5rem; top:100%; max-width:min(28rem,calc(100% - 1rem)); padding:.75rem; border:1px solid var(--line); border-radius:.5rem; background:var(--panel); color:var(--text); overflow-wrap:anywhere; }
 .standalone-reader .reader-more-actions { margin-left:0; }
 /* Reader icon actions share inert geometry in standalone and coordinated readers. */
+.message-card[data-list-focus]:focus-visible,.search-result-row[data-list-focus]:focus-visible{outline:3px solid var(--focus);outline-offset:2px;scroll-margin-block:5rem}
+@media(forced-colors:active){.message-card[data-list-focus]:focus-visible,.search-result-row[data-list-focus]:focus-visible{outline-color:Highlight}}
 .reader-icon-toolbar{gap:.65rem;min-height:3.5rem;padding:.6rem .7rem}
 .reader-icon-toolbar form{margin:0}
 .reader-icon-toolbar .reader-icon-moves{display:flex;gap:.65rem}

@@ -2562,6 +2562,11 @@ mod tests {
             validated_session: &ValidatedSession,
             mailbox_name: &str,
         ) -> BrowserMessageListOutcome {
+            if let Some(outcome) =
+                ux_browser_server::back_focus_list(validated_session, mailbox_name)
+            {
+                return outcome;
+            }
             if mailbox_name == "INBOX"
                 && validated_session.record.canonical_username == "alice@example.com"
             {
@@ -2758,6 +2763,11 @@ mod tests {
             query: &str,
             field: MessageSearchField,
         ) -> BrowserMessageSearchOutcome {
+            if let Some(outcome) =
+                ux_browser_server::back_focus_search(validated_session, mailbox_name, query, field)
+            {
+                return outcome;
+            }
             if validated_session.record.canonical_username == "alice@example.com"
                 && mailbox_name.is_none_or(|name| name == "INBOX")
                 && query == "Shared public subject"
@@ -3066,6 +3076,11 @@ mod tests {
             mailbox_name: &str,
             uid: u64,
         ) -> BrowserMessageViewOutcome {
+            if let Some(outcome) =
+                ux_browser_server::back_focus_view(validated_session, mailbox_name, uid)
+            {
+                return outcome;
+            }
             if mailbox_name == "INBOX"
                 && validated_session.record.canonical_username == "alice@example.com"
             {

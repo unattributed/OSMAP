@@ -424,7 +424,7 @@ fn attribute(tag: &str, name: &str) -> Option<String> {
         .map(|(value, _)| decode(value))
 }
 fn back_href(body: &str) -> String {
-    body.split("<a ")
+    let href = body.split("<a ")
         .find_map(|part| {
             let element = part.split_once("</a>")?.0;
             element
@@ -432,7 +432,18 @@ fn back_href(body: &str) -> String {
                 .then(|| attribute(element, "href"))
                 .flatten()
         })
-        .expect("rendered Back to list control")
+        .expect("rendered Back to list control");
+    // A browser retains its native focus fragment locally, never in the HTTP
+    // request target. Verify the actual rendered target before following GET.
+    if let Some((target, fragment)) = href.split_once('#') {
+        let digest = fragment.strip_prefix("mail-row-").expect("generated row target");
+        assert_eq!(digest.len(), 64);
+        assert!(digest.bytes().all(|byte| byte.is_ascii_hexdigit()));
+        assert_eq!(body.matches(&format!("id=\"{fragment}\" tabindex=\"-1\" data-list-focus=\"true\"")).count(), 1);
+        target.into()
+    } else {
+        href
+    }
 }
 fn neighbour_href(body: &str, label: &str) -> Option<String> {
     body.split("<a ").find_map(|part| {
