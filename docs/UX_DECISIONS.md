@@ -463,3 +463,142 @@ Carry unresolved controls/runtime limits into the existing ledger and owning
 slices. S00-03 next reconciles D04–D06 against actual implementation and standing
 authority. Preserve the ordered epic, existing code and valid earlier evidence;
 known ordinary and protected Send failures cannot be erased by this append.
+
+## S00-03 D04–D06 reconciliation — 2026-10-03
+
+Append-ready technical-writer draft, prepared read-only from source
+`66117e7e7aa299f27cd5d8760ea709290a1a597d` and the current standing user direction.
+Root integrates this only after the predecessor delivery. This draft neither
+modifies the accepted plan nor accepts S00-03 or any application journey.
+Retain the original dated D04–D06 records above; the following distinguishes
+their intended rules, current source capabilities and unresolved qualification.
+
+### D04: authoritative account changes remain distinct from presentation
+
+Dovecot and the authoritative mail-account backend remain the authentication
+and password authorities. OSMAP presentation preferences do not grant another
+From identity or become a parallel password database. The older September 29
+obsd1 SQL/mysqld observation is historical; it does not establish the current
+Toronto backend's exact password-write adapter, account epoch, changed-at
+source or session-containment capability.
+
+Current source facts:
+
+- `src/settings_identity_ui.rs:41–48` and
+  `src/http/routes_identity_preferences.rs::handle_identity_preferences_update`
+  provide display-name/Reply-to preferences for the canonical account. The
+  email field is read-only; additional sender identities are unavailable.
+  `src/identity_preferences.rs:1–10,26–63` supplies bounded presentation data,
+  not account/password administration.
+- `src/http_gateway_auth.rs:6–35` builds Dovecot authentication and the separate
+  file-backed TOTP verifier. `maint/mail-backend/relay.py::ssh_argv` supplies the
+  bounded development transport for the auth/mailbox purposes. Successful
+  authentication through that transport does not supply a password mutation
+  capability.
+- `src/settings_security_ui.rs:40–55` still renders disabled password/TOTP
+  management and unavailable recovery-contact status/management. The current
+  dispatcher has no password-change or recovery-contact browser mutation route.
+  These are missing required capabilities, not passed identity/recovery slices.
+- `docs/TOTP_OPERATOR_RECOVERY_SOP.md:3–24,28–48` describes separate interim
+  operator-assisted factor recovery and a fixed-account controlled rehearsal.
+  It does not authenticate a real claimant, provide a browser recovery workflow,
+  recover mail identities or allow an agent to attest someone's identity.
+
+The original D04 own-account step-up, bounded password handling, authoritative
+conditional write/verification, changed-at result and session impact remain the
+design requirements for their assigned slices. Contact verification must prove
+control before replacement; it must not bypass MFA or independent recovery
+identity proof. The exact current backend writer/epoch/containment integration,
+password and contact workflows, interrupted-result reconciliation and real-user
+recovery evidence remain **open**. Do not treat a saved display name, valid
+session or synthetic recovery rehearsal as their acceptance.
+
+### D05: finite ancillary functions, quotas and migration remain bounded
+
+Preserve the original finite action inventory and stricter existing limits.
+Revision 2 supersedes incompatible presentation choices and requires Documents
+to consume authoritative mailbox/storage quota; the historical 100 MiB document
+cap is an additional ceiling, not an independent storage entitlement. No new
+general command, arbitrary administrative API or unbounded groupware is implied.
+
+| Area | Current inspected source | Existing semantics and remaining gap |
+| --- | --- | --- |
+| Contacts | `src/contacts.rs:1–27`, `src/http/routes_contacts.rs` | Explicit private contacts, 200 entries and 100-byte display names; no harvesting or OpenPGP trust inference. Account-private address selection is separate from recovery-contact proof. Current functional/UAT acceptance is not inferred here. |
+| Labels | `src/labels.rs:14–19,211–212,239–275`, `src/http/routes_labels.rs` | 32 labels/account, 8/message, bounded revision-checked private records and source-defined current message identity handling. The 8 MiB record bound explicitly is not mailbox/storage quota. Correct move/stale-identity outcomes need their focused evidence. |
+| Snooze | `src/snooze.rs:15–17`, `src/http/routes_snooze.rs` | 100 markers and 30-day maximum; a private visibility marker rather than silent mail movement/deletion. Expiry, missing identities and current browser outcomes retain their own tests/UAT. |
+| Notifications | `src/notifications.rs:11–26`, `src/http/routes_notifications.rs` | Source supports 200 events/90 days and only SessionIssued/SessionRevoked kinds. The broader approved password/contact/key/policy/job/delivery event scope is incomplete; no invented score, fake event or implicit desktop permission. |
+| Drafts and intent | `src/draft.rs:32–37`, `src/send_journal.rs:378–388` | Existing 50 drafts, 30-day age and 50 MiB draft cap; versioned send-attempt state. Storage/result preservation is separate from current successful Send, authoritative Sent and recipient receipt. Unknown dispatch is not an automatic retry. |
+| Folder lifecycle | `src/http/routes_folder_create.rs:40–90`, `src/settings_copies_ui.rs:114–116` | An authenticated/CSRF-bound creation route exists. Rename/move/delete remain unavailable; mailbox summaries and virtual size do not establish shared quota or disk consumption. Required protected-folder, non-empty disposition and lifecycle outcomes remain assigned acceptance work. |
+| Documents/storage | `src/http_ui.rs:278–279`, `src/settings_copies_ui.rs:115`, `src/welcome_ui.rs:147` | Documents navigation and usage/quota remain unavailable; no Documents dispatch/store was established in S00-01. Authoritative concurrent mail/document quota accounting, bin/retention and upload/download lifecycle remain missing/open. |
+| Scheduling/permanent deletion | `src/http_ui.rs:2114`, `src/http/archive_ui.rs::page` | Schedule and permanent deletion are disabled; archive dates and retention management are unavailable. No scheduler/retention backend is established by these controls. Reversible Bin/restore must not be relabelled permanent delete. |
+
+The original resource budgets and their revised shared-quota constraint remain
+requirements, not measured current runtime guarantees. In particular document,
+scheduled-storage and global quota concurrency cannot be demonstrated by local
+record caps. A missing quota or retention authority must not permit implicit
+expunge or provide a false “space available” result.
+
+Reuse the source's private-record machinery rather than introducing another
+store framework: `src/private_account_file.rs:1–4,49–78` provides namespaced
+account records and a held file lock; callers own bounded versioned schemas.
+Contacts/labels/notifications retain revision checks. Composition preferences
+already have source-defined legacy v1/v2 reading and v3 serialization
+(`src/composition_preferences.rs:83–131`). This is source capability, not proof
+of every rollback or live migration. Each future state change must record its
+own existing schema, compatibility/unknown-version behaviour and restore path
+in the current work order, without destructive rewriting on read.
+
+Controlled `.test` fixture identities and isolated local sink namespaces remain
+the default for bounded engineering tests. Their coverage must be labelled
+synthetic and cleaned by the assigned owner. Duncan's authoritative account and
+the selected Proton recipient are the agreed real UAT scope; do not replace
+their passwords, factors, private keys or saved policy to make fixtures pass.
+Synthetic or reserved-account recovery does not become real-user proof.
+
+### D06: current standing scope supersedes the expired window
+
+The user's renewed full engineering authority and explicit epic resumption
+supersede the September 29 record's October 1 check-in window. Current AGENTS.md
+and the user's October 1 instruction also supersede the old “no remote push”
+restriction: completed contextual Shopkeeper-signed commits are verified and
+promptly synchronized to the current GitHub UX branch. Source synchronization
+is separate from deployment, functional qualification and human acceptance.
+No additional routine approval checkpoint or parallel status board is added.
+
+The development frontend and native validation target remain
+`obsd1.blackbagsecurity.com` at `192.168.1.44`. The authoritative account/mailbox
+data are on `mail.blackbagsecurity.com`. This existing backend integration is
+in scope; the historical blanket “no Vultr action” cannot be used to prohibit
+the explicitly requested authoritative auth/mailbox connection. It does not
+grant unrelated production administration or recovery identity attestations.
+
+The exact paths are distinct:
+
+- Authentication: Dovecot auth test uses the configured auth socket
+  (`src/http_gateway_auth.rs:6–20`); the bounded relay has fixed auth/mailbox
+  purposes, peer checks, static configured destination and SSH authority
+  (`maint/mail-backend/relay.py:29–34,56–59,81–128`). Remote forced-connector
+  authorization is a deployment prerequisite, not newly measured here.
+- Mailbox reads and Sent append: helper/direct selection is configuration-bound
+  (`src/http_mailbox_backends.rs::build_mailbox_list_backend` and
+  `build_message_append_backend`, lines 203–218). The intended deployed helper
+  route uses the authoritative mail backend. Current configured paths, grants,
+  peer identity and data authority must be checked before live qualification.
+- Submission: the runtime constructs the local sendmail service
+  (`src/http_gateway_mail.rs:208–218`). Previous deployment evidence describes
+  obsd1's existing SMTP/Brevo path; this draft does not inspect or certify its
+  current configuration, accepted handoff or delivery.
+
+Native source/binary identity, relevant gates, bounded installation and recovery
+remain required within standing authority. Preserve unrelated state and retained
+failures; use no assumed Roundcube fallback. A known failed required journey
+reopens readiness. Keep exact build/configuration/account evidence with its
+actual scope instead of carrying September 29 host observations forward.
+
+The operator controls the next actual external Send. Do not submit a parallel
+agent message or run an obsolete probe. An ambiguous submission is reconciled
+read-only before retry; preparation, transport acceptance, authoritative Sent,
+provider receipt/decryption/signature and human acceptance remain separate.
+All reported Send failures remain unresolved by this draft. Current policy,
+private-agent availability, backend identity and destination outcomes are not
+live-verified here; no keys/policy/service changes or email operations occurred.

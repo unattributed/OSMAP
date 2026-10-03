@@ -4056,3 +4056,44 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   is preserved. Required normal signing/sync hooks finish the doc-only delivery.
   Source/native gates from66117e7 remain applicable to unchanged code; no new
   functional pass, installation, release or human acceptance is claimed.
+
+### S00-02 signed delivery and S00-03 work order — 2026-10-03
+
+- S00-02 delivered in570fa71b5ff990d30a986d8ee2865312c4e400ec, Shopkeeper
+  signature verified, normal pre-commit/pre-push security hooks PASS, immediate
+  ordinary source push and fresh origin equality0/0. Working tree clean before
+  this entry. s00-02-delivery.json retains final draft/PM/security/focused proof
+  and source-sync identities. Installed application and human UAT unchanged.
+- S00-03 current outcome: reconcile D04/D05/D06 current authoritative identity,
+  finite actions/quotas/retention, threat/migration and exact deployment scope.
+  Preserve original dated decisions and accepted R2 bytes; do not convert
+  source fields, defaults, helper compilation or inherited labels into success.
+- Dedicated Scrum lead supplies bounded work order; existing framework writer
+  owns one external s00-03-d04-d06-draft.md and checksum. Dedicated PM independently
+  reviews current authority/outcomes; technical auditor independently reviews
+  privilege, resource, persistence and recovery semantics. Root owns reviewed
+  append in UX_DECISIONS.md, DECISION_LOG.md and this ledger, Git and hooks.
+- Source base66117e7 remains unchanged by doc-only570fa71. Existing implemented
+  identity presentation, typed backend, private finite stores and explicit
+  missing integrations must be separated from complete account capability.
+  Current obsd1 development versus authoritative mail backend, controlled test
+  identities and operator-controlled next actual Send remain distinct facts.
+- No runtime source, dependency, host, key/policy, account, auth, deployment or
+  submission mutations. Focused documentation/source references and unchanged
+  plan verification plus mandatory signed commit/push hooks apply; reuse current
+  code/native gates instead of repeating unrelated cryptography/provider checks.
+  UAT is bounded decision review only; all actual ordinary/protected delivery,
+  authoritative Sent/return and human account/key lifecycle results remain OPEN.
+  Next ordered slice is S00-04 after reviewed signed source delivery.
+- S00-03 exact reviewed draftb6918ac2c86c4cd50257abb6b52e8d5f4d6c08b07475068048bbabecdd5da7fa
+  integrated as an appendix; original dated decisions/prefix retained. All26
+  referenced source files match66117e7, unchanged code in570fa71. PM/outcome and
+  security reviews PASS with no factual blocking findings or requested amendments.
+  Focused source identity/draft/allowlist/diff checks apply; no repeated runtime
+  tests, cryptography, provider or raw historical evidence audit occurred.
+- Decision-review scope VERIFIED, pending normal signed commit/push hooks.
+  Missing identity mutation, quota/Documents/scheduler/folder lifecycle and
+  broader notifications remain assigned work. No old unavailable state is
+  disguised as acceptance. Source sync, installation, SMTP/authoritative Sent,
+  provider receipt/decryption and human results remain distinct. All-Send failure
+  stays OPEN; no live policy, keys, cache, account or installed binary changed.
