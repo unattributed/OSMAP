@@ -5275,3 +5275,61 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   signing/decryption boundaries remain explicit. Signing, prompt sync, matching
   obsd1 web-only installation and installed GET form projection remain pending
   at commit checkpoint. Human UAT/Send/provider outcomes remain OPEN.
+
+### S03 ordinary context signed/deployed repair confirmation — 2026-10-03
+
+- cba974ad0df9589c723c0f63db6dec583203c74c verifies Shopkeeper signature,
+  passes normal commit/push hooks, syncs the existing UX branch; fetched exact
+  local/remote equality0/0, clean checkpoint and290 signed-input parity PASS.
+- Matching obsd1 web-only application3254ed064e4b20fcb569ef1a795c3e0584b98fb1e5ba0791b5dddc7392521fc0
+  installed after strict identity/current SHA/services/configuration preflight;
+  root-private exact backup and rollback preserved. Only web restarted; all
+  helper services checked unchanged. No mail submitted or operator state altered.
+- Actual installed GET-only Compose/Settings probe PASS: dynamic revision5
+  matches owned BindingRecord; three enabled controls share native form and
+  match saved all-Off defaults; actual account fingerprint/policies displayed.
+  Optional account/Required Proton policies and binding/composition hashes stay
+  unchanged, own180sec synthetic post-auth session removed, final binary pinned.
+  Zero Send/POST/flag/policy/outside requests. This proves current installed
+  projection, not human password/TOTP, private readiness or actual SMTP receipt.
+- Scoped ordinary-prepare/UAT.md is READY for operator fresh ordinary self
+  all-Off and second saved/reopened draft tests, with separate exact submission/
+  authoritative Sent/Inbox outcomes. Each human result remains NOT RUN. No claim
+  all Send repaired, whole S03/S02 accepted, or protected Proton round-trip passed.
+- Resume earliest remaining S02-03 implementation: R2-08-016/017 lacks typed
+  permanent-delete and authoritative retention policy backend; disabled UI alone
+  is incomplete. Build actual guarded operation/refusal and separate disposable
+  native proof, preserving operator mail and existing reader/Bin expunge bans.
+
+### S02-03 executable permanent-delete backend checkpoint — 2026-10-03
+
+- Implement new mailbox_delete.rs and mailbox_retention.rs with typed single
+  tuple deletion and actual trusted file policy. Revalidate public request
+  fields, account ownership, UID/both GUIDs, current native identity and policy
+  revision; share the native mutation gate, absolute three-second deadline and
+  64KiB output limit. Missing/Denied/changed authority refuses before dispatch;
+  unconfirmed dispatched completion is Unknown and never automatically retried.
+- Add 12 recording/stateful deletion and five actual file-policy cases. Initial
+  focused17 PASS; aggregate11 failures expose positive-fixture writable TMPDIR
+  ancestry, not a permission bypass. Canonical sticky-root /tmp fixtures correct
+  the tests while retaining actual owner/mode/ancestor/link/parser checks.
+  Corrected acceptance/security/v14 PASS1232lib/23ignored; refreshed v10 audit
+  count4256/refinedhigh0. Normal gate assertions are unchanged.
+- Matching frozen294 compile inputs qualify on obsd1: 12 delete, five retention
+  and one separately opted-in actual Dovecot test PASS. One exact permitted
+  synthetic Alice/Deleted tuple is expunged once and absence confirmed; missing,
+  denied, changed revision, stale, busy and foreign refusals dispatch zero.
+  A preexisting Deleted neighbour plus Alice Inbox/Bob matching UID keep their
+  bytes, flags and GUIDs; scratch cleaned and standard host metadata unchanged.
+  Existing reader/Bin executor expunge bans remain unchanged.
+- Native test binary f2d9b462131290ec19fcb5a5c5b59fe7b8d1fddb97a5dd4093ce33d4b6e55ff1;
+  application03d4a2c39666280849b9f63217e9a62968402b495ea5e5e5d27a55a18db7ec4c
+  is built, not installed. Current web remains cba974a/3254ed0; no operator mail,
+  policy, key, live Send or production service altered by this disposable proof.
+- Evidence: /home/foo/Downloads/osmap-ux-s02/revalidation-20261003/permanent-delete/
+  native-retention-backend-attempt1.log and its294 input manifest; initial and
+  corrected aggregate logs retain the actual failure/fix distinction. This is
+  real backend code awaiting signed checkpoint, not a closed slice. Helper
+  protocol/service configuration and browser Cancel/Confirm/bulk integration,
+  their native deployment and human UAT remain OPEN. Wildcard folder behavior is
+  unit-tested; actual native positive uses Deleted and makes no wildcard claim.

@@ -8266,3 +8266,30 @@ private-operation client is unavailable. Reproduce that exact public-inventory/
 binding/runtime combination, preserve the fingerprint and Required policy, and
 report unavailable capability. Freeze290 inputs and requalify the changed final
 candidate; earlier successful289 native hashes are historical only.
+
+### 2026-10-03 — Implement the missing retention-bound permanent-delete backend
+
+Resume S02-03 R2-08-016/017 with executable code, not a disabled-control closure.
+Add a separately trusted, read-only file policy and a typed single-message
+backend. Missing, denied, malformed, insecure or changed authority refuses before
+dispatch. Browser preference, confirmation, message age and flags cannot create
+permission. Select the authenticated account, mailbox name, mailbox GUID, UID
+and message GUID together; re-read identity and policy under the shared mutation
+gate, execute once, and confirm absence. A dispatched but unconfirmed operation
+returns Unknown and is never retried automatically.
+
+Keep normal legal folder names, including wildcard characters, with mandatory
+GUID conjunction and exact returned folder checks. Do not use mailbox-wide
+expunge or infer authority from a Deleted flag. Require a separate disposable
+OpenBSD proof preserving an already-Deleted neighbour, another folder and another
+account with the same UID; existing reader/Bin executor expunge bans remain.
+Static policy replacement must share the mutation gate or occur with the service
+stopped; no atomicity claim for arbitrary external root rewrites. Helper transport,
+native service configuration and separate browser Cancel/Confirm remain further
+integration work; this backend checkpoint is not human UAT readiness.
+
+The first aggregate run exposes an actual test fixture defect: its positive
+policy file follows a deliberately writable gate TMPDIR ancestor and correctly
+fails the production trust checks. Move only owned positive fixtures to canonical
+sticky-root /tmp, following existing inventory tests. Preserve the production
+checks and retain the failed aggregate result alongside the corrected run.

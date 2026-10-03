@@ -9,6 +9,8 @@
 
 #[path = "mailbox_backend.rs"]
 mod mailbox_backend;
+#[path = "mailbox_delete.rs"]
+mod mailbox_delete;
 #[path = "mailbox_flags.rs"]
 mod mailbox_flags;
 #[path = "mailbox_json.rs"]
@@ -19,12 +21,18 @@ mod mailbox_model;
 mod mailbox_move;
 #[path = "mailbox_parse.rs"]
 mod mailbox_parse;
+#[path = "mailbox_retention.rs"]
+mod mailbox_retention;
 #[path = "mailbox_service.rs"]
 mod mailbox_service;
 
 pub use self::mailbox_backend::{
     DoveadmMailboxListBackend, DoveadmMessageAppendBackend, DoveadmMessageListBackend,
     DoveadmMessageSearchBackend, DoveadmMessageViewBackend,
+};
+pub use self::mailbox_delete::{
+    DoveadmMessageDeleteBackend, MessageDeleteBackend, MessageDeleteError, MessageDeleteRequest,
+    MessageDeleteResult, DELETE_OPERATION_TIMEOUT_SECS, DELETE_STATE_OUTPUT_MAX_BYTES,
 };
 pub use self::mailbox_flags::{
     DoveadmMessageFlagBackend, MessageFlagBackend, MessageFlagRequest, MessageFlagResult,
@@ -54,6 +62,9 @@ use self::mailbox_parse::parse_doveadm_mailbox_list_output;
 use self::mailbox_parse::{
     parse_doveadm_message_list_output, parse_doveadm_message_search_output,
     parse_doveadm_message_view_output,
+};
+pub use self::mailbox_retention::{
+    FileMailboxRetentionPolicy, RetentionDecision, MAX_RETENTION_POLICY_BYTES,
 };
 pub use self::mailbox_service::{
     MailboxListingService, MessageListService, MessageMoveService, MessageSearchService,

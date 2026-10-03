@@ -2286,3 +2286,155 @@ fn isolated_openbsd_configured_bin_browser_moves_restore() {
     assert!(!root.exists()); assert_eq!(before, standard_metadata());
     println!("native_configured_bin=PASS saved_top_level_deleted=PASS owned_guid_moves=2 restored_new_uid=PASS stale_csrf_foreign_missing_refusal=PASS no_trash_fallback=PASS neighbours_foreign_unchanged=PASS no_append_expunge_crypto=PASS scratch_cleanup=PASS standard_host_metadata_unchanged=PASS");
 }
+
+// Separate opt-in backend proof. The existing reader/Bin executor and their
+// expunge bans above stay unchanged; this wrapper allows one declared tuple.
+#[derive(Clone)]
+struct ScopedDeleteExecutor {
+    inner: NativeExecutor,
+    permitted_args: Vec<String>,
+    expunge_count: Arc<AtomicUsize>,
+}
+impl CommandExecutor for ScopedDeleteExecutor {
+    fn run_with_stdin_bytes(&self, _: &str, _: &[String], _: &[u8]) -> Result<CommandExecution, CommandExecutionError> {
+        panic!("scoped delete fixture requires bounded execution")
+    }
+    fn run_with_stdin_bytes_timeout_and_output_limit(
+        &self, program: &str, args: &[String], input: &[u8], timeout: Duration, limit: usize,
+    ) -> Result<CommandExecution, CommandExecutionError> {
+        if !args.iter().any(|value| value == "expunge") {
+            assert!(args.iter().any(|value| value == "fetch"));
+            return self.inner.run_with_stdin_bytes_timeout_and_output_limit(program, args, input, timeout, limit);
+        }
+        assert_eq!(program, "/usr/local/bin/doveadm");
+        assert!(input.is_empty());
+        assert_eq!(args, self.permitted_args.as_slice());
+        assert!(timeout > Duration::ZERO && timeout <= Duration::from_secs(3));
+        assert!(limit > 0 && limit <= crate::mailbox::DELETE_STATE_OUTPUT_MAX_BYTES);
+        assert_eq!(self.expunge_count.fetch_add(1, Ordering::SeqCst), 0, "no duplicate expunge/retry");
+        assert!(self.inner.config.is_absolute());
+        let mut isolated = vec!["-c".into(), self.inner.config.to_string_lossy().into_owned()];
+        isolated.extend_from_slice(args);
+        self.inner.calls.fetch_add(1, Ordering::SeqCst);
+        SystemCommandExecutor.run_with_stdin_bytes_timeout_and_output_limit(program, &isolated, input, timeout, limit)
+    }
+}
+
+fn scoped_delete_wire_bytes(root: &Path, user: &str, folder: &str) -> Vec<Vec<u8>> {
+    let mut values = Vec::new();
+    for part in ["cur", "new"] {
+        for entry in fs::read_dir(root.join(user).join("Maildir").join(folder).join(part)).unwrap() {
+            let entry = entry.unwrap();
+            assert!(entry.file_type().unwrap().is_file());
+            values.push(fs::read(entry.path()).unwrap());
+        }
+    }
+    values.sort();
+    values
+}
+
+#[test]
+#[ignore = "explicit OpenBSD retention/delete backend proof; one configured disposable tuple only"]
+fn isolated_openbsd_retention_bound_single_delete_backend() {
+    use crate::mailbox::{DoveadmMessageDeleteBackend, FileMailboxRetentionPolicy, MessageDeleteBackend,
+        MessageDeleteError, MessageDeleteRequest, MessageDeleteResult};
+    assert_eq!(std::env::consts::OS, "openbsd");
+    let host = SystemCommandExecutor.run_with_stdin_timeout("/bin/hostname", &[], "", Duration::from_secs(1)).unwrap();
+    assert_eq!(host.status_code, 0);
+    assert_eq!(host.stdout.trim(), "obsd1.blackbagsecurity.com");
+    let before = standard_metadata();
+    let root = fs::canonicalize("/tmp").unwrap().join(format!("osmap-delete-native-{}-{}", std::process::id(),
+        SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos()));
+    fs::DirBuilder::new().mode(0o700).create(&root).unwrap();
+    let mut fixture = Fixture { root: root.clone(), stop: Arc::new(AtomicBool::new(false)), threads: vec![] };
+    let uid = fs::metadata(&root).unwrap().uid();
+    assert_ne!(uid, 0);
+    let group = SystemCommandExecutor.run_with_stdin_timeout("/usr/bin/id", &["-g".into()], "", Duration::from_secs(1)).unwrap();
+    assert_eq!(group.status_code, 0);
+    let gid = group.stdout.trim().parse::<u32>().unwrap();
+    assert_ne!(gid, 0);
+    for directory in ["run", "state"] { fs::DirBuilder::new().mode(0o700).create(root.join(directory)).unwrap(); }
+    for user in ["alice", "bob"] {
+        for folder in ["", ".Deleted"] {
+            for part in ["cur", "new", "tmp"] { fs::create_dir_all(root.join(user).join("Maildir").join(folder).join(part)).unwrap(); }
+        }
+    }
+    write_message(&root, "alice", 0, 0);
+    write_message(&root, "bob", 0, 0);
+    write_message(&root, "alice", 1, 0);
+    fs::rename(root.join("alice/Maildir/new/synthetic-001"), root.join("alice/Maildir/.Deleted/new/selected-001")).unwrap();
+    let inbox_bytes = scoped_delete_wire_bytes(&root, "alice", "");
+    let bob_bytes = scoped_delete_wire_bytes(&root, "bob", "");
+    let config = root.join("dovecot.conf");
+    fs::write(&config, format!("base_dir = {0}/run\nstate_dir = {0}/state\nmail_location = maildir:~/Maildir\nmail_uid = {uid}\nmail_gid = {gid}\nfirst_valid_uid = {uid}\nprotocols =\nlisten = 127.0.0.1\nssl = no\nmail_plugins =\nstats_writer_socket_path =\nauth_socket_path = {0}/never-default\nlog_path = {0}/native.log\ninfo_log_path = {0}/native.log\nnamespace inbox {{\n inbox = yes\n separator =\n}}\n", root.display())).unwrap();
+    fs::set_permissions(&config, fs::Permissions::from_mode(0o600)).unwrap();
+    let userdb = serve_userdb(&mut fixture, uid, gid);
+    let native = NativeExecutor { config, calls: Arc::new(AtomicUsize::new(0)), bin_move_count: None };
+    let native_list = DoveadmMessageListBackend::new(MessageListPolicy::default(), native.clone(), "/usr/local/bin/doveadm")
+        .with_userdb_socket_path(Some(userdb.clone()));
+    let inbox_query = MessageListRequest::new(MessageListPolicy::default(), "INBOX").unwrap();
+    let deleted_query = MessageListRequest::new(MessageListPolicy::default(), "Deleted").unwrap();
+    // Index the sole selected object first, so same-UID cross-folder controls
+    // do not depend on Maildir readdir order when the neighbour is introduced.
+    assert_eq!(native_list.list_messages(ALICE, &deleted_query).unwrap().len(), 1);
+    write_message(&root, "alice", 2, 0);
+    let neighbour_file = root.join("alice/Maildir/.Deleted/cur/neighbour-002:2,T");
+    fs::rename(root.join("alice/Maildir/new/synthetic-002"), &neighbour_file).unwrap();
+    let neighbour_bytes = fs::read(&neighbour_file).unwrap();
+    let inbox = native_list.list_messages(ALICE, &inbox_query).unwrap();
+    let bob = native_list.list_messages(BOB, &inbox_query).unwrap();
+    let deleted = native_list.list_messages(ALICE, &deleted_query).unwrap();
+    assert_eq!(inbox.len(), 1); assert_eq!(bob.len(), 1); assert_eq!(deleted.len(), 2);
+    let target = deleted.iter().find(|row| row.subject.as_deref() == Some("Native 001")).unwrap();
+    let neighbour = deleted.iter().find(|row| row.subject.as_deref() == Some("Native 002")).unwrap().clone();
+    assert_eq!(target.uid, inbox[0].uid); assert_eq!(target.uid, bob[0].uid);
+    assert!(crate::mail_list::has_flag(&neighbour.flags, "\\Deleted"));
+    let version = target.metadata.as_ref().unwrap().version.clone();
+    assert_ne!(version.mailbox_guid, inbox[0].metadata.as_ref().unwrap().version.mailbox_guid);
+    assert_ne!(version.mailbox_guid, bob[0].metadata.as_ref().unwrap().version.mailbox_guid);
+    let request = MessageDeleteRequest::new(ALICE, "Deleted", target.uid, version.clone(), 7).unwrap();
+    let expunge_count = Arc::new(AtomicUsize::new(0));
+    let permitted_args = vec!["-o".into(), "stats_writer_socket_path=".into(), "-o".into(),
+        format!("auth_socket_path={}", userdb.display()), "expunge".into(), "-u".into(), ALICE.into(),
+        "mailbox".into(), "Deleted".into(), "mailbox-guid".into(), version.mailbox_guid.clone(),
+        "uid".into(), target.uid.to_string(), "guid".into(), version.message_guid.clone()];
+    let executor = ScopedDeleteExecutor { inner: native, permitted_args, expunge_count: expunge_count.clone() };
+    let policy_path = root.join("retention.json");
+    let write_policy = |revision, permission: &str| {
+        fs::write(&policy_path, serde_json::to_vec(&serde_json::json!({"version":1,"rules":[{
+            "account":ALICE,"mailbox_name":"Deleted","revision":revision,"permanent_delete":permission
+        }]})).unwrap()).unwrap();
+        fs::set_permissions(&policy_path, fs::Permissions::from_mode(0o600)).unwrap();
+    };
+    let gate = Arc::new(Mutex::new(()));
+    let backend = |policy| DoveadmMessageDeleteBackend::new(executor.clone(), "/usr/local/bin/doveadm", policy)
+        .with_userdb_socket_path(Some(userdb.clone())).with_operation_gate(gate.clone());
+    assert_eq!(backend(FileMailboxRetentionPolicy::default()).delete_message(ALICE, &request), Err(MessageDeleteError::PolicyUnavailable));
+    write_policy(7u64, "denied");
+    let authority = FileMailboxRetentionPolicy::new(Some(policy_path.clone()), uid);
+    assert_eq!(backend(authority.clone()).delete_message(ALICE, &request), Err(MessageDeleteError::PolicyDenied));
+    write_policy(8u64, "allowed");
+    assert_eq!(backend(authority.clone()).delete_message(ALICE, &request), Err(MessageDeleteError::Stale));
+    write_policy(7u64, "allowed");
+    let mut stale = request.clone(); stale.version.message_guid = "stale-public-tuple".into();
+    assert_eq!(backend(authority.clone()).delete_message(ALICE, &stale), Err(MessageDeleteError::Stale));
+    assert_eq!(backend(authority.clone()).delete_message(BOB, &request), Err(MessageDeleteError::Invalid));
+    let guard = gate.lock().unwrap();
+    assert_eq!(backend(authority.clone()).delete_message(ALICE, &request), Err(MessageDeleteError::Busy));
+    drop(guard);
+    assert_eq!(expunge_count.load(Ordering::SeqCst), 0);
+    assert_eq!(native_list.list_messages(ALICE, &deleted_query).unwrap(), deleted);
+    assert_eq!(backend(authority.clone()).delete_message(ALICE, &request), Ok(MessageDeleteResult::Deleted));
+    assert_eq!(expunge_count.load(Ordering::SeqCst), 1);
+    assert_eq!(backend(authority).delete_message(ALICE, &request), Err(MessageDeleteError::Stale));
+    assert_eq!(expunge_count.load(Ordering::SeqCst), 1);
+    assert_eq!(native_list.list_messages(ALICE, &deleted_query).unwrap(), vec![neighbour]);
+    assert_eq!(native_list.list_messages(ALICE, &inbox_query).unwrap(), inbox);
+    assert_eq!(native_list.list_messages(BOB, &inbox_query).unwrap(), bob);
+    assert_eq!(scoped_delete_wire_bytes(&root, "alice", ".Deleted"), vec![neighbour_bytes]);
+    assert_eq!(scoped_delete_wire_bytes(&root, "alice", ""), inbox_bytes);
+    assert_eq!(scoped_delete_wire_bytes(&root, "bob", ""), bob_bytes);
+    fixture.finish(); drop(fixture);
+    assert!(!root.exists()); assert_eq!(before, standard_metadata());
+    println!("native_retention_single_delete_backend=PASS exact_identity_expunge_once=PASS absent_denied_changed_revision_stale_busy_foreign_refusal=PASS preexisting_deleted_neighbour_intact=PASS same_uid_inbox_bob_bytes_flags_guids_unchanged=PASS no_helper_http_claim=PASS scratch_cleanup=PASS standard_host_metadata_unchanged=PASS");
+}
