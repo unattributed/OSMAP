@@ -7528,3 +7528,18 @@ actual recipient receipt, signature verification and inbound/encrypted-Sent
 reading require observed outcomes. Retain the existing lock-test scheduling
 failure alongside its focused and full bounded-concurrency passes; do not alter
 production locks or bypass delivery hooks to conceal it.
+
+### Resume scoped UAT after restored access without overstating refusal proof — 2026-10-02
+
+Root verified obsd1 access, the unchanged deployed repair binary and HTTPS login
+after the ISP-router interruption. The independent negative test specifically
+showed an unbound recipient and Blocked public-key preflight, then a single
+protected-send refusal retaining all selections, with no accepted receipt or
+authoritative Sent marker. The generic 503 did not identify its precise cause;
+record the specific preflight and source-order inference separately instead of
+calling the HTTP status alone cryptographic proof. Temporary state was cleaned
+and no external send was repeated. Current actual private crypto remains Locked:
+the reviewed operator unlock precedes protected mail checks. The available
+interaction UAT, pending fresh-authenticated key mutations, and unperformed
+Proton protected exchange remain distinct outcomes; no full sprint completion is
+claimed.

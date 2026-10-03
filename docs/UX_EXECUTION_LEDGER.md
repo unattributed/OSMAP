@@ -3388,3 +3388,37 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   remain open. The dedicated Scrum lead's scoped recommendation does not accept
   these unperformed cases. Optional missing-key deployed refusal is still pending
   at this checkpoint.
+
+### Access restored and deployed missing-key refusal exercised — 2026-10-02 — scoped UAT AVAILABLE
+
+- After the reported ISP-router interruption, root verified restored LAN SSH,
+  the expected obsd1 hostname, the same installed/running `7cca63ae...` binary,
+  `osmap_serve(ok)` and public HTTPS login 200. Deployed engineering source remains
+  `360df3216510a520a78962867fad64c5e17a8838`; evidence-only HEAD was
+  `336edb9f85724da65fba2a0d4303aeaa35408541`, clean before this update. No source
+  repair, backend reconfiguration or unrelated network mutation was required.
+- Independent missing-key proof was captured at 2026-10-02 20:09:17 America/Toronto
+  (2026-10-03 00:09:17 UTC). Preserve the original evidence filename
+  `/home/foo/Downloads/osmap-ux-s05/live-web-missing-key-refusal-20261003.json`,
+  SHA-256 `8efe1cf7adabf9e5e10ea4d9a5147b341d0dcb72cd7d5a1cb277538153110fba`.
+  Actual saved-draft preflight for the disposable `.invalid` recipient showed
+  no approved key binding and Blocked with sign/encrypt/self selected. Exactly
+  one protected POST returned generic 503 and retained recipient, subject and
+  all three choices; the corresponding receipt was 404 and authoritative Sent
+  contained no unique marker. The probe deleted its own draft and temporary
+  session, changed no real keys/bindings and repeated no external send.
+- The specific preflight plus pinned source ordering supports missing-key
+  attribution; generic 503 alone does not prove the precise denial cause, and no
+  separate audit reason was captured. This is bounded refusal/retained-state
+  evidence, not successful cryptography, recipient delivery or human acceptance.
+- Root's current private-operation validation confirms public inventory and
+  Duncan binding revision 2, but the crypto operation refuses as Locked. Retain
+  the earlier warmed-agent proof within its scope; the operator's reviewed native
+  unlock is required before the future protected-send/read checks. No protected
+  external message was submitted by this continuation.
+- Updated the same `interaction-repair-20261002/UAT.md` to supersede reachability
+  blockage, correct visible Edit policy labels and record bounded refusal proof.
+  Cases 01-07 are available for operator validation of the deployed interaction
+  repair; fresh-authenticated public import/bind/remove remain NOT RUN. Protected
+  Proton receipt/decryption/signature, encrypted Sent and full sprint acceptance
+  remain OPEN. Root owns the signed/synced evidence-only closeout.
