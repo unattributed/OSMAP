@@ -486,6 +486,17 @@ pub(crate) fn public_reason_message(reason: &str) -> &'static str {
         "openpgp_binding_unavailable" => "OpenPGP account bindings could not be checked. Nothing was sent. Open Settings > OpenPGP > Manage keys; if the problem continues, contact the mail operator.",
         "openpgp_binding_changed" => "OpenPGP key bindings changed since this compose page opened. Nothing was sent. Choose Review current keys to save this message and review the current fingerprints, then check your protection choices before sending.",
         "openpgp_protection_blocked" => "Current OpenPGP key or policy checks block the selected protection. Nothing was sent. Review recipient addresses, approved keys and policy in OpenPGP Key Management.",
+        "openpgp_recipient_encryption_required" => "A recipient requires encryption. Nothing was sent. Select Encrypt on send, then use Pre-send check to review this message. Signing and Include my approved key are separate choices.",
+        "openpgp_recipient_encryption_disabled" => "A recipient disables encryption. Nothing was sent. Review that recipient's policy in Manage keys before changing your protection choices.",
+        "openpgp_recipient_key_unavailable" => "A recipient has no eligible approved encryption key. Nothing was sent. Review Recipient key status and the binding in Manage keys.",
+        "openpgp_signing_required" => "Your account requires signing. Nothing was sent. Select Sign on send and review the approved signing key.",
+        "openpgp_signing_disabled" => "Your account disables signing. Nothing was sent. Review its policy in Manage keys before changing your protection choices.",
+        "openpgp_encryption_required" => "Your account requires encryption. Nothing was sent. Select Encrypt on send, then use Pre-send check to review the recipients.",
+        "openpgp_encryption_disabled" => "Your account disables encryption. Nothing was sent. Review its policy in Manage keys before changing your protection choices.",
+        "openpgp_signing_key_unavailable" => "The approved signing public key is not eligible. Nothing was sent. Review your account key in Manage keys.",
+        "openpgp_encrypted_bcc_unavailable" => "Encrypted Bcc delivery is unavailable. Nothing was sent. Remove Bcc before an encrypted send.",
+        "openpgp_self_requires_encryption" => "Include my approved key requires encryption. Nothing was sent. Select Encrypt on send or clear Include my approved key.",
+        "openpgp_self_key_unavailable" => "Your account has no eligible approved encryption key for Include my approved key. Nothing was sent. Review your account key in Manage keys.",
         "openpgp_inventory_unavailable" => "The OpenPGP public-key inventory is unavailable. Nothing was sent. Contact the mail operator and submit only after key status is restored.",
         "openpgp_key_locked" => "A private OpenPGP key required for this message is locked. Nothing was sent. Keep this text and ask the mail operator to unlock the required key through the mail host's native key agent before sending.",
         "openpgp_message_too_large" => "This message is too large after OpenPGP protection. Nothing was sent. Reduce its body or attachments before submitting again.",
@@ -611,6 +622,41 @@ mod tests {
             public_reason_message("unknown_openpgp_reason"),
             "The service could not complete the request at this time."
         );
+    }
+
+    #[test]
+    fn public_policy_refusals_preserve_the_specific_choice_without_private_unlock_advice() {
+        for (reason, action) in [
+            (
+                "openpgp_recipient_encryption_required",
+                "Select Encrypt on send",
+            ),
+            (
+                "openpgp_recipient_encryption_disabled",
+                "recipient's policy",
+            ),
+            ("openpgp_recipient_key_unavailable", "Recipient key status"),
+            ("openpgp_signing_required", "Select Sign on send"),
+            ("openpgp_signing_disabled", "policy in Manage keys"),
+            ("openpgp_encryption_required", "Select Encrypt on send"),
+            ("openpgp_encryption_disabled", "policy in Manage keys"),
+            ("openpgp_signing_key_unavailable", "account key"),
+            ("openpgp_encrypted_bcc_unavailable", "Remove Bcc"),
+            (
+                "openpgp_self_requires_encryption",
+                "clear Include my approved key",
+            ),
+            ("openpgp_self_key_unavailable", "account key"),
+        ] {
+            let message = public_reason_message(reason);
+            assert!(message.contains("Nothing was sent."), "{reason}: {message}");
+            assert!(message.contains(action), "{reason}: {message}");
+            assert!(
+                !message.contains("unlock"),
+                "public policy refusal is not a private-key failure"
+            );
+            assert_ne!(message, public_reason_message("openpgp_protection_blocked"));
+        }
     }
 
     #[test]

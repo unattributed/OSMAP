@@ -10,6 +10,7 @@ import json
 import os
 import pathlib
 import resource
+import re
 import socket
 import subprocess
 import tempfile
@@ -77,6 +78,12 @@ def main():
             result = subprocess.run([str(binary), test, "--exact", "--ignored", "--test-threads=1", "--nocapture"],
                                     env=native_env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=120)
             print(result.stdout.decode(), flush=True)
+            if result.returncode:
+                # Retain only source locations, never helper stderr, key material,
+                # message bytes or a rendered failure outcome.
+                locations = re.findall(r"panicked at ([a-zA-Z0-9_./-]+:[0-9]+:[0-9]+)",
+                                       result.stderr.decode("utf-8", "replace"))
+                print(json.dumps({"native_failure_source_locations": locations}), flush=True)
             assert result.returncode == 0 and b"1 passed; 0 failed" in result.stdout, "actual native gateway fixture refused"
         finally:
             for home in homes:

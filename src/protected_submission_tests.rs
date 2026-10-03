@@ -461,7 +461,9 @@ fn delivery_reevaluates_exact_final_recipients_and_confirmed_revision() {
             100
         )
         .unwrap_err(),
-        SubmissionError::ProtectionBlocked
+        SubmissionError::ProtectionBlocked(Some(
+            crate::openpgp_bindings::BlockReason::RecipientKeyUnavailable
+        ))
     );
     assert!(executor.operations.borrow().is_empty());
 }
@@ -534,7 +536,9 @@ fn ordinary_delivery_with_existing_optional_bindings_needs_no_inventory_or_crypt
             100,
         )
         .unwrap_err(),
-        SubmissionError::ProtectionBlocked
+        SubmissionError::ProtectionBlocked(Some(
+            crate::openpgp_bindings::BlockReason::RecipientRequiresEncryption
+        ))
     );
 }
 
@@ -597,7 +601,9 @@ fn required_protection_cannot_downgrade_when_public_inventory_is_unavailable() {
     record.policy.encryption = crate::openpgp_bindings::Requirement::Required;
     assert_eq!(
         prepare_for_delivery(&executor, &account(), &request, &record, None, 100).unwrap_err(),
-        SubmissionError::ProtectionBlocked
+        SubmissionError::ProtectionBlocked(Some(
+            crate::openpgp_bindings::BlockReason::EncryptionRequired
+        ))
     );
     assert!(executor.operations.borrow().is_empty());
     let empty = crate::openpgp_bindings::BindingRecord::empty(account().as_str()).unwrap();

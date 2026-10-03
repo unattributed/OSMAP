@@ -30,13 +30,13 @@ pub(crate) fn send_controls(model: &ComposePageModel<'_>) -> String {
         "<p class=\"muted\">Compare the stored version before saving or sending.</p>"
     };
     format!(concat!(
+        "<button type=\"submit\"{disabled} formaction=\"/drafts/save\" name=\"compose_action\" value=\"preflight\" aria-describedby=\"compose-pre-send-description\">Pre-send check</button>",
+        "<span id=\"compose-pre-send-description\" class=\"sr-only\">Save this draft and check current recipients, keys and protection choices. No message is sent.</span>",
         "<div class=\"compose-send-controls\">",
         "<button class=\"primary-button\" type=\"submit\"{disabled} aria-label=\"Send Message\">Send</button>",
         "<details class=\"compose-send-options\" name=\"compose-delivery-menu\">",
         "<summary aria-label=\"Send options\" title=\"Send options\">⌄</summary>",
         "<div class=\"compose-delivery-menu\">",
-        "<button type=\"submit\"{disabled} formaction=\"/drafts/save\" name=\"compose_action\" value=\"preflight\">Pre-send check</button>",
-        "<p class=\"muted\">Save this draft and check its readiness. No message is sent.</p>",
         "<button type=\"button\" disabled aria-describedby=\"compose-send-schedule-status\">Schedule</button>",
         "<p id=\"compose-send-schedule-status\" class=\"muted\">Scheduling is unavailable.</p>{paused}",
         "</div></details></div>"

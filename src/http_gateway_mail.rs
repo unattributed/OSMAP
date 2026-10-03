@@ -1103,8 +1103,32 @@ impl RuntimeBrowserGateway {
                 crate::protected_submission::SubmissionError::StaleBinding => {
                     "openpgp_binding_changed"
                 }
-                crate::protected_submission::SubmissionError::ProtectionBlocked => {
-                    "openpgp_protection_blocked"
+                crate::protected_submission::SubmissionError::ProtectionBlocked(reason) => {
+                    use crate::openpgp_bindings::BlockReason;
+                    match reason {
+                        Some(BlockReason::RecipientRequiresEncryption) => {
+                            "openpgp_recipient_encryption_required"
+                        }
+                        Some(BlockReason::RecipientForbidsEncryption) => {
+                            "openpgp_recipient_encryption_disabled"
+                        }
+                        Some(BlockReason::RecipientKeyUnavailable) => {
+                            "openpgp_recipient_key_unavailable"
+                        }
+                        Some(BlockReason::SigningRequired) => "openpgp_signing_required",
+                        Some(BlockReason::SigningDisabled) => "openpgp_signing_disabled",
+                        Some(BlockReason::EncryptionRequired) => "openpgp_encryption_required",
+                        Some(BlockReason::EncryptionDisabled) => "openpgp_encryption_disabled",
+                        Some(BlockReason::SigningUnavailable) => "openpgp_signing_key_unavailable",
+                        Some(BlockReason::EncryptedBccUnqualified) => {
+                            "openpgp_encrypted_bcc_unavailable"
+                        }
+                        Some(BlockReason::SelfRequiresEncryption) => {
+                            "openpgp_self_requires_encryption"
+                        }
+                        Some(BlockReason::SelfKeyUnavailable) => "openpgp_self_key_unavailable",
+                        None => "openpgp_protection_blocked",
+                    }
                 }
                 crate::protected_submission::SubmissionError::InventoryUnavailable => {
                     "openpgp_inventory_unavailable"

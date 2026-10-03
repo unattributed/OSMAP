@@ -7894,3 +7894,49 @@ claims receive a dated reconciliation rather than a rewrite. No runtime,
 account/key/policy, authoritative mailbox or installed binary changes occur in
 this acceptance-design slice. All-Send human failure remains open for its
 implementation slices; no unchanged retry or helper result closes that result.
+
+### Require remediation and matching installed outcomes before UX closure — 2026-10-03
+
+The user explicitly rejected document review as remediation or slice closure.
+Supersede the S00 decision/acceptance-design closure wording for functional
+progress, while preserving its reviewed artifacts and historical evidence.
+S00-02/03/04 preparation is source-delivered, not human-accepted functionality;
+current functional revalidation remains in progress. Source synchronization,
+native regression, installed workflow results and human acceptance remain
+separate facts. No new plan, framework, approval board or scope is introduced.
+
+The concrete 66117e7 account-lock lifetime repair now has an installed result.
+Signed cacde9ecfe636774faa12539cff926619109ee30 contains the same fixed source;
+all 258 retained native build inputs match it. Root activated only the obsd1 web
+binary `8603d7c9b0f5ad36b065ee39a27fdcf9e8a19b3609f5ea65337a784974383435`,
+with a reversible backup and helper services checked unchanged. Matching
+before/after digests surround actual installed HTTP preference/default and draft
+operations. Concurrent writes left a complete owned record; a stale draft save
+returned 503 without replacing the newer body/revision, and invalid CSRF returned
+403 without a preference write. Native RED/GREEN and binding 17/0 evidence remain
+separate from those installed outcomes. The stale refusal is not labelled 409
+or a completed conflict-recovery UX; its original failed assumption is retained.
+
+This bounded probe used a disposable account and synthetic post-auth session,
+then confirmed owned draft/preference/namespace/session cleanup. It did not
+authenticate a real user, invoke Send/private cryptography, change Duncan's keys
+or policy, or establish authoritative Sent/recipient outcomes. The existing
+Send and human UAT failures remain open. Corrective UI/backend work must be
+verified through the actual permitted user journey before declaring readiness;
+the operator still controls the next external Send. Do not use the installed
+lock/persistence result to claim all Send operations repaired or prescribe an
+unchanged retry.
+
+### 2026-10-03 — Remediate Send policy usability without weakening protection
+
+Carry actual server-evaluated refusal reasons through preparation to finite,
+actionable public responses. Surface evaluated requirements in Compose and
+show the existing save-first Pre-send check beside Send. Required recipient
+policy stays enforced; explicit unchecked flags are not silently changed.
+Public-key EncryptOnly is independent of sender private-key unlocking. Actual
+native gateway tests now prove fresh/saved-draft EncryptOnly with disposable
+sender secret keys absent, exact Sent bytes and recipient-decoded content.
+Signed/self-protected use still requires the native account agent. No actual
+provider/human Send outcome is inferred from synthetic acceptance; reported
+operator failures remain open. Restore practical UAT through the deployed
+journey rather than declaring completion from builds or process health.

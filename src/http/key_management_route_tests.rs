@@ -362,13 +362,12 @@ fn key_management_panel_navigation_opens_forms_without_mutating_state() {
     assert_eq!(calls.load(Ordering::SeqCst), 0);
 }
 
-#[test]
-fn compose_live_protection_controls_are_direct_and_preserve_selection() {
-    let mut model = crate::http_ui::ComposePageModel {
+fn compose_protection_model() -> crate::http_ui::ComposePageModel<'static> {
+    crate::http_ui::ComposePageModel {
         protection: crate::send::ProtectionIntent::default(),
         openpgp: Some(ComposeProtectionView {
             runtime_configured: true,
-            revision: Some(0),
+            revision: Some(1),
             preflight: None,
             account_binding: None,
             policy: crate::openpgp_bindings::ProtectionPolicy::default(),
@@ -401,7 +400,58 @@ fn compose_live_protection_controls_are_direct_and_preserve_selection() {
         source_attachments: &[],
         selected_source_part_paths: &[],
         reply_reference: None,
-    };
+    }
+}
+
+fn evaluated_recipient_protection(
+    requirement: crate::openpgp_bindings::Requirement,
+    encrypt: bool,
+    bound: bool,
+) -> crate::openpgp_bindings::Preflight {
+    use crate::openpgp_bindings::{BindingRecord, RecipientBinding, Recipients, Selections};
+    let key = |fingerprint: &str, encrypt: bool| serde_json::json!({
+        "fingerprint": fingerprint, "algorithm": 1, "bits": 3072,
+        "created": 1, "expires": 0, "revoked": false, "expired": false,
+        "disabled": false, "invalid": false, "can_sign": !encrypt,
+        "can_encrypt": encrypt, "can_certify": false, "can_authenticate": false,
+    });
+    let inventory = crate::openpgp_inventory::Inventory::parse(
+        &serde_json::to_vec(&serde_json::json!({
+            "version": 1, "ok": true, "protocol": "openpgp",
+            "gpgme_version": "2.0.1", "engine_version": "2.4.8",
+            "keys": [{"primary": key(&"D".repeat(40), false),
+                "subkeys": [key(&"F".repeat(40), true)]}],
+        })).unwrap(),
+    ).unwrap();
+    let mut record = BindingRecord::empty("alice@example.test").unwrap();
+    // A configured binding record has a persisted revision; revision zero is
+    // reserved by the production validator for an empty initial record.
+    record.revision = 1;
+    if bound {
+        record.recipient_bindings.push(RecipientBinding {
+            address: "bob@example.test".into(),
+            primary_fingerprint: "D".repeat(40),
+            encryption: requirement,
+        });
+    }
+    let to = ["bob@example.test".to_string()];
+    crate::openpgp_bindings::evaluate(
+        "alice@example.test", &record, &inventory,
+        Recipients { to: &to, cc: &[], bcc: &[] },
+        Selections { sign: false, encrypt, encrypt_to_self: false }, 100,
+    ).unwrap()
+}
+
+// The policy notice must be outside every collapsed disclosure, not merely
+// present somewhere in the page source. Public readiness remains a snapshot.
+fn visible_protection_notice(body: &str) -> &str {
+    let (_, notice) = body.split_once("<div class=\"notice compose-protection-requirements\"").unwrap();
+    notice.split_once("</div>").unwrap().0
+}
+
+#[test]
+fn compose_live_protection_controls_are_direct_and_preserve_selection() {
+    let mut model = compose_protection_model();
     let body = crate::http_ui::render_compose_page(&model)
         .as_str()
         .to_owned();
@@ -419,23 +469,98 @@ fn compose_live_protection_controls_are_direct_and_preserve_selection() {
     assert!(!body.contains("<span>Sign</span><strong>Signed</strong>"));
     model.protection.sign = false;
     model.to_value = "bob@example.test";
-    model.openpgp.as_mut().unwrap().preflight = Some(crate::openpgp_bindings::Preflight {
-        revision: 0,
-        state: crate::openpgp_bindings::PreflightState::Blocked,
-        signing: crate::openpgp_bindings::KeyStatus::Ready,
-        self_encryption: crate::openpgp_bindings::KeyStatus::Ready,
-        recipients: vec![crate::openpgp_bindings::RecipientReadiness {
-            address: "bob@example.test".into(),
-            state: crate::openpgp_bindings::KeyStatus::Ready,
-            requirement: crate::openpgp_bindings::Requirement::Required,
-        }],
-        reasons: vec![crate::openpgp_bindings::BlockReason::RecipientRequiresEncryption],
-        plan: None,
-    });
+    model.openpgp.as_mut().unwrap().preflight = Some(evaluated_recipient_protection(
+        crate::openpgp_bindings::Requirement::Required, false, true,
+    ));
     let body = crate::http_ui::render_compose_page(&model).as_str().to_owned();
     assert!(body.contains("<strong>Blocked</strong>"));
     assert!(body.contains("bob@example.test</span>: Public key eligible; Encryption required"));
     assert!(body.contains("A recipient binding requires encryption. Select Encrypt on send"));
     assert!(!body.contains("<strong>No protection selected</strong>"));
     assert!(!body.contains("name=\"pgp_encrypt\" checked"));
+}
+
+#[test]
+fn compose_required_recipient_policy_is_visible_without_changing_intent() {
+    let mut model = compose_protection_model();
+    model.to_value = "bob@example.test";
+    model.openpgp.as_mut().unwrap().preflight = Some(evaluated_recipient_protection(
+        crate::openpgp_bindings::Requirement::Required, false, true,
+    ));
+    let body = crate::http_ui::render_compose_page(&model).as_str().to_owned();
+    let notice = visible_protection_notice(&body);
+    assert!(notice.contains("<strong>Blocked</strong>"));
+    assert!(notice.contains("bob@example.test</span>: Encryption required"));
+    assert!(notice.contains("Select Encrypt on send"));
+    assert!(notice.contains("signing optional; encryption optional"));
+    assert!(body.contains("<strong>Blocked</strong></summary>"));
+    let before_notice = body.split_once("<div class=\"notice compose-protection-requirements\"").unwrap().0;
+    assert!(before_notice.ends_with("</div></section>"));
+    assert!(!body.contains("name=\"pgp_sign\" checked"));
+    assert!(!body.contains("name=\"pgp_encrypt\" checked"));
+    assert!(!body.contains("name=\"pgp_self\" checked"));
+    // This snapshot must not disable Send after the operator changes choices.
+    assert!(body.contains("type=\"submit\" aria-label=\"Send Message\""));
+    let check = body.find("aria-describedby=\"compose-pre-send-description\"").unwrap();
+    let menu = body.find("<details class=\"compose-send-options\"").unwrap();
+    assert!(check < menu);
+    assert_eq!(body.matches(">Pre-send check</button>").count(), 1);
+}
+
+#[test]
+fn compose_encrypt_only_and_optional_plain_choices_match_evaluated_policy() {
+    use crate::openpgp_bindings::{PreflightState, Requirement};
+    for (requirement, encrypt, state) in [
+        (Requirement::Required, true, "Attention"),
+        (Requirement::Optional, false, "No protection selected"),
+    ] {
+        let mut model = compose_protection_model();
+        model.to_value = "bob@example.test";
+        model.protection.encrypt = encrypt;
+        let preflight = evaluated_recipient_protection(requirement, encrypt, true);
+        assert_eq!(preflight.state, PreflightState::Orange);
+        assert!(preflight.reasons.is_empty());
+        let plan = preflight.plan.as_ref().unwrap();
+        assert!(plan.signer_fingerprint.is_none());
+        assert!(!plan.encrypt_to_self);
+        assert_eq!(plan.recipient_fingerprints.len(), usize::from(encrypt));
+        model.openpgp.as_mut().unwrap().preflight = Some(preflight);
+        let body = crate::http_ui::render_compose_page(&model).as_str().to_owned();
+        let notice = visible_protection_notice(&body);
+        assert!(notice.contains(&format!("<strong>{state}</strong>")));
+        assert!(!notice.contains("Blocked"));
+        assert!(!body.contains("name=\"pgp_sign\" checked"));
+        assert!(!body.contains("name=\"pgp_self\" checked"));
+        assert_eq!(body.contains("name=\"pgp_encrypt\" checked"), encrypt);
+        assert!(!body.contains("private key is unlocked"));
+        assert!(!body.contains("Signing and encryption are confirmed only when delivery completes"));
+    }
+}
+
+#[test]
+fn compose_missing_key_unchecked_stale_and_unconfirmed_states_remain_honest() {
+    let mut model = compose_protection_model();
+    let body = crate::http_ui::render_compose_page(&model).as_str().to_owned();
+    assert!(visible_protection_notice(&body).contains("Recipient protection not checked"));
+    assert!(body.contains("<strong>Not checked</strong></summary>"));
+    model.to_value = "bob@example.test";
+    model.protection.encrypt = true;
+    model.openpgp.as_mut().unwrap().preflight = Some(evaluated_recipient_protection(
+        crate::openpgp_bindings::Requirement::Optional, true, false,
+    ));
+    let body = crate::http_ui::render_compose_page(&model).as_str().to_owned();
+    let notice = visible_protection_notice(&body);
+    assert!(notice.contains("<strong>Blocked</strong>"));
+    assert!(notice.contains("no eligible approved encryption key"));
+    assert!(body.contains("name=\"pgp_encrypt\" checked"));
+    model.protection.binding_revision = Some(0);
+    model.openpgp.as_mut().unwrap().revision = Some(1);
+    model.draft_id = Some("0");
+    model.draft_revision = None;
+    let body = crate::http_ui::render_compose_page(&model).as_str().to_owned();
+    assert!(visible_protection_notice(&body).contains("Keys changed — review required"));
+    assert!(body.contains("type=\"submit\" disabled aria-label=\"Send Message\""));
+    assert!(body.contains("type=\"submit\" disabled formaction=\"/drafts/save\" name=\"compose_action\" value=\"preflight\" aria-describedby"));
+    assert!(body.contains("name=\"pgp_binding_revision\" value=\"0\""));
+    assert!(!body.contains("name=\"pgp_binding_revision\" value=\"1\""));
 }

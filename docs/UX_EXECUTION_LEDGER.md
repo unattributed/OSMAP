@@ -4155,3 +4155,100 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   human acceptance remain separate. No app/backend/host/key/policy/submission
   changed; all-Send failure stays OPEN. S01-01 ordered implementation is next,
   with read-only source gap analysis delegated while root finishes delivery.
+
+### S00 closure correction and installed account-lock remediation — 2026-10-03
+
+- The user's explicit correction supersedes the preceding S00 document-only
+  closure/next-slice claims. S00-02, S00-03 and S00-04 delivered reviewed decision
+  and acceptance-design artifacts; they did not remediate the reported UX or
+  establish functional slice/sprint acceptance. Preserve those artifacts and
+  their scoped results. Current functional revalidation remains IN_PROGRESS;
+  this entry accepts no UX slice, sprint or epic and supplies no human UAT result.
+- The real account-lock lifetime repair was committed in
+  `66117e7e7aa299f27cd5d8760ea709290a1a597d`. Native OpenBSD regression evidence
+  retains RED 0/1 before explicit unlock-on-drop and GREEN 1/0 after it; the
+  isolated binding group passed 17/0. These source/native results were previously
+  distinct from installation. The same repaired source bytes are now included
+  in signed source `cacde9ecfe636774faa12539cff926619109ee30`.
+- Root built and activated the web binary on obsd1 at `192.168.1.44` with
+  SHA-256 `8603d7c9b0f5ad36b065ee39a27fdcf9e8a19b3609f5ea65337a784974383435`.
+  Independent read-only review matched all 258 retained build-input hashes to
+  that exact signed Git source and confirmed the repaired account-lock file
+  equals the 66117e7 version. Activation records a reversible binary backup at
+  `/var/backups/osmap-ux-s00-account-lock-cacde9e-20261003/osmap-before` and helper
+  services checked unchanged. This is web activation, not a helper/key/policy
+  deployment or authoritative-mailbox/Send qualification.
+- Root's actual installed HTTP probe used a unique disposable
+  `@example.invalid` account and a synthetic 120-second post-auth session.
+  Installed binary digests immediately before and after equal the digest above.
+  General/Composition defaults persisted, reloaded and affected fresh Compose;
+  existing draft choices/content remained intact; invalid self-without-encrypt
+  returned 400 without a preference write; the legacy format-only update retained
+  protection choices. Two concurrent preference requests returned [303, 303]
+  and left a complete expected owned record. A real draft N1-to-N2 save returned
+  303; a stale N1 save returned 503 and did not overwrite N2's body/revision.
+  Record this actual refusal, not an assumed 409 or completed conflict-message UX.
+  An invalid CSRF request returned 403 without changing the preference record.
+- The initial Python `-c` import permission failure, isolated-run assertion
+  failure and diagnosis disproving the assumed stale 409 are retained. Root
+  used Python isolated mode and corrected the countercase expectation; no
+  application assertion or boundary was weakened to hide an overwrite. The
+  final probe is `a4569e1550b54d47a4f770cc8dccc7eb418e13a4929ed79348e1a964269c3440`;
+  final workflow log is
+  `cffbeefd5bcb96cdbe221af2d90ea819ef695d6cb6055d4d6a894c707fc52d44`.
+  Retained evidence is under
+  `/home/foo/Downloads/osmap-ux-s00/revalidation-20261003/native-lock/`, including
+  native-build-inputs.json, native-build-driver.log, activation.log and
+  installed-http-final-{before,workflow,after}.log.
+- Final logs confirm removal of the owned synthetic draft, restoration of the
+  original absent preference record, unchanged synthetic signature/reading/
+  identity/autosave records, removal of the empty owned draft namespace/lock,
+  and removal of the synthetic session. The probe bypassed password/TOTP
+  authentication, invoked no Send route or private cryptography, and changed no
+  operator keys or policy. It does not test cross-account attacks, actual mailbox
+  data, recipient delivery, human interaction or protected mail readiness.
+- All current user-reported Send failures and required human UAT outcomes remain
+  OPEN. Neither the deployed lock repair nor passing persistence checks establish
+  fresh Compose/Draft Send, authoritative Sent, Proton receipt/signature,
+  encrypted return or real key-lifecycle acceptance. The operator retains the
+  next external Send; no unchanged retry or ambiguous automatic resubmission is
+  authorized by this installed persistence result.
+
+### Actual Send-policy remediation candidate and native dispatch verification — 2026-10-03
+
+- Source repairs preserve the actual backend BlockReason instead of discarding
+  it into one generic protection error. Static public codes distinguish required
+  encryption, forbidden selections and unavailable keys. No key/policy change,
+  automatic selection, downgrade or private-agent bypass was introduced.
+- Compose displays actual evaluated account/recipient requirements outside the
+  collapsed key details; the existing save-first Pre-send check is visible beside
+  Send. It preserves selected flags, exact draft content and pinned revision.
+- Production-evaluator UI tests passed 6/0 and the production-route preflight
+  test passed 1/0 with zero Submit calls for valid/invalid-format checks. The
+  five-check rendered composer fixture passed with zero external requests.
+  Initial compile/invalid revision-zero fixture/clippy failures were fixed and
+  retained; production validation and assertions were not weakened.
+- Expanded actual OpenBSD gateway regression passed 1/0 using disposable native
+  GPGME helpers, isolated keys, loopback SMTP and a controlled Sent process.
+  It dispatched fresh and saved-draft EncryptOnly after removing only disposable
+  sender secret keys, decrypted exact Unicode body/binary attachment for the
+  recipient, and qualified exact Sent-byte parity and accepted draft cleanup.
+  Signed+self encryption, Optional plaintext with helper stopped, required
+  recipient plaintext refusal, stale refusal and duplicate-send prevention also
+  passed. Native test binary SHA-256:
+  `14574aa6d792ae02fb0e5d36d356d820f96184afbbedbc0f0bcb83595f6ef161`.
+- Test-development failures exposed incorrect expectations about encoded MIME,
+  where route-qualified draft cleanup occurs, and using an earlier clock after
+  journal high-water advanced. Tests now decode through MimeAnalyzer, invoke
+  actual receipt-qualified cleanup with the current clock and preserve clock
+  rollback refusal. Diagnostic tooling records restricted panic source locations
+  without retaining helper stderr, keys or message content.
+- Retained evidence: `/home/foo/Downloads/osmap-ux-s07/revalidation-20261003/`,
+  including ui-remediation-verified.json, native-send-source-manifest-final6.json,
+  native-send-driver-attempt6.log and remediation-verification.json. Earlier
+  failures remain separately retained. Source review found no production/security
+  blocker; final signed synchronization and matching web activation are pending.
+- These are real source and bounded native delivery results, not a current real
+  Dovecot append, Proton receipt/signature, encrypted return, password/TOTP proof
+  or human UAT acceptance. Operator controls the next external Send. All current
+  operator failures remain OPEN until the actual browser/mail journey passes.

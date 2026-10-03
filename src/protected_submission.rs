@@ -33,7 +33,7 @@ pub enum SubmissionError {
     BindingUnavailable,
     StaleBinding,
     InventoryUnavailable,
-    ProtectionBlocked,
+    ProtectionBlocked(Option<crate::openpgp_bindings::BlockReason>),
 }
 
 /// Reevaluation consumes trusted account-store state and optional fresh public
@@ -81,7 +81,9 @@ pub fn prepare_for_delivery<E: CryptoExecutor>(
         now,
     )
     .map_err(|_| SubmissionError::BindingUnavailable)?;
-    let plan = readiness.plan.ok_or(SubmissionError::ProtectionBlocked)?;
+    let plan = readiness.plan.ok_or(SubmissionError::ProtectionBlocked(
+        readiness.reasons.first().copied(),
+    ))?;
     prepare(executor, account, request, &plan)
 }
 

@@ -156,6 +156,24 @@ impl Drop for SinkGuard {
     }
 }
 
+fn assert_decrypted_authored_entity(entity: &[u8]) {
+    let raw = std::str::from_utf8(entity).unwrap();
+    let (headers, body) = raw.split_once("\r\n\r\n").unwrap();
+    let message = crate::mailbox::MessageView {
+        metadata: None, mailbox_name: "INBOX".into(), uid: 1,
+        flags: Vec::new(), date_received: String::new(), size_virtual: entity.len() as u64,
+        header_block: headers.into(), body_text: body.into(),
+    };
+    let analysis = crate::mime::MimeAnalyzer::new(crate::mime::MimeAnalysisPolicy::default())
+        .analyze_message(&message).unwrap();
+    assert_eq!(analysis.selected_plain_text_body.as_deref(),
+        Some("Synthetic café body\r\nSecond line"), "decoded authored body");
+    let download = crate::attachment::AttachmentDownloadService::new(
+        crate::attachment::AttachmentDownloadPolicy::default())
+        .download_from_message(&message, "1.2").unwrap();
+    assert_eq!(download.body, [0, 1, 255], "decoded authored attachment");
+}
+
 fn native_send_request<'a>(
     intent: &'a str,
     revision: u64,
@@ -508,9 +526,89 @@ fn native_crypto_gateway_protected_send_roundtrip() {
     );
     assert!(matches!(required_refusal.decision,
         BrowserSendDecision::Denied { ref public_reason, .. }
-        if public_reason == "openpgp_protection_blocked"));
+        if public_reason == "openpgp_recipient_encryption_required"));
     assert_eq!(smtp.lock().unwrap().len(), 2);
     assert_eq!(fs::read(&sent_count).unwrap(), b"11");
+
+    // Encryption-only uses the approved recipient public key, without any
+    // sender private key. Remove only this disposable fixture's secret keys.
+    let removed = Command::new("/usr/local/bin/gpg")
+        .args(["--no-options", "--homedir"])
+        .arg(&alice)
+        .args(["--batch", "--yes", "--delete-secret-keys", &afp])
+        .stdout(Stdio::null()).stderr(Stdio::null()).status().unwrap();
+    assert!(removed.success(), "disposable sender secret-key removal");
+    let encrypt_only_intent = crate::send_journal::mint_intent(now).unwrap();
+    let mut encrypt_only_request = native_send_request(&encrypt_only_intent, record.revision, &attachments);
+    encrypt_only_request.protection.sign = false;
+    encrypt_only_request.protection.encrypt_to_self = false;
+    let encrypt_only = gateway.send_message_with_backends(
+        &context, &session, encrypt_only_request, &submission, &append,
+    );
+    assert!(matches!(encrypt_only.decision, BrowserSendDecision::Submitted {
+        sent_copy_stored: true, receipt_persisted: true
+    }));
+    assert_eq!(smtp.lock().unwrap().len(), 3);
+    let encrypt_only_wire = smtp.lock().unwrap()[2].clone();
+    assert_eq!(fs::read(&sent_path).unwrap(), encrypt_only_wire);
+    assert_eq!(fs::read(&sent_count).unwrap(), b"111");
+    let crate::pgp_mime::PgpMimeMessage::Encrypted { ciphertext, .. } =
+        crate::pgp_mime::classify(&encrypt_only_wire, crate::pgp_mime::PgpMimePolicy::default()).unwrap()
+    else { panic!("encryption-only delivery must be encrypted MIME"); };
+    let recipient_plain = crypto.execute("bob@example.test",
+        &crate::openpgp_crypto::Operation::Decrypt {
+            allowed_primary_fingerprints: vec![bfp.clone()], ciphertext,
+        }).unwrap().unwrap();
+    assert_decrypted_authored_entity(&recipient_plain.content);
+    assert!(!matches!(crate::pgp_mime::classify(&recipient_plain.content,
+        crate::pgp_mime::PgpMimePolicy::default()).unwrap(),
+        crate::pgp_mime::PgpMimeMessage::Signed { .. }));
+
+    // Exercise saved-draft submission through the actual gateway/store too.
+    let draft_save_intent = crate::send_journal::mint_intent(now).unwrap();
+    let draft_save = gateway.save_draft_impl(&context, &session, BrowserDraftSaveRequest {
+        protection: encrypt_only_request.protection,
+        send_intent: &draft_save_intent,
+        draft_id: None, expected_revision: None,
+        recipients: encrypt_only_request.recipients, cc_recipients: "", bcc_recipients: "",
+        subject: encrypt_only_request.subject, body: encrypt_only_request.body,
+        body_format: encrypt_only_request.body_format,
+        attachments: &attachments, removed_attachment_indices: &[],
+        source_attachments: None, reply_thread: None,
+    });
+    let BrowserDraftSaveDecision::Saved { draft_id } = draft_save.decision
+    else { panic!("native encryption-only draft must save"); };
+    let saved = gateway.build_draft_store().load("alice@example.test", &draft_id, now)
+        .unwrap().unwrap();
+    let draft_revision = saved.revision.unwrap();
+    let draft_send_intent = crate::send_journal::intent_for_draft(
+        "alice@example.test", &draft_id, draft_revision, saved.updated_at).unwrap();
+    let draft_send = gateway.send_message_with_backends(&context, &session,
+        BrowserSendRequest {
+            send_intent: &draft_send_intent, draft_id: Some(&draft_id),
+            draft_revision: Some(draft_revision), attachments: &saved.request.attachments,
+            ..encrypt_only_request
+        }, &submission, &append);
+    assert!(matches!(draft_send.decision, BrowserSendDecision::Submitted {
+        sent_copy_stored: true, receipt_persisted: true
+    }));
+    assert_eq!(smtp.lock().unwrap().len(), 4);
+    let draft_wire = smtp.lock().unwrap()[3].clone();
+    assert_eq!(fs::read(&sent_path).unwrap(), draft_wire);
+    assert_eq!(fs::read(&sent_count).unwrap(), b"1111");
+    assert!(gateway.cleanup_submitted_draft_impl("alice@example.test", &draft_id,
+        draft_revision, &draft_send_intent, SystemTimeProvider.unix_timestamp()).unwrap(),
+        "receipt-qualified cleanup must remove only the submitted revision");
+    assert!(gateway.build_draft_store().load("alice@example.test", &draft_id, now)
+        .unwrap().is_none(), "only successfully submitted exact draft is removed");
+    let crate::pgp_mime::PgpMimeMessage::Encrypted { ciphertext, .. } =
+        crate::pgp_mime::classify(&draft_wire, crate::pgp_mime::PgpMimePolicy::default()).unwrap()
+    else { panic!("saved-draft delivery must be encrypted MIME"); };
+    let draft_plain = crypto.execute("bob@example.test",
+        &crate::openpgp_crypto::Operation::Decrypt {
+            allowed_primary_fingerprints: vec![bfp.clone()], ciphertext,
+        }).unwrap().unwrap();
+    assert_decrypted_authored_entity(&draft_plain.content);
 
     // Missing actual helper cannot silently fall back to a plaintext send.
     services.0[0].kill().unwrap();
@@ -526,8 +624,8 @@ fn native_crypto_gateway_protected_send_roundtrip() {
     assert!(
         matches!(unavailable.decision,BrowserSendDecision::Denied {ref public_reason,..} if public_reason=="openpgp_submission_unavailable")
     );
-    assert!(smtp.lock().unwrap().len() == 2);
-    assert!(fs::read(&sent_count).unwrap() == b"11");
+    assert!(smtp.lock().unwrap().len() == 4);
+    assert!(fs::read(&sent_count).unwrap() == b"1111");
     assert!(
         crate::send_journal::SendJournal::new(gateway.settings_dir.join("send-journal"))
             .receipt("alice@example.test", &failed_intent, now)
@@ -549,10 +647,10 @@ fn native_crypto_gateway_protected_send_roundtrip() {
     assert!(matches!(ordinary.decision, BrowserSendDecision::Submitted {
         sent_copy_stored: true, receipt_persisted: true
     }));
-    assert_eq!(smtp.lock().unwrap().len(), 3);
-    let ordinary_wire = smtp.lock().unwrap()[2].clone();
+    assert_eq!(smtp.lock().unwrap().len(), 5);
+    let ordinary_wire = smtp.lock().unwrap()[4].clone();
     assert_eq!(fs::read(&sent_path).unwrap(), ordinary_wire);
-    assert_eq!(fs::read(&sent_count).unwrap(), b"111");
+    assert_eq!(fs::read(&sent_count).unwrap(), b"11111");
     assert!(ordinary_wire.windows("Synthetic café body".len())
         .any(|w| w == "Synthetic café body".as_bytes()));
     assert!(!ordinary_wire.windows(b"application/pgp-encrypted".len())
@@ -565,6 +663,8 @@ fn native_crypto_gateway_protected_send_roundtrip() {
         &self_outcome.audit_events,
         &ordinary.audit_events,
         &required_refusal.audit_events,
+        &encrypt_only.audit_events,
+        &draft_send.audit_events,
     ] {
         let rendered = format!("{events:?}");
         assert!(!rendered.contains("Synthetic café body"));

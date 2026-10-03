@@ -83,14 +83,18 @@ def main():
                     page.get_by_role("link", name="Attach local files", exact=True).click()
                 chooser.value.set_files({"name": name, "mimeType": "text/plain", "buffer": payload})
             assert page.locator("#compose-attachment").evaluate("field => [...field.files].map(file => file.name)") == ["first.txt", "second.txt"]
-            menu(page, ".compose-send-options")
+            expect(page.locator(".compose-send-options")).not_to_have_attribute("open", "")
+            expect(page.get_by_role("button", name="Pre-send check", exact=True)).to_be_visible()
+            page.get_by_role("button", name="Pre-send check", exact=True).focus()
             page.keyboard.press("Tab")
+            expect(page.get_by_role("button", name="Send Message", exact=True)).to_be_focused()
+            page.keyboard.press("Shift+Tab")
             expect(page.get_by_role("button", name="Pre-send check", exact=True)).to_be_focused()
             submit(page, "Pre-send check")
             assert "preflight=1" in page.url
             expect(page.locator(".compose-preflight")).to_contain_text("pass composition checks")
             ident = stored(page)
-            checks.append("Attach opens cumulative picker; keyboard Send options reaches Pre-send check; save-first valid check preserves exact Unicode body and both file byte sequences")
+            checks.append("Attach opens cumulative picker; visible Pre-send check precedes Send in keyboard order; save-first valid check preserves exact Unicode body and both file byte sequences")
             for action in ["preflight", "preview"]:
                 if action == "preview":
                     submit(page, "Preview")
@@ -105,7 +109,6 @@ def main():
             page.get_by_role("button", name="Edit all recipients", exact=True).click()
             page.locator('[name="to"]').fill("unfinished@")
             page.get_by_role("button", name="Use recipient chips", exact=True).click()
-            menu(page, ".compose-send-options")
             submit(page, "Pre-send check")
             expect(page.locator(".compose-preflight [role=alert]")).to_contain_text("Edit this draft before sending")
             assert page.locator('[name="to"]').input_value() == "unfinished@"

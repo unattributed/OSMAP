@@ -1913,8 +1913,10 @@ fn render_live_openpgp_compose_controls(model: &ComposePageModel<'_>) -> String 
             format!("<input type=\"hidden\" name=\"pgp_binding_revision\" value=\"{value}\">")
         })
         .unwrap_or_default();
-    let status = match model.openpgp.as_ref().and_then(|view| view.preflight.as_ref()) {
-        Some(preflight) => {
+    let (summary, status, requirements) = match model.openpgp.as_ref().and_then(|view| {
+        view.preflight.as_ref().map(|preflight| (view, preflight))
+    }) {
+        Some((view, preflight)) => {
             let state = if stale_binding {
                 "Keys changed — review required"
             } else if model.protection.sign || model.protection.encrypt
@@ -1948,7 +1950,7 @@ fn render_live_openpgp_compose_controls(model: &ComposePageModel<'_>) -> String 
                 let message = match reason {
                     BlockReason::RecipientRequiresEncryption => "A recipient binding requires encryption. Select Encrypt on send, or explicitly edit that recipient's policy in Manage keys.",
                     BlockReason::RecipientForbidsEncryption => "A recipient binding disables encryption. Review that recipient's policy in Manage keys.",
-                    BlockReason::RecipientKeyUnavailable => "A recipient has no eligible approved encryption key. Review the recipient key status below.",
+                    BlockReason::RecipientKeyUnavailable => "A recipient has no eligible approved encryption key. Review Recipient key status.",
                     BlockReason::SigningRequired => "The account policy requires signing. Select Sign on send, or explicitly edit the account policy in Manage keys.",
                     BlockReason::SigningDisabled => "The account policy disables signing. Review the account policy in Manage keys.",
                     BlockReason::EncryptionRequired => "The account policy requires encryption. Select Encrypt on send, or explicitly edit the account policy in Manage keys.",
@@ -1960,12 +1962,34 @@ fn render_live_openpgp_compose_controls(model: &ComposePageModel<'_>) -> String 
                 };
                 format!("<li>{message}</li>")
             }).collect::<String>();
-            format!("<strong>{state}</strong><p>Public-key status for the addresses shown when this page loaded. Send Message checks the final addresses again. Signing and encryption are confirmed only when delivery completes; a failed check sends nothing.</p><ul>{reasons}</ul><ul>{recipients}</ul>")
+            let requirements = preflight.recipients.iter().map(|recipient| {
+                let policy = match recipient.requirement {
+                    crate::openpgp_bindings::Requirement::Required => "Encryption required",
+                    crate::openpgp_bindings::Requirement::Optional => "Encryption optional",
+                    crate::openpgp_bindings::Requirement::Disabled => "Encryption disabled",
+                };
+                format!("<li><span>{}</span>: {policy}</li>", escape_html(&recipient.address))
+            }).collect::<String>();
+            let policy = view.policy;
+            let requirement = |value| match value {
+                crate::openpgp_bindings::Requirement::Required => "required",
+                crate::openpgp_bindings::Requirement::Optional => "optional",
+                crate::openpgp_bindings::Requirement::Disabled => "disabled",
+            };
+            (
+                state,
+                format!("<p>Public-key eligibility for the addresses shown when this page loaded. It does not establish private-key readiness or delivery.</p><ul>{recipients}</ul>"),
+                format!("<strong>{state}</strong><p>Account policy: signing {}; encryption {}.</p><ul>{requirements}</ul><ul>{reasons}</ul><p>After changing recipients or protection choices, use Pre-send check to save this draft and check the current choices without sending. Send checks the final choices again.</p>", requirement(policy.signing), requirement(policy.encryption)),
+            )
         }
-        None => "<strong>Unavailable</strong><p>OpenPGP key status could not be checked. A selected protected send will pause without sending plaintext.</p>".to_string(),
+        None => (
+            "Not checked",
+            "<p>OpenPGP key status could not be checked. Public-key eligibility and private-key readiness are not confirmed.</p>".to_string(),
+            "<strong>Recipient protection not checked</strong><p>Use Pre-send check after entering recipients to save this draft and check current keys and policy without sending. A selected protected send pauses if its checks fail; it does not fall back to plaintext.</p>".to_string(),
+        ),
     };
     format!(
-        "<section class=\"openpgp-compose-controls compose-policy-row\" aria-label=\"OpenPGP compose controls\" data-openpgp-compose-controls=\"server-enforced\">{revision_field}<label class=\"compose-protection-choice\"><span>Sign</span><span class=\"compose-choice-toggle\"><input type=\"checkbox\" name=\"pgp_sign\"{}/> Sign on send</span></label><label class=\"compose-protection-choice\"><span>Encrypt</span><span class=\"compose-choice-toggle\"><input type=\"checkbox\" name=\"pgp_encrypt\"{}/> Encrypt on send</span></label><label class=\"compose-protection-choice\"><span>Encrypt to self</span><span class=\"compose-choice-toggle\"><input type=\"checkbox\" name=\"pgp_self\"{}/> Include my approved key</span></label><details class=\"compose-key-status\"><summary><span>Recipient key status</span><strong>Check recipients</strong></summary><div class=\"compose-policy-detail\">{status}</div></details><div class=\"compose-key-management\"><span>Approved keys</span>{review_action}<a href=\"/settings/keys\" target=\"_blank\" rel=\"noopener noreferrer\">Manage keys</a></div></section>",
+        "<section class=\"openpgp-compose-controls compose-policy-row\" aria-label=\"OpenPGP compose controls\" data-openpgp-compose-controls=\"server-enforced\">{revision_field}<label class=\"compose-protection-choice\"><span>Sign</span><span class=\"compose-choice-toggle\"><input type=\"checkbox\" name=\"pgp_sign\"{}/> Sign on send</span></label><label class=\"compose-protection-choice\"><span>Encrypt</span><span class=\"compose-choice-toggle\"><input type=\"checkbox\" name=\"pgp_encrypt\"{}/> Encrypt on send</span></label><label class=\"compose-protection-choice\"><span>Encrypt to self</span><span class=\"compose-choice-toggle\"><input type=\"checkbox\" name=\"pgp_self\"{}/> Include my approved key</span></label><details class=\"compose-key-status\"><summary><span>Recipient key status</span><strong>{summary}</strong></summary><div class=\"compose-policy-detail\">{status}</div></details><div class=\"compose-key-management\"><span>Approved keys</span>{review_action}<a href=\"/settings/keys\" target=\"_blank\" rel=\"noopener noreferrer\">Manage keys</a></div></section><div class=\"notice compose-protection-requirements\" role=\"status\" data-protection-snapshot=\"page-load\">{requirements}</div>",
         checked(model.protection.sign),
         checked(model.protection.encrypt),
         checked(model.protection.encrypt_to_self),
