@@ -598,6 +598,19 @@ fn budget_pair(response: &HandledHttpResponse) {
         .iter()
         .any(|event| event.action == "request_budget_acquired"));
 }
+fn stored_content_href(body: &str, label: &str) -> String {
+    body.split("<a ").find_map(|part| {
+        let (tag, content) = part.split_once('>')?;
+        (content.split_once("</a>")?.0 == label)
+            .then(|| attribute(tag, "href"))
+            .flatten()
+    }).expect("actual native stored-content link")
+}
+fn stored_content_header<'a>(response: &'a HandledHttpResponse, name: &str) -> &'a str {
+    response.response.headers.iter()
+        .find(|(key, _)| key.eq_ignore_ascii_case(name))
+        .expect("native stored-content response header").1.as_str()
+}
 fn persisted_flags(messages: &[MessageSummary]) -> Vec<(u64, bool, bool)> {
     messages
         .iter()
@@ -1070,6 +1083,102 @@ fn isolated_openbsd_coordinated_reader_signed_helper() {
     if presentation_before.attachment_details { restore_presentation.insert("attachment_details".into(), "1".into()); }
     assert_eq!(http(&app, Some(&alice), "POST", "/settings/reading", &restore_presentation).response.status_code, 303);
     assert_eq!(reading_store.load(ALICE).unwrap(), presentation_before);
+
+    // Follow current renderer links through actual runtime, signed helper and
+    // Dovecot. Source is exact escaped stored text, not original wire bytes.
+    let content_reader = get(&app, &alice, &standalone_presentation);
+    assert_eq!(content_reader.response.status_code, 200);
+    let source_href = stored_content_href(text(&content_reader), "View source");
+    let download_href = stored_content_href(text(&content_reader), "Download");
+    assert!(source_href.starts_with("/message?") && download_href.starts_with("/attachment?"));
+    for target in [&source_href, &download_href] {
+        let fields = neighbour_fields(&app, target);
+        assert_eq!(fields.get("mailbox").map(String::as_str), Some("INBOX"));
+        assert_eq!(fields.get("uid"), Some(&presentation_row.uid.to_string()));
+        assert_eq!(fields.get("mailbox_guid"), Some(&presentation_identity.mailbox_guid));
+        assert_eq!(fields.get("message_guid"), Some(&presentation_identity.message_guid));
+    }
+    let stored = MailboxHelperMessageViewBackend::new(
+        helper.clone(), key.clone(), MailboxHelperPolicy::default(), MessageViewPolicy::default(),
+    ).fetch_message(ALICE, &MessageViewRequest::new(
+        MessageViewPolicy::default(), "INBOX", presentation_row.uid,
+    ).unwrap()).unwrap();
+    assert_eq!(stored.metadata.as_ref().unwrap().version, *presentation_identity);
+    assert!(stored.body_text.contains("ALICE_READER_ONLY_001"));
+    let source = get(&app, &alice, &source_href);
+    assert_eq!(source.response.status_code, 200);
+    budget_pair(&source);
+    let escaped_source = text(&source).split_once("<pre class=\"message-source\"")
+        .unwrap().1.split_once('>').unwrap().1.split_once("</pre>").unwrap().0;
+    assert_eq!(escaped_source, format!("{}\n\n{}",
+        crate::http_support::escape_html(stored.header_block.trim_end_matches(['\r', '\n'])),
+        crate::http_support::escape_html(&stored.body_text)));
+    assert!(escaped_source.contains("&lt;alice-1@fixture.test&gt;"));
+    assert!(!text(&source).contains("<script"));
+    assert_eq!(stored_content_header(&source, "Cache-Control"), "no-store");
+    assert_eq!(stored_content_header(&source, "Content-Security-Policy"), crate::http_support::browser_csp());
+    let download = get(&app, &alice, &download_href);
+    assert_eq!(download.response.status_code, 200);
+    budget_pair(&download);
+    assert_eq!(download.response.body, b"Public fixture.");
+    assert_eq!(download.response.body.len(), 15);
+    assert_eq!(stored_content_header(&download, "Content-Type"), "application/octet-stream");
+    assert_eq!(stored_content_header(&download, "Content-Disposition"), "attachment; filename=\"public.txt\"");
+    assert_eq!(stored_content_header(&download, "Cache-Control"), "no-store");
+    assert_eq!(stored_content_header(&download, "X-Content-Type-Options"), "nosniff");
+    assert_eq!(stored_content_header(&download, "Cross-Origin-Resource-Policy"), "same-origin");
+    assert_eq!(stored_content_header(&download, "Referrer-Policy"), "no-referrer");
+    assert_eq!(stored_content_header(&download, "X-Frame-Options"), "DENY");
+    assert_eq!(stored_content_header(&download, "Content-Security-Policy"),
+        "sandbox; default-src 'none'; base-uri 'none'; frame-ancestors 'none'");
+    assert!(download.response.to_http_bytes().windows(b"Content-Length: 15\r\n".len())
+        .any(|window| window == b"Content-Length: 15\r\n"));
+    for target in [&source_href, &download_href] {
+        let before_calls = calls.load(Ordering::SeqCst);
+        let unauth = http(&app, None, "GET", target, &BTreeMap::new());
+        assert_eq!(unauth.response.status_code, 303);
+        assert_eq!(stored_content_header(&unauth, "Location"), "/login");
+        assert_eq!(calls.load(Ordering::SeqCst), before_calls);
+        assert!(!text(&unauth).contains("ALICE_READER_ONLY_001"));
+        let foreign_content = get(&app, &bob, target);
+        assert_eq!(foreign_content.response.status_code, 409);
+        budget_pair(&foreign_content);
+        assert!(!text(&foreign_content).contains("ALICE_READER_ONLY_001"));
+        assert_ne!(foreign_content.response.body, b"Public fixture.");
+        let prefix = target.split_once('?').unwrap().0;
+        let fields = neighbour_fields(&app, target);
+        let href = |fields: &BTreeMap<String, String>| format!("{prefix}?{}",
+            fields.iter().map(|(key, value)| format!("{}={}", encode(key), encode(value)))
+                .collect::<Vec<_>>().join("&"));
+        let mut stale_fields = fields.clone();
+        stale_fields.insert("message_guid".into(), "stale-native-content-guid".into());
+        let stale_content = get(&app, &alice, &href(&stale_fields));
+        assert_eq!(stale_content.response.status_code, 409);
+        budget_pair(&stale_content);
+        assert!(!text(&stale_content).contains("ALICE_READER_ONLY_001"));
+        assert_ne!(stale_content.response.body, b"Public fixture.");
+        let mut incomplete = fields;
+        incomplete.remove("mailbox_guid");
+        let before_calls = calls.load(Ordering::SeqCst);
+        let invalid = get(&app, &alice, &href(&incomplete));
+        assert_eq!(invalid.response.status_code, 400);
+        assert_eq!(calls.load(Ordering::SeqCst), before_calls);
+    }
+    let mut invalid_part = neighbour_fields(&app, &download_href);
+    invalid_part.insert("part".into(), "1..2".into());
+    let invalid_part_url = format!("/attachment?{}", invalid_part.iter()
+        .map(|(key, value)| format!("{}={}", encode(key), encode(value)))
+        .collect::<Vec<_>>().join("&"));
+    let before_calls = calls.load(Ordering::SeqCst);
+    assert_eq!(get(&app, &alice, &invalid_part_url).response.status_code, 400);
+    assert_eq!(calls.load(Ordering::SeqCst), before_calls);
+    let recovered_download = get(&app, &alice, &download_href);
+    assert_eq!(recovered_download.response.status_code, 200);
+    assert_eq!(recovered_download.response.body, b"Public fixture.");
+    budget_pair(&recovered_download);
+    assert_eq!(persisted_flags(&native_list.list_messages(ALICE, &query).unwrap()), persisted_flags(&initial));
+    assert_eq!(persisted_flags(&native_list.list_messages(BOB, &query).unwrap()), persisted_flags(&foreign));
+    assert_eq!(persisted_flags(&native_list.list_messages(ALICE, &sent_query).unwrap()), persisted_flags(&initial_sent));
     let save_reading = |order: &str| {
         BTreeMap::from([
             ("csrf_token".into(), alice.record.csrf_token.clone()),
@@ -1967,6 +2076,7 @@ fn isolated_openbsd_coordinated_reader_signed_helper() {
     assert!(!root.exists());
     assert_eq!(before, standard_metadata());
     println!("native_saved_reading_presentation_cookie_independent_account_isolated=PASS");
+    println!("native_rendered_source_attachment_exact_stored_text_decoded_bytes=PASS foreign_stale_unauth_content_refused=PASS content_read_flags_unchanged_budget_reusable=PASS");
     println!("native_sent_guid_recipient_star_unstar_restore=PASS bcc_not_in_sent_list=PASS same_uid_inbox_and_foreign_account_unchanged=PASS");
     println!("native_reader_cases=PASS rows53_two_accounts=PASS classification_only=PASS page50_selected_back_search=PASS filtered_previous_next_crosspage_search_origin=PASS stale_navigation_guid_refusal=PASS native_csrf_read_star_filtered_membership_reload=PASS native_manual_onopen_seen_unread_reconciliation=PASS opening_stale_foreign_guid_refusal=PASS native_conversation_headers_saved_order_reader_next_explicit_precedence=PASS conversation_excluded_parent_stale_guid_refusal=PASS attachment_without_and_actual_unknown_count={unknown_attachment_records} foreign_neighbour_stale_refusal=PASS budget_reuse=PASS no_move_append_or_crypto_configuration=PASS scratch_cleanup=PASS standard_host_metadata_unchanged=PASS");
 }

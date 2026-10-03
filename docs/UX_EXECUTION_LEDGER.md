@@ -5147,3 +5147,53 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   Save reading preferences, both mixed combinations, older normal session,
   already-read source/attachment records and restore originals. All human cases
   NOT RUN, full S02 and reported Send failures remain OPEN.
+
+### S02-04 saved reader presentation delivered — 2026-10-03
+
+- Signed source5287f9d12e238e45782bfbb6aaa5e280299e3995 verifies Shopkeeper
+  signature, passes normal commit/push hooks, syncs promptly to UX branch and
+  fetch proves SHA equality0/0. Matching web-only obsd1 applicationc4471aff60bfb161c8a46700a4edb5ca63e0cd0f94c11c6bd52bed348864ca4a
+  installed with exact root-private rollback; helpers/configuration unchanged.
+- Installed GET-only actual authoritative coordinated reader PASS: saved native
+  switch/body parity despite inverse stale cookie, source visibility and one
+  populated attachment-details control agree. Saved choices unchanged, zero
+  POST/flag/policy/Send/outside requests, owned session cleanup and final binary
+  identity PASS. It does not prove human password/TOTP or operator acceptance.
+- Exact reading-presentation/UAT.md is ready for two independent mixed choices,
+  reload/older normal session and restore originals. Human NOT RUN. Whole
+  S02-04/S02 and all reported Send failures remain OPEN. Next native source/
+  download proof must follow actual renderer links through current helper and
+  BrowserApp; historical helper-only and Stub HTTP tests are insufficient for
+  that combined backend seam. No production defect is asserted before execution.
+
+### S02-04 native rendered Source/Download backend qualification — 2026-10-03
+
+- Close a real execution gap without inventing a production defect: existing
+  helper/decoder and Stub HTTP tests had not followed current native rendered
+  View source and Download through Runtime gateway, signed helper and Dovecot.
+  Add executable native assertions against the already-owned disposable MIME
+  message. Renderer links bind exact account folder/UID/current GUID pair.
+- Native current source is the complete escaped helper-carried stored header/
+  body representation, including angle-bracket Message-ID escaping, no active
+  script, exact CSP and no-store. This is explicitly not original wire fidelity.
+  Actual download decodes exact15-byte Public fixture., safe public.txt forced
+  filename/octet stream, length, nosniff, sandbox, same-origin, no-referrer and
+  frame denial. Foreign Bob has same native UID and mismatching GUID; foreign/
+  stale409 releases budgets without controlled body/decoded bytes. Invalid
+  partial GUID/malformed part400 and unauth303 occur before native reads.
+  A subsequent real download succeeds; Alice/Bob/Sent flags stay unchanged.
+- Exact matching289 inputs,12 Reading HTTP cases and both isolated native
+  integrations PASS first attempt, including earlier mixed persisted choices
+  and Bin move/restore guards; scratch cleanup and standard host fingerprints
+  unchanged. Testc3653f597fd693caca22e1ea274ea04f359f9f58f9b443444137a4810c590980;
+  native application remains byte-identicalc4471aff60bfb161c8a46700a4edb5ca63e0cd0f94c11c6bd52bed348864ca4a
+  to installed signed5287f9d web, because only cfg(test) source changes.
+- Current aggregate acceptance/security/v14 PASS1212lib/22ignored; v10 refresh
+  4144/refinedhigh0, no gate relaxation. Independent source/fixture review finds
+  no blocker. Evidence reading-presentation/native-source-download-* and
+  conversation-order/native-source-download-attempt1*. Signed test commit and
+  normal prompt sync are pending at this checkpoint. No service reinstall is
+  needed for the identical production binary.
+- Human source/download/presentation UAT remains NOT RUN. Scoped existing UAT
+  supplies normal-browser steps; no agent Send or operator mutation occurred.
+  Whole S02 and reported Send/provider/crypto acceptance remain OPEN.

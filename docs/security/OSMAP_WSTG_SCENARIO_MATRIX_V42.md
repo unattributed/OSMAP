@@ -103,3 +103,11 @@ escaped source text and decoded attachment bytes. Native disposable mixed-value
 saves/readers restore fixture state; installed validation is GET-only. Current
 executed proof and deployed binary pins belong in the ledger. These component
 checks do not close entire WSTG scenarios, strict release, human UAT or Send.
+
+Native Source/Download component execution now follows actual renderer GUID
+links through Runtime gateway, signed helper and disposable Dovecot. ATHZ/SESS
+controls include foreign same-UID, stale GUID and unauthenticated refusals;
+INPV/BUSL controls retain selector rejection before native reads, escaped stored
+source, exact decoded bytes, forced-download isolation and reusable budgets.
+This extends executable bounded evidence, not routes, permission or whole WSTG
+scenario/release acceptance. Actual source/binary/outcomes remain in the ledger.

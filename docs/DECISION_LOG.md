@@ -8227,3 +8227,17 @@ restore original fixture preferences before other checks. No operator preference
 mail flag, key, policy or Send mutation is authorized by the installed GET probe.
 Human UAT and whole S02 remain open. Do not equate cookie independence, source
 access or successful builds with remediation of the reported Send failures.
+
+### 2026-10-03 — Validate rendered stored content through the real native backend
+
+After delivering saved-reader behavior, add actual native browser Source and
+Download assertions to the disposable reader fixture. Helper-level and Stub
+route proof cannot establish their combined current backend. Execute rendered
+GUID-bound links, escaped stored header/body, exact decoded attachment bytes,
+isolation headers and foreign/stale/unauth/malformed refusals. Preserve account
+flags, budgets and no-move/append/crypto/scratch-cleanup guards. Native first
+attempt and current gates pass; no production defect is found in this seam.
+Tests change only cfg(test) code: the rebuilt production binary remains exactly
+the installed c4471 candidate, so do not restart a healthy unchanged service
+just to attach test evidence. Sign/sync the test source and retain source pins.
+Do not claim original wire bytes, human UAT or Send from this proof.
