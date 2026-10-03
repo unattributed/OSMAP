@@ -117,3 +117,203 @@ manifest hashes and actual command exit records. S01 uses its own stable
 `osmap-ux-s01` root. Disposable Python/browser tooling and drafts in `/tmp`
 are test scratch, not runtime dependencies. Source-only rollback restores the
 previous signed commit; no application state migration exists in S00.
+
+
+## S00-04 acceptance-design reconciliation — 2026-10-03, accepted revision 2
+
+This append preserves the original 2026-09-29 acceptance-design record above.
+Its original 110-case table, 15-state/45-image baseline, source gaps and
+script-free statement describe that intake; they are not current application
+facts. The accepted R2 anchor is
+`6b3ce8fff27ca3dabf87039d54098bd9967a2e42`. Current source/document inspection
+used `fa1a535e21adca2739113ecec5311c1cc0703a2d`; the applicable frozen-plan
+manifest remains unchanged. Root owns integration, independent review, actual
+validator/gate results, signed delivery and synchronization. This preparation
+does not close S00-04 or establish functional UAT readiness.
+
+### Current reference coverage and additive acceptance cases
+
+The normative inventory is `maint/ux/approved_pages.json`: 27 page IDs and
+403 unique control IDs. It represents all 25 approved reference PNGs, retained
+Login/TOTP and the prescribed state matrix. An absent dedicated runtime page
+is still a requirement. Mapping Password/Recovery to the disabled overview,
+Documents to a 404, or TOTP to the retained combined login records the current
+surface; it does not implement the missing workflow or invent a separate route.
+
+`maint/ux/acceptance.json` retains all 110 UX01–UX17 legacy cases unchanged.
+At this inspection their historical statuses are 39
+`IMPLEMENTED_VERIFIED_LOCAL`, 68 `NOT_YET_ACCEPTED`, two
+`PARTIALLY_IMPLEMENTED` and one `PARTIALLY_VERIFIED`. Preserve those statuses
+and evidence; do not reset history, transfer them to R2 controls as passing
+results, or interpret them as current deployed, final-reference or human
+acceptance. The existing top-level visual-acceptance disclaimer still applies.
+
+The approved S00-04 interface adds `approved_control_cases` to
+`maint/ux/acceptance.json`, with each row carrying `id`, `page_id`,
+`reference_control`, `owning_slices`, `positive {setup, action, expected}`,
+`negative {setup, action, expected, preserved}`, `pointers [{kind, path, scope}]`,
+`legacy_case_ids`, and `result {status, executed, evidence}`. Each exact approved
+control therefore needs user preconditions/action, observable frontend/backend/
+persistence expectations, refusal/failure and preservation behavior, relevant
+legacy links, and explicitly typed pointers. Existing source pointers remain
+candidates; existing tests remain unexecuted until their actual outcomes are
+recorded. A page-family pointer does not prove a specific control works.
+Initial new results remain `NOT_YET_ACCEPTED`; planned cases have no claimed
+executed evidence or human acceptance.
+
+The proposed `maint/ux/validate_acceptance.py` and
+`maint/ux/test_validate_acceptance.py` are small standard-library
+acceptance-design tooling. They must reject missing/duplicate/extra control IDs, page mismatches,
+invalid owners, missing action/outcome/preservation fields, invalid links or
+pointer types, changed legacy records and false execution/acceptance claims.
+Those checks demonstrate traceability integrity when actually run; they do not
+execute 403 browser workflows or certify their semantics. Independent semantic
+review must challenge generic case text and compare it with the actual control.
+At draft freeze, root has approved that additive interface; the new matrix,
+validator, focused negative checks and combined results are pending developer
+handoff and actual root proof. No count/schema PASS is asserted here.
+
+Concrete expectation examples identify why the design needs actual outcomes:
+
+| Journey | Required observable result | Required countercase and preservation | Current acceptance result |
+| --- | --- | --- | --- |
+| New ordinary mail under a policy that permits the chosen mode | Current browser request reaches the actual submission path; recipient and authoritative Sent show the intended content, with truthful submission versus receipt status | A Required recipient policy must be visible and reconciled with the selected mode; rejection must identify the actual boundary, preserve text and show no dispatch | Operator reports all Send attempts failing; unresolved. An all-Off message to a Required-encryption recipient is not a demonstrated permitted-plaintext test |
+| Send a saved draft | Current saved content, recipients, uploads and chosen protection reach the same delivery path, then the correct Sent/draft state reconciles | Stale binding/source or an interrupted submission preserves the version; known no-dispatch may allow explicit recovery, ambiguous dispatch must not automatically retry | Unaccepted; source saving/preparation or historical SMTP acceptance is insufficient |
+| Encrypt to the approved Proton recipient | The exact approved recipient binding selects the eligible encryption subkey; the provider receives and decrypts the intended message | Missing/expired/changed recipient key must not silently downgrade or transmit plaintext; preserve author content and chosen intent | Provider encrypted receipt remains unaccepted; public eligibility alone is insufficient |
+| Sign, encrypt and include self | Actual native private operation succeeds; Proton verifies the intended signer, and authoritative encrypted Sent is readable by Duncan | Locked/missing private material reports the actual dependency without dispatch or loss; workstation Git-agent readiness cannot substitute for the runtime mail agent | Unaccepted; the unlock/component checks do not establish actual protected delivery |
+| Import/bind/remove a public certificate | Fresh authenticated action changes the intended account's inventory/binding and survives reload; the sender uses that current binding | Wrong account, bad CSRF, replayed factor, malformed key or stale revision cannot mutate state; removing a referenced key preserves binding consistency | Human fresh-auth lifecycle remains unaccepted |
+| Missing backend page/action | Implemented intended action produces its required authoritative result before its owning slice closes | Current disabled overview/404 remains explicitly missing, without a simulated success badge or removed requirement | Documents, password/recovery mutation and scheduling remain open |
+
+Common account isolation, session expiry, CSRF, cross-origin, malformed and
+oversized input, stale state, restart and sensitive-output controls supplement
+each named action; they cannot replace it. Positive cases must name the actual
+permitted configuration. Correctly refusing a policy-conflicting request is a
+countercase, not proof that the required usable Send journey succeeds.
+
+### Reused fixture and light-page observations
+
+S00-01 retained artifacts are reused under
+`/home/foo/Downloads/osmap-ux-s00/revalidation-20261003/`. The fixture source
+`src/http/ux_fixtures.rs` has SHA-256
+`dd9f1b5ab2c6db3040abdc3869af5d8c91578180433e88e85c37865963c3624b`.
+`fixture-handoff.json`, `fixtures-light/routes.json`,
+`fixtures-light/approved-page-baselines.json`, `screenshots-light/capture.json`
+and `qa-review.json` retain the source, actual routes/statuses, page mappings
+and bounded independent review. The focused synthetic fixture check passed
+one test with zero failures, generating 74 route states and mapping all 27
+approved page IDs. It uses the test-only gateway, not the runtime mail backend.
+
+The capture contains 31 mapped light states at 360/768/1440 CSS pixels,
+93 digest-verified images. Its review records zero outside requests and zero
+measured overflows within that capture. These are observations of those pages,
+not final design or workflow acceptance. Initial Identity expectation failure
+and capture-tool failures remain retained with their actual dispositions;
+Identity's synthetic dependency returns 503, Documents 404, and disabled
+password/recovery controls remain explicit. A transport-tool repair was not an
+application repair.
+
+No new capture is required solely because this documentation changes. Contrast,
+dark/system schemes, 200% zoom, keyboard, forced colours, long-value coverage
+beyond recorded fixtures, whole-bundle visual comparison and actual user
+workflows remain separate requirements. A contact-sheet inspection or successful
+image generation cannot silently mark those requirements passed. Any genuinely
+uncovered required state needs a specifically assigned fixture extension.
+
+### Current source correction to historical Source/Reply All/no-script claims
+
+The source now contains explicit View Source links and the escaped source-page
+renderer in `src/http_ui.rs::render_message_source_page`; typed source handling
+is in `src/http/routes_content.rs`. The fixtures include source, source-long,
+source-unavailable and source-not-found states. `src/http/content_tests.rs`
+contains source-input/security candidates. These facts supersede the old
+"ignored source request" and absent-source statements as current source facts;
+they are not current authoritative-mailbox source-view acceptance.
+
+Reader actions now render Reply, Reply all and Forward in `src/http_ui.rs`;
+`src/http/routes_compose.rs` resolves `ComposeIntent::ReplyAll`, and the fixture
+contains `/compose?mode=reply-all&mailbox=INBOX&uid=9`. Actual recipient
+derivation, self-exclusion, Bcc privacy, source-context preservation and delivery
+must retain their own case results. A visible link does not close that journey.
+
+The universal no-JavaScript statement is historical. The documented D01
+exception is the bounded first-party Compose enhancement:
+`src/http/compose_enhancement.rs` includes fixed `compose_local.js` bytes under
+the exact hash-only script CSP and same-origin connection policy; no author
+text is interpolated into the script. `src/http/compose_enhancement_tests.rs`
+contains the boundary and author-text countercases. Other reader/auth/settings
+responses retain their script-free boundary. This does not authorize broader
+script loading or count as a fresh execution of those tests.
+
+### Prior TOTP reconciliation — records and residuals remain dated
+
+The required repository records remain present:
+`docs/TOTP_LIFECYCLE_SPRINT.md`, `docs/TOTP_LIFECYCLE_OBSD1_EVIDENCE.md`,
+`docs/TOTP_OPERATOR_PROVISIONING_SOP.md`, `docs/TOTP_OPERATOR_REVOCATION_SOP.md`,
+`docs/TOTP_OPERATOR_ROTATION_SOP.md` and `docs/TOTP_OPERATOR_RECOVERY_SOP.md`.
+Their historical provisioning/rotation source delivery, native synthetic checks,
+operator-reported enrollment/rotation with digest reconciliation and browser
+containment rehearsal remain preserved within their stated scopes.
+
+A metadata-only check on 2026-10-03 finds
+`/home/foo/Downloads/osmap-totp-lifecycle/` absent. This repeats the earlier
+artifact-availability limit as a new presence observation; it does not prove
+those historical artifacts never existed, inspect factors, recreate evidence
+or establish current live-host state. Raw records cannot be independently
+rehashed from this missing root. No search of private factor/credential stores
+or unrelated content was performed to obtain replacements.
+
+The repository explicitly leaves controlled recovery with a human-operated
+replacement authenticator unperformed and final live validation-account cleanup
+unverified after administrative closure. The later signed containment rehearsal
+does not prove completed factor recovery or a real claimant's identity. TOTP
+revocation alone explicitly does not revoke browser sessions. No old PASS,
+signature, test-account custody or ordinary commit authority supplies missing
+identity, session-revocation or recovery-approval evidence. Future follow-up
+must use its correctly scoped SOP and actual account/containment state; no new
+TOTP operation is performed or accepted by S00-04 documentation.
+
+### Bounded exit and subsequent implementation
+
+S00-04 exit is a reviewed executable acceptance design: exact R2 linkage,
+preserved legacy cases, meaningful validator acceptance/rejection outcomes,
+reused fixture/capture provenance and scoped historical-TOTP reconciliation.
+Root must append actual validation/review/delivery identities before claiming
+this exit. It is not 403 functional passes, application release qualification,
+human sprint acceptance or permission to repeat an external mutation.
+
+Subsequent slices implement missing frontend and backend behavior together,
+with source/native/deployed/independent-QA/UAT-ready/user-accepted outcomes kept
+distinct in the existing ledger. An unresolved required human failure immediately
+blocks that journey's readiness; do not prescribe another unchanged retry or
+let helper/default/public-key checks overrule the result. Current development
+uses obsd1 with authoritative mail-host data, and the operator controls the next
+real external Send. Preserve keys, policies and unsent content; never repeat an
+ambiguous submission automatically. Existing signed-commit, ordinary source-sync,
+security and release gates remain applicable without an additional board or
+approval ceremony.
+
+### S00-04 executed tooling and reviewed delivery scope
+
+The final additive matrix has SHA-256
+`01304a5984702178358e3afc7181e941f6ef8c028731ab32ac589ee26eb4bffe`.
+All 403 exact approved controls have planned cases; all new results remain
+unexecuted and unaccepted. The full prior top-level values/110 legacy records
+and original documentation prefix are preserved. Root executed the final
+traceability validator and 19 positive/counterexample tooling tests successfully.
+`make acceptance-check` (security and V10–V13) and final `make v14-check` passed.
+These are source/tooling results; no mail workflow or deployment was executed.
+
+Independent QA sampled all 27 page families and high-risk actions; the separate
+security review inspected the validator and boundary-sensitive cases. Final
+reports are `s00-04-draft/final-qa-review.json` (SHA-256
+`56b16b1bf226d02fe389e1168a717f011260d1bc69bbf56262c011d288be216c`)
+and `s00-04-draft/security-review.json` (SHA-256
+`fa7a14362d5f007abb3dc923eced9865271170118bc9b39adab80d6bd72aaed3`)
+under the retained S00 root. Finite review findings were corrected, including
+a reviewer-imposed step-up requirement that did not apply to composition
+defaults; the superseded review remains retained.
+
+S00-04 acceptance-design exit is satisfied, subject to signed source delivery
+and ordinary synchronization. S00's foundation record does not qualify
+functional browser UAT or a release. S01-01 is next; operator all-Send failures
+and all required delivery/key/account outcomes remain open.

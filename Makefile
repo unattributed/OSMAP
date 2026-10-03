@@ -137,6 +137,8 @@ v12-check:
 	sh maint/security/test-osmap-v12-openpgp-closeout-readiness-gate.sh
 
 v14-check:
+	python3 -B maint/ux/validate_acceptance.py
+	python3 -B -m unittest discover -s maint/ux -p 'test_validate_acceptance.py'
 	sh maint/security/osmap-v14-streamline-webui-docs-gate.sh
 	sh maint/security/osmap-v14-css-icon-foundation-gate.sh
 	sh maint/security/osmap-v14-auth-shell-gate.sh

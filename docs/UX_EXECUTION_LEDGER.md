@@ -4097,3 +4097,61 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   disguised as acceptance. Source sync, installation, SMTP/authoritative Sent,
   provider receipt/decryption and human results remain distinct. All-Send failure
   stays OPEN; no live policy, keys, cache, account or installed binary changed.
+
+### S00-03 source delivery and S00-04 executable coverage work order — 2026-10-03
+
+- S00-03 deliveredfa1a535e21adca2739113ecec5311c1cc0703a2d: verified Shopkeeper
+  signature, normal commit/push security hooks PASS, immediate ordinary sync,
+  fresh origin equality0/0 and clean before this entry. s00-03-delivery.json
+  retains matching draft/reviews/focused/source records; runtime/UAT unchanged.
+- S00-04 uses Scrum's bounded work-order draftd331b084e634c2104f6f7818a0e0077b5e826a0c9e89f90cf530a4207ff1cf2f.
+  Outcome: all403 exact R2 controls gain explicit case/owner/positive/negative/
+  preservation/provenance linkage in existing acceptance.json; preserve110
+  legacy records and status/evidence exactly, semantic SHA256
+  987e7384fd6b698f783f95bfe6e48b57d05fa0fbd56500dfc110a83ee72abefd.
+  Initial new results NOT_YET_ACCEPTED, executedfalse and no execution evidence.
+- Developer1 s00_fixtures owns maint/ux/acceptance.json only. Root is developer2
+  for maint/ux/validate_acceptance.py and test_validate_acceptance.py and owns
+  minimal Makefile V14 wiring/integration. Existing agent-thread limit prevented
+  another developer reactivation; no retry or extra idle roles. Independent
+  QA/security review must inspect root-authored validator. Technical writer owns
+  external acceptance-doc append; root integrates docs/UX_S00_ACCEPTANCE.md,
+  decisions and this ledger only after the matrix contract/actual checks freeze.
+- Shared row contract: id/page_id/reference_control/owning_slices, structured
+  positive(setup/action/expected), negative(setup/action/expected/preserved),
+  typed pointers(kind/path/scope), valid legacy_case_ids and structured result.
+  Pilot semantic review precedes complete403 rows; generic label repetition does
+  not meet the expectation. Validator covers exact IDs, ownership/schema/link
+  integrity and meaningful rejection mutations; it cannot certify actual use.
+- Reuse74 synthetic fixtures/93 light observations with explicit original
+  provenance/limits; no new capture or fixture unless a concrete missing state
+  needs one. Correct stale R1 no-script/Source/ReplyAll/baseline statements through
+  an append, preserve historical evidence, reconcile TOTP raw-artifact availability
+  and unqualified recovery/cleanup without host/factor/session changes.
+- No approved_pages requirements, frozen plans/design, application runtime,
+  dependency, policy/key/account/auth/host/deployment/submission changes. Focused
+  validator/negative/source/diff checks plus required acceptance/V14 and normal
+  signed hooks apply. All current functional/human acceptance remains open;
+  S00-04 closes acceptance design only, then S01-01 proceeds in order.
+
+- S00-04 final matrix01304a5984702178358e3afc7181e941f6ef8c028731ab32ac589ee26eb4bffe
+  covers403 exact IDs/labels/owners and preserves all110 prior case/top-level
+  values. All new rows remain unexecuted/unaccepted. Retained generator
+  6865431757dff23857d860ebb19bb29bba0054ad11b9379ad8abd254233cade4
+  and matrix-handoff.json identify the authored planned scenarios.
+- Independent corrected-pilot and finite final semantic reviews covered all27
+  page families and high-risk Send/draft/key/account/quota actions. Final QA
+  56b16b1bf226d02fe389e1168a717f011260d1bc69bbf56262c011d288be216c
+  and securityfa7a14362d5f007abb3dc923eced9865271170118bc9b39adab80d6bd72aaed3
+  PASS within source/design scope. Reviewer-imposed encrypt-to-self step-up was
+  rejected against actual defaults/compose versus SetPolicy protocols; prior
+  incorrect review retained as superseded. No new governance/security rule.
+- Root final traceability/19 counterexample tests PASS; make acceptance-check
+  (security,V10–V13) and final make v14-check PASS. Historical documentation
+  prefix and frozen accepted manifest preserved. Root proof appendix is distinct
+  from exact reviewed writer draftdf45570adcb458c325cc6a10f8a9948a30284c8cf0d3d15231abddf9bcd88d49.
+  Normal signed commit/push hooks remain pending before delivered status.
+- S00-04 engineering acceptance-design exit met; source sync/install/release and
+  human acceptance remain separate. No app/backend/host/key/policy/submission
+  changed; all-Send failure stays OPEN. S01-01 ordered implementation is next,
+  with read-only source gap analysis delegated while root finishes delivery.
