@@ -467,6 +467,78 @@ fn delivery_reevaluates_exact_final_recipients_and_confirmed_revision() {
 }
 
 #[test]
+fn delivery_to_exact_self_uses_account_key_once_without_recipient_contact_binding() {
+    let executor = mock(vec![Ok(signed()), Ok(encrypted())]);
+    let mut request = ComposeRequest::new_with_routing(
+        ComposePolicy::default(),
+        "alice@example.test",
+        "",
+        "",
+        "Synthetic self delivery",
+        "Synthetic protected body",
+        Vec::new(),
+    )
+    .unwrap();
+    request.protection = crate::send::ProtectionIntent {
+        sign: true,
+        encrypt: true,
+        encrypt_to_self: true,
+        binding_revision: Some(7),
+    };
+    let result = prepare_for_delivery(
+        &executor,
+        &account(),
+        &request,
+        &bindings(),
+        Some(&inventory()),
+        100,
+    )
+    .unwrap();
+    assert_eq!(
+        result.protection(),
+        SubmissionProtection::SignedAndEncrypted
+    );
+    let operations = executor.operations.borrow();
+    assert_eq!(operations.len(), 2);
+    assert!(
+        matches!(&operations[0], Operation::Sign { signer_fingerprint, .. } if signer_fingerprint == SIGNER)
+    );
+    assert!(
+        matches!(&operations[1], Operation::Encrypt { recipient_fingerprints, .. } if recipient_fingerprints == &[SIGNER.to_string()])
+    );
+}
+
+#[test]
+fn ordinary_delivery_with_existing_optional_bindings_needs_no_inventory_or_crypto() {
+    let mut request = request();
+    request.protection.binding_revision = Some(7);
+    let record = bindings();
+    let result =
+        prepare_for_delivery(&UnavailableCrypto, &account(), &request, &record, None, 100).unwrap();
+    assert_eq!(result.protection(), SubmissionProtection::Ordinary);
+    assert_eq!(
+        result.as_bytes(),
+        crate::send::build_submission_message(account().as_str(), &request).unwrap()
+    );
+
+    let mut required_recipient = record;
+    required_recipient.recipient_bindings[0].encryption =
+        crate::openpgp_bindings::Requirement::Required;
+    assert_eq!(
+        prepare_for_delivery(
+            &UnavailableCrypto,
+            &account(),
+            &request,
+            &required_recipient,
+            None,
+            100,
+        )
+        .unwrap_err(),
+        SubmissionError::ProtectionBlocked
+    );
+}
+
+#[test]
 fn stale_missing_foreign_binding_and_missing_inventory_refuse_before_engine() {
     let executor = mock(Vec::new());
     let mut request = request();

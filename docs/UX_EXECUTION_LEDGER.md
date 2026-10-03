@@ -3693,3 +3693,54 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   readable encrypted authoritative Sent. No agent Send runs alongside the user.
   Proton return/inbound reading and fresh-auth key CRUD remain unaccepted. This
   recovery slice is complete; the sprint and epic are not accepted.
+
+### S07 self-recipient and ordinary-send repair — 2026-10-03 — IN_PROGRESS
+
+- Operator reports both protected Compose/Draft refused with Locked, self-send
+  blocked, and an ordinary Proton send with all protection choices off blocked.
+  Latest screenshot shows account signing/encryption Optional; confirm current
+  recipient policy independently rather than infer it from account policy.
+- Base `efa51c53a2753c2a23d06ce9e011ece26dc093d4`; signed accepted R2 anchor
+  `6b3ce8fff27ca3dabf87039d54098bd9967a2e42`, equal plan manifest and nested
+  approved-design checksums verified. Standing operator engineering/deployment
+  and prompt signed-sync authority applies; frozen plans remain unchanged.
+- Finite work order: resolve an exact canonical self-recipient through the
+  existing account binding only when no explicit recipient binding exists.
+  Preserve explicit recipient policy/fingerprint precedence, account policy,
+  local-part case, missing/unusable-key refusal and encryption-key deduplication.
+  Allowed source files: `src/openpgp_bindings.rs`, its test module, and focused
+  gateway tests if needed. Investigate ordinary-send refusal and composition
+  default placeholders before expanding source scope; do not silently alter
+  operator policy or send an external test message alongside the operator.
+- Root integrates/deploys; source engineer implements/tests; crypto reviewer
+  independently assesses final source/native results; Scrum lead reconciles
+  actual UAT expectations and unresolved acceptance. Required acceptance/V14,
+  final generated audit inventories, signed source parity and native functional
+  checks precede delivery. Sanitized artifacts stay under the S05 repair root.
+- Correct account agent/home/signer confirmed; selected private-key caches are
+  absent. This is distinct from the self-resolver defect. No passphrase retrieval,
+  cache-policy weakening, private-key replacement or protection downgrade.
+- Current read-only host metadata supersedes revision4: revision5, account
+  signing/encryption Optional, Proton recipient encryption Required. All choices
+  off is therefore refused by that recipient policy, not an unavailable account.
+  Root may extend `src/http/protected_send_gateway_native_tests.rs` for native
+  self-recipient and ordinary local-sink delivery proof and `src/http_ui.rs` plus
+  existing compose route tests to expose actual blocking policy before sending.
+  Composition default placeholders are a separate unfinished settings feature;
+  do not represent them as the account capability or claim their completion.
+- Source engineer delivered exact self-account fallback and positive/negative
+  precedence, address-isolation, unusable-key, deduplication and prepare tests.
+  Binding tests17/17 and protected-submission tests15/15 passed. Independent
+  review found no blocker. Root's renderer regression exposes Required recipient
+  policy even with all choices off and leaves those choices unchanged.
+- Final local acceptance/security/V10/V11/V12/V13 gate exited0: library1071
+  passed,0 failed,19 ignored. V14, formatting and whitespace checks passed.
+  Generated inventories were refreshed against final source. Native archive has
+  308 signed-parity-pending source/Cargo/public-fixture/C-harness entries and
+  SHA-256 `7acae8a2c1b3e117751d51d72d3aa9dacf33db4efc603a2ff1dd60ee3b7f4d2b`.
+  Native web build passed; native focused/gateway qualification and activation
+  remain pending at this source checkpoint.
+- Live public Encrypt-only probe passed through the existing authenticated
+  confined helper for Proton without Sign/Decrypt, cache mutation or delivery.
+  Current Optional signing permits encryption alone; no private unlock is needed
+  for that operation. This is public crypto evidence, not mail delivery/UAT.

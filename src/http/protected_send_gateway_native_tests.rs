@@ -125,6 +125,7 @@ fn smtp_sink(
                     stream.write_all(b"250 fixture\r\n").unwrap();
                 } else if command.starts_with("MAIL FROM:<ALICE@EXAMPLE.TEST>")
                     || command.starts_with("RCPT TO:<BOB@EXAMPLE.TEST>")
+                    || command.starts_with("RCPT TO:<ALICE@EXAMPLE.TEST>")
                 {
                     stream.write_all(b"250 accepted\r\n").unwrap();
                 } else if command == "DATA\r\n" {
@@ -465,6 +466,52 @@ fn native_crypto_gateway_protected_send_roundtrip() {
             .unwrap()
             .is_none()
     );
+    // An account key is sufficient for an exact self-recipient, without a
+    // duplicate contact binding. The transmitted bytes must actually decrypt
+    // and verify; public eligibility alone is not a delivery proof.
+    let self_intent = crate::send_journal::mint_intent(now).unwrap();
+    let mut self_request = native_send_request(&self_intent, record.revision, &attachments);
+    self_request.recipients = "alice@example.test";
+    let self_outcome = gateway.send_message_with_backends(
+        &context, &session, self_request, &submission, &append,
+    );
+    assert!(matches!(self_outcome.decision, BrowserSendDecision::Submitted {
+        sent_copy_stored: true, receipt_persisted: true
+    }));
+    assert_eq!(smtp.lock().unwrap().len(), 2);
+    let self_wire = smtp.lock().unwrap()[1].clone();
+    assert_eq!(fs::read(&sent_path).unwrap(), self_wire);
+    assert_eq!(fs::read(&sent_count).unwrap(), b"11");
+    let crate::pgp_mime::PgpMimeMessage::Encrypted { ciphertext, .. } =
+        crate::pgp_mime::classify(&self_wire, crate::pgp_mime::PgpMimePolicy::default()).unwrap()
+    else { panic!("self delivery must be encrypted MIME"); };
+    let self_plain = crypto.execute("alice@example.test",
+        &crate::openpgp_crypto::Operation::Decrypt {
+            allowed_primary_fingerprints: vec![afp.clone()], ciphertext,
+        }).unwrap().unwrap();
+    let crate::pgp_mime::PgpMimeMessage::Signed { canonical_entity, signature, .. } =
+        crate::pgp_mime::classify(&self_plain.content, crate::pgp_mime::PgpMimePolicy::default()).unwrap()
+    else { panic!("self delivery must contain signed MIME"); };
+    let verified_self = crypto.execute("alice@example.test",
+        &crate::openpgp_crypto::Operation::Verify { data: canonical_entity, signature })
+        .unwrap().unwrap();
+    assert_eq!(verified_self.signature, crate::openpgp_crypto::SignatureState::Valid);
+    assert_eq!(verified_self.primary_fingerprint.as_deref(), Some(afp.as_str()));
+
+    let required_intent = crate::send_journal::mint_intent(now).unwrap();
+    let mut required_request = native_send_request(&required_intent, record.revision, &attachments);
+    required_request.protection = crate::send::ProtectionIntent {
+        binding_revision: Some(record.revision), ..Default::default()
+    };
+    let required_refusal = gateway.send_message_with_backends(
+        &context, &session, required_request, &submission, &append,
+    );
+    assert!(matches!(required_refusal.decision,
+        BrowserSendDecision::Denied { ref public_reason, .. }
+        if public_reason == "openpgp_protection_blocked"));
+    assert_eq!(smtp.lock().unwrap().len(), 2);
+    assert_eq!(fs::read(&sent_count).unwrap(), b"11");
+
     // Missing actual helper cannot silently fall back to a plaintext send.
     services.0[0].kill().unwrap();
     services.0[0].wait().unwrap();
@@ -479,19 +526,45 @@ fn native_crypto_gateway_protected_send_roundtrip() {
     assert!(
         matches!(unavailable.decision,BrowserSendDecision::Denied {ref public_reason,..} if public_reason=="openpgp_submission_unavailable")
     );
-    assert!(smtp.lock().unwrap().len() == 1);
-    assert!(fs::read(&sent_count).unwrap() == b"1");
+    assert!(smtp.lock().unwrap().len() == 2);
+    assert!(fs::read(&sent_count).unwrap() == b"11");
     assert!(
         crate::send_journal::SendJournal::new(gateway.settings_dir.join("send-journal"))
             .receipt("alice@example.test", &failed_intent, now)
             .unwrap()
             .is_none()
     );
+    // Optional account/self policy permits an explicit ordinary message even
+    // with the private crypto helper stopped. No sign/encrypt downgrade occurs:
+    // the browser request itself selects no protection.
+    let ordinary_intent = crate::send_journal::mint_intent(now).unwrap();
+    let mut ordinary_request = native_send_request(&ordinary_intent, record.revision, &attachments);
+    ordinary_request.recipients = "alice@example.test";
+    ordinary_request.protection = crate::send::ProtectionIntent {
+        binding_revision: Some(record.revision), ..Default::default()
+    };
+    let ordinary = gateway.send_message_with_backends(
+        &context, &session, ordinary_request, &submission, &append,
+    );
+    assert!(matches!(ordinary.decision, BrowserSendDecision::Submitted {
+        sent_copy_stored: true, receipt_persisted: true
+    }));
+    assert_eq!(smtp.lock().unwrap().len(), 3);
+    let ordinary_wire = smtp.lock().unwrap()[2].clone();
+    assert_eq!(fs::read(&sent_path).unwrap(), ordinary_wire);
+    assert_eq!(fs::read(&sent_count).unwrap(), b"111");
+    assert!(ordinary_wire.windows("Synthetic café body".len())
+        .any(|w| w == "Synthetic café body".as_bytes()));
+    assert!(!ordinary_wire.windows(b"application/pgp-encrypted".len())
+        .any(|w| w == b"application/pgp-encrypted"));
     for events in [
         &outcome.audit_events,
         &replay.audit_events,
         &stale.audit_events,
         &unavailable.audit_events,
+        &self_outcome.audit_events,
+        &ordinary.audit_events,
+        &required_refusal.audit_events,
     ] {
         let rendered = format!("{events:?}");
         assert!(!rendered.contains("Synthetic café body"));

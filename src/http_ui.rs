@@ -1917,7 +1917,8 @@ fn render_live_openpgp_compose_controls(model: &ComposePageModel<'_>) -> String 
         Some(preflight) => {
             let state = if stale_binding {
                 "Keys changed — review required"
-            } else if model.protection.sign || model.protection.encrypt {
+            } else if model.protection.sign || model.protection.encrypt
+                || preflight.state == crate::openpgp_bindings::PreflightState::Blocked {
                 crate::http::compose_protection::selection_text(preflight.state)
             } else {
                 "No protection selected"
@@ -1935,9 +1936,31 @@ fn render_live_openpgp_compose_controls(model: &ComposePageModel<'_>) -> String 
                     crate::openpgp_bindings::KeyStatus::WrongUsage => "Key cannot encrypt",
                     crate::openpgp_bindings::KeyStatus::Ambiguous => "Key ambiguous",
                 };
-                format!("<li><span>{}</span>: {readiness}</li>", escape_html(&recipient.address))
+                let policy = match recipient.requirement {
+                    crate::openpgp_bindings::Requirement::Required => "Encryption required",
+                    crate::openpgp_bindings::Requirement::Optional => "Encryption optional",
+                    crate::openpgp_bindings::Requirement::Disabled => "Encryption disabled",
+                };
+                format!("<li><span>{}</span>: {readiness}; {policy}</li>", escape_html(&recipient.address))
             }).collect::<String>();
-            format!("<strong>{state}</strong><p>Public-key status for the addresses shown when this page loaded. Send Message checks the final addresses again. Signing and encryption are confirmed only when delivery completes; a failed check sends nothing.</p><ul>{recipients}</ul>")
+            let reasons = preflight.reasons.iter().map(|reason| {
+                use crate::openpgp_bindings::BlockReason;
+                let message = match reason {
+                    BlockReason::RecipientRequiresEncryption => "A recipient binding requires encryption. Select Encrypt on send, or explicitly edit that recipient's policy in Manage keys.",
+                    BlockReason::RecipientForbidsEncryption => "A recipient binding disables encryption. Review that recipient's policy in Manage keys.",
+                    BlockReason::RecipientKeyUnavailable => "A recipient has no eligible approved encryption key. Review the recipient key status below.",
+                    BlockReason::SigningRequired => "The account policy requires signing. Select Sign on send, or explicitly edit the account policy in Manage keys.",
+                    BlockReason::SigningDisabled => "The account policy disables signing. Review the account policy in Manage keys.",
+                    BlockReason::EncryptionRequired => "The account policy requires encryption. Select Encrypt on send, or explicitly edit the account policy in Manage keys.",
+                    BlockReason::EncryptionDisabled => "The account policy disables encryption. Review the account policy in Manage keys.",
+                    BlockReason::SigningUnavailable => "The approved signing public key is not eligible. Review the account key in Manage keys.",
+                    BlockReason::EncryptedBccUnqualified => "Encrypted Bcc delivery is not available. Remove Bcc before an encrypted send.",
+                    BlockReason::SelfRequiresEncryption => "Include my approved key requires Encrypt on send.",
+                    BlockReason::SelfKeyUnavailable => "The account encryption public key is not eligible. Review the account key in Manage keys.",
+                };
+                format!("<li>{message}</li>")
+            }).collect::<String>();
+            format!("<strong>{state}</strong><p>Public-key status for the addresses shown when this page loaded. Send Message checks the final addresses again. Signing and encryption are confirmed only when delivery completes; a failed check sends nothing.</p><ul>{reasons}</ul><ul>{recipients}</ul>")
         }
         None => "<strong>Unavailable</strong><p>OpenPGP key status could not be checked. A selected protected send will pause without sending plaintext.</p>".to_string(),
     };

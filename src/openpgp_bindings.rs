@@ -493,6 +493,7 @@ pub fn evaluate(
     let mut reasons = Vec::new();
     let mut recipient_fingerprints = BTreeSet::new();
     let mut seen_addresses = BTreeSet::new();
+    let own_address = crate::mail_address::comparison_key(account);
     for recipient in all {
         let compare = crate::mail_address::comparison_key(recipient);
         if !seen_addresses.insert(compare.clone()) {
@@ -502,9 +503,22 @@ pub fn evaluate(
             .recipient_bindings
             .iter()
             .find(|b| crate::mail_address::comparison_key(&b.address) == compare);
+        // The account binding is an approved encryption destination for the
+        // exact account address. An explicit recipient binding, including its
+        // policy and fingerprint, always takes precedence over this fallback.
+        let fingerprint = binding.map(|b| &b.primary_fingerprint).or_else(|| {
+            if compare == own_address {
+                record
+                    .account_binding
+                    .as_ref()
+                    .map(|b| &b.primary_fingerprint)
+            } else {
+                None
+            }
+        });
         let requirement = binding.map(|b| b.encryption).unwrap_or_default();
-        let state = binding
-            .map(|b| status(encryption(inventory, &b.primary_fingerprint, now)))
+        let state = fingerprint
+            .map(|fingerprint| status(encryption(inventory, fingerprint, now)))
             .unwrap_or(KeyStatus::MissingBinding);
         if requirement == Requirement::Required && !selection.encrypt {
             reasons.push(BlockReason::RecipientRequiresEncryption);
@@ -515,8 +529,8 @@ pub fn evaluate(
         if selection.encrypt {
             if state != KeyStatus::Ready {
                 reasons.push(BlockReason::RecipientKeyUnavailable);
-            } else if let Some(binding) = binding {
-                recipient_fingerprints.insert(binding.primary_fingerprint.clone());
+            } else if let Some(fingerprint) = fingerprint {
+                recipient_fingerprints.insert(fingerprint.clone());
             }
         }
         readiness.push(RecipientReadiness {

@@ -53,6 +53,27 @@ fn evaluate_to(record: &BindingRecord, inventory: &Inventory, selection: Selecti
     )
     .unwrap()
 }
+fn evaluate_recipient(
+    record: &BindingRecord,
+    inventory: &Inventory,
+    recipient: &str,
+    selection: Selections,
+) -> Preflight {
+    let to = vec![recipient.to_string()];
+    evaluate(
+        "alice@example.test",
+        record,
+        inventory,
+        Recipients {
+            to: &to,
+            cc: &[],
+            bcc: &[],
+        },
+        selection,
+        100,
+    )
+    .unwrap()
+}
 fn scratch() -> PathBuf {
     std::env::temp_dir().join(format!(
         "osmap-pgp-bindings-{}",
@@ -117,6 +138,165 @@ fn exact_signing_subkey_and_self_encryption_operation_plan() {
     assert_eq!(result.state, PreflightState::Blocked);
     assert!(result.plan.is_none());
     // Primary SC capability never replaces the revoked explicitly bound S subkey.
+}
+
+#[test]
+fn exact_self_recipient_uses_account_primary_without_redundant_contact_binding() {
+    let record = record();
+    let inventory = inventory(&raw_inventory());
+    let choices = Selections {
+        sign: true,
+        encrypt: true,
+        encrypt_to_self: true,
+    };
+    let self_send = evaluate_recipient(&record, &inventory, "alice@example.test", choices);
+    assert_eq!(self_send.state, PreflightState::Green);
+    assert_eq!(self_send.recipients[0].state, KeyStatus::Ready);
+    assert_eq!(self_send.recipients[0].requirement, Requirement::Optional);
+    let plan = self_send.plan.unwrap();
+    assert_eq!(plan.signer_fingerprint, Some("B".repeat(40)));
+    assert_eq!(plan.recipient_fingerprints, vec!["A".repeat(40)]);
+    assert!(plan.encrypt_to_self);
+
+    // Mail-domain case is folded, but local-part case is not assumed equal.
+    let domain_case = evaluate_recipient(&record, &inventory, "alice@EXAMPLE.TEST", choices);
+    assert_eq!(domain_case.state, PreflightState::Green);
+    assert_eq!(
+        domain_case.plan.unwrap().recipient_fingerprints,
+        vec!["A".repeat(40)]
+    );
+    let local_case = evaluate_recipient(&record, &inventory, "Alice@example.test", choices);
+    assert_eq!(local_case.recipients[0].state, KeyStatus::MissingBinding);
+    assert!(local_case
+        .reasons
+        .contains(&BlockReason::RecipientKeyUnavailable));
+    assert!(local_case.plan.is_none());
+}
+
+#[test]
+fn self_fallback_never_bypasses_explicit_recipient_or_account_policy() {
+    let mut record = record();
+    record.recipient_bindings.push(RecipientBinding {
+        address: "alice@example.test".into(),
+        primary_fingerprint: "D".repeat(40),
+        encryption: Requirement::Required,
+    });
+    let available_inventory = inventory(&raw_inventory());
+    let encrypted = evaluate_recipient(
+        &record,
+        &available_inventory,
+        "alice@example.test",
+        Selections {
+            encrypt: true,
+            ..Selections::default()
+        },
+    );
+    assert_eq!(encrypted.recipients[0].requirement, Requirement::Required);
+    assert_eq!(
+        encrypted.plan.unwrap().recipient_fingerprints,
+        vec!["D".repeat(40)]
+    );
+    let no_encryption = evaluate_recipient(
+        &record,
+        &available_inventory,
+        "alice@example.test",
+        Selections::default(),
+    );
+    assert!(no_encryption
+        .reasons
+        .contains(&BlockReason::RecipientRequiresEncryption));
+
+    record.recipient_bindings.last_mut().unwrap().encryption = Requirement::Disabled;
+    let disabled = evaluate_recipient(
+        &record,
+        &available_inventory,
+        "alice@example.test",
+        Selections {
+            encrypt: true,
+            ..Selections::default()
+        },
+    );
+    assert_eq!(disabled.recipients[0].requirement, Requirement::Disabled);
+    assert!(disabled
+        .reasons
+        .contains(&BlockReason::RecipientForbidsEncryption));
+    assert!(disabled.plan.is_none());
+
+    // A failing explicit self-recipient key must not fall back to the usable
+    // account primary and silently change the approved recipient fingerprint.
+    record.recipient_bindings.last_mut().unwrap().encryption = Requirement::Optional;
+    let mut revoked_explicit = raw_inventory();
+    revoked_explicit["keys"][1]["subkeys"][1]["revoked"] = json!(true);
+    let explicit_unusable = evaluate_recipient(
+        &record,
+        &inventory(&revoked_explicit),
+        "alice@example.test",
+        Selections {
+            encrypt: true,
+            ..Selections::default()
+        },
+    );
+    assert_eq!(explicit_unusable.recipients[0].state, KeyStatus::WrongUsage);
+    assert!(explicit_unusable.plan.is_none());
+
+    record.recipient_bindings.pop();
+    record.policy.encryption = Requirement::Required;
+    let account_required = evaluate_recipient(
+        &record,
+        &available_inventory,
+        "alice@example.test",
+        Selections::default(),
+    );
+    assert!(account_required
+        .reasons
+        .contains(&BlockReason::EncryptionRequired));
+    assert!(account_required.plan.is_none());
+}
+
+#[test]
+fn self_fallback_requires_usable_account_key_and_never_applies_to_other_addresses() {
+    let mut record = record();
+    let available_inventory = inventory(&raw_inventory());
+    let selection = Selections {
+        encrypt: true,
+        ..Selections::default()
+    };
+    let unrelated = evaluate_recipient(
+        &record,
+        &available_inventory,
+        "unknown@example.test",
+        selection,
+    );
+    assert_eq!(unrelated.recipients[0].state, KeyStatus::MissingBinding);
+    assert!(unrelated.plan.is_none());
+
+    record.account_binding = None;
+    let missing = evaluate_recipient(
+        &record,
+        &available_inventory,
+        "alice@example.test",
+        selection,
+    );
+    assert_eq!(missing.recipients[0].state, KeyStatus::MissingBinding);
+    assert!(missing
+        .reasons
+        .contains(&BlockReason::RecipientKeyUnavailable));
+    assert!(missing.plan.is_none());
+
+    record.account_binding = update().account_binding;
+    let mut revoked = raw_inventory();
+    revoked["keys"][0]["subkeys"][1]["revoked"] = json!(true);
+    let unusable = evaluate_recipient(
+        &record,
+        &inventory(&revoked),
+        "alice@example.test",
+        selection,
+    );
+    assert_eq!(unusable.recipients[0].state, KeyStatus::WrongUsage);
+    assert!(unusable
+        .reasons
+        .contains(&BlockReason::RecipientKeyUnavailable));
+    assert!(unusable.plan.is_none());
 }
 #[test]
 fn required_optional_disabled_matrix_never_downgrades_selection() {

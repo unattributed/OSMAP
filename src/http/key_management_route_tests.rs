@@ -417,4 +417,25 @@ fn compose_live_protection_controls_are_direct_and_preserve_selection() {
         .to_owned();
     assert!(body.contains("name=\"pgp_sign\" checked"));
     assert!(!body.contains("<span>Sign</span><strong>Signed</strong>"));
+    model.protection.sign = false;
+    model.to_value = "bob@example.test";
+    model.openpgp.as_mut().unwrap().preflight = Some(crate::openpgp_bindings::Preflight {
+        revision: 0,
+        state: crate::openpgp_bindings::PreflightState::Blocked,
+        signing: crate::openpgp_bindings::KeyStatus::Ready,
+        self_encryption: crate::openpgp_bindings::KeyStatus::Ready,
+        recipients: vec![crate::openpgp_bindings::RecipientReadiness {
+            address: "bob@example.test".into(),
+            state: crate::openpgp_bindings::KeyStatus::Ready,
+            requirement: crate::openpgp_bindings::Requirement::Required,
+        }],
+        reasons: vec![crate::openpgp_bindings::BlockReason::RecipientRequiresEncryption],
+        plan: None,
+    });
+    let body = crate::http_ui::render_compose_page(&model).as_str().to_owned();
+    assert!(body.contains("<strong>Blocked</strong>"));
+    assert!(body.contains("bob@example.test</span>: Public key eligible; Encryption required"));
+    assert!(body.contains("A recipient binding requires encryption. Select Encrypt on send"));
+    assert!(!body.contains("<strong>No protection selected</strong>"));
+    assert!(!body.contains("name=\"pgp_encrypt\" checked"));
 }

@@ -7597,6 +7597,40 @@ There is no preflight send/crypto/key mutation or policy relaxation. The prior
 typed error dependency stays a bounded delivered result, not functional success
 for this blocked journey. Protected-send completion remains open.
 
+### Separate self resolution, ordinary-send policy and unfinished defaults — 2026-10-02 (Toronto)
+
+Continuation of the S07 work order dated 2026-10-03 UTC. The operator reports
+self-send/protected-send failures, an ordinary Proton attempt blocked with all
+three protection choices off while account signing/encryption show Optional, and
+Composition OpenPGP defaults displayed as Unavailable despite a configured account.
+Preserve these as actual failed user workflows; neither the prior recovery slice
+nor healthy helpers accepts them.
+
+Baseline source recipient assessment searches only explicit recipient bindings;
+an exact canonical self-address does not resolve through its separately approved
+account binding. The bounded repair may use the existing account binding only
+when no explicit recipient binding exists. Explicit recipient fingerprint/policy
+still takes precedence, local-part case and account isolation remain intact, and
+missing/unusable keys refuse protection. Deduplicate encryption recipients without
+requiring a duplicate self contact or implicitly trusting another identity.
+
+Account Optional policy alone does not establish that a Proton recipient permits
+plaintext. Current live recipient metadata is pending and prior Required metadata
+must not be assumed current after operator changes. Reconcile account policy,
+recipient policy and actual submitted flags before attributing the ordinary-send
+failure; do not change policy to make it pass. When both applicable policies are
+Optional and all protections are off, the ordinary-send path must not require a
+private-key unlock. A genuinely Required recipient remains protected.
+
+Composition source hard-codes disabled Unavailable options for signing, encryption
+and encrypt-to-self; that is a confirmed unimplemented settings surface, separate
+from runtime key availability. A later defaults repair needs real persisted
+settings, correct new-draft application and policy-bound tests; changing the label
+alone does not complete it. Keep it open pending root's bounded source scope.
+No private-key/cache change, provider receipt claim or automatic parallel Send is
+authorised by this diagnosis. Successful protected delivery/Sent and human
+acceptance remain separate required results.
+
 ### Make explicit stale-key review visible without silently changing trust — 2026-10-02
 
 The operator found the recovery process overly obtuse after following incorrect
