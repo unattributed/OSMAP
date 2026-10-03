@@ -442,3 +442,100 @@ fn reader_neighbours_route_checks_link_version_and_fetches_only_current_body() {
         assert!(!body_text(&outcome).contains("id=\"reading-pane\""));
     }
 }
+
+fn empty_search_clear_href(response: &HandledHttpResponse) -> String {
+    let body = body_text(response);
+    let card = body
+        .split_once("<section class=\"mail-state-card\">")
+        .expect("empty search card")
+        .1;
+    let href = card
+        .split_once("href=\"")
+        .expect("native clear link")
+        .1
+        .split_once('"')
+        .expect("closed native href")
+        .0;
+    href.replace("&amp;", "&")
+}
+
+#[test]
+fn empty_search_clear_preserves_validated_query_field_and_scope() {
+    let app = app();
+    for (path, expected) in [
+        ("/search?scope=all&q=ux-empty-fixture&field=subject&filter=unread&attachment=with&after=2026-03-01&before=2026-03-31&page=2&selected_mailbox=INBOX&selected_uid=9&select=move", "/search?scope=all&q=ux-empty-fixture&field=subject"),
+        ("/search?mailbox=INBOX&q=ux-empty-fixture&field=from&filter=starred&attachment=with&after=2026-03-01&page=2", "/search?mailbox=INBOX&q=ux-empty-fixture&field=from"),
+        ("/search?mailbox=INBOX&scope=all&q=ux-empty-fixture&field=all&attachment=with", "/search?scope=all&q=ux-empty-fixture&field=all"),
+        ("/search?mailbox=Archive%2F2026&q=caf%C3%A9+%2B+%3Cdraft%3E+%26+%23%2F%3F&field=subject&attachment=with&sort=subject&dir=asc&page=2", "/search?mailbox=Archive%2F2026&q=caf%C3%A9+%2B+%3Cdraft%3E+%26+%23%2F%3F&field=subject"),
+    ] {
+        let source = request("GET", path, &authenticated_headers(), "");
+        let response = app.handle_request(&source, "127.0.0.1");
+        assert_eq!(response.response.status_code, 200);
+        assert!(body_text(&response).contains("<h2>Empty search</h2>"));
+        let href = empty_search_clear_href(&response);
+        assert_eq!(href, expected, "Clear filters must keep the search, not erase keywords");
+        let cleared = request("GET", &href, &authenticated_headers(), "");
+        assert_eq!(cleared.query_params.get("q"), source.query_params.get("q"));
+        assert_eq!(cleared.query_params.get("field"), source.query_params.get("field"));
+        for removed in ["filter", "attachment", "after", "before", "page", "selected_mailbox", "selected_uid", "select"] {
+            assert!(!cleared.query_params.contains_key(removed), "stale constraint {removed} retained");
+        }
+        let follow = app.handle_request(&cleared, "127.0.0.1");
+        assert_eq!(follow.response.status_code, 200);
+        assert!(!body_text(&follow).contains("Enter keywords to search your mail."));
+        assert_eq!(app.request_budgets.search_workers.active_count(), 0);
+    }
+}
+
+#[test]
+fn empty_search_clear_is_not_offered_for_unverified_search_context() {
+    let app = app();
+    for path in [
+        "/search?q=ux-empty-fixture&field=unsupported",
+        "/search?q=ux-empty-fixture&field=subject&filter=unknown",
+        "/search?mailbox=MissingArchive&q=report&field=subject",
+    ] {
+        let response = app.handle_request(
+            &request("GET", path, &authenticated_headers(), ""),
+            "127.0.0.1",
+        );
+        assert_eq!(response.response.status_code, 400);
+        assert!(!body_text(&response).contains(">Clear filters</a>"));
+    }
+    for headers in [
+        vec![("User-Agent", "Firefox/Test")],
+        vec![
+            ("User-Agent", "Firefox/Test"),
+            ("Cookie", "osmap_session=invalid"),
+        ],
+    ] {
+        let response = app.handle_request(
+            &request(
+                "GET",
+                "/search?q=ux-empty-fixture&scope=all&field=subject",
+                &headers,
+                "",
+            ),
+            "127.0.0.1",
+        );
+        assert_eq!(response.response.status_code, 303);
+        assert_eq!(location_header(&response), "/login");
+        assert!(!body_text(&response).contains(">Clear filters</a>"));
+    }
+    let mut foreign = request(
+        "GET",
+        "/search?q=ux-empty-fixture&scope=all&field=subject",
+        &authenticated_headers(),
+        "",
+    );
+    foreign
+        .headers
+        .insert("user-agent".into(), "OSMAP/SearchWrongOwner".into());
+    let response = app.handle_request(&foreign, "127.0.0.1");
+    assert_eq!(response.response.status_code, 503);
+    let body = body_text(&response);
+    assert!(!body.contains(">Clear filters</a>"));
+    assert!(!body.contains("foreign-secret"));
+    assert!(!body.contains("ForeignFolder"));
+    assert_eq!(app.request_budgets.search_workers.active_count(), 0);
+}

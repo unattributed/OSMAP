@@ -65,7 +65,7 @@ def main():
             p.get_by_label('Search query', exact=True).fill('ux-empty-fixture')
             p.locator('main').get_by_role('button', name='Search', exact=True).click()
             p.wait_for_load_state('networkidle')
-            expect(p.get_by_text('No messages matched this search.', exact=False)).to_be_visible()
+            expect(p.get_by_role('heading', name='Empty search', exact=True)).to_be_visible()
             visit('/search?q=ux-empty-fixture&field=subject&scope=all&filter=unread&attachment=with&after=2026-03-01')
             p.get_by_role('link', name='Clear filters', exact=True).click()
             p.wait_for_load_state('networkidle')

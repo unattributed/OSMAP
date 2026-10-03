@@ -4453,3 +4453,32 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   in S02-01: empty Search Clear filters erases keywords/field contrary to existing
   search workflow and prior ledger; conflicting state assertion will be repaired
   with actual route/browser RED/GREEN, not merely relabelled.
+
+### S02-01 Search recovery code repair; authoritative fanout gap remains — 2026-10-03
+
+- Actual empty-Search Clear filters erased the validated query and field; the
+  prior Search browser assertion and State browser assertion contradicted each
+  other. Reuse the existing URL-encoded, typed, HTML-escaped navigation base to
+  retain keywords, field and owned-folder/all-mail scope while removing filters,
+  date/attachment constraints, selection and pagination. Existing sort reset
+  remains unchanged. Correct only the obsolete Search empty-text selector and
+  the State expectation that explicitly required keyword loss.
+- Actual route regression: RED1 pass/1 fail, GREEN2/0, including Unicode/reserved
+  characters, scope precedence, follow-up and malformed/auth/wrong-owner refusals.
+  Original obsolete-selector failure and corrected-selector product query-loss
+  failure are retained separately. Current Search browser8 captures and State5
+  keyboard journeys/15 captures passed, with clean fixture server shutdown and
+  zero outside/non-login writes. Independent QA matched37 retained hashes and
+  all four source pins. Native OpenBSD executed the same2 route tests successfully;
+  all258 native inputs verified. Candidate6477c7ad14b02b79401d6c99b8517e6722bd042111580aba53857fa056da1162
+  is built but NOT installed. fmt/clippy passed.
+- Installed963aae9329909e882e9c408836dcd54fa3c69bc6b20dfa3a870418ee22df9b8f
+  authoritative INBOX Search reproduced the query-loss link. All-folder Search
+  instead returns503 before empty-state recovery: current audit reports39 visible
+  folders,5 searched and5-second deadline. Initial compound-query and subsequent
+  simple-query failures are retained; all owned synthetic sessions were removed.
+  No Send, UID/body selection, private crypto or key/policy mutation occurred.
+- S02-01 remains OPEN. This code repair is committed incrementally while the
+  independently demonstrated all-folder backend fanout gap is engineered and
+  tested. No slice completion, installed fix, human UAT readiness or Send success
+  is inferred. Artifacts: /home/foo/Downloads/osmap-ux-s02/revalidation-20261003/.

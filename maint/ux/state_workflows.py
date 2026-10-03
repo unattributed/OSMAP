@@ -29,7 +29,14 @@ with tempfile.TemporaryDirectory() as tmp,(a.output/'server.log').open('w') as l
     from urllib.parse import parse_qs,urlsplit
     assert parse_qs(urlsplit(page.url).query)==parse_qs(urlsplit(origin+path).query) or all(parse_qs(urlsplit(page.url).query).get(k)==v for k,v in parse_qs(urlsplit(origin+path).query).items())
     assert page.get_by_role('heading',name='Failed load',exact=True).count()==1
-   elif action=='Clear filters':assert page.url==origin+('/search?scope=all' if name=='search-all' else '/search?mailbox=INBOX');assert page.get_by_text('Enter keywords to search your mail.',exact=True).count()==1;assert page.locator('input[name=q]').last.input_value()==''
+   elif action=='Clear filters':
+    from urllib.parse import parse_qs,urlsplit
+    original=parse_qs(urlsplit(path).query)
+    expected=dict(q=original['q'],field=original.get('field',['all']))
+    expected.update(dict(scope=['all']) if name=='search-all' else dict(mailbox=original['mailbox']))
+    assert parse_qs(urlsplit(page.url).query)==expected
+    assert page.get_by_role('heading',name='Empty search',exact=True).count()==1
+    assert page.locator('input[name=q]').last.input_value()==original['q'][0]
    else:assert '/compose' in page.url;assert page.locator('textarea[name=body]').count()==1
    r['checks'].append(name+' native keyboard action preserves finite context');c.close()
   assert r['external']==r['mutations']==0;r['status']='PASS'

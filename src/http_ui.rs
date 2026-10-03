@@ -1555,16 +1555,12 @@ pub(crate) fn render_message_search_page(
     ));
     let mut rows = String::new();
     if results.is_empty() {
-        let clear = match mailbox_name {
-            Some(name) => format!("/search?mailbox={}", url_encode(name)),
-            None => "/search?scope=all".into(),
-        };
         rows.push_str(&format!(
             "<li class=\"message-empty-state\">{}</li>",
             mail_state_card(
                 "Empty search",
                 "No results match the current search and filters.",
-                &clear,
+                &navigation_base,
                 "Clear filters",
                 false
             )

@@ -7975,3 +7975,13 @@ human picture/accessibility/authentication/delivery acceptance. Correct mixed
 record-count descriptions rather than inflating navigation coverage. Keep
 actual implemented repairs and matching native deployment distinct from this
 executed evidence closeout; proceed to concrete S02 Search recovery defect.
+
+### 2026-10-03 — Preserve the search and repair real backend fanout
+
+Clear filters removes constraints, not the validated keyword/field/folder query.
+Reuse existing typed URL construction and reconcile contradictory harnesses with
+actual before/after route and browser results. Current authoritative all-folder
+Search fails its deadline after5 of39 folders; do not hide this with a timeout
+increase, weaker test or partial-result success. Engineer one bounded authenticated
+native batch while retaining result/output/account limits. Keep this incremental
+Clear filters repair distinct from open S02-01 and human delivery acceptance.

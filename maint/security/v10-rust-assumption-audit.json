@@ -7708,6 +7708,30 @@
       "classification": "test_or_fixture_assumption",
       "disposition": "accepted_test_or_fixture_assumption",
       "fail_closed_relevance": "low",
+      "file": "src/http/mail_list_tests.rs",
+      "kind": "expect_call",
+      "line": 450
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/http/mail_list_tests.rs",
+      "kind": "expect_call",
+      "line": 454
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/http/mail_list_tests.rs",
+      "kind": "expect_call",
+      "line": 457
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
       "file": "src/http/move_fixtures.rs",
       "kind": "expect_call",
       "line": 21
@@ -12198,7 +12222,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http_ui.rs",
       "kind": "expect_call",
-      "line": 2596
+      "line": 2592
     },
     {
       "classification": "production_adjacent_assumption",
@@ -12206,7 +12230,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http_ui.rs",
       "kind": "expect_call",
-      "line": 2598
+      "line": 2594
     },
     {
       "classification": "production_adjacent_assumption",
@@ -12214,7 +12238,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http_ui.rs",
       "kind": "unwrap_call",
-      "line": 2648
+      "line": 2644
     },
     {
       "classification": "production_adjacent_assumption",
@@ -12222,7 +12246,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http_ui.rs",
       "kind": "unwrap_call",
-      "line": 2684
+      "line": 2680
     },
     {
       "classification": "production_adjacent_assumption",
@@ -27681,7 +27705,7 @@
       "line": 521
     }
   ],
-  "generated_at_utc": "2026-10-03T11:45:57Z",
+  "generated_at_utc": "2026-10-03T12:42:34Z",
   "non_claims": [
     "This audit does not claim that all Rust assumptions are safe.",
     "This audit does not claim that production request paths are panic-free.",
@@ -27723,25 +27747,25 @@
       "panic_path_assumption": 69,
       "production_adjacent_assumption": 1622,
       "startup_or_global_invariant": 8,
-      "test_or_fixture_assumption": 1757
+      "test_or_fixture_assumption": 1760
     },
     "by_fail_closed_relevance": {
       "high": 1691,
-      "low": 1757,
+      "low": 1760,
       "medium": 12
     },
     "by_kind": {
-      "expect_call": 905,
+      "expect_call": 908,
       "panic_macro": 146,
       "unreachable_macro": 9,
       "unwrap_call": 2400
     },
     "classification_complete": true,
-    "inventory_sha256": "6e8bf08d27490f84cde5af3c8b6daf20cc3c02963dc3f607637e2e3df66d1893",
+    "inventory_sha256": "e2373ff75a9cf38c91d4842f0a1ffe1e1da4e1b557d468fdb289c2f38e8652aa",
     "live_host_state_changed": false,
     "product_behavior_changed": false,
     "production_state_changed": false,
     "slice0_carried_forward_rust_assumption_count": 712,
-    "total_count": 3460
+    "total_count": 3463
   }
 }
