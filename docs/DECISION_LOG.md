@@ -7951,3 +7951,15 @@ workflow. Preserve approved effective colours and the exact fixed Compose CSP
 exception; base CSS or a different display harness does not establish rendered
 behaviour. Keep failed tests and superseded review interpretations; do not alter
 approved design to satisfy an incorrect test expectation.
+
+### 2026-10-03 — Connect Security overview to owned public keys and existing settings
+
+Replace a hardcoded unavailable summary with the existing account-bound public
+inventory/binding read; independently reject foreign state or binding ownership.
+Describe only public configuration and leave private readiness operation-specific.
+Use actual key-management navigation without adding mutation authority. Index
+working Composition signing/encryption/self controls in section-scoped Settings
+search. Reproduce route failures before fixes and measure real configured-layout
+countercases before CSS changes. Two wrapping rules repair demonstrated overflow
+while preserving approved geometry. Keep seeded-session navigation, synthetic
+backend/browser results and human authentication/delivery acceptance distinct.

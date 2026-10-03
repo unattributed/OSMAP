@@ -76,6 +76,50 @@ fn settings_search_is_bounded_escaped_and_never_searches_mail() {
 }
 
 #[test]
+fn settings_search_finds_existing_openpgp_composition_defaults() {
+    let app = app();
+    for (query, label, anchor, field) in [
+        ("sign+outgoing", "Sign outgoing", "composition-signing", "pgp_sign"),
+        ("encryption", "Encryption", "composition-encryption", "pgp_encrypt"),
+        ("encrypt+to+self", "Encrypt to self", "composition-self", "pgp_self"),
+        ("OPENPGP+SIGNING", "Sign outgoing", "composition-signing", "pgp_sign"),
+    ] {
+        let result = app.handle_request(&request("GET", &format!("/settings?q={query}"), &authenticated_headers(), ""), "127.0.0.1");
+        assert_eq!(result.response.status_code, 200);
+        let body = body_text(&result);
+        assert!(body.contains(&format!("<a href=\"/settings?section=composition#{anchor}\">{label}</a>")), "missing existing control for {query}");
+        assert!(!body.contains("No available settings match this search."));
+        assert!(body.contains("action=\"/settings\""));
+        assert!(!body.contains("action=\"/search\""));
+        let destination = app.handle_request(&request("GET", "/settings?section=composition", &authenticated_headers(), ""), "127.0.0.1");
+        assert_eq!(destination.response.status_code, 200);
+        assert!(body_text(&destination).contains(&format!("id=\"{anchor}\" name=\"{field}\" form=\"composition-settings-form\">")), "search result must target an existing enabled setting");
+    }
+}
+
+#[test]
+fn settings_protection_search_requires_session_and_never_uses_mail_search() {
+    let app = app_with_policy(HttpPolicy { search_worker_budget: 1, ..HttpPolicy::default() });
+    let _held = app.request_budgets.search_workers.try_acquire().expect("hold the only mail search slot");
+    let result = app.handle_request(&request("GET", "/settings?q=encryption", &authenticated_headers(), ""), "127.0.0.1");
+    assert_eq!(result.response.status_code, 200);
+    assert!(body_text(&result).contains("/settings?section=composition#composition-encryption"));
+    let mail_control = app.handle_request(&request("GET", "/search?q=encryption", &authenticated_headers(), ""), "127.0.0.1");
+    assert_eq!(mail_control.response.status_code, 503);
+    assert!(mail_control.audit_events.iter().any(|event| event.action == "request_budget_exhausted"));
+    for headers in [vec![("User-Agent", "Firefox/Test")], vec![("User-Agent", "Firefox/Test"), ("Cookie", "osmap_session=invalid")]] {
+        let result = app.handle_request(&request("GET", "/settings?q=encryption", &headers, ""), "127.0.0.1");
+        assert_eq!(result.response.status_code, 303);
+        assert_eq!(location_header(&result), "/login");
+        assert!(!body_text(&result).contains("settings-search-results"));
+    }
+    let unmatched = app.handle_request(&request("GET", "/settings?q=quarterly+report", &authenticated_headers(), ""), "127.0.0.1");
+    assert_eq!(unmatched.response.status_code, 200);
+    assert!(body_text(&unmatched).contains("No available settings match this search."));
+    assert!(!body_text(&unmatched).contains("/message?"));
+}
+
+#[test]
 fn display_storage_failure_reports_unconfirmed_save_without_setting_cookies() {
     let mut req = request("POST", "/settings/display", &authenticated_same_origin_headers(), &format!("csrf_token={CSRF}&appearance=dark&density=compact&font_size=large&reader_layout=stacked"));
     req.headers.insert("user-agent".into(), "OSMAP/AppearanceUnavailable".into());

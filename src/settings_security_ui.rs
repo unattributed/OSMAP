@@ -1,4 +1,4 @@
-//! Read-only account protection overview, scoped to retained session metadata.
+//! Read-only account protection overview from owned sessions and public keys.
 use super::*;
 use crate::http::BrowserSessionListDecision;
 
@@ -14,10 +14,50 @@ fn verified_security_sessions<'a>(
     decision.verified_sessions(account)
 }
 
+fn public_account_key_summary(
+    account: &str,
+    state: Option<&crate::key_management::State>,
+) -> (&'static str, String) {
+    let owned = state.filter(|value| value.canonical_username == account);
+    let Some((record, keys)) = owned.and_then(|value| {
+        let record = value.bindings.as_ref()?;
+        record.ensure_account(account).ok()?;
+        Some((record, value.inventory.as_ref()?.keys()?))
+    }) else {
+        return (
+            "Unknown",
+            "Account bindings or public inventory unavailable".into(),
+        );
+    };
+    let Some(binding) = &record.account_binding else {
+        return (
+            "Account binding needed",
+            "No account key is approved for this identity".into(),
+        );
+    };
+    let Some(key) = keys
+        .iter()
+        .find(|key| key.primary.fingerprint == binding.primary_fingerprint)
+    else {
+        return (
+            "Bound public key missing",
+            "The approved account key is absent from the reported public inventory".into(),
+        );
+    };
+    if key.primary.revoked || key.primary.expired || key.primary.disabled || key.primary.invalid {
+        return ("Bound public key ineligible", "The reported account public key is revoked, expired, disabled or invalid; review it in Manage keys".into());
+    }
+    ("Account binding configured", format!(
+        "Approved primary fingerprint: {}. Public metadata only; private-key readiness is checked when an operation runs.",
+        escape_html(&binding.primary_fingerprint),
+    ))
+}
+
 pub(crate) fn render_security_page(
     account: &str,
     csrf: &str,
     decision: &BrowserSessionListDecision,
+    keys: Option<&crate::key_management::State>,
     authentication: bool,
 ) -> TrustedHtml {
     let sessions = verified_security_sessions(account, decision);
@@ -54,6 +94,8 @@ pub(crate) fn render_security_page(
         format!(concat!("<div class=\"security-two-cards authentication-cards\"><section class=\"security-card\"><h2>Authentication</h2>{password}{totp}{active}</section>",
             "<section class=\"security-card\"><h2>Recovery</h2><div class=\"security-recovery-contact\"><strong>Recovery contact</strong><span class=\"security-unknown\">Unknown</span><p>Contact and verification status unavailable</p></div><button type=\"button\" class=\"secondary\" disabled>Manage contact</button><p class=\"security-policy-note\">Recovery-contact management is unavailable. This session does not establish a recovery contact or permission to bypass authentication.</p></section></div>"), password=password, totp=totp, active=active)
     } else {
+        let (key_status, key_detail) = public_account_key_summary(account, keys);
+        let key_control = format!("<div class=\"security-control\"><div><strong>OpenPGP keys</strong><p>{key_detail}</p></div><a class=\"button-link secondary\" href=\"/settings/keys\" aria-label=\"Manage OpenPGP keys\">Manage</a></div>");
         let mut events = String::new();
         if let Some(sessions) = sessions {
             let mut ordered: Vec<_> = sessions.iter().collect();
@@ -73,10 +115,10 @@ pub(crate) fn render_security_page(
         } else {
             events.push_str("<li>Retained sign-ins are unavailable.</li>");
         }
-        let tiles = [("OpenPGP", "Unknown", "Key capability and fingerprint unavailable"), ("TOTP", "Used at sign-in", "Current enrollment unknown"), ("Password", "Used at sign-in", "Last change unknown"), ("Recovery Contact", "Unknown", "Contact and verification unavailable")].into_iter().map(|(title, state, note)| format!("<section class=\"security-tile\"><span class=\"security-tile-symbol\" aria-hidden=\"true\">{}</span><div><h3>{title}</h3><strong>{state}</strong><p>{note}</p></div></section>", shell_icon("shield"))).collect::<String>();
+        let tiles = [("OpenPGP", key_status, key_detail.as_str()), ("TOTP", "Used at sign-in", "Current enrollment unknown"), ("Password", "Used at sign-in", "Last change unknown"), ("Recovery Contact", "Unknown", "Contact and verification unavailable")].into_iter().map(|(title, state, note)| format!("<section class=\"security-tile\"><span class=\"security-tile-symbol\" aria-hidden=\"true\">{}</span><div><h3>{title}</h3><strong>{state}</strong><p>{note}</p></div></section>", shell_icon("shield"))).collect::<String>();
         format!(concat!("<section class=\"security-card security-heading\"><h2>Security</h2><p>Status and management for account protection. Privacy preferences remain under <a href=\"/settings?section=privacy\">Privacy &amp; Security</a>.</p></section><div class=\"security-tiles\">{tiles}</div>",
             "<div class=\"security-two-cards security-overview-cards\"><section class=\"security-card\"><h2>Security Controls</h2>{keys}{totp}{password}{recovery}{active}</section><section class=\"security-card\"><h2>Recent Security Events</h2><p class=\"security-event-scope\">Sign-ins from retained sessions; other security event history unavailable.</p><ul class=\"security-events\">{events}</ul></section></div>",
-            "<section class=\"security-card security-role\"><h3>Security page role</h3><p>These details describe this sign-in and retained sessions. Key, password and recovery changes are unavailable here. <a href=\"/settings?section=privacy\">Review privacy and rendering protections</a>.</p></section>"), password=password, totp=totp, active=active, tiles=tiles, events=events, keys=row("OpenPGP keys", "Key management and capability unavailable", "Manage", false), recovery=row("Recovery contact", "Contact and verification status unknown", "Manage", false))
+            "<section class=\"security-card security-role\"><h3>Security page role</h3><p>These details describe this sign-in, retained sessions and reported public account keys. Manage keys opens account-bound key management; this overview does not establish private-key availability. Password and recovery changes remain unavailable here. <a href=\"/settings?section=privacy\">Review privacy and rendering protections</a>.</p></section>"), password=password, totp=totp, active=active, tiles=tiles, events=events, keys=key_control, recovery=row("Recovery contact", "Contact and verification status unknown", "Manage", false))
     };
     let section = if authentication {
         "authentication"
@@ -116,7 +158,7 @@ mod tests {
             sessions,
         };
         let valid = make(sessions.clone());
-        let html = render_security_page("alice", "synthetic", &valid, false)
+        let html = render_security_page("alice", "synthetic", &valid, None, false)
             .as_str()
             .to_owned();
         assert!(html.contains("256 active browser sessions"));
@@ -130,9 +172,10 @@ mod tests {
         duplicate[1].session_id = duplicate[0].session_id.clone();
         for invalid in [make(excess), make(duplicate)] {
             for authentication in [false, true] {
-                let html = render_security_page("alice", "synthetic", &invalid, authentication)
-                    .as_str()
-                    .to_owned();
+                let html =
+                    render_security_page("alice", "synthetic", &invalid, None, authentication)
+                        .as_str()
+                        .to_owned();
                 assert!(html.contains("Active session count unknown"));
                 assert!(!html.contains("bounded-device"));
                 assert!(!html.contains("256 active browser sessions"));
@@ -166,7 +209,7 @@ mod tests {
             session_idle_timeout_seconds: 100,
             sessions: entries,
         };
-        let html = render_security_page("alice", "synthetic", &decision, false)
+        let html = render_security_page("alice", "synthetic", &decision, None, false)
             .as_str()
             .to_owned();
         assert!(html.contains("6 active browser sessions"));
@@ -183,7 +226,7 @@ mod tests {
                 public_reason: "private-error".into(),
             },
         ] {
-            let html = render_security_page("bob", "synthetic", &decision, false)
+            let html = render_security_page("bob", "synthetic", &decision, None, false)
                 .as_str()
                 .to_owned();
             assert!(html.contains("Active session count unknown"));

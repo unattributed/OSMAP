@@ -388,6 +388,21 @@ pub(crate) fn render_settings_search_page(account: &str, csrf: &str, query: &str
             "/settings?section=composition#composition-reply-placement",
         ),
         (
+            "Sign outgoing",
+            "composition openpgp signing default protected delivery",
+            "/settings?section=composition#composition-signing",
+        ),
+        (
+            "Encryption",
+            "composition openpgp encrypt default protected delivery",
+            "/settings?section=composition#composition-encryption",
+        ),
+        (
+            "Encrypt to self",
+            "composition openpgp encryption default protected delivery",
+            "/settings?section=composition#composition-self",
+        ),
+        (
             "Identity",
             "identity display name reply-to sender profile email",
             "/settings?section=identity",

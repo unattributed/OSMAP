@@ -15,6 +15,8 @@
 .security-tile-symbol { display:grid; place-items:center; width:2.2rem; height:2.2rem; flex:0 0 2.2rem; border:1px solid var(--line); border-radius:50%; background:var(--selected); color:var(--link); }
 .security-tile-symbol svg { width:1rem; height:1rem; }
 .security-tile p { font-size:.75rem; margin-top:.55rem; }
+.security-tile > div { min-width:0; }
+.security-tile p,.security-control p { overflow-wrap:anywhere; }
 .security-two-cards { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
 .security-overview-cards > .security-card { min-height:26.6rem; }
 .security-control { display:flex; gap:.75rem; align-items:center; justify-content:space-between; min-height:4.2rem; border-bottom:1px solid var(--line); padding:.65rem .9rem; font-size:.875rem; }

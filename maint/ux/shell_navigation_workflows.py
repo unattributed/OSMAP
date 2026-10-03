@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Synthetic native approved navigation and responsive authenticated header."""
 import argparse
+import base64
+import hashlib
 import json
 from pathlib import Path
 import tempfile
@@ -16,7 +18,7 @@ def main():
     parser.add_argument('--browser', default='/usr/bin/microsoft-edge-stable')
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=True, mode=0o700)
-    report = dict(result='FAIL', captures=[], external_requests=0, post_requests=0, script_requests=0)
+    report = dict(result='FAIL', captures=[], navigation=[], external_requests=0, post_requests=0, script_requests=0, send_requests=0)
     with tempfile.TemporaryDirectory(prefix='osmap-shell-ui-') as temp, (args.output/'server.log').open('w') as log, sync_playwright() as pw:
         root = Path(temp)
         server, origin = start_server(root, Path(__file__).resolve().parents[2], log)
@@ -28,6 +30,9 @@ def main():
             if not req.url.startswith(origin+'/'):
                 report['external_requests'] += 1
                 route.abort()
+            elif urlsplit(req.url).path == '/send':
+                report['send_requests'] += 1
+                route.abort()
             elif req.method == 'POST' and urlsplit(req.url).path not in ('/login', '/settings'):
                 report['post_requests'] += 1
                 route.abort()
@@ -36,10 +41,36 @@ def main():
                 route.continue_()
         ctx.route('**/*', bounded)
         p = ctx.new_page()
+        trusted_script = (Path(__file__).resolve().parents[2] / 'src/http/compose_local.js').read_bytes()
+        trusted_hash = 'sha256-' + base64.b64encode(hashlib.sha256(trusted_script).digest()).decode('ascii')
+        assert trusted_hash == 'sha256-kh8tYa8AQwqxy9l64g1sCx8epjT43a/Wj5pR91Smywc='
+        base_csp = "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'"
+        def response_boundary(response):
+            assert response and response.status == 200
+            assert response.headers['cache-control'] == 'no-store'
+            csp = response.all_headers().get('content-security-policy')
+            if urlsplit(response.url).path == '/compose':
+                assert p.locator('script').count() == 1
+                script = p.locator('script#osmap-compose-local')
+                assert script.count() == 1
+                assert script.evaluate('e => [...e.attributes].map(a => [a.name, a.value])') == [['id', 'osmap-compose-local']]
+                assert script.text_content() == trusted_script.decode('utf-8')
+                assert csp == base_csp + f"; connect-src 'self'; script-src '{trusted_hash}'; script-src-attr 'none'"
+            else:
+                assert p.locator('script').count() == 0
+                assert csp == base_csp
         def visit(path):
             response = p.goto(origin+path, wait_until='networkidle')
-            assert response.status == 200
-            assert response.headers['cache-control'] == 'no-store'
+            response_boundary(response)
+        def selected_page(path, heading, current, response):
+            response_boundary(response)
+            assert response.request.method == 'GET'
+            assert p.url == origin + path
+            expect(p.get_by_role('heading', name=heading, exact=True, level=1)).to_be_visible()
+            selected = p.get_by_role('navigation', name='Primary navigation').locator('[aria-current=page]')
+            expect(selected).to_have_count(1)
+            expect(selected).to_have_text(current)
+            report['navigation'].append(dict(path=path, heading=heading, selected=current, method='GET'))
         try:
             visit('/login')
             p.get_by_label('Username or Email').fill('alice@example.com')
@@ -49,13 +80,40 @@ def main():
             p.wait_for_load_state('networkidle')
             visit('/mailboxes')
             expect(p.locator('.topbar-welcome .brand-copy small')).to_be_visible()
-            def rail(name):
+            def rail(name, path=None, heading=None, current=None):
                 nav = p.get_by_role('navigation', name='Primary navigation')
                 link = nav.get_by_role('link', name=name, exact=True)
                 link.focus()
-                p.keyboard.press('Enter')
-                p.wait_for_load_state('networkidle')
+                expect(link).to_be_focused()
+                with p.expect_navigation(wait_until='networkidle') as navigation:
+                    p.keyboard.press('Enter')
+                if path is not None:
+                    selected_page(path, heading, current, navigation.value)
                 return nav
+            for name, path, heading in [
+                ('Inbox', '/mailbox?name=INBOX', 'Inbox'),
+                ('Sent', '/mailbox?name=Sent', 'Sent'),
+                ('Drafts', '/drafts', 'Drafts'),
+                ('Compose', '/compose', 'Compose'),
+                ('Mailbox', '/mailboxes', 'Welcome back.'),
+                ('Search', '/search', 'Search'),
+            ]:
+                rail(name, path, heading, name)
+            p.locator('.account-menu summary').focus()
+            p.keyboard.press('Enter')
+            expect(p.locator('.account-menu')).to_have_attribute('open', '')
+            sessions = p.locator('.account-menu').get_by_role('link', name='Manage sessions', exact=True)
+            sessions.focus()
+            expect(sessions).to_be_focused()
+            with p.expect_navigation(wait_until='networkidle') as navigation:
+                p.keyboard.press('Enter')
+            selected_page('/sessions', 'Active Sessions', 'Settings', navigation.value)
+            brand = p.get_by_role('link', name='OSMAP mailboxes', exact=True)
+            brand.focus()
+            expect(brand).to_be_focused()
+            with p.expect_navigation(wait_until='networkidle') as navigation:
+                p.keyboard.press('Enter')
+            selected_page('/mailboxes', 'Welcome back.', 'Mailbox', navigation.value)
             rail('Security')
             expect(p.locator('.rail-links [aria-current=page]')).to_have_text('Settings')
             rail('Settings')
@@ -118,7 +176,7 @@ def main():
                     p.screenshot(path=str(args.output/filename))
                     report['captures'].append(dict(file=filename,overflow=False,contrast=p.evaluate(TEXT_AUDIT)))
             assert all(not c['contrast']['failures'] and not c['contrast']['ui_failures'] for c in report['captures'])
-            assert report['external_requests'] == report['post_requests'] == report['script_requests'] == 0
+            assert report['external_requests'] == report['post_requests'] == report['script_requests'] == report['send_requests'] == 0
             report['result'] = 'PASS'
         finally:
             (args.output/'report.json').write_text(json.dumps(report, indent=2)+'\n')

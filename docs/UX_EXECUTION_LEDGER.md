@@ -4324,3 +4324,74 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   application built as `e19504c84a4fe44e3163630af3fec826ed4118d09cccde748184036bac9861af`.
   Signed synchronization and matching web activation remain pending;
   native/source results do not yet establish installed or human acceptance.
+
+### S01-01 signed native deployment and matching installed journey — 2026-10-03
+
+- Signed source `dfd5d08d22c3aa83ccf7f613e8986947fd8de559` passed normal
+  commit/push security hooks; fresh origin fetch proved local/remote equality.
+  All 258 native inputs matched signed Git bytes. Installed application binary
+  `e19504c84a4fe44e3163630af3fec826ed4118d09cccde748184036bac9861af` matches the
+  candidate before/after the actual workflow. Web-only activation passed with
+  original binary preserved under `/var/backups/osmap-ux-s01-appearance-dfd5d08-20261003/`;
+  helpers/configuration/keys/policy unchanged.
+- Actual installed native theme-only HTTP save/reload Light/Dark/System passed;
+  invalid CSRF/theme requests refused without writes, concurrent updates both
+  returned303 and left a complete owned preference. All owned synthetic session,
+  preference and lock cleanup passed. Probe bypassed real password/TOTP and did
+  not invoke Send, private cryptography or key/policy changes.
+- First probe refused before mutation on an incorrect session-directory mode
+  assumption; corrected to existing qualified0750 session-store bound, retaining
+  owner-only preference/records and all ownership/path checks. No host mode changed.
+- S01-01 engineering remediation is delivered. Human Appearance acceptance remains
+  OPEN, with concise steps/results at `/home/foo/Downloads/osmap-ux-s01/revalidation-20261003/UAT.md`.
+  This does not close S01, current real Send acceptance or the epic. Retained
+  deployment-verification.json pins source/binary/log evidence and limits.
+
+### S01-02 actual shell navigation and S01-03 Security/search remediation — 2026-10-03
+
+- S01-02 lacked actual keyboard activation proof for six primary rail destinations,
+  account-menu sessions and brand return. Extended the existing shell harness;
+  eight exact GET URL/H1/unique-selected-item journeys and all 26 existing
+  responsive/contrast captures passed with zero external/script/unrelated POST/
+  Send requests. Documents and unknown quota remain explicitly unavailable.
+- Matching installed HTTPS browser probe passed those eight journeys on signed
+  dfd5d08/e19504c8 native deployment through the configured authoritative adapter.
+  Exact synthetic session cleanup and unchanged before/after binary passed; no
+  message UID selection, body/cookie/screenshot retention, Send or policy mutation.
+  The short-lived seeded session bypassed password/TOTP, so it is not human auth
+  or mailbox-content/delivery qualification.
+- Fresh current Welcome harness passed 13 functional workflows/11 captures with
+  zero contrast/overflow/external/script/Send failures; actual links/search/folder
+  bounds/hostile text and account-isolation countercases passed. Fixture server
+  stopped cleanly. Historical shell/Welcome records were not substituted for
+  current execution. Evidence is in S01 root shell-navigation, welcome-current
+  and installed-navigation-result.json; broader every-surface proof stays S01-04.
+- S01-03 found a real backend integration gap: Security hardcoded OpenPGP Unknown
+  and disabled Manage despite the existing owned public binding/inventory. It now
+  reads public state only for Security, verifies both State and BindingRecord
+  ownership, reports configured/unbound/missing/ineligible/unavailable states and
+  opens real account key management. No private-key readiness is inferred;
+  Authentication avoids the additional public-state read. Actual production-route
+  regressions failed 0/2 on old production code and passed 2/0 after correction;
+  owned-navigation/no-mutation, foreign-account leakage and unauthenticated cases
+  are exercised. Independent source/proof review passed.
+- Actual new configured fingerprint browser layout failed: 360px page expanded
+  to404px and control text overflowed all360/768/1440 widths. Two scoped CSS rules
+  (tile text min-width and paragraph wrapping) corrected all three widths without
+  changing approved geometry. Same rendered synthetic response capture and all
+  failures are retained, with zero external requests.
+- Settings search omitted three working Composition controls. Added only actual
+  section/anchor entries for signing/encryption/self defaults. Production-route
+  RED preceded the change; three focused GREEN tests prove existing enabled
+  destinations, bounded/escaped settings-only queries, missing/invalid-session
+  refusal and independence from exhausted mail-search capacity. No preference,
+  key/policy or sending behavior changed.
+- Native OpenBSD execution passed Security2, Settings-search2 and its independent
+  refusal/budget countercase1 (five distinct tests). All258 final native inputs
+  were verified; candidate application `963aae9329909e882e9c408836dcd54fa3c69bc6b20dfa3a870418ee22df9b8f`,
+  native test binary `04ac4ffe0515554b2ef0d97a180888211d54544804f01f66e1c81b60f9cde174`.
+  A native archive-driver iteration assertion failed before any source update;
+  corrected streaming iteration and retained the failure. Final fmt/clippy and
+  V10/V14 gates passed. Signed synchronization, matching installed Security/search
+  proof and human acceptance remain pending. This does not establish Send or
+  sprint/epic closure.

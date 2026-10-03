@@ -4,6 +4,19 @@ struct KeyChangeSpy {
     calls: Arc<AtomicUsize>,
 }
 impl BrowserGateway for KeyChangeSpy {
+    fn key_management(
+        &self,
+        context: &AuthenticationContext,
+        session: &ValidatedSession,
+    ) -> crate::key_management::StateOutcome {
+        crate::key_management::StateOutcome {
+            state: security_overview_key_state(
+                &session.record.canonical_username,
+                &context.user_agent,
+            ),
+            audit_events: vec![],
+        }
+    }
     fn send_receipt(
         &self,
         session: &ValidatedSession,
@@ -563,4 +576,164 @@ fn compose_missing_key_unchecked_stale_and_unconfirmed_states_remain_honest() {
     assert!(body.contains("type=\"submit\" disabled formaction=\"/drafts/save\" name=\"compose_action\" value=\"preflight\" aria-describedby"));
     assert!(body.contains("name=\"pgp_binding_revision\" value=\"0\""));
     assert!(!body.contains("name=\"pgp_binding_revision\" value=\"1\""));
+}
+
+fn security_overview_key_state(account: &str, mode: &str) -> crate::key_management::State {
+    if !mode.starts_with("OSMAP/SecurityKeys-") || mode.ends_with("unavailable") {
+        return crate::key_management::State::unavailable(account);
+    }
+    let owner = if mode.ends_with("foreign-state") {
+        "bob@example.com"
+    } else {
+        account
+    };
+    let binding_owner = if mode.ends_with("foreign-binding") {
+        "bob@example.com"
+    } else {
+        owner
+    };
+    let mut state = crate::key_management::State::unavailable(owner);
+    let mut record = crate::openpgp_bindings::BindingRecord::empty(binding_owner).unwrap();
+    if !mode.ends_with("unbound") {
+        record.revision = 1;
+        record.account_binding = Some(crate::openpgp_bindings::AccountBinding {
+            primary_fingerprint: "A".repeat(40),
+            signing_fingerprint: Some("A".repeat(40)),
+            decrypt_primary_fingerprints: vec!["A".repeat(40)],
+        });
+    }
+    state.bindings = Some(record);
+    let keys = if mode.ends_with("missing-key") {
+        vec![]
+    } else {
+        vec![serde_json::json!({
+            "primary": {
+                "fingerprint": "A".repeat(40), "algorithm": 1, "bits": 3072,
+                "created": 1, "expires": 0, "revoked": mode.ends_with("revoked"),
+                "expired": false, "disabled": false, "invalid": false,
+                "can_sign": true, "can_encrypt": false, "can_certify": true,
+                "can_authenticate": false,
+            }, "subkeys": [],
+        })]
+    };
+    state.inventory = Some(
+        crate::openpgp_inventory::Inventory::parse(
+            &serde_json::to_vec(&serde_json::json!({
+                "version": 1, "ok": true, "protocol": "openpgp",
+                "gpgme_version": "2.0.1", "engine_version": "2.4.8", "keys": keys,
+            }))
+            .unwrap(),
+        )
+        .unwrap(),
+    );
+    state
+}
+
+#[test]
+fn security_overview_loads_owned_public_binding_and_opens_real_key_management() {
+    let calls = Arc::new(AtomicUsize::new(0));
+    let browser = BrowserApp::new(
+        HttpPolicy::default(),
+        KeyChangeSpy {
+            inner: StubGateway::default(),
+            calls: calls.clone(),
+        },
+    );
+    let mut req = request(
+        "GET",
+        "/settings?section=security",
+        &authenticated_headers(),
+        "",
+    );
+    req.headers
+        .insert("user-agent".into(), "OSMAP/SecurityKeys-configured".into());
+    let result = browser.handle_request(&req, "127.0.0.1");
+    assert_eq!(result.response.status_code, 200);
+    let html = body_text(&result);
+    if let Some(directory) = std::env::var_os("OSMAP_UX_SECURITY_FIXTURE_DIR") {
+        let directory = std::path::PathBuf::from(directory);
+        assert!(directory.is_absolute() && directory.is_dir());
+        assert_eq!(std::fs::canonicalize(&directory).unwrap(), directory);
+        let path = directory.join("configured-security.html");
+        use std::io::Write as _;
+        let mut options = std::fs::OpenOptions::new();
+        options.write(true).create_new(true);
+        #[cfg(unix)] {
+            use std::os::unix::fs::OpenOptionsExt as _;
+            options.mode(0o600);
+        }
+        options.open(path).unwrap().write_all(html.as_bytes()).unwrap();
+    }
+    assert!(html.contains("Account binding configured"));
+    assert!(html.contains(&"A".repeat(40)));
+    assert!(html.contains("private-key readiness is checked when an operation runs"));
+    assert!(html.contains("href=\"/settings/keys\" aria-label=\"Manage OpenPGP keys\""));
+    assert!(!html.contains("Key management and capability unavailable"));
+    assert!(!html.contains("private key is unlocked"));
+    let keys = browser.handle_request(
+        &request("GET", "/settings/keys", &authenticated_headers(), ""),
+        "127.0.0.1",
+    );
+    assert_eq!(keys.response.status_code, 200);
+    assert!(body_text(&keys).contains("OpenPGP Key Management"));
+    assert_eq!(
+        calls.load(Ordering::SeqCst),
+        0,
+        "overview/navigation must not mutate keys"
+    );
+}
+
+#[test]
+fn security_overview_unknown_foreign_and_ineligible_public_states_do_not_claim_readiness() {
+    let browser = BrowserApp::new(
+        HttpPolicy::default(),
+        KeyChangeSpy {
+            inner: StubGateway::default(),
+            calls: Arc::new(AtomicUsize::new(0)),
+        },
+    );
+    for (mode, expected) in [
+        (
+            "unavailable",
+            "Account bindings or public inventory unavailable",
+        ),
+        (
+            "foreign-state",
+            "Account bindings or public inventory unavailable",
+        ),
+        (
+            "foreign-binding",
+            "Account bindings or public inventory unavailable",
+        ),
+        ("unbound", "Account binding needed"),
+        ("missing-key", "Bound public key missing"),
+        ("revoked", "Bound public key ineligible"),
+    ] {
+        let mut req = request(
+            "GET",
+            "/settings?section=security",
+            &authenticated_headers(),
+            "",
+        );
+        req.headers
+            .insert("user-agent".into(), format!("OSMAP/SecurityKeys-{mode}"));
+        let result = browser.handle_request(&req, "127.0.0.1");
+        assert_eq!(result.response.status_code, 200);
+        let html = body_text(&result);
+        assert!(html.contains(expected), "{mode}");
+        assert!(
+            !html.contains(&"A".repeat(40)),
+            "{mode}: no unsupported/foreign fingerprint"
+        );
+        assert!(!html.contains("Account binding configured"), "{mode}");
+        assert!(!html.contains("private key is unlocked"), "{mode}");
+        assert!(html.contains("href=\"/settings/keys\" aria-label=\"Manage OpenPGP keys\""));
+    }
+    let unauthenticated = browser.handle_request(
+        &request("GET", "/settings?section=security", &[], ""),
+        "127.0.0.1",
+    );
+    assert_eq!(unauthenticated.response.status_code, 303);
+    assert_eq!(location_header(&unauthenticated), "/login");
+    assert!(!body_text(&unauthenticated).contains(&"A".repeat(40)));
 }

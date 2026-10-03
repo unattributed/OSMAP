@@ -190,6 +190,14 @@ where
         if matches!(section, "security" | "authentication") {
             let outcome = self.gateway.list_sessions(context, &validated_session);
             audit_events.extend(outcome.audit_events);
+            let mut key_state = if section == "security" {
+                Some(self.gateway.key_management(context, &validated_session))
+            } else {
+                None
+            };
+            if let Some(keys) = key_state.as_mut() {
+                audit_events.append(&mut keys.audit_events);
+            }
             return HandledHttpResponse {
                 response: html_response(
                     200,
@@ -199,6 +207,7 @@ where
                         &validated_session.record.canonical_username,
                         &validated_session.record.csrf_token,
                         &outcome.decision,
+                        key_state.as_ref().map(|keys| &keys.state),
                         section == "authentication",
                     ),
                 ),
