@@ -10,6 +10,23 @@ impl StubGateway {
             if uid % 4 == 0 { return None; }
             metadata.attachment_count=match uid % 4 { 1=>None, 2=>Some(0), _=>Some(2) };
         }
+        if context.user_agent.contains("ProtectionFilter") {
+            let structure = match uid % 4 {
+                0 => "invalid",
+                1 => "\"text\" \"plain\" NIL NIL NIL \"7bit\" 12 1",
+                2 => "(\"text\" \"plain\" NIL NIL NIL \"7bit\" 12 1) (\"application\" \"pgp-signature\" NIL NIL NIL \"7bit\" 12) \"signed\" (\"protocol\" \"application/pgp-signature\" \"micalg\" \"pgp-sha256\")",
+                _ => "(\"application\" \"pgp-encrypted\" NIL NIL NIL \"7bit\" 12) (\"application\" \"octet-stream\" NIL NIL NIL \"7bit\" 12) \"encrypted\" (\"protocol\" \"application/pgp-encrypted\")",
+            };
+            metadata.protection = crate::message_metadata::message_protection(Some(structure));
+            if metadata.protection == crate::message_metadata::MessageProtection::Encrypted {
+                metadata.preview = None;
+            }
+        }
+        if context.user_agent.contains("AttachmentNames") {
+            let structure = "(\"text\" \"plain\" NIL NIL NIL \"7bit\" 12 1) (\"application\" \"octet-stream\" NIL NIL NIL \"base64\" 129 NIL (\"attachment\" (\"filename\" \"public-<b>.txt\"))) \"mixed\"";
+            metadata.attachment_count = crate::message_metadata::attachment_count(structure);
+            metadata.attachments = crate::message_metadata::attachment_summaries(Some(structure));
+        }
         Some(metadata)
     }
 
@@ -19,6 +36,8 @@ impl StubGateway {
             Sha256::digest(format!("synthetic/{username}/{mailbox}").as_bytes())
         );
         MessageMetadata {
+            attachments: None,
+            protection: crate::message_metadata::MessageProtection::Unknown,
             preview: if uid == 124 {
                 None
             } else if uid == 125 {

@@ -25,7 +25,7 @@ use crate::http::BrowserVisibleSession;
 use crate::http_support::{escape_html, url_encode};
 use crate::mail_list::{
     has_flag, sender_initials, AttachmentFilter, BulkSelection, ListViewState, MessageFilter,
-    MAX_BULK_SELECTION,
+    ProtectionFilter, MAX_BULK_SELECTION,
 };
 use crate::mailbox::{
     MailboxEntry, MessageSearchField, MessageSearchResult, MessageSort, MessageSortColumn,
@@ -752,6 +752,14 @@ fn append_list_filter_selection(href: &mut String, view: &ListViewState) {
         href.push_str("&attachment=");
         href.push_str(view.attachment.value());
     }
+    if view.protection != ProtectionFilter::All {
+        href.push_str("&pgp=");
+        href.push_str(view.protection.value());
+    }
+    if view.sender.active() {
+        href.push_str("&from=");
+        href.push_str(&url_encode(view.sender.value()));
+    }
     if let Some(selected) = &view.selection {
         href.push_str("&selected_mailbox=");
         href.push_str(&url_encode(&selected.mailbox));
@@ -779,6 +787,16 @@ fn list_form_state(view: &ListViewState) -> String {
         "<input type=\"hidden\" name=\"attachment\" value=\"{}\">",
         view.attachment.value()
     ));
+    fields.push_str(&format!(
+        "<input type=\"hidden\" name=\"pgp\" value=\"{}\">",
+        view.protection.value()
+    ));
+    if view.sender.active() {
+        fields.push_str(&format!(
+            "<input type=\"hidden\" name=\"from\" value=\"{}\">",
+            escape_html(view.sender.value())
+        ));
+    }
     for (key, value) in [("after", &view.dates.after), ("before", &view.dates.before)] {
         if let Some(value) = value {
             fields.push_str(&format!(
@@ -869,6 +887,39 @@ fn render_list_navigation(base: &str, view: &ListViewState, compact: bool) -> St
     format!("<div class=\"list-navigation\">{filters}{pages}</div>{notices}")
 }
 
+fn render_sender_filter(base: &str, view: &ListViewState) -> String {
+    let Some((path, query)) = base.split_once('?') else {
+        return String::new();
+    };
+    if !matches!(path, "/mailbox" | "/search") || query.len() > 2048 {
+        return String::new();
+    }
+    let Ok(fields) = crate::http_form::parse_query_string(query, 8) else {
+        return String::new();
+    };
+    if fields
+        .keys()
+        .any(|key| !["name", "mailbox", "q", "scope", "field"].contains(&key.as_str()))
+    {
+        return String::new();
+    }
+    let base_fields: String = fields
+        .iter()
+        .map(|(key, value)| {
+            format!(
+                "<input type=\"hidden\" name=\"{}\" value=\"{}\">",
+                escape_html(key),
+                escape_html(value)
+            )
+        })
+        .collect();
+    let mut cleared = view.clone();
+    cleared.sender = crate::mail_list::SenderFilter::default();
+    cleared.selection = None;
+    let state = list_form_state(&cleared);
+    format!("<details class=\"sender-filter\"><summary>From: {}</summary><form method=\"get\" action=\"{path}\" aria-label=\"Sender filter\">{base_fields}{state}<label>Sender address<input type=\"email\" name=\"from\" maxlength=\"320\" placeholder=\"sender@example.com\" value=\"{}\"></label><button type=\"submit\">Apply sender</button><a href=\"{}\">Clear sender</a><p class=\"muted\">Exact mailbox address in the public From header, applied to loaded results. This does not verify the sender's identity.</p></form></details>", escape_html(if view.sender.active() { view.sender.value() } else { "all" }), escape_html(view.sender.value()), escape_html(&list_navigation_href(base, &cleared, 1)))
+}
+
 fn render_list_navigation_parts(
     base: &str,
     view: &ListViewState,
@@ -916,6 +967,29 @@ fn render_list_navigation_parts(
     filters.push_str(
         "</div><p class=\"muted\">Unknown means attachment metadata is unavailable.</p></details>",
     );
+    filters.push_str(&format!("<details class=\"protection-filter\"><summary>OpenPGP: {}</summary><div role=\"group\" aria-label=\"OpenPGP filter\">", view.protection.label()));
+    for protection in [
+        ProtectionFilter::All,
+        ProtectionFilter::Plain,
+        ProtectionFilter::Signed,
+        ProtectionFilter::Encrypted,
+        ProtectionFilter::Unknown,
+    ] {
+        let mut target = view.clone();
+        target.protection = protection;
+        filters.push_str(&format!(
+            "<a class=\"filter-link\" href=\"{}\"{}>{}</a>",
+            escape_html(&list_navigation_href(base, &target, 1)),
+            if protection == view.protection {
+                " aria-current=\"page\""
+            } else {
+                ""
+            },
+            protection.label()
+        ));
+    }
+    filters.push_str("</div><p class=\"muted\">Outer MIME structure only; signatures are not verified by this filter. No outer OpenPGP MIME does not exclude nested or inline PGP. Unknown includes absent or unsupported metadata.</p></details>");
+    filters.push_str(&render_sender_filter(base, view));
     filters.push_str(&render_date_filter(base, view));
     if compact {
         filters = format!("<details class=\"sent-filter-menu\" name=\"list-tools\"><summary>{}</summary><div class=\"mail-tools-panel\"><nav aria-label=\"Sent filters\">{filters}</nav></div></details>", if view.attachment == AttachmentFilter::All { format!("{}{}", view.filter.label(), if view.dates.active() { " · Dates" } else { "" }) } else { format!("{} · {}", view.filter.label(), view.attachment.label()) });
@@ -1025,6 +1099,42 @@ fn render_attachment_count(metadata: Option<&MessageMetadata>) -> String {
     }
 }
 
+fn render_public_attachment_details(metadata: Option<&MessageMetadata>) -> String {
+    let Some(metadata) = metadata else {
+        return "<p class=\"muted\">Attachment details unavailable.</p>".into();
+    };
+    let Some(summaries) = metadata.attachments.as_deref().filter(|summaries| {
+        crate::message_metadata::validate_attachment_summaries(summaries, metadata.attachment_count)
+    }) else {
+        return "<p class=\"muted\">Attachment details unavailable or outside the supported limit.</p>".into();
+    };
+    if summaries.is_empty() {
+        return String::new();
+    }
+    let items: String = summaries
+        .iter()
+        .map(|summary| {
+            format!(
+                "<li><span dir=\"auto\">{}</span> · {} encoded MIME bytes</li>",
+                escape_html(summary.filename.as_deref().unwrap_or("Name unavailable")),
+                summary.encoded_size_bytes
+            )
+        })
+        .collect();
+    format!("<section class=\"public-attachment-details\" aria-label=\"Public attachment details\"><h3>Attachment details</h3><ul>{items}</ul><p class=\"muted\">Public MIME parts, not decoded download size. Unsupported names and protected inner files are unavailable here.</p></section>")
+}
+
+fn render_public_message_protection(metadata: Option<&MessageMetadata>) -> String {
+    use crate::message_metadata::MessageProtection;
+    let label = match metadata.map(|value| value.protection).unwrap_or_default() {
+        MessageProtection::Unknown => "OpenPGP MIME unknown",
+        MessageProtection::Plain => "No outer OpenPGP MIME",
+        MessageProtection::Signed => "Signed MIME",
+        MessageProtection::Encrypted => "Encrypted MIME",
+    };
+    format!("<span class=\"message-security\" title=\"Public outer MIME structure only; signatures are not verified and ciphertext has not been decrypted. No outer OpenPGP MIME does not exclude nested or inline PGP.\">{label}</span>")
+}
+
 fn render_search_field_select(active_field: MessageSearchField) -> String {
     let mut options = String::new();
     for field in MESSAGE_SEARCH_FIELDS {
@@ -1110,9 +1220,9 @@ fn render_message_card(
             "<div class=\"message-card-main\"><span class=\"message-avatar\" aria-hidden=\"true\" title=\"{initials_hint}\">{}</span><span class=\"message-sender\" title=\"{}\" dir=\"auto\">{}</span>",
             "<span class=\"message-date\" title=\"{}\">{}</span>",
             "<a class=\"message-subject-link\" href=\"{}\"{} dir=\"auto\">{}</a><span class=\"message-body-preview\" dir=\"auto\">{}</span></div>",
-            "<div class=\"message-card-footer message-preview-meta\"><span class=\"message-mailbox\">{}</span><div class=\"message-star-cell\">{star}</div>{}<span class=\"message-security\" title=\"OpenPGP protection has not been assessed for this message. Open the message for available details.\">Not assessed</span>",
+            "<div class=\"message-card-footer message-preview-meta\"><span class=\"message-mailbox\">{}</span><div class=\"message-star-cell\">{star}</div>{}{protection}",
             "<details class=\"message-more\"><summary aria-label=\"More for message #{} in {}\"><span aria-hidden=\"true\">⋮</span><span class=\"sr-only\">More</span></summary>",
-            "<div class=\"message-more-content\"><p class=\"muted\">Message #{} · {} bytes</p><p><strong>{party_label}:</strong> {}</p><p><strong>Subject:</strong> {}</p>{read_action}{}</div></details></div></li>"
+            "<div class=\"message-more-content\"><p class=\"muted\">Message #{} · {} bytes</p><p><strong>{party_label}:</strong> {}</p><p><strong>Subject:</strong> {}</p>{attachment_details}{read_action}{}</div></details></div></li>"
         ),
         if has_flag(message.flags, "\\Seen") { "" } else { " message-unread" },
         selected,
@@ -1135,6 +1245,8 @@ fn render_message_card(
         selection = selection,
         star = star,
         read_action = read_action,
+        protection = render_public_message_protection(message.metadata),
+        attachment_details = render_public_attachment_details(message.metadata),
     )
 }
 
@@ -1567,6 +1679,15 @@ pub(crate) fn render_message_search_page(
         ));
     } else {
         for result in results {
+            let mut more_controls = render_message_state_controls(
+                csrf_token,
+                &result.mailbox_name,
+                result.uid,
+                &result.flags,
+                result.metadata.as_ref(),
+                &list_navigation_href(&navigation_base, view, view.page),
+            );
+            more_controls.push_str(&render_public_attachment_details(result.metadata.as_ref()));
             let message_href = if result.metadata.is_some() {
                 selected_message_href(&navigation_base, view, &result.mailbox_name, result.uid)
             } else {
@@ -1583,7 +1704,7 @@ pub(crate) fn render_message_search_page(
                 escape_html(result.subject.as_deref().unwrap_or("(No subject)")),
                 escape_html(result.from.as_deref().unwrap_or("Sender unavailable")), escape_html(&result.mailbox_name), escape_html(&result.date_received),
                 result.uid, escape_html(&result.mailbox_name),
-                render_message_state_controls(csrf_token, &result.mailbox_name, result.uid, &result.flags, result.metadata.as_ref(), &list_navigation_href(&navigation_base, view, view.page)),
+                more_controls,
                 preview = result.metadata.as_ref().and_then(|metadata| metadata.preview.as_deref()).filter(|preview| crate::message_metadata::valid_message_preview(preview)).map(|preview| format!(" · {}", escape_html(preview))).unwrap_or_default(),
             ));
         }
@@ -1601,7 +1722,7 @@ pub(crate) fn render_message_search_page(
             "<div class=\"search-query-panel\"><form class=\"search-row compact-search\" method=\"get\" action=\"/search\">{}<label class=\"search-query-label\" for=\"search-query\"><span class=\"sr-only\">Search query</span><input id=\"search-query\" type=\"search\" name=\"q\" value=\"{}\" placeholder=\"Search mail…\" autocomplete=\"off\"></label><button type=\"submit\">Search</button><details class=\"search-options\"><summary>Search options</summary><div>{}{}<label><input type=\"checkbox\" name=\"scope\" value=\"all\"{}> Search all mailboxes</label></div></details></form>{}</div>",
             "<div class=\"search-result-tabs\" aria-label=\"Search types\"><span aria-current=\"true\">Messages{}</span><span aria-disabled=\"true\">Documents</span><a href=\"/search?category=people&amp;q={people_query}\">People</a><span class=\"search-scope\">{}</span>{}</div>",
             "<div class=\"search-result-headings\" aria-hidden=\"true\"><span>Type</span><span>Result</span><span>Location</span><span>Received</span><span></span></div><ul role=\"list\" class=\"message-cards search-result-list\" aria-label=\"Search results\">{}</ul>",
-            "<div class=\"search-result-footer\">{}{}</div>{}<p class=\"search-capability-note muted\">Search covers accessible messages. Documents and protection-status filters are unavailable. People search covers your saved contacts. Message protection is assessed when opened.</p></section>{}</main>"
+            "<div class=\"search-result-footer\">{}{}</div>{}<p class=\"search-capability-note muted\">Search covers accessible messages. OpenPGP filters use public MIME structure, not signature verification or decryption. Documents search is unavailable. People search covers your saved contacts.</p></section>{}</main>"
         ),
         app_header(canonical_username, csrf_token, "search"),
         if view.selection.is_some() { " has-selection" } else { "" },

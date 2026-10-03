@@ -8008,3 +8008,28 @@ limits. Use directly executed qualified Python3 for owned process test fixtures
 so the shell-execution source ban still applies unchanged. This changes neither
 production dependencies nor native runtime assertions. Require final matching
 native and authoritative installed outcomes before slice closure.
+
+### 2026-10-03 — Deliver actual Search repair without closing unrelated controls
+
+The matching signed-source batch helper and web binary are deployed; actual
+authoritative Search/Clear keyboard recovery passes for both scopes. Preserve
+the earlier unexplained OS WouldBlock refusal and failed diagnostic/test-data
+attempts rather than turning later success into a reliability claim. Current
+public native header metadata, not an old assumed subject, supplies the positive
+predicate; retain only a neutral word and boolean/count outcomes.
+
+Reconcile the complete approved slice catalogue before closure. Its OpenPGP
+filters remain absent, so implement bounded public MIME structure classification
+and filtering, plus actual native list/flag/identity proof. A MIME envelope is
+not signature verification or decrypted-content assurance. Missing or invalid
+metadata remains Unknown; legacy responses do not become Plain. Preserve actual
+helper/account/output bounds, operator mail/keys/policy and human Send authority.
+# S02-01 remaining functional gaps — 2026-10-03
+
+The full-control review requires an independent sender constraint combined with
+the message query and public attachment descriptors. Implement both within the
+accepted slice rather than closing it from successful Search alone. Match one
+parsed From mailbox exactly without identity-assurance claims. Derive descriptors
+only from already fetched bounded BODYSTRUCTURE, retaining unsupported names as
+unknown and labelling encoded MIME octets separately from decoded downloads.
+Preserve operator data, key policy, original deadlines and reply bounds.

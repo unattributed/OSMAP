@@ -639,6 +639,10 @@ fn remove_stale_socket_if_needed(socket_path: &Path) -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     #[cfg(unix)]
+    mod native_reader_tests {
+        include!("mailbox_helper_native_reader_tests.rs");
+    }
+    #[cfg(unix)]
     mod native_search_batch_tests {
         include!("mailbox_helper/native_search_batch_tests.rs");
     }

@@ -33,6 +33,8 @@ fn session() -> ValidatedSession {
 fn message() -> MessageView {
     MessageView {
         metadata: Some(crate::message_metadata::MessageMetadata {
+            attachments: None,
+            protection: crate::message_metadata::MessageProtection::Unknown,
             version: MessageVersion::new("a".repeat(32), "b".repeat(32)).unwrap(),
             attachment_count: None,
             preview: None,

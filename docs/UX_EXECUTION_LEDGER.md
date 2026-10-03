@@ -4555,3 +4555,109 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   was not retained, so no independent old-file byte-equivalence claim is made.
   Signing/sync and matching helper-first deployment with positive authoritative
   Search/Clear proof remain the next steps; no slice or human Send acceptance yet.
+
+### S02-01 deployed Search checkpoint; remaining controls stay open — 2026-10-03
+
+- Signed Shopkeeper commit3217db6eb332a6e2974afed8b7598dc4fdf709c0 is synced
+  to origin/feat/ux-completion-20260929; fresh fetch proved SHA equality and a
+  clean tree. All259 native source inputs matched that commit. Matching binary
+  b19c86d8232aa621ac6c183e30b0dd5290780546d55c47f07690af4bcef73269 is installed
+  first on the authoritative mail-host helper, then on obsd1 web. Activation
+  checked unrelated services unchanged and retained private previous-binary
+  rollback copies. obsd1 serve's mapped text inode matches the installed file.
+- Actual HTTPS keyboard Search/Clear with a temporary synthetic post-auth Duncan
+  session now passes against authoritative mail.blackbagsecurity.com data.
+  Current native INBOX subject metadata established neutral query report; one
+  matching INBOX row and50 visible all-folder rows returned200. Future-date,
+  unread and attachment constraints produce empty views; keyboard Clear retains
+  query/Subject/folder or All scope and recovers both result sets. No body,
+  header text, UID, cookie or credentials were retained; zero Send requests,
+  owned-session cleanup and installed binary recheck pass. Counts are a changing
+  bounded snapshot, not full-archive totals or human authentication acceptance.
+- Earlier installed probes remain failed records: old test subject no longer
+  matches current INBOX; one diagnostic wrongly held the session-store lock;
+  one listing read refused with OS WouldBlock. The last cause remains UNPROVEN;
+  subsequent positive paths do not establish general transport reliability.
+  No deadline increase, routing change or automatic retry is a remediation.
+- Independent source/catalogue review confirms this is a delivered Search
+  checkpoint, not entire S02-01 closure. Remaining approved controls include
+  selection, sort/paging, native flags/attachment metadata and OpenPGP filters.
+  The latter are a concrete absent feature: current list state has no typed
+  protection filter and Search explicitly labels it unavailable. All40 approved
+  S02-01 control acceptance rows and human Send outcomes remain OPEN.
+- Next bounded work order: reuse bounded native BODYSTRUCTURE for public MIME
+  Unknown/Plain/Signed/Encrypted classification, carry optional strict helper
+  metadata with absent legacy fields Unknown, apply typed pgp filters before
+  paging, preserve validated navigation/forms, and expose real Inbox/Search
+  controls. No signature-validity, decryption or inline-PGP detection claim; no
+  per-row body fetch or private crypto. Developer1 owns message_metadata;
+  developer2 mail_list; developer3 an isolated native browser-route fixture;
+  root owns JSON/protocol/UI integration, gates, hosts, decisions and Git.
+  Native disposable accounts verify real row/flag/metadata/identity outcomes;
+  operator messages, keys and policies are preserved. Fix demonstrated failures
+  before signed delivery. Search-only UAT is retained in SEARCH_UAT.md under the
+  stable S02 root; human tests are NOT RUN and no completion notice is emitted
+  for the incomplete slice.
+
+- Full40-control Scrum review found two additional source gaps inside this slice:
+  R2-09-003 independent sender-address filtering cannot be satisfied by choosing
+  the existing From search field; R2-02-014/R2-05-008 attachment names/size cannot
+  be satisfied by count-only rows. These receive actual code repairs before
+  closure. Sender model3 and HTTP1 regressions reproduce absent behaviour (RED).
+  Root integrates typed sender navigation/forms with existing query/field/scope;
+  developer2 implements exact parsed public From matching before pagination.
+  Developer1 extends bounded existing BODYSTRUCTURE to public descriptors, with
+  names limited255 bytes, at most8 descriptors and encoded MIME octets explicitly
+  distinct from decoded downloads. Unsupported/ambiguous names remain unknown;
+  no attachment contents, per-row body fetch or private crypto. Existing count
+  semantics are preserved. Native fixture developer verifies these through the
+  actual signed helper/browser gateway and disposable accounts. Synthetic browser
+  and native proofs remain distinct from installed outcomes and human UAT.
+
+### S02-01 actual filter/metadata/native reader remediation — 2026-10-03
+
+- Implemented typed public outer-MIME filters, independent exact public From
+  constraints, and count-consistent public attachment descriptors in actual
+  Inbox/Sent/Search routes. Reused fetched BODYSTRUCTURE; no per-row body or
+  attachment download, signature verification or decryption claim. Preserve
+  2000/250 prefixes,50-row pages,16KiB structures, original deadlines and reply
+  limits. Missing/legacy MIME metadata remains Unknown. Details are bounded8
+  parts/255-byte supported names/8192-byte descriptor JSON; sizes are encoded
+  MIME octets. Unsupported/ambiguous names and protected inner files stay unknown.
+- Actual RED/GREEN is retained: missing protection links and rejected flag return
+  context; missing sender model3/HTTP1; absent descriptor extraction2 of3 and
+  row disclosure1. Integrated tests additionally exposed missing Search file
+  details and wrong-operation metadata acceptance. Repairs pass corresponding
+  regressions. Initial integration compilation errors are retained separately
+  and never counted as functional RED. Helper tests cover legacy absence, typed
+  List/Search/View/Batch round trips, duplicates/incomplete/wrong-operation data,
+ 8/255/u64 boundaries and9/256/oversized/count-mismatch refusals.
+- Final make acceptance-check attempt4 PASS:1133 library tests and1 binary test;
+  21 ignored are explicitly excluded. Original gates remain enabled. Attempt1
+  caught nested rendering format misuse; attempt2 stale existing audit inventories;
+  attempt3 generic TLS keyword guard matched unused MIME digest nomenclature.
+  Corrected rendering, refreshed existing actual scanners (3742/refined high0),
+  and described the unchanged optional body digest accurately. No cryptographic
+  implementation or gate exemption was added. fmt/diff and strict Clippy pass.
+- Matching native attempt3 verifies all260 frozen inputs. Actual disposable
+  Dovecot -> authenticated signed helper -> RuntimeBrowserGateway -> BrowserApp
+  fixture PASS in10.59 seconds:53 Alice/two Bob records; sort/page/selected/Back;
+  public MIME/sender/file metadata; actual CSRF read/star POST, reload and filtered
+  membership; neighbour/foreign/stale refusal; budget reuse and scratch cleanup;
+  standard Dovecot metadata unchanged. The fixture is one executed integration
+  test, not53 tests. Positive native unknown-attachment membership was0 and is
+  not claimed. Test binary075503814ea1345c4c380f41e86a05008886c1a8f43206345d77d655b84ef8a0;
+  app1bb4f2eab0ba5ba6ddfcf5d34b50e612c5a5dc79fc7db749befa74c2665a272b.
+- Final synthetic browser proof PASS:4 named journeys/16 captures, including
+  keyboard MIME filters and50-row paging, combined Subject/from/protection,
+  actual escaped file disclosure, native Escape without submission and empty
+  Search/Clear retention; light/dark360/1440 contrast/overflow checks. Zero Send,
+  scripts, outside requests or non-login writes. No operator mail was retained.
+  Independent reviewers approve eight integration source pins and all260 native
+  input hashes; dedicated Scrum reconciles the full40-control catalogue and
+  technical writer supplies actionable READER_FILTER_UAT.md with NOT RUN results.
+- Signed synchronization and matching helper-first rollout remain pending at
+  this checkpoint. These are implemented message-control repairs; dependent
+  Documents/combined-category totals and human acceptance remain OPEN in their
+  owning slices. Do not claim S02-01 fully accepted, current Send repaired,
+  protected Proton delivery, encrypted Sent or return-mail qualification.

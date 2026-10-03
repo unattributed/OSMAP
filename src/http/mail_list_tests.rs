@@ -1,6 +1,63 @@
 use super::*;
 
 #[test]
+fn public_attachment_names_and_encoded_sizes_are_real_escaped_row_details() {
+    for path in ["/mailbox?name=INBOX", "/mailbox?name=Sent", "/search?q=reader-fixture&field=subject&scope=all"] {
+        let mut req = request("GET", path, &authenticated_headers(), "");
+        req.headers.insert("user-agent".into(), "OSMAP/ManyMessages;AttachmentNames".into());
+        let response = app().handle_request(&req, "127.0.0.1");
+        assert_eq!(response.response.status_code, 200);
+        let body = body_text(&response);
+        assert!(body.contains("public-&lt;b&gt;.txt"), "{path}");
+        assert!(!body.contains("public-<b>.txt"));
+        assert!(body.contains("129 encoded MIME bytes"), "{path}");
+        assert!(body.contains("decoded download size"));
+        assert!(!response.audit_events.iter().any(|event| event.action == "stub_message_view"));
+    }
+}
+
+#[test]
+fn independent_sender_filter_has_an_actual_combined_search_and_navigation_control() {
+    let path = "/search?q=reader-fixture&field=subject&scope=all&from=sender%40example.test&pgp=unknown&sort=subject&dir=asc&page=2";
+    let response = mailbox_page(path);
+    assert_eq!(response.response.status_code, 200);
+    let body = body_text(&response);
+    assert!(body.contains("aria-label=\"Sender filter\""));
+    assert!(body.contains("name=\"from\" value=\"sender@example.test\""));
+    assert!(body.contains("from=sender%40example.test"));
+    assert!(body.contains("q=reader-fixture"));
+    assert!(body.contains("field=subject"));
+    assert!(body.contains("pgp=unknown"));
+    assert!(body.contains("Showing 51–100"));
+    assert_eq!(mailbox_page("/mailbox?name=INBOX&from=not-an-address").response.status_code, 400);
+}
+
+#[test]
+fn public_mime_protection_filter_is_a_real_preserved_list_and_search_control() {
+    for path in [
+        "/mailbox?name=INBOX&pgp=unknown&sort=subject&dir=asc&page=2",
+        "/search?q=reader-fixture&field=subject&scope=all&pgp=unknown&sort=subject&dir=asc&page=2",
+    ] {
+        let response = mailbox_page(path);
+        assert_eq!(response.response.status_code, 200);
+        let body = body_text(&response);
+        assert!(body.contains("aria-label=\"OpenPGP filter\""), "{path}");
+        assert!(body.contains("name=\"pgp\" value=\"unknown\""), "{path}");
+        assert!(body.contains("pgp=unknown&amp;page=3"), "{path}");
+        assert!(!body.contains("protection-status filters are unavailable"));
+        assert!(body.contains("MIME structure"));
+        assert!(!body.contains(">Verified<"));
+    }
+    let invalid = mailbox_page("/mailbox?name=INBOX&pgp=verified");
+    assert_eq!(invalid.response.status_code, 400);
+    let absent_session = app().handle_request(
+        &request("GET", "/search?q=fixture&scope=all&pgp=encrypted", &[], ""),
+        "127.0.0.1",
+    );
+    assert_eq!(absent_session.response.status_code, 303);
+}
+
+#[test]
 fn compact_rows_keep_untrusted_headers_as_text_and_actions_outside_links() {
     let mut request = request("GET", "/mailbox?name=INBOX", &authenticated_headers(), "");
     request

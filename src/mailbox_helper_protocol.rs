@@ -1308,6 +1308,8 @@ pub(super) fn parse_response(
             | "message_mailbox_guid"
             | "message_guid_b64"
             | "message_attachment_count"
+            | "message_protection"
+            | "message_attachments_b64"
             | "message_preview_b64"
             | "message_body_text_b64" => {
                 if current_message_fields
@@ -1341,6 +1343,17 @@ pub(super) fn parse_response(
             }
             _ => return Err(format!("unexpected helper response field: {key}")),
         }
+    }
+
+    if (response_field_names.contains(&"message_protection")
+        || response_field_names.contains(&"message_attachments_b64"))
+        && (status.as_deref() != Some("ok")
+            || !matches!(
+                operation.as_deref(),
+                Some("message_list" | "message_search" | "message_view")
+            ))
+    {
+        return Err("public message metadata on another helper response operation".into());
     }
 
     if operation.as_deref() == Some("message_move") {
@@ -1680,6 +1693,21 @@ fn encode_message_metadata(metadata: Option<&MessageMetadata>) -> String {
             encode_base64(preview.as_bytes())
         ));
     }
+    if metadata.protection != crate::message_metadata::MessageProtection::Unknown {
+        encoded.push_str(&format!(
+            "message_protection={}\n",
+            metadata.protection.value()
+        ));
+    }
+    if let Some(attachments) = &metadata.attachments {
+        // Derived bounded public descriptors, never attachment file contents.
+        let data =
+            serde_json::to_vec(attachments).expect("public attachment descriptors serialize");
+        encoded.push_str(&format!(
+            "message_attachments_b64={}\n",
+            encode_base64(&data)
+        ));
+    }
     encoded
 }
 
@@ -1690,7 +1718,15 @@ fn parse_message_metadata(
     let message_guid = fields.get("message_guid_b64");
     let count = fields.get("message_attachment_count");
     let preview = fields.get("message_preview_b64");
-    if mailbox_guid.is_none() && message_guid.is_none() && count.is_none() && preview.is_none() {
+    let protection = fields.get("message_protection");
+    let attachments = fields.get("message_attachments_b64");
+    if mailbox_guid.is_none()
+        && message_guid.is_none()
+        && count.is_none()
+        && preview.is_none()
+        && protection.is_none()
+        && attachments.is_none()
+    {
         // Old helper responses can still be read, but cannot authorize flag writes.
         return Ok(None);
     }
@@ -1715,6 +1751,31 @@ fn parse_message_metadata(
         )
     };
     Ok(Some(MessageMetadata {
+        attachments: attachments
+            .map(|value| -> Result<_, String> {
+                let text = decode_base64_text(value, 8192, "public attachment descriptors")?;
+                let summaries: Vec<crate::message_metadata::AttachmentSummary> =
+                    serde_json::from_str(&text)
+                        .map_err(|_| "helper attachment descriptors were malformed".to_string())?;
+                if !crate::message_metadata::validate_attachment_summaries(
+                    &summaries,
+                    attachment_count,
+                ) {
+                    return Err(
+                        "helper attachment descriptors were invalid or outside bounds".into(),
+                    );
+                }
+                Ok(summaries)
+            })
+            .transpose()?,
+        protection: protection
+            .map(|value| {
+                crate::message_metadata::MessageProtection::parse(value).ok_or_else(|| {
+                    "helper message protection classification was invalid".to_string()
+                })
+            })
+            .transpose()?
+            .unwrap_or_default(),
         version,
         attachment_count,
         preview: preview
@@ -2446,6 +2507,8 @@ fn parse_search_batch_response(
             | "message_mailbox_guid"
             | "message_guid_b64"
             | "message_attachment_count"
+            | "message_protection"
+            | "message_attachments_b64"
             | "message_preview_b64" => {
                 rows_started = true;
                 if row.insert(key.to_string(), value.to_string()).is_some() {
@@ -2525,6 +2588,8 @@ mod batch_protocol_tests {
             subject: Some("fixture É".into()),
             from: Some("fixture@example.com".into()),
             metadata: Some(MessageMetadata {
+                attachments: None,
+                protection: crate::message_metadata::MessageProtection::Unknown,
                 version: MessageVersion::new("a".repeat(32), format!("fixture-{uid}")).unwrap(),
                 attachment_count: Some(1),
                 preview: Some("fixture preview".into()),
@@ -2549,6 +2614,224 @@ mod batch_protocol_tests {
             MessageViewPolicy::default(),
             text,
         )
+    }
+
+    #[test]
+    fn public_protection_metadata_refuses_wrong_operation_even_with_valid_value() {
+        for base in [
+            "status=ok\noperation=mailbox_list\nmailbox_count=0\n",
+            "status=ok\noperation=message_append\nmailbox_name_b64=SU5CT1g=\nmessage_bytes=1\n",
+            "status=error\nbackend_b64=Zml4dHVyZQ==\nreason_b64=cmVmdXNlZA==\n",
+        ] {
+            for value in ["signed", "verified"] {
+                assert!(
+                    parse_batch(&format!("{base}message_protection={value}\n")).is_err(),
+                    "{base}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn public_attachment_descriptors_roundtrip_and_refuse_malformed_or_unowned_fields() {
+        use crate::message_metadata::AttachmentSummary;
+        let legacy = encode_response(&response(vec![row("INBOX", 1)]));
+        assert!(!legacy.contains("message_attachments_b64="));
+        assert!(parse_batch(&legacy).unwrap() == response(vec![row("INBOX", 1)]));
+        let mut message = row("INBOX", 1);
+        message.metadata.as_mut().unwrap().attachments = Some(vec![AttachmentSummary {
+            filename: Some("public-<b>.txt".into()),
+            encoded_size_bytes: 129,
+        }]);
+        let expected = response(vec![message.clone()]);
+        let encoded = encode_response(&expected);
+        assert_eq!(parse_batch(&encoded).unwrap(), expected);
+        let mut edge = message.clone();
+        edge.metadata.as_mut().unwrap().attachment_count = Some(8);
+        edge.metadata.as_mut().unwrap().attachments = Some(vec![
+            AttachmentSummary {
+                filename: Some("a".repeat(255)),
+                encoded_size_bytes: u64::MAX,
+            };
+            8
+        ]);
+        let edge_response = response(vec![edge.clone()]);
+        assert_eq!(
+            parse_batch(&encode_response(&edge_response)).unwrap(),
+            edge_response
+        );
+        let mut long_name = edge.clone();
+        long_name
+            .metadata
+            .as_mut()
+            .unwrap()
+            .attachments
+            .as_mut()
+            .unwrap()[0]
+            .filename = Some("a".repeat(256));
+        assert!(parse_batch(&encode_response(&response(vec![long_name]))).is_err());
+        edge.metadata.as_mut().unwrap().attachment_count = Some(9);
+        edge.metadata
+            .as_mut()
+            .unwrap()
+            .attachments
+            .as_mut()
+            .unwrap()
+            .push(AttachmentSummary {
+                filename: None,
+                encoded_size_bytes: 0,
+            });
+        assert!(parse_batch(&encode_response(&response(vec![edge]))).is_err());
+        let token = encoded
+            .lines()
+            .find(|line| line.starts_with("message_attachments_b64="))
+            .unwrap();
+        for json in ["not-json", "null", "[]", "[{\"filename\":\"public.txt\",\"encoded_size_bytes\":-1}]", "[{\"filename\":\"public.txt\",\"encoded_size_bytes\":1,\"body\":\"untrusted\"}]", "[{\"filename\":\"line\\nbreak\",\"encoded_size_bytes\":1}]", "[{\"filename\":null,\"encoded_size_bytes\":1},{\"filename\":null,\"encoded_size_bytes\":2}]"] {
+            let replaced = encoded.replace(token, &format!("message_attachments_b64={}", encode_base64(json.as_bytes())));
+            assert!(parse_batch(&replaced).is_err(), "{json}");
+        }
+        assert!(parse_batch(&encoded.replace(token, &format!("{token}\n{token}"))).is_err());
+        assert!(parse_batch(&encoded.replace(
+            "message_attachment_count=1",
+            "message_attachment_count=unknown"
+        ))
+        .is_err());
+        let oversized = format!(
+            "message_attachments_b64={}",
+            encode_base64(&vec![b' '; 8193])
+        );
+        assert!(parse_batch(&encoded.replace(token, &oversized)).is_err());
+        let single = MailboxHelperResponse::MessageSearchOk {
+            mailbox_name: "INBOX".into(),
+            query: "public".into(),
+            field: MessageSearchField::Subject,
+            results: vec![message],
+        };
+        let single_encoded = encode_response(&single);
+        assert_eq!(
+            parse_response(
+                MailboxListingPolicy::default(),
+                MessageListPolicy::default(),
+                MessageSearchPolicy::default(),
+                MessageViewPolicy::default(),
+                &single_encoded
+            )
+            .unwrap(),
+            single
+        );
+        for operation in ["mailbox_list", "message_append"] {
+            let wrong = format!("status=ok\noperation={operation}\n{token}\n");
+            assert!(parse_response(
+                MailboxListingPolicy::default(),
+                MessageListPolicy::default(),
+                MessageSearchPolicy::default(),
+                MessageViewPolicy::default(),
+                &wrong
+            )
+            .is_err());
+        }
+    }
+
+    #[test]
+    fn public_protection_metadata_roundtrips_and_legacy_is_unknown() {
+        use crate::message_metadata::MessageProtection;
+        let legacy = encode_response(&response(vec![row("INBOX", 1)]));
+        assert!(!legacy.contains("message_protection="));
+        assert_eq!(
+            parse_batch(&legacy).unwrap(),
+            response(vec![row("INBOX", 1)])
+        );
+        for protection in [
+            MessageProtection::Plain,
+            MessageProtection::Signed,
+            MessageProtection::Encrypted,
+        ] {
+            let mut message = row("INBOX", 1);
+            message.metadata.as_mut().unwrap().protection = protection;
+            let expected = response(vec![message]);
+            let encoded = encode_response(&expected);
+            assert_eq!(parse_batch(&encoded).unwrap(), expected);
+            for token in [
+                "verified",
+                "decrypted",
+                "signed ",
+                "Encrypted",
+                "",
+                "<script>",
+            ] {
+                let malformed = encoded.replace(
+                    &format!("message_protection={}\n", protection.value()),
+                    &format!("message_protection={token}\n"),
+                );
+                assert!(parse_batch(&malformed).is_err(), "{token:?}");
+            }
+            let duplicate = encoded.replace(
+                &format!("message_protection={}\n", protection.value()),
+                "message_protection=signed\nmessage_protection=encrypted\n",
+            );
+            assert!(parse_batch(&duplicate).is_err());
+            let incomplete = encoded
+                .lines()
+                .filter(|line| !line.starts_with("message_mailbox_guid="))
+                .collect::<Vec<_>>()
+                .join("\n");
+            assert!(parse_batch(&incomplete).is_err());
+        }
+    }
+
+    #[test]
+    fn public_protection_metadata_works_in_single_list_search_and_view_codecs() {
+        use crate::message_metadata::MessageProtection;
+        let metadata = MessageMetadata {
+            attachments: Some(vec![crate::message_metadata::AttachmentSummary {
+                filename: Some("public.txt".into()),
+                encoded_size_bytes: 20,
+            }]),
+            version: MessageVersion::new("a".repeat(32), "fixture".into()).unwrap(),
+            attachment_count: Some(1),
+            preview: None,
+            protection: MessageProtection::Encrypted,
+        };
+        let summary = MessageSummary {
+            mailbox_name: "INBOX".into(),
+            uid: 1,
+            flags: vec![],
+            date_received: "2026-10-03 10:00:00 +0000".into(),
+            size_virtual: 1,
+            subject: Some("Public fixture".into()),
+            from: None,
+            to: None,
+            metadata: Some(metadata.clone()),
+        };
+        let mut searched = row("INBOX", 1);
+        searched.metadata = Some(metadata.clone());
+        for expected in [
+            MailboxHelperResponse::MessageListOk {
+                mailbox_name: "INBOX".into(),
+                messages: vec![summary],
+            },
+            MailboxHelperResponse::MessageSearchOk {
+                mailbox_name: "INBOX".into(),
+                query: "fixture".into(),
+                field: MessageSearchField::Subject,
+                results: vec![searched],
+            },
+            MailboxHelperResponse::MessageViewOk {
+                message: Box::new(crate::mailbox::MessageView {
+                    mailbox_name: "INBOX".into(),
+                    uid: 1,
+                    flags: vec![],
+                    date_received: "2026-10-03 10:00:00 +0000".into(),
+                    size_virtual: 1,
+                    header_block: "Subject: Public fixture".into(),
+                    body_text: "Public synthetic body".into(),
+                    metadata: Some(metadata),
+                }),
+            },
+        ] {
+            let encoded = encode_response(&expected);
+            assert_eq!(parse_batch(&encoded).unwrap(), expected);
+        }
     }
 
     #[test]

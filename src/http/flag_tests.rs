@@ -1,6 +1,19 @@
 use super::*;
 
 #[test]
+fn protection_filtered_flag_action_keeps_its_validated_return_context() {
+    let response = post_flag(
+        &app(),
+        &[("return_to", "/mailbox?name=INBOX&pgp=unknown&from=sender%40example.test&filter=unread&sort=subject&dir=asc&page=2")],
+        "OSMAP/ManyMessages",
+    );
+    assert_eq!(response.response.status_code, 303);
+    assert!(response.response.headers.iter().any(|(key, value)| {
+        key == "Location" && value.contains("pgp=unknown") && value.contains("filter=unread") && value.contains("from=sender%40example.test")
+    }));
+}
+
+#[test]
 fn runtime_flag_quota_lock_and_store_failure_refuse_before_the_backend() {
     let root = temp_dir("osmap-flag-quota");
     let context = AuthenticationContext::new(

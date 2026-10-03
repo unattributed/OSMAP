@@ -230,6 +230,8 @@ mod tests {
             .map(|uid| MessageSummary {
                 to: None,
                 metadata: Some(crate::message_metadata::MessageMetadata {
+                    attachments: None,
+                    protection: crate::message_metadata::MessageProtection::Unknown,
                     version: version(uid),
                     attachment_count: Some(0),
                     preview: None,

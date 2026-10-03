@@ -5,7 +5,9 @@ use serde::Deserialize;
 
 use super::mailbox_parse::{normalize_header_summary_value, validate_bounded_string};
 use super::*;
-use crate::message_metadata::{attachment_count, message_preview, MessageMetadata, MessageVersion};
+use crate::message_metadata::{
+    attachment_count, message_preview, message_protection, MessageMetadata, MessageVersion,
+};
 
 pub(super) const SUMMARY_FIELDS: &str = "uid flags date.received size.virtual mailbox mailbox-guid guid hdr.subject hdr.from hdr.to imap.bodystructure body.preview";
 pub(super) const VIEW_FIELDS: &str =
@@ -111,6 +113,10 @@ impl FetchRow {
         )?;
         validate_bounded_string("flags", &self.flags, flags_max, BACKEND, true, false)?;
         let metadata = MessageMetadata {
+            attachments: crate::message_metadata::attachment_summaries(
+                self.bodystructure.as_deref(),
+            ),
+            protection: message_protection(self.bodystructure.as_deref()),
             version: MessageVersion::new(self.mailbox_guid.clone(), self.guid.clone())?,
             attachment_count: self.bodystructure.as_deref().and_then(attachment_count),
             preview: message_preview(self.preview.as_deref(), self.bodystructure.as_deref()),
@@ -658,6 +664,33 @@ mod tests {
                 .and_then(|value| value.attachment_count),
             Some(0)
         );
+    }
+
+    #[test]
+    fn native_protection_metadata_uses_structure_not_subject_and_missing_is_unknown() {
+        use crate::message_metadata::MessageProtection;
+        let plain = "\"text\" \"plain\" NIL NIL NIL \"7bit\" 12 1";
+        let signed = format!("({plain}) (\"application\" \"pgp-signature\" NIL NIL NIL \"7bit\" 12) \"signed\" (\"protocol\" \"application/pgp-signature\" \"micalg\" \"pgp-sha256\")");
+        let encrypted = "(\"application\" \"pgp-encrypted\" NIL NIL NIL \"7bit\" 12) (\"application\" \"octet-stream\" NIL NIL NIL \"7bit\" 12) \"encrypted\" (\"protocol\" \"application/pgp-encrypted\")";
+        for (structure, expected) in [
+            (Some(plain), MessageProtection::Plain),
+            (Some(signed.as_str()), MessageProtection::Signed),
+            (Some(encrypted), MessageProtection::Encrypted),
+            (Some("invalid"), MessageProtection::Unknown),
+            (None, MessageProtection::Unknown),
+        ] {
+            let mut fixture = row();
+            fixture["hdr.subject"] =
+                "Signed, encrypted, verified <script> deceptive public fixture".into();
+            fixture["imap.bodystructure"] = structure.into();
+            let parsed =
+                parse_json_summaries(MessageListPolicy::default(), &execution(fixture)).unwrap();
+            assert_eq!(parsed[0].metadata.as_ref().unwrap().protection, expected);
+        }
+        assert!(SUMMARY_FIELDS
+            .split_whitespace()
+            .all(|field| field != "body" && field != "hdr"));
+        assert_eq!(SUMMARY_FIELDS.matches("imap.bodystructure").count(), 1);
     }
 
     #[test]

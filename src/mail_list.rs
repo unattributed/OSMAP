@@ -1,6 +1,6 @@
 //! Bounded, presentation-only mailbox navigation and result windows.
 
-use crate::message_metadata::MessageVersion;
+use crate::message_metadata::{MessageProtection, MessageVersion};
 use std::collections::BTreeMap;
 
 use crate::mailbox::{
@@ -114,6 +114,125 @@ impl AttachmentFilter {
     }
 }
 
+/// Outer OpenPGP MIME metadata, never signature verification or decryption proof.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub enum ProtectionFilter {
+    #[default]
+    All,
+    Plain,
+    Signed,
+    Encrypted,
+    Unknown,
+}
+
+impl ProtectionFilter {
+    pub fn value(self) -> &'static str {
+        match self {
+            Self::All => "all",
+            Self::Plain => "plain",
+            Self::Signed => "signed",
+            Self::Encrypted => "encrypted",
+            Self::Unknown => "unknown",
+        }
+    }
+
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::All => "All OpenPGP states",
+            Self::Plain => "No outer OpenPGP MIME",
+            Self::Signed => "Signed MIME",
+            Self::Encrypted => "Encrypted MIME",
+            Self::Unknown => "OpenPGP MIME unknown",
+        }
+    }
+
+    pub fn matches(self, protection: MessageProtection) -> bool {
+        match self {
+            Self::All => true,
+            Self::Plain => protection == MessageProtection::Plain,
+            Self::Signed => protection == MessageProtection::Signed,
+            Self::Encrypted => protection == MessageProtection::Encrypted,
+            Self::Unknown => protection == MessageProtection::Unknown,
+        }
+    }
+}
+
+/// Exact public From mailbox matching, never proof of sender identity.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct SenderFilter {
+    address: Option<String>,
+}
+
+impl SenderFilter {
+    fn parse(query: &BTreeMap<String, String>) -> Result<Self, &'static str> {
+        let Some(value) = query.get("from") else {
+            return Ok(Self::default());
+        };
+        let policy = Self::policy();
+        if value.len() > policy.recipient_max_len || value.chars().any(char::is_control) {
+            return Err("The sender address is too long or contains unsupported characters.");
+        }
+        let address = value.trim();
+        if address.is_empty() {
+            return Ok(Self::default());
+        }
+        crate::mail_address::validate_address(policy, address)
+            .map_err(|_| "Enter one supported sender email address.")?;
+        Ok(Self {
+            address: Some(crate::mail_address::comparison_key(address)),
+        })
+    }
+
+    fn policy() -> crate::send::ComposePolicy {
+        crate::send::ComposePolicy {
+            max_recipients: 1,
+            ..crate::send::ComposePolicy::default()
+        }
+    }
+
+    pub fn value(&self) -> &str {
+        self.address.as_deref().unwrap_or("")
+    }
+
+    pub fn active(&self) -> bool {
+        self.address.is_some()
+    }
+
+    pub fn matches(&self, header: Option<&str>) -> bool {
+        let Some(address) = &self.address else {
+            return true;
+        };
+        let Some(header) = header else {
+            return false;
+        };
+        let policy = Self::policy();
+        if header.len() > policy.recipient_max_len.saturating_add(256) {
+            return false;
+        }
+        // The authoring list parser permits empty comma-separated fields.
+        // A From singleton must not accept those malformed list separators;
+        // quoted display-name commas remain supported by the shared parser.
+        let mut quoted = false;
+        let mut escaped = false;
+        for character in header.chars() {
+            if escaped {
+                escaped = false;
+                continue;
+            }
+            match character {
+                '\\' if quoted => escaped = true,
+                '"' => quoted = !quoted,
+                ',' if !quoted => return false,
+                _ => {}
+            }
+        }
+        crate::mail_address::parse_address_list(policy, header)
+            .ok()
+            .filter(|mailboxes| mailboxes.len() == 1)
+            .is_some_and(|mailboxes| crate::mail_address::comparison_key(&mailboxes[0]) == *address)
+    }
+}
+
 pub fn has_flag(flags: &[String], flag: &str) -> bool {
     flags.iter().any(|value| value.eq_ignore_ascii_case(flag))
 }
@@ -174,6 +293,8 @@ pub struct ListViewState {
     pub sort: MessageSort,
     pub filter: MessageFilter,
     pub attachment: AttachmentFilter,
+    pub protection: ProtectionFilter,
+    pub sender: SenderFilter,
     pub requested_page: usize,
     pub page: usize,
     pub total_results: usize,
@@ -211,6 +332,14 @@ impl ListViewState {
             Some("without") => AttachmentFilter::Without,
             Some("unknown") => AttachmentFilter::Unknown,
             Some(_) => return Err("Choose a supported attachment filter."),
+        };
+        let protection = match query.get("pgp").map(String::as_str) {
+            None | Some("all") => ProtectionFilter::All,
+            Some("plain") => ProtectionFilter::Plain,
+            Some("signed") => ProtectionFilter::Signed,
+            Some("encrypted") => ProtectionFilter::Encrypted,
+            Some("unknown") => ProtectionFilter::Unknown,
+            Some(_) => return Err("Choose a supported OpenPGP MIME filter."),
         };
         let page = match query.get("page") {
             None => 1,
@@ -253,6 +382,8 @@ impl ListViewState {
             }),
             filter,
             attachment,
+            protection,
+            sender: SenderFilter::parse(query)?,
             requested_page: page,
             page,
             total_results: 0,
@@ -271,9 +402,16 @@ impl ListViewState {
         messages.retain(|message| {
             self.dates.matches(&message.date_received)
                 && self.filter.matches(&message.flags)
+                && self.sender.matches(message.from.as_deref())
                 && self
                     .attachment
                     .matches(message.metadata.as_ref().and_then(|m| m.attachment_count))
+                && self.protection.matches(
+                    message
+                        .metadata
+                        .as_ref()
+                        .map_or(MessageProtection::Unknown, |m| m.protection),
+                )
         });
         sort_message_summaries(messages, Some(self.sort));
         let selected = messages
@@ -297,9 +435,16 @@ impl ListViewState {
         results.retain(|message| {
             self.dates.matches(&message.date_received)
                 && self.filter.matches(&message.flags)
+                && self.sender.matches(message.from.as_deref())
                 && self
                     .attachment
                     .matches(message.metadata.as_ref().and_then(|m| m.attachment_count))
+                && self.protection.matches(
+                    message
+                        .metadata
+                        .as_ref()
+                        .map_or(MessageProtection::Unknown, |m| m.protection),
+                )
         });
         sort_message_search_results(results, Some(self.sort));
         let selected = results
@@ -356,6 +501,427 @@ impl ListViewState {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn sender_filter_query_is_independent_and_canonical() {
+        let inactive = ListViewState::from_query(&BTreeMap::new()).unwrap();
+        assert!(!inactive.sender.active());
+        let empty =
+            ListViewState::from_query(&BTreeMap::from([("from".into(), "".into())])).unwrap();
+        assert!(!empty.sender.active());
+        let state = ListViewState::from_query(&BTreeMap::from([
+            ("from".into(), " Sender@EXAMPLE.test ".into()),
+            ("q".into(), "independent subject words".into()),
+            ("field".into(), "subject".into()),
+            ("pgp".into(), "signed".into()),
+        ]))
+        .unwrap();
+        assert!(state.sender.active());
+        assert_eq!(state.sender.value(), "Sender@example.test");
+        assert_eq!(state.protection, ProtectionFilter::Signed);
+    }
+
+    #[test]
+    fn sender_filter_query_rejects_multiple_malformed_control_and_oversize() {
+        for value in [
+            "not-a-mailbox",
+            "sender@example.test,other@example.test",
+            "sender@example.test,",
+            "Public Sender <sender@example.test>",
+            "sender@example.test\r\nBcc: other@example.test",
+            "sender@example.test\0",
+            "sender@-example.test",
+            "sender@example..test",
+        ] {
+            assert!(
+                ListViewState::from_query(&BTreeMap::from([("from".into(), value.into())]))
+                    .is_err(),
+                "{value:?}"
+            );
+        }
+        assert!(
+            ListViewState::from_query(&BTreeMap::from([("from".into(), "s".repeat(321))])).is_err()
+        );
+    }
+
+    #[test]
+    fn sender_filter_matches_only_one_exact_parsed_public_mailbox() {
+        let filter = ListViewState::from_query(&BTreeMap::from([(
+            "from".into(),
+            "sender@example.test".into(),
+        )]))
+        .unwrap()
+        .sender;
+        for header in [
+            "sender@example.test",
+            "Sender Name <sender@EXAMPLE.test>",
+            "\"Last, First\" <sender@example.test>",
+        ] {
+            assert!(filter.matches(Some(header)), "{header:?}");
+        }
+        for header in [
+            None,
+            Some(""),
+            Some("sender@example.test <other@example.test>"),
+            Some("not-sender@example.test"),
+            Some("Sender@example.test"),
+            Some("sender@example.test.evil"),
+            Some("sender@example.test,other@example.test"),
+            Some(",sender@example.test"),
+            Some("sender@example.test,"),
+            Some("sender@example.test,,"),
+            Some("Sender <sender@example.test>\r\nX: bad"),
+            Some("incomplete <sender@example.test"),
+        ] {
+            assert!(!filter.matches(header), "{header:?}");
+        }
+        assert!(!filter.matches(Some(&format!("{} <sender@example.test>", "x".repeat(600)))));
+        assert!(SenderFilter::default().matches(None));
+    }
+
+    #[test]
+    fn sender_filter_combines_with_query_metadata_and_selection_before_paging() {
+        use crate::message_metadata::MessageMetadata;
+        let rows = (1..=240)
+            .map(|uid| {
+                let mut message = row(uid, if uid % 2 == 0 { &["\\Seen"] } else { &[] });
+                message.from = Some(
+                    if uid <= 120 {
+                        "\"Public, Sender\" <sender@EXAMPLE.test>"
+                    } else {
+                        "sender@example.test <other@example.test>"
+                    }
+                    .into(),
+                );
+                message.date_received = if uid <= 220 {
+                    "2026-03-28 00:00:00 +0000"
+                } else {
+                    "unknown"
+                }
+                .into();
+                message.metadata = Some(MessageMetadata {
+                    version: MessageVersion::new("a".repeat(32), format!("synthetic-{uid}"))
+                        .unwrap(),
+                    attachment_count: Some(usize::from(uid % 2 == 1)),
+                    attachments: None,
+                    preview: None,
+                    protection: if uid <= 200 {
+                        MessageProtection::Signed
+                    } else {
+                        MessageProtection::Plain
+                    },
+                });
+                message
+            })
+            .collect::<Vec<_>>();
+        let query = BTreeMap::from([
+            ("from".into(), "sender@example.test".into()),
+            ("q".into(), "same subject".into()),
+            ("field".into(), "subject".into()),
+            ("pgp".into(), "signed".into()),
+            ("filter".into(), "unread".into()),
+            ("attachment".into(), "with".into()),
+            ("after".into(), "2026-03-28".into()),
+            ("page".into(), "2".into()),
+            ("selected_mailbox".into(), "INBOX".into()),
+            ("selected_uid".into(), "1".into()),
+        ]);
+        let mut messages = rows.clone();
+        let mut state = ListViewState::from_query(&query).unwrap();
+        state.apply_messages(&mut messages);
+        assert_eq!(state.total_results, 60);
+        assert_eq!(state.page, 2);
+        assert_eq!(state.selection_page, Some(2));
+        assert_eq!(
+            state.selected_version.as_ref().unwrap().message_guid,
+            "synthetic-1"
+        );
+        assert_eq!(
+            messages.iter().map(|r| r.uid).collect::<Vec<_>>(),
+            (1..=19).rev().step_by(2).collect::<Vec<_>>()
+        );
+        let mut search = rows.clone().into_iter().map(search_row).collect();
+        let mut state = ListViewState::from_query(&query).unwrap();
+        state.apply_search(&mut search);
+        assert_eq!(state.total_results, 60);
+        assert_eq!(state.selection_page, Some(2));
+        assert_eq!(
+            search.iter().map(|r| r.uid).collect::<Vec<_>>(),
+            messages.iter().map(|r| r.uid).collect::<Vec<_>>()
+        );
+
+        let mut other = query;
+        other.insert("from".into(), "other@example.test".into());
+        let mut state = ListViewState::from_query(&other).unwrap();
+        let mut search = rows.into_iter().map(search_row).collect();
+        state.apply_search(&mut search);
+        assert_eq!(state.total_results, 40);
+        assert_eq!(state.page, 1);
+        assert_eq!(state.selection_page, None);
+        assert_eq!(state.selected_version, None);
+        assert!(search.iter().all(|r| (121..=199).contains(&r.uid)));
+    }
+
+    #[test]
+    fn sender_filter_does_not_extend_the_validated_backend_prefix() {
+        let rows = (1..=DEFAULT_MAX_MESSAGES + 1)
+            .map(|uid| {
+                let mut message = row(uid as u64, &[]);
+                message.from = Some(
+                    if uid > DEFAULT_MAX_MESSAGES {
+                        "sender@example.test"
+                    } else {
+                        "other@example.test"
+                    }
+                    .into(),
+                );
+                message
+            })
+            .collect::<Vec<_>>();
+        let query = BTreeMap::from([("from".into(), "sender@example.test".into())]);
+        let mut messages = rows.clone();
+        let mut state = ListViewState::from_query(&query).unwrap();
+        state.apply_messages(&mut messages);
+        assert!(messages.is_empty());
+        assert!(state.backend_truncated);
+        assert_eq!(state.total_results, 0);
+        let mut search = rows.into_iter().map(search_row).collect::<Vec<_>>();
+        search[DEFAULT_MAX_SEARCH_RESULTS].from = Some("sender@example.test".into());
+        let mut state = ListViewState::from_query(&query).unwrap();
+        state.apply_search(&mut search);
+        assert!(search.is_empty());
+        assert!(state.backend_truncated);
+        assert_eq!(state.total_results, 0);
+    }
+
+    #[test]
+    fn protection_filter_query_is_not_ignored() {
+        assert_eq!(
+            ListViewState::from_query(&BTreeMap::new())
+                .unwrap()
+                .protection,
+            ProtectionFilter::All
+        );
+        for protection in [
+            ProtectionFilter::All,
+            ProtectionFilter::Plain,
+            ProtectionFilter::Signed,
+            ProtectionFilter::Encrypted,
+            ProtectionFilter::Unknown,
+        ] {
+            let state = ListViewState::from_query(&BTreeMap::from([(
+                "pgp".into(),
+                protection.value().into(),
+            )]))
+            .unwrap();
+            assert_eq!(state.protection, protection);
+        }
+    }
+
+    #[test]
+    fn protection_filter_query_refuses_unsupported_or_assurance_values() {
+        for value in [
+            "",
+            "verified",
+            "decrypted",
+            "Signed",
+            " signed",
+            "signed\n",
+            "<script>",
+        ] {
+            assert!(
+                ListViewState::from_query(&BTreeMap::from([("pgp".into(), value.into(),)]))
+                    .is_err(),
+                "{value:?}"
+            );
+        }
+        assert!(
+            ListViewState::from_query(&BTreeMap::from([("pgp".into(), "s".repeat(8192),)]))
+                .is_err()
+        );
+    }
+
+    #[test]
+    fn protection_filter_uses_metadata_and_keeps_unknown_distinct_in_both_lists() {
+        use crate::message_metadata::{MessageMetadata, MessageProtection};
+        let mut rows = [
+            MessageProtection::Plain,
+            MessageProtection::Signed,
+            MessageProtection::Encrypted,
+            MessageProtection::Unknown,
+        ]
+        .into_iter()
+        .enumerate()
+        .map(|(index, protection)| {
+            let mut message = row(index as u64 + 1, &[]);
+            message.subject = Some("[signed] [encrypted] decorative header".into());
+            message.metadata = Some(MessageMetadata {
+                version: MessageVersion::new("a".repeat(32), format!("synthetic-{index}")).unwrap(),
+                attachment_count: Some(0),
+                attachments: None,
+                preview: None,
+                protection,
+            });
+            message
+        })
+        .collect::<Vec<_>>();
+        let mut missing = row(5, &[]);
+        missing.subject = Some("Signed and encrypted message".into());
+        rows.push(missing);
+        for (value, expected) in [
+            ("all", vec![5, 4, 3, 2, 1]),
+            ("plain", vec![1]),
+            ("signed", vec![2]),
+            ("encrypted", vec![3]),
+            ("unknown", vec![5, 4]),
+        ] {
+            let query = BTreeMap::from([("pgp".into(), value.into())]);
+            let mut mailbox = rows.clone();
+            let mut state = ListViewState::from_query(&query).unwrap();
+            state.apply_messages(&mut mailbox);
+            assert_eq!(mailbox.iter().map(|r| r.uid).collect::<Vec<_>>(), expected);
+            assert_eq!(state.total_results, expected.len());
+            let mut search = rows.iter().cloned().map(search_row).collect();
+            let mut state = ListViewState::from_query(&query).unwrap();
+            state.apply_search(&mut search);
+            assert_eq!(search.iter().map(|r| r.uid).collect::<Vec<_>>(), expected);
+            assert_eq!(state.total_results, expected.len());
+        }
+    }
+
+    #[test]
+    fn protection_filter_composes_before_selection_and_paging_in_both_lists() {
+        use crate::message_metadata::MessageMetadata;
+        let rows = (1..=240)
+            .map(|uid| {
+                let mut message = row(uid, if uid % 2 == 0 { &["\\Seen"] } else { &[] });
+                message.date_received = if uid <= 120 {
+                    "2026-03-28 00:00:00 +0000"
+                } else {
+                    "unknown"
+                }
+                .into();
+                message.metadata = Some(MessageMetadata {
+                    version: MessageVersion::new("a".repeat(32), format!("synthetic-{uid}"))
+                        .unwrap(),
+                    attachment_count: Some(usize::from(uid % 2 == 1)),
+                    attachments: None,
+                    preview: None,
+                    protection: if uid <= 160 {
+                        MessageProtection::Signed
+                    } else {
+                        MessageProtection::Plain
+                    },
+                });
+                message
+            })
+            .collect::<Vec<_>>();
+        let query = BTreeMap::from([
+            ("pgp".into(), "signed".into()),
+            ("filter".into(), "unread".into()),
+            ("attachment".into(), "with".into()),
+            ("after".into(), "2026-03-28".into()),
+            ("page".into(), "2".into()),
+            ("selected_mailbox".into(), "INBOX".into()),
+            ("selected_uid".into(), "1".into()),
+        ]);
+        let mut messages = rows.clone();
+        let mut state = ListViewState::from_query(&query).unwrap();
+        state.apply_messages(&mut messages);
+        assert_eq!(state.total_results, 60);
+        assert_eq!(state.page, 2);
+        assert_eq!(state.selection_page, Some(2));
+        assert_eq!(
+            state.selected_version.as_ref().unwrap().message_guid,
+            "synthetic-1"
+        );
+        assert_eq!(messages.len(), 10);
+        assert_eq!(
+            messages.iter().map(|r| r.uid).collect::<Vec<_>>(),
+            (1..=19).rev().step_by(2).collect::<Vec<_>>()
+        );
+
+        let mut stale_search = rows.clone().into_iter().map(search_row).collect();
+        let mut search = rows.into_iter().map(search_row).collect();
+        let mut state = ListViewState::from_query(&query).unwrap();
+        state.apply_search(&mut search);
+        assert_eq!(state.total_results, 60);
+        assert_eq!(state.selection_page, Some(2));
+        assert_eq!(
+            state.selected_version.as_ref().unwrap().message_guid,
+            "synthetic-1"
+        );
+        assert_eq!(
+            search.iter().map(|r| r.uid).collect::<Vec<_>>(),
+            messages.iter().map(|r| r.uid).collect::<Vec<_>>()
+        );
+
+        let mut stale = query;
+        stale.insert("selected_uid".into(), "200".into());
+        let mut state = ListViewState::from_query(&stale).unwrap();
+        state.apply_search(&mut stale_search);
+        assert_eq!(state.selection_page, None);
+        assert_eq!(state.selected_version, None);
+    }
+
+    #[test]
+    fn protection_filter_never_searches_beyond_the_validated_backend_prefix() {
+        use crate::message_metadata::MessageMetadata;
+        let rows = (1..=DEFAULT_MAX_MESSAGES + 1)
+            .map(|uid| {
+                let mut message = row(uid as u64, &[]);
+                message.metadata = Some(MessageMetadata {
+                    version: MessageVersion::new("a".repeat(32), format!("synthetic-{uid}"))
+                        .unwrap(),
+                    attachment_count: Some(0),
+                    attachments: None,
+                    preview: None,
+                    protection: if uid > DEFAULT_MAX_MESSAGES {
+                        MessageProtection::Signed
+                    } else {
+                        MessageProtection::Plain
+                    },
+                });
+                message
+            })
+            .collect::<Vec<_>>();
+        let query = BTreeMap::from([("pgp".into(), "signed".into()), ("page".into(), "2".into())]);
+        let mut messages = rows.clone();
+        let mut state = ListViewState::from_query(&query).unwrap();
+        state.apply_messages(&mut messages);
+        assert!(messages.is_empty());
+        assert!(state.backend_truncated);
+        assert_eq!(state.backend_limit, DEFAULT_MAX_MESSAGES);
+        assert_eq!(state.total_results, 0);
+        assert_eq!(state.page, 1);
+
+        let mut search = rows.into_iter().map(search_row).collect::<Vec<_>>();
+        search[DEFAULT_MAX_SEARCH_RESULTS]
+            .metadata
+            .as_mut()
+            .unwrap()
+            .protection = MessageProtection::Signed;
+        let mut state = ListViewState::from_query(&query).unwrap();
+        state.apply_search(&mut search);
+        assert!(search.is_empty());
+        assert!(state.backend_truncated);
+        assert_eq!(state.backend_limit, DEFAULT_MAX_SEARCH_RESULTS);
+        assert_eq!(state.total_results, 0);
+        assert_eq!(state.page, 1);
+    }
+
+    fn search_row(message: MessageSummary) -> MessageSearchResult {
+        MessageSearchResult {
+            metadata: message.metadata,
+            mailbox_name: message.mailbox_name,
+            uid: message.uid,
+            flags: message.flags,
+            date_received: message.date_received,
+            size_virtual: message.size_virtual,
+            subject: message.subject,
+            from: message.from,
+        }
+    }
 
     #[test]
     fn received_dates_are_strict_inclusive_utc_and_bounded() {
@@ -448,7 +1014,9 @@ mod tests {
         let metadata = |count| crate::message_metadata::MessageMetadata {
             version: MessageVersion::new("a".repeat(32), "synthetic".into()).unwrap(),
             attachment_count: count,
+            attachments: None,
             preview: None,
+            protection: crate::message_metadata::MessageProtection::Unknown,
         };
         let rows = (1..=240)
             .map(|uid| {
@@ -582,7 +1150,9 @@ mod tests {
         rows[0].metadata = Some(crate::message_metadata::MessageMetadata {
             version: version.clone(),
             attachment_count: Some(0),
+            attachments: None,
             preview: None,
+            protection: crate::message_metadata::MessageProtection::Unknown,
         });
         state.apply_messages(&mut rows);
         assert_eq!(state.selection_page, Some(3));
