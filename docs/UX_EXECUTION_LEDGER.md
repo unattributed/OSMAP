@@ -4395,3 +4395,61 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   V10/V14 gates passed. Signed synchronization, matching installed Security/search
   proof and human acceptance remain pending. This does not establish Send or
   sprint/epic closure.
+
+### S01-03 signed matching deployment and actual installed journeys — 2026-10-03
+
+- Source `9a73a29a2f1db7afa6b36086a6efac2516e9c685` is Shopkeeper-signed,
+  verified and normally pushed; fresh origin fetch proves equality. Normal
+  security hooks passed. All258 native inputs matched signed Git bytes.
+  Installed native binary `963aae9329909e882e9c408836dcd54fa3c69bc6b20dfa3a870418ee22df9b8f`
+  matches the actual OpenBSD-built candidate. Web-only activation passed,
+  preserving helpers/config/keys/policy and old binary at
+  `/var/backups/osmap-ux-s01-security-9a73a29-20261003/osmap-before`.
+- Actual installed HTTPS external-browser GET-only journeys passed: Duncan's
+  bound public fingerprint is projected without private-readiness claim;
+  keyboard Manage opens real key management; Settings native search form finds
+  all three actual Composition defaults and keyboard follows each to enabled
+  destination. Configured fingerprint fits360/768/1440. Exact owned synthetic
+  session cleanup and final binary equality passed; zero outside/Send requests.
+  Password/TOTP was bypassed; no preference/key/policy/private crypto mutation,
+  message UID selection, body/cookie/screenshot retention or actual delivery.
+- S01-03 engineering remediation is delivered. S01-02 actual navigation proof
+  and current synthetic shell/Welcome proof are retained. Concise scoped human
+  steps/results: `/home/foo/Downloads/osmap-ux-s01/revalidation-20261003/SECURITY_AND_NAVIGATION_UAT.md`.
+  Human acceptance, S01-04 every-surface qualification, all actual Send outcomes,
+  full sprint and epic remain OPEN; deployment does not supersede operator UAT.
+
+### S01-02/S01-04 bounded engineering exit and independent reconciliation — 2026-10-03
+
+- Independent QA reconciled current9a73a29 source/fixture/harness/design-inventory
+  hashes, all74 sanitized HTML hashes, four report hashes and1210 retained image
+  hashes. S01-02 has current actual shell8 keyboard journeys/26 captures,
+  installedHTTPS8 journeys, fresh Welcome13 workflows/11 captures, and current
+  long-identity/disclosure checks; no further concrete shell defect found within
+  this scope. Human shell/picture acceptance is not supplied by these results.
+- S01-04 replaced a stale/source-mismatched theme evidence gap with one current
+  74-state System bundle, covering all actual mapped/unavailable/error/source/
+  Compose surfaces. Standard444 and forced-colour444 captures at360/768/1440
+  plus62 actual reference-dimension captures passed. No measured overflow,
+  flat-colour text/UI contrast, preference, landmark, script-count or outside
+  request failure occurred. 236 shell records comprise24 skip/rail/account/long
+  identity checks plus212 global-search-menu checks;38 table checks passed.
+- Normal/error Login body attributes/form/password/TOTP controls exactly match
+  retained S00 baseline, excluding shared stylesheet and outer theme marker.
+  An initial literal-body parser error is retained; correction changed neither
+  product nor fixture. Current saved-theme persistence proof was reused, not
+  needlessly repeated. Static fixture servers stopped cleanly; no runtime gateway
+  or mail host was contacted for this matrix, and no new CSS/runtime gap observed.
+- These are executed engineering verification, not paper closures. Source repairs
+  were signed/synced/deployed before their matching installed proof. Current
+  reproducible metadata and explicit limits are committed in
+  `maint/ux/s01-engineering-revalidation-20261003.json`; retained reports and scoped
+  human steps stay under the stable S01 sprint root.
+- S01-02/S01-04 bounded engineering exits are delivered; human acceptance stays
+  OPEN. Gradient/translucent/native-control/icon and human assistive-technology
+  review, exact final-picture approval, actual password/TOTP, all403 controls,
+  current human Send/provider/encrypted Sent/return/key lifecycle and full sprint/
+  epic acceptance remain unaccepted. Next ordered concrete source defect identified
+  in S02-01: empty Search Clear filters erases keywords/field contrary to existing
+  search workflow and prior ledger; conflicting state assertion will be repaired
+  with actual route/browser RED/GREEN, not merely relabelled.

@@ -7963,3 +7963,15 @@ search. Reproduce route failures before fixes and measure real configured-layout
 countercases before CSS changes. Two wrapping rules repair demonstrated overflow
 while preserving approved geometry. Keep seeded-session navigation, synthetic
 backend/browser results and human authentication/delivery acceptance distinct.
+
+### 2026-10-03 — Close execution gaps with current proof, preserve acceptance limits
+
+Use one frozen current route bundle rather than source-stale image matrices.
+Measure every actual theme/state/viewport, forced colours and existing keyboard
+controls; independently reconcile bytes/counts and retained Login behavior.
+A passing current verification can establish bounded engineering exit where no
+new code defect is observed. It cannot create unavailable features or supply
+human picture/accessibility/authentication/delivery acceptance. Correct mixed
+record-count descriptions rather than inflating navigation coverage. Keep
+actual implemented repairs and matching native deployment distinct from this
+executed evidence closeout; proceed to concrete S02 Search recovery defect.
