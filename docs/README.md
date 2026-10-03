@@ -69,6 +69,8 @@ Current public documentation map:
 - `UX_FULL_FUNCTIONAL_SLICES.md`
 - `UX_AGENT_EXECUTION_CONTRACT.md`
 - `UX_EXECUTION_LEDGER.md`
+- `AGENT_DEVELOPMENT_FRAMEWORK.md` — portable six-role framework for complete user journeys, independent review and actionable UAT
+- `OSMAP_AGENT_FRAMEWORK_ADOPTION.md` — application to existing OSMAP records and unresolved acceptance
 - `UX_S00_INTAKE.md`
 - `UX_DECISIONS.md`
 - `UX_PLAN_AMENDMENT_R2.md` — final approved 25-image / 27-page reference correction

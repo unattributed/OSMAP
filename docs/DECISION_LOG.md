@@ -7752,3 +7752,38 @@ and self off, and full signing/encryption/self after native private readiness.
 Only the third requires private unlock; all require actual operator submission
 and appropriate recipient/Sent results. Do not submit duplicate agent mail, claim
 all Send fixed, or answer the universal report with repeated unlock-only advice.
+
+### Adopt a reusable outcome-based agent framework — 2026-10-03
+
+The operator requested codification of the independent auditor's recommendations
+for project management, Scrum leadership, multiple developers, QA, security code
+review and technical writing. Apply `AGENT_DEVELOPMENT_FRAMEWORK.md` through the
+repository's AGENTS.md entry point; `OSMAP_AGENT_FRAMEWORK_ADOPTION.md` maps it to
+the existing epic, ledger, decision log and UAT record. No additional board,
+approval committee or repeated gate suite is introduced. Role ownership and
+bounded assignments precede dispatch; independent reviewers challenge whether
+the exact user journey was exercised, not only whether component checks passed.
+
+Preserve useful ordinary mail as a regression invariant while adding complete
+protected journeys. Required policy remains authoritative; intended Optional
+behaviour must be reconciled explicitly rather than bypassing a Required rule.
+Source checks, native qualification, deployment, independent functional QA, UAT
+readiness and human acceptance remain separate claims. A reported failure of a
+required journey invalidates its readiness until matching evidence supersedes it.
+Schedule roles around actual available slots and dependencies; agent count and
+available compute cannot guarantee successful delivery. Every meaningful task
+has an owner, scope, observable expected result and a bounded evidence handoff.
+
+The auditor's historical comparison establishes pre-V14 a096751 and current
+origin/main 2d7f264 retain the compared ordinary mail implementations, while the
+later UX branch added OpenPGP admission conditions and remote-mail integration.
+The latest October3 06:18UTC ordinary Proton Send503 supersedes the earlier
+no-post-deployment-Send observation. Its current Required/plaintext mismatch is
+confirmed; the actor who changed that policy and causes of every earlier refusal
+remain unknown. Current ordinary/protected human acceptance stays failed/open.
+
+This is an operator-authorized documentation/framework delivery. Frozen plan
+revision2 and approved design bytes are preserved. The request does not resume
+application repair, change live policy/keys/lifetimes, deploy or submit mail.
+The original audit and historical comparison remain unchanged; subsequent real
+engineering must apply the framework without reclassifying missing UAT as passed.

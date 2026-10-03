@@ -17,6 +17,21 @@ authorize live mutation, runtime cryptography, deployment or synchronization.
 These epic-specific rules do not override higher-priority instructions or the
 operator's explicit instructions.
 
+## Coordinated agent development
+
+For operator-authorized multi-agent work, apply
+`docs/AGENT_DEVELOPMENT_FRAMEWORK.md` and its OSMAP mapping in
+`docs/OSMAP_AGENT_FRAMEWORK_ADOPTION.md`. Assign project management, Scrum
+coordination, development, independent QA, security review and technical writing
+responsibilities explicitly; activate agents only for actionable assignments.
+Use the existing execution ledger, decision log and UAT record rather than
+creating a parallel status system. Required user journeys need frontend,
+backend, persistence and actual integration evidence before readiness claims.
+Component tests, page rendering and service health alone do not qualify UAT.
+An unresolved failure of a required journey blocks that journey's readiness.
+This framework does not change the frozen UX plan or authorize application,
+policy, deployment or external side effects beyond the operator's instructions.
+
 ## Working Rules
 
 - Keep changes small, reviewed, and aligned with the existing Rust, shell, and

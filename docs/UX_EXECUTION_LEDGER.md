@@ -3837,3 +3837,47 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   signing/Sent decryption needs existing native private readiness and actual Send.
   Protected receipt/signature, readable authoritative Sent and provider encrypted
   return remain OPEN; sprint/epic acceptance has not been claimed.
+
+### Cross-cutting agent framework documentation — 2026-10-03 — DOCUMENTATION DELIVERY
+
+- The operator requested a universal development framework for project manager,
+  Scrum lead, multiple assigned developers, independent QA testers, security code
+  auditors and technical writer. This authorizes framework/documentation work,
+  not application repair or live mutation. No normative slice requirements,
+  acceptance order or approved design references are changed.
+- Base documentation HEAD9032cf01d0db6722746afa4c439973b76be16d79; accepted R2
+  anchor6b3ce8fff27ca3dabf87039d54098bd9967a2e42 verified with Good Shopkeeper
+  signature, unchanged manifest and passing plan/nested-design checksums.
+  File scope: AGENTS.md, docs/AGENT_DEVELOPMENT_FRAMEWORK.md,
+  docs/OSMAP_AGENT_FRAMEWORK_ADOPTION.md, docs/README.md, this ledger and
+  DECISION_LOG.md. The documentation index is included because its existing
+  required guard rejected unindexed new documents; no gate was weakened.
+- Root owns integration/signing/sync; dedicated writer owns the two new docs;
+  Scrum lead supplies assignment/scheduling and UAT templates; the same technical
+  auditor independently reviews against both failure audits. Role responsibilities
+  are distinct from the number of simultaneously active processes. Use the actual
+  concurrency limit, exclusive file ownership and actionable assignments.
+- Reuse this ledger, DECISION_LOG.md and the existing sprint-root UAT record.
+  Preserve functional invariants; define complete user/backend outcomes before
+  dispatch; require independent matching workflow evidence before UAT readiness.
+  Partial component deliveries remain useful but cannot close failed user journeys.
+  Human acceptance remains independent and unperformed/failed results stay visible.
+- Audit reconciliation supersedes the earlier no-post-deployment-Send observation:
+  October3 06:18UTC operator ordinary Proton Send returned503 on current candidate.
+  Current revision5 Optional account/Required Proton explains that exact all-off
+  refusal before SMTP. Who changed the policy and causes of every earlier failure
+  remain unproven. All-Send UAT is unresolved; no Send repair or acceptance claim.
+- Retained original audit SHA256221f16c84b797e437d54af5b70741db9e34d9d2a0f5b2b3bdc0608209ce05944;
+  historical comparison SHA25620e9641bbf020c9254a1849de30cd24a617127633919a4e89c25a4f6248f5f29.
+  Both are in /home/foo/Downloads/osmap-ux-s05/interaction-repair-20261002/.
+  Framework review/checks and signed/sync result are recorded under its
+  framework-20261003/ delivery directory. This documentation needs no native
+  deployment or state migration and makes no refreshed strict-release claim.
+- Independent technical-auditor and Scrum reviews passed, including dedicated
+  management-role scheduling and reuse of the existing state machine. Initial
+  required pre-commit security check failed an existing OpenPGP test:1073 passed,
+  1 failed,19 ignored; store_is_account_private_atomic_and_revision_checked
+  expected Stale but received Busy. Its one isolated rerun passed1/1. No source
+  or test assertions were changed; root cause is not established and that rerun
+  does not replace the full required check. Retain the failed log; rerun the
+  normal hook before signed delivery, without suppressing or weakening tests.
