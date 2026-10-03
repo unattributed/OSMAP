@@ -4882,3 +4882,47 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   v10/v11/v12/v13 gates PASS and audit3928/refinedhigh0. Matching285 source input
   checks PASS before signing; normal repository hooks remain enabled. Signed
   synchronization and compatible matching installation are the next operations.
+
+### S02-02 conversation delivery and reader toolbar remediation — 2026-10-03
+
+- Signed source ff39151b20ee6613a651d852e331fdc9d1e563f9 is verified and
+  synchronized to the existing GitHub UX branch, clean and 0/0. Application
+  b17eb05a6a9232368977055586077890f485ecacdb1cdec601f46dce11080a6c is
+  activated web-first on obsd1, then on the authoritative mail host helper.
+  Both installed GET-only compatibility probes PASS, including actual owned
+  Inbox body/GUID identity, explicit sort, correctly associated saved controls
+  and unchanged policy revisions/Seen forms. Inbox has one eligible row and
+  Unread is empty: linked A/B/C grouping and positive Unread live acceptance
+  remain NOT RUN. The first probe failure was an obsolete displayed sort-label
+  assertion and explicit-sort origin in an implicit-context test; retained and
+  corrected without changing production code or weakening the actual checks.
+- Actual screenshot inspection found a real toolbar code defect: inert icon
+  geometry and compact action styles were scoped only to standalone reader.
+  A measured browser RED confirms standalone positive control and eight failing
+  coordinated Mailbox/Search cases. Initial instrumentation included unrelated
+  help/menu controls; its report remains retained. The corrected discriminating
+  RED measures the ten actual top-row actions and preserves strict icon paint,
+  dimensions, keyboard, bounds and overflow checks.
+- Shared toolbar CSS scope now draws the same inert icons in both contexts.
+  No declarations/media conditions outside the intended selector scope change;
+  accessible labels, forms, ownership, CSP, script prohibition and actions remain
+  unchanged. Commit the reproducible actual-browser regression instrument,
+  including optional system forced-colours mode; no label-only implementation.
+- Matching final actual browser PASS12 desktop/mobile light/dark observations
+  and PASS6 forced-colours observations, zero Send/mutation/outside requests,
+  owned fixture cleanup PASS. Independent reviewer viewed all twelve standard
+  screenshots and found no blocking toolbar clipping/painting/focus defect.
+  Full-page parity and closed-menu/human acceptance are not inferred.
+- Native reader-toolbar attempt1 PASS285 pinned compile inputs, thirteen
+  focused conversation tests and one distinct disposable Dovecot/helper/browser
+  integration. Test9d89aa2727e0d4eeb35c8326114a8576e449cfe573271148dcd24512023927d8;
+  applicatione9e9c8da074487554598e09ba6d4f9ae3199923d1b429be125039249ed1b441e.
+  Current v14-check PASS; normal signed commit/synchronization security hooks
+  still required. Toolbar candidate activation is pending matching signed
+  delivery. Evidence stays in the stable S02 revalidation root, under
+  conversation-order/, conversation-deployment/ and reader-toolbar/.
+- Whole S02-02 remains OPEN for exact originating-row Back focus and remaining
+  approved obligations. All Send/provider/protected Sent/return and human key
+  lifecycle acceptance remain OPEN. No agent Send or operator mail/key/policy
+  mutation occurred. Next work requires an actual keyboard RED for Back focus,
+  followed by native code repair and matching tests, not a paper closeout.

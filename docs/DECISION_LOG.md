@@ -8111,3 +8111,21 @@ metadata, and helper-first rollback. Actual functional, native and browser
 execution must precede matching signed-source delivery. Human tests and all
 Send/provider/protected-mail acceptance remain open; no operator mailbox data,
 private keys, binding policy or Send is changed for these fixtures.
+
+### 2026-10-03 — Repair coordinated reader icons with discriminating browser proof
+
+The shared renderer already emits inert line-icon spans, but their CSS applied
+only under standalone-reader. Text contrast and returned HTML cannot prove
+painted icon geometry. Keep the exact existing declarations and scope them to
+the actual shared reader-icon-toolbar. Measure all ten top-row actions and
+icon strokes on standalone/Mailbox/Search in desktop/mobile, both themes and
+system forced colours. Retain the genuine RED and the standalone positive
+control; independently inspect captures after GREEN. No scripts, SVG injection,
+mail mutation or changes to security forms are needed for this repair.
+
+Conversation source ff39151 is signed/synchronized and the matching web/helper
+is installed in compatible order. Installed owned read-only checks pass, but
+one Inbox row does not establish live linked-conversation grouping. Keep that
+human case NOT RUN and the full slice OPEN. Back-to-list exact keyboard focus
+is the next demonstrable source gap; Send and cryptographic acceptance remain
+separate unresolved user outcomes.
