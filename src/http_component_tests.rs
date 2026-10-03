@@ -67,6 +67,13 @@ fn compact_security_states_do_not_claim_undelivered_capabilities() {
     assert!(settings.contains("Source is never active HTML"));
     assert!(!settings.to_ascii_lowercase().contains("zero-knowledge"));
     assert!(!settings.contains("name=\"openpgp"));
+    assert!(settings.contains("id=\"general-signing\" name=\"pgp_sign\""));
+    assert!(settings.contains("id=\"general-encryption\" name=\"pgp_encrypt\""));
+    assert!(settings.contains("OpenPGP choices apply to newly opened messages"));
+    assert!(!settings.contains("OpenPGP signing and encryption are unavailable"));
+    let mut unavailable = request("GET", "/settings", &authenticated_headers(), "");
+    unavailable.headers.insert("user-agent".into(), "OSMAP/CompositionUnavailable".into());
+    let settings = body_text(&app().handle_request(&unavailable, "127.0.0.1"));
     assert!(settings.contains("disabled aria-label=\"OpenPGP signing, unavailable\""));
     assert!(settings.contains("disabled aria-label=\"Encryption, unavailable\""));
 }

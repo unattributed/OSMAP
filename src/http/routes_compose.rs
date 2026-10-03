@@ -123,6 +123,16 @@ where
             }
         };
 
+        // These are preferences for this newly opened composer. A failed load
+        // must not silently turn a requested protected default off.
+        let preferences = match self.gateway.load_composition_preferences(context, &validated_session) {
+            Ok(value) => value,
+            Err(_) => return HandledHttpResponse {
+                response: html_response(503, "Service Unavailable", "Composition Preferences Unavailable", "<p>Your saved composition defaults could not be loaded. No draft was changed.</p>"),
+                audit_events,
+            },
+        };
+
         match compose_source_from_request(request) {
             Ok(Some((intent, mailbox_name, uid))) => {
                 let (budget_guard, budget_event) = match self.acquire_mailbox_budget(
@@ -197,18 +207,13 @@ where
                         body_value = draft.body;
                         signature_placement = crate::signature::InitialPlacement::AboveQuote;
                         if intent != ComposeIntent::Forward {
-                            match self.gateway.load_composition_preferences(context, &validated_session) {
-                                Ok(preferences) => {
-                                    let Some(placed) = preferences.reply_placement.initial_reply_body(&body_value) else {
-                                        return HandledHttpResponse { response: html_response(503, "Service Unavailable", "Reply Placement Unavailable", "<p>The reply layout could not be prepared safely.</p>"), audit_events };
-                                    };
-                                    body_value = placed;
-                                    if preferences.reply_placement == crate::composition_preferences::ReplyPlacement::Below {
-                                        signature_placement = crate::signature::InitialPlacement::BelowQuote;
-                                        context_notice.get_or_insert_with(String::new).push_str(" Reply space is below the quoted text. Move to the end of the message before typing; the cursor is not moved automatically.");
-                                    }
-                                }
-                                Err(_) => context_notice.get_or_insert_with(String::new).push_str(" Your saved reply placement could not be loaded. Reply space is above the quoted text."),
+                            let Some(placed) = preferences.reply_placement.initial_reply_body(&body_value) else {
+                                return HandledHttpResponse { response: html_response(503, "Service Unavailable", "Reply Placement Unavailable", "<p>The reply layout could not be prepared safely.</p>"), audit_events };
+                            };
+                            body_value = placed;
+                            if preferences.reply_placement == crate::composition_preferences::ReplyPlacement::Below {
+                                signature_placement = crate::signature::InitialPlacement::BelowQuote;
+                                context_notice.get_or_insert_with(String::new).push_str(" Reply space is below the quoted text. Move to the end of the message before typing; the cursor is not moved automatically.");
                             }
                         }
                         if intent != ComposeIntent::Forward {
@@ -242,10 +247,7 @@ where
                 }
             }
             Ok(None) => {
-                body_format = match self.gateway.load_composition_preferences(context, &validated_session) {
-                    Ok(value) => value.default_body_format,
-                    Err(_) => return HandledHttpResponse { response: html_response(503, "Service Unavailable", "Composition Preferences Unavailable", "<p>Your default composition format could not be loaded. No draft was changed.</p>"), audit_events },
-                };
+                body_format = preferences.default_body_format;
             }
             Err(reason) => {
                 return HandledHttpResponse {
@@ -282,7 +284,12 @@ where
                 self.render_protected_compose_page(
                     &validated_session,
                     ComposePageModel {
-                        protection: crate::send::ProtectionIntent::default(),
+                        protection: crate::send::ProtectionIntent {
+                            sign: preferences.openpgp.sign,
+                            encrypt: preferences.openpgp.encrypt,
+                            encrypt_to_self: preferences.openpgp.encrypt_to_self,
+                            binding_revision: None,
+                        },
                         openpgp: None,
                         sender_identity: self
                             .gateway

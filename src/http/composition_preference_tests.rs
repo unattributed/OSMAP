@@ -207,7 +207,7 @@ fn preference_http_source_compose_is_plain_and_preserves_literal_quotes() {
 }
 
 #[test]
-fn preference_http_source_compose_survives_unavailable_preference_store() {
+fn preference_http_fresh_compose_fails_closed_when_preferences_unavailable() {
     let fixture = Fixture::new();
     fixture.preference(BodyFormat::Formatted);
     let record = fixture.record_bytes().remove(0).0;
@@ -227,9 +227,8 @@ fn preference_http_source_compose_survives_unavailable_preference_store() {
             "",
             false,
         );
-        assert_mode(&response, BodyFormat::Plain);
-        assert!(body_text(&response).contains("preserve quoted message text"));
-        assert!(textarea(&response).contains("[x](unsupported:target)"));
+        assert_eq!(response.response.status_code, 503);
+        assert!(body_text(&response).contains("composition defaults could not be loaded"));
     }
 }
 
@@ -353,7 +352,9 @@ fn composition_page_and_general_native_form_project_saved_defaults() {
                 .contains("form=\"general-composition-form\" aria-label=\"Save composition defaults\">Save composition</button>"));
         } else {
             assert!(body.contains("name=\"return_section\" value=\"composition\""));
-            assert!(body.contains("id=\"composition-signing\" disabled"));
+            assert!(body.contains("id=\"composition-signing\" name=\"pgp_sign\""));
+            assert!(body.contains("id=\"composition-encryption\" name=\"pgp_encrypt\""));
+            assert!(body.contains("id=\"composition-self\" name=\"pgp_self\""));
             assert!(body.contains("Below does not move the cursor automatically"));
         }
     }
@@ -369,4 +370,125 @@ fn composition_page_and_general_native_form_project_saved_defaults() {
     let response = unavailable.perform("GET", "/settings?section=composition", "", false);
     assert_eq!(response.response.status_code, 200);
     assert!(body_text(&response).contains("name=\"reply_placement\" disabled"));
+}
+
+#[test]
+fn openpgp_defaults_save_reload_isolate_accounts_and_apply_only_to_fresh_composers() {
+    let f = Fixture::new();
+    let existing = f.save("existing draft body", BodyFormat::Plain);
+    assert_eq!(existing.response.status_code, 303);
+    let existing_url = location_header(&existing);
+    let csrf = StubGateway::validated_session().record.csrf_token;
+    let saved = f.perform(
+        "POST", "/settings/composition",
+        &format!("csrf_token={csrf}&default_body_format=formatted&reply_placement=below&pgp_sign=on&pgp_encrypt=on&pgp_self=on&return_section=composition"),
+        false,
+    );
+    assert_eq!(saved.response.status_code, 303, "{}", body_text(&saved));
+    let reopened = CompositionPreferencesStore::new(f.root.join("preferences"));
+    assert_eq!(
+        reopened.load("alice@example.com").unwrap().openpgp,
+        crate::composition_preferences::OpenPgpDefaults {
+            sign: true,
+            encrypt: true,
+            encrypt_to_self: true
+        }
+    );
+    assert_eq!(
+        reopened.load("bob@example.com").unwrap().openpgp,
+        crate::composition_preferences::OpenPgpDefaults::default()
+    );
+    for path in [
+        "/compose",
+        "/compose?mode=reply&mailbox=INBOX&uid=9",
+        "/compose?mode=reply-all&mailbox=INBOX&uid=9",
+        "/compose?mode=forward&mailbox=INBOX&uid=9",
+    ] {
+        let response = f.perform("GET", path, "", false);
+        assert_eq!(response.response.status_code, 200, "{path}");
+        let html = body_text(&response);
+        for field in ["pgp_sign", "pgp_encrypt", "pgp_self"] {
+            assert!(
+                html.contains(&format!("name=\"{field}\" checked")),
+                "{field}: {path}"
+            );
+        }
+        if path != "/compose" {
+            assert_mode(&response, BodyFormat::Plain);
+        }
+    }
+    let old = f.perform("GET", &existing_url, "", false);
+    assert_eq!(old.response.status_code, 200);
+    for field in ["pgp_sign", "pgp_encrypt", "pgp_self"] {
+        assert!(body_text(&old).contains(&format!("name=\"{field}\"")));
+        assert!(!body_text(&old).contains(&format!("name=\"{field}\" checked")));
+    }
+    for section in ["general", "composition"] {
+        let html = body_text(&f.perform("GET", &format!("/settings?section={section}"), "", false));
+        for field in ["pgp_sign", "pgp_encrypt", "pgp_self"] {
+            assert!(html.contains(&format!("name=\"{field}\"")));
+        }
+        assert_eq!(html.matches("<option value=\"on\" selected>").count(), 3);
+    }
+    let bob = f.perform("GET", "/compose", "", true);
+    assert_eq!(bob.response.status_code, 200);
+    assert!(!body_text(&bob).contains("name=\"pgp_encrypt\" checked"));
+    let disabled = f.perform(
+        "POST", "/settings/composition",
+        &format!("csrf_token={csrf}&default_body_format=formatted&reply_placement=below&pgp_sign=off&pgp_encrypt=off&pgp_self=off"),
+        false,
+    );
+    assert_eq!(disabled.response.status_code, 303);
+    assert_eq!(
+        reopened.load("alice@example.com").unwrap().openpgp,
+        crate::composition_preferences::OpenPgpDefaults::default()
+    );
+    let fresh = f.perform("GET", "/compose", "", false);
+    for field in ["pgp_sign", "pgp_encrypt", "pgp_self"] {
+        assert!(!body_text(&fresh).contains(&format!("name=\"{field}\" checked")));
+    }
+}
+
+#[test]
+fn openpgp_defaults_invalid_or_partial_forms_preserve_record_and_legacy_posts_merge() {
+    let f = Fixture::new();
+    let csrf = StubGateway::validated_session().record.csrf_token;
+    let base = format!("csrf_token={csrf}&default_body_format=plain&reply_placement=above");
+    let initial = format!("{base}&pgp_sign=on&pgp_encrypt=on&pgp_self=on");
+    assert_eq!(
+        f.perform("POST", "/settings/composition", &initial, false)
+            .response
+            .status_code,
+        303
+    );
+    let before = f.record_bytes();
+    for invalid in [
+        format!("{base}&pgp_sign=on&pgp_encrypt=off&pgp_self=on"),
+        format!("{base}&pgp_sign=on&pgp_encrypt=on"),
+        format!("{base}&pgp_sign=enabled&pgp_encrypt=on&pgp_self=on"),
+        format!("{initial}&pgp_sign=off"),
+    ] {
+        let response = f.perform("POST", "/settings/composition", &invalid, false);
+        assert_eq!(
+            response.response.status_code,
+            400,
+            "{}",
+            body_text(&response)
+        );
+        assert_eq!(f.record_bytes(), before);
+    }
+    let old_form = format!("csrf_token={csrf}&default_body_format=formatted&reply_placement=below");
+    assert_eq!(
+        f.perform("POST", "/settings/composition", &old_form, false)
+            .response
+            .status_code,
+        303
+    );
+    let value = f.store.load("alice@example.com").unwrap();
+    assert_eq!(value.default_body_format, BodyFormat::Formatted);
+    assert_eq!(
+        value.reply_placement,
+        crate::composition_preferences::ReplyPlacement::Below
+    );
+    assert!(value.openpgp.sign && value.openpgp.encrypt && value.openpgp.encrypt_to_self);
 }

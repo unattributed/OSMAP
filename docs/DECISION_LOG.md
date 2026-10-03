@@ -7672,3 +7672,58 @@ failure and protected Proton/Sent/return outcomes open. Review current keys is
 an explicit public snapshot review; native unlocking and actual cryptography
 remain separate. Do not weaken current required protection to repeat plaintext
 UAT, automatically retarget keys, or submit a duplicate agent message.
+
+### Reconcile revision5 policy and bound encrypt-only proof — 2026-10-02 (Toronto)
+
+Independent current-state reconciliation confirms revision5: account signing and
+encryption Optional, but the Proton recipient binding still Requires encryption.
+The all-off attempt is refused as RecipientRequiresEncryption; account Optional
+does not override that explicit recipient requirement. The earlier pending-policy
+diagnosis is resolved. No policy change was authorised or performed to manufacture
+ordinary-send success. Preserve the failed user intent and distinguish it from the
+correct required-recipient refusal.
+
+Actual authenticated public Encrypt-only operation on the deployed source0038811
+passed without private unlock. Evidence `live-public-encrypt-only-result.json`
+records 330 ciphertext bytes, no retained ciphertext, private sign/decrypt or SMTP
+submission, and unchanged bindings/policy. It qualifies public encryption only,
+not a web Send, received email or unlocked private signing/decryption.
+
+The canonical-self repair's focused suites passed 17 and 15 cases; root reports
+local acceptance and V14 passed. Native build/functional checks and deployment
+remain pending, so the self-send failure is not reclassified as fixed human UAT.
+Composition default persistence/wiring and protected provider/Sent outcomes remain
+unfinished. Keep the earlier operator results and exact assessed source identities.
+
+### Deliver canonical-self resolution and retain actual acceptance boundaries — 2026-10-02 (Toronto)
+
+The signed/synced self repair f746c2d is activated on obsd1 as tested binary
+4c50550c. Exact source parity, nonzero native focused/gateway checks and independent
+running identity passed. Disposable local sinks exercised protected submission;
+actual live draft-only preflight resolves Duncan's canonical self-address through
+the approved account key without a duplicate contact. Proton all-off accurately
+reports Required encryption/Blocked. Revision5/operator policy stayed unchanged;
+disposable drafts and synthetic session were removed. No actual-account private
+operation or agent external Send occurred. Accept this engineering slice only;
+retain the operator's failed self-send and unperformed protected/provider outcomes.
+The live result is `self-recipient-live-independent-result.json` in the existing
+S05 interaction-repair root. Prior assessed-source proofs remain historical.
+
+### Implement persisted composition defaults instead of replacing placeholder labels — 2026-10-02 (Toronto)
+
+The next finite work order addresses the real General/Composition workflow:
+persist account-isolated sign/encrypt/self preferences, share them across both
+pages and apply them only to newly opened blank/reply/reply-all/forward composers.
+Existing saved draft intent and final account/recipient enforcement stay intact.
+Legacy preference migration, old-form merging and load-failure behaviour require
+meaningful engineering proof; failed loads cannot silently downgrade protection.
+Reject self without encryption. Functional defaults are IN PROGRESS, not delivered
+or accepted. The retained UAT adds actionable save/reload, new-composer and saved-
+draft boundary cases without another planning artifact or completion gate.
+
+Current revision5 makes public-only Proton encryption a separate practical test:
+Sign off, Encrypt on, self off, exact To added, explicit public preflight, then one
+operator Send and actual Proton decryption. It requires no private unlock and does
+not qualify signing or readable encrypted Sent. Full signed/self mail still needs
+native private unlocking and actual provider/Sent outcomes. No policy downgrade,
+key mutation or concurrent agent Send is authorised by this UAT sequence.

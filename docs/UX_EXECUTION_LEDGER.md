@@ -3744,3 +3744,57 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   confined helper for Proton without Sign/Decrypt, cache mutation or delivery.
   Current Optional signing permits encryption alone; no private unlock is needed
   for that operation. This is public crypto evidence, not mail delivery/UAT.
+
+### S07 self-recipient repair delivery — 2026-10-03 — ENGINEERING SLICE COMPLETE
+
+- Signed source `f746c2d3e8ae9ad0880e62cdeaa76aafea7d6daf` passed normal
+  commit/push gates and synchronized to the UX branch. All308 archive entries
+  match signed source. Native build, nonzero focused1/1 and actual gateway1/1
+  passed: self-address sign/encrypt/decrypt/verify, three SMTP/Sent exact copies,
+  Required-recipient plaintext refusal, ordinary self with crypto helper stopped,
+  and replay/stale/helper-failure no-dispatch controls. Disposable local keys/sinks
+  do not qualify Duncan/Proton external delivery.
+- Actual web activation on obsd1 passed with tested binary SHA-256
+  `4c50550c6008b5fd70718d2275fc6bd55bbfbba91b970ca148dc25d27bcce04a`.
+  Independent installed/text mapping, seven services and HTTPSlogin200/TLS0 passed.
+  Live draft-only self preflight is now eligible; Proton all-off shows Blocked,
+  Encryption required and the actual policy reason. Both drafts and synthetic
+  120-second session were removed; binding revision5 and operator policy unchanged.
+- Retained S05 repair-root `self-recipient-live-independent-result.json` has
+  SHA-256 `c21e6ad5c7311e0bc21fb8122cea1b8ff8dee2af31b7c652b62650428b5df034`.
+  Human protected delivery, readable authoritative encrypted Sent, Proton receipt
+  and return remain OPEN. No real-account private operation or agent Send occurred.
+
+### S07 functional composition protection defaults — 2026-10-03 — IN_PROGRESS
+
+- Finite continuation under the same accepted R2 plan and standing authority:
+  replace the hardcoded General/Composition OpenPGP placeholders with persisted
+  account-isolated sign/encrypt/self defaults, initially all Off. Apply only to
+  newly opened blank/reply/reply-all/forward composers; existing saved drafts and
+  final required/disabled policy checks retain their authority. These preferences
+  are choices, not public-key capability or private-agent readiness claims.
+- Allowed source: composition preference store/module and tests, browser gateway
+  typed methods and test implementation, composition settings route, fresh compose
+  route, General/Composition renderers and focused route tests. Exact versioned
+  migration must preserve legacy format/reply settings and old forms must merge
+  protection choices under the existing account lock. Failed preference loads
+  cannot silently downgrade protected defaults. Reject self without encryption.
+- Source engineer owns implementation; crypto reviewer independently reviews
+  persistence/policy/draft boundaries and native verification; root integrates
+  gates/signing/sync/deployment; Scrum lead maintains actual UAT states. Generated
+  inventories may be refreshed after source freeze. No key, recipient policy or
+  agent lifetime change; no agent external delivery or concurrent real Send.
+- Final integrated acceptance/security/V10–V13 gate exited0: library1074
+  passed,0 failed,19 ignored; extended V14, formatting and whitespace passed.
+  Initial stale unavailable-control assertions failed and were corrected to test
+  both successful preference loads and explicit unavailable loads; failures are
+  retained in the private repair-root logs. Independent review found no blocker.
+- Frozen native archive SHA-256
+  `045b70e2c10615a4d45b9339dfecc4ec659b5b3b93ca7e5a1fd68fbf4d193eec`
+  contains308 source entries. Native web build and20 focused tests passed
+  (store10, routes9, compact-boundary1). Candidate SHA-256
+  `f4dab793ba0a084adf701b1107ffb92f0d87c263a56adafe3db0ab77df6dc1ba`.
+  Signed parity, activation and bounded live persistence validation remain pending.
+- Operator reports all actual Send paths failed. Independent read-only live
+  transport/refusal diagnosis is assigned; local sink results do not establish a
+  successful real-account Send. No sprint acceptance or delivery claim is made.

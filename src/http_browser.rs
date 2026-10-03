@@ -343,7 +343,7 @@ pub trait BrowserGateway {
         &self,
         _context: &AuthenticationContext,
         _session: &ValidatedSession,
-        _value: crate::composition_preferences::CompositionPreferences,
+        _value: crate::composition_preferences::CompositionPreferencesUpdate,
     ) -> std::io::Result<()> {
         Err(std::io::Error::new(
             std::io::ErrorKind::Unsupported,

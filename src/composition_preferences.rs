@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use crate::compose_format::BodyFormat;
 use crate::private_account_file::PrivateAccountFile;
 
-const MAX_RECORD_BYTES: usize = 96;
+const MAX_RECORD_BYTES: usize = 192;
 const NAMESPACE: &str = "osmap-composition-preferences-v1";
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
@@ -44,6 +44,29 @@ impl ReplyPlacement {
 pub struct CompositionPreferences {
     pub default_body_format: BodyFormat,
     pub reply_placement: ReplyPlacement,
+    pub openpgp: OpenPgpDefaults,
+}
+
+/// Per-message choices for newly opened composers, not account key policy.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct OpenPgpDefaults {
+    pub sign: bool,
+    pub encrypt: bool,
+    pub encrypt_to_self: bool,
+}
+
+impl OpenPgpDefaults {
+    fn valid(self) -> bool {
+        !self.encrypt_to_self || self.encrypt
+    }
+}
+
+/// An old form updates only fields it knew about, under the account lock.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct CompositionPreferencesUpdate {
+    pub default_body_format: BodyFormat,
+    pub reply_placement: Option<ReplyPlacement>,
+    pub openpgp: Option<OpenPgpDefaults>,
 }
 
 impl CompositionPreferences {
@@ -51,14 +74,18 @@ impl CompositionPreferences {
         BodyFormat::parse(value).map(|default_body_format| Self {
             default_body_format,
             reply_placement: ReplyPlacement::Above,
+            openpgp: OpenPgpDefaults::default(),
         })
     }
 
     fn record(self) -> Vec<u8> {
         format!(
-            "{{\"version\":2,\"default_body_format\":\"{}\",\"reply_placement\":\"{}\"}}\n",
+            "{{\"version\":3,\"default_body_format\":\"{}\",\"reply_placement\":\"{}\",\"pgp_sign\":{},\"pgp_encrypt\":{},\"pgp_self\":{}}}\n",
             self.default_body_format.as_str(),
-            self.reply_placement.as_str()
+            self.reply_placement.as_str(),
+            self.openpgp.sign,
+            self.openpgp.encrypt,
+            self.openpgp.encrypt_to_self,
         )
         .into_bytes()
     }
@@ -73,15 +100,42 @@ impl CompositionPreferences {
                 return Ok(Self {
                     default_body_format,
                     reply_placement: ReplyPlacement::Above,
+                    openpgp: OpenPgpDefaults::default(),
                 });
             }
             for reply_placement in [ReplyPlacement::Above, ReplyPlacement::Below] {
-                let value = Self {
-                    default_body_format,
-                    reply_placement,
-                };
-                if bytes == value.record() {
-                    return Ok(value);
+                let old = format!(
+                    "{{\"version\":2,\"default_body_format\":\"{}\",\"reply_placement\":\"{}\"}}\n",
+                    default_body_format.as_str(),
+                    reply_placement.as_str()
+                );
+                if bytes == old.as_bytes() {
+                    return Ok(Self {
+                        default_body_format,
+                        reply_placement,
+                        openpgp: OpenPgpDefaults::default(),
+                    });
+                }
+                for sign in [false, true] {
+                    for encrypt in [false, true] {
+                        for encrypt_to_self in [false, true] {
+                            let openpgp = OpenPgpDefaults {
+                                sign,
+                                encrypt,
+                                encrypt_to_self,
+                            };
+                            if openpgp.valid() {
+                                let value = Self {
+                                    default_body_format,
+                                    reply_placement,
+                                    openpgp,
+                                };
+                                if bytes == value.record() {
+                                    return Ok(value);
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -118,12 +172,35 @@ impl CompositionPreferencesStore {
     /// Older format-only forms preserve reply placement under
     /// the same account lock; no read/merge/write race between separate calls.
     pub fn save_format(&self, account: &str, format: BodyFormat) -> io::Result<()> {
+        self.update(
+            account,
+            CompositionPreferencesUpdate {
+                default_body_format: format,
+                reply_placement: None,
+                openpgp: None,
+            },
+        )
+    }
+
+    pub fn update(&self, account: &str, change: CompositionPreferencesUpdate) -> io::Result<()> {
         let locked = self.file.lock(account)?;
         let mut value = locked.read()?.map_or_else(
             || Ok(CompositionPreferences::default()),
             |bytes| CompositionPreferences::parse_record(&bytes),
         )?;
-        value.default_body_format = format;
+        value.default_body_format = change.default_body_format;
+        if let Some(placement) = change.reply_placement {
+            value.reply_placement = placement;
+        }
+        if let Some(openpgp) = change.openpgp {
+            if !openpgp.valid() {
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidInput,
+                    "invalid OpenPGP defaults",
+                ));
+            }
+            value.openpgp = openpgp;
+        }
         #[cfg(test)]
         if self.fail_before_publish {
             return Err(io::Error::other("injected pre-publication failure"));
@@ -134,6 +211,12 @@ impl CompositionPreferencesStore {
     /// A busy account refuses immediately. Callers must not claim success on
     /// any error, including a directory-sync failure after atomic publication.
     pub fn save(&self, canonical_account: &str, value: CompositionPreferences) -> io::Result<()> {
+        if !value.openpgp.valid() {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "invalid OpenPGP defaults",
+            ));
+        }
         let locked = self.file.lock(canonical_account)?;
         if let Some(bytes) = locked.read()? {
             CompositionPreferences::parse_record(&bytes)?;
@@ -177,6 +260,7 @@ mod tests {
         CompositionPreferences {
             default_body_format: BodyFormat::Formatted,
             reply_placement: ReplyPlacement::Above,
+            openpgp: OpenPgpDefaults::default(),
         }
     }
 
@@ -381,6 +465,7 @@ mod placement_tests {
         let below = CompositionPreferences {
             default_body_format: BodyFormat::Formatted,
             reply_placement: ReplyPlacement::Below,
+            openpgp: OpenPgpDefaults::default(),
         };
         store.save("alice", below).unwrap();
         assert_eq!(
@@ -406,7 +491,7 @@ mod placement_tests {
             .read("alice")
             .unwrap()
             .unwrap()
-            .starts_with(b"{\"version\":2,"));
+            .starts_with(b"{\"version\":3,"));
         std::fs::remove_dir_all(root).unwrap();
     }
     #[test]
@@ -432,6 +517,7 @@ mod placement_tests {
         let value = CompositionPreferences {
             default_body_format: BodyFormat::Formatted,
             reply_placement: ReplyPlacement::Below,
+            openpgp: OpenPgpDefaults::default(),
         };
         assert_eq!(
             CompositionPreferences::parse_record(&value.record()).unwrap(),
@@ -444,10 +530,81 @@ mod placement_tests {
                 "\"reply_placement\":\"below\"",
                 "\"reply_placement\":\"below\",\"reply_placement\":\"above\"",
             ),
-            valid.replace("version\":2", "version\":3"),
+            valid.replace("version\":3", "version\":4"),
+            valid.replace("\"pgp_sign\":false", "\"pgp_sign\":1"),
+            valid.replace("\"pgp_sign\":false", "\"pgp_sign\":true,\"pgp_sign\":false"),
             valid.trim_end().into(),
         ] {
             assert!(CompositionPreferences::parse_record(invalid.as_bytes()).is_err());
         }
+    }
+
+    #[test]
+    fn v2_migrates_to_off_and_legacy_updates_preserve_protection_under_lock() {
+        let root = std::env::temp_dir().join(format!(
+            "osmap-openpgp-defaults-{}",
+            crate::draft::generate_draft_id().unwrap()
+        ));
+        let store = CompositionPreferencesStore::new(&root);
+        let legacy = b"{\"version\":2,\"default_body_format\":\"formatted\",\"reply_placement\":\"below\"}\n";
+        store.file.lock("alice").unwrap().write(legacy).unwrap();
+        let migrated = store.load("alice").unwrap();
+        assert_eq!(migrated.default_body_format, BodyFormat::Formatted);
+        assert_eq!(migrated.reply_placement, ReplyPlacement::Below);
+        assert_eq!(migrated.openpgp, OpenPgpDefaults::default());
+        assert_eq!(store.file.read("alice").unwrap().unwrap(), legacy);
+        let defaults = OpenPgpDefaults {
+            sign: true,
+            encrypt: true,
+            encrypt_to_self: true,
+        };
+        store
+            .update(
+                "alice",
+                CompositionPreferencesUpdate {
+                    default_body_format: BodyFormat::Formatted,
+                    reply_placement: Some(ReplyPlacement::Below),
+                    openpgp: Some(defaults),
+                },
+            )
+            .unwrap();
+        store.save_format("alice", BodyFormat::Plain).unwrap();
+        store
+            .update(
+                "alice",
+                CompositionPreferencesUpdate {
+                    default_body_format: BodyFormat::Plain,
+                    reply_placement: Some(ReplyPlacement::Above),
+                    openpgp: None,
+                },
+            )
+            .unwrap();
+        let reopened = CompositionPreferencesStore::new(&root);
+        assert_eq!(reopened.load("alice").unwrap().openpgp, defaults);
+        assert_eq!(
+            reopened.load("alice").unwrap().reply_placement,
+            ReplyPlacement::Above
+        );
+        assert_eq!(
+            reopened.load("bob").unwrap().openpgp,
+            OpenPgpDefaults::default()
+        );
+        let before = store.file.read("alice").unwrap().unwrap();
+        assert!(store
+            .update(
+                "alice",
+                CompositionPreferencesUpdate {
+                    default_body_format: BodyFormat::Plain,
+                    reply_placement: None,
+                    openpgp: Some(OpenPgpDefaults {
+                        sign: false,
+                        encrypt: false,
+                        encrypt_to_self: true
+                    }),
+                }
+            )
+            .is_err());
+        assert_eq!(store.file.read("alice").unwrap().unwrap(), before);
+        std::fs::remove_dir_all(root).unwrap();
     }
 }

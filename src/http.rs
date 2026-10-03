@@ -1976,12 +1976,12 @@ mod tests {
             &self,
             _context: &AuthenticationContext,
             session: &ValidatedSession,
-            value: crate::composition_preferences::CompositionPreferences,
+            value: crate::composition_preferences::CompositionPreferencesUpdate,
         ) -> std::io::Result<()> {
             self.composition_preferences_store
                 .as_ref()
                 .ok_or_else(|| std::io::Error::other("synthetic preference store unavailable"))?
-                .save(&session.record.canonical_username, value)
+                .update(&session.record.canonical_username, value)
         }
 
         fn load_settings(

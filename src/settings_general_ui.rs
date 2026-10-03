@@ -60,13 +60,21 @@ pub(crate) fn render_general_page(
         Some(value) => format!("<div class=\"general-field\"><label for=\"general-reply-placement\">Reply placement</label><select id=\"general-reply-placement\" name=\"reply_placement\" form=\"general-composition-form\">{}</select></div>", select_options(value.reply_placement.as_str(), &[("above", "Above quoted text"), ("below", "Below quoted text")])),
         None => unavailable_select("general-reply-placement", "Reply placement", "Unavailable"),
     };
+    let protection_controls = match composition {
+        Some(value) => [
+            ("general-signing", "Sign outgoing", "pgp_sign", value.openpgp.sign),
+            ("general-encryption", "Encryption", "pgp_encrypt", value.openpgp.encrypt),
+            ("general-encrypt-self", "Encrypt to self", "pgp_self", value.openpgp.encrypt_to_self),
+        ].iter().map(|(id, label, name, enabled)| format!("<div class=\"general-field\"><label for=\"{id}\">{label}</label><select id=\"{id}\" name=\"{name}\" form=\"general-composition-form\">{}</select></div>", select_options(if *enabled { "on" } else { "off" }, &[("off", "Off"), ("on", "On")]))).collect::<String>(),
+        None => format!("{}{}{}", unavailable_select("general-signing", "OpenPGP signing", "Unavailable"), unavailable_select("general-encryption", "Encryption", "Unavailable"), unavailable_select("general-encrypt-self", "Encrypt to self", "Unavailable")),
+    };
     let signature_control = signature.map(|r| format!("<form id=\"general-signature-form\" method=\"post\" action=\"/settings/signature\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"signature_revision\" value=\"{}\"><input type=\"hidden\" name=\"operation\" value=\"selection\"><input type=\"hidden\" name=\"return_section\" value=\"general\"><div class=\"general-field\"><label for=\"general-signature\">Signature</label><select id=\"general-signature\" name=\"selection\">{}</select></div></form>",escape_html(model.csrf_token),r.revision,select_options(r.selection.as_str(), &[("none","None"),("default","Default signature")]))).unwrap_or_else(|| unavailable_select("general-signature","Signature","Unavailable"));
     let composition = format!(concat!(
-        "<section class=\"general-card\" aria-labelledby=\"general-composition-title\"><h2 id=\"general-composition-title\">Composition Defaults</h2>{}{}{}{}{}",
-        "<div class=\"general-card-actions general-composition-actions\">{}{signature_save}<details><summary>About composition defaults</summary><p class=\"general-help\">Format applies to new blank messages. Replies and forwards use Plain text to preserve quoted message text. Reply placement applies to new replies and reply-all; move the cursor to the blank reply space before typing. Saved drafts remain unchanged. Signature is ordinary footer text for newly opened composers; existing drafts stay unchanged. <a href=\"/settings?section=identity\">Edit the footer in Identity</a>. OpenPGP signing and encryption are unavailable.</p></details></div></section>"
+        "<section class=\"general-card\" aria-labelledby=\"general-composition-title\"><h2 id=\"general-composition-title\">Composition Defaults</h2>{}{}{}{}",
+        "<div class=\"general-card-actions general-composition-actions\">{}{signature_save}<details><summary>About composition defaults</summary><p class=\"general-help\">Format applies to new blank messages. Replies and forwards use Plain text to preserve quoted message text. Reply placement applies to new replies and reply-all; move the cursor to the blank reply space before typing. Saved drafts remain unchanged. Signature is ordinary footer text for newly opened composers; existing drafts stay unchanged. <a href=\"/settings?section=identity\">Edit the footer in Identity</a>. OpenPGP choices apply to newly opened messages and remain subject to account and recipient policy and a fresh key check before sending.</p></details></div></section>"
     ), format_control,
         signature_control, placement_control,
-        unavailable_select("general-signing", "OpenPGP signing", "Unavailable"), unavailable_select("general-encryption", "Encryption", "Unavailable"),
+        protection_controls,
         if composition.is_some() { "<button type=\"submit\" form=\"general-composition-form\" aria-label=\"Save composition defaults\">Save composition</button>" } else { "" }, signature_save=if signature.is_some(){"<button type=\"submit\" form=\"general-signature-form\" aria-label=\"Save signature choice\">Save signature</button>"}else{"<span>Saved signature unavailable.</span>"});
 
     let privacy = concat!(
