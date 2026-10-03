@@ -7834,3 +7834,22 @@ was verified on obsd1 at192.168.1.44; the installed application and standard hos
 checkout were preserved. No private-key operation, policy mutation or message
 submission occurred. Independent security review and aggregate gates remain
 distinct from deployment and human acceptance.
+
+### Reconcile current interaction, crypto location and custody decisions — 2026-10-03
+
+S00-02 appends current D01–D03 findings to UX_DECISIONS.md while retaining the
+original dated choices. Existing accepted revision2 and later bounded work
+orders supply engineering authority; no repeated approval or scope invention.
+The fixed Compose script and opt-in same-origin autosave supersede the original
+universal no-script/local-only wording within their exact boundary. Host crypto
+on obsd1 is distinct from authoritative mailbox/auth/Sent on the mail backend.
+Public encryption/verification and browser public-key management do not require
+private unlock; private signing/decryption, host custody, cache/confinement and
+memory limits remain separate. Locked is not proof of cache expiry.
+
+Independent PM and security reviews pin the exact final draft and fourteen
+source hashes. RSA plus the accepted v4 Ed/CV extension remain bounded profiles;
+no universal interoperability, live availability or browser Send is inferred.
+This decision reconciliation changes no application code, live policy, key,
+dependency, host or installed binary. Operator Send failures remain unresolved;
+S00-03 carries identity, ancillary and deployment decisions forward in order.

@@ -342,3 +342,124 @@ No existing record is silently rewritten merely by reading it. Destructive
 migration requires an individually tested restore path. D01 appearance uses a
 separate sidecar; later modules must explicitly record their migration before
 runtime wiring. A discovered incompatibility remains open in the ledger.
+
+## S00-02 current D01–D03 reconciliation — 2026-10-03
+
+This append assesses source `66117e7e7aa299f27cd5d8760ea709290a1a597d` against the existing accepted R2 plan and
+recorded direct engineering authority. It distinguishes original declarations,
+subsequent bounded implementation and unresolved qualification. It neither
+reopens already delegated decisions for repetitive approval nor accepts the
+user's failed mail journeys. Later implementation must correct gaps in their
+owning slices while preserving current security boundaries.
+
+### D01 — bounded Compose enhancement; native server workflows remain
+
+The original no-script declaration is historical, rather than an accurate
+statement about every current response. The later ledger work orders **S03-01C
+local composer controls** and **S03-02 / PAGE15 automatic draft saving** record
+the operator-authorized Compose-only extension. The latter explicitly supersedes
+the earlier local-only/no-network Compose allowance for bounded same-origin draft
+saving; it does not permit external requests or scripts on Reader/authentication
+pages.
+
+`src/http/compose_enhancement.rs` includes one fixed repository script, admits its
+exact SHA-256 in `script-src`, uses `connect-src 'self'` and denies event-attribute
+scripts with `script-src-attr 'none'`. No message content is interpolated into
+script bytes. `src/http/compose_local.js` submits only finite draft fields to
+`/drafts/autosave` and reads `/drafts/autosave/config` with same-origin credentials,
+redirect refusal and no-store semantics. Automatic saving is opt-in, defaults
+Off, and uses only the configured 30/60/120-second interval while the page is
+visible; pending files/source attachments require manual saving. Saves have one
+in-flight operation and a 15-second client abort; uncertain results pause rather
+than retry. Confirmed
+responses update verified draft identity/revision and browser history. Client
+abort is not proof that a backend write did not occur.
+
+Native Save, formatting/preflight and explicit stale-key review remain separate
+server actions. Existing fallback/CSP tests and bounded browser evidence are
+reused for their recorded scope, not rerun merely to reconcile these decisions.
+This does not establish every required clipboard, Show/Hide, notification,
+no-reload pane or keyboard interaction. Unmapped or unexercised controls remain
+open in their owning slices. Preserve Login/TOTP and the approved design; no
+framework dependency or broader CSP exception is authorised by this append.
+
+### D02 — distinguish crypto execution, authoritative mailbox and browser
+
+The current integration separates three trust/data paths: the development web
+and configured crypto execution are on **obsd1.blackbagsecurity.com**; mailbox/auth
+operations and authoritative Sent use **mail.blackbagsecurity.com** through the
+existing authenticated relay; the browser receives rendered plaintext over TLS.
+Outbound transport remains the separate obsd1 sendmail/relay path. These are
+source/retained-configuration findings, not a new inspection of host state or a
+claim that transport delivered a message.
+
+`src/http_gateway_protected.rs::render_protected_snapshot` assembles an owned
+stored source and calls the authenticated crypto processor. `src/protected_message.rs`
+reparses resulting MIME and uses the existing validated-session renderer; it
+clears plaintext compose quoting so this reader cannot automatically feed decrypted
+content into an autosaved draft. Original encrypted source remains distinct.
+`maint/openpgp-runtime/crypto.c` sets offline/local-key operation, denies automatic
+retrieval/import and uses error-on-Pinentry. The web process is not a private-key
+or passphrase interface.
+
+Source bounds remain 16 MiB content, 64 KiB metadata and 50 explicit recipients, with
+length-delimited authenticated frames, a 10-second deadline and bounded admission
+(one operation per account, two global workers). Source resource/confinement
+controls and prior native results retain their assessed scope. Compilation,
+source checks or this append do not establish current encrypted swap, complete
+memory erasure or fresh native qualification.
+
+The current reader text **Decrypted on mail host** does not identify a hostname.
+In this topology it must not be interpreted as browser-only execution or proof
+that the authoritative storage host performed decryption. Accurate execution-
+location presentation and author-consented protected reply/forward remain
+explicit review items for their owning S06/S07 workflows. No zero-access,
+zero-knowledge or universal plaintext-erasure claim is supported.
+
+### D03 — public browser operations and private custody are different
+
+Browser management imports public certificates and changes explicit account/
+recipient bindings and policy through typed, account-isolated, revision-checked
+operations with fresh password/TOTP step-up. Import alone establishes no trust.
+There is no web secret-key import/export, passphrase entry or private-key
+creation interface. Private custody, provisioning, encrypted backup and private
+unlock remain operator operations outside the web process; Shopkeeper signing
+and its workstation agent are separate from mailbox keys and the host agent.
+
+`maint/openpgp-runtime/deployment_unlock.py` records a 300-second isolated host
+cache and uses the operator's real terminal/Pinentry. `crypto.c` requires agent
+access for Sign/Decrypt, while Encrypt/Verify use public material without private
+unlock. A Locked result can also reflect failed confinement/socket admission,
+not merely cache expiry. Public-only encryption and fully permitted ordinary
+sending must not be assigned an unnecessary private unlock prerequisite. Current
+required policies still refuse incompatible requests without downgrade.
+
+The operator's later terminal output reports revision5, signing/decryption warmup,
+helper restart, sign/verify, tamper refusal, self-encrypt/decrypt and selected
+Proton public encryption PASS with no binding write and no external delivery.
+Its timestamp was not supplied: it proves that checkpoint, not present cache
+availability or a successful browser Send. Earlier locked and all-Send failures
+remain open; no unknown refusal is attributed universally to cache expiry.
+
+The existing interoperability extension authorises the bounded v4 profile:
+RSA at least 3072 bits and exact Ed25519/CV25519 material; SHA-256/SHA-512 signatures;
+AES-256 with the worker's accepted integrity-protection status; detached signed
+and encrypted PGP/MIME with exact canonical bytes. Current 40-hex fingerprint
+checks and v4 signature checks do not establish general v6/RFC 9580 support.
+Unsupported/ambiguous capable subkeys, weak algorithms and failed integrity are
+refused. Existing disposable native operations qualify only their recorded
+profiles and conditions. Independent Proton receipt/signature, readable encrypted
+Sent, protected return, and human fresh-auth key lifecycle remain unaccepted.
+Backup/rotation/revocation and missing/locked/tampered/timeout/crash handling must
+be checked through their existing owning cases; a custody declaration is not
+execution evidence.
+
+### Advancement and remaining scope
+
+S00-02 completion requires this reconciliation, exact source/authority/evidence
+references and independent outcome review, not another live mail or crypto probe. Required repository delivery hooks remain
+authoritative.
+Carry unresolved controls/runtime limits into the existing ledger and owning
+slices. S00-03 next reconciles D04–D06 against actual implementation and standing
+authority. Preserve the ordered epic, existing code and valid earlier evidence;
+known ordinary and protected Send failures cannot be erased by this append.

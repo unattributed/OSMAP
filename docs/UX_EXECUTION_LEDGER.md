@@ -4013,3 +4013,46 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   source SHA. S00-01 returns to VERIFIED for its bounded intake/prerequisite
   scope; normal signed hook and immediate ordinary branch sync complete delivery.
   Neither installed application nor any current human UAT result changed.
+
+### S00-01 signed source delivery and S00-02 work order — 2026-10-03
+
+- S00-01 delivered in66117e7e7aa299f27cd5d8760ea709290a1a597d with verified
+  Shopkeeper signature, passing normal pre-commit/pre-push security hooks and
+  immediate ordinary push. Fresh origin/feat/ux-completion-20260929 equals HEAD,
+  ahead/behind0/0 and clean before this next entry. Private intake-delivery.json
+  and gates/source-sync.json retain matching source/native/review/gate records.
+  No installed app change, release claim, Send repair or human acceptance.
+- S00-02 current outcome: reconcile D01/D02/D03 against accepted revision2,
+  superseding work orders and actual current source. Preserve original dated
+  decisions while clearly superseding stale no-script/host/custody claims.
+  Frozen plans/reference bytes and functioning ordinary-mail invariants remain.
+- Dedicated Scrum lead performs the technical-writer role sequentially, owning
+  the sprint-root s00-02-decision-reconciliation-draft.md only. Dedicated project
+  manager independently reviews requirements/authority; technical auditor
+  independently reviews security/data/custody semantics. Root integrates only
+  review-approved appendix in docs/UX_DECISIONS.md plus decision/ledger entries.
+  No runtime source, dependency, policy, keys, host, auth or external-mail changes.
+- Exact exit: bounded Compose/script/autosave consent versus hostile content
+  separation; obsd1 crypto execution versus authoritative mail backend; private
+  agent/public-only distinction, residual memory and native-confinement limits;
+  qualified RSA/v4 Ed/CV profile versus unsupported/unqualified interoperability.
+  Existing operator authority is reused; no new committee, board or approval.
+- Reuse matching S00-01 code gates; focused documentation/source-anchor and
+  unchanged-plan checks plus mandatory signed commit/push hooks apply. No repeat
+  native cryptography or provider checks for this decision reconciliation.
+  UAT is document review only, not a browser Send test. All required current
+  ordinary/protected delivery, Sent/return/key-lifecycle human results stay OPEN.
+  Next is S00-03 after this bounded reviewed and signed delivery.
+- S00-02 decision appendix integrated from independently reviewed final draft
+  6dea91e2e2a1b9e6a8d9101fe65c21ce8cfc2687d7c7c30cb3adf6084ecb8703.
+  Fourteen cited files equal signed66117e7 Git blobs; accepted plan manifest
+  remains byte-identical and passes. PM and technical auditor PASS reports pin
+  that final hash. A finite autosave clarification received targeted delta review
+  only, with no repeated tests, crypto or full-source audit.
+- Scope verified: current authority, limited first-party Compose/autosave,
+  hostile content/auth separation, crypto/mail/browser paths, private custody,
+  public-only operations, Locked ambiguity, bounded profiles and honest unknowns.
+  Exact appended text matches the reviewed section; original decision prefix
+  is preserved. Required normal signing/sync hooks finish the doc-only delivery.
+  Source/native gates from66117e7 remain applicable to unchanged code; no new
+  functional pass, installation, release or human acceptance is claimed.
