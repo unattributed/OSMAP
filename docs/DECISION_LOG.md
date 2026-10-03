@@ -7787,3 +7787,50 @@ revision2 and approved design bytes are preserved. The request does not resume
 application repair, change live policy/keys/lifetimes, deploy or submit mail.
 The original audit and historical comparison remain unchanged; subsequent real
 engineering must apply the framework without reclassifying missing UAT as passed.
+
+### Resume the epic in slice order with current evidence — 2026-10-03
+
+The investor explicitly resumed real engineering and selected revalidation from
+S00-01, first sprint/first slice, through the accepted epic. This supersedes the
+preceding audit/framework-only hold. Dedicated management roles assign bounded
+work; developers implement complete outcomes and independent reviewers challenge
+the actual evidence. Existing implementation and historical passes are retained,
+but neither status labels nor old component checks establish current usability.
+
+S00-01 first reconciles the403-control/27-page final inventory and fresh synthetic
+light-page baselines. Missing source, tests, runtime capability and human results
+are separate observations. Test-only intake work cannot close the operator's
+all-Send failure. Continue in frozen slice order without creating new governance
+or requesting already-delegated routine engineering decisions. The user requests
+one concise completion update under50 words per completed slice.
+
+S00-01 capture uncovered a test-harness transport defect: the legitimate
+Compose autosave-preference fetch rejected a static404 response without consuming
+its error body, leaving browser network-idle accounting pending. Return an empty
+length-zero404 for refused static fixture paths, retaining the exact allowlist
+and response security headers. The isolated Compose check and full93-image
+light baseline then completed with zero outside requests. Runtime Compose,
+script hash/CSP and real mail operations were not changed or qualified by this
+repair. Missing Documents/password/recovery pages and unavailable fixture
+dependencies remain explicit intake observations, not invented functionality.
+
+### Release account locks at the guard boundary — 2026-10-03
+
+The required aggregate gate again found Busy where the binding-store test
+expected a later validation result. Investigation demonstrated a concrete
+account-lock lifetime defect: a duplicated or fork-retained file description
+prolonged the advisory lock after its owning guard dropped. The precise actor
+in the parallel-suite failure remains untraced; do not attribute every reported
+failure or the operator's Send failures to this finding.
+
+Use the existing session/TOTP/throttle pattern and explicitly unlock in
+`LockedAccountFile::drop`. Preserve nonblocking contention, ownership/path
+checks, revision validation and atomic writes. The safe duplicated-descriptor
+regression verifies refusal while held, immediate reacquisition after drop, and
+that closing an old descriptor cannot release a newly acquired lock. It fails
+before the correction and passes afterward on Linux and native OpenBSD7.9.
+The isolated native binding group also passes17/0. The signed source candidate
+was verified on obsd1 at192.168.1.44; the installed application and standard host
+checkout were preserved. No private-key operation, policy mutation or message
+submission occurred. Independent security review and aggregate gates remain
+distinct from deployment and human acceptance.

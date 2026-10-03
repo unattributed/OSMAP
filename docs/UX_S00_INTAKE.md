@@ -230,3 +230,100 @@ observations, not proof that missing interactions work.
 - Account status must remain honest while later helpers are incomplete. The
   reference's password-strength, zero-knowledge and device-decryption language
   cannot be copied into the current product.
+
+## S00-01 revalidation — 2026-10-03, accepted revision 2
+
+Everything above is the retained **2026-09-29 historical intake**, assessed
+against its stated source and revision-1 references. Its missing-control and
+source statements are not current implementation claims. This append reconciles
+that history with the current revision-2 inventory; it does not erase valid
+historical observations or establish application UAT acceptance.
+
+The current source/evidence-pointer inventory assesses Git source
+`6706f4f024f5575c4f86afaf9ad8d9b8e8e42e8b`. The accepted revision-2 anchor is
+`6b3ce8fff27ca3dabf87039d54098bd9967a2e42`: Good Shopkeeper signature; current
+plan and nested approved-reference checksum checks passed. The approved inventory
+has **27 page IDs and 403 unique control IDs**. Its older status labels and
+evidence are preserved as historical candidates, never promoted to current
+functionality from file or route presence.
+
+Retained owner-only artifacts:
+
+- `/home/foo/Downloads/osmap-ux-s00/revalidation-20261003/control-map.json`:
+  every approved ID, historical status/evidence, current open classification,
+  actual page-route/handler context, frontend/backend/test candidates and error
+  anchors. Its source index contains 161 existing file hashes, actual function
+  and test names/lines, and 54 dispatcher routes including plaintext health.
+- `control-map.md`: readable 27-page context table and all 403 control rows.
+- `generate-control-map.py` and `control-map.sha256`: deterministic reproduction
+  and portable basename checksums. The generator reads Git blobs at the assessed
+  SHA, rather than mixing other agents' in-progress source edits into the map.
+- `fixtures-light/routes.json` and `fixtures-light/approved-page-baselines.json`:
+  the separate current synthetic-route baseline and all 27 page mappings. The
+  fixture source hash is
+  `dd9f1b5ab2c6db3040abdc3869af5d8c91578180433e88e85c37865963c3624b`.
+  These contain actual route observations and explicit missing/partial states;
+  they neither exercise Send nor contact mail hosts.
+
+Reproduce the mapping without application or host mutation:
+
+```sh
+python3 /home/foo/Downloads/osmap-ux-s00/revalidation-20261003/generate-control-map.py \
+  --repo /home/foo/Workspace/OSMAP \
+  --base 6706f4f024f5575c4f86afaf9ad8d9b8e8e42e8b \
+  --out /home/foo/Downloads/osmap-ux-s00/revalidation-20261003
+```
+
+The generator validated exact page/control set sizes, uniqueness, actual route
+contexts and source/test candidate existence. Repeated generation produced
+identical map bytes. Individual named tests were **not run by this inventory**;
+fixture/browser results have their own recorded scope. Literal error anchors
+are source locations, not a complete executed refusal/recovery matrix.
+
+### Concrete current-source corrections to the old intake
+
+These are inspected source facts, **not claims that the operator can complete
+the corresponding journey**. The JSON's 17 direct control mappings retain their
+literal anchors and named test candidates where located; remaining unlocated
+control-specific mappings stay explicitly open.
+
+| Historical statement | Current source fact | Verification still required |
+| --- | --- | --- |
+| Compose Minimize/Expand absent | `src/http_ui.rs:2100` renders Minimize as `/drafts/save` with `compose_action=minimize`, and presentation Expand/Restore through `compose-expanded`. `src/http/routes_draft.rs:923` routes a successfully saved Minimize to Drafts. | Current browser preservation/interaction; no direct behavioural pass inferred from these anchors. |
+| Compose Sign/Encrypt/Self disabled or absent | `src/http_ui.rs:1968` renders direct `pgp_sign`, `pgp_encrypt`, `pgp_self` checkboxes when runtime capability is configured. `src/http/compose_protection.rs::intent_from_form` parses the choices; `src/http_gateway_mail.rs::prepare_outbound_request` enforces current bindings/policy before submission. `compose_live_protection_controls_are_direct_and_preserve_selection` exists in key-management route tests. | Actual selected-mode Send through the correct deployed configuration. Visible checkboxes and public eligibility do not prove this. |
+| General/Composition signing and encryption defaults unavailable | Current General/Composition renderers project typed saved defaults. `src/http/routes_composition_preferences.rs::handle_composition_preferences_update` handles the finite triple; existing `openpgp_defaults_save_reload_isolate_accounts_and_apply_only_to_fresh_composers` and invalid/partial-form regression tests locate the source contract. | Current intended defaults, saved-draft preservation and actual policy-permitted Send remain separate results. Defaults do not override Required recipient policy. |
+| Key-management mutation controls absent | `src/key_inventory_ui.rs::render_key_management_panel` contains account/recipient/public-import forms and public-certificate removal. `src/http/routes_keys.rs::handle_key_management_change` and `src/http_gateway_keys.rs::change_keys_impl` provide typed mutation and fresh password/TOTP paths. Forms are conditional on binding/inventory/admin readiness. | Human fresh-auth import/bind/change/remove persistence and error recovery under the actual account. The read-only fallback still has disabled controls. |
+| Dedicated Documents, password-change and recovery-contact pages | Documents has no dispatcher route and disabled navigation; its synthetic request is a 404. Password/contact requirements have no dedicated browser form/route; the existing Authentication overview renders disabled Change/Manage controls. | These pages remain missing/open; an overview or error screenshot cannot substitute for their required functionality. |
+| Scheduling and permanent deletion/retention | Compose Schedule remains disabled in source. Archive/Bin explicitly states archive dates and permanent-delete/retention management are unavailable. | Required backend workflows and UI actions remain incomplete. No missing feature is removed from the epic. |
+| Separate TOTP Challenge page | The approved inventory retains the existing combined password/TOTP login implementation. The source map links it to `/login`, without inventing a new challenge page. | Retained layout/theme and actual auth/security regression evidence retain separate scope. |
+
+Mapping classifications are **197 recorded candidate-pointer controls**, **139
+page-family-only controls**, **43 controls on missing dedicated pages**, **17
+direct source-present controls not currently exercised**, and **7 explicitly
+source-unavailable controls**. All 403 remain `NOT_REVALIDATED` for current
+control functionality and `UNACCEPTED` for human UAT in this inventory. These are
+intake coverage states, not another sprint state machine or a claim that all
+existing source is nonfunctional.
+
+### Failed Send remains the essential unresolved journey
+
+The user's reported failures across Send operations remain open. In particular,
+the matched ordinary Proton `/send` 503 at **2026-10-03 06:18:00 UTC** occurred
+after the assessed deployment and supersedes earlier “no postdeployment Send”
+notes. At that audit's revision 5, Proton encryption was Required while the
+reported message selected all protections Off; policy provenance is unknown.
+That dated diagnosis does not establish current configuration, repair every
+failure or make the intended success a passed refusal test.
+
+The inventory and capture work changes no application workflow, policy, keys,
+private-agent lifetime, services or live mail. A separately reviewed prerequisite
+repair in `src/private_account_file.rs` releases the account lock explicitly
+when its guard is dropped. A duplicated descriptor otherwise prolonged the lock;
+the deterministic regression fails before the repair and passes afterward on
+Linux and OpenBSD. This source correction is not installed application evidence
+and does not establish the cause or repair of the reported Send failures.
+Synthetic pages, screenshots, source pointers and test
+names cannot close ordinary delivery, authoritative Sent, protected Proton
+receipt/signature, encrypted return or fresh-auth key lifecycle. The next
+authorized work order must preserve those outcomes and reconcile the exact
+frontend/backend/configuration path before any UAT-ready claim.

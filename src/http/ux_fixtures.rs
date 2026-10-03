@@ -213,11 +213,49 @@ fn ux_synthetic_route_baselines() {
         ),
         ("drafts-empty", "/drafts", true, 200),
         ("drafts-populated", "/drafts", true, 200),
-        ("drafts-filtered-empty", "/drafts?filter=starred&q=NoMatch", true, 200),
+        (
+            "drafts-filtered-empty",
+            "/drafts?filter=starred&q=NoMatch",
+            true,
+            200,
+        ),
         ("drafts-review", "/drafts/discard", true, 200),
         ("settings", "/settings", true, 200),
-        ("settings-appearance", "/settings?section=appearance", true, 200),
+        (
+            "settings-appearance",
+            "/settings?section=appearance",
+            true,
+            200,
+        ),
         ("settings-reading", "/settings?section=reading", true, 200),
+        ("sent", "/mailbox?name=Sent", true, 200),
+        ("bin", "/mailbox?name=Trash", true, 200),
+        ("documents-missing", "/documents", true, 404),
+        ("settings-security", "/settings?section=security", true, 200),
+        ("settings-identity", "/settings?section=identity", true, 503),
+        (
+            "settings-composition",
+            "/settings?section=composition",
+            true,
+            200,
+        ),
+        ("settings-copies", "/settings?section=copies", true, 200),
+        (
+            "settings-notifications",
+            "/settings?section=notifications",
+            true,
+            200,
+        ),
+        ("settings-privacy", "/settings?section=privacy", true, 200),
+        ("settings-openpgp", "/settings?section=openpgp", true, 200),
+        (
+            "settings-authentication",
+            "/settings?section=authentication",
+            true,
+            200,
+        ),
+        ("key-management-unavailable", "/settings/keys", true, 200),
+        ("key-management-inventory", "/settings/keys", true, 200),
         ("settings-long-identity", "/settings", true, 200),
         (
             "archive-shortcut",
@@ -246,13 +284,78 @@ fn ux_synthetic_route_baselines() {
         ("sessions", "/sessions", true, 200),
         ("not-found", "/not-a-route", false, 404),
         ("invalid-search", "/search?field=invalid", true, 400),
-        (
-            "reader-unavailable",
-            "/message?mailbox=INBOX&uid=900",
-            true,
-            503,
-        ),
     ];
+    // A design page is not necessarily a distinct implemented route. Keep
+    // absent screens, combined authentication and state references explicit.
+    let approved_page_cases: [(&str, &[&str], &str, &str); 27] = [
+        ("PAGE-01", &["mailboxes"], "route_rendered", "Synthetic welcome; no live mailbox qualification."),
+        ("PAGE-02", &["inbox", "mailbox-empty"], "route_rendered", "Synthetic list and empty state."),
+        ("PAGE-03", &["reader", "reader-unavailable"], "route_rendered", "Synthetic reader and unavailable state."),
+        ("PAGE-04", &["compose"], "route_rendered", "Rendering only; no Send exercised."),
+        ("PAGE-05", &["sent"], "route_rendered", "Synthetic Sent list; no authoritative storage or delivery proof."),
+        ("PAGE-06", &["drafts-populated"], "route_rendered", "Synthetic drafts; no live persisted draft proof."),
+        ("PAGE-07", &["documents-missing"], "missing_route", "Documents route returns404; required screen remains absent."),
+        ("PAGE-08", &["bin", "archive-unconfigured", "archive-missing"], "partial_route_rendered", "Current Bin and archive failures; no complete archive/bin acceptance."),
+        ("PAGE-09", &["search", "search-empty"], "route_rendered", "Synthetic message search; ancillary search is not qualified."),
+        ("PAGE-10", &["settings-security"], "route_rendered", "Current overview includes unavailable controls."),
+        ("PAGE-11", &["settings"], "route_rendered", "Current General settings; persistence not exercised."),
+        ("PAGE-12", &["settings-appearance"], "route_rendered", "Current Appearance settings; persistence not exercised."),
+        ("PAGE-13", &["settings-identity"], "unavailable_fixture", "Actual identity route with unavailable synthetic preferences returns503; no live capability conclusion."),
+        ("PAGE-14", &["settings-reading"], "route_rendered", "Current Reading settings; persistence not exercised."),
+        ("PAGE-15", &["settings-composition"], "route_rendered", "Current Composition settings; persistence and Send not exercised."),
+        ("PAGE-16", &["settings-copies"], "route_rendered", "Current Copies settings; folder mutations not exercised."),
+        ("PAGE-17", &["settings-notifications"], "route_rendered", "Current notification preferences; event delivery not exercised."),
+        ("PAGE-18", &["settings-privacy"], "route_rendered", "Current Privacy settings; preference mutations not exercised."),
+        ("PAGE-19", &["settings-openpgp"], "route_rendered", "Unavailable public inventory fixture; no private-key readiness proof."),
+        ("PAGE-20", &["settings-authentication"], "route_rendered", "Current overview includes disabled password and recovery controls."),
+        ("PAGE-21", &["key-management-unavailable", "key-management-inventory"], "route_rendered", "Unavailable and synthetic public inventory; no mutation or cryptography exercised."),
+        ("PAGE-22", &["settings-authentication"], "missing_dedicated_page", "Password change is disabled in the current authentication overview; no dedicated screen exists."),
+        ("PAGE-23", &["settings-authentication"], "missing_dedicated_page", "Recovery contact management is disabled in the current authentication overview; no dedicated screen exists."),
+        ("PAGE-24", &["sessions"], "route_rendered", "Current synthetic sessions; revocation not exercised."),
+        ("PAGE-25", &["login", "login-error"], "retained_authentication", "Current combined password/TOTP login and generic failure; layout unchanged."),
+        ("PAGE-26", &["login", "login-error"], "combined_authentication", "TOTP remains in the current login form; no standalone challenge route exists."),
+        ("PAGE-27", &["mailbox-empty", "reader-unavailable", "key-management-unavailable", "host-rejected"], "state_reference", "Representative actual states, not a fabricated State Matrix runtime page or complete state acceptance."),
+    ];
+    let inventory: serde_json::Value =
+        serde_json::from_str(include_str!("../../maint/ux/approved_pages.json"))
+            .expect("approved page inventory");
+    let pages = inventory["pages"].as_array().expect("approved pages array");
+    assert_eq!(pages.len(), approved_page_cases.len());
+    let approved_ids: std::collections::BTreeSet<_> = pages
+        .iter()
+        .map(|page| page["id"].as_str().expect("approved page id"))
+        .collect();
+    let mapped_ids: std::collections::BTreeSet<_> =
+        approved_page_cases.iter().map(|case| case.0).collect();
+    assert_eq!(
+        mapped_ids.len(),
+        approved_page_cases.len(),
+        "page ids must be unique"
+    );
+    assert_eq!(
+        mapped_ids, approved_ids,
+        "every approved page must be mapped"
+    );
+    let names: std::collections::BTreeSet<_> = cases.iter().map(|case| case.0).collect();
+    assert_eq!(names.len(), cases.len(), "fixture names must be unique");
+    let mut page_manifest = Vec::new();
+    for (page_id, fixtures, observation, limit) in &approved_page_cases {
+        let page = pages
+            .iter()
+            .find(|page| page["id"] == *page_id)
+            .expect("mapping references an approved page");
+        for name in *fixtures {
+            assert!(
+                names.contains(name),
+                "{page_id} references absent fixture {name}"
+            );
+        }
+        page_manifest.push(serde_json::json!({
+            "page_id": page_id, "title": page["title"], "reference": page["reference"],
+            "fixture_names": fixtures, "observation": observation, "limit": limit,
+            "functional_acceptance": false, "synthetic": true,
+        }));
+    }
     let mut manifest = Vec::new();
     for (name, path, authenticated, expected_status) in cases {
         let mut headers = if authenticated {
@@ -295,6 +398,7 @@ fn ux_synthetic_route_baselines() {
             "archive-missing" => headers[0] = ("User-Agent", "OSMAP/InvalidArchiveTest"),
             "archive-unavailable" => headers[0] = ("User-Agent", "OSMAP/SettingsUnavailable"),
             "draft-save-unconfirmed" => headers[0] = ("User-Agent", "OSMAP/DraftSaveUnconfirmed"),
+            "key-management-inventory" => headers[0] = ("User-Agent", "KeyInventoryAvailable"),
             _ => {}
         }
         let method = if name == "login-error"
@@ -466,6 +570,18 @@ fn ux_synthetic_route_baselines() {
             .map(|(_, value)| value.as_str())
             .expect("HTML has CSP");
         let html = redact_fixture_tokens(&body_text(&response));
+        if matches!(name, "login" | "login-error") {
+            assert!(html.contains("name=\"totp_code\""), "retained TOTP control");
+            assert!(
+                html.contains("name=\"password\""),
+                "retained password control"
+            );
+        }
+        if name == "settings-authentication" {
+            assert!(html.contains("disabled>Change</button>"));
+            assert!(html.contains("disabled>Manage contact</button>"));
+            assert!(html.contains("Recovery-contact management is unavailable."));
+        }
         let compose_enhanced = html.contains("id=\"compose-form\"");
         if compose_enhanced {
             assert_eq!(csp, super::super::compose_enhancement::csp());
@@ -489,6 +605,11 @@ fn ux_synthetic_route_baselines() {
             "csp": csp, "synthetic": true, "tokens_redacted": true,
             "appearance": appearance.as_str(),
             "script_count": usize::from(compose_enhanced),
+            "approved_page_ids": approved_page_cases.iter()
+                .filter(|(_, names, _, _)| names.contains(&name))
+                .map(|(id, _, _, _)| *id).collect::<Vec<_>>(),
+            "fixture_source_sha256": format!("{:x}", Sha256::digest(include_bytes!("ux_fixtures.rs"))),
+            "approved_inventory_sha256": format!("{:x}", Sha256::digest(include_bytes!("../../maint/ux/approved_pages.json"))),
         }));
     }
     if let Some(directory) = &output_dir {
@@ -497,5 +618,10 @@ fn ux_synthetic_route_baselines() {
             serde_json::to_vec_pretty(&manifest).expect("serialize manifest"),
         )
         .expect("write manifest");
+        fs::write(
+            directory.join("approved-page-baselines.json"),
+            serde_json::to_vec_pretty(&page_manifest).expect("serialize page mappings"),
+        )
+        .expect("write approved page mapping");
     }
 }

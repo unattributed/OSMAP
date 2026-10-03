@@ -48,7 +48,13 @@ def main():
     class FixtureHandler(SimpleHTTPRequestHandler):
         def do_GET(self):
             if self.path not in policies:
-                self.send_error(404)
+                # Scripted snapshots may request an unavailable backend URL.
+                # Keep it refused, but finish the empty response explicitly:
+                # fetch can reject the status without consuming an error body,
+                # leaving browser network-idle accounting pending indefinitely.
+                self.send_response(404)
+                self.send_header("Content-Length", "0")
+                self.end_headers()
                 return
             super().do_GET()
 

@@ -78,11 +78,21 @@ impl PrivateAccountFile {
 }
 
 pub(crate) struct LockedAccountFile {
-    // Closing this descriptor releases flock, including on errors/panic.
+    // Unlock explicitly on drop: a forked child may retain the open file
+    // description until exec, so closing our descriptor alone is insufficient.
     _lock: File,
     directory: PathBuf,
     stem: String,
     max_bytes: usize,
+}
+
+impl Drop for LockedAccountFile {
+    fn drop(&mut self) {
+        #[cfg(unix)]
+        {
+            let _ = crate::openbsd::advisory_file_unlock(&self._lock);
+        }
+    }
 }
 
 impl LockedAccountFile {
@@ -190,4 +200,50 @@ fn invalid() -> io::Error {
         io::ErrorKind::InvalidData,
         "private account record is unsafe or invalid",
     )
+}
+
+#[cfg(all(test, unix))]
+mod tests {
+    use super::*;
+
+    struct Scratch(PathBuf);
+    impl Drop for Scratch {
+        fn drop(&mut self) {
+            let _ = fs::remove_dir_all(&self.0);
+        }
+    }
+
+    #[test]
+    fn dropping_guard_unlocks_despite_inherited_open_file_description() {
+        let root = Scratch(std::env::temp_dir().join(format!(
+            "osmap-private-lock-{}",
+            crate::draft::generate_draft_id().unwrap()
+        )));
+        let store = PrivateAccountFile::new(root.0.clone(), "lock-lifetime-test", 4096);
+        let account = "synthetic@example.test";
+        let held = store.lock(account).unwrap();
+        // dup and fork retain the same open file description. Keep a duplicate
+        // alive to reproduce inheritance deterministically without forking the
+        // multi-threaded test process or depending on process-spawn timing.
+        let inherited = held._lock.try_clone().unwrap();
+        assert_eq!(
+            store.lock(account).err().unwrap().kind(),
+            io::ErrorKind::WouldBlock
+        );
+        drop(held);
+        let next = store
+            .lock(account)
+            .expect("guard drop must release its lock immediately");
+        assert_eq!(
+            store.lock(account).err().unwrap().kind(),
+            io::ErrorKind::WouldBlock
+        );
+        drop(inherited);
+        assert_eq!(
+            store.lock(account).err().unwrap().kind(),
+            io::ErrorKind::WouldBlock
+        );
+        drop(next);
+        assert!(store.lock(account).is_ok());
+    }
 }

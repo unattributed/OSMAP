@@ -3881,3 +3881,135 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   or test assertions were changed; root cause is not established and that rerun
   does not replace the full required check. Retain the failed log; rerun the
   normal hook before signed delivery, without suppressing or weakening tests.
+
+### Ordered epic revalidation / S00-01 work order — 2026-10-03 — IN_PROGRESS
+
+- The investor explicitly resumed application engineering and requested an
+  ordered, zero-assumption pass from S00-01 through the accepted epic. This
+  supersedes the preceding documentation-only hold. Use the existing framework
+  and records; no additional approval layer or parallel board is introduced.
+- Base6706f4f024f5575c4f86afaf9ad8d9b8e8e42e8b is signed and synchronized;
+  installed application sourcefa2ebeb remains a separate runtime fact. Accepted
+  R2 anchor6b3ce8fff27ca3dabf87039d54098bd9967a2e42 has a verified Shopkeeper
+  signature and unchanged, passing plan/design manifests. Original results and
+  approved reference bytes remain preserved rather than rewritten as new passes.
+- Dedicated project manager and Scrum lead supplied the bounded S00-01 work
+  order and yielded developer slots. Inventory developer/technical writer owns
+  the current intake reconciliation and control mapping; fixture developer owns
+  minimal test-only coverage in src/http/ux_fixtures.rs. Root owns captures,
+  shared integration, ledger/decisions, signing and immediate source sync.
+  Independent QA/security review follows the concrete handoff, not agent counts.
+- Allowed edits: append docs/UX_S00_INTAKE.md, test-only fixture coverage,
+  this ledger/DECISION_LOG.md and necessary indexed evidence tooling. Existing
+  approved_pages.json requirements/status history remain authoritative intake
+  inputs. No runtime application, Login/TOTP, frozen-plan or live state changes.
+- Exit: account for all27 approved pages and403 control IDs with actual
+  route/source/backend/error/test pointers or explicit missing/open findings;
+  capture fresh synthetic light baselines from the current router, including
+  useful errors/unavailable states; verify provenance and independent review.
+  Evidence root: /home/foo/Downloads/osmap-ux-s00/revalidation-20261003/.
+- Source/fixture tests and developer security gate apply to changed test code;
+  captures are visual intake observations, not workflow or human acceptance.
+  Operator all-SendFAIL, protected receipt/Sent/return and other unperformed UAT
+  remain OPEN. No external agent Send or policy/key mutation is authorized by
+  this intake slice. Next ordered slice is S00-02 after this bounded exit.
+- Bounded capture follow-up adds maint/ux/capture_pages.py to the allowed
+  test-tool scope: Compose's legitimate autosave-preference request receives
+  the static fixture server's404, whose HTML body is not consumed by the
+  rejecting client. Narrow browser diagnosis found the DOM/controls ready but
+  the request never finished for networkidle. Preserve the failure and qualify
+  an empty-body, explicitly length-zero404 without changing the route allowlist,
+  response CSP, runtime script or application behaviour. Do not weaken waiting
+  or treat a partial screenshot set as completed capture evidence.
+- Existing V10 scanner registers required refresh for six added test-only
+  expect calls (3391 ->3397); production-adjacent/high counts are unchanged.
+  Allowed generated evidence: maint/security/v10-rust-assumption-audit.json,
+  v10-fail-closed-remediation.json and corresponding existing claims count/hash
+  fields in v10-claims-boundary.json. Initial drift and intermediate metadata
+  mismatch are retained; the normal V10 gate passes after consistent refresh.
+  No scanner, assertion, classification rule or gate requirement was relaxed.
+
+### S00-01 current intake verification — 2026-10-03 — VERIFIED (bounded intake)
+
+- Exact27 page IDs/403 control IDs inventoried at base6706f4f;161 Git-blob
+  source indexes and54 dispatcher routes pinned. Current classifications:
+  197 candidate-pointer,139 page-family-only,43 missing-dedicated-page,
+  17 direct source-present/unexecuted and7 explicitly unavailable controls.
+  All current functional/UAT results remain unaccepted in this intake;
+  historical status/evidence and original intake bytes remain retained.
+- Mapping JSON35f7d4980fa26575f10e129eeab05b1bf6c3f1f966cb10cf72a532d8da5a5274;
+  deterministic generatorc5a6e08756874ac87128ea3b8ee319cace520ffd2b7d1b98145ea66450273e77.
+  Artifacts and portable basenames are under the stable S00 revalidation root.
+  Actual source facts correct stale claims about Compose controls, key forms
+  and saved defaults; they do not turn any failed journey into a passed one.
+- Focused router fixture passed1/0 after correcting the synthetic Identity
+  expectation from200 to its actual unavailable-dependency503.74 unique route
+  snapshots include exact27-page coverage, missing Documents404, absent password/
+  recovery screens, combined retained Login/TOTP and representative state cases.
+  Fixture source SHA256dd9f1b5ab2c6db3040abdc3869af5d8c91578180433e88e85c37865963c3624b.
+- Repaired static harness completed93 fresh screenshots:31 actual states at
+  360/768/1440 CSS pixels, light, height1100; no overflow or outside requests.
+  Capture273dbfd6c5e42537878a03ccb772b199e7b7ab04e1c9765134db0845394dd7fa;
+  routes15fa24d718681a26a448116d1ef2c11140cfc4855b9067a4897d2829bc05e2d7.
+  Root inspected both31-state desktop contact sheets and narrow Compose/key
+  pages; independent reviewer inspected additional auth/reader/missing states.
+  Contrast, dark/system, final reference conformity and full workflow matrices
+  were not run by this baseline and are not claimed from zero-valued counters.
+- Capture-harness SHA256222456b61ec3abb5e5137d2f70b234186588ae6cf45d6d77d5a4bfbf0115dce8;
+  isolated Compose and full baseline pass after explicit empty404 repair.
+  Failed capture/network diagnosis, initial fixture failure and V10 drift stay
+  retained. Format, diff, script compilation, plan checksums and refreshed V10
+  gate pass. Independent final intake review and signed hook/delivery follow.
+- No runtime deployment, authentication mutation, mail-host connection, private
+  cryptography, external submission or human acceptance occurred. All-SendFAIL
+  and required ordinary/protected delivery outcomes remain OPEN. This completes
+  intake coverage only; subsequent slices must qualify the named real outcomes.
+- Independent QA/security review PASS within this intake scope, report
+  qa-review.json SHA256cc19d4ee2f818224fa6f81096e097841ea63bf5b7064c9df20a0c43373bac8d7.
+  Reviewer authored no source/fixture/intake changes. Exact control/page sets,
+  direct anchors, current source hashes, historical prefix, reference integrity,
+  capture provenance and truthful missing/unavailable distinctions checked.
+  Required aggregate acceptance/UI gates and normal signed hook are pending;
+  no engineering delivery or human UAT acceptance is inferred before they pass.
+- Required aggregate gate returned the slice to IN_PROGRESS: full parallel
+  library run1073 passed/1 failed/19 ignored, existing binding-store test620
+  expected InvalidKey but received Busy. This repeats the earlier framework
+  gate's Busy/Stale anomaly, so an isolated pass/retry is insufficient diagnosis.
+  Retain gates/acceptance-check.log. Developer investigates the actual private
+  account lock lifetime and test isolation; no weakened assertion, serialization
+  of the whole suite or production lock change is authorized without a concrete
+  cause and bounded review. No human-only blocker is inferred from this failure.
+- Concrete prerequisite repair now authorized in src/private_account_file.rs:
+  the deterministic exact-source probe shows a fork-retained descriptor keeps
+  the account flock held after the parent guard is dropped; reacquisition fails
+  until the child exits. Existing session/TOTP/throttle guards explicitly unlock.
+  The exact concurrent-suite fork actor is not traced; this establishes the
+  guard-lifetime defect rather than every failure's cause. Preserve the probe
+  and diagnosis logs; add matching explicit unlock-on-drop plus a safe
+  duplicate-descriptor red/green regression, without weakening lock admission.
+  Independent security review and bounded native OpenBSD tests precede delivery.
+  This narrow mandatory-gate repair supersedes the work order's no-runtime-source
+  exclusion for this file only. No installed binary, keys, policy or Send change.
+- Prerequisite correction implemented with explicit account-lock unlock-on-drop;
+  deterministic duplicate-descriptor regression RED before/ GREEN after on
+  Linux and native OpenBSD7.9. Source SHA256
+  80e3cd3c1db7b6ec0633314dde5d69ad5072fbbf2bcf7f7b8affeb40c3acc438.
+  Native candidate094b6b339f270611c9aeaaadbc52d2b36b4aa3d788a00f5492d238cefb44c8ba
+  has a verified detached Shopkeeper signature. obsd1 identity was checked;
+  isolated native red exit101, green1/0 and binding group17/0. Retained logs in
+  native-lock/. No installed binary, standard checkout or private key changed.
+  Independent auditor accepts the minimal security semantics; exact concurrent
+  fork actor and operator Send causes remain unestablished by this regression.
+- The seven new safe-regression scanner calls require final V10 inventory3404;
+  refreshed audit/remediation and corresponding claims hashes pass the normal
+  V10 gate with refined high0. Initial3397 refresh remains historical above.
+  Required aggregate gates are rerunning against the corrected candidate.
+- Final corrected candidate: make acceptance-check PASS (developer security
+  and V10/V11/V12/V13), make v14-check PASS, cargo fmt --check and git diff
+  --check PASS. No whole-suite serialization or weakened gate/assertion used.
+  Independent lock review retained as
+  gates/private-account-lock-security-review.json, separate from the intake QA.
+  Native host-source-identity.log records OpenBSD7.9 and the exact corrected
+  source SHA. S00-01 returns to VERIFIED for its bounded intake/prerequisite
+  scope; normal signed hook and immediate ordinary branch sync complete delivery.
+  Neither installed application nor any current human UAT result changed.
