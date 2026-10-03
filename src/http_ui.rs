@@ -1599,34 +1599,39 @@ fn render_reader_move_controls(
     format!("<form class=\"message-move-controls\" method=\"post\" action=\"/message/move\">{fields}<div class=\"toolbar\">{buttons}</div>{chooser}<p class=\"muted\">Bin moves mail to Trash. Restore returns it to Inbox. These controls never permanently delete mail.</p></form>")
 }
 
-fn render_bulk_selection_menu(
-    base: &str,
-    view: &ListViewState,
-    _move_available: bool,
-    _archive_available: bool,
-) -> String {
+fn render_bulk_selection_menu(base: &str, view: &ListViewState, eligible_count: usize) -> String {
     if view.total_results == 0 {
         return String::new();
     }
     let visible = view.last_result() - view.first_result() + 1;
-    let count = visible.min(MAX_BULK_SELECTION);
+    let count = eligible_count;
     let base = list_navigation_href(base, view, view.page);
-    let label = if visible <= MAX_BULK_SELECTION {
+    let label = if count != visible.min(MAX_BULK_SELECTION) {
+        if visible <= MAX_BULK_SELECTION {
+            format!("Select {count} eligible on this page")
+        } else {
+            format!("Select {count} eligible in first {MAX_BULK_SELECTION} on this page")
+        }
+    } else if visible <= MAX_BULK_SELECTION {
         format!("Select all {count} on this page")
     } else {
         format!("Select first {count} on this page")
     };
-    let mut links = format!(
-        "<a href=\"{}\">{}</a>",
-        escape_html(&format!("{base}&select=move")),
-        label
-    );
+    let mut links = if count == 0 {
+        String::new()
+    } else {
+        format!(
+            "<a href=\"{}\">{}</a>",
+            escape_html(&format!("{base}&select=move")),
+            label
+        )
+    };
     links.push_str(&format!(
         "<a href=\"{}\">Clear selection</a>",
         escape_html(&base)
     ));
     let selected = match view.bulk_selection {
-        BulkSelection::Move | BulkSelection::Archive => {
+        BulkSelection::Move | BulkSelection::Archive if count > 0 => {
             format!("{count} selected for the next action.")
         }
         _ => "No automatic selection.".into(),
@@ -1670,11 +1675,17 @@ pub(crate) fn render_message_list_page(
         navigation_base.push_str(&format!("&scope={}", url_encode(scope)));
     }
     let focus_targets = back_focus::summary_targets(canonical_username, messages);
+    // Count the same GUID-bearing rows that the first-ten selection checks.
+    // Do not fill missing identities with later manually selectable rows.
+    let automatic_selection_count = messages
+        .iter()
+        .take(MAX_BULK_SELECTION)
+        .filter(|message| message.metadata.is_some())
+        .count();
     let mut rows = String::new();
     let archive_actions_available = bulk_actions
         .archive_mailbox_name
         .is_some_and(|archive_mailbox_name| archive_mailbox_name != mailbox_name);
-    let bulk_actions_available = !bulk_actions.move_destinations.is_empty();
     for (index, message) in messages.iter().enumerate() {
         let message_href = if message.metadata.is_some() {
             selected_message_href(
@@ -1803,6 +1814,7 @@ pub(crate) fn render_message_list_page(
             rows: &rows,
             banner: &list_notice_banner,
             bulk_form: &bulk_move_form,
+            automatic_selection_count,
         });
     }
     let bulk_archive_form = String::new();
@@ -1843,12 +1855,7 @@ pub(crate) fn render_message_list_page(
         }
     };
     let selection_controls = compact_tool(
-        render_bulk_selection_menu(
-            &navigation_base,
-            sort_links.view,
-            bulk_actions_available,
-            archive_actions_available,
-        ),
+        render_bulk_selection_menu(&navigation_base, sort_links.view, automatic_selection_count),
         "Select messages",
         "inbox",
     );

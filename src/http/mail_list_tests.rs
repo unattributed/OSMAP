@@ -224,6 +224,146 @@ fn bulk_selection_is_bounded_to_the_current_page_and_one_action() {
     );
 }
 
+fn eligible_selection_rendered_page(
+    mailbox: &str,
+    total: u64,
+    eligible: &[u64],
+    page: usize,
+) -> String {
+    let mut messages: Vec<_> = (1..=total)
+        .map(|uid| MessageSummary {
+            mailbox_name: mailbox.into(),
+            uid,
+            flags: vec![],
+            date_received: "2026-10-03 01:00:00 +0000".into(),
+            size_virtual: 100,
+            subject: Some(format!("Selection fixture {uid:04}")),
+            from: Some("sender@example.test".into()),
+            to: Some("recipient@example.test".into()),
+            metadata: eligible.contains(&uid).then(|| {
+                StubGateway::fixture_metadata("alice@example.com", mailbox, uid)
+            }),
+        })
+        .collect();
+    let mut view = crate::mail_list::ListViewState::from_query(&BTreeMap::from([
+        ("sort".into(), "subject".into()),
+        ("dir".into(), "asc".into()),
+        ("page".into(), page.to_string()),
+        ("select".into(), "move".into()),
+    ]))
+    .unwrap();
+    view.apply_messages(&mut messages);
+    let reader = crate::http_ui::MailReaderContext::default();
+    let destinations = vec!["Archive".into(), "Trash".into()];
+    crate::http_ui::render_message_list_page(
+        "alice@example.com",
+        "synthetic-csrf",
+        mailbox,
+        &messages,
+        None,
+        crate::http_ui::MessageListBulkActions {
+            archive_mailbox_name: Some("Archive"),
+            move_destinations: &destinations,
+        },
+        crate::http_ui::MessageListSortLinks {
+            view: &view,
+            search_query: None,
+            search_scope: None,
+            reader: &reader,
+        },
+    )
+    .as_str()
+    .to_owned()
+}
+
+fn eligible_selection_checkbox_tags(html: &str) -> Vec<&str> {
+    html.split("<input")
+        .skip(1)
+        .filter_map(|tail| tail.split_once('>').map(|(tag, _)| tag))
+        .filter(|tag| {
+            tag.contains("type=\"checkbox\"") && tag.contains("form=\"bulk-move-form\"")
+        })
+        .collect()
+}
+
+#[test]
+fn rendered_inbox_sent_selection_counts_only_current_eligible_identities() {
+    for mailbox in ["INBOX", "Sent"] {
+        let html = eligible_selection_rendered_page(mailbox, 3, &[2], 1);
+        let controls = eligible_selection_checkbox_tags(&html);
+        assert_eq!(controls.len(), 1, "only current GUID-bearing row is selectable: {mailbox}");
+        assert!(controls[0].contains("name=\"message_2\""));
+        assert_eq!(controls.iter().filter(|tag| tag.contains(" checked")).count(), 1);
+        assert!(html.contains("1 selected for the next action."),
+                "menu count must equal actual checked owned tuples: {mailbox}");
+        assert!(!html.contains("3 selected for the next action."));
+        assert!(!html.contains("Select all 3 on this page"));
+    }
+}
+
+#[test]
+fn rendered_inbox_sent_missing_identities_offer_no_automatic_selection() {
+    for mailbox in ["INBOX", "Sent"] {
+        let html = eligible_selection_rendered_page(mailbox, 3, &[], 1);
+        assert!(eligible_selection_checkbox_tags(&html).is_empty());
+        assert!(!html.contains("Select all 3 on this page"));
+        assert!(!html.contains("3 selected for the next action."));
+        assert!(!html.contains("name=\"action\" value=\"move\">Move Selected"));
+        assert!(!html.contains("name=\"action\" value=\"archive\">Archive Selected"));
+        // A zero-count native message or omission is allowed; do not invent
+        // a required label. No enabled automatic-selection link may exist.
+        for nav in html.split("<nav aria-label=\"Select messages on this page\">").skip(1) {
+            let nav = nav.split("</nav>").next().unwrap();
+            assert!(!nav.contains("select=move"), "no eligibility, no selection action");
+        }
+    }
+}
+
+#[test]
+fn rendered_page_two_selection_preserves_first_ten_boundary_and_eligible_count() {
+    for mailbox in ["INBOX", "Sent"] {
+        // First page has many eligible rows; they must never contribute.
+        // Page2 has 13 rows. Only UID51 lies within its first ten rows;
+        // UID61/62 have valid identities but stay unchecked by this mode.
+        let eligible: Vec<_> = (1..=50).chain([51, 61, 62]).collect();
+        let html = eligible_selection_rendered_page(mailbox, 63, &eligible, 2);
+        let controls = eligible_selection_checkbox_tags(&html);
+        assert_eq!(controls.len(), 3, "visible current-page controls only");
+        let checked: Vec<_> = controls.iter().filter(|tag| tag.contains(" checked")).collect();
+        assert_eq!(checked.len(), 1);
+        assert!(checked[0].contains("name=\"message_51\""));
+        assert!(!controls.iter().any(|tag| tag.contains("name=\"message_50\"")));
+        assert!(html.contains("Showing 51–63"));
+        assert!(html.contains("1 selected for the next action."));
+        assert!(!html.contains("10 selected for the next action."));
+    }
+}
+
+#[test]
+fn rendered_selection_tenth_row_boundary_keeps_later_manual_controls() {
+    for mailbox in ["INBOX", "Sent", "Archive", "Trash"] {
+        let html = eligible_selection_rendered_page(mailbox, 13, &[10, 11], 1);
+        let controls = eligible_selection_checkbox_tags(&html);
+        assert_eq!(controls.len(), 2);
+        let checked: Vec<_> = controls.iter().filter(|tag| tag.contains(" checked")).collect();
+        assert_eq!(checked.len(), 1, "original first-ten window: {mailbox}");
+        assert!(checked[0].contains("name=\"message_10\""));
+        assert!(html.contains("1 selected for the next action."));
+
+        let html = eligible_selection_rendered_page(mailbox, 13, &[11, 12], 1);
+        let controls = eligible_selection_checkbox_tags(&html);
+        assert_eq!(controls.len(), 2, "later manual controls stay available: {mailbox}");
+        assert!(!controls.iter().any(|tag| tag.contains(" checked")));
+        assert!(html.contains("id=\"bulk-move-form\""));
+        assert!(html.contains("value=\"move\">Move Selected"));
+        assert!(html.contains("No automatic selection."));
+        for nav in html.split("<nav aria-label=\"Select messages on this page\">").skip(1) {
+            let nav = nav.split("</nav>").next().unwrap();
+            assert!(!nav.contains("select=move"), "no automatic identities: {mailbox}");
+        }
+    }
+}
+
 #[test]
 fn global_search_uses_existing_routes_and_settings_omits_it() {
     let body = body_text(&mailbox_page("/mailbox?name=INBOX"));

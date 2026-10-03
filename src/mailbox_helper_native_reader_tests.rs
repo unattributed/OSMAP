@@ -594,6 +594,25 @@ fn isolated_openbsd_coordinated_reader_signed_helper() {
     for index in 0..2 {
         write_message(&root, "bob", index, 0);
     }
+    // Public synthetic Sent fixture only; no submission or append backend.
+    // Keep the original Inbox53/Bob2 subjects and search matches unchanged.
+    let sent_file = root.join("alice/Maildir/.Sent/new/synthetic-sent-recipient");
+    fs::write(
+        &sent_file,
+        concat!(
+            "From: Sent Sender <alice@fixture.test>\r\n",
+            "To: Public Recipient <recipient@fixture.test>\r\n",
+            "Bcc: SENT_BCC_PROJECTION_SENTINEL <hidden-recipient@fixture.test>\r\n",
+            "Subject: Sent recipient visibility\r\n",
+            "Date: Sat, 03 Oct 2026 12:00:00 +0000\r\n",
+            "Message-ID: <sent-recipient@fixture.test>\r\n",
+            "MIME-Version: 1.0\r\n",
+            "Content-Type: text/plain; charset=utf-8\r\n\r\n",
+            "Public synthetic Sent fixture body.\r\n",
+        ),
+    )
+    .unwrap();
+    fs::set_permissions(&sent_file, fs::Permissions::from_mode(0o600)).unwrap();
     let config = root.join("dovecot.conf");
     fs::write(&config, format!("base_dir = {0}/run\nstate_dir = {0}/state\nmail_location = maildir:~/Maildir\nmail_uid = {uid}\nmail_gid = {gid}\nfirst_valid_uid = {uid}\nprotocols =\nlisten = 127.0.0.1\nssl = no\nmail_plugins =\nstats_writer_socket_path =\nauth_socket_path = {0}/never-default\nlog_path = {0}/native.log\ninfo_log_path = {0}/native.log\nnamespace inbox {{\n inbox = yes\n separator =\n}}\n", root.display())).unwrap();
     fs::set_permissions(&config, fs::Permissions::from_mode(0o600)).unwrap();
@@ -803,6 +822,105 @@ fn isolated_openbsd_coordinated_reader_signed_helper() {
     let app = BrowserApp::new(
         HttpPolicy::from_config(&app_config),
         RuntimeBrowserGateway::from_config(&app_config),
+    );
+    // Actual Sent projection and same-UID folder isolation through the native
+    // Dovecot -> signed helper -> browser route, never through SMTP or crypto.
+    let sent_query = MessageListRequest::new(MessageListPolicy::default(), "Sent").unwrap();
+    let initial_sent = native_list.list_messages(ALICE, &sent_query).unwrap();
+    assert_eq!(initial_sent.len(), 1);
+    let sent_row = &initial_sent[0];
+    assert_eq!(sent_row.uid, 1);
+    assert_eq!(
+        sent_row.to.as_deref(),
+        Some("Public Recipient <recipient@fixture.test>")
+    );
+    assert_eq!(sent_row.from.as_deref(), Some("Sent Sender <alice@fixture.test>"));
+    let sent_version = &sent_row.metadata.as_ref().unwrap().version;
+    let inbox_version = &initial
+        .iter()
+        .find(|row| row.uid == sent_row.uid)
+        .unwrap()
+        .metadata
+        .as_ref()
+        .unwrap()
+        .version;
+    assert_ne!(sent_version.mailbox_guid, inbox_version.mailbox_guid);
+    assert_ne!(sent_version.message_guid, inbox_version.message_guid);
+    assert!(native_list.list_messages(BOB, &sent_query).unwrap().is_empty());
+    assert!(!crate::mail_list::has_flag(&sent_row.flags, "\\Flagged"));
+    let sent_path = "/mailbox?dir=asc&name=Sent&sort=subject";
+    let mut sent_page = get(&app, &alice, sent_path);
+    for enabled in ["1", "0"] {
+        assert_eq!(sent_page.response.status_code, 200);
+        assert_eq!(
+            text(&sent_page).matches("class=\"message-row message-card").count(),
+            1
+        );
+        let party = text(&sent_page)
+            .split_once("class=\"message-sender\"")
+            .unwrap()
+            .1
+            .split_once("</span>")
+            .unwrap()
+            .0;
+        assert!(party.contains("To: Public Recipient &lt;recipient@fixture.test&gt;"));
+        assert!(!party.contains("Sent Sender"));
+        assert!(!text(&sent_page).contains("SENT_BCC_PROJECTION_SENTINEL"));
+        assert!(!text(&sent_page).contains("hidden-recipient@fixture.test"));
+        let form = flag_form(text(&sent_page), sent_row.uid, "flagged");
+        assert_eq!(form["mailbox"], "Sent");
+        assert_eq!(form["mailbox_guid"], sent_version.mailbox_guid);
+        assert_eq!(form["message_guid"], sent_version.message_guid);
+        assert_eq!(form["enabled"], enabled);
+        let changed = http(&app, Some(&alice), "POST", "/message/flag", &form);
+        assert_eq!(changed.response.status_code, 303);
+        // Unselected lists do not acquire the browser reader budget. Flag
+        // POSTs acquire it and release via RAII without a release audit event.
+        assert_eq!(
+            changed.audit_events.iter()
+                .filter(|event| event.action == "request_budget_acquired")
+                .count(),
+            1
+        );
+        assert!(changed.audit_events.iter().any(|event| {
+            event.action == "message_flag_result"
+                && event.fields.iter().any(|field| {
+                    field.key == "outcome" && field.value == "updated"
+                })
+        }));
+        let location = changed.response.headers.iter()
+            .find(|(key, _)| key.eq_ignore_ascii_case("location"))
+            .unwrap().1.clone();
+        assert_eq!(location, sent_path);
+        sent_page = get(&app, &alice, &location);
+        assert_eq!(sent_page.response.status_code, 200);
+        let actual_sent = native_list.list_messages(ALICE, &sent_query).unwrap();
+        assert_eq!(actual_sent.len(), 1);
+        assert_eq!(actual_sent[0].metadata.as_ref().unwrap().version, *sent_version);
+        assert_eq!(
+            crate::mail_list::has_flag(&actual_sent[0].flags, "\\Flagged"),
+            enabled == "1"
+        );
+        assert_eq!(
+            crate::mail_list::has_flag(&actual_sent[0].flags, "\\Seen"),
+            crate::mail_list::has_flag(&sent_row.flags, "\\Seen")
+        );
+        assert_eq!(
+            persisted_flags(&native_list.list_messages(ALICE, &query).unwrap()),
+            persisted_flags(&initial)
+        );
+        assert_eq!(
+            persisted_flags(&native_list.list_messages(BOB, &query).unwrap()),
+            persisted_flags(&foreign)
+        );
+        assert!(native_list.list_messages(BOB, &sent_query).unwrap().is_empty());
+    }
+    assert_eq!(flag_form(text(&sent_page), sent_row.uid, "flagged")["enabled"], "1");
+    assert!(!text(&sent_page).contains("SENT_BCC_PROJECTION_SENTINEL"));
+    assert!(!text(&sent_page).contains("hidden-recipient@fixture.test"));
+    assert_eq!(
+        persisted_flags(&native_list.list_messages(ALICE, &sent_query).unwrap()),
+        persisted_flags(&initial_sent)
     );
     let reading_store = crate::reading_preferences::ReadingPreferencesStore::new(
         &app_config.state_layout.settings_dir,
@@ -1694,9 +1812,15 @@ fn isolated_openbsd_coordinated_reader_signed_helper() {
         persisted_flags(&foreign)
     );
     assert_eq!(forbidden.load(Ordering::SeqCst), 0);
+    assert_eq!(
+        persisted_flags(&native_list.list_messages(ALICE, &sent_query).unwrap()),
+        persisted_flags(&initial_sent)
+    );
+    assert!(native_list.list_messages(BOB, &sent_query).unwrap().is_empty());
     fixture.finish();
     drop(fixture);
     assert!(!root.exists());
     assert_eq!(before, standard_metadata());
+    println!("native_sent_guid_recipient_star_unstar_restore=PASS bcc_not_in_sent_list=PASS same_uid_inbox_and_foreign_account_unchanged=PASS");
     println!("native_reader_cases=PASS rows53_two_accounts=PASS classification_only=PASS page50_selected_back_search=PASS filtered_previous_next_crosspage_search_origin=PASS stale_navigation_guid_refusal=PASS native_csrf_read_star_filtered_membership_reload=PASS native_manual_onopen_seen_unread_reconciliation=PASS opening_stale_foreign_guid_refusal=PASS native_conversation_headers_saved_order_reader_next_explicit_precedence=PASS conversation_excluded_parent_stale_guid_refusal=PASS attachment_without_and_actual_unknown_count={unknown_attachment_records} foreign_neighbour_stale_refusal=PASS budget_reuse=PASS no_move_append_or_crypto_configuration=PASS scratch_cleanup=PASS standard_host_metadata_unchanged=PASS");
 }

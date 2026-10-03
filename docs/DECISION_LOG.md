@@ -8148,3 +8148,25 @@ HTTP while production parsing continues to reject fragment request targets.
 Keep failed fixture/instrument attempts and current human acceptance OPEN.
 Next remediate the discovered automatic-selection eligibility/count defect
 with actual Inbox/Sent mixed-metadata and page2 RED/GREEN source tests.
+
+### 2026-10-03 — Count actual eligible selection and prove native Sent behavior
+
+Automatic selection is bounded to the original first ten visible positions.
+Count only the metadata-bearing controls actually checked in that window;
+never skip missing identities to reach later rows. Retain later manual controls
+when the automatic count is zero, and use the same count in Archive/Bin.
+Compiled RED and four actual-renderer GREEN regressions precede delivery.
+
+Prove Sent's actual recipient and star persistence in the existing disposable
+native Dovecot/helper/browser fixture, including overlapping folder UIDs and
+Bcc exclusion from the list. Preserve its failed assertion attempts; align only
+new instrumentation with actual list/flag budget and canonical-return contracts.
+Native GREEN, cleanup and zero forbidden actions are bounded engineering proof,
+not human Send, cryptography, provider receipt or whole-sprint acceptance.
+
+Next implement approved configurable Bin behavior, which remains absent.
+Use a separate typed account-private CAS record so the strict legacy settings
+parser and unrelated Archive/content saves stay compatible with rollback.
+Missing record retains Trash; a missing configured folder must refuse instead
+of silently redirecting mail. Validate the session's actual owned selectable
+folder, route Bin/restore to it and preserve permanent-delete refusal.

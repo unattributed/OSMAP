@@ -4975,3 +4975,54 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   identities still offer selection. Prepared actual Inbox/Sent/page2 regressions
   require a genuine compiled RED and a code fix after this checkpoint. No paper
   closure; all human Send/provider/protected-mail/key acceptance remain OPEN.
+
+### S02-01 eligible selection and actual native Sent proof — 2026-10-03
+
+- Previous Back-focus source172e6f20d5eb26bdb7d4e89efbae6e3c80d73c10 has a
+  verified Shopkeeper signature and exact local/origin equality0/0. Matching
+  application5191cc55fc1192018e0109fb7d0ab1432b2a28a71b51392a1e491e54e7c332e7
+  is installed web-only on obsd1; owned Inbox keyboard Back closes the pane and
+  focuses the exact current row, with saved forms unchanged and zero POST/Send.
+  Unread is empty; positive live Unread/page2/linked-thread cases are NOT RUN.
+  Authoritative helper sourceff39151 remains unchanged and compatible.
+- Genuine compiled RED: all three new actual production-renderer regressions
+  fail the inflated menu count/empty eligibility/page2 assertions. Count now
+  derives from the same metadata-bearing first-ten visible positions as checked
+  controls. Missing identities do not pull later rows into the selection.
+  Zero automatic eligibility suppresses only the automatic action; later manual
+  checkboxes and bulk form remain. Pass the same count to Archive/Bin's shared
+  caller. Bounds, backend ownership/GUID validation and mutation rules stay.
+- Four discriminating rendered regressions cover Inbox/Sent mixed/missing
+  metadata, page2 isolation and positions10/11 with manual-only11/12, including
+  Archive/Bin callers. All25 current local list tests PASS; native25 PASS too.
+  Independent source review finds no blocking count/window/manual-control issue.
+- Add one synthetic owned native Sent record, distinct To/From and Bcc sentinel,
+  with UID1 overlapping Inbox. Exercise actual Dovecot, authenticated helper and
+  browser Star/Unstar forms; verify current Sent GUID, recipient projection and
+  Bcc exclusion from list, native Flagged persistence/Seen unchanged, restoration,
+  same-UID Inbox and Bob unchanged, no submission/crypto and owned scratch cleanup.
+- Native attempt1 retained: an incorrect new unselected-list budget assertion;
+  attempt2 retained: expected noncanonical query ordering after Star. Correct
+  only new fixture assertions against actual route contracts: flag POST has one
+  acquired budget/updated outcome, released guard without a release audit event;
+  exact return uses existing canonical query order. Original budget helper/tests,
+  production limits and all mutation/restoration guards are unchanged.
+- Matching native attempt3 PASS286 pinned compile inputs,25 list tests and one
+  distinct disposable Dovecot/helper/browser integration. Test binary
+  d31897a7a6ac010e05fcece0ec2603858199edb11f453213c3c4c632223929c8;
+  application8873df85c4250ae2f7b5cb2e2d955d59f563ec949e35b4f662c79ed021935a7c.
+  Current acceptance-check/v14 PASS; v10 register refresh initially used an
+  incorrect register key and correctly refused the stale count. Corrected
+  existing schema, refreshed3968/refinedhigh0 and final v10 PASS; gates unchanged.
+- Evidence retained under stable S02 revalidation root eligible-selection/,
+  sent-native/, back-focus/ and conversation-order/native-eligible-sent-attempt*.
+  Signed commit/push hooks and matching installation still required for this
+  source. Human UAT and whole S02 remain OPEN; no agent Send, operator flag/key/
+  policy mutation or provider acceptance is inferred from the disposable fixture.
+- Next real S02-03 gap is accepted R2-14-010: Bin folder is still fixed Trash.
+  Implement a separate typed per-account defaultTrash/revision0 CAS preference,
+  owned selectable folder save, actual configured Bin/restore destinations and
+  matching UI/navigation. Preserve strict legacy settings schema/independent
+  saves/rollback. Work order under bin-folder/work-order.json; no expunge or new
+  retention policy. A test/report without the requested implementation cannot
+  close that slice.
