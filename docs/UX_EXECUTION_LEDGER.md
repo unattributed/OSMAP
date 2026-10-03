@@ -4482,3 +4482,76 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   independently demonstrated all-folder backend fanout gap is engineered and
   tested. No slice completion, installed fix, human UAT readiness or Send success
   is inferred. Artifacts: /home/foo/Downloads/osmap-ux-s02/revalidation-20261003/.
+
+### S02-01 authenticated batch implementation and native countercase — 2026-10-03
+
+- The gateway now prepares one ordered typed visible-folder search rather than
+  starting a helper/native fetch per folder. New operation-specific HMAC scope
+  binds canonical account, ordered names, query and field; the old single-folder
+  codec remains byte compatible. Existing five-second deadline and concurrency,
+  request/reply, row and result bounds remain. Validate all observed bounded rows
+  before returning the stable discovery-order prefix; no partial-result fallback.
+- Actual gateway RED reproduced39 native fetches; focused GREEN proves one batch
+  fetch. Native attempt1 failed staging before compilation; attempt2 exhausted
+  compiler memory before functional execution. Attempt3 uses one build job with
+  debug symbols/incremental disabled, preserving assertions and runtime limits.
+  It executed15 focused tests successfully; the explicit native fixture then
+  passed39-folder/late-match/account-separation paths and failed a literal-wildcard
+  folder because Dovecot's MAILBOX predicate expands the name to its sibling.
+- The broadened result is correctly refused, but the valid selected folder is
+  unusable. Exact account mailbox-GUID resolution is being implemented under the
+  same deadline; no validation weakening or deadline increase is authorised by
+  these results. S02-01, matching deployment and human UAT remain OPEN. All
+  failed attempts and the actual functional countercase are retained under the
+  stable S02 root. No Send or operator key/policy mutation occurred.
+
+- Native attempt4 then completed the corrected fixture: normal39/late/account,
+  exact wildcard GUID scope, validated250 prefix and owned cleanup all passed.
+  Native focused18 and Clear filters2 also passed. Its application candidate
+  `a10e93ff34fbb9f8bcdece9b49d4ba3fb25cd3f4fb6e5cc21dab272b983a2656`
+  remains uninstalled: independent security review found that helper listing and
+  batch clients reset socket timeouts on each read. Actual signed slow-trickle
+  regressions both accepted replies after1.503 seconds under a1-second policy
+  (RED0/2). The narrow listing/batch absolute transport deadline is now being
+  repaired with the existing safe bounded-connect utility and partial-I/O loops;
+  final matching native tests/build are required after that change.
+- The installed obsd1 relay is a peer-authenticated opaque Python byte pump,
+  with an actual authoritative endpoint216.128.179.75. Strict SSH identity,
+  helper/application/wrapper hashes and Dovecot2.3.21.1 metadata match the earlier
+  reachable155.138.144.113 endpoint. Use the actual relay endpoint for rollout;
+  do not alter routing or restart the unchanged opaque relay for the new codec.
+
+- Absolute listing/batch transport deadlines now cover connect, grant preparation,
+  partial writes, reads and final reply validation. Actual signed slow-trickle
+  RED0/2 becomes GREEN2/0; real backpressure/full-deadline and next healthy request
+  pass without increased limits. Native attempts6–8 pass the 21 focused tests,
+  two Clear filters tests and one separately executed native fixture:24 distinct
+  tests, not25. Attempt5 timed out on its initial native fetch; its cause remains
+  unproven and later passes do not erase that retained failure. Finite phase/
+  timing/userdb counters and bounded diagnostic classification aid reproduction
+  without raw native logs, queries, accounts or message bodies in output.
+- Candidate native8 is b19c86d8232aa621ac6c183e30b0dd5290780546d55c47f07690af4bcef73269,
+  all259 inputs verified; NOT installed. Full acceptance attempt1 failed a test-only
+  Clippy type-complexity warning; a named test alias fixes it, with strict Clippy
+  passing. Attempt2 then failed the repository shell-process source ban in the
+  gateway's owned process fixture. Replace the actual shell fixture with a direct
+  qualified Python3 process while retaining real timeout/refusal/argv and cleanup
+  assertions; do not hide literals or weaken the gate. Final gates, matching native
+  build, signed-source helper-first rollout and installed authoritative positive
+  Search/Clear recovery remain required. S02-01 remains OPEN.
+
+- Final owned gateway fixture directly executes qualified Python3, records exact
+  JSON argv/account and checks timed-out fixture PIDs were reaped; shell source
+  ban remains unchanged. Final make acceptance-check attempt3 PASS:1107 library
+  tests and1 binary test,20 ignored explicitly excluded. fmt, strict all-targets/
+  all-features Clippy and diff check PASS. Refreshed existing V10 inventories
+  through their actual scanners:3619 entries, refined high0; no gate waiver.
+- Final native attempt9 verifies259 frozen inputs and passes the same24 distinct
+  tests, including the corrected real-process fixture and explicit native owned
+  Dovecot/account/GUID/250-prefix cleanup. Test binary82b88bf8d87c4802c4323d4a99a1f8c22ab94e099b25bb3289fcc9990300c2d3;
+  app b19c86d8232aa621ac6c183e30b0dd5290780546d55c47f07690af4bcef73269 is
+  unchanged from native8. Independent security review approves current source and
+  matches all12 reviewed Rust pins to native9. Prior complete gateway source blob
+  was not retained, so no independent old-file byte-equivalence claim is made.
+  Signing/sync and matching helper-first deployment with positive authoritative
+  Search/Clear proof remain the next steps; no slice or human Send acceptance yet.

@@ -262,3 +262,22 @@ should remain:
 - hostile to unnecessary dependency growth
 - compatible with packaging and redistribution expectations
 - free of Linux-first release assumptions
+
+## UX S02-01 compatible search-helper rollout
+
+The new authenticated batch-search request preserves the single-folder codec.
+Deploy the matching reviewed native application to the authoritative mailbox
+helper before the obsd1 web client starts using the new operation. Preserve the
+original binary in a private, exclusive rollback directory on each host; do not
+change routing, keys, account policy, Dovecot/Postfix configuration or data.
+The obsd1 mailbox relay transports opaque bounded bytes and needs no protocol
+change. Confirm its actual destination identity rather than relying on an old
+address in a handoff.
+
+Service health and binary hashes are activation prerequisites, not functional
+acceptance. Verify installed INBOX and all-folder searches against authoritative
+matching metadata, then keyboard Clear filters from an empty filtered view back
+to those matches with query, field and scope retained. Record the assessed signed
+source, native test/build input hashes, installed digests, rollback paths and
+outcomes in the execution ledger. This bounded development rollout does not
+refresh historical strict-release reports or qualify Send/OpenPGP/human UAT.

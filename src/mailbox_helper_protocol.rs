@@ -20,9 +20,10 @@ use crate::attachment::{
 };
 use crate::mailbox::{
     MailboxEntry, MailboxListingPolicy, MessageAppendRequest, MessageListPolicy,
-    MessageListRequest, MessageMovePolicy, MessageMoveRequest, MessageSearchField,
-    MessageSearchPolicy, MessageSearchRequest, MessageSearchResult, MessageSummary, MessageView,
-    MessageViewPolicy, MessageViewRequest, DEFAULT_MESSAGE_APPEND_MAX_BYTES,
+    MessageListRequest, MessageMovePolicy, MessageMoveRequest, MessageSearchBatchRequest,
+    MessageSearchField, MessageSearchPolicy, MessageSearchRequest, MessageSearchResult,
+    MessageSummary, MessageView, MessageViewPolicy, MessageViewRequest,
+    DEFAULT_MESSAGE_APPEND_MAX_BYTES,
 };
 
 /// Supported helper requests for the first mailbox-read slice.
@@ -58,6 +59,13 @@ pub(super) enum MailboxHelperRequest {
     MessageSearch {
         canonical_username: String,
         mailbox_name: String,
+        query: String,
+        field: MessageSearchField,
+        grant: MailboxHelperGrant,
+    },
+    MessageSearchBatch {
+        canonical_username: String,
+        mailbox_names: Vec<String>,
         query: String,
         field: MessageSearchField,
         grant: MailboxHelperGrant,
@@ -141,6 +149,12 @@ pub(crate) enum MailboxHelperResponse {
         field: MessageSearchField,
         results: Vec<MessageSearchResult>,
     },
+    MessageSearchBatchOk {
+        mailbox_names: Vec<String>,
+        query: String,
+        field: MessageSearchField,
+        results: Vec<MessageSearchResult>,
+    },
     MessageViewOk {
         message: Box<MessageView>,
     },
@@ -199,6 +213,16 @@ pub(super) fn encode_request(request: &MailboxHelperRequest) -> String {
             "operation=message_search\ncanonical_username_b64={}\nmailbox_name_b64={}\nquery_b64={}\nsearch_field={}\n{}",
             encode_base64(canonical_username.as_bytes()),
             encode_base64(mailbox_name.as_bytes()),
+            encode_base64(query.as_bytes()),
+            field.query_value(),
+            encode_grant_fields(grant),
+        ),
+        MailboxHelperRequest::MessageSearchBatch {
+            canonical_username, mailbox_names, query, field, grant,
+        } => format!(
+            "operation=message_search_batch\ncanonical_username_b64={}\nmailbox_names_b64={}\nquery_b64={}\nsearch_field={}\n{}",
+            encode_base64(canonical_username.as_bytes()),
+            encode_mailbox_names(mailbox_names),
             encode_base64(query.as_bytes()),
             field.query_value(),
             encode_grant_fields(grant),
@@ -354,6 +378,31 @@ pub(super) fn parse_request(input: &str) -> Result<MailboxHelperRequest, String>
             Ok(MailboxHelperRequest::MessageSearch {
                 canonical_username,
                 mailbox_name: request.mailbox_name,
+                query: request.query,
+                field: request.field,
+                grant,
+            })
+        }
+        "message_search_batch" => {
+            let query = decode_batch_text(
+                require_field(&fields, "query_b64")?,
+                crate::mailbox::DEFAULT_SEARCH_QUERY_MAX_LEN,
+                "query",
+            )?;
+            let request = MessageSearchBatchRequest::new(
+                MessageSearchPolicy::default(),
+                decode_mailbox_names(require_field(&fields, "mailbox_names_b64")?)?,
+                query.clone(),
+                MessageSearchField::from_query_value(require_field(&fields, "search_field")?)
+                    .ok_or_else(|| "invalid helper search_field".to_string())?,
+            )
+            .map_err(|error| error.reason)?;
+            if request.query != query {
+                return Err("helper batch query is not canonical".into());
+            }
+            Ok(MailboxHelperRequest::MessageSearchBatch {
+                canonical_username,
+                mailbox_names: request.mailbox_names,
                 query: request.query,
                 field: request.field,
                 grant,
@@ -562,6 +611,7 @@ pub(super) fn request_grant(request: &MailboxHelperRequest) -> &MailboxHelperGra
         | MailboxHelperRequest::MailboxList { grant, .. }
         | MailboxHelperRequest::MessageList { grant, .. }
         | MailboxHelperRequest::MessageSearch { grant, .. }
+        | MailboxHelperRequest::MessageSearchBatch { grant, .. }
         | MailboxHelperRequest::MessageView { grant, .. }
         | MailboxHelperRequest::AttachmentDownload { grant, .. }
         | MailboxHelperRequest::MessageMove { grant, .. }
@@ -578,6 +628,7 @@ fn set_request_grant(request: &mut MailboxHelperRequest, new_grant: MailboxHelpe
         | MailboxHelperRequest::MailboxList { grant, .. }
         | MailboxHelperRequest::MessageList { grant, .. }
         | MailboxHelperRequest::MessageSearch { grant, .. }
+        | MailboxHelperRequest::MessageSearchBatch { grant, .. }
         | MailboxHelperRequest::MessageView { grant, .. }
         | MailboxHelperRequest::AttachmentDownload { grant, .. }
         | MailboxHelperRequest::MessageMove { grant, .. }
@@ -594,6 +645,7 @@ pub(super) fn helper_operation_label(request: &MailboxHelperRequest) -> &'static
         MailboxHelperRequest::MailboxList { .. } => "mailbox_list",
         MailboxHelperRequest::MessageList { .. } => "message_list",
         MailboxHelperRequest::MessageSearch { .. } => "message_search",
+        MailboxHelperRequest::MessageSearchBatch { .. } => "message_search_batch",
         MailboxHelperRequest::MessageView { .. } => "message_view",
         MailboxHelperRequest::AttachmentDownload { .. } => "attachment_download",
         MailboxHelperRequest::MessageMove { .. } => "message_move",
@@ -606,6 +658,26 @@ fn sign_request_grant(
     grant: &MailboxHelperGrant,
     key: &[u8],
 ) -> Result<String, String> {
+    if let MailboxHelperRequest::MessageSearchBatch {
+        canonical_username,
+        mailbox_names,
+        query,
+        field,
+        ..
+    } = request
+    {
+        validate_canonical_username(canonical_username)?;
+        let validated = MessageSearchBatchRequest::new(
+            MessageSearchPolicy::default(),
+            mailbox_names.clone(),
+            query.clone(),
+            *field,
+        )
+        .map_err(|error| error.reason)?;
+        if validated.query != *query {
+            return Err("helper batch query is not canonical".into());
+        }
+    }
     type HmacSha256 = Hmac<Sha256>;
     let mut mac = HmacSha256::new_from_slice(key)
         .map_err(|error| format!("helper grant key was invalid: {error}"))?;
@@ -675,6 +747,19 @@ fn canonical_grant_payload(request: &MailboxHelperRequest, grant: &MailboxHelper
         } => {
             fields.push(canonical_username.clone());
             fields.push(mailbox_name.clone());
+            fields.push(query.clone());
+            fields.push(field.query_value().to_string());
+        }
+        MailboxHelperRequest::MessageSearchBatch {
+            canonical_username,
+            mailbox_names,
+            query,
+            field,
+            ..
+        } => {
+            fields.push(canonical_username.clone());
+            fields.push(mailbox_names.len().to_string());
+            fields.extend(mailbox_names.iter().cloned());
             fields.push(query.clone());
             fields.push(field.query_value().to_string());
         }
@@ -872,6 +957,48 @@ pub(crate) fn encode_response(response: &MailboxHelperResponse) -> String {
             }
             output
         }
+        MailboxHelperResponse::MessageSearchBatchOk {
+            mailbox_names,
+            query,
+            field,
+            results,
+        } => {
+            let mut output = format!(
+                "status=ok\noperation=message_search_batch\nmailbox_names_b64={}\nquery_b64={}\nsearch_field={}\nmessage_count={}\n",
+                encode_mailbox_names(mailbox_names),
+                encode_base64(query.as_bytes()),
+                field.query_value(),
+                results.len()
+            );
+            for result in results {
+                output.push_str("message_uid=");
+                output.push_str(&result.uid.to_string());
+                output.push('\n');
+                output.push_str("message_flags_b64=");
+                output.push_str(&encode_base64(result.flags.join(",").as_bytes()));
+                output.push('\n');
+                output.push_str("message_date_received_b64=");
+                output.push_str(&encode_base64(result.date_received.as_bytes()));
+                output.push('\n');
+                output.push_str("message_size_virtual=");
+                output.push_str(&result.size_virtual.to_string());
+                output.push('\n');
+                output.push_str("message_mailbox_b64=");
+                output.push_str(&encode_base64(result.mailbox_name.as_bytes()));
+                output.push('\n');
+                output.push_str("message_subject_b64=");
+                output.push_str(&encode_base64(
+                    result.subject.as_deref().unwrap_or("").as_bytes(),
+                ));
+                output.push('\n');
+                output.push_str("message_from_b64=");
+                output.push_str(&encode_base64(result.from.as_deref().unwrap_or("").as_bytes()));
+                output.push('\n');
+                output.push_str(&encode_message_metadata(result.metadata.as_ref()));
+                output.push_str("message_end=1\n");
+            }
+            output
+        }
         MailboxHelperResponse::MessageViewOk { message } => format!(
             "status=ok\noperation=message_view\nmessage_uid={}\nmessage_flags_b64={}\nmessage_date_received_b64={}\nmessage_size_virtual={}\nmessage_mailbox_b64={}\nmessage_header_block_b64={}\nmessage_body_text_b64={}\n{}",
             message.uid,
@@ -927,6 +1054,12 @@ pub(super) fn parse_response(
     message_view_policy: MessageViewPolicy,
     input: &str,
 ) -> Result<MailboxHelperResponse, String> {
+    if input
+        .lines()
+        .any(|line| line == "operation=message_search_batch")
+    {
+        return parse_search_batch_response(search_policy, input);
+    }
     if input.lines().any(|line| line == "operation=folder_create") {
         if input.len() > 4096 {
             return Err("create response too large".into());
@@ -1384,6 +1517,17 @@ fn reject_unknown_request_fields(
             "operation",
             "canonical_username_b64",
             "mailbox_name_b64",
+            "grant_issued_at",
+            "grant_expires_at",
+            "grant_nonce",
+            "grant_signature",
+        ],
+        "message_search_batch" => &[
+            "operation",
+            "canonical_username_b64",
+            "mailbox_names_b64",
+            "query_b64",
+            "search_field",
             "grant_issued_at",
             "grant_expires_at",
             "grant_nonce",
@@ -2183,4 +2327,412 @@ fn parse_move_version(fields: &BTreeMap<String, String>) -> Result<MessageVersio
         )?,
     )
     .map_err(|error| error.reason)
+}
+
+// JSON's worst-case escaped representation is six bytes per input byte, plus
+// quotes and delimiters. This decoder does not change the transport byte caps.
+const MAX_BATCH_SCOPE_JSON_BYTES: usize = crate::mailbox::DEFAULT_MAX_MAILBOXES
+    * (crate::mailbox::DEFAULT_MAILBOX_NAME_MAX_LEN * 6 + 3)
+    + 2;
+
+fn encode_mailbox_names(names: &[String]) -> String {
+    encode_base64(serde_json::to_string(names).unwrap_or_default().as_bytes())
+}
+
+fn decode_batch_bytes(value: &str, limit: usize, field: &str) -> Result<Vec<u8>, String> {
+    if value.len() > limit.div_ceil(3) * 4 {
+        return Err(format!("{field} exceeded encoded byte limit"));
+    }
+    let bytes = decode_base64_bytes(value, limit, field)?;
+    if encode_base64(&bytes) != value {
+        return Err(format!("{field} base64 was not canonical"));
+    }
+    Ok(bytes)
+}
+
+fn decode_batch_text(value: &str, limit: usize, field: &str) -> Result<String, String> {
+    String::from_utf8(decode_batch_bytes(value, limit, field)?)
+        .map_err(|_| format!("{field} was not valid UTF-8"))
+}
+
+fn decode_mailbox_names(value: &str) -> Result<Vec<String>, String> {
+    let bytes = decode_batch_bytes(value, MAX_BATCH_SCOPE_JSON_BYTES, "mailbox names")?;
+    struct BoundedNames;
+    impl<'de> serde::de::Visitor<'de> for BoundedNames {
+        type Value = Vec<String>;
+        fn expecting(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            f.write_str("a bounded mailbox name vector")
+        }
+        fn visit_seq<A: serde::de::SeqAccess<'de>>(
+            self,
+            mut sequence: A,
+        ) -> Result<Self::Value, A::Error> {
+            let mut names = Vec::new();
+            while let Some(name) = sequence.next_element::<String>()? {
+                if names.len() == crate::mailbox::DEFAULT_MAX_MAILBOXES
+                    || name.len() > crate::mailbox::DEFAULT_MAILBOX_NAME_MAX_LEN
+                {
+                    return Err(serde::de::Error::custom("mailbox scope exceeded bounds"));
+                }
+                names.push(name);
+            }
+            Ok(names)
+        }
+    }
+    let mut decoder = serde_json::Deserializer::from_slice(&bytes);
+    let names = serde::de::Deserializer::deserialize_seq(&mut decoder, BoundedNames)
+        .map_err(|_| "invalid helper mailbox names vector".to_string())?;
+    decoder
+        .end()
+        .map_err(|_| "invalid helper mailbox names vector".to_string())?;
+    // Scope validation is shared with the model. A harmless literal query only
+    // allows this decoder to qualify the vector independently of the header.
+    MessageSearchBatchRequest::new(
+        MessageSearchPolicy::default(),
+        names.clone(),
+        "scope",
+        MessageSearchField::All,
+    )
+    .map_err(|error| error.reason)?;
+    Ok(names)
+}
+
+fn parse_search_batch_response(
+    policy: MessageSearchPolicy,
+    input: &str,
+) -> Result<MailboxHelperResponse, String> {
+    if input.len() > super::DEFAULT_MAILBOX_HELPER_MAX_RESPONSE_BYTES {
+        return Err("helper batch response exceeded byte limit".into());
+    }
+    let mut headers = BTreeMap::new();
+    let mut row = BTreeMap::new();
+    let mut results = Vec::new();
+    let mut rows_started = false;
+    for line in input.lines() {
+        if line.is_empty() {
+            continue;
+        }
+        let (key, value) = line
+            .split_once('=')
+            .ok_or_else(|| "malformed helper batch response".to_string())?;
+        if value.chars().any(char::is_control) {
+            return Err("control in helper batch response".into());
+        }
+        match key {
+            "status" | "operation" | "mailbox_names_b64" | "query_b64" | "search_field"
+            | "message_count" => {
+                if rows_started || headers.insert(key.to_string(), value.to_string()).is_some() {
+                    return Err("duplicate or misplaced helper batch header".into());
+                }
+            }
+            "message_end" => {
+                rows_started = true;
+                if value != "1" || row.is_empty() {
+                    return Err("invalid helper batch message marker".into());
+                }
+                results.push(parse_message_search_fields(policy, &row)?);
+                row.clear();
+                if results.len() > policy.max_results {
+                    return Err("helper batch response exceeded result limit".into());
+                }
+            }
+            "message_uid"
+            | "message_flags_b64"
+            | "message_date_received_b64"
+            | "message_size_virtual"
+            | "message_mailbox_b64"
+            | "message_subject_b64"
+            | "message_from_b64"
+            | "message_mailbox_guid"
+            | "message_guid_b64"
+            | "message_attachment_count"
+            | "message_preview_b64" => {
+                rows_started = true;
+                if row.insert(key.to_string(), value.to_string()).is_some() {
+                    return Err("duplicate helper batch message field".into());
+                }
+            }
+            _ => return Err("unknown helper batch response field".into()),
+        }
+    }
+    if !row.is_empty()
+        || headers.len() != 6
+        || require_field(&headers, "status")? != "ok"
+        || require_field(&headers, "operation")? != "message_search_batch"
+    {
+        return Err("incomplete helper batch response".into());
+    }
+    let mailbox_names = decode_mailbox_names(require_field(&headers, "mailbox_names_b64")?)?;
+    let query = decode_batch_text(
+        require_field(&headers, "query_b64")?,
+        policy.query_max_len,
+        "query",
+    )?;
+    let field = MessageSearchField::from_query_value(require_field(&headers, "search_field")?)
+        .ok_or_else(|| "invalid helper batch search field".to_string())?;
+    let validated =
+        MessageSearchBatchRequest::new(policy, mailbox_names.clone(), query.clone(), field)
+            .map_err(|error| error.reason)?;
+    if validated.query != query {
+        return Err("helper batch query is not canonical".into());
+    }
+    let count = require_field(&headers, "message_count")?;
+    if count != results.len().to_string() {
+        return Err("helper batch result count mismatch".into());
+    }
+    let mut identities = std::collections::BTreeSet::new();
+    for result in &results {
+        if !mailbox_names.contains(&result.mailbox_name) {
+            return Err("helper batch result outside requested scope".into());
+        }
+        if !identities.insert((&result.mailbox_name, result.uid)) {
+            return Err("duplicate helper batch message identity".into());
+        }
+    }
+    Ok(MailboxHelperResponse::MessageSearchBatchOk {
+        mailbox_names,
+        query,
+        field,
+        results,
+    })
+}
+
+#[cfg(test)]
+mod batch_protocol_tests {
+    use super::*;
+
+    const KEY: &[u8] = b"batch-test-key-with-32-bytes-or-more";
+
+    fn signed_batch() -> MailboxHelperRequest {
+        let mut request = MailboxHelperRequest::MessageSearchBatch {
+            canonical_username: "alice@example.com".into(),
+            mailbox_names: vec!["INBOX".into(), "Archive/Été \"quoted\"\\folder".into()],
+            query: "quarterly É report $(literal)".into(),
+            field: MessageSearchField::Subject,
+            grant: MailboxHelperGrant::unsigned(),
+        };
+        issue_request_grant_with_nonce(&mut request, KEY, 100, &"01".repeat(32)).unwrap();
+        request
+    }
+
+    fn row(mailbox: &str, uid: u64) -> MessageSearchResult {
+        MessageSearchResult {
+            mailbox_name: mailbox.into(),
+            uid,
+            flags: vec!["\\Seen".into()],
+            date_received: "2026-10-03 10:00:00 +0000".into(),
+            size_virtual: 42,
+            subject: Some("fixture É".into()),
+            from: Some("fixture@example.com".into()),
+            metadata: Some(MessageMetadata {
+                version: MessageVersion::new("a".repeat(32), format!("fixture-{uid}")).unwrap(),
+                attachment_count: Some(1),
+                preview: Some("fixture preview".into()),
+            }),
+        }
+    }
+
+    fn response(results: Vec<MessageSearchResult>) -> MailboxHelperResponse {
+        MailboxHelperResponse::MessageSearchBatchOk {
+            mailbox_names: vec!["INBOX".into(), "Archive".into()],
+            query: "fixture".into(),
+            field: MessageSearchField::From,
+            results,
+        }
+    }
+
+    fn parse_batch(text: &str) -> Result<MailboxHelperResponse, String> {
+        parse_response(
+            MailboxListingPolicy::default(),
+            MessageListPolicy::default(),
+            MessageSearchPolicy::default(),
+            MessageViewPolicy::default(),
+            text,
+        )
+    }
+
+    #[test]
+    fn batch_codec_roundtrips_ordered_literal_scope_and_bounds() {
+        let request = signed_batch();
+        let decoded = parse_request(&encode_request(&request)).unwrap();
+        assert_eq!(decoded, request);
+        verify_request_grant(&decoded, KEY, 100).unwrap();
+        let max_names = (0..crate::mailbox::DEFAULT_MAX_MAILBOXES)
+            .map(|n| format!("{n:04}{}", "\\".repeat(251)))
+            .collect::<Vec<_>>();
+        assert_eq!(
+            decode_mailbox_names(&encode_mailbox_names(&max_names)).unwrap(),
+            max_names
+        );
+        let expected = response(vec![row("INBOX", 1), row("Archive", 1)]);
+        assert_eq!(parse_batch(&encode_response(&expected)).unwrap(), expected);
+    }
+
+    #[test]
+    fn batch_request_refuses_malformed_scope_and_headers() {
+        let signed = encode_request(&signed_batch());
+        let scope_line = signed
+            .lines()
+            .find(|line| line.starts_with("mailbox_names_b64="))
+            .unwrap();
+        for json in [
+            "[]".to_string(),
+            "{}".into(),
+            "[1]".into(),
+            "[\"INBOX\",\"INBOX\"]".into(),
+            "[\"bad\\u0000name\"]".into(),
+            "[\"bad\\nname\"]".into(),
+            serde_json::to_string(&vec!["x".repeat(256)]).unwrap(),
+            serde_json::to_string(&(0..1025).map(|n| format!("F{n}")).collect::<Vec<_>>()).unwrap(),
+            "[\"INBOX\"] trailing".into(),
+        ] {
+            let bad = signed.replace(
+                scope_line,
+                &format!("mailbox_names_b64={}", encode_base64(json.as_bytes())),
+            );
+            assert!(
+                parse_request(&bad).is_err(),
+                "scope should refuse {json:.80}"
+            );
+        }
+        for bad in [
+            signed.replace(scope_line, "mailbox_names_b64=!!!"),
+            signed.replace(scope_line, &format!("{scope_line} ")),
+            signed.replace(
+                scope_line,
+                &format!(
+                    "mailbox_names_b64={}",
+                    "A".repeat(MAX_BATCH_SCOPE_JSON_BYTES.div_ceil(3) * 4 + 4)
+                ),
+            ),
+            format!("{signed}unexpected=1\n"),
+            format!("{signed}{scope_line}\n"),
+            signed.replace("search_field=subject", "search_field=body"),
+            signed.replace("search_field=subject\n", ""),
+            signed.replace("query_b64=", "query_b64=!!!"),
+        ] {
+            assert!(parse_request(&bad).is_err());
+        }
+        let query_line = signed
+            .lines()
+            .find(|line| line.starts_with("query_b64="))
+            .unwrap();
+        for query in [
+            "\nfixture".to_string(),
+            "fixture\u{0000}".into(),
+            "x".repeat(257),
+            "".into(),
+        ] {
+            let bad = signed.replace(
+                query_line,
+                &format!("query_b64={}", encode_base64(query.as_bytes())),
+            );
+            assert!(parse_request(&bad).is_err());
+        }
+    }
+
+    #[test]
+    fn batch_grant_binds_account_order_name_count_query_field_and_operation() {
+        let original = signed_batch();
+        let mut mutations = Vec::new();
+        for selector in 0..6 {
+            let mut tampered = original.clone();
+            if let MailboxHelperRequest::MessageSearchBatch {
+                canonical_username,
+                mailbox_names,
+                query,
+                field,
+                ..
+            } = &mut tampered
+            {
+                match selector {
+                    0 => *canonical_username = "bob@example.com".into(),
+                    1 => mailbox_names.reverse(),
+                    2 => mailbox_names[1] = "Foreign".into(),
+                    3 => {
+                        mailbox_names.pop();
+                    }
+                    4 => *query = "other query".into(),
+                    _ => *field = MessageSearchField::From,
+                }
+            }
+            mutations.push(tampered);
+        }
+        mutations.push(MailboxHelperRequest::MessageSearch {
+            canonical_username: "alice@example.com".into(),
+            mailbox_name: "INBOX".into(),
+            query: "quarterly É report $(literal)".into(),
+            field: MessageSearchField::Subject,
+            grant: request_grant(&original).clone(),
+        });
+        for tampered in mutations {
+            assert!(verify_request_grant(&tampered, KEY, 100).is_err());
+        }
+        assert!(verify_request_grant(&original, KEY, 99).is_err());
+        assert!(verify_request_grant(&original, KEY, 161).is_err());
+        let mut invalid = original;
+        if let MailboxHelperRequest::MessageSearchBatch { query, .. } = &mut invalid {
+            *query = "\nfixture".into();
+        }
+        assert!(issue_request_grant_with_nonce(&mut invalid, KEY, 100, &"01".repeat(32)).is_err());
+    }
+
+    #[test]
+    fn batch_response_refuses_foreign_duplicate_malformed_and_over_cap_rows() {
+        for rows in [
+            vec![row("Foreign", 1)],
+            vec![row("INBOX", 1), row("INBOX", 1)],
+            (1..=251).map(|uid| row("INBOX", uid)).collect(),
+        ] {
+            assert!(parse_batch(&encode_response(&response(rows))).is_err());
+        }
+        let good = encode_response(&response(vec![row("INBOX", 1)]));
+        for bad in [
+            good.replace("message_count=1", "message_count=2"),
+            good.replace("message_count=1", "message_count=01"),
+            good.replace("message_uid=1", "message_uid=0"),
+            good.replace(
+                "message_mailbox_guid=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "message_mailbox_guid=bad",
+            ),
+            good.replace(
+                "message_attachment_count=1",
+                "message_attachment_count=1025",
+            ),
+            good.replace("message_end=1\n", ""),
+            good.replace("message_end=1", "message_end=0"),
+            good.replace("message_uid=1", "message_uid=1\nmessage_uid=2"),
+            good.replace("status=ok", "status=ok\nstatus=ok"),
+            format!("{good}unexpected=1\n"),
+            format!(
+                "{good}{}",
+                "x".repeat(super::super::DEFAULT_MAILBOX_HELPER_MAX_RESPONSE_BYTES)
+            ),
+        ] {
+            assert!(parse_batch(&bad).is_err());
+        }
+        let mut many = (1..=250).map(|uid| row("INBOX", uid)).collect::<Vec<_>>();
+        many.push(row("Foreign", 251));
+        assert!(parse_batch(&encode_response(&response(many))).is_err());
+    }
+
+    #[test]
+    fn single_folder_codec_and_hmac_stay_byte_compatible() {
+        let mut request = MailboxHelperRequest::MessageSearch {
+            canonical_username: "alice@example.com".into(),
+            mailbox_name: "INBOX".into(),
+            query: "quarterly report".into(),
+            field: MessageSearchField::Subject,
+            grant: MailboxHelperGrant::unsigned(),
+        };
+        issue_request_grant_with_nonce(&mut request, KEY, 100, &"01".repeat(32)).unwrap();
+        assert_eq!(
+            request_grant(&request).signature,
+            "bccdf09c77c981ea96c7302dd44981597e740f914e3b6b9422d09b4ac9d4f3e3"
+        );
+        assert_eq!(encode_request(&request), format!(
+            "operation=message_search\ncanonical_username_b64=YWxpY2VAZXhhbXBsZS5jb20=\nmailbox_name_b64=SU5CT1g=\nquery_b64=cXVhcnRlcmx5IHJlcG9ydA==\nsearch_field=subject\ngrant_issued_at=100\ngrant_expires_at=160\ngrant_nonce={}\ngrant_signature={}\n",
+            "01".repeat(32), request_grant(&request).signature));
+        assert_eq!(parse_request(&encode_request(&request)).unwrap(), request);
+    }
 }

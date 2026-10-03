@@ -36,6 +36,25 @@ The current OSMAP mapping includes these WSTG identifiers that were not present 
 
 For those identifiers, keep the OSMAP test if it is valuable, but add a source note that explains whether it comes from latest WSTG content, an OWASP mirror, or an OSMAP-specific supplemental control.
 
+## UX S02-01 search-helper development delta
+
+The authenticated all-folder search operation is a new helper protocol boundary.
+Its bounded component evidence supplements the existing mappings; it does not
+mark a full WSTG scenario or credential-backed release run complete.
+
+| Existing mapping | Concrete component check |
+| --- | --- |
+| WSTG-v42-ATHZ-02 / ATHZ-04 | Canonical account and ordered scope grants; foreign/mismatched identities refused; owned native paired accounts and exact mailbox GUID scope |
+| WSTG-v42-INPV-12 | Typed search field and literal argument vector; no client-selected program or shell command; pattern-shaped names resolved to exact GUIDs |
+| WSTG-v42-BUSL-03 / BUSL-05 | Operation/account/count/order/query/field-bound HMAC, in-process replay refusal, byte/row/result bounds, absolute transport deadline and worker release |
+| WSTG-v42-ERRH-01 | Whole-result refusal for malformed/out-of-scope/late replies; finite gateway error codes exclude private queries and native diagnostics |
+
+Executed attempts, source pins and matching deployment outcomes belong in
+`docs/UX_EXECUTION_LEDGER.md` and the S02 sprint root. Helper replay remains
+in-memory; restart/clock-rollback protection, human password/TOTP, SMTP delivery,
+OpenPGP and broad hostile-email or strict-release assurance are not established
+by these Search tests.
+
 ## Git commit comment
 
 ```text

@@ -3,7 +3,7 @@ use crate::totp::TimeProvider;
 
 use crate::config::LogLevel;
 use crate::logging::EventCategory;
-use crate::mailbox::validate_message_search_query;
+use crate::mailbox::{validate_message_search_query, MessageSearchBackend};
 use std::time::{Duration, Instant};
 
 fn mailbox_is_browser_visible(mailbox_name: &str) -> bool {
@@ -11,6 +11,17 @@ fn mailbox_is_browser_visible(mailbox_name: &str) -> bool {
         mailbox_name,
         "INBOX" | "Archive" | "Drafts" | "Junk" | "Sent" | "Trash"
     ) || mailbox_name.starts_with("INBOX.")
+}
+
+fn batch_search_failure_code(error: &crate::mailbox::MailboxBackendError) -> &'static str {
+    match error.backend {
+        "message-search-parser" | "mailbox-parser" => "scope_request_invalid",
+        "message-json-parser" => "native_output_rejected",
+        "doveadm-message-search" => "native_operation_unavailable",
+        "mailbox-helper-config" => "helper_configuration_unavailable",
+        "mailbox-helper-client" => "helper_transport_or_response_rejected",
+        _ => "backend_operation_refused",
+    }
 }
 
 fn mailbox_list_contains(mailboxes: &[MailboxEntry], mailbox_name: &str) -> bool {
@@ -339,10 +350,22 @@ impl RuntimeBrowserGateway {
         };
 
         let Some(mailbox_name) = mailbox_name else {
-            let mailbox_outcome = MailboxListingService::new(self.build_mailbox_list_backend())
-                .list_for_validated_session(context, validated_session);
+            let deadline = self.expensive_route_deadline();
+            let Some(list_timeout) = Self::expensive_route_remaining_timeout_secs(deadline) else {
+                return BrowserMessageSearchOutcome {
+                    decision: BrowserMessageSearchDecision::Denied {
+                        public_reason: "temporarily_unavailable".into(),
+                    },
+                    audit_events: vec![
+                        self.build_message_search_fanout_deadline_event(context, 0, 0)
+                    ],
+                };
+            };
+            let mailbox_outcome = MailboxListingService::new(
+                self.build_mailbox_list_backend_with_timeout(list_timeout),
+            )
+            .list_for_validated_session(context, validated_session);
             let mut audit_events = vec![mailbox_outcome.audit_event];
-
             let (canonical_username, mailboxes) = match mailbox_outcome.decision {
                 MailboxListingDecision::Listed {
                     canonical_username,
@@ -352,118 +375,89 @@ impl RuntimeBrowserGateway {
                 MailboxListingDecision::Denied { public_reason } => {
                     return BrowserMessageSearchOutcome {
                         decision: BrowserMessageSearchDecision::Denied {
-                            public_reason: public_reason.as_str().to_string(),
+                            public_reason: public_reason.as_str().into(),
                         },
                         audit_events,
-                    };
+                    }
                 }
             };
-
-            let visible_mailboxes = mailboxes
+            let names = mailboxes
                 .into_iter()
                 .filter(|mailbox| mailbox_is_browser_visible(&mailbox.name))
+                .map(|mailbox| mailbox.name)
                 .collect::<Vec<_>>();
-            let visible_mailbox_count = visible_mailboxes.len();
-            let deadline = self.expensive_route_deadline();
-            let mut searched_mailboxes = 0usize;
-            let mut aggregated_results = Vec::new();
-            for mailbox in visible_mailboxes {
-                let Some(remaining_timeout_secs) =
-                    Self::expensive_route_remaining_timeout_secs(deadline)
-                else {
-                    audit_events.push(self.build_message_search_fanout_deadline_event(
-                        context,
-                        visible_mailbox_count,
-                        searched_mailboxes,
-                    ));
-                    return BrowserMessageSearchOutcome {
-                        decision: BrowserMessageSearchDecision::Denied {
-                            public_reason: "temporarily_unavailable".to_string(),
+            let count = names.len();
+            let Some(remaining_timeout) = Self::expensive_route_remaining_timeout_secs(deadline)
+            else {
+                audit_events
+                    .push(self.build_message_search_fanout_deadline_event(context, count, 0));
+                return BrowserMessageSearchOutcome {
+                    decision: BrowserMessageSearchDecision::Denied {
+                        public_reason: "temporarily_unavailable".into(),
+                    },
+                    audit_events,
+                };
+            };
+            let results = if names.is_empty() {
+                Ok(Vec::new())
+            } else {
+                crate::mailbox::MessageSearchBatchRequest::new(search_policy, names, &query, field)
+                    .and_then(|request| {
+                        self.build_message_search_backend_with_timeout(remaining_timeout)
+                            .search_messages_batch(&canonical_username, &request)
+                    })
+            };
+            if Self::expensive_route_deadline_exceeded(deadline) {
+                audit_events
+                    .push(self.build_message_search_fanout_deadline_event(context, count, 0));
+                return BrowserMessageSearchOutcome {
+                    decision: BrowserMessageSearchDecision::Denied {
+                        public_reason: "temporarily_unavailable".into(),
+                    },
+                    audit_events,
+                };
+            }
+            return match results {
+                Ok(results) => {
+                    audit_events.push(
+                        LogEvent::new(
+                            LogLevel::Info,
+                            EventCategory::Mailbox,
+                            "message_search_batch_completed",
+                            "bounded visible-mailbox search completed",
+                        )
+                        .with_field("canonical_username", canonical_username.clone())
+                        .with_field("visible_mailbox_count", count.to_string())
+                        .with_field("result_count", results.len().to_string())
+                        .with_field("request_id", context.request_id.clone()),
+                    );
+                    BrowserMessageSearchOutcome {
+                        decision: BrowserMessageSearchDecision::Listed {
+                            canonical_username,
+                            mailbox_name: None,
+                            query,
+                            results,
                         },
                         audit_events,
-                    };
-                };
-
-                let request = match MessageSearchRequest::new_with_field(
-                    search_policy,
-                    mailbox.name.clone(),
-                    &query,
-                    field,
-                ) {
-                    Ok(request) => request,
-                    Err(error) => {
-                        audit_events.push(
-                            build_http_warning_event(
-                                "message_search_request_rejected",
-                                "message search request validation failed",
-                                context,
-                            )
-                            .with_field("reason", error.reason),
-                        );
-                        return BrowserMessageSearchOutcome {
-                            decision: BrowserMessageSearchDecision::Denied {
-                                public_reason: "invalid_request".to_string(),
-                            },
-                            audit_events,
-                        };
-                    }
-                };
-                let search_service = MessageSearchService::new(
-                    self.build_message_search_backend_with_timeout(remaining_timeout_secs),
-                );
-                let outcome = search_service.search_for_validated_session(
-                    context,
-                    validated_session,
-                    &request,
-                );
-                audit_events.push(outcome.audit_event);
-                searched_mailboxes += 1;
-
-                match outcome.decision {
-                    MessageSearchDecision::Listed { results, .. } => {
-                        if Self::expensive_route_deadline_exceeded(deadline) {
-                            audit_events.push(self.build_message_search_fanout_deadline_event(
-                                context,
-                                visible_mailbox_count,
-                                searched_mailboxes,
-                            ));
-                            return BrowserMessageSearchOutcome {
-                                decision: BrowserMessageSearchDecision::Denied {
-                                    public_reason: "temporarily_unavailable".to_string(),
-                                },
-                                audit_events,
-                            };
-                        }
-                        let remaining = search_policy
-                            .max_results
-                            .saturating_sub(aggregated_results.len());
-                        if remaining == 0 {
-                            break;
-                        }
-                        aggregated_results.extend(results.into_iter().take(remaining));
-                        if aggregated_results.len() >= search_policy.max_results {
-                            break;
-                        }
-                    }
-                    MessageSearchDecision::Denied { public_reason } => {
-                        return BrowserMessageSearchOutcome {
-                            decision: BrowserMessageSearchDecision::Denied {
-                                public_reason: public_reason.as_str().to_string(),
-                            },
-                            audit_events,
-                        };
                     }
                 }
-            }
-
-            return BrowserMessageSearchOutcome {
-                decision: BrowserMessageSearchDecision::Listed {
-                    canonical_username,
-                    mailbox_name: None,
-                    query,
-                    results: aggregated_results,
-                },
-                audit_events,
+                Err(error) => {
+                    audit_events.push(
+                        build_http_warning_event(
+                            "message_search_batch_failed",
+                            "bounded visible-mailbox search refused",
+                            context,
+                        )
+                        .with_field("failure_code", batch_search_failure_code(&error))
+                        .with_field("backend", error.backend),
+                    );
+                    BrowserMessageSearchOutcome {
+                        decision: BrowserMessageSearchDecision::Denied {
+                            public_reason: "temporarily_unavailable".into(),
+                        },
+                        audit_events,
+                    }
+                }
             };
         };
 
@@ -1408,6 +1402,218 @@ mod tests {
                 "session_validated",
                 "session validated",
             ),
+        }
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn all_mailbox_search_uses_one_batch_fetch_for_39_folders() {
+        use crate::auth::CommandExecutor;
+        use std::os::unix::fs::{DirBuilderExt, PermissionsExt};
+        let root = std::env::temp_dir().join(format!(
+            "osmap-search-batch-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::DirBuilder::new()
+            .mode(0o700)
+            .create(&root)
+            .unwrap();
+        struct Cleanup(std::path::PathBuf);
+        impl Drop for Cleanup {
+            fn drop(&mut self) {
+                let _ = std::fs::remove_dir_all(&self.0);
+            }
+        }
+        let _cleanup = Cleanup(root.clone());
+        let interpreter = if cfg!(target_os = "openbsd") {
+            "/usr/local/bin/python3"
+        } else {
+            "/usr/bin/python3"
+        };
+        assert!(
+            std::path::Path::new(interpreter).is_file(),
+            "qualified direct Python interpreter required"
+        );
+        let script = root.join("doveadm-fixture");
+        let calls = root.join("calls");
+        let mode_file = root.join("mode");
+        let names = (0..39)
+            .map(|n| format!("INBOX.fixture{n:02}"))
+            .collect::<Vec<_>>();
+        std::fs::write(
+            root.join("names.json"),
+            serde_json::to_string(&names).unwrap(),
+        )
+        .unwrap();
+        std::fs::write(&mode_file, "normal").unwrap();
+        std::fs::write(&calls, "").unwrap();
+        // Direct exec preserves argv boundaries and has no interpreter child to
+        // outlive SystemCommandExecutor's timeout/kill/wait boundary.
+        const FIXTURE: &str = r#"import json
+import os
+from pathlib import Path
+import sys
+import time
+root = Path(__file__).resolve().parent
+args = sys.argv[1:]
+if len(args) == 2 and args[0] == "--assert-process-gone":
+    try:
+        os.kill(int(args[1]), 0)
+    except ProcessLookupError:
+        sys.exit(0)
+    sys.exit(42)
+if "-u" not in args or args.index("-u") + 1 >= len(args) or args[args.index("-u") + 1] != "alice@example.com":
+    sys.exit(1)
+with (root / "calls").open("a") as recorded:
+    recorded.write(json.dumps(args) + "\n")
+(root / "pid").write_text(str(os.getpid()))
+mode = (root / "mode").read_text()
+is_listing = any(args[index:index + 2] == ["mailbox", "list"] for index in range(len(args) - 1))
+if is_listing:
+    if mode == "listing_timeout":
+        time.sleep(2)
+    names = json.loads((root / "names.json").read_text()) if mode == "normal" else ["INBOX"]
+    sys.stdout.write("".join(name + "\n" for name in names))
+elif "fetch" in args:
+    if mode == "fetch_timeout":
+        time.sleep(2)
+    sys.stdout.write("[]" if mode in ["normal", "fetch_timeout"] else "[invalid-json]")
+else:
+    sys.exit(1)
+"#;
+        std::fs::write(&script, format!("#!{interpreter}\n{FIXTURE}")).unwrap();
+        std::fs::set_permissions(&script, std::fs::Permissions::from_mode(0o700)).unwrap();
+        let read_calls = || -> Vec<Vec<String>> {
+            std::fs::read_to_string(&calls)
+                .unwrap()
+                .lines()
+                .map(|line| serde_json::from_str(line).unwrap())
+                .collect()
+        };
+        let is_listing =
+            |args: &Vec<String>| args.windows(2).any(|pair| pair == ["mailbox", "list"]);
+        let is_fetch = |args: &Vec<String>| args.iter().any(|arg| arg == "fetch");
+        let mut gateway = RuntimeBrowserGateway::for_test(&root);
+        gateway.doveadm_path = script;
+        gateway.mailbox_helper_socket_path = None;
+        gateway.doveadm_userdb_socket_path = None;
+        gateway.expensive_request_timeout_secs = 5;
+        let result = gateway.search_messages_impl(
+            &test_context(),
+            &validated_session(),
+            None,
+            "needle",
+            MessageSearchField::Subject,
+        );
+        assert!(
+            matches!(result.decision, BrowserMessageSearchDecision::Listed {results, ..} if results.is_empty())
+        );
+        let recorded = read_calls();
+        assert_eq!(recorded.iter().filter(|args| is_listing(args)).count(), 1);
+        assert_eq!(
+            recorded.iter().filter(|args| is_fetch(args)).count(),
+            1,
+            "39-folder all-scope search must not start 39 separate native fetches"
+        );
+        assert!(recorded
+            .iter()
+            .any(|args| args.iter().any(|arg| arg == "INBOX.fixture38")));
+        assert!(recorded.iter().all(|args| args
+            .windows(2)
+            .any(|pair| pair == ["-u", "alice@example.com"])));
+        for mode in [
+            "malformed_fetch",
+            "listing_timeout",
+            "fetch_timeout",
+            "expired",
+        ] {
+            std::fs::write(&calls, "").unwrap();
+            std::fs::write(&mode_file, mode).unwrap();
+            gateway.expensive_request_timeout_secs = if mode == "expired" { 1 } else { 2 };
+            let started = Instant::now();
+            let denied = gateway.search_messages_impl(
+                &test_context(),
+                &validated_session(),
+                None,
+                "private-needle",
+                MessageSearchField::Subject,
+            );
+            assert!(
+                matches!(denied.decision, BrowserMessageSearchDecision::Denied { .. }),
+                "{mode}"
+            );
+            assert!(
+                started.elapsed() < Duration::from_secs(3),
+                "{mode} must keep bounded total deadline"
+            );
+            let observed = read_calls();
+            if matches!(mode, "listing_timeout" | "expired") {
+                assert!(
+                    !observed.iter().any(is_fetch),
+                    "{mode} must not dispatch search"
+                );
+            }
+            if matches!(mode, "listing_timeout" | "fetch_timeout") {
+                let pid = std::fs::read_to_string(root.join("pid"))
+                    .unwrap()
+                    .parse::<u32>()
+                    .unwrap();
+                assert!(pid > 0);
+                let child_gone = crate::auth::SystemCommandExecutor
+                    .run_with_stdin_timeout(
+                        gateway.doveadm_path.to_str().unwrap(),
+                        &["--assert-process-gone".into(), pid.to_string()],
+                        "",
+                        Duration::from_secs(1),
+                    )
+                    .unwrap();
+                assert_eq!(
+                    child_gone.status_code, 0,
+                    "{mode} timed-out fixture process must be reaped"
+                );
+            }
+            if mode == "malformed_fetch" {
+                assert!(denied
+                    .audit_events
+                    .iter()
+                    .any(|event| event.action == "message_search_batch_failed"
+                        && event.fields.iter().any(|field| field.key == "failure_code"
+                            && field.value == "native_output_rejected")));
+            }
+            assert!(!format!("{:?}", denied.audit_events).contains("private-needle"));
+            std::fs::write(&mode_file, "cheap_listing").unwrap();
+            assert!(
+                matches!(
+                    gateway
+                        .list_mailboxes_impl(&test_context(), &validated_session())
+                        .decision,
+                    BrowserMailboxDecision::Listed { .. }
+                ),
+                "{mode} must not prevent cheap subsequent listing"
+            );
+        }
+    }
+
+    #[test]
+    fn batch_search_refusal_audit_codes_are_finite_and_ignore_private_diagnostics() {
+        for (backend, expected) in [
+            ("message-search-parser", "scope_request_invalid"),
+            ("message-json-parser", "native_output_rejected"),
+            ("doveadm-message-search", "native_operation_unavailable"),
+            (
+                "mailbox-helper-client",
+                "helper_transport_or_response_rejected",
+            ),
+        ] {
+            let error = crate::mailbox::MailboxBackendError {
+                backend,
+                reason: "private-query and backend output must not reach audit".into(),
+            };
+            assert_eq!(batch_search_failure_code(&error), expected);
         }
     }
 

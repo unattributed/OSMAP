@@ -390,6 +390,60 @@ impl MessageSearchRequest {
     }
 }
 
+/// Validated ordered visible-mailbox scope for one native search invocation.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MessageSearchBatchRequest {
+    pub mailbox_names: Vec<String>,
+    pub query: String,
+    pub field: MessageSearchField,
+}
+
+impl MessageSearchBatchRequest {
+    pub fn new(
+        policy: MessageSearchPolicy,
+        mailbox_names: Vec<String>,
+        query: impl Into<String>,
+        field: MessageSearchField,
+    ) -> Result<Self, MailboxBackendError> {
+        if mailbox_names.is_empty() || mailbox_names.len() > DEFAULT_MAX_MAILBOXES {
+            return Err(MailboxBackendError {
+                backend: "message-search-parser",
+                reason: "invalid batch mailbox count".into(),
+            });
+        }
+        let mut unique = std::collections::BTreeSet::new();
+        for name in &mailbox_names {
+            MailboxEntry::new(
+                MailboxListingPolicy {
+                    mailbox_name_max_len: policy.mailbox_name_max_len,
+                    max_mailboxes: DEFAULT_MAX_MAILBOXES,
+                },
+                name.clone(),
+            )?;
+            if !unique.insert(name) {
+                return Err(MailboxBackendError {
+                    backend: "message-search-parser",
+                    reason: "duplicate batch mailbox".into(),
+                });
+            }
+        }
+        Ok(Self {
+            mailbox_names,
+            query: validate_message_search_query(policy, query)?,
+            field,
+        })
+    }
+    pub fn validate(&self, policy: MessageSearchPolicy) -> Result<(), MailboxBackendError> {
+        Self::new(
+            policy,
+            self.mailbox_names.clone(),
+            self.query.clone(),
+            self.field,
+        )
+        .map(|_| ())
+    }
+}
+
 /// Bounded search fields accepted from browser query parameters.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MessageSearchField {
@@ -1021,6 +1075,17 @@ pub trait MessageViewBackend {
 
 /// A backend capable of searching for messages within one mailbox.
 pub trait MessageSearchBackend {
+    /// Searches one authenticated, explicitly enumerated scope without fanout.
+    fn search_messages_batch(
+        &self,
+        _canonical_username: &str,
+        _request: &MessageSearchBatchRequest,
+    ) -> Result<Vec<MessageSearchResult>, MailboxBackendError> {
+        Err(MailboxBackendError {
+            backend: "message-search-backend",
+            reason: "batch search unavailable".into(),
+        })
+    }
     fn search_messages(
         &self,
         canonical_username: &str,

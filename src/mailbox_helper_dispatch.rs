@@ -8,8 +8,8 @@ use crate::logging::{EventCategory, LogEvent, Logger};
 use crate::mailbox::{
     MailboxBackend, MessageAppendBackend, MessageAppendRequest, MessageListBackend,
     MessageListPolicy, MessageListRequest, MessageMoveBackend, MessageMovePolicy,
-    MessageMoveRequest, MessageSearchBackend, MessageSearchPolicy, MessageSearchRequest,
-    MessageViewBackend, MessageViewPolicy, MessageViewRequest,
+    MessageMoveRequest, MessageSearchBackend, MessageSearchBatchRequest, MessageSearchPolicy,
+    MessageSearchRequest, MessageViewBackend, MessageViewPolicy, MessageViewRequest,
 };
 
 #[cfg(unix)]
@@ -156,6 +156,41 @@ where
             }) {
                 Ok(results) => MailboxHelperResponse::MessageSearchOk {
                     mailbox_name: mailbox_name.clone(),
+                    query: query.clone(),
+                    field: *field,
+                    results,
+                },
+                Err(error_response) => error_response,
+            }
+        }
+        MailboxHelperRequest::MessageSearchBatch {
+            canonical_username,
+            mailbox_names,
+            query,
+            field,
+            ..
+        } => {
+            match MessageSearchBatchRequest::new(
+                MessageSearchPolicy::default(),
+                mailbox_names.clone(),
+                query.clone(),
+                *field,
+            )
+            .map_err(|error| MailboxHelperResponse::Error {
+                backend: error.backend.to_string(),
+                reason: error.reason,
+            })
+            .and_then(|request| {
+                backends
+                    .message_search_backend
+                    .search_messages_batch(canonical_username, &request)
+                    .map_err(|error| MailboxHelperResponse::Error {
+                        backend: error.backend.to_string(),
+                        reason: error.reason,
+                    })
+            }) {
+                Ok(results) => MailboxHelperResponse::MessageSearchBatchOk {
+                    mailbox_names: mailbox_names.clone(),
                     query: query.clone(),
                     field: *field,
                     results,
@@ -377,6 +412,26 @@ pub(super) fn log_helper_response(
             .with_field("result_count", results.len().to_string()),
         ),
         (
+            MailboxHelperResponse::MessageSearchBatchOk {
+                mailbox_names,
+                results,
+                ..
+            },
+            Some(MailboxHelperRequest::MessageSearchBatch {
+                canonical_username, ..
+            }),
+        ) => logger.emit(
+            &LogEvent::new(
+                LogLevel::Info,
+                EventCategory::Mailbox,
+                "mailbox_helper_batch_searched",
+                "mailbox helper searched ordered mailbox scope",
+            )
+            .with_field("canonical_username", canonical_username.clone())
+            .with_field("mailbox_count", mailbox_names.len().to_string())
+            .with_field("result_count", results.len().to_string()),
+        ),
+        (
             MailboxHelperResponse::MessageViewOk { message },
             Some(MailboxHelperRequest::MessageView {
                 canonical_username, ..
@@ -486,6 +541,7 @@ fn helper_operation_label(request: &MailboxHelperRequest) -> &'static str {
         MailboxHelperRequest::MailboxList { .. } => "mailbox_list",
         MailboxHelperRequest::MessageList { .. } => "message_list",
         MailboxHelperRequest::MessageSearch { .. } => "message_search",
+        MailboxHelperRequest::MessageSearchBatch { .. } => "message_search_batch",
         MailboxHelperRequest::MessageView { .. } => "message_view",
         MailboxHelperRequest::AttachmentDownload { .. } => "attachment_download",
         MailboxHelperRequest::MessageMove { .. } => "message_move",

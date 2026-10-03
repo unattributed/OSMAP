@@ -65,13 +65,23 @@ impl RuntimeBrowserGateway {
     /// Selects the current mailbox-list backend without widening the browser
     /// runtime's authority when a local helper is configured.
     pub(super) fn build_mailbox_list_backend(&self) -> MailboxListRuntimeBackend {
+        self.build_mailbox_list_backend_with_timeout(
+            crate::auth::DEFAULT_EXTERNAL_COMMAND_TIMEOUT_SECS,
+        )
+    }
+
+    /// A listing bounded by the remaining all-mailbox search deadline.
+    pub(super) fn build_mailbox_list_backend_with_timeout(
+        &self,
+        timeout_secs: u64,
+    ) -> MailboxListRuntimeBackend {
         match &self.mailbox_helper_socket_path {
             Some(socket_path) => match self.helper_grant_key_path() {
                 Some(grant_key_path) => {
                     MailboxListRuntimeBackend::Helper(MailboxHelperMailboxListBackend::new(
                         socket_path,
                         grant_key_path,
-                        MailboxHelperPolicy::default(),
+                        self.expensive_route_helper_policy_with_timeout(timeout_secs),
                     ))
                 }
                 None => MailboxListRuntimeBackend::Unavailable(missing_helper_grant_error()),
@@ -82,7 +92,10 @@ impl RuntimeBrowserGateway {
                     SystemCommandExecutor,
                     self.doveadm_path.clone(),
                 )
-                .with_userdb_socket_path(self.doveadm_userdb_socket_path.clone()),
+                .with_userdb_socket_path(self.doveadm_userdb_socket_path.clone())
+                .with_command_timeout_secs(
+                    self.expensive_route_command_timeout_secs_with_timeout(timeout_secs),
+                ),
             ),
         }
     }
@@ -346,6 +359,17 @@ pub(super) enum MessageSearchRuntimeBackend {
 }
 
 impl crate::mailbox::MessageSearchBackend for MessageSearchRuntimeBackend {
+    fn search_messages_batch(
+        &self,
+        canonical_username: &str,
+        request: &crate::mailbox::MessageSearchBatchRequest,
+    ) -> Result<Vec<MessageSearchResult>, crate::mailbox::MailboxBackendError> {
+        match self {
+            Self::Direct(backend) => backend.search_messages_batch(canonical_username, request),
+            Self::Helper(backend) => backend.search_messages_batch(canonical_username, request),
+            Self::Unavailable(error) => Err(error.clone()),
+        }
+    }
     fn search_messages(
         &self,
         canonical_username: &str,

@@ -7985,3 +7985,26 @@ Search fails its deadline after5 of39 folders; do not hide this with a timeout
 increase, weaker test or partial-result success. Engineer one bounded authenticated
 native batch while retaining result/output/account limits. Keep this incremental
 Clear filters repair distinct from open S02-01 and human delivery acceptance.
+
+### 2026-10-03 — Treat native mailbox predicates as patterns, preserve literal scope
+
+The owned OpenBSD/Dovecot fixture demonstrates that MAILBOX with a valid literal
+asterisk name selects its sibling. Keep the strict returned-scope refusal and
+repair usability through bounded canonical-account GUID discovery and exact
+selected-name/GUID mapping, sharing the existing deadline with fetch. Require
+matching real native execution, helper-first compatible rollout and installed
+authoritative Search/Clear journeys before engineering closure. Compiler or
+fixture-staging failures establish no functional pass; reduce build-only memory
+use without weakening assertions or runtime controls. Do not infer Send readiness.
+
+### 2026-10-03 — Enforce a whole helper deadline and keep real gate-compatible fixtures
+
+An actual signed slow-trickle response outlived the configured helper deadline.
+Use the existing bounded Unix connector and recompute remaining time before
+partial I/O; check expiry again before accepting a parsed reply. Preserve legacy
+single-operation wire compatibility, bounds and admission. Native attempt5 has
+an unproven timeout cause; retain it and add finite diagnostics rather than raise
+limits. Use directly executed qualified Python3 for owned process test fixtures
+so the shell-execution source ban still applies unchanged. This changes neither
+production dependencies nor native runtime assertions. Require final matching
+native and authoritative installed outcomes before slice closure.

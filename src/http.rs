@@ -5153,6 +5153,51 @@ mod tests {
     }
 
     #[test]
+    fn batch_search_backend_refusal_releases_browser_worker_and_keeps_login_available() {
+        let app = app_with_policy(HttpPolicy {
+            search_worker_budget: 1,
+            ..HttpPolicy::default()
+        });
+        let mut headers = authenticated_headers();
+        for (name, value) in &mut headers {
+            if *name == "User-Agent" {
+                *value = "OSMAP/StateFailure";
+            }
+        }
+        let response = app.handle_request(
+            &request("GET", "/search?q=needle", &headers, ""),
+            "127.0.0.1",
+        );
+        assert_eq!(response.response.status_code, 503);
+        assert!(!response
+            .audit_events
+            .iter()
+            .any(|event| event.action == "request_budget_exhausted"));
+        let released = app
+            .request_budgets
+            .search_workers
+            .try_acquire()
+            .expect("backend refusal must release its only worker slot");
+        let login = app.handle_request(
+            &request("GET", "/login", &[("User-Agent", "Firefox/Test")], ""),
+            "127.0.0.1",
+        );
+        assert_eq!(login.response.status_code, 200);
+        drop(released);
+        let success = app.handle_request(
+            &request(
+                "GET",
+                "/search?q=quarterly+report",
+                &authenticated_headers(),
+                "",
+            ),
+            "127.0.0.1",
+        );
+        assert_eq!(success.response.status_code, 200);
+        assert!(body_text(&success).contains("Quarterly report"));
+    }
+
+    #[test]
     fn all_mailbox_search_fanout_uses_search_budget() {
         let policy = HttpPolicy {
             search_worker_budget: 1,

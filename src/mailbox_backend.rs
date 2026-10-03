@@ -1,18 +1,21 @@
 use std::path::PathBuf;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use crate::auth::{CommandExecutor, SystemCommandExecutor, DEFAULT_EXTERNAL_COMMAND_TIMEOUT_SECS};
 
 use super::mailbox_json::{
-    parse_json_search, parse_json_summaries, parse_json_view, SUMMARY_FIELDS, VIEW_FIELDS,
+    parse_json_batch_guids, parse_json_search, parse_json_search_batch,
+    parse_json_search_batch_with_guids, parse_json_summaries, parse_json_view, SUMMARY_FIELDS,
+    VIEW_FIELDS,
 };
 
 use super::{
     concise_command_diagnostics, parse_doveadm_mailbox_list_output, MailboxBackend,
     MailboxBackendError, MailboxEntry, MailboxListingPolicy, MessageAppendBackend,
     MessageAppendRequest, MessageListBackend, MessageListPolicy, MessageListRequest,
-    MessageSearchBackend, MessageSearchPolicy, MessageSearchRequest, MessageSearchResult,
-    MessageSummary, MessageView, MessageViewBackend, MessageViewPolicy, MessageViewRequest,
+    MessageSearchBackend, MessageSearchBatchRequest, MessageSearchPolicy, MessageSearchRequest,
+    MessageSearchResult, MessageSummary, MessageView, MessageViewBackend, MessageViewPolicy,
+    MessageViewRequest,
 };
 
 /// Lists mailboxes through `doveadm mailbox list`.
@@ -22,6 +25,7 @@ pub struct DoveadmMailboxListBackend<E> {
     command_executor: E,
     doveadm_path: PathBuf,
     userdb_socket_path: Option<PathBuf>,
+    command_timeout_secs: u64,
 }
 
 impl<E> DoveadmMailboxListBackend<E> {
@@ -36,7 +40,12 @@ impl<E> DoveadmMailboxListBackend<E> {
             command_executor,
             doveadm_path: doveadm_path.into(),
             userdb_socket_path: None,
+            command_timeout_secs: DEFAULT_EXTERNAL_COMMAND_TIMEOUT_SECS,
         }
+    }
+    pub fn with_command_timeout_secs(mut self, timeout_secs: u64) -> Self {
+        self.command_timeout_secs = timeout_secs.max(1);
+        self
     }
 
     /// Points mailbox lookups at an explicit Dovecot userdb-capable socket.
@@ -133,7 +142,7 @@ where
                 self.doveadm_path.to_string_lossy().as_ref(),
                 &args,
                 "",
-                Duration::from_secs(DEFAULT_EXTERNAL_COMMAND_TIMEOUT_SECS),
+                Duration::from_secs(self.command_timeout_secs),
             )
             .map_err(|error| MailboxBackendError {
                 backend: "doveadm-mailbox-list",
@@ -388,6 +397,113 @@ impl<E> MessageSearchBackend for DoveadmMessageSearchBackend<E>
 where
     E: CommandExecutor,
 {
+    fn search_messages_batch(
+        &self,
+        canonical_username: &str,
+        request: &MessageSearchBatchRequest,
+    ) -> Result<Vec<MessageSearchResult>, MailboxBackendError> {
+        request.validate(self.policy)?;
+        crate::mailbox_status::validate_account(canonical_username)?;
+        // Discovery and fetch share the caller's remaining budget. Native helpers
+        // never extend the browser's five-second all-scope search boundary.
+        let deadline = Instant::now() + Duration::from_secs(self.command_timeout_secs.min(5));
+        let remaining = || {
+            deadline
+                .checked_duration_since(Instant::now())
+                .filter(|duration| !duration.is_zero())
+                .ok_or_else(|| MailboxBackendError {
+                    backend: "doveadm-message-search",
+                    reason: "native batch search deadline expired".into(),
+                })
+        };
+        let expected_guids = if request
+            .mailbox_names
+            .iter()
+            .any(|name| name.contains(['*', '%', '?', '[', ']', '\\']))
+        {
+            let mut discovery = vec!["-o".into(), "stats_writer_socket_path=".into()];
+            append_doveadm_auth_socket_override(&mut discovery, self.userdb_socket_path.as_ref());
+            discovery.extend([
+                "-f".into(),
+                "json".into(),
+                "mailbox".into(),
+                "status".into(),
+                "-u".into(),
+                canonical_username.into(),
+                "guid".into(),
+                "*".into(),
+            ]);
+            let execution = self
+                .command_executor
+                .run_with_stdin_timeout(
+                    self.doveadm_path.to_string_lossy().as_ref(),
+                    &discovery,
+                    "",
+                    remaining()?,
+                )
+                .map_err(|error| MailboxBackendError {
+                    backend: "doveadm-message-search",
+                    reason: error.reason,
+                })?;
+            Some(parse_json_batch_guids(self.policy, request, &execution)?)
+        } else {
+            None
+        };
+        let mut args = vec!["-o".into(), "stats_writer_socket_path=".into()];
+        append_doveadm_auth_socket_override(&mut args, self.userdb_socket_path.as_ref());
+        args.extend([
+            "-f".into(),
+            "json".into(),
+            "fetch".into(),
+            "-u".into(),
+            canonical_username.into(),
+            SUMMARY_FIELDS.into(),
+            "(".into(),
+        ]);
+        for (index, name) in request.mailbox_names.iter().enumerate() {
+            if index > 0 {
+                args.push("OR".into());
+            }
+            args.extend(match &expected_guids {
+                Some(guids) => [
+                    "mailbox-guid".into(),
+                    guids
+                        .get(name)
+                        .cloned()
+                        .ok_or_else(|| MailboxBackendError {
+                            backend: "message-json-parser",
+                            reason: "resolved native GUID scope is incomplete".into(),
+                        })?,
+                ],
+                None => ["mailbox".into(), name.clone()],
+            });
+        }
+        args.extend([
+            ")".into(),
+            request.field.doveadm_search_key().into(),
+            request.query.clone(),
+        ]);
+        let execution = self
+            .command_executor
+            .run_with_stdin_timeout(
+                self.doveadm_path.to_string_lossy().as_ref(),
+                &args,
+                "",
+                remaining()?,
+            )
+            .map_err(|error| MailboxBackendError {
+                backend: "doveadm-message-search",
+                reason: error.reason,
+            })?;
+        let results = match expected_guids.as_ref() {
+            Some(guids) => {
+                parse_json_search_batch_with_guids(self.policy, request, &execution, Some(guids))
+            }
+            None => parse_json_search_batch(self.policy, request, &execution),
+        }?;
+        remaining()?;
+        Ok(results)
+    }
     fn search_messages(
         &self,
         canonical_username: &str,
@@ -528,5 +644,101 @@ fn append_doveadm_auth_socket_override(args: &mut Vec<String>, auth_socket_path:
     if let Some(auth_socket_path) = auth_socket_path {
         args.push("-o".to_string());
         args.push(format!("auth_socket_path={}", auth_socket_path.display()));
+    }
+}
+
+#[cfg(test)]
+mod batch_tests {
+    use super::*;
+    use crate::auth::{CommandExecution, CommandExecutionError};
+    use crate::mailbox::MessageSearchField;
+    use std::sync::{Arc, Mutex};
+    type RecordedGuidCalls = Arc<Mutex<Vec<(Vec<String>, Duration)>>>;
+    #[derive(Clone)]
+    struct GuidExecutor {
+        calls: RecordedGuidCalls,
+        delay: Duration,
+    }
+    impl CommandExecutor for GuidExecutor {
+        fn run_with_stdin_bytes(
+            &self,
+            _: &str,
+            _: &[String],
+            _: &[u8],
+        ) -> Result<CommandExecution, CommandExecutionError> {
+            panic!("batch must use bounded native execution")
+        }
+        fn run_with_stdin_bytes_timeout(
+            &self,
+            program: &str,
+            args: &[String],
+            input: &[u8],
+            timeout: Duration,
+        ) -> Result<CommandExecution, CommandExecutionError> {
+            assert_eq!(program, "/fixture/doveadm");
+            assert!(input.is_empty());
+            self.calls.lock().unwrap().push((args.to_vec(), timeout));
+            let stdout = if args.iter().any(|arg| arg == "status") {
+                std::thread::sleep(self.delay);
+                r#"[{"mailbox":"INBOX.literal*folder","guid":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}]"#
+            } else {
+                "[]"
+            };
+            Ok(CommandExecution {
+                status_code: 0,
+                stdout: stdout.into(),
+                stderr: String::new(),
+            })
+        }
+    }
+    #[test]
+    fn batch_guid_resolution_and_fetch_share_one_deadline_and_literal_scope() {
+        for (delay, succeeds) in [
+            (Duration::from_millis(250), true),
+            (Duration::from_millis(1100), false),
+        ] {
+            let calls = Arc::new(Mutex::new(Vec::new()));
+            let backend = DoveadmMessageSearchBackend::new(
+                MessageSearchPolicy::default(),
+                GuidExecutor {
+                    calls: calls.clone(),
+                    delay,
+                },
+                "/fixture/doveadm",
+            )
+            .with_command_timeout_secs(1);
+            let request = MessageSearchBatchRequest::new(
+                MessageSearchPolicy::default(),
+                vec!["INBOX.literal*folder".into()],
+                "literal OR (subject)",
+                MessageSearchField::Subject,
+            )
+            .unwrap();
+            assert_eq!(
+                backend
+                    .search_messages_batch("alice@example.com", &request)
+                    .is_ok(),
+                succeeds
+            );
+            let calls = calls.lock().unwrap();
+            assert_eq!(calls.len(), if succeeds { 2 } else { 1 });
+            assert!(calls[0].0.windows(2).any(|pair| pair == ["guid", "*"]));
+            assert!(calls[0]
+                .0
+                .windows(2)
+                .any(|pair| pair == ["-u", "alice@example.com"]));
+            if succeeds {
+                assert!(
+                    calls[1].1 < calls[0].1.saturating_sub(Duration::from_millis(200)),
+                    "GUID lookup time must reduce fetch's remaining timeout"
+                );
+                assert!(calls[1]
+                    .0
+                    .windows(2)
+                    .any(|pair| pair == ["mailbox-guid", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"]));
+                assert!(!calls[1].0.iter().any(|arg| arg == "INBOX.literal*folder"));
+                assert_eq!(calls[1].0.last().unwrap(), "literal OR (subject)");
+            }
+        }
     }
 }
