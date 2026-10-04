@@ -8544,3 +8544,26 @@ representation boundary, not a production mail-host or transport change. The
 matching final native and aggregate runs remain required; a preceding source's
 aggregate PASS cannot qualify the subsequently changed fixture. Operator ALLSEND,
 provider receipt and human acceptance remain open, with no agent real-mail Send.
+
+
+### 2026-10-04 — Complete owned-origin submission qualification remains bounded
+
+Actual origin native attempt2 now passes one complete ignored case with312 frozen
+inputs, all15 final markers, three loopback SMTP submissions and three authenticated
+real disposable Dovecot Sent appends. Generated Reply/Reply all/Forward actions,
+current owned source identities and captured draft/thread data, recipient roles,
+self deduplication/Bcc privacy, exact forwarded source attachment, replay refusal,
+stale/forged/foreign refusal and neighbour/scratch preservation are executed
+proof. Preserve attempt1's failed source-part assertion (expected2, actual1.2):
+its earlier Reply/Reply all prefix was not a completed passing case. Correct the
+fixture identifier/public filename, then qualify the complete corrected path.
+
+Keep these cfg(test) integration seams separate from production functionality
+and actual operator results. No runtime bypass, provider Send, private crypto,
+operator login or mailbox/policy mutation is added; no application activation is
+performed or needed for the test-only qualification. Existing narrower model,
+formatter/browser and ordinary two-submission proofs retain their scopes.
+Matching final aggregate and signed synchronization must still complete before
+this engineering checkpoint is delivered. Reported ALLSEND failures, human origin
+UAT, real receipt/protected-provider qualification and whole S03 remain open;
+missing prior integrated coverage is not a production root-cause finding.

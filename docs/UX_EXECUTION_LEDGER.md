@@ -6074,3 +6074,66 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   account and recipient policies remain unchanged. Signed Git delivery follows
   normal hooks and standing immediate synchronization authority. Next earliest
   missing combined seam is generated Reply/Reply-all/Forward actual submission.
+
+### 2026-10-04 UTC — signed ordinary delivery and origin integration admitted
+
+- Ordinary source362b37cbb97851cb05bd500cae44e4a2aa0bf46f is committed with a
+  verified Good Shopkeeper signature. Normal commit/push security hooks PASS.
+  Fresh origin fetch proves exact UX branch equality,0 ahead/behind and a clean
+  worktree at delivery. All311 committed compiler inputs match native attempt5.
+  Final ordinary UATa9a65825e804d6698536b70a9685b2a79bcba364a1e3dce958ffc58dddd9b326
+  gives self-mail fresh/Draft steps and separates actual native from human
+  outcomes; signed-delivery-result.json retains exact files/pins/limits.
+- Admit S03-01's next missing combined origin seam under origin-submit/work-order.json:
+  source candidate2ef71140d8c4c92ab67ce4202bc94430bb994637614d5068499a438616f9b62f,
+  one new cfg(test) module and additive parent registration only. Ordinary
+  exact-two guards and the existing production/test transport construction are
+  unchanged. Developer owns source corrections; root integrates and actually
+  compiles/executes/signs/syncs; dedicated Scrum lead supplies retained scripts
+  and UAT; independent reviewer checks source/runner and actual evidence.
+- Required generated Reply/Reply-all/Forward path starts with an actual owned
+  Dovecot original/currentGUID helper reader and rendered action, then normal
+  Runtime, exactly three local-only SMTP admissions and three authenticated
+  isolated Sent appends. Require recipient roles/self exclusion, captured draft
+  threading, original Forward attachment, current Sent reader/download, stale/
+  forged/foreign refusal, replay/state/cleanup checks. One exact ignored native
+  case,15 final markers and312 frozen inputs are pending execution, not acceptance.
+  No operator Send/provider/private crypto/policy change or whole-sprint claim.
+- Local origin compile attempt1 exits0 without executing tests. Actual native
+  attempt1 executes one failed case at the Forward attachment selector: generated
+  value1.2 differs from the fixture's assumed2. MIME analysis starts at root1
+  and appends child indices; the owned multipart's second leaf is1.2. The
+  corrected fixture consumes the actual checkbox and checks this verified path
+  plus public filename, current source identity and exact forwarded bytes.
+  Prior Reply/Reply-all prefixes are not a completed case. Retain0PASS/1FAIL;
+  matching new native execution and full gate/signing remain pending.
+
+### 2026-10-04 UTC — generated origin submission native integration qualified
+
+- Actual origin native attempt2 executes1PASS/zero failed/ignored/all15 final
+  markers with312 matching frozen inputs. Final fixture447d456d93770bbd747cfb8b334feba4d7b483243cd567b2e75f73116fe92138;
+  native testcc75e71ce0e10197f9104a922e4d3b198e6085bf0f48fc58714da0899a0091d6;
+  built application457d1f4d5fe2e0e6a589871cd39b7e1d78c17c6b50899eca24ddd1f094d59290.
+  No activation or production route/transport/helper authority change occurred.
+- Actual current-GUID source reader actions produce Reply, Reply-all and Forward
+  Compose forms. Three normal Runtime submissions reach the owned loopback
+  SMTP sink and authenticated real isolated Sent. Recipient roles/self dedup,
+  Bcc privacy and server-owned In-Reply-To/References PASS; saved/resumed Reply-all
+  retains its captured thread and exact draft cleanup. Forward has no reply
+  thread, and its selected original attachment downloads as exact decoded bytes.
+  Current Sent body/identity/download, stale/forged/foreign/auth refusals,
+  no-duplicate replay and untouched neighbour/account byte/flag/GUID controls
+  PASS. Zero move/expunge/flag/private-crypto calls; all scratch/listeners cleaned
+  and standard metadata unchanged. Synthetic issued sessions are not login proof.
+- Matching aggregate attempt1 exits0:1334 library PASS/zero failed/31 explicit
+  locally ignored native cases; remaining security/format/Clippy/mapping gates
+  complete without waiver. Native skips do not qualify native tests.
+  Independent actual-native review2be74ce6d360003153dc417558106250c41c871b5030c2019a57fa368cda5685
+  reconciles this complete result. Earlier actual native attempt1 remains FAIL.
+- The generated-origin combined engineering seam is qualified; final signed
+  synchronization follows normal hooks. Human Reply/Reply-all/Forward, real
+  provider receipt/decryption, private-key readiness, whole S03 and epic
+  acceptance remain OPEN. Origin UAT distinguishes Required-Proton encrypt-only
+  receipt from self-readable encrypted Sent; it never treats public fixture
+  outcomes as human acceptance. Next remaining combined seam is generated
+  formatting/Preview through normal Runtime MIME and actual isolated Sent.

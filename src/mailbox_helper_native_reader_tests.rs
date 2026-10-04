@@ -4056,3 +4056,7 @@ mod bulk_move_native_tests;
 // Additive ordinary submission proof; the original reader forbids every save.
 #[path = "mailbox_helper_native_ordinary_send_tests.rs"]
 mod ordinary_send_native_tests;
+
+// Separate exact-three generated origin submission proof; ordinary guards unchanged.
+#[path = "mailbox_helper_native_origin_send_tests.rs"]
+mod origin_send_native_tests;
