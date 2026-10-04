@@ -6899,3 +6899,84 @@ without MAIL/RCPT/DATA or production configuration changes. Native SQL/RPC/
 session containment, whole-workflow deadline, working browser form and human
 password UAT remain OPEN. Operator ALLSEND/protected receipt/signature/return,
 readable encrypted Sent, key lifecycle and full epic acceptance also remain OPEN.
+
+### 2026-10-04 UTC — S04-02 worker and browser-containment integration, still disabled
+
+The earlier prerequisite checkpoint is signed and synchronized at
+`7ae4623e2b01c4293fc4c55ef9f2b3d31b6ec9bb`; its pending signing entry is superseded
+by the retained normal-sync proof. Continuing from that source, admit thirteen
+independently reviewed source paths for the authenticated Python mutation
+worker, actual Rust/Python byte compatibility, opaque terminal receipt, and
+bounded browser revocation after the guarded dispatch lock is released.
+
+The worker consumes a durable private action intent before invoking the existing
+coordinator. Exact authenticated outcomes preserve refusal, changed epoch and
+containment; uncertainty never becomes a known non-write. The terminal receipt
+consumes its original authenticated request, has private fields and no Clone or
+public constructor, and keeps the original action identity and expiry. Browser
+cleanup uses the actual nonblocking store lock, validates a bounded complete
+snapshot before writes, revokes current/legacy/old-epoch account sessions and
+preserves newer-epoch sessions and other accounts. Partial or late cleanup remains
+contained. The public historical dispatch API remains unchanged; its private
+trusted callback can return the sealed receipt only after its lock has dropped.
+
+Actual merged local library results are 1508 passed/0 failed/38 explicit native
+skips; actual Python results are112 passed/0 failed. The nine guarded-session
+controls include an actual stored lock, authenticated synthetic codec receipt,
+post-lock revocation and preservation of a new-epoch login. These tests do not
+prove an actual SQL mutation, private native RPC, SMTP containment or human UAT.
+Preserve the test-constructor compile refusal and generic Err-only inference
+refusal. Two incorrect test filters executed zero tests and are not counted;
+corrected exact filters executed the stated controls. Independent source review
+records and source-admission parity are retained in the stable password-change
+sprint root. Normal signed admission/sync of this increment is pending here.
+
+Actual obsd1 proxy diagnostics retain two failed native attempts: the first
+reached owned IPC then timed out before authentication with unqualified process
+ownership; the reviewed diagnostic attempt stopped at its early ownership check
+before TCP/AUTH. Correcting buffered short-output capture improves diagnostics,
+not SMTP capability. Both owned failed-test scratch directories were removed
+only after a fresh exact master-PID and same-UID native-service absence check;
+no unrelated process was killed or operator configuration/account modified.
+The frozen prior attempts and failure reports remain intact. Next diagnostic
+records the actual numeric ownership mismatch before changing readiness logic.
+
+The native factories stay false, the Runtime account client stays None, and no
+form, dispatch, binary installation or provider Send is enabled by this source
+increment. Next concrete work is authenticated single-attempt mutation transport,
+remaining-budget epoch admission, cross-process budget/supervisor ownership,
+complete native SQL/mail/browser containment and the functioning protected HTTP
+workflow. A fresh client timeout cannot prove that its helper or native children
+stopped. The original request codec alone does not relay the caller's already
+spent monotonic budget to the worker. S04-02, operator mail failures and epic
+acceptance remain OPEN. Finished subagents or signed checkpoints do not stop
+coordination or establish slice completion.
+
+The reviewed mutation client is included in this source increment: its actual
+fourteen new transport controls and nineteen preserved codec/wire controls pass
+on the canonical checkout (33 passed). It enforces the original caller deadline,
+exact peer/key ownership, one bounded authenticated reply followed by EOF, and
+request/response replay handling. Post-submission uncertainty quarantines the
+account locally without reconnect or retry. Local quarantine is not durable
+shared login containment. Epoch admission's final-return deadline gap was found
+independently; that separate candidate is not admitted pending its actual repair.
+
+The normal commit gate retained an actual generated V10 inventory drift refusal
+(6898 expected versus6974 current at that attempt), caused by added test inputs.
+Refresh the unchanged existing audit/refinement generators and only their
+matching derived claims fields; classifiers, validation rules and hooks stay
+unchanged. This is evidence maintenance, not a repaired product defect. The next
+native diagnostic measured exactly one safe master at the early ownership check,
+then a matching submission-login child later. Await child readiness within the
+same original startup budget; do not weaken the two-process qualification or
+infer that this diagnoses the historical greeting timeout.
+
+#### Normal integration gate follow-up, 2026-10-04
+
+Commit attempt2 failed: 1509 library tests passed, thirteen new mutation-client fixture constructors refused the gate TMPDIR ancestor (observed foo-owned mode0775). A matching focused TMPDIR run reproduced Unavailable. The production ancestor check was correct; the disposable fixtures now follow existing private-socket tests by creating random owner-only directories beneath canonical sticky /tmp. No shared directory permissions or production transport checks changed. Matching fourteen mutation-client tests pass under the gate TMPDIR; independent review found no blocker. Earlier focused33 result remains retained with its narrower environment. Native SMTP proxy attempt6 measured safe startup count1 to3 within the original deadline, then failed at Bob greeting before AUTH with TimeoutError; launcher confirmed its owned group gone, private scratch retained. No SQL, password, provider Send, production containment or human acceptance is inferred.
+
+Commit attempt3 reached the CWE guard after the repaired full library regression passed, then refused two direct process constructors in cfg(test)-registered standalone fixtures. Both now call a single cfg(all(test,unix)) fixed-absolute-interpreter fixture factory in the existing command boundary, with cleared environment and fixed script, public stdin only, original10-second bounded duplex process runner. Existing runner captures at most64KiB; the fixture then asserts output≤16KiB. No guard rules, allowlists or exclusions changed. Matching33 codec/transport tests and the unchanged CWE guard pass; independent review cleared this test-only repair.
+
+Commit attempt4 refused one newly introduced high-relevance unwrap in the test-only fixture factory. The factory now propagates the bounded-runner Result; only registered unit-test callers unwrap. Existing V10 classifiers and V11 gate remain unchanged. Actual matching33 codec/client tests pass. Independently cleared admission-deadline increment2 was integrated by only its four exact reviewed paths: the original deadline is rechecked after final clock/Request.valid sampling; actual delayed-final-clock RED and original freeze retained. Actual matching19 admission controls pass. Isolated merged admission/mutation/guarded-session/cleanup68 controls and strict all-target/all-feature Clippy passed; earlier wrong guarded filter executed0 and is excluded. Production helper construction and browser workflow remain disabled pending exact native worker/SQL/mail-containment and composed cleanup proof.
+
+Commit attempt5 exposed the same unsafe shared temporary ancestor in seven new admission deadline fixtures (actual1522pass/7fail). The exact same reviewed canonical sticky-/tmp random-owned0700 fixture correction was applied there; production admission three source files still match reviewed increment2 exactly. Matching19 admission controls now pass with TMPDIR=/tmp/osmap-tmp. No fixture failure is inferred to be a deployed application fault; prior failures remain retained.

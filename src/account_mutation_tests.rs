@@ -86,7 +86,7 @@ impl TimeProvider for Clock {
 // Only codec preparation dependencies are synthetic here. The request issuer
 // still must consume the real sealed preparation type; no mutation/native auth
 // result is supplied or claimed by these unit tests.
-fn issue(current: &str, new: &str, epoch: u64, sign_at: u64) -> Result<Request, Error> {
+pub(crate) fn issue(current: &str, new: &str, epoch: u64, sign_at: u64) -> Result<Request, Error> {
     let scratch = Scratch::new();
     let authority = Authority(epoch);
     let clock = Clock(100);
@@ -144,6 +144,112 @@ fn issue(current: &str, new: &str, epoch: u64, sign_at: u64) -> Result<Request, 
 }
 fn request() -> Request {
     issue(CURRENT, NEW, 3, 100).unwrap()
+}
+
+#[test]
+fn terminal_receipt_preserves_exact_action_binding_without_credentials() {
+    let request = request();
+    let account = request.account().to_owned();
+    let session = request.session_id().to_owned();
+    let request_id = request.request_id().to_owned();
+    let intent = request.intent_reference().to_owned();
+    let source = request.source().to_owned();
+    let bytes = request
+        .response(
+            Outcome::Changed {
+                epoch: 4,
+                changed_at: STAMP.into(),
+            },
+            &KEY,
+            110,
+        )
+        .unwrap();
+    let receipt = Verifier::default()
+        .terminal_response(request, &bytes, &KEY, 111)
+        .unwrap();
+    assert_eq!(receipt.account(), account);
+    assert_eq!(receipt.session_id(), session);
+    assert_eq!(receipt.request_id(), request_id);
+    assert_eq!(receipt.intent_reference(), intent);
+    assert_eq!(receipt.source(), source);
+    assert_eq!(
+        (
+            receipt.old_epoch(),
+            receipt.issued(),
+            receipt.expires(),
+            receipt.responded_at()
+        ),
+        (3, 100, 400, 110)
+    );
+    assert_eq!(
+        receipt.outcome(),
+        &Outcome::Changed {
+            epoch: 4,
+            changed_at: STAMP.into()
+        }
+    );
+    assert_eq!(
+        format!("{receipt:?}"),
+        "AccountMutationTerminalReceipt(<redacted>)"
+    );
+}
+
+#[test]
+fn terminal_receipt_requires_matching_signature_and_original_window() {
+    let request = request();
+    let mut bytes = request.response(Outcome::KnownRefused, &KEY, 110).unwrap();
+    let value: ResponseWire = serde_json::from_slice(&bytes).unwrap();
+    bytes = signed_response(ResponseWire {
+        request_id: "different-request".into(),
+        ..value
+    });
+    assert!(matches!(
+        Verifier::default().terminal_response(request, &bytes, &KEY, 111),
+        Err(Error::Authentication)
+    ));
+    let request = self::request();
+    let bytes = request
+        .response(
+            Outcome::Changed {
+                epoch: 4,
+                changed_at: STAMP.into(),
+            },
+            &KEY,
+            399,
+        )
+        .unwrap();
+    assert!(matches!(
+        Verifier::default().terminal_response(request, &bytes, &KEY, 400),
+        Err(Error::Expired)
+    ));
+}
+
+#[test]
+fn terminal_receipt_and_legacy_reply_share_same_replay_authority() {
+    let request = request();
+    let copy = Verifier::default()
+        .request(&request.bytes().unwrap(), &KEY, 100)
+        .unwrap();
+    let bytes = request.response(Outcome::KnownRefused, &KEY, 110).unwrap();
+    let mut verifier = Verifier::default();
+    assert_eq!(
+        verifier.response(&request, &bytes, &KEY, 111),
+        Ok(Outcome::KnownRefused)
+    );
+    assert!(matches!(
+        verifier.terminal_response(copy, &bytes, &KEY, 111),
+        Err(Error::Replay)
+    ));
+}
+
+#[test]
+fn terminal_receipt_preserves_containment_instead_of_success_or_known_refusal() {
+    let request = request();
+    let bytes = request.response(Outcome::Contained, &KEY, 110).unwrap();
+    let receipt = Verifier::default()
+        .terminal_response(request, &bytes, &KEY, 111)
+        .unwrap();
+    assert_eq!(receipt.outcome(), &Outcome::Contained);
 }
 fn resigned(mut r: Request) -> Vec<u8> {
     r.0.signature = hex(&mac(&KEY, &r.payload().unwrap())
@@ -584,3 +690,6 @@ fn replay_cache_capacity_and_bad_mac_do_not_become_refusal_outcomes() {
         Error::Authentication
     );
 }
+
+#[path = "account_mutation_python_tests.rs"]
+mod python_compatibility;

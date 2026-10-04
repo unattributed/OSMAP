@@ -8899,3 +8899,24 @@ callback and shared deadline, retain uncertainty durably, and never retry an
 ambiguous credential mutation. Only complete matching native/runtime/browser
 results can close S04-02 or make its UAT actionable. Existing human mail failures
 and unexecuted acceptance results remain open.
+
+### 2026-10-04 — continue through verified worker and post-lock browser cleanup
+
+Integrate the reviewed authenticated worker, exact cross-language contract and
+sealed terminal receipt with actual bounded browser-store revocation. Keep
+current and all old sessions in scope while preserving newer epochs and other
+accounts. Return the receipt only after the guarded callback releases its lock;
+partial persistence or expired cleanup stays contained, without mutation retry.
+Retain real failures and zero-test filters distinctly from passing controls.
+
+Do not treat a completed worker or signed source checkpoint as a stopping point.
+Continue original-budget authenticated transport, epoch reconciliation and native
+workflow qualification before enabling the password form. A client IO timeout
+is not helper/process containment; an authenticated budget relay or qualified
+supervisor must bound remaining cross-process work. Improve the disposable SMTP
+fixture's diagnostics without weakening its expectations or inferring capability
+from IPC/process health. Clean only exact owned failed-test resources after
+measured process absence. Preserve operator keys, policies, services and actual
+unaccepted encrypted-provider delivery results.
+
+- 2026-10-04 integration gate: repair the unsafe temporary ancestor in new disposable test fixtures; preserve production path validation and shared TMPDIR. Keep native SMTP greeting failure open after exact startup readiness passed; diagnose actual source/output rather than repeat unmodified native attempts.

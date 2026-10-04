@@ -62,6 +62,59 @@ pub enum Outcome {
     Changed { epoch: u64, changed_at: String },
     Contained,
 }
+
+/// A matching authenticated terminal reply, consumed once by the caller.
+/// This proves wire authenticity and exact action binding, not database effects.
+/// Credentials and a reusable request are deliberately absent.
+pub struct TerminalReceipt {
+    account: String,
+    old_epoch: u64,
+    session_id: String,
+    request_id: String,
+    intent_reference: String,
+    source: String,
+    issued: u64,
+    expires: u64,
+    responded_at: u64,
+    outcome: Outcome,
+}
+impl std::fmt::Debug for TerminalReceipt {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("AccountMutationTerminalReceipt(<redacted>)")
+    }
+}
+impl TerminalReceipt {
+    pub fn account(&self) -> &str {
+        &self.account
+    }
+    pub fn old_epoch(&self) -> u64 {
+        self.old_epoch
+    }
+    pub fn session_id(&self) -> &str {
+        &self.session_id
+    }
+    pub fn request_id(&self) -> &str {
+        &self.request_id
+    }
+    pub fn intent_reference(&self) -> &str {
+        &self.intent_reference
+    }
+    pub fn source(&self) -> &str {
+        &self.source
+    }
+    pub fn issued(&self) -> u64 {
+        self.issued
+    }
+    pub fn expires(&self) -> u64 {
+        self.expires
+    }
+    pub fn responded_at(&self) -> u64 {
+        self.responded_at
+    }
+    pub fn outcome(&self) -> &Outcome {
+        &self.outcome
+    }
+}
 // Empty struct variants enforce unknown-field refusal; serde's internally
 // tagged unit variants otherwise ignore extra fields despite the enum setting.
 #[derive(Deserialize)]
@@ -364,6 +417,40 @@ impl Verifier {
         key: &[u8],
         now: u64,
     ) -> Result<Outcome, Error> {
+        self.verified_response(request, bytes, key, now)
+            .map(|r| r.outcome)
+    }
+
+    /// Consume the original request and seal only its authenticated reply.
+    pub fn terminal_response(
+        &mut self,
+        request: Request,
+        bytes: &[u8],
+        key: &[u8],
+        now: u64,
+    ) -> Result<TerminalReceipt, Error> {
+        let reply = self.verified_response(&request, bytes, key, now)?;
+        Ok(TerminalReceipt {
+            account: request.0.account,
+            old_epoch: request.0.epoch,
+            session_id: request.0.session_id,
+            request_id: request.0.request_id,
+            intent_reference: request.0.intent_reference,
+            source: request.0.source,
+            issued: request.0.issued,
+            expires: request.0.expires,
+            responded_at: reply.responded_at,
+            outcome: reply.outcome,
+        })
+    }
+
+    fn verified_response(
+        &mut self,
+        request: &Request,
+        bytes: &[u8],
+        key: &[u8],
+        now: u64,
+    ) -> Result<ResponseWire, Error> {
         if bytes.len() > MAX_FRAME {
             return Err(Error::Invalid);
         }
@@ -387,10 +474,10 @@ impl Verifier {
         verify(key, &r.payload()?, &r.signature)?;
         request.outcome_valid(&r.outcome)?;
         self.consume(request, true, now)?;
-        Ok(r.outcome)
+        Ok(r)
     }
 }
 
 #[cfg(test)]
 #[path = "account_mutation_tests.rs"]
-mod tests;
+pub(crate) mod tests;

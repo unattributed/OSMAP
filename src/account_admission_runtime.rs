@@ -260,22 +260,92 @@ impl Client {
         })))
     }
     fn execute(&self, account: &str, operation: Operation) -> Result<Option<Admission>, Error> {
-        let deadline = Instant::now() + Duration::from_secs(30);
-        let request = Request::issue(account, operation, now().map_err(unavailable)?, &self.0.key)?;
+        self.execute_before(account, operation, Instant::now() + Duration::from_secs(30))
+    }
+    fn execute_before(
+        &self,
+        account: &str,
+        operation: Operation,
+        original_deadline: Instant,
+    ) -> Result<Option<Admission>, Error> {
+        self.execute_before_with_clock(account, operation, original_deadline, || {
+            now().map_err(unavailable)
+        })
+    }
+    fn execute_before_with_clock(
+        &self,
+        account: &str,
+        operation: Operation,
+        original_deadline: Instant,
+        mut clock: impl FnMut() -> Result<u64, Error>,
+    ) -> Result<Option<Admission>, Error> {
+        // Preserve the caller's one workflow budget and this adapter's existing
+        // maximum; neither connection nor verification starts a new deadline.
+        let deadline = original_deadline.min(Instant::now() + Duration::from_secs(30));
+        crate::openpgp_inventory_runtime::remaining(deadline).map_err(|_| Error::Expired)?;
+        let mut previous = clock()?;
+        let request = Request::issue(account, operation, previous, &self.0.key)?;
+        let mut check = || -> Result<u64, Error> {
+            crate::openpgp_inventory_runtime::remaining(deadline).map_err(|_| Error::Expired)?;
+            let at = clock()?;
+            if at < previous {
+                return Err(Error::Expired);
+            }
+            request.valid(&self.0.key, at)?;
+            // A clock callback or validation cannot consume the remaining
+            // original budget and still return a late authorization.
+            crate::openpgp_inventory_runtime::remaining(deadline).map_err(|_| Error::Expired)?;
+            previous = at;
+            Ok(at)
+        };
         validate_socket(&self.0.socket, self.0.helper_uid).map_err(unavailable)?;
+        check()?;
         let mut stream =
             crate::openbsd::connect_unix_before(&self.0.socket, deadline).map_err(unavailable)?;
         if crate::openbsd::unix_stream_peer_uid(&stream).map_err(unavailable)? != self.0.helper_uid
         {
             return Err(Error::Authentication);
         }
+        check()?;
         write_frame(&mut stream, &request.bytes()?, deadline).map_err(unavailable)?;
+        check()?;
         let bytes = read_frame(&mut stream, MAX_FRAME, deadline).map_err(unavailable)?;
-        self.0.verifier.lock().map_err(unavailable)?.response(
+        let at = check()?;
+        // A held verifier must not turn a bounded operation into a blocking
+        // lock wait. The authenticated result is withheld until the final check.
+        let result = self.0.verifier.try_lock().map_err(unavailable)?.response(
             &request,
             &bytes,
             &self.0.key,
-            now().map_err(unavailable)?,
+            at,
+        )?;
+        check()?;
+        Ok(result)
+    }
+    /// Revalidate the exact epoch within the original workflow deadline.
+    /// This does not renew preparation freshness or prove native confinement.
+    pub fn admit_before(
+        &self,
+        account: &str,
+        epoch: u64,
+        original_deadline: Instant,
+    ) -> Result<(), Error> {
+        self.execute_before(account, Operation::Admit { epoch }, original_deadline)?
+            .map(|_| ())
+            .ok_or(Error::Refused)
+    }
+    pub fn authenticate_before(
+        &self,
+        username: &str,
+        password: &str,
+        original_deadline: Instant,
+    ) -> Result<Option<Admission>, Error> {
+        self.execute_before(
+            username,
+            Operation::Authenticate {
+                password: password.into(),
+            },
+            original_deadline,
         )
     }
     pub fn authenticate(&self, username: &str, password: &str) -> Result<Option<Admission>, Error> {

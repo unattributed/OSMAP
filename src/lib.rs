@@ -8,6 +8,8 @@ pub mod account_admission;
 #[cfg(unix)]
 pub mod account_admission_runtime;
 pub mod account_mutation;
+#[cfg(unix)]
+pub mod account_mutation_client;
 pub mod after_archive;
 pub mod appearance;
 pub mod archive_event;

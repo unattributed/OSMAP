@@ -350,7 +350,7 @@ fn consumed_callback_error_releases_lock_without_persisting_or_reissuing_permit(
             (f.epoch.clone(), &f.clock),
             |_| {
                 calls.fetch_add(1, Ordering::SeqCst);
-                Err(Error::Unavailable)
+                Err::<(), Error>(Error::Unavailable)
             }
         ),
         Err(Error::Unavailable)
@@ -362,4 +362,78 @@ fn consumed_callback_error_releases_lock_without_persisting_or_reissuing_permit(
     assert!(service
         .with_guarded_validated_session(&f.context, &f.token, |_| ())
         .is_ok());
+}
+
+#[test]
+fn authenticated_receipt_returns_after_guard_drop_and_revokes_only_old_sessions() {
+    use crate::account_mutation::{
+        Outcome as MutationOutcome, Request as MutationRequest, Verifier,
+    };
+    use crate::session::BrowserRevocation;
+    use std::time::{Duration, Instant};
+    let f = Fixture::new();
+    let deadline = Instant::now() + Duration::from_secs(5);
+    let key = [17_u8; 32];
+    let receipt = f
+        .gateway
+        .password_dispatch_for_test(
+            &f.context,
+            &f.token,
+            f.prepared(),
+            (f.epoch.clone(), &f.clock),
+            |dispatch| {
+                let request = MutationRequest::issue(dispatch, &key, 100).unwrap();
+                let bytes = request
+                    .response(
+                        MutationOutcome::Changed {
+                            epoch: 4,
+                            changed_at: "19700101000140".into(),
+                        },
+                        &key,
+                        100,
+                    )
+                    .unwrap();
+                // Actual callback holds the session lock; parent cleanup cannot run here.
+                let concurrent =
+                    SessionService::new(f.store(), &f.clock, SystemRandomSource, 3600, 1800);
+                assert!(matches!(
+                    concurrent.with_guarded_validated_session(&f.context, &f.token, |_| ()),
+                    Err(crate::session::GuardedSessionError::Unavailable)
+                ));
+                f.epoch.value.store(4, Ordering::SeqCst);
+                Ok(Verifier::default()
+                    .terminal_response(request, &bytes, &key, 100)
+                    .unwrap())
+            },
+        )
+        .unwrap();
+    // This is a codec/lock integration control, not SQL password mutation proof.
+    let service = SessionService::new(f.store(), &f.clock, SystemRandomSource, 3600, 1800)
+        .with_epoch_authority(f.epoch.clone());
+    // A concurrent login authenticated at the new epoch enters after lock release.
+    let new_login = service
+        .issue_with_epoch(
+            &f.context,
+            "alice@example.test",
+            RequiredSecondFactor::Totp,
+            Some(4),
+        )
+        .unwrap();
+    let new_path = f.store().session_path(&new_login.record.session_id);
+    let new_bytes = std::fs::read(&new_path).unwrap();
+    assert_eq!(
+        service.revoke_password_change_sessions(receipt, deadline),
+        BrowserRevocation::OldSessionsRevoked { count: 1 }
+    );
+    assert_eq!(
+        f.store()
+            .load(&f.session.record.session_id)
+            .unwrap()
+            .unwrap()
+            .revoked_at,
+        Some(100)
+    );
+    assert_eq!(std::fs::read(new_path).unwrap(), new_bytes);
+    assert!(service.validate(&f.context, &f.token).is_err());
+    assert!(service.validate(&f.context, &new_login.token).is_ok());
 }

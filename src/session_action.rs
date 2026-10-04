@@ -7,16 +7,9 @@ pub enum GuardedSessionError {
 }
 
 impl FileSessionStore {
-    fn with_guarded_record<O>(
-        &self,
-        id: &str,
-        callback: impl FnOnce(SessionRecord) -> Result<O, GuardedSessionError>,
-    ) -> Result<O, GuardedSessionError> {
+    pub(super) fn guarded_lock(&self) -> Result<SessionFileLock, GuardedSessionError> {
         let unavailable = |_| GuardedSessionError::Unavailable;
         crate::private_account_file::check_directory(&self.session_dir).map_err(unavailable)?;
-        if id.len() != SESSION_ID_HEX_LEN || !id.bytes().all(|b| b.is_ascii_hexdigit()) {
-            return Err(GuardedSessionError::Inactive);
-        }
         let mut options = OpenOptions::new();
         options.read(true).write(true).create(true);
         #[cfg(unix)]
@@ -44,7 +37,19 @@ impl FileSessionStore {
             // Finite lock admission: contention refuses immediately, never queues.
             crate::openbsd::try_advisory_file_lock_exclusive(&file).map_err(unavailable)?;
         }
-        let _guard = SessionFileLock { file };
+        Ok(SessionFileLock { file })
+    }
+    fn with_guarded_record<O>(
+        &self,
+        id: &str,
+        callback: impl FnOnce(SessionRecord) -> Result<O, GuardedSessionError>,
+    ) -> Result<O, GuardedSessionError> {
+        let unavailable = |_| GuardedSessionError::Unavailable;
+        crate::private_account_file::check_directory(&self.session_dir).map_err(unavailable)?;
+        if id.len() != SESSION_ID_HEX_LEN || !id.bytes().all(|b| b.is_ascii_hexdigit()) {
+            return Err(GuardedSessionError::Inactive);
+        }
+        let _guard = self.guarded_lock()?;
         let bytes = crate::private_account_file::read_record(&self.session_path(id), 4096)
             .map_err(unavailable)?
             .ok_or(GuardedSessionError::Inactive)?;

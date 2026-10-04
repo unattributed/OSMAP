@@ -183,7 +183,7 @@ impl Request {
         ))
         .map_err(|_| Error::Invalid)
     }
-    fn valid(&self, key: &[u8], now: u64) -> Result<(), Error> {
+    pub(crate) fn valid(&self, key: &[u8], now: u64) -> Result<(), Error> {
         self.shape()?;
         if self.expires.checked_sub(self.issued) != Some(WINDOW)
             || now < self.issued

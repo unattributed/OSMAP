@@ -79,6 +79,36 @@ pub(crate) fn account_admission_command() -> Command {
     command
 }
 
+/// Fixed public-only codec fixture, compiled exclusively for unit tests.
+/// No environment, shell, browser field or credential selects the executable.
+#[cfg(all(test, unix))]
+pub(crate) fn mutation_compatibility_fixture(
+    input: &[u8],
+) -> Result<Vec<u8>, crate::openpgp_crypto::Error> {
+    assert!(input.len() <= 16384);
+    let engine = if cfg!(target_os = "openbsd") {
+        "/usr/local/bin/python3"
+    } else {
+        "/usr/bin/python3"
+    };
+    let fixture = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("maint/account-runtime/account_mutation_compatibility_fixture.py");
+    let mut command = Command::new(engine);
+    command
+        .arg("-B")
+        .arg(fixture)
+        .env_clear()
+        .env("LC_ALL", "C")
+        .current_dir("/");
+    let output = crate::openpgp_crypto_process::run_public_admin(
+        command,
+        input,
+        std::time::Instant::now() + std::time::Duration::from_secs(10),
+    )?;
+    assert!(output.len() <= 16384);
+    Ok(output)
+}
+
 #[cfg(all(test, unix))]
 pub(crate) fn inventory_fixture_command(mode: &str) -> Command {
     let mut command = Command::new(std::env::current_exe().unwrap());

@@ -35,7 +35,7 @@ impl RuntimeBrowserGateway {
             dispatch,
         )
     }
-    fn password_dispatch_guarded<'a>(
+    fn password_dispatch_guarded<'a, O>(
         &self,
         context: &AuthenticationContext,
         token: &SessionToken,
@@ -44,8 +44,8 @@ impl RuntimeBrowserGateway {
             std::sync::Arc<dyn crate::account_admission::EpochAuthority>,
             &dyn crate::totp::TimeProvider,
         ),
-        dispatch: impl FnOnce(password_change::Dispatch<'a>) -> Result<(), password_change::Error>,
-    ) -> Result<(), password_change::Error> {
+        dispatch: impl FnOnce(password_change::Dispatch<'a>) -> Result<O, password_change::Error>,
+    ) -> Result<O, password_change::Error> {
         let (authority, clock) = services;
         let service = SessionService::new(
             FileSessionStore::new(self.session_dir.clone()),
@@ -68,7 +68,7 @@ impl RuntimeBrowserGateway {
     }
     /// Synthetic authority injection exists only in unit-test compilation.
     #[cfg(test)]
-    pub(crate) fn password_dispatch_for_test<'a>(
+    pub(crate) fn password_dispatch_for_test<'a, O>(
         &self,
         context: &AuthenticationContext,
         token: &SessionToken,
@@ -77,8 +77,8 @@ impl RuntimeBrowserGateway {
             std::sync::Arc<dyn crate::account_admission::EpochAuthority>,
             &dyn crate::totp::TimeProvider,
         ),
-        dispatch: impl FnOnce(password_change::Dispatch<'a>) -> Result<(), password_change::Error>,
-    ) -> Result<(), password_change::Error> {
+        dispatch: impl FnOnce(password_change::Dispatch<'a>) -> Result<O, password_change::Error>,
+    ) -> Result<O, password_change::Error> {
         self.password_dispatch_guarded(context, token, prepared, services, dispatch)
     }
     /// Backend prerequisite only. No browser route/form or configuration opt-in
