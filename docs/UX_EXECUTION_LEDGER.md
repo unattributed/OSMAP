@@ -6556,3 +6556,35 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   qualification passes current acceptance controls without a timeout/status/
   cleanup waiver; it does not claim their past cause has been repaired.
   Normal signed sync and matching activation remain next; human UAT NOT RUN.
+
+### 2026-10-04 UTC — R2-16-003 Draft location engineering delivery, human UAT ready
+
+- Final product d341da94714c2062f96a66c8e3122ed06b54a449 is signed by the exact
+  Shopkeeper key. Both normal commit3/push2 gates pass1407 library/0 failed/36
+  explicit local native skips. Fresh GitHub UX equality0/0 and clean source at
+  synchronization, all337 signed blobs matching actual native4, are retained in
+  draft-location/signed-sync-proof.json. No unsigned commits or gate bypass.
+- Actual native4 passes all5 exact scenarios/77 markers,8 loopback acceptances,
+  5 authenticated append attempts and4 disposable Dovecot saves; Draft alone
+  has zero transport. Independent execution review f13416f5c2af4f8f764d769593cea5274b2da2247e56f3342ad1b4d865de230b
+  reconciles driver/source/outputs and finite totals. Previous native3 and
+  diagnostic1 failures remain recorded with unknown cause; no retrospective
+  production repair or timeout/status waiver is claimed.
+- Matching native application8edbc3fdafccc894628958b29b2f4f1fc33076643658aed11d173aa7819b9840
+  is actually installed on authoritative mail helper first, then obsd1 helper/web.
+  Both activation wrappers verify exact source/binary, unchanged private env
+  hashes, retention, key-agent and unrelated service state; mail web stays OFF.
+  Records: draft-location/deployment-d341da94714c/native-draft-location-attempt4/.
+  Public obsd1 TLS verifies login200 and unauthenticated Copies303 tologin;
+  this is access validation, not an authenticated browser or Send result.
+- UAT under draft-location/UAT.md is narrowly ready for private Draft choice:
+  select Working/save/reload, save harmless draft with attachment, resume twice,
+  select Default/create second draft, edit/resume original Working unchanged,
+  delete only both new test rows and restore original choice. Save Draft only;
+  existing IDs keep original placement and shared quota. Missing/unsafe/lost
+  storage and downgrade limits remain documented. Human results NOT RUN.
+- Engineering increment is delivered; full S03, current human ALLSEND, protected
+  provider receipt/signature/return, encrypted Sent and key lifecycle stay OPEN.
+  General operator PASS does not invent these outcomes. Continue actual sender-
+  identity Runtime/native transport and automatic-save location qualification,
+  then ordered S04 outcomes/password writer; no paper-only epic closeout.

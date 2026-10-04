@@ -8766,3 +8766,15 @@ Only a complete five-case run of final matching inputs, normal signed sync,
 actual installation and bounded live verification can establish this Draft
 increment's delivery. None of these steps establishes operator/provider Send
 acceptance. The live previous application remains until that evidence exists.
+
+### 2026-10-04 — deliver the qualified Draft increment with a narrow actionable UAT
+
+Normal signed source/sync, actual complete matching native4 and binary-only
+mail-helper-first/obsd1 activation now establish Draft-location engineering
+readiness. Offer the seven-step Save Draft UAT with observable persistence,
+original-ID/attachment retention and exact cleanup; keep human outcomes pending.
+Public TLS and installed hash are supporting access/provenance, not user action
+or email receipt. Preserve all historical failures and actual qualification
+limits. Do not repeat prior Sent notifications, claim all Send repaired, invent
+password writer/storage authority or declare full S03/epic accepted. Continue
+concrete backend work and independent review within the accepted ordered scope.
