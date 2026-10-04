@@ -468,6 +468,7 @@ mod tests {
     fn validated_session_fixture() -> ValidatedSession {
         ValidatedSession {
             record: crate::session::SessionRecord {
+                account_epoch: None,
                 session_id: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
                     .to_string(),
                 csrf_token: "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210"

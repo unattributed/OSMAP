@@ -162,6 +162,7 @@ impl Fixture {
         .unwrap();
         let session = ValidatedSession {
             record: crate::session::SessionRecord {
+                account_epoch: None,
                 session_id: "public-synthetic-session".into(),
                 csrf_token: "public-synthetic-csrf".into(),
                 canonical_username: ACCOUNT.into(),

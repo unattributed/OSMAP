@@ -23,6 +23,10 @@ use crate::identity::CanonicalUsername;
 use crate::logging::{EventCategory, LogEvent};
 use crate::totp::TimeProvider;
 
+#[path = "session_action.rs"]
+mod session_action;
+pub use session_action::GuardedSessionError;
+
 /// Conservative token size for opaque browser sessions.
 pub const SESSION_TOKEN_BYTES: usize = 32;
 
@@ -47,6 +51,8 @@ const SESSION_LOCK_FILE: &str = ".session-store.lock";
 /// Describes the persisted session metadata visible to operators.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SessionRecord {
+    /// Captured authoritative credential epoch; absent only in legacy mode.
+    pub account_epoch: Option<u64>,
     pub session_id: String,
     pub csrf_token: String,
     pub canonical_username: String,
@@ -405,6 +411,7 @@ impl Drop for SessionFileLock {
 
 /// Issues, validates, and revokes browser sessions.
 pub struct SessionService<S, T, R> {
+    epoch_authority: Option<std::sync::Arc<dyn crate::account_admission::EpochAuthority>>,
     session_store: S,
     time_provider: T,
     random_source: R,
@@ -413,6 +420,35 @@ pub struct SessionService<S, T, R> {
 }
 
 impl<S, T, R> SessionService<S, T, R> {
+    /// Enabling admission rejects legacy unbound sessions; no fallback.
+    pub fn with_epoch_authority(
+        mut self,
+        authority: std::sync::Arc<dyn crate::account_admission::EpochAuthority>,
+    ) -> Self {
+        self.epoch_authority = Some(authority);
+        self
+    }
+
+    fn check_epoch(&self, account: &str, epoch: Option<u64>) -> Result<(), SessionError> {
+        if epoch.is_some_and(|value| !crate::account_admission::valid_epoch(value)) {
+            return Err(SessionError::StoreFailure {
+                reason: "account epoch binding invalid".into(),
+            });
+        }
+        match (&self.epoch_authority, epoch) {
+            (None, None) => Ok(()),
+            (Some(authority), Some(epoch)) => {
+                authority
+                    .admit(account, epoch)
+                    .map_err(|_| SessionError::StoreFailure {
+                        reason: "account epoch admission refused".into(),
+                    })
+            }
+            _ => Err(SessionError::StoreFailure {
+                reason: "account epoch binding unavailable".into(),
+            }),
+        }
+    }
     /// Creates a new session service.
     pub fn new(
         session_store: S,
@@ -422,6 +458,7 @@ impl<S, T, R> SessionService<S, T, R> {
         idle_timeout_seconds: u64,
     ) -> Self {
         Self {
+            epoch_authority: None,
             session_store,
             time_provider,
             random_source,
@@ -444,6 +481,18 @@ where
         canonical_username: &str,
         factor: RequiredSecondFactor,
     ) -> Result<IssuedSession, SessionError> {
+        self.issue_with_epoch(context, canonical_username, factor, None)
+    }
+
+    /// The epoch must be captured by primary verification, never read afresh
+    /// after TOTP; a credential change in that gap invalidates issuance.
+    pub fn issue_with_epoch(
+        &self,
+        context: &AuthenticationContext,
+        canonical_username: &str,
+        factor: RequiredSecondFactor,
+        authenticated_epoch: Option<u64>,
+    ) -> Result<IssuedSession, SessionError> {
         let canonical_username =
             CanonicalUsername::parse(canonical_username.to_string()).map_err(|error| {
                 SessionError::StoreFailure {
@@ -451,6 +500,7 @@ where
                 }
             })?;
         self.session_store.with_exclusive_lock(|| {
+            self.check_epoch(canonical_username.as_str(), authenticated_epoch)?;
             let issued_at = self.time_provider.unix_timestamp();
             let expires_at = issued_at.saturating_add(self.lifetime_seconds);
             let token = generate_session_token(&self.random_source)?;
@@ -458,6 +508,7 @@ where
             let csrf_token = csrf_token_from_session_token(token.as_str());
 
             let record = SessionRecord {
+                account_epoch: authenticated_epoch,
                 session_id: session_id.clone(),
                 csrf_token,
                 canonical_username: canonical_username.into_string(),
@@ -530,6 +581,7 @@ where
             });
         }
 
+        self.check_epoch(&record.canonical_username, record.account_epoch)?;
         record.last_seen_at = now;
         self.session_store.save_unlocked(&record)?;
 
@@ -733,7 +785,7 @@ fn serialize_session_record(record: &SessionRecord) -> String {
         .map(|value| value.to_string())
         .unwrap_or_default();
 
-    format!(
+    let mut content = format!(
         "session_id={}\ncsrf_token={}\ncanonical_username={}\nissued_at={}\nexpires_at={}\nlast_seen_at={}\nrevoked_at={}\nremote_addr={}\nuser_agent={}\nfactor={}\n",
         record.session_id,
         record.csrf_token,
@@ -745,12 +797,17 @@ fn serialize_session_record(record: &SessionRecord) -> String {
         record.remote_addr,
         record.user_agent,
         record.factor.as_str(),
-    )
+    );
+    if let Some(epoch) = record.account_epoch {
+        content.push_str(&format!("account_epoch={epoch}\n"));
+    }
+    content
 }
 
 /// Parses a serialized session record.
 fn parse_session_record(content: &str) -> Result<Option<SessionRecord>, SessionError> {
     let mut session_id = None;
+    let mut account_epoch = None;
     let mut csrf_token = None;
     let mut canonical_username = None;
     let mut issued_at = None;
@@ -778,6 +835,15 @@ fn parse_session_record(content: &str) -> Result<Option<SessionRecord>, SessionE
         };
 
         match key {
+            "account_epoch" => {
+                let epoch = parse_u64_field("account_epoch", value)?;
+                if account_epoch.is_some() || !crate::account_admission::valid_epoch(epoch) {
+                    return Err(SessionError::StoreFailure {
+                        reason: "invalid account epoch field".into(),
+                    });
+                }
+                account_epoch = Some(epoch);
+            }
             "session_id" => {
                 if value.len() != SESSION_ID_HEX_LEN
                     || !value.chars().all(|ch| ch.is_ascii_hexdigit())
@@ -851,6 +917,7 @@ fn parse_session_record(content: &str) -> Result<Option<SessionRecord>, SessionE
     };
 
     Ok(Some(SessionRecord {
+        account_epoch,
         session_id,
         csrf_token: required_field("csrf_token", csrf_token)?,
         canonical_username: required_field("canonical_username", canonical_username)?,
@@ -1044,6 +1111,7 @@ mod tests {
         issued_at: u64,
     ) -> SessionRecord {
         SessionRecord {
+            account_epoch: None,
             session_id: id_char.to_string().repeat(SESSION_ID_HEX_LEN),
             csrf_token: "c".repeat(CSRF_TOKEN_HEX_LEN),
             canonical_username: canonical_username.to_string(),
@@ -1693,6 +1761,7 @@ mod tests {
             )
             .expect("current session issuance should succeed");
         let other_record = SessionRecord {
+            account_epoch: None,
             session_id: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
                 .to_string(),
             csrf_token: "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
@@ -1732,6 +1801,7 @@ mod tests {
     #[test]
     fn parses_serialized_session_records() {
         let record = SessionRecord {
+            account_epoch: None,
             session_id: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
                 .to_string(),
             csrf_token: "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210"
@@ -1949,3 +2019,7 @@ mod tests {
         fs::remove_dir_all(root).unwrap();
     }
 }
+
+#[cfg(all(test, unix))]
+#[path = "account_epoch_session_tests.rs"]
+mod account_epoch_session_tests;

@@ -12,6 +12,9 @@ mod http_gateway_flags;
 mod http_gateway_keys;
 #[path = "http_gateway_mail.rs"]
 mod http_gateway_mail;
+#[cfg(unix)]
+#[path = "http_gateway_password.rs"]
+mod http_gateway_password;
 #[path = "http_gateway_protected.rs"]
 pub(super) mod http_gateway_protected;
 #[path = "http_gateway_settings.rs"]
@@ -22,6 +25,7 @@ mod http_mailbox_backends;
 /// The concrete runtime gateway built from the existing OSMAP services.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RuntimeBrowserGateway {
+    pub(crate) account_admission_client: Option<crate::account_admission_runtime::Client>,
     pub(crate) public_inventory_client: Option<crate::openpgp_inventory_runtime::Client>,
     pub(crate) crypto_client: Option<crate::openpgp_crypto_runtime::Client>,
     pub(crate) public_admin_client: Option<crate::openpgp_public_admin_runtime::Client>,
@@ -109,6 +113,7 @@ impl RuntimeBrowserGateway {
     /// Builds the runtime gateway from validated configuration.
     pub fn from_config(config: &AppConfig) -> Self {
         Self {
+            account_admission_client: None, // No unqualified config/environment activation.
             public_admin_client: config.openpgp_public_admin.as_ref().and_then(|c| {
                 crate::openpgp_public_admin_runtime::Client::from_operator_files(
                     &c.socket,
@@ -300,6 +305,7 @@ impl RuntimeBrowserGateway {
     #[cfg(test)]
     pub(crate) fn for_test(temp_root: &std::path::Path) -> Self {
         Self {
+            account_admission_client: None,
             public_inventory_client: None,
             crypto_client: None,
             public_admin_client: None,
@@ -1407,6 +1413,7 @@ mod public_inventory_gateway_tests {
         .unwrap();
         let session = ValidatedSession {
             record: crate::session::SessionRecord {
+                account_epoch: None,
                 session_id: "synthetic".into(),
                 csrf_token: "synthetic".into(),
                 canonical_username: "alice@example.com".into(),

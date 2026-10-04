@@ -683,6 +683,7 @@ mod draft_state_tests {
             .unwrap();
             let session = ValidatedSession {
                 record: crate::session::SessionRecord {
+                    account_epoch: None,
                     session_id: "synthetic-session".into(),
                     csrf_token: "synthetic-csrf".into(),
                     canonical_username: "alice@example.com".into(),

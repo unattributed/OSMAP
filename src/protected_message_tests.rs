@@ -65,6 +65,7 @@ fn decrypted(content: Vec<u8>) -> Outcome {
 pub(super) fn session() -> ValidatedSession {
     ValidatedSession {
         record: crate::session::SessionRecord {
+            account_epoch: None,
             session_id: "0".repeat(64),
             csrf_token: "1".repeat(64),
             canonical_username: "bob".into(),

@@ -4,6 +4,10 @@
 //! goal is to prove a maintainable starting point before any mail-specific or
 //! browser-facing complexity is added.
 
+pub mod account_admission;
+#[cfg(unix)]
+pub mod account_admission_runtime;
+pub mod account_mutation;
 pub mod after_archive;
 pub mod appearance;
 pub mod archive_event;
@@ -45,6 +49,11 @@ pub mod message_metadata;
 pub mod mime;
 pub mod openbsd;
 pub mod openpgp_helper_client;
+pub mod password_change;
+pub mod password_change_rate;
+#[cfg(test)]
+#[path = "password_change_tests.rs"]
+mod password_change_tests;
 mod private_account_file;
 pub mod reading_preferences;
 pub mod rendering;

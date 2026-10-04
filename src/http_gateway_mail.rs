@@ -1546,6 +1546,7 @@ mod tests {
     fn validated_session() -> ValidatedSession {
         ValidatedSession {
             record: crate::session::SessionRecord {
+                account_epoch: None,
                 session_id: "session-id".to_string(),
                 csrf_token: "csrf-token".to_string(),
                 canonical_username: "alice@example.com".to_string(),

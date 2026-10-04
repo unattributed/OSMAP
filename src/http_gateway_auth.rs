@@ -40,13 +40,17 @@ impl RuntimeBrowserGateway {
     pub(super) fn build_session_service(
         &self,
     ) -> SessionService<FileSessionStore, SystemTimeProvider, SystemRandomSource> {
-        SessionService::new(
+        let service = SessionService::new(
             FileSessionStore::new(self.session_dir.clone()),
             SystemTimeProvider,
             SystemRandomSource,
             self.session_lifetime_seconds,
             self.session_idle_timeout_seconds,
-        )
+        );
+        match &self.account_admission_client {
+            Some(client) => service.with_epoch_authority(std::sync::Arc::new(client.clone())),
+            None => service,
+        }
     }
 
     /// Builds the current file-backed login-throttle service.
@@ -121,9 +125,20 @@ impl RuntimeBrowserGateway {
             )),
         }
 
-        let auth_outcome = self
-            .build_auth_service()
-            .authenticate(context, username, password);
+        let captured_admission = std::sync::Arc::new(std::sync::Mutex::new(None));
+        let auth_outcome = if let Some(client) = &self.account_admission_client {
+            AuthenticationService::new(
+                self.authentication_policy,
+                crate::account_admission_runtime::CredentialBackend {
+                    client: client.clone(),
+                    captured: captured_admission.clone(),
+                },
+            )
+            .authenticate(context, username, password)
+        } else {
+            self.build_auth_service()
+                .authenticate(context, username, password)
+        };
         audit_events.push(auth_outcome.audit_event.clone());
 
         match auth_outcome.decision {
@@ -201,10 +216,16 @@ impl RuntimeBrowserGateway {
                         }
                     }
                     AuthenticationDecision::AuthenticatedPendingSession { canonical_username } => {
-                        match self.build_session_service().issue(
+                        let authenticated_epoch = captured_admission.lock().ok().and_then(|v| {
+                            v.as_ref()
+                                .filter(|a| a.account == canonical_username)
+                                .map(|a| a.epoch)
+                        });
+                        match self.build_session_service().issue_with_epoch(
                             context,
                             &canonical_username,
                             second_factor,
+                            authenticated_epoch,
                         ) {
                             Ok(issued_session) => {
                                 audit_events.push(issued_session.audit_event.clone());

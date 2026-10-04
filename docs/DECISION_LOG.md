@@ -8877,3 +8877,25 @@ supporting evidence, not authenticated UAT or protected-provider receipt. Keep
 full PAGE17/S04/epic and the operator's encrypted-delivery result open. Continue
 the working password backend prerequisites with independent review before UI
 activation; avoid repeating delivered notifications or already passed checks.
+
+### 2026-10-04 — commit disabled password prerequisites without painting completion
+
+Admit the independently reviewed concrete current-password/TOTP/rate/epoch/
+session-consumption/typed-wire/conditional-writer/prepared-action/deadline
+prerequisites as a signed source checkpoint through normal gates. Preserve
+observed failures and exact current source parity; do not substitute a whole
+older candidate over newer Digest, sender or autosave code. Refresh only stale
+generated V10 evidence and its derived cross-register fields using existing
+tools; keep classifiers, validation rules and hooks unchanged.
+
+Actual authoritative-mail discovery establishes authenticated SMTP sessions
+owned by Postfix. A Dovecot auth-cache flush or ordinary kick is insufficient
+for exact-account termination of those idle sessions. Keep native capability,
+Runtime client, mutation dispatch and password form inactive. Engineer and
+independently qualify a disposable Submission login-proxy containment path
+before considering entry-point migration; no production routing change is
+authorized by a synthetic proof. Recheck original permit expiry through every
+callback and shared deadline, retain uncertainty durably, and never retry an
+ambiguous credential mutation. Only complete matching native/runtime/browser
+results can close S04-02 or make its UAT actionable. Existing human mail failures
+and unexecuted acceptance results remain open.

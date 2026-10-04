@@ -1582,6 +1582,7 @@ mod tests {
     fn validated_session_fixture() -> ValidatedSession {
         ValidatedSession {
             record: SessionRecord {
+                account_epoch: None,
                 session_id: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
                     .to_string(),
                 canonical_username: "alice@example.com".to_string(),

@@ -1183,6 +1183,7 @@ mod tests {
         fn validated_session() -> ValidatedSession {
             ValidatedSession {
                 record: SessionRecord {
+                    account_epoch: None,
                     session_id: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
                         .to_string(),
                     csrf_token: "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210"
@@ -5172,6 +5173,7 @@ mod tests {
         let gateway = RuntimeBrowserGateway::for_test(&temp_root);
         let validated_session = ValidatedSession {
             record: crate::session::SessionRecord {
+                account_epoch: None,
                 session_id: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
                     .to_string(),
                 csrf_token: "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210"
@@ -5259,6 +5261,7 @@ mod tests {
         let gateway = RuntimeBrowserGateway::for_test(&temp_root);
         let validated_session = ValidatedSession {
             record: crate::session::SessionRecord {
+                account_epoch: None,
                 session_id: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
                     .to_string(),
                 csrf_token: "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210"

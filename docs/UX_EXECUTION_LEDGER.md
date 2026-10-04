@@ -6843,3 +6843,59 @@ operator ALLSEND/protected provider receipt/signature/return and full epic
 acceptance remain OPEN. Continue concrete isolated S04-02 fresh-action admission
 and durable independent rate-state work; do not enable a password form before
 the required backend/runtime qualification exists.
+
+### 2026-10-04 UTC — S04-02 disabled password backend source checkpoint
+
+Continue from signed606850c under accepted R2 anchor6b3ce8f; the frozen plan
+remains unchanged. This checkpoint adds working prerequisites, not an enabled
+password workflow or slice acceptance. Exact integrated366 compiler inputs are
+frozen by manifest SHA
+`847ee1715fe62062b95081559778cc5cd7a4085bd26d683d7dce5597b021d987`.
+
+- Implement current-password/replay-protected TOTP admission, independent
+  durable account/source failure limits, and account/epoch/request/session/
+  source/action-bound move-only permits with the original300-second expiry.
+  Consume against the actual locked session store and current account epoch;
+  do not release a reusable validated proof. The callback must not reacquire
+  the same blocking session lock.
+- Add an authenticated typed mutation wire contract, durable account epoch
+  coordination, full-input ARGON2ID conditional credential writer, prepared
+  action authorization and shared bounded SQL/hash subprocess budget. Retain
+  terminal epoch, expiry-after-callback, invalid authorization, subprocess
+  late-return and malformed response failures with their actual repairs.
+- Add exact-account Dovecot cache invalidation before new-password verification,
+  followed by connection kick and independent zero-connection observation.
+  Preserve the actual cache-order RED. No force/wildcard kick, arbitrary PID
+  termination or automatic retry of an uncertain password mutation is allowed.
+- Actual canonical Python84 tests pass. Integrated Rust1491 library tests pass,
+  zero failures/38 explicit native skips; the normal security check passes.
+  Independent frozen source reviews precede integration. OpenBSD7.9/Python3.13.14
+  executes56 tests in unprivileged owned scratch, including child timeout/reap;
+  that earlier eight-input run excludes the later cache-order increment and
+  does not qualify native SQL, helper confinement or the complete workflow.
+- Normal acceptance exposes successive stale V10 generated inventories and
+  cross-register hashes. Retain each refusal; refresh both reports using their
+  unchanged existing generators and only derived claims fields. Current raw
+  audit6898/refined source-test6812, five production medium/zero refined high;
+  these scanner classifications do not establish panic-free production. No
+  validator, hook, frozen plan or newer Digest/sender/autosave source is weakened.
+
+Artifacts and independent review are retained under
+`/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/integrated-prerequisites-attempt1/`
+and its six producer increment directories. After the retained drift refusals,
+the exact current V10/V11/V12/V13/V14 gate invocation passes. Together with the
+unchanged366-input security check, this executes every acceptance constituent;
+the earlier aggregate invocations remain failed records, not rewritten passes.
+Normal signed admission/sync is pending at this entry. No binary is
+installed, operator credential changed, message sent or password form enabled.
+
+Read-only authoritative-mail discovery confirms four authenticated Postfix
+submission entry points. Ordinary Dovecot kick/cache flush cannot qualify
+termination of Postfix-owned authenticated idle SMTP connections. The native
+factory stays false, the Runtime account client stays None, and required SMTP
+scope refuses before mutation. Next work is the actual private mutation worker
+and an isolated Dovecot Submission login-proxy Alice/Bob containment proof,
+without MAIL/RCPT/DATA or production configuration changes. Native SQL/RPC/
+session containment, whole-workflow deadline, working browser form and human
+password UAT remain OPEN. Operator ALLSEND/protected receipt/signature/return,
+readable encrypted Sent, key lifecycle and full epic acceptance also remain OPEN.

@@ -375,7 +375,11 @@ fn read_exact(
     }
     Ok(())
 }
-fn read_frame(stream: &mut UnixStream, max: usize, deadline: Instant) -> Result<Vec<u8>, Error> {
+pub(crate) fn read_frame(
+    stream: &mut UnixStream,
+    max: usize,
+    deadline: Instant,
+) -> Result<Vec<u8>, Error> {
     let mut size = [0; 4];
     read_exact(stream, &mut size, deadline)?;
     let size = u32::from_be_bytes(size) as usize;
@@ -386,7 +390,11 @@ fn read_frame(stream: &mut UnixStream, max: usize, deadline: Instant) -> Result<
     read_exact(stream, &mut bytes, deadline)?;
     Ok(bytes)
 }
-fn write_frame(stream: &mut UnixStream, bytes: &[u8], deadline: Instant) -> Result<(), Error> {
+pub(crate) fn write_frame(
+    stream: &mut UnixStream,
+    bytes: &[u8],
+    deadline: Instant,
+) -> Result<(), Error> {
     if bytes.is_empty() || bytes.len() > FRAME_LIMIT {
         return Err(Error::Limit);
     }

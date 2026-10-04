@@ -63,6 +63,22 @@ pub(crate) fn public_inventory_command(
     command
 }
 
+/// Fixed account-admission worker; no browser field becomes argv/environment.
+#[cfg(unix)]
+pub(crate) fn account_admission_command() -> Command {
+    let mut command = Command::new("/usr/local/bin/python3");
+    command
+        .args([
+            "-I",
+            "/usr/local/libexec/osmap/account-runtime/account_admission_worker.py",
+        ])
+        .env_clear()
+        .env("PATH", "/usr/local/bin:/usr/bin:/bin")
+        .env("LC_ALL", "C")
+        .current_dir("/");
+    command
+}
+
 #[cfg(all(test, unix))]
 pub(crate) fn inventory_fixture_command(mode: &str) -> Command {
     let mut command = Command::new(std::env::current_exe().unwrap());

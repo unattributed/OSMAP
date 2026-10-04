@@ -42,16 +42,47 @@ pub(crate) fn run_public_admin(
     }
     Ok(output)
 }
+/// Separate primary-auth profile: Dovecot may delay a failed credential by15s.
+/// Existing crypto/admin callers retain their original ten-second cap.
+pub(crate) fn run_account_admission(
+    command: Command,
+    input: &[u8],
+    deadline: Instant,
+) -> Result<Vec<u8>, Error> {
+    if input.len() > 4096 {
+        return Err(Error::Limit);
+    }
+    let (output, success) = run_limited(command, input, deadline, 4096, Duration::from_secs(30))?;
+    if !success {
+        return Err(Error::Unavailable);
+    }
+    Ok(output)
+}
 fn run_bounded(
-    mut command: Command,
+    command: Command,
     input: &[u8],
     deadline: Instant,
     output_limit: usize,
 ) -> Result<(Vec<u8>, bool), Error> {
+    run_limited(
+        command,
+        input,
+        deadline,
+        output_limit,
+        Duration::from_secs(10),
+    )
+}
+fn run_limited(
+    mut command: Command,
+    input: &[u8],
+    deadline: Instant,
+    output_limit: usize,
+    operation_limit: Duration,
+) -> Result<(Vec<u8>, bool), Error> {
     if CLEANUP_UNCONFIRMED.load(Ordering::SeqCst) {
         return Err(Error::Unavailable);
     }
-    let deadline = deadline.min(Instant::now() + Duration::from_secs(10));
+    let deadline = deadline.min(Instant::now() + operation_limit);
     if deadline.saturating_duration_since(Instant::now()) <= Duration::from_millis(100) {
         return Err(Error::Expired);
     }
@@ -194,6 +225,12 @@ mod tests {
             .as_str()
         {
             "blocked_stdin" => std::thread::sleep(Duration::from_secs(5)),
+            "account_auth_delay" => {
+                std::thread::sleep(Duration::from_secs(11));
+                std::io::stdout()
+                    .write_all(b"bounded-account-auth-delay")
+                    .unwrap();
+            }
             "duplex" => {
                 std::io::stdout().write_all(&vec![1; 256 * 1024]).unwrap();
                 let mut input = Vec::new();
@@ -214,6 +251,31 @@ mod tests {
             "success" => (),
             _ => panic!("unknown fixture"),
         }
+    }
+
+    #[test]
+    fn account_auth_delay_profile_preserves_crypto_admin_ten_second_cap() {
+        // Synthetic current-executable children only; no native authentication,
+        // credentials, cryptography or provider operations are performed.
+        let ordinary = std::thread::spawn(|| {
+            run_public_admin(
+                fixture("account_auth_delay"),
+                b"",
+                Instant::now() + Duration::from_secs(14),
+            )
+        });
+        let account = std::thread::spawn(|| {
+            run_account_admission(
+                fixture("account_auth_delay"),
+                b"",
+                Instant::now() + Duration::from_secs(14),
+            )
+        });
+        assert!(ordinary.join().unwrap().is_err());
+        let output = account.join().unwrap().unwrap();
+        assert!(output
+            .windows(b"bounded-account-auth-delay".len())
+            .any(|w| w == b"bounded-account-auth-delay"));
     }
     #[test]
     fn duplex_stdin_deadlines_limits_and_descendant_cleanup() {

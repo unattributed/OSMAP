@@ -40,6 +40,7 @@ use crate::auth::AuthenticationPolicy;
 fn session() -> ValidatedSession {
     ValidatedSession {
         record: SessionRecord {
+            account_epoch: None,
             session_id: "A".repeat(64),
             csrf_token: "B".repeat(64),
             canonical_username: "alice@example.test".into(),

@@ -833,6 +833,7 @@ fn test_context() -> AuthenticationContext {
 fn validated_session_fixture() -> ValidatedSession {
     ValidatedSession {
         record: SessionRecord {
+            account_epoch: None,
             session_id: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
                 .to_string(),
             csrf_token: "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210"
