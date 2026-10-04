@@ -61,6 +61,14 @@ pub struct RuntimeBrowserGateway {
 }
 
 impl RuntimeBrowserGateway {
+    /// Routes only an explicitly opted-in test fixture to its owned transport.
+    /// Production construction retains the fixed local sendmail executable.
+    #[cfg(test)]
+    pub(crate) fn with_fixture_sendmail_path(mut self, path: PathBuf) -> Self {
+        self.sendmail_path = path;
+        self
+    }
+
     /// Builds the runtime gateway from validated configuration.
     pub fn from_config(config: &AppConfig) -> Self {
         Self {

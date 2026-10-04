@@ -5975,3 +5975,102 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   through normal Runtime, loopback-only SMTP and authenticated isolated Dovecot
   Sent. Existing direct gateway submission proof remains valid but does not
   establish this combined path or the operator's reported ALLSEND root cause.
+
+### 2026-10-04 UTC — S03-04 actual ordinary submission integration admitted
+
+- Following signed source4e6ed081 and documentation-only closeoutdcbbbf1, root
+  releases the frozen ordinary-submit work order c0693fe9ce3835ece3baaa3ee1483ed1dd8564daf5accf88fccc99ab02d5fc7f.
+  Exact scope: new mailbox_helper_native_ordinary_send_tests.rs, additive nested
+  registration in mailbox_helper_native_reader_tests.rs, and a cfg(test)-only
+  existing sendmail-path fixture setter in http_gateway.rs. No production
+  transport setting, helper protocol change or operator mail operation.
+- Developer owns these three source files; root owns actual compilation/native
+  execution, integration and signed sync. Independent reviewer assesses source
+  and test authority; Scrum lead supplies artifact-only runner/UAT and subsequent
+  S03 reconciliation. Existing original reader executor save/expunge bans remain;
+  a separate exact Alice/Sent append executor injects only owned fixture config.
+- Required actual path: generated fresh Compose and resumed saved-draft POST
+  through BrowserApp/normal Runtime, loopback-only SMTP sink, signed helper and
+  real isolated Dovecot Sent, followed by current-identity reader/attachment
+  access. Require two accepted submissions/two appends total, replay refusal
+  without extra work, exact draft cleanup, Bcc envelope/header privacy and
+  neighbour/foreign byte/flag/GUID preservation. These are pending assertions,
+  not executed outcomes or evidence of a production defect.
+- Runner independently reviewed conditionally ready; final source/query/13
+  marker review and actual execution remain pending. Exact ignored native test
+  must be listed and then actually execute one passed/zero failed/zero ignored;
+  local skipped native tests do not qualify this path. Human ordinary Send,
+  provider receipt, protected round-trip and whole S03 remain OPEN. Preserve
+  operator policy and next real Send control; no obsolete probe or agent email.
+
+### 2026-10-04 UTC — ordinary submission actual failed attempts retained
+
+- Local compile attempt1 executed zero tests and failed on three incorrect
+  mailbox flag import paths; attempt2 compiled after using public mailbox
+  reexports. Native attempt1 failed before linking on compiler allocation;
+  actual OpenBSD DATA soft limit was1.5GiB. The reviewed retry raises only the
+  Cargo compiler child's limit to3GiB within its existing hard limit, retaining
+  debug assertions, single-job build and the original test runtime limits.
+- Aggregate attempt1 passed1332 library cases/30 explicit native skips, then
+  failed Clippy on a constant assertion. The test-only OS assertion was corrected
+  without suppressing Clippy. Aggregate attempt2 passed1331/failed1/skipped30:
+  the owned delete detector's positive-control spawn returned ETXTBSY before
+  any gateway request. Its exact focused test then executed1PASS; the earlier
+  short-name exact filter executed zero and is not counted as proof.
+- The bounded work-order amendment adds only http_gateway_delete_tests.rs.
+  Retry applies solely to an explicitly unexecuted harmless detector spawn with
+  that exact error, at most eight attempts and a one-second admission window.
+  Other errors and process results return immediately; expected exit and exact
+  marker remain mandatory. Two actual discriminator tests PASS. No Runtime
+  command, Send or delete retry, gate waiver or policy change was introduced.
+- Native attempt2 actually executed one failed case after fresh303 and real
+  isolated Sent save. Its extractor assumed standalone reader fields instead
+  of the generated coordinated mailbox selection. The corrected fixture follows
+  that actual href and checks selected mailbox/UID/both GUIDs. Native attempt3
+  executed one failed case after current Sent read/download, at the stale/foreign
+  unavailable-pane assertion. These prefix observations are not workflow PASS;
+  all failures remain retained under ordinary-submit/native. Human Send remains
+  unaccepted and no failure is attributed to production without a discriminator.
+- Attempt3's stale-identity mutation used a raw GUID against an encoded href;
+  the fixture now changes the parsed selected_message_guid and proves the target
+  changed, preserving mailbox identity. Native attempt4 reached both actual
+  submissions, current Sent readers/downloads, replay counters and exact draft
+  cleanup, then failed raw SMTP/Maildir byte equality. Actual obsd1 doveconf
+  reports mail_save_crlf=no. The owned fixture now explicitly pins that setting
+  and compares only CRLF-pair-to-LF canonical storage, preserving every other
+  byte and all standalone CR bytes. Untouched neighbour raw bytes and decoded
+  attachment bytes remain exact checks. Attempt4 remains0PASS/1FAIL, not an
+  ordinary workflow pass; only a complete matching run can qualify this change.
+
+### 2026-10-04 UTC — ordinary fresh/draft native integration qualified
+
+- Actual native attempt5 executes the exact ignored integration case:1PASS,
+  zero failed/ignored, all13 final markers. All311 frozen compiler inputs match
+  canonical source before/after execution. Fixture4097c4378e3e5081da13cba68529fe30470d3e9ebd7aba0b4ba89505899b4ded;
+  native test9b813578bc046fd096794ec093c01ca4154ad990e08d7379e6621bb06e3a5cad;
+  built application457d1f4d5fe2e0e6a589871cd39b7e1d78c17c6b50899eca24ddd1f094d59290.
+  No application activation: all changed Rust is cfg(test) fixture machinery;
+  the current installed production4e6ed081/application1abb3f38 remains explicit.
+- Fresh generated Compose and saved/resumed Draft each perform one actual
+  normal Runtime submission to the owned loopback sink and one authenticated
+  real isolated Dovecot Sent append. Current-identity readers and exact decoded
+  attachment downloads PASS. Replay makes no third submission/append; foreign,
+  stale, auth/CSRF and exact draft-revision controls refuse appropriately.
+  Only the submitted exact draft is cleaned; unrelated saved draft, neighbouring
+  message bytes/flags/GUIDs and foreign mailbox snapshots remain unchanged.
+  Bcc stays envelope-only; storage comparison permits only declared CRLF-to-LF.
+  Zero move/expunge/flag/private-crypto calls; scratch cleanup and standard host
+  metadata comparison PASS. Synthetic issued sessions are not real login proof.
+- Matching aggregate attempt5 exits0:1334 library PASS/zero failed,30 explicit
+  local native skips, unchanged formatting/Clippy/security/mapping/fail-closed
+  gates complete. Skips are not native proof. Independent native reconciliation
+  807b8330693e720896763dd705c3ea74b4cf5744a778c5f9f28b424922bc8b8f
+  verifies the actual complete result; attempts1–4 remain retained failures.
+- This closes the missing combined ordinary submission engineering proof,
+  not a demonstrated production ALLSEND cause or all S03 obligations. Exact
+  ordinary self fresh/Draft human steps and separate expected/actual results
+  remain under osmap-ux-s03/revalidation-20261003/ordinary-submit/UAT.md.
+  Human Send/provider receipt/protected round-trip are NOT RUN/unaccepted;
+  account and recipient policies remain unchanged. Signed Git delivery follows
+  normal hooks and standing immediate synchronization authority. Next earliest
+  missing combined seam is generated Reply/Reply-all/Forward actual submission.

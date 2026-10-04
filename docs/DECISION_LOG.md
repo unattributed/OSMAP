@@ -8475,3 +8475,72 @@ implementation to test-only fixture seams and preserve the original reader
 executor's no-save guards. A coverage gap does not itself establish a production
 defect; correct production code only when actual execution demonstrates one.
 No agent email, provider submission or operator key/policy change is involved.
+
+
+### 2026-10-04 — Ordinary browser submission qualification retains failed attempts
+
+Qualify the previously unexecuted combined generated fresh Compose/resumed-Draft
+form → normal Runtime submission → loopback-only sink → authenticated append →
+real disposable Dovecot Sent path. Preserve existing direct gateway, draft store,
+formatter and MIME proofs. Missing combined coverage is not a demonstrated
+production defect or an explanation for the operator's reported ALLSEND failures.
+Those human failures and actual service/provider acceptance remain unaccepted;
+synthetic sessions and local sink receipt cannot substitute for them.
+
+Preserve the actual failed native attempts. Attempt2 passed earlier fresh 303/
+isolated Sent storage assertions but failed the generated Sent-link extractor;
+its assumption about standalone UID/mailbox parameters did not match the
+coordinated selected-row link. Attempt3 then failed its stale-selection
+unavailable-pane assertion. The suspected raw-GUID substitution did not alter
+the URL-encoded identity; that instrument diagnosis is being checked/corrected,
+not asserted as a product cause or passing stale-refusal result. A complete
+matching native execution, aggregate gate, signed delivery and bounded UAT
+handoff still follow; no slice closure follows from these partial results.
+
+Use a 3 GiB data limit only in owned Cargo/compiler child processes for this
+native qualification, retaining debug assertions, symbol-disabled single-job
+builds, frozen inputs and exclusive binary copies. The parent runner/fixture
+limits remain unchanged; no service, system-wide or production resource limit
+changes are authorized or performed by this solution.
+
+The aggregate ETXTBSY correction is confined to the existing cfg(test) harmless
+delete-fallback detector positive control. At most seven retries within its
+one-second deadline apply only to the exact spawn failure stating Text file busy
+(os error 26), before that detector executed. Other errors, unexpected exits and
+exhaustion remain failures; meaningful positive/no-fallback checks remain. This
+is not a Runtime Send, helper operation or uncertain-submission retry and does
+not weaken production idempotency or delete authority. Preserve the original
+aggregate 1,331-pass/1-fail/30-ignored result and rerun matching gates after the
+final fixture freeze. No operator mail, provider submission, private key or
+recipient-policy mutation is part of this qualification.
+
+Actual ordinary native attempt5 now passes one complete case and all13 final
+markers with311 matching inputs, two loopback submissions and two authenticated
+real isolated Sent appends. Matching developer security-check exits0 with1334
+library passes/30 explicit native skips. The combined proof gap is closed by
+executable cfg(test) code, not paper disposition; no production ALLSEND cause is
+asserted. No application activation is needed for these test-only changes.
+Keep real operator/provider/protected acceptance open and commit/sync the tested
+source through existing signed hooks. Next qualify generated Reply/Reply-all/
+Forward through actual Runtime transport and isolated Sent before claiming that
+combined journey. Existing narrower proofs retain their documented limits.
+
+
+### 2026-10-04 — Ordinary native fixture checks encoded identity and stored EOL
+
+Keep native attempt3's failed stale-pane assertion: the instrument's raw GUID
+substitution did not change its URL-encoded query value. Correct the actual
+encoded identity rather than weaken the expected stale refusal. Attempt4 then
+reached the final SMTP-versus-authoritative-Sent comparison after both fresh and
+resumed-Draft paths, but failed there; partial path completion is not an overall
+PASS or a human Send result. Preserve both logs and require a matching complete
+native execution after the fixture correction.
+
+Set mail_save_crlf=no only in the owned disposable Dovecot fixture configuration
+and compare SMTP CRLF pairs to stored LF explicitly. Preserve every standalone
+CR and all other bytes; do not strip arbitrary whitespace, re-encode MIME or
+ignore attachment/body differences. This establishes a reproducible storage
+representation boundary, not a production mail-host or transport change. The
+matching final native and aggregate runs remain required; a preceding source's
+aggregate PASS cannot qualify the subsequently changed fixture. Operator ALLSEND,
+provider receipt and human acceptance remain open, with no agent real-mail Send.

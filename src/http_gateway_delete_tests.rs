@@ -13,6 +13,94 @@ use std::time::{Duration, Instant};
 static NEXT: AtomicU64 = AtomicU64::new(0);
 const ACCOUNT: &str = "alice@example.test";
 
+// A concurrent test may briefly hold this newly written owned script open.
+// Retry only a spawn that explicitly did not execute the harmless detector.
+// This does not wrap or retry any gateway operation.
+fn sentinel_positive_control(
+    mut run: impl FnMut() -> Result<crate::auth::CommandExecution, crate::auth::CommandExecutionError>,
+) -> Result<crate::auth::CommandExecution, crate::auth::CommandExecutionError> {
+    let deadline = Instant::now() + Duration::from_secs(1);
+    let mut remaining_retries = 7;
+    loop {
+        match run() {
+            Err(error)
+                if error.reason == "failed to spawn command: Text file busy (os error 26)"
+                    && remaining_retries > 0
+                    && Instant::now() + Duration::from_millis(10) < deadline =>
+            {
+                remaining_retries -= 1;
+                thread::sleep(Duration::from_millis(10));
+            }
+            result => return result,
+        }
+    }
+}
+
+#[test]
+fn sentinel_control_retries_only_unexecuted_text_busy_spawns() {
+    let mut attempts = 0;
+    let control = sentinel_positive_control(|| {
+        attempts += 1;
+        if attempts == 1 {
+            Err(crate::auth::CommandExecutionError {
+                reason: "failed to spawn command: Text file busy (os error 26)".into(),
+            })
+        } else {
+            Ok(crate::auth::CommandExecution {
+                status_code: 1,
+                stdout: String::new(),
+                stderr: String::new(),
+            })
+        }
+    })
+    .unwrap();
+    assert_eq!(attempts, 2);
+    assert_eq!(control.status_code, 1);
+
+    for reason in [
+        "failed to spawn command: Permission denied (os error 13)",
+        "command timed out",
+    ] {
+        attempts = 0;
+        let refused = sentinel_positive_control(|| {
+            attempts += 1;
+            Err(crate::auth::CommandExecutionError {
+                reason: reason.into(),
+            })
+        });
+        assert_eq!(attempts, 1);
+        assert_eq!(refused.unwrap_err().reason, reason);
+    }
+    attempts = 0;
+    let unexpected_exit = sentinel_positive_control(|| {
+        attempts += 1;
+        Ok(crate::auth::CommandExecution {
+            status_code: 2,
+            stdout: String::new(),
+            stderr: String::new(),
+        })
+    })
+    .unwrap();
+    assert_eq!(attempts, 1);
+    assert_eq!(unexpected_exit.status_code, 2);
+}
+
+#[test]
+fn sentinel_control_exhausted_spawn_conflict_still_fails() {
+    let mut attempts = 0;
+    let refused = sentinel_positive_control(|| {
+        attempts += 1;
+        Err(crate::auth::CommandExecutionError {
+            reason: "failed to spawn command: Text file busy (os error 26)".into(),
+        })
+    });
+    assert_eq!(attempts, 8);
+    assert_eq!(
+        refused.unwrap_err().reason,
+        "failed to spawn command: Text file busy (os error 26)"
+    );
+}
+
 struct Fixture {
     root: PathBuf,
     gateway: RuntimeBrowserGateway,
@@ -46,14 +134,16 @@ impl Fixture {
         fs::write(&sentinel, format!("#!{interpreter}\nfrom pathlib import Path\nPath({:?}).write_text('attempted')\nraise SystemExit(1)\n", marker.to_str().unwrap())).unwrap();
         fs::set_permissions(&sentinel, fs::Permissions::from_mode(0o700)).unwrap();
         // Prove the owned detector executes before using its absence as evidence.
-        let control = crate::auth::CommandExecutor::run_with_stdin_bytes_timeout_and_output_limit(
-            &crate::auth::SystemCommandExecutor,
-            sentinel.to_str().unwrap(),
-            &[],
-            &[],
-            Duration::from_secs(2),
-            64,
-        )
+        let control = sentinel_positive_control(|| {
+            crate::auth::CommandExecutor::run_with_stdin_bytes_timeout_and_output_limit(
+                &crate::auth::SystemCommandExecutor,
+                sentinel.to_str().unwrap(),
+                &[],
+                &[],
+                Duration::from_secs(2),
+                64,
+            )
+        })
         .unwrap();
         assert_eq!(control.status_code, 1);
         assert_eq!(fs::read(&marker).unwrap(), b"attempted");
