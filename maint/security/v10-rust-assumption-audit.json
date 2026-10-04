@@ -1132,6 +1132,70 @@
       "classification": "test_or_fixture_assumption",
       "disposition": "accepted_test_or_fixture_assumption",
       "fail_closed_relevance": "low",
+      "file": "src/account_mutation_budget_tests.rs",
+      "kind": "unwrap_call",
+      "line": 5
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/account_mutation_budget_tests.rs",
+      "kind": "unwrap_call",
+      "line": 9
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/account_mutation_budget_tests.rs",
+      "kind": "unwrap_call",
+      "line": 10
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/account_mutation_budget_tests.rs",
+      "kind": "unwrap_call",
+      "line": 15
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/account_mutation_budget_tests.rs",
+      "kind": "unwrap_call",
+      "line": 20
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/account_mutation_budget_tests.rs",
+      "kind": "unwrap_call",
+      "line": 27
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/account_mutation_budget_tests.rs",
+      "kind": "unwrap_call",
+      "line": 37
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/account_mutation_budget_tests.rs",
+      "kind": "unwrap_call",
+      "line": 40
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
       "file": "src/account_mutation_client_tests.rs",
       "kind": "unwrap_call",
       "line": 12
@@ -1406,7 +1470,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_client_tests.rs",
       "kind": "unwrap_call",
-      "line": 201
+      "line": 192
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -1414,7 +1478,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_client_tests.rs",
       "kind": "unwrap_call",
-      "line": 203
+      "line": 202
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -1422,7 +1486,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_client_tests.rs",
       "kind": "unwrap_call",
-      "line": 212
+      "line": 204
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -1430,7 +1494,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_client_tests.rs",
       "kind": "unwrap_call",
-      "line": 220
+      "line": 213
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -1438,7 +1502,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_client_tests.rs",
       "kind": "unwrap_call",
-      "line": 230
+      "line": 221
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -1446,7 +1510,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_client_tests.rs",
       "kind": "unwrap_call",
-      "line": 244
+      "line": 231
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -1454,7 +1518,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_client_tests.rs",
       "kind": "unwrap_call",
-      "line": 246
+      "line": 245
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -1462,7 +1526,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_client_tests.rs",
       "kind": "unwrap_call",
-      "line": 249
+      "line": 247
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -1478,7 +1542,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_client_tests.rs",
       "kind": "unwrap_call",
-      "line": 253
+      "line": 251
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -1486,7 +1550,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_client_tests.rs",
       "kind": "unwrap_call",
-      "line": 255
+      "line": 254
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -1502,7 +1566,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_client_tests.rs",
       "kind": "unwrap_call",
-      "line": 259
+      "line": 257
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -1518,7 +1582,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_client_tests.rs",
       "kind": "unwrap_call",
-      "line": 263
+      "line": 261
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -1526,7 +1590,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_client_tests.rs",
       "kind": "unwrap_call",
-      "line": 265
+      "line": 264
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -1542,7 +1606,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_client_tests.rs",
       "kind": "unwrap_call",
-      "line": 269
+      "line": 267
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -1550,7 +1614,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_client_tests.rs",
       "kind": "unwrap_call",
-      "line": 271
+      "line": 270
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -1565,16 +1629,16 @@
       "disposition": "accepted_test_or_fixture_assumption",
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_client_tests.rs",
-      "kind": "unreachable_macro",
-      "line": 274
+      "kind": "unwrap_call",
+      "line": 273
     },
     {
       "classification": "test_or_fixture_assumption",
       "disposition": "accepted_test_or_fixture_assumption",
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_client_tests.rs",
-      "kind": "unwrap_call",
-      "line": 297
+      "kind": "unreachable_macro",
+      "line": 275
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -1590,7 +1654,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_client_tests.rs",
       "kind": "unwrap_call",
-      "line": 306
+      "line": 299
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -1598,7 +1662,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_client_tests.rs",
       "kind": "unwrap_call",
-      "line": 312
+      "line": 307
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -1606,7 +1670,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_client_tests.rs",
       "kind": "unwrap_call",
-      "line": 323
+      "line": 313
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -1614,7 +1678,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_client_tests.rs",
       "kind": "unwrap_call",
-      "line": 330
+      "line": 324
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -1622,7 +1686,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_client_tests.rs",
       "kind": "unwrap_call",
-      "line": 332
+      "line": 331
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -1638,7 +1702,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_client_tests.rs",
       "kind": "unwrap_call",
-      "line": 346
+      "line": 334
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -1646,7 +1710,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_client_tests.rs",
       "kind": "unwrap_call",
-      "line": 356
+      "line": 347
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -1654,7 +1718,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_client_tests.rs",
       "kind": "unwrap_call",
-      "line": 358
+      "line": 357
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -1662,7 +1726,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_client_tests.rs",
       "kind": "unwrap_call",
-      "line": 361
+      "line": 359
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -1670,7 +1734,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_client_tests.rs",
       "kind": "unwrap_call",
-      "line": 369
+      "line": 362
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -1678,7 +1742,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_client_tests.rs",
       "kind": "unwrap_call",
-      "line": 390
+      "line": 370
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -1686,7 +1750,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_client_tests.rs",
       "kind": "unwrap_call",
-      "line": 392
+      "line": 391
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -1702,7 +1766,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_client_tests.rs",
       "kind": "unwrap_call",
-      "line": 403
+      "line": 394
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -1710,7 +1774,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_client_tests.rs",
       "kind": "unwrap_call",
-      "line": 433
+      "line": 404
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -1718,7 +1782,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_client_tests.rs",
       "kind": "unwrap_call",
-      "line": 444
+      "line": 434
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -1726,7 +1790,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_client_tests.rs",
       "kind": "unwrap_call",
-      "line": 456
+      "line": 445
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -1734,7 +1798,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_client_tests.rs",
       "kind": "unwrap_call",
-      "line": 458
+      "line": 457
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -1750,7 +1814,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_client_tests.rs",
       "kind": "unwrap_call",
-      "line": 467
+      "line": 460
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -1758,7 +1822,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_client_tests.rs",
       "kind": "unwrap_call",
-      "line": 481
+      "line": 468
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -1766,7 +1830,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_client_tests.rs",
       "kind": "unwrap_call",
-      "line": 492
+      "line": 482
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -1774,7 +1838,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_client_tests.rs",
       "kind": "unwrap_call",
-      "line": 498
+      "line": 493
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -1782,7 +1846,143 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_client_tests.rs",
       "kind": "unwrap_call",
-      "line": 506
+      "line": 499
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/account_mutation_client_tests.rs",
+      "kind": "unwrap_call",
+      "line": 507
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/account_mutation_client_tests.rs",
+      "kind": "unwrap_call",
+      "line": 525
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/account_mutation_client_tests.rs",
+      "kind": "unwrap_call",
+      "line": 527
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/account_mutation_client_tests.rs",
+      "kind": "unwrap_call",
+      "line": 533
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/account_mutation_client_tests.rs",
+      "kind": "unwrap_call",
+      "line": 534
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/account_mutation_client_tests.rs",
+      "kind": "unwrap_call",
+      "line": 537
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/account_mutation_client_tests.rs",
+      "kind": "unwrap_call",
+      "line": 541
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/account_mutation_client_tests.rs",
+      "kind": "unwrap_call",
+      "line": 543
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/account_mutation_client_tests.rs",
+      "kind": "unwrap_call",
+      "line": 545
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/account_mutation_client_tests.rs",
+      "kind": "unwrap_call",
+      "line": 549
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/account_mutation_client_tests.rs",
+      "kind": "unwrap_call",
+      "line": 552
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/account_mutation_client_tests.rs",
+      "kind": "unwrap_call",
+      "line": 555
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/account_mutation_client_tests.rs",
+      "kind": "unwrap_call",
+      "line": 557
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/account_mutation_client_tests.rs",
+      "kind": "unwrap_call",
+      "line": 558
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/account_mutation_client_tests.rs",
+      "kind": "unwrap_call",
+      "line": 564
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/account_mutation_client_tests.rs",
+      "kind": "unwrap_call",
+      "line": 568
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/account_mutation_client_tests.rs",
+      "kind": "unwrap_call",
+      "line": 570
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -1996,6 +2196,54 @@
       "classification": "test_or_fixture_assumption",
       "disposition": "accepted_test_or_fixture_assumption",
       "fail_closed_relevance": "low",
+      "file": "src/account_mutation_supervisor_tests.rs",
+      "kind": "unwrap_call",
+      "line": 9
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/account_mutation_supervisor_tests.rs",
+      "kind": "unwrap_call",
+      "line": 16
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/account_mutation_supervisor_tests.rs",
+      "kind": "unwrap_call",
+      "line": 17
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/account_mutation_supervisor_tests.rs",
+      "kind": "unwrap_call",
+      "line": 18
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/account_mutation_supervisor_tests.rs",
+      "kind": "unwrap_call",
+      "line": 39
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/account_mutation_supervisor_tests.rs",
+      "kind": "unwrap_call",
+      "line": 68
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
       "file": "src/account_mutation_tests.rs",
       "kind": "unwrap_call",
       "line": 22
@@ -2030,7 +2278,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_tests.rs",
       "kind": "unwrap_call",
-      "line": 99
+      "line": 108
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -2038,7 +2286,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_tests.rs",
       "kind": "unwrap_call",
-      "line": 135
+      "line": 116
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -2046,7 +2294,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_tests.rs",
       "kind": "unwrap_call",
-      "line": 139
+      "line": 144
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -2054,7 +2302,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_tests.rs",
       "kind": "unwrap_call",
-      "line": 142
+      "line": 148
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -2062,7 +2310,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_tests.rs",
       "kind": "unwrap_call",
-      "line": 146
+      "line": 151
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -2070,7 +2318,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_tests.rs",
       "kind": "unwrap_call",
-      "line": 166
+      "line": 155
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -2078,7 +2326,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_tests.rs",
       "kind": "unwrap_call",
-      "line": 169
+      "line": 175
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -2086,7 +2334,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_tests.rs",
       "kind": "unwrap_call",
-      "line": 200
+      "line": 178
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -2094,7 +2342,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_tests.rs",
       "kind": "unwrap_call",
-      "line": 201
+      "line": 209
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -2102,7 +2350,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_tests.rs",
       "kind": "unwrap_call",
-      "line": 220
+      "line": 210
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -2110,7 +2358,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_tests.rs",
       "kind": "unwrap_call",
-      "line": 231
+      "line": 229
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -2118,7 +2366,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_tests.rs",
       "kind": "unwrap_call",
-      "line": 232
+      "line": 240
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -2126,7 +2374,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_tests.rs",
       "kind": "unwrap_call",
-      "line": 233
+      "line": 241
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -2134,7 +2382,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_tests.rs",
       "kind": "unwrap_call",
-      "line": 248
+      "line": 242
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -2142,7 +2390,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_tests.rs",
       "kind": "unwrap_call",
-      "line": 251
+      "line": 257
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -2150,7 +2398,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_tests.rs",
       "kind": "unwrap_call",
-      "line": 255
+      "line": 260
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -2158,7 +2406,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_tests.rs",
       "kind": "unwrap_call",
-      "line": 256
+      "line": 264
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -2166,7 +2414,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_tests.rs",
       "kind": "unwrap_call",
-      "line": 259
+      "line": 265
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -2174,7 +2422,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_tests.rs",
       "kind": "unwrap_call",
-      "line": 262
+      "line": 268
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -2182,7 +2430,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_tests.rs",
       "kind": "unwrap_call",
-      "line": 263
+      "line": 271
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -2190,7 +2438,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_tests.rs",
       "kind": "unwrap_call",
-      "line": 266
+      "line": 272
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -2198,7 +2446,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_tests.rs",
       "kind": "unwrap_call",
-      "line": 278
+      "line": 275
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -2206,7 +2454,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_tests.rs",
       "kind": "unwrap_call",
-      "line": 279
+      "line": 287
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -2214,7 +2462,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_tests.rs",
       "kind": "unwrap_call",
-      "line": 289
+      "line": 288
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -2230,7 +2478,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_tests.rs",
       "kind": "unwrap_call",
-      "line": 320
+      "line": 307
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -2238,7 +2486,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_tests.rs",
       "kind": "unwrap_call",
-      "line": 334
+      "line": 329
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -2254,7 +2502,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_tests.rs",
       "kind": "unwrap_call",
-      "line": 346
+      "line": 352
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -2262,7 +2510,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_tests.rs",
       "kind": "unwrap_call",
-      "line": 353
+      "line": 355
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -2270,7 +2518,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_tests.rs",
       "kind": "unwrap_call",
-      "line": 358
+      "line": 362
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -2278,7 +2526,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_tests.rs",
       "kind": "unwrap_call",
-      "line": 371
+      "line": 367
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -2286,7 +2534,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_tests.rs",
       "kind": "unwrap_call",
-      "line": 373
+      "line": 380
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -2294,15 +2542,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_tests.rs",
       "kind": "unwrap_call",
-      "line": 376
-    },
-    {
-      "classification": "test_or_fixture_assumption",
-      "disposition": "accepted_test_or_fixture_assumption",
-      "fail_closed_relevance": "low",
-      "file": "src/account_mutation_tests.rs",
-      "kind": "unwrap_call",
-      "line": 383
+      "line": 382
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -2318,7 +2558,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_tests.rs",
       "kind": "unwrap_call",
-      "line": 395
+      "line": 392
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -2326,7 +2566,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_tests.rs",
       "kind": "unwrap_call",
-      "line": 396
+      "line": 394
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -2334,7 +2574,23 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_tests.rs",
       "kind": "unwrap_call",
-      "line": 406
+      "line": 404
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/account_mutation_tests.rs",
+      "kind": "unwrap_call",
+      "line": 405
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/account_mutation_tests.rs",
+      "kind": "unwrap_call",
+      "line": 415
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -2342,7 +2598,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_tests.rs",
       "kind": "unreachable_macro",
-      "line": 444
+      "line": 453
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -2350,7 +2606,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_tests.rs",
       "kind": "unwrap_call",
-      "line": 467
+      "line": 476
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -2358,7 +2614,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_tests.rs",
       "kind": "unwrap_call",
-      "line": 480
+      "line": 489
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -2366,7 +2622,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_tests.rs",
       "kind": "unwrap_call",
-      "line": 484
+      "line": 493
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -2374,7 +2630,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_tests.rs",
       "kind": "unwrap_call",
-      "line": 488
+      "line": 497
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -2382,15 +2638,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_tests.rs",
       "kind": "unwrap_call",
-      "line": 502
-    },
-    {
-      "classification": "test_or_fixture_assumption",
-      "disposition": "accepted_test_or_fixture_assumption",
-      "fail_closed_relevance": "low",
-      "file": "src/account_mutation_tests.rs",
-      "kind": "unwrap_call",
-      "line": 504
+      "line": 511
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -2406,7 +2654,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_tests.rs",
       "kind": "unwrap_call",
-      "line": 514
+      "line": 522
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -2414,7 +2662,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_tests.rs",
       "kind": "unwrap_call",
-      "line": 517
+      "line": 523
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -2422,7 +2670,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_tests.rs",
       "kind": "unwrap_call",
-      "line": 529
+      "line": 526
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -2438,7 +2686,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_tests.rs",
       "kind": "unwrap_call",
-      "line": 541
+      "line": 547
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -2446,7 +2694,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_tests.rs",
       "kind": "unwrap_call",
-      "line": 545
+      "line": 550
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -2454,7 +2702,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_tests.rs",
       "kind": "unwrap_call",
-      "line": 555
+      "line": 554
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -2462,15 +2710,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_tests.rs",
       "kind": "unwrap_call",
-      "line": 576
-    },
-    {
-      "classification": "test_or_fixture_assumption",
-      "disposition": "accepted_test_or_fixture_assumption",
-      "fail_closed_relevance": "low",
-      "file": "src/account_mutation_tests.rs",
-      "kind": "unwrap_call",
-      "line": 580
+      "line": 564
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -2494,7 +2734,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_tests.rs",
       "kind": "unwrap_call",
-      "line": 595
+      "line": 594
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -2502,7 +2742,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_tests.rs",
       "kind": "unwrap_call",
-      "line": 641
+      "line": 598
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -2510,7 +2750,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_tests.rs",
       "kind": "unwrap_call",
-      "line": 660
+      "line": 604
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -2518,7 +2758,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_tests.rs",
       "kind": "unwrap_call",
-      "line": 662
+      "line": 650
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -2526,7 +2766,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_tests.rs",
       "kind": "unwrap_call",
-      "line": 664
+      "line": 669
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -2534,7 +2774,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_tests.rs",
       "kind": "unwrap_call",
-      "line": 670
+      "line": 671
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -2542,7 +2782,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_tests.rs",
       "kind": "unwrap_call",
-      "line": 684
+      "line": 673
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -2550,7 +2790,23 @@
       "fail_closed_relevance": "low",
       "file": "src/account_mutation_tests.rs",
       "kind": "unwrap_call",
-      "line": 688
+      "line": 679
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/account_mutation_tests.rs",
+      "kind": "unwrap_call",
+      "line": 693
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/account_mutation_tests.rs",
+      "kind": "unwrap_call",
+      "line": 697
     },
     {
       "classification": "production_adjacent_assumption",
@@ -3750,7 +4006,7 @@
       "fail_closed_relevance": "medium",
       "file": "src/auth.rs",
       "kind": "unwrap_call",
-      "line": 114
+      "line": 173
     },
     {
       "classification": "startup_or_global_invariant",
@@ -3758,7 +4014,7 @@
       "fail_closed_relevance": "medium",
       "file": "src/auth.rs",
       "kind": "unwrap_call",
-      "line": 148
+      "line": 207
     },
     {
       "classification": "production_adjacent_assumption",
@@ -3766,7 +4022,7 @@
       "fail_closed_relevance": "high",
       "file": "src/auth.rs",
       "kind": "expect_call",
-      "line": 1416
+      "line": 1475
     },
     {
       "classification": "production_adjacent_assumption",
@@ -3774,7 +4030,7 @@
       "fail_closed_relevance": "high",
       "file": "src/auth.rs",
       "kind": "expect_call",
-      "line": 1441
+      "line": 1500
     },
     {
       "classification": "production_adjacent_assumption",
@@ -3782,7 +4038,7 @@
       "fail_closed_relevance": "high",
       "file": "src/auth.rs",
       "kind": "expect_call",
-      "line": 1451
+      "line": 1510
     },
     {
       "classification": "production_adjacent_assumption",
@@ -3790,7 +4046,7 @@
       "fail_closed_relevance": "high",
       "file": "src/auth.rs",
       "kind": "unwrap_call",
-      "line": 1461
+      "line": 1520
     },
     {
       "classification": "production_adjacent_assumption",
@@ -3798,7 +4054,7 @@
       "fail_closed_relevance": "high",
       "file": "src/auth.rs",
       "kind": "expect_call",
-      "line": 1641
+      "line": 1700
     },
     {
       "classification": "production_adjacent_assumption",
@@ -3806,7 +4062,7 @@
       "fail_closed_relevance": "high",
       "file": "src/auth.rs",
       "kind": "expect_call",
-      "line": 1658
+      "line": 1717
     },
     {
       "classification": "production_adjacent_assumption",
@@ -3814,7 +4070,7 @@
       "fail_closed_relevance": "high",
       "file": "src/auth.rs",
       "kind": "expect_call",
-      "line": 1701
+      "line": 1760
     },
     {
       "classification": "production_adjacent_assumption",
@@ -3822,7 +4078,7 @@
       "fail_closed_relevance": "high",
       "file": "src/auth.rs",
       "kind": "expect_call",
-      "line": 1772
+      "line": 1831
     },
     {
       "classification": "production_adjacent_assumption",
@@ -3830,7 +4086,7 @@
       "fail_closed_relevance": "high",
       "file": "src/auth.rs",
       "kind": "expect_call",
-      "line": 1864
+      "line": 1923
     },
     {
       "classification": "production_adjacent_assumption",
@@ -3838,7 +4094,7 @@
       "fail_closed_relevance": "high",
       "file": "src/auth.rs",
       "kind": "expect_call",
-      "line": 1868
+      "line": 1927
     },
     {
       "classification": "production_adjacent_assumption",
@@ -43166,7 +43422,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "expect_call",
-      "line": 872
+      "line": 890
     },
     {
       "classification": "production_adjacent_assumption",
@@ -43174,7 +43430,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "unwrap_call",
-      "line": 1109
+      "line": 1127
     },
     {
       "classification": "production_adjacent_assumption",
@@ -43182,7 +43438,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "unwrap_call",
-      "line": 1112
+      "line": 1130
     },
     {
       "classification": "production_adjacent_assumption",
@@ -43190,7 +43446,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "expect_call",
-      "line": 1237
+      "line": 1255
     },
     {
       "classification": "production_adjacent_assumption",
@@ -43198,7 +43454,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "expect_call",
-      "line": 1240
+      "line": 1258
     },
     {
       "classification": "production_adjacent_assumption",
@@ -43206,7 +43462,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "expect_call",
-      "line": 1241
+      "line": 1259
     },
     {
       "classification": "production_adjacent_assumption",
@@ -43214,7 +43470,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "expect_call",
-      "line": 1242
+      "line": 1260
     },
     {
       "classification": "production_adjacent_assumption",
@@ -43222,7 +43478,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "expect_call",
-      "line": 1243
+      "line": 1261
     },
     {
       "classification": "production_adjacent_assumption",
@@ -43230,7 +43486,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "expect_call",
-      "line": 1246
+      "line": 1264
     },
     {
       "classification": "production_adjacent_assumption",
@@ -43238,7 +43494,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "expect_call",
-      "line": 1256
+      "line": 1274
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -43662,7 +43918,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openpgp_crypto_process.rs",
       "kind": "unwrap_call",
-      "line": 224
+      "line": 316
     },
     {
       "classification": "production_adjacent_assumption",
@@ -43670,7 +43926,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openpgp_crypto_process.rs",
       "kind": "unwrap_call",
-      "line": 232
+      "line": 324
     },
     {
       "classification": "production_adjacent_assumption",
@@ -43678,7 +43934,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openpgp_crypto_process.rs",
       "kind": "unwrap_call",
-      "line": 235
+      "line": 327
     },
     {
       "classification": "production_adjacent_assumption",
@@ -43686,7 +43942,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openpgp_crypto_process.rs",
       "kind": "unwrap_call",
-      "line": 237
+      "line": 329
     },
     {
       "classification": "production_adjacent_assumption",
@@ -43694,79 +43950,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openpgp_crypto_process.rs",
       "kind": "unwrap_call",
-      "line": 241
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/openpgp_crypto_process.rs",
-      "kind": "unwrap_call",
-      "line": 242
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/openpgp_crypto_process.rs",
-      "kind": "unwrap_call",
-      "line": 243
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/openpgp_crypto_process.rs",
-      "kind": "unwrap_call",
-      "line": 248
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/openpgp_crypto_process.rs",
-      "kind": "unwrap_call",
-      "line": 249
-    },
-    {
-      "classification": "panic_path_assumption",
-      "disposition": "requires_path_review_before_broader_release_claims",
-      "fail_closed_relevance": "high",
-      "file": "src/openpgp_crypto_process.rs",
-      "kind": "panic_macro",
-      "line": 252
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/openpgp_crypto_process.rs",
-      "kind": "unwrap_call",
-      "line": 274
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/openpgp_crypto_process.rs",
-      "kind": "unwrap_call",
-      "line": 275
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/openpgp_crypto_process.rs",
-      "kind": "unwrap_call",
-      "line": 297
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/openpgp_crypto_process.rs",
-      "kind": "unwrap_call",
-      "line": 305
+      "line": 333
     },
     {
       "classification": "production_adjacent_assumption",
@@ -43782,7 +43966,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openpgp_crypto_process.rs",
       "kind": "unwrap_call",
-      "line": 342
+      "line": 335
     },
     {
       "classification": "production_adjacent_assumption",
@@ -43790,6 +43974,22 @@
       "fail_closed_relevance": "high",
       "file": "src/openpgp_crypto_process.rs",
       "kind": "unwrap_call",
+      "line": 340
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/openpgp_crypto_process.rs",
+      "kind": "unwrap_call",
+      "line": 341
+    },
+    {
+      "classification": "panic_path_assumption",
+      "disposition": "requires_path_review_before_broader_release_claims",
+      "fail_closed_relevance": "high",
+      "file": "src/openpgp_crypto_process.rs",
+      "kind": "panic_macro",
       "line": 344
     },
     {
@@ -43798,7 +43998,63 @@
       "fail_closed_relevance": "high",
       "file": "src/openpgp_crypto_process.rs",
       "kind": "unwrap_call",
-      "line": 353
+      "line": 366
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/openpgp_crypto_process.rs",
+      "kind": "unwrap_call",
+      "line": 367
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/openpgp_crypto_process.rs",
+      "kind": "unwrap_call",
+      "line": 389
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/openpgp_crypto_process.rs",
+      "kind": "unwrap_call",
+      "line": 397
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/openpgp_crypto_process.rs",
+      "kind": "unwrap_call",
+      "line": 426
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/openpgp_crypto_process.rs",
+      "kind": "unwrap_call",
+      "line": 434
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/openpgp_crypto_process.rs",
+      "kind": "unwrap_call",
+      "line": 436
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/openpgp_crypto_process.rs",
+      "kind": "unwrap_call",
+      "line": 445
     },
     {
       "classification": "production_adjacent_assumption",
@@ -47767,6 +48023,302 @@
       "file": "src/password_session_action_tests.rs",
       "kind": "unwrap_call",
       "line": 436
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_session_action_tests.rs",
+      "kind": "unwrap_call",
+      "line": 446
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_session_action_tests.rs",
+      "kind": "unwrap_call",
+      "line": 447
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_session_action_tests.rs",
+      "kind": "unwrap_call",
+      "line": 450
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_session_action_tests.rs",
+      "kind": "unwrap_call",
+      "line": 483
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_session_action_tests.rs",
+      "kind": "unwrap_call",
+      "line": 492
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_session_action_tests.rs",
+      "kind": "unwrap_call",
+      "line": 493
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_session_action_tests.rs",
+      "kind": "unwrap_call",
+      "line": 502
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_session_action_tests.rs",
+      "kind": "panic_macro",
+      "line": 517
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_session_action_tests.rs",
+      "kind": "unwrap_call",
+      "line": 519
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_session_action_tests.rs",
+      "kind": "unwrap_call",
+      "line": 521
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_session_action_tests.rs",
+      "kind": "unwrap_call",
+      "line": 565
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_session_action_tests.rs",
+      "kind": "unwrap_call",
+      "line": 576
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_session_action_tests.rs",
+      "kind": "unwrap_call",
+      "line": 596
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_session_action_tests.rs",
+      "kind": "unwrap_call",
+      "line": 602
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_session_action_tests.rs",
+      "kind": "unwrap_call",
+      "line": 609
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_session_action_tests.rs",
+      "kind": "unwrap_call",
+      "line": 636
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_session_action_tests.rs",
+      "kind": "unwrap_call",
+      "line": 642
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_session_action_tests.rs",
+      "kind": "unwrap_call",
+      "line": 649
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_session_action_tests.rs",
+      "kind": "unwrap_call",
+      "line": 666
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_session_action_tests.rs",
+      "kind": "unwrap_call",
+      "line": 667
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_session_action_tests.rs",
+      "kind": "unwrap_call",
+      "line": 670
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_session_action_tests.rs",
+      "kind": "unwrap_call",
+      "line": 677
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_session_action_tests.rs",
+      "kind": "unwrap_call",
+      "line": 683
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_session_action_tests.rs",
+      "kind": "panic_macro",
+      "line": 699
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_session_action_tests.rs",
+      "kind": "panic_macro",
+      "line": 700
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_session_action_tests.rs",
+      "kind": "unwrap_call",
+      "line": 729
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_session_action_tests.rs",
+      "kind": "unwrap_call",
+      "line": 738
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_session_action_tests.rs",
+      "kind": "unwrap_call",
+      "line": 739
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_session_action_tests.rs",
+      "kind": "unwrap_call",
+      "line": 748
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_session_action_tests.rs",
+      "kind": "unwrap_call",
+      "line": 767
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_session_action_tests.rs",
+      "kind": "unwrap_call",
+      "line": 775
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_session_action_tests.rs",
+      "kind": "unwrap_call",
+      "line": 781
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_session_action_tests.rs",
+      "kind": "unwrap_call",
+      "line": 790
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_session_action_tests.rs",
+      "kind": "unwrap_call",
+      "line": 791
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_session_action_tests.rs",
+      "kind": "unwrap_call",
+      "line": 793
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_session_action_tests.rs",
+      "kind": "panic_macro",
+      "line": 801
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_session_action_tests.rs",
+      "kind": "panic_macro",
+      "line": 802
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -56729,7 +57281,7 @@
       "line": 521
     }
   ],
-  "generated_at_utc": "2026-10-04T22:48:25Z",
+  "generated_at_utc": "2026-10-04T23:18:15Z",
   "non_claims": [
     "This audit does not claim that all Rust assumptions are safe.",
     "This audit does not claim that production request paths are panic-free.",
@@ -56771,25 +57323,25 @@
       "panic_path_assumption": 74,
       "production_adjacent_assumption": 2015,
       "startup_or_global_invariant": 8,
-      "test_or_fixture_assumption": 4989
+      "test_or_fixture_assumption": 5058
     },
     "by_fail_closed_relevance": {
       "high": 2089,
-      "low": 4989,
+      "low": 5058,
       "medium": 13
     },
     "by_kind": {
       "expect_call": 1001,
-      "panic_macro": 230,
+      "panic_macro": 235,
       "unreachable_macro": 20,
-      "unwrap_call": 5840
+      "unwrap_call": 5904
     },
     "classification_complete": true,
-    "inventory_sha256": "e60fc8f32066b9ad39b825adbc06a93530e26360866e5103f4f25c6acf9218e1",
+    "inventory_sha256": "213becf090b59f68b866de47f11de3fcaebdbfe963df1591e2095311bf06e348",
     "live_host_state_changed": false,
     "product_behavior_changed": false,
     "production_state_changed": false,
     "slice0_carried_forward_rust_assumption_count": 712,
-    "total_count": 7091
+    "total_count": 7160
   }
 }

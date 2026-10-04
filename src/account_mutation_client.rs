@@ -90,11 +90,30 @@ impl Client {
         self.execute_with(request, workflow_deadline, &SystemTimeProvider)
     }
 
+    /// Additive budget-envelope transport. Only this entry may be integrated
+    /// with the future supervised native mutation listener; defaults stay off.
+    pub fn execute_budget(
+        &self,
+        request: Request,
+        workflow_deadline: Instant,
+    ) -> Result<TerminalReceipt, Error> {
+        self.execute_mode(request, workflow_deadline, &SystemTimeProvider, true)
+    }
+
     fn execute_with(
         &self,
         request: Request,
         workflow_deadline: Instant,
         clock: &dyn TimeProvider,
+    ) -> Result<TerminalReceipt, Error> {
+        self.execute_mode(request, workflow_deadline, clock, false)
+    }
+    fn execute_mode(
+        &self,
+        request: Request,
+        workflow_deadline: Instant,
+        clock: &dyn TimeProvider,
+        budget_envelope: bool,
     ) -> Result<TerminalReceipt, Error> {
         let mut at = clock.unix_timestamp();
         let deadline = bound_deadline(&request, workflow_deadline, at)?;
@@ -116,12 +135,31 @@ impl Client {
         check_time(&request, deadline, clock, &mut at)?;
         let stream = crate::openbsd::connect_unix_before(&self.0.socket, deadline)
             .map_err(|_| Error::Unavailable)?;
-        self.exchange(request, stream, deadline, clock, at)
+        let frame = if budget_envelope {
+            let sent = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map_err(|_| Error::Expired)?
+                .as_millis();
+            let left = remaining(deadline)?.as_millis();
+            let sent = u64::try_from(sent).map_err(|_| Error::Expired)?;
+            let left = u64::try_from(left).map_err(|_| Error::Expired)?;
+            crate::account_mutation_budget::issue(
+                &request,
+                &self.0.key,
+                sent,
+                sent.checked_add(left).ok_or(Error::Expired)?,
+            )
+            .map_err(|_| Error::Invalid)?
+        } else {
+            request.bytes().map_err(|_| Error::Invalid)?
+        };
+        self.exchange(request, frame, stream, deadline, clock, at)
     }
 
     fn exchange(
         &self,
         request: Request,
+        frame: Vec<u8>,
         mut stream: UnixStream,
         deadline: Instant,
         clock: &dyn TimeProvider,
@@ -140,12 +178,7 @@ impl Client {
         let result = (|| {
             // Once frame submission starts, even a failed partial write is
             // ambiguous. Never reconnect or convert any error below to refusal.
-            write_frame(
-                &mut stream,
-                &request.bytes().map_err(|_| Error::Uncertain)?,
-                deadline,
-            )
-            .map_err(|_| Error::Uncertain)?;
+            write_frame(&mut stream, &frame, deadline).map_err(|_| Error::Uncertain)?;
             stream
                 .shutdown(std::net::Shutdown::Write)
                 .map_err(|_| Error::Uncertain)?;

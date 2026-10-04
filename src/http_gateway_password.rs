@@ -35,6 +35,169 @@ impl RuntimeBrowserGateway {
             dispatch,
         )
     }
+    /// Backend completion seam only: no route/form activates this workflow.
+    /// The same original deadline must begin before preparation. A verified
+    /// mutation receipt establishes only its stated outcome; this return type
+    /// describes browser cleanup, not full native mail containment acceptance.
+    pub fn with_password_change_completion<'a>(
+        &self,
+        context: &AuthenticationContext,
+        token: &SessionToken,
+        prepared: password_change::Prepared<'a>,
+        mutation: &crate::account_mutation_client::Client,
+        original_deadline: std::time::Instant,
+    ) -> Result<crate::session::BrowserRevocation, password_change::Error> {
+        let Some(client) = &self.account_admission_client else {
+            return Err(password_change::Error::Unavailable);
+        };
+        let authority = std::sync::Arc::new(DeadlineAuthority {
+            client: client.clone(),
+            deadline: original_deadline,
+        });
+        self.password_completion_guarded(
+            context,
+            token,
+            prepared,
+            (authority, &SystemTimeProvider),
+            original_deadline,
+            |dispatch| {
+                let request = mutation
+                    .issue(dispatch)
+                    .map_err(|_| password_change::Error::Unavailable)?;
+                mutation
+                    .execute_budget(request, original_deadline)
+                    .map_err(|_| password_change::Error::Unavailable)
+            },
+            |account| mutation.quarantine_account(account),
+        )
+    }
+    #[allow(clippy::too_many_arguments)]
+    fn password_completion_guarded<'a>(
+        &self,
+        context: &AuthenticationContext,
+        token: &SessionToken,
+        prepared: password_change::Prepared<'a>,
+        services: (
+            std::sync::Arc<dyn crate::account_admission::EpochAuthority>,
+            &dyn crate::totp::TimeProvider,
+        ),
+        deadline: std::time::Instant,
+        dispatch: impl FnOnce(
+            password_change::Dispatch<'a>,
+        ) -> Result<
+            crate::account_mutation::TerminalReceipt,
+            password_change::Error,
+        >,
+        mut quarantine: impl FnMut(&str),
+    ) -> Result<crate::session::BrowserRevocation, password_change::Error> {
+        use crate::account_mutation::Outcome as MutationOutcome;
+        use crate::session::BrowserRevocation;
+        use std::time::{Duration, Instant};
+        let now = Instant::now();
+        if deadline <= now || deadline > now + Duration::from_secs(60) {
+            return Err(password_change::Error::Expired);
+        }
+        let (authority, clock) = services;
+        let mut binding = None;
+        let receipt = self.password_dispatch_guarded(
+            context,
+            token,
+            prepared,
+            (authority.clone(), clock),
+            |action| {
+                if Instant::now() >= deadline {
+                    return Err(password_change::Error::Expired);
+                }
+                binding = Some(CompletionBinding::capture(&action));
+                dispatch(action)
+            },
+        );
+        // The guarded call has returned: its store lock has dropped on all paths.
+        let receipt = match receipt {
+            Ok(receipt) => receipt,
+            Err(error) => {
+                if let Some(binding) = &binding {
+                    quarantine(&binding.account);
+                }
+                return Err(error);
+            }
+        };
+        let binding = binding.ok_or(password_change::Error::Unavailable)?;
+        if !binding.matches(&receipt) {
+            quarantine(&binding.account);
+            return Ok(BrowserRevocation::Contained { count: 0 });
+        }
+        // Even an authentic refusal cannot become a known terminal result once
+        // the original operation budget or action validity has elapsed. Sample
+        // the wall clock before the final Instant check so a slow clock cannot
+        // renew the budget at this boundary.
+        let wall_now = clock.unix_timestamp();
+        if wall_now < receipt.issued()
+            || wall_now < receipt.responded_at()
+            || wall_now >= receipt.expires()
+            || Instant::now() >= deadline
+        {
+            quarantine(&binding.account);
+            return Ok(BrowserRevocation::Contained { count: 0 });
+        }
+        if matches!(receipt.outcome(), MutationOutcome::KnownRefused) {
+            return Ok(BrowserRevocation::KnownRefused);
+        }
+        let epoch_ready = match receipt.outcome() {
+            MutationOutcome::Changed { epoch, .. } => {
+                Instant::now() < deadline
+                    && authority.admit(&binding.account, *epoch).is_ok()
+                    && Instant::now() < deadline
+            }
+            _ => false,
+        };
+        let service = SessionService::new(
+            FileSessionStore::new(self.session_dir.clone()),
+            ActionClock(clock),
+            SystemRandomSource,
+            self.session_lifetime_seconds,
+            self.session_idle_timeout_seconds,
+        );
+        let result = service.revoke_password_change_sessions(receipt, deadline);
+        match result {
+            BrowserRevocation::OldSessionsRevoked { count } if epoch_ready => {
+                Ok(BrowserRevocation::OldSessionsRevoked { count })
+            }
+            BrowserRevocation::OldSessionsRevoked { count }
+            | BrowserRevocation::Contained { count } => {
+                quarantine(&binding.account);
+                Ok(BrowserRevocation::Contained { count })
+            }
+            BrowserRevocation::KnownRefused => {
+                quarantine(&binding.account);
+                Ok(BrowserRevocation::Contained { count: 0 })
+            }
+        }
+    }
+    #[cfg(test)]
+    #[allow(clippy::too_many_arguments)]
+    pub(crate) fn password_completion_for_test<'a>(
+        &self,
+        context: &AuthenticationContext,
+        token: &SessionToken,
+        prepared: password_change::Prepared<'a>,
+        services: (
+            std::sync::Arc<dyn crate::account_admission::EpochAuthority>,
+            &dyn crate::totp::TimeProvider,
+        ),
+        deadline: std::time::Instant,
+        dispatch: impl FnOnce(
+            password_change::Dispatch<'a>,
+        ) -> Result<
+            crate::account_mutation::TerminalReceipt,
+            password_change::Error,
+        >,
+        quarantine: impl FnMut(&str),
+    ) -> Result<crate::session::BrowserRevocation, password_change::Error> {
+        self.password_completion_guarded(
+            context, token, prepared, services, deadline, dispatch, quarantine,
+        )
+    }
     fn password_dispatch_guarded<'a, O>(
         &self,
         context: &AuthenticationContext,
@@ -128,5 +291,49 @@ fn guarded_error(error: crate::session::GuardedSessionError) -> password_change:
     match error {
         crate::session::GuardedSessionError::Inactive => password_change::Error::Authentication,
         crate::session::GuardedSessionError::Unavailable => password_change::Error::Unavailable,
+    }
+}
+
+struct DeadlineAuthority {
+    client: crate::account_admission_runtime::Client,
+    deadline: std::time::Instant,
+}
+impl crate::account_admission::EpochAuthority for DeadlineAuthority {
+    fn admit(&self, account: &str, epoch: u64) -> Result<(), crate::account_admission::Error> {
+        self.client.admit_before(account, epoch, self.deadline)
+    }
+}
+struct CompletionBinding {
+    account: String,
+    epoch: u64,
+    session: String,
+    request: String,
+    intent: String,
+    source: String,
+    issued: u64,
+    expires: u64,
+}
+impl CompletionBinding {
+    fn capture(action: &password_change::Dispatch<'_>) -> Self {
+        Self {
+            account: action.account().into(),
+            epoch: action.epoch(),
+            session: action.session_id().into(),
+            request: action.request_id().into(),
+            intent: action.intent_reference().into(),
+            source: action.source().into(),
+            issued: action.issued(),
+            expires: action.expires(),
+        }
+    }
+    fn matches(&self, receipt: &crate::account_mutation::TerminalReceipt) -> bool {
+        receipt.account() == self.account
+            && receipt.old_epoch() == self.epoch
+            && receipt.session_id() == self.session
+            && receipt.request_id() == self.request
+            && receipt.intent_reference() == self.intent
+            && receipt.source() == self.source
+            && receipt.issued() == self.issued
+            && receipt.expires() == self.expires
     }
 }

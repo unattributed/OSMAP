@@ -9,6 +9,8 @@ pub mod account_admission;
 pub mod account_admission_runtime;
 pub mod account_mutation;
 #[cfg(unix)]
+pub(crate) mod account_mutation_budget;
+#[cfg(unix)]
 pub mod account_mutation_client;
 pub mod after_archive;
 pub mod appearance;

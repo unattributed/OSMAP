@@ -24,6 +24,7 @@ class OperationBudget:
             raise Refused('mutation deadline unavailable')
         self._monotonic = monotonic
         self._wall = wall
+        self._owned_group = None
         self._expires = expires_at
         self._last_mono = self._sample(monotonic())
         self._last_wall = self._sample(wall())
@@ -55,3 +56,46 @@ class OperationBudget:
                 or phase_limit > self.MAXIMUM_SECONDS):
             raise Refused('mutation phase deadline unavailable')
         return min(phase_limit, self.remaining())
+
+
+    @classmethod
+    def from_original_deadline(cls, expires_at, *, received_mono, received_millis,
+                               sent_millis, deadline_millis, monotonic=time.monotonic,
+                               wall_millis):
+        # The authenticated envelope consumer captures receipt before parsing.
+        # Parsing/authentication time is deducted rather than starting a new cap.
+        if (type(expires_at) is not int or expires_at <= 0 or
+                any(type(v) is not int or v <= 0 for v in
+                    (received_millis, sent_millis, deadline_millis)) or
+                not 0 < deadline_millis - sent_millis <= 60000 or
+                not sent_millis <= received_millis < deadline_millis or
+                deadline_millis > expires_at * 1000):
+            raise Refused('mutation original deadline unavailable')
+        value = cls.__new__(cls)
+        value._owned_group = None
+        value._monotonic = monotonic
+        value._wall = lambda: wall_millis() / 1000
+        value._expires = min(expires_at, deadline_millis / 1000)
+        value._last_mono = cls._sample(received_mono)
+        value._last_wall = received_millis / 1000
+        value._deadline = received_mono + (deadline_millis - received_millis) / 1000
+        value.remaining()
+        return value
+
+    def attach_owned_process_group(self):
+        # Called only by the supervised private worker entry. A browser/wire
+        # boolean cannot enable group inheritance or choose any process ID.
+        import os
+        if self._owned_group is not None or os.getpid() != os.getpgrp() or os.getpid() <= 1:
+            raise Refused('mutation process group unavailable')
+        self.remaining()
+        self._owned_group = os.getpid()
+
+    def inherited_group(self):
+        import os
+        if self._owned_group is None:
+            return False
+        if os.getpgrp() != self._owned_group:
+            raise Refused('mutation process group changed')
+        self.remaining()
+        return True

@@ -179,9 +179,10 @@ class ContainmentExecutor:
                 type(limit) is not int or limit != 4096):
             raise Refused('mail containment process authority refused')
         duration = self._budget.cap_seconds(seconds)
+        inherited = self._budget.inherited_group()
         child = subprocess.Popen((program,) + args, stdin=subprocess.DEVNULL,
                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                 shell=False, close_fds=True, start_new_session=True,
+                                 shell=False, close_fds=True, start_new_session=not inherited,
                                  env={'PATH': '/usr/bin:/usr/local/bin', 'LC_ALL': 'C'})
         deadline = time.monotonic() + duration
         output = bytearray()
@@ -218,7 +219,10 @@ class ContainmentExecutor:
                 return code, bytes(output), bytes(diagnostic)
         except BaseException:
             try:
-                os.killpg(child.pid, signal.SIGKILL)
+                if inherited:
+                    child.kill()
+                else:
+                    os.killpg(child.pid, signal.SIGKILL)
             except ProcessLookupError:
                 pass
             child.wait(timeout=2)

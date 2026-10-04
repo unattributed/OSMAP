@@ -87,9 +87,18 @@ impl TimeProvider for Clock {
 // still must consume the real sealed preparation type; no mutation/native auth
 // result is supplied or claimed by these unit tests.
 pub(crate) fn issue(current: &str, new: &str, epoch: u64, sign_at: u64) -> Result<Request, Error> {
+    issue_timed(current, new, epoch, 100, sign_at)
+}
+pub(crate) fn issue_timed(
+    current: &str,
+    new: &str,
+    epoch: u64,
+    began: u64,
+    sign_at: u64,
+) -> Result<Request, Error> {
     let scratch = Scratch::new();
     let authority = Authority(epoch);
-    let clock = Clock(100);
+    let clock = Clock(began);
     let context = AuthenticationContext::new(
         AuthenticationPolicy::default(),
         "public-mutation-request",
@@ -104,7 +113,7 @@ pub(crate) fn issue(current: &str, new: &str, epoch: u64, sign_at: u64) -> Resul
             session_id: "a".repeat(64),
             csrf_token: "b".repeat(64),
             issued_at: 1,
-            expires_at: 1000,
+            expires_at: began.checked_add(900).unwrap(),
             last_seen_at: 1,
             revoked_at: None,
             remote_addr: "127.0.0.1".into(),

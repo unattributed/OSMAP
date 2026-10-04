@@ -215,6 +215,7 @@ class NativeExecutor:
                 limit!=AuthoritativePasswordAdapter.OUTPUT_LIMIT):
             raise Refused('native process bounds refused')
         operation_seconds=self._budget.cap_seconds(seconds) if self._budget else seconds
+        if self._budget:self._budget.inherited_group()
         child=subprocess.Popen((program,)+args,stdin=subprocess.PIPE,
                                stdout=subprocess.PIPE,stderr=subprocess.PIPE,
                                shell=False,close_fds=True,

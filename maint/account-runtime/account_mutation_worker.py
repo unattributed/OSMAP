@@ -249,6 +249,32 @@ class MutationWorker:
         except Exception:
             raise Unavailable('mutation request unavailable') from None
 
+        return self._execute_verified(request, began, budget)
+
+    def execute_budget(self, raw, *, clock_millis=None):
+        """Private additive supervised entry; no production startup/activation."""
+        from account_mutation_budget import wall_millis, verify_envelope, operation_budget
+        sample = clock_millis or wall_millis
+        received_mono = self._monotonic()
+        received_millis = sample()
+        try:
+            proof = verify_envelope(raw, self._key, received_millis)
+            if proof.request.action.account not in self._accounts:
+                raise Invalid('mutation account unavailable')
+            budget = operation_budget(proof, received_mono=received_mono,
+                                      received_millis=received_millis,
+                                      monotonic=self._monotonic, clock_millis=sample)
+            # The enclosing fixed supervisor must be this process-group leader.
+            # Nested SQL/hash/containment executors retain this same owned group.
+            budget.attach_owned_process_group()
+            began = self._clock()
+            proof.request.verify(self._key, began)
+            budget.remaining()
+        except Exception:
+            raise Unavailable('mutation budget unavailable') from None
+        return self._execute_verified(proof.request, began, budget)
+
+    def _execute_verified(self, request, began, budget):
         def authorize(action, at):
             budget.remaining()
             request.verify(self._key, at)
@@ -312,7 +338,12 @@ class MutationWorker:
             raise Unavailable('native mutation worker unavailable')
         return self._connection(stream, trusted_web_uid)
 
-    def _connection(self, stream, trusted_web_uid):
+    def budget_connection(self, stream, trusted_web_uid):
+        if not NATIVE_CONFINEMENT_QUALIFIED:
+            raise Unavailable('native mutation worker unavailable')
+        return self._connection(stream, trusted_web_uid, original_budget=True)
+
+    def _connection(self, stream, trusted_web_uid, original_budget=False):
         """Private finite reviewed transport seam; tests use actual local peers."""
         if type(trusted_web_uid) is not int or trusted_web_uid <= 0:
             raise Unavailable('mutation peer unavailable')
@@ -339,11 +370,13 @@ class MutationWorker:
                     data.extend(part)
                 return bytes(data)
             size = int.from_bytes(read_exact(4), 'big')
-            if not 1 <= size <= LIMIT:
+            from account_mutation_budget import LIMIT as BUDGET_LIMIT
+            if not 1 <= size <= (BUDGET_LIMIT if original_budget else LIMIT):
                 raise Unavailable('mutation frame unavailable')
             raw = read_exact(size)
             remaining = deadline - self._monotonic()
-            reply = self.execute(raw, maximum_seconds=min(60, remaining))
+            reply = (self.execute_budget(raw) if original_budget else
+                     self.execute(raw, maximum_seconds=min(60, remaining)))
             remaining = deadline - self._monotonic()
             if remaining <= 0:
                 raise Unavailable('mutation reply unavailable')

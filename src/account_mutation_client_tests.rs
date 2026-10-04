@@ -189,6 +189,7 @@ fn actual_wrong_peer_uid_sends_no_frame_or_private_credential() {
         client
             .exchange(
                 request(),
+                request().bytes().unwrap(),
                 stream,
                 Instant::now() + Duration::from_secs(1),
                 &Clock::new(),
@@ -507,4 +508,64 @@ fn quarantine_capacity_or_nonblocking_publication_failure_fail_globally_without_
     other.quarantine_account(ACCOUNT);
     drop(lock);
     assert!(matches!(other.enter(ACCOUNT), Err(Error::Uncertain)));
+}
+
+#[test]
+fn actual_budget_socket_carries_original_deadline_and_returns_matching_sealed_receipt() {
+    let scratch = Scratch::new();
+    let (client, listener) = scratch.client();
+    let now = SystemTimeProvider.unix_timestamp();
+    let request = crate::account_mutation::tests::issue_timed(
+        "public-old-value",
+        "public-new-passphrase",
+        3,
+        now,
+        now,
+    )
+    .unwrap();
+    let server = std::thread::spawn(move || {
+        let (mut stream, _) = listener.accept().unwrap();
+        let frame = read_frame(
+            &mut stream,
+            crate::account_mutation_budget::MAX_FRAME,
+            Instant::now() + Duration::from_secs(1),
+        )
+        .unwrap();
+        let proof: serde_json::Value = serde_json::from_slice(&frame).unwrap();
+        let now_ms = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_millis() as u64;
+        let result = crate::auth::mutation_budget_fixture(
+            &serde_json::to_vec(&serde_json::json!({"raw_hex":hex(&frame),"now_millis":now_ms}))
+                .unwrap(),
+        )
+        .unwrap();
+        assert_eq!(
+            serde_json::from_slice::<serde_json::Value>(&result).unwrap()["accepted"],
+            true
+        );
+        assert!(
+            proof["deadline_millis"].as_u64().unwrap() - proof["sent_millis"].as_u64().unwrap()
+                <= 1000
+        );
+        let text = proof["request_hex"].as_str().unwrap();
+        let raw: Vec<u8> = (0..text.len())
+            .step_by(2)
+            .map(|i| u8::from_str_radix(&text[i..i + 2], 16).unwrap())
+            .collect();
+        let request = Verifier::default().request(&raw, &KEY, now).unwrap();
+        let response = request.response(Outcome::KnownRefused, &KEY, now).unwrap();
+        write_frame(
+            &mut stream,
+            &response,
+            Instant::now() + Duration::from_secs(1),
+        )
+        .unwrap();
+    });
+    let receipt = client
+        .execute_budget(request, Instant::now() + Duration::from_secs(1))
+        .unwrap();
+    assert_eq!(receipt.outcome(), &Outcome::KnownRefused);
+    server.join().unwrap();
 }

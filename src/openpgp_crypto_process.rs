@@ -52,12 +52,76 @@ pub(crate) fn run_account_admission(
     if input.len() > 4096 {
         return Err(Error::Limit);
     }
-    let (output, success) = run_limited(command, input, deadline, 4096, Duration::from_secs(30))?;
+    let (output, success) = run_limited(
+        command,
+        input,
+        deadline,
+        4096,
+        Duration::from_secs(30),
+        false,
+    )?;
     if !success {
         return Err(Error::Unavailable);
     }
     Ok(output)
 }
+/// Mutation-only whole-worker profile; production bootstrap remains disabled.
+/// Existing authentication and crypto/admin profiles retain their prior limits.
+#[allow(dead_code)] // Not wired until fixed native mutation bootstrap is qualified.
+pub(crate) fn run_account_mutation(
+    command: Command,
+    input: &[u8],
+    deadline: Instant,
+) -> Result<Vec<u8>, Error> {
+    if input.len() > 12288 {
+        return Err(Error::Limit);
+    }
+    let (output, success) = run_limited(
+        command,
+        input,
+        deadline,
+        4096,
+        Duration::from_secs(60),
+        true,
+    )?;
+    if !success {
+        return Err(Error::Unavailable);
+    }
+    Ok(output)
+}
+
+fn cleanup_owned_group_before(child: &mut Child, deadline: Instant) -> Result<(), Error> {
+    cleanup_owned_group_with(
+        child,
+        deadline,
+        crate::openbsd::kill_process_group,
+        crate::openbsd::process_group_exists,
+    )
+}
+fn cleanup_owned_group_with(
+    child: &mut Child,
+    deadline: Instant,
+    kill: impl Fn(u32) -> std::io::Result<()>,
+    exists: impl Fn(u32) -> std::io::Result<bool>,
+) -> Result<(), Error> {
+    let pid = child.id();
+    match kill(pid) {
+        Ok(()) => {}
+        Err(e) if e.raw_os_error() == Some(libc::ESRCH) => {}
+        Err(_) => return Err(Error::Unavailable),
+    }
+    while Instant::now() < deadline {
+        let reaped = child.try_wait().map_err(|_| Error::Unavailable)?.is_some();
+        let absent = !exists(pid).map_err(|_| Error::Unavailable)?;
+        if reaped && absent && Instant::now() < deadline {
+            return Ok(());
+        }
+        let remaining = deadline.saturating_duration_since(Instant::now());
+        std::thread::sleep(remaining.min(Duration::from_millis(2)));
+    }
+    Err(Error::Unavailable)
+}
+
 fn run_bounded(
     command: Command,
     input: &[u8],
@@ -70,6 +134,7 @@ fn run_bounded(
         deadline,
         output_limit,
         Duration::from_secs(10),
+        false,
     )
 }
 fn run_limited(
@@ -78,6 +143,7 @@ fn run_limited(
     deadline: Instant,
     output_limit: usize,
     operation_limit: Duration,
+    strict_group: bool,
 ) -> Result<(Vec<u8>, bool), Error> {
     if CLEANUP_UNCONFIRMED.load(Ordering::SeqCst) {
         return Err(Error::Unavailable);
@@ -144,11 +210,22 @@ fn run_limited(
                 )?;
                 discarded += bytes.len();
             }
-            if status.is_none() {
+            if strict_group && out_done && err_done {
+                // Do not reap/release the leader PID before the owned group
+                // kill. The true exit status is reconciled after strict cleanup.
+                return if written == input.len() {
+                    Ok((output, true))
+                } else {
+                    Err(Error::Unavailable)
+                };
+            }
+            if !strict_group && status.is_none() {
                 status = child.try_wait().map_err(|_| Error::Unavailable)?;
             }
             if let Some(status) = status {
-                let _ = crate::openbsd::kill_process_group(pid);
+                if !strict_group {
+                    let _ = crate::openbsd::kill_process_group(pid);
+                }
                 if out_done && err_done {
                     return if written == input.len() {
                         Ok((output, status.success()))
@@ -172,6 +249,21 @@ fn run_limited(
             })?;
         }
     })();
+    if strict_group {
+        if cleanup_owned_group_before(&mut child, deadline).is_ok() {
+            let confirmed_status = child.try_wait().ok().flatten();
+            if let Some(status) = confirmed_status {
+                if Instant::now() < deadline {
+                    return result.map(|(output, _)| (output, status.success()));
+                }
+            }
+        }
+        CLEANUP_UNCONFIRMED.store(true, Ordering::SeqCst);
+        if let Ok(mut children) = UNREAPED.try_lock() {
+            children.push(child);
+        }
+        return Err(Error::Unavailable);
+    }
     let _ = crate::openbsd::kill_process_group(pid);
     while Instant::now() < deadline {
         match child.try_wait() {
@@ -357,3 +449,7 @@ mod tests {
         CLEANUP_UNCONFIRMED.store(false, Ordering::SeqCst);
     }
 }
+
+#[cfg(test)]
+#[path = "account_mutation_supervisor_tests.rs"]
+mod mutation_supervisor_tests;

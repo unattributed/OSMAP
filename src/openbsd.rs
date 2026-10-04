@@ -108,6 +108,24 @@ pub(crate) fn kill_process_group(child_pid: u32) -> io::Result<()> {
     Ok(())
 }
 
+/// Exact owned process-group existence; permission/other errors are unknown.
+#[cfg(unix)]
+pub(crate) fn process_group_exists(child_pid: u32) -> io::Result<bool> {
+    let pid = i32::try_from(child_pid).map_err(|_| io::Error::from(io::ErrorKind::InvalidInput))?;
+    if pid <= 1 {
+        return Err(io::ErrorKind::InvalidInput.into());
+    }
+    if unsafe { libc::kill(-pid, 0) } == 0 {
+        return Ok(true);
+    }
+    let error = io::Error::last_os_error();
+    if error.raw_os_error() == Some(libc::ESRCH) {
+        Ok(false)
+    } else {
+        Err(error)
+    }
+}
+
 /// Deadline-bound local connect; avoids blocking on a full Unix listener backlog.
 #[cfg(unix)]
 pub(crate) fn connect_unix_before(

@@ -8920,3 +8920,23 @@ measured process absence. Preserve operator keys, policies, services and actual
 unaccepted encrypted-provider delivery results.
 
 - 2026-10-04 integration gate: repair the unsafe temporary ancestor in new disposable test fixtures; preserve production path validation and shared TMPDIR. Keep native SMTP greeting failure open after exact startup readiness passed; diagnose actual source/output rather than repeat unmodified native attempts.
+
+### 2026-10-04 — retain one mutation budget and qualify actual fixture failures
+
+Integrate the reviewed domain-bound remaining-budget envelope and strict owned
+mutation supervisor, selecting execute_budget in the composed completion seam.
+Keep the same original Instant through epoch reconciliation and post-lock browser
+cleanup. Even authenticated KnownRefused replies arriving after that budget or
+action expiry remain uncertain and quarantined; independent review's actual RED
+and repaired delayed/expired/rollback controls are retained. These source changes
+do not enable a password form or qualify native credential mutation.
+
+The disposable native SMTP fixture's128 descriptor clamp caused measured startup
+pipe EMFILE. Use a finite512 cap only within that fixture, refusing smaller
+inherited limits and confirming the applied values; do not alter system limits,
+groups or production services. Its matching native18-control pass demonstrates
+the specified Dovecot proxy behavior, not current Postfix containment. Preserve
+the three late logger error diagnostics and independent source interpretation
+without claiming the exact discarded service-fd parameters are known. Continue
+real guarded-session authority, authoritative mail-host routing and native
+workflow integration after signed synchronization; no checkpoint ends the epic.
