@@ -486,6 +486,7 @@ pub struct SendmailSubmissionBackend<E> {
     command_executor: E,
     sendmail_path: PathBuf,
     command_timeout_secs: u64,
+    sender_authority: crate::sender_authority::Provider,
 }
 
 impl<E> SendmailSubmissionBackend<E> {
@@ -495,7 +496,13 @@ impl<E> SendmailSubmissionBackend<E> {
             command_executor,
             sendmail_path: sendmail_path.into(),
             command_timeout_secs: DEFAULT_EXTERNAL_COMMAND_TIMEOUT_SECS,
+            sender_authority: crate::sender_authority::Provider::default(),
         }
+    }
+
+    pub fn with_sender_authority(mut self, provider: crate::sender_authority::Provider) -> Self {
+        self.sender_authority = provider;
+        self
     }
 
     /// Caps the sendmail command timeout for route-level deadline use.
@@ -533,6 +540,9 @@ where
                     reason: format!("invalid outbound mailbox identity: {}", error.as_str()),
                 }
             })?;
+        self.sender_authority
+            .authorize(mailbox_identity.as_str(), request.sender_identity.sender())
+            .map_err(|_| prepared_submission_error())?;
         let submission_message = build_submission_message(mailbox_identity.as_str(), request)
             .map_err(|error| SubmissionBackendError {
                 backend: "sendmail-submission",
@@ -575,6 +585,9 @@ where
             .map_err(|_| prepared_submission_error())?;
         prepared
             .validate_for(&account, request)
+            .map_err(|_| prepared_submission_error())?;
+        self.sender_authority
+            .authorize(account.as_str(), request.sender_identity.sender())
             .map_err(|_| prepared_submission_error())?;
         let execution = self
             .command_executor
@@ -1170,23 +1183,27 @@ pub(crate) fn build_submission_message(
     crate::identity::MailboxIdentity::parse(canonical_username).map_err(|_| ComposeError {
         reason: "invalid authorized sender".into(),
     })?;
+    let sender = request
+        .sender_identity
+        .sender()
+        .map(|capture| capture.address())
+        .unwrap_or(canonical_username);
+    crate::identity::MailboxIdentity::parse(sender).map_err(|_| ComposeError {
+        reason: "invalid captured sender".into(),
+    })?;
     let raw = if request.body_format == BodyFormat::Formatted {
-        build_formatted_submission_message(
-            canonical_username,
-            request,
-            &formatted_body(&request.body)?,
-        )
+        build_formatted_submission_message(sender, request, &formatted_body(&request.body)?)
     } else if request.attachments.is_empty() {
-        build_plain_text_submission_message(canonical_username, request)
+        build_plain_text_submission_message(sender, request)
     } else {
-        build_multipart_submission_message(canonical_username, request)
+        build_multipart_submission_message(sender, request)
     };
     let name = request.sender_identity.display_name();
     if name.is_empty() && request.sender_identity.reply_to().is_none() {
         return Ok(raw.into_bytes());
     }
     let from = if name.is_empty() {
-        canonical_username.to_owned()
+        sender.to_owned()
     } else {
         // RFC2047 B words: <=45 UTF-8 bytes, never split a code point; <=72 encoded bytes.
         let mut words = Vec::new();
@@ -1207,14 +1224,14 @@ pub(crate) fn build_submission_message(
                 base64_encode_wrapped(chunk.as_bytes())
             ));
         }
-        format!("{}\r\n <{canonical_username}>", words.join("\r\n "))
+        format!("{}\r\n <{sender}>", words.join("\r\n "))
     };
     let reply = request
         .sender_identity
         .reply_to()
         .map(|value| format!("Reply-To: {value}\r\n"))
         .unwrap_or_default();
-    let prefix = format!("From: {canonical_username}\r\n");
+    let prefix = format!("From: {sender}\r\n");
     let tail = raw.strip_prefix(&prefix).ok_or_else(|| ComposeError {
         reason: "sender header assembly failed".into(),
     })?;
@@ -1331,7 +1348,12 @@ fn sendmail_args(canonical_username: &str, request: &ComposeRequest) -> Vec<Stri
     let mut args = vec![
         "-oi".to_string(),
         "-f".to_string(),
-        canonical_username.to_string(),
+        request
+            .sender_identity
+            .sender()
+            .map(|capture| capture.address())
+            .unwrap_or(canonical_username)
+            .to_string(),
         "--".to_string(),
     ];
     args.extend(request.all_recipients());
@@ -2394,4 +2416,5 @@ mod tests {
             crate::send_journal::snapshot_digest("alice@example.test", &request)
         );
     }
+    include!("send_sender_tests.rs");
 }

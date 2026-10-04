@@ -49,6 +49,7 @@ fn protected_send_stale_or_missing_inventory_does_not_dispatch_or_consume_intent
         let now = SystemTimeProvider.unix_timestamp();
         let intent = crate::send_journal::mint_intent(now).unwrap();
         let request = BrowserSendRequest {
+ sender_id: None,
             send_intent: &intent,
             draft_id: None,
             draft_revision: None,

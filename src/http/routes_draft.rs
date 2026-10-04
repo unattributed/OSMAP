@@ -373,6 +373,8 @@ where
                         "OK",
                         "Resume Draft",
                         self.render_protected_compose_page(&validated_session, ComposePageModel {
+ sender_choices: None,
+ selected_sender_id: None,
                             protection: draft.request.protection,
                             openpgp: None,
                     sender_identity: Some(&draft.request.sender_identity),
@@ -527,6 +529,7 @@ where
         if request.path == "/drafts/autosave" {
             let allowed = [
                 "csrf_token",
+                "sender_id",
                 "send_intent",
                 "from",
                 "to",
@@ -618,6 +621,8 @@ where
         if let Err(error) = contact_result {
             return HandledHttpResponse {
                 response: super::compose_enhancement::response(409, "Conflict", "Choose a Contact", self.render_protected_compose_page(&validated_session, ComposePageModel {
+ sender_choices: None,
+ selected_sender_id: form.get("sender_id").map(String::as_str),
                     protection: super::compose_protection::retained_intent_from_form(&form),
                     openpgp: None,
                     sender_identity: None,
@@ -822,6 +827,7 @@ where
             context,
             &validated_session,
             BrowserDraftSaveRequest {
+                sender_id: form.get("sender_id").map(String::as_str),
                 protection,
                 send_intent: form
                     .get("send_intent")
@@ -969,6 +975,8 @@ where
                         reason_phrase,
                         "Compose",
                         self.render_protected_compose_page(&validated_session, ComposePageModel {
+ sender_choices: None,
+ selected_sender_id: form.get("sender_id").map(String::as_str),
                             protection: super::compose_protection::retained_intent_from_form(&form),
                             openpgp: None,
                     sender_identity: None,

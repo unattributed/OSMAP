@@ -180,6 +180,7 @@ fn native_send_request<'a>(
     attachments: &'a [crate::send::UploadedAttachment],
 ) -> BrowserSendRequest<'a> {
     BrowserSendRequest {
+ sender_id: None,
         send_intent: intent,
         draft_id: None,
         draft_revision: None,
@@ -567,6 +568,7 @@ fn native_crypto_gateway_protected_send_roundtrip() {
     // Exercise saved-draft submission through the actual gateway/store too.
     let draft_save_intent = crate::send_journal::mint_intent(now).unwrap();
     let draft_save = gateway.save_draft_impl(&context, &session, BrowserDraftSaveRequest {
+ sender_id: None,
         protection: encrypt_only_request.protection,
         send_intent: &draft_save_intent,
         draft_id: None, expected_revision: None,
@@ -585,6 +587,7 @@ fn native_crypto_gateway_protected_send_roundtrip() {
         "alice@example.test", &draft_id, draft_revision, saved.updated_at).unwrap();
     let draft_send = gateway.send_message_with_backends(&context, &session,
         BrowserSendRequest {
+ sender_id: None,
             send_intent: &draft_send_intent, draft_id: Some(&draft_id),
             draft_revision: Some(draft_revision), attachments: &saved.request.attachments,
             ..encrypt_only_request

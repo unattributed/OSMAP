@@ -323,6 +323,13 @@ fn request_digest(raw: &[u8], request: &ComposeRequest) -> [u8; 32] {
         }
         None => digest.update([0]),
     }
+    if let Some(sender) = request.sender_identity.sender() {
+        digest.update(b"authorized-sender-v1");
+        for value in [sender.id(), sender.address()] {
+            digest.update((value.len() as u64).to_be_bytes());
+            digest.update(value.as_bytes());
+        }
+    }
     digest.finalize().into()
 }
 

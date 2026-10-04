@@ -48,6 +48,7 @@ pub struct AppConfig {
     pub mailbox_helper_peer_uid: Option<u32>,
     /// Helper-only read authority. Missing policy never permits permanent delete.
     pub mailbox_retention_policy_path: Option<PathBuf>,
+    pub sender_authority_path: Option<PathBuf>,
     pub state_root: PathBuf,
     pub log_level: LogLevel,
     pub log_format: LogFormat,
@@ -445,6 +446,18 @@ impl AppConfig {
         let mailbox_helper_grant_key_path =
             parse_optional_absolute_optional_path(env_map, "OSMAP_MAILBOX_HELPER_GRANT_KEY_PATH")?;
         let mailbox_helper_peer_uid = parse_optional_u32(env_map, "OSMAP_MAILBOX_HELPER_PEER_UID")?;
+        let sender_authority_path =
+            parse_optional_absolute_optional_path(env_map, "OSMAP_SENDER_AUTHORITY_PATH")?;
+        if sender_authority_path.as_ref().is_some_and(|path| {
+            path.as_os_str().as_encoded_bytes().len() > 4096
+                || path
+                    .as_os_str()
+                    .as_encoded_bytes()
+                    .iter()
+                    .any(|v| v.is_ascii_control())
+        }) {
+            return Err(BootstrapError::InvalidConfig{field:"OSMAP_SENDER_AUTHORITY_PATH",reason:"sender inventory path must be a bounded absolute path without control characters".into()});
+        }
         let mailbox_retention_policy_path =
             parse_optional_absolute_optional_path(env_map, "OSMAP_MAILBOX_RETENTION_POLICY_PATH")?;
 
@@ -784,6 +797,7 @@ impl AppConfig {
             mailbox_helper_grant_key_path,
             mailbox_helper_peer_uid,
             mailbox_retention_policy_path,
+            sender_authority_path,
             log_level,
             log_format,
             state_root,
@@ -1105,6 +1119,31 @@ fn is_loopback_listener(listen_addr: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn sender_identity_authority_config_is_optional_absolute_and_not_alias_provisioning() {
+        let mut values = BTreeMap::new();
+        assert_eq!(
+            AppConfig::from_env_map(&values)
+                .unwrap()
+                .sender_authority_path,
+            None
+        );
+        values.insert(
+            "OSMAP_SENDER_AUTHORITY_PATH".into(),
+            "/etc/osmap/sender-authority.json".into(),
+        );
+        assert_eq!(
+            AppConfig::from_env_map(&values)
+                .unwrap()
+                .sender_authority_path
+                .as_deref(),
+            Some(Path::new("/etc/osmap/sender-authority.json"))
+        );
+        for bad in ["", "relative/inventory.json", "/bad\0path"] {
+            values.insert("OSMAP_SENDER_AUTHORITY_PATH".into(), bad.into());
+            assert!(AppConfig::from_env_map(&values).is_err());
+        }
+    }
 
     #[test]
     fn permanent_delete_config_is_optional_explicit_and_rejects_invalid_authority() {

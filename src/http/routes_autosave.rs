@@ -165,7 +165,7 @@ impl<G: BrowserGateway> BrowserApp<G> {
                 ) {
                     return json(
                         200,
-                        serde_json::json!({"version":1,"state":"saved","draft_id":id,"revision":draft.revision,"send_intent":intent,"display_name":req.sender_identity.display_name(),"reply_to":req.sender_identity.reply_to()}),
+                        serde_json::json!({"version":1,"state":"saved","draft_id":id,"revision":draft.revision,"send_intent":intent,"display_name":req.sender_identity.display_name(),"reply_to":req.sender_identity.reply_to(),"sender_address":req.sender_identity.sender().map(|s|s.address()).unwrap_or(&s.record.canonical_username)}),
                     );
                 }
             }

@@ -997,7 +997,13 @@ subject_hex={}\n\
 body_hex={}\n\
 body_format={}\n\
 attachment_count={}\n",
-        if record.request.sender_identity
+        if record.request.sender_identity.sender().is_some() {
+            if record.request.protection == crate::send::ProtectionIntent::default() {
+                13
+            } else {
+                14
+            }
+        } else if record.request.sender_identity
             == crate::identity_preferences::IdentityPreferences::default()
         {
             if record.request.protection == crate::send::ProtectionIntent::default() {
@@ -1055,6 +1061,13 @@ attachment_count={}\n",
                     .unwrap_or("")
                     .as_bytes()
             )
+        ));
+    }
+    if let Some(sender) = record.request.sender_identity.sender() {
+        content.push_str(&format!(
+            "sender_id_hex={}\nsender_address_hex={}\n",
+            hex_lower(sender.id().as_bytes()),
+            hex_lower(sender.address().as_bytes())
         ));
     }
     if let Some(thread) = &record.request.reply_thread {
@@ -1131,6 +1144,8 @@ fn parse_draft_metadata(
     let mut pgp_binding_revision = None;
     let mut identity_name = None;
     let mut identity_reply_to = None;
+    let mut sender_id = None;
+    let mut sender_address = None;
     let mut attachment_count = None;
     let mut attachment_fields = Vec::<AttachmentMetadataFields>::new();
     let mut source_mailbox = None;
@@ -1221,6 +1236,8 @@ fn parse_draft_metadata(
             "body_hex" => body = Some(decode_hex_string(value)?),
             "identity_name_hex" => identity_name = Some(decode_hex_string(value)?),
             "identity_reply_to_hex" => identity_reply_to = Some(decode_hex_string(value)?),
+            "sender_id_hex" => sender_id = Some(decode_hex_string(value)?),
+            "sender_address_hex" => sender_address = Some(decode_hex_string(value)?),
             "body_format" => {
                 body_format = Some(crate::compose_format::BodyFormat::parse(value).ok_or_else(
                     || DraftError {
@@ -1288,6 +1305,8 @@ fn parse_draft_metadata(
             | Some("10")
             | Some("11")
             | Some("12")
+            | Some("13")
+            | Some("14")
     ) {
         return Err(DraftError {
             reason: "unsupported draft metadata version".to_string(),
@@ -1296,7 +1315,11 @@ fn parse_draft_metadata(
 
     let draft_id = required_field("draft_id", draft_id)?;
     let revision = match (version.as_deref(), revision) {
-        (Some("5" | "6" | "7" | "8" | "9" | "10" | "11" | "12"), Some(value)) if value > 0 => value,
+        (Some("5" | "6" | "7" | "8" | "9" | "10" | "11" | "12" | "13" | "14"), Some(value))
+            if value > 0 =>
+        {
+            value
+        }
         (Some("1" | "2" | "3" | "4"), None) => 0,
         _ => {
             return Err(DraftError {
@@ -1305,7 +1328,7 @@ fn parse_draft_metadata(
         }
     };
     let starred = match (version.as_deref(), starred) {
-        (Some("6" | "7" | "8" | "9" | "10" | "11" | "12"), Some(value)) => value,
+        (Some("6" | "7" | "8" | "9" | "10" | "11" | "12" | "13" | "14"), Some(value)) => value,
         (Some("1" | "2" | "3" | "4" | "5"), None) => false,
         _ => {
             return Err(DraftError {
@@ -1314,7 +1337,7 @@ fn parse_draft_metadata(
         }
     };
     let body_format = match (version.as_deref(), body_format) {
-        (Some("9" | "10" | "11" | "12"), Some(value)) => value,
+        (Some("9" | "10" | "11" | "12" | "13" | "14"), Some(value)) => value,
         (Some("1" | "2" | "3" | "4" | "5" | "6" | "7" | "8"), None) => {
             crate::compose_format::BodyFormat::Plain
         }
@@ -1324,8 +1347,8 @@ fn parse_draft_metadata(
             })
         }
     };
-    let sender_identity = match (version.as_deref(), identity_name, identity_reply_to) {
-        (Some("10" | "12"), Some(name), Some(reply)) => {
+    let mut sender_identity = match (version.as_deref(), identity_name, identity_reply_to) {
+        (Some("10" | "12" | "13" | "14"), Some(name), Some(reply)) => {
             crate::identity_preferences::IdentityPreferences::new(&name, Some(&reply)).map_err(
                 |_| DraftError {
                     reason: "invalid stored sender presentation".into(),
@@ -1341,12 +1364,33 @@ fn parse_draft_metadata(
             })
         }
     };
+    match (version.as_deref(), sender_id, sender_address) {
+        (Some("13" | "14"), Some(id), Some(address)) => {
+            if address == required_field("canonical_username", canonical_username.clone())? {
+                return Err(DraftError {
+                    reason: "invalid captured sender".into(),
+                });
+            }
+            sender_identity =
+                sender_identity
+                    .with_sender(&id, &address)
+                    .map_err(|_| DraftError {
+                        reason: "invalid captured sender".into(),
+                    })?;
+        }
+        (Some("13" | "14"), _, _) | (_, Some(_), _) | (_, _, Some(_)) => {
+            return Err(DraftError {
+                reason: "missing or incompatible captured sender".into(),
+            })
+        }
+        _ => {}
+    }
     let reply_thread = match (reply_parent, reply_references, reply_shortened) {
         (None, None, None) => None,
         (Some(parent), Some(references), Some(shortened))
             if matches!(
                 version.as_deref(),
-                Some("4" | "5" | "6" | "7" | "8" | "9" | "10" | "11" | "12")
+                Some("4" | "5" | "6" | "7" | "8" | "9" | "10" | "11" | "12" | "13" | "14")
             ) =>
         {
             Some(
@@ -1402,7 +1446,10 @@ fn parse_draft_metadata(
         let size_bytes = required_field("attachment size", fields.size_bytes)?;
         let body_file = required_field("attachment body file", fields.body_file)?;
         let expected_body_file = attachment_body_file_name(index);
-        if if matches!(version.as_deref(), Some("8" | "9" | "10" | "11" | "12")) {
+        if if matches!(
+            version.as_deref(),
+            Some("8" | "9" | "10" | "11" | "12" | "13" | "14")
+        ) {
             !atomic::is_blob_name(&body_file)
         } else {
             body_file != expected_body_file
@@ -1430,8 +1477,10 @@ fn parse_draft_metadata(
                 reason: "draft attachment body size did not match metadata".to_string(),
             });
         }
-        if matches!(version.as_deref(), Some("8" | "9" | "10" | "11" | "12"))
-            && atomic::blob_name(&body) != body_file
+        if matches!(
+            version.as_deref(),
+            Some("8" | "9" | "10" | "11" | "12" | "13" | "14")
+        ) && atomic::blob_name(&body) != body_file
         {
             return Err(DraftError {
                 reason: "draft attachment content identity mismatch".into(),
@@ -1469,7 +1518,7 @@ fn parse_draft_metadata(
         pgp_binding_revision,
     ) {
         (
-            Some("11" | "12"),
+            Some("11" | "12" | "14"),
             Some(sign),
             Some(encrypt),
             Some(encrypt_to_self),
@@ -1481,7 +1530,7 @@ fn parse_draft_metadata(
             binding_revision,
         },
         (
-            Some("1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "10"),
+            Some("1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "10" | "13"),
             None,
             None,
             None,
@@ -1495,7 +1544,7 @@ fn parse_draft_metadata(
     };
     if !matches!(
         version.as_deref(),
-        Some("5" | "6" | "7" | "8" | "9" | "10" | "11" | "12")
+        Some("5" | "6" | "7" | "8" | "9" | "10" | "11" | "12" | "13" | "14")
     ) {
         crate::send::ComposeRequest::new_with_routing(
             policy.compose_policy,
@@ -1515,7 +1564,7 @@ fn parse_draft_metadata(
         (Some(mailbox), Some(message))
             if matches!(
                 version.as_deref(),
-                Some("7" | "8" | "9" | "10" | "11" | "12")
+                Some("7" | "8" | "9" | "10" | "11" | "12" | "13" | "14")
             ) =>
         {
             Some(
@@ -1571,7 +1620,7 @@ fn parse_draft_metadata(
 
     if matches!(
         version.as_deref(),
-        Some("7" | "8" | "9" | "10" | "11" | "12")
+        Some("7" | "8" | "9" | "10" | "11" | "12" | "13" | "14")
     ) {
         validate_combined_attachment_count(policy, &request, source_attachments.as_ref())?;
     }
@@ -2550,4 +2599,5 @@ mod tests {
             DEFAULT_TOTAL_ATTACHMENT_MAX_BYTES
         );
     }
+    include!("draft_sender_tests.rs");
 }

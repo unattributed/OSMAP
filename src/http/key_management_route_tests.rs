@@ -377,6 +377,8 @@ fn key_management_panel_navigation_opens_forms_without_mutating_state() {
 
 fn compose_protection_model() -> crate::http_ui::ComposePageModel<'static> {
     crate::http_ui::ComposePageModel {
+ sender_choices: None,
+ selected_sender_id: None,
         protection: crate::send::ProtectionIntent::default(),
         openpgp: Some(ComposeProtectionView {
             runtime_configured: true,

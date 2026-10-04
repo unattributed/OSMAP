@@ -155,6 +155,8 @@ impl<G: BrowserGateway> BrowserApp<G> {
             model.bcc_value,
             model.protection,
         );
+        let sender_choices = self.gateway.sender_inventory(session).ok();
+        model.sender_choices = sender_choices;
         render_compose_page(&model)
     }
 }

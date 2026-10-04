@@ -195,7 +195,11 @@ fn receipt_page(
         TrustedHtml::from_template(format!("{}<main id=\"main-content\" class=\"page-shell submission-result-page\"><section class=\"panel\"><h1>{}</h1><p role=\"status\">{}</p>{}{footer}</section></main>", crate::http_ui::app_header(&session.record.canonical_username, &session.record.csrf_token, "compose-result"), escape_html(title), escape_html(message), recovery)))
 }
 fn sender_presentation(identity: &crate::identity_preferences::IdentityPreferences) -> String {
-    format!("<section class=\"retained-sender\" aria-label=\"Captured sender presentation\"><h3>Captured sender presentation</h3><p>Display name: <span data-sender-name>{}</span></p><p>Reply-to: <span data-sender-reply>{}</span></p><p>The canonical account address remains the authorized sender. These values come from this retained version, not the current profile.</p></section>", escape_html(if identity.display_name().is_empty() { "None (canonical address only)" } else { identity.display_name() }), escape_html(identity.reply_to().unwrap_or("Canonical account address")))
+    let address = identity
+        .sender()
+        .map(|sender| sender.address())
+        .unwrap_or("Canonical account address");
+    format!("<section class=\"retained-sender\" aria-label=\"Captured sender presentation\"><h3>Captured sender presentation</h3><p>Captured sender: <span data-sender-address>{}</span></p><p>Display name: <span data-sender-name>{}</span></p><p>Reply-to: <span data-sender-reply>{}</span></p><p>These values come from this retained version, not the current profile. This read-only record does not reauthorize or resend a revoked identity.</p></section>", escape_html(address), escape_html(if identity.display_name().is_empty() { "None" } else { identity.display_name() }), escape_html(identity.reply_to().unwrap_or(address)))
 }
 
 fn saved_version(draft: &DraftRecord) -> String {

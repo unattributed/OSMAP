@@ -44,6 +44,7 @@ pub struct RuntimeBrowserGateway {
     auth_backend_timeout_secs: u64,
     session_dir: PathBuf,
     pub(crate) settings_dir: PathBuf,
+    sender_authority: crate::sender_authority::Provider,
     draft_dir: PathBuf,
     login_throttle_dir: PathBuf,
     submission_throttle_dir: PathBuf,
@@ -61,11 +62,47 @@ pub struct RuntimeBrowserGateway {
 }
 
 impl RuntimeBrowserGateway {
+    fn requested_sender(
+        &self,
+        session: &ValidatedSession,
+        captured: crate::identity_preferences::IdentityPreferences,
+        id: Option<&str>,
+    ) -> Result<
+        crate::identity_preferences::IdentityPreferences,
+        crate::identity_preferences::IdentityPreferencesError,
+    > {
+        let Some(id) = id else { return Ok(captured) };
+        if !crate::sender_authority::valid_id(id) {
+            return Err(crate::identity_preferences::IdentityPreferencesError::InvalidInput);
+        }
+        let old_id = captured
+            .sender()
+            .map(|v| v.id())
+            .unwrap_or(crate::sender_authority::CANONICAL_ID);
+        if id == old_id {
+            return Ok(captured);
+        }
+        self.sender_identity_settings(session)?.preferences_for_id(
+            &session.record.canonical_username,
+            &self.sender_authority,
+            id,
+        )
+    }
+
     /// Routes only an explicitly opted-in test fixture to its owned transport.
     /// Production construction retains the fixed local sendmail executable.
     #[cfg(test)]
     pub(crate) fn with_fixture_sendmail_path(mut self, path: PathBuf) -> Self {
         self.sendmail_path = path;
+        self
+    }
+
+    #[cfg(test)]
+    pub(crate) fn with_fixture_sender_authority(
+        mut self,
+        provider: crate::sender_authority::Provider,
+    ) -> Self {
+        self.sender_authority = provider;
         self
     }
 
@@ -134,6 +171,10 @@ impl RuntimeBrowserGateway {
             auth_backend_timeout_secs: config.auth_backend_timeout_seconds,
             session_dir: config.state_layout.session_dir.clone(),
             settings_dir: config.state_layout.settings_dir.clone(),
+            sender_authority: crate::sender_authority::Provider::new(
+                config.sender_authority_path.clone(),
+                0,
+            ),
             draft_dir: config.state_layout.draft_dir.clone(),
             login_throttle_dir: config.state_layout.cache_dir.join("login-throttle"),
             submission_throttle_dir: config.state_layout.cache_dir.join("submission-throttle"),
@@ -294,6 +335,7 @@ impl RuntimeBrowserGateway {
             auth_backend_timeout_secs: crate::config::DEFAULT_AUTH_BACKEND_TIMEOUT_SECONDS,
             session_dir: temp_root.join("sessions"),
             settings_dir: temp_root.join("settings"),
+            sender_authority: crate::sender_authority::Provider::default(),
             draft_dir: temp_root.join("drafts"),
             login_throttle_dir: temp_root.join("cache").join("login-throttle"),
             submission_throttle_dir: temp_root.join("cache").join("submission-throttle"),
@@ -875,8 +917,46 @@ impl BrowserGateway for RuntimeBrowserGateway {
         crate::identity_preferences::IdentityPreferencesRecord,
         crate::identity_preferences::IdentityPreferencesError,
     > {
+        let mut record = self.sender_identity_settings(session)?;
+        record.preferences = record
+            .selected_preferences(&session.record.canonical_username, &self.sender_authority)?;
+        Ok(record)
+    }
+    fn sender_inventory(
+        &self,
+        session: &ValidatedSession,
+    ) -> Result<crate::sender_authority::Snapshot, crate::sender_authority::Error> {
+        self.sender_authority
+            .snapshot(&session.record.canonical_username)
+    }
+    fn sender_identity_settings(
+        &self,
+        session: &ValidatedSession,
+    ) -> Result<
+        crate::identity_preferences::IdentityPreferencesRecord,
+        crate::identity_preferences::IdentityPreferencesError,
+    > {
         crate::identity_preferences::IdentityPreferencesStore::new(&self.settings_dir)
             .load(&session.record.canonical_username)
+    }
+    fn update_sender_identity(
+        &self,
+        session: &ValidatedSession,
+        revision: u64,
+        update: &crate::identity_preferences::SenderIdentityUpdate,
+    ) -> Result<
+        crate::identity_preferences::IdentityPreferencesRecord,
+        crate::identity_preferences::IdentityPreferencesError,
+    > {
+        let inventory = self
+            .sender_inventory(session)
+            .map_err(|_| crate::identity_preferences::IdentityPreferencesError::Unavailable)?;
+        crate::identity_preferences::IdentityPreferencesStore::new(&self.settings_dir).save_sender(
+            &session.record.canonical_username,
+            revision,
+            &inventory,
+            update,
+        )
     }
     fn update_identity_preferences(
         &self,

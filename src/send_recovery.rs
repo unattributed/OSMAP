@@ -933,6 +933,7 @@ mod tests {
         assert_eq!(policy.max_drafts_per_user, 49);
         assert!(policy.storage_max_bytes < crate::draft::DEFAULT_DRAFT_STORAGE_MAX_BYTES);
     }
+    include!("send_recovery_sender_tests.rs");
 }
 #[cfg(test)]
 mod correction_tests {

@@ -103,3 +103,5 @@ pub mod openpgp_reader_ui;
 pub mod protected_message_gateway;
 
 pub mod protected_submission;
+
+pub mod sender_authority;

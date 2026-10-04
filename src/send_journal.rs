@@ -329,6 +329,11 @@ pub(crate) fn snapshot_digest(account: &str, request: &ComposeRequest) -> String
             request.sender_identity.reply_to().unwrap_or("").as_bytes(),
         );
     }
+    if let Some(sender) = request.sender_identity.sender() {
+        field(&mut hash, b"authorized-sender-v1");
+        field(&mut hash, sender.id().as_bytes());
+        field(&mut hash, sender.address().as_bytes());
+    }
     // Preserve existing ordinary-attempt hashes while binding every explicit
     // protection/revision selection into new protected attempts.
     if request.protection != crate::send::ProtectionIntent::default() {
@@ -2042,4 +2047,5 @@ mod tests {
     }
 
     include!("send_journal_sent_location_tests.rs");
+    include!("send_journal_sender_tests.rs");
 }

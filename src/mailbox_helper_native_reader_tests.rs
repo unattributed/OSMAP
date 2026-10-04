@@ -4078,3 +4078,7 @@ mod sent_location_native_tests;
 // Private Draft location proof; zero SMTP and mailbox mutation.
 #[path = "mailbox_helper_native_draft_location_tests.rs"]
 mod draft_location_native_tests;
+
+// Separate authorized sender identity proof; existing transport guards unchanged.
+#[path = "mailbox_helper_native_sender_identity_tests.rs"]
+mod sender_identity_native_tests;

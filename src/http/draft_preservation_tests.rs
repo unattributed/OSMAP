@@ -286,6 +286,7 @@ fn runtime_saved_attachment_removal_replacement_and_revision_checks_use_the_priv
         })
         .collect::<Vec<_>>();
     let input = BrowserDraftSaveRequest {
+ sender_id: None,
         protection: crate::send::ProtectionIntent::default(),
         send_intent: &crate::send_journal::mint_intent(gateway.send_clock()).unwrap(),
         draft_id: None,
@@ -325,6 +326,7 @@ fn runtime_saved_attachment_removal_replacement_and_revision_checks_use_the_priv
     )
     .unwrap();
     let input = BrowserDraftSaveRequest {
+ sender_id: None,
         send_intent: &saved_intent,
         draft_id: Some(&draft_id),
         expected_revision: Some(1),
@@ -362,12 +364,14 @@ fn runtime_saved_attachment_removal_replacement_and_revision_checks_use_the_priv
     )
     .unwrap();
     assert!(
-        matches!(gateway.save_draft(&context, &session, BrowserDraftSaveRequest { send_intent: &current_intent, expected_revision: Some(2), removed_attachment_indices: &[0,0], ..input }).decision, BrowserDraftSaveDecision::Denied { public_reason } if public_reason == "invalid_request")
+        matches!(gateway.save_draft(&context, &session, BrowserDraftSaveRequest {
+ sender_id: None, send_intent: &current_intent, expected_revision: Some(2), removed_attachment_indices: &[0,0], ..input }).decision, BrowserDraftSaveDecision::Denied { public_reason } if public_reason == "invalid_request")
     );
     // A current revision with a different, valid unconsumed nonce remains paused.
     let wrong_nonce = crate::send_journal::mint_intent(gateway.send_clock()).unwrap();
     assert!(matches!(
         gateway.save_draft(&context, &session, BrowserDraftSaveRequest {
+ sender_id: None,
             send_intent: &wrong_nonce,
             expected_revision: Some(2),
             removed_attachment_indices: &[],
@@ -382,6 +386,7 @@ fn runtime_saved_attachment_removal_replacement_and_revision_checks_use_the_priv
     .unwrap();
     assert!(matches!(
         gateway.save_draft(&context, &session, BrowserDraftSaveRequest {
+ sender_id: None,
             send_intent: &expired,
             ..input
         }).decision,
@@ -399,6 +404,7 @@ fn runtime_saved_attachment_removal_replacement_and_revision_checks_use_the_priv
     for revision in [Some(1), Some(2)] {
         assert!(matches!(
             gateway.save_draft(&context, &session, BrowserDraftSaveRequest {
+ sender_id: None,
                 send_intent: &current_intent,
                 expected_revision: revision,
                 removed_attachment_indices: &[],

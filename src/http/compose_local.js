@@ -14,7 +14,7 @@
   let blocked = initialState === "unconfirmed";
   let inheritedChanges = initialState === "unsaved" || blocked;
   const watched = [...form.querySelectorAll(
-    'input[name="to"], input[name="cc"], input[name="bcc"], input[name="subject"], textarea[name="body"], select[name="body_format"], input[name="pgp_sign"], input[name="pgp_encrypt"], input[name="pgp_self"], input[name^="remove_saved_attachment_"], input[name^="include_original_attachment_"]'
+    'input[name="to"], input[name="cc"], input[name="bcc"], input[name="subject"], textarea[name="body"], select[name="body_format"], select[name="sender_id"], input[name="pgp_sign"], input[name="pgp_encrypt"], input[name="pgp_self"], input[name^="remove_saved_attachment_"], input[name^="include_original_attachment_"]'
   )];
   const value = (field) => field.type === "checkbox" ? field.checked : field.value;
   const baseline = watched.map(value);
@@ -154,7 +154,7 @@
     const expectedId = form.elements.namedItem("draft_id")?.value || "";
     const previousRevision = form.elements.namedItem("draft_revision")?.value || "0";
     const fields = new URLSearchParams();
-    const allowed = ["csrf_token", "send_intent", "from", "to", "cc", "bcc", "subject", "body", "body_format", "pgp_sign", "pgp_encrypt", "pgp_self", "pgp_binding_revision", "draft_id", "draft_revision", "reply_mailbox", "reply_uid", "reply_mailbox_guid", "reply_message_guid"];
+    const allowed = ["csrf_token", "send_intent", "from", "sender_id", "to", "cc", "bcc", "subject", "body", "body_format", "pgp_sign", "pgp_encrypt", "pgp_self", "pgp_binding_revision", "draft_id", "draft_revision", "reply_mailbox", "reply_uid", "reply_mailbox_guid", "reply_message_guid"];
     for (const name of allowed) {
       const field = form.elements.namedItem(name);
       if (field && (field.type !== "checkbox" || field.checked)) fields.set(name, field.value);
@@ -172,13 +172,13 @@
           !/^[a-f0-9]{32}$/.test(result.draft_id) || (expectedId && expectedId !== result.draft_id) ||
           !Number.isSafeInteger(result.revision) || result.revision !== Number(previousRevision) + 1 ||
           typeof result.send_intent !== "string" || !/^[1-9][0-9]*\.[a-f0-9]{32}$/.test(result.send_intent) ||
-          typeof result.display_name !== "string" || !(result.reply_to === null || typeof result.reply_to === "string")) throw new Error("unconfirmed");
+          typeof result.sender_address !== "string" || result.sender_address.length > 254 || typeof result.display_name !== "string" || !(result.reply_to === null || typeof result.reply_to === "string")) throw new Error("unconfirmed");
       hidden("draft_id", result.draft_id); hidden("draft_revision", result.revision); hidden("send_intent", result.send_intent);
       for (const name of allowed.filter((name) => name.startsWith("reply_"))) form.elements.namedItem(name)?.remove();
       history.replaceState(null, "", `/draft?id=${encodeURIComponent(result.draft_id)}`);
       const draftHeading = form.querySelector(".compose-card-header h2"); if (draftHeading) draftHeading.textContent = "Saved Draft";
       baseline.splice(0, baseline.length, ...savedValues); inheritedChanges = false; initialState = "saved";
-      const account = form.elements.namedItem("from").value;
+      const account = result.sender_address;
       const sender = form.querySelector(".compose-sender-chip");
       if (sender) sender.textContent = result.display_name ? `${result.display_name} <${account}>` : account;
       const policy = document.getElementById("sender-policy");

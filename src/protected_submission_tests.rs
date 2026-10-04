@@ -615,3 +615,38 @@ fn required_protection_cannot_downgrade_when_public_inventory_is_unavailable() {
         SubmissionProtection::Ordinary
     );
 }
+
+#[test]
+fn sender_identity_prepared_alias_keeps_canonical_crypto_account_and_exact_capture() {
+    let executor = mock(vec![Ok(signed())]);
+    let mut selected = request();
+    selected.sender_identity = selected
+        .sender_identity
+        .clone()
+        .with_sender("desk", "desk@example.test")
+        .unwrap();
+    selected.protection.sign = true;
+    let prepared = prepare(&executor, &account(), &selected, &plan(true, false)).unwrap();
+    assert_eq!(executor.operations.borrow().len(), 1);
+    assert!(std::str::from_utf8(prepared.as_bytes())
+        .unwrap()
+        .contains("<desk@example.test>"));
+    prepared.validate_for(&account(), &selected).unwrap();
+    let mut changed = selected.clone();
+    changed.sender_identity = changed
+        .sender_identity
+        .clone()
+        .with_sender("other", "desk@example.test")
+        .unwrap();
+    assert_eq!(
+        prepared.validate_for(&account(), &changed),
+        Err(SubmissionError::RequestMismatch)
+    );
+    assert_eq!(
+        prepared.validate_for(
+            &CanonicalUsername::parse("desk@example.test").unwrap(),
+            &selected
+        ),
+        Err(SubmissionError::RequestMismatch)
+    );
+}

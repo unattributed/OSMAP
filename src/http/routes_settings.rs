@@ -160,9 +160,12 @@ where
         }
         if section == "identity" {
             let signature = self.gateway.load_signature(&validated_session).ok();
-            let loaded = self
+            let inventory = self
                 .gateway
-                .load_identity_preferences(context, &validated_session);
+                .sender_inventory(&validated_session)
+                .ok()
+                .filter(|snapshot| snapshot.account == validated_session.record.canonical_username);
+            let loaded = self.gateway.sender_identity_settings(&validated_session);
             return HandledHttpResponse {
                 response: match loaded {
                     Ok(record) => html_response(200, "OK", "Identity Settings", crate::http_ui::render_identity_page_with_signature(&crate::http_ui::IdentityPageModel {
@@ -173,6 +176,8 @@ where
                         reply_to: record.preferences.reply_to().unwrap_or(""),
                         error_message: None,
                         available: true,
+                        sender_inventory: inventory.as_ref(),
+                        sender_record: Some(&record),
                     },signature.as_ref())),
                     Err(_) => html_response(503, "Service Unavailable", "Identity Settings Unavailable", crate::http_ui::render_identity_page_with_signature(&crate::http_ui::IdentityPageModel {
                         canonical_username: &validated_session.record.canonical_username,
@@ -182,6 +187,8 @@ where
                         reply_to: "",
                         error_message: Some("Your saved identity preferences could not be loaded. No preference was changed. Reload this page before editing."),
                         available: false,
+                        sender_inventory: None,
+                        sender_record: None,
                     },signature.as_ref())),
                 },
                 audit_events,

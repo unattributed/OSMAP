@@ -421,6 +421,32 @@ pub trait BrowserGateway {
         ))
     }
 
+    fn sender_inventory(
+        &self,
+        session: &ValidatedSession,
+    ) -> Result<crate::sender_authority::Snapshot, crate::sender_authority::Error> {
+        crate::sender_authority::Snapshot::canonical(&session.record.canonical_username)
+    }
+    fn sender_identity_settings(
+        &self,
+        _: &ValidatedSession,
+    ) -> Result<
+        crate::identity_preferences::IdentityPreferencesRecord,
+        crate::identity_preferences::IdentityPreferencesError,
+    > {
+        Err(crate::identity_preferences::IdentityPreferencesError::Unavailable)
+    }
+    fn update_sender_identity(
+        &self,
+        _: &ValidatedSession,
+        _: u64,
+        _: &crate::identity_preferences::SenderIdentityUpdate,
+    ) -> Result<
+        crate::identity_preferences::IdentityPreferencesRecord,
+        crate::identity_preferences::IdentityPreferencesError,
+    > {
+        Err(crate::identity_preferences::IdentityPreferencesError::Unavailable)
+    }
     fn load_identity_preferences(
         &self,
         _context: &AuthenticationContext,
@@ -772,6 +798,7 @@ pub trait BrowserGateway {
 /// Draft save fields parsed by the browser route layer.
 #[derive(Debug, Clone, Copy)]
 pub struct BrowserDraftSaveRequest<'a> {
+    pub sender_id: Option<&'a str>,
     pub protection: crate::send::ProtectionIntent,
     pub send_intent: &'a str,
     pub draft_id: Option<&'a str>,
@@ -791,6 +818,7 @@ pub struct BrowserDraftSaveRequest<'a> {
 /// Send fields parsed by the browser route layer.
 #[derive(Debug, Clone, Copy)]
 pub struct BrowserSendRequest<'a> {
+    pub sender_id: Option<&'a str>,
     pub protection: crate::send::ProtectionIntent,
     pub send_intent: &'a str,
     pub draft_id: Option<&'a str>,

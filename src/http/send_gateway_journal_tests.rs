@@ -51,6 +51,7 @@ fn save_request<'a>(
     revision: Option<u64>,
 ) -> BrowserDraftSaveRequest<'a> {
     BrowserDraftSaveRequest {
+ sender_id: None,
             protection: crate::send::ProtectionIntent::default(),
         send_intent: intent,
         draft_id: id,
@@ -69,6 +70,7 @@ fn save_request<'a>(
 }
 fn send_request<'a>(intent: &'a str, draft: &'a DraftRecord) -> BrowserSendRequest<'a> {
     BrowserSendRequest {
+ sender_id: None,
             protection: crate::send::ProtectionIntent::default(),
         send_intent: intent,
         draft_id: Some(&draft.draft_id),

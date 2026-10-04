@@ -330,6 +330,7 @@ impl RuntimeBrowserGateway {
     ) -> SubmissionService<SendmailSubmissionBackend<SystemCommandExecutor>> {
         SubmissionService::new(
             SendmailSubmissionBackend::new(SystemCommandExecutor, self.sendmail_path.clone())
+                .with_sender_authority(self.sender_authority.clone())
                 .with_command_timeout_secs(
                     self.expensive_request_timeout_secs
                         .min(crate::auth::DEFAULT_EXTERNAL_COMMAND_TIMEOUT_SECS),
@@ -1015,6 +1016,7 @@ impl RuntimeBrowserGateway {
                                     public_reason: "send_attempt_paused".into(),
                                 });
                             }
+                            if send_request.sender_id.is_some_and(|id| id != snapshot.request.sender_identity.sender().map(|s|s.id()).unwrap_or(crate::sender_authority::CANONICAL_ID)) {return Err(BrowserSendDecision::Unconfirmed {public_reason:"send_attempt_paused".into()});}
                             snapshot.request.sender_identity.clone()
                         }
                         _ => {
@@ -1032,6 +1034,7 @@ impl RuntimeBrowserGateway {
                         })?
                         .preferences
                 };
+                if !consumed { request.sender_identity = self.requested_sender(validated_session,request.sender_identity,send_request.sender_id).map_err(|_|BrowserSendDecision::Unconfirmed {public_reason:"send_attempt_paused".into()})?; }
                 request.reply_thread = send_request.reply_thread.cloned();
                 request.protection = send_request.protection;
                 // Replay skips current throttle state. For fresh attempts the check
@@ -1218,6 +1221,9 @@ impl RuntimeBrowserGateway {
     ) -> Result<(crate::protected_submission::PreparedSubmission, u64), &'static str> {
         let account =
             crate::identity::CanonicalUsername::parse(account).map_err(|_| "invalid_request")?;
+        self.sender_authority
+            .authorize(account.as_str(), request.sender_identity.sender())
+            .map_err(|_| "invalid_request")?;
         let record =
             crate::openpgp_bindings::BindingStore::new(self.settings_dir.join("openpgp-bindings"))
                 .load(account.as_str())

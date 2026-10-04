@@ -380,6 +380,21 @@ impl RuntimeBrowserGateway {
                 }
             },
         };
+        record.request.sender_identity = match self.requested_sender(
+            validated_session,
+            record.request.sender_identity,
+            request.sender_id,
+        ) {
+            Ok(value) => value,
+            Err(_) => {
+                return BrowserDraftSaveOutcome {
+                    decision: BrowserDraftSaveDecision::Denied {
+                        public_reason: "invalid_request".into(),
+                    },
+                    audit_events: vec![],
+                }
+            }
+        };
         record.request.body_format = request.body_format;
         record.request.protection = request.protection;
         record.request.reply_thread = request.reply_thread.cloned();

@@ -7,12 +7,36 @@ use std::{
     time::{Duration, Instant},
 };
 const NAMESPACE: &str = "osmap-identity-preferences-v1";
-const MAX_RECORD: usize = 2048;
+const MAX_RECORD: usize = 16 * 2048;
 
 #[derive(Clone, Default, PartialEq, Eq)]
 pub struct IdentityPreferences {
     display_name: String,
     reply_to: Option<String>,
+    sender: Option<CapturedSender>,
+}
+#[derive(Clone, PartialEq, Eq)]
+pub struct CapturedSender {
+    id: String,
+    address: String,
+}
+impl CapturedSender {
+    pub(crate) fn new(id: &str, address: &str) -> Result<Self, IdentityPreferencesError> {
+        if !crate::sender_authority::valid_id(id) || id == crate::sender_authority::CANONICAL_ID {
+            return Err(IdentityPreferencesError::InvalidInput);
+        }
+        IdentityPreferences::new("", Some(address))?;
+        Ok(Self {
+            id: id.into(),
+            address: address.into(),
+        })
+    }
+    pub fn id(&self) -> &str {
+        &self.id
+    }
+    pub fn address(&self) -> &str {
+        &self.address
+    }
 }
 impl std::fmt::Debug for IdentityPreferences {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -59,7 +83,19 @@ impl IdentityPreferences {
         Ok(Self {
             display_name: display_name.into(),
             reply_to: reply_to.map(str::to_owned),
+            sender: None,
         })
+    }
+    pub fn sender(&self) -> Option<&CapturedSender> {
+        self.sender.as_ref()
+    }
+    pub(crate) fn with_sender(
+        mut self,
+        id: &str,
+        address: &str,
+    ) -> Result<Self, IdentityPreferencesError> {
+        self.sender = Some(CapturedSender::new(id, address)?);
+        Ok(self)
     }
     pub fn display_name(&self) -> &str {
         &self.display_name
@@ -72,6 +108,26 @@ impl IdentityPreferences {
 pub struct IdentityPreferencesRecord {
     pub preferences: IdentityPreferences,
     pub revision: u64,
+    pub primary_identity: Option<String>,
+    pub sender_profiles: Vec<SenderProfile>,
+}
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SenderProfile {
+    pub id: String,
+    pub preferences: IdentityPreferences,
+}
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum IdentityAction {
+    Add,
+    Edit,
+    Primary,
+}
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SenderIdentityUpdate {
+    pub identity_id: String,
+    pub action: IdentityAction,
+    pub presentation: IdentityPreferences,
+    pub use_for_new: bool,
 }
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum IdentityPreferencesError {
@@ -88,7 +144,19 @@ struct Stored {
     revision: u64,
     display_name: String,
     reply_to: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    primary_identity: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    sender_profiles: Vec<StoredProfile>,
 }
+#[derive(Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct StoredProfile {
+    id: String,
+    display_name: String,
+    reply_to: String,
+}
+
 impl IdentityPreferencesRecord {
     fn parse(bytes: Option<Vec<u8>>) -> Result<Self, IdentityPreferencesError> {
         let Some(bytes) = bytes else {
@@ -99,11 +167,95 @@ impl IdentityPreferencesRecord {
         if raw.version != 1 || raw.revision == 0 {
             return Err(IdentityPreferencesError::Corrupt);
         }
+        if raw.sender_profiles.len() >= crate::sender_authority::MAX_IDENTITIES {
+            return Err(IdentityPreferencesError::Corrupt);
+        }
+        let mut seen = std::collections::BTreeSet::new();
+        let mut sender_profiles = Vec::new();
+        for profile in raw.sender_profiles {
+            if !crate::sender_authority::valid_id(&profile.id)
+                || profile.id == crate::sender_authority::CANONICAL_ID
+                || !seen.insert(profile.id.clone())
+            {
+                return Err(IdentityPreferencesError::Corrupt);
+            }
+            sender_profiles.push(SenderProfile {
+                id: profile.id,
+                preferences: IdentityPreferences::new(
+                    &profile.display_name,
+                    Some(&profile.reply_to),
+                )
+                .map_err(|_| IdentityPreferencesError::Corrupt)?,
+            });
+        }
+        if raw
+            .primary_identity
+            .as_ref()
+            .is_some_and(|id| !seen.contains(id))
+        {
+            return Err(IdentityPreferencesError::Corrupt);
+        }
         Ok(Self {
+            primary_identity: raw.primary_identity,
+            sender_profiles,
             preferences: IdentityPreferences::new(&raw.display_name, Some(&raw.reply_to))
                 .map_err(|_| IdentityPreferencesError::Corrupt)?,
             revision: raw.revision,
         })
+    }
+    pub fn primary_id(&self) -> &str {
+        self.primary_identity
+            .as_deref()
+            .unwrap_or(crate::sender_authority::CANONICAL_ID)
+    }
+    pub fn presentation(&self, id: &str) -> Option<&IdentityPreferences> {
+        if id == crate::sender_authority::CANONICAL_ID {
+            Some(&self.preferences)
+        } else {
+            self.sender_profiles
+                .iter()
+                .find(|profile| profile.id == id)
+                .map(|profile| &profile.preferences)
+        }
+    }
+    pub fn selected_preferences(
+        &self,
+        account: &str,
+        provider: &crate::sender_authority::Provider,
+    ) -> Result<IdentityPreferences, IdentityPreferencesError> {
+        let Some(id) = &self.primary_identity else {
+            return Ok(self.preferences.clone());
+        };
+        let snapshot = provider
+            .snapshot(account)
+            .map_err(|_| IdentityPreferencesError::Unavailable)?;
+        let selected = snapshot
+            .get(id)
+            .map_err(|_| IdentityPreferencesError::Unavailable)?;
+        self.presentation(id)
+            .ok_or(IdentityPreferencesError::Corrupt)?
+            .clone()
+            .with_sender(id, &selected.address)
+    }
+    pub fn preferences_for_id(
+        &self,
+        account: &str,
+        provider: &crate::sender_authority::Provider,
+        id: &str,
+    ) -> Result<IdentityPreferences, IdentityPreferencesError> {
+        if id == crate::sender_authority::CANONICAL_ID {
+            return Ok(self.preferences.clone());
+        }
+        let snapshot = provider
+            .snapshot(account)
+            .map_err(|_| IdentityPreferencesError::Unavailable)?;
+        let identity = snapshot
+            .get(id)
+            .map_err(|_| IdentityPreferencesError::InvalidInput)?;
+        self.presentation(id)
+            .cloned()
+            .unwrap_or_default()
+            .with_sender(id, &identity.address)
     }
     fn bytes(&self) -> Result<Vec<u8>, IdentityPreferencesError> {
         serde_json::to_vec(&Stored {
@@ -111,6 +263,16 @@ impl IdentityPreferencesRecord {
             revision: self.revision,
             display_name: self.preferences.display_name.clone(),
             reply_to: self.preferences.reply_to.clone().unwrap_or_default(),
+            primary_identity: self.primary_identity.clone(),
+            sender_profiles: self
+                .sender_profiles
+                .iter()
+                .map(|profile| StoredProfile {
+                    id: profile.id.clone(),
+                    display_name: profile.preferences.display_name.clone(),
+                    reply_to: profile.preferences.reply_to.clone().unwrap_or_default(),
+                })
+                .collect(),
         })
         .map_err(|_| IdentityPreferencesError::Unavailable)
     }
@@ -148,6 +310,9 @@ impl IdentityPreferencesStore {
         preferences: &IdentityPreferences,
     ) -> Result<IdentityPreferencesRecord, IdentityPreferencesError> {
         Self::account(account)?;
+        if preferences.sender().is_some() {
+            return Err(IdentityPreferencesError::InvalidInput);
+        }
         let deadline = Instant::now() + Duration::from_millis(500);
         let lock = loop {
             match self.file.lock(account) {
@@ -167,11 +332,88 @@ impl IdentityPreferencesStore {
         }
         let record = IdentityPreferencesRecord {
             preferences: preferences.clone(),
+            primary_identity: old.primary_identity,
+            sender_profiles: old.sender_profiles,
             revision: old
                 .revision
                 .checked_add(1)
                 .ok_or(IdentityPreferencesError::Corrupt)?,
         };
+        lock.write(&record.bytes()?)
+            .map_err(|_| IdentityPreferencesError::Unconfirmed)?;
+        Ok(record)
+    }
+    pub fn save_sender(
+        &self,
+        account: &str,
+        expected_revision: u64,
+        inventory: &crate::sender_authority::Snapshot,
+        update: &SenderIdentityUpdate,
+    ) -> Result<IdentityPreferencesRecord, IdentityPreferencesError> {
+        Self::account(account)?;
+        if inventory.validate(account).is_err()
+            || update.presentation.sender().is_some()
+            || inventory.get(&update.identity_id).is_err()
+        {
+            return Err(IdentityPreferencesError::InvalidInput);
+        }
+        let deadline = Instant::now() + Duration::from_millis(500);
+        let lock = loop {
+            match self.file.lock(account) {
+                Ok(lock) => break lock,
+                Err(e) if e.kind() == io::ErrorKind::WouldBlock && Instant::now() < deadline => {
+                    std::thread::sleep(Duration::from_millis(5))
+                }
+                Err(_) => return Err(IdentityPreferencesError::Unavailable),
+            }
+        };
+        let mut record = IdentityPreferencesRecord::parse(
+            lock.read()
+                .map_err(|_| IdentityPreferencesError::Unavailable)?,
+        )?;
+        if record.revision != expected_revision {
+            return Err(IdentityPreferencesError::Stale);
+        }
+        let canonical = update.identity_id == crate::sender_authority::CANONICAL_ID;
+        if !canonical
+            && !record
+                .sender_profiles
+                .iter()
+                .any(|profile| profile.id == update.identity_id)
+        {
+            if record.sender_profiles.len() >= crate::sender_authority::MAX_IDENTITIES - 1 {
+                return Err(IdentityPreferencesError::InvalidInput);
+            }
+            record.sender_profiles.push(SenderProfile {
+                id: update.identity_id.clone(),
+                preferences: IdentityPreferences::default(),
+            });
+        }
+        if update.action == IdentityAction::Edit {
+            if canonical {
+                record.preferences = update.presentation.clone();
+            } else {
+                record
+                    .sender_profiles
+                    .iter_mut()
+                    .find(|profile| profile.id == update.identity_id)
+                    .ok_or(IdentityPreferencesError::Corrupt)?
+                    .preferences = update.presentation.clone();
+            }
+        }
+        if update.action == IdentityAction::Primary
+            || (update.action == IdentityAction::Edit && update.use_for_new)
+        {
+            record.primary_identity = (!canonical).then(|| update.identity_id.clone());
+        } else if update.action == IdentityAction::Edit
+            && record.primary_identity.as_deref() == Some(&update.identity_id)
+        {
+            record.primary_identity = None;
+        }
+        record.revision = record
+            .revision
+            .checked_add(1)
+            .ok_or(IdentityPreferencesError::Corrupt)?;
         lock.write(&record.bytes()?)
             .map_err(|_| IdentityPreferencesError::Unconfirmed)?;
         Ok(record)
@@ -326,4 +568,5 @@ mod tests {
         }
         std::fs::remove_dir_all(path).unwrap();
     }
+    include!("sender_preferences_tests.rs");
 }

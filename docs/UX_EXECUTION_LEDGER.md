@@ -6588,3 +6588,119 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   General operator PASS does not invent these outcomes. Continue actual sender-
   identity Runtime/native transport and automatic-save location qualification,
   then ordered S04 outcomes/password writer; no paper-only epic closeout.
+
+### 2026-10-04 UTC — S03 sender identity and autosave interaction source qualification
+
+- Continue from signed clean767b688fb7e7ead3e2e10c7bb119909301dab555 and the
+  unchanged accepted R2 anchor. The isolated sender candidate adds operator-
+  declared authorized identities, generated own-account settings/Compose
+  controls, captured sender MIME/envelope and current-authority refusal before
+  dispatch. Browser preferences cannot provision aliases; canonical account
+  authority remains the mailbox and cryptographic principal. No live policy,
+  operator key, credential, alias inventory or service configuration is changed.
+- Integrated-attempt2 preserves the four existing Sent/submission fixtures and
+  original Draft18-marker case, adding only sender native and location-sensitive
+  autosave interaction qualification. Actual349 compiler inputs match before/
+  after, manifest48c04cbe7f6f7c6e11f6c75f8f0f123a9f796cca87f3d93e77e10c8819cf513e.
+  Actual library1425/0 failed/38 explicit native skips, exact local automatic-
+  save1/0/0 with8 markers, unchanged CWE/fmt/strict all-target/all-feature Clippy
+  pass. Assembly failures remain retained as missing noncompiler patch input
+  and redundant registration dispositions, not invented production defects.
+- Independent source/execution-scope reviewf2e94b65d4fa422ae7552cc593981dde85eb4f0f58f545e6863a9734853317ab
+  finds no concrete blocker to the proposed seven exact native cases. Expected
+  totals105 markers/10 loopback acceptances/7 authenticated append attempts/
+  6 disposable saves are an UNEXECUTED contract, not outcomes. Production
+  root-owned inventory and actual configured Serve confinement require a
+  separate matching-library proof; the native sender injected test UID cannot
+  qualify them. Source admission/signing/sync/installation remain pending.
+- Root executed the unchanged current Compose script in Edge154 and Firefox155
+  against a disposable canonical Stub gateway and real private Draft store.
+  Each actual run passes4 automatic-save attempts,0 external requests/0 Send,
+  five captures with no measured overflow/contrast failures; pending files,
+  delayed response/newer edits, conflict pause/no retry and no-script manual
+  fallback are exercised. All349 source bytes remain unchanged. This browser
+  proof does not qualify alias authority, Working Runtime or hidden-page
+  dispatch, which was not observed in either engine. Evidence lives under
+  sender-identities/integrated-attempt2/browser-canonical-autosave/.
+- Actual S04 password backend prerequisites remain isolated and unadmitted.
+  Native BLF long-tail verification fails its required negative; native ARGON2ID
+  full64/112/512-byte positives/changed-tail negatives pass. The typed conditional
+  writer and durable epoch coordinator have actual29 local tests, but no Rust
+  own-account RPC, shared session epoch integration, fresh D04 step-up/rate
+  limits, native SQL mutation/containment or generated working password form
+  is claimed. S04-01 reconciliation precedes S04-02 admission. Human ALLSEND,
+  provider/protected/key lifecycle, full S03 and epic acceptance stay OPEN.
+
+
+### 2026-10-04 UTC — preserve native sender cohort failure and correct the portable fixture
+
+- Actual matching native attempt1 built the frozen349-input application and ran
+  six exact scenarios successfully: Draft, Sent, Save Sent, ordinary submission,
+  recovery and sender identity;97 markers,10 loopback acceptances,7 authenticated
+  append attempts and6 disposable Dovecot saves. The seventh automatic-saving
+  scenario failed before transport at UnixListener bind because its generated
+  path exceeded OpenBSD SUN_LEN. Overall seven-case qualification is FAILED /
+  INCOMPLETE, not delivered. Actual result93a8eb06f7826928b85896abfccba17dcb3159aedf21e8ae0aa733d17d181b2f
+  and original log f7e43ad2b4b7e82acaac9f7dd86641bd051a1c6a5d4811871db2de9d739dcfac
+  remain under sender-identities/integrated-attempt2/native/. Source349 parity
+  passed; final binary-after-fixture assertions were not reached.
+- Root copied the exact failed input into integrated-attempt3 and changed only
+  the additive autosave fixture's temporary root prefix to osmap-dai, with an
+  explicit portable socket-path bound. No production source, expected statuses,
+  markers, transport counters, deadlines or existing controls changed. Actual
+  focused local test passes1/0failed/0ignored/eight markers; this is fixture
+  remediation, not a diagnosis of the operator's Send failures. Independent QA
+  review and a matching complete seven-case native run are pending. No source
+  admission, signed delivery, installation or new UAT readiness is claimed.
+- Separate owner0 authority qualification now includes both direct Serve and
+  production helper-backed Serve using an owned dummy socket/public synthetic
+  grant. Actual emitted application-library provenance is retained from
+  attempt1; no operator account or alias provisioning follows from this proof.
+  Reviewed bounded driver/code are cleared for native execution, with no native
+  confinement result yet. Human ALLSEND/provider/protected/key and full epic
+  acceptance stay OPEN; prior Draft completion notification is not repeated.
+
+
+### 2026-10-04 UTC — S03 sender and automatic-save source admitted after matching native qualification
+
+- Actual corrected native attempt2 passes all seven exact cases105 markers,
+  ten loopback submissions/seven authenticated append attempts/six disposable
+  Dovecot saves, with final source and owned binary parity. Final349 manifest
+  d0b0f429c8aa5981ceb9f560216f4e98e91d8d1cb151ef20c5afc593cef35279,
+  application8b729c98efcada280931d598bc0a38d9234bfff8cbf1354e268ea5cd4efc565e,
+  actual resultd2560ff93b7ab21ee1ca2401f2507fdb19257725f9fb9ec79fd1a257de635dc5.
+  Prior failed native1 remains retained; only its portable fixture path changed.
+- Actual final-library production-authority attempt4 passes both direct and
+  helper-backed Serve as UID1001,22 exact markers, owner0 configured inventory,
+  real enforced read-only/DAC/outside-plan/foreign-authority/canonical/session
+  controls; no helper connections or SMTP operations, inventory unchanged,
+  owned cleanup and standard metadata preserved. Result79a83eebf1445d24f789358cffefd737d3388626cd51164dcabbc337c7131bba
+  pins the exact final library2c516160fa8190dfc1dc10e32c4400bc761bdfba76e97817c1323f63d75c13fd
+  and dependency mapfdd7a6f487fe032e0ad01df985d13f2711bf28d762ae4dd1dbb70dfe4f42385a.
+  Original pre-confinement failure29b354 is retained: actual /var/tmp symlink
+  correctly violates canonical-path authority. Unexecuted attempt3's outside
+  witness was inside a readable ancestor subtree; reviewed attempt4 corrects
+  fixture paths and adds an explicit no-readable-covering-rule precondition.
+  Existing product ancestor rules remain; no global minimality claim follows.
+- Root admits exactly50 compiler changes including12 new files, plus the reviewed
+  noncompiler sender route/field WSTG registration c98fadfe. All349 canonical
+  compiler hashes match the qualified candidate; existing root progress entries
+  remain. Preparation0183c445 and actual source-admission.json are retained under
+  sender-identities/integrated-attempt3/. Normal signed gates/sync, reviewed
+  authority-bound activation and actual matching deployment are still pending.
+- No operator alias is provisioned and no provider message sent. Alias profile/
+  draft13/14 records require the new reader; reverting the executable does not
+  imply data-format downgrade compatibility. Existing canonical authority and
+  records are preserved. S04-01 Notifications still has actual preference/event
+  gaps and S08-04 dependencies; subsequent source-only password prerequisites
+  do not close it. Human ALLSEND/protected/provider/key/fullS03/epic remain OPEN.
+
+
+- Normal source commit attempt1 refuses before signing at the existing V10
+  generated inventory drift. Its full log/exit1 is retained. The unchanged
+  generator refreshes refined assumptions6161→6512, with351 net test/fixture
+  additions and the identical five production medium entries/high0. Independent
+  review compares generated values, actual HEAD/current scans and unchanged
+  validator/gate/Makefile; all349 native compiler inputs remain identical.
+  Refresh only the generated report and rerun the normal gate; no bypass,
+  unsigned commit, native expectation waiver or production defect is inferred.

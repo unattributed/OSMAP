@@ -44,6 +44,7 @@ mod routes_labels;
 mod routes_mail;
 mod routes_mark_read;
 mod routes_message_open;
+mod routes_sender_identity;
 mod routes_sent_copy;
 mod routes_sent_location;
 pub(crate) use folder_tree::FolderTree;
@@ -889,6 +890,8 @@ mod tests {
     }
     mod identity_preference_tests {
         include!("http/identity_preference_tests.rs");
+        include!("http/sender_identity_tests.rs");
+        include!("http/sender_identity_runtime_tests.rs");
     }
     mod archive_event_route_tests {
         include!("http/archive_event_route_tests.rs");
@@ -1079,6 +1082,7 @@ mod tests {
         notification_loads: std::sync::Arc<std::sync::atomic::AtomicUsize>,
         snooze_store: Option<crate::snooze::SnoozeStore>,
         identity_preferences_store: Option<crate::identity_preferences::IdentityPreferencesStore>,
+        sender_authority: crate::sender_authority::Provider,
         composition_preferences_store:
             Option<crate::composition_preferences::CompositionPreferencesStore>,
         reading_preferences_store: Option<crate::reading_preferences::ReadingPreferencesStore>,
@@ -1135,6 +1139,7 @@ mod tests {
                 appearance_store: None,
                 settings_store: None,
                 identity_preferences_store: None,
+                sender_authority: crate::sender_authority::Provider::default(),
                 notification_store: None,
                 notification_loads: Default::default(),
                 snooze_store: None,
@@ -2215,9 +2220,15 @@ mod tests {
                     crate::totp::TimeProvider::unix_timestamp(&crate::totp::SystemTimeProvider),
                 )
         }
-        fn load_identity_preferences(
+        fn sender_inventory(
             &self,
-            _context: &AuthenticationContext,
+            session: &ValidatedSession,
+        ) -> Result<crate::sender_authority::Snapshot, crate::sender_authority::Error> {
+            self.sender_authority
+                .snapshot(&session.record.canonical_username)
+        }
+        fn sender_identity_settings(
+            &self,
             session: &ValidatedSession,
         ) -> Result<
             crate::identity_preferences::IdentityPreferencesRecord,
@@ -2227,6 +2238,41 @@ mod tests {
                 .as_ref()
                 .ok_or(crate::identity_preferences::IdentityPreferencesError::Unavailable)?
                 .load(&session.record.canonical_username)
+        }
+        fn update_sender_identity(
+            &self,
+            session: &ValidatedSession,
+            revision: u64,
+            update: &crate::identity_preferences::SenderIdentityUpdate,
+        ) -> Result<
+            crate::identity_preferences::IdentityPreferencesRecord,
+            crate::identity_preferences::IdentityPreferencesError,
+        > {
+            let inventory = self
+                .sender_inventory(session)
+                .map_err(|_| crate::identity_preferences::IdentityPreferencesError::Unavailable)?;
+            self.identity_preferences_store
+                .as_ref()
+                .ok_or(crate::identity_preferences::IdentityPreferencesError::Unavailable)?
+                .save_sender(
+                    &session.record.canonical_username,
+                    revision,
+                    &inventory,
+                    update,
+                )
+        }
+        fn load_identity_preferences(
+            &self,
+            _context: &AuthenticationContext,
+            session: &ValidatedSession,
+        ) -> Result<
+            crate::identity_preferences::IdentityPreferencesRecord,
+            crate::identity_preferences::IdentityPreferencesError,
+        > {
+            let mut record = self.sender_identity_settings(session)?;
+            record.preferences = record
+                .selected_preferences(&session.record.canonical_username, &self.sender_authority)?;
+            Ok(record)
         }
         fn update_identity_preferences(
             &self,
@@ -4164,13 +4210,45 @@ mod tests {
             record.request.sender_identity = if let Some(saved) = existing.as_ref() {
                 saved.request.sender_identity.clone()
             } else if let Some(store) = &self.identity_preferences_store {
-                match store.load(&validated_session.record.canonical_username) {
-                    Ok(value) => value.preferences,
+                match store
+                    .load(&validated_session.record.canonical_username)
+                    .and_then(|value| {
+                        value.selected_preferences(
+                            &validated_session.record.canonical_username,
+                            &self.sender_authority,
+                        )
+                    }) {
+                    Ok(value) => value,
                     Err(_) => return fixture_paused_save(),
                 }
             } else {
                 crate::identity_preferences::IdentityPreferences::default()
             };
+            if let Some(id) = request.sender_id {
+                let old = record
+                    .request
+                    .sender_identity
+                    .sender()
+                    .map(|v| v.id())
+                    .unwrap_or(crate::sender_authority::CANONICAL_ID);
+                if id != old {
+                    record.request.sender_identity = match self
+                        .identity_preferences_store
+                        .as_ref()
+                        .ok_or(crate::identity_preferences::IdentityPreferencesError::Unavailable)
+                        .and_then(|store| store.load(&validated_session.record.canonical_username))
+                        .and_then(|record| {
+                            record.preferences_for_id(
+                                &validated_session.record.canonical_username,
+                                &self.sender_authority,
+                                id,
+                            )
+                        }) {
+                        Ok(value) => value,
+                        Err(_) => return fixture_paused_save(),
+                    };
+                }
+            }
             record.request.body_format = request.body_format;
             record.request.protection = request.protection;
             record.request.reply_thread = request.reply_thread.cloned();
@@ -5084,6 +5162,7 @@ mod tests {
             &context,
             &validated_session,
             BrowserSendRequest {
+                sender_id: None,
                 protection: crate::send::ProtectionIntent::default(),
                 send_intent: &crate::send_journal::mint_intent(gateway.send_clock()).unwrap(),
                 draft_id: None,

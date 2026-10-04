@@ -106,6 +106,8 @@ impl<G: BrowserGateway> BrowserApp<G> {
                             reply_to: reply,
                             error_message: Some(message),
                             available,
+                            sender_inventory: None,
+                            sender_record: None,
                         }),
                     ),
                     audit_events,

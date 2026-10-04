@@ -57,6 +57,8 @@ pub(crate) use sessions_ui::render_sessions_page;
 
 /// Small view model for the current server-rendered compose page.
 pub(crate) struct ComposePageModel<'a> {
+    pub sender_choices: Option<crate::sender_authority::Snapshot>,
+    pub selected_sender_id: Option<&'a str>,
     pub protection: crate::send::ProtectionIntent,
     pub openpgp: Option<crate::http::ComposeProtectionView>,
     pub sender_identity: Option<&'a crate::identity_preferences::IdentityPreferences>,
@@ -2749,11 +2751,36 @@ pub(crate) fn render_compose_page(model: &ComposePageModel<'_>) -> TrustedHtml {
         .map(|identity| identity.display_name())
         .filter(|name| !name.is_empty())
         .unwrap_or(&sender_initial);
+    let sender_address = model
+        .sender_identity
+        .and_then(|identity| identity.sender())
+        .map(|sender| sender.address())
+        .unwrap_or(model.canonical_username);
+    let selected_id = model
+        .selected_sender_id
+        .or_else(|| {
+            model
+                .sender_identity
+                .and_then(|v| v.sender())
+                .map(|v| v.id())
+        })
+        .unwrap_or(crate::sender_authority::CANONICAL_ID);
+    let sender_choice = model.sender_choices.as_ref().filter(|s|s.validate(model.canonical_username).is_ok()).map(|snapshot| {
+        let options = snapshot.identities.iter().map(|identity|format!("<option value=\"{}\"{}>{}</option>",escape_html(&identity.id),if identity.id==selected_id {" selected"} else {""},escape_html(&identity.address))).collect::<String>();
+        // Revoked captured identities are retained as an unavailable choice, never silently retargeted.
+        let missing = if snapshot.identities.iter().any(|v|v.id==selected_id) {String::new()} else {format!("<option value=\"{}\" selected>Captured identity unavailable</option>",escape_html(selected_id))};
+        format!("<label for=\"compose-sender-identity\">Send as</label><select id=\"compose-sender-identity\" name=\"sender_id\">{missing}{options}</select>")
+    }).unwrap_or_default();
+    let sender_input = if model.sender_identity.and_then(|v| v.sender()).is_some() {
+        format!("<input type=\"hidden\" name=\"from\" value=\"{}\"><input id=\"compose-from\" value=\"{}\" readonly aria-describedby=\"sender-policy\">",escape_html(model.canonical_username),escape_html(sender_address))
+    } else {
+        format!("<input id=\"compose-from\" name=\"from\" value=\"{}\" readonly aria-describedby=\"sender-policy\">",escape_html(model.canonical_username))
+    };
     let sender_detail = match model.sender_identity {
-        Some(identity) => format!("{} Reply-to: {}. Only {} is authorized as the sender.",
+        Some(identity) => format!("{} Reply-to: {}. Captured sender: {}.",
             if model.draft_id.is_some() { "This draft keeps its captured identity after profile changes." }
             else { "Current profile shown; preferences are captured when first saved or submitted and may change before then." },
-            identity.reply_to().unwrap_or(model.canonical_username), model.canonical_username),
+            identity.reply_to().unwrap_or(sender_address), sender_address),
         None if model.draft_id.is_some() => "Captured sender presentation is unavailable in this response. Open the saved draft to inspect it; current profile values have not been substituted.".into(),
         None => "Sender preferences could not be confirmed here. New messages capture the account profile when first saved or submitted.".into(),
     };
@@ -2820,7 +2847,7 @@ pub(crate) fn render_compose_page(model: &ComposePageModel<'_>) -> TrustedHtml {
             "{}",
             "{}",
             "{}",
-            "<div class=\"compose-field\"><label for=\"compose-from\">From</label><div class=\"compose-sender\"><span class=\"compose-sender-chip\" >{sender_label}</span><input id=\"compose-from\" name=\"from\" value=\"{}\" readonly aria-describedby=\"sender-policy\"><details class=\"compose-sender-details\"><summary>Sender details</summary><p id=\"sender-policy\">{sender_detail}</p></details></div></div>",
+            "<div class=\"compose-field\"><label for=\"compose-from\">From</label><div class=\"compose-sender\">{sender_choice}<span class=\"compose-sender-chip\" >{sender_label}</span>{sender_input}<details class=\"compose-sender-details\"><summary>Sender details</summary><p id=\"sender-policy\">{sender_detail}</p></details></div></div>",
             "<div class=\"compose-field\"><label for=\"compose-to\">To</label><input id=\"compose-to\" type=\"text\" name=\"to\" value=\"{}\" autocomplete=\"off\"></div>",
             "<div class=\"compose-recipient-tools\"><details class=\"compose-cc\"{}><summary>+ Cc</summary><label for=\"compose-cc\">Cc</label><input id=\"compose-cc\" type=\"text\" name=\"cc\" value=\"{}\" autocomplete=\"off\"></details>",
             "<details class=\"compose-bcc\"{}><summary>+ Bcc</summary><label for=\"compose-bcc\">Bcc</label><input id=\"compose-bcc\" type=\"text\" name=\"bcc\" value=\"{}\" autocomplete=\"off\"></details>{}</div>",
@@ -2845,7 +2872,7 @@ pub(crate) fn render_compose_page(model: &ComposePageModel<'_>) -> TrustedHtml {
         escape_html(model.csrf_token),
         draft_id_field,
         render_source_attachment_hidden_fields(model.source_mailbox_name, model.source_uid, model.source_version),
-        render_reply_reference(model.reply_reference), escape_html(model.canonical_username),
+        render_reply_reference(model.reply_reference),
         escape_html(model.to_value),
         if model.cc_value.is_empty() { "" } else { " open" },
         escape_html(model.cc_value),
@@ -2869,6 +2896,8 @@ pub(crate) fn render_compose_page(model: &ComposePageModel<'_>) -> TrustedHtml {
         send_controls = crate::http::compose_delivery_ui::send_controls(model),
         sender_label = escape_html(sender_label),
         sender_detail = escape_html(&sender_detail),
+ sender_choice = sender_choice,
+ sender_input = sender_input,
     ))
 }
 

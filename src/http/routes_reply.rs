@@ -16,6 +16,7 @@ pub(super) fn compose_metadata_valid(form: &BTreeMap<String, String>, username: 
         "csrf_token",
         "send_intent",
         "from",
+        "sender_id",
         "to",
         "cc",
         "bcc",
@@ -54,6 +55,7 @@ pub(super) fn compose_metadata_valid(form: &BTreeMap<String, String>, username: 
                     !suffix.is_empty() && suffix.bytes().all(|byte| byte.is_ascii_digit())
                 }))
             && (name != "from" || value == username)
+            && (name != "sender_id" || crate::sender_authority::valid_id(value))
     })
 }
 

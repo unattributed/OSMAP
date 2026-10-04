@@ -245,6 +245,9 @@ where
             (HttpMethod::Post, "/settings/identity") => {
                 self.handle_identity_preferences_update(request, &context)
             }
+            (HttpMethod::Post, "/settings/sender-identity") => {
+                self.handle_sender_identity_update(request, &context)
+            }
             (HttpMethod::Post, "/settings/composition") => {
                 self.handle_composition_preferences_update(request, &context)
             }

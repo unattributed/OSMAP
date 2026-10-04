@@ -599,7 +599,8 @@
         "source_message_guid",
         "include_original_attachment_*",
         "remove_saved_attachment_*",
-        "attachment"
+        "attachment",
+        "sender_id"
       ],
       "wstg_test_ids": [
         "OSMAP-WSTG-INPV-003",
@@ -635,7 +636,8 @@
         "source_message_guid",
         "include_original_attachment_*",
         "remove_saved_attachment_*",
-        "attachment"
+        "attachment",
+        "sender_id"
       ],
       "wstg_test_ids": [
         "OSMAP-WSTG-BUSL-002",
@@ -791,6 +793,26 @@
     },
     {
       "method": "POST",
+      "path": "/settings/sender-identity",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "sender_revision",
+        "action",
+        "identity_id",
+        "display_name",
+        "reply_to",
+        "use_for_new"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "POST",
       "path": "/settings/reading",
       "query_fields": [],
       "form_fields": [
@@ -905,7 +927,8 @@
         "reply_mailbox",
         "reply_uid",
         "reply_mailbox_guid",
-        "reply_message_guid"
+        "reply_message_guid",
+        "sender_id"
       ],
       "wstg_test_ids": [
         "OSMAP-WSTG-BUSL-002",

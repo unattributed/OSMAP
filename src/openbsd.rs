@@ -327,6 +327,10 @@ impl OpenbsdConfinementPlan {
                 add_rule(&mut rules, &config.state_layout.audit_dir, "rwc");
                 add_rule(&mut rules, &config.state_layout.cache_dir, "rwc");
                 add_rule(&mut rules, &config.state_layout.totp_secret_dir, "rwc");
+                if let Some(path) = &config.sender_authority_path {
+                    add_rule(&mut rules, path, "r");
+                    add_parent_dir_rules(&mut rules, path);
+                }
 
                 add_doveadm_dependency_rules(&mut rules);
                 add_sendmail_dependency_rules(&mut rules);
@@ -851,6 +855,7 @@ mod tests {
             mailbox_helper_grant_key_path: None,
             mailbox_helper_peer_uid: None,
             mailbox_retention_policy_path: None,
+            sender_authority_path: None,
             state_root: PathBuf::from("/var/lib/osmap"),
             log_level: LogLevel::Info,
             log_format: LogFormat::Text,
@@ -889,6 +894,33 @@ mod tests {
             message_move_throttle_lockout_seconds: 900,
             openbsd_confinement_mode: mode,
         }
+    }
+
+    #[test]
+    fn sender_identity_inventory_is_unveiled_read_only_for_serve_without_helper_authority() {
+        let mut config = config_fixture(OpenbsdConfinementMode::LogOnly);
+        let path = PathBuf::from("/etc/osmap/sender-authority.json");
+        assert!(!OpenbsdConfinementPlan::from_config(&config)
+            .unveil_rules
+            .iter()
+            .any(|rule| rule.path == path));
+        config.sender_authority_path = Some(path.clone());
+        config.mailbox_helper_socket_path =
+            Some(PathBuf::from("/var/lib/osmap/run/mailbox-helper.sock"));
+        let plan = OpenbsdConfinementPlan::from_config(&config);
+        assert!(plan
+            .unveil_rules
+            .iter()
+            .any(|rule| rule.path == path && rule.permissions == "r"));
+        assert_eq!(
+            plan.promises_after_lock,
+            OPENBSD_SERVE_WITH_HELPER_PROMISES_AFTER_LOCK
+        );
+        config.run_mode = AppRunMode::MailboxHelper;
+        assert!(!OpenbsdConfinementPlan::from_config(&config)
+            .unveil_rules
+            .iter()
+            .any(|rule| rule.path == path));
     }
 
     #[test]

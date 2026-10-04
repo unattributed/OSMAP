@@ -284,6 +284,8 @@ where
                 self.render_protected_compose_page(
                     &validated_session,
                     ComposePageModel {
+                        sender_choices: None,
+                        selected_sender_id: None,
                         protection: crate::send::ProtectionIntent {
                             sign: preferences.openpgp.sign,
                             encrypt: preferences.openpgp.encrypt,
@@ -643,6 +645,7 @@ where
             context,
             &validated_session,
             BrowserSendRequest {
+                sender_id: form.get("sender_id").map(String::as_str),
                 protection,
                 send_intent: form
                     .get("send_intent")
@@ -864,6 +867,8 @@ where
                     reason_phrase,
                     "Compose",
                     self.render_protected_compose_page(&validated_session, ComposePageModel {
+ sender_choices: None,
+ selected_sender_id: None,
                         protection: super::compose_protection::retained_intent_from_form(&form),
                         openpgp: None,
                     sender_identity: None,
@@ -962,6 +967,8 @@ where
             reason,
             "Compose",
             self.render_protected_compose_page(session, ComposePageModel {
+ sender_choices: None,
+ selected_sender_id: form.get("sender_id").map(String::as_str),
                 protection: super::compose_protection::retained_intent_from_form(form),
                 openpgp: None,
                 sender_identity: None,

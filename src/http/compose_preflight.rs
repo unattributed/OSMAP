@@ -20,7 +20,7 @@ pub(crate) fn render(model: &ComposePageModel<'_>) -> String {
     let summary = match result {
         Ok(request) => format!(
             "<p class=\"notice notice-success\">Recipient addresses, message text and stored files pass composition checks.</p><dl class=\"message-meta\"><dt>Sender</dt><dd>{}</dd><dt>Recipients</dt><dd>{} To · {} Cc · {} Bcc · {} unique delivery addresses</dd><dt>Message format</dt><dd>{}</dd><dt>Stored attachments</dt><dd>{} files · {} bytes</dd></dl>",
-            escape_html(model.canonical_username), request.recipients.len(),
+            escape_html(model.sender_identity.and_then(|v|v.sender()).map(|v|v.address()).unwrap_or(model.canonical_username)), request.recipients.len(),
             request.cc_recipients.len(), request.bcc_recipients.len(),
             request.all_recipients().len(),
             if model.body_format == crate::compose_format::BodyFormat::Plain { "Plain text" } else { "Formatted text with a plain-text alternative" },
@@ -115,6 +115,8 @@ mod tests {
 
     fn model() -> ComposePageModel<'static> {
         ComposePageModel {
+            sender_choices: None,
+            selected_sender_id: None,
             protection: ProtectionIntent::default(),
             openpgp: None,
             sender_identity: None,

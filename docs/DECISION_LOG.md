@@ -8778,3 +8778,58 @@ or email receipt. Preserve all historical failures and actual qualification
 limits. Do not repeat prior Sent notifications, claim all Send repaired, invent
 password writer/storage authority or declare full S03/epic accepted. Continue
 concrete backend work and independent review within the accepted ordered scope.
+
+### 2026-10-04 — qualify sender authority and automatic-save interactions without inventing acceptance
+
+Use the isolated349-input sender candidate for matching actual native execution;
+retain every original finite submission/control expectation and historical
+failure. Production sender ownership must come from a configured administrator-
+owned inventory, never an editable browser field or fixture UID. Qualify the
+owner0 provider under actual Serve confinement separately using fixed public
+disposable data and the exact emitted native library. No operator aliases,
+configuration or provider messages are created for this proof.
+
+Actual Edge/Firefox canonical automatic-saving confirms current script/timer/
+DOM behaviour and conflict preservation. Keep Working Runtime, alias-authority
+and unobserved hidden-page behaviour outside that browser claim. Native skip,
+source review and planned counters cannot establish execution or readiness.
+Signed admission, matching installation and a narrow observable UAT follow
+actual qualification; full S03/ALLSEND/provider/key/epic remain unresolved.
+
+The subsequent password writer must preserve existing credential reads and use
+the actually qualified full-input ARGON2ID scheme; BLF long-input truncation
+cannot satisfy the approved policy. Durable account epochs/serialization and
+native containment are required runtime behaviour, not a generic modified
+timestamp or an SQL receipt. Keep the source-only prerequisites unadmitted until
+own-account RPC, step-up, session binding and native integration work exists.
+
+
+### 2026-10-04 — correct actual native fixture portability without waiving qualification
+
+Preserve the exact six-pass/seventh-fail sender cohort. Its OpenBSD SUN_LEN
+failure occurs before transport and supports a short private fixture path and
+explicit bound, not a product or operator-policy change. Require the complete
+matching cohort on corrected inputs before admission; keep finite controls and
+all prior failed records. Qualify production owner0 under actual helper-backed
+Serve separately from injected-owner tests. None of these outcomes qualifies
+provider receipt, operator ALLSEND, real alias provisioning or whole-epic UAT.
+
+
+### 2026-10-04 — admit working sender authority only after final-artifact proof
+
+Actual final seven-case transport/private-store qualification and final-library
+owner0 direct/helper-backed Serve confinement now permit source admission. Keep
+all historical failures and precise fixture causes. Browser Add registers only
+current administrator-authorized IDs; captured message identity cannot create
+mailbox or crypto authority. Preserve current alias inventory, keys and policies,
+and document that older readers cannot downgrade new alias records. Signed
+normal sync and matching binary-only activation precede observable UAT delivery;
+provider/human/whole-sprint acceptance and actual Notifications gaps remain open.
+
+
+The normal commit refusal on stale V10 inventory is retained. Regenerate the
+report through its existing tool and independently reconcile351 new fixture
+assumptions, unchanged five production medium entries and all349 native inputs.
+Keep the validator and hooks intact; retry the normal signed gate rather than
+suppress its drift check. Generated evidence refresh does not alter product
+qualification or imply a strict release claim.
