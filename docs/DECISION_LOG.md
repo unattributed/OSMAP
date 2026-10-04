@@ -8833,3 +8833,22 @@ assumptions, unchanged five production medium entries and all349 native inputs.
 Keep the validator and hooks intact; retry the normal signed gate rather than
 suppress its drift check. Generated evidence refresh does not alter product
 qualification or imply a strict release claim.
+
+
+### 2026-10-04 — deliver observable sender/draft behaviour and retain acceptance boundaries
+
+Matching final source, normal signed GitHub synchronization and actual mail-first
+then obsd1 binary activation now establish this sender/automatic-save increment's
+engineering delivery. Offer explicit Identity capture and visible automatic-save
+conflict UAT with exact restoration; preserve human NOT RUN and unresolved Send,
+provider and cryptography outcomes. Additional identity controls register existing
+server grants and cannot provision aliases. Neither native synthetic accounts nor
+public login access establishes operator acceptance. Keep historical failures,
+format-downgrade limits and unobserved hidden-page behaviour explicit.
+
+The next concrete Notifications increment stores Individual/Daily UTC presentation
+privately and groups existing in-app events without suppressing SessionIssued or
+SessionRevoked, losing read state, or inventing delivery jobs. The broader PAGE17
+mail/security/desktop dependencies remain with their later owners; a preference
+vertical is not a full S04 or Notifications closure. Continue isolated source-only
+password prerequisites without enabling an unsupported decorative password form.

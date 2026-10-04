@@ -6704,3 +6704,34 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   validator/gate/Makefile; all349 native compiler inputs remain identical.
   Refresh only the generated report and rerun the normal gate; no bypass,
   unsigned commit, native expectation waiver or production defect is inferred.
+
+
+### 2026-10-04 UTC — S03 sender identity and automatic-save engineering delivery
+
+- Signed source c9ddc5020e410103d4040259a254adfc24cd0353 passes the
+  normal commit and push gates:1425 library passes/0 failures/38 explicit native
+  skips. Shopkeeper signature verifies; checked fresh fetch proves GitHub/local
+  equality,0/0 and clean. All349 signed compiler inputs match actual final native
+  execution; reviewed sender WSTG registration is included. Original inventory
+  drift refusal remains retained; the existing generator refresh and independent
+  reconciliation passed without changing gates or production findings.
+- Actual matching application8b729c98efcada280931d598bc0a38d9234bfff8cbf1354e268ea5cd4efc565e
+  is activated mail-helper first, then obsd1 helper/web. Activation records
+  e6c36bb762fce6b8d3885cc2045a165529463d7bf77973fc7f2bbad8a1b0c100 and
+  8469a1170bf0b52a2425916f5a0cf250174ccbf56a80118b800f690746ed6767
+  preserve environment/configuration hashes, retention, key agents and unrelated
+  services. No alias inventory is provisioned and no provider email submitted.
+  Installed-file provenance is measured; process-memory image hash is not.
+- UAT.md under sender-identities/integrated-attempt3 provides exact normal-browser
+  Identity save/reload, captured draft retention, currently authorized optional
+  identity and visible automatic-save/conflict cases with restoration. Human
+  outcomes remain NOT RUN. Native seven-case105 markers/10 loopback/7 append/6
+  saves and final-library22 confinement markers are separate actual engineering
+  proof. Canonical browser-script tests do not qualify Working Runtime, real
+  alias login or hidden-page dispatch. Public TLS/login200 is access proof only.
+- Prior native cohort/authority failures and unknown Sent/choice refusals remain
+  preserved. Human ALLSEND, provider receipt/signature/return, readable encrypted
+  Sent, key lifecycle, full S03 and epic acceptance remain OPEN. Old alias profile
+  and draft13/14 readers are not supported downgrade paths. Continue the actual
+  S04-01 in-app notification Digest preference gap, preserving both security event
+  kinds and all original event/read/badge state; no scheduled external digest.
