@@ -5423,3 +5423,54 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   metadata and human UAT remain OPEN. Native tests use issued disposable sessions,
   not password/TOTP login or separately applied confinement. All-Send, protected
   provider delivery, sprint acceptance and whole-epic completion remain OPEN.
+
+### 2026-10-04 UTC — S02-03 confirmed Archive-event remediation
+
+- Implement the missing known Archive action date with real account-private
+  persistence. Only a confirmed explicit Archive move plus an authenticated,
+  unique current destination summary records server time against destination
+  folder/UID/both GUIDs. Ordinary Move/Bin/Restore, attempted or Unknown moves,
+  Received dates and partial identity matches cannot create history. Older mail
+  is Unknown; invalid/unavailable metadata is Unavailable. No message body or
+  private cryptographic operation is needed.
+- Preserve confirmed mail outcomes if metadata resolution or publication cannot
+  be confirmed. Report read-only reconciliation without repeating a move; retain
+  earlier metadata warnings alongside later bulk refusal/Unknown. Idempotent
+  reconciliation preserves the first known event time. Bound storage to 2000
+  events/8 MiB with the existing private-file/locking/publication checks.
+- Compare against approved R2 page08: retain exactly seven table columns with
+  Archived visible and separately escaped Received in row actions. Correct the
+  initial extra-column design drift. Preserve selection, On-open and Next
+  navigation. Add the document to the existing index.
+- Actual execution exposes an omitted route QA module: source files existed but
+  zero route cases ran. Register the module and required stub/Runtime seams,
+  then execute all ten. Correct the test fixture's missing SnoozeStore required
+  by existing Next behavior; keep its exact Next redirect and one-event checks.
+  Remove a redundant native import and retain explicit test/unix guards. The
+  first local UI filter also ran zero; corrected exact filter executes one case.
+  Local module14, route10, UI1 and warning-as-error Clippy PASS. Failed/zero
+  attempts remain evidence, not pass claims.
+- Matching306 native compile inputs on obsd1 PASS all51 counted cases:14 module,
+  ten route/Runtime, one UI, one actual Archive BrowserApp/Runtime/helper/Dovecot
+  case and 25 single/bulk-delete regressions. Actual moved destination UID and
+  mailbox GUID differ while message GUID matches; server event date persists
+  across a fresh BrowserApp. Received and unknown legacy dates stay distinct.
+  CSRF/foreign/stale controls cause zero event/move; no extra append, expunge,
+  flag or crypto operation. Neighbour/foreign/legacy bytes/flags/GUIDs and standard
+  host metadata remain unchanged; owned scratch cleanup PASS.
+- Evidence root: osmap-ux-s02/revalidation-20261003/archive-event. Native retained
+  native-archive-event-attempt1.log/result/source-manifest, 306 inputs; test hash
+  b9fa6143b322a00f535f07ffbaff71c5d0904cc83235fe40d4e1319214370b08;
+  app caab7c9bcfcfdcae0a09f58874511d6b37356379983a3b847a773c7a4c92d0e9
+  is copied to the owned native run/bin directory, not installed. Independent
+  final-source-security-review.json pins15 current source files and finds no
+  concrete blocker; this is source review, separate from executed native51.
+- Refresh actual V10 inventory and claim-register values rather than weakening
+  gates. Matching deployment, authoritative relay/retention configuration and
+  human UAT remain OPEN. Issued disposable sessions are not password/TOTP login,
+  provider delivery or applied-confinement qualification. Whole S02-03, all-Send,
+  protected Proton round-trip, sprint acceptance and whole epic remain OPEN.
+
+- Final archive aggregate acceptance/security/v14 PASS:1300 library cases pass,
+  27 explicitly opted-in native cases ignored locally; actual51 native cases are
+  executed separately above. aggregate-attempt1.log is the passing full gate.

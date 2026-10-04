@@ -190,6 +190,27 @@ pub trait BrowserGateway {
         intent: &str,
     ) -> Result<bool, String>;
 
+    fn archive_events_available(&self) -> bool {
+        false
+    }
+    fn archive_event_clock(&self) -> u64 {
+        crate::totp::TimeProvider::unix_timestamp(&crate::totp::SystemTimeProvider)
+    }
+    fn load_archive_events(
+        &self,
+        _session: &ValidatedSession,
+    ) -> Result<crate::archive_event::Snapshot, crate::archive_event::Error> {
+        Err(crate::archive_event::Error::Unavailable)
+    }
+    fn record_archive_event(
+        &self,
+        _session: &ValidatedSession,
+        _confirmation: &crate::archive_event::ConfirmedArchive,
+        _confirmed_at: u64,
+    ) -> Result<crate::archive_event::Snapshot, crate::archive_event::Error> {
+        Err(crate::archive_event::Error::Unavailable)
+    }
+
     fn labels_available(&self) -> bool {
         false
     }

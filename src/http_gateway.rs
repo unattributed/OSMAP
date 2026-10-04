@@ -591,6 +591,30 @@ impl BrowserGateway for RuntimeBrowserGateway {
         .map_err(|_| "send_attempt_paused".into())
     }
 
+    fn archive_events_available(&self) -> bool {
+        true
+    }
+    fn load_archive_events(
+        &self,
+        session: &ValidatedSession,
+    ) -> Result<crate::archive_event::Snapshot, crate::archive_event::Error> {
+        crate::archive_event::Store::new(self.settings_dir.join("archive-events-v1"))
+            .load(&session.record.canonical_username)
+    }
+    fn record_archive_event(
+        &self,
+        session: &ValidatedSession,
+        confirmation: &crate::archive_event::ConfirmedArchive,
+        confirmed_at: u64,
+    ) -> Result<crate::archive_event::Snapshot, crate::archive_event::Error> {
+        crate::archive_event::Store::new(self.settings_dir.join("archive-events-v1"))
+            .record_confirmed_archive(
+                &session.record.canonical_username,
+                confirmation,
+                confirmed_at,
+            )
+    }
+
     fn labels_available(&self) -> bool {
         true
     }

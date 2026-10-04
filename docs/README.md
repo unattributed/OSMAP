@@ -69,6 +69,7 @@ Current public documentation map:
 - `UX_FULL_FUNCTIONAL_SLICES.md`
 - `UX_AGENT_EXECUTION_CONTRACT.md`
 - `UX_EXECUTION_LEDGER.md`
+- `ARCHIVE_EVENT_METADATA.md` — persisted known Archive action dates, destination identity and independent metadata uncertainty
 - `AGENT_DEVELOPMENT_FRAMEWORK.md` — portable six-role framework for complete user journeys, independent review and actionable UAT
 - `OSMAP_AGENT_FRAMEWORK_ADOPTION.md` — application to existing OSMAP records and unresolved acceptance
 - `UX_S00_INTAKE.md`

@@ -306,6 +306,7 @@ impl<G: BrowserGateway> BrowserApp<G> {
         };
         let total = selected.len();
         let mut label_uncertain = false;
+        let mut archive_date_uncertain = false;
         for (confirmed, selected) in selected.iter().enumerate() {
             let pending = if std::time::Instant::now() >= deadline {
                 Err(crate::labels::LabelError::Unavailable)
@@ -326,6 +327,7 @@ impl<G: BrowserGateway> BrowserApp<G> {
                 self.gateway.move_message(context, &session, selected)
             };
             audit_events.extend(outcome.audit_events);
+            let archive_decision = outcome.decision.clone();
             match outcome.decision {
                 BrowserMessageMoveDecision::Moved {
                     source_mailbox_name,
@@ -335,6 +337,16 @@ impl<G: BrowserGateway> BrowserApp<G> {
                     && destination_mailbox_name == destination
                     && uid == selected.uid =>
                 {
+                    if action == "archive" && self.gateway.archive_events_available() {
+                        // Capture confirmation time before destination resolution; never use Received.
+                        let confirmed_at = self.gateway.archive_event_clock();
+                        archive_date_uncertain |= !self.archive_date_after_confirmed_move(
+                            (context, &session),
+                            (selected, &archive_decision, confirmed_at),
+                            deadline,
+                            &mut audit_events,
+                        );
+                    }
                     label_uncertain |= !self.labels_after_move(
                         context,
                         &session,
@@ -366,6 +378,11 @@ impl<G: BrowserGateway> BrowserApp<G> {
                     } else {
                         detail.to_owned()
                     };
+                    let detail = if archive_date_uncertain {
+                        format!("{detail} Archive-date recording for an earlier confirmed move could not be confirmed. Refresh the destination metadata; do not repeat those mail moves.")
+                    } else {
+                        detail
+                    };
                     let remaining = total - confirmed - 1;
                     let mut response = html_response(status, reason, "Move Stopped", TrustedHtml::from_template(format!(
                         "{}<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\"><section class=\"panel\"><h1>Move stopped</h1><p>{}</p><p>{confirmed} confirmed moved; {uncertain} uncertain; {remaining} remaining messages were not attempted.</p><p><a class=\"button-link\" href=\"{}\">Refresh message list</a> <a class=\"button-link\" href=\"/mailbox?name={}\">Check destination</a></p></section></main>",
@@ -382,8 +399,13 @@ impl<G: BrowserGateway> BrowserApp<G> {
                 }
             }
         }
-        if label_uncertain {
-            return notice(200,"OK","Messages Moved","All selected mail moves were confirmed. Label continuity could not be confirmed; labels may remain attached to old identities. Do not repeat the mail move to repair labels.",audit_events);
+        if label_uncertain || archive_date_uncertain {
+            let detail = match (label_uncertain, archive_date_uncertain) {
+                (true, true) => "All selected mail moves were confirmed. Label continuity and archive-date recording could not be confirmed. Do not repeat the mail moves to repair metadata.",
+                (true, false) => "All selected mail moves were confirmed. Label continuity could not be confirmed; labels may remain attached to old identities. Do not repeat the mail move to repair labels.",
+                _ => "All selected mail moves were confirmed. Archive-date recording could not be confirmed. Refresh the destination metadata; do not repeat the mail move to repair its date.",
+            };
+            return notice(200, "OK", "Messages Moved", detail, audit_events);
         }
         let next = next_after_archive.and_then(|candidate| {
             if std::time::Instant::now() >= deadline {
@@ -403,5 +425,43 @@ impl<G: BrowserGateway> BrowserApp<G> {
             response: redirect_response(303, "See Other", next.as_deref().unwrap_or(&return_to)),
             audit_events,
         }
+    }
+
+    fn archive_date_after_confirmed_move(
+        &self,
+        owner: (&AuthenticationContext, &ValidatedSession),
+        confirmed: (&MessageMoveRequest, &BrowserMessageMoveDecision, u64),
+        deadline: std::time::Instant,
+        audit: &mut Vec<LogEvent>,
+    ) -> bool {
+        let (context, session) = owner;
+        let (request, decision, confirmed_at) = confirmed;
+        if std::time::Instant::now() >= deadline {
+            return false;
+        }
+        // Reuse the same owned, bounded, unambiguous destination resolver as labels.
+        let Ok(rows) = self.label_rows(context, session, &request.destination_mailbox_name, audit)
+        else {
+            return false;
+        };
+        let rows: Vec<_> = rows.into_iter().map(|(_, row)| row).collect();
+        let account = &session.record.canonical_username;
+        let Ok(event) = crate::archive_event::ConfirmedArchive::resolve(
+            account,
+            &request.destination_mailbox_name,
+            request,
+            decision,
+            account,
+            &request.destination_mailbox_name,
+            &rows,
+        ) else {
+            return false;
+        };
+        if std::time::Instant::now() >= deadline {
+            return false;
+        }
+        self.gateway
+            .record_archive_event(session, &event, confirmed_at)
+            .is_ok()
     }
 }

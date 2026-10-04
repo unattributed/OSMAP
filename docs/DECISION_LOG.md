@@ -8328,3 +8328,17 @@ inventory failure were corrected with real code; keep failed evidence. Matching
 302-input native HTTP/Dovecot cases and normal gates pass. Commit/sync this
 concrete checkpoint while deployment, known Archive event metadata and operator
 acceptance remain separate unfinished work. Do not label the slice complete.
+
+### 2026-10-04 UTC — Store known Archive actions without inventing history
+
+Resolve actual destination identity after a confirmed explicit Archive action;
+record server event time in bounded account-private metadata. Preserve Received
+as a distinct original fact in row actions and the approved seven-column table.
+Legacy mail has no fabricated action date. A metadata refusal/uncertain publication
+never asks the user to repeat a confirmed mail move; expose safe read-only
+reconciliation and preserve mixed bulk outcomes. Source, registered execution,
+matching native fixture, installed authoritative path and human UAT remain
+separate claims. Catch zero-case QA registration/filter defects with compiled
+name/count checks before native execution; do not call paper or zero-case checks
+a pass. Matching306-input native51 PASS; candidate remains uninstalled while
+deployment/configuration are prepared under standing engineering authority.

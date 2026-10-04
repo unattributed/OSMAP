@@ -4040,3 +4040,7 @@ fn isolated_openbsd_retention_bound_bulk_delete_browser() {
     assert_eq!(before, standard_metadata());
     println!("native_retention_bulk_delete_browser=PASS actual_browser_runtime_helper_dovecot=PASS rendered_review_cancel_zero_mutation=PASS complete_selection_before_prefix=PASS actual_first_deleted_second_policy_denied_third_unattempted=PASS expunge_once_no_retry=PASS remaining_selected_and_predeleted_neighbour_intact=PASS same_uid_inbox_bob_bytes_flags_guids_unchanged=PASS no_other_mutations_or_crypto=PASS synthetic_session_not_login_proof=PASS scratch_cleanup=PASS standard_host_metadata_unchanged=PASS");
 }
+
+// Additive owned Archive-event proof; original reader/Bin/delete guards unchanged.
+#[path = "mailbox_helper_native_archive_event_tests.rs"]
+mod archive_event_native_tests;

@@ -123,6 +123,7 @@ pub(crate) struct MailReaderContext {
     pub archive_mailbox_name: Option<String>,
     pub bin_mailbox_name: Option<String>,
     pub mailboxes: Vec<MailboxEntry>,
+    pub archive_events: Option<crate::archive_event::Snapshot>,
 }
 
 impl Default for MailReaderContext {
@@ -133,6 +134,7 @@ impl Default for MailReaderContext {
             archive_mailbox_name: None,
             bin_mailbox_name: Some("Trash".into()),
             mailboxes: Vec::new(),
+            archive_events: None,
         }
     }
 }
@@ -1776,8 +1778,14 @@ pub(crate) fn render_message_list_page(
             String::new()
         };
         if archive_page {
-            rows.push_str(&archive_ui::row(
+            let archived_at = crate::archive_event::date_for(
+                sort_links.reader.archive_events.as_ref(),
+                canonical_username,
+                mailbox_name,
                 message,
+            );
+            rows.push_str(&archive_ui::row(
+                (message, archived_at),
                 &selection_cells,
                 &message_href,
                 csrf_token,

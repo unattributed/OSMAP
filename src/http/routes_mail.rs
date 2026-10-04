@@ -649,6 +649,7 @@ where
                         &mut audit_events,
                     ),
                     archive_mailbox_name: archive_mailbox_name.clone(),
+                    archive_events: self.gateway.load_archive_events(&validated_session).ok(),
                     bin_mailbox_name: self
                         .gateway
                         .load_bin_preference(&validated_session)

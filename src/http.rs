@@ -885,6 +885,9 @@ mod tests {
     mod identity_preference_tests {
         include!("http/identity_preference_tests.rs");
     }
+    mod archive_event_route_tests {
+        include!("http/archive_event_route_tests.rs");
+    }
     mod after_archive_tests {
         include!("http/after_archive_tests.rs");
     }
@@ -1023,6 +1026,9 @@ mod tests {
         signature_store: Option<crate::signature::SignatureStore>,
         autosave_store: Option<crate::autosave::Store>,
         after_archive_store: Option<crate::after_archive::Store>,
+        archive_event_store: Option<crate::archive_event::Store>,
+        archive_event_records: Arc<std::sync::atomic::AtomicUsize>,
+        archive_event_post_list_fault: Arc<Mutex<Option<archive_event_route_tests::PostListFault>>>,
         bin_store: Option<crate::bin_folder::BinPreferencesStore>,
         delete_decision: Arc<Mutex<crate::mailbox::RetentionDecision>>,
         delete_result: Arc<
@@ -1071,6 +1077,9 @@ mod tests {
                 signature_store: None,
                 autosave_store: None,
                 after_archive_store: None,
+                archive_event_store: None,
+                archive_event_records: Default::default(),
+                archive_event_post_list_fault: Default::default(),
                 bin_store: None,
                 delete_decision: Arc::new(Mutex::new(
                     crate::mailbox::RetentionDecision::Unavailable,
@@ -1508,6 +1517,38 @@ mod tests {
             Ok(drafts.remove(id).is_some())
         }
 
+        fn archive_events_available(&self) -> bool {
+            self.archive_event_store.is_some()
+        }
+        fn archive_event_clock(&self) -> u64 {
+            archive_event_route_tests::CONFIRMED_AT
+        }
+        fn load_archive_events(
+            &self,
+            session: &ValidatedSession,
+        ) -> Result<crate::archive_event::Snapshot, crate::archive_event::Error> {
+            self.archive_event_store
+                .as_ref()
+                .ok_or(crate::archive_event::Error::Unavailable)?
+                .load(&session.record.canonical_username)
+        }
+        fn record_archive_event(
+            &self,
+            session: &ValidatedSession,
+            confirmation: &crate::archive_event::ConfirmedArchive,
+            confirmed_at: u64,
+        ) -> Result<crate::archive_event::Snapshot, crate::archive_event::Error> {
+            self.archive_event_records
+                .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+            self.archive_event_store
+                .as_ref()
+                .ok_or(crate::archive_event::Error::Unavailable)?
+                .record_confirmed_archive(
+                    &session.record.canonical_username,
+                    confirmation,
+                    confirmed_at,
+                )
+        }
         fn labels_available(&self) -> bool {
             self.labels_store.is_some()
         }
@@ -2655,6 +2696,43 @@ mod tests {
             validated_session: &ValidatedSession,
             mailbox_name: &str,
         ) -> BrowserMessageListOutcome {
+            if self.archive_event_store.is_some() && mailbox_name == "INBOX.Projects" {
+                let mut rows = self.fixture_reconcile_messages(
+                    &validated_session.record.canonical_username,
+                    mailbox_name,
+                    Vec::new(),
+                );
+                let mut returned_account = validated_session.record.canonical_username.clone();
+                match *self.archive_event_post_list_fault.lock().unwrap() {
+                    Some(archive_event_route_tests::PostListFault::Missing) => rows.clear(),
+                    Some(archive_event_route_tests::PostListFault::Foreign) => {
+                        returned_account = "bob@example.com".into()
+                    }
+                    Some(archive_event_route_tests::PostListFault::Duplicate) => {
+                        if let Some(row) = rows.first().cloned() {
+                            rows.push(row);
+                        }
+                    }
+                    Some(archive_event_route_tests::PostListFault::WrongGeneration) => {
+                        if let Some(mut row) = rows.first().cloned() {
+                            row.uid += 1;
+                            let version = &mut row.metadata.as_mut().unwrap().version;
+                            version.mailbox_guid = "c".repeat(32);
+                            version.message_guid = "different-native-guid".into();
+                            rows.push(row);
+                        }
+                    }
+                    None => {}
+                }
+                return BrowserMessageListOutcome {
+                    decision: BrowserMessageListDecision::Listed {
+                        canonical_username: returned_account,
+                        mailbox_name: mailbox_name.into(),
+                        messages: rows,
+                    },
+                    audit_events: vec![],
+                };
+            }
             if let Some(decision) = self.delete_list_decision.lock().unwrap().clone() {
                 return BrowserMessageListOutcome {
                     decision,

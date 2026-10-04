@@ -6,6 +6,7 @@
 
 pub mod after_archive;
 pub mod appearance;
+pub mod archive_event;
 pub mod attachment;
 pub mod auth;
 pub mod autosave;
