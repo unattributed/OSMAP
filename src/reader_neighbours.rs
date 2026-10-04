@@ -24,7 +24,7 @@ pub(crate) struct ReaderNeighbours {
     previous: Option<String>,
     next: Option<String>,
     scope: Option<String>,
-    open_on_select: bool,
+    open_on_select: Option<bool>,
 }
 
 pub(crate) fn query_version_matches(
@@ -325,6 +325,108 @@ impl ReaderNeighbours {
         )
     }
 
+    /// Standalone All neighbours use its validated message prefix, never People
+    /// or a mailbox/date/conversation fallback. Entire-source checks precede filters.
+    pub(crate) fn derive_all_search(
+        account: &str,
+        rendered: &RenderedMessageView,
+        decision: &BrowserMessageSearchDecision,
+        return_to: &str,
+        recover_opened: bool,
+    ) -> Self {
+        let Some((back, path, fields)) = origin(return_to) else {
+            return Self::default();
+        };
+        let unavailable = || Self::unavailable(Some(back.clone()));
+        let Some(mut filters) = crate::mail_navigation::SearchFilterContext::parse(&fields) else {
+            return unavailable();
+        };
+        let BrowserMessageSearchDecision::Listed {
+            canonical_username,
+            mailbox_name,
+            query,
+            results,
+        } = decision
+        else {
+            return unavailable();
+        };
+        if path != "/search"
+            || fields.get("category").map(String::as_str) != Some("all")
+            || fields.get("q").map(|query| query.trim()) != Some(query.as_str())
+            || query.is_empty()
+            || account != canonical_username
+            || mailbox_name != &filters.mailbox
+            || results.is_empty()
+            || !crate::mail_navigation::valid_all_search_messages(results)
+            || mailbox_name
+                .as_ref()
+                .is_some_and(|folder| results.iter().any(|row| &row.mailbox_name != folder))
+            || !valid_rows(results.iter().map(|row| {
+                (
+                    row.mailbox_name.as_str(),
+                    row.uid,
+                    row.date_received.as_str(),
+                    row.metadata.as_ref().map(|metadata| &metadata.version),
+                )
+            }))
+        {
+            return unavailable();
+        }
+        let Some(version) = rendered.metadata.as_ref().map(|metadata| &metadata.version) else {
+            return unavailable();
+        };
+        let mut rows = results.clone();
+        // OnOpen has already confirmed only this exact object Seen. Retain it
+        // temporarily in an Unread navigation snapshot without changing storage
+        // or allowing any other Seen row into the filtered result set.
+        if recover_opened
+            && filters.view.filter == crate::mail_list::MessageFilter::Unread
+            && crate::mail_list::has_flag(&rendered.flags, "\\Seen")
+        {
+            for row in &mut rows {
+                if row.mailbox_name == rendered.mailbox_name
+                    && row.uid == rendered.uid
+                    && row.metadata.as_ref().map(|metadata| &metadata.version) == Some(version)
+                {
+                    row.flags
+                        .retain(|flag| !flag.eq_ignore_ascii_case("\\Seen"));
+                }
+            }
+        }
+        crate::mail_navigation::order_all_search_messages(&mut filters, &mut rows);
+        let Some(index) = rows.iter().position(|row| {
+            row.mailbox_name == rendered.mailbox_name
+                && row.uid == rendered.uid
+                && row.metadata.as_ref().map(|metadata| &metadata.version) == Some(version)
+        }) else {
+            return unavailable();
+        };
+        let link = |index: usize| {
+            rows.get(index).and_then(|row| {
+                let version = &row.metadata.as_ref()?.version;
+                let destination = filters.href(
+                    crate::mail_navigation::SearchTab::All,
+                    query,
+                    Some(index / crate::mail_navigation::ALL_SEARCH_PAGE_SIZE + 1),
+                );
+                let destination = crate::mail_navigation::safe_mail_return(&destination)?;
+                Some(format!(
+                    "/message?mailbox={}&uid={}&mailbox_guid={}&message_guid={}&return_to={}",
+                    url_encode(&row.mailbox_name),
+                    row.uid,
+                    url_encode(&version.mailbox_guid),
+                    url_encode(&version.message_guid),
+                    url_encode(&destination)
+                ))
+            })
+        };
+        Self {
+            back: Some(back), previous: index.checked_sub(1).and_then(link), next: link(index + 1),
+            scope: Some(format!("Previous and Next follow All's filtered message ordering (up to {DEFAULT_MAX_SEARCH_RESULTS} messages). People and Documents are not message neighbours. Results can change between requests.")),
+            open_on_select: None,
+        }
+    }
+
     fn from_ordered(
         rendered: &RenderedMessageView,
         back: &str,
@@ -393,17 +495,23 @@ impl ReaderNeighbours {
             })
         };
         Self { back: Some(back.into()), previous: index.checked_sub(1).and_then(link),
-            next: link(index + 1), open_on_select: false, scope: Some(format!(
+            next: link(index + 1), open_on_select: None, scope: Some(format!(
                 "Previous and Next follow this request's filtered and sorted result snapshot (up to {limit} messages). Mailbox contents can change between requests.")) }
     }
 
     pub(crate) fn set_open_on_select(&mut self, value: bool) {
-        self.open_on_select = value;
+        self.open_on_select = Some(value);
+    }
+
+    /// All carries the same admitted policy snapshot used for Seen recovery.
+    /// Ordinary reader paths retain their existing later policy lookup.
+    pub(crate) fn opening_policy_bound(&self) -> bool {
+        self.open_on_select.is_some()
     }
 
     pub(crate) fn controls_html_with_policy(&self, csrf: &str) -> String {
         let control = |href: &Option<String>, label: &str, symbol: &str| match href {
-            Some(href) if !self.open_on_select => format!(
+            Some(href) if !self.open_on_select.unwrap_or(false) => format!(
                 "<a class=\"button-link\" aria-label=\"{label} message\" href=\"{}\">{symbol}</a>",
                 escape_html(href)
             ),
@@ -413,7 +521,7 @@ impl ReaderNeighbours {
                 "button-link",
                 symbol,
                 false,
-                self.open_on_select,
+                self.open_on_select.unwrap_or(false),
                 Some(&format!("{label} message")),
             ),
             None => format!(

@@ -1048,6 +1048,8 @@ mod tests {
         >,
         delete_list_decision: Arc<Mutex<Option<BrowserMessageListDecision>>>,
         mark_read_store: Option<crate::mark_read::Store>,
+        mark_read_policy_loads: Arc<std::sync::atomic::AtomicUsize>,
+        mark_read_policy_sequence: Option<Arc<Mutex<Vec<crate::mark_read::Policy>>>>,
         contacts_store: Option<crate::contacts::ContactStore>,
         draft_store: Option<crate::draft::FileDraftStore>,
         fail_draft_delete: Option<String>,
@@ -1096,6 +1098,8 @@ mod tests {
                 delete_results: Arc::new(Mutex::new(std::collections::VecDeque::new())),
                 delete_list_decision: Arc::new(Mutex::new(None)),
                 mark_read_store: None,
+                mark_read_policy_loads: Arc::new(std::sync::atomic::AtomicUsize::new(0)),
+                mark_read_policy_sequence: None,
                 contacts_store: None,
                 draft_store: None,
                 send_journal: fixture_send_journal(),
@@ -1311,6 +1315,24 @@ mod tests {
             &self,
             session: &ValidatedSession,
         ) -> Result<crate::mark_read::Preference, crate::mark_read::Error> {
+            self.mark_read_policy_loads
+                .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+            if let Some(sequence) = &self.mark_read_policy_sequence {
+                let mut policies = sequence
+                    .lock()
+                    .map_err(|_| crate::mark_read::Error::Unavailable)?;
+                if policies.is_empty() || policies.len() > 2 {
+                    return Err(crate::mark_read::Error::Invalid);
+                }
+                let policy = policies[0];
+                if policies.len() > 1 {
+                    policies.remove(0);
+                }
+                return Ok(crate::mark_read::Preference {
+                    revision: 1,
+                    policy,
+                });
+            }
             self.mark_read_store
                 .as_ref()
                 .ok_or(crate::mark_read::Error::Unavailable)?

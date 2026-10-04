@@ -134,6 +134,68 @@ where
         ) else {
             return ReaderNeighbours::unavailable(Some(origin.clone()));
         };
+        // All has a separate twenty-row category window and finite filter
+        // context; parse it before the ordinary mail-list five-page model.
+        if path == "/search" && fields.get("category").map(String::as_str) == Some("all") {
+            let Some(filters) = crate::mail_navigation::SearchFilterContext::parse(&fields) else {
+                return ReaderNeighbours::unavailable(Some(origin.clone()));
+            };
+            let Some(query) = fields
+                .get("q")
+                .map(|query| query.trim())
+                .filter(|query| !query.is_empty())
+            else {
+                return ReaderNeighbours::unavailable(Some(origin.clone()));
+            };
+            let (guard, event) = match self.acquire_search_budget(context, session) {
+                Ok(value) => value,
+                Err(response) => {
+                    audit.extend(response.audit_events);
+                    return ReaderNeighbours::unavailable(Some(origin.clone()));
+                }
+            };
+            audit.push(event);
+            let deadline = std::time::Instant::now()
+                + std::time::Duration::from_secs(
+                    self.policy.expensive_request_timeout_secs.clamp(1, 30),
+                );
+            let outcome = self.gateway.search_messages(
+                context,
+                session,
+                filters.mailbox.as_deref(),
+                query,
+                MessageSearchField::All,
+            );
+            audit.extend(outcome.audit_events);
+            let mut open_on_select = false;
+            let mut neighbours = if std::time::Instant::now() < deadline {
+                let recover_opened = self
+                    .gateway
+                    .load_mark_read_policy(session)
+                    .is_ok_and(|preference| preference.policy == crate::mark_read::Policy::OnOpen);
+                open_on_select = recover_opened;
+                if std::time::Instant::now() < deadline {
+                    ReaderNeighbours::derive_all_search(
+                        account,
+                        rendered,
+                        &outcome.decision,
+                        &origin,
+                        recover_opened,
+                    )
+                } else {
+                    ReaderNeighbours::unavailable(Some(origin.clone()))
+                }
+            } else {
+                ReaderNeighbours::unavailable(Some(origin.clone()))
+            };
+            audit.push(self.release_request_budget(guard, "message_search", context, session));
+            if std::time::Instant::now() >= deadline {
+                neighbours = ReaderNeighbours::unavailable(Some(origin.clone()));
+                open_on_select = false;
+            }
+            neighbours.set_open_on_select(open_on_select);
+            return neighbours;
+        }
         let mut origin_request = request.clone();
         origin_request.query_params = fields.clone();
         let preferences = self.gateway.load_reading_preferences(context, session).ok();
@@ -1134,13 +1196,15 @@ where
                     &rendered,
                     &mut audit_events,
                 );
-                neighbours.set_open_on_select(
-                    self.gateway
-                        .load_mark_read_policy(&validated_session)
-                        .is_ok_and(|preference| {
-                            preference.policy == crate::mark_read::Policy::OnOpen
-                        }),
-                );
+                if !neighbours.opening_policy_bound() {
+                    neighbours.set_open_on_select(
+                        self.gateway
+                            .load_mark_read_policy(&validated_session)
+                            .is_ok_and(|preference| {
+                                preference.policy == crate::mark_read::Policy::OnOpen
+                            }),
+                    );
+                }
                 let archive_mailbox_name = self.validated_archive_mailbox_name(
                     context,
                     &validated_session,

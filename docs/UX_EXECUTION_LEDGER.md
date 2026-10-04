@@ -5746,3 +5746,113 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   ignored locally), preserving separate actual native21 evidence and unchanged
   gates. V10 Rust scanner inputs are unchanged by this CSS-only repair. Final
   deployed responsive/synthetic visual results remain pending until execution.
+
+### 2026-10-04 UTC — All filters matching installed functional layout result
+
+- Signed92e6ffff7519062db8b7f868141c0036cc579cdf verifies Good Shopkeeper;
+  normal commit/push hooks pass and fresh origin UX equality is exact0/0 with
+  clean source at synchronization. All310 frozen native inputs match signed
+  Git blobs. Matching app3769125fe3c007004a05e0d74c3fe60708c2c683b8d1b7f4794452d338f850dc
+  actually replaces web9e411 on obsd1 only; exclusive backup
+  /var/backups/osmap-ux-s02-all-search-92e6ffff7519-20261004. Only osmap_serve
+  restarts. Environment hashes, retention policy, native agents and unrelated
+  service states remain preserved; compatible authoritative helper unchanged.
+- Actual final external Edge GET probe exits0/PASS. Real Folder, Sender and UTC
+  received-date forms return six matches and measured zero nonmatches; plain,
+  attachment-free and independently observed six-Unread predicates apply.
+  Actual People query/All return, filtered current-GUID Manual Open/Back and
+  Clear search pass. Eighteen opened native panels and keyboard controls fit
+  360/768/1440, including the formerly overflowing Date at768.
+- Ten actual public query/filter-only crops cover light/dark/system rendering
+  at three widths and empty All. Root inspected all ten and verified hashes;
+  controls/text/focus stay visible without clipping. Theme rendering changes
+  only local DOM/media, not persisted preference. No whole-page final-design
+  acceptance or private message/body screenshot claim.
+- Six current identities, Seen/Flagged observations and saved reading/settings
+  state are unchanged. Owned synthetic postauth session cleanup passes;
+  zero POST/Send/blocked requests, no cookie/CSRF/HTML/body/trace retention.
+  This is authenticated functional browser evidence, not real password/TOTP
+  login or human acceptance. Full IMAP flag preservation has separate native
+  proof. Retain prior instrument FAIL and actual Date FAIL without relabelling.
+- Evidence under all-search/filters: layout-synchronization.json,
+  signed-native-layout-parity.json, activation/layout-activate.log,
+  activation/installed-get-filters-layout-attempt1/result.json and
+  visual-layout-review.json. S02-01 All-filter engineering remediation is
+  delivered with actionable UAT; human NOT RUN. Documents/S08, whole S02,
+  All-origin Previous/Next, historical helper-refusal cause, actual Send,
+  protected-provider acceptance and epic remain OPEN.
+
+### 2026-10-04 UTC — S02-02 All-origin navigation actual RED and repair order
+
+- Preserve prior ordinary filtered-reader, conversation and Back-focus repairs;
+  this is a concrete remaining All-origin gap, not a repeat of delivered work.
+  Allowed source/test scope and immutable base92e6 recorded in
+  all-search/reader-navigation/work-order.json; accepted signed R2 anchor and
+  all32 plan hashes verify again, current manifest equals the signed anchor.
+- Developer appends two actual generated-link tests before production edits.
+  Independent RED review943f87fbd55afe6536d802367a4f48a1abb5e9952af70b8be5b38c12f24a76a4
+  verifies legitimate owned account/query/folder/GUID fixtures and typed Unknown
+  MIME predicate; no malformed fixture or execution claim. Root actually compiles
+  and executes exactly two: zero PASS/two FAIL/zero ignored, exit101. Existing
+  production bytes are unchanged during RED; log
+  1f238e10309d560ead4d2772b5dafae027059ef38488992be960dcbfa7ce6ffa.
+- First real generated All opening returns owned reader200 but no Next for its
+  second Message, with an owned Person and opposing received-date order. Second
+  actual125-row listing/page6/7 opens UID101 correctly but Next is unavailable;
+  it also specifies boundary20-to21 and Previous100 context after the repair.
+  No source build failure is labelled RED; the expected navigation assertions
+  fail. Source diagnosis is category exclusion and ordinary five-page parsing.
+- Engineer a dedicated finite All-origin branch before ordinary list parsing,
+  reuse All mailbox/UID order and20-row paging, retain six predicates and Back,
+  validate whole250-bounded snapshot/account/query/folder before projection and
+  bind current rendered GUID. People/Documents never become message neighbours.
+  Preserve request budgets/deadlines, authentication/CSRF, Manual/On-open policy,
+  preferences and flags. No mailbox fallback, retries, ignored authority or Send.
+  Actual GREEN, negative cases, native filtered Next/Previous, independent review,
+  signed sync, exact matching installation and browser UAT remain pending.
+- First candidate actually executes all25 All HTTP cases PASS/0 fail/0 ignored.
+  Independent source review b872d5540d29618209cfb140b2c9092d6047bccec29292150660fa2ac8bb5287
+  nevertheless finds a concrete P2: the new All branch loads Mark Read policy
+  for recovery, while the existing outer reader reloads it for arrow controls.
+  A concurrent policy change could mix snapshots and repeat work outside the
+  branch deadline. This is a real consistency finding, not added authority or
+  GET mutation. Do not close the candidate from focused GREEN alone.
+- Correct narrowly by carrying the first admitted All policy through neighbours
+  and preserving the outer policy load only for ordinary unbound paths. Extend
+  allowed scope solely to src/http.rs cfg(test) StubGateway for a counted,
+  two-value synthetic policy sequence and a discriminating route assertion.
+  Production http.rs is untouched; original opening endpoints still enforce
+  fresh authentication/CSRF/policy. Preserve prior candidate/finding/GREEN,
+  rerun matching source tests and review after the actual correction. No new
+  compiled RED is claimed for this review finding before its test executes.
+
+### 2026-10-04 UTC — S02-02 matching corrected source execution
+
+- The policy-snapshot correction actually passes all26 All HTTP cases. Actual
+  aggregate attempt1 passes1326 library cases with29 explicitly ignored native
+  fixtures, then fails Clippy on an obsolete unused BTreeMap import. Preserve
+  this failure; delete only that import, with no lint waiver or hook bypass.
+  Independent attempt3 recheck c2cd2e9d47712bf8f74adcd35aa262a8875761015771ada22c771b8017e3b82d
+  confirms the exact seven-file candidate and unchanged executable guards.
+- Rebuild final corrected source natively from all310 frozen compile inputs.
+  Actual native attempt2 exits0:26 All HTTP plus1 isolated authenticated
+  helper/Dovecot fixture PASS, zero failures/ignored. Actual filtered generated
+  Next000-to002 and Previous002-to000 follow the same bounded All order and
+  current GUIDs, retain predicates/Back, and preserve source/owned binaries,
+  flags/preferences/contact storage and cleanup. No operator mail, Send or
+  private crypto; same-UID native fixture is not distinct-UID confinement.
+- Final native app45b55f36534e8f62158ffb15b31afdef9937179558abe83727bfa5ac737df0ba,
+  test3daf134ef8335451f9ce68813a5740859f00877db6b71e8faa1997c2d3ab9aa0,
+  manifest52c6115059421bfe1c66e7cc3e03066c98ef1065e58fb8a977fc4707f19d752d;
+  log028ee8030a9396d1820a9cef4b9553bea8432c95e2fc37387ddcb3ecc196a135.
+  Earlier native attempt1 remains retained, not substituted for final source.
+  Actual matching aggregate attempt2, signed sync, web activation and installed
+  read-only public-fixture Previous/Next results remain pending.
+
+- Final corrected-source make acceptance-check actually exits0, including
+ 1326 PASS/zero failed/29 explicit local native ignores, Clippy and unchanged
+ security/V10/V13 bounded gates. Separate matching native27 proves actual native
+ execution; ignored local fixtures are not called executed. No credential-backed
+ strict release or human acceptance is inferred. Final review and all14 scoped
+ changed files are ready for signed commit; installation/browser results remain
+ pending and must be recorded after their execution.

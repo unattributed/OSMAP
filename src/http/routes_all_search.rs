@@ -1,10 +1,9 @@
 //! Bounded mixed search over authenticated mail summaries and saved contacts.
 //! Documents remain unavailable until their actual S08 adapter is implemented.
 use super::*;
-use std::collections::{BTreeMap, BTreeSet};
 use std::time::{Duration, Instant};
 
-const PAGE_SIZE: usize = 20;
+const PAGE_SIZE: usize = crate::mail_navigation::ALL_SEARCH_PAGE_SIZE;
 const MAX_PAGES: usize = (crate::mailbox::DEFAULT_MAX_SEARCH_RESULTS
     + crate::contacts::MAX_CONTACTS)
     .div_ceil(PAGE_SIZE);
@@ -91,7 +90,7 @@ impl<G: BrowserGateway> BrowserApp<G> {
                 && mailbox_name == filters.mailbox
                 && echoed == query
                 && Instant::now() < deadline
-                && valid_messages(&results)
+                && crate::mail_navigation::valid_all_search_messages(&results)
                 && filters
                     .mailbox
                     .as_ref()
@@ -99,12 +98,7 @@ impl<G: BrowserGateway> BrowserApp<G> {
             {
                 // Deterministic type-first ordering, then mailbox/UID. This
                 // is not a fabricated cross-category relevance score.
-                filters.view.order_search(&mut results);
-                results.sort_by(|left, right| {
-                    left.mailbox_name
-                        .cmp(&right.mailbox_name)
-                        .then(left.uid.cmp(&right.uid))
-                });
+                crate::mail_navigation::order_all_search_messages(&mut filters, &mut results);
                 Category::Available(results)
             }
             _ => Category::Unavailable,
@@ -149,53 +143,6 @@ impl<G: BrowserGateway> BrowserApp<G> {
             audit_events,
         }
     }
-}
-
-fn valid_messages(results: &[MessageSearchResult]) -> bool {
-    let policy = crate::mailbox::MessageSearchPolicy::default();
-    if results.len() > policy.max_results {
-        return false;
-    }
-    let mut identities = BTreeSet::new();
-    let mut versions = BTreeSet::new();
-    let mut mailbox_versions = BTreeMap::new();
-    results.iter().all(|row| {
-        if crate::mailbox::MailboxEntry::new(
-            crate::mailbox::MailboxListingPolicy::default(),
-            &row.mailbox_name,
-        )
-        .is_err()
-            || row.uid == 0
-            || row.uid > u64::from(u32::MAX)
-            || !identities.insert((&row.mailbox_name, row.uid))
-            || row.date_received.len() > policy.message_date_max_len
-            || row.date_received.chars().any(char::is_control)
-            || [&row.subject, &row.from].iter().any(|value| {
-                value.as_ref().is_some_and(|text| {
-                    text.len() > policy.header_value_max_len || text.chars().any(char::is_control)
-                })
-            })
-        {
-            return false;
-        }
-        if let Some(metadata) = &row.metadata {
-            let version = &metadata.version;
-            if crate::message_metadata::MessageVersion::new(
-                version.mailbox_guid.clone(),
-                version.message_guid.clone(),
-            )
-            .is_err()
-                || !versions.insert((&row.mailbox_name, &version.message_guid))
-            {
-                return false;
-            }
-            match mailbox_versions.insert(&row.mailbox_name, &version.mailbox_guid) {
-                Some(previous) if previous != &version.mailbox_guid => return false,
-                _ => {}
-            }
-        }
-        true
-    })
 }
 
 enum Row<'a> {

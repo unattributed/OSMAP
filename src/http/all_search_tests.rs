@@ -1303,3 +1303,814 @@ fn all_search_people_query_and_pagination_submit_retained_mail_context_without_m
             && !all_href.contains("page=")
     );
 }
+
+// All navigation uses real generated route controls against an owned synthetic
+// snapshot. These fixtures do not dispatch transport, cryptography or Send.
+fn all_navigation_app(
+    fixture: &AllFixture,
+    rows: Vec<MessageSearchResult>,
+) -> BrowserApp<StubGateway> {
+    let summaries = rows
+        .iter()
+        .map(|row| crate::mailbox::MessageSummary {
+            to: None,
+            metadata: row.metadata.clone(),
+            mailbox_name: row.mailbox_name.clone(),
+            uid: row.uid,
+            flags: row.flags.clone(),
+            date_received: row.date_received.clone(),
+            size_virtual: row.size_virtual,
+            subject: row.subject.clone(),
+            from: row.from.clone(),
+        })
+        .collect();
+    BrowserApp::new(
+        HttpPolicy::default(),
+        StubGateway {
+            contacts_store: Some(fixture.contacts.clone()),
+            message_list_override: Some(summaries),
+            all_search_override: Some(BrowserMessageSearchDecision::Listed {
+                canonical_username: "alice@example.com".into(),
+                mailbox_name: Some("INBOX".into()),
+                query: "Public".into(),
+                results: rows,
+            }),
+            ..StubGateway::default()
+        },
+    )
+}
+fn all_navigation_fields(href: &str) -> BTreeMap<String, String> {
+    crate::http_form::parse_urlencoded_form(
+        href.split_once('?').unwrap().1.as_bytes(),
+        crate::mail_navigation::MAIL_RETURN_MAX_FIELDS,
+        2048,
+    )
+    .unwrap()
+}
+fn all_navigation_row_href(body: &str, uid: u64) -> String {
+    body.split("<a ")
+        .find_map(|anchor| {
+            let tag = anchor.split_once('>')?.0;
+            if !tag.contains("class=\"message-subject-link\"") || !tag.contains("href=\"/message?")
+            {
+                return None;
+            }
+            let href = all_html_attribute(tag, "href");
+            let fields = all_navigation_fields(&href);
+            (fields.get("uid") == Some(&uid.to_string())
+                && fields.get("mailbox").map(String::as_str) == Some("INBOX"))
+            .then_some(href)
+        })
+        .expect("actual owned All message opening link")
+}
+fn all_navigation_control(body: &str, label: &str) -> Option<String> {
+    body.split("<a ").find_map(|anchor| {
+        let tag = anchor.split_once('>')?.0;
+        tag.contains(&format!("aria-label=\"{label} message\""))
+            .then(|| all_html_attribute(tag, "href"))
+    })
+}
+fn all_navigation_assert_target(
+    href: &str,
+    uid: u64,
+    expected_page: usize,
+    origin: &BTreeMap<String, String>,
+) {
+    assert!(href.starts_with("/message?"));
+    let fields = all_navigation_fields(href);
+    assert_eq!(fields.get("mailbox").map(String::as_str), Some("INBOX"));
+    assert_eq!(fields.get("uid"), Some(&uid.to_string()));
+    let version = StubGateway::fixture_metadata("alice@example.com", "INBOX", uid).version;
+    assert_eq!(fields.get("mailbox_guid"), Some(&version.mailbox_guid));
+    assert_eq!(fields.get("message_guid"), Some(&version.message_guid));
+    let back = all_navigation_fields(fields.get("return_to").unwrap());
+    for (name, value) in origin {
+        if name != "page" {
+            assert_eq!(back.get(name), Some(value), "retained {name}");
+        }
+    }
+    assert_eq!(back.get("page"), Some(&expected_page.to_string()));
+    assert!(!back.keys().any(|name| matches!(
+        name.as_str(),
+        "sort" | "dir" | "selected_uid" | "selected_mailbox" | "scope" | "field"
+    )));
+}
+fn all_navigation_row(uid: u64, date: &str) -> MessageSearchResult {
+    let mut row = all_row("INBOX", uid, &format!("Public message {uid:03}"));
+    row.date_received = date.into();
+    row.metadata.as_mut().unwrap().attachment_count = Some(0);
+    // Unknown MIME metadata with complete GUIDs is not an absent identity.
+    assert_eq!(
+        row.metadata.as_ref().unwrap().protection,
+        crate::message_metadata::MessageProtection::Unknown
+    );
+    row
+}
+const ALL_NAVIGATION_ORIGIN: &str="/search?category=all&q=Public&mailbox=INBOX&filter=unread&from=sender%40example.test&after=2026-10-01&before=2026-10-04&attachment=without&pgp=unknown";
+
+#[test]
+fn all_reader_navigation_follows_generated_filtered_order_skips_people_and_preserves_manual_flags()
+{
+    let fixture = AllFixture::new();
+    fixture.add(
+        "alice@example.com",
+        "Public owned person",
+        "public-person@example.test",
+    );
+    let contacts_before = fixture.contacts.load("alice@example.com").unwrap();
+    // UID order opposes newest-first date order and the backend's vector order.
+    let app = all_navigation_app(
+        &fixture,
+        vec![
+            all_navigation_row(10, "2026-10-03 12:00:00 +0000"),
+            all_navigation_row(9, "2026-10-02 12:00:00 +0000"),
+        ],
+    );
+    let flags_before = [9, 10].map(|uid| {
+        app.gateway
+            .fixture_message_flags("alice@example.com", "INBOX", uid)
+    });
+    let listing = all_get(&app, ALL_NAVIGATION_ORIGIN);
+    assert_eq!(listing.response.status_code, 200);
+    assert!(
+        body_text(&listing).contains("Messages (2)") && body_text(&listing).contains("People (1)")
+    );
+    let opening = all_navigation_row_href(&body_text(&listing), 9);
+    let first = all_get(&app, &opening);
+    assert_eq!(first.response.status_code, 200);
+    assert!(body_text(&first).contains("Synthetic message 9 in INBOX for alice@example.com."));
+    let next = all_navigation_control(&body_text(&first), "Next");
+    assert!(next.is_some(),"All's first generated Message must offer its second current Message, not disabled navigation");
+    assert!(all_navigation_control(&body_text(&first), "Previous").is_none());
+    let next = next.unwrap();
+    let origin = all_navigation_fields(ALL_NAVIGATION_ORIGIN);
+    all_navigation_assert_target(&next, 10, 1, &origin);
+    let second = all_get(&app, &next);
+    assert_eq!(second.response.status_code, 200);
+    assert!(body_text(&second).contains("Synthetic message 10 in INBOX for alice@example.com."));
+    assert!(
+        all_navigation_control(&body_text(&second), "Next").is_none(),
+        "the saved Person is not a message neighbour"
+    );
+    let previous = all_navigation_control(&body_text(&second), "Previous")
+        .expect("actual preceding owned Message");
+    all_navigation_assert_target(&previous, 9, 1, &origin);
+    let returned = all_get(&app, &previous);
+    assert_eq!(returned.response.status_code, 200);
+    let back = all_rendered_back(&body_text(&returned));
+    assert_eq!(all_get(&app, &back).response.status_code, 200);
+    for response in [&first, &second, &returned] {
+        assert!(
+            !response
+                .audit_events
+                .iter()
+                .any(|event| event.action == "stub_message_list"),
+            "All must not fall back to a mailbox ordering"
+        );
+        assert_eq!(
+            response
+                .audit_events
+                .iter()
+                .filter(|event| event.action == "stub_all_search")
+                .count(),
+            1
+        );
+        assert_eq!(
+            response
+                .audit_events
+                .iter()
+                .filter(|event| event.action == "request_budget_acquired")
+                .count(),
+            2
+        );
+        assert_eq!(
+            response
+                .audit_events
+                .iter()
+                .filter(|event| event.action == "request_budget_released")
+                .count(),
+            2
+        );
+    }
+    for (index, uid) in [9, 10].into_iter().enumerate() {
+        assert_eq!(
+            app.gateway
+                .fixture_message_flags("alice@example.com", "INBOX", uid),
+            flags_before[index]
+        );
+    }
+    assert_eq!(
+        fixture.contacts.load("alice@example.com").unwrap(),
+        contacts_before
+    );
+    assert_eq!(app.request_budgets.mailbox_workers.active_count(), 0);
+    assert_eq!(app.request_budgets.search_workers.active_count(), 0);
+}
+
+#[test]
+fn all_reader_navigation_uses_full_bounded_snapshot_and_valid_twenty_row_page_six_context() {
+    let fixture = AllFixture::new();
+    fixture.add(
+        "alice@example.com",
+        "Public owned person",
+        "public-person@example.test",
+    );
+    let rows = (1..=125)
+        .rev()
+        .map(|uid| {
+            all_navigation_row(
+                uid,
+                if uid % 2 == 0 {
+                    "2026-10-03 12:00:00 +0000"
+                } else {
+                    "2026-10-02 12:00:00 +0000"
+                },
+            )
+        })
+        .collect();
+    let app = all_navigation_app(&fixture, rows);
+    let contacts_before = fixture.contacts.load("alice@example.com").unwrap();
+    let origin = all_navigation_fields(ALL_NAVIGATION_ORIGIN);
+    let flags_before = [20, 21, 100, 101, 102].map(|uid| {
+        app.gateway
+            .fixture_message_flags("alice@example.com", "INBOX", uid)
+    });
+    let listing = all_get(&app, &format!("{ALL_NAVIGATION_ORIGIN}&page=6"));
+    assert_eq!(listing.response.status_code, 200);
+    assert!(
+        body_text(&listing).contains("Messages (125)")
+            && body_text(&listing).contains("Page 6 of 7")
+    );
+    assert_eq!(
+        body_text(&listing)
+            .matches("class=\"search-result-row\"")
+            .count(),
+        20
+    );
+    let opening = all_navigation_row_href(&body_text(&listing), 101);
+    let read = all_get(&app, &opening);
+    assert_eq!(read.response.status_code, 200);
+    assert!(body_text(&read).contains("Synthetic message 101 in INBOX for alice@example.com."));
+    let next = all_navigation_control(&body_text(&read), "Next");
+    assert!(
+        next.is_some(),
+        "valid All page6 must not inherit the ordinary five-page/50-row reader limit"
+    );
+    all_navigation_assert_target(next.as_ref().unwrap(), 102, 6, &origin);
+    let previous = all_navigation_control(&body_text(&read), "Previous").unwrap();
+    all_navigation_assert_target(&previous, 100, 5, &origin);
+    let next_read = all_get(&app, next.as_ref().unwrap());
+    assert_eq!(next_read.response.status_code, 200);
+    assert!(body_text(&next_read).contains("Synthetic message 102 in INBOX for alice@example.com."));
+    let previous_read = all_get(&app, &previous);
+    assert_eq!(previous_read.response.status_code, 200);
+    assert!(
+        body_text(&previous_read).contains("Synthetic message 100 in INBOX for alice@example.com.")
+    );
+    let back = all_rendered_back(&body_text(&previous_read));
+    assert_eq!(
+        all_navigation_fields(&back).get("page").map(String::as_str),
+        Some("5")
+    );
+    let restored = all_get(&app, &back);
+    assert_eq!(restored.response.status_code, 200);
+    assert!(
+        body_text(&restored).contains("Public message 100")
+            && !body_text(&restored).contains("Public message 101")
+    );
+    // A native All-page boundary uses20 rows, not the Messages page size50.
+    let first_page = all_get(&app, ALL_NAVIGATION_ORIGIN);
+    assert_eq!(first_page.response.status_code, 200);
+    let twentieth = all_get(&app, &all_navigation_row_href(&body_text(&first_page), 20));
+    assert_eq!(twentieth.response.status_code, 200);
+    let twenty_first = all_navigation_control(&body_text(&twentieth), "Next").unwrap();
+    all_navigation_assert_target(&twenty_first, 21, 2, &origin);
+    let opened = all_get(&app, &twenty_first);
+    assert_eq!(opened.response.status_code, 200);
+    assert_eq!(
+        all_navigation_fields(&all_rendered_back(&body_text(&opened)))
+            .get("page")
+            .map(String::as_str),
+        Some("2")
+    );
+    for response in [&read, &next_read, &previous_read, &twentieth, &opened] {
+        assert!(!response
+            .audit_events
+            .iter()
+            .any(|event| event.action == "stub_message_list"));
+    }
+    for (index, uid) in [20, 21, 100, 101, 102].into_iter().enumerate() {
+        assert_eq!(
+            app.gateway
+                .fixture_message_flags("alice@example.com", "INBOX", uid),
+            flags_before[index]
+        );
+    }
+    assert_eq!(
+        fixture.contacts.load("alice@example.com").unwrap(),
+        contacts_before
+    );
+    assert_eq!(app.request_budgets.mailbox_workers.active_count(), 0);
+    assert_eq!(app.request_budgets.search_workers.active_count(), 0);
+}
+
+#[test]
+fn all_reader_navigation_refuses_whole_invalid_snapshot_before_predicates_and_current_stale_identity(
+) {
+    let fixture = AllFixture::new();
+    let rows = vec![
+        all_navigation_row(9, "2026-10-02 12:00:00 +0000"),
+        all_navigation_row(11, "2026-10-03 12:00:00 +0000"),
+    ];
+    let mut app = all_navigation_app(&fixture, rows.clone());
+    let listing = all_get(&app, ALL_NAVIGATION_ORIGIN);
+    assert_eq!(listing.response.status_code, 200);
+    let opening = all_navigation_row_href(&body_text(&listing), 9);
+    let valid = app.gateway.all_search_override.clone().unwrap();
+    let mut refused = Vec::new();
+    for kind in [
+        "foreign-account",
+        "wrong-query",
+        "wrong-scope",
+        "wrong-folder-hidden",
+        "missing-guid-hidden",
+        "invalid-guid-hidden",
+        "duplicate-uid",
+        "duplicate-guid-hidden",
+        "guid-folder-alias",
+        "bad-header-hidden",
+        "bad-time-hidden",
+        "oversize",
+    ] {
+        let mut decision = valid.clone();
+        let BrowserMessageSearchDecision::Listed {
+            canonical_username,
+            mailbox_name,
+            query,
+            results,
+        } = &mut decision
+        else {
+            unreachable!()
+        };
+        match kind {
+            "foreign-account" => *canonical_username = "bob@example.com".into(),
+            "wrong-query" => *query = "Different".into(),
+            "wrong-scope" => *mailbox_name = None,
+            "wrong-folder-hidden" => {
+                results[1].mailbox_name = "Sent".into();
+                results[1].flags.push("\\Seen".into());
+            }
+            "missing-guid-hidden" => {
+                results[1].metadata = None;
+                results[1].flags.push("\\Seen".into());
+            }
+            "invalid-guid-hidden" => {
+                results[1].metadata.as_mut().unwrap().version.message_guid = "invalid\nGUID".into();
+                results[1].flags.push("\\Seen".into());
+            }
+            "duplicate-uid" => results.push(results[0].clone()),
+            "duplicate-guid-hidden" => {
+                results[1].metadata = results[0].metadata.clone();
+                results[1].flags.push("\\Seen".into());
+            }
+            "guid-folder-alias" => {
+                *mailbox_name = None;
+                results[1].mailbox_name = "Sent".into();
+            }
+            "bad-header-hidden" => {
+                results[1].from = Some("bad\r\nHeader".into());
+                results[1].flags.push("\\Seen".into());
+            }
+            "bad-time-hidden" => {
+                results[1].date_received = "not a timestamp".into();
+                results[1].flags.push("\\Seen".into());
+            }
+            "oversize" => {
+                *results = (1..=251)
+                    .map(|uid| all_navigation_row(uid, "2026-10-03 12:00:00 +0000"))
+                    .collect()
+            }
+            _ => unreachable!(),
+        }
+        refused.push((kind, decision));
+    }
+    let before = [9, 11].map(|uid| {
+        app.gateway
+            .fixture_message_flags("alice@example.com", "INBOX", uid)
+    });
+    for (kind, decision) in refused {
+        app.gateway.all_search_override = Some(decision);
+        let read = all_get(&app, &opening);
+        assert_eq!(
+            read.response.status_code, 200,
+            "current reader remains independently valid: {kind}"
+        );
+        assert!(
+            all_navigation_control(&body_text(&read), "Next").is_none(),
+            "{kind}"
+        );
+        assert!(
+            all_navigation_control(&body_text(&read), "Previous").is_none(),
+            "{kind}"
+        );
+        assert!(!read
+            .audit_events
+            .iter()
+            .any(|event| event.action == "stub_message_list"));
+        assert_eq!(
+            read.audit_events
+                .iter()
+                .filter(|event| event.action == "request_budget_acquired")
+                .count(),
+            read.audit_events
+                .iter()
+                .filter(|event| event.action == "request_budget_released")
+                .count()
+        );
+    }
+    // Isolate reverse GUID-to-folder validation with a genuinely unscoped
+    // generated All link and a matching None echo; scope refusal cannot mask it.
+    let mut unscoped = valid.clone();
+    let BrowserMessageSearchDecision::Listed { mailbox_name, .. } = &mut unscoped else {
+        unreachable!()
+    };
+    *mailbox_name = None;
+    app.gateway.all_search_override = Some(unscoped.clone());
+    let unscoped_list = all_get(&app, "/search?category=all&q=Public&filter=unread");
+    assert_eq!(unscoped_list.response.status_code, 200);
+    let unscoped_open = all_navigation_row_href(&body_text(&unscoped_list), 9);
+    let baseline = all_get(&app, &unscoped_open);
+    assert_eq!(baseline.response.status_code, 200);
+    assert!(all_navigation_control(&body_text(&baseline), "Next").is_some());
+    let BrowserMessageSearchDecision::Listed { results, .. } = &mut unscoped else {
+        unreachable!()
+    };
+    results[1].mailbox_name = "Sent".into();
+    assert_eq!(
+        results[0].metadata.as_ref().unwrap().version.mailbox_guid,
+        results[1].metadata.as_ref().unwrap().version.mailbox_guid
+    );
+    app.gateway.all_search_override = Some(unscoped);
+    let alias = all_get(&app, &unscoped_open);
+    assert_eq!(alias.response.status_code, 200);
+    assert!(all_navigation_control(&body_text(&alias), "Next").is_none());
+    assert!(all_navigation_control(&body_text(&alias), "Previous").is_none());
+    assert!(!alias
+        .audit_events
+        .iter()
+        .any(|event| event.action == "stub_message_list"));
+    app.gateway.all_search_override = Some(valid);
+    let stale = opening.replace("message_guid=synthetic-", "message_guid=stale-synthetic-");
+    assert_ne!(stale, opening);
+    let read = all_get(&app, &stale);
+    assert_eq!(read.response.status_code, 503);
+    assert!(!body_text(&read).contains("Synthetic message 9"));
+    for (index, uid) in [9, 11].into_iter().enumerate() {
+        assert_eq!(
+            app.gateway
+                .fixture_message_flags("alice@example.com", "INBOX", uid),
+            before[index]
+        );
+    }
+    assert_eq!(app.request_budgets.mailbox_workers.active_count(), 0);
+    assert_eq!(app.request_budgets.search_workers.active_count(), 0);
+}
+
+#[test]
+fn all_reader_navigation_rejects_ignored_authority_context_without_mailbox_fallback() {
+    let fixture = AllFixture::new();
+    let app = all_navigation_app(
+        &fixture,
+        vec![
+            all_navigation_row(9, "2026-10-03 12:00:00 +0000"),
+            all_navigation_row(11, "2026-10-03 12:00:00 +0000"),
+        ],
+    );
+    let version = StubGateway::fixture_metadata("alice@example.com", "INBOX", 9).version;
+    for suffix in [
+        "&sort=subject",
+        "&dir=asc",
+        "&scope=all",
+        "&field=subject",
+        "&selected_uid=9",
+        "&opened_read=1",
+        "&page=24",
+    ] {
+        let destination = format!("{ALL_NAVIGATION_ORIGIN}{suffix}");
+        let opening = format!(
+            "/message?mailbox=INBOX&uid=9&mailbox_guid={}&message_guid={}&return_to={}",
+            url_encode(&version.mailbox_guid),
+            url_encode(&version.message_guid),
+            url_encode(&destination)
+        );
+        let read = all_get(&app, &opening);
+        assert_eq!(read.response.status_code, 200);
+        assert!(
+            all_navigation_control(&body_text(&read), "Next").is_none(),
+            "{suffix}"
+        );
+        assert!(
+            !read
+                .audit_events
+                .iter()
+                .any(|event| matches!(event.action, "stub_message_list" | "stub_all_search")),
+            "{suffix}"
+        );
+    }
+    assert_eq!(app.request_budgets.mailbox_workers.active_count(), 0);
+    assert_eq!(app.request_budgets.search_workers.active_count(), 0);
+}
+
+fn all_navigation_open_control(body: &str, label: &str) -> Option<BTreeMap<String, String>> {
+    let form = body
+        .split("<form ")
+        .find(|form| {
+            form.split_once("</form>").is_some_and(|(form, _)| {
+                form.contains(&format!("aria-label=\"{label} message\""))
+                    && form.contains("action=\"/message/open\"")
+            })
+        })?
+        .split_once("</form>")?
+        .0;
+    let fields: BTreeMap<_, _> = form
+        .split("<input ")
+        .skip(1)
+        .map(|input| {
+            let tag = input.split_once('>').unwrap().0;
+            (
+                all_html_attribute(tag, "name"),
+                all_html_attribute(tag, "value"),
+            )
+        })
+        .collect();
+    assert_eq!(fields.len(), 6);
+    Some(fields)
+}
+
+#[test]
+fn all_reader_navigation_on_open_uses_authenticated_native_forms_and_only_recovers_current_seen_row(
+) {
+    let fixture = AllFixture::new();
+    let store = crate::mark_read::Store::new(fixture.root.join("mark-read"));
+    store
+        .save("alice@example.com", 0, crate::mark_read::Policy::OnOpen)
+        .unwrap();
+    let mut app = BrowserApp::new(
+        HttpPolicy::default(),
+        StubGateway {
+            contacts_store: Some(fixture.contacts.clone()),
+            mark_read_store: Some(store.clone()),
+            all_search_override: Some(BrowserMessageSearchDecision::Listed {
+                canonical_username: "alice@example.com".into(),
+                mailbox_name: Some("INBOX".into()),
+                query: "Public".into(),
+                results: vec![
+                    all_navigation_row(9, "2026-10-03 12:00:00 +0000"),
+                    all_navigation_row(11, "2026-10-03 12:00:00 +0000"),
+                ],
+            }),
+            ..StubGateway::default()
+        },
+    );
+    let before9 = app
+        .gateway
+        .fixture_message_flags("alice@example.com", "INBOX", 9);
+    let before11 = app
+        .gateway
+        .fixture_message_flags("alice@example.com", "INBOX", 11);
+    let listing = all_get(&app, ALL_NAVIGATION_ORIGIN);
+    assert_eq!(listing.response.status_code, 200);
+    let fields = all_rendered_open_form(&body_text(&listing));
+    assert_eq!(fields["uid"], "9");
+    let refused_get = all_get(&app, "/message/open");
+    assert_eq!(refused_get.response.status_code, 404); // POST-only route; GET never marks Seen.
+    let mut bad_csrf = fields.clone();
+    bad_csrf.insert("csrf_token".into(), "wrong".into());
+    assert_eq!(
+        all_post_open(&app, &bad_csrf, None).response.status_code,
+        403
+    );
+    assert_eq!(
+        app.gateway
+            .fixture_message_flags("alice@example.com", "INBOX", 9),
+        before9
+    );
+    assert_eq!(
+        app.gateway
+            .fixture_message_flags("alice@example.com", "INBOX", 11),
+        before11
+    );
+    let opened = all_post_open(&app, &fields, None);
+    assert_eq!(opened.response.status_code, 303);
+    let current9 = app
+        .gateway
+        .fixture_message_flags("alice@example.com", "INBOX", 9);
+    assert!(crate::mail_list::has_flag(&current9, "\\Seen"));
+    assert_eq!(
+        app.gateway
+            .fixture_message_flags("alice@example.com", "INBOX", 11),
+        before11
+    );
+    // Reflect actual confirmed flags in the controlled fresh search snapshot.
+    let BrowserMessageSearchDecision::Listed { results, .. } =
+        app.gateway.all_search_override.as_mut().unwrap()
+    else {
+        unreachable!()
+    };
+    results[0].flags = current9.clone();
+    let read = all_get(&app, &location_header(&opened));
+    assert_eq!(read.response.status_code, 200);
+    assert!(
+        all_navigation_control(&body_text(&read), "Next").is_none(),
+        "OnOpen must not expose a mutating GET link"
+    );
+    let next = all_navigation_open_control(&body_text(&read), "Next")
+        .expect("actual current OnOpen next form");
+    assert_eq!(next["uid"], "11");
+    assert_eq!(next["mailbox"], "INBOX");
+    let target = StubGateway::fixture_metadata("alice@example.com", "INBOX", 11).version;
+    assert_eq!(next["mailbox_guid"], target.mailbox_guid);
+    assert_eq!(next["message_guid"], target.message_guid);
+    all_navigation_assert_target(
+        &next["return_to"],
+        11,
+        1,
+        &all_navigation_fields(ALL_NAVIGATION_ORIGIN),
+    );
+    assert_eq!(
+        app.gateway
+            .fixture_message_flags("alice@example.com", "INBOX", 9),
+        current9
+    );
+    assert_eq!(
+        app.gateway
+            .fixture_message_flags("alice@example.com", "INBOX", 11),
+        before11
+    );
+    let next_opened = all_post_open(&app, &next, None);
+    assert_eq!(next_opened.response.status_code, 303);
+    let current11 = app
+        .gateway
+        .fixture_message_flags("alice@example.com", "INBOX", 11);
+    assert!(crate::mail_list::has_flag(&current11, "\\Seen"));
+    let BrowserMessageSearchDecision::Listed { results, .. } =
+        app.gateway.all_search_override.as_mut().unwrap()
+    else {
+        unreachable!()
+    };
+    results[1].flags = current11.clone();
+    let next_read = all_get(&app, &location_header(&next_opened));
+    assert_eq!(next_read.response.status_code, 200);
+    assert!(
+        all_navigation_open_control(&body_text(&next_read), "Previous").is_none(),
+        "earlier Seen object is not reinstated"
+    );
+    assert!(all_navigation_control(&body_text(&next_read), "Previous").is_none());
+    assert!(body_text(&next_read).contains("aria-label=\"Previous message\" disabled"));
+    // Manual policy does not reinstate a Seen row merely because it was rendered.
+    store
+        .save("alice@example.com", 1, crate::mark_read::Policy::Manual)
+        .unwrap();
+    let manual = all_get(&app, &location_header(&next_opened));
+    assert_eq!(manual.response.status_code, 200);
+    assert!(all_navigation_control(&body_text(&manual), "Previous").is_none());
+    assert!(all_navigation_control(&body_text(&manual), "Next").is_none());
+    for (uid, expected) in [(9, current9), (11, current11)] {
+        assert_eq!(
+            app.gateway
+                .fixture_message_flags("alice@example.com", "INBOX", uid),
+            expected
+        );
+    }
+    for response in [&read, &next_read, &manual] {
+        assert!(!response
+            .audit_events
+            .iter()
+            .any(|event| event.action == "stub_message_list"));
+        assert_eq!(
+            response
+                .audit_events
+                .iter()
+                .filter(|event| event.action == "request_budget_acquired")
+                .count(),
+            response
+                .audit_events
+                .iter()
+                .filter(|event| event.action == "request_budget_released")
+                .count()
+        );
+    }
+    assert_eq!(app.request_budgets.mailbox_workers.active_count(), 0);
+    assert_eq!(app.request_budgets.search_workers.active_count(), 0);
+}
+
+#[test]
+fn all_reader_navigation_binds_one_policy_read_to_recovery_and_controls_then_refreshes_next_request(
+) {
+    let fixture = AllFixture::new();
+    let store = crate::mark_read::Store::new(fixture.root.join("mark-read"));
+    store
+        .save("alice@example.com", 0, crate::mark_read::Policy::OnOpen)
+        .unwrap();
+    let mut app = BrowserApp::new(
+        HttpPolicy::default(),
+        StubGateway {
+            contacts_store: Some(fixture.contacts.clone()),
+            mark_read_store: Some(store.clone()),
+            all_search_override: Some(BrowserMessageSearchDecision::Listed {
+                canonical_username: "alice@example.com".into(),
+                mailbox_name: Some("INBOX".into()),
+                query: "Public".into(),
+                results: vec![
+                    all_navigation_row(9, "2026-10-03 12:00:00 +0000"),
+                    all_navigation_row(11, "2026-10-03 12:00:00 +0000"),
+                ],
+            }),
+            ..StubGateway::default()
+        },
+    );
+    let listing = all_get(&app, ALL_NAVIGATION_ORIGIN);
+    assert_eq!(listing.response.status_code, 200);
+    let fields = all_rendered_open_form(&body_text(&listing));
+    let opened = all_post_open(&app, &fields, None);
+    assert_eq!(opened.response.status_code, 303);
+    let seen = app
+        .gateway
+        .fixture_message_flags("alice@example.com", "INBOX", 9);
+    assert!(crate::mail_list::has_flag(&seen, "\\Seen"));
+    let other = app
+        .gateway
+        .fixture_message_flags("alice@example.com", "INBOX", 11);
+    let BrowserMessageSearchDecision::Listed { results, .. } =
+        app.gateway.all_search_override.as_mut().unwrap()
+    else {
+        unreachable!()
+    };
+    results[0].flags = seen.clone();
+    let policy_before = store.load("alice@example.com").unwrap();
+    // Deterministic test-only provider: first request sees OnOpen, the next sees
+    // Manual. A duplicate load within the first request would consume Manual
+    // and turn its recovered Seen snapshot into GET arrows (the reviewed gap).
+    app.gateway.mark_read_policy_sequence = Some(Arc::new(Mutex::new(vec![
+        crate::mark_read::Policy::OnOpen,
+        crate::mark_read::Policy::Manual,
+    ])));
+    let loads = app.gateway.mark_read_policy_loads.clone();
+    let before = loads.load(std::sync::atomic::Ordering::SeqCst);
+    let first = all_get(&app, &location_header(&opened));
+    assert_eq!(first.response.status_code, 200);
+    assert_eq!(loads.load(std::sync::atomic::Ordering::SeqCst), before + 1);
+    let next = all_navigation_open_control(&body_text(&first), "Next")
+        .expect("first policy snapshot must produce POST arrows");
+    assert_eq!(next["uid"], "11");
+    assert!(
+        all_navigation_control(&body_text(&first), "Next").is_none(),
+        "no GET from a second Manual lookup"
+    );
+    all_navigation_assert_target(
+        &next["return_to"],
+        11,
+        1,
+        &all_navigation_fields(ALL_NAVIGATION_ORIGIN),
+    );
+    let second = all_get(&app, &location_header(&opened));
+    assert_eq!(second.response.status_code, 200);
+    assert_eq!(loads.load(std::sync::atomic::Ordering::SeqCst), before + 2);
+    assert!(all_navigation_open_control(&body_text(&second), "Next").is_none());
+    assert!(
+        all_navigation_control(&body_text(&second), "Next").is_none(),
+        "fresh Manual cannot recover a Seen row in Unread"
+    );
+    assert!(body_text(&second).contains("aria-label=\"Next message\" disabled"));
+    assert_eq!(
+        app.gateway
+            .fixture_message_flags("alice@example.com", "INBOX", 9),
+        seen
+    );
+    assert_eq!(
+        app.gateway
+            .fixture_message_flags("alice@example.com", "INBOX", 11),
+        other
+    );
+    assert_eq!(store.load("alice@example.com").unwrap(), policy_before);
+    for response in [&first, &second] {
+        assert!(!response
+            .audit_events
+            .iter()
+            .any(|event| event.action == "stub_message_list"));
+        assert_eq!(
+            response
+                .audit_events
+                .iter()
+                .filter(|event| event.action == "request_budget_acquired")
+                .count(),
+            response
+                .audit_events
+                .iter()
+                .filter(|event| event.action == "request_budget_released")
+                .count()
+        );
+    }
+    assert_eq!(app.request_budgets.mailbox_workers.active_count(), 0);
+    assert_eq!(app.request_budgets.search_workers.active_count(), 0);
+}

@@ -8405,3 +8405,28 @@ acceptance distinct. Actual All filters do not qualify Documents, Send or crypto
 checks. Retain the pre-submit encoder-instrument failure separately from the
 actual opened Date overflow at768 (document920). Repair All-only responsive CSS
 with matching binary/browser evidence; do not change unrelated search surfaces.
+
+2026-10-04 UTC — Matching signed92e6/native376912 web activation and actual
+installed All forms, counts, keyboard/opened panels and ten inspected public
+filter crops pass. Date768 now fits. Record this bounded real remediation,
+preserved state and exact actionable UAT; do not infer human/whole-page approval,
+All reader Previous/Next, Documents or Send acceptance. Reset controls use their
+actual native labels; no invented global Clear filters. Continue with actual
+All-origin navigation RED before implementation rather than a paper closure.
+
+
+## 2026-10-04 — All-origin reader navigation closes a real functional gap
+
+Actual generated-link RED demonstrated missing Next in a two-Message All list
+and a125-Message/page6 All list. Reuse All's bounded validated mailbox/UID order
+and20-row paging rather than the ordinary reader's date/conversation model.
+Retain six predicates, exact current identities, deadlines, Back and ownership;
+People and unavailable Documents cannot be reader neighbours. Manual opening
+stays read-only; On-open arrows use existing authenticated CSRF-protected POST.
+
+Independent review found that policy recovery and arrow rendering loaded policy
+twice. Carry one admitted All snapshot through both, with a counted two-policy
+regression and fresh policy next request. Preserve ordinary behavior. Actual
+aggregate caught an unused import: remove it and rerun matching checks without
+waiving Clippy. Native27-case execution passes, but native or source checks alone
+do not establish installation, human acceptance, Send or whole-sprint closure.

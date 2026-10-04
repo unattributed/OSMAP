@@ -129,6 +129,72 @@ impl SearchFilterContext {
     }
 }
 
+/// All uses a twenty-row combined category window. Its message prefix comes
+/// first, so each message's index determines its All page independently of People.
+pub(crate) const ALL_SEARCH_PAGE_SIZE: usize = 20;
+
+/// Validate every authenticated summary before a predicate can hide a bad row.
+pub(crate) fn valid_all_search_messages(results: &[crate::mailbox::MessageSearchResult]) -> bool {
+    let policy = crate::mailbox::MessageSearchPolicy::default();
+    if results.len() > policy.max_results {
+        return false;
+    }
+    let mut identities = std::collections::BTreeSet::new();
+    let mut versions = std::collections::BTreeSet::new();
+    let mut mailbox_versions = std::collections::BTreeMap::new();
+    results.iter().all(|row| {
+        if crate::mailbox::MailboxEntry::new(
+            crate::mailbox::MailboxListingPolicy::default(),
+            &row.mailbox_name,
+        )
+        .is_err()
+            || row.uid == 0
+            || row.uid > u64::from(u32::MAX)
+            || !identities.insert((&row.mailbox_name, row.uid))
+            || row.date_received.len() > policy.message_date_max_len
+            || row.date_received.chars().any(char::is_control)
+            || [&row.subject, &row.from].iter().any(|value| {
+                value.as_ref().is_some_and(|text| {
+                    text.len() > policy.header_value_max_len || text.chars().any(char::is_control)
+                })
+            })
+        {
+            return false;
+        }
+        if let Some(metadata) = &row.metadata {
+            let version = &metadata.version;
+            if crate::message_metadata::MessageVersion::new(
+                version.mailbox_guid.clone(),
+                version.message_guid.clone(),
+            )
+            .is_err()
+                || !versions.insert((&row.mailbox_name, &version.message_guid))
+            {
+                return false;
+            }
+            match mailbox_versions.insert(&row.mailbox_name, &version.mailbox_guid) {
+                Some(previous) if previous != &version.mailbox_guid => return false,
+                _ => {}
+            }
+        }
+        true
+    })
+}
+
+/// The same full-prefix predicates and fixed ordering serve All and its reader.
+/// This deliberately does not apply the ordinary fifty-row message-list window.
+pub(crate) fn order_all_search_messages(
+    filters: &mut SearchFilterContext,
+    results: &mut Vec<crate::mailbox::MessageSearchResult>,
+) {
+    filters.view.order_search(results);
+    results.sort_by(|left, right| {
+        left.mailbox_name
+            .cmp(&right.mailbox_name)
+            .then(left.uid.cmp(&right.uid))
+    });
+}
+
 /// Clear action selection after a move; the next GET recomputes counts/pages.
 pub fn mail_return_after_move(value: &str, source: &str) -> Option<String> {
     let safe = safe_mail_return(value)?;

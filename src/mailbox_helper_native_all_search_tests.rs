@@ -24,6 +24,15 @@ fn all_search_row_link(body: &str, mailbox: &str, uid: u64) -> String {
         .expect("actual selected row GUID-bound opening link")
 }
 
+fn all_search_native_neighbour_link(body: &str, label: &str) -> Option<String> {
+    body.split("<a ").find_map(|anchor| {
+        let tag = anchor.split_once('>')?.0;
+        (attribute(tag, "aria-label")?.as_str() == format!("{label} message"))
+            .then(|| attribute(tag, "href"))
+            .flatten()
+    })
+}
+
 fn all_search_native_filter_form(body: &str, class: &str) -> BTreeMap<String, String> {
     let detail = body
         .split_once(&format!("<details class=\"{class}\""))
@@ -418,6 +427,117 @@ fn isolated_openbsd_all_search_browser_owned_categories() {
     let filtered_read = get(&app, &alice, &filtered_link);
     assert_eq!(filtered_read.response.status_code, 200);
     assert!(text(&filtered_read).contains("ALICE_READER_ONLY_000"));
+    // Follow actual authenticated native All neighbours, not a fabricated URL.
+    // Sender excludes001 and folder excludes003, so the next owned row is002.
+    let second_target = initial
+        .iter()
+        .find(|row| row.subject.as_deref() == Some("All Public <Row> 002"))
+        .unwrap();
+    let second_version = &second_target.metadata.as_ref().unwrap().version;
+    assert!(all_search_native_neighbour_link(text(&filtered_read), "Previous").is_none());
+    let native_next = all_search_native_neighbour_link(text(&filtered_read), "Next")
+        .expect("actual All next link");
+    let native_next_fields = crate::http_form::parse_urlencoded_form(
+        native_next.split_once('?').unwrap().1.as_bytes(),
+        crate::mail_navigation::MAIL_RETURN_MAX_FIELDS,
+        2048,
+    )
+    .unwrap();
+    assert_eq!(
+        native_next_fields.get("mailbox").map(String::as_str),
+        Some("INBOX")
+    );
+    assert_eq!(
+        native_next_fields.get("uid"),
+        Some(&second_target.uid.to_string())
+    );
+    assert_eq!(
+        native_next_fields.get("mailbox_guid"),
+        Some(&second_version.mailbox_guid)
+    );
+    assert_eq!(
+        native_next_fields.get("message_guid"),
+        Some(&second_version.message_guid)
+    );
+    let native_next_back = crate::http_form::parse_urlencoded_form(
+        native_next_fields["return_to"]
+            .split_once('?')
+            .unwrap()
+            .1
+            .as_bytes(),
+        crate::mail_navigation::MAIL_RETURN_MAX_FIELDS,
+        2048,
+    )
+    .unwrap();
+    for (key, value) in &filter_fields {
+        assert_eq!(
+            native_next_back.get(key),
+            Some(value),
+            "native next retains {key}"
+        );
+    }
+    assert_eq!(native_next_back.get("page").map(String::as_str), Some("1"));
+    let second_read = get(&app, &alice, &native_next);
+    assert_eq!(second_read.response.status_code, 200);
+    budget_pair(&filtered_read);
+    budget_pair(&second_read);
+    assert!(
+        text(&second_read).contains("ALICE_READER_ONLY_002")
+            && !text(&second_read).contains("ALICE_READER_ONLY_000")
+            && !text(&second_read).contains("BOB_READER_ONLY")
+    );
+    assert!(
+        all_search_native_neighbour_link(text(&second_read), "Next").is_none(),
+        "Person is not a reader neighbour"
+    );
+    let native_previous = all_search_native_neighbour_link(text(&second_read), "Previous")
+        .expect("actual All previous link");
+    let native_previous_fields = crate::http_form::parse_urlencoded_form(
+        native_previous.split_once('?').unwrap().1.as_bytes(),
+        crate::mail_navigation::MAIL_RETURN_MAX_FIELDS,
+        2048,
+    )
+    .unwrap();
+    assert_eq!(
+        native_previous_fields.get("mailbox").map(String::as_str),
+        Some("INBOX")
+    );
+    assert_eq!(
+        native_previous_fields.get("uid"),
+        Some(&target.uid.to_string())
+    );
+    assert_eq!(
+        native_previous_fields.get("mailbox_guid"),
+        Some(&version.mailbox_guid)
+    );
+    assert_eq!(
+        native_previous_fields.get("message_guid"),
+        Some(&version.message_guid)
+    );
+    let native_previous_back = crate::http_form::parse_urlencoded_form(
+        native_previous_fields["return_to"]
+            .split_once('?')
+            .unwrap()
+            .1
+            .as_bytes(),
+        crate::mail_navigation::MAIL_RETURN_MAX_FIELDS,
+        2048,
+    )
+    .unwrap();
+    assert_eq!(native_previous_back, native_next_back);
+    let first_again = get(&app, &alice, &native_previous);
+    assert_eq!(first_again.response.status_code, 200);
+    budget_pair(&first_again);
+    assert!(
+        text(&first_again).contains("ALICE_READER_ONLY_000")
+            && !text(&first_again).contains("ALICE_READER_ONLY_002")
+    );
+    assert_eq!(
+        get(&app, &alice, &back_href(text(&second_read)))
+            .response
+            .status_code,
+        200
+    );
     let filtered_back = back_href(text(&filtered_read));
     let back_fields = crate::http_form::parse_urlencoded_form(
         filtered_back.split_once('?').unwrap().1.as_bytes(),
@@ -523,5 +643,5 @@ fn isolated_openbsd_all_search_browser_owned_categories() {
     drop(fixture);
     assert!(!root.exists());
     assert_eq!(before, standard_metadata());
-    println!("native_all_search_browser=PASS all_message_filters_actual_owned_scope_context=PASS actual_browser_runtime_authenticated_helper_dovecot=PASS measured_messages_and_owned_people=PASS public_snippet_escaped_protected_absent=PASS rendered_guid_open_actual_body_and_all_back=PASS foreign_stale_unauth_refused=PASS same_uid_inbox_sent_bob_bytes_flags_guids_unchanged=PASS contact_records_unchanged=PASS no_move_append_delete_send_crypto=PASS synthetic_session_not_login_proof=PASS scratch_cleanup=PASS standard_host_metadata_unchanged=PASS");
+    println!("native_all_search_browser=PASS all_message_filters_actual_owned_scope_context=PASS all_reader_navigation_actual_filtered_next_previous=PASS actual_browser_runtime_authenticated_helper_dovecot=PASS measured_messages_and_owned_people=PASS public_snippet_escaped_protected_absent=PASS rendered_guid_open_actual_body_and_all_back=PASS foreign_stale_unauth_refused=PASS same_uid_inbox_sent_bob_bytes_flags_guids_unchanged=PASS contact_records_unchanged=PASS no_move_append_delete_send_crypto=PASS synthetic_session_not_login_proof=PASS scratch_cleanup=PASS standard_host_metadata_unchanged=PASS");
 }
