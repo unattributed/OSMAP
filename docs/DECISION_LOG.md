@@ -8687,3 +8687,25 @@ unavailable authority must still render generically. Match the actual generated
 picker ID and configured shortcut without dropping accessibility, escaping or
 CAS assertions. Rerun matching native qualification because test inputs changed;
 never pair its historical PASS with new compiler inputs or bypass the full gate.
+
+### 2026-10-04 UTC — deliver matching Sent location and start real Draft location
+
+Record actual matching native2, both successful normal gates, verified signed
+6f549911e66a40fabb964317e0efe8e8d80cd623 and fresh GitHub equality independently
+of the earlier failed gate and historical native1. Deploy exact qualified binary
+helper-first on mail, then obsd1 helper/web, with positive stop evidence and
+private backups. Preserve configuration, operator policies and native key agents.
+Offer concise selected-folder/persist/one-self-send/captured-copy/restore UAT;
+human results and provider/protected/full-sprint acceptance remain open.
+
+For accepted R2-16-003, preserve the documented private OSMAP draft-file boundary.
+Expose fixed opaque server-owned default and working locations under the validated
+draft root, without browser paths or a speculative Dovecot mirror. Capture only
+new-draft placement; every existing-ID operation must resolve its original owned
+location regardless of current preference. Share bounded resolution, account
+coordination, aggregate ordinary-plus-recovery quotas, expiry and exact cleanup;
+duplicates, unavailable/unsafe roots and stale versions refuse without fallback.
+Implement actual generated selection, metadata/blob save and exact resume, then
+qualify meaningful filesystem/native cases before signed matching delivery.
+These engineering choices implement existing accepted private-files requirements;
+the frozen plan is unchanged and new Drafts behavior is not yet accepted.

@@ -6381,3 +6381,41 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   findings; classification is not runtime proof. New matching nativeattempt2
   is running against331 inputs because test-source bytes changed. Attempt1
   remains actual historical evidence, not current-source or full-gate PASS.
+
+### 2026-10-04 UTC — Sent location signed, synchronized and deployed
+
+- Matching nativeattempt2 completes all4 actual cases, zero failures/skips,
+  exact16/15/13/15 markers and331 inputs. Totals8 loopback acceptances,
+  5 authenticated append attempts and4 disposable Dovecot saves. Manifest
+  92bebd237970663178934cd88c6f7b094d8dc343fc24847dfdcd190f1d92c0c8;
+  log5025fd945ac22b929d89f2a9a9ac637d2c42ff0e77cf748799254f8dc73f06a9.
+  Independent postcompatibility review verifies all current input hashes and
+  unchanged applicationd7de657fc6decd802ade000f8b80aa35c83c57211c19cc69806fa4e5ec845854.
+  It does not erase the retained first full-gate failure or imply provider Send.
+- Product6f549911e66a40fabb964317e0efe8e8d80cd623 has an exact verified Shopkeeper
+  signature. Normal commit2 and push1 gates PASS:1384 library tests,0 failures,
+  35 explicit local native skips; the separate4-case native run supplies its
+  recorded execution bounds. Fresh origin fetch proves UX branch equality,
+  0 ahead/behind and clean delivery. All331 signed Git blobs match native2.
+  Signed-sync proof3554752642f25908121a87e34c993d46cf56a80bdee02ac170da3c832dc046eb.
+- Reviewed binary-only preflight/activation updates authoritative mail helper
+  first, then obsd1 helper/web with exact matching native application. Installed
+  hashes, unchanged private configuration hashes, existing service states and
+  root-private prior-binary backups are verified. Key agents are not restarted;
+  operator keys/policy/routing are preserved. Mail activation record052a139c55d52f6596d98bb32b07cc82499c25732a4fc701859f0384656b23c1;
+  obsd1 record8fd240bcb575c223672edf06df6c426125d9b7071354c80433c765b6e3f80377.
+  A bounded public check verifies TLS login200 and unauthenticated Copies303
+  on the exact obsd1 IP/SNI. Installation and public access are not human UAT.
+- Ready bounded UAT: record original Copies settings; choose an existing owned
+  non-Bin folder, save/reload; with Save Sent On send one uniquely named ordinary
+  self message only if current policy permits; inspect captured copy location,
+  current Sent recipient view and persistence; restore original settings.
+  Human results remain NOT_RUN; no actual operator/provider Send was submitted
+  by an agent. ALLSEND, protected-provider/privatecrypto, full S03 and epic remain
+  OPEN. Do not repeat earlier completion messages or infer broad acceptance.
+- Next concrete accepted R2-16-003 gap is fixed private draft storage. Developer
+  and QA are implementing actual selectable server-owned private locations,
+  preserved existing-ID placement, attachments, account-wide quotas/recovery and
+  generated save/resume behavior in an isolated candidate. Existing design keeps
+  draft files outside mailbox storage; no speculative IMAP mirror is introduced.
+  This is implementation in progress, not paper-only or completed Drafts work.
