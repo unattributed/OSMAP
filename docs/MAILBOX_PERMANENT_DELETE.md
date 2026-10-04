@@ -44,8 +44,18 @@ complete request and nonce. One bounded deadline covers connect, write and read;
 finite refusals remain distinct from uncertain completion. The helper retains
 its existing authenticated request and replay admission checks.
 
-At this checkpoint, configuration parsing, confinement planning, gateway quota,
-helper transport and isolated native Dovecot operation have executable coverage.
-The application candidate is not installed. Browser confirmation, bounded bulk,
-matching deployment and operator UAT remain incomplete; backend tests do not
-establish an accepted UX slice or successful email delivery.
+The Bin page provides a per-message review link and a separate review action for
+one to ten selected messages. Review checks the current owned summary identities
+and retention revision, then renders an explicit Cancel / Delete confirmation.
+Cancel performs no mailbox operation. Confirmation checks every selected tuple
+again before the first deletion. Message body rendering and private-key unlock
+are not prerequisites for deleting a current stored tuple.
+
+Bulk deletion reports each outcome and stops after the first refusal or uncertain
+result. Later messages are marked not attempted; confirmed and uncertain requests
+must not be repeated automatically. A stale tuple or changed revision requires a
+fresh review. Result pages have a refresh link, not a resubmission form.
+
+The application candidate is not installed. Matching native HTTP validation,
+deployment and operator UAT are separate from source tests; backend or browser
+test results alone do not establish an accepted UX slice or email delivery.

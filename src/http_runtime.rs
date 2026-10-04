@@ -179,6 +179,15 @@ where
             (HttpMethod::Post, "/settings/keys/change") => {
                 self.handle_key_management_change(request, &context)
             }
+            (HttpMethod::Get, "/message/delete") | (HttpMethod::Post, "/message/delete") => {
+                self.handle_message_delete(request, &context)
+            }
+            (HttpMethod::Post, "/messages/delete/review") => {
+                self.handle_bulk_delete(request, &context, true)
+            }
+            (HttpMethod::Post, "/messages/delete") => {
+                self.handle_bulk_delete(request, &context, false)
+            }
             (HttpMethod::Post, "/message/move") => self.handle_message_move(request, &context),
             (HttpMethod::Post, "/message/flag") => self.handle_message_flag(request, &context),
             (HttpMethod::Post, "/message/open") => self.handle_message_open(request, &context),

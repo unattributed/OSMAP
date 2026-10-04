@@ -5384,3 +5384,42 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   failed attempts remain retained. Independent source review finds no concrete
   production blocker; its test-only earlier-manifest discrepancy is resolved by
   matching attempt3 native execution, not a waived source mismatch.
+
+### 2026-10-03 — S02-03 actual permanent-delete HTTP checkpoint
+
+- Reproduced missing single/bulk routes as actual failing HTTP tests before
+  implementing them. Bin row and selection actions now open explicit native
+  confirmation forms; Cancel performs no mailbox operation. Confirmation uses
+  fresh current account/private Bin summaries, both GUIDs and helper-owned
+  retention revision, without requiring message-body rendering or decryption.
+- Bulk validates every selected tuple before dispatch, handles one to ten
+  messages, stops on refusal/Unknown and reports confirmed, refused, unconfirmed
+  and not-attempted members. Result pages contain refresh links, no retry form.
+- Correct actual compile findings: response reason has a static lifetime; native
+  fixture sessions do not shadow saved Bob summaries; RowState keeps the UI
+  interface bounded. The bulk GET test separately proves raw parser refusal and
+  dispatcher refusal instead of asking a parsing helper to accept a GET body.
+  Preserve all no-dispatch assertions. Clippy and all23 focused HTTP tests PASS.
+- First aggregate exposes four routes missing from WSTG inventory. Add their
+  actual contracts; preserve the inventory gate. Final http-gates-attempt2.log
+  passes acceptance/security/v14 with1276 library tests and26 opted-in ignored
+  cases. V10 reflects the actual new source; no warning/check exception added.
+- Matching302 frozen compile inputs on obsd1 PASS all25 scoped cases:13 single
+  HTTP,10 bulk HTTP, one actual single and one actual bulk BrowserApp → Runtime
+  gateway → authenticated helper → disposable Dovecot fixture. Single confirms
+  exact absence; bulk deletes one, refuses the second after a policy change
+  under the shared gate, never attempts the third. Cancel/auth/CSRF/foreign/
+  stale/missing/denied/changed-revision controls dispatch no deletion. Remaining
+  messages, pre-deleted neighbour, same-UID Inbox/Bob bytes/flags/GUIDs and host
+  metadata are preserved; owned scratch removed. No operator mail or crypto.
+- Evidence: permanent-delete/native-retention-http-attempt1.log,302-input
+  manifest/result; test002ce39803da06275774368aa1d59e477d73ea070ddd1e47068025ff33f30e36;
+  app7d9994dc28d66013d67cc85105c96301f024a32db7653d5221a63c878f63be6e.
+  Independent final-http-source-review.json hashes corrected current source and
+  finds no concrete blocker; its scope is source review, not native execution.
+- Application is built, not installed. Live read-only diagnosis confirms obsd1
+  still uses web3254ed0 through local relay UID1003; new peer-UID/retention settings
+  are absent. Matching deployment, actual configured permission, Archive event
+  metadata and human UAT remain OPEN. Native tests use issued disposable sessions,
+  not password/TOTP login or separately applied confinement. All-Send, protected
+  provider delivery, sprint acceptance and whole-epic completion remain OPEN.

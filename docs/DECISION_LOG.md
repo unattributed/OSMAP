@@ -8318,3 +8318,13 @@ Retain failed runs and requalify matching native inputs after each fixture chang
 Index the new deployment document through the existing documentation mechanism.
 Final acceptance/security/v14 and current-input native helper results pass; no
 checks were weakened to accept this checkpoint.
+
+2026-10-03 — S02-03 permanent-delete interaction follows exact stored identity,
+not body availability. Use fresh owned private Bin summaries and helper-owned
+permission for single/bulk confirmation. Validate the entire selection before
+dispatch; stop and itemize any partial outcome without replaying confirmed or
+uncertain work. Actual new-route REDs, compile/parser-fixture defects and WSTG
+inventory failure were corrected with real code; keep failed evidence. Matching
+302-input native HTTP/Dovecot cases and normal gates pass. Commit/sync this
+concrete checkpoint while deployment, known Archive event metadata and operator
+acceptance remain separate unfinished work. Do not label the slice complete.

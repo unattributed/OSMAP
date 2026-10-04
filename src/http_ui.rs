@@ -1782,8 +1782,11 @@ pub(crate) fn render_message_list_page(
                 &message_href,
                 csrf_token,
                 &return_to,
-                sort_links.view.is_selected(mailbox_name, message.uid),
-                sort_links.view.open_on_select,
+                archive_ui::RowState {
+                    selected: sort_links.view.is_selected(mailbox_name, message.uid),
+                    on_open: sort_links.view.open_on_select,
+                    is_bin: sort_links.reader.bin_mailbox_name.as_deref() == Some(mailbox_name),
+                },
             ));
             continue;
         }
@@ -1860,6 +1863,9 @@ pub(crate) fn render_message_list_page(
                 .any(|name| name == "INBOX")
         {
             buttons.push_str("<button type=\"submit\" name=\"action\" value=\"restore\">Restore Selected to Inbox</button>");
+        }
+        if sort_links.reader.bin_mailbox_name.as_deref() == Some(mailbox_name) {
+            buttons.push_str("<button type=\"submit\" formaction=\"/messages/delete/review\" name=\"action\" value=\"review-delete\">Review permanent deletion of selected</button>");
         }
         format!("<form id=\"bulk-move-form\" class=\"bulk-move-controls\" method=\"post\" action=\"/messages/move\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><input type=\"hidden\" name=\"return_to\" value=\"{}\"><div class=\"toolbar\">{buttons}</div>{chooser}<p class=\"muted\">Select up to ten messages. Bin moves to your saved folder; restore returns to Inbox.</p></form>", escape_html(csrf_token), escape_html(mailbox_name), escape_html(&list_navigation_href(&navigation_base, sort_links.view, sort_links.view.page)))
     } else {

@@ -1,15 +1,25 @@
 // Archive/Bin presentation reuses the authenticated list and move contracts.
 use super::*;
 
+pub(super) struct RowState {
+    pub selected: bool,
+    pub on_open: bool,
+    pub is_bin: bool,
+}
+
 pub(super) fn row(
     message: &MessageSummary,
     selection: &str,
     href: &str,
     csrf: &str,
     return_to: &str,
-    selected: bool,
-    on_open: bool,
+    state: RowState,
 ) -> String {
+    let RowState {
+        selected,
+        on_open,
+        is_bin,
+    } = state;
     let date = if message.date_received.is_empty() {
         "Unavailable"
     } else {
@@ -24,7 +34,12 @@ pub(super) fn row(
         on_open,
         None,
     );
-    format!("<tr data-selected=\"{selected}\"><td>{selection}</td><td data-label=\"From\" class=\"archive-sender\">{}</td><td data-label=\"Subject\">{subject}</td><td data-label=\"Folder\">{}</td><td data-label=\"Received\">{}</td><td data-label=\"Size\">{} B</td><td><details class=\"archive-row-more\"><summary aria-label=\"Actions for message #{}\">⋮</summary><div>{}</div></details></td></tr>", escape_html(message.from.as_deref().unwrap_or("Sender unavailable")), escape_html(&message.mailbox_name), escape_html(date), message.size_virtual, message.uid, render_message_state_controls(csrf, &message.mailbox_name, message.uid, &message.flags, message.metadata.as_ref(), return_to))
+    let delete = if is_bin {
+        message.metadata.as_ref().map(|metadata| format!("<a class=\"button-link\" href=\"/message/delete?mailbox={}&amp;uid={}&amp;mailbox_guid={}&amp;message_guid={}&amp;return_to={}\">Review permanent deletion</a>", url_encode(&message.mailbox_name), message.uid, url_encode(&metadata.version.mailbox_guid), url_encode(&metadata.version.message_guid), url_encode(return_to))).unwrap_or_default()
+    } else {
+        String::new()
+    };
+    format!("<tr data-selected=\"{selected}\"><td>{selection}</td><td data-label=\"From\" class=\"archive-sender\">{}</td><td data-label=\"Subject\">{subject}</td><td data-label=\"Folder\">{}</td><td data-label=\"Received\">{}</td><td data-label=\"Size\">{} B</td><td><details class=\"archive-row-more\"><summary aria-label=\"Actions for message #{}\">⋮</summary><div>{}{delete}</div></details></td></tr>", escape_html(message.from.as_deref().unwrap_or("Sender unavailable")), escape_html(&message.mailbox_name), escape_html(date), message.size_virtual, message.uid, render_message_state_controls(csrf, &message.mailbox_name, message.uid, &message.flags, message.metadata.as_ref(), return_to))
 }
 
 pub(super) struct Page<'a> {
@@ -97,7 +112,7 @@ pub(super) fn page(p: Page<'_>) -> TrustedHtml {
     let empty = format!("<tr><td colspan=\"7\">{}</td></tr>", mail_state_card("No messages", "No messages are shown in this folder view. Active filters and snoozed messages may limit the loaded results.", "/compose", "Compose", false));
     let rows = if p.rows.is_empty() { &empty } else { p.rows };
     let reader = render_coordinated_reader(p.base, view, p.csrf, p.links.reader);
-    TrustedHtml::from_template(format!("{}<main id=\"main-content\" class=\"page-shell coordinated-mail archive-page{}\" tabindex=\"-1\"><div class=\"page-intro mail-page-intro\"><h1>Archive / Bin</h1><p>Manage archived and deleted messages with reversible actions.</p></div><section class=\"content-pane coordinated-list\" aria-label=\"Archive and Bin messages\"><nav class=\"archive-tabs\" aria-label=\"Archive and Bin\">{archive}{bin}</nav>{}<div class=\"mail-list-toolbar\">{}{search}{navigation}{sort}</div><table class=\"archive-table\"><caption class=\"sr-only\">Messages in {}. Dates are received dates; archive dates are unavailable.</caption><thead><tr><th scope=\"col\"><span class=\"sr-only\">Select</span></th><th scope=\"col\">From</th><th scope=\"col\">Subject</th><th scope=\"col\">Folder</th><th scope=\"col\">Received</th><th scope=\"col\">Size</th><th scope=\"col\"><span class=\"sr-only\">Actions</span></th></tr></thead><tbody>{rows}</tbody></table><div class=\"archive-actions\">{}<button disabled aria-describedby=\"archive-retention\">Delete permanently</button></div><p id=\"archive-retention\" class=\"archive-retention\">Permanent deletion and retention management are unavailable. Bin moves messages to your saved folder; restore returns them to Inbox. To return archived messages, choose Inbox in Move selected to.</p></section>{reader}</main>", app_header(p.account, p.csrf, if is_bin { "bin" } else { "archive" }), if view.selection.is_some() { " has-selection" } else { "" }, p.banner, render_bulk_selection_menu(p.base, view, p.automatic_selection_count), escape_html(p.mailbox), p.bulk_form))
+    TrustedHtml::from_template(format!("{}<main id=\"main-content\" class=\"page-shell coordinated-mail archive-page{}\" tabindex=\"-1\"><div class=\"page-intro mail-page-intro\"><h1>Archive / Bin</h1><p>Manage archived and deleted messages.</p></div><section class=\"content-pane coordinated-list\" aria-label=\"Archive and Bin messages\"><nav class=\"archive-tabs\" aria-label=\"Archive and Bin\">{archive}{bin}</nav>{}<div class=\"mail-list-toolbar\">{}{search}{navigation}{sort}</div><table class=\"archive-table\"><caption class=\"sr-only\">Messages in {}. Dates are received dates; archive dates are unavailable.</caption><thead><tr><th scope=\"col\"><span class=\"sr-only\">Select</span></th><th scope=\"col\">From</th><th scope=\"col\">Subject</th><th scope=\"col\">Folder</th><th scope=\"col\">Received</th><th scope=\"col\">Size</th><th scope=\"col\"><span class=\"sr-only\">Actions</span></th></tr></thead><tbody>{rows}</tbody></table><div class=\"archive-actions\">{}</div><p id=\"archive-retention\" class=\"archive-retention\">Permanent deletion requires a separate confirmation and current retention permission. Bin moves messages to your saved folder; restore returns them to Inbox. To return archived messages, choose Inbox in Move selected to.</p></section>{reader}</main>", app_header(p.account, p.csrf, if is_bin { "bin" } else { "archive" }), if view.selection.is_some() { " has-selection" } else { "" }, p.banner, render_bulk_selection_menu(p.base, view, p.automatic_selection_count), escape_html(p.mailbox), p.bulk_form))
 }
 
 #[cfg(test)]
@@ -122,8 +137,11 @@ mod tests {
             "/message?mailbox=INBOX&uid=9",
             "csrf",
             "/mailbox?name=INBOX",
-            false,
-            false,
+            RowState {
+                selected: false,
+                on_open: false,
+                is_bin: false,
+            },
         );
         assert!(text.contains("&lt;img src=x&gt; &amp; subject"));
         assert!(text.contains("&lt;sender@example.test&gt;"));
@@ -137,7 +155,18 @@ mod tests {
             date_received: String::new(),
             ..message
         };
-        let text = row(&unknown, "", "/message", "csrf", "/mailbox", false, false);
+        let text = row(
+            &unknown,
+            "",
+            "/message",
+            "csrf",
+            "/mailbox",
+            RowState {
+                selected: false,
+                on_open: false,
+                is_bin: false,
+            },
+        );
         assert!(text.contains("Sender unavailable"));
         assert!(text.contains("data-label=\"Received\">Unavailable"));
     }

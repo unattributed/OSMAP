@@ -2872,3 +2872,1171 @@ fn isolated_openbsd_retention_bound_single_delete_helper() {
     assert_eq!(before, standard_metadata());
     println!("native_retention_single_delete_helper=PASS unix_peer_hmac_replay_admission=PASS actual_status_missing_denied_allowed=PASS exact_identity_expunge_once=PASS changed_revision_stale_busy_foreign_refusal=PASS preexisting_deleted_neighbour_intact=PASS same_uid_inbox_bob_bytes_flags_guids_unchanged=PASS no_http_claim=PASS no_other_mutations=PASS scratch_cleanup=PASS standard_host_metadata_unchanged=PASS");
 }
+// Separate HTTP proof with real read backends and only one exact permitted
+// deletion. Original direct/helper/reader/Bin fixtures remain unchanged.
+fn start_retention_delete_http_helper(
+    fixture: &mut Fixture,
+    backend: crate::mailbox::DoveadmMessageDeleteBackend<ScopedDeleteExecutor>,
+    native: NativeExecutor,
+    userdb: PathBuf,
+    uid: u32,
+    admissions: Arc<AtomicUsize>,
+    forbidden: Arc<AtomicUsize>,
+) -> PathBuf {
+    let socket = fixture.root.join("delete-http-helper.sock");
+    let listener = UnixListener::bind(&socket).unwrap();
+    fs::set_permissions(&socket, fs::Permissions::from_mode(0o600)).unwrap();
+    listener.set_nonblocking(true).unwrap();
+    let stop = fixture.stop.clone();
+    fixture.threads.push(thread::spawn(move || {
+        let backend = RetentionDeleteCountedBackend {
+            inner: backend,
+            admissions,
+        };
+        let listing = DoveadmMailboxListBackend::new(
+            MailboxListingPolicy::default(),
+            native.clone(),
+            "/usr/local/bin/doveadm",
+        )
+        .with_userdb_socket_path(Some(userdb.clone()));
+        let messages = DoveadmMessageListBackend::new(
+            MessageListPolicy::default(),
+            native.clone(),
+            "/usr/local/bin/doveadm",
+        )
+        .with_userdb_socket_path(Some(userdb.clone()));
+        let search = DoveadmMessageSearchBackend::new(
+            MessageSearchPolicy::default(),
+            native.clone(),
+            "/usr/local/bin/doveadm",
+        )
+        .with_userdb_socket_path(Some(userdb.clone()));
+        // Identity comes from actual bounded summaries. A reader/body fallback
+        // is refused, so a successful confirmation does not depend on decoding.
+        let unavailable = || MailboxBackendError {
+            backend: "native-delete-http-view-forbidden",
+            reason: "body fetch outside delete proof".into(),
+        };
+        let view = StaticHelperBackend {
+            mailbox_result: Arc::new(Err(unavailable())),
+            message_list_result: Arc::new(Err(unavailable())),
+            message_search_result: Arc::new(Err(unavailable())),
+            message_view_result: Arc::new(Err(unavailable())),
+            message_move_result: Arc::new(Err(unavailable())),
+        };
+        let mutations = ForbiddenMutation(forbidden.clone());
+        let flags = RetentionDeleteForbiddenFlag(forbidden);
+        let replay = Mutex::new(BTreeMap::new());
+        let deadline = Instant::now() + NATIVE_LIMIT;
+        while !stop.load(Ordering::SeqCst) && Instant::now() < deadline {
+            let (mut stream, _) = match listener.accept() {
+                Ok(value) => value,
+                Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
+                    thread::sleep(Duration::from_millis(5));
+                    continue;
+                }
+                Err(_) => panic!("isolated delete HTTP helper accept failed"),
+            };
+            handle_helper_client_with_delete(
+                HelperBackends {
+                    mailbox_backend: &listing,
+                    message_list_backend: &messages,
+                    message_search_backend: &search,
+                    message_view_backend: &view,
+                    message_move_backend: &mutations,
+                    message_append_backend: &mutations,
+                    message_flag_backend: &flags,
+                },
+                Some(&backend),
+                &Logger::new(crate::config::LogFormat::Text, LogLevel::Error),
+                &mut stream,
+                MailboxHelperPolicy::default(),
+                MailboxHelperTrustedCallerPolicy {
+                    trusted_peer_uid: uid,
+                    grant_key: test_helper_grant_key(),
+                },
+                &replay,
+            );
+        }
+    }));
+    socket
+}
+fn retention_delete_confirmation_form(body: &str, action: &str) -> BTreeMap<String, String> {
+    assert!(matches!(action, "delete" | "cancel"));
+    let form = body
+        .split("<form ")
+        .find_map(|part| {
+            let form = part.split_once("</form>")?.0;
+            (attribute(form, "action").as_deref() == Some("/message/delete")).then_some(form)
+        })
+        .expect("actual rendered deletion confirmation form");
+    assert!(form.split("<button ").any(|button| {
+        let Some(tag) = button.split_once('>').map(|v| v.0) else {
+            return false;
+        };
+        attribute(tag, "name").as_deref() == Some("confirm")
+            && attribute(tag, "value").as_deref() == Some(action)
+            && !tag.contains(" disabled")
+    }));
+    let mut fields: BTreeMap<String, String> = form
+        .split("<input ")
+        .filter_map(|input| {
+            let tag = input.split_once('>')?.0;
+            Some((attribute(tag, "name")?, attribute(tag, "value")?))
+        })
+        .collect();
+    assert_eq!(fields.len(), 7);
+    fields.insert("confirm".into(), action.into());
+    fields
+}
+
+#[test]
+#[ignore = "explicit OpenBSD BrowserApp/runtime authenticated delete proof; disposable tuple only"]
+fn isolated_openbsd_retention_bound_single_delete_browser() {
+    use crate::mailbox::{
+        DoveadmMessageDeleteBackend, FileMailboxRetentionPolicy, MessageDeleteRequest,
+    };
+    assert_eq!(std::env::consts::OS, "openbsd");
+    let host = SystemCommandExecutor
+        .run_with_stdin_timeout("/bin/hostname", &[], "", Duration::from_secs(1))
+        .unwrap();
+    assert_eq!(host.status_code, 0);
+    assert_eq!(host.stdout.trim(), "obsd1.blackbagsecurity.com");
+    let before = standard_metadata();
+    let root = fs::canonicalize("/tmp").unwrap().join(format!(
+        "osmap-delete-browser-native-{}-{}",
+        std::process::id(),
+        SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos()
+    ));
+    fs::DirBuilder::new().mode(0o700).create(&root).unwrap();
+    let mut fixture = Fixture {
+        root: root.clone(),
+        stop: Arc::new(AtomicBool::new(false)),
+        threads: vec![],
+    };
+    let uid = fs::metadata(&root).unwrap().uid();
+    assert_ne!(uid, 0);
+    let group = SystemCommandExecutor
+        .run_with_stdin_timeout("/usr/bin/id", &["-g".into()], "", Duration::from_secs(1))
+        .unwrap();
+    assert_eq!(group.status_code, 0);
+    let gid = group.stdout.trim().parse::<u32>().unwrap();
+    assert_ne!(gid, 0);
+    for directory in ["run", "state", "app-state"] {
+        fs::DirBuilder::new()
+            .mode(0o700)
+            .create(root.join(directory))
+            .unwrap();
+    }
+    for user in ["alice", "bob"] {
+        for folder in ["", ".Deleted"] {
+            for part in ["cur", "new", "tmp"] {
+                fs::create_dir_all(root.join(user).join("Maildir").join(folder).join(part))
+                    .unwrap();
+            }
+        }
+    }
+    write_message(&root, "alice", 0, 0);
+    write_message(&root, "bob", 0, 0);
+    write_message(&root, "alice", 1, 0);
+    fs::rename(
+        root.join("alice/Maildir/new/synthetic-001"),
+        root.join("alice/Maildir/.Deleted/new/selected-001"),
+    )
+    .unwrap();
+    let inbox_bytes = scoped_delete_wire_bytes(&root, "alice", "");
+    let bob_bytes = scoped_delete_wire_bytes(&root, "bob", "");
+    let config = root.join("dovecot.conf");
+    fs::write(&config, format!("base_dir = {0}/run\nstate_dir = {0}/state\nmail_location = maildir:~/Maildir\nmail_uid = {uid}\nmail_gid = {gid}\nfirst_valid_uid = {uid}\nprotocols =\nlisten = 127.0.0.1\nssl = no\nmail_plugins =\nstats_writer_socket_path =\nauth_socket_path = {0}/never-default\nlog_path = {0}/native.log\ninfo_log_path = {0}/native.log\nnamespace inbox {{\n inbox = yes\n separator =\n}}\n", root.display())).unwrap();
+    fs::set_permissions(&config, fs::Permissions::from_mode(0o600)).unwrap();
+    let userdb = serve_userdb(&mut fixture, uid, gid);
+    let native = NativeExecutor {
+        config,
+        calls: Arc::new(AtomicUsize::new(0)),
+        bin_move_count: None,
+    };
+    let native_list = DoveadmMessageListBackend::new(
+        MessageListPolicy::default(),
+        native.clone(),
+        "/usr/local/bin/doveadm",
+    )
+    .with_userdb_socket_path(Some(userdb.clone()));
+    let inbox_query = MessageListRequest::new(MessageListPolicy::default(), "INBOX").unwrap();
+    let deleted_query = MessageListRequest::new(MessageListPolicy::default(), "Deleted").unwrap();
+    // Index the sole selected object first, so same-UID cross-folder controls
+    // do not depend on Maildir readdir order when the neighbour is introduced.
+    assert_eq!(
+        native_list
+            .list_messages(ALICE, &deleted_query)
+            .unwrap()
+            .len(),
+        1
+    );
+    write_message(&root, "alice", 2, 0);
+    let neighbour_file = root.join("alice/Maildir/.Deleted/cur/neighbour-002:2,T");
+    fs::rename(
+        root.join("alice/Maildir/new/synthetic-002"),
+        &neighbour_file,
+    )
+    .unwrap();
+    let neighbour_bytes = fs::read(&neighbour_file).unwrap();
+    let inbox = native_list.list_messages(ALICE, &inbox_query).unwrap();
+    let bob = native_list.list_messages(BOB, &inbox_query).unwrap();
+    let deleted = native_list.list_messages(ALICE, &deleted_query).unwrap();
+    assert_eq!(inbox.len(), 1);
+    assert_eq!(bob.len(), 1);
+    assert_eq!(deleted.len(), 2);
+    let target = deleted
+        .iter()
+        .find(|row| row.subject.as_deref() == Some("Native 001"))
+        .unwrap();
+    let neighbour = deleted
+        .iter()
+        .find(|row| row.subject.as_deref() == Some("Native 002"))
+        .unwrap()
+        .clone();
+    assert_eq!(target.uid, inbox[0].uid);
+    assert_eq!(target.uid, bob[0].uid);
+    assert!(crate::mail_list::has_flag(&neighbour.flags, "\\Deleted"));
+    let version = target.metadata.as_ref().unwrap().version.clone();
+    assert_ne!(
+        version.mailbox_guid,
+        inbox[0].metadata.as_ref().unwrap().version.mailbox_guid
+    );
+    assert_ne!(
+        version.mailbox_guid,
+        bob[0].metadata.as_ref().unwrap().version.mailbox_guid
+    );
+    let request =
+        MessageDeleteRequest::new(ALICE, "Deleted", target.uid, version.clone(), 7).unwrap();
+    let expunge_count = Arc::new(AtomicUsize::new(0));
+    let permitted_args = vec![
+        "-o".into(),
+        "stats_writer_socket_path=".into(),
+        "-o".into(),
+        format!("auth_socket_path={}", userdb.display()),
+        "expunge".into(),
+        "-u".into(),
+        ALICE.into(),
+        "mailbox".into(),
+        "Deleted".into(),
+        "mailbox-guid".into(),
+        version.mailbox_guid.clone(),
+        "uid".into(),
+        target.uid.to_string(),
+        "guid".into(),
+        version.message_guid.clone(),
+    ];
+    let executor = ScopedDeleteExecutor {
+        inner: native,
+        permitted_args,
+        expunge_count: expunge_count.clone(),
+    };
+    let policy_path = root.join("retention.json");
+    let gate = Arc::new(Mutex::new(()));
+    let write_policy = |revision, permission: &str| {
+        let _guard = gate.lock().unwrap();
+        fs::write(&policy_path, serde_json::to_vec(&serde_json::json!({"version":1,"rules":[{
+            "account":ALICE,"mailbox_name":"Deleted","revision":revision,"permanent_delete":permission
+        }]})).unwrap()).unwrap();
+        fs::set_permissions(&policy_path, fs::Permissions::from_mode(0o600)).unwrap();
+    };
+    let backend = DoveadmMessageDeleteBackend::new(
+        executor.clone(),
+        "/usr/local/bin/doveadm",
+        FileMailboxRetentionPolicy::new(Some(policy_path.clone()), uid),
+    )
+    .with_userdb_socket_path(Some(userdb.clone()))
+    .with_operation_gate(gate.clone());
+    let delete_admissions = Arc::new(AtomicUsize::new(0));
+    let forbidden = Arc::new(AtomicUsize::new(0));
+    let socket = start_retention_delete_http_helper(
+        &mut fixture,
+        backend,
+        executor.inner.clone(),
+        userdb.clone(),
+        uid,
+        delete_admissions.clone(),
+        forbidden.clone(),
+    );
+    let key_path = root.join("helper-grant.key");
+    fs::write(&key_path, test_helper_grant_key()).unwrap();
+    fs::set_permissions(&key_path, fs::Permissions::from_mode(0o600)).unwrap();
+    let app_config = AppConfig::from_env_map(&BTreeMap::from([
+        ("OSMAP_RUN_MODE".into(), "serve".into()),
+        (
+            "OSMAP_STATE_DIR".into(),
+            root.join("app-state").to_string_lossy().into_owned(),
+        ),
+        (
+            "OSMAP_MAILBOX_HELPER_SOCKET_PATH".into(),
+            socket.to_string_lossy().into_owned(),
+        ),
+        (
+            "OSMAP_MAILBOX_HELPER_GRANT_KEY_PATH".into(),
+            key_path.to_string_lossy().into_owned(),
+        ),
+        ("OSMAP_MAILBOX_HELPER_PEER_UID".into(), uid.to_string()),
+        ("OSMAP_MAILBOX_WORKER_BUDGET".into(), "1".into()),
+    ]))
+    .unwrap();
+    assert!(app_config.state_layout.settings_dir.starts_with(&root));
+    assert!(app_config.state_layout.session_dir.starts_with(&root));
+    assert!(
+        app_config.openpgp_crypto.is_none()
+            && app_config.openpgp_inventory.is_none()
+            && app_config.openpgp_public_admin.is_none()
+    );
+    assert!(
+        app_config.mailbox_retention_policy_path.is_none(),
+        "web has no helper policy-file authority"
+    );
+    let context = AuthenticationContext::new(
+        AuthenticationPolicy::default(),
+        "native-delete-browser-session",
+        "127.0.0.1",
+        "OSMAP/native-reader",
+    )
+    .unwrap();
+    let sessions = SessionService::new(
+        FileSessionStore::new(&app_config.state_layout.session_dir),
+        SystemTimeProvider,
+        SystemRandomSource,
+        1800,
+        1800,
+    );
+    // Actual issued fixture sessions; this does not qualify password/TOTP login.
+    let alice = sessions
+        .issue(&context, ALICE, RequiredSecondFactor::Totp)
+        .unwrap();
+    let bob_session = sessions
+        .issue(&context, BOB, RequiredSecondFactor::Totp)
+        .unwrap();
+    let app = BrowserApp::new(
+        HttpPolicy::from_config(&app_config),
+        RuntimeBrowserGateway::from_config(&app_config),
+    );
+    let store = crate::bin_folder::BinPreferencesStore::new(&app_config.state_layout.settings_dir);
+    let saved = http(
+        &app,
+        Some(&alice),
+        "POST",
+        "/settings/bin-folder",
+        &BTreeMap::from([
+            ("csrf_token".into(), alice.record.csrf_token.clone()),
+            ("expected_revision".into(), "0".into()),
+            ("mailbox_name".into(), "Deleted".into()),
+            ("section".into(), "reading".into()),
+        ]),
+    );
+    assert_eq!(saved.response.status_code, 303);
+    assert_eq!(store.load(ALICE).unwrap().mailbox_name, "Deleted");
+    assert_eq!(
+        store.load(BOB).unwrap(),
+        crate::bin_folder::BinPreference::default()
+    );
+    let back = "/mailbox?name=Deleted";
+    let path = format!(
+        "/message/delete?mailbox=Deleted&uid={}&mailbox_guid={}&message_guid={}&return_to={}",
+        request.uid,
+        encode(&request.version.mailbox_guid),
+        encode(&request.version.message_guid),
+        encode(back)
+    );
+    let calls = executor.inner.calls.clone();
+    let before_unauth = calls.load(Ordering::SeqCst);
+    assert_eq!(
+        http(&app, None, "GET", &path, &BTreeMap::new())
+            .response
+            .status_code,
+        303
+    );
+    assert_eq!(calls.load(Ordering::SeqCst), before_unauth);
+    assert_eq!(
+        get(&app, &alice, &path).response.status_code,
+        503,
+        "missing retention authority"
+    );
+    assert_eq!(delete_admissions.load(Ordering::SeqCst), 0);
+    write_policy(7u64, "denied");
+    assert_eq!(
+        get(&app, &alice, &path).response.status_code,
+        403,
+        "denied retention authority"
+    );
+    assert_eq!(delete_admissions.load(Ordering::SeqCst), 0);
+    write_policy(7u64, "allowed");
+    let confirmation = get(&app, &alice, &path);
+    assert_eq!(confirmation.response.status_code, 200);
+    assert!(text(&confirmation).contains("Delete permanently?"));
+    assert!(text(&confirmation).contains("It cannot be restored."));
+    let form = retention_delete_confirmation_form(text(&confirmation), "delete");
+    assert!(form.get("csrf_token") == Some(&alice.record.csrf_token));
+    assert_eq!(form.get("policy_revision").map(String::as_str), Some("7"));
+    assert_eq!(delete_admissions.load(Ordering::SeqCst), 0);
+    assert_eq!(expunge_count.load(Ordering::SeqCst), 0);
+    let cancel = retention_delete_confirmation_form(text(&confirmation), "cancel");
+    let cancel_before = calls.load(Ordering::SeqCst);
+    let cancelled = http(&app, Some(&alice), "POST", "/message/delete", &cancel);
+    assert_eq!(cancelled.response.status_code, 303);
+    assert_eq!(
+        calls.load(Ordering::SeqCst),
+        cancel_before,
+        "Cancel performs no native read or mutation"
+    );
+    assert_eq!(delete_admissions.load(Ordering::SeqCst), 0);
+    let mut bad = form.clone();
+    bad.insert("csrf_token".into(), "0".repeat(64));
+    let bad_before = calls.load(Ordering::SeqCst);
+    assert_eq!(
+        http(&app, Some(&alice), "POST", "/message/delete", &bad)
+            .response
+            .status_code,
+        403
+    );
+    assert_eq!(calls.load(Ordering::SeqCst), bad_before);
+    // A confirmed old form cannot override helper-owned missing/denied/revised policy.
+    {
+        let _guard = gate.lock().unwrap();
+        fs::remove_file(&policy_path).unwrap();
+    }
+    let cancel_unavailable_before = calls.load(Ordering::SeqCst);
+    assert_eq!(
+        http(&app, Some(&alice), "POST", "/message/delete", &cancel)
+            .response
+            .status_code,
+        303
+    );
+    assert_eq!(calls.load(Ordering::SeqCst), cancel_unavailable_before);
+    assert_eq!(
+        http(&app, Some(&alice), "POST", "/message/delete", &form)
+            .response
+            .status_code,
+        503
+    );
+    write_policy(7u64, "denied");
+    assert_eq!(
+        http(&app, Some(&alice), "POST", "/message/delete", &form)
+            .response
+            .status_code,
+        403
+    );
+    write_policy(8u64, "allowed");
+    assert_eq!(
+        http(&app, Some(&alice), "POST", "/message/delete", &form)
+            .response
+            .status_code,
+        409
+    );
+    assert_eq!(delete_admissions.load(Ordering::SeqCst), 0);
+    assert_eq!(expunge_count.load(Ordering::SeqCst), 0);
+    write_policy(7u64, "allowed");
+    let mut stale = form.clone();
+    stale.insert("message_guid".into(), "stale-public-tuple".into());
+    assert_eq!(
+        http(&app, Some(&alice), "POST", "/message/delete", &stale)
+            .response
+            .status_code,
+        409
+    );
+    // Bob retains default Trash, so Alice's submitted Deleted tuple is refused.
+    let mut foreign = form.clone();
+    foreign.insert("csrf_token".into(), bob_session.record.csrf_token.clone());
+    assert_eq!(
+        http(&app, Some(&bob_session), "POST", "/message/delete", &foreign)
+            .response
+            .status_code,
+        400
+    );
+    assert_eq!(delete_admissions.load(Ordering::SeqCst), 0);
+    assert_eq!(
+        native_list.list_messages(ALICE, &deleted_query).unwrap(),
+        deleted
+    );
+    let deleted_response = http(&app, Some(&alice), "POST", "/message/delete", &form);
+    assert_eq!(deleted_response.response.status_code, 200);
+    assert!(text(&deleted_response).contains("Permanent deletion was confirmed."));
+    assert_eq!(delete_admissions.load(Ordering::SeqCst), 1);
+    assert_eq!(expunge_count.load(Ordering::SeqCst), 1);
+    assert!(deleted_response
+        .audit_events
+        .iter()
+        .any(|event| event.action == "message_delete_result"));
+    let duplicate = http(&app, Some(&alice), "POST", "/message/delete", &form);
+    assert_eq!(duplicate.response.status_code, 409);
+    assert_eq!(delete_admissions.load(Ordering::SeqCst), 1);
+    assert_eq!(expunge_count.load(Ordering::SeqCst), 1);
+    assert_eq!(forbidden.load(Ordering::SeqCst), 0);
+    assert_eq!(
+        native_list.list_messages(ALICE, &deleted_query).unwrap(),
+        vec![neighbour]
+    );
+    assert_eq!(
+        native_list.list_messages(ALICE, &inbox_query).unwrap(),
+        inbox
+    );
+    assert_eq!(native_list.list_messages(BOB, &inbox_query).unwrap(), bob);
+    assert_eq!(
+        scoped_delete_wire_bytes(&root, "alice", ".Deleted"),
+        vec![neighbour_bytes]
+    );
+    assert_eq!(scoped_delete_wire_bytes(&root, "alice", ""), inbox_bytes);
+    assert_eq!(scoped_delete_wire_bytes(&root, "bob", ""), bob_bytes);
+    fixture.finish();
+    drop(fixture);
+    assert!(!root.exists());
+    assert_eq!(before, standard_metadata());
+    println!("native_retention_single_delete_browser=PASS actual_browser_runtime_helper_dovecot=PASS rendered_confirmation_form=PASS get_cancel_csrf_unauth_missing_denied_changed_revision_stale_foreign_no_delete=PASS exact_identity_expunge_once_no_retry=PASS preexisting_deleted_neighbour_intact=PASS same_uid_inbox_bob_bytes_flags_guids_unchanged=PASS no_other_mutations_or_crypto=PASS synthetic_session_not_login_proof=PASS scratch_cleanup=PASS standard_host_metadata_unchanged=PASS");
+}
+// Dedicated bulk fixture. No original expunge guard is changed or bypassed.
+#[derive(Clone)]
+struct BulkScopedDeleteExecutor {
+    inner: NativeExecutor,
+    permitted_args: Vec<Vec<String>>,
+    expunge_count: Arc<AtomicUsize>,
+}
+impl CommandExecutor for BulkScopedDeleteExecutor {
+    fn run_with_stdin_bytes(
+        &self,
+        _: &str,
+        _: &[String],
+        _: &[u8],
+    ) -> Result<CommandExecution, CommandExecutionError> {
+        panic!("bulk delete fixture requires bounded output execution")
+    }
+    fn run_with_stdin_bytes_timeout_and_output_limit(
+        &self,
+        p: &str,
+        a: &[String],
+        input: &[u8],
+        timeout: Duration,
+        limit: usize,
+    ) -> Result<CommandExecution, CommandExecutionError> {
+        if !a.iter().any(|value| value == "expunge") {
+            assert!(a.iter().any(|value| value == "fetch"));
+            return self
+                .inner
+                .run_with_stdin_bytes_timeout_and_output_limit(p, a, input, timeout, limit);
+        }
+        assert_eq!(p, "/usr/local/bin/doveadm");
+        assert!(input.is_empty());
+        assert!(self
+            .permitted_args
+            .iter()
+            .any(|permitted| permitted.as_slice() == a));
+        assert!(timeout > Duration::ZERO && timeout <= Duration::from_secs(3));
+        assert!(limit > 0 && limit <= crate::mailbox::DELETE_STATE_OUTPUT_MAX_BYTES);
+        assert_eq!(
+            self.expunge_count.fetch_add(1, Ordering::SeqCst),
+            0,
+            "partial fixture permits only the first actual expunge"
+        );
+        let mut scoped = vec![
+            "-c".into(),
+            self.inner.config.to_string_lossy().into_owned(),
+        ];
+        scoped.extend_from_slice(a);
+        self.inner.calls.fetch_add(1, Ordering::SeqCst);
+        SystemCommandExecutor
+            .run_with_stdin_bytes_timeout_and_output_limit(p, &scoped, input, timeout, limit)
+    }
+}
+struct BulkRetentionPolicyFlip {
+    inner: crate::mailbox::DoveadmMessageDeleteBackend<BulkScopedDeleteExecutor>,
+    gate: Arc<Mutex<()>>,
+    policy_path: PathBuf,
+    admissions: Arc<AtomicUsize>,
+    first_confirmed: Arc<AtomicBool>,
+}
+impl crate::mailbox::MessageDeleteBackend for BulkRetentionPolicyFlip {
+    fn retention_status(&self, account: &str, mailbox: &str) -> crate::mailbox::RetentionDecision {
+        self.inner.retention_status(account, mailbox)
+    }
+    fn delete_message(
+        &self,
+        account: &str,
+        request: &crate::mailbox::MessageDeleteRequest,
+    ) -> Result<crate::mailbox::MessageDeleteResult, crate::mailbox::MessageDeleteError> {
+        let index = self.admissions.fetch_add(1, Ordering::SeqCst);
+        assert!(index < 2, "third selected target must not be dispatched");
+        if index == 1 {
+            assert!(self.first_confirmed.load(Ordering::SeqCst));
+            let _guard = self.gate.lock().unwrap();
+            fs::write(&self.policy_path,serde_json::to_vec(&serde_json::json!({"version":1,"rules":[{"account":ALICE,"mailbox_name":"Deleted","revision":7,"permanent_delete":"denied"}]})).unwrap()).unwrap();
+            fs::set_permissions(&self.policy_path, fs::Permissions::from_mode(0o600)).unwrap();
+        }
+        let result =
+            crate::mailbox::MessageDeleteBackend::delete_message(&self.inner, account, request);
+        if index == 0 && matches!(result, Ok(crate::mailbox::MessageDeleteResult::Deleted)) {
+            self.first_confirmed.store(true, Ordering::SeqCst);
+        }
+        result
+    }
+}
+fn bulk_retention_confirmation_form(body: &str, action: &str) -> BTreeMap<String, String> {
+    assert!(matches!(action, "delete" | "cancel"));
+    let form = body
+        .split("<form ")
+        .find_map(|part| {
+            let form = part.split_once("</form>")?.0;
+            (attribute(form, "action").as_deref() == Some("/messages/delete")).then_some(form)
+        })
+        .expect("actual rendered bulk confirmation form");
+    assert!(form.split("<button ").any(|button| {
+        let Some(tag) = button.split_once('>').map(|v| v.0) else {
+            return false;
+        };
+        attribute(tag, "name").as_deref() == Some("confirm")
+            && attribute(tag, "value").as_deref() == Some(action)
+            && !tag.contains(" disabled")
+    }));
+    let mut fields: BTreeMap<String, String> = form
+        .split("<input ")
+        .filter_map(|input| {
+            let tag = input.split_once('>')?.0;
+            Some((attribute(tag, "name")?, attribute(tag, "value")?))
+        })
+        .collect();
+    assert_eq!(fields.len(), 7);
+    fields.insert("confirm".into(), action.into());
+    fields
+}
+
+// Separate HTTP proof with real read backends and only one exact permitted
+// deletion. Original direct/helper/reader/Bin fixtures remain unchanged.
+fn start_bulk_retention_delete_http_helper(
+    fixture: &mut Fixture,
+    backend: BulkRetentionPolicyFlip,
+    native: NativeExecutor,
+    userdb: PathBuf,
+    uid: u32,
+    forbidden: Arc<AtomicUsize>,
+) -> PathBuf {
+    let socket = fixture.root.join("delete-http-helper.sock");
+    let listener = UnixListener::bind(&socket).unwrap();
+    fs::set_permissions(&socket, fs::Permissions::from_mode(0o600)).unwrap();
+    listener.set_nonblocking(true).unwrap();
+    let stop = fixture.stop.clone();
+    fixture.threads.push(thread::spawn(move || {
+        let listing = DoveadmMailboxListBackend::new(
+            MailboxListingPolicy::default(),
+            native.clone(),
+            "/usr/local/bin/doveadm",
+        )
+        .with_userdb_socket_path(Some(userdb.clone()));
+        let messages = DoveadmMessageListBackend::new(
+            MessageListPolicy::default(),
+            native.clone(),
+            "/usr/local/bin/doveadm",
+        )
+        .with_userdb_socket_path(Some(userdb.clone()));
+        let search = DoveadmMessageSearchBackend::new(
+            MessageSearchPolicy::default(),
+            native.clone(),
+            "/usr/local/bin/doveadm",
+        )
+        .with_userdb_socket_path(Some(userdb.clone()));
+        // Identity comes from actual bounded summaries. A reader/body fallback
+        // is refused, so a successful confirmation does not depend on decoding.
+        let unavailable = || MailboxBackendError {
+            backend: "native-delete-http-view-forbidden",
+            reason: "body fetch outside delete proof".into(),
+        };
+        let view = StaticHelperBackend {
+            mailbox_result: Arc::new(Err(unavailable())),
+            message_list_result: Arc::new(Err(unavailable())),
+            message_search_result: Arc::new(Err(unavailable())),
+            message_view_result: Arc::new(Err(unavailable())),
+            message_move_result: Arc::new(Err(unavailable())),
+        };
+        let mutations = ForbiddenMutation(forbidden.clone());
+        let flags = RetentionDeleteForbiddenFlag(forbidden);
+        let replay = Mutex::new(BTreeMap::new());
+        let deadline = Instant::now() + NATIVE_LIMIT;
+        while !stop.load(Ordering::SeqCst) && Instant::now() < deadline {
+            let (mut stream, _) = match listener.accept() {
+                Ok(value) => value,
+                Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
+                    thread::sleep(Duration::from_millis(5));
+                    continue;
+                }
+                Err(_) => panic!("isolated delete HTTP helper accept failed"),
+            };
+            handle_helper_client_with_delete(
+                HelperBackends {
+                    mailbox_backend: &listing,
+                    message_list_backend: &messages,
+                    message_search_backend: &search,
+                    message_view_backend: &view,
+                    message_move_backend: &mutations,
+                    message_append_backend: &mutations,
+                    message_flag_backend: &flags,
+                },
+                Some(&backend),
+                &Logger::new(crate::config::LogFormat::Text, LogLevel::Error),
+                &mut stream,
+                MailboxHelperPolicy::default(),
+                MailboxHelperTrustedCallerPolicy {
+                    trusted_peer_uid: uid,
+                    grant_key: test_helper_grant_key(),
+                },
+                &replay,
+            );
+        }
+    }));
+    socket
+}
+
+#[test]
+#[ignore = "explicit OpenBSD BrowserApp bulk delete partial-prefix proof; disposable tuples only"]
+fn isolated_openbsd_retention_bound_bulk_delete_browser() {
+    use crate::mailbox::{
+        DoveadmMessageDeleteBackend, FileMailboxRetentionPolicy, MessageDeleteRequest,
+    };
+    assert_eq!(std::env::consts::OS, "openbsd");
+    let host = SystemCommandExecutor
+        .run_with_stdin_timeout("/bin/hostname", &[], "", Duration::from_secs(1))
+        .unwrap();
+    assert_eq!(host.status_code, 0);
+    assert_eq!(host.stdout.trim(), "obsd1.blackbagsecurity.com");
+    let before = standard_metadata();
+    let root = fs::canonicalize("/tmp").unwrap().join(format!(
+        "osmap-bulk-delete-browser-native-{}-{}",
+        std::process::id(),
+        SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos()
+    ));
+    fs::DirBuilder::new().mode(0o700).create(&root).unwrap();
+    let mut fixture = Fixture {
+        root: root.clone(),
+        stop: Arc::new(AtomicBool::new(false)),
+        threads: vec![],
+    };
+    let uid = fs::metadata(&root).unwrap().uid();
+    assert_ne!(uid, 0);
+    let group = SystemCommandExecutor
+        .run_with_stdin_timeout("/usr/bin/id", &["-g".into()], "", Duration::from_secs(1))
+        .unwrap();
+    assert_eq!(group.status_code, 0);
+    let gid = group.stdout.trim().parse::<u32>().unwrap();
+    assert_ne!(gid, 0);
+    for directory in ["run", "state", "app-state"] {
+        fs::DirBuilder::new()
+            .mode(0o700)
+            .create(root.join(directory))
+            .unwrap();
+    }
+    for user in ["alice", "bob"] {
+        for folder in ["", ".Deleted"] {
+            for part in ["cur", "new", "tmp"] {
+                fs::create_dir_all(root.join(user).join("Maildir").join(folder).join(part))
+                    .unwrap();
+            }
+        }
+    }
+    write_message(&root, "alice", 0, 0);
+    write_message(&root, "bob", 0, 0);
+    write_message(&root, "alice", 1, 0);
+    fs::rename(
+        root.join("alice/Maildir/new/synthetic-001"),
+        root.join("alice/Maildir/.Deleted/new/selected-001"),
+    )
+    .unwrap();
+    let first_wire_bytes = fs::read(root.join("alice/Maildir/.Deleted/new/selected-001")).unwrap();
+    let inbox_bytes = scoped_delete_wire_bytes(&root, "alice", "");
+    let bob_bytes = scoped_delete_wire_bytes(&root, "bob", "");
+    let config = root.join("dovecot.conf");
+    fs::write(&config, format!("base_dir = {0}/run\nstate_dir = {0}/state\nmail_location = maildir:~/Maildir\nmail_uid = {uid}\nmail_gid = {gid}\nfirst_valid_uid = {uid}\nprotocols =\nlisten = 127.0.0.1\nssl = no\nmail_plugins =\nstats_writer_socket_path =\nauth_socket_path = {0}/never-default\nlog_path = {0}/native.log\ninfo_log_path = {0}/native.log\nnamespace inbox {{\n inbox = yes\n separator =\n}}\n", root.display())).unwrap();
+    fs::set_permissions(&config, fs::Permissions::from_mode(0o600)).unwrap();
+    let userdb = serve_userdb(&mut fixture, uid, gid);
+    let native = NativeExecutor {
+        config,
+        calls: Arc::new(AtomicUsize::new(0)),
+        bin_move_count: None,
+    };
+    let native_list = DoveadmMessageListBackend::new(
+        MessageListPolicy::default(),
+        native.clone(),
+        "/usr/local/bin/doveadm",
+    )
+    .with_userdb_socket_path(Some(userdb.clone()));
+    let inbox_query = MessageListRequest::new(MessageListPolicy::default(), "INBOX").unwrap();
+    let deleted_query = MessageListRequest::new(MessageListPolicy::default(), "Deleted").unwrap();
+    // Index the sole selected object first, so same-UID cross-folder controls
+    // do not depend on Maildir readdir order when the neighbour is introduced.
+    assert_eq!(
+        native_list
+            .list_messages(ALICE, &deleted_query)
+            .unwrap()
+            .len(),
+        1
+    );
+    for index in [2, 3] {
+        write_message(&root, "alice", index, 0);
+        fs::rename(
+            root.join(format!("alice/Maildir/new/synthetic-{index:03}")),
+            root.join(format!("alice/Maildir/.Deleted/new/selected-{index:03}")),
+        )
+        .unwrap();
+    }
+    write_message(&root, "alice", 4, 0);
+    let neighbour_file = root.join("alice/Maildir/.Deleted/cur/neighbour-004:2,T");
+    fs::rename(
+        root.join("alice/Maildir/new/synthetic-004"),
+        &neighbour_file,
+    )
+    .unwrap();
+    let original_deleted_wire = scoped_delete_wire_bytes(&root, "alice", ".Deleted");
+    let inbox = native_list.list_messages(ALICE, &inbox_query).unwrap();
+    let bob = native_list.list_messages(BOB, &inbox_query).unwrap();
+    let deleted = native_list.list_messages(ALICE, &deleted_query).unwrap();
+    assert_eq!(inbox.len(), 1);
+    assert_eq!(bob.len(), 1);
+    assert_eq!(deleted.len(), 4);
+    let neighbour = deleted
+        .iter()
+        .find(|row| row.subject.as_deref() == Some("Native 004"))
+        .unwrap()
+        .clone();
+    assert!(crate::mail_list::has_flag(&neighbour.flags, "\\Deleted"));
+    let mut selected: Vec<_> = deleted
+        .iter()
+        .filter(|row| row.subject.as_deref() != Some("Native 004"))
+        .cloned()
+        .collect();
+    selected.sort_by_key(|row| row.uid);
+    assert_eq!(selected.len(), 3);
+    assert_eq!(selected[0].uid, inbox[0].uid);
+    assert_eq!(selected[0].uid, bob[0].uid);
+    let targets: Vec<_> = selected
+        .iter()
+        .map(|row| {
+            MessageDeleteRequest::new(
+                ALICE,
+                "Deleted",
+                row.uid,
+                row.metadata.as_ref().unwrap().version.clone(),
+                7,
+            )
+            .unwrap()
+        })
+        .collect();
+    let expunge_count = Arc::new(AtomicUsize::new(0));
+    let permitted_args: Vec<Vec<String>> = targets
+        .iter()
+        .map(|target| {
+            vec![
+                "-o".into(),
+                "stats_writer_socket_path=".into(),
+                "-o".into(),
+                format!("auth_socket_path={}", userdb.display()),
+                "expunge".into(),
+                "-u".into(),
+                ALICE.into(),
+                "mailbox".into(),
+                "Deleted".into(),
+                "mailbox-guid".into(),
+                target.version.mailbox_guid.clone(),
+                "uid".into(),
+                target.uid.to_string(),
+                "guid".into(),
+                target.version.message_guid.clone(),
+            ]
+        })
+        .collect();
+    let executor = BulkScopedDeleteExecutor {
+        inner: native,
+        permitted_args,
+        expunge_count: expunge_count.clone(),
+    };
+    let policy_path = root.join("retention.json");
+    let gate = Arc::new(Mutex::new(()));
+    let write_policy = |revision, permission: &str| {
+        let _guard = gate.lock().unwrap();
+        fs::write(&policy_path, serde_json::to_vec(&serde_json::json!({"version":1,"rules":[{
+            "account":ALICE,"mailbox_name":"Deleted","revision":revision,"permanent_delete":permission
+        }]})).unwrap()).unwrap();
+        fs::set_permissions(&policy_path, fs::Permissions::from_mode(0o600)).unwrap();
+    };
+    let backend = DoveadmMessageDeleteBackend::new(
+        executor.clone(),
+        "/usr/local/bin/doveadm",
+        FileMailboxRetentionPolicy::new(Some(policy_path.clone()), uid),
+    )
+    .with_userdb_socket_path(Some(userdb.clone()))
+    .with_operation_gate(gate.clone());
+    let delete_admissions = Arc::new(AtomicUsize::new(0));
+    let forbidden = Arc::new(AtomicUsize::new(0));
+    let socket = start_bulk_retention_delete_http_helper(
+        &mut fixture,
+        BulkRetentionPolicyFlip {
+            inner: backend,
+            gate: gate.clone(),
+            policy_path: policy_path.clone(),
+            admissions: delete_admissions.clone(),
+            first_confirmed: Arc::new(AtomicBool::new(false)),
+        },
+        executor.inner.clone(),
+        userdb.clone(),
+        uid,
+        forbidden.clone(),
+    );
+    let key_path = root.join("helper-grant.key");
+    fs::write(&key_path, test_helper_grant_key()).unwrap();
+    fs::set_permissions(&key_path, fs::Permissions::from_mode(0o600)).unwrap();
+    let app_config = AppConfig::from_env_map(&BTreeMap::from([
+        ("OSMAP_RUN_MODE".into(), "serve".into()),
+        (
+            "OSMAP_STATE_DIR".into(),
+            root.join("app-state").to_string_lossy().into_owned(),
+        ),
+        (
+            "OSMAP_MAILBOX_HELPER_SOCKET_PATH".into(),
+            socket.to_string_lossy().into_owned(),
+        ),
+        (
+            "OSMAP_MAILBOX_HELPER_GRANT_KEY_PATH".into(),
+            key_path.to_string_lossy().into_owned(),
+        ),
+        ("OSMAP_MAILBOX_HELPER_PEER_UID".into(), uid.to_string()),
+        ("OSMAP_MAILBOX_WORKER_BUDGET".into(), "1".into()),
+    ]))
+    .unwrap();
+    assert!(app_config.state_layout.settings_dir.starts_with(&root));
+    assert!(app_config.state_layout.session_dir.starts_with(&root));
+    assert!(
+        app_config.openpgp_crypto.is_none()
+            && app_config.openpgp_inventory.is_none()
+            && app_config.openpgp_public_admin.is_none()
+    );
+    assert!(
+        app_config.mailbox_retention_policy_path.is_none(),
+        "web has no helper policy-file authority"
+    );
+    let context = AuthenticationContext::new(
+        AuthenticationPolicy::default(),
+        "native-delete-browser-session",
+        "127.0.0.1",
+        "OSMAP/native-reader",
+    )
+    .unwrap();
+    let sessions = SessionService::new(
+        FileSessionStore::new(&app_config.state_layout.session_dir),
+        SystemTimeProvider,
+        SystemRandomSource,
+        1800,
+        1800,
+    );
+    // Actual issued fixture sessions; this does not qualify password/TOTP login.
+    let alice = sessions
+        .issue(&context, ALICE, RequiredSecondFactor::Totp)
+        .unwrap();
+    let bob_session = sessions
+        .issue(&context, BOB, RequiredSecondFactor::Totp)
+        .unwrap();
+    let app = BrowserApp::new(
+        HttpPolicy::from_config(&app_config),
+        RuntimeBrowserGateway::from_config(&app_config),
+    );
+    let store = crate::bin_folder::BinPreferencesStore::new(&app_config.state_layout.settings_dir);
+    let saved = http(
+        &app,
+        Some(&alice),
+        "POST",
+        "/settings/bin-folder",
+        &BTreeMap::from([
+            ("csrf_token".into(), alice.record.csrf_token.clone()),
+            ("expected_revision".into(), "0".into()),
+            ("mailbox_name".into(), "Deleted".into()),
+            ("section".into(), "reading".into()),
+        ]),
+    );
+    assert_eq!(saved.response.status_code, 303);
+    assert_eq!(store.load(ALICE).unwrap().mailbox_name, "Deleted");
+    assert_eq!(
+        store.load(BOB).unwrap(),
+        crate::bin_folder::BinPreference::default()
+    );
+    let back = "/mailbox?name=Deleted";
+    let mut review = BTreeMap::from([
+        ("csrf_token".into(), alice.record.csrf_token.clone()),
+        ("mailbox".into(), "Deleted".into()),
+        ("return_to".into(), back.into()),
+        ("action".into(), "review-delete".into()),
+        ("destination_mailbox".into(), "INBOX".into()),
+    ]);
+    for target in &targets {
+        review.insert(
+            format!("message_{}", target.uid),
+            format!(
+                "{}|{}|{}",
+                target.uid, target.version.mailbox_guid, target.version.message_guid
+            ),
+        );
+    }
+    assert_eq!(review.len(), 8);
+    assert_eq!(
+        http(&app, None, "POST", "/messages/delete/review", &review)
+            .response
+            .status_code,
+        303
+    );
+    assert_eq!(
+        http(
+            &app,
+            Some(&alice),
+            "POST",
+            "/messages/delete/review",
+            &review
+        )
+        .response
+        .status_code,
+        503
+    );
+    write_policy(7u64, "denied");
+    assert_eq!(
+        http(
+            &app,
+            Some(&alice),
+            "POST",
+            "/messages/delete/review",
+            &review
+        )
+        .response
+        .status_code,
+        403
+    );
+    assert_eq!(delete_admissions.load(Ordering::SeqCst), 0);
+    write_policy(7u64, "allowed");
+    let reviewed = http(
+        &app,
+        Some(&alice),
+        "POST",
+        "/messages/delete/review",
+        &review,
+    );
+    assert_eq!(reviewed.response.status_code, 200);
+    assert!(text(&reviewed).contains("Delete selected messages permanently?"));
+    let form = bulk_retention_confirmation_form(text(&reviewed), "delete");
+    assert!(form.get("csrf_token") == Some(&alice.record.csrf_token));
+    assert_eq!(form.len(), 8);
+    assert_eq!(delete_admissions.load(Ordering::SeqCst), 0);
+    assert_eq!(expunge_count.load(Ordering::SeqCst), 0);
+    let cancel = bulk_retention_confirmation_form(text(&reviewed), "cancel");
+    let calls = executor.inner.calls.clone();
+    let before_cancel = calls.load(Ordering::SeqCst);
+    assert_eq!(
+        http(&app, Some(&alice), "POST", "/messages/delete", &cancel)
+            .response
+            .status_code,
+        303
+    );
+    assert_eq!(calls.load(Ordering::SeqCst), before_cancel);
+    let mut invalid = form.clone();
+    invalid.insert("csrf_token".into(), "0".repeat(64));
+    assert_eq!(
+        http(&app, Some(&alice), "POST", "/messages/delete", &invalid)
+            .response
+            .status_code,
+        403
+    );
+    // A bad third tuple must prevent deletion of the otherwise valid prefix.
+    let mut stale = form.clone();
+    let last = targets.last().unwrap();
+    stale.insert(
+        format!("message_{}", last.uid),
+        format!(
+            "{}|{}|stale-public-tuple",
+            last.uid, last.version.mailbox_guid
+        ),
+    );
+    assert_eq!(
+        http(&app, Some(&alice), "POST", "/messages/delete", &stale)
+            .response
+            .status_code,
+        409
+    );
+    write_policy(8u64, "allowed");
+    assert_eq!(
+        http(&app, Some(&alice), "POST", "/messages/delete", &form)
+            .response
+            .status_code,
+        409
+    );
+    // A valid foreign session cannot use Alice's submitted Bin tuples.
+    let mut foreign = form.clone();
+    foreign.insert("csrf_token".into(), bob_session.record.csrf_token.clone());
+    assert_eq!(http(&app, Some(&bob_session), "POST", "/messages/delete", &foreign).response.status_code, 400);
+    write_policy(7u64, "allowed");
+    assert_eq!(delete_admissions.load(Ordering::SeqCst), 0);
+    assert_eq!(expunge_count.load(Ordering::SeqCst), 0);
+    assert_eq!(
+        native_list.list_messages(ALICE, &deleted_query).unwrap(),
+        deleted
+    );
+    let result = http(&app, Some(&alice), "POST", "/messages/delete", &form);
+    assert_eq!(result.response.status_code, 403);
+    assert!(
+        text(&result).contains("1 confirmed deleted; 1 refused; 0 unconfirmed; 1 not attempted.")
+    );
+    assert!(text(&result).contains(&format!(
+        "Message #{}: Deleted: absence confirmed",
+        targets[0].uid
+    )));
+    assert!(text(&result).contains(&format!(
+        "Message #{}: Refused: retention policy",
+        targets[1].uid
+    )));
+    assert!(text(&result).contains(&format!("Message #{}: Not attempted", targets[2].uid)));
+    assert!(text(&result).contains("Do not repeat completed or unconfirmed requests."));
+    assert_eq!(
+        delete_admissions.load(Ordering::SeqCst),
+        2,
+        "third target never dispatched"
+    );
+    assert_eq!(expunge_count.load(Ordering::SeqCst), 1);
+    assert_eq!(forbidden.load(Ordering::SeqCst), 0);
+    let remaining: Vec<_> = deleted
+        .iter()
+        .filter(|row| row.uid != targets[0].uid)
+        .cloned()
+        .collect();
+    assert_eq!(
+        native_list.list_messages(ALICE, &deleted_query).unwrap(),
+        remaining
+    );
+    assert!(remaining.contains(&neighbour));
+    assert_eq!(
+        original_deleted_wire
+            .iter()
+            .filter(|bytes| **bytes == first_wire_bytes)
+            .count(),
+        1
+    );
+    let expected_bytes: Vec<_> = original_deleted_wire
+        .into_iter()
+        .filter(|bytes| *bytes != first_wire_bytes)
+        .collect();
+    assert_eq!(expected_bytes.len(), 3);
+    assert_eq!(
+        native_list.list_messages(ALICE, &inbox_query).unwrap(),
+        inbox
+    );
+    assert_eq!(native_list.list_messages(BOB, &inbox_query).unwrap(), bob);
+    assert_eq!(
+        scoped_delete_wire_bytes(&root, "alice", ".Deleted"),
+        expected_bytes
+    );
+    assert_eq!(scoped_delete_wire_bytes(&root, "alice", ""), inbox_bytes);
+    assert_eq!(scoped_delete_wire_bytes(&root, "bob", ""), bob_bytes);
+    fixture.finish();
+    drop(fixture);
+    assert!(!root.exists());
+    assert_eq!(before, standard_metadata());
+    println!("native_retention_bulk_delete_browser=PASS actual_browser_runtime_helper_dovecot=PASS rendered_review_cancel_zero_mutation=PASS complete_selection_before_prefix=PASS actual_first_deleted_second_policy_denied_third_unattempted=PASS expunge_once_no_retry=PASS remaining_selected_and_predeleted_neighbour_intact=PASS same_uid_inbox_bob_bytes_flags_guids_unchanged=PASS no_other_mutations_or_crypto=PASS synthetic_session_not_login_proof=PASS scratch_cleanup=PASS standard_host_metadata_unchanged=PASS");
+}

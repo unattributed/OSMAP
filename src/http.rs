@@ -43,6 +43,8 @@ mod routes_mail;
 mod routes_mark_read;
 mod routes_message_open;
 pub(crate) use folder_tree::FolderTree;
+mod routes_bulk_delete;
+mod routes_delete;
 mod routes_folder_create;
 mod routes_moves;
 mod routes_notifications;
@@ -886,6 +888,12 @@ mod tests {
     mod after_archive_tests {
         include!("http/after_archive_tests.rs");
     }
+    mod message_delete_tests {
+        include!("http_message_delete_tests.rs");
+    }
+    mod bulk_delete_tests {
+        include!("http_bulk_delete_tests.rs");
+    }
     mod bin_folder_tests {
         include!("http/bin_folder_tests.rs");
     }
@@ -1016,6 +1024,19 @@ mod tests {
         autosave_store: Option<crate::autosave::Store>,
         after_archive_store: Option<crate::after_archive::Store>,
         bin_store: Option<crate::bin_folder::BinPreferencesStore>,
+        delete_decision: Arc<Mutex<crate::mailbox::RetentionDecision>>,
+        delete_result: Arc<
+            Mutex<Result<crate::mailbox::MessageDeleteResult, crate::mailbox::MessageDeleteError>>,
+        >,
+        delete_calls: Arc<Mutex<Vec<crate::mailbox::MessageDeleteRequest>>>,
+        delete_results: Arc<
+            Mutex<
+                std::collections::VecDeque<
+                    Result<crate::mailbox::MessageDeleteResult, crate::mailbox::MessageDeleteError>,
+                >,
+            >,
+        >,
+        delete_list_decision: Arc<Mutex<Option<BrowserMessageListDecision>>>,
         mark_read_store: Option<crate::mark_read::Store>,
         contacts_store: Option<crate::contacts::ContactStore>,
         draft_store: Option<crate::draft::FileDraftStore>,
@@ -1051,6 +1072,15 @@ mod tests {
                 autosave_store: None,
                 after_archive_store: None,
                 bin_store: None,
+                delete_decision: Arc::new(Mutex::new(
+                    crate::mailbox::RetentionDecision::Unavailable,
+                )),
+                delete_result: Arc::new(Mutex::new(Err(
+                    crate::mailbox::MessageDeleteError::PolicyUnavailable,
+                ))),
+                delete_calls: Arc::new(Mutex::new(Vec::new())),
+                delete_results: Arc::new(Mutex::new(std::collections::VecDeque::new())),
+                delete_list_decision: Arc::new(Mutex::new(None)),
                 mark_read_store: None,
                 contacts_store: None,
                 draft_store: None,
@@ -1133,6 +1163,36 @@ mod tests {
     }
 
     impl BrowserGateway for StubGateway {
+        fn retention_status(
+            &self,
+            _session: &ValidatedSession,
+            _mailbox: &str,
+        ) -> crate::mailbox::RetentionDecision {
+            *self.delete_decision.lock().unwrap()
+        }
+        fn delete_message(
+            &self,
+            _context: &AuthenticationContext,
+            session: &ValidatedSession,
+            request: &crate::mailbox::MessageDeleteRequest,
+        ) -> BrowserMessageDeleteOutcome {
+            assert_eq!(
+                request.canonical_username,
+                session.record.canonical_username
+            );
+            self.delete_calls.lock().unwrap().push(request.clone());
+            let result = self
+                .delete_results
+                .lock()
+                .unwrap()
+                .pop_front()
+                .unwrap_or_else(|| *self.delete_result.lock().unwrap());
+            BrowserMessageDeleteOutcome {
+                result,
+                retry_after_seconds: None,
+                audit_events: Vec::new(),
+            }
+        }
         fn compose_protection(
             &self,
             _session: &ValidatedSession,
@@ -2595,6 +2655,12 @@ mod tests {
             validated_session: &ValidatedSession,
             mailbox_name: &str,
         ) -> BrowserMessageListOutcome {
+            if let Some(decision) = self.delete_list_decision.lock().unwrap().clone() {
+                return BrowserMessageListOutcome {
+                    decision,
+                    audit_events: Vec::new(),
+                };
+            }
             if let Some(outcome) =
                 ux_browser_server::back_focus_list(validated_session, mailbox_name)
             {
