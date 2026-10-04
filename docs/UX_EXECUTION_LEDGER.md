@@ -5640,3 +5640,72 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   Attachment/OpenPGP/Unread/Folder controls are absent and current filter inputs
   return400. Repair real code with executed RED/green cases; do not substitute a
   paper finding for remediation. Documents remains its explicit S08 dependency.
+
+### 2026-10-04 UTC — S02-01 approved All message filters admitted
+
+- Previous reversible bulk proof is signed917119ecd1690553e7df149abb7a72454445f763,
+  verified Good Shopkeeper signature, normal commit/push hooks PASS. Fresh origin
+  fetch proves exact branch equality and clean0/0; all310 frozen native inputs
+  match signed Git blobs. Production app remains identical; no redeployment.
+- The accepted page09 displays All with From/Time/Attachment/OpenPGP/Unread/
+  Folder controls. Current All allows only category/q/page and omits the row.
+  Root executes exactly2 compiled RED cases: Unread request400 versus expected200;
+  successful All lacks native sender-filter. Existing12 tests are preserved.
+  Retain all-search/filters/{actual-red-results.json,red-unread.log,red-controls.log}.
+- Work order all-search/filters/work-order.json freezes production/test scope:
+  routes_all_search.rs, all_search_tests.rs, http_ui.rs, routes_people.rs and
+  mail_navigation.rs; additive existing native All fixture for actual proof.
+  Reuse typed existing filters and authenticated scoped search; validate the
+  entire account/query/folder echo and rows before filtering. Preserve finite
+  category/form/Open/Back/page context without admitting ignored sort/selection
+  fields, changing ordinary Messages forms or imposing its50-row window on All.
+  All retains20-row pages/23 maximum,250 message and200 owned-contact bounds,
+  one existing budget/deadline, no retry or new privilege. Contacts keep their
+  independent keyword count with truthful message-only filter applicability.
+- Normal signed/sync and exact obsd1 web-only activation follow matching local,
+  native and independent results. Preserve current compatible authoritative
+  helper, preferences/keys/policy and designated public fixtures. Migration none;
+  rollback exact previous binary with retained configuration. Documents, human
+  acceptance, unresolved helper refusal and all Send outcomes remain OPEN.
+- Necessary existing-test scope adjustment: people_tests.rs previously rejects
+  mailbox context, which is now legitimately retained for return to All. Replace
+  only that obsolete contract negative with an unsupported authority/scope case,
+  and add positive validated-context/no-mail-worker proof. Likewise reclassify
+  valid plain-PGP empty All landing while retaining unsupported assurance/bounds
+  negatives. These are explicit required behavior changes, not waived guards.
+
+### 2026-10-04 UTC — S02-01 real All filter remediation, matching execution
+
+- Actual production repair supplies From, received dates, Attachment, OpenPGP,
+  read state and Folder in approved All order. The shared typed predicates apply
+  only after account/query/exact scoped-folder echo and all bounded rows validate.
+  People keeps account-private name/address keyword semantics and explicit mail
+  predicate applicability; generated forms/tabs/pages/Open/Back retain finite
+  validated context. No ignored sorting/selection authority is admitted.
+- Final local focused All20, People1 and return-context1 actually execute and
+  PASS. A61-eligible active-predicate case checks rows51–60 on page3 and row61
+  plus owned contact on page4; actual Sender/date/Folder and People query forms,
+  Next links and Clear search are submitted/followed. Whole scoped snapshots are
+  refused before predicates can hide bad rows; Unknown remains distinct.
+- Matching native All-filter attempt1 actually executes20 HTTP plus1 isolated
+  BrowserApp/Runtime/authenticated same-UID helper/Dovecot integration:21 PASS,
+  zero failed/ignored. Actual scoped filter forms, six predicates, contact counts,
+  generated GUID Open/Back, People no-mail dispatch, Messages tab, encrypted MIME
+  count and Clear search pass. Original12 proof markers/state comparisons remain,
+  plus all_message_filters_actual_owned_scope_context. No move/append/delete/Send/
+  private cryptography or operator-mail mutation; scratch/host preservation PASS.
+- Frozen310 inputs match canonical bytes. Native manifest
+  8c663ac00ed7873953940dccf7f272e8e5c23016cfe900c10e626e65f05cf4b6,
+  app9e4113b56ce9e2dc63dc3364506551b265d7d2de5e5c37e4dffb16e6ef1eb763,
+  test4a43cac6c1110fafe759f1b1c55f982ef74aca26a424f8f5a26faba608262771.
+  Independent final seven-file review824e85ccadb25a3622648e21c4f6078fc14a2a5473196b9a8b1b688d7b9f2bff
+  finds no concrete blocker and expressly performs no execution.
+- Aggregate gates, signed synchronization, web-only activation and installed
+  external-browser filter/form/opened-panel verification are separate pending
+  checkpoints until their actual matching results are recorded. Human UAT,
+  Documents/S08, whole S02, Send and protected-provider acceptance remain OPEN.
+- Matching acceptance-check actually exits0:1320 library cases PASS/0 fail/29
+  explicit native registrations ignored locally; separate native21 above actually
+  run. Security/Clippy and V10/V14/V13/WSTG harness gates pass without relaxation.
+  Synthetic negative WSTG/release-refusal harness output is not authenticated
+  live release qualification. aggregate-results.json retains exact log hash.

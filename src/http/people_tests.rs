@@ -41,6 +41,21 @@ fn people_search_owned_bounded_escaped_paged_and_no_mail_dispatch() {
         .audit_events
         .iter()
         .any(|e| format!("{e:?}").contains("search_budget")));
+    let retained =
+        call("/search?category=people&q=PERSON&mailbox=INBOX&filter=unread&pgp=encrypted&page=10");
+    assert_eq!(retained.response.status_code, 200);
+    assert!(
+        body_text(&retained).contains("People (23)")
+            && body_text(&retained).contains("do not filter People")
+    );
+    assert!(
+        body_text(&retained).contains("category=all")
+            && body_text(&retained).contains("filter=unread")
+            && body_text(&retained).contains("pgp=encrypted")
+    );
+    assert!(!retained.audit_events.iter().any(
+        |event| event.action == "request_budget_acquired" || event.action == "stub_all_search"
+    ));
     let page = call("/search?category=people&q=person&page=2");
     assert_eq!(body_text(&page).matches("class=\"people-type\"").count(), 3);
     assert!(body_text(&page).contains("revision=23"));
@@ -49,7 +64,7 @@ fn people_search_owned_bounded_escaped_paged_and_no_mail_dispatch() {
         "/search?category=people&page=0",
         "/search?category=people&page=11",
         "/search?category=people&page=01",
-        "/search?category=people&mailbox=INBOX",
+        "/search?category=people&scope=all",
         "/search?category=people&q=%00",
     ] {
         assert_eq!(call(p).response.status_code, 400, "{p}");
@@ -87,7 +102,7 @@ fn people_search_owned_bounded_escaped_paged_and_no_mail_dispatch() {
     assert_eq!(failed.response.status_code, 503);
     assert!(!body_text(&failed).contains("person00@example.test"));
     assert!(!body_text(&failed).contains("No saved contacts match"));
-    assert!(body_text(&failed).contains("/search?category=people&amp;q=Person&amp;page=2"));
+    assert!(body_text(&failed).contains("/search?category=people&amp;page=2&amp;q=Person"));
     std::fs::write(&file, b"corrupt").unwrap();
     assert_eq!(call("/search?category=people").response.status_code, 503);
 }

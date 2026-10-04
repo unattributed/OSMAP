@@ -30,33 +30,17 @@ impl<G: BrowserGateway> BrowserApp<G> {
             .get("q")
             .map(String::as_str)
             .unwrap_or("");
-        let page = request
-            .query_params
-            .get("page")
-            .map(|value| {
-                value.parse::<usize>().ok().filter(|number| {
-                    (1..=MAX_PAGES).contains(number) && number.to_string() == *value
-                })
-            })
-            .unwrap_or(Some(1));
-        if request.query_params.get("category").map(String::as_str) != Some("all")
-            || request
-                .query_params
-                .keys()
-                .any(|key| !matches!(key.as_str(), "category" | "q" | "page"))
-            || query.len() > 256
-            || query.chars().any(char::is_control)
-            || page.is_none()
-        {
-            return HandledHttpResponse {
-                response: html_response(400, "Bad Request", "Invalid Search Request",
-                    all_page(&session, "", 1, &Category::NotSearched, &Category::NotSearched, false,
-                        Some("Use at most 256 bytes of keywords and a supported All results page. Message-only filters belong to the Messages tab."))),
+        let mut filters = match crate::mail_navigation::SearchFilterContext::parse(&request.query_params) {
+            Some(filters) if request.query_params.get("category").map(String::as_str) == Some("all")
+                && filters.view.requested_page <= MAX_PAGES => filters,
+            _ => return HandledHttpResponse {
+                response: html_response(400,"Bad Request","Invalid Search Request",render_navigation_notice(
+                    &session.record.canonical_username,&session.record.csrf_token,"Invalid Search Request",
+                    "Use bounded keywords, supported message filters and an available results page.")),
                 audit_events,
-            };
-        }
+            },
+        };
         let query = query.trim();
-        let page = page.unwrap_or(1);
         if query.is_empty() {
             return HandledHttpResponse {
                 response: html_response(
@@ -66,7 +50,7 @@ impl<G: BrowserGateway> BrowserApp<G> {
                     all_page(
                         &session,
                         query,
-                        page,
+                        &filters,
                         &Category::NotSearched,
                         &Category::NotSearched,
                         false,
@@ -89,9 +73,13 @@ impl<G: BrowserGateway> BrowserApp<G> {
         // Reject late category projection without increasing any worker timeout.
         let deadline = Instant::now()
             + Duration::from_secs(self.policy.expensive_request_timeout_secs.clamp(1, 30));
-        let outcome =
-            self.gateway
-                .search_messages(context, &session, None, query, MessageSearchField::All);
+        let outcome = self.gateway.search_messages(
+            context,
+            &session,
+            filters.mailbox.as_deref(),
+            query,
+            MessageSearchField::All,
+        );
         audit_events.extend(outcome.audit_events);
         let messages = match outcome.decision {
             BrowserMessageSearchDecision::Listed {
@@ -100,13 +88,18 @@ impl<G: BrowserGateway> BrowserApp<G> {
                 query: echoed,
                 mut results,
             } if canonical_username == session.record.canonical_username
-                && mailbox_name.is_none()
+                && mailbox_name == filters.mailbox
                 && echoed == query
                 && Instant::now() < deadline
-                && valid_messages(&results) =>
+                && valid_messages(&results)
+                && filters
+                    .mailbox
+                    .as_ref()
+                    .is_none_or(|folder| results.iter().all(|row| &row.mailbox_name == folder)) =>
             {
                 // Deterministic type-first ordering, then mailbox/UID. This
                 // is not a fabricated cross-category relevance score.
+                filters.view.order_search(&mut results);
                 results.sort_by(|left, right| {
                     left.mailbox_name
                         .cmp(&right.mailbox_name)
@@ -148,7 +141,7 @@ impl<G: BrowserGateway> BrowserApp<G> {
                 "Service Unavailable"
             },
             "Search All",
-            all_page(&session, query, page, &messages, &people, on_open, None),
+            all_page(&session, query, &filters, &messages, &people, on_open, None),
         );
         audit_events.push(self.release_request_budget(guard, "message_search", context, &session));
         HandledHttpResponse {
@@ -213,12 +206,13 @@ enum Row<'a> {
 fn all_page(
     session: &ValidatedSession,
     query: &str,
-    requested_page: usize,
+    filters: &crate::mail_navigation::SearchFilterContext,
     messages: &Category<Vec<MessageSearchResult>>,
     people: &Category<crate::contacts::ContactBook>,
     on_open: bool,
     error: Option<&str>,
 ) -> TrustedHtml {
+    let requested_page = filters.view.requested_page;
     let q = query.to_lowercase();
     let mut contacts = match people {
         Category::Available(book) => book
@@ -251,7 +245,7 @@ fn all_page(
     } else {
         requested_page
     };
-    let href = |number| format!("/search?category=all&q={}&page={number}", url_encode(query));
+    let href = |number| filters.href(crate::mail_navigation::SearchTab::All, query, Some(number));
     let back = href(page);
     let rows = message_rows
         .iter()
@@ -395,9 +389,12 @@ fn all_page(
     }
     TrustedHtml::from_template(format!(concat!(
         "{}<main id=\"main-content\" class=\"page-shell coordinated-mail search-results all-search\" tabindex=\"-1\"><div class=\"page-intro mail-page-intro\"><h1>Search</h1><p>Find messages and people saved in your contacts.</p></div><section class=\"content-pane coordinated-list\"><h2 class=\"sr-only\">All available search results</h2>",
-        "<div class=\"search-query-panel\"><form method=\"get\" action=\"/search\"><input type=\"hidden\" name=\"category\" value=\"all\"><label class=\"sr-only\" for=\"all-query\">Search query</label><input id=\"all-query\" type=\"search\" name=\"q\" value=\"{}\" maxlength=\"256\" placeholder=\"Search messages and people…\"><button type=\"submit\">Search</button></form></div>",
-        "<nav class=\"search-result-tabs\" aria-label=\"Search types\"><span aria-current=\"page\">{all_label}</span><a href=\"/search?scope=all&amp;q={encoded}\">{messages_label}</a><span aria-disabled=\"true\">Documents unavailable</span><a href=\"/search?category=people&amp;q={encoded}\">{people_label}</a></nav>{notices}",
+        "<div class=\"search-query-panel\"><form method=\"get\" action=\"/search\"><input type=\"hidden\" name=\"category\" value=\"all\">{filter_state}<label class=\"sr-only\" for=\"all-query\">Search query</label><input id=\"all-query\" type=\"search\" name=\"q\" value=\"{}\" maxlength=\"256\" placeholder=\"Search messages and people…\"><button type=\"submit\">Search</button></form>{filter_controls}</div>",
+        "<nav class=\"search-result-tabs\" aria-label=\"Search types\"><span aria-current=\"page\">{all_label}</span><a href=\"{messages_href}\">{messages_label}</a><span aria-disabled=\"true\">Documents unavailable</span><a href=\"{people_href}\">{people_label}</a></nav>{notices}",
         "<div class=\"search-result-headings\" aria-hidden=\"true\"><span>Type</span><span>Result</span><span>Location</span><span>Received / Modified</span><span></span></div><ul class=\"search-result-list\" aria-label=\"All available results\">{markup}</ul><div class=\"search-result-footer\">{pagination}</div>",
         "<p class=\"search-capability-note muted\">Counts cover at most 250 loaded messages and 200 saved contacts. Messages appear first by mailbox and UID, then people by name and address. Documents search and contact modification times are unavailable. This is not a complete count of all content.</p><a href=\"/search?category=all\">Clear search</a></section></main>"),
-        crate::http_ui::app_header(&session.record.canonical_username, &session.record.csrf_token, "search"), escape_html(query), encoded = escape_html(&url_encode(query)), all_label=all_label, messages_label=messages_label, people_label=people_label, notices=notices, markup=markup, pagination=pagination))
+        crate::http_ui::app_header(&session.record.canonical_username, &session.record.csrf_token, "search"), escape_html(query), filter_state=crate::http_ui::category_filter_hidden(filters),
+        filter_controls=crate::http_ui::render_search_category_filters(filters,query),
+        messages_href=escape_html(&filters.href(crate::mail_navigation::SearchTab::Messages,query,None)),
+        people_href=escape_html(&filters.href(crate::mail_navigation::SearchTab::People,query,None)), all_label=all_label, messages_label=messages_label, people_label=people_label, notices=notices, markup=markup, pagination=pagination))
 }

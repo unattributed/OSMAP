@@ -67,7 +67,7 @@
     "security_check": "preserved",
     "v10_check_target_present": true
   },
-  "generated_at_utc": "2026-07-29T19:48:23Z",
+  "generated_at_utc": "2026-10-04T03:40:50Z",
   "purpose": "Targeted fail-closed remediation for the V10 governance boundary.",
   "required_followups": [
     "Classify Rust fail-closed assumptions from Slice 0.",
@@ -88,8 +88,8 @@
     "audit_script": "maint/security/osmap-v10-rust-assumption-audit.py",
     "audit_script_present": true,
     "classification_complete": true,
-    "current_scanner_count": 4820,
-    "inventory_sha256": "10f6df032147ed9b403e513c389a70b45e685a759f54519ad87abd57771bb74c",
+    "current_scanner_count": 4860,
+    "inventory_sha256": "0bd998a8220779d6fc58360ea9971e027bd2a2a6afde6356bc1cbf525446073f",
     "live_host_state_changed": false,
     "product_behavior_changed": false,
     "production_state_changed": false,
@@ -127,7 +127,7 @@
     "live_host_state_changed": false,
     "product_behavior_changed": false,
     "production_state_changed": false,
-    "refined_inventory_sha256": "279e68cee11c691bc12f5412577dfc3054c81e6ce311e8384519514732e932e3",
+    "refined_inventory_sha256": "dc3a93a38e2c899918f4c8d92e3866c53c972ae74928d6701612b640a7d52b81",
     "remediation_document": "docs/V10_TARGETED_FAIL_CLOSED_REMEDIATION.md",
     "remediation_document_present": true,
     "remediation_register": "maint/security/v10-fail-closed-remediation.json",
@@ -135,6 +135,6 @@
     "remediation_script": "maint/security/osmap-v10-fail-closed-remediation.py",
     "remediation_script_present": true,
     "selected_target": "src_test_module_assumption_reclassification",
-    "source_test_module_assumption_count": 4734
+    "source_test_module_assumption_count": 4774
   }
 }

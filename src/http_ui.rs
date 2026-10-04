@@ -1228,11 +1228,10 @@ fn render_sender_filter(base: &str, view: &ListViewState) -> String {
     format!("<details class=\"sender-filter\"><summary>From: {}</summary><form method=\"get\" action=\"{path}\" aria-label=\"Sender filter\">{base_fields}{state}<label>Sender address<input type=\"email\" name=\"from\" maxlength=\"320\" placeholder=\"sender@example.com\" value=\"{}\"></label><button type=\"submit\">Apply sender</button><a href=\"{}\">Clear sender</a><p class=\"muted\">Exact mailbox address in the public From header, applied to loaded results. This does not verify the sender's identity.</p></form></details>", escape_html(if view.sender.active() { view.sender.value() } else { "all" }), escape_html(view.sender.value()), escape_html(&list_navigation_href(base, &cleared, 1)))
 }
 
-fn render_list_navigation_parts(
-    base: &str,
+fn render_read_filter_choices(
     view: &ListViewState,
-    compact: bool,
-) -> (String, String, String) {
+    href: &impl Fn(&ListViewState) -> String,
+) -> String {
     let mut filters = String::new();
     for filter in [
         MessageFilter::All,
@@ -1243,7 +1242,7 @@ fn render_list_navigation_parts(
         target.filter = filter;
         filters.push_str(&format!(
             "<a class=\"filter-link\" href=\"{}\"{}>{}</a>",
-            escape_html(&list_navigation_href(base, &target, 1)),
+            escape_html(&href(&target)),
             if filter == view.filter {
                 " aria-current=\"page\""
             } else {
@@ -1252,6 +1251,14 @@ fn render_list_navigation_parts(
             filter.label()
         ));
     }
+    filters
+}
+
+fn render_attachment_filter_choices(
+    view: &ListViewState,
+    href: &impl Fn(&ListViewState) -> String,
+) -> String {
+    let mut filters = String::new();
     filters.push_str(&format!("<details class=\"attachment-filter\"><summary>Attachments: {}</summary><div role=\"group\" aria-label=\"Attachment filter\">", view.attachment.label()));
     for attachment in [
         AttachmentFilter::All,
@@ -1263,7 +1270,7 @@ fn render_list_navigation_parts(
         target.attachment = attachment;
         filters.push_str(&format!(
             "<a class=\"filter-link\" href=\"{}\"{}>{}</a>",
-            escape_html(&list_navigation_href(base, &target, 1)),
+            escape_html(&href(&target)),
             if attachment == view.attachment {
                 " aria-current=\"page\""
             } else {
@@ -1275,6 +1282,14 @@ fn render_list_navigation_parts(
     filters.push_str(
         "</div><p class=\"muted\">Unknown means attachment metadata is unavailable.</p></details>",
     );
+    filters
+}
+
+fn render_protection_filter_choices(
+    view: &ListViewState,
+    href: &impl Fn(&ListViewState) -> String,
+) -> String {
+    let mut filters = String::new();
     filters.push_str(&format!("<details class=\"protection-filter\"><summary>OpenPGP: {}</summary><div role=\"group\" aria-label=\"OpenPGP filter\">", view.protection.label()));
     for protection in [
         ProtectionFilter::All,
@@ -1287,7 +1302,7 @@ fn render_list_navigation_parts(
         target.protection = protection;
         filters.push_str(&format!(
             "<a class=\"filter-link\" href=\"{}\"{}>{}</a>",
-            escape_html(&list_navigation_href(base, &target, 1)),
+            escape_html(&href(&target)),
             if protection == view.protection {
                 " aria-current=\"page\""
             } else {
@@ -1297,6 +1312,70 @@ fn render_list_navigation_parts(
         ));
     }
     filters.push_str("</div><p class=\"muted\">Outer MIME structure only; signatures are not verified by this filter. No outer OpenPGP MIME does not exclude nested or inline PGP. Unknown includes absent or unsupported metadata.</p></details>");
+    filters
+}
+
+fn render_filter_choices(view: &ListViewState, href: impl Fn(&ListViewState) -> String) -> String {
+    [
+        render_read_filter_choices(view, &href),
+        render_attachment_filter_choices(view, &href),
+        render_protection_filter_choices(view, &href),
+    ]
+    .concat()
+}
+
+pub(crate) fn category_filter_hidden(
+    context: &crate::mail_navigation::SearchFilterContext,
+) -> String {
+    context
+        .fields()
+        .iter()
+        .map(|(key, value)| {
+            format!(
+                "<input type=\"hidden\" name=\"{}\" value=\"{}\">",
+                escape_html(key),
+                escape_html(value)
+            )
+        })
+        .collect()
+}
+
+pub(crate) fn render_search_category_filters(
+    context: &crate::mail_navigation::SearchFilterContext,
+    query: &str,
+) -> String {
+    use crate::mail_navigation::SearchTab;
+    let view = &context.view;
+    let href = |target: &ListViewState| {
+        let mut target_context = context.clone();
+        target_context.view = target.clone();
+        target_context.href(SearchTab::All, query, None)
+    };
+    let mut filters = String::new();
+    let state = |context: &crate::mail_navigation::SearchFilterContext| {
+        format!("<input type=\"hidden\" name=\"category\" value=\"all\"><input type=\"hidden\" name=\"q\" value=\"{}\">{}",escape_html(query),category_filter_hidden(context))
+    };
+    let mut sender = context.clone();
+    sender.view.sender = crate::mail_list::SenderFilter::default();
+    filters.push_str(&format!("<details class=\"sender-filter\"><summary>From: {}</summary><form method=\"get\" action=\"/search\" aria-label=\"Sender filter\">{}<label>Sender address<input type=\"email\" name=\"from\" maxlength=\"320\" value=\"{}\"></label><button type=\"submit\">Apply sender</button><a href=\"{}\">Clear sender</a><p class=\"muted\">Exact public From mailbox in loaded Messages; this does not verify identity.</p></form></details>",escape_html(if view.sender.active(){view.sender.value()}else{"all"}),state(&sender),escape_html(view.sender.value()),escape_html(&sender.href(SearchTab::All,query,None))));
+    let mut dates = context.clone();
+    dates.view.dates = crate::mail_list::ReceivedDateRange::default();
+    filters.push_str(&format!("<details class=\"date-filter\"><summary>Received dates: {}</summary><form method=\"get\" action=\"/search\">{}<label>From date (UTC)<input type=\"date\" name=\"after\" min=\"0001-01-01\" max=\"9999-12-31\" value=\"{}\"></label><label>Through date (UTC)<input type=\"date\" name=\"before\" min=\"0001-01-01\" max=\"9999-12-31\" value=\"{}\"></label><button type=\"submit\">Apply dates</button><a href=\"{}\">Clear dates</a><p class=\"muted\">Inclusive UTC received dates in loaded Messages; missing or invalid dates do not match an active range.</p></form></details>",if view.dates.active(){"filtered"}else{"all"},state(&dates),escape_html(view.dates.after.as_deref().unwrap_or("")),escape_html(view.dates.before.as_deref().unwrap_or("")),escape_html(&dates.href(SearchTab::All,query,None))));
+    filters.push_str(&render_attachment_filter_choices(view, &href));
+    filters.push_str(&render_protection_filter_choices(view, &href));
+    filters.push_str(&format!("<details class=\"read-filter\"><summary>Read state: {}</summary><div role=\"group\" aria-label=\"Read state filter\">{}</div></details>", view.filter.label(), render_read_filter_choices(view, &href)));
+    let mut folder = context.clone();
+    folder.mailbox = None;
+    filters.push_str(&format!("<details class=\"folder-filter\"><summary>Folder: {}</summary><form method=\"get\" action=\"/search\" aria-label=\"Folder filter\">{}<label>Folder<input name=\"mailbox\" maxlength=\"255\" value=\"{}\" placeholder=\"Mailbox name\"></label><button type=\"submit\">Apply folder</button><a href=\"{}\">All mailboxes</a><p class=\"muted\">Selected folder is checked under your account before Messages are searched.</p></form></details>",escape_html(context.mailbox.as_deref().unwrap_or("All mailboxes")),state(&folder),escape_html(context.mailbox.as_deref().unwrap_or("")),escape_html(&folder.href(SearchTab::All,query,None))));
+    format!("<div class=\"list-navigation search-category-filters\">{filters}</div><p class=\"search-filter-applicability muted\">Mail filters apply only to Messages. People is matched by saved name or email address; Documents is unavailable.</p>")
+}
+
+fn render_list_navigation_parts(
+    base: &str,
+    view: &ListViewState,
+    compact: bool,
+) -> (String, String, String) {
+    let mut filters = render_filter_choices(view, |target| list_navigation_href(base, target, 1));
     filters.push_str(&render_sender_filter(base, view));
     filters.push_str(&render_date_filter(base, view));
     if compact {
@@ -2087,7 +2166,7 @@ pub(crate) fn render_message_search_page(
             "{}<main id=\"main-content\" class=\"page-shell coordinated-mail search-results{}\" tabindex=\"-1\"><div class=\"page-intro mail-page-intro\"><h1>Search</h1><p>Find messages across your mailboxes.</p></div>",
             "<section class=\"content-pane coordinated-list\"><h2 class=\"section-title sr-only\">Search Results</h2>",
             "<div class=\"search-query-panel\"><form class=\"search-row compact-search\" method=\"get\" action=\"/search\">{}<label class=\"search-query-label\" for=\"search-query\"><span class=\"sr-only\">Search query</span><input id=\"search-query\" type=\"search\" name=\"q\" value=\"{}\" placeholder=\"Search mail…\" autocomplete=\"off\"></label><button type=\"submit\">Search</button><details class=\"search-options\"><summary>Search options</summary><div>{}{}<label><input type=\"checkbox\" name=\"scope\" value=\"all\"{}> Search all mailboxes</label></div></details></form>{}</div>",
-            "<div class=\"search-result-tabs\" aria-label=\"Search types\"><a href=\"/search?category=all&amp;q={people_query}\">All</a><span aria-current=\"true\">Messages{}</span><span aria-disabled=\"true\">Documents</span><a href=\"/search?category=people&amp;q={people_query}\">People</a><span class=\"search-scope\">{}</span>{}</div>",
+            "<div class=\"search-result-tabs\" aria-label=\"Search types\"><a href=\"{all_href}\">All</a><span aria-current=\"true\">Messages{}</span><span aria-disabled=\"true\">Documents</span><a href=\"{people_href}\">People</a><span class=\"search-scope\">{}</span>{}</div>",
             "<div class=\"search-result-headings\" aria-hidden=\"true\"><span>Type</span><span>Result</span><span>Location</span><span>Received</span><span></span></div><ul role=\"list\" class=\"message-cards search-result-list\" aria-label=\"Search results\">{}</ul>",
             "<div class=\"search-result-footer\">{}{}</div>{}<p class=\"search-capability-note muted\">Search covers accessible messages. OpenPGP filters use public MIME structure, not signature verification or decryption. Documents search is unavailable. People search covers your saved contacts.</p></section>{}</main>"
         ),
@@ -2097,7 +2176,8 @@ pub(crate) fn render_message_search_page(
         if landing { String::new() } else { format!(" ({})", view.total_results) }, escape_html(search_scope),
         sort_headers, rows, pages, back_link, notices,
         render_coordinated_reader_with_focus(&navigation_base, view, csrf_token, context.reader, canonical_username, &focus_targets),
-        people_query = escape_html(&url_encode(query)),
+        all_href = escape_html(&crate::mail_navigation::SearchFilterContext {view:view.clone(),mailbox:mailbox_name.map(str::to_string)}.href(crate::mail_navigation::SearchTab::All,query,None)),
+        people_href = escape_html(&crate::mail_navigation::SearchFilterContext {view:view.clone(),mailbox:mailbox_name.map(str::to_string)}.href(crate::mail_navigation::SearchTab::People,query,None)),
     ))
 }
 

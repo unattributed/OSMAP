@@ -8387,3 +8387,16 @@ Next S02-01 product remediation is the approved All-search filter row: current
 All rejects validated message filter inputs. Reuse bounded existing filters,
 preserve actual context through category/Open/Back/paging, and state their
 category applicability truthfully. Keep Documents and human acceptance open.
+
+2026-10-04 UTC — Actual compiled REDs establish the All-filter production gap
+before changes. Apply existing typed mail predicates only to the validated
+Message projection; owned People keep keyword semantics and explicit predicate
+applicability. Preserve finite filter context across real generated forms and
+links, separate20-row mixed paging from50-row mail windows, and validate scope
+before a predicate can hide a malformed/foreign row. Do not admit ignored
+sorting or selection fields to make shared rendering convenient.
+
+2026-10-04 UTC — Preserve category paging independently of the ordinary mail
+window; actual61-match and native scoped form/Open/Back results pass. Keep signed
+source, native execution, deployed binary, installed browser results and human
+acceptance distinct. Actual All filters do not qualify Documents, Send or crypto.

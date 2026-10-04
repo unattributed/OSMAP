@@ -24,6 +24,70 @@ fn all_search_row_link(body: &str, mailbox: &str, uid: u64) -> String {
         .expect("actual selected row GUID-bound opening link")
 }
 
+fn all_search_native_filter_form(body: &str, class: &str) -> BTreeMap<String, String> {
+    let detail = body
+        .split_once(&format!("<details class=\"{class}\""))
+        .unwrap()
+        .1
+        .split_once("</details>")
+        .unwrap()
+        .0;
+    let form = detail
+        .split_once("<form ")
+        .unwrap()
+        .1
+        .split_once("</form>")
+        .unwrap()
+        .0;
+    assert!(form.contains("method=\"get\"") && form.contains("action=\"/search\""));
+    let mut fields = BTreeMap::new();
+    for input in form.split("<input ").skip(1) {
+        let tag = input.split_once('>').unwrap().0;
+        assert!(fields
+            .insert(
+                attribute(tag, "name").unwrap(),
+                attribute(tag, "value").unwrap()
+            )
+            .is_none());
+    }
+    assert!(!fields.keys().any(|key| matches!(
+        key.as_str(),
+        "sort" | "dir" | "page" | "scope" | "select" | "selected_uid" | "field"
+    )));
+    fields
+}
+fn all_search_native_form_href(fields: &BTreeMap<String, String>) -> String {
+    format!(
+        "/search?{}",
+        fields
+            .iter()
+            .map(|(key, value)| format!("{}={}", encode(key), encode(value)))
+            .collect::<Vec<_>>()
+            .join("&")
+    )
+}
+fn all_search_native_tab_href(body: &str, label: &str) -> String {
+    let nav = body
+        .split_once("class=\"search-result-tabs\"")
+        .unwrap()
+        .1
+        .split_once("</nav>")
+        .unwrap()
+        .0;
+    let tag = nav
+        .split("<a ")
+        .find(|anchor| {
+            anchor
+                .split_once('>')
+                .is_some_and(|(_, text)| text.starts_with(label))
+        })
+        .unwrap()
+        .split_once('>')
+        .unwrap()
+        .0;
+    attribute(tag, "href").unwrap()
+}
+
 #[test]
 #[ignore = "explicit OpenBSD All search proof; disposable Dovecot/helper/contact-store only"]
 fn isolated_openbsd_all_search_browser_owned_categories() {
@@ -316,6 +380,119 @@ fn isolated_openbsd_all_search_browser_owned_categories() {
         !text(&foreign_open).contains("ALICE_READER_ONLY_000")
             && !text(&foreign_open).contains("BOB_READER_ONLY_000")
     );
+    // Apply actual rendered native GET forms, not handcrafted UI-only state.
+    let mut filter_fields = all_search_native_filter_form(body, "sender-filter");
+    filter_fields.insert("from".into(), "sender@example.test".into());
+    let by_sender = get(&app, &alice, &all_search_native_form_href(&filter_fields));
+    assert_eq!(by_sender.response.status_code, 200);
+    budget_pair(&by_sender);
+    assert!(text(&by_sender).contains("Messages (3)") && text(&by_sender).contains("People (1)"));
+    assert!(!text(&by_sender).contains("All Public &lt;Row&gt; 001"));
+    let mut filter_fields = all_search_native_filter_form(text(&by_sender), "date-filter");
+    let day = &target.date_received[..10];
+    filter_fields.insert("after".into(), day.into());
+    filter_fields.insert("before".into(), day.into());
+    let by_date = get(&app, &alice, &all_search_native_form_href(&filter_fields));
+    assert_eq!(by_date.response.status_code, 200);
+    budget_pair(&by_date);
+    assert!(text(&by_date).contains("All Public &lt;Row&gt; 000"));
+    let mut filter_fields = all_search_native_filter_form(text(&by_date), "folder-filter");
+    filter_fields.insert("mailbox".into(), "INBOX".into());
+    filter_fields.insert("filter".into(), "unread".into());
+    filter_fields.insert("pgp".into(), "plain".into());
+    filter_fields.insert("attachment".into(), "without".into());
+    let filtered_path = all_search_native_form_href(&filter_fields);
+    let scoped = get(&app, &alice, &filtered_path);
+    assert_eq!(scoped.response.status_code, 200);
+    budget_pair(&scoped);
+    assert!(text(&scoped).contains("Messages (2)") && text(&scoped).contains("People (1)"));
+    assert_eq!(
+        text(&scoped).matches("class=\"search-result-row\"").count(),
+        3
+    );
+    assert!(
+        !text(&scoped).contains("All Public &lt;Row&gt; 001")
+            && !text(&scoped).contains("All Public &lt;Row&gt; 003")
+    );
+    let filtered_link = all_search_row_link(text(&scoped), "INBOX", target.uid);
+    let filtered_read = get(&app, &alice, &filtered_link);
+    assert_eq!(filtered_read.response.status_code, 200);
+    assert!(text(&filtered_read).contains("ALICE_READER_ONLY_000"));
+    let filtered_back = back_href(text(&filtered_read));
+    let back_fields = crate::http_form::parse_urlencoded_form(
+        filtered_back.split_once('?').unwrap().1.as_bytes(),
+        19,
+        2048,
+    )
+    .unwrap();
+    for (key, value) in &filter_fields {
+        assert_eq!(back_fields.get(key), Some(value), "retained {key}");
+    }
+    assert_eq!(back_fields.get("page").map(String::as_str), Some("1"));
+    let filtered_return = get(&app, &alice, &filtered_back);
+    assert_eq!(filtered_return.response.status_code, 200);
+    budget_pair(&filtered_return);
+    assert!(text(&filtered_return).contains("Messages (2)"));
+    let people_href = all_search_native_tab_href(text(&scoped), "People");
+    let before_people = calls.load(Ordering::SeqCst);
+    let only_people = get(&app, &alice, &people_href);
+    assert_eq!(only_people.response.status_code, 200);
+    assert_eq!(
+        calls.load(Ordering::SeqCst),
+        before_people,
+        "People must not dispatch mail filters"
+    );
+    assert!(
+        text(&only_people).contains("People (1)")
+            && text(&only_people).contains("do not filter People")
+    );
+    assert!(!text(&only_people).contains("FOREIGN-SENTINEL"));
+    let all_tab_href = all_search_native_tab_href(text(&only_people), "All");
+    let all_tab = get(&app, &alice, &all_tab_href);
+    assert_eq!(all_tab.response.status_code, 200);
+    budget_pair(&all_tab);
+    assert!(text(&all_tab).contains("Messages (2)") && text(&all_tab).contains("People (1)"));
+    let messages_href = all_search_native_tab_href(text(&scoped), "Messages");
+    let messages_tab = get(&app, &alice, &messages_href);
+    assert_eq!(messages_tab.response.status_code, 200);
+    budget_pair(&messages_tab);
+    assert!(
+        text(&messages_tab).contains("All Public &lt;Row&gt; 000")
+            && !text(&messages_tab).contains("All Public &lt;Row&gt; 001")
+            && !text(&messages_tab).contains("All Public &lt;Row&gt; 003")
+    );
+    let encrypted_filter = get(&app, &alice, "/search?category=all&q=Public&pgp=encrypted");
+    assert_eq!(encrypted_filter.response.status_code, 200);
+    budget_pair(&encrypted_filter);
+    assert!(
+        text(&encrypted_filter).contains("Messages (1)")
+            && text(&encrypted_filter).contains("People (1)")
+    );
+    assert!(
+        text(&encrypted_filter).contains("All Public &lt;Row&gt; 001")
+            && !text(&encrypted_filter).contains("Public invalid ciphertext fixture.")
+    );
+    let before_clear = calls.load(Ordering::SeqCst);
+    let clear_tag = text(&scoped)
+        .split("<a ")
+        .find(|anchor| {
+            anchor
+                .split_once('>')
+                .is_some_and(|(_, text)| text.starts_with("Clear search</a>"))
+        })
+        .unwrap()
+        .split_once('>')
+        .unwrap()
+        .0;
+    let clear_href = attribute(clear_tag, "href").unwrap();
+    let cleared = get(&app, &alice, &clear_href);
+    assert_eq!(cleared.response.status_code, 200);
+    assert_eq!(calls.load(Ordering::SeqCst), before_clear);
+    assert!(
+        text(&cleared).contains("Messages not searched")
+            && !text(&cleared).contains("name=\"from\" value=\"sender@example.test\"")
+    );
+
     let before_unauth = calls.load(Ordering::SeqCst);
     let unauth = http(
         &app,
@@ -346,5 +523,5 @@ fn isolated_openbsd_all_search_browser_owned_categories() {
     drop(fixture);
     assert!(!root.exists());
     assert_eq!(before, standard_metadata());
-    println!("native_all_search_browser=PASS actual_browser_runtime_authenticated_helper_dovecot=PASS measured_messages_and_owned_people=PASS public_snippet_escaped_protected_absent=PASS rendered_guid_open_actual_body_and_all_back=PASS foreign_stale_unauth_refused=PASS same_uid_inbox_sent_bob_bytes_flags_guids_unchanged=PASS contact_records_unchanged=PASS no_move_append_delete_send_crypto=PASS synthetic_session_not_login_proof=PASS scratch_cleanup=PASS standard_host_metadata_unchanged=PASS");
+    println!("native_all_search_browser=PASS all_message_filters_actual_owned_scope_context=PASS actual_browser_runtime_authenticated_helper_dovecot=PASS measured_messages_and_owned_people=PASS public_snippet_escaped_protected_absent=PASS rendered_guid_open_actual_body_and_all_back=PASS foreign_stale_unauth_refused=PASS same_uid_inbox_sent_bob_bytes_flags_guids_unchanged=PASS contact_records_unchanged=PASS no_move_append_delete_send_crypto=PASS synthetic_session_not_login_proof=PASS scratch_cleanup=PASS standard_host_metadata_unchanged=PASS");
 }

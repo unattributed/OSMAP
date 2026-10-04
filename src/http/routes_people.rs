@@ -14,28 +14,13 @@ impl<G: BrowserGateway> BrowserApp<G> {
         };
         let fields = &request.query_params;
         let query = fields.get("q").map(String::as_str).unwrap_or("");
-        let page = fields
-            .get("page")
-            .map(|v| {
-                v.parse::<usize>()
-                    .ok()
-                    .filter(|n| (1..=10).contains(n) && n.to_string() == *v)
-            })
-            .unwrap_or(Some(1));
-        let valid = fields.get("category").map(String::as_str) == Some("people")
-            && fields
-                .keys()
-                .all(|k| matches!(k.as_str(), "category" | "q" | "page"))
-            && query.len() <= 256
-            && !query.chars().any(char::is_control)
-            && page.is_some();
-        let (status, body) = if !valid {
-            (400, people_page(&session, "", None, 1, Some("This search request is invalid. Use shorter keywords and a supported results page.")))
-        } else {
-            match self.contact_snapshot(&session) {
-                Ok(book) => (200, people_page(&session, query, Some(&book), page.unwrap_or(1), None)),
-                Err(_) => (503, people_page(&session, query, None, page.unwrap_or(1), Some("Saved contacts could not be verified for this account. Search results are unavailable; this does not mean there are no matches."))),
-            }
+        let filters = crate::mail_navigation::SearchFilterContext::parse(fields);
+        let (status, body) = match filters.as_ref() {
+            None => (400, render_navigation_notice(&session.record.canonical_username, &session.record.csrf_token, "Invalid Search Request", "Use bounded keywords, supported mail context and an available People results page.")),
+            Some(filters) => match self.contact_snapshot(&session) {
+                Ok(book) => (200, people_page(&session, query, Some(&book), filters, None)),
+                Err(_) => (503, people_page(&session, query, None, filters, Some("Saved contacts could not be verified for this account. Search results are unavailable; this does not mean there are no matches."))),
+            },
         };
         HandledHttpResponse {
             response: html_response(
@@ -57,9 +42,10 @@ fn people_page(
     session: &ValidatedSession,
     query: &str,
     book: Option<&crate::contacts::ContactBook>,
-    requested_page: usize,
+    filters: &crate::mail_navigation::SearchFilterContext,
     error: Option<&str>,
 ) -> TrustedHtml {
+    let requested_page = filters.view.requested_page;
     let q = query.trim().to_lowercase();
     let mut matches: Vec<_> = book
         .into_iter()
@@ -82,7 +68,7 @@ fn people_page(
     } else {
         requested_page
     };
-    let href = |p| format!("/search?category=people&q={}&page={p}", url_encode(query));
+    let href = |p| filters.href(crate::mail_navigation::SearchTab::People, query, Some(p));
     let mut rows = String::new();
     for c in matches.iter().skip((page - 1) * PAGE_SIZE).take(PAGE_SIZE) {
         let link = format!(
@@ -114,5 +100,5 @@ fn people_page(
         }
         pagination.push_str("</nav>");
     }
-    TrustedHtml::from_template(format!("{}<main id=\"main-content\" class=\"page-shell coordinated-mail search-results people-search\" tabindex=\"-1\"><div class=\"page-intro mail-page-intro\"><h1>Search</h1><p>Find messages and people saved in your contacts.</p></div><section class=\"content-pane coordinated-list\"><h2 class=\"sr-only\">People search results</h2><div class=\"search-query-panel\"><form method=\"get\" action=\"/search\"><input type=\"hidden\" name=\"category\" value=\"people\"><label class=\"sr-only\" for=\"people-query\">Search query</label><input id=\"people-query\" type=\"search\" name=\"q\" value=\"{}\" maxlength=\"256\" placeholder=\"Search saved contacts…\"><button type=\"submit\">Search</button></form><p>Saved contacts · Name or email address</p></div><nav class=\"search-result-tabs\" aria-label=\"Search types\"><a href=\"/search?category=all&amp;q={all_query}\">All</a><a href=\"/search?scope=all&amp;q={}\">Messages</a><span aria-disabled=\"true\">Documents</span><span aria-current=\"page\">People{}</span><span class=\"search-scope\">Saved contacts</span></nav><div class=\"search-result-headings\" aria-hidden=\"true\"><span>Type</span><span>Result</span><span>Location</span><span>Modified</span><span></span></div><ul class=\"search-result-list\" aria-label=\"People results\">{rows}</ul><div class=\"search-result-footer\">{pagination}</div><p class=\"search-capability-note muted\">Only your saved contacts are searched. Contact modification times and Documents search are unavailable.</p></section></main>",crate::http_ui::app_header(&session.record.canonical_username,&session.record.csrf_token,"search"),escape_html(query),escape_html(&url_encode(query)),if book.is_some(){format!(" ({count})")}else{String::new()},all_query=escape_html(&url_encode(query))))
+    TrustedHtml::from_template(format!("{}<main id=\"main-content\" class=\"page-shell coordinated-mail search-results people-search\" tabindex=\"-1\"><div class=\"page-intro mail-page-intro\"><h1>Search</h1><p>Find messages and people saved in your contacts.</p></div><section class=\"content-pane coordinated-list\"><h2 class=\"sr-only\">People search results</h2><div class=\"search-query-panel\"><form method=\"get\" action=\"/search\"><input type=\"hidden\" name=\"category\" value=\"people\">{filter_state}<label class=\"sr-only\" for=\"people-query\">Search query</label><input id=\"people-query\" type=\"search\" name=\"q\" value=\"{}\" maxlength=\"256\" placeholder=\"Search saved contacts…\"><button type=\"submit\">Search</button></form><p>Saved contacts · Name or email address. Retained mail filters apply only to Messages; they do not filter People.</p></div><nav class=\"search-result-tabs\" aria-label=\"Search types\"><a href=\"{all_href}\">All</a><a href=\"{messages_href}\">Messages</a><span aria-disabled=\"true\">Documents</span><span aria-current=\"page\">People{}</span><span class=\"search-scope\">Saved contacts</span></nav><div class=\"search-result-headings\" aria-hidden=\"true\"><span>Type</span><span>Result</span><span>Location</span><span>Modified</span><span></span></div><ul class=\"search-result-list\" aria-label=\"People results\">{rows}</ul><div class=\"search-result-footer\">{pagination}</div><p class=\"search-capability-note muted\">Only your saved contacts are searched. Contact modification times and Documents search are unavailable.</p></section></main>",crate::http_ui::app_header(&session.record.canonical_username,&session.record.csrf_token,"search"),escape_html(query),if book.is_some(){format!(" ({count})")}else{String::new()},all_href=escape_html(&filters.href(crate::mail_navigation::SearchTab::All,query,None)),messages_href=escape_html(&filters.href(crate::mail_navigation::SearchTab::Messages,query,None)),filter_state=crate::http_ui::category_filter_hidden(filters)))
 }

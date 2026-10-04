@@ -7,6 +7,128 @@ use crate::mailbox::{MailboxEntry, MailboxListingPolicy, MessageSearchField};
 // Finite mail-context allowlists plus the expected selected GUID pair.
 pub(crate) const MAIL_RETURN_MAX_FIELDS: usize = 19;
 
+/// Validated mail filters carried through mixed search; not contact metadata.
+#[derive(Clone)]
+pub(crate) struct SearchFilterContext {
+    pub view: ListViewState,
+    pub mailbox: Option<String>,
+}
+
+#[derive(Clone, Copy)]
+pub(crate) enum SearchTab {
+    All,
+    Messages,
+    People,
+}
+
+impl SearchFilterContext {
+    pub fn parse(fields: &std::collections::BTreeMap<String, String>) -> Option<Self> {
+        let max_page = match fields.get("category").map(String::as_str) {
+            Some("all") => 23,
+            Some("people") => 10,
+            _ => return None,
+        };
+        if fields.keys().any(|key| {
+            !matches!(
+                key.as_str(),
+                "category"
+                    | "q"
+                    | "page"
+                    | "from"
+                    | "after"
+                    | "before"
+                    | "attachment"
+                    | "pgp"
+                    | "filter"
+                    | "mailbox"
+            )
+        }) {
+            return None;
+        }
+        let mut page_number = 1;
+        if let Some(page) = fields.get("page") {
+            let number = page.parse::<usize>().ok()?;
+            if !(1..=max_page).contains(&number) || number.to_string() != *page {
+                return None;
+            }
+            page_number = number;
+        }
+        // Category windows are 20 rows; the mail-list 50-row page cap does not
+        // constrain them. Validate only predicates with the existing model.
+        let mut predicates = fields.clone();
+        predicates.remove("page");
+        let mut view = ListViewState::from_query(&predicates).ok()?;
+        view.page = page_number;
+        view.requested_page = page_number;
+        let mailbox = fields
+            .get("mailbox")
+            .filter(|name| !name.is_empty())
+            .cloned();
+        if let Some(name) = &mailbox {
+            MailboxEntry::new(MailboxListingPolicy::default(), name).ok()?;
+        }
+        Some(Self { view, mailbox })
+    }
+
+    /// No sort, reader selection, read marker or bulk fields enter category URLs.
+    pub fn fields(&self) -> std::collections::BTreeMap<String, String> {
+        use crate::mail_list::{AttachmentFilter, MessageFilter, ProtectionFilter};
+        let mut fields = std::collections::BTreeMap::new();
+        if self.view.sender.active() {
+            fields.insert("from".into(), self.view.sender.value().into());
+        }
+        for (key, value) in [
+            ("after", &self.view.dates.after),
+            ("before", &self.view.dates.before),
+        ] {
+            if let Some(value) = value {
+                fields.insert(key.into(), value.clone());
+            }
+        }
+        if self.view.filter != MessageFilter::All {
+            fields.insert("filter".into(), self.view.filter.value().into());
+        }
+        if self.view.attachment != AttachmentFilter::All {
+            fields.insert("attachment".into(), self.view.attachment.value().into());
+        }
+        if self.view.protection != ProtectionFilter::All {
+            fields.insert("pgp".into(), self.view.protection.value().into());
+        }
+        if let Some(name) = &self.mailbox {
+            fields.insert("mailbox".into(), name.clone());
+        }
+        fields
+    }
+
+    pub fn href(&self, tab: SearchTab, query: &str, page: Option<usize>) -> String {
+        let mut fields = self.fields();
+        match tab {
+            SearchTab::All => {
+                fields.insert("category".into(), "all".into());
+            }
+            SearchTab::People => {
+                fields.insert("category".into(), "people".into());
+            }
+            SearchTab::Messages if self.mailbox.is_none() => {
+                fields.insert("scope".into(), "all".into());
+            }
+            SearchTab::Messages => {}
+        }
+        fields.insert("q".into(), query.into());
+        if let Some(page) = page {
+            fields.insert("page".into(), page.to_string());
+        }
+        format!(
+            "/search?{}",
+            fields
+                .iter()
+                .map(|(key, value)| format!("{}={}", url_encode(key), url_encode(value)))
+                .collect::<Vec<_>>()
+                .join("&")
+        )
+    }
+}
+
 /// Clear action selection after a move; the next GET recomputes counts/pages.
 pub fn mail_return_after_move(value: &str, source: &str) -> Option<String> {
     let safe = safe_mail_return(value)?;
@@ -74,31 +196,25 @@ pub fn safe_mail_return(value: &str) -> Option<String> {
                 "select",
             ]
         }
-        "/search" if fields.get("category").map(String::as_str) == Some("all") => {
-            let query = fields.get("q").map(String::as_str).unwrap_or("");
-            if query.len() > 256 || query.chars().any(char::is_control) {
-                return None;
-            }
-            if let Some(page) = fields.get("page") {
-                let number = page.parse::<usize>().ok()?;
-                if !(1..=23).contains(&number) || number.to_string() != *page {
-                    return None;
-                }
-            }
-            &["category", "q", "page"]
-        }
-        "/search" if fields.get("category").map(String::as_str) == Some("people") => {
-            let query = fields.get("q").map(String::as_str).unwrap_or("");
-            if query.len() > 256 || query.chars().any(char::is_control) {
-                return None;
-            }
-            if let Some(page) = fields.get("page") {
-                let number = page.parse::<usize>().ok()?;
-                if !(1..=10).contains(&number) || number.to_string() != *page {
-                    return None;
-                }
-            }
-            &["category", "q", "page"]
+        "/search"
+            if matches!(
+                fields.get("category").map(String::as_str),
+                Some("all" | "people")
+            ) =>
+        {
+            SearchFilterContext::parse(&fields)?;
+            &[
+                "category",
+                "q",
+                "page",
+                "from",
+                "after",
+                "before",
+                "attachment",
+                "pgp",
+                "filter",
+                "mailbox",
+            ]
         }
         "/search" => {
             if fields.get("q")?.trim().is_empty() {
@@ -201,7 +317,7 @@ mod tests {
             "/search?category=people&page=0",
             "/search?category=people&page=11",
             "/search?category=people&page=01",
-            "/search?category=people&mailbox=INBOX",
+            "/search?category=people&scope=all",
             "/search?category=people&selected_uid=9",
             "/search?category=people&q=%00",
             "/search?category=other&q=Alice",
