@@ -8647,3 +8647,15 @@ strict input fields in the existing WSTG attack-surface inventory; never weaken
 the router-parity assertion. The focused existing regression passes after the
 inventory-only correction. Full normal hook rerun is required before signing;
 unchanged native compiler inputs retain their already executed qualification.
+
+### 2026-10-04 UTC — close bounded Save Sent engineering delivery honestly
+
+Record signed427757f and fresh matching GitHub UX branch, both normal gates,
+the actual native cohort and exact web-only obsd1 product activation separately.
+Keep failed gate history and earlier pending snapshots; use later matching
+delivery records to supersede their status without rewriting them. The general
+operator check-in PASS does not establish specific Off/On receipt, Sent-copy,
+Inbox or protected-provider results. Offer the now-deployed concise Off/On/
+restore UAT and continue actual missing Sent-location implementation with
+developer, QA and independent review. No full sprint/epic completion claim,
+operator policy change, duplicate Send or agent real-provider submission.

@@ -6298,3 +6298,35 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   references. The focused existing router/inventory regression now exits0.
   No Rust or compiled fixture input changed; native320 evidence retains its
   matching source scope. Normal complete hook rerun remains required.
+
+### 2026-10-04 UTC — Save Sent signed delivery and matching obsd1 activation
+
+- Product427757f24f9bef967f0e58d8a0998cbeb8eb32f9 has a verified Shopkeeper
+  signature. Both normal commit and push security gates pass:1351 library
+  cases, zero failures,34 explicit locally skipped native cases. The separate
+  actual native3PASS/15-13-15markers/320-input run qualifies its recorded
+  generated settings and submission behavior; local skips do not qualify it.
+  Preserve the failed first route-inventory gate and its actual correction.
+- Fresh origin fetch proves exact UX branch equality,0 ahead/behind and clean
+  product delivery. All320 committed compiler inputs match the actual native
+  manifest. Retained signed-sync-proof.json and independent-delivery-review.json
+  reconcile normal gates, native results and signed source without extending
+  them to provider or human acceptance.
+- Reviewed web-only preflight and activation install exact native product
+  ccc9d62639cecd63ae930c5698b6914e041475e78943a0737988029adc9c6381 on obsd1.
+  Root-private prior-binary backup is retained. Helpers/configuration/keys and
+  operator policies are not changed. A fresh bounded check confirms installed
+  parity, seven services running, login200 and unauthenticated preference-POST
+  redirect303. Those health checks are not authenticated user functionality.
+- Current bounded UAT is save Off/reload, one ordinary uniquely named self
+  message with no Sent copy; save On/reload, a different ordinary self message
+  with one Sent copy; restore the original choice. Inbox delivery is observed
+  separately. The operator rates the general check-in PASS; no case-specific
+  Off/On/receipt/Inbox results were supplied, so those human rows remain NOT_RUN.
+  Actual delivery and concise UAT are under the existing sprint-root save-sent
+  directory. Earlier native pending snapshots remain historical, superseded by
+  deployment-427757f24f9b/web-activated.json and current UAT.md.
+- Next actual missing feature is R2-16-002 owned Sent location; developer and
+  QA agents are coordinating product/backend and discriminating native cases.
+  ALLSEND, protected-provider/privatecrypto, full S03 and epic acceptance remain
+  OPEN. No real operator/provider message was submitted by an agent.
