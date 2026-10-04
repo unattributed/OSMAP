@@ -8739,3 +8739,30 @@ native scenarios. Direct local sentinel controls pass without application or
 network execution; matching native3 and the normal gate qualify final source.
 Preserve prior failed gate/native records. No suppression, hook bypass, mailbox
 policy change or provider Send is authorized by this fixture correction.
+
+### 2026-10-04 — hold Draft activation on actual native Sent failure
+
+Signed product f20f1ed is promptly synchronized after both normal security gates
+pass. Matching native3's Draft proof does not waive the actual Sent200/303
+failure or the other three unexecuted cases. Preserve native2 as historical own-
+input qualification and supersede any broader interpretation of commit context.
+A reviewed one-case diagnostic fails earlier at Sent-choice503/303, so measure
+finite early-phase operation facts before changing code, fixtures or limits.
+Do not label this transient, change operator policy, relax timeouts, repeat an
+ambiguous submission or activate the candidate without an actual demonstrated
+resolution. Keep the current installed Sent application. Root integrates and
+validates; dedicated Scrum coordination maintains slice order, developer/QA
+produce concrete code and independent review checks evidence and boundaries.
+
+### 2026-10-04 — preserve failure observability and qualify current source explicitly
+
+The reviewed second disposable Sent scenario passes all original expectations
+and finite transport counters. This does not retrospectively explain either
+previous refusal. Retain their unknown causes rather than label them transient
+or claim a production fix. Keep bounded sanitized early-choice and captured-
+submission diagnostics in the test so a new actual failure has usable evidence.
+Do not increase any deadline or weaken status, cleanup, or authority checks.
+Only a complete five-case run of final matching inputs, normal signed sync,
+actual installation and bounded live verification can establish this Draft
+increment's delivery. None of these steps establishes operator/provider Send
+acceptance. The live previous application remains until that evidence exists.

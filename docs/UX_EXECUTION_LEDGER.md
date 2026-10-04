@@ -6492,3 +6492,67 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   approves exact fixture eb2793c681a8c432f7cdd3faaf42ba1233c61fedfae18e969a9b0668af238428.
   Matching native3 and normal commit2 run on these final frozen inputs.
   Native2 retains its own historical PASS; no repaired-source delivery claim.
+
+### 2026-10-04 UTC — signed Draft source synchronized; native Sent refusal remains open
+
+- Product f20f1eda5aae8f1794749d6c23011f48fdd3a277 has the exact Shopkeeper
+  signature. Normal commit2 and push1 gates PASS1407 library/0 failed/36 explicit
+  locally ignored native cases. Fresh GitHub UX branch equality0/0 and clean
+  source337 signed-blob parity are recorded in signed-sync-proof.json.
+- Matching native3 proves Draft1PASS18 markers/zero transport, then the preserved
+  Sent scenario fails0PASS/1FAIL200 versus expected303 at its submission result.
+  Remaining three cases are NOT RUN. No complete current native qualification,
+  deployment or human UAT is inferred from normal gates or prior native2 PASS.
+  Retain actual log7b6cdb47ee243bb3dc5a8a0aa940c6c6f75cff030c915bb3526735102ab7dd55.
+- A source-reviewed single-case disposable diagnostic preserves expectations,
+  deadlines, exact Sent markers and finite transport. It fails earlier during
+  initial Sent choice503 versus303, before the submission diagnostics run; log
+  9691002656ffcb21e4e12fe27ce089a8f157526bed3ff5f6216974e327548685.
+  This does not establish barrier timeout, SMTP, append or cleanup as the cause.
+  Add only finite early-phase availability/command-status/timing observations;
+  no raw responses, private fields, changed deadlines or production config.
+  The initial diagnostic mutating Draft load was rejected and corrected to the
+  immutable reader before execution; superseded source remains retained.
+- Product commit context referred to native2's previous-input five-case PASS.
+  This subsequent complete-matching failure supersedes any interpretation of
+  that wording as final native qualification/readiness. Published signed history
+  is preserved. Current installed prior Sent application remains untouched.
+- Dedicated Scrum lead reconfirms real order: finish Draft actual qualification
+  and deployment, then sender-identity backend/generated UI/captured transport,
+  then only location-sensitive draft interactions. Identity developer has actual
+  generated-form RED→GREEN in isolated source; no new broad completion claim.
+  ALLSEND human, provider/protected/key-lifecycle, full S03 and epic stay OPEN.
+
+### 2026-10-04 UTC — retain measured Sent diagnostics without changing runtime limits
+
+- The second independently reviewed disposable Sent diagnostic passes its exact
+  one case:1 PASS/0 FAIL/0 ignored,16 unchanged markers,3 loopback acceptances,
+  1 authenticated append attempt and1 actual Dovecot save. Initial Sent-choice
+  303 takes373ms with available metadata/status and persisted selected identity;
+  captured submission303 shows no expired barrier, accepted/stored journal,
+  exact original destination and confirmed Draft cleanup. Log
+  6220eec7f82c4e20c2b1d87e76ed0a5cfb42031153bb1ed7932975182ce79da2.
+- This execution does not identify the causes of native3 or diagnostic1 failure.
+  Retain both failures and UNKNOWN cause. Admit only the reviewed test fixture's
+  bounded operation/audit/outcome diagnostics, with one original executor call,
+  immutable Draft observation and no raw values. Production behavior, deadlines,
+  expected303,16 markers and finite transport counters remain unchanged.
+- Independent review54917d963650edcbe710c0fef69f3e97b0f9cecf3ccbd7bdf2411aa2f255d4ca;
+  fixture834bd075da270246d46430147d2cd6b72d88440230713455d1009a0f1d3fcb93.
+  Source admission retains337 inputs; matching full five-case native4 is running.
+  Refresh unchanged V10 generators/current inventories to6161/source-test6075,
+  refined high0/medium5; historical June sections remain byte-preserved.
+  Full matching native result and normal signed sync are required before binary
+  activation; a passing diagnostic alone is not Draft delivery or human UAT.
+  Full S03, current human ALLSEND, provider/protected/key lifecycle and epic OPEN.
+
+- Full matching native4 now PASS5/0/0, all77 markers18/16/15/13/15 and original
+  finite8 loopback acceptances/5 authenticated append attempts/4 real Dovecot
+  saves. All337 compiler inputs and owned binaries match before/after, manifest
+  949ef36379f93639ee974b189bd06b4c820d764a15043f9c7cf609ec8b14ac73;
+  log267bb5a08a1a7f909acf162c8864a432b5aed481a361c2f5ed13d1a6bf38baa8;
+  native application8edbc3fdafccc894628958b29b2f4f1fc33076643658aed11d173aa7819b9840.
+  Earlier failures remain recorded with unknown cause. This final-source
+  qualification passes current acceptance controls without a timeout/status/
+  cleanup waiver; it does not claim their past cause has been repaired.
+  Normal signed sync and matching activation remain next; human UAT NOT RUN.

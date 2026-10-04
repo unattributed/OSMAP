@@ -125,9 +125,24 @@ impl CommandExecutor for ScopedAppendExecutor {
 }
 
 #[derive(Clone)]
+struct ReadObservation {
+    category: &'static str,
+    started: Instant,
+    timeout_ms: u128,
+    elapsed_ms: u128,
+    finished: bool,
+    status_zero: bool,
+    command_error: bool,
+    command_timeout: bool,
+    stdout_present: bool,
+    stderr_present: bool,
+}
+
+#[derive(Clone)]
 struct GuardedReadExecutor {
     native: NativeExecutor,
     status_calls: Arc<AtomicUsize>,
+    observations: Arc<Mutex<Vec<ReadObservation>>>,
 }
 impl CommandExecutor for GuardedReadExecutor {
     fn run_with_stdin_bytes(
@@ -176,8 +191,62 @@ impl CommandExecutor for GuardedReadExecutor {
         {
             self.status_calls.fetch_add(1, Ordering::SeqCst);
         }
-        self.native
-            .run_with_stdin_bytes_timeout_and_output_limit(p, a, input, timeout, limit)
+        let started = Instant::now();
+        let category = if input == crate::folder_metadata_backend::TRANSCRIPT {
+            "namespace_list"
+        } else if a
+            .windows(2)
+            .any(|pair| pair[0] == "mailbox" && pair[1] == "status")
+        {
+            "mailbox_status"
+        } else if a
+            .windows(2)
+            .any(|pair| pair[0] == "mailbox" && pair[1] == "list")
+        {
+            "folder_list"
+        } else {
+            "other_read"
+        };
+        let index = {
+            let mut observations = self.observations.lock().unwrap();
+            assert!(
+                observations.len() < 256,
+                "bounded fixture read observations"
+            );
+            let index = observations.len();
+            observations.push(ReadObservation {
+                category,
+                started,
+                timeout_ms: timeout.as_millis(),
+                elapsed_ms: 0,
+                finished: false,
+                status_zero: false,
+                command_error: false,
+                command_timeout: false,
+                stdout_present: false,
+                stderr_present: false,
+            });
+            index
+        };
+        let result = self
+            .native
+            .run_with_stdin_bytes_timeout_and_output_limit(p, a, input, timeout, limit);
+        let mut observations = self.observations.lock().unwrap();
+        let observation = &mut observations[index];
+        observation.finished = true;
+        observation.elapsed_ms = started.elapsed().as_millis();
+        match &result {
+            Ok(execution) => {
+                observation.status_zero = execution.status_code == 0;
+                observation.stdout_present = !execution.stdout.is_empty();
+                observation.stderr_present = !execution.stderr.is_empty();
+            }
+            Err(error) => {
+                observation.command_error = true;
+                observation.command_timeout = error.reason.starts_with("command timed out after ");
+            }
+        }
+        result
     }
 }
 
@@ -720,9 +789,11 @@ fn isolated_openbsd_generated_owned_sent_location_capture_unavailable_and_off() 
         bin_move_count: None,
     };
     let location_readiness = Arc::new(AtomicUsize::new(0));
+    let read_observations = Arc::new(Mutex::new(Vec::new()));
     let native = GuardedReadExecutor {
         native,
         status_calls: location_readiness.clone(),
+        observations: read_observations.clone(),
     };
     let list = DoveadmMessageListBackend::new(
         MessageListPolicy::default(),
@@ -768,7 +839,10 @@ fn isolated_openbsd_generated_owned_sent_location_capture_unavailable_and_off() 
     let sendmail = root.join("owned-loopback-sendmail");
     let pending = root.join("send-reservation-ready");
     let release = root.join("release-reserved-send");
-    fs::write(&sendmail, format!("#!/usr/local/bin/python3\nimport smtplib,sys,time,pathlib\nassert sys.argv[1:3]==['-oi','-f'] and sys.argv[3]=={ALICE:?} and sys.argv[4]=='--'\nassert sorted(sys.argv[5:])==sorted([{ALICE:?},{BOB:?}])\ncontent=sys.stdin.buffer.read({})\nassert len(content)<={}\nready=pathlib.Path({:?})\nrelease=pathlib.Path({:?})\nif not release.exists():\n    ready.touch(mode=0o600)\n    deadline=time.monotonic()+8\n    while not release.exists():\n        assert time.monotonic()<deadline\n        time.sleep(0.005)\nwith smtplib.SMTP('127.0.0.1',{port},timeout=3) as client:\n    client.sendmail(sys.argv[3],sys.argv[5:],content)\n", MAX_FIXTURE_WIRE + 1, MAX_FIXTURE_WIRE, pending.to_string_lossy(), release.to_string_lossy())).unwrap();
+    let barrier_expired = root.join("diagnostic-barrier-expired");
+    let smtp_started = root.join("diagnostic-smtp-started");
+    let smtp_returned = root.join("diagnostic-smtp-returned");
+    fs::write(&sendmail, format!("#!/usr/local/bin/python3\nimport smtplib,sys,time,pathlib\nassert sys.argv[1:3]==['-oi','-f'] and sys.argv[3]=={ALICE:?} and sys.argv[4]=='--'\nassert sorted(sys.argv[5:])==sorted([{ALICE:?},{BOB:?}])\ncontent=sys.stdin.buffer.read({})\nassert len(content)<={}\nready=pathlib.Path({:?})\nrelease=pathlib.Path({:?})\nexpired=pathlib.Path({:?})\nsmtp_started=pathlib.Path({:?})\nsmtp_returned=pathlib.Path({:?})\nif not release.exists():\n    ready.touch(mode=0o600)\n    deadline=time.monotonic()+8\n    while not release.exists():\n        now=time.monotonic()\n        if now>=deadline:\n            expired.touch(mode=0o600)\n        assert now<deadline\n        time.sleep(0.005)\nsmtp_started.touch(mode=0o600)\nwith smtplib.SMTP('127.0.0.1',{port},timeout=3) as client:\n    client.sendmail(sys.argv[3],sys.argv[5:],content)\nsmtp_returned.touch(mode=0o600)\n", MAX_FIXTURE_WIRE + 1, MAX_FIXTURE_WIRE, pending.to_string_lossy(), release.to_string_lossy(), barrier_expired.to_string_lossy(), smtp_started.to_string_lossy(), smtp_returned.to_string_lossy())).unwrap();
     fs::set_permissions(&sendmail, fs::Permissions::from_mode(0o700)).unwrap();
     let key = root.join("fixture-grant.key");
     fs::write(&key, test_helper_grant_key()).unwrap();
@@ -958,18 +1032,55 @@ fn isolated_openbsd_generated_owned_sent_location_capture_unavailable_and_off() 
         preferences.load(ALICE).unwrap(),
         crate::sent_location::Preference::default()
     );
-    assert_eq!(
-        http(
-            &app,
-            Some(&alice),
-            "POST",
-            "/settings/sent-location",
-            &choose_a
-        )
-        .response
-        .status_code,
-        303
+    let choice_started = Instant::now();
+    let initial_choice = http(
+        &app,
+        Some(&alice),
+        "POST",
+        "/settings/sent-location",
+        &choose_a,
     );
+    let choice_elapsed_ms = choice_started.elapsed().as_millis();
+    let observed_preference = preferences.load(ALICE);
+    let audit_has = |action| {
+        initial_choice
+            .audit_events
+            .iter()
+            .any(|event| event.action == action)
+    };
+    let audit_available = |action, available| {
+        initial_choice.audit_events.iter().any(|event| {
+            event.action == action
+                && event
+                    .fields
+                    .iter()
+                    .any(|field| field.key == "available" && field.value == available)
+        })
+    };
+    eprintln!(
+        "native_sent_location_choice_diagnostic http_status={} elapsed_ms={} session_validated={} budget_exhausted={} mailbox_listed={} mailbox_list_failed={} metadata_available={} metadata_unavailable={} status_available={} status_unavailable={} preference_saved={} preference_unconfirmed={} persisted_readable={} persisted_default={} persisted_revision1_selected_a={} smtp_records={} authenticated_save_calls={}",
+        initial_choice.response.status_code, choice_elapsed_ms,
+        audit_has("session_validated"), audit_has("request_budget_exhausted"),
+        audit_has("mailbox_listed"), audit_has("mailbox_list_failed"),
+        audit_available("folder_metadata_read", "true"), audit_available("folder_metadata_read", "false"),
+        audit_available("mailbox_status_read", "true"), audit_available("mailbox_status_read", "false"),
+        audit_has("sent_location_preference_saved"), audit_has("sent_location_preference_unconfirmed"),
+        observed_preference.is_ok(), observed_preference.as_ref().is_ok_and(|value| *value == crate::sent_location::Preference::default()),
+        observed_preference.as_ref().is_ok_and(|value| value.revision == 1 && value.mailbox_name == TARGET_A && value.mailbox_guid.is_some()),
+        records.lock().unwrap().len(), appends.load(Ordering::SeqCst),
+    );
+    let observations = read_observations.lock().unwrap();
+    for (index, observation) in observations.iter().enumerate().rev().take(12).rev() {
+        eprintln!(
+            "native_sent_location_read_diagnostic ordinal={} category={} finished={} timeout_ms={} elapsed_ms={} observation_age_ms={} status_zero={} command_error={} command_timeout={} stdout_present={} stderr_present={}",
+            index, observation.category, observation.finished, observation.timeout_ms,
+            observation.elapsed_ms, observation.started.elapsed().as_millis(),
+            observation.status_zero, observation.command_error, observation.command_timeout,
+            observation.stdout_present, observation.stderr_present,
+        );
+    }
+    drop(observations);
+    assert_eq!(initial_choice.response.status_code, 303);
     let saved_a = preferences.load(ALICE).unwrap();
     assert_eq!(saved_a.revision, 1);
     assert_eq!(saved_a.mailbox_name, TARGET_A);
@@ -1095,61 +1206,154 @@ fn isolated_openbsd_generated_owned_sent_location_capture_unavailable_and_off() 
             == Some(&draft_before)
     );
     let intent = resumed.get("send_intent").unwrap();
-    let submitted = thread::scope(|scope| {
-        let sending =
-            scope.spawn(|| compose_post(&restarted, Some(&alice), "/send", &resumed, false));
-        let release_guard = ReleaseReservedSend(release.clone());
-        let deadline = Instant::now() + Duration::from_secs(5);
-        while !pending.exists() && Instant::now() < deadline {
-            thread::sleep(Duration::from_millis(5));
-        }
-        assert!(
-            pending.exists(),
-            "actual pre-SMTP sendmail barrier must be reached"
-        );
-        assert_location_journal(
-            &app_config.state_layout.settings_dir,
-            intent,
-            "reserved",
-            Some(("selected", TARGET_A, &a_guid)),
-        );
-        assert!(records.lock().unwrap().is_empty() && appends.load(Ordering::SeqCst) == 0);
-        assert_eq!(
-            http(
-                &app,
-                Some(&alice),
-                "POST",
-                "/settings/sent-location",
-                &choose_b
+    let reservation_started = Instant::now();
+    let (submitted, barrier_ready_ms, choice_update_ms, release_elapsed_ms) =
+        thread::scope(|scope| {
+            let sending =
+                scope.spawn(|| compose_post(&restarted, Some(&alice), "/send", &resumed, false));
+            let release_guard = ReleaseReservedSend(release.clone());
+            let deadline = Instant::now() + Duration::from_secs(5);
+            while !pending.exists() && Instant::now() < deadline {
+                thread::sleep(Duration::from_millis(5));
+            }
+            assert!(
+                pending.exists(),
+                "actual pre-SMTP sendmail barrier must be reached"
+            );
+            let barrier_ready_ms = reservation_started.elapsed().as_millis();
+            assert_location_journal(
+                &app_config.state_layout.settings_dir,
+                intent,
+                "reserved",
+                Some(("selected", TARGET_A, &a_guid)),
+            );
+            assert!(records.lock().unwrap().is_empty() && appends.load(Ordering::SeqCst) == 0);
+            let choice_started = Instant::now();
+            assert_eq!(
+                http(
+                    &app,
+                    Some(&alice),
+                    "POST",
+                    "/settings/sent-location",
+                    &choose_b
+                )
+                .response
+                .status_code,
+                303
+            );
+            let choice_update_ms = choice_started.elapsed().as_millis();
+            let saved_b = preferences.load(ALICE).unwrap();
+            assert_eq!(saved_b.revision, 2);
+            assert_eq!(saved_b.mailbox_name, TARGET_B);
+            assert_eq!(
+                saved_b.mailbox_guid.as_deref(),
+                Some(
+                    other_alice[0]
+                        .metadata
+                        .as_ref()
+                        .unwrap()
+                        .version
+                        .mailbox_guid
+                        .as_str()
+                )
+            );
+            assert_location_journal(
+                &app_config.state_layout.settings_dir,
+                intent,
+                "reserved",
+                Some(("selected", TARGET_A, &a_guid)),
+            );
+            let release_elapsed_ms = reservation_started.elapsed().as_millis();
+            drop(release_guard);
+            (
+                sending.join().unwrap(),
+                barrier_ready_ms,
+                choice_update_ms,
+                release_elapsed_ms,
             )
-            .response
-            .status_code,
-            303
-        );
-        let saved_b = preferences.load(ALICE).unwrap();
-        assert_eq!(saved_b.revision, 2);
-        assert_eq!(saved_b.mailbox_name, TARGET_B);
-        assert_eq!(
-            saved_b.mailbox_guid.as_deref(),
-            Some(
-                other_alice[0]
-                    .metadata
-                    .as_ref()
-                    .unwrap()
-                    .version
-                    .mailbox_guid
-                    .as_str()
-            )
-        );
-        assert_location_journal(
-            &app_config.state_layout.settings_dir,
-            intent,
-            "reserved",
-            Some(("selected", TARGET_A, &a_guid)),
-        );
-        drop(release_guard);
-        sending.join().unwrap()
+        });
+    // Diagnostic observations expose fixed categories/counts only, never private fields.
+    let durable_entry = crate::private_account_file::PrivateAccountFile::new(
+        app_config.state_layout.settings_dir.join("send-journal"),
+        "osmap-send-journal-v1",
+        1024 * 1024,
+    )
+    .read(ALICE)
+    .ok()
+    .flatten()
+    .and_then(|bytes| serde_json::from_slice::<serde_json::Value>(&bytes).ok())
+    .and_then(|value| {
+        value
+            .get("attempts")?
+            .as_array()?
+            .iter()
+            .find(|entry| entry.get("intent").and_then(serde_json::Value::as_str) == Some(intent))
+            .cloned()
     });
+    let durable_state = durable_entry
+        .as_ref()
+        .and_then(|entry| entry.get("state"))
+        .and_then(serde_json::Value::as_str);
+    let capture_same = durable_entry.as_ref().is_some_and(|entry| {
+        entry.get("sent_location").is_some_and(|location| {
+            location.get("mode").and_then(serde_json::Value::as_str) == Some("selected")
+                && location
+                    .get("mailbox_name")
+                    .and_then(serde_json::Value::as_str)
+                    == Some(TARGET_A)
+                && location
+                    .get("mailbox_guid")
+                    .and_then(serde_json::Value::as_str)
+                    == Some(a_guid.as_str())
+        })
+    });
+    let diagnostic_draft = draft_store.read_immutable(ALICE, &draft_id);
+    let diagnostic_record = diagnostic_draft
+        .as_ref()
+        .ok()
+        .and_then(|record| record.as_ref());
+    let steps = guard_steps.lock().unwrap();
+    let audit_has = |action| {
+        submitted
+            .audit_events
+            .iter()
+            .any(|event| event.action == action)
+    };
+    eprintln!(
+        "native_sent_location_submit_diagnostic http_status={} barrier_ready_ms={} choice_update_ms={} release_elapsed_ms={} join_elapsed_ms={} barrier_expired={} smtp_started={} smtp_returned={} smtp_records={} authenticated_save_calls={} guard_namespace_calls={} guard_status_calls={} guard_save_calls={} journal_readable={} journal_reserved={} journal_unconfirmed={} journal_accepted_stored={} journal_accepted_unconfirmed={} capture_selected_a_guid_same={} draft_readable={} draft_present={} draft_revision_same={} draft_record_same={} receipt_stored_category={} receipt_copy_unconfirmed_category={} receipt_outcome_unconfirmed_category={} audit_submitted={} audit_submit_unconfirmed={} audit_copy_stored={} audit_copy_failed={} audit_recovery_unconfirmed={}",
+        submitted.response.status_code,
+        barrier_ready_ms,
+        choice_update_ms,
+        release_elapsed_ms,
+        reservation_started.elapsed().as_millis(),
+        barrier_expired.exists(),
+        smtp_started.exists(),
+        smtp_returned.exists(),
+        records.lock().unwrap().len(),
+        appends.load(Ordering::SeqCst),
+        steps.iter().filter(|step| **step == "namespace_list").count(),
+        steps.iter().filter(|step| **step == "guid_status").count(),
+        steps.iter().filter(|step| **step == "save").count(),
+        durable_entry.is_some(),
+        durable_state == Some("reserved"),
+        durable_state == Some("unconfirmed"),
+        durable_state == Some("accepted_stored"),
+        durable_state == Some("accepted_unconfirmed"),
+        capture_same,
+        diagnostic_draft.is_ok(),
+        diagnostic_record.is_some(),
+        diagnostic_record.is_some_and(|record| record.revision == draft_before.revision),
+        diagnostic_record == Some(&draft_before),
+        text(&submitted).contains("A copy was stored in"),
+        text(&submitted).contains("Copy storage in the captured destination"),
+        text(&submitted).contains("Submission could not be confirmed"),
+        audit_has("message_submitted"),
+        audit_has("message_submit_unconfirmed"),
+        audit_has("sent_copy_stored"),
+        audit_has("sent_copy_store_failed"),
+        audit_has("send_recovery_unconfirmed"),
+    );
+    drop(steps);
     assert_eq!(submitted.response.status_code, 303);
     let first_receipt_url = location(&submitted);
     let reopened = BrowserApp::new(
