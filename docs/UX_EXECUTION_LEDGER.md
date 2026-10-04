@@ -5944,3 +5944,34 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   Source independent reviewd985f1c3a6591d0e154567cb162dea33f7af989cbd1a811ffc2d4bfa12fa0600
   finds no blocker. Signed sync, matching installation and public current/stale
   reader GET countercase remain pending; no human/Send/whole-sprint acceptance.
+
+### 2026-10-04 UTC — S02-04 reader Retry signed delivery and installed verification
+
+- Signed source4e6ed0816ed856063f1abe71e414b20b8bb03974 verifies with Shopkeeper;
+  normal commit/push hooks pass and a fresh origin fetch proves UX branch SHA
+  equality, clean tree and ahead/behind0/0. All310 signed compiler inputs match
+  the actual33-case native manifest. No unsigned commit or hook bypass.
+- Reviewed web-only activation installs matching application
+  1abb3f38eeef8fd3e3d94345c944e4086f0af43129cbe103e9872580503cefb9 on
+  obsd1. Actual stage/check/activate all exit0; only osmap_serve restarts. Keep
+  authoritative helper, environment hashes, keys, agents and policy unchanged.
+  Backup: /var/backups/osmap-ux-s02-all-search-reader-retry-4e6ed0816ed8-20261004.
+- Actual installed external browser GET probe passes: generated current fixture01
+  Open, keyboard Next02, Previous01, and exact six-filter All Back. A controlled
+  public stale GUID returns503/no-store with no body panel or Retry, preserving
+  the same contextual Back. This is installed identity-refusal proof, not a live
+  temporary-outage Retry; the latter was executed only in the isolated native
+  caller-grant fixture. No operator message replacement, outage or grant change.
+- Six current tuples, Seen/Flagged booleans and saved Bin/Manual preferences
+  remain unchanged; zero browser POST, zero Send and owned-session cleanup PASS.
+  Root inspects actual public arrow-control crops at360/1440: no clipping,
+  visible keyboard focus, correct disabled Previous and active Next. No private
+  body, cookies, CSRF or browser traces retained. Evidence lives under
+  osmap-ux-s02/revalidation-20261003/reader-retry, including synchronization,
+  signed-native-parity, activation result and visual-navigation-review records.
+- Scoped reader Retry engineering delivery is complete. Human UAT remains NOT
+  RUN; whole S02 and actual Send/provider/crypto acceptance remain OPEN. Next
+  real S03-04 work adds missing actual generated Compose/resumed-draft POST
+  through normal Runtime, loopback-only SMTP and authenticated isolated Dovecot
+  Sent. Existing direct gateway submission proof remains valid but does not
+  establish this combined path or the operator's reported ALLSEND root cause.

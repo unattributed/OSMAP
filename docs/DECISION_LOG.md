@@ -8457,3 +8457,21 @@ provides a real Runtime denial/recovery seam without disrupting operator service
 same-UID replacement remains route-fixture proof. Retain the initial driver arity
 failure as zero executed tests. Source/health alone cannot close installation or
 human UAT; signed deployment and current/stale installed browser checks follow.
+
+### Reader Retry installed result and next actual Send qualification
+
+Matching signed source4e6ed081 and native application1abb3f38 are now delivered
+on obsd1. Actual generated current-reader navigation and controlled stale-GUID
+refusal/contextual Back pass without mail, preference or flag mutation. Keep
+temporary-denial Retry proof limited to the disposable native caller-grant fault;
+an installed stale-GUID refusal is not an operator-outage recovery test. Retain
+human acceptance and the unexplained historical helper refusal separately.
+
+Proceed to the demonstrated missing integration seam rather than repeat existing
+direct gateway proof: actual generated Compose and resumed draft POST, normal
+Runtime builders, a strictly local SMTP sink, authenticated append and real
+isolated Dovecot Sent with reader/download/replay assertions. Restrict initial
+implementation to test-only fixture seams and preserve the original reader
+executor's no-save guards. A coverage gap does not itself establish a production
+defect; correct production code only when actual execution demonstrates one.
+No agent email, provider submission or operator key/policy change is involved.
