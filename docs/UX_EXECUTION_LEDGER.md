@@ -5856,3 +5856,91 @@ with later outcomes. Correct errors using a new entry referencing the old one.
  strict release or human acceptance is inferred. Final review and all14 scoped
  changed files are ready for signed commit; installation/browser results remain
  pending and must be recorded after their execution.
+
+
+### 2026-10-04 UTC — S02-02 All-origin navigation matching installed delivery
+
+- Signed f960bdd71b61d7eb22c7fe7be7e0d42148d4600f verifies Good Shopkeeper;
+  normal commit/push hooks pass, fresh origin UX equality is exact0/0 and clean
+  at sync. All310 signed Git inputs match final native manifest52c61150.
+- Initial check-only refuses an incompatible backup-name prefix before host
+  mutation. Retain navigation-check.log and initial review; correct only wrapper
+  prefix/exclusive log/review filenames, not the activation guard or product.
+  Independent corrected review e3c45e19c69fa6954f9d382cee89ef104fa7b94b7128bf920ca362c67e478f0e
+  passes. Actual corrected check and activation exit0, matching web app45b55,
+  backup /var/backups/osmap-ux-s02-all-search-reader-f960bdd71b61-20261004.
+  Only osmap_serve restarts; environment hashes, retention contents, native key
+  agents, authoritative helper and unrelated service states remain unchanged.
+- Actual external Edge installed GET probe PASS: generated currentGUID Open01,
+  keyboard Next02, Previous01 and Back to identical All query/six filters/page1.
+  Each controlled public body matches in RAM; no bodies/HTML/cookies/CSRF retained.
+  Six current identities, Seen/Flagged booleans and saved Manual/Bin preferences
+  stay unchanged; owned180sec synthetic postauth session cleanup PASS. Zero
+  POST/Send/blocked requests. Actual arrow controls fit360/1440, root inspects
+  both retained public-controls-only crops with visible keyboard focus.
+- Source/native/installed evidence is under all-search/reader-navigation. Human
+  UAT NOT RUN; installed On-open mutation, >50-row/page-boundary and hostile
+  countercases are not claimed from six public fixtures. Separate native/local
+  tests establish their recorded bounds. Whole S02, actual Send/provider/crypto
+  acceptance, historical helper-refusal cause and epic remain OPEN.
+- Next concrete S02-04 gap: a temporary reader failure's generated Retry drops
+  both GUIDs and nested originating filters, and Back drops original context.
+  Existing tests recover a different direct URL rather than actual rendered Retry.
+  Freeze two-file work order in reader-retry; add generated-link discriminator
+  before production edits. Same-UID replacement is controlled test state only,
+  never an operator mail mutation. No paper review is labelled remediation.
+
+
+### 2026-10-04 UTC — S02-04 generated reader Retry actual RED
+
+- Actual two new route tests compile and execute against unchanged f960 production
+  routes_mail SHA36612c92:zero passed/two failed/zero ignored, exit101. Valid All
+  generated GUID-bound opening uses actual six predicates, no fabricated URL.
+  Existing temporary Denied503 produces actual Retry containing only mailbox/UID,
+  dropping both GUIDs and finite original All query/filter/page return context.
+- Current bound opening200 and controlled original bound stale opening503 are
+  positive controls. Following the actual rendered unbound Retry returns200 on
+  the same-account/folder/UID replacement: genuine identity downgrade, not a
+  compiler failure or asserted account-authentication bypass. Both budget events
+  pair, flags remain unchanged; operator mail/hosts/Send are untouched.
+- Retain reader-retry/work-order.json, tests-ready.json, actual-red-run.log and
+  actual-red-results.json. Release narrow production repair after this execution:
+  preserve validated original GUID pair and finite return context, reject invalid
+  partial identity without downgrade, keep deliberate legacy unversioned links,
+  unchanged classifications/budgets and read-only GET retry. GREEN/native/current
+  signed deployment and actionable recovery UAT remain pending.
+
+
+### 2026-10-04 UTC — S02-04 reader Retry implemented and qualified natively
+
+- Repair routes_mail through existing finite safe_mail_return validation: valid
+  requested GUID pair/nested originating list context survives temporary denial;
+  partial/malformed identity, invalid origin and unknown fields suppress Retry
+  rather than downgrade it. Identity-refusal Back preserves safe origin but has
+  no Retry. Deliberate legacy GUID-free reads retain behavior and status classes;
+  authentication, budget release, read-only GET and source/download guards stay.
+- Root actually runs all9 content tests PASS:two original genuine RED
+  discriminators now GREEN plus actual matching Retry200/body/All Back, invalid
+  context suppression, legacy200 and session/valid foreign/stale refusal. No
+  controlled same-UID replacement ever touches operator mail.
+- Extend only disposable native fixture: hide its caller grant file temporarily,
+  restore before assertions, observe real Runtime Denied503 and actual rendered
+  Retry/Back exact GUID/origin. Follow Retry to actual authenticated helper/
+  Dovecot200/body/context after restore. It is a caller-grant fault, not a live
+  outage or native same-UID replacement. Original byte/flag/contact/preferences/
+  cleanup/host-metadata assertions remain, with one additional actual marker.
+- Native attempt1 refuses old driver argv count before source extraction/build:
+  zero tests. Preserve failure; exact arity5 replaces4 to match supplied retry
+  count without weakening input bounds. Corrected review6970822bdf1520a9b0c361a2bf70edcf02708a630ed8d25c788109fe75984295
+  passes. Actual exclusive attempt2 exits0,26 All+6 Retry+1 native=33 PASS,
+  zero fail/ignored,310 frozen inputs, unchanged source/owned binary parity.
+  App1abb3f38eeef8fd3e3d94345c944e4086f0af43129cbe103e9872580503cefb9,
+  testd950ee5ba1e578b03725c4dd9edf52bb6947932f2aca0214c8442b14dbbf82f2,
+  manifest6ee0baec0005ef52e1375791e8cecaa3caeb59707f74def9053dde0c056bec4a,
+  log00b4c307413e8eabc9c0acb93daa919b3ca0778ff942eb7d1de980218eab8253.
+- Actual matching acceptance-check exits0:1332 library PASS/zero fail/29 explicit
+  local native ignores, unchanged Clippy/security/V10/V13 checks. V10 official
+  current scanner4931/refinedhigh0 is bookkeeping, not panic-free runtime proof.
+  Source independent reviewd985f1c3a6591d0e154567cb162dea33f7af989cbd1a811ffc2d4bfa12fa0600
+  finds no blocker. Signed sync, matching installation and public current/stale
+  reader GET countercase remain pending; no human/Send/whole-sprint acceptance.

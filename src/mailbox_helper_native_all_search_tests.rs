@@ -33,6 +33,17 @@ fn all_search_native_neighbour_link(body: &str, label: &str) -> Option<String> {
     })
 }
 
+fn all_search_native_recovery_link(body: &str, label: &str) -> String {
+    body.split("<a ")
+        .find_map(|anchor| {
+            let (tag, contents) = anchor.split_once('>')?;
+            (contents.split_once("</a>")?.0 == label)
+                .then(|| attribute(tag, "href"))
+                .flatten()
+        })
+        .expect("actual native rendered recovery anchor")
+}
+
 fn all_search_native_filter_form(body: &str, class: &str) -> BTreeMap<String, String> {
     let detail = body
         .split_once(&format!("<details class=\"{class}\""))
@@ -427,6 +438,44 @@ fn isolated_openbsd_all_search_browser_owned_categories() {
     let filtered_read = get(&app, &alice, &filtered_link);
     assert_eq!(filtered_read.response.status_code, 200);
     assert!(text(&filtered_read).contains("ALICE_READER_ONLY_000"));
+    // Temporarily hide only this disposable caller's fixture grant. This causes
+    // a real Runtime read denial, without changing a live helper or mailbox.
+    // Restore it before assertions or following the actual rendered Retry.
+    let hidden_key = root.join("fixture-grant.retry-stashed");
+    assert!(!hidden_key.exists());
+    fs::rename(&key, &hidden_key).unwrap();
+    let failed_read = get(&app, &alice, &filtered_link);
+    fs::rename(&hidden_key, &key).unwrap();
+    assert_eq!(fs::read(&key).unwrap(), test_helper_grant_key());
+    assert_eq!(failed_read.response.status_code, 503);
+    budget_pair(&failed_read);
+    assert!(!text(&failed_read).contains("ALICE_READER_ONLY_000"));
+    let actual_retry = all_search_native_recovery_link(text(&failed_read), "Retry loading");
+    let retry_fields = crate::http_form::parse_urlencoded_form(
+        actual_retry.split_once('?').unwrap().1.as_bytes(),
+        crate::mail_navigation::MAIL_RETURN_MAX_FIELDS,
+        2048,
+    )
+    .unwrap();
+    let original_fields = crate::http_form::parse_urlencoded_form(
+        filtered_link.split_once('?').unwrap().1.as_bytes(),
+        crate::mail_navigation::MAIL_RETURN_MAX_FIELDS,
+        2048,
+    )
+    .unwrap();
+    assert_eq!(retry_fields, original_fields);
+    assert_eq!(
+        all_search_native_recovery_link(text(&failed_read), "Back to message"),
+        original_fields["return_to"]
+    );
+    let recovered_read = get(&app, &alice, &actual_retry);
+    assert_eq!(recovered_read.response.status_code, 200);
+    budget_pair(&recovered_read);
+    assert!(text(&recovered_read).contains("ALICE_READER_ONLY_000"));
+    assert_eq!(
+        back_href(text(&recovered_read)),
+        original_fields["return_to"]
+    );
     // Follow actual authenticated native All neighbours, not a fabricated URL.
     // Sender excludes001 and folder excludes003, so the next owned row is002.
     let second_target = initial
@@ -643,5 +692,5 @@ fn isolated_openbsd_all_search_browser_owned_categories() {
     drop(fixture);
     assert!(!root.exists());
     assert_eq!(before, standard_metadata());
-    println!("native_all_search_browser=PASS all_message_filters_actual_owned_scope_context=PASS all_reader_navigation_actual_filtered_next_previous=PASS actual_browser_runtime_authenticated_helper_dovecot=PASS measured_messages_and_owned_people=PASS public_snippet_escaped_protected_absent=PASS rendered_guid_open_actual_body_and_all_back=PASS foreign_stale_unauth_refused=PASS same_uid_inbox_sent_bob_bytes_flags_guids_unchanged=PASS contact_records_unchanged=PASS no_move_append_delete_send_crypto=PASS synthetic_session_not_login_proof=PASS scratch_cleanup=PASS standard_host_metadata_unchanged=PASS");
+    println!("native_all_search_browser=PASS all_message_filters_actual_owned_scope_context=PASS all_reader_navigation_actual_filtered_next_previous=PASS actual_reader_denial_rendered_retry_identity_context_and_recovery=PASS actual_browser_runtime_authenticated_helper_dovecot=PASS measured_messages_and_owned_people=PASS public_snippet_escaped_protected_absent=PASS rendered_guid_open_actual_body_and_all_back=PASS foreign_stale_unauth_refused=PASS same_uid_inbox_sent_bob_bytes_flags_guids_unchanged=PASS contact_records_unchanged=PASS no_move_append_delete_send_crypto=PASS synthetic_session_not_login_proof=PASS scratch_cleanup=PASS standard_host_metadata_unchanged=PASS");
 }

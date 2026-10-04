@@ -8430,3 +8430,30 @@ regression and fresh policy next request. Preserve ordinary behavior. Actual
 aggregate caught an unused import: remove it and rerun matching checks without
 waiving Clippy. Native27-case execution passes, but native or source checks alone
 do not establish installation, human acceptance, Send or whole-sprint closure.
+
+
+### All-reader deployment result and next functional repair
+
+The matching signed native application is installed on obsd1 and actual generated
+GET navigation succeeds against six authoritative public fixtures without state
+mutation. Keep human acceptance separate. A deployment-wrapper backup prefix
+failed its unchanged guard before mutation; correct the caller, preserve the
+failed result, and rerun actual preflight rather than weaken the guard.
+
+Next repair follows the actual rendered reader Retry link. A temporary failure
+must preserve the original current GUID pair and validated return context; an
+account-local same-UID replacement must not become the failed message. Prove the
+current defect with a controlled generated-link RED before changing production.
+
+
+### Reader Retry remediation and validation boundary
+
+Executed RED proved an actual unbound Retry could open a controlled replacement
+that the original GUID-bound request refused. Reuse the finite return validator,
+keep valid requested identity/context, and suppress invalid-context recovery
+instead of inventing another parser or changing legacy unversioned reads. Actual
+content GREEN and33-case native execution pass. Disposable caller-grant absence
+provides a real Runtime denial/recovery seam without disrupting operator services;
+same-UID replacement remains route-fixture proof. Retain the initial driver arity
+failure as zero executed tests. Source/health alone cannot close installation or
+human UAT; signed deployment and current/stale installed browser checks follow.

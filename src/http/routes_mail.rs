@@ -73,6 +73,24 @@ fn list_origin(request: &HttpRequest) -> Option<String> {
     ))
 }
 
+// A failed read still carries the requested object identity. Reconstruct only
+// the existing finite GET context; invalid supplied fields cannot become an
+// unversioned retry. A GUID-free legacy request remains deliberately supported.
+fn message_recovery_links(request: &HttpRequest, mailbox: &str) -> (String, Option<String>) {
+    let back = request
+        .query_params
+        .get("return_to")
+        .and_then(|origin| crate::mail_navigation::safe_mail_return(origin))
+        .or_else(|| {
+            crate::mail_navigation::safe_mail_return(&format!(
+                "/mailbox?name={}",
+                url_encode(mailbox)
+            ))
+        })
+        .unwrap_or_else(|| "/mailboxes".into());
+    (back, list_origin(request))
+}
+
 // A standalone reader may outlive its Unread membership. This only derives
 // navigation from an already rendered owned identity; it changes no stored flag.
 fn opened_reader_view(view: &ListViewState, rendered: &RenderedMessageView) -> ListViewState {
@@ -1177,6 +1195,7 @@ where
             .view_message(context, &validated_session, &mailbox_name, uid);
         audit_events.extend(outcome.audit_events);
 
+        let (recovery_back, recovery_retry) = message_recovery_links(request, &mailbox_name);
         let mut handled = match outcome.decision {
             BrowserMessageViewDecision::Rendered {
                 canonical_username,
@@ -1287,7 +1306,7 @@ where
                         &validated_session.record.csrf_token,
                         "Message unavailable",
                         "The message identity could not be confirmed. Return to the mailbox.",
-                        &format!("/mailbox?name={}", url_encode(&mailbox_name)),
+                        &recovery_back,
                         None,
                     ),
                 ),
@@ -1309,13 +1328,12 @@ where
                             &validated_session.record.csrf_token,
                             title,
                             public_reason_message(&public_reason),
-                            &format!("/mailbox?name={}", url_encode(&mailbox_name)),
-                            (status_code == 503)
-                                .then_some(format!(
-                                    "/message?mailbox={}&uid={uid}",
-                                    url_encode(&mailbox_name)
-                                ))
-                                .as_deref(),
+                            &recovery_back,
+                            if status_code == 503 {
+                                recovery_retry.as_deref()
+                            } else {
+                                None
+                            },
                         ),
                     )
                 },
