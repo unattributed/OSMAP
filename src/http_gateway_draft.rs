@@ -239,6 +239,35 @@ impl RuntimeBrowserGateway {
                 Err(_) => return paused_draft_save(),
             };
         let store = FileDraftStore::new(self.draft_dir.clone(), policy);
+        // Existing IDs never depend on a preference or migrate on a save.
+        let store = if request.draft_id.is_none() {
+            match crate::draft_location::Store::new(&self.settings_dir).load(&canonical_username) {
+                Ok(saved) => store.with_new_location(saved.location),
+                Err(_) => {
+                    return BrowserDraftSaveOutcome {
+                        decision: BrowserDraftSaveDecision::Denied {
+                            public_reason: "temporarily_unavailable".into(),
+                        },
+                        audit_events: vec![draft_warn_event(
+                            "draft_save_denied",
+                            "draft save denied",
+                            context,
+                            validated_session,
+                        )],
+                    }
+                }
+            }
+        } else {
+            store
+        };
+        if request.draft_id.is_none() && store.require_new_location(&canonical_username).is_err() {
+            return BrowserDraftSaveOutcome {
+                decision: BrowserDraftSaveDecision::Denied {
+                    public_reason: "temporarily_unavailable".into(),
+                },
+                audit_events: vec![],
+            };
+        }
         let existing = match store.load(&canonical_username, &draft_id, now) {
             Ok(existing) => existing,
             Err(error) => {
@@ -257,15 +286,6 @@ impl RuntimeBrowserGateway {
             }
         };
 
-        if let Some(draft) = &existing {
-            let Ok(intent) = guard.draft_intent(draft) else {
-                return paused_draft_save();
-            };
-            if intent != request.send_intent || guard.require_unconsumed(&intent).is_err() {
-                return paused_draft_save();
-            }
-        }
-
         if existing.as_ref().and_then(|draft| draft.revision) != request.expected_revision
             || request.draft_id.is_some() != existing.is_some()
         {
@@ -280,6 +300,15 @@ impl RuntimeBrowserGateway {
                     validated_session,
                 )],
             };
+        }
+
+        if let Some(draft) = &existing {
+            let Ok(intent) = guard.draft_intent(draft) else {
+                return paused_draft_save();
+            };
+            if intent != request.send_intent || guard.require_unconsumed(&intent).is_err() {
+                return paused_draft_save();
+            }
         }
 
         let mut persisted_attachments = match crate::draft_content::retain_saved_attachments(

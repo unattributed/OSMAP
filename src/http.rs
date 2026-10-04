@@ -32,6 +32,8 @@ mod routes_contacts;
 mod routes_content;
 mod routes_display;
 mod routes_draft;
+#[path = "http/routes_draft_location.rs"]
+mod routes_draft_location;
 mod routes_draft_selection;
 mod routes_flags;
 mod routes_identity_preferences;
@@ -998,6 +1000,9 @@ mod tests {
     mod mark_read_tests {
         include!("http/mark_read_tests.rs");
     }
+    mod draft_location_tests {
+        include!("http/draft_location_tests.rs");
+    }
     mod sent_location_tests {
         include!("http/sent_location_tests.rs");
     }
@@ -1056,6 +1061,7 @@ mod tests {
         >,
         delete_list_decision: Arc<Mutex<Option<BrowserMessageListDecision>>>,
         mark_read_store: Option<crate::mark_read::Store>,
+        draft_location_store: Option<crate::draft_location::Store>,
         sent_copy_store: Option<crate::sent_copy::Store>,
         sent_location_store: Option<crate::sent_location::Store>,
         mark_read_policy_loads: Arc<std::sync::atomic::AtomicUsize>,
@@ -1108,6 +1114,7 @@ mod tests {
                 delete_results: Arc::new(Mutex::new(std::collections::VecDeque::new())),
                 delete_list_decision: Arc::new(Mutex::new(None)),
                 mark_read_store: None,
+                draft_location_store: None,
                 sent_copy_store: None,
                 sent_location_store: None,
                 mark_read_policy_loads: Arc::new(std::sync::atomic::AtomicUsize::new(0)),
@@ -1349,6 +1356,55 @@ mod tests {
                 .as_ref()
                 .ok_or(crate::mark_read::Error::Unavailable)?
                 .load(&session.record.canonical_username)
+        }
+        fn load_draft_location_preference(
+            &self,
+            session: &ValidatedSession,
+        ) -> Result<crate::draft_location::Preference, crate::draft_location::Error> {
+            self.draft_location_store
+                .as_ref()
+                .ok_or(crate::draft_location::Error::Unavailable)?
+                .load(&session.record.canonical_username)
+        }
+        fn draft_location_ready(
+            &self,
+            session: &ValidatedSession,
+            location: crate::draft_location::Location,
+        ) -> bool {
+            self.draft_store.as_ref().is_some_and(|store| {
+                store
+                    .clone()
+                    .with_new_location(location)
+                    .require_new_location(&session.record.canonical_username)
+                    .is_ok()
+            })
+        }
+        fn qualify_draft_location(
+            &self,
+            session: &ValidatedSession,
+            location: crate::draft_location::Location,
+        ) -> Result<(), crate::draft_location::Error> {
+            self.draft_store
+                .as_ref()
+                .ok_or(crate::draft_location::Error::Unavailable)?
+                .qualify_location(&session.record.canonical_username, location)
+                .map_err(|_| crate::draft_location::Error::Unavailable)
+        }
+        fn save_draft_location_preference(
+            &self,
+            session: &ValidatedSession,
+            revision: u64,
+            location: crate::draft_location::Location,
+        ) -> Result<crate::draft_location::Preference, crate::draft_location::Error> {
+            self.draft_location_store
+                .as_ref()
+                .ok_or(crate::draft_location::Error::Unavailable)?
+                .save_qualified(
+                    &session.record.canonical_username,
+                    revision,
+                    location,
+                    || self.qualify_draft_location(session, location),
+                )
         }
         fn load_sent_location_preference(
             &self,

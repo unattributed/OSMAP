@@ -276,11 +276,13 @@ where
                             let creation = chosen.zip(status.as_ref()).zip(hierarchy.as_ref()).is_some_and(|((name, status), tree)| tree.can_create(&canonical_username, name, status));
                             {
                                 let bin = self.gateway.load_bin_preference(&validated_session).ok();
+                                let draft_location = self.gateway.load_draft_location_preference(&validated_session).ok();
+                                let draft_location_ready = draft_location.as_ref().is_some_and(|saved| self.gateway.draft_location_ready(&validated_session, saved.location));
                                 let sent_copy = self.gateway.load_sent_copy_preference(&validated_session).ok();
                                 let sent_location = self.gateway.load_sent_location_preference(&validated_session).ok();
                                 let sent_location_choices = self.sent_location_choices(context, &validated_session, &mut audit_events);
                                 let bin_choices = self.bin_folder_choices(context, &validated_session, &mut audit_events);
-                                crate::http_ui::render_copies_page_with_state(&model, crate::http_ui::CopiesPageState { mailboxes: mailboxes.as_deref(), chosen, counts, status: status.as_ref(), hierarchy: hierarchy.as_ref(), creation, bin: bin.as_ref(), bin_choices: bin_choices.as_deref(), sent_copy: sent_copy.as_ref(), sent_location: sent_location.as_ref(), sent_location_choices: sent_location_choices.as_deref() })
+                                crate::http_ui::render_copies_page_with_state(&model, crate::http_ui::CopiesPageState { mailboxes: mailboxes.as_deref(), chosen, counts, status: status.as_ref(), hierarchy: hierarchy.as_ref(), creation, draft_location: draft_location.as_ref(), draft_location_ready, bin: bin.as_ref(), bin_choices: bin_choices.as_deref(), sent_copy: sent_copy.as_ref(), sent_location: sent_location.as_ref(), sent_location_choices: sent_location_choices.as_deref() })
                             }
                         }
                     } else if section == "appearance" {
@@ -323,7 +325,11 @@ where
                         {
                             let bin = self.gateway.load_bin_preference(&validated_session).ok();
                             let bin_choices = self.bin_folder_choices(context, &validated_session, &mut audit_events);
-                            crate::http_ui::render_reading_page_with_folders(&model, &preferences, mailboxes.as_deref(),self.gateway.load_after_archive(&validated_session).ok().as_ref(),mark_read.as_ref(), bin.as_ref(), bin_choices.as_deref())
+                            let draft_location = self.gateway.load_draft_location_preference(&validated_session).ok();
+                            let draft_location_ready = draft_location.as_ref().is_some_and(|saved| self.gateway.draft_location_ready(&validated_session, saved.location));
+                            crate::http_ui::render_reading_page_with_state(&model, &preferences, crate::http_ui::ReadingFoldersState {
+                            mailboxes: mailboxes.as_deref(), after_archive: self.gateway.load_after_archive(&validated_session).ok().as_ref(), mark_read: mark_read.as_ref(), bin: bin.as_ref(), bin_choices: bin_choices.as_deref(), draft_location: draft_location.as_ref(), draft_location_ready,
+                        })
                         }
                     }
                 })

@@ -40,6 +40,7 @@ pub(crate) fn render_reading_page_with_policies(
     )
 }
 
+#[cfg(test)]
 pub(crate) fn render_reading_page_with_folders(
     model: &SettingsPageModel<'_>,
     preferences: &ReadingPreferences,
@@ -49,6 +50,51 @@ pub(crate) fn render_reading_page_with_folders(
     bin: Option<&crate::bin_folder::BinPreference>,
     bin_choices: Option<&[MailboxEntry]>,
 ) -> TrustedHtml {
+    render_reading_page_with_state(
+        model,
+        preferences,
+        ReadingFoldersState {
+            mailboxes,
+            after_archive,
+            mark_read,
+            bin,
+            bin_choices,
+            draft_location: None,
+            draft_location_ready: false,
+        },
+    )
+}
+
+pub(crate) struct ReadingFoldersState<'a> {
+    pub mailboxes: Option<&'a [MailboxEntry]>,
+    pub after_archive: Option<&'a crate::after_archive::Preference>,
+    pub mark_read: Option<&'a crate::mark_read::Preference>,
+    pub bin: Option<&'a crate::bin_folder::BinPreference>,
+    pub bin_choices: Option<&'a [MailboxEntry]>,
+    pub draft_location: Option<&'a crate::draft_location::Preference>,
+    pub draft_location_ready: bool,
+}
+
+pub(crate) fn render_reading_page_with_state(
+    model: &SettingsPageModel<'_>,
+    preferences: &ReadingPreferences,
+    state: ReadingFoldersState<'_>,
+) -> TrustedHtml {
+    let ReadingFoldersState {
+        mailboxes,
+        after_archive,
+        mark_read,
+        bin,
+        bin_choices,
+        draft_location,
+        draft_location_ready,
+    } = state;
+    let draft_label = draft_location.map_or("Unavailable", |saved| saved.location.label());
+    let draft_notice = if draft_location.is_some() && !draft_location_ready {
+        " Saved draft location is unavailable; change or requalify it in Copies &amp; Folders."
+    } else {
+        ""
+    };
     let bin_form = render_bin_folder_form(model, "reading-bin-folder", "reading", bin, bin_choices);
     let csrf = escape_html(model.csrf_token);
     let start = select_options(
@@ -163,10 +209,10 @@ pub(crate) fn render_reading_page_with_folders(
         "<div class=\"reading-card-column\"><section class=\"general-card\" aria-labelledby=\"reading-folders-title\"><h2 id=\"reading-folders-title\">Folders</h2>{archive}",
         "{bin_form}",
         "<div class=\"general-field\"><label for=\"reading-sent-folder\">Sent folder</label><input id=\"reading-sent-folder\" value=\"Sent (fixed)\" readonly></div>",
-        "<div class=\"general-field\"><label for=\"reading-drafts-folder\">Drafts folder</label><input id=\"reading-drafts-folder\" value=\"OSMAP drafts (fixed)\" readonly></div></section>",
+        "<div class=\"general-field\"><label for=\"reading-drafts-folder\">Drafts folder</label><input id=\"reading-drafts-folder\" value=\"{draft_label}\" readonly></div><p><a href=\"/settings?section=copies\">Change new draft location</a>. The Drafts list includes Drafts and Working drafts; existing drafts stay in place.{draft_notice}</p></section>",
         "<div class=\"reading-card-actions\">{archive_save}</div><p class=\"reading-help\" id=\"reading-archive-help\">{archive_help}</p>",
         "<details class=\"reading-help\"><summary>Folder details</summary><p>Bin moves messages to your saved existing folder; Restore returns them to Inbox. Sent and draft storage locations cannot be changed here.</p></details></div>"
-    ), bin_form=bin_form, archive=archive, archive_save=archive_save, archive_help=archive_help);
+    ), draft_label=draft_label, draft_notice=draft_notice, bin_form=bin_form, archive=archive, archive_save=archive_save, archive_help=archive_help);
     let notices = [
         model
             .success_message

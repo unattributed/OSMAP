@@ -431,6 +431,45 @@ impl BrowserGateway for RuntimeBrowserGateway {
     ) -> Result<crate::mark_read::Preference, crate::mark_read::Error> {
         crate::mark_read::Store::new(&self.settings_dir).load(&session.record.canonical_username)
     }
+    fn load_draft_location_preference(
+        &self,
+        session: &ValidatedSession,
+    ) -> Result<crate::draft_location::Preference, crate::draft_location::Error> {
+        crate::draft_location::Store::new(&self.settings_dir)
+            .load(&session.record.canonical_username)
+    }
+    fn draft_location_ready(
+        &self,
+        session: &ValidatedSession,
+        location: crate::draft_location::Location,
+    ) -> bool {
+        self.build_draft_store()
+            .with_new_location(location)
+            .require_new_location(&session.record.canonical_username)
+            .is_ok()
+    }
+    fn save_draft_location_preference(
+        &self,
+        session: &ValidatedSession,
+        revision: u64,
+        location: crate::draft_location::Location,
+    ) -> Result<crate::draft_location::Preference, crate::draft_location::Error> {
+        crate::draft_location::Store::new(&self.settings_dir).save_qualified(
+            &session.record.canonical_username,
+            revision,
+            location,
+            || self.qualify_draft_location(session, location),
+        )
+    }
+    fn qualify_draft_location(
+        &self,
+        session: &ValidatedSession,
+        location: crate::draft_location::Location,
+    ) -> Result<(), crate::draft_location::Error> {
+        self.build_draft_store()
+            .qualify_location(&session.record.canonical_username, location)
+            .map_err(|_| crate::draft_location::Error::Unavailable)
+    }
     fn load_sent_location_preference(
         &self,
         session: &ValidatedSession,

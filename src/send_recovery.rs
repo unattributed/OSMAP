@@ -846,6 +846,77 @@ mod tests {
         );
     }
     #[test]
+    fn recovery_and_both_draft_locations_share_the_same_account_quota() {
+        let f = Fixture::new();
+        f.normal
+            .qualify_location(ACCOUNT, crate::draft_location::Location::Working)
+            .unwrap();
+        let token = crate::send_journal::mint_intent(100).unwrap();
+        dispatch(&f, &token, &request(), None, &std::cell::Cell::new(0));
+        let policy = f.recovery.draft_policy(ACCOUNT, 100).unwrap();
+        for index in 0..49 {
+            let record = DraftRecord::new(
+                policy,
+                DraftRecordInput {
+                    draft_id: format!("{:032x}", index + 1),
+                    canonical_username: ACCOUNT.into(),
+                    now: 100,
+                    recipients_text: "bob@example.test".into(),
+                    cc_text: String::new(),
+                    bcc_text: String::new(),
+                    subject: "Public quota fixture".into(),
+                    body: "Public body".into(),
+                    attachments: vec![],
+                    source_attachments: None,
+                },
+            )
+            .unwrap();
+            let location = if index % 2 == 0 {
+                crate::draft_location::Location::Default
+            } else {
+                crate::draft_location::Location::Working
+            };
+            FileDraftStore::new(f.root.join("drafts"), policy)
+                .with_new_location(location)
+                .save(&record, 100)
+                .unwrap();
+        }
+        let record = DraftRecord::new(
+            policy,
+            DraftRecordInput {
+                draft_id: format!("{:032x}", 100),
+                canonical_username: ACCOUNT.into(),
+                now: 100,
+                recipients_text: "bob@example.test".into(),
+                cc_text: String::new(),
+                bcc_text: String::new(),
+                subject: "Public excess fixture".into(),
+                body: "Public body".into(),
+                attachments: vec![],
+                source_attachments: None,
+            },
+        )
+        .unwrap();
+        for location in [
+            crate::draft_location::Location::Default,
+            crate::draft_location::Location::Working,
+        ] {
+            assert!(FileDraftStore::new(f.root.join("drafts"), policy)
+                .with_new_location(location)
+                .save(&record, 100)
+                .unwrap_err()
+                .reason
+                .contains("quota"));
+        }
+        assert_eq!(f.normal.list(ACCOUNT, 100).unwrap().len(), 49);
+        assert_eq!(f.recovery.storage_usage(ACCOUNT, 100).unwrap().0, 1);
+        assert!(f
+            .normal
+            .load(ACCOUNT, &record.draft_id, 100)
+            .unwrap()
+            .is_none());
+    }
+    #[test]
     fn recovery_usage_reduces_ordinary_draft_budget() {
         let f = Fixture::new();
         let token = crate::send_journal::mint_intent(100).unwrap();

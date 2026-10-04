@@ -8709,3 +8709,33 @@ Implement actual generated selection, metadata/blob save and exact resume, then
 qualify meaningful filesystem/native cases before signed matching delivery.
 These engineering choices implement existing accepted private-files requirements;
 the frozen plan is unchanged and new Drafts behavior is not yet accepted.
+
+### 2026-10-04 UTC — preserve original draft placement and repair actual refusal order
+
+Implement R2-16-003 within the accepted private-file boundary, using two fixed
+server-owned opaque locations, shared original-ID resolution and aggregate
+ordinary/recovery quotas. Do not substitute a label-only picker, browser paths
+or an unapproved mailbox mirror. Validate all owners/backup relationships before
+mutation; qualify only explicit Working choice under CAS/common account locks.
+Keep registration account-scoped so another user's interrupted initialization
+cannot disable a Default-only account. Initialization is not lost-data recovery.
+
+Treat the actual first native failure as a product finding. Retain it, trace the
+real Runtime ordering, and move stale ID/revision refusal before current-intent
+comparison while preserving initial consumed/expired admission and current wrong-
+nonce refusal. Keep native409 intact rather than blessing503. Credit compiled
+Runtime RED/GREEN and independent authority/attachment discriminators narrowly;
+require a new matching native cohort, normal signed commit/push gates and actual
+matching activation before UAT readiness. Keep operator/provider and whole-epic
+acceptance separate. No policy, key-agent, mail configuration or provider Send.
+
+### 2026-10-04 — repair the native transport-denial fixture without weakening gates
+
+The normal signed commit gate rejected formatted shell execution in the new
+Draft-location fixture. Replace its code/data interpolation with a fixed Python
+program that derives a private sibling marker from the structured absolute
+executable path. Keep the unchanged CWE guard, exact no-SMTP markers and all five
+native scenarios. Direct local sentinel controls pass without application or
+network execution; matching native3 and the normal gate qualify final source.
+Preserve prior failed gate/native records. No suppression, hook bypass, mailbox
+policy change or provider Send is authorized by this fixture correction.

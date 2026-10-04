@@ -199,6 +199,9 @@ where
             (HttpMethod::Post, "/settings/mark-read") => {
                 self.handle_mark_read_settings(request, &context)
             }
+            (HttpMethod::Post, "/settings/draft-location") => {
+                self.handle_draft_location_settings(request, &context)
+            }
             (HttpMethod::Post, "/settings/sent-copy") => {
                 self.handle_sent_copy_settings(request, &context)
             }

@@ -274,6 +274,7 @@ pub trait DraftStore {
 pub struct FileDraftStore {
     draft_root: PathBuf,
     policy: DraftPolicy,
+    new_location: crate::draft_location::Location,
     #[cfg(test)]
     save_fault: Option<atomic::SaveFault>,
 }
@@ -284,9 +285,229 @@ impl FileDraftStore {
         Self {
             draft_root: draft_root.into(),
             policy,
+            new_location: crate::draft_location::Location::Default,
             #[cfg(test)]
             save_fault: None,
         }
+    }
+
+    /// Placement is used only for a new ID. Existing IDs resolve independently.
+    pub fn with_new_location(mut self, location: crate::draft_location::Location) -> Self {
+        self.new_location = location;
+        self
+    }
+
+    fn location_root(&self, location: crate::draft_location::Location) -> PathBuf {
+        match location {
+            crate::draft_location::Location::Default => self.draft_root.clone(),
+            crate::draft_location::Location::Working => self.draft_root.join(".locations/working"),
+        }
+    }
+
+    fn working_registration_file(&self) -> crate::private_account_file::PrivateAccountFile {
+        crate::private_account_file::PrivateAccountFile::new(
+            self.draft_root.clone(),
+            "draft-working-location-v1",
+            1024,
+        )
+    }
+
+    fn working_registration_bytes(account: &str) -> Vec<u8> {
+        format!("version=1\naccount={account}\nworking=1\n").into_bytes()
+    }
+
+    fn working_registered(&self, account: &str) -> Result<bool, DraftError> {
+        match self
+            .working_registration_file()
+            .read(account)
+            .map_err(|_| location_unavailable())?
+        {
+            None => Ok(false),
+            Some(bytes) if bytes == Self::working_registration_bytes(account) => Ok(true),
+            Some(_) => Err(location_unavailable()),
+        }
+    }
+
+    fn register_working(&self, account: &str) -> Result<(), DraftError> {
+        let file = self.working_registration_file();
+        let lock = file.lock(account).map_err(|_| location_unavailable())?;
+        let expected = Self::working_registration_bytes(account);
+        match lock.read().map_err(|_| location_unavailable())? {
+            Some(bytes) if bytes == expected => Ok(()),
+            Some(_) => Err(location_unavailable()),
+            None => lock.write(&expected).map_err(|_| DraftError {
+                reason: "draft location registration unconfirmed".into(),
+            }),
+        }
+    }
+
+    fn checked_owners(&self, account: &str) -> Result<Vec<PathBuf>, DraftError> {
+        self.checked_owners_for_qualification(account, false)
+    }
+
+    fn checked_owners_for_qualification(
+        &self,
+        account: &str,
+        initialize_working: bool,
+    ) -> Result<Vec<PathBuf>, DraftError> {
+        // Validate every registered root before considering any individual ID.
+        let root = private_directory_exists(&self.draft_root)?;
+        let locations = self.draft_root.join(".locations");
+        let locations_exists = if root {
+            private_directory_exists(&locations)?
+        } else {
+            false
+        };
+        let working = self.location_root(crate::draft_location::Location::Working);
+        let working_exists = locations_exists && private_directory_exists(&working)?;
+        let registered = self.working_registered(account)?;
+        if !initialize_working {
+            if registered && !working_exists {
+                return Err(location_unavailable());
+            }
+            if registered && !private_directory_exists(&working.join(owner_hash(account)))? {
+                return Err(location_unavailable());
+            }
+        }
+        let owners = [
+            self.owner_dir_for_username(account),
+            working.join(owner_hash(account)),
+        ];
+        let mut seen = std::collections::BTreeMap::new();
+        let mut present = Vec::new();
+        for owner in owners {
+            if !private_directory_exists(&owner)? {
+                continue;
+            }
+            for (index, entry) in fs::read_dir(&owner)
+                .map_err(|_| location_unavailable())?
+                .enumerate()
+            {
+                if index >= 256 {
+                    return Err(location_unavailable());
+                }
+                let entry = entry.map_err(|_| location_unavailable())?;
+                let name = entry.file_name();
+                let Some(name) = name.to_str() else {
+                    return Err(location_unavailable());
+                };
+                let id = if validate_draft_id(name).is_ok() {
+                    Some(name)
+                } else {
+                    atomic::legacy_backup_id(name)
+                };
+                if let Some(id) = id {
+                    if let Some(previous) = seen.insert(id.to_owned(), owner.clone()) {
+                        if previous != owner {
+                            return Err(DraftError {
+                                reason: "draft location is ambiguous".into(),
+                            });
+                        }
+                    }
+                    crate::private_account_file::check_directory(&entry.path())
+                        .map_err(|_| location_unavailable())?;
+                    // Validate complete metadata before any expiry or backup mutation.
+                    let metadata = entry.path().join(DRAFT_METADATA_FILE);
+                    let parsed = self.read_record_from_metadata(account, &metadata)?;
+                    if fs::symlink_metadata(&metadata).is_ok() && parsed.is_none() {
+                        return Err(location_unavailable());
+                    }
+                }
+            }
+            self.validate_legacy_backups_in(account, &owner)?;
+            present.push(owner);
+        }
+        Ok(present)
+    }
+
+    /// Read-only exact-ID lookup shared by ordinary drafts and send recovery.
+    pub fn resolved_draft_dir(
+        &self,
+        account: &str,
+        id: &str,
+    ) -> Result<Option<PathBuf>, DraftError> {
+        validate_canonical_username(account)?;
+        validate_draft_id(id)?;
+        let mut found = None;
+        for owner in self.checked_owners(account)? {
+            let path = owner.join(id);
+            if private_directory_exists(&path)? {
+                if found.is_some() {
+                    return Err(location_unavailable());
+                }
+                found = Some(path);
+            }
+        }
+        Ok(found)
+    }
+
+    pub fn validate_locations(&self, account: &str) -> Result<(), DraftError> {
+        validate_canonical_username(account)?;
+        self.checked_owners(account)?;
+        Ok(())
+    }
+
+    /// Qualifies or initializes only a fixed server-owned placement under the
+    /// common account lock. Browser input cannot supply a filesystem path.
+    pub fn qualify_location(
+        &self,
+        account: &str,
+        location: crate::draft_location::Location,
+    ) -> Result<(), DraftError> {
+        validate_canonical_username(account)?;
+        let _lock = self.acquire_location_qualification_lock(
+            account,
+            location == crate::draft_location::Location::Working,
+        )?;
+        if location == crate::draft_location::Location::Working {
+            // Registration survives disappearance of the .locations ancestor.
+            // Publish it before initializing names so incomplete initialization
+            // refuses ordinary operations until an explicit qualification.
+            self.register_working(account)?;
+            create_private_directory(&self.draft_root.join(".locations"))?;
+            create_private_directory(&self.location_root(location))?;
+        }
+        self.ensure_location_owner(account, location)?;
+        Ok(())
+    }
+
+    pub fn require_new_location(&self, account: &str) -> Result<(), DraftError> {
+        self.validate_locations(account)?;
+        if self.new_location == crate::draft_location::Location::Working
+            && (!self.working_registered(account)?
+                || !private_directory_exists(&self.draft_root.join(".locations"))?
+                || !private_directory_exists(&self.location_root(self.new_location))?
+                || !private_directory_exists(
+                    &self
+                        .location_root(self.new_location)
+                        .join(owner_hash(account)),
+                )?)
+        {
+            return Err(location_unavailable());
+        }
+        Ok(())
+    }
+
+    fn ensure_location_owner(
+        &self,
+        account: &str,
+        location: crate::draft_location::Location,
+    ) -> Result<PathBuf, DraftError> {
+        if location == crate::draft_location::Location::Working
+            && (!private_directory_exists(&self.draft_root.join(".locations"))?
+                || !private_directory_exists(&self.location_root(location))?)
+        {
+            return Err(location_unavailable());
+        }
+        let owner = self.location_root(location).join(owner_hash(account));
+        create_private_directory(&owner)?;
+        if location == crate::draft_location::Location::Working {
+            atomic::sync_directory(&owner)?;
+            atomic::sync_directory(&self.location_root(location))?;
+            atomic::sync_directory(&self.draft_root.join(".locations"))?;
+        }
+        atomic::sync_directory(&self.draft_root)?;
+        Ok(owner)
     }
 
     /// Returns the per-user draft directory derived from the canonical username.
@@ -313,16 +534,29 @@ impl FileDraftStore {
     ) -> Result<Option<DraftRecord>, DraftError> {
         validate_canonical_username(account)?;
         validate_draft_id(id)?;
-        self.read_record_from_metadata(account, &self.metadata_path(account, id))
+        let Some(directory) = self.resolved_draft_dir(account, id)? else {
+            return Ok(None);
+        };
+        self.read_record_from_metadata(account, &directory.join(DRAFT_METADATA_FILE))
     }
-    fn metadata_path(&self, canonical_username: &str, draft_id: &str) -> PathBuf {
-        self.draft_dir_for_username_and_id(canonical_username, draft_id)
+
+    #[cfg(test)]
+    fn metadata_path(&self, account: &str, id: &str) -> PathBuf {
+        self.draft_dir_for_username_and_id(account, id)
             .join(DRAFT_METADATA_FILE)
     }
 
     fn acquire_exclusive_lock(
         &self,
         account: &str,
+    ) -> Result<crate::private_account_file::LockedAccountFile, DraftError> {
+        self.acquire_location_qualification_lock(account, false)
+    }
+
+    fn acquire_location_qualification_lock(
+        &self,
+        account: &str,
+        initialize_working: bool,
     ) -> Result<crate::private_account_file::LockedAccountFile, DraftError> {
         let guard = crate::private_account_file::PrivateAccountFile::new(
             self.draft_root.clone(),
@@ -337,61 +571,52 @@ impl FileDraftStore {
                 "draft store lock unavailable".into()
             },
         })?;
-        self.recover_legacy_backups(account)?;
+        let owners = self.checked_owners_for_qualification(account, initialize_working)?;
+        for owner in owners {
+            self.recover_legacy_backups_in(account, &owner)?;
+        }
+        self.checked_owners_for_qualification(account, initialize_working)?;
         Ok(guard)
     }
 
-    fn ensure_owner_dir(&self, canonical_username: &str) -> Result<PathBuf, DraftError> {
-        let owner_dir = self.owner_dir_for_username(canonical_username);
-        create_private_directory(&owner_dir)?;
-        Ok(owner_dir)
+    fn cleanup_expired_unlocked(&self, account: &str, now: u64) -> Result<usize, DraftError> {
+        let records = self.records_for_owner(account)?;
+        let mut removed = 0;
+        for (directory, record, _) in records {
+            if record.expires_at <= now {
+                remove_draft_dir(directory)?;
+                removed += 1;
+            }
+        }
+        Ok(removed)
     }
 
-    fn cleanup_expired_unlocked(
+    fn records_for_owner(
         &self,
-        canonical_username: &str,
-        now: u64,
-    ) -> Result<usize, DraftError> {
-        let owner_dir = self.owner_dir_for_username(canonical_username);
-        if !private_directory_exists(&owner_dir)? {
-            return Ok(0);
-        }
-
-        let mut removed = 0;
-        for entry in fs::read_dir(&owner_dir).map_err(|error| DraftError {
-            reason: format!(
-                "failed to read draft owner directory {:?}: {error}",
-                owner_dir
-            ),
-        })? {
-            let entry = entry.map_err(|error| DraftError {
-                reason: format!("failed to read draft directory entry: {error}"),
-            })?;
-            if !entry
-                .file_type()
-                .map_err(|error| DraftError {
-                    reason: format!("failed to inspect draft directory entry: {error}"),
-                })?
-                .is_dir()
-            {
-                continue;
-            }
-            let draft_id = entry.file_name().to_string_lossy().to_string();
-            if validate_draft_id(&draft_id).is_err() {
-                continue;
-            }
-            let metadata_path = entry.path().join(DRAFT_METADATA_FILE);
-            if let Some(record) =
-                self.read_record_from_metadata(canonical_username, &metadata_path)?
-            {
-                if record.expires_at <= now {
-                    remove_draft_dir(entry.path())?;
-                    removed += 1;
+        account: &str,
+    ) -> Result<Vec<(PathBuf, DraftRecord, u64)>, DraftError> {
+        let mut records = Vec::new();
+        for owner in self.checked_owners(account)? {
+            for entry in fs::read_dir(owner).map_err(|_| location_unavailable())? {
+                let entry = entry.map_err(|_| location_unavailable())?;
+                if entry
+                    .file_name()
+                    .to_str()
+                    .is_none_or(|id| validate_draft_id(id).is_err())
+                {
+                    continue;
                 }
+                let path = entry.path().join(DRAFT_METADATA_FILE);
+                let record = self
+                    .read_record_from_metadata(account, &path)?
+                    .ok_or_else(location_unavailable)?;
+                let size = fs::metadata(&path)
+                    .map_err(|_| location_unavailable())?
+                    .len();
+                records.push((entry.path(), record, size));
             }
         }
-
-        Ok(removed)
+        Ok(records)
     }
 
     fn read_record_from_metadata(
@@ -399,9 +624,6 @@ impl FileDraftStore {
         canonical_username: &str,
         metadata_path: &Path,
     ) -> Result<Option<DraftRecord>, DraftError> {
-        if !private_directory_exists(&self.owner_dir_for_username(canonical_username))? {
-            return Ok(None);
-        }
         let directory = metadata_path.parent().ok_or_else(|| DraftError {
             reason: "invalid draft metadata directory".into(),
         })?;
@@ -429,52 +651,16 @@ impl FileDraftStore {
         canonical_username: &str,
         now: u64,
     ) -> Result<Vec<DraftSummary>, DraftError> {
+        let all = self.records_for_owner(canonical_username)?;
         let mut records = Vec::new();
-        let owner_dir = self.owner_dir_for_username(canonical_username);
-        if !private_directory_exists(&owner_dir)? {
-            return Ok(records);
-        }
-
-        for entry in fs::read_dir(&owner_dir).map_err(|error| DraftError {
-            reason: format!(
-                "failed to read draft owner directory {:?}: {error}",
-                owner_dir
-            ),
-        })? {
-            let entry = entry.map_err(|error| DraftError {
-                reason: format!("failed to read draft directory entry: {error}"),
-            })?;
-            if !entry
-                .file_type()
-                .map_err(|error| DraftError {
-                    reason: format!("failed to inspect draft directory entry: {error}"),
-                })?
-                .is_dir()
-            {
+        for (directory, record, metadata_bytes) in all {
+            if record.expires_at <= now {
+                remove_draft_dir(directory)?;
                 continue;
             }
-
-            let draft_id = entry.file_name().to_string_lossy().to_string();
-            if validate_draft_id(&draft_id).is_err() {
-                continue;
-            }
-            let metadata_path = entry.path().join(DRAFT_METADATA_FILE);
-            if let Some(record) =
-                self.read_record_from_metadata(canonical_username, &metadata_path)?
-            {
-                if record.expires_at <= now {
-                    remove_draft_dir(entry.path())?;
-                    continue;
-                }
-                let mut summary = record.summary();
-                summary.storage_bytes = fs::metadata(&metadata_path)
-                    .map_err(|_| DraftError {
-                        reason: "draft metadata size unavailable".into(),
-                    })?
-                    .len()
-                    + summary.total_attachment_bytes as u64;
-                records.push(summary);
-            }
+            let mut summary = record.summary();
+            summary.storage_bytes = metadata_bytes + summary.total_attachment_bytes as u64;
+            records.push(summary);
         }
 
         records.sort_by_key(|record| Reverse(record.updated_at));
@@ -501,13 +687,23 @@ impl DraftStore for FileDraftStore {
             record.source_attachments.as_ref(),
         )?;
         let _lock = self.acquire_exclusive_lock(&record.canonical_username)?;
+        if record.revision.is_none() {
+            self.require_new_location(&record.canonical_username)?;
+        }
 
         self.cleanup_expired_unlocked(&record.canonical_username, now)?;
 
-        let existing = self.read_record_from_metadata(
-            &record.canonical_username,
-            &self.metadata_path(&record.canonical_username, &record.draft_id),
-        )?;
+        let resolved = self.resolved_draft_dir(&record.canonical_username, &record.draft_id)?;
+        let existing = resolved
+            .as_ref()
+            .map(|directory| {
+                self.read_record_from_metadata(
+                    &record.canonical_username,
+                    &directory.join(DRAFT_METADATA_FILE),
+                )
+            })
+            .transpose()?
+            .flatten();
         let is_new = existing.is_none();
         if existing.as_ref().and_then(|current| current.revision) != record.revision
             || is_new != record.revision.is_none()
@@ -564,15 +760,19 @@ impl DraftStore for FileDraftStore {
             });
         }
 
-        let result = self.publish_atomic_record(&updated, existing.as_ref());
+        let directory = match resolved {
+            Some(directory) => directory,
+            None => self
+                .ensure_location_owner(&record.canonical_username, self.new_location)?
+                .join(&record.draft_id),
+        };
+        let result = self.publish_atomic_record_in(&updated, existing.as_ref(), &directory);
         if is_new
             && result
                 .as_ref()
                 .is_err_and(|error| error.reason != atomic::SAVE_UNCONFIRMED)
         {
-            let _ = remove_draft_dir(
-                self.draft_dir_for_username_and_id(&record.canonical_username, &record.draft_id),
-            );
+            let _ = remove_draft_dir(&directory);
         }
         result
     }
@@ -587,13 +787,16 @@ impl DraftStore for FileDraftStore {
         validate_draft_id(draft_id)?;
         let _lock = self.acquire_exclusive_lock(canonical_username)?;
 
-        let metadata_path = self.metadata_path(canonical_username, draft_id);
+        let Some(directory) = self.resolved_draft_dir(canonical_username, draft_id)? else {
+            return Ok(None);
+        };
+        let metadata_path = directory.join(DRAFT_METADATA_FILE);
         let Some(record) = self.read_record_from_metadata(canonical_username, &metadata_path)?
         else {
             return Ok(None);
         };
         if record.expires_at <= now {
-            remove_draft_dir(self.draft_dir_for_username_and_id(canonical_username, draft_id))?;
+            remove_draft_dir(directory)?;
             return Ok(None);
         }
 
@@ -621,15 +824,11 @@ impl DraftStore for FileDraftStore {
         validate_draft_id(draft_id)?;
         let _lock = self.acquire_exclusive_lock(canonical_username)?;
 
-        let draft_dir = self.draft_dir_for_username_and_id(canonical_username, draft_id);
-        if !draft_dir.exists() {
+        let Some(draft_dir) = self.resolved_draft_dir(canonical_username, draft_id)? else {
             return Ok(false);
-        }
+        };
         let current = self
-            .read_record_from_metadata(
-                canonical_username,
-                &self.metadata_path(canonical_username, draft_id),
-            )?
+            .read_record_from_metadata(canonical_username, &draft_dir.join(DRAFT_METADATA_FILE))?
             .ok_or_else(|| DraftError {
                 reason: "draft revision is stale".into(),
             })?;
@@ -1625,6 +1824,12 @@ fn hex_value(byte: u8) -> Result<u8, DraftError> {
 
 static NEXT_DRAFT_TEMP_FILE_ID: AtomicU64 = AtomicU64::new(0);
 
+fn location_unavailable() -> DraftError {
+    DraftError {
+        reason: "draft location unavailable".into(),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1633,6 +1838,9 @@ mod tests {
     }
     mod preservation {
         include!("draft_preservation_tests.rs");
+    }
+    mod locations_tests {
+        include!("draft_multi_location_tests.rs");
     }
     mod atomic_tests {
         include!("draft_atomic_tests.rs");

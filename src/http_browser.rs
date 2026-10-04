@@ -93,6 +93,38 @@ pub trait BrowserGateway {
     ) -> Result<crate::mark_read::Preference, crate::mark_read::Error> {
         Err(crate::mark_read::Error::Unavailable)
     }
+    fn load_draft_location_preference(
+        &self,
+        session: &ValidatedSession,
+    ) -> Result<crate::draft_location::Preference, crate::draft_location::Error> {
+        let _ = session;
+        Err(crate::draft_location::Error::Unavailable)
+    }
+    fn draft_location_ready(
+        &self,
+        session: &ValidatedSession,
+        location: crate::draft_location::Location,
+    ) -> bool {
+        let _ = (session, location);
+        false
+    }
+    fn save_draft_location_preference(
+        &self,
+        session: &ValidatedSession,
+        revision: u64,
+        location: crate::draft_location::Location,
+    ) -> Result<crate::draft_location::Preference, crate::draft_location::Error> {
+        let _ = (session, revision, location);
+        Err(crate::draft_location::Error::Unavailable)
+    }
+    fn qualify_draft_location(
+        &self,
+        session: &ValidatedSession,
+        location: crate::draft_location::Location,
+    ) -> Result<(), crate::draft_location::Error> {
+        let _ = (session, location);
+        Err(crate::draft_location::Error::Unavailable)
+    }
     fn load_sent_location_preference(
         &self,
         session: &ValidatedSession,

@@ -6419,3 +6419,76 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   generated save/resume behavior in an isolated candidate. Existing design keeps
   draft files outside mailbox storage; no speculative IMAP mirror is introduced.
   This is implementation in progress, not paper-only or completed Drafts work.
+
+### 2026-10-04 UTC — private Draft location implemented; native refusal corrected
+
+- Accepted R2-16-003 now has actual private account CAS/CSRF settings for the
+  fixed server-owned Drafts and Working drafts locations. Only new IDs use the
+  current choice; shared bounded resolution keeps every existing-ID operation
+  at its original owned location. Original Default metadata/layout bytes remain
+  compatible. Aggregate ordinary-plus-recovery quota, expiry, account locking,
+  saved attachment blobs and atomic publication span both locations. Reading
+  settings displays the same preference. No IMAP draft mirror or browser paths.
+- Read-only validation of every owner and legacy backup relationship precedes
+  recovery/expiry mutation. Registration is private/account-bound and durable
+  before explicit Working initialization. Registered missing owner/root/ancestor
+  refuses normal operations without recreation, fallback or quota omission;
+  unregistered Default-only accounts remain independent of another account's
+  incomplete initialization. Only explicit Working qualification can initialize
+  its fixed namespace; this cannot reconstruct lost bodies or IDs. Simultaneous
+  loss of own registration plus Working storage can look like first use even
+  when the configured root remains. Downgrade/complete data-loss recovery is not
+  qualified, and the frozen plan remains unchanged.
+- Retain actual initial compiler/lint/test failures and the compiled backup-order
+  RED; repair their concrete findings. Final isolated51 draft,10 location,
+  11 recovery,4 Sent-copy and5 Reading cases give80 distinct local passes with
+  strict all-target/all-feature Clippy and formatting. Native skip stays explicit.
+  Independent final source review reconciles23 admitted files and337 inputs;
+  canonical admission uses verified base d8480b6 and exact frozen final bytes.
+- Actual native-draft-location-attempt1 fails its first Draft case0PASS/1FAIL
+  at generated stale Save:503 instead of409. Remaining four cases do not run.
+  Retain log5e7748338d8226c2d61ad88b370579ffbd48e20aa5c562e87bf28b79599575bb;
+  no native success, activation or human UAT is inferred from local passes.
+- Trace finds a real Runtime ordering defect: a valid unconsumed revision1
+  intent is compared to revision2's derived intent before stale CAS, unlike the
+  star path. Move the existing ID/revision check after owned load and before
+  current-intent comparison. Initial expired/consumed admission stays first,
+  and matched-revision wrong nonce still pauses. Actual exact Runtime RED0/1
+  becomes GREEN1/0; discriminators cover wrong nonce, expired and durable reserved
+  intents at stale/current revisions plus full saved-record/attachment equality.
+  Preserve the original native409 assertion; add another genuinely generated
+  current-intent/stale-revision discriminator and retained incomplete authoring.
+- Reviewed two-file correction and QA amendment are admitted; matching native2
+  is running337 frozen inputs. Existing V10 inventories/docs refresh to6155,
+  source-test6069, refined high0/medium5; classification is not runtime proof.
+  Normal commit/push gates, signed matching delivery and human UAT remain pending.
+  ALLSEND, protected/provider/privatecrypto, full S03 and epic stay OPEN.
+
+- Matching native-draft-location-attempt2 now PASS: all5 ordered exact cases,
+  no failures or skips,18/16/15/13/15 required markers. Draft case proves actual
+  generated choice/attachment/save/resume/immutable original IDs, current-intent
+  stale CAS, parked/unsafe/ambiguous storage refusals, combined recovery quota,
+  expiry and exact discard with zero transport. Four preserved regression cases
+  give8 loopback SMTP acceptances,5 append attempts and4 actual disposable Dovecot
+  saves. No operator/provider Send, private crypto or real login is established.
+  All337 current inputs and owned binaries match before/after; manifest
+  0dc8f1a240c9f59c83270f983eb76be74f3d3a3bbe3984f3bef21403da0fb232;
+  log641936533c12255711097af30e8d78fea40ab369132ab2fdfacfb71388d27589;
+  application8edbc3fdafccc894628958b29b2f4f1fc33076643658aed11d173aa7819b9840.
+  Native1 remains actual retained FAIL. Normal signing/push gates and matching
+  activation are next; full S03, ALLSEND, provider and epic acceptance stay OPEN.
+
+- Normal signed-commit attempt1 refuses CWE-78/CWE-77 in the new native test
+  denial script: a formatted shell command at fixture425. Actual ordinary full
+  library suite1407PASS/0FAIL/36explicit local native skips does not waive the
+  failed security gate. Retain the failed gate and do not commit/deploy it.
+  Replace only this unsafe fixture code with a fixed literal Python program;
+  executable path stays structured data, private sibling marker uses exclusive
+  no-follow0600 creation, existing/symlink targets remain unchanged. Unchanged
+  CWE guard has actual RED original/GREEN full337-input candidate; local positive
+  path/existing/symlink/relative controls and formatting PASS. All18markers,
+  five exact queries and transport counters remain unchanged. Independent review
+  a6b477749a44db5c1ee3c2cfb174bda6eaff7aee4939f3cf1279416ce11faf03
+  approves exact fixture eb2793c681a8c432f7cdd3faaf42ba1233c61fedfae18e969a9b0668af238428.
+  Matching native3 and normal commit2 run on these final frozen inputs.
+  Native2 retains its own historical PASS; no repaired-source delivery claim.

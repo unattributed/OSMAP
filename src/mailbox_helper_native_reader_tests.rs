@@ -4074,3 +4074,7 @@ mod save_sent_native_tests;
 // Additive owned Sent location proof; legacy Sent and Save Sent guards retained.
 #[path = "mailbox_helper_native_sent_location_tests.rs"]
 mod sent_location_native_tests;
+
+// Private Draft location proof; zero SMTP and mailbox mutation.
+#[path = "mailbox_helper_native_draft_location_tests.rs"]
+mod draft_location_native_tests;

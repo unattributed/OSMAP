@@ -286,7 +286,7 @@ fn runtime_saved_attachment_removal_replacement_and_revision_checks_use_the_priv
         })
         .collect::<Vec<_>>();
     let input = BrowserDraftSaveRequest {
-            protection: crate::send::ProtectionIntent::default(),
+        protection: crate::send::ProtectionIntent::default(),
         send_intent: &crate::send_journal::mint_intent(gateway.send_clock()).unwrap(),
         draft_id: None,
         expected_revision: None,
@@ -337,7 +337,7 @@ fn runtime_saved_attachment_removal_replacement_and_revision_checks_use_the_priv
         BrowserDraftSaveDecision::Saved { .. }
     ));
     assert!(
-        matches!(gateway.save_draft(&context, &session, input).decision, BrowserDraftSaveDecision::Denied { public_reason } if public_reason == "send_attempt_paused")
+        matches!(gateway.save_draft(&context, &session, input).decision, BrowserDraftSaveDecision::Denied { public_reason } if public_reason == "draft_conflict")
     );
     let BrowserDraftLoadDecision::Loaded { draft, .. } =
         gateway.load_draft(&context, &session, &draft_id).decision
@@ -363,6 +363,58 @@ fn runtime_saved_attachment_removal_replacement_and_revision_checks_use_the_priv
     .unwrap();
     assert!(
         matches!(gateway.save_draft(&context, &session, BrowserDraftSaveRequest { send_intent: &current_intent, expected_revision: Some(2), removed_attachment_indices: &[0,0], ..input }).decision, BrowserDraftSaveDecision::Denied { public_reason } if public_reason == "invalid_request")
+    );
+    // A current revision with a different, valid unconsumed nonce remains paused.
+    let wrong_nonce = crate::send_journal::mint_intent(gateway.send_clock()).unwrap();
+    assert!(matches!(
+        gateway.save_draft(&context, &session, BrowserDraftSaveRequest {
+            send_intent: &wrong_nonce,
+            expected_revision: Some(2),
+            removed_attachment_indices: &[],
+            ..input
+        }).decision,
+        BrowserDraftSaveDecision::Denied { public_reason } if public_reason == "send_attempt_paused"
+    ));
+    // Expired admission refuses before revision classification, even for a stale form.
+    let expired = crate::send_journal::mint_intent(
+        gateway.send_clock() - crate::send_journal::INTENT_LIFETIME - 1,
+    )
+    .unwrap();
+    assert!(matches!(
+        gateway.save_draft(&context, &session, BrowserDraftSaveRequest {
+            send_intent: &expired,
+            ..input
+        }).decision,
+        BrowserDraftSaveDecision::Denied { public_reason } if public_reason == "send_attempt_paused"
+    ));
+    // A durable reserved attempt must not become an ordinary stale-conflict retry.
+    {
+        let journal =
+            crate::send_journal::SendJournal::new(gateway.settings_dir.join("send-journal"));
+        let mut guard = journal
+            .account_guard(&session.record.canonical_username, gateway.send_clock())
+            .unwrap();
+        guard.begin_draft_save(&current_intent, &draft_id).unwrap();
+    }
+    for revision in [Some(1), Some(2)] {
+        assert!(matches!(
+            gateway.save_draft(&context, &session, BrowserDraftSaveRequest {
+                send_intent: &current_intent,
+                expected_revision: revision,
+                removed_attachment_indices: &[],
+                ..input
+            }).decision,
+            BrowserDraftSaveDecision::Denied { public_reason } if public_reason == "send_attempt_paused"
+        ));
+    }
+    let BrowserDraftLoadDecision::Loaded { draft: after, .. } =
+        gateway.load_draft(&context, &session, &draft_id).decision
+    else {
+        panic!("saved version remains readable");
+    };
+    assert!(
+        after == draft,
+        "refused saves must preserve all saved content and attachments"
     );
     fs::remove_dir_all(root).unwrap();
 }

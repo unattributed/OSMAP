@@ -44,7 +44,7 @@ pub(super) fn legacy_backup_id(name: &str) -> Option<&str> {
     Some(fields[1])
 }
 
-fn sync_directory(path: &Path) -> Result<(), DraftError> {
+pub(super) fn sync_directory(path: &Path) -> Result<(), DraftError> {
     crate::private_account_file::check_directory(path).map_err(|_| unavailable())?;
     fs::File::open(path)
         .and_then(|file| file.sync_all())
@@ -114,13 +114,56 @@ fn cleanup_blobs(
 }
 
 impl FileDraftStore {
-    pub(super) fn recover_legacy_backups(&self, account: &str) -> Result<(), DraftError> {
-        let owner = self.owner_dir_for_username(account);
-        if !private_directory_exists(&owner)? {
+    /// Proves every recoverable relationship before any location is mutated.
+    /// Legal legacy state is one backup alone or one backup plus a newer final.
+    pub(super) fn validate_legacy_backups_in(
+        &self,
+        account: &str,
+        owner: &Path,
+    ) -> Result<(), DraftError> {
+        let mut backups = BTreeMap::<String, Vec<PathBuf>>::new();
+        for (index, entry) in fs::read_dir(owner).map_err(|_| unavailable())?.enumerate() {
+            if index >= 256 {
+                return Err(unavailable());
+            }
+            let entry = entry.map_err(|_| unavailable())?;
+            if let Some(id) = entry.file_name().to_str().and_then(legacy_backup_id) {
+                backups.entry(id.into()).or_default().push(entry.path());
+            }
+        }
+        for (id, candidates) in backups {
+            if candidates.len() != 1 {
+                return Err(DraftError {
+                    reason: "draft recovery is ambiguous".into(),
+                });
+            }
+            let old = self
+                .read_record_from_metadata(account, &candidates[0].join(DRAFT_METADATA_FILE))?
+                .ok_or_else(unavailable)?;
+            let final_dir = owner.join(id);
+            if private_directory_exists(&final_dir)? {
+                let current = self
+                    .read_record_from_metadata(account, &final_dir.join(DRAFT_METADATA_FILE))?
+                    .ok_or_else(unavailable)?;
+                if current.revision <= old.revision {
+                    return Err(DraftError {
+                        reason: "draft recovery is ambiguous".into(),
+                    });
+                }
+            }
+        }
+        Ok(())
+    }
+    pub(super) fn recover_legacy_backups_in(
+        &self,
+        account: &str,
+        owner: &Path,
+    ) -> Result<(), DraftError> {
+        if !private_directory_exists(owner)? {
             return Ok(());
         }
         let mut backups = BTreeMap::<String, Vec<PathBuf>>::new();
-        for (index, entry) in fs::read_dir(&owner).map_err(|_| unavailable())?.enumerate() {
+        for (index, entry) in fs::read_dir(owner).map_err(|_| unavailable())?.enumerate() {
             if index > 256 {
                 return Err(unavailable());
             }
@@ -150,7 +193,7 @@ impl FileDraftStore {
                     });
                 }
                 sync_directory(&final_dir)?;
-                sync_directory(&owner)?;
+                sync_directory(owner)?;
                 // Once the newer version is durable, retire the backup name
                 // atomically so a later discard cannot resurrect it.
                 let retired = owner.join(format!(
@@ -160,17 +203,17 @@ impl FileDraftStore {
                     NEXT_DRAFT_TEMP_FILE_ID.fetch_add(1, Ordering::Relaxed)
                 ));
                 fs::rename(backup, &retired).map_err(|_| unavailable())?;
-                sync_directory(&owner)?;
+                sync_directory(owner)?;
                 let _ = remove_draft_dir(retired);
             } else {
                 fs::rename(backup, &final_dir).map_err(|_| unavailable())?;
                 sync_directory(&final_dir)?;
             }
-            sync_directory(&owner)?;
+            sync_directory(owner)?;
         }
         // An interrupted first save has no published manifest. Only remove our
         // generated private files; unexpected entries remain and refuse cleanup.
-        for entry in fs::read_dir(&owner).map_err(|_| unavailable())? {
+        for entry in fs::read_dir(owner).map_err(|_| unavailable())? {
             let entry = entry.map_err(|_| unavailable())?;
             if entry
                 .file_name()
@@ -190,22 +233,22 @@ impl FileDraftStore {
             if missing_manifest {
                 cleanup_blobs(&entry.path(), &BTreeSet::new(), self.policy)?;
                 fs::remove_dir(entry.path()).map_err(|_| unavailable())?;
-                sync_directory(&owner)?;
+                sync_directory(owner)?;
             }
         }
         Ok(())
     }
 
-    pub(super) fn publish_atomic_record(
+    pub(super) fn publish_atomic_record_in(
         &self,
         record: &DraftRecord,
         previous: Option<&DraftRecord>,
+        directory: &Path,
     ) -> Result<(), DraftError> {
-        let owner = self.ensure_owner_dir(&record.canonical_username)?;
+        let owner = directory.parent().ok_or_else(unavailable)?;
         sync_directory(&self.draft_root)?;
-        let directory = owner.join(&record.draft_id);
-        create_private_directory(&directory)?;
-        sync_directory(&owner)?;
+        create_private_directory(directory)?;
+        sync_directory(owner)?;
 
         // Preserve both possible filename forms while migrating an older manifest.
         let mut old_files = BTreeSet::new();
@@ -215,7 +258,7 @@ impl FileDraftStore {
                 old_files.insert(attachment_body_file_name(index));
             }
         }
-        cleanup_blobs(&directory, &old_files, self.policy)?;
+        cleanup_blobs(directory, &old_files, self.policy)?;
         let mut published_files = BTreeSet::new();
         for file in &record.request.attachments {
             let name = blob_name(&file.body);
@@ -235,7 +278,7 @@ impl FileDraftStore {
             published_files.insert(name);
         }
         // All referenced blob names and bytes precede the new manifest's publication.
-        sync_directory(&directory)?;
+        sync_directory(directory)?;
         #[cfg(test)]
         if self.save_fault == Some(SaveFault::BeforePublish) {
             return Err(unavailable());
@@ -251,12 +294,12 @@ impl FileDraftStore {
                 reason: SAVE_UNCONFIRMED.into(),
             });
         }
-        sync_directory(&directory).map_err(|_| DraftError {
+        sync_directory(directory).map_err(|_| DraftError {
             reason: SAVE_UNCONFIRMED.into(),
         })?;
         // Cleanup cannot turn an acknowledged, durable version into a failed save.
         // The next write must complete cleanup before allocating more blobs.
-        let _ = cleanup_blobs(&directory, &published_files, self.policy);
+        let _ = cleanup_blobs(directory, &published_files, self.policy);
         Ok(())
     }
 }

@@ -116,7 +116,8 @@ fn sent_copy_generated_settings_form_persists_off_reload_and_stale_cas() {
     assert!(html.contains("name=\"expected_revision\" value=\"1\""));
     assert!(html.contains("<select id=\"copies-sent-location\" name=\"mailbox_name\""));
     assert!(!html.contains("Sent (fixed)"));
-    assert!(html.contains("OSMAP drafts (fixed)"));
+    assert!(html.contains("id=\"copies-draft-location\" disabled"));
+    assert!(!html.contains("OSMAP drafts (fixed)"));
     assert_eq!(f.post(&fields, false).response.status_code, 409);
     assert!(!f.store.load(COPY_ALICE).unwrap().save_sent);
     assert_eq!(

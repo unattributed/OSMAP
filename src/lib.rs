@@ -22,6 +22,7 @@ pub mod conversation;
 pub mod draft;
 pub mod draft_content;
 mod draft_list;
+pub mod draft_location;
 pub mod error;
 pub mod html;
 pub mod http;

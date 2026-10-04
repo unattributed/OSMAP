@@ -38,8 +38,8 @@ pub(crate) use settings_ui::render_openpgp_settings;
 pub(crate) use settings_ui::{
     render_appearance_page, render_composition_page_with_signature, render_copies_page_with_state,
     render_general_page_with_mark_read, render_identity_page, render_identity_page_with_signature,
-    render_notifications_page, render_privacy_page, render_reading_page_with_folders,
-    render_security_page, CopiesPageState, IdentityPageModel,
+    render_notifications_page, render_privacy_page, render_reading_page_with_state,
+    render_security_page, CopiesPageState, IdentityPageModel, ReadingFoldersState,
 };
 
 /// Defense-in-depth cap for attachment metadata rows rendered by one route.
@@ -3135,7 +3135,7 @@ pub(crate) fn render_draft_list_page(model: &DraftListPageModel<'_>) -> TrustedH
         concat!(
             "{}",
             "<main id=\"main-content\" class=\"page-shell drafts-page\" tabindex=\"-1\">",
-            "<div class=\"page-intro\"><h1>Drafts</h1><p>Resume, organize and safely discard saved messages.</p></div>{}{}",
+            "<div class=\"page-intro\"><h1>Drafts</h1><p>Resume, organize and safely discard saved messages. Includes Drafts and Working drafts under one account limit.</p></div>{}{}",
             "<div class=\"draft-list-toolbar\"><details class=\"draft-selection-menu\"><summary>Select drafts</summary><nav aria-label=\"Draft selection\"><a href=\"{select_href}\">Select up to 10 editable drafts shown</a><a href=\"{clear_href}\">Clear selection</a><p>This checks current editable rows only. Review discard before confirming any deletion.</p></nav></details><form method=\"get\" action=\"/drafts\"><label class=\"sr-only\" for=\"draft-filter\">Draft filter</label><select id=\"draft-filter\" name=\"filter\">{}</select><label class=\"sr-only\" for=\"draft-sort\">Draft order</label><select id=\"draft-sort\" name=\"sort\">{}</select><label class=\"sr-only\" for=\"draft-query\">Search drafts</label><input id=\"draft-query\" name=\"q\" value=\"{}\" maxlength=\"200\" placeholder=\"Search subjects or recipients\"><button type=\"submit\">Apply</button></form><a class=\"button-link primary-button\" href=\"/compose\">+ New Message</a></div>",
             "<div class=\"table-wrap draft-list\" role=\"region\" aria-label=\"Saved drafts\" tabindex=\"0\"><table>",
             "<thead><tr><th><span class=\"sr-only\">Select</span></th><th><span class=\"sr-only\">Star</span></th><th>Recipient</th><th>Subject</th><th>Attachment</th><th>Status</th><th>Saved</th><th><span class=\"sr-only\">Actions</span></th></tr></thead>",
