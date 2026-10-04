@@ -8400,3 +8400,8 @@ sorting or selection fields to make shared rendering convenient.
 window; actual61-match and native scoped form/Open/Back results pass. Keep signed
 source, native execution, deployed binary, installed browser results and human
 acceptance distinct. Actual All filters do not qualify Documents, Send or crypto.
+
+2026-10-04 UTC — Do not close All filters from native tests or partial browser
+checks. Retain the pre-submit encoder-instrument failure separately from the
+actual opened Date overflow at768 (document920). Repair All-only responsive CSS
+with matching binary/browser evidence; do not change unrelated search surfaces.

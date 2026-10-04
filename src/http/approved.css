@@ -671,6 +671,9 @@ body:has(.app-rail) {
 .search-results .search-options > div { display:flex; flex-wrap:wrap; gap:12px; align-items:end; }
 .search-results .search-options label { flex:1; min-width:160px; }
 .search-results .list-navigation { margin:8px 0 0; display:flex; flex-wrap:wrap; gap:8px 16px; align-items:center; }
+/* All's Date panel expands inside the filter row instead of beyond its edge. */
+.all-search .search-category-filters > .date-filter[open] { flex-basis:100%; grid-column:1 / -1; min-width:0; max-width:100%; }
+.all-search .search-category-filters .date-filter > form { position:static; width:min(22rem,100%); max-width:100%; box-shadow:none; }
 .search-results .message-filters { width:100%; margin:0; }
 .search-results .list-window, .search-results .list-pagination { margin:0; font-size:.75rem; }
 .search-results .search-result-tabs { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:16px 0 11px; font-size:.82rem; }

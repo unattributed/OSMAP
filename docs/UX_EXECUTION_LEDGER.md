@@ -5709,3 +5709,40 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   run. Security/Clippy and V10/V14/V13/WSTG harness gates pass without relaxation.
   Synthetic negative WSTG/release-refusal harness output is not authenticated
   live release qualification. aggregate-results.json retains exact log hash.
+
+### 2026-10-04 UTC — All filters installed, actual responsive failure retained
+
+- Signed a789c315fd06d8b0ac8dab4dd37e6ce3b1f61930 has Good Shopkeeper signature,
+  normal commit/push hooks PASS and fresh origin exact0/0 equality. All310 native
+  inputs match signed Git blobs. Exact app9e4113b56ce9e2dc63dc3364506551b265d7d2de5e5c37e4dffb16e6ef1eb763
+  actually replaces web3aff on obsd1 only, exclusive backup
+  /var/backups/osmap-ux-s02-all-search-a789c315fd06-20261004. Only osmap_serve
+  restarts; compatible authoritative helper, environments, policies and native
+  crypto agents remain preserved. Installation is not functional UAT acceptance.
+- Actual external Edge attempt1: basic counts/tabs/Manual OpenBack PASS but
+  TypeError before Folder submit. Retain original FAIL; actual DOM list pairs
+  need tuple conversion for Python URL encoding. Reproduction and independent
+  narrow correction review pass; this does not establish a production defect.
+- Actual corrected attempt2 executes real Folder/Sender/UTC date forms, matching
+  six and nonmatching measured-zero cases, plain/attachment-free predicates and
+  independently observed Unread count/reset. Basic360/1440 and all opened360
+  controls pass, then opened Date at768 FAIL. Owned session cleanup PASS, zero
+  POST/Send, no content/cookie/CSRF retention; do not label partial checks PASS.
+- Separate fixed three-GET geometry records actual Date document width920 at
+  viewport768; other measured panels at360/768/1440 fit. This is actual responsive
+  product evidence, not an invented backend failure. Extend source scope only to
+  approved.css for All-only layout repair, preserving ordinary Messages/People.
+  Require matching new frozen native application and actual installed opened
+  panel/filter checks before declaring this remediation UAT-ready.
+- Narrow Date repair adds only one comment/two All-specific CSS rules: open
+  Date occupies the available flex/grid row; its form is static and bounded by
+  that row, with no overflow clipping. Independent layout-source-review.json
+  finds no concrete blocker; ordinary Messages/People are outside selectors.
+- Matching CSS-source native layoutattempt1 executes actual21/310 PASS, no
+  failures/ignored. New app3769125fe3c007004a05e0d74c3fe60708c2c683b8d1b7f4794452d338f850dc,
+  test3efb420f63f29f4b35ec1a3207018113373045e3c8d568a6b54e9f75f8d83ddf,
+  manifestfe7155fc06c02b3f3ae9dbc42267a4bb3ee1fe5131b05c1d88e9195a7490f3f1.
+  Actual matching acceptance-check exits0 (1320 PASS/0 fail/29 explicit native
+  ignored locally), preserving separate actual native21 evidence and unchanged
+  gates. V10 Rust scanner inputs are unchanged by this CSS-only repair. Final
+  deployed responsive/synthetic visual results remain pending until execution.
