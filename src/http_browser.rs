@@ -17,6 +17,25 @@ pub enum BrowserSendRecoveryDecision {
 }
 
 pub trait BrowserGateway {
+    fn retention_status(
+        &self,
+        _session: &ValidatedSession,
+        _mailbox: &str,
+    ) -> crate::mailbox::RetentionDecision {
+        crate::mailbox::RetentionDecision::Unavailable
+    }
+    fn delete_message(
+        &self,
+        _context: &AuthenticationContext,
+        _session: &ValidatedSession,
+        _request: &crate::mailbox::MessageDeleteRequest,
+    ) -> BrowserMessageDeleteOutcome {
+        BrowserMessageDeleteOutcome {
+            result: Err(crate::mailbox::MessageDeleteError::Unavailable),
+            retry_after_seconds: None,
+            audit_events: Vec::new(),
+        }
+    }
     fn key_management(
         &self,
         _context: &AuthenticationContext,
@@ -974,6 +993,14 @@ pub enum BrowserAttachmentDownloadDecision {
     Denied {
         public_reason: String,
     },
+}
+
+/// A permanent-delete outcome; a quota refusal is distinct from dispatched uncertainty.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BrowserMessageDeleteOutcome {
+    pub result: Result<crate::mailbox::MessageDeleteResult, crate::mailbox::MessageDeleteError>,
+    pub retry_after_seconds: Option<u64>,
+    pub audit_events: Vec<LogEvent>,
 }
 
 /// The result of a browser message-move operation.

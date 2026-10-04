@@ -2438,3 +2438,437 @@ fn isolated_openbsd_retention_bound_single_delete_backend() {
     assert!(!root.exists()); assert_eq!(before, standard_metadata());
     println!("native_retention_single_delete_backend=PASS exact_identity_expunge_once=PASS absent_denied_changed_revision_stale_busy_foreign_refusal=PASS preexisting_deleted_neighbour_intact=PASS same_uid_inbox_bob_bytes_flags_guids_unchanged=PASS no_helper_http_claim=PASS scratch_cleanup=PASS standard_host_metadata_unchanged=PASS");
 }
+// Separate authenticated helper proof. The original direct, reader and Bin
+// fixtures retain their existing command and mutation guards unchanged.
+struct RetentionDeleteCountedBackend {
+    inner: crate::mailbox::DoveadmMessageDeleteBackend<ScopedDeleteExecutor>,
+    admissions: Arc<AtomicUsize>,
+}
+impl crate::mailbox::MessageDeleteBackend for RetentionDeleteCountedBackend {
+    fn retention_status(&self, account: &str, mailbox: &str) -> crate::mailbox::RetentionDecision {
+        self.inner.retention_status(account, mailbox)
+    }
+    fn delete_message(
+        &self,
+        account: &str,
+        request: &crate::mailbox::MessageDeleteRequest,
+    ) -> Result<crate::mailbox::MessageDeleteResult, crate::mailbox::MessageDeleteError> {
+        self.admissions.fetch_add(1, Ordering::SeqCst);
+        crate::mailbox::MessageDeleteBackend::delete_message(&self.inner, account, request)
+    }
+}
+struct RetentionDeleteForbiddenFlag(Arc<AtomicUsize>);
+impl MessageFlagBackend for RetentionDeleteForbiddenFlag {
+    fn set_message_flag(
+        &self,
+        _: &str,
+        _: &crate::mailbox::MessageFlagRequest,
+    ) -> Result<crate::mailbox::MessageFlagResult, MailboxBackendError> {
+        self.0.fetch_add(1, Ordering::SeqCst);
+        Err(MailboxBackendError {
+            backend: "native-delete-fixture-forbidden",
+            reason: "flag mutation outside delete fixture".into(),
+        })
+    }
+}
+fn start_retention_delete_helper(
+    fixture: &mut Fixture,
+    backend: crate::mailbox::DoveadmMessageDeleteBackend<ScopedDeleteExecutor>,
+    uid: u32,
+    admissions: Arc<AtomicUsize>,
+    forbidden: Arc<AtomicUsize>,
+) -> PathBuf {
+    let socket = fixture.root.join("delete-helper.sock");
+    let listener = UnixListener::bind(&socket).unwrap();
+    fs::set_permissions(&socket, fs::Permissions::from_mode(0o600)).unwrap();
+    listener.set_nonblocking(true).unwrap();
+    let stop = fixture.stop.clone();
+    fixture.threads.push(thread::spawn(move || {
+        let backend = RetentionDeleteCountedBackend {
+            inner: backend,
+            admissions,
+        };
+        let refused = || MailboxBackendError {
+            backend: "native-delete-fixture-forbidden",
+            reason: "unrelated operation outside delete proof".into(),
+        };
+        let readonly = StaticHelperBackend {
+            mailbox_result: Arc::new(Err(refused())),
+            message_list_result: Arc::new(Err(refused())),
+            message_search_result: Arc::new(Err(refused())),
+            message_view_result: Arc::new(Err(refused())),
+            message_move_result: Arc::new(Err(refused())),
+        };
+        let mutations = ForbiddenMutation(forbidden.clone());
+        let flags = RetentionDeleteForbiddenFlag(forbidden);
+        let replay = Mutex::new(BTreeMap::new());
+        let deadline = Instant::now() + NATIVE_LIMIT;
+        while !stop.load(Ordering::SeqCst) && Instant::now() < deadline {
+            let (mut stream, _) = match listener.accept() {
+                Ok(value) => value,
+                Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
+                    thread::sleep(Duration::from_millis(5));
+                    continue;
+                }
+                Err(_) => panic!("isolated delete helper accept failed"),
+            };
+            handle_helper_client_with_delete(
+                HelperBackends {
+                    mailbox_backend: &readonly,
+                    message_list_backend: &readonly,
+                    message_search_backend: &readonly,
+                    message_view_backend: &readonly,
+                    message_move_backend: &mutations,
+                    message_append_backend: &mutations,
+                    message_flag_backend: &flags,
+                },
+                Some(&backend),
+                &Logger::new(crate::config::LogFormat::Text, LogLevel::Error),
+                &mut stream,
+                MailboxHelperPolicy {
+                    max_request_bytes: 4096,
+                    max_response_bytes: 4096,
+                    ..MailboxHelperPolicy::default()
+                },
+                MailboxHelperTrustedCallerPolicy {
+                    trusted_peer_uid: uid,
+                    grant_key: test_helper_grant_key(),
+                },
+                &replay,
+            );
+        }
+    }));
+    socket
+}
+fn retention_delete_raw_exchange(socket: &Path, request: &str, uid: u32) -> MailboxHelperResponse {
+    let deadline = Instant::now() + Duration::from_secs(5);
+    let mut stream = crate::openbsd::connect_unix_before(socket, deadline).unwrap();
+    assert_eq!(crate::openbsd::unix_stream_peer_uid(&stream).unwrap(), uid);
+    stream
+        .set_read_timeout(Some(Duration::from_secs(3)))
+        .unwrap();
+    stream
+        .set_write_timeout(Some(Duration::from_secs(3)))
+        .unwrap();
+    stream.write_all(request.as_bytes()).unwrap();
+    stream.shutdown(Shutdown::Write).unwrap();
+    let response = read_bounded_from_stream(&mut stream, 4096).unwrap();
+    assert!(Instant::now() < deadline);
+    parse_response(
+        MailboxListingPolicy::default(),
+        MessageListPolicy::default(),
+        MessageSearchPolicy::default(),
+        MessageViewPolicy::default(),
+        std::str::from_utf8(&response).unwrap(),
+    )
+    .unwrap()
+}
+
+#[test]
+#[ignore = "explicit OpenBSD authenticated helper/delete proof; one disposable tuple only"]
+fn isolated_openbsd_retention_bound_single_delete_helper() {
+    use crate::mailbox::{
+        DoveadmMessageDeleteBackend, FileMailboxRetentionPolicy, MessageDeleteBackend,
+        MessageDeleteError, MessageDeleteRequest, MessageDeleteResult, RetentionDecision,
+    };
+    assert_eq!(std::env::consts::OS, "openbsd");
+    let host = SystemCommandExecutor
+        .run_with_stdin_timeout("/bin/hostname", &[], "", Duration::from_secs(1))
+        .unwrap();
+    assert_eq!(host.status_code, 0);
+    assert_eq!(host.stdout.trim(), "obsd1.blackbagsecurity.com");
+    let before = standard_metadata();
+    let root = fs::canonicalize("/tmp").unwrap().join(format!(
+        "osmap-delete-helper-native-{}-{}",
+        std::process::id(),
+        SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos()
+    ));
+    fs::DirBuilder::new().mode(0o700).create(&root).unwrap();
+    let mut fixture = Fixture {
+        root: root.clone(),
+        stop: Arc::new(AtomicBool::new(false)),
+        threads: vec![],
+    };
+    let uid = fs::metadata(&root).unwrap().uid();
+    assert_ne!(uid, 0);
+    let group = SystemCommandExecutor
+        .run_with_stdin_timeout("/usr/bin/id", &["-g".into()], "", Duration::from_secs(1))
+        .unwrap();
+    assert_eq!(group.status_code, 0);
+    let gid = group.stdout.trim().parse::<u32>().unwrap();
+    assert_ne!(gid, 0);
+    for directory in ["run", "state"] {
+        fs::DirBuilder::new()
+            .mode(0o700)
+            .create(root.join(directory))
+            .unwrap();
+    }
+    for user in ["alice", "bob"] {
+        for folder in ["", ".Deleted"] {
+            for part in ["cur", "new", "tmp"] {
+                fs::create_dir_all(root.join(user).join("Maildir").join(folder).join(part))
+                    .unwrap();
+            }
+        }
+    }
+    write_message(&root, "alice", 0, 0);
+    write_message(&root, "bob", 0, 0);
+    write_message(&root, "alice", 1, 0);
+    fs::rename(
+        root.join("alice/Maildir/new/synthetic-001"),
+        root.join("alice/Maildir/.Deleted/new/selected-001"),
+    )
+    .unwrap();
+    let inbox_bytes = scoped_delete_wire_bytes(&root, "alice", "");
+    let bob_bytes = scoped_delete_wire_bytes(&root, "bob", "");
+    let config = root.join("dovecot.conf");
+    fs::write(&config, format!("base_dir = {0}/run\nstate_dir = {0}/state\nmail_location = maildir:~/Maildir\nmail_uid = {uid}\nmail_gid = {gid}\nfirst_valid_uid = {uid}\nprotocols =\nlisten = 127.0.0.1\nssl = no\nmail_plugins =\nstats_writer_socket_path =\nauth_socket_path = {0}/never-default\nlog_path = {0}/native.log\ninfo_log_path = {0}/native.log\nnamespace inbox {{\n inbox = yes\n separator =\n}}\n", root.display())).unwrap();
+    fs::set_permissions(&config, fs::Permissions::from_mode(0o600)).unwrap();
+    let userdb = serve_userdb(&mut fixture, uid, gid);
+    let native = NativeExecutor {
+        config,
+        calls: Arc::new(AtomicUsize::new(0)),
+        bin_move_count: None,
+    };
+    let native_list = DoveadmMessageListBackend::new(
+        MessageListPolicy::default(),
+        native.clone(),
+        "/usr/local/bin/doveadm",
+    )
+    .with_userdb_socket_path(Some(userdb.clone()));
+    let inbox_query = MessageListRequest::new(MessageListPolicy::default(), "INBOX").unwrap();
+    let deleted_query = MessageListRequest::new(MessageListPolicy::default(), "Deleted").unwrap();
+    // Index the sole selected object first, so same-UID cross-folder controls
+    // do not depend on Maildir readdir order when the neighbour is introduced.
+    assert_eq!(
+        native_list
+            .list_messages(ALICE, &deleted_query)
+            .unwrap()
+            .len(),
+        1
+    );
+    write_message(&root, "alice", 2, 0);
+    let neighbour_file = root.join("alice/Maildir/.Deleted/cur/neighbour-002:2,T");
+    fs::rename(
+        root.join("alice/Maildir/new/synthetic-002"),
+        &neighbour_file,
+    )
+    .unwrap();
+    let neighbour_bytes = fs::read(&neighbour_file).unwrap();
+    let inbox = native_list.list_messages(ALICE, &inbox_query).unwrap();
+    let bob = native_list.list_messages(BOB, &inbox_query).unwrap();
+    let deleted = native_list.list_messages(ALICE, &deleted_query).unwrap();
+    assert_eq!(inbox.len(), 1);
+    assert_eq!(bob.len(), 1);
+    assert_eq!(deleted.len(), 2);
+    let target = deleted
+        .iter()
+        .find(|row| row.subject.as_deref() == Some("Native 001"))
+        .unwrap();
+    let neighbour = deleted
+        .iter()
+        .find(|row| row.subject.as_deref() == Some("Native 002"))
+        .unwrap()
+        .clone();
+    assert_eq!(target.uid, inbox[0].uid);
+    assert_eq!(target.uid, bob[0].uid);
+    assert!(crate::mail_list::has_flag(&neighbour.flags, "\\Deleted"));
+    let version = target.metadata.as_ref().unwrap().version.clone();
+    assert_ne!(
+        version.mailbox_guid,
+        inbox[0].metadata.as_ref().unwrap().version.mailbox_guid
+    );
+    assert_ne!(
+        version.mailbox_guid,
+        bob[0].metadata.as_ref().unwrap().version.mailbox_guid
+    );
+    let request =
+        MessageDeleteRequest::new(ALICE, "Deleted", target.uid, version.clone(), 7).unwrap();
+    let expunge_count = Arc::new(AtomicUsize::new(0));
+    let permitted_args = vec![
+        "-o".into(),
+        "stats_writer_socket_path=".into(),
+        "-o".into(),
+        format!("auth_socket_path={}", userdb.display()),
+        "expunge".into(),
+        "-u".into(),
+        ALICE.into(),
+        "mailbox".into(),
+        "Deleted".into(),
+        "mailbox-guid".into(),
+        version.mailbox_guid.clone(),
+        "uid".into(),
+        target.uid.to_string(),
+        "guid".into(),
+        version.message_guid.clone(),
+    ];
+    let executor = ScopedDeleteExecutor {
+        inner: native,
+        permitted_args,
+        expunge_count: expunge_count.clone(),
+    };
+    let policy_path = root.join("retention.json");
+    let gate = Arc::new(Mutex::new(()));
+    let write_policy = |revision, permission: &str| {
+        let _guard = gate.lock().unwrap();
+        fs::write(&policy_path, serde_json::to_vec(&serde_json::json!({"version":1,"rules":[{
+            "account":ALICE,"mailbox_name":"Deleted","revision":revision,"permanent_delete":permission
+        }]})).unwrap()).unwrap();
+        fs::set_permissions(&policy_path, fs::Permissions::from_mode(0o600)).unwrap();
+    };
+    let backend = DoveadmMessageDeleteBackend::new(
+        executor.clone(),
+        "/usr/local/bin/doveadm",
+        FileMailboxRetentionPolicy::new(Some(policy_path.clone()), uid),
+    )
+    .with_userdb_socket_path(Some(userdb.clone()))
+    .with_operation_gate(gate.clone());
+    let delete_admissions = Arc::new(AtomicUsize::new(0));
+    let forbidden = Arc::new(AtomicUsize::new(0));
+    let socket = start_retention_delete_helper(
+        &mut fixture,
+        backend,
+        uid,
+        delete_admissions.clone(),
+        forbidden.clone(),
+    );
+    let key_path = root.join("helper-grant.key");
+    fs::write(&key_path, test_helper_grant_key()).unwrap();
+    fs::set_permissions(&key_path, fs::Permissions::from_mode(0o600)).unwrap();
+    let client =
+        MailboxHelperMessageDeleteBackend::new(&socket, &key_path, MailboxHelperPolicy::default())
+            .with_helper_uid(uid);
+    assert_eq!(
+        crate::openbsd::unix_stream_peer_uid(&UnixStream::connect(&socket).unwrap()).unwrap(),
+        uid
+    );
+    assert_eq!(
+        client.retention_status(ALICE, "Deleted"),
+        RetentionDecision::Unavailable
+    );
+    assert_eq!(
+        client.delete_message(ALICE, &request),
+        Err(MessageDeleteError::PolicyUnavailable)
+    );
+    write_policy(7u64, "denied");
+    assert_eq!(
+        client.retention_status(ALICE, "Deleted"),
+        RetentionDecision::Denied
+    );
+    let mut signed = MailboxHelperRequest::MessageDelete {
+        request: request.clone(),
+        grant: MailboxHelperGrant::unsigned(),
+    };
+    issue_request_grant_with_nonce(
+        &mut signed,
+        &test_helper_grant_key(),
+        current_unix_time_secs().unwrap(),
+        &test_grant_nonce(55),
+    )
+    .unwrap();
+    let granted = encode_request(&signed);
+    assert!(matches!(
+        retention_delete_raw_exchange(&socket, &granted, uid),
+        MailboxHelperResponse::MessageDelete {
+            result: Err(MessageDeleteError::PolicyDenied),
+            ..
+        }
+    ));
+    let count = delete_admissions.load(Ordering::SeqCst);
+    assert!(
+        matches!(retention_delete_raw_exchange(&socket, &granted, uid), MailboxHelperResponse::Error { backend, .. } if backend == "mailbox-helper-grant")
+    );
+    assert_eq!(
+        delete_admissions.load(Ordering::SeqCst),
+        count,
+        "replay refused before backend"
+    );
+    if let MailboxHelperRequest::MessageDelete { request, .. } = &mut signed {
+        request.uid += 1;
+    }
+    assert!(
+        matches!(retention_delete_raw_exchange(&socket, &encode_request(&signed), uid), MailboxHelperResponse::Error { backend, .. } if backend == "mailbox-helper-grant")
+    );
+    assert_eq!(
+        delete_admissions.load(Ordering::SeqCst),
+        count,
+        "tampered request refused before backend"
+    );
+    let wrong_peer =
+        MailboxHelperMessageDeleteBackend::new(&socket, &key_path, MailboxHelperPolicy::default())
+            .with_helper_uid(uid.checked_add(1).unwrap());
+    assert_eq!(
+        wrong_peer.delete_message(ALICE, &request),
+        Err(MessageDeleteError::Unavailable)
+    );
+    assert_eq!(delete_admissions.load(Ordering::SeqCst), count);
+    write_policy(8u64, "allowed");
+    assert_eq!(
+        client.retention_status(ALICE, "Deleted"),
+        RetentionDecision::Allowed { revision: 8 }
+    );
+    assert_eq!(
+        client.delete_message(ALICE, &request),
+        Err(MessageDeleteError::Stale)
+    );
+    write_policy(7u64, "allowed");
+    assert_eq!(
+        client.retention_status(ALICE, "Deleted"),
+        RetentionDecision::Allowed { revision: 7 }
+    );
+    let mut stale = request.clone();
+    stale.version.message_guid = "stale-public-tuple".into();
+    assert_eq!(
+        client.delete_message(ALICE, &stale),
+        Err(MessageDeleteError::Stale)
+    );
+    assert_eq!(
+        client.delete_message(BOB, &request),
+        Err(MessageDeleteError::Invalid)
+    );
+    let guard = gate.lock().unwrap();
+    assert_eq!(
+        client.delete_message(ALICE, &request),
+        Err(MessageDeleteError::Busy)
+    );
+    drop(guard);
+    assert_eq!(expunge_count.load(Ordering::SeqCst), 0);
+    assert_eq!(
+        native_list.list_messages(ALICE, &deleted_query).unwrap(),
+        deleted
+    );
+    assert_eq!(
+        client.delete_message(ALICE, &request),
+        Ok(MessageDeleteResult::Deleted)
+    );
+    assert_eq!(expunge_count.load(Ordering::SeqCst), 1);
+    assert_eq!(
+        client.delete_message(ALICE, &request),
+        Err(MessageDeleteError::Stale)
+    );
+    assert_eq!(expunge_count.load(Ordering::SeqCst), 1);
+    assert_eq!(forbidden.load(Ordering::SeqCst), 0);
+    assert_eq!(
+        native_list.list_messages(ALICE, &deleted_query).unwrap(),
+        vec![neighbour]
+    );
+    assert_eq!(
+        native_list.list_messages(ALICE, &inbox_query).unwrap(),
+        inbox
+    );
+    assert_eq!(native_list.list_messages(BOB, &inbox_query).unwrap(), bob);
+    assert_eq!(
+        scoped_delete_wire_bytes(&root, "alice", ".Deleted"),
+        vec![neighbour_bytes]
+    );
+    assert_eq!(scoped_delete_wire_bytes(&root, "alice", ""), inbox_bytes);
+    assert_eq!(scoped_delete_wire_bytes(&root, "bob", ""), bob_bytes);
+    fixture.finish();
+    drop(fixture);
+    assert!(!root.exists());
+    assert_eq!(before, standard_metadata());
+    println!("native_retention_single_delete_helper=PASS unix_peer_hmac_replay_admission=PASS actual_status_missing_denied_allowed=PASS exact_identity_expunge_once=PASS changed_revision_stale_busy_foreign_refusal=PASS preexisting_deleted_neighbour_intact=PASS same_uid_inbox_bob_bytes_flags_guids_unchanged=PASS no_http_claim=PASS no_other_mutations=PASS scratch_cleanup=PASS standard_host_metadata_unchanged=PASS");
+}

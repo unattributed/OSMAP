@@ -5333,3 +5333,54 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   protocol/service configuration and browser Cancel/Confirm/bulk integration,
   their native deployment and human UAT remain OPEN. Wildcard folder behavior is
   unit-tested; actual native positive uses Deleted and makes no wildcard claim.
+
+### S02-03 authenticated helper and gateway checkpoint — 2026-10-04 UTC
+
+- First concrete backend checkpoint30a4e49092ef926ef02b63b8c511b30b36cd4cb7
+  is signed, verified and synced to the existing GitHub UX branch, with matching
+  294 native compile inputs. Preserve its scoped direct-backend result.
+- Wire actual status/delete codecs, HMAC coverage of all identity/policy fields,
+  replay admission, typed replies, exact echoed nonce and configured Unix peer
+  identity. New client has one transport deadline and no direct fallback or
+  uncertain retry. Production helper shares the existing move/flag gate and
+  reads the optional root-owned retention file. Runtime gateway reserves the
+  existing mutation quota before helper transport; no browser-provided owner or
+  path creates permission. Configuration and helper-only read confinement are
+  implemented, not a claimed applied confinement qualification.
+- Actual focused13 authenticated helper and six Runtime gateway cases PASS.
+  Initial Clippy exposes a large response error variant and production functions
+  after a test module. Box only the response tuple and move production functions
+  before tests; preserve the warning gate. A mistaken boxed request constructor
+  is caught in the second compile and corrected. Final Clippy PASS.
+- Matching298 native compile inputs on obsd1 PASS: 12 backend, five file-policy,
+  13 helper, six gateway, two config/plan, one direct backend and one actual Unix
+  helper/Dovecot case. Exactly one owned tuple expunged; missing/denied authority,
+  changed revision, stale/foreign identities, wrong peer, replay/tamper and shared
+  gate refusal preserve neighbouring bytes/flags/GUIDs. Scratch cleanup and
+  standard host metadata PASS. No HTTP or separate-principal claim.
+- Native test55788f83589da8b6eddeeafe04873115bd7f1a7ad938e0a07985573be6fc299f;
+  app228bbc5982007d90f37fa6b5d7d3fe3bb4e824da3115a9db8c62d78cddc1b676
+  is built, not installed. Web remains cba974a/3254ed0. No operator Send, mail,
+  policy, key or production service mutation. First aggregate stops on stale
+  V10 inventory counts; refresh the actual evidence, without weakening gates.
+- Evidence remains permanent-delete/native-retention-helper-attempt1.log and
+  its298-input manifest, helper/gateway focused logs, Clippy attempt logs and
+  aggregate attempt logs. Browser Cancel/Confirm/bulk and their deployment/UAT
+  remain OPEN. This checkpoint is real integration awaiting signed commit, not
+  full S02-03 completion or a repaired-all-Send claim.
+
+- Final helper checkpoint gates: acceptance/security/v14 PASS, 1253 library
+  tests passed/24 opted-in tests ignored; final native attempt3 qualifies all298
+  current compile inputs and all40 cases above. Its test binary is
+  99c285e210f88718702836f4ec73a614939291da4407c7791102009d9d3b9129;
+  application hash remains228bbc59. Retain earlier native attempts as superseded
+  test-fixture snapshots, not matching-current evidence.
+- Actual full-gate findings were remediated: replace the test-only shell detector
+  with a harmless direct Python detector, prove it executes through the existing
+  bounded SystemCommandExecutor, then clear its owned marker before the negative
+  fallback test. No scanner exceptions or weakened checks. Add the new deployment
+  document to the existing documentation index. Refresh real V10 inventory after
+  fixture changes. Final helper-gates-attempt5.log is the passing aggregate;
+  failed attempts remain retained. Independent source review finds no concrete
+  production blocker; its test-only earlier-manifest discrepancy is resolved by
+  matching attempt3 native execution, not a waived source mismatch.

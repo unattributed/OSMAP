@@ -44,6 +44,10 @@ pub struct AppConfig {
     pub doveadm_userdb_socket_path: Option<PathBuf>,
     pub mailbox_helper_socket_path: Option<PathBuf>,
     pub mailbox_helper_grant_key_path: Option<PathBuf>,
+    /// Expected local helper or relay principal; absence grants no delete client.
+    pub mailbox_helper_peer_uid: Option<u32>,
+    /// Helper-only read authority. Missing policy never permits permanent delete.
+    pub mailbox_retention_policy_path: Option<PathBuf>,
     pub state_root: PathBuf,
     pub log_level: LogLevel,
     pub log_format: LogFormat,
@@ -440,6 +444,9 @@ impl AppConfig {
             parse_optional_absolute_optional_path(env_map, "OSMAP_DOVEADM_USERDB_SOCKET_PATH")?;
         let mailbox_helper_grant_key_path =
             parse_optional_absolute_optional_path(env_map, "OSMAP_MAILBOX_HELPER_GRANT_KEY_PATH")?;
+        let mailbox_helper_peer_uid = parse_optional_u32(env_map, "OSMAP_MAILBOX_HELPER_PEER_UID")?;
+        let mailbox_retention_policy_path =
+            parse_optional_absolute_optional_path(env_map, "OSMAP_MAILBOX_RETENTION_POLICY_PATH")?;
 
         validate_non_empty("OSMAP_RUN_MODE", &run_mode_value)?;
         validate_non_empty("OSMAP_ENV", &environment_value)?;
@@ -775,6 +782,8 @@ impl AppConfig {
             doveadm_userdb_socket_path,
             mailbox_helper_socket_path,
             mailbox_helper_grant_key_path,
+            mailbox_helper_peer_uid,
+            mailbox_retention_policy_path,
             log_level,
             log_format,
             state_root,
@@ -1098,6 +1107,36 @@ mod tests {
     use super::*;
 
     #[test]
+    fn permanent_delete_config_is_optional_explicit_and_rejects_invalid_authority() {
+        let mut values = BTreeMap::from([
+            ("OSMAP_MAILBOX_HELPER_PEER_UID".into(), "2000".into()),
+            (
+                "OSMAP_MAILBOX_RETENTION_POLICY_PATH".into(),
+                "/var/db/osmap-retention/policy.json".into(),
+            ),
+        ]);
+        let config = AppConfig::from_env_map(&values).unwrap();
+        assert_eq!(config.mailbox_helper_peer_uid, Some(2000));
+        assert_eq!(
+            config.mailbox_retention_policy_path.as_deref(),
+            Some(std::path::Path::new("/var/db/osmap-retention/policy.json"))
+        );
+        for bad in ["", "0", "-1", "4294967296", "not-a-uid"] {
+            values.insert("OSMAP_MAILBOX_HELPER_PEER_UID".into(), bad.into());
+            assert!(AppConfig::from_env_map(&values).is_err());
+        }
+        values.insert("OSMAP_MAILBOX_HELPER_PEER_UID".into(), "2000".into());
+        for bad in ["", "relative/policy.json"] {
+            values.insert("OSMAP_MAILBOX_RETENTION_POLICY_PATH".into(), bad.into());
+            assert!(AppConfig::from_env_map(&values).is_err());
+        }
+        values.clear();
+        let absent = AppConfig::from_env_map(&values).unwrap();
+        assert_eq!(absent.mailbox_helper_peer_uid, None);
+        assert_eq!(absent.mailbox_retention_policy_path, None);
+    }
+
+    #[test]
     fn uses_conservative_defaults_when_environment_is_empty() {
         let env_map = BTreeMap::new();
         let config = AppConfig::from_env_map(&env_map).expect("defaults should be valid");
@@ -1119,6 +1158,8 @@ mod tests {
         assert_eq!(config.doveadm_userdb_socket_path, None);
         assert_eq!(config.mailbox_helper_socket_path, None);
         assert_eq!(config.mailbox_helper_grant_key_path, None);
+        assert_eq!(config.mailbox_helper_peer_uid, None);
+        assert_eq!(config.mailbox_retention_policy_path, None);
         assert_eq!(config.state_root, std::path::Path::new("/var/lib/osmap"));
         assert_eq!(
             config.state_layout.runtime_dir,

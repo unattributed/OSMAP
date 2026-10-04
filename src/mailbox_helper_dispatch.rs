@@ -29,8 +29,9 @@ pub(super) struct HelperBackends<'a, MB, MLB, MSB, MVB, MMB, MAB, MFB> {
 }
 
 #[cfg(unix)]
-pub(super) fn dispatch_helper_request<MB, MLB, MSB, MVB, MMB, MAB, MFB>(
+pub(super) fn dispatch_helper_request_with_delete<MB, MLB, MSB, MVB, MMB, MAB, MFB>(
     backends: HelperBackends<'_, MB, MLB, MSB, MVB, MMB, MAB, MFB>,
+    delete_backend: Option<&dyn crate::mailbox::MessageDeleteBackend>,
     request: &MailboxHelperRequest,
 ) -> MailboxHelperResponse
 where
@@ -43,6 +44,27 @@ where
     MFB: MessageFlagBackend,
 {
     match request {
+        MailboxHelperRequest::RetentionStatus {
+            canonical_username,
+            mailbox_name,
+            grant,
+        } => MailboxHelperResponse::RetentionStatus {
+            canonical_username: canonical_username.clone(),
+            mailbox_name: mailbox_name.clone(),
+            decision: delete_backend
+                .map(|backend| backend.retention_status(canonical_username, mailbox_name))
+                .unwrap_or(crate::mailbox::RetentionDecision::Unavailable),
+            nonce: grant.nonce.clone(),
+        },
+        MailboxHelperRequest::MessageDelete { request, grant } => {
+            MailboxHelperResponse::MessageDelete {
+                request: Box::new(request.clone()),
+                result: delete_backend
+                    .map(|backend| backend.delete_message(&request.canonical_username, request))
+                    .unwrap_or(Err(crate::mailbox::MessageDeleteError::PolicyUnavailable)),
+                nonce: grant.nonce.clone(),
+            }
+        }
         MailboxHelperRequest::FolderCreate { request, .. } => {
             MailboxHelperResponse::FolderCreateOk {
                 request: request.clone(),
@@ -335,6 +357,51 @@ pub(super) fn log_helper_response(
 ) {
     match (response, request) {
         (
+            MailboxHelperResponse::RetentionStatus { decision, .. },
+            Some(MailboxHelperRequest::RetentionStatus { .. }),
+        ) => logger.emit(
+            &LogEvent::new(
+                LogLevel::Info,
+                EventCategory::Mailbox,
+                "mailbox_helper_retention_status",
+                "mailbox helper checked retention authority",
+            )
+            .with_field(
+                "result",
+                match decision {
+                    crate::mailbox::RetentionDecision::Allowed { .. } => "allowed",
+                    crate::mailbox::RetentionDecision::Denied => "denied",
+                    crate::mailbox::RetentionDecision::Unavailable => "unavailable",
+                },
+            ),
+        ),
+        (
+            MailboxHelperResponse::MessageDelete { result, .. },
+            Some(MailboxHelperRequest::MessageDelete { .. }),
+        ) => logger.emit(
+            &LogEvent::new(
+                LogLevel::Info,
+                EventCategory::Mailbox,
+                "mailbox_helper_message_delete_result",
+                "mailbox helper returned exact deletion outcome",
+            )
+            .with_field(
+                "result",
+                match result {
+                    Ok(_) => "deleted",
+                    Err(crate::mailbox::MessageDeleteError::Invalid) => "invalid",
+                    Err(crate::mailbox::MessageDeleteError::Stale) => "stale",
+                    Err(crate::mailbox::MessageDeleteError::PolicyDenied) => "policy_denied",
+                    Err(crate::mailbox::MessageDeleteError::PolicyUnavailable) => {
+                        "policy_unavailable"
+                    }
+                    Err(crate::mailbox::MessageDeleteError::Busy) => "busy",
+                    Err(crate::mailbox::MessageDeleteError::Unavailable) => "unavailable",
+                    Err(crate::mailbox::MessageDeleteError::Unknown) => "unknown",
+                },
+            ),
+        ),
+        (
             MailboxHelperResponse::MessageFlagOk { request, result },
             Some(MailboxHelperRequest::MessageFlag { .. }),
         ) => logger.emit(
@@ -534,6 +601,8 @@ pub(super) fn log_helper_response(
 #[cfg(unix)]
 fn helper_operation_label(request: &MailboxHelperRequest) -> &'static str {
     match request {
+        MailboxHelperRequest::RetentionStatus { .. } => "retention_status",
+        MailboxHelperRequest::MessageDelete { .. } => "message_delete",
         MailboxHelperRequest::MessageFlag { .. } => "message_flag",
         MailboxHelperRequest::FolderCreate { .. } => "folder_create",
         MailboxHelperRequest::FolderMetadata { .. } => "folder_metadata",

@@ -264,7 +264,9 @@ impl MailboxBackend for MailboxHelperMailboxListBackend {
             })?;
 
             match response {
-                MailboxHelperResponse::FolderCreateOk { .. }
+                MailboxHelperResponse::RetentionStatus { .. }
+                | MailboxHelperResponse::MessageDelete { .. }
+                | MailboxHelperResponse::FolderCreateOk { .. }
                 | MailboxHelperResponse::FolderMetadataOk { .. }
                 | MailboxHelperResponse::MailboxStatusOk { .. }
                 | MailboxHelperResponse::MessageFlagOk { .. }
@@ -419,7 +421,9 @@ impl MessageListBackend for MailboxHelperMessageListBackend {
             })?;
 
             match response {
-                MailboxHelperResponse::FolderCreateOk { .. }
+                MailboxHelperResponse::RetentionStatus { .. }
+                | MailboxHelperResponse::MessageDelete { .. }
+                | MailboxHelperResponse::FolderCreateOk { .. }
                 | MailboxHelperResponse::FolderMetadataOk { .. }
                 | MailboxHelperResponse::MailboxStatusOk { .. }
                 | MailboxHelperResponse::MessageFlagOk { .. }
@@ -584,7 +588,9 @@ impl MessageSearchBackend for MailboxHelperMessageSearchBackend {
             })?;
 
             match response {
-                MailboxHelperResponse::FolderCreateOk { .. }
+                MailboxHelperResponse::RetentionStatus { .. }
+                | MailboxHelperResponse::MessageDelete { .. }
+                | MailboxHelperResponse::FolderCreateOk { .. }
                 | MailboxHelperResponse::FolderMetadataOk { .. }
                 | MailboxHelperResponse::MailboxStatusOk { .. }
                 | MailboxHelperResponse::MessageFlagOk { .. }
@@ -864,7 +870,9 @@ impl MessageViewBackend for MailboxHelperMessageViewBackend {
             })?;
 
             match response {
-                MailboxHelperResponse::FolderCreateOk { .. }
+                MailboxHelperResponse::RetentionStatus { .. }
+                | MailboxHelperResponse::MessageDelete { .. }
+                | MailboxHelperResponse::FolderCreateOk { .. }
                 | MailboxHelperResponse::FolderMetadataOk { .. }
                 | MailboxHelperResponse::MailboxStatusOk { .. }
                 | MailboxHelperResponse::MessageFlagOk { .. }
@@ -1014,7 +1022,9 @@ impl MailboxHelperAttachmentDownloadBackend {
             .map_err(transport_error)?;
 
             match response {
-                MailboxHelperResponse::FolderCreateOk { .. }
+                MailboxHelperResponse::RetentionStatus { .. }
+                | MailboxHelperResponse::MessageDelete { .. }
+                | MailboxHelperResponse::FolderCreateOk { .. }
                 | MailboxHelperResponse::FolderMetadataOk { .. }
                 | MailboxHelperResponse::MailboxStatusOk { .. }
                 | MailboxHelperResponse::MessageFlagOk { .. }
@@ -1310,7 +1320,9 @@ impl MessageAppendBackend for MailboxHelperMessageAppendBackend {
             })?;
 
             match response {
-                MailboxHelperResponse::FolderCreateOk { .. }
+                MailboxHelperResponse::RetentionStatus { .. }
+                | MailboxHelperResponse::MessageDelete { .. }
+                | MailboxHelperResponse::FolderCreateOk { .. }
                 | MailboxHelperResponse::FolderMetadataOk { .. }
                 | MailboxHelperResponse::MailboxStatusOk { .. }
                 | MailboxHelperResponse::MessageFlagOk { .. }

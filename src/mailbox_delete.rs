@@ -70,6 +70,11 @@ impl MessageDeleteRequest {
 }
 
 pub trait MessageDeleteBackend {
+    /// Helper-owned authority, never inferred from the browser's Bin preference.
+    fn retention_status(&self, _account: &str, _mailbox: &str) -> RetentionDecision {
+        RetentionDecision::Unavailable
+    }
+
     fn delete_message(
         &self,
         authenticated_account: &str,
@@ -217,6 +222,10 @@ impl<E: CommandExecutor> DoveadmMessageDeleteBackend<E> {
     }
 }
 impl<E: CommandExecutor> MessageDeleteBackend for DoveadmMessageDeleteBackend<E> {
+    fn retention_status(&self, account: &str, mailbox: &str) -> RetentionDecision {
+        DoveadmMessageDeleteBackend::retention_status(self, account, mailbox)
+    }
+
     fn delete_message(
         &self,
         authenticated_account: &str,

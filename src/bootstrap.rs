@@ -310,6 +310,8 @@ mod tests {
             mailbox_helper_grant_key_path: Some(PathBuf::from(
                 "/var/lib/osmap/secrets/mailbox-helper-grant.key",
             )),
+            mailbox_helper_peer_uid: None,
+            mailbox_retention_policy_path: None,
             openbsd_confinement_mode: crate::config::OpenbsdConfinementMode::Disabled,
             state_root: PathBuf::from("/var/lib/osmap"),
             log_level: LogLevel::Info,

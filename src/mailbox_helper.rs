@@ -24,6 +24,9 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 #[path = "mailbox_helper_client.rs"]
 mod mailbox_helper_client;
+#[path = "mailbox_helper_delete.rs"]
+mod mailbox_helper_delete;
+pub use self::mailbox_helper_delete::MailboxHelperMessageDeleteBackend;
 #[path = "mailbox_helper_flags.rs"]
 mod mailbox_helper_flags;
 pub use self::mailbox_helper_flags::MailboxHelperMessageFlagBackend;
@@ -38,7 +41,9 @@ pub use self::mailbox_helper_client::{
     MailboxHelperMessageMoveBackend, MailboxHelperMessageSearchBackend,
     MailboxHelperMessageViewBackend,
 };
-use self::mailbox_helper_dispatch::{dispatch_helper_request, log_helper_response, HelperBackends};
+use self::mailbox_helper_dispatch::{
+    dispatch_helper_request_with_delete, log_helper_response, HelperBackends,
+};
 #[cfg(test)]
 use self::mailbox_helper_protocol::issue_request_grant_with_nonce;
 use self::mailbox_helper_protocol::{
@@ -188,8 +193,20 @@ pub fn run_mailbox_helper_server(config: &AppConfig, logger: &Logger) -> Result<
         );
         let message_flag_backend = Arc::new(
             DoveadmMessageFlagBackend::new(SystemCommandExecutor, "/usr/local/bin/doveadm")
-                .with_operation_gate(mutation_gate)
+                .with_operation_gate(Arc::clone(&mutation_gate))
                 .with_userdb_socket_path(config.doveadm_userdb_socket_path.clone()),
+        );
+        let message_delete_backend = Arc::new(
+            crate::mailbox::DoveadmMessageDeleteBackend::new(
+                SystemCommandExecutor,
+                "/usr/local/bin/doveadm",
+                crate::mailbox::FileMailboxRetentionPolicy::new(
+                    config.mailbox_retention_policy_path.clone(),
+                    0,
+                ),
+            )
+            .with_operation_gate(mutation_gate)
+            .with_userdb_socket_path(config.doveadm_userdb_socket_path.clone()),
         );
         let message_append_backend = Arc::new(
             DoveadmMessageAppendBackend::new(SystemCommandExecutor, "/usr/local/bin/doveadm")
@@ -246,6 +263,7 @@ pub fn run_mailbox_helper_server(config: &AppConfig, logger: &Logger) -> Result<
                     let message_move_backend = Arc::clone(&message_move_backend);
                     let message_append_backend = Arc::clone(&message_append_backend);
                     let message_flag_backend = Arc::clone(&message_flag_backend);
+                    let message_delete_backend = Arc::clone(&message_delete_backend);
                     let replay_cache = Arc::clone(&replay_cache);
                     let trusted_caller_policy = trusted_caller_policy.clone();
                     let worker_logger = logger.clone();
@@ -253,7 +271,7 @@ pub fn run_mailbox_helper_server(config: &AppConfig, logger: &Logger) -> Result<
                         .name("osmap-mailbox-helper".to_string())
                         .spawn(move || {
                             let _slot = slot;
-                            handle_helper_client(
+                            handle_helper_client_with_delete(
                                 HelperBackends {
                                     mailbox_backend: mailbox_backend.as_ref(),
                                     message_list_backend: message_list_backend.as_ref(),
@@ -263,6 +281,7 @@ pub fn run_mailbox_helper_server(config: &AppConfig, logger: &Logger) -> Result<
                                     message_append_backend: message_append_backend.as_ref(),
                                     message_flag_backend: message_flag_backend.as_ref(),
                                 },
+                                Some(message_delete_backend.as_ref()),
                                 &worker_logger,
                                 &mut stream,
                                 policy,
@@ -298,9 +317,38 @@ pub fn run_mailbox_helper_server(config: &AppConfig, logger: &Logger) -> Result<
     }
 }
 
-#[cfg(unix)]
+#[cfg(all(test, unix))]
 fn handle_helper_client<MB, MLB, MSB, MVB, MMB, MAB, MFB>(
     backends: HelperBackends<'_, MB, MLB, MSB, MVB, MMB, MAB, MFB>,
+    logger: &Logger,
+    stream: &mut UnixStream,
+    policy: MailboxHelperPolicy,
+    trusted_caller_policy: MailboxHelperTrustedCallerPolicy,
+    replay_cache: &Mutex<BTreeMap<String, u64>>,
+) where
+    MB: MailboxBackend,
+    MLB: MessageListBackend,
+    MSB: MessageSearchBackend,
+    MVB: MessageViewBackend,
+    MMB: MessageMoveBackend,
+    MAB: MessageAppendBackend,
+    MFB: MessageFlagBackend,
+{
+    handle_helper_client_with_delete(
+        backends,
+        None,
+        logger,
+        stream,
+        policy,
+        trusted_caller_policy,
+        replay_cache,
+    );
+}
+
+#[cfg(unix)]
+fn handle_helper_client_with_delete<MB, MLB, MSB, MVB, MMB, MAB, MFB>(
+    backends: HelperBackends<'_, MB, MLB, MSB, MVB, MMB, MAB, MFB>,
+    delete_backend: Option<&dyn crate::mailbox::MessageDeleteBackend>,
     logger: &Logger,
     stream: &mut UnixStream,
     policy: MailboxHelperPolicy,
@@ -379,7 +427,7 @@ fn handle_helper_client<MB, MLB, MSB, MVB, MMB, MAB, MFB>(
         return;
     }
 
-    let response = dispatch_helper_request(backends, &request);
+    let response = dispatch_helper_request_with_delete(backends, delete_backend, &request);
 
     let _ = write_response(stream, &response);
     log_helper_response(logger, &response, Some(&request));
@@ -638,6 +686,12 @@ fn remove_stale_socket_if_needed(socket_path: &Path) -> Result<(), String> {
 
 #[cfg(test)]
 mod tests {
+    #[cfg(unix)]
+    mod delete_tests {
+        use super::*;
+        include!("mailbox_helper_delete_tests.rs");
+    }
+
     #[cfg(unix)]
     mod native_reader_tests {
         include!("mailbox_helper_native_reader_tests.rs");
@@ -1264,6 +1318,8 @@ mod tests {
             doveadm_auth_socket_path: Some(socket_path.clone()),
             trusted_web_runtime_uid: Some(test_runtime_uid()),
             doveadm_userdb_socket_path: None,
+            mailbox_helper_peer_uid: None,
+            mailbox_retention_policy_path: None,
             mailbox_helper_socket_path: Some(temp_root.join("mailbox-helper.sock")),
             mailbox_helper_grant_key_path: Some(grant_key_path),
             state_root: temp_root.clone(),
@@ -1345,6 +1401,8 @@ mod tests {
             doveadm_auth_socket_path: Some(socket_path.clone()),
             trusted_web_runtime_uid: Some(mismatched_uid),
             doveadm_userdb_socket_path: None,
+            mailbox_helper_peer_uid: None,
+            mailbox_retention_policy_path: None,
             mailbox_helper_socket_path: Some(temp_root.join("mailbox-helper.sock")),
             mailbox_helper_grant_key_path: Some(temp_root.join("mailbox-helper-grant.key")),
             state_root: temp_root.clone(),

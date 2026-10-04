@@ -2,6 +2,8 @@ use super::*;
 
 #[path = "http_gateway_auth.rs"]
 mod http_gateway_auth;
+#[path = "http_gateway_delete.rs"]
+mod http_gateway_delete;
 #[path = "http_gateway_draft.rs"]
 mod http_gateway_draft;
 #[path = "http_gateway_flags.rs"]
@@ -53,6 +55,7 @@ pub struct RuntimeBrowserGateway {
     doveadm_userdb_socket_path: Option<PathBuf>,
     mailbox_helper_socket_path: Option<PathBuf>,
     mailbox_helper_grant_key_path: Option<PathBuf>,
+    mailbox_helper_peer_uid: Option<u32>,
     sendmail_path: PathBuf,
     render_policy: RenderingPolicy,
 }
@@ -134,6 +137,7 @@ impl RuntimeBrowserGateway {
             doveadm_userdb_socket_path: config.doveadm_userdb_socket_path.clone(),
             mailbox_helper_socket_path: config.mailbox_helper_socket_path.clone(),
             mailbox_helper_grant_key_path: config.mailbox_helper_grant_key_path.clone(),
+            mailbox_helper_peer_uid: config.mailbox_helper_peer_uid,
             sendmail_path: PathBuf::from("/usr/sbin/sendmail"),
             render_policy: RenderingPolicy::default(),
         }
@@ -293,6 +297,7 @@ impl RuntimeBrowserGateway {
             doveadm_userdb_socket_path: None,
             mailbox_helper_socket_path: None,
             mailbox_helper_grant_key_path: None,
+            mailbox_helper_peer_uid: None,
             sendmail_path: PathBuf::from("/usr/sbin/sendmail"),
             render_policy: RenderingPolicy::default(),
         }
@@ -300,6 +305,24 @@ impl RuntimeBrowserGateway {
 }
 
 impl BrowserGateway for RuntimeBrowserGateway {
+    fn retention_status(
+        &self,
+        session: &ValidatedSession,
+        mailbox: &str,
+    ) -> crate::mailbox::RetentionDecision {
+        use crate::mailbox::MessageDeleteBackend;
+        self.build_message_delete_backend()
+            .map(|backend| backend.retention_status(&session.record.canonical_username, mailbox))
+            .unwrap_or(crate::mailbox::RetentionDecision::Unavailable)
+    }
+    fn delete_message(
+        &self,
+        context: &AuthenticationContext,
+        session: &ValidatedSession,
+        request: &crate::mailbox::MessageDeleteRequest,
+    ) -> BrowserMessageDeleteOutcome {
+        self.delete_message_impl(context, session, request)
+    }
     fn key_management(
         &self,
         context: &AuthenticationContext,

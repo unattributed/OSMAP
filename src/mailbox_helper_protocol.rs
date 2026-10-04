@@ -29,6 +29,15 @@ use crate::mailbox::{
 /// Supported helper requests for the first mailbox-read slice.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(super) enum MailboxHelperRequest {
+    RetentionStatus {
+        canonical_username: String,
+        mailbox_name: String,
+        grant: MailboxHelperGrant,
+    },
+    MessageDelete {
+        request: crate::mailbox::MessageDeleteRequest,
+        grant: MailboxHelperGrant,
+    },
     FolderCreate {
         request: crate::folder_create::CreateFolderRequest,
         grant: MailboxHelperGrant,
@@ -122,6 +131,17 @@ impl MailboxHelperGrant {
 /// Supported helper responses for the first mailbox-read slice.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) enum MailboxHelperResponse {
+    RetentionStatus {
+        canonical_username: String,
+        mailbox_name: String,
+        decision: crate::mailbox::RetentionDecision,
+        nonce: String,
+    },
+    MessageDelete {
+        request: Box<crate::mailbox::MessageDeleteRequest>,
+        result: Result<crate::mailbox::MessageDeleteResult, crate::mailbox::MessageDeleteError>,
+        nonce: String,
+    },
     FolderCreateOk {
         request: crate::folder_create::CreateFolderRequest,
         outcome: crate::folder_create::Outcome,
@@ -179,6 +199,10 @@ pub(crate) enum MailboxHelperResponse {
 
 pub(super) fn encode_request(request: &MailboxHelperRequest) -> String {
     match request {
+        MailboxHelperRequest::RetentionStatus { canonical_username, mailbox_name, grant } =>
+            format!("operation=retention_status\ncanonical_username_b64={}\nmailbox_name_b64={}\n{}", encode_base64(canonical_username.as_bytes()), encode_base64(mailbox_name.as_bytes()), encode_grant_fields(grant)),
+        MailboxHelperRequest::MessageDelete { request, grant } =>
+            format!("operation=message_delete\n{}{}", encode_delete_fields(request), encode_grant_fields(grant)),
         MailboxHelperRequest::FolderCreate {request,grant} => format!("operation=folder_create\ncanonical_username_b64={}\ncreate_request_b64={}\n{}",encode_base64(request.account().as_bytes()),encode_base64(serde_json::to_string(request).unwrap_or_default().as_bytes()),encode_grant_fields(grant)),
         MailboxHelperRequest::FolderMetadata {canonical_username,grant} => format!("operation=folder_metadata\ncanonical_username_b64={}\n{}",encode_base64(canonical_username.as_bytes()),encode_grant_fields(grant)),
         MailboxHelperRequest::MailboxStatus {canonical_username,mailbox_name,grant} => format!("operation=mailbox_status\ncanonical_username_b64={}\nmailbox_name_b64={}\n{}",encode_base64(canonical_username.as_bytes()),encode_base64(mailbox_name.as_bytes()),encode_grant_fields(grant)),
@@ -282,7 +306,22 @@ pub(super) fn encode_request(request: &MailboxHelperRequest) -> String {
 }
 
 pub(super) fn parse_request(input: &str) -> Result<MailboxHelperRequest, String> {
-    let fields = parse_kv_lines(input)?;
+    let deletion = input.lines().any(|line| {
+        matches!(
+            line,
+            "operation=retention_status" | "operation=message_delete"
+        )
+    });
+    if deletion && input.len() > 4096 {
+        return Err("delete request too large".into());
+    }
+    let fields = parse_kv_lines(input).map_err(|error| {
+        if deletion {
+            "malformed delete request".into()
+        } else {
+            error
+        }
+    })?;
     let operation = require_field(&fields, "operation")?;
     reject_unknown_request_fields(&fields, operation)?;
     let canonical_username = decode_base64_text(
@@ -292,8 +331,33 @@ pub(super) fn parse_request(input: &str) -> Result<MailboxHelperRequest, String>
     )?;
     validate_canonical_username(&canonical_username)?;
     let grant = parse_grant_fields(&fields)?;
+    if deletion && (grant.nonce.is_empty() || grant.nonce.len() > 128) {
+        return Err("invalid delete nonce".into());
+    }
 
     match operation {
+        "retention_status" => {
+            if input.len() > 4096 {
+                return Err("retention request too large".into());
+            }
+            let mailbox_name =
+                decode_base64_text(require_field(&fields, "mailbox_name_b64")?, 255, "mailbox")?;
+            validate_retention_identity(&canonical_username, &mailbox_name)?;
+            Ok(MailboxHelperRequest::RetentionStatus {
+                canonical_username,
+                mailbox_name,
+                grant,
+            })
+        }
+        "message_delete" => {
+            if input.len() > 4096 {
+                return Err("delete request too large".into());
+            }
+            Ok(MailboxHelperRequest::MessageDelete {
+                request: parse_delete_fields(&fields)?,
+                grant,
+            })
+        }
         "folder_create" => {
             let bytes = decode_base64_bytes(
                 require_field(&fields, "create_request_b64")?,
@@ -604,7 +668,9 @@ pub(super) fn verify_request_grant(
 
 pub(super) fn request_grant(request: &MailboxHelperRequest) -> &MailboxHelperGrant {
     match request {
-        MailboxHelperRequest::MessageFlag { grant, .. } => grant,
+        MailboxHelperRequest::RetentionStatus { grant, .. }
+        | MailboxHelperRequest::MessageDelete { grant, .. }
+        | MailboxHelperRequest::MessageFlag { grant, .. } => grant,
         MailboxHelperRequest::FolderCreate { grant, .. }
         | MailboxHelperRequest::FolderMetadata { grant, .. }
         | MailboxHelperRequest::MailboxStatus { grant, .. }
@@ -621,7 +687,9 @@ pub(super) fn request_grant(request: &MailboxHelperRequest) -> &MailboxHelperGra
 
 fn set_request_grant(request: &mut MailboxHelperRequest, new_grant: MailboxHelperGrant) {
     match request {
-        MailboxHelperRequest::MessageFlag { grant, .. } => *grant = new_grant,
+        MailboxHelperRequest::RetentionStatus { grant, .. }
+        | MailboxHelperRequest::MessageDelete { grant, .. }
+        | MailboxHelperRequest::MessageFlag { grant, .. } => *grant = new_grant,
         MailboxHelperRequest::FolderCreate { grant, .. }
         | MailboxHelperRequest::FolderMetadata { grant, .. }
         | MailboxHelperRequest::MailboxStatus { grant, .. }
@@ -638,6 +706,8 @@ fn set_request_grant(request: &mut MailboxHelperRequest, new_grant: MailboxHelpe
 
 pub(super) fn helper_operation_label(request: &MailboxHelperRequest) -> &'static str {
     match request {
+        MailboxHelperRequest::RetentionStatus { .. } => "retention_status",
+        MailboxHelperRequest::MessageDelete { .. } => "message_delete",
         MailboxHelperRequest::MessageFlag { .. } => "message_flag",
         MailboxHelperRequest::FolderCreate { .. } => "folder_create",
         MailboxHelperRequest::FolderMetadata { .. } => "folder_metadata",
@@ -694,6 +764,19 @@ fn canonical_grant_payload(request: &MailboxHelperRequest, grant: &MailboxHelper
         grant.nonce.clone(),
     ];
     match request {
+        MailboxHelperRequest::RetentionStatus {
+            canonical_username,
+            mailbox_name,
+            ..
+        } => fields.extend([canonical_username.clone(), mailbox_name.clone()]),
+        MailboxHelperRequest::MessageDelete { request, .. } => fields.extend([
+            request.canonical_username.clone(),
+            request.mailbox_name.clone(),
+            request.uid.to_string(),
+            request.version.mailbox_guid.clone(),
+            request.version.message_guid.clone(),
+            request.policy_revision.to_string(),
+        ]),
         MailboxHelperRequest::FolderCreate { request, .. } => fields.extend([
             request.account().into(),
             request.parent().into(),
@@ -854,6 +937,16 @@ fn parse_grant_fields(fields: &BTreeMap<String, String>) -> Result<MailboxHelper
 
 pub(crate) fn encode_response(response: &MailboxHelperResponse) -> String {
     match response {
+        MailboxHelperResponse::RetentionStatus { canonical_username, mailbox_name, decision, nonce } => {
+            let (state,revision) = match decision {
+                crate::mailbox::RetentionDecision::Allowed { revision } => ("allowed", *revision),
+                crate::mailbox::RetentionDecision::Denied => ("denied", 0),
+                crate::mailbox::RetentionDecision::Unavailable => ("unavailable", 0),
+            };
+            format!("operation=retention_status\ncanonical_username_b64={}\nmailbox_name_b64={}\nretention_state={}\npolicy_revision={}\nrequest_nonce={}\n", encode_base64(canonical_username.as_bytes()), encode_base64(mailbox_name.as_bytes()), state, revision, nonce)
+        }
+        MailboxHelperResponse::MessageDelete { request, result, nonce } =>
+            format!("operation=message_delete\n{}delete_result={}\nrequest_nonce={}\n", encode_delete_fields(request), delete_result_value(*result), nonce),
         MailboxHelperResponse::FolderCreateOk {request,outcome}=>format!("status=ok\noperation=folder_create\ncreate_request_b64={}\ncreate_outcome_b64={}\n",encode_base64(serde_json::to_string(request).unwrap_or_default().as_bytes()),encode_base64(serde_json::to_string(outcome).unwrap_or_default().as_bytes())),
         MailboxHelperResponse::FolderMetadataOk {snapshot} => format!("status=ok\noperation=folder_metadata\ncanonical_username_b64={}\ntranscript_b64={}\n",encode_base64(snapshot.account().as_bytes()),encode_base64(snapshot.transcript())),
         MailboxHelperResponse::MailboxStatusOk {status} => format!("status=ok\noperation=mailbox_status\nmailbox_name_b64={}\nstatus_guid={}\nstatus_messages={}\nstatus_vsize={}\n",encode_base64(status.mailbox().as_bytes()),status.guid(),status.messages(),status.virtual_bytes()),
@@ -1054,6 +1147,14 @@ pub(super) fn parse_response(
     message_view_policy: MessageViewPolicy,
     input: &str,
 ) -> Result<MailboxHelperResponse, String> {
+    if input.lines().any(|line| {
+        matches!(
+            line,
+            "operation=retention_status" | "operation=message_delete"
+        )
+    }) {
+        return parse_delete_response(input);
+    }
     if input
         .lines()
         .any(|line| line == "operation=message_search_batch")
@@ -1497,6 +1598,28 @@ fn reject_unknown_request_fields(
     operation: &str,
 ) -> Result<(), String> {
     let allowed: &[&str] = match operation {
+        "retention_status" => &[
+            "operation",
+            "canonical_username_b64",
+            "mailbox_name_b64",
+            "grant_issued_at",
+            "grant_expires_at",
+            "grant_nonce",
+            "grant_signature",
+        ],
+        "message_delete" => &[
+            "operation",
+            "canonical_username_b64",
+            "mailbox_name_b64",
+            "delete_uid",
+            "delete_mailbox_guid",
+            "delete_message_guid_b64",
+            "policy_revision",
+            "grant_issued_at",
+            "grant_expires_at",
+            "grant_nonce",
+            "grant_signature",
+        ],
         "message_flag" => &[
             "operation",
             "canonical_username_b64",
@@ -2584,6 +2707,158 @@ fn parse_search_batch_response(
         query,
         field,
         results,
+    })
+}
+
+fn validate_retention_identity(account: &str, mailbox: &str) -> Result<(), String> {
+    crate::identity::CanonicalUsername::parse(account).map_err(|_| "invalid retention account")?;
+    if account.contains(['*', '?']) {
+        return Err("invalid retention account".into());
+    }
+    crate::bin_folder::parse_mailbox_name(mailbox).map_err(|_| "invalid retention folder")?;
+    Ok(())
+}
+fn encode_delete_fields(request: &crate::mailbox::MessageDeleteRequest) -> String {
+    format!("canonical_username_b64={}\nmailbox_name_b64={}\ndelete_uid={}\ndelete_mailbox_guid={}\ndelete_message_guid_b64={}\npolicy_revision={}\n",
+        encode_base64(request.canonical_username.as_bytes()), encode_base64(request.mailbox_name.as_bytes()),
+        request.uid,request.version.mailbox_guid,encode_base64(request.version.message_guid.as_bytes()),request.policy_revision)
+}
+fn canonical_u64(fields: &BTreeMap<String, String>, name: &str) -> Result<u64, String> {
+    let raw = require_field(fields, name)?;
+    let value = raw.parse::<u64>().map_err(|_| "invalid integer")?;
+    if value.to_string() != raw {
+        return Err("noncanonical integer".into());
+    }
+    Ok(value)
+}
+fn parse_delete_fields(
+    fields: &BTreeMap<String, String>,
+) -> Result<crate::mailbox::MessageDeleteRequest, String> {
+    let account = decode_base64_text(
+        require_field(fields, "canonical_username_b64")?,
+        crate::auth::DEFAULT_USERNAME_MAX_LEN,
+        "account",
+    )?;
+    let mailbox = decode_base64_text(require_field(fields, "mailbox_name_b64")?, 255, "mailbox")?;
+    let version = MessageVersion::new(
+        require_field(fields, "delete_mailbox_guid")?.into(),
+        decode_base64_text(
+            require_field(fields, "delete_message_guid_b64")?,
+            MAX_MESSAGE_GUID_BYTES,
+            "message GUID",
+        )?,
+    )
+    .map_err(|_| "invalid delete identity")?;
+    crate::mailbox::MessageDeleteRequest::new(
+        account,
+        mailbox,
+        canonical_u64(fields, "delete_uid")?,
+        version,
+        canonical_u64(fields, "policy_revision")?,
+    )
+    .map_err(|_| "invalid delete request".into())
+}
+fn delete_result_value(
+    result: Result<crate::mailbox::MessageDeleteResult, crate::mailbox::MessageDeleteError>,
+) -> &'static str {
+    use crate::mailbox::{MessageDeleteError as E, MessageDeleteResult as R};
+    match result {
+        Ok(R::Deleted) => "deleted",
+        Err(E::Invalid) => "invalid",
+        Err(E::Stale) => "stale",
+        Err(E::PolicyDenied) => "policy_denied",
+        Err(E::PolicyUnavailable) => "policy_unavailable",
+        Err(E::Busy) => "busy",
+        Err(E::Unavailable) => "unavailable",
+        Err(E::Unknown) => "unknown",
+    }
+}
+fn parse_delete_result(
+    raw: &str,
+) -> Result<Result<crate::mailbox::MessageDeleteResult, crate::mailbox::MessageDeleteError>, String>
+{
+    use crate::mailbox::{MessageDeleteError as E, MessageDeleteResult as R};
+    Ok(match raw {
+        "deleted" => Ok(R::Deleted),
+        "invalid" => Err(E::Invalid),
+        "stale" => Err(E::Stale),
+        "policy_denied" => Err(E::PolicyDenied),
+        "policy_unavailable" => Err(E::PolicyUnavailable),
+        "busy" => Err(E::Busy),
+        "unavailable" => Err(E::Unavailable),
+        "unknown" => Err(E::Unknown),
+        _ => return Err("invalid delete result".into()),
+    })
+}
+fn parse_delete_response(input: &str) -> Result<MailboxHelperResponse, String> {
+    if input.len() > 4096 {
+        return Err("delete response too large".into());
+    }
+    let fields = parse_kv_lines(input)?;
+    let operation = require_field(&fields, "operation")?;
+    let allowed: &[&str] = match operation {
+        "retention_status" => &[
+            "operation",
+            "canonical_username_b64",
+            "mailbox_name_b64",
+            "retention_state",
+            "policy_revision",
+            "request_nonce",
+        ],
+        "message_delete" => &[
+            "operation",
+            "canonical_username_b64",
+            "mailbox_name_b64",
+            "delete_uid",
+            "delete_mailbox_guid",
+            "delete_message_guid_b64",
+            "policy_revision",
+            "delete_result",
+            "request_nonce",
+        ],
+        _ => return Err("invalid delete operation".into()),
+    };
+    if fields.len() != allowed.len() || fields.keys().any(|key| !allowed.contains(&key.as_str())) {
+        return Err("invalid delete response fields".into());
+    }
+    let nonce = require_field(&fields, "request_nonce")?;
+    if nonce.is_empty()
+        || nonce.len() > 128
+        || !nonce
+            .bytes()
+            .all(|b| b.is_ascii_hexdigit() && !b.is_ascii_uppercase())
+    {
+        return Err("invalid response nonce".into());
+    }
+    if operation == "message_delete" {
+        return Ok(MailboxHelperResponse::MessageDelete {
+            request: Box::new(parse_delete_fields(&fields)?),
+            result: parse_delete_result(require_field(&fields, "delete_result")?)?,
+            nonce: nonce.into(),
+        });
+    }
+    let canonical_username = decode_base64_text(
+        require_field(&fields, "canonical_username_b64")?,
+        crate::auth::DEFAULT_USERNAME_MAX_LEN,
+        "account",
+    )?;
+    let mailbox_name =
+        decode_base64_text(require_field(&fields, "mailbox_name_b64")?, 255, "mailbox")?;
+    validate_retention_identity(&canonical_username, &mailbox_name)?;
+    let revision = canonical_u64(&fields, "policy_revision")?;
+    let decision = match (require_field(&fields, "retention_state")?, revision) {
+        ("allowed", revision) if revision > 0 => {
+            crate::mailbox::RetentionDecision::Allowed { revision }
+        }
+        ("denied", 0) => crate::mailbox::RetentionDecision::Denied,
+        ("unavailable", 0) => crate::mailbox::RetentionDecision::Unavailable,
+        _ => return Err("invalid retention decision".into()),
+    };
+    Ok(MailboxHelperResponse::RetentionStatus {
+        canonical_username,
+        mailbox_name,
+        decision,
+        nonce: nonce.into(),
     })
 }
 

@@ -8293,3 +8293,28 @@ policy file follows a deliberately writable gate TMPDIR ancestor and correctly
 fails the production trust checks. Move only owned positive fixtures to canonical
 sticky-root /tmp, following existing inventory tests. Preserve the production
 checks and retain the failed aggregate result alongside the corrected run.
+
+### 2026-10-04 UTC — Authenticate deletion through the existing helper and quota
+
+Keep the exact native deletion backend behind the configured Unix helper, with
+explicit peer UID, signed complete identity/policy tuple, replay checks and exact
+nonce/target reply echo. Retain finite refusal versus uncertain completion; never
+retry a possibly dispatched delete. Missing configuration has no native fallback.
+Use the existing mutation quota and shared helper move/flag gate. Add optional
+root-owned retention-file configuration and its explicit helper-only read rule;
+do not infer permission from Bin preference, public form fields, age or flags.
+
+The actual obsd1 helper/Dovecot fixture proves one exact deletion and surrounding
+mail preservation. Existing reader/Bin mutation guards remain unchanged. Backend
+and helper evidence cannot substitute for browser confirmation, bounded bulk,
+matching installed behavior or human UAT; these remain open. Fix actual Clippy
+size/placement defects and refresh the changed V10 inventory rather than relaxing
+checks. Source code and executable results must accompany each signed checkpoint.
+
+Actual aggregate testing catches the new test detector's shell and direct-process
+patterns. Replace them with a bounded existing executor and a harmless Python
+fixture, including an executed positive control before asserting no fallback.
+Retain failed runs and requalify matching native inputs after each fixture change.
+Index the new deployment document through the existing documentation mechanism.
+Final acceptance/security/v14 and current-input native helper results pass; no
+checks were weakened to accept this checkpoint.

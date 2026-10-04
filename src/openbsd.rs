@@ -424,6 +424,11 @@ impl OpenbsdConfinementPlan {
                     add_parent_dir_rules(&mut rules, grant_key_path);
                 }
 
+                if let Some(policy_path) = &config.mailbox_retention_policy_path {
+                    add_rule(&mut rules, policy_path, "r");
+                    add_parent_dir_rules(&mut rules, policy_path);
+                }
+
                 Self {
                     promises_before_lock: OPENBSD_HELPER_PROMISES_BEFORE_LOCK,
                     promises_after_lock: OPENBSD_HELPER_PROMISES_AFTER_LOCK,
@@ -844,6 +849,8 @@ mod tests {
             doveadm_userdb_socket_path: None,
             mailbox_helper_socket_path: None,
             mailbox_helper_grant_key_path: None,
+            mailbox_helper_peer_uid: None,
+            mailbox_retention_policy_path: None,
             state_root: PathBuf::from("/var/lib/osmap"),
             log_level: LogLevel::Info,
             log_format: LogFormat::Text,
@@ -882,6 +889,31 @@ mod tests {
             message_move_throttle_lockout_seconds: 900,
             openbsd_confinement_mode: mode,
         }
+    }
+
+    #[test]
+    fn retention_policy_is_added_read_only_in_helper_plan_only() {
+        let mut config = config_fixture(OpenbsdConfinementMode::Enforce);
+        let policy = PathBuf::from("/var/db/osmap-retention/policy.json");
+        config.mailbox_retention_policy_path = Some(policy.clone());
+        let web = OpenbsdConfinementPlan::from_config(&config);
+        assert!(!web.unveil_rules.iter().any(|rule| rule.path == policy));
+        config.run_mode = AppRunMode::MailboxHelper;
+        let helper = OpenbsdConfinementPlan::from_config(&config);
+        assert!(helper
+            .unveil_rules
+            .iter()
+            .any(|rule| rule.path == policy && rule.permissions == "r"));
+        assert!(helper.unveil_rules.iter().any(|rule| rule.path
+            == Path::new("/var/db/osmap-retention")
+            && rule.permissions == "r"));
+        assert_eq!(
+            helper.promises_after_lock,
+            OPENBSD_HELPER_PROMISES_AFTER_LOCK
+        );
+        config.mailbox_retention_policy_path = None;
+        let absent = OpenbsdConfinementPlan::from_config(&config);
+        assert!(!absent.unveil_rules.iter().any(|rule| rule.path == policy));
     }
 
     #[test]
