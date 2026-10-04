@@ -14,6 +14,10 @@ pub(crate) enum SubmissionResult {
         draft_cleanup_confirmed: bool,
         receipt_persisted: bool,
     },
+    AcceptedWithoutSentCopy {
+        draft_cleanup_confirmed: bool,
+        receipt_persisted: bool,
+    },
     Unconfirmed,
     Paused,
 }
@@ -37,7 +41,7 @@ pub(crate) fn render(model: &ComposeResultModel<'_>) -> TrustedHtml {
     let (heading, explanation) = match model.result {
         SubmissionResult::AlreadyRecorded => ("This intent already has a recorded action", "No new save or submission was started. The current form text and files shown below may differ from the recorded action. Inspect the existing receipt in a new tab to compare; do not retry this form."),
         SubmissionResult::RecoveryRefused { capacity } => ("Submission was not invoked", if capacity { "The combined draft and attempt-recovery storage limit was reached. Submission was not invoked. This intent remains paused; do not retry or recreate this message automatically." } else { "The exact attempt recovery copy could not be confirmed. Submission was not invoked. This intent remains paused; do not retry or recreate this message automatically." }),
-        SubmissionResult::Accepted { .. } => (
+        SubmissionResult::Accepted { .. } | SubmissionResult::AcceptedWithoutSentCopy { .. } => (
             "Message accepted for submission",
             "The mail system accepted this message for submission. This does not confirm delivery. Do not send this message again to repair its Sent copy or remove its draft.",
         ),
@@ -79,6 +83,22 @@ pub(crate) fn render(model: &ComposeResultModel<'_>) -> TrustedHtml {
                 "<p>Removal of the saved draft could not be confirmed. It may still appear in Drafts. Do not send it again.</p>"
             } else {
                 "<p>The saved draft is no longer present.</p>"
+            });
+        }
+    } else if let SubmissionResult::AcceptedWithoutSentCopy {
+        draft_cleanup_confirmed,
+        receipt_persisted,
+    } = model.result
+    {
+        details.push_str("<p>Sent copy was not requested for this attempt. No Sent append was invoked. This does not confirm delivery.</p>");
+        if !receipt_persisted {
+            details.push_str("<p>Submission acceptance is known, but receipt persistence could not be confirmed. Do not retry.</p>");
+        }
+        if model.draft_id.is_some() {
+            details.push_str(if draft_cleanup_confirmed {
+                "<p>The saved draft is no longer present.</p>"
+            } else {
+                "<p>Removal of the saved draft could not be confirmed. It may still appear in Drafts. Do not send it again.</p>"
             });
         }
     } else if model.draft_id.is_some() {
@@ -147,6 +167,14 @@ mod tests {
     fn recovery_retains_exact_escaped_text_without_a_send_action() {
         let text = "</textarea><script>private & synthetic</script>\n🦊";
         for result in [
+            SubmissionResult::AcceptedWithoutSentCopy {
+                draft_cleanup_confirmed: false,
+                receipt_persisted: false,
+            },
+            SubmissionResult::AcceptedWithoutSentCopy {
+                draft_cleanup_confirmed: true,
+                receipt_persisted: true,
+            },
             SubmissionResult::AlreadyRecorded,
             SubmissionResult::RecoveryRefused { capacity: false },
             SubmissionResult::RecoveryRefused { capacity: true },
@@ -192,6 +220,13 @@ mod tests {
             assert!(!html.contains("Send Message"));
             assert!(!html.contains("Nothing was sent"));
             assert!(html.contains("Do not reload or resubmit"));
+            if matches!(result, SubmissionResult::AcceptedWithoutSentCopy { .. }) {
+                assert!(html.contains("Sent copy was not requested for this attempt"));
+                assert!(html.contains("No Sent append was invoked"));
+                assert!(!html.contains("Sent-copy storage could not be confirmed"));
+                assert!(!html.contains("A copy was stored in Sent"));
+                assert!(html.contains("does not confirm delivery"));
+            }
         }
     }
 }

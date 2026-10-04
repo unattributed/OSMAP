@@ -128,6 +128,11 @@ pub(super) fn journal_send_decision(
 ) -> BrowserSendDecision {
     match result {
         Ok(crate::send_journal::JournalResult {
+            outcome: crate::send_journal::AttemptOutcome::AcceptedWithoutSentCopy,
+            receipt_persisted,
+            ..
+        }) => BrowserSendDecision::SubmittedWithoutSentCopy { receipt_persisted },
+        Ok(crate::send_journal::JournalResult {
             outcome: crate::send_journal::AttemptOutcome::RecoveryRefused { capacity },
             ..
         }) => BrowserSendDecision::RecoveryRefused { capacity },
@@ -826,11 +831,12 @@ impl RuntimeBrowserGateway {
         let mut preparation_events = Vec::new();
         let mut dispatch_events = Vec::new();
         let prepared_wire = std::cell::RefCell::new(None);
-        let result = journal.execute_prepared(
+        let result = journal.execute_prepared_with_sent_copy(
             account,
             send_request.send_intent,
             now,
-            |consumed| {
+            |captured_copy| {
+                let consumed = captured_copy.is_some();
                 // The journal account lock is already held. Recheck persisted
                 // revision here, after any concurrent save has completed.
                 let mut sender_identity = None;
@@ -958,9 +964,21 @@ impl RuntimeBrowserGateway {
                         })?;
                     *prepared_wire.borrow_mut() = Some(prepared);
                 }
-                Ok(request)
+                let save_sent = match captured_copy {
+                    Some(choice) => choice,
+                    None => {
+                        crate::sent_copy::Store::new(&self.settings_dir)
+                            .load(account)
+                            .map_err(|_| BrowserSendDecision::Denied {
+                                public_reason: "sent_copy_preference_unavailable".into(),
+                                retry_after_seconds: None,
+                            })?
+                            .save_sent
+                    }
+                };
+                Ok((request, save_sent))
             },
-            |request| {
+            |request, save_sent| {
                 let recovery = crate::send_recovery::SendRecovery::new(
                     self.settings_dir.join("send-recovery"),
                 );
@@ -1013,13 +1031,26 @@ impl RuntimeBrowserGateway {
 
                 match decision {
                     SubmissionDecision::Submitted { .. } => {
-                        let (sent_copy_stored, sent_copy_event) = store_prepared_sent_copy(
-                            context,
-                            &validated_session.record.canonical_username,
-                            &request,
-                            &prepared,
-                            append,
-                        );
+                        let (sent_copy_stored, sent_copy_event) = if save_sent {
+                            store_prepared_sent_copy(
+                                context,
+                                &validated_session.record.canonical_username,
+                                &request,
+                                &prepared,
+                                append,
+                            )
+                        } else {
+                            (
+                                false,
+                                LogEvent::new(
+                                    LogLevel::Info,
+                                    EventCategory::Submission,
+                                    "sent_copy_not_requested",
+                                    "outbound message accepted; no Sent copy requested",
+                                )
+                                .with_field("request_id", context.request_id.clone()),
+                            )
+                        };
                         dispatch_events.push(sent_copy_event);
 
                         match throttle_service.record_submission(
@@ -1037,7 +1068,11 @@ impl RuntimeBrowserGateway {
                             ),
                         }
 
-                        crate::send_journal::AttemptOutcome::Accepted { sent_copy_stored }
+                        if save_sent {
+                            crate::send_journal::AttemptOutcome::Accepted { sent_copy_stored }
+                        } else {
+                            crate::send_journal::AttemptOutcome::AcceptedWithoutSentCopy
+                        }
                     }
                     SubmissionDecision::Unconfirmed { .. } | SubmissionDecision::Denied { .. } => {
                         crate::send_journal::AttemptOutcome::Unconfirmed
@@ -1270,6 +1305,7 @@ mod tests {
     mod journal_integration {
         use super::*;
         include!("http/send_gateway_journal_tests.rs");
+        include!("http/sent_copy_gateway_tests.rs");
     }
     mod protected_send {
         use super::*;

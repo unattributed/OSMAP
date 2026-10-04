@@ -137,6 +137,7 @@ fn receipt_copy(
     decision: &Result<Option<BrowserSendDecision>, String>,
 ) -> (u16, &'static str, String, Option<String>) {
     match decision {
+            Ok(Some(BrowserSendDecision::SubmittedWithoutSentCopy { receipt_persisted })) => (200, "Message accepted for submission", format!("Submission acceptance is known. Delivery is not confirmed. Sent copy was not requested for this attempt. No Sent append was invoked. {} Do not send again to create a copy or repair draft cleanup.", if *receipt_persisted { "The outcome record was saved." } else { "Saving the outcome record could not be confirmed." }), None),
         Ok(Some(BrowserSendDecision::RecoveryRefused { capacity })) => (200, "Submission was not invoked", if *capacity { "The combined draft and attempt-recovery limit was reached. Submission was not invoked; this intent remains paused. Do not retry automatically." } else { "Attempt recovery was not confirmed. Submission was not invoked; this intent remains paused. Do not retry automatically." }.into(), None),
             Ok(Some(BrowserSendDecision::Submitted { sent_copy_stored: true, receipt_persisted: true })) => (200, "Message submitted", "The mail server accepted your message. A copy was saved in Sent. Delivery to the recipient is not yet confirmed.".into(), None),
             Ok(Some(BrowserSendDecision::Submitted { sent_copy_stored, receipt_persisted })) => (200, "Message accepted for submission", format!("Submission acceptance is known. Delivery is not confirmed. {} {} Do not send again to repair Sent or draft cleanup. The outcome record and retained message snapshot are separate. Open recovery details only if needed to reconcile this attempt.", if *sent_copy_stored { "A copy was stored in Sent." } else { "Sent-copy storage could not be confirmed; the copy may be missing or already present." }, if *receipt_persisted { "The outcome record was saved." } else { "Saving the outcome record could not be confirmed." }), None),
@@ -297,4 +298,32 @@ fn prepared_reply_metadata_and_formatted_source_are_literal() {
         assert!(html.contains(expected));
     }
     assert!(!html.contains("<strong>") && !html.contains("action=\"/send\""));
+}
+
+#[cfg(test)]
+mod sent_copy_tests {
+    use super::*;
+    #[test]
+    fn sent_copy_receipt_distinguishes_not_requested_from_failed_append_and_unknown_submission() {
+        let (status, _, message, _) =
+            receipt_copy(&Ok(Some(BrowserSendDecision::SubmittedWithoutSentCopy {
+                receipt_persisted: true,
+            })));
+        assert_eq!(status, 200);
+        assert!(message.contains("Sent copy was not requested"));
+        assert!(message.contains("No Sent append was invoked"));
+        assert!(message.contains("Delivery is not confirmed"));
+        assert!(!message.contains("storage could not be confirmed"));
+        let (_, _, failed, _) = receipt_copy(&Ok(Some(BrowserSendDecision::Submitted {
+            sent_copy_stored: false,
+            receipt_persisted: true,
+        })));
+        assert!(failed.contains("Sent-copy storage could not be confirmed"));
+        assert!(!failed.contains("not requested"));
+        let (_, _, unknown, _) = receipt_copy(&Ok(Some(BrowserSendDecision::Unconfirmed {
+            public_reason: "synthetic".into(),
+        })));
+        assert!(unknown.contains("Submission may have occurred"));
+        assert!(!unknown.contains("not requested"));
+    }
 }

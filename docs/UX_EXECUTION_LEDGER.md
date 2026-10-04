@@ -6240,3 +6240,61 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   remain valid; these configurable controls are not implemented. Next concrete
   product remediation starts with persisted Save Sent choice and truthful
   server-enforced per-attempt behavior; owned location follows separately.
+
+### 2026-10-04 UTC — Save Sent product remediation admitted; execution in progress
+
+- Recovery373c72f29abda99af93dfcf3f7d906e27e47c4f5 has verified Shopkeeper
+  signing, normal commit/push developer gates PASS, fresh UX-origin equality,
+  zero ahead/behind and clean delivery state. All314 signed compile inputs
+  match the actual native recovery case. No test-only production activation.
+- Source-confirmed R2-16-001 gap is remediated in the current candidate with
+  a persisted account Save Sent On/Off choice and actual generated Copies &
+  Folders save form. Absence preserves default On; corrupt/unavailable state
+  refuses a fresh submission. Server-owned choice is recorded before dispatch;
+  replay uses that captured choice, including legacy On, rather than current
+  settings. Intentional Off performs no append, records throttling and has a
+  distinct accepted/not-requested receipt. Exact draft cleanup requires a
+  durable accepted stored or intentional-Off outcome and matching draft/intent.
+  Existing uncertain-Sent recovery and legacy On journal bytes remain guarded.
+- Frozen product01b03a751460ce259b3c0e00efed0197098d6d62f54c176fe4163c97967041d6
+  and native QA dfa336cf5081052a12aa493ae43523bdd72a68862ee599f4154b39cf2bad7a7d
+  passed independent source review439f9dc6eb16fa2a1edf8ad51a77a6dd2b07edf25de8fe377ba3b07d0f7e4818.
+  Root admitted21 scoped source files against signed373c72f. Local compile1
+  and all-targets Clippy1 exit0; actual targeted18 cases PASS with zero failures
+  or skips. These are executed local tests, not native or human acceptance.
+- Combined native execution is in progress against320 frozen compile inputs:
+  one Save Sent Off/On/captured-replay case and unchanged ordinary submission
+  and refused-Sent recovery cases. Require all three complete cases and their
+  15/13/15 markers; expected5 local acceptances,4 authenticated append attempts,
+  3 real disposable Dovecot saves. No result is inferred from preparation.
+  Product activation, normal signed gates/sync and human UAT remain pending.
+  R2-16-002 owned Sent location remains unimplemented; fixed Sent is preserved.
+  Operator ALLSEND/provider/privatecrypto/whole S03/epic acceptance remains OPEN.
+
+- Actual Save Sent combined nativeattempt1 completes3PASS/zero failed/ignored,
+  all15/13/15 required markers and320 inputs matching canonical bytes before
+  and after. Testf9b7820aa22e2a3e973971b8c39a2b9aee31bd4c74548f443ca0963c6a09941b;
+  applicationccc9d62639cecd63ae930c5698b6914e041475e78943a0737988029adc9c6381,
+  not yet activated. Actual generated Copies form persists Off; saved/resumed
+  Draft records Off before SMTP, then a concurrent actual settings update to
+  On cannot alter the captured choice. Off accepts once, invokes zero appends,
+  leaves real disposable Sent unchanged, retains exact recovery and cleans
+  only the consumed exact draft. Reconstructed replay invokes no fresh action.
+  Fresh On accepts once and performs one authenticated actual Sent save. The
+  two unchanged regression cases pass ordinary2/2 and recovery1/refused1/save0.
+  Across all cases:5 loopback acceptances,4 append attempts,3 Dovecot saves;
+  Bcc, foreign/current/stale identity, neighbour bytes/flags/GUIDs, unrelated
+  settings/drafts, zero privatecrypto/move/expunge/flags, cleanup and standard
+  metadata preservation PASS. Native result/source manifest/log and local18
+  targeted/Clippy proof retained under save-sent. No provider or login proof.
+  Full developer gate runs through the normal signed commit hook next, followed
+  by normal push gate/fresh equality and matching web-only product activation.
+
+- Normal signed-commit gateattempt1 exits1 before committing: the existing
+  WSTG runtime-router inventory regression found POST /settings/sent-copy
+  missing from the attack-surface inventory. Preserve that failed gate log;
+  local product/native positives do not bypass it. Add only the actual route,
+  its three form fields and existing authorization/session/business-logic/input
+  references. The focused existing router/inventory regression now exits0.
+  No Rust or compiled fixture input changed; native320 evidence retains its
+  matching source scope. Normal complete hook rerun remains required.

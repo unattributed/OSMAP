@@ -4066,3 +4066,7 @@ mod formatted_send_native_tests;
 
 #[path = "mailbox_helper_native_send_recovery_tests.rs"]
 mod send_recovery_native_tests;
+
+// Separate Save Sent preference proof; original fixed-Sent guards unchanged.
+#[path = "mailbox_helper_native_save_sent_tests.rs"]
+mod save_sent_native_tests;

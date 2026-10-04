@@ -510,7 +510,7 @@ impl RuntimeBrowserGateway {
             .account_guard(account, now)
             .map_err(journal_draft_error)?;
         guard
-            .require_accepted_with_sent(intent)
+            .require_accepted_for_cleanup(intent)
             .map_err(journal_draft_error)?;
         let store = self.build_draft_store();
         let Some(draft) = store.load(account, draft_id, now)? else {

@@ -37,6 +37,8 @@ pub(crate) enum AttemptOutcome {
     Accepted {
         sent_copy_stored: bool,
     },
+    /// SMTP accepted; the captured account preference requested no Sent copy.
+    AcceptedWithoutSentCopy,
     Unconfirmed,
     /// The intent was retired into a draft, never submitted under this intent.
     DraftSaved {
@@ -157,6 +159,7 @@ impl AccountGuard {
             intent: intent.into(),
             snapshot: "0".repeat(64),
             state: State::SaveReserved { draft_id },
+            sent_copy_requested: None,
         });
         self.journal.write(&self.lock, &self.record, false)
     }
@@ -195,6 +198,22 @@ impl AccountGuard {
             .attempts
             .iter()
             .any(|entry| entry.intent == intent && matches!(entry.state, State::AcceptedStored))
+        {
+            Ok(())
+        } else {
+            Err(JournalError::ConfirmationRequired)
+        }
+    }
+    /// Confirmed receipt may clean up an exact submitted draft when a copy
+    /// was stored OR deliberately not requested. Append uncertainty cannot.
+    pub(crate) fn require_accepted_for_cleanup(&self, intent: &str) -> Result<(), JournalError> {
+        self.validate_intent(intent)?;
+        if self.require_accepted_with_sent(intent).is_ok()
+            || self.record.attempts.iter().any(|entry| {
+                entry.intent == intent
+                    && matches!(entry.state, State::AcceptedWithoutSentCopy)
+                    && entry.sent_copy_requested == Some(false)
+            })
         {
             Ok(())
         } else {
@@ -327,6 +346,7 @@ enum State {
     Reserved,
     AcceptedStored,
     AcceptedUnconfirmed,
+    AcceptedWithoutSentCopy,
     Unconfirmed,
     SaveReserved { draft_id: [u8; 16] },
     DraftSaved { draft_id: [u8; 16] },
@@ -342,6 +362,7 @@ impl State {
             Self::AcceptedUnconfirmed => AttemptOutcome::Accepted {
                 sent_copy_stored: false,
             },
+            Self::AcceptedWithoutSentCopy => AttemptOutcome::AcceptedWithoutSentCopy,
             Self::Reserved | Self::Unconfirmed => AttemptOutcome::Unconfirmed,
             Self::SaveReserved { draft_id } => AttemptOutcome::DraftSaved {
                 draft_id,
@@ -361,6 +382,10 @@ struct Entry {
     intent: String,
     snapshot: String,
     state: State,
+    // Absence is captured legacy On. Only Off serializes a new field, so
+    // existing default-On journal bytes and request digests stay unchanged.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    sent_copy_requested: Option<bool>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -394,6 +419,19 @@ impl Record {
             if issued > record.high_water
                 || !lower_hex(&entry.snapshot, 64)
                 || !seen.insert(&entry.intent)
+            {
+                return Err(JournalError::InvalidRecord);
+            }
+            if entry.sent_copy_requested == Some(true)
+                || (matches!(entry.state, State::AcceptedWithoutSentCopy)
+                    && entry.sent_copy_requested != Some(false))
+                || (matches!(
+                    entry.state,
+                    State::AcceptedStored
+                        | State::AcceptedUnconfirmed
+                        | State::SaveReserved { .. }
+                        | State::DraftSaved { .. }
+                ) && entry.sent_copy_requested.is_some())
             {
                 return Err(JournalError::InvalidRecord);
             }
@@ -585,6 +623,7 @@ impl SendJournal {
     /// Consumed-state lookup, validation and throttle decisions share the same
     /// lock as reservation. Only an unconsumed intent may return NotDispatched.
     /// All journal errors pause sending; never substitute a fresh intent.
+    #[cfg(test)]
     pub(crate) fn execute_prepared<E>(
         &self,
         account: &str,
@@ -592,6 +631,27 @@ impl SendJournal {
         now: u64,
         prepare: impl FnOnce(bool) -> Result<ComposeRequest, E>,
         dispatch: impl FnOnce(&ComposeRequest) -> AttemptOutcome,
+    ) -> Result<PreparedResult<E>, JournalError> {
+        self.execute_prepared_with_sent_copy(
+            account,
+            intent,
+            now,
+            |captured| {
+                prepare(captured.is_some()).map(|request| (request, captured.unwrap_or(true)))
+            },
+            |request, _| dispatch(request),
+        )
+    }
+
+    /// Captures the server-owned copy choice in the durable reservation before
+    /// dispatch. Replay supplies the recorded choice and never reloads settings.
+    pub(crate) fn execute_prepared_with_sent_copy<E>(
+        &self,
+        account: &str,
+        intent: &str,
+        now: u64,
+        prepare: impl FnOnce(Option<bool>) -> Result<(ComposeRequest, bool), E>,
+        dispatch: impl FnOnce(&ComposeRequest, bool) -> AttemptOutcome,
     ) -> Result<PreparedResult<E>, JournalError> {
         let (lock, mut record) = self.read_for(account, intent, now)?;
         let existing = record.attempts.iter().find(|entry| entry.intent == intent);
@@ -609,14 +669,15 @@ impl SendJournal {
                 }));
             }
         }
-        let request = match prepare(existing.is_some()) {
-            Ok(request) => request,
+        let captured = existing.map(|entry| entry.sent_copy_requested.unwrap_or(true));
+        let (request, save_sent) = match prepare(captured) {
+            Ok(value) => value,
             Err(_) if existing.is_some() => return Err(JournalError::ChangedSnapshot),
             Err(reason) => return Ok(PreparedResult::NotDispatched(reason)),
         };
         let snapshot = snapshot_digest(account, &request);
         if let Some(entry) = existing {
-            if entry.snapshot != snapshot {
+            if entry.snapshot != snapshot || captured != Some(save_sent) {
                 return Err(JournalError::ChangedSnapshot);
             }
             return Ok(PreparedResult::Outcome(JournalResult {
@@ -637,9 +698,17 @@ impl SendJournal {
             intent: intent.into(),
             snapshot,
             state: State::Reserved,
+            sent_copy_requested: (!save_sent).then_some(false),
         });
         self.write(&lock, &record, false)?;
-        let outcome = dispatch(&request);
+        let outcome = dispatch(&request, save_sent);
+        if matches!(outcome, AttemptOutcome::Accepted { .. }) && !save_sent
+            || matches!(outcome, AttemptOutcome::AcceptedWithoutSentCopy) && save_sent
+        {
+            // A mismatched terminal result never replaces the already durable
+            // reservation. Its outcome remains unknown and cannot be retried.
+            return Err(JournalError::InvalidRecord);
+        }
         record
             .attempts
             .last_mut()
@@ -651,6 +720,7 @@ impl SendJournal {
             AttemptOutcome::Accepted {
                 sent_copy_stored: false,
             } => State::AcceptedUnconfirmed,
+            AttemptOutcome::AcceptedWithoutSentCopy => State::AcceptedWithoutSentCopy,
             AttemptOutcome::Unconfirmed => State::Unconfirmed,
             AttemptOutcome::RecoveryRefused { capacity } => State::RecoveryRefused { capacity },
             AttemptOutcome::DraftSaved { .. } => return Err(JournalError::InvalidRecord),
@@ -1093,6 +1163,7 @@ mod tests {
                     intent: intent(100, n as u128),
                     snapshot: snapshot_digest(ACCOUNT, &request()),
                     state: State::Unconfirmed,
+                    sent_copy_requested: None,
                 })
                 .collect(),
         };
@@ -1623,5 +1694,229 @@ mod tests {
             Err(JournalError::ExpiredIntent)
         );
         assert!(!root.0.exists());
+    }
+    #[test]
+    fn sent_copy_legacy_absent_choice_preserves_record_bytes_digest_and_captured_on_replay() {
+        let root = Scratch::new();
+        let store = root.store();
+        let token = intent(100, 201);
+        let req = request();
+        let snapshot = snapshot_digest(ACCOUNT, &req);
+        let legacy = format!(
+            r#"{{"version":1,"high_water":100,"attempts":[{{"intent":"{token}","snapshot":"{snapshot}","state":"accepted_stored"}}]}}"#
+        );
+        fixture(&store, legacy.as_bytes());
+        let parsed = Record::read(Some(legacy.as_bytes().to_vec())).unwrap();
+        assert_eq!(serde_json::to_vec(&parsed).unwrap(), legacy.as_bytes());
+        let result = store
+            .execute_prepared_with_sent_copy(
+                ACCOUNT,
+                &token,
+                101,
+                |captured| {
+                    assert_eq!(captured, Some(true));
+                    Ok::<_, ()>((req.clone(), captured.unwrap()))
+                },
+                |_, _| panic!("legacy receipt must never redispatch"),
+            )
+            .unwrap();
+        assert!(matches!(
+            result,
+            PreparedResult::Outcome(JournalResult {
+                outcome: ACCEPTED,
+                replayed: true,
+                receipt_persisted: true
+            })
+        ));
+        assert_eq!(record_bytes(&store), legacy.as_bytes());
+        assert_eq!(snapshot_digest(ACCOUNT, &req), snapshot);
+        let token2 = intent(101, 202);
+        store
+            .execute_prepared(
+                ACCOUNT,
+                &token2,
+                101,
+                |consumed| {
+                    assert!(!consumed);
+                    Ok::<_, ()>(req.clone())
+                },
+                |_| ACCEPTED,
+            )
+            .unwrap();
+        assert!(!String::from_utf8(record_bytes(&store))
+            .unwrap()
+            .contains("sent_copy_requested"));
+    }
+
+    #[test]
+    fn sent_copy_off_is_reserved_before_dispatch_and_replay_uses_immutable_choice() {
+        let root = Scratch::new();
+        let store = root.store();
+        let token = intent(100, 203);
+        let calls = AtomicUsize::new(0);
+        let result = store
+            .execute_prepared_with_sent_copy(
+                ACCOUNT,
+                &token,
+                100,
+                |captured| {
+                    assert_eq!(captured, None);
+                    Ok::<_, ()>((request(), false))
+                },
+                |_, save_sent| {
+                    assert!(!save_sent);
+                    calls.fetch_add(1, Ordering::SeqCst);
+                    let reserved = Record::read(Some(record_bytes(&store))).unwrap();
+                    assert!(matches!(reserved.attempts[0].state, State::Reserved));
+                    assert_eq!(reserved.attempts[0].sent_copy_requested, Some(false));
+                    AttemptOutcome::AcceptedWithoutSentCopy
+                },
+            )
+            .unwrap();
+        assert!(matches!(
+            result,
+            PreparedResult::Outcome(JournalResult {
+                outcome: AttemptOutcome::AcceptedWithoutSentCopy,
+                replayed: false,
+                receipt_persisted: true
+            })
+        ));
+        let replay = root
+            .store()
+            .execute_prepared_with_sent_copy(
+                ACCOUNT,
+                &token,
+                101,
+                |captured| {
+                    assert_eq!(captured, Some(false));
+                    Ok::<_, ()>((request(), false))
+                },
+                |_, _| panic!("changed current settings cannot redispatch"),
+            )
+            .unwrap();
+        assert!(matches!(
+            replay,
+            PreparedResult::Outcome(JournalResult {
+                outcome: AttemptOutcome::AcceptedWithoutSentCopy,
+                replayed: true,
+                ..
+            })
+        ));
+        assert_eq!(calls.load(Ordering::SeqCst), 1);
+        let guard = store.account_guard(ACCOUNT, 101).unwrap();
+        assert_eq!(
+            guard.require_accepted_with_sent(&token),
+            Err(JournalError::ConfirmationRequired)
+        );
+        assert_eq!(guard.require_accepted_for_cleanup(&token), Ok(()));
+    }
+
+    #[test]
+    fn sent_copy_impossible_record_choices_and_terminal_results_fail_closed() {
+        let root = Scratch::new();
+        let store = root.store();
+        let token = intent(100, 204);
+        let snapshot = snapshot_digest(ACCOUNT, &request());
+        for (state, field) in [
+            ("accepted_without_sent_copy", ""),
+            ("accepted_stored", ",\"sent_copy_requested\":false"),
+            ("reserved", ",\"sent_copy_requested\":true"),
+        ] {
+            let bytes = format!(
+                r#"{{"version":1,"high_water":100,"attempts":[{{"intent":"{token}","snapshot":"{snapshot}","state":"{state}"{field}}}]}}"#
+            );
+            assert!(matches!(
+                Record::read(Some(bytes.into_bytes())),
+                Err(JournalError::InvalidRecord)
+            ));
+        }
+        let result = store.execute_prepared_with_sent_copy(
+            ACCOUNT,
+            &token,
+            100,
+            |_| Ok::<_, ()>((request(), false)),
+            |_, _| ACCEPTED,
+        );
+        assert_eq!(result, Err(JournalError::InvalidRecord));
+        let replay = store
+            .execute_prepared_with_sent_copy(
+                ACCOUNT,
+                &token,
+                101,
+                |captured| {
+                    assert_eq!(captured, Some(false));
+                    Ok::<_, ()>((request(), false))
+                },
+                |_, _| panic!("durable reservation must not retry"),
+            )
+            .unwrap();
+        assert!(matches!(
+            replay,
+            PreparedResult::Outcome(JournalResult {
+                outcome: AttemptOutcome::Unconfirmed,
+                replayed: true,
+                ..
+            })
+        ));
+        assert_eq!(
+            store
+                .account_guard(ACCOUNT, 101)
+                .unwrap()
+                .require_accepted_for_cleanup(&token),
+            Err(JournalError::ConfirmationRequired)
+        );
+    }
+
+    #[test]
+    fn sent_copy_terminal_write_failure_preserves_unknown_reservation_without_retry_or_cleanup() {
+        let root = Scratch::new();
+        let mut store = root.store();
+        store.fault = Some((true, false));
+        let token = intent(100, 205);
+        let first = store
+            .execute_prepared_with_sent_copy(
+                ACCOUNT,
+                &token,
+                100,
+                |_| Ok::<_, ()>((request(), false)),
+                |_, _| AttemptOutcome::AcceptedWithoutSentCopy,
+            )
+            .unwrap();
+        assert!(matches!(
+            first,
+            PreparedResult::Outcome(JournalResult {
+                outcome: AttemptOutcome::AcceptedWithoutSentCopy,
+                receipt_persisted: false,
+                ..
+            })
+        ));
+        let reopened = root.store();
+        assert_eq!(
+            reopened
+                .account_guard(ACCOUNT, 101)
+                .unwrap()
+                .require_accepted_for_cleanup(&token),
+            Err(JournalError::ConfirmationRequired)
+        );
+        let replay = reopened
+            .execute_prepared_with_sent_copy(
+                ACCOUNT,
+                &token,
+                101,
+                |captured| {
+                    assert_eq!(captured, Some(false));
+                    Ok::<_, ()>((request(), false))
+                },
+                |_, _| panic!("unknown reservation never redispatches"),
+            )
+            .unwrap();
+        assert!(matches!(
+            replay,
+            PreparedResult::Outcome(JournalResult {
+                outcome: AttemptOutcome::Unconfirmed,
+                replayed: true,
+                ..
+            })
+        ));
     }
 }

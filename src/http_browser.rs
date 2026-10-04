@@ -93,6 +93,20 @@ pub trait BrowserGateway {
     ) -> Result<crate::mark_read::Preference, crate::mark_read::Error> {
         Err(crate::mark_read::Error::Unavailable)
     }
+    fn load_sent_copy_preference(
+        &self,
+        _session: &ValidatedSession,
+    ) -> Result<crate::sent_copy::Preference, crate::sent_copy::Error> {
+        Err(crate::sent_copy::Error::Unavailable)
+    }
+    fn save_sent_copy_preference(
+        &self,
+        _session: &ValidatedSession,
+        _revision: u64,
+        _save_sent: bool,
+    ) -> Result<crate::sent_copy::Preference, crate::sent_copy::Error> {
+        Err(crate::sent_copy::Error::Unavailable)
+    }
     fn save_mark_read_policy(
         &self,
         _session: &ValidatedSession,
@@ -1082,6 +1096,10 @@ pub enum BrowserSendDecision {
     /// Accepted by the submission backend; this does not confirm delivery.
     Submitted {
         sent_copy_stored: bool,
+        receipt_persisted: bool,
+    },
+    /// Acceptance is known; no copy was requested by captured account choice.
+    SubmittedWithoutSentCopy {
         receipt_persisted: bool,
     },
     /// Dispatch may have occurred; this outcome must not trigger a retry.

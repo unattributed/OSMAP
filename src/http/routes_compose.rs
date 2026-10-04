@@ -663,6 +663,52 @@ where
         audit_events.extend(outcome.audit_events);
 
         let mut handled = match outcome.decision {
+            BrowserSendDecision::SubmittedWithoutSentCopy { receipt_persisted } => {
+                let mut draft_cleanup_confirmed = draft_id.is_none();
+                if receipt_persisted {
+                    if let (Some(id), Some(revision)) = (draft_id.as_deref(), draft_revision) {
+                        draft_cleanup_confirmed = self
+                            .gateway
+                            .cleanup_sent_draft(
+                                &validated_session,
+                                id,
+                                revision,
+                                form.get("send_intent")
+                                    .map(String::as_str)
+                                    .unwrap_or_default(),
+                            )
+                            .is_ok();
+                    }
+                }
+                let response = if receipt_persisted && draft_cleanup_confirmed {
+                    redirect_response(
+                        303,
+                        "See Other",
+                        &format!(
+                            "/compose?receipt={}",
+                            url_encode(
+                                form.get("send_intent")
+                                    .map(String::as_str)
+                                    .unwrap_or_default()
+                            )
+                        ),
+                    )
+                } else {
+                    submission_result_response(
+                        &validated_session,
+                        &form,
+                        &send_attachments,
+                        crate::compose_result_ui::SubmissionResult::AcceptedWithoutSentCopy {
+                            draft_cleanup_confirmed,
+                            receipt_persisted,
+                        },
+                    )
+                };
+                HandledHttpResponse {
+                    response,
+                    audit_events,
+                }
+            }
             BrowserSendDecision::Submitted {
                 sent_copy_stored,
                 receipt_persisted,
@@ -974,7 +1020,9 @@ pub(super) fn submission_result_response(
         SubmissionResult::AlreadyRecorded => {
             (200, "OK", "This intent already has a recorded action")
         }
-        SubmissionResult::Accepted { .. } => (200, "OK", "Message accepted for submission"),
+        SubmissionResult::Accepted { .. } | SubmissionResult::AcceptedWithoutSentCopy { .. } => {
+            (200, "OK", "Message accepted for submission")
+        }
         SubmissionResult::RecoveryRefused { .. } => {
             (503, "Service Unavailable", "Submission was not invoked")
         }

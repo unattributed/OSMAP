@@ -6,13 +6,13 @@ V10 Slice 4 classifies Rust assumptions that can affect fail-closed confidence. 
 
 ## Current UX source snapshot — 2026-10-04
 
-The current generated register is `maint/security/v10-rust-assumption-audit.json`, generated at UTC `2026-10-04T08:04:02Z`. These counts supersede the June 2026 numbers for the current source snapshot; they do not rewrite the original June assessed-source record below. This document update does not claim a new runtime remediation, deployment, completed UX slice or human acceptance.
+The current generated register is `maint/security/v10-rust-assumption-audit.json`, generated at UTC `2026-10-04T08:53:57Z`. These counts supersede the June 2026 numbers for the current source snapshot; they do not rewrite the original June assessed-source record below. This document update does not claim a new runtime remediation, deployment, completed UX slice or human acceptance.
 
 | Signal | Current value |
 | --- | --- |
-| Current normalized scanner count | `5327` |
-| Inventory SHA-256 | `c8c9f0ce1b508714d8002a444059dd0ab63e31a4b2369ead313ab60889a6f0ce` |
-| Register file SHA-256 | `fe069527f1c67619b8a74b7874787dd0a4e7b251223fc90fed2259372d822237` |
+| Current normalized scanner count | `5552` |
+| Inventory SHA-256 | `5de4969ed129e479ce8df5061892913e3bbd456515f765eedb6240b7a4cfca08` |
+| Register file SHA-256 | `dbecc3594af2fb617c6070f5d1acc8a9d0295499a1d081d41af12c3787d8026c` |
 | Classification complete | `true` |
 | Original Slice 0 carried-forward intake signal | `712` (historical, not a current count) |
 | Refined register | `maint/security/v10-fail-closed-remediation.json` |
@@ -22,30 +22,30 @@ The current generated register is `maint/security/v10-rust-assumption-audit.json
 
 | Signal | Count |
 | --- | ---: |
-| expect_call | `986` |
-| panic_macro | `187` |
+| expect_call | `990` |
+| panic_macro | `195` |
 | unreachable_macro | `18` |
-| unwrap_call | `4136` |
+| unwrap_call | `4349` |
 
 ### Current baseline fail-closed classification
 
 | Signal | Count |
 | --- | ---: |
 | control_flow_invariant | `5` |
-| panic_path_assumption | `70` |
-| production_adjacent_assumption | `1950` |
+| panic_path_assumption | `74` |
+| production_adjacent_assumption | `1965` |
 | startup_or_global_invariant | `8` |
-| test_or_fixture_assumption | `3294` |
+| test_or_fixture_assumption | `3500` |
 
 ### Current baseline fail-closed relevance
 
 | Signal | Count |
 | --- | ---: |
-| high | `2020` |
-| low | `3294` |
+| high | `2039` |
+| low | `3500` |
 | medium | `13` |
 
-The baseline scanner is intentionally coarse: its `2020` high-relevance entries are not the refined production-path queue. The matching refinement reclassifies source test modules, recording `5241` source-test-module assumptions, `5322` final test/fixture assumptions, zero high-relevance entries and five medium-relevance entries. Zero refined high relevance does **not** prove all runtime paths safe or panic-free; it is a classification result at these exact generated inventory hashes.
+The baseline scanner is intentionally coarse: its `2039` high-relevance entries are not the refined production-path queue. The matching refinement reclassifies source test modules, recording `5466` source-test-module assumptions, `5547` final test/fixture assumptions, zero high-relevance entries and five medium-relevance entries. Zero refined high relevance does **not** prove all runtime paths safe or panic-free; it is a classification result at these exact generated inventory hashes.
 
 ## Preserved June 2026 record
 

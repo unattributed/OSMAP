@@ -50,6 +50,7 @@ pub mod rendering;
 pub mod rendering_html;
 pub mod reply_thread;
 pub mod send;
+pub mod sent_copy;
 pub mod session;
 pub mod settings;
 pub mod signature;

@@ -472,6 +472,7 @@ pub(crate) fn public_reason_message(reason: &str) -> &'static str {
         }
         "invalid_mailbox" => "The selected mailbox does not exist for this account.",
         "invalid_message_reference" => "The selected message was not found in that mailbox.",
+        "sent_copy_preference_unavailable" => "Your saved Save Sent choice could not be checked. Nothing was submitted. Keep this text and reload Settings > Copies & Folders before another attempt.",
         "invalid_request" => "The submitted request was not valid.",
         "draft_conflict" => "This draft changed in another tab or was deleted. Your changes have not overwritten the saved version. Open the saved version separately to compare your text.",
         "draft_save_unconfirmed" => "The save could not be confirmed. It may already be stored. Keep this text and open the saved version in a new tab to compare before continuing. Do not repeat this save or send from this form.",

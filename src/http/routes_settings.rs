@@ -276,8 +276,9 @@ where
                             let creation = chosen.zip(status.as_ref()).zip(hierarchy.as_ref()).is_some_and(|((name, status), tree)| tree.can_create(&canonical_username, name, status));
                             {
                                 let bin = self.gateway.load_bin_preference(&validated_session).ok();
+                                let sent_copy = self.gateway.load_sent_copy_preference(&validated_session).ok();
                                 let bin_choices = self.bin_folder_choices(context, &validated_session, &mut audit_events);
-                                crate::http_ui::render_copies_page_with_state(&model, crate::http_ui::CopiesPageState { mailboxes: mailboxes.as_deref(), chosen, counts, status: status.as_ref(), hierarchy: hierarchy.as_ref(), creation, bin: bin.as_ref(), bin_choices: bin_choices.as_deref() })
+                                crate::http_ui::render_copies_page_with_state(&model, crate::http_ui::CopiesPageState { mailboxes: mailboxes.as_deref(), chosen, counts, status: status.as_ref(), hierarchy: hierarchy.as_ref(), creation, bin: bin.as_ref(), bin_choices: bin_choices.as_deref(), sent_copy: sent_copy.as_ref() })
                             }
                         }
                     } else if section == "appearance" {

@@ -8605,3 +8605,45 @@ Treat the source-confirmed fixed Save Sent/Sent-location UI and hardcoded Sent
 as unimplemented accepted R2-16-001/002 controls. Remediate them with actual
 product/settings/backend code, starting with Save Sent before owned location.
 Do not substitute further qualification-only tests for these missing features.
+
+### 2026-10-04 UTC — implement persisted Save Sent choice in the submission path
+
+R2-16-001 is an actual product/settings/backend repair. Persist a private,
+account-owned On/Off preference with a strict revision check and normal session
+CSRF validation. Default On preserves existing behavior; invalid storage never
+silently resets the preference. Capture the trusted choice in the durable send
+reservation before SMTP. Later changes affect new attempts only; legacy absence
+means captured On and retains existing journal/digest bytes. Intentional Off
+skips append and records a distinct accepted/not-requested outcome, including
+throttling. Preserve exact attempted recovery and uncertain-outcome protections.
+Allow exact draft cleanup only after a durable stored or intentional-Off receipt;
+never label Off as stored, append failure or delivered, and never resend to
+repair a missing copy. Sent destination remains fixed for this bounded repair.
+
+Require actual native generated settings, Off/On submission and real disposable
+Sent outcomes, plus ordinary and refused-Sent regressions at matching source.
+Local18 targeted PASS and Clippy are credited only to their executed bounds.
+Deploy the matching signed product binary web-only after the normal gates and
+immediate approved GitHub synchronization; preserve helpers, keys, policy and
+authoritative mail configuration. Reviewed activation now handles ordinary
+termination through guarded rollback and confirms the stopped service before
+replacement; SIGKILL/power-loss remains outside that process guarantee. Old
+binaries refuse new Off journal records; rollback must preserve those records
+and never initiate a replacement Send. Native execution/deployment/human UAT
+remain pending at this entry; ALLSEND and whole-sprint acceptance remain open.
+
+Actual combined native execution now completes the three required cases on
+320 matching inputs, including generated settings Off/On, immutable captured
+choice during a concurrent update, real storage/no-storage, ordinary and
+uncertain-Sent regression outcomes. This qualifies bounded engineering behavior,
+not provider delivery or human acceptance. The normal signed commit hook remains
+the full developer gate; no redundant standalone aggregate or waiver. Match the
+native PASS record to its exact manifest and pin reviewed activation bytes before
+upload; source/blob parity alone must not be paired with an unrelated PASS log.
+
+Preserve the failed initial commit gate when the route inventory omission is
+found. Register the actual authenticated CSRF/CAS preference endpoint and its
+strict input fields in the existing WSTG attack-surface inventory; never weaken
+the router-parity assertion. The focused existing regression passes after the
+inventory-only correction. Full normal hook rerun is required before signing;
+unchanged native compiler inputs retain their already executed qualification.

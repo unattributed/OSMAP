@@ -431,6 +431,24 @@ impl BrowserGateway for RuntimeBrowserGateway {
     ) -> Result<crate::mark_read::Preference, crate::mark_read::Error> {
         crate::mark_read::Store::new(&self.settings_dir).load(&session.record.canonical_username)
     }
+    fn load_sent_copy_preference(
+        &self,
+        session: &ValidatedSession,
+    ) -> Result<crate::sent_copy::Preference, crate::sent_copy::Error> {
+        crate::sent_copy::Store::new(&self.settings_dir).load(&session.record.canonical_username)
+    }
+    fn save_sent_copy_preference(
+        &self,
+        session: &ValidatedSession,
+        revision: u64,
+        save_sent: bool,
+    ) -> Result<crate::sent_copy::Preference, crate::sent_copy::Error> {
+        crate::sent_copy::Store::new(&self.settings_dir).save(
+            &session.record.canonical_username,
+            revision,
+            save_sent,
+        )
+    }
     fn save_mark_read_policy(
         &self,
         session: &ValidatedSession,
