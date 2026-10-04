@@ -4044,3 +4044,7 @@ fn isolated_openbsd_retention_bound_bulk_delete_browser() {
 // Additive owned Archive-event proof; original reader/Bin/delete guards unchanged.
 #[path = "mailbox_helper_native_archive_event_tests.rs"]
 mod archive_event_native_tests;
+
+// Additive owned mixed-category search proof; original native guards unchanged.
+#[path = "mailbox_helper_native_all_search_tests.rs"]
+mod all_search_native_tests;

@@ -43,6 +43,7 @@ mod routes_mail;
 mod routes_mark_read;
 mod routes_message_open;
 pub(crate) use folder_tree::FolderTree;
+mod routes_all_search;
 mod routes_bulk_delete;
 mod routes_delete;
 mod routes_folder_create;
@@ -971,6 +972,9 @@ mod tests {
     mod people_tests {
         include!("http/people_tests.rs");
     }
+    mod all_search_tests {
+        include!("http/all_search_tests.rs");
+    }
     mod contact_tests {
         include!("http/contact_tests.rs");
     }
@@ -1061,6 +1065,7 @@ mod tests {
             Option<crate::composition_preferences::CompositionPreferencesStore>,
         reading_preferences_store: Option<crate::reading_preferences::ReadingPreferencesStore>,
         message_list_override: Option<Vec<MessageSummary>>,
+        all_search_override: Option<BrowserMessageSearchDecision>,
         browser_fixture_accounts: bool,
         browser_fixture_openpgp: bool,
         browser_fixture_openpgp_denials: bool,
@@ -1113,6 +1118,7 @@ mod tests {
                 composition_preferences_store: None,
                 reading_preferences_store: None,
                 message_list_override: None,
+                all_search_override: None,
                 browser_fixture_accounts: false,
                 browser_fixture_openpgp: false,
                 browser_fixture_openpgp_denials: false,
@@ -2944,6 +2950,18 @@ mod tests {
             query: &str,
             field: MessageSearchField,
         ) -> BrowserMessageSearchOutcome {
+            if let Some(decision) = &self.all_search_override {
+                return BrowserMessageSearchOutcome {
+                    decision: decision.clone(),
+                    audit_events: vec![build_http_info_event(
+                        "stub_all_search",
+                        "controlled search returned",
+                        context,
+                    )
+                    .with_field("all_scope", mailbox_name.is_none().to_string())
+                    .with_field("field", field.query_value())],
+                };
+            }
             if let Some(outcome) =
                 ux_browser_server::back_focus_search(validated_session, mailbox_name, query, field)
             {

@@ -5474,3 +5474,90 @@ with later outcomes. Correct errors using a new entry referencing the old one.
 - Final archive aggregate acceptance/security/v14 PASS:1300 library cases pass,
   27 explicitly opted-in native cases ignored locally; actual51 native cases are
   executed separately above. aggregate-attempt1.log is the passing full gate.
+
+### 2026-10-04 UTC — S02-03 matching deployment and real UAT data
+
+- Signed103b466a756a889d013a8109e2ace30549a629a7 is verified and normally
+  synchronized; fresh origin fetch proves equal UX-branch SHAs, clean0/0 at
+  that checkpoint. All306 frozen native compile inputs match signed Git bytes.
+  Exact native application caab7c9bcfcfdcae0a09f58874511d6b37356379983a3b847a773c7a4c92d0e9
+  is now installed on authoritative mail helper216.128.179.75 and development
+  obsd1 web192.168.1.44. Preserve the previous uninstalled entry as historical.
+- The actual local relay peer is1003, separately checked before writes; the
+  previous missing serve peer setting is now configured. Wrong peer1004 refuses
+  before zero request bytes. Existing unrelated environment/service state and
+  native key agents remain unchanged. Exclusive root-private rollback backups
+  are osmap-ux-s02-archive-{mail,obsd1}-103b466a756a-20261004 in /var/backups.
+  Status/login health is operational evidence, not human or Send acceptance.
+- Provision six public synthetic fixtures through the real native library,
+  authenticated relay and authoritative helper in the new private selectable
+  INBOX.OSMAP-UX-UAT-Bin-20261004. Exact folder GUID is
+  bef8f70feab0c16a9f1c0000ef960a1e. Actual account BinStore CAS0/Trash→1/child
+  succeeds after exact six-object reconciliation. No handwritten preference,
+  SMTP, operator-message mutation, private crypto or key/policy change occurs.
+- Configure exactly this new folder's Allowed revision1 in the new trusted
+  root-owned development permission file while the helper is stopped. Existing
+  operator rules are untouched. Actual authenticated relay status is Allowed1;
+  existing Trash has no rule and returns Unavailable0. Neither Bin selection nor
+  public browser confirmation supplies permission. No wildcard/Inbox/Trash rule.
+- Read-only exact native verification reconciles all six owned public fixtures,
+  their UID/both GUIDs, selectable folder metadata and current Binrevision1.
+  Initial provisioning is never replayed. The conditional real Store CAS restore
+  requires unchanged revision1/child/currentGUID and preserves later operator
+  choices. Leave current public fixtures for UAT; no automatic expunge cleanup.
+- Actual evidence: archive-event/activation/{mail,obsd1}-activation.log,
+  live-uat-provision.log, live-uat-policy-allow.log, live-relay-uat-rule.log and
+  live-uat-verify.log. Native public tool efaf52d8e0a5a2fffe9b6e2ad81e745c87fa5d6e03d19e84ed64bdb0ec4aee7f
+  links the exact signed native library; its source/compile pins are retained.
+  Browser Cancel/Confirm, Archive destination/event and human UAT remain NOT RUN.
+  No live deletion or agent mail delivery. Whole S02-03, all-Send, protected
+  Proton round-trip, sprint and epic acceptance remain OPEN.
+
+### 2026-10-04 UTC — S02-01 All-search concrete remediation in progress
+
+- Actual supported All request returns400 before implementation; retain executed
+  red-executed.log. Implement bounded Messages plus own saved People projection
+  using the existing authenticated mail search and private ContactStore. Distinct
+  type/count/location, finite20-row pagination, current GUID-bound native opens
+  and exact Back context are real behavior. Documents remains an explicit S08
+  dependency; never fabricate its results or full-content counts.
+- First compile fails on implicit format captures inside concat; corrected
+  explicit arguments. QA catches a fabricated zero when both categories fail;
+  render unavailable count with no page total. Reuse validated escaped public
+  previews, suppress protected/invalid previews, and follow actual generated
+  Manual GET and OnOpen CSRF POST through reader/Back/stale/foreign controls.
+- green-attempt4 actually executes12 passing cases. green-attempt3 executes zero
+  from a wrong filter and is not PASS. Earlier compile failures remain retained.
+  Current independent review pins all seven changed files and inherited security
+  boundaries; no concrete blocker. Native helper proof, final gates, signing,
+  synchronization and matching installation remain pending at this checkpoint.
+  Whole PAGE09/S02 and human UAT are not accepted by partial All implementation.
+
+- Final native All attempt1 matches309 frozen compile inputs and actually passes
+  all13 cases: twelve HTTP cases plus one separate BrowserApp → Runtime →
+  authenticated helper → isolated Dovecot / real private ContactStore integration.
+  Actual measured Messages4/People1 include distinct Inbox/Sent identities;
+  generated Manual GUID GET fetches the exact public body and returns to All.
+  Stale/foreign/unauthenticated controls refuse; encrypted previews stay absent.
+  Same-UID Inbox/Sent/Bob bytes/flags/GUIDs and contacts remain unchanged; owned
+  scratch cleanup and standard host metadata PASS. Existing native executor
+  mutation guards are unchanged. No SMTP, private crypto or operator mail change.
+- Native test45509427df07047bf6d56e60c20b9181fe2b4d2e7816d5393d9c26597a8f5f45;
+  app3aff39fd4aa02256f3468cabd262f05a2417239ebc612bb272295e028f065cf4,
+  copied to the owned native run/bin path, not yet installed. Independent current
+  final-native-all-search-security-review.json pins all nine source files against
+  this exact309-input manifest; no concrete source blocker. Synthetic issued
+  sessions and same-UID fixtures are not password/TOTP or applied confinement.
+  Native opening is Manual/read-only; local actual12 tests separately cover the
+  OnOpen CSRF POST. Human UAT and Documents remain unaccepted dependencies.
+- Final aggregate-attempt1.log PASS acceptance/security/v14:1312 library cases,
+  28 explicitly opted-in native cases ignored locally. Actual native13 execution
+  above is distinct. V10 regenerated from actual4732 assumptions/refinedhigh0;
+  claims match real inventory. No security/lint/WSTG gate or bound was relaxed.
+- Actual installed Archive/Bin GET probe verifies the saved Archive destination
+  offered by authenticated settings and successful exact-destination GET. It then
+  fails its six-row review-link inspection; retain actual FAIL and owned session
+  cleanup with zero POST/Send/outside requests. Review whether the test opens the
+  row's native More disclosure before accessing its hidden link; no product PASS
+  or UAT-readiness claim follows from this failed probe. Repair/execute the
+  discriminating interaction before claiming installed controls qualify.

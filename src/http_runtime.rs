@@ -141,6 +141,11 @@ where
                 self.handle_mailbox_shortcut(request, &context)
             }
             (HttpMethod::Get, "/mailbox") => self.handle_mailbox_messages(request, &context),
+            (HttpMethod::Get, "/search")
+                if request.query_params.get("category").map(String::as_str) == Some("all") =>
+            {
+                self.handle_all_search(request, &context)
+            }
             (HttpMethod::Get, "/search") if request.query_params.contains_key("category") => {
                 self.handle_people_search(request, &context)
             }

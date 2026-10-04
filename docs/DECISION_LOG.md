@@ -8342,3 +8342,19 @@ separate claims. Catch zero-case QA registration/filter defects with compiled
 name/count checks before native execution; do not call paper or zero-case checks
 a pass. Matching306-input native51 PASS; candidate remains uninstalled while
 deployment/configuration are prepared under standing engineering authority.
+
+2026-10-04 UTC — Deploy the signed Archive/delete repair on obsd1 web and the
+authoritative mail helper using the actual local relay peer1003. Preserve key
+agents and unrelated services/configuration. Supply practical UAT data through
+six identified public synthetic messages in one new owned selectable folder,
+actual BinStore CAS and exactly scoped new trusted permission. Do not expose
+ordinary Trash or operator mail to irreversible tests. Native read-only object
+and permission verification succeeds; human actions remain unrun. A matching
+deployment or helper status is not a human acceptance result.
+
+2026-10-04 UTC — Repair the real supported All-search400 using bounded existing
+mail search and own saved contacts. Distinguish unknown category counts from
+measured zero, project only validated public previews, and use actual GUID-bound
+opening/Back paths. Retain compile and zero-case QA failures. Documents is an
+explicit later adapter dependency, not a fabricated zero or silently removed
+requirement. Execute matching native and installed proof before delivery claims.

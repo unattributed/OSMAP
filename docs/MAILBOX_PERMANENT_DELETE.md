@@ -56,6 +56,14 @@ result. Later messages are marked not attempted; confirmed and uncertain request
 must not be repeated automatically. A stale tuple or changed revision requires a
 fresh review. Result pages have a refresh link, not a resubmission form.
 
-The application candidate is not installed. Matching native HTTP validation,
-deployment and operator UAT are separate from source tests; backend or browser
-test results alone do not establish an accepted UX slice or email delivery.
+Signed source `103b466a756a889d013a8109e2ace30549a629a7` has matching native
+HTTP/helper/Dovecot validation and is installed on the authoritative mail helper
+and obsd1 development web. The exact application hash is
+`caab7c9bcfcfdcae0a09f58874511d6b37356379983a3b847a773c7a4c92d0e9`.
+The local relay peer is UID1003. A new trusted development permission grants only
+the public synthetic UAT folder, not ordinary Trash, Inbox or operator messages.
+Current six-object reconciliation and Allowed revision1 relay status pass.
+Operator Cancel/Confirm and full Archive/Bin acceptance remain NOT RUN. Backend,
+source, installed helper or test results do not establish human acceptance or
+email delivery. Retained evidence is under the stable `osmap-ux-s02` sprint root;
+the execution ledger distinguishes each checkpoint and its limits.

@@ -74,6 +74,19 @@ pub fn safe_mail_return(value: &str) -> Option<String> {
                 "select",
             ]
         }
+        "/search" if fields.get("category").map(String::as_str) == Some("all") => {
+            let query = fields.get("q").map(String::as_str).unwrap_or("");
+            if query.len() > 256 || query.chars().any(char::is_control) {
+                return None;
+            }
+            if let Some(page) = fields.get("page") {
+                let number = page.parse::<usize>().ok()?;
+                if !(1..=23).contains(&number) || number.to_string() != *page {
+                    return None;
+                }
+            }
+            &["category", "q", "page"]
+        }
         "/search" if fields.get("category").map(String::as_str) == Some("people") => {
             let query = fields.get("q").map(String::as_str).unwrap_or("");
             if query.len() > 256 || query.chars().any(char::is_control) {
