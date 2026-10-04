@@ -8591,3 +8591,17 @@ coverage does not demonstrate a product defect or explain the operator's Send
 failures. Matching aggregate gates and signed synchronization remain pending at
 this entry. Reported ALLSEND, human formatted-message UAT, protected-provider
 acceptance and the full S03 sprint remain open, with no agent real-mail Send.
+
+### 2026-10-04 UTC — bounded submission recovery and remaining copy-control gap
+
+Qualify the real combined accepted-SMTP/refused-Sent path with one executable
+cfg(test) fixture. Actual native1PASS/15markers/314 inputs verifies retained
+exact recovery, one dispatch and zero successful copies, not a provider receipt
+or a production outage. Preserve narrower existing journal/probe tests and
+keep real ALLSEND/human/crypto acceptance open. Normal commit/push security
+hooks supply the full developer gate; no waiver or extra standalone duplicate.
+
+Treat the source-confirmed fixed Save Sent/Sent-location UI and hardcoded Sent
+as unimplemented accepted R2-16-001/002 controls. Remediate them with actual
+product/settings/backend code, starting with Save Sent before owned location.
+Do not substitute further qualification-only tests for these missing features.

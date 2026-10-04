@@ -6198,3 +6198,45 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   reconciles its actual1/15/313. Next scoped seam is accepted localSMTP plus
   failed Sent storage reconciliation. Human UAT/ALLSEND/provider/crypto/whole
   S03 and epic acceptance remain OPEN; final signed sync follows normal hooks.
+
+### 2026-10-04 UTC — signed formatting delivery and recovery integration admission
+
+- Formattingd4700c9be1b9a8ac25970985b2b08a9b23fd6989 has a verified Good
+  Shopkeeper signature, normal commit/push security gates PASS, fresh UX-origin
+  SHA equality, zero ahead/behind and clean delivery state. All313 signed compile
+  inputs match corrected nativeattempt2. Native1/15/313 and matching gate1334/
+  zero failures/32 explicit local native skips retained; actual human/provider/
+  browserJS/privatecrypto acceptance remains OPEN. No production activation.
+- Admit reviewed S03-04 recovery candidate7cf7c91aeccd6d43fe7a1025c3a775820d183fc7192cd1caeafb72ce56eefe16
+  as one cfg(test) module/additive registration only. Existing narrower Runtime
+  probe/journal, receipt and durable recovery tests remain credited. Missing
+  combined seam is actual saved/resumed Draft to normal Runtime loopback SMTP
+  acceptance, authenticated controlled Sent append refusal and real disposable
+  Dovecot Sent unchanged, exact attempted body/file recovery and durable
+  read-only replay without another dispatch. Require one accepted localSMTP,
+  one refused append admission and zero native saves, exact original/foreign
+  state and cleanup. No product defect follows merely from missing integration.
+  One exact native case/15 markers/314 source inputs pending actual execution.
+  No operator/provider email, privatecrypto, policy or production runtime change.
+- Local recovery compileattempt1 and all-targets Clippyattempt1 exit0; no
+  tests executed by those steps. Actual recovery nativeattempt1 executes1PASS/
+  zero failed/ignored/all15 final markers on314 matching source inputs. Fixture
+  7cf7c91aeccd6d43fe7a1025c3a775820d183fc7192cd1caeafb72ce56eefe16; native
+  test48b2e6ac5f9a8100761719146311f4efa6eecf0fba8f8e3a793e9c02f022dcb8;
+  unchanged application457d1f4d... unactivated. Exactlyone normal Runtime local
+  SMTP acceptance and authenticated controlled status75 append refusal occur;
+  zero native saves and real disposable Dovecot Sent/neighbours remain unchanged.
+  Receipt states accepted, delivery unknown and Sent copy unconfirmed. Exact
+  durable attempted body/file downloads and consumed read-only draft survive
+  reconstructed application; repeat Send/Save/recovery makes no further dispatch
+  or append; unrelated draft stays editable. Foreign/auth/Bcc/isolation/state/
+  cleanup checks PASS. This is neither socket-loss nor power-loss/provider proof.
+- Required full developer security gate will execute through the existing
+  normal signed-commit hook; no bypass or redundant standalone aggregate run.
+  Human/provider/privatecrypto/full S03/epic acceptance remains OPEN.
+- Developer source review identified real remaining accepted S03-04 features:
+  R2-16-001 Save Sent preference and R2-16-002 owned Sent location. Current UI
+  labels both fixed and Runtime hardcodes Sent. Existing fixed-Sent proofs
+  remain valid; these configurable controls are not implemented. Next concrete
+  product remediation starts with persisted Save Sent choice and truthful
+  server-enforced per-attempt behavior; owned location follows separately.

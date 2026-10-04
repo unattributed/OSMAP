@@ -14,25 +14,25 @@ This target was selected because the Slice 4 audit included source-file assumpti
 
 ## Current UX classification snapshot — 2026-10-04
 
-Current evidence comes from `maint/security/v10-rust-assumption-audit.json` and `maint/security/v10-fail-closed-remediation.json`, generated respectively at UTC `2026-10-04T07:44:34Z` and `2026-10-04T07:44:34Z`. The earlier June `722` totals below remain historical; they are not the current scanner counts.
+Current evidence comes from `maint/security/v10-rust-assumption-audit.json` and `maint/security/v10-fail-closed-remediation.json`, generated respectively at UTC `2026-10-04T08:04:02Z` and `2026-10-04T08:04:02Z`. The earlier June `722` totals below remain historical; they are not the current scanner counts.
 
 | Signal | Current value |
 | --- | ---: |
-| Baseline scanner count | `5236` |
-| Refined scanner count | `5236` |
-| Source test-module assumptions | `5150` |
+| Baseline scanner count | `5327` |
+| Refined scanner count | `5327` |
+| Source test-module assumptions | `5241` |
 | High relevance before refinement | `2020` |
 | High relevance after refinement | `0` |
-| Test/fixture assumptions before refinement | `3203` |
-| Test/fixture assumptions after refinement | `5231` |
+| Test/fixture assumptions before refinement | `3294` |
+| Test/fixture assumptions after refinement | `5322` |
 | Classification complete | `true` |
 
 | Inventory / retained register | SHA-256 |
 | --- | --- |
-| Baseline normalized inventory | `79e159d8e9ac6f0564e31d92023ddfb3d4a57f3ba76a36d526257f17996fc6fc` |
-| Refined normalized inventory | `fca4b96894b8ed94da4962103592094577d8d51eae24a20b2cf094d87a98bf08` |
-| Baseline register file | `e80fd5ef9302c355b8104894b44be1b2bc38aa1b0cc284e10d9f760768248d9a` |
-| Refined register file | `4467a860478244f475db0a3c6b631e8077ea01e649815a3b16fe0c64ed51a66e` |
+| Baseline normalized inventory | `c8c9f0ce1b508714d8002a444059dd0ab63e31a4b2369ead313ab60889a6f0ce` |
+| Refined normalized inventory | `8075347cb4afb903404471871a96302cc999f151c4f60c342b223922e9443520` |
+| Baseline register file | `fe069527f1c67619b8a74b7874787dd0a4e7b251223fc90fed2259372d822237` |
+| Refined register file | `7bbc06d58e31e6d30f0e754237f855a57bca394eacd71f1b1db40af899914278` |
 
 
 ### Current refined classification
@@ -41,13 +41,13 @@ Current evidence comes from `maint/security/v10-rust-assumption-audit.json` and 
 | --- | ---: |
 | control_flow_invariant | `3` |
 | startup_or_global_invariant | `2` |
-| test_or_fixture_assumption | `5231` |
+| test_or_fixture_assumption | `5322` |
 
 ### Current refined relevance
 
 | Signal | Count |
 | --- | ---: |
-| low | `5231` |
+| low | `5322` |
 | medium | `5` |
 
 Current refined high-relevance top files: **none**. The current classification still records five medium-relevance assumptions. Reclassifying test-module assumptions is audit precision, not proof that production code is panic-free, a runtime behavior change, release readiness, or UX slice completion. The original assessed-source provenance is preserved in `docs/V10_RUST_ASSUMPTION_FAIL_CLOSED_AUDIT.md`; this snapshot records exact current generated evidence without inventing a newly assessed Git commit.

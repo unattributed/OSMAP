@@ -4063,3 +4063,6 @@ mod origin_send_native_tests;
 
 #[path = "mailbox_helper_native_formatted_send_tests.rs"]
 mod formatted_send_native_tests;
+
+#[path = "mailbox_helper_native_send_recovery_tests.rs"]
+mod send_recovery_native_tests;
