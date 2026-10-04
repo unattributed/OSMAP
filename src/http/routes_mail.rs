@@ -353,12 +353,17 @@ where
         }
     }
 
-    /// Resolves an account's configured archive target; never invents a folder.
+    /// Resolves a configured account-owned target; never invents a folder.
     pub(super) fn handle_mailbox_shortcut(
         &self,
         request: &HttpRequest,
         context: &AuthenticationContext,
     ) -> HandledHttpResponse {
+        if request.query_params.len() == 1
+            && request.query_params.get("kind").map(String::as_str) == Some("sent")
+        {
+            return self.handle_sent_location_shortcut(request, context);
+        }
         let (validated_session, mut audit_events) =
             match self.require_validated_session(request, context) {
                 Ok(result) => result,
@@ -728,6 +733,13 @@ where
                         &view,
                         &mut audit_events,
                     ),
+                    sent_role: self.confirmed_sent_folder_role(
+                        context,
+                        &validated_session,
+                        &mailbox_name,
+                        &mut audit_events,
+                        None,
+                    ),
                     archive_mailbox_name: archive_mailbox_name.clone(),
                     archive_events: self.gateway.load_archive_events(&validated_session).ok(),
                     bin_mailbox_name: self
@@ -1031,6 +1043,13 @@ where
                                 crate::reader_neighbours::ReaderLocation::Coordinated,
                             );
                     }
+                    reader.sent_role = self.confirmed_sent_folder_role(
+                        context,
+                        &validated_session,
+                        &rendered.mailbox_name,
+                        &mut audit_events,
+                        Some(&budget_guard),
+                    );
                     reader.archive_mailbox_name = self.validated_archive_mailbox_name(
                         context,
                         &validated_session,
@@ -1278,18 +1297,30 @@ where
                     }
                 };
 
+                let reader_context = MailReaderContext {
+                    sent_role: self.confirmed_sent_folder_role(
+                        context,
+                        &validated_session,
+                        &rendered.mailbox_name,
+                        &mut audit_events,
+                        Some(&budget_guard),
+                    ),
+                    archive_mailbox_name,
+                    bin_mailbox_name,
+                    mailboxes: visible_mailboxes,
+                    ..MailReaderContext::default()
+                };
+
                 HandledHttpResponse {
                     response: html_response(
                         200,
                         "OK",
                         "Message View",
-                        crate::http_ui::render_message_view_page_with_folders(
+                        crate::http_ui::render_message_view_page_with_context(
                             &canonical_username,
                             &validated_session.record.csrf_token,
                             &rendered,
-                            archive_mailbox_name.as_deref(),
-                            bin_mailbox_name.as_deref(),
-                            &visible_mailboxes,
+                            &reader_context,
                             &neighbours,
                         ),
                     ),

@@ -7,7 +7,37 @@ impl<G: BrowserGateway> BrowserApp<G> {
         intent: &str,
     ) -> HttpResponse {
         let decision = self.gateway.send_receipt(session, intent);
+        self.send_receipt_decision_response(context, session, intent, decision)
+    }
+    /// The immediate response retains the known return from submission even if
+    /// the terminal journal publication failed. Later GETs use the durable record.
+    pub(super) fn send_receipt_decision_response(
+        &self,
+        context: &AuthenticationContext,
+        session: &ValidatedSession,
+        intent: &str,
+        decision: Result<Option<BrowserSendDecision>, String>,
+    ) -> HttpResponse {
         let (mut status, title, message, recovery) = receipt_copy(&decision);
+        if let Ok(Some(BrowserSendDecision::SubmittedTo {
+            mailbox_name,
+            sent_copy_stored: true,
+            receipt_persisted: true,
+            ..
+        })) = &decision
+        {
+            return receipt_page(
+                session,
+                status,
+                title,
+                &message,
+                &format!(
+                    "<p><a href=\"/mailbox?name={}\">Open captured copy location</a></p>",
+                    escape_html(&url_encode(mailbox_name))
+                ),
+                false,
+            );
+        }
         if matches!(
             decision,
             Ok(Some(BrowserSendDecision::Submitted {
@@ -137,6 +167,7 @@ fn receipt_copy(
     decision: &Result<Option<BrowserSendDecision>, String>,
 ) -> (u16, &'static str, String, Option<String>) {
     match decision {
+        Ok(Some(BrowserSendDecision::SubmittedTo{mailbox_name,copy_available,sent_copy_stored,receipt_persisted})) => (200,"Message accepted for submission",format!("Submission acceptance is known. Delivery is not confirmed. {} {} Do not send again to repair copy storage or draft cleanup.", if *sent_copy_stored {format!("A copy was stored in {mailbox_name}.")} else if !*copy_available {format!("The captured copy destination {mailbox_name} was unavailable; no copy append was invoked.")}else{format!("Copy storage in the captured destination {mailbox_name} could not be confirmed; it may be missing or already present.")},if *receipt_persisted {"The outcome record was saved."}else{"Saving the outcome record could not be confirmed."}),None),
             Ok(Some(BrowserSendDecision::SubmittedWithoutSentCopy { receipt_persisted })) => (200, "Message accepted for submission", format!("Submission acceptance is known. Delivery is not confirmed. Sent copy was not requested for this attempt. No Sent append was invoked. {} Do not send again to create a copy or repair draft cleanup.", if *receipt_persisted { "The outcome record was saved." } else { "Saving the outcome record could not be confirmed." }), None),
         Ok(Some(BrowserSendDecision::RecoveryRefused { capacity })) => (200, "Submission was not invoked", if *capacity { "The combined draft and attempt-recovery limit was reached. Submission was not invoked; this intent remains paused. Do not retry automatically." } else { "Attempt recovery was not confirmed. Submission was not invoked; this intent remains paused. Do not retry automatically." }.into(), None),
             Ok(Some(BrowserSendDecision::Submitted { sent_copy_stored: true, receipt_persisted: true })) => (200, "Message submitted", "The mail server accepted your message. A copy was saved in Sent. Delivery to the recipient is not yet confirmed.".into(), None),

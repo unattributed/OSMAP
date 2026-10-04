@@ -1,6 +1,47 @@
 //! PAGE16 folder settings backed by the existing account settings store.
 use super::*;
 
+fn render_sent_location_form(
+    model: &SettingsPageModel<'_>,
+    saved: Option<&crate::sent_location::Preference>,
+    choices: Option<&[MailboxEntry]>,
+) -> String {
+    let Some(saved) = saved.filter(|saved| saved.valid()) else {
+        return "<div class=\"general-field\"><label for=\"copies-sent-location\">Sent location</label><select id=\"copies-sent-location\" disabled><option>Unavailable</option></select></div><p>The saved Sent folder could not be loaded. Reload Copies &amp; Folders.</p>".into();
+    };
+    let entries = choices.unwrap_or(&[]);
+    let visible = entries.iter().take(DEFAULT_RENDERED_MAILBOXES_MAX);
+    let included = visible
+        .clone()
+        .any(|entry| entry.name == saved.mailbox_name);
+    let mut options = String::new();
+    if !included {
+        let name = escape_html(&saved.mailbox_name);
+        let unavailable = !entries.iter().any(|entry| entry.name == saved.mailbox_name);
+        options.push_str(&format!(
+            "<option value=\"{name}\" selected>{name}{}</option>",
+            if unavailable { " (unavailable)" } else { "" }
+        ));
+    }
+    for entry in visible {
+        let name = escape_html(&entry.name);
+        options.push_str(&format!(
+            "<option value=\"{name}\"{}>{name}</option>",
+            if entry.name == saved.mailbox_name {
+                " selected"
+            } else {
+                ""
+            }
+        ));
+    }
+    let disabled = if choices.is_none() || entries.is_empty() {
+        " disabled"
+    } else {
+        ""
+    };
+    format!("<form id=\"copies-sent-location-form\" method=\"post\" action=\"/settings/sent-location\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"expected_revision\" value=\"{}\"><div class=\"general-field\"><label for=\"copies-sent-location\">Sent location</label><select id=\"copies-sent-location\" name=\"mailbox_name\"{disabled}>{options}</select></div><button type=\"submit\"{disabled}>Save Sent folder</button></form><p class=\"general-help\">Choose an existing folder in this account. This changes where future Sent copies are saved; it does not move existing mail. An unavailable destination is reported separately from submission.</p>", escape_html(model.csrf_token), saved.revision)
+}
+
 pub(crate) struct CopiesPageState<'a> {
     pub mailboxes: Option<&'a [MailboxEntry]>,
     pub chosen: Option<&'a str>,
@@ -11,6 +52,8 @@ pub(crate) struct CopiesPageState<'a> {
     pub bin: Option<&'a crate::bin_folder::BinPreference>,
     pub bin_choices: Option<&'a [MailboxEntry]>,
     pub sent_copy: Option<&'a crate::sent_copy::Preference>,
+    pub sent_location: Option<&'a crate::sent_location::Preference>,
+    pub sent_location_choices: Option<&'a [MailboxEntry]>,
 }
 pub(crate) fn render_copies_page_with_state(
     model: &SettingsPageModel<'_>,
@@ -26,6 +69,8 @@ pub(crate) fn render_copies_page_with_state(
         bin,
         bin_choices,
         sent_copy,
+        sent_location,
+        sent_location_choices,
     } = state;
     let bin_form = render_bin_folder_form(model, "copies-bin", "copies", bin, bin_choices);
     let sent_copy_form = match sent_copy {
@@ -33,6 +78,7 @@ pub(crate) fn render_copies_page_with_state(
         None => "<div class=\"general-field\"><label for=\"copies-save-sent\">Save sent messages</label><select id=\"copies-save-sent\" disabled><option>Unavailable</option></select></div><p>Saved copy preference unavailable. Reload Copies &amp; Folders before submitting.</p>".into(),
     };
     let entries = mailboxes.unwrap_or(&[]);
+    let sent_location_form = render_sent_location_form(model, sent_location, sent_location_choices);
     let has = |name: &str| entries.iter().any(|v| v.name == name);
     let missing = model.archive_mailbox_name.is_some_and(|name| !has(name));
     let mut options = format!(
@@ -122,18 +168,11 @@ pub(crate) fn render_copies_page_with_state(
         v.map(|v| format!("<p class=\"notice\" role=\"{role}\">{}</p>", escape_html(v)))
     })
     .collect::<String>();
-    let open = |name: &str, label: &str| {
-        if has(name) {
-            format!("<a href=\"/mailbox?name={}\">{label}</a>", url_encode(name))
-        } else {
-            format!("<span aria-disabled=\"true\">{label}: unavailable</span>")
-        }
-    };
     TrustedHtml::from_template(format!(concat!(
         "{header}<main id=\"main-content\" class=\"page-shell settings-page settings-copies-page\" tabindex=\"-1\"><div class=\"page-intro\"><h1>Settings</h1><p>Review storage locations and choose Archive and Bin folders.</p></div>{notices}<div class=\"settings-layout\">{nav}<div class=\"copies-content\"><div class=\"copies-top-grid\">",
-        "<section class=\"general-card\"><h2>Copies</h2>{sent_copy_form}<div class=\"general-field\"><label for=\"copies-sent\">Sent location</label><input id=\"copies-sent\" readonly value=\"Sent (fixed)\"></div><div class=\"general-field\"><label for=\"copies-drafts\">Draft location</label><input id=\"copies-drafts\" readonly value=\"OSMAP drafts (fixed)\"></div><div class=\"general-field\"><span>Keep Bcc private</span><span>Bcc omitted from message headers</span></div><div class=\"copies-links\">{sent}<a href=\"/drafts\">Open drafts</a></div></section>",
+        "<section class=\"general-card\"><h2>Copies</h2>{sent_copy_form}{sent_location_form}<div class=\"general-field\"><label for=\"copies-drafts\">Draft location</label><input id=\"copies-drafts\" readonly value=\"OSMAP drafts (fixed)\"></div><div class=\"general-field\"><span>Keep Bcc private</span><span>Bcc omitted from message headers</span></div><div class=\"copies-links\">{sent}<a href=\"/drafts\">Open drafts</a></div></section>",
         "<section class=\"general-card\"><h2>Folders</h2><form id=\"copies-archive-form\" method=\"post\" action=\"/settings\"><input type=\"hidden\" name=\"csrf_token\" value=\"{csrf}\"><input type=\"hidden\" name=\"return_section\" value=\"copies\"><input type=\"hidden\" name=\"settings_action\" value=\"archive\"><div class=\"general-field\"><label for=\"copies-archive\">Archive</label><select id=\"copies-archive\" name=\"archive_mailbox_name\"{disabled}>{options}</select></div></form>{bin_form}<div class=\"general-field\"><span>Delete action</span><span>Explicit message controls</span></div><div class=\"general-field\"><span>Permanent deletion</span><span>Unavailable here</span></div><div class=\"copies-links\">{bin}<button type=\"submit\" form=\"copies-archive-form\"{disabled}>Save archive folder</button></div></section></div>",
         "<section class=\"copies-management\"><div class=\"copies-management-heading\"><div><h2>Mailbox Folder Management</h2><p>Browse available mailboxes. Rename, move and deletion are unavailable.</p></div><div class=\"copies-management-actions\">{create}<button disabled>Rename</button><button disabled>Move</button><button disabled>Delete</button></div></div>",
         "<div class=\"copies-browser\"><section class=\"copies-tree\"><h3>{tree_heading}</h3><ul>{rows}</ul>{limit}{tree_notice}</section><section class=\"copies-details\"><h3>Selected folder</h3>{selected}<div class=\"copies-safety\"><h4>Folder safety</h4><p>Opening folders does not change mail. Folder rename, move and delete are unavailable.</p><p>Documents, scheduled storage and quota information are unavailable.</p></div></section></div></section><p class=\"copies-help\">{help}</p></div></div></main>"
-    ), sent_copy_form=sent_copy_form, bin_form=bin_form, create=create, header=app_header(model.canonical_username,model.csrf_token,"settings-copies"), nav=settings_navigation("copies"), tree_heading=if hierarchy.is_some(){"Folder hierarchy"}else{"Available folders"}, tree_notice=if hierarchy.is_some(){""}else{"<p class=\"copies-count-scope\">Hierarchy unavailable. The verified flat folder list remains available.</p>"}, notices=notices, sent=open("Sent","Open Sent"), bin="<a href=\"/mailbox/shortcut?kind=bin\">Open Bin</a>", csrf=escape_html(model.csrf_token),disabled=if unavailable {" disabled"} else {""},options=options, rows=rows, selected=selected, limit=if entries.len()>DEFAULT_RENDERED_MAILBOXES_MAX {"<p>Mailbox display limit reached.</p>"} else {""},help=if unavailable {"The mailbox list could not be loaded. Archive changes are unavailable."} else if missing {"The stored Archive folder is unavailable. Select an available folder or Not configured before saving. The saved content preference is preserved."} else {"Archive changes preserve your saved content preference. Sent and draft storage locations cannot be changed here."}))
+    ), sent_copy_form=sent_copy_form, sent_location_form=sent_location_form, bin_form=bin_form, create=create, header=app_header(model.canonical_username,model.csrf_token,"settings-copies"), nav=settings_navigation("copies"), tree_heading=if hierarchy.is_some(){"Folder hierarchy"}else{"Available folders"}, tree_notice=if hierarchy.is_some(){""}else{"<p class=\"copies-count-scope\">Hierarchy unavailable. The verified flat folder list remains available.</p>"}, notices=notices, sent="<a href=\"/mailbox/shortcut?kind=sent\">Open Sent</a>", bin="<a href=\"/mailbox/shortcut?kind=bin\">Open Bin</a>", csrf=escape_html(model.csrf_token),disabled=if unavailable {" disabled"} else {""},options=options, rows=rows, selected=selected, limit=if entries.len()>DEFAULT_RENDERED_MAILBOXES_MAX {"<p>Mailbox display limit reached.</p>"} else {""},help=if unavailable {"The mailbox list could not be loaded. Archive changes are unavailable."} else if missing {"The stored Archive folder is unavailable. Select an available folder or Not configured before saving. The saved content preference is preserved."} else {"Archive changes preserve your saved content preference. Sent changes apply to new copy attempts. Draft storage remains OSMAP drafts."}))
 }

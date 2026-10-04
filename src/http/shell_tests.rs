@@ -20,7 +20,7 @@ fn shell_has_real_named_navigation_and_main_follows_the_header() {
         assert_body_order(&body, "</header>", "<main id=\"main-content\"");
         for (label, href) in [
             ("Inbox", "/mailbox?name=INBOX"),
-            ("Sent", "/mailbox?name=Sent"),
+            ("Sent", "/mailbox/shortcut?kind=sent"),
             ("Archive / Bin", "/mailbox/shortcut?kind=archive"),
             ("Security", "/settings?section=security"),
         ] {

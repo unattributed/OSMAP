@@ -36,7 +36,9 @@ fn store_prepared_sent_copy(
     request: &ComposeRequest,
     prepared: &crate::protected_submission::PreparedSubmission,
     backend: &impl MessageAppendBackend,
+    location: Option<&crate::sent_location::CapturedLocation>,
 ) -> (bool, LogEvent) {
+    let mailbox_name = location.map_or("Sent", |location| location.name());
     let append_result = crate::identity::CanonicalUsername::parse(canonical_username)
         .map_err(|_| crate::mailbox::MailboxBackendError {
             backend: "sent-copy-formatter",
@@ -50,7 +52,16 @@ fn store_prepared_sent_copy(
                 }
             })
         })
-        .and_then(|()| MessageAppendRequest::new("Sent", prepared.as_bytes().to_vec()))
+        .and_then(|()| MessageAppendRequest::new(mailbox_name, prepared.as_bytes().to_vec()))
+        .and_then(|request| match location {
+            Some(crate::sent_location::CapturedLocation::Selected { mailbox_guid, .. }) => {
+                request.with_destination_mailbox_guid(mailbox_guid)
+            }
+            Some(crate::sent_location::CapturedLocation::Unavailable { .. }) => {
+                Err(crate::mailbox_status::unavailable())
+            }
+            None => Ok(request),
+        })
         .and_then(|append_request| {
             backend.append_message(canonical_username, &append_request)?;
             Ok(append_request.message.len())
@@ -62,7 +73,7 @@ fn store_prepared_sent_copy(
                 LogLevel::Info,
                 EventCategory::Submission,
                 "sent_copy_stored",
-                "outbound message accepted for submission; copy stored in Sent",
+                "outbound message accepted for submission; copy stored in captured destination",
             )
             .with_field("message_bytes", message_bytes.to_string()),
         ),
@@ -81,7 +92,7 @@ fn store_prepared_sent_copy(
         stored,
         event
             .with_field("canonical_username", canonical_username)
-            .with_field("mailbox_name", "Sent")
+            .with_field("mailbox_name", mailbox_name)
             .with_field("request_id", context.request_id.clone()),
     )
 }
@@ -105,9 +116,14 @@ fn store_sent_copy(
         },
     );
     match prepared {
-        Ok(prepared) => {
-            store_prepared_sent_copy(context, canonical_username, request, &prepared, backend)
-        }
+        Ok(prepared) => store_prepared_sent_copy(
+            context,
+            canonical_username,
+            request,
+            &prepared,
+            backend,
+            None,
+        ),
         Err(_) => (
             false,
             LogEvent::new(
@@ -120,6 +136,23 @@ fn store_sent_copy(
             .with_field("canonical_username", canonical_username)
             .with_field("request_id", &context.request_id),
         ),
+    }
+}
+
+pub(super) fn located_send_decision(
+    value: crate::send_journal::LocatedResult,
+) -> BrowserSendDecision {
+    if let (crate::send_journal::AttemptOutcome::Accepted { sent_copy_stored }, Some(location)) =
+        (value.result.outcome, value.location.as_ref())
+    {
+        BrowserSendDecision::SubmittedTo {
+            mailbox_name: location.name().into(),
+            copy_available: location.available(),
+            sent_copy_stored,
+            receipt_persisted: value.result.receipt_persisted,
+        }
+    } else {
+        journal_send_decision(Ok(value.result))
     }
 }
 
@@ -162,6 +195,76 @@ pub(super) fn journal_send_decision(
 }
 
 impl RuntimeBrowserGateway {
+    pub(super) fn resolve_sent_location(
+        &self,
+        account: &str,
+        name: &str,
+        guid: Option<&str>,
+    ) -> Result<String, crate::sent_location::Error> {
+        use crate::mailbox::MailboxBackend;
+        let unavailable = crate::sent_location::Error::Unavailable;
+        crate::identity::CanonicalUsername::parse(account)
+            .map_err(|_| crate::sent_location::Error::Invalid)?;
+        crate::mailbox_status::validate_name(name)
+            .map_err(|_| crate::sent_location::Error::Invalid)?;
+        let deadline = self.expensive_route_deadline();
+        let backend = self.build_mailbox_list_backend();
+        let listing = backend.list_mailboxes(account).map_err(|_| unavailable)?;
+        let mut names = std::collections::HashSet::new();
+        if listing.len() > crate::mailbox::DEFAULT_MAX_MAILBOXES
+            || listing.iter().any(|row| {
+                crate::mailbox::MailboxEntry::new(
+                    crate::mailbox::MailboxListingPolicy::default(),
+                    &row.name,
+                )
+                .is_err()
+                    || !names.insert(row.name.as_str())
+            })
+            || !listing.iter().any(|row| row.name == name)
+            || Instant::now() >= deadline
+        {
+            return Err(unavailable);
+        }
+        let snapshot = backend.folder_metadata(account).map_err(|_| unavailable)?;
+        if !crate::sent_location::selectable(&snapshot, account, name) || Instant::now() >= deadline
+        {
+            return Err(unavailable);
+        }
+        let status = backend
+            .mailbox_status(account, name)
+            .map_err(|_| unavailable)?;
+        if status.validate(name).is_err()
+            || guid.is_some_and(|guid| status.guid() != guid)
+            || Instant::now() >= deadline
+        {
+            return Err(unavailable);
+        }
+        Ok(status.guid().into())
+    }
+    fn capture_sent_location(
+        &self,
+        account: &str,
+    ) -> Result<Option<crate::sent_location::CapturedLocation>, crate::sent_location::Error> {
+        let preference = crate::sent_location::Store::new(&self.settings_dir).load(account)?;
+        let Some(guid) = preference.mailbox_guid else {
+            return Ok(None);
+        };
+        let available = self
+            .resolve_sent_location(account, &preference.mailbox_name, Some(&guid))
+            .is_ok();
+        Ok(Some(if available {
+            crate::sent_location::CapturedLocation::Selected {
+                mailbox_name: preference.mailbox_name,
+                mailbox_guid: guid,
+            }
+        } else {
+            crate::sent_location::CapturedLocation::Unavailable {
+                mailbox_name: preference.mailbox_name,
+                mailbox_guid: guid,
+            }
+        }))
+    }
+
     fn expensive_route_deadline(&self) -> Instant {
         Instant::now() + Duration::from_secs(self.expensive_request_timeout_secs)
     }
@@ -823,7 +926,7 @@ impl RuntimeBrowserGateway {
         submission: &SubmissionService<S>,
         append: &A,
     ) -> BrowserSendOutcome {
-        use crate::send_journal::PreparedResult;
+        use crate::send_journal::LocatedPreparedResult;
         let throttle_service = self.build_submission_throttle_service();
         let account = &validated_session.record.canonical_username;
         let now = SystemTimeProvider.unix_timestamp();
@@ -831,7 +934,7 @@ impl RuntimeBrowserGateway {
         let mut preparation_events = Vec::new();
         let mut dispatch_events = Vec::new();
         let prepared_wire = std::cell::RefCell::new(None);
-        let result = journal.execute_prepared_with_sent_copy(
+        let result = journal.execute_prepared_with_sent_location(
             account,
             send_request.send_intent,
             now,
@@ -965,7 +1068,7 @@ impl RuntimeBrowserGateway {
                     *prepared_wire.borrow_mut() = Some(prepared);
                 }
                 let save_sent = match captured_copy {
-                    Some(choice) => choice,
+                    Some(ref choice) => choice.requested,
                     None => {
                         crate::sent_copy::Store::new(&self.settings_dir)
                             .load(account)
@@ -976,9 +1079,11 @@ impl RuntimeBrowserGateway {
                             .save_sent
                     }
                 };
-                Ok((request, save_sent))
+                let capture=match captured_copy {Some(captured)=>captured,None=>crate::sent_location::SentCopyCapture{requested:save_sent,location:if save_sent {self.capture_sent_location(account).map_err(|_|BrowserSendDecision::Denied{public_reason:"sent_location_preference_unavailable".into(),retry_after_seconds:None})?}else{None}}};
+                Ok((request, capture))
             },
-            |request, save_sent| {
+            |request, capture| {
+                let save_sent=capture.requested;
                 let recovery = crate::send_recovery::SendRecovery::new(
                     self.settings_dir.join("send-recovery"),
                 );
@@ -1031,13 +1136,16 @@ impl RuntimeBrowserGateway {
 
                 match decision {
                     SubmissionDecision::Submitted { .. } => {
-                        let (sent_copy_stored, sent_copy_event) = if save_sent {
+                        let (sent_copy_stored, sent_copy_event) = if save_sent && capture.location.as_ref().is_some_and(|location| !location.available()) {
+                            (false,LogEvent::new(LogLevel::Warn,EventCategory::Submission,"sent_copy_destination_unavailable","submission accepted; captured copy destination unavailable; append not invoked").with_field("mailbox_name",capture.location.as_ref().map_or("",|location|location.name())).with_field("request_id",context.request_id.clone()))
+                        } else if save_sent {
                             store_prepared_sent_copy(
                                 context,
                                 &validated_session.record.canonical_username,
                                 &request,
                                 &prepared,
                                 append,
+                                capture.location.as_ref(),
                             )
                         } else {
                             (
@@ -1082,8 +1190,8 @@ impl RuntimeBrowserGateway {
         );
         preparation_events.extend(dispatch_events);
         let decision = match result {
-            Ok(PreparedResult::NotDispatched(decision)) => decision,
-            Ok(PreparedResult::Outcome(recorded)) => journal_send_decision(Ok(recorded)),
+            Ok(LocatedPreparedResult::NotDispatched(decision)) => decision,
+            Ok(LocatedPreparedResult::Outcome(recorded)) => located_send_decision(recorded),
             Err(error) => journal_send_decision(Err(error)),
         };
         BrowserSendOutcome {
@@ -1306,6 +1414,7 @@ mod tests {
         use super::*;
         include!("http/send_gateway_journal_tests.rs");
         include!("http/sent_copy_gateway_tests.rs");
+        include!("http/sent_location_gateway_tests.rs");
     }
     mod protected_send {
         use super::*;

@@ -54,11 +54,23 @@ pub(crate) struct JournalResult {
     pub receipt_persisted: bool,
 }
 
+#[cfg(test)]
 #[derive(Debug, PartialEq, Eq)]
 pub(crate) enum PreparedResult<E> {
     /// Validation/throttling refused while the intent was unconsumed and locked.
     NotDispatched(E),
     Outcome(JournalResult),
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub(crate) struct LocatedResult {
+    pub result: JournalResult,
+    pub location: Option<crate::sent_location::CapturedLocation>,
+}
+#[derive(Debug, PartialEq, Eq)]
+pub(crate) enum LocatedPreparedResult<E> {
+    NotDispatched(E),
+    Outcome(LocatedResult),
 }
 
 /// Generated on the server and carried unchanged by the native compose form.
@@ -160,6 +172,7 @@ impl AccountGuard {
             snapshot: "0".repeat(64),
             state: State::SaveReserved { draft_id },
             sent_copy_requested: None,
+            sent_location: None,
         });
         self.journal.write(&self.lock, &self.record, false)
     }
@@ -386,6 +399,8 @@ struct Entry {
     // existing default-On journal bytes and request digests stay unchanged.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     sent_copy_requested: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    sent_location: Option<crate::sent_location::CapturedLocation>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -420,6 +435,19 @@ impl Record {
                 || !lower_hex(&entry.snapshot, 64)
                 || !seen.insert(&entry.intent)
             {
+                return Err(JournalError::InvalidRecord);
+            }
+            if entry.sent_location.as_ref().is_some_and(|location| {
+                !location.valid()
+                    || entry.sent_copy_requested.is_some()
+                    || matches!(
+                        entry.state,
+                        State::SaveReserved { .. }
+                            | State::DraftSaved { .. }
+                            | State::AcceptedWithoutSentCopy
+                    )
+                    || (!location.available() && matches!(entry.state, State::AcceptedStored))
+            }) {
                 return Err(JournalError::InvalidRecord);
             }
             if entry.sent_copy_requested == Some(true)
@@ -465,6 +493,11 @@ pub(crate) struct SendJournal {
 }
 
 impl SendJournal {
+    #[cfg(test)]
+    pub(crate) fn with_terminal_write_failure_for_test(mut self) -> Self {
+        self.fault = Some((true, false));
+        self
+    }
     pub(crate) fn new(directory: PathBuf) -> Self {
         Self {
             file: PrivateAccountFile::new(directory, "osmap-send-journal-v1", MAX_BYTES),
@@ -645,6 +678,7 @@ impl SendJournal {
 
     /// Captures the server-owned copy choice in the durable reservation before
     /// dispatch. Replay supplies the recorded choice and never reloads settings.
+    #[cfg(test)]
     pub(crate) fn execute_prepared_with_sent_copy<E>(
         &self,
         account: &str,
@@ -653,6 +687,66 @@ impl SendJournal {
         prepare: impl FnOnce(Option<bool>) -> Result<(ComposeRequest, bool), E>,
         dispatch: impl FnOnce(&ComposeRequest, bool) -> AttemptOutcome,
     ) -> Result<PreparedResult<E>, JournalError> {
+        self.execute_prepared_with_sent_location(
+            account,
+            intent,
+            now,
+            |captured| {
+                let location = captured.as_ref().and_then(|value| value.location.clone());
+                prepare(captured.map(|value| value.requested)).map(|(request, requested)| {
+                    (
+                        request,
+                        crate::sent_location::SentCopyCapture {
+                            requested,
+                            location,
+                        },
+                    )
+                })
+            },
+            |request, capture| dispatch(request, capture.requested),
+        )
+        .map(|value| match value {
+            LocatedPreparedResult::NotDispatched(reason) => PreparedResult::NotDispatched(reason),
+            LocatedPreparedResult::Outcome(value) => PreparedResult::Outcome(value.result),
+        })
+    }
+    pub(crate) fn receipt_with_sent_location(
+        &self,
+        account: &str,
+        intent: &str,
+    ) -> Result<Option<LocatedResult>, JournalError> {
+        crate::identity::MailboxIdentity::parse(account)
+            .map_err(|_| JournalError::InvalidAccount)?;
+        intent_time(intent)?;
+        let record = Record::read(
+            self.file
+                .read(account)
+                .map_err(|_| JournalError::StoreUnavailable)?,
+        )?;
+        Ok(record
+            .attempts
+            .iter()
+            .find(|entry| entry.intent == intent)
+            .map(|entry| LocatedResult {
+                location: entry.sent_location.clone(),
+                result: JournalResult {
+                    outcome: entry.state.outcome(),
+                    replayed: true,
+                    receipt_persisted: true,
+                },
+            }))
+    }
+    pub(crate) fn execute_prepared_with_sent_location<E>(
+        &self,
+        account: &str,
+        intent: &str,
+        now: u64,
+        prepare: impl FnOnce(
+            Option<crate::sent_location::SentCopyCapture>,
+        )
+            -> Result<(ComposeRequest, crate::sent_location::SentCopyCapture), E>,
+        dispatch: impl FnOnce(&ComposeRequest, &crate::sent_location::SentCopyCapture) -> AttemptOutcome,
+    ) -> Result<LocatedPreparedResult<E>, JournalError> {
         let (lock, mut record) = self.read_for(account, intent, now)?;
         let existing = record.attempts.iter().find(|entry| entry.intent == intent);
         if let Some(entry) = existing {
@@ -662,28 +756,40 @@ impl SendJournal {
                     | State::DraftSaved { .. }
                     | State::RecoveryRefused { .. }
             ) {
-                return Ok(PreparedResult::Outcome(JournalResult {
-                    outcome: entry.state.outcome(),
-                    replayed: true,
-                    receipt_persisted: true,
+                return Ok(LocatedPreparedResult::Outcome(LocatedResult {
+                    location: entry.sent_location.clone(),
+                    result: JournalResult {
+                        outcome: entry.state.outcome(),
+                        replayed: true,
+                        receipt_persisted: true,
+                    },
                 }));
             }
         }
-        let captured = existing.map(|entry| entry.sent_copy_requested.unwrap_or(true));
-        let (request, save_sent) = match prepare(captured) {
+        let captured = existing.map(|entry| crate::sent_location::SentCopyCapture {
+            requested: entry.sent_copy_requested.unwrap_or(true),
+            location: entry.sent_location.clone(),
+        });
+        let (request, capture) = match prepare(captured.clone()) {
             Ok(value) => value,
             Err(_) if existing.is_some() => return Err(JournalError::ChangedSnapshot),
-            Err(reason) => return Ok(PreparedResult::NotDispatched(reason)),
+            Err(reason) => return Ok(LocatedPreparedResult::NotDispatched(reason)),
         };
+        if !capture.valid() {
+            return Err(JournalError::InvalidRecord);
+        }
         let snapshot = snapshot_digest(account, &request);
         if let Some(entry) = existing {
-            if entry.snapshot != snapshot || captured != Some(save_sent) {
+            if entry.snapshot != snapshot || captured.as_ref() != Some(&capture) {
                 return Err(JournalError::ChangedSnapshot);
             }
-            return Ok(PreparedResult::Outcome(JournalResult {
-                outcome: entry.state.outcome(),
-                replayed: true,
-                receipt_persisted: true,
+            return Ok(LocatedPreparedResult::Outcome(LocatedResult {
+                location: entry.sent_location.clone(),
+                result: JournalResult {
+                    outcome: entry.state.outcome(),
+                    replayed: true,
+                    receipt_persisted: true,
+                },
             }));
         }
         // Unknown/reserved entries stay forever, even after intent expiry.
@@ -698,11 +804,22 @@ impl SendJournal {
             intent: intent.into(),
             snapshot,
             state: State::Reserved,
-            sent_copy_requested: (!save_sent).then_some(false),
+            sent_copy_requested: (!capture.requested).then_some(false),
+            sent_location: capture.location.clone(),
         });
         self.write(&lock, &record, false)?;
-        let outcome = dispatch(&request, save_sent);
-        if matches!(outcome, AttemptOutcome::Accepted { .. }) && !save_sent
+        let outcome = dispatch(&request, &capture);
+        let save_sent = capture.requested;
+        if matches!(
+            outcome,
+            AttemptOutcome::Accepted {
+                sent_copy_stored: true
+            }
+        ) && capture
+            .location
+            .as_ref()
+            .is_some_and(|location| !location.available())
+            || matches!(outcome, AttemptOutcome::Accepted { .. }) && !save_sent
             || matches!(outcome, AttemptOutcome::AcceptedWithoutSentCopy) && save_sent
         {
             // A mismatched terminal result never replaces the already durable
@@ -726,10 +843,13 @@ impl SendJournal {
             AttemptOutcome::DraftSaved { .. } => return Err(JournalError::InvalidRecord),
         };
         let receipt_persisted = self.write(&lock, &record, true).is_ok();
-        Ok(PreparedResult::Outcome(JournalResult {
-            outcome,
-            replayed: false,
-            receipt_persisted,
+        Ok(LocatedPreparedResult::Outcome(LocatedResult {
+            location: capture.location,
+            result: JournalResult {
+                outcome,
+                replayed: false,
+                receipt_persisted,
+            },
         }))
     }
 }
@@ -1164,6 +1284,7 @@ mod tests {
                     snapshot: snapshot_digest(ACCOUNT, &request()),
                     state: State::Unconfirmed,
                     sent_copy_requested: None,
+                    sent_location: None,
                 })
                 .collect(),
         };
@@ -1919,4 +2040,6 @@ mod tests {
             })
         ));
     }
+
+    include!("send_journal_sent_location_tests.rs");
 }

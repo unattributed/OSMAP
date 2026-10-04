@@ -277,8 +277,10 @@ where
                             {
                                 let bin = self.gateway.load_bin_preference(&validated_session).ok();
                                 let sent_copy = self.gateway.load_sent_copy_preference(&validated_session).ok();
+                                let sent_location = self.gateway.load_sent_location_preference(&validated_session).ok();
+                                let sent_location_choices = self.sent_location_choices(context, &validated_session, &mut audit_events);
                                 let bin_choices = self.bin_folder_choices(context, &validated_session, &mut audit_events);
-                                crate::http_ui::render_copies_page_with_state(&model, crate::http_ui::CopiesPageState { mailboxes: mailboxes.as_deref(), chosen, counts, status: status.as_ref(), hierarchy: hierarchy.as_ref(), creation, bin: bin.as_ref(), bin_choices: bin_choices.as_deref(), sent_copy: sent_copy.as_ref() })
+                                crate::http_ui::render_copies_page_with_state(&model, crate::http_ui::CopiesPageState { mailboxes: mailboxes.as_deref(), chosen, counts, status: status.as_ref(), hierarchy: hierarchy.as_ref(), creation, bin: bin.as_ref(), bin_choices: bin_choices.as_deref(), sent_copy: sent_copy.as_ref(), sent_location: sent_location.as_ref(), sent_location_choices: sent_location_choices.as_deref() })
                             }
                         }
                     } else if section == "appearance" {

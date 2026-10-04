@@ -122,6 +122,7 @@ pub(crate) struct MailReaderContext {
     pub neighbours: crate::reader_neighbours::ReaderNeighbours,
     pub archive_mailbox_name: Option<String>,
     pub bin_mailbox_name: Option<String>,
+    pub sent_role: Option<SentFolderRole>,
     pub mailboxes: Vec<MailboxEntry>,
     pub archive_events: Option<crate::archive_event::Snapshot>,
 }
@@ -133,11 +134,62 @@ impl Default for MailReaderContext {
             neighbours: crate::reader_neighbours::ReaderNeighbours::default(),
             archive_mailbox_name: None,
             bin_mailbox_name: Some("Trash".into()),
+            sent_role: Some(SentFolderRole::legacy()),
             mailboxes: Vec::new(),
             archive_events: None,
         }
     }
 }
+/// A response-local rendering role, never mailbox or mutation authority.
+/// Production routes derive it from the authenticated preference and current
+/// account-owned folder status. Legacy wrappers preserve the old Sent view.
+#[derive(Clone)]
+pub(crate) struct SentFolderRole {
+    mailbox_name: String,
+    mailbox_guid: Option<String>,
+}
+impl SentFolderRole {
+    fn legacy() -> Self {
+        Self {
+            mailbox_name: "Sent".into(),
+            mailbox_guid: None,
+        }
+    }
+    pub(crate) fn confirmed(
+        saved: &crate::sent_location::Preference,
+        status: Option<&crate::mailbox_status::MailboxStatus>,
+    ) -> Option<Self> {
+        if !saved.valid() {
+            return None;
+        }
+        match saved.mailbox_guid.as_deref() {
+            None => Some(Self::legacy()),
+            Some(guid) => {
+                let status = status?;
+                if status.validate(&saved.mailbox_name).is_err() || status.guid() != guid {
+                    return None;
+                }
+                Some(Self {
+                    mailbox_name: saved.mailbox_name.clone(),
+                    mailbox_guid: Some(guid.into()),
+                })
+            }
+        }
+    }
+    fn matches(&self, name: &str) -> bool {
+        self.mailbox_name == name
+    }
+    fn matches_rendered(&self, rendered: &RenderedMessageView) -> bool {
+        self.matches(&rendered.mailbox_name)
+            && self.mailbox_guid.as_deref().is_none_or(|guid| {
+                rendered
+                    .metadata
+                    .as_ref()
+                    .is_some_and(|metadata| metadata.version.mailbox_guid == guid)
+            })
+    }
+}
+
 #[derive(Clone, Copy)]
 struct ReaderFolders<'a> {
     archive: Option<&'a str>,
@@ -314,7 +366,7 @@ pub(crate) fn app_header(canonical_username: &str, csrf_token: &str, current: &s
         ("compose", "Compose", "/compose", "compose"),
         ("inbox", "Inbox", "/mailbox?name=INBOX", "inbox"),
         ("drafts", "Drafts", "/drafts", "drafts"),
-        ("sent", "Sent", "/mailbox?name=Sent", "sent"),
+        ("sent", "Sent", "/mailbox/shortcut?kind=sent", "sent"),
         ("documents", "Documents", "", "drafts"),
         (
             "archive",
@@ -352,7 +404,7 @@ pub(crate) fn app_header(canonical_username: &str, csrf_token: &str, current: &s
         "<div class=\"header-search\"><form role=\"search\" method=\"get\" action=\"/search\"><input type=\"hidden\" name=\"scope\" value=\"all\"><label class=\"sr-only\" for=\"global-mail-query\">Search all mail</label><input id=\"global-mail-query\" name=\"q\" type=\"search\" placeholder=\"Search mail…\" maxlength=\"256\" autocomplete=\"off\" accesskey=\"s\" required><button type=\"submit\" aria-label=\"Search mail\">Search</button></form>",
         "<details class=\"global-search-menu\" name=\"toolbar-menu\"><summary title=\"Mail shortcuts\">Shortcuts</summary>",
         "<div class=\"account-menu-panel global-search-panel\">",
-        "<nav aria-label=\"Mail shortcuts\"><h2>Shortcuts</h2><a href=\"/compose\">Compose a message</a><a href=\"/mailbox?name=INBOX\">Open Inbox</a><a href=\"/mailbox?name=Sent\">Open Sent</a><a href=\"/mailbox/shortcut?kind=archive\">Open Archive</a><a href=\"/mailbox/shortcut?kind=bin\">Open Bin</a><a href=\"/drafts\">Open Drafts</a><a href=\"/mailboxes\">Browse mailboxes</a><a href=\"/settings\">Open account settings</a></nav></div></details></div>"
+        "<nav aria-label=\"Mail shortcuts\"><h2>Shortcuts</h2><a href=\"/compose\">Compose a message</a><a href=\"/mailbox?name=INBOX\">Open Inbox</a><a href=\"/mailbox/shortcut?kind=sent\">Open Sent</a><a href=\"/mailbox/shortcut?kind=archive\">Open Archive</a><a href=\"/mailbox/shortcut?kind=bin\">Open Bin</a><a href=\"/drafts\">Open Drafts</a><a href=\"/mailboxes\">Browse mailboxes</a><a href=\"/settings\">Open account settings</a></nav></div></details></div>"
     )
     };
     format!(concat!(
@@ -543,9 +595,18 @@ pub(crate) fn mailbox_nav_section(
     mailbox_name: &str,
     archive_mailbox_name: Option<&str>,
 ) -> &'static str {
+    mailbox_nav_section_with_sent(mailbox_name, archive_mailbox_name, mailbox_name == "Sent")
+}
+fn mailbox_nav_section_with_sent(
+    mailbox_name: &str,
+    archive_mailbox_name: Option<&str>,
+    is_sent: bool,
+) -> &'static str {
+    if is_sent {
+        return "sent";
+    }
     match mailbox_name {
         "INBOX" => "inbox",
-        "Sent" => "sent",
         value if Some(value) == archive_mailbox_name => "archive",
         _ => "mailboxes",
     }
@@ -1794,9 +1855,17 @@ pub(crate) fn render_message_list_page(
     bulk_actions: MessageListBulkActions<'_>,
     sort_links: MessageListSortLinks<'_>,
 ) -> TrustedHtml {
+    // Bin retains its existing deletion workflow if folder roles overlap.
+    let is_sent = sort_links.reader.bin_mailbox_name.as_deref() != Some(mailbox_name)
+        && sort_links
+            .reader
+            .sent_role
+            .as_ref()
+            .is_some_and(|role| role.matches(mailbox_name));
     let archive_page = sort_links.reader.bin_mailbox_name.as_deref() == Some(mailbox_name)
         || (Some(mailbox_name) == bulk_actions.archive_mailbox_name
-            && !matches!(mailbox_name, "INBOX" | "Sent"));
+            && mailbox_name != "INBOX"
+            && !is_sent);
     let list_notice_banner = match list_notice {
         Some(list_notice) => format!(
             "<div class=\"notice\" role=\"status\">{}</div>",
@@ -1885,8 +1954,8 @@ pub(crate) fn render_message_list_page(
                 mailbox: mailbox_name,
                 uid: message.uid,
                 subject: message.subject.as_deref(),
-                recipient: mailbox_name == "Sent",
-                sender: if mailbox_name == "Sent" {
+                recipient: is_sent,
+                sender: if is_sent {
                     message.to.as_deref()
                 } else {
                     message.from.as_deref()
@@ -1995,7 +2064,7 @@ pub(crate) fn render_message_list_page(
         "<details class=\"bulk-actions\" name=\"list-tools\"><summary>Bulk actions</summary><div class=\"mail-tools-panel\">{}<p class=\"muted\">Use the row checkboxes to select messages for an action.</p><div class=\"toolbar\" aria-label=\"Mailbox actions\">{}{}</div></div></details>"
     ), archive_notice, bulk_move_form, bulk_archive_form);
 
-    let table_mailbox = matches!(mailbox_name, "INBOX" | "Sent");
+    let table_mailbox = mailbox_name == "INBOX" || is_sent;
     let compact_tool = |html: String, text: &str, icon: &str| {
         if table_mailbox {
             html.replace(
@@ -2016,8 +2085,7 @@ pub(crate) fn render_message_list_page(
     );
     let search_controls = compact_tool(search_controls, "Search this mailbox", "search");
     let action_controls = compact_tool(action_controls, "Bulk actions", "more");
-    let mut navigation =
-        render_list_navigation(&navigation_base, sort_links.view, mailbox_name == "Sent");
+    let mut navigation = render_list_navigation(&navigation_base, sort_links.view, is_sent);
     let mut sort_headers = sort_headers;
     if table_mailbox {
         navigation = navigation.replace("Attachments: All attachment states", "Attachments: all");
@@ -2047,7 +2115,7 @@ pub(crate) fn render_message_list_page(
             "</section>{}",
             "</main>"
         ),
-        app_header(canonical_username, csrf_token, if sort_links.reader.bin_mailbox_name.as_deref() == Some(mailbox_name) { "bin" } else { mailbox_nav_section(mailbox_name, bulk_actions.archive_mailbox_name) }),
+        app_header(canonical_username, csrf_token, if sort_links.reader.bin_mailbox_name.as_deref() == Some(mailbox_name) { "bin" } else { mailbox_nav_section_with_sent(mailbox_name, bulk_actions.archive_mailbox_name, is_sent) }),
         if sort_links.view.selection.is_some() { " has-selection" } else { "" },
         escape_html(if mailbox_name == "INBOX" { "Inbox" } else { mailbox_name }),
         escape_html(mailbox_name),
@@ -2057,11 +2125,11 @@ pub(crate) fn render_message_list_page(
         sort_headers,
         search_controls,
         action_controls,
-        message_column_headings(mailbox_name == "Sent"),
+        message_column_headings(is_sent),
         rows,
         render_coordinated_reader_with_focus(&navigation_base, sort_links.view, csrf_token, sort_links.reader, canonical_username, &focus_targets),
-        table_class = if mailbox_name == "INBOX" { " approved-mail-table inbox-table" } else if mailbox_name == "Sent" { " approved-mail-table sent-table" } else { "" },
-        list_intro = if mailbox_name == "Sent" { "Stored Sent copies. Their presence does not confirm delivery." } else { "Search, filter, sort and work with messages without losing context." },
+        table_class = if is_sent { " approved-mail-table sent-table" } else if mailbox_name == "INBOX" { " approved-mail-table inbox-table" } else { "" },
+        list_intro = if is_sent { "Stored Sent copies. Their presence does not confirm delivery." } else { "Search, filter, sort and work with messages without losing context." },
     ))
 }
 
@@ -2227,6 +2295,35 @@ pub(crate) fn render_message_view_page_with_folders(
     user_visible_mailboxes: &[MailboxEntry],
     neighbours: &crate::reader_neighbours::ReaderNeighbours,
 ) -> TrustedHtml {
+    let context = MailReaderContext {
+        archive_mailbox_name: archive_mailbox_name.map(str::to_string),
+        bin_mailbox_name: bin_mailbox_name.map(str::to_string),
+        mailboxes: user_visible_mailboxes.to_vec(),
+        ..MailReaderContext::default()
+    };
+    render_message_view_page_with_context(
+        canonical_username,
+        csrf_token,
+        rendered,
+        &context,
+        neighbours,
+    )
+}
+
+pub(crate) fn render_message_view_page_with_context(
+    canonical_username: &str,
+    csrf_token: &str,
+    rendered: &RenderedMessageView,
+    context: &MailReaderContext,
+    neighbours: &crate::reader_neighbours::ReaderNeighbours,
+) -> TrustedHtml {
+    let archive_mailbox_name = context.archive_mailbox_name.as_deref();
+    let bin_mailbox_name = context.bin_mailbox_name.as_deref();
+    let user_visible_mailboxes = &context.mailboxes;
+    let is_sent = context
+        .sent_role
+        .as_ref()
+        .is_some_and(|role| role.matches_rendered(rendered));
     let back = neighbours
         .back
         .clone()
@@ -2254,7 +2351,7 @@ pub(crate) fn render_message_view_page_with_folders(
         if bin_mailbox_name == Some(rendered.mailbox_name.as_str()) {
             "bin"
         } else {
-            mailbox_nav_section(&rendered.mailbox_name, archive_mailbox_name)
+            mailbox_nav_section_with_sent(&rendered.mailbox_name, archive_mailbox_name, is_sent)
         },
     )
     .replace(
@@ -3284,3 +3381,7 @@ fn draft_ui_unmatched_revision_and_duplicate_state_never_enable_editing() {
 #[cfg(test)]
 #[path = "http_ui_state_tests.rs"]
 mod mail_state_tests;
+
+#[cfg(test)]
+#[path = "http_ui_sent_role_tests.rs"]
+mod sent_role_tests;

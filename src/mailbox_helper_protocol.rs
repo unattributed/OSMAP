@@ -101,6 +101,7 @@ pub(super) enum MailboxHelperRequest {
         grant: MailboxHelperGrant,
     },
     MessageAppend {
+        destination_mailbox_guid: Option<String>,
         canonical_username: String,
         mailbox_name: String,
         message: Vec<u8>,
@@ -188,6 +189,7 @@ pub(crate) enum MailboxHelperResponse {
         version: MessageVersion,
     },
     MessageAppendOk {
+        destination_mailbox_guid: Option<String>,
         mailbox_name: String,
         message_bytes: usize,
     },
@@ -294,12 +296,14 @@ pub(super) fn encode_request(request: &MailboxHelperRequest) -> String {
             canonical_username,
             mailbox_name,
             message,
+            destination_mailbox_guid,
             grant,
         } => format!(
-            "operation=message_append\ncanonical_username_b64={}\nmailbox_name_b64={}\nmessage_b64={}\n{}",
+            "operation=message_append\ncanonical_username_b64={}\nmailbox_name_b64={}\nmessage_b64={}\n{}{}",
             encode_base64(canonical_username.as_bytes()),
             encode_base64(mailbox_name.as_bytes()),
             encode_base64(message),
+            encode_append_guid(destination_mailbox_guid.as_deref()),
             encode_grant_fields(grant),
         ),
     }
@@ -565,11 +569,17 @@ pub(super) fn parse_request(input: &str) -> Result<MailboxHelperRequest, String>
                 DEFAULT_MESSAGE_APPEND_MAX_BYTES,
                 "message",
             )?;
-            let request =
+            let mut request =
                 MessageAppendRequest::new(mailbox_name, message).map_err(|error| error.reason)?;
+            if let Some(guid) = fields.get("append_mailbox_guid") {
+                request = request
+                    .with_destination_mailbox_guid(guid)
+                    .map_err(|error| error.reason)?;
+            }
             Ok(MailboxHelperRequest::MessageAppend {
                 canonical_username,
                 mailbox_name: request.mailbox_name,
+                destination_mailbox_guid: request.destination_mailbox_guid,
                 message: request.message,
                 grant,
             })
@@ -587,6 +597,11 @@ pub(super) fn issue_request_grant(
     getrandom::getrandom(&mut nonce)
         .map_err(|error| format!("failed to create helper grant nonce: {error}"))?;
     issue_request_grant_with_nonce(request, key, now_secs, &hex_lower(&nonce))
+}
+
+fn encode_append_guid(guid: Option<&str>) -> String {
+    guid.map(|guid| format!("append_mailbox_guid={guid}\n"))
+        .unwrap_or_default()
 }
 
 #[cfg(test)]
@@ -892,6 +907,14 @@ fn canonical_grant_payload(request: &MailboxHelperRequest, grant: &MailboxHelper
             fields.push(canonical_username.clone());
             fields.push(mailbox_name.clone());
             fields.push(hex_lower(&Sha256::digest(message)));
+            if let MailboxHelperRequest::MessageAppend {
+                destination_mailbox_guid: Some(guid),
+                ..
+            } = request
+            {
+                fields.push("sent-location-v1".into());
+                fields.push(guid.clone());
+            }
         }
     }
     fields.join("\0")
@@ -1126,9 +1149,11 @@ pub(crate) fn encode_response(response: &MailboxHelperResponse) -> String {
         MailboxHelperResponse::MessageAppendOk {
             mailbox_name,
             message_bytes,
+            destination_mailbox_guid,
         } => format!(
-            "status=ok\noperation=message_append\nmailbox_name_b64={}\nmessage_bytes={message_bytes}\n",
+            "status=ok\noperation=message_append\nmailbox_name_b64={}\nmessage_bytes={message_bytes}\n{}",
             encode_base64(mailbox_name.as_bytes()),
+            encode_append_guid(destination_mailbox_guid.as_deref()),
         ),
         MailboxHelperResponse::Error { backend, reason } => {
             format!(
@@ -1257,6 +1282,7 @@ pub(super) fn parse_response(
     let mut destination_mailbox_name = None::<String>;
     let mut moved_uid = None::<u64>;
     let mut message_bytes = None::<usize>;
+    let mut append_guid = None::<String>;
     let mut singleton_fields = BTreeMap::<String, ()>::new();
     let mut response_field_names = Vec::new();
 
@@ -1311,6 +1337,11 @@ pub(super) fn parse_response(
                     .is_some()
                 {
                     return Err("duplicate flag response field".into());
+                }
+            }
+            "append_mailbox_guid" => {
+                if append_guid.replace(value.to_string()).is_some() {
+                    return Err("duplicate append GUID".into());
                 }
             }
             "status" => status = Some(value.to_string()),
@@ -1459,6 +1490,25 @@ pub(super) fn parse_response(
         return Err("public message metadata on another helper response operation".into());
     }
 
+    if append_guid.is_some()
+        && (operation.as_deref() != Some("message_append") || status.as_deref() != Some("ok"))
+    {
+        return Err("append GUID on another response operation".into());
+    }
+    if operation.as_deref() == Some("message_append")
+        && response_field_names.iter().any(|key| {
+            !matches!(
+                *key,
+                "status"
+                    | "operation"
+                    | "mailbox_name_b64"
+                    | "message_bytes"
+                    | "append_mailbox_guid"
+            )
+        })
+    {
+        return Err("unexpected append response field".into());
+    }
     if operation.as_deref() == Some("message_move") {
         if status.as_deref() != Some("ok")
             || response_field_names.iter().any(|key| {
@@ -1550,13 +1600,24 @@ pub(super) fn parse_response(
                 uid: moved_uid.ok_or_else(|| "helper response did not include uid".to_string())?,
                 version: parse_move_version(&move_fields)?,
             }),
-            Some("message_append") => Ok(MailboxHelperResponse::MessageAppendOk {
-                mailbox_name: mailbox_name.ok_or_else(|| {
-                    "helper response did not include append mailbox_name".to_string()
-                })?,
-                message_bytes: message_bytes
-                    .ok_or_else(|| "helper response did not include message_bytes".to_string())?,
-            }),
+            Some("message_append") => {
+                if let Some(guid) = append_guid.as_deref() {
+                    crate::sent_location::validate_destination(
+                        mailbox_name.as_deref().unwrap_or(""),
+                        guid,
+                    )
+                    .map_err(|_| "invalid append GUID".to_string())?;
+                }
+                Ok(MailboxHelperResponse::MessageAppendOk {
+                    destination_mailbox_guid: append_guid,
+                    mailbox_name: mailbox_name.ok_or_else(|| {
+                        "helper response did not include append mailbox_name".to_string()
+                    })?,
+                    message_bytes: message_bytes.ok_or_else(|| {
+                        "helper response did not include message_bytes".to_string()
+                    })?,
+                })
+            }
             Some(other) => Err(format!("unsupported helper response operation: {other}")),
             None => Err("helper response did not include an operation".to_string()),
         },
@@ -1721,6 +1782,7 @@ fn reject_unknown_request_fields(
             "canonical_username_b64",
             "mailbox_name_b64",
             "message_b64",
+            "append_mailbox_guid",
             "grant_issued_at",
             "grant_expires_at",
             "grant_nonce",
@@ -3372,3 +3434,7 @@ mod batch_protocol_tests {
         assert_eq!(parse_request(&encode_request(&request)).unwrap(), request);
     }
 }
+
+#[cfg(test)]
+#[path = "mailbox_helper_append_location_tests.rs"]
+mod append_location_tests;

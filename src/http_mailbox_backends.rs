@@ -216,17 +216,19 @@ impl RuntimeBrowserGateway {
     pub(super) fn build_message_append_backend(&self) -> MessageAppendRuntimeBackend {
         match &self.mailbox_helper_socket_path {
             Some(socket_path) => match self.helper_grant_key_path() {
-                Some(grant_key_path) => {
-                    MessageAppendRuntimeBackend::Helper(MailboxHelperMessageAppendBackend::new(
+                Some(grant_key_path) => MessageAppendRuntimeBackend::Helper(
+                    MailboxHelperMessageAppendBackend::new(
                         socket_path,
                         grant_key_path,
                         self.expensive_route_helper_policy(),
-                    ))
-                }
+                    )
+                    .with_helper_uid(self.mailbox_helper_peer_uid),
+                ),
                 None => MessageAppendRuntimeBackend::Unavailable(missing_helper_grant_error()),
             },
             None => MessageAppendRuntimeBackend::Direct(
                 DoveadmMessageAppendBackend::new(SystemCommandExecutor, self.doveadm_path.clone())
+                    .with_operation_gate(direct_mail_mutation_gate())
                     .with_userdb_socket_path(self.doveadm_userdb_socket_path.clone())
                     .with_command_timeout_secs(self.expensive_route_command_timeout_secs()),
             ),

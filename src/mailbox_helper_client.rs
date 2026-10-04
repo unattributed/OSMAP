@@ -1228,6 +1228,7 @@ pub struct MailboxHelperMessageAppendBackend {
     socket_path: PathBuf,
     grant_key_path: PathBuf,
     policy: MailboxHelperPolicy,
+    helper_uid: Option<u32>,
 }
 
 impl MailboxHelperMessageAppendBackend {
@@ -1241,7 +1242,15 @@ impl MailboxHelperMessageAppendBackend {
             socket_path: socket_path.into(),
             grant_key_path: grant_key_path.into(),
             policy,
+            helper_uid: None,
         }
+    }
+}
+
+impl MailboxHelperMessageAppendBackend {
+    pub fn with_helper_uid(mut self, uid: Option<u32>) -> Self {
+        self.helper_uid = uid;
+        self
     }
 }
 
@@ -1251,9 +1260,20 @@ impl MessageAppendBackend for MailboxHelperMessageAppendBackend {
         canonical_username: &str,
         request: &MessageAppendRequest,
     ) -> Result<(), MailboxBackendError> {
+        #[cfg(unix)]
+        let deadline = helper_request_deadline(self.policy);
+        if let Some(guid) = request.destination_mailbox_guid.as_deref() {
+            crate::sent_location::validate_destination(&request.mailbox_name, guid).map_err(
+                |_| MailboxBackendError {
+                    backend: "mailbox-helper-client",
+                    reason: "invalid captured copy identity".into(),
+                },
+            )?;
+        }
         let mut helper_request = MailboxHelperRequest::MessageAppend {
             canonical_username: canonical_username.to_string(),
             mailbox_name: request.mailbox_name.clone(),
+            destination_mailbox_guid: request.destination_mailbox_guid.clone(),
             message: request.message.clone(),
             grant: MailboxHelperGrant::unsigned(),
         };
@@ -1274,36 +1294,54 @@ impl MessageAppendBackend for MailboxHelperMessageAppendBackend {
                 backend: "mailbox-helper-client",
                 reason,
             })?;
-            let mut stream =
-                UnixStream::connect(&self.socket_path).map_err(|error| MailboxBackendError {
+            let response_bytes = if request.destination_mailbox_guid.is_some() {
+                let uid = self.helper_uid.ok_or_else(|| MailboxBackendError {
                     backend: "mailbox-helper-client",
-                    reason: format!(
-                        "failed to connect to mailbox helper {}: {error}",
-                        self.socket_path.display()
-                    ),
+                    reason: "trusted helper UID unavailable".into(),
+                })?;
+                helper_exchange_before_with_peer(
+                    &self.socket_path,
+                    &request_bytes,
+                    self.policy,
+                    deadline,
+                    Some(uid),
+                )
+                .map_err(|_| MailboxBackendError {
+                    backend: "mailbox-helper-client",
+                    reason: "selected copy append unconfirmed".into(),
+                })?
+            } else {
+                let mut stream = UnixStream::connect(&self.socket_path).map_err(|error| {
+                    MailboxBackendError {
+                        backend: "mailbox-helper-client",
+                        reason: format!(
+                            "failed to connect to mailbox helper {}: {error}",
+                            self.socket_path.display()
+                        ),
+                    }
                 })?;
 
-            configure_stream_timeouts(&stream, self.policy);
-            stream
-                .write_all(&request_bytes)
-                .map_err(|error| MailboxBackendError {
-                    backend: "mailbox-helper-client",
-                    reason: format!("failed to write helper request: {error}"),
-                })?;
-            stream
-                .shutdown(Shutdown::Write)
-                .map_err(|error| MailboxBackendError {
-                    backend: "mailbox-helper-client",
-                    reason: format!("failed to finish helper request: {error}"),
-                })?;
+                configure_stream_timeouts(&stream, self.policy);
+                stream
+                    .write_all(&request_bytes)
+                    .map_err(|error| MailboxBackendError {
+                        backend: "mailbox-helper-client",
+                        reason: format!("failed to write helper request: {error}"),
+                    })?;
+                stream
+                    .shutdown(Shutdown::Write)
+                    .map_err(|error| MailboxBackendError {
+                        backend: "mailbox-helper-client",
+                        reason: format!("failed to finish helper request: {error}"),
+                    })?;
 
-            let response_bytes =
                 read_bounded_from_stream(&mut stream, self.policy.max_response_bytes).map_err(
                     |reason| MailboxBackendError {
                         backend: "mailbox-helper-client",
                         reason,
                     },
-                )?;
+                )?
+            };
             let response = parse_response(
                 MailboxListingPolicy::default(),
                 MessageListPolicy::default(),
@@ -1319,6 +1357,12 @@ impl MessageAppendBackend for MailboxHelperMessageAppendBackend {
                 reason,
             })?;
 
+            if request.destination_mailbox_guid.is_some() && Instant::now() >= deadline {
+                return Err(MailboxBackendError {
+                    backend: "mailbox-helper-client",
+                    reason: "selected copy response expired".into(),
+                });
+            }
             match response {
                 MailboxHelperResponse::RetentionStatus { .. }
                 | MailboxHelperResponse::MessageDelete { .. }
@@ -1333,7 +1377,9 @@ impl MessageAppendBackend for MailboxHelperMessageAppendBackend {
                 MailboxHelperResponse::MessageAppendOk {
                     mailbox_name,
                     message_bytes,
-                } if mailbox_name == request.mailbox_name
+                    destination_mailbox_guid,
+                } if destination_mailbox_guid == request.destination_mailbox_guid
+                    && mailbox_name == request.mailbox_name
                     && message_bytes == request.message.len() =>
                 {
                     Ok(())
@@ -1341,6 +1387,7 @@ impl MessageAppendBackend for MailboxHelperMessageAppendBackend {
                 MailboxHelperResponse::MessageAppendOk {
                     mailbox_name,
                     message_bytes,
+                    ..
                 } => Err(MailboxBackendError {
                     backend: "mailbox-helper-client",
                     reason: format!(
@@ -1391,6 +1438,16 @@ fn helper_exchange_before(
     policy: MailboxHelperPolicy,
     deadline: Instant,
 ) -> Result<Vec<u8>, String> {
+    helper_exchange_before_with_peer(socket, request, policy, deadline, None)
+}
+#[cfg(unix)]
+fn helper_exchange_before_with_peer(
+    socket: &Path,
+    request: &[u8],
+    policy: MailboxHelperPolicy,
+    deadline: Instant,
+    peer: Option<u32>,
+) -> Result<Vec<u8>, String> {
     if request.len() > policy.max_request_bytes {
         return Err("helper request exceeded byte limit".into());
     }
@@ -1401,6 +1458,12 @@ fn helper_exchange_before(
             socket.display()
         )
     })?;
+    if let Some(uid) = peer {
+        if crate::openbsd::unix_stream_peer_uid(&stream).ok() != Some(uid) {
+            return Err("helper peer refused".into());
+        }
+    }
+    helper_deadline_remaining(deadline)?;
     let mut unwritten = request;
     while !unwritten.is_empty() {
         stream
@@ -1969,3 +2032,8 @@ mod batch_client_tests {
         server.join().unwrap();
     }
 }
+
+#[cfg(test)]
+#[cfg(unix)]
+#[path = "mailbox_helper_append_location_client_tests.rs"]
+mod append_location_client_tests;

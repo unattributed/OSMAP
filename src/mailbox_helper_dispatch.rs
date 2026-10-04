@@ -323,9 +323,14 @@ where
             canonical_username,
             mailbox_name,
             message,
+            destination_mailbox_guid,
             ..
         } => {
             match MessageAppendRequest::new(mailbox_name.clone(), message.clone())
+                .and_then(|request| match destination_mailbox_guid {
+                    Some(guid) => request.with_destination_mailbox_guid(guid),
+                    None => Ok(request),
+                })
                 .map_err(|error| MailboxHelperResponse::Error {
                     backend: error.backend.to_string(),
                     reason: error.reason,
@@ -340,6 +345,7 @@ where
                         })
                 }) {
                 Ok(()) => MailboxHelperResponse::MessageAppendOk {
+                    destination_mailbox_guid: destination_mailbox_guid.clone(),
                     mailbox_name: mailbox_name.clone(),
                     message_bytes: message.len(),
                 },
@@ -558,6 +564,7 @@ pub(super) fn log_helper_response(
             MailboxHelperResponse::MessageAppendOk {
                 mailbox_name,
                 message_bytes,
+                ..
             },
             Some(MailboxHelperRequest::MessageAppend {
                 canonical_username, ..

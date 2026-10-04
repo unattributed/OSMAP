@@ -8659,3 +8659,31 @@ Inbox or protected-provider results. Offer the now-deployed concise Off/On/
 restore UAT and continue actual missing Sent-location implementation with
 developer, QA and independent review. No full sprint/epic completion claim,
 operator policy change, duplicate Send or agent real-provider submission.
+
+### 2026-10-04 UTC — make the configured Sent destination operational
+
+Implement accepted R2-16-002 as actual account settings, submission capture,
+authenticated helper append and current-folder UX, rather than a label-only
+control. Bind owned selection to observed GUID and capture its exact name/GUID
+before dispatch. Preserve legacy default Sent bytes and intentional Save Sent
+Off behavior. A known unavailable destination produces truthful accepted/copy-
+unavailable recovery without fallback, folder creation, retargeting or repeat
+Send. Keep Bin role precedence explicit and external IMAP races non-atomic.
+
+Credit the actual four native cases and331 matching inputs, including generated
+selection, settings change during Send, unavailable target, Off, real disposable
+storage and current-role readers;8 loopback acceptances are not provider receipt.
+Retain failed compilation/lint/format attempts and their actual code fixes.
+Refresh only the existing audit inventories needed by unchanged gates. Normal
+signed commit/push hooks qualify the full developer gate; deploy matching mail
+helper first, then obsd1 helper/web, preserving configuration, keys and policy.
+Require positive stopped-service evidence before replacement or rollback.
+Keep operator UAT and whole-sprint/epic acceptance open until their actual results.
+
+The full normal gate subsequently catches three old test-authority/markup
+assumptions. Preserve its failed result and repair the tests discriminatingly:
+an actual absent record in a working private store demonstrates legacy Sent;
+unavailable authority must still render generically. Match the actual generated
+picker ID and configured shortcut without dropping accessibility, escaping or
+CAS assertions. Rerun matching native qualification because test inputs changed;
+never pair its historical PASS with new compiler inputs or bypass the full gate.

@@ -159,6 +159,7 @@ fn sent_stores_exact_protected_submission_bytes_and_never_rebuilds_plaintext() {
         &request,
         &prepared,
         &backend,
+        None,
     );
     assert!(stored);
     let calls = backend.calls.borrow();

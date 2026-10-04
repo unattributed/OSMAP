@@ -205,11 +205,12 @@ pub fn run_mailbox_helper_server(config: &AppConfig, logger: &Logger) -> Result<
                     0,
                 ),
             )
-            .with_operation_gate(mutation_gate)
+            .with_operation_gate(Arc::clone(&mutation_gate))
             .with_userdb_socket_path(config.doveadm_userdb_socket_path.clone()),
         );
         let message_append_backend = Arc::new(
             DoveadmMessageAppendBackend::new(SystemCommandExecutor, "/usr/local/bin/doveadm")
+                .with_operation_gate(mutation_gate)
                 .with_userdb_socket_path(config.doveadm_userdb_socket_path.clone()),
         );
         let policy = MailboxHelperPolicy::default();
@@ -859,6 +860,7 @@ mod tests {
     #[test]
     fn message_append_grant_binds_mailbox_and_message_digest() {
         let mut request = MailboxHelperRequest::MessageAppend {
+            destination_mailbox_guid: None,
             canonical_username: "alice@example.com".to_string(),
             mailbox_name: "Sent".to_string(),
             message: b"Subject: original\r\n\r\nBody\r\n".to_vec(),

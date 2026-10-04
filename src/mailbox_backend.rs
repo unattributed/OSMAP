@@ -559,6 +559,7 @@ pub struct DoveadmMessageAppendBackend<E> {
     doveadm_path: PathBuf,
     userdb_socket_path: Option<PathBuf>,
     command_timeout_secs: u64,
+    operation_gate: std::sync::Arc<std::sync::Mutex<()>>,
 }
 
 impl<E> DoveadmMessageAppendBackend<E> {
@@ -569,12 +570,18 @@ impl<E> DoveadmMessageAppendBackend<E> {
             doveadm_path: doveadm_path.into(),
             userdb_socket_path: None,
             command_timeout_secs: DEFAULT_EXTERNAL_COMMAND_TIMEOUT_SECS,
+            operation_gate: std::sync::Arc::new(std::sync::Mutex::new(())),
         }
     }
 
     /// Points message append operations at an explicit userdb-capable socket.
     pub fn with_userdb_socket_path(mut self, userdb_socket_path: Option<PathBuf>) -> Self {
         self.userdb_socket_path = userdb_socket_path;
+        self
+    }
+
+    pub fn with_operation_gate(mut self, gate: std::sync::Arc<std::sync::Mutex<()>>) -> Self {
+        self.operation_gate = gate;
         self
     }
 
@@ -600,6 +607,9 @@ where
         canonical_username: &str,
         request: &MessageAppendRequest,
     ) -> Result<(), MailboxBackendError> {
+        if request.destination_mailbox_guid.is_some() {
+            return self.append_bound(canonical_username, request);
+        }
         let mut args = vec!["-o".to_string(), "stats_writer_socket_path=".to_string()];
         append_doveadm_auth_socket_override(&mut args, self.userdb_socket_path.as_ref());
         args.extend([
@@ -638,6 +648,120 @@ where
     }
 }
 
+impl<E: CommandExecutor> DoveadmMessageAppendBackend<E> {
+    fn append_bound(
+        &self,
+        account: &str,
+        request: &MessageAppendRequest,
+    ) -> Result<(), MailboxBackendError> {
+        let unavailable = || MailboxBackendError {
+            backend: "sent-location-append",
+            reason: "captured copy destination could not be confirmed".into(),
+        };
+        crate::identity::CanonicalUsername::parse(account).map_err(|_| unavailable())?;
+        crate::mailbox_status::validate_account(account)?;
+        let guid = request
+            .destination_mailbox_guid
+            .as_deref()
+            .ok_or_else(unavailable)?;
+        let validated = MessageAppendRequest::new(&request.mailbox_name, request.message.clone())?
+            .with_destination_mailbox_guid(guid)?;
+        if &validated != request {
+            return Err(unavailable());
+        }
+        let deadline = Instant::now()
+            + Duration::from_secs(
+                self.command_timeout_secs
+                    .clamp(1, DEFAULT_EXTERNAL_COMMAND_TIMEOUT_SECS),
+            );
+        let _gate = self.operation_gate.try_lock().map_err(|_| unavailable())?;
+        let snapshot = crate::folder_metadata_backend::read_before(
+            &self.command_executor,
+            &self.doveadm_path,
+            self.userdb_socket_path.as_deref(),
+            account,
+            deadline,
+        )?;
+        if !crate::sent_location::selectable(&snapshot, account, &request.mailbox_name) {
+            return Err(unavailable());
+        }
+        self.bound_status(account, &request.mailbox_name, guid, deadline)?;
+        let mut args = vec!["-o".into(), "stats_writer_socket_path=".into()];
+        append_doveadm_auth_socket_override(&mut args, self.userdb_socket_path.as_ref());
+        args.extend([
+            "save".into(),
+            "-u".into(),
+            account.into(),
+            "-m".into(),
+            request.mailbox_name.clone(),
+        ]);
+        let execution = self
+            .command_executor
+            .run_with_stdin_bytes_timeout_and_output_limit(
+                &self.doveadm_path.to_string_lossy(),
+                &args,
+                &request.message,
+                deadline
+                    .checked_duration_since(Instant::now())
+                    .filter(|d| !d.is_zero())
+                    .ok_or_else(unavailable)?,
+                1024 * 1024,
+            )
+            .map_err(|_| unavailable())?;
+        if execution.status_code != 0
+            || Instant::now() >= deadline
+            || execution.stdout.len() > 1024 * 1024
+            || execution.stderr.len() > 1024 * 1024
+        {
+            return Err(unavailable());
+        }
+        // The CLI addresses a name, not a mailbox GUID. Concurrent external IMAP
+        // replacement between the final check and save is not atomic. A failed
+        // post-check means unconfirmed copy, never a retry or a storage claim.
+        self.bound_status(account, &request.mailbox_name, guid, deadline)
+    }
+    fn bound_status(
+        &self,
+        account: &str,
+        name: &str,
+        guid: &str,
+        deadline: Instant,
+    ) -> Result<(), MailboxBackendError> {
+        let mut args = vec!["-o".into(), "stats_writer_socket_path=".into()];
+        append_doveadm_auth_socket_override(&mut args, self.userdb_socket_path.as_ref());
+        args.extend([
+            "-f".into(),
+            "json".into(),
+            "mailbox".into(),
+            "status".into(),
+            "-u".into(),
+            account.into(),
+            "guid messages vsize".into(),
+            name.into(),
+        ]);
+        let execution = self
+            .command_executor
+            .run_with_stdin_bytes_timeout_and_output_limit(
+                &self.doveadm_path.to_string_lossy(),
+                &args,
+                b"",
+                deadline
+                    .checked_duration_since(Instant::now())
+                    .filter(|d| !d.is_zero())
+                    .ok_or_else(crate::mailbox_status::unavailable)?,
+                4096,
+            )
+            .map_err(|_| crate::mailbox_status::unavailable())?;
+        if execution.stdout.len() > 4096 || execution.stderr.len() > 4096 {
+            return Err(crate::mailbox_status::unavailable());
+        }
+        let status = crate::mailbox_status::parse_native(name, &execution)?;
+        if Instant::now() >= deadline || status.guid() != guid {
+            return Err(crate::mailbox_status::unavailable());
+        }
+        Ok(())
+    }
+}
 /// Adds an explicit Dovecot auth socket override for userdb-capable helper work
 /// when the deployment provides one.
 fn append_doveadm_auth_socket_override(args: &mut Vec<String>, auth_socket_path: Option<&PathBuf>) {
@@ -742,3 +866,7 @@ mod batch_tests {
         }
     }
 }
+
+#[cfg(test)]
+#[path = "mailbox_append_location_tests.rs"]
+mod append_location_tests;

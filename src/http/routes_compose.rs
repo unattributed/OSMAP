@@ -709,6 +709,56 @@ where
                     audit_events,
                 }
             }
+            BrowserSendDecision::SubmittedTo {
+                mailbox_name,
+                copy_available,
+                sent_copy_stored,
+                receipt_persisted,
+            } => {
+                let mut draft_cleanup_confirmed = draft_id.is_none();
+                if sent_copy_stored && receipt_persisted {
+                    if let (Some(id), Some(revision)) = (draft_id.as_deref(), draft_revision) {
+                        draft_cleanup_confirmed = self
+                            .gateway
+                            .cleanup_sent_draft(
+                                &validated_session,
+                                id,
+                                revision,
+                                form.get("send_intent")
+                                    .map(String::as_str)
+                                    .unwrap_or_default(),
+                            )
+                            .is_ok();
+                    }
+                }
+                let intent = form
+                    .get("send_intent")
+                    .map(String::as_str)
+                    .unwrap_or_default();
+                let response = if sent_copy_stored && receipt_persisted && draft_cleanup_confirmed {
+                    redirect_response(
+                        303,
+                        "See Other",
+                        &format!("/compose?receipt={}", url_encode(intent)),
+                    )
+                } else {
+                    self.send_receipt_decision_response(
+                        context,
+                        &validated_session,
+                        intent,
+                        Ok(Some(BrowserSendDecision::SubmittedTo {
+                            mailbox_name,
+                            copy_available,
+                            sent_copy_stored,
+                            receipt_persisted,
+                        })),
+                    )
+                };
+                HandledHttpResponse {
+                    response,
+                    audit_events,
+                }
+            }
             BrowserSendDecision::Submitted {
                 sent_copy_stored,
                 receipt_persisted,

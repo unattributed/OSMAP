@@ -782,11 +782,21 @@ pub const DEFAULT_MESSAGE_APPEND_MAX_BYTES: usize = 48 * 1024 * 1024;
 /// A bounded request to append one complete message to an existing mailbox.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MessageAppendRequest {
+    /// Absent preserves legacy save behavior; explicit target must be rechecked by helper.
+    pub destination_mailbox_guid: Option<String>,
     pub mailbox_name: String,
     pub message: Vec<u8>,
 }
 
 impl MessageAppendRequest {
+    pub fn with_destination_mailbox_guid(
+        mut self,
+        guid: &str,
+    ) -> Result<Self, MailboxBackendError> {
+        crate::mailbox_status::MailboxStatus::new(&self.mailbox_name, guid, 0, 0)?;
+        self.destination_mailbox_guid = Some(guid.into());
+        Ok(self)
+    }
     /// Validates the destination mailbox and raw message size.
     pub fn new(
         mailbox_name: impl Into<String>,
@@ -811,6 +821,7 @@ impl MessageAppendRequest {
         }
 
         Ok(Self {
+            destination_mailbox_guid: None,
             mailbox_name,
             message,
         })

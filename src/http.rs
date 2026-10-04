@@ -43,6 +43,7 @@ mod routes_mail;
 mod routes_mark_read;
 mod routes_message_open;
 mod routes_sent_copy;
+mod routes_sent_location;
 pub(crate) use folder_tree::FolderTree;
 mod routes_all_search;
 mod routes_bulk_delete;
@@ -997,6 +998,9 @@ mod tests {
     mod mark_read_tests {
         include!("http/mark_read_tests.rs");
     }
+    mod sent_location_tests {
+        include!("http/sent_location_tests.rs");
+    }
     mod sent_copy_tests {
         include!("http/sent_copy_tests.rs");
     }
@@ -1053,6 +1057,7 @@ mod tests {
         delete_list_decision: Arc<Mutex<Option<BrowserMessageListDecision>>>,
         mark_read_store: Option<crate::mark_read::Store>,
         sent_copy_store: Option<crate::sent_copy::Store>,
+        sent_location_store: Option<crate::sent_location::Store>,
         mark_read_policy_loads: Arc<std::sync::atomic::AtomicUsize>,
         mark_read_policy_sequence: Option<Arc<Mutex<Vec<crate::mark_read::Policy>>>>,
         contacts_store: Option<crate::contacts::ContactStore>,
@@ -1104,6 +1109,7 @@ mod tests {
                 delete_list_decision: Arc::new(Mutex::new(None)),
                 mark_read_store: None,
                 sent_copy_store: None,
+                sent_location_store: None,
                 mark_read_policy_loads: Arc::new(std::sync::atomic::AtomicUsize::new(0)),
                 mark_read_policy_sequence: None,
                 contacts_store: None,
@@ -1343,6 +1349,27 @@ mod tests {
                 .as_ref()
                 .ok_or(crate::mark_read::Error::Unavailable)?
                 .load(&session.record.canonical_username)
+        }
+        fn load_sent_location_preference(
+            &self,
+            session: &ValidatedSession,
+        ) -> Result<crate::sent_location::Preference, crate::sent_location::Error> {
+            self.sent_location_store
+                .as_ref()
+                .ok_or(crate::sent_location::Error::Unavailable)?
+                .load(&session.record.canonical_username)
+        }
+        fn save_sent_location_preference(
+            &self,
+            session: &ValidatedSession,
+            revision: u64,
+            name: &str,
+            guid: &str,
+        ) -> Result<crate::sent_location::Preference, crate::sent_location::Error> {
+            self.sent_location_store
+                .as_ref()
+                .ok_or(crate::sent_location::Error::Unavailable)?
+                .save(&session.record.canonical_username, revision, name, guid)
         }
         fn load_sent_copy_preference(
             &self,

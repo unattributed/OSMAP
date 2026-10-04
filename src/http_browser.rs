@@ -93,6 +93,23 @@ pub trait BrowserGateway {
     ) -> Result<crate::mark_read::Preference, crate::mark_read::Error> {
         Err(crate::mark_read::Error::Unavailable)
     }
+    fn load_sent_location_preference(
+        &self,
+        session: &ValidatedSession,
+    ) -> Result<crate::sent_location::Preference, crate::sent_location::Error> {
+        let _ = session;
+        Err(crate::sent_location::Error::Unavailable)
+    }
+    fn save_sent_location_preference(
+        &self,
+        session: &ValidatedSession,
+        revision: u64,
+        name: &str,
+        guid: &str,
+    ) -> Result<crate::sent_location::Preference, crate::sent_location::Error> {
+        let _ = (session, revision, name, guid);
+        Err(crate::sent_location::Error::Unavailable)
+    }
     fn load_sent_copy_preference(
         &self,
         _session: &ValidatedSession,
@@ -1095,6 +1112,13 @@ pub enum BrowserSendDecision {
     },
     /// Accepted by the submission backend; this does not confirm delivery.
     Submitted {
+        sent_copy_stored: bool,
+        receipt_persisted: bool,
+    },
+    /// SMTP acceptance with a captured explicit destination, not a delivery guarantee.
+    SubmittedTo {
+        mailbox_name: String,
+        copy_available: bool,
         sent_copy_stored: bool,
         receipt_persisted: bool,
     },

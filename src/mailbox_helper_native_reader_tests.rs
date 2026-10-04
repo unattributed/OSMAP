@@ -4070,3 +4070,7 @@ mod send_recovery_native_tests;
 // Separate Save Sent preference proof; original fixed-Sent guards unchanged.
 #[path = "mailbox_helper_native_save_sent_tests.rs"]
 mod save_sent_native_tests;
+
+// Additive owned Sent location proof; legacy Sent and Save Sent guards retained.
+#[path = "mailbox_helper_native_sent_location_tests.rs"]
+mod sent_location_native_tests;

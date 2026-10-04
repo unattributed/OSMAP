@@ -202,6 +202,9 @@ where
             (HttpMethod::Post, "/settings/sent-copy") => {
                 self.handle_sent_copy_settings(request, &context)
             }
+            (HttpMethod::Post, "/settings/sent-location") => {
+                self.handle_sent_location_settings(request, &context)
+            }
             (HttpMethod::Post, "/messages/move") => self.handle_bulk_move(request, &context),
             (HttpMethod::Post, "/messages/archive") => self.handle_bulk_archive(request, &context),
             (HttpMethod::Post, "/send") => self.handle_send(request, &context),

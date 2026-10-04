@@ -410,6 +410,30 @@ fn attachment_filter_http_preserves_search_reader_and_rejects_bad_values() {
 
 #[test]
 fn sent_recipient_rows_escape_headers_and_inbox_search_keep_sender() {
+    // An absent record in an available own store is the legacy Sent default.
+    // A gateway with no store models unavailable authority, not an absent record.
+    struct OwnedSettings(PathBuf);
+    impl Drop for OwnedSettings {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_dir_all(&self.0);
+        }
+    }
+    let owned = OwnedSettings(temp_dir(&format!(
+        "sent-recipient-default-{}",
+        crate::draft::generate_draft_id().unwrap()
+    )));
+    let store = crate::sent_location::Store::new(owned.0.join("settings"));
+    assert_eq!(
+        store.load("alice@example.com").unwrap(),
+        crate::sent_location::Preference::default()
+    );
+    let fixture = BrowserApp::new(
+        HttpPolicy::default(),
+        StubGateway {
+            sent_location_store: Some(store),
+            ..StubGateway::default()
+        },
+    );
     for (path, sent) in [
         ("/mailbox?name=Sent", true),
         ("/mailbox?name=INBOX", false),
@@ -420,7 +444,7 @@ fn sent_recipient_rows_escape_headers_and_inbox_search_keep_sender() {
             "user-agent".into(),
             "OSMAP/ManyMessages;SentRecipients".into(),
         );
-        let result = app().handle_request(&req, "127.0.0.1");
+        let result = fixture.handle_request(&req, "127.0.0.1");
         assert_eq!(result.response.status_code, 200);
         let html = body_text(&result);
         if sent {
@@ -445,6 +469,21 @@ fn sent_recipient_rows_escape_headers_and_inbox_search_keep_sender() {
             assert!(!html.contains("To: &lt;img"));
         }
     }
+    // Unavailable preference authority must not silently become legacy Sent.
+    let mut req = request("GET", "/mailbox?name=Sent", &authenticated_headers(), "");
+    req.headers.insert(
+        "user-agent".into(),
+        "OSMAP/ManyMessages;SentRecipients".into(),
+    );
+    let unavailable = app().handle_request(&req, "127.0.0.1");
+    assert_eq!(unavailable.response.status_code, 200);
+    let html = body_text(&unavailable);
+    assert!(html.contains(">From</span>"));
+    assert!(html.contains("Initials from the sender header"));
+    assert!(!html.contains(">Recipient</span>"));
+    assert!(!html.contains("approved-mail-table sent-table"));
+    assert!(!html.contains("To: &lt;img"));
+    assert!(!html.contains("<img src=x>"));
 }
 
 #[test]

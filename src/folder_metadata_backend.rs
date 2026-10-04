@@ -2,7 +2,10 @@
 use crate::auth::{CommandExecutor, DEFAULT_EXTERNAL_COMMAND_TIMEOUT_SECS};
 use crate::folder_metadata::FolderSnapshot;
 use crate::mailbox::MailboxBackendError;
-use std::{path::Path, time::Duration};
+use std::{
+    path::Path,
+    time::{Duration, Instant},
+};
 pub(crate) const TRANSCRIPT: &[u8] =
     b"N1 NAMESPACE\r\nL1 LIST \"\" \"*\" RETURN (CHILDREN SPECIAL-USE)\r\nZ1 LOGOUT\r\n";
 pub(crate) fn unavailable() -> MailboxBackendError {
@@ -16,6 +19,21 @@ pub(crate) fn read<E: CommandExecutor>(
     path: &Path,
     socket: Option<&Path>,
     account: &str,
+) -> Result<FolderSnapshot, MailboxBackendError> {
+    read_before(
+        executor,
+        path,
+        socket,
+        account,
+        Instant::now() + Duration::from_secs(DEFAULT_EXTERNAL_COMMAND_TIMEOUT_SECS),
+    )
+}
+pub(crate) fn read_before<E: CommandExecutor>(
+    executor: &E,
+    path: &Path,
+    socket: Option<&Path>,
+    account: &str,
+    deadline: Instant,
 ) -> Result<FolderSnapshot, MailboxBackendError> {
     crate::identity::CanonicalUsername::parse(account).map_err(|_| unavailable())?;
     crate::mailbox_status::validate_account(account)?;
@@ -38,11 +56,15 @@ pub(crate) fn read<E: CommandExecutor>(
             &path.to_string_lossy(),
             &args,
             TRANSCRIPT,
-            Duration::from_secs(DEFAULT_EXTERNAL_COMMAND_TIMEOUT_SECS),
+            deadline
+                .checked_duration_since(Instant::now())
+                .filter(|d| !d.is_zero())
+                .ok_or_else(unavailable)?,
             512 * 1024,
         )
         .map_err(|_| unavailable())?;
-    if result.status_code != 0
+    if Instant::now() >= deadline
+        || result.status_code != 0
         || result.stdout.len() > 512 * 1024
         || result.stderr.len() > 512 * 1024
     {
@@ -92,7 +114,7 @@ mod tests {
                 ]
             );
             assert_eq!(input, TRANSCRIPT);
-            assert_eq!(timeout, Duration::from_secs(10));
+            assert!(!timeout.is_zero() && timeout <= Duration::from_secs(10));
             assert_eq!(limit, 512 * 1024);
             Ok(CommandExecution {status_code:if self.fail{89}else{0},stdout:"* PREAUTH ready\r\n* NAMESPACE ((\"\" \".\")) NIL NIL\r\nN1 OK done\r\n* LIST (\\HasNoChildren) \".\" INBOX\r\nL1 OK done\r\n* BYE done\r\nZ1 OK done\r\n".into(),stderr:"native informational logout; never metadata".into()})
         }

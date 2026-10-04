@@ -431,6 +431,27 @@ impl BrowserGateway for RuntimeBrowserGateway {
     ) -> Result<crate::mark_read::Preference, crate::mark_read::Error> {
         crate::mark_read::Store::new(&self.settings_dir).load(&session.record.canonical_username)
     }
+    fn load_sent_location_preference(
+        &self,
+        session: &ValidatedSession,
+    ) -> Result<crate::sent_location::Preference, crate::sent_location::Error> {
+        crate::sent_location::Store::new(&self.settings_dir)
+            .load(&session.record.canonical_username)
+    }
+    fn save_sent_location_preference(
+        &self,
+        session: &ValidatedSession,
+        revision: u64,
+        name: &str,
+        guid: &str,
+    ) -> Result<crate::sent_location::Preference, crate::sent_location::Error> {
+        crate::sent_location::Store::new(&self.settings_dir).save(
+            &session.record.canonical_username,
+            revision,
+            name,
+            guid,
+        )
+    }
     fn load_sent_copy_preference(
         &self,
         session: &ValidatedSession,
@@ -582,22 +603,8 @@ impl BrowserGateway for RuntimeBrowserGateway {
         intent: &str,
     ) -> Result<Option<BrowserSendDecision>, String> {
         self.send_journal()
-            .receipt(
-                &session.record.canonical_username,
-                intent,
-                self.send_clock(),
-            )
-            .map(|value| {
-                value.map(|outcome| {
-                    http_gateway_mail::journal_send_decision(Ok(
-                        crate::send_journal::JournalResult {
-                            outcome,
-                            replayed: true,
-                            receipt_persisted: true,
-                        },
-                    ))
-                })
-            })
+            .receipt_with_sent_location(&session.record.canonical_username, intent)
+            .map(|value| value.map(http_gateway_mail::located_send_decision))
             .map_err(|_| "send_attempt_paused".into())
     }
     fn cleanup_sent_draft(

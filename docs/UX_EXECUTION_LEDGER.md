@@ -6330,3 +6330,54 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   QA agents are coordinating product/backend and discriminating native cases.
   ALLSEND, protected-provider/privatecrypto, full S03 and epic acceptance remain
   OPEN. No real operator/provider message was submitted by an agent.
+
+### 2026-10-04 UTC — owned Sent location implemented and native-qualified
+
+- R2-16-002 remediates the fixed destination with private account CAS settings,
+  an actual owned/selectable folder picker and captured mailbox name/GUID.
+  The trusted destination is durable before SMTP; later settings changes cannot
+  retarget an attempt. Save Sent Off skips all copy-location readiness work.
+  A known unavailable destination permits an otherwise authorized submission
+  with an explicit unavailable-copy receipt and exact recovery, without append,
+  folder creation, fallback, retargeting or repeat submission.
+- Current configured Sent role supplies recipient presentation, active Sent
+  navigation and bounded coordinated/standalone readers. A historical target
+  becomes a generic folder after selection changes; its actual copy stays at
+  the captured destination. Bin presentation takes precedence when selected.
+  Optional GUID binding is authenticated across the helper protocol; absent
+  fields preserve legacy bytes. Pre/post GUID checks detect observed drift;
+  an external IMAP race is not claimed atomic. Existing attempt records remain
+  preserved during rollback; an older web binary can refuse new record forms.
+- Retain actual first local compilation failure (three test API/type errors),
+  first Clippy failure (one let-and-return), and first formatting failure.
+  Concrete corrections pass compilation2, all33 exact focused tests without
+  skips, all-target Clippy2 with warnings denied, and format2. Independent source
+  review and the existing V10 inventory refresh preserve their bounded scope.
+- Actual native-sent-location-attempt1 completes all four cases, zero failures
+  or skips, required16/15/13/15 markers and331 frozen compiler inputs matching
+  canonical bytes before/after. Generated settings and resumed attachment draft
+  capture A; changing settings to B during submission cannot retarget the one
+  copy. Current-role A/B readers, unavailable B, Off while B is absent and exact
+  recovery/replay pass alongside unchanged Save Sent/ordinary/recovery cases.
+  Totals:8 loopback SMTP acceptances,5 authenticated append attempts,4 disposable
+  Dovecot saves. No operator/provider Send, private cryptography or real login.
+- Native manifest795f6f4495e4642c2b332836058c18fb7285a399db7df928fc15ca38f231e08e;
+  log4d8201eefd53978bc9e3a4157bfbe8ab3a321d39a1c53c2396758645ad694fb2;
+  test4d0386289259e8c8596af750186c74961c6a435c8165aee7b9a50c519e95f48a;
+  applicationd7de657fc6decd802ade000f8b80aa35c83c57211c19cc69806fa4e5ec845854.
+  Retained artifacts/UAT are in the existing sprint-root sent-location directory.
+  Full normal signed commit/push gates and helper-first matching activation are
+  next; builds/native results alone do not claim production activation or human
+  acceptance. ALLSEND, protected-provider, full S03 and epic acceptance stay OPEN.
+
+- Normal commit gateattempt1 actually fails before signing:1381 passed,3 failed,
+  35 locally ignored native cases. Preserve the log. Two existing tests expect
+  replaced picker/navigation markup; the recipient fixture has unavailable
+  preference authority rather than a real missing-record store. Correct exactly
+  those test seams, preserving all original escaping checks and adding an
+  unavailable-authority generic-rendering negative. Do not add a production
+  fallback. All three corrected cases execute1PASS each; format check passes.
+  The existing V10 refresh now counts5879, with zero refined high-relevance
+  findings; classification is not runtime proof. New matching nativeattempt2
+  is running against331 inputs because test-source bytes changed. Attempt1
+  remains actual historical evidence, not current-source or full-gate PASS.
