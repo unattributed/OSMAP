@@ -34,6 +34,10 @@
 .notification-event[data-read=false] { border-left:3px solid var(--accent); }
 .notification-empty { padding:1.2rem; }
 .notification-inbox-scope { max-width:75rem;font-size:.8rem;line-height:1.5; }
+.notification-day > section > h2 { margin:0;padding:.8rem 1rem;font-size:.9rem;overflow-wrap:anywhere; }
+.notification-day .notification-events { border-radius:0;border-left:0;border-right:0; }
+.notification-day:last-child .notification-events { border-bottom:0; }
+#notification-preferences-form > p { font-size:.8rem;line-height:1.5;overflow-wrap:anywhere; }
 @media(max-width:600px) { .notification-event { grid-template-columns:minmax(0,1fr) auto;gap:.6rem; }.notification-event > div { grid-column:1 / -1; }.notification-event form { grid-column:2; }.notification-event button { width:auto; } }
 @media(forced-colors:active) { .notification-event[data-read=false] { border-left-color:Highlight; }.header-notifications { color:LinkText; } }
 .header-notifications { position:relative; }

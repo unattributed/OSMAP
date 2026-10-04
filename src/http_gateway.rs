@@ -791,6 +791,27 @@ impl BrowserGateway for RuntimeBrowserGateway {
         self.set_message_flag_impl(context, validated_session, request)
     }
 
+    fn load_notification_preference(
+        &self,
+        session: &ValidatedSession,
+    ) -> Result<crate::notification_preferences::Preference, crate::notification_preferences::Error>
+    {
+        crate::notification_preferences::Store::new(&self.settings_dir)
+            .load(&session.record.canonical_username)
+    }
+    fn save_notification_preference(
+        &self,
+        session: &ValidatedSession,
+        revision: u64,
+        digest: crate::notification_preferences::DigestMode,
+    ) -> Result<crate::notification_preferences::Preference, crate::notification_preferences::Error>
+    {
+        crate::notification_preferences::Store::new(&self.settings_dir).save(
+            &session.record.canonical_username,
+            revision,
+            digest,
+        )
+    }
     fn record_session_notification(
         &self,
         account: &str,

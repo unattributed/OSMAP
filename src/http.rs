@@ -888,6 +888,13 @@ mod tests {
     mod notification_tests {
         include!("http/notification_tests.rs");
     }
+    mod notification_preference_tests {
+        include!("http/notification_preference_tests.rs");
+    }
+    #[cfg(unix)]
+    mod notification_digest_runtime_tests {
+        include!("http/notification_digest_runtime_tests.rs");
+    }
     mod identity_preference_tests {
         include!("http/identity_preference_tests.rs");
         include!("http/sender_identity_tests.rs");
@@ -1079,6 +1086,7 @@ mod tests {
         appearance_store: Option<AppearanceStore>,
         settings_store: Option<crate::settings::FileUserSettingsStore>,
         notification_store: Option<crate::notifications::NotificationStore>,
+        notification_preference_store: Option<crate::notification_preferences::Store>,
         notification_loads: std::sync::Arc<std::sync::atomic::AtomicUsize>,
         snooze_store: Option<crate::snooze::SnoozeStore>,
         identity_preferences_store: Option<crate::identity_preferences::IdentityPreferencesStore>,
@@ -1141,6 +1149,7 @@ mod tests {
                 identity_preferences_store: None,
                 sender_authority: crate::sender_authority::Provider::default(),
                 notification_store: None,
+                notification_preference_store: None,
                 notification_loads: Default::default(),
                 snooze_store: None,
                 composition_preferences_store: None,
@@ -2173,6 +2182,32 @@ mod tests {
                 .save(&session.record.canonical_username, value)
         }
 
+        fn load_notification_preference(
+            &self,
+            session: &ValidatedSession,
+        ) -> Result<
+            crate::notification_preferences::Preference,
+            crate::notification_preferences::Error,
+        > {
+            self.notification_preference_store.as_ref().map_or(
+                Ok(crate::notification_preferences::Preference::default()),
+                |store| store.load(&session.record.canonical_username),
+            )
+        }
+        fn save_notification_preference(
+            &self,
+            session: &ValidatedSession,
+            revision: u64,
+            digest: crate::notification_preferences::DigestMode,
+        ) -> Result<
+            crate::notification_preferences::Preference,
+            crate::notification_preferences::Error,
+        > {
+            self.notification_preference_store
+                .as_ref()
+                .ok_or(crate::notification_preferences::Error::Unavailable)?
+                .save(&session.record.canonical_username, revision, digest)
+        }
         fn record_session_notification(
             &self,
             account: &str,

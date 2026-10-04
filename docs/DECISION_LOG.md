@@ -8852,3 +8852,18 @@ SessionRevoked, losing read state, or inventing delivery jobs. The broader PAGE1
 mail/security/desktop dependencies remain with their later owners; a preference
 vertical is not a full S04 or Notifications closure. Continue isolated source-only
 password prerequisites without enabling an unsupported decorative password form.
+### 2026-10-04 — admit notification presentation after actual runtime qualification
+
+Private Individual/Daily UTC changes group existing inbox events without
+suppressing either security kind, altering read history or inventing delivery
+jobs. Admit the exact final352 inputs only after actual eight-case native and
+34-marker final-library owner0 Serve proof, with independent source/browser/
+security review. Retain the root argument refusal and its corrected binding;
+do not turn fixture/provenance checks into operator mail acceptance.
+
+Add the existing preference route to unchanged WSTG inventory and regenerate
+V10's test-only drift using the existing tool. Preserve its five production
+medium entries, validators, hooks, keys and policies. Normal signed GitHub sync
+and matching mail-first/obsd1 installation precede a narrow actionable Digest
+UAT. Full notification delivery dependencies, password workflow, protected
+provider delivery and whole-sprint/epic acceptance remain separate open work.

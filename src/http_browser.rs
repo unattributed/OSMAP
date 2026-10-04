@@ -323,6 +323,22 @@ pub trait BrowserGateway {
         }
     }
 
+    fn load_notification_preference(
+        &self,
+        _session: &ValidatedSession,
+    ) -> Result<crate::notification_preferences::Preference, crate::notification_preferences::Error>
+    {
+        Err(crate::notification_preferences::Error::Unavailable)
+    }
+    fn save_notification_preference(
+        &self,
+        _session: &ValidatedSession,
+        _revision: u64,
+        _digest: crate::notification_preferences::DigestMode,
+    ) -> Result<crate::notification_preferences::Preference, crate::notification_preferences::Error>
+    {
+        Err(crate::notification_preferences::Error::Unavailable)
+    }
     fn record_session_notification(
         &self,
         _account: &str,

@@ -226,6 +226,9 @@ where
             (HttpMethod::Post, "/notifications/read") => {
                 self.handle_notification_read(request, &context)
             }
+            (HttpMethod::Post, "/settings/notifications") => {
+                self.handle_notification_settings(request, &context)
+            }
             (HttpMethod::Get, "/drafts/autosave/config") => {
                 self.handle_autosave_config(request, &context)
             }

@@ -66,6 +66,7 @@ mod send_recovery;
 
 mod reader_neighbours;
 
+pub mod notification_preferences;
 mod notifications;
 mod signature_ui;
 

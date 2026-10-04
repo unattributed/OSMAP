@@ -145,14 +145,23 @@ where
         }
 
         if section == "notifications" {
+            let preference = self
+                .gateway
+                .load_notification_preference(&validated_session);
             return HandledHttpResponse {
                 response: html_response(
-                    200,
-                    "OK",
+                    if preference.is_ok() { 200 } else { 503 },
+                    if preference.is_ok() {
+                        "OK"
+                    } else {
+                        "Service Unavailable"
+                    },
                     "Notification Settings",
                     crate::http_ui::render_notifications_page(
                         &validated_session.record.canonical_username,
                         &validated_session.record.csrf_token,
+                        preference.as_ref().ok(),
+                        None,
                     ),
                 ),
                 audit_events,

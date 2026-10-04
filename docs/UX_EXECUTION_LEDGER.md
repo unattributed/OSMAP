@@ -6735,3 +6735,78 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   and draft13/14 readers are not supported downgrade paths. Continue the actual
   S04-01 in-app notification Digest preference gap, preserving both security event
   kinds and all original event/read/badge state; no scheduled external digest.
+
+### 2026-10-04 UTC — S04-01 notification presentation remediation in progress
+
+- Resume from signed clean2a8b886 with accepted R2 anchor6b3ce8f; signature and
+  all32 plan checksums verify. Frozen plan/reference bytes are unchanged.
+  The first remaining Settings gap has an actual compiled generated-form RED,
+  followed by real account-private Individual/Daily UTC preference persistence,
+  generated CSRF/CAS save, reload/restart and inbox grouping. Both mandatory
+  session event kinds and every original row/read control/unread badge remain.
+  This is in-app presentation, not scheduled/provider digest delivery.
+- Isolated combined candidate352 inputs has actual1433 library passes/0 failures/
+  38 explicit native skips, exact Runtime composite1 pass/eight markers, strict
+  Clippy/fmt and source parity. Independent source review24 focused/private-file
+  checks passes. Actual Edge154/Firefox155 keyboard, reload, stale-CAS, restart,
+  corrupt preference fallback and light/dark/mobile/forced-colour checks pass
+  with zero external/script/Send requests. Browser fixture adds only a private
+  preference-store seam; its one actual UTC day is separate from the Runtime
+  two-day discrimination. No native or deployed Digest readiness is claimed.
+- Native eight-case preparation preserves the prior seven exact cases105 markers
+  and10 loopback/7 append/6 disposable saves; added Digest requires eight markers
+  and zero transport. Independent exact driver/source/archive review precedes
+  execution. Matching current-library Serve qualification and normal signed
+  admission/sync/activation remain required. Artifacts are under
+  osmap-ux-s04/revalidation-20261004/notifications-preferences/.
+- Operator supplies new protected-send screenshots and reports no accepted
+  encrypted Proton delivery. Retain protected-delivery UAT as OPEN; the visual
+  Sent Encrypted MIME label and Proton readable body do not independently prove
+  emitted ciphertext, verified signature or provider decryption. No private
+  bodies, provider session URLs or raw screenshots enter Git. Continue current
+  Settings sequence; no provider Send/retry, policy/key change or scope diversion.
+### 2026-10-04 UTC — S04-01 notification Digest source/native admission
+
+The earlier in-progress record is superseded for executed qualification, not
+rewritten. Admit the exact reviewed352 compiler inputs (13 changed, three new)
+onto2a8b886a; source manifest
+`c21ee312b6dcfe58552563fe031cd255d36f8eec4d57cf167d6d7d05382ebfea`.
+Individual/Daily UTC is a private CAS preference for existing in-app inbox
+presentation only. SessionIssued and SessionRevoked, each original event ID,
+time/read control/read state and the raw unread badge remain available.
+
+- Actual combined local1433 library passes/0failed/38 explicitly skipped native
+  tests; focused Runtime Digest1pass/eight markers, strict Clippy and fmt pass.
+- Actual matching OpenBSD native eight-case run:8passes/0failed/0ignored,
+  113 exact markers, ten loopback submissions, seven authenticated append
+  attempts and six disposable Dovecot saves. The added Digest case performs
+  zero transport. Retain prior suite failures; this does not diagnose ALLSEND.
+- Actual final-library owner0 direct/helper-backed bootstrap Serve confinement:
+  34 exact markers/UID1001, zero helper connections, original authority controls,
+  private preference CAS/reload, two-day original-row rendering/read badge,
+  both event kinds and foreign-account isolation pass. Inventory, owned cleanup
+  and standard metadata are preserved. Initial root command's incorrect
+  dependency-manifest argument was refused before scratch/runtime; corrected
+  arguments from the unchanged reviewed binding pass. No guard was weakened.
+- Actual Edge154.0.4258.53/Firefox155.0 Digest keyboard/save/reload/CAS/read/
+  account-isolation/corruption checks pass, with light/dark/responsive/forced-
+  colour inspection and zero Send/external requests. Browser sessions are
+  synthetic; the test-only store seam is excluded from admitted production.
+- Native application
+  `6858843875bdb1c5f3a859e2916ce10b13308a3176f372d0b01d521e4b7ef8ea`,
+  library `eb1a83c9c9305eb12f9e73408cfbe0e7bc6700e7bfdd242ed8b6c0917d79aaf3`;
+  actual native result SHA9cf7231c and Serve result SHA25ea149c are retained under
+  `/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/notifications-preferences/`.
+- Register the existing POST/settings/notifications route in the unchanged WSTG
+  inventory after its actual missing-route RED, then existing tooling GREEN.
+  Refresh V10 through its existing generator:110 added test assumptions, the
+  same five medium production entries, unchanged validator/gate and all352
+  compiler inputs. Neither extra creates a strict-release qualification.
+
+Normal signed commit/push/fresh equality and matching mail-helper-first then
+obsd1 activation are still pending at this source-admission record. Digest human
+UAT is NOT RUN. Full PAGE17/S04/S08, operator ALLSEND, protected provider receipt/
+decryption/signature/return and encrypted Sent acceptance remain OPEN. The
+operator's latest screenshots do not establish either plaintext transmission
+or successful encrypted delivery; preserve the reported unresolved result and
+do not send a parallel provider message. Continue ordered backend remediation.
