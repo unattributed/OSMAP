@@ -6810,3 +6810,36 @@ decryption/signature/return and encrypted Sent acceptance remain OPEN. The
 operator's latest screenshots do not establish either plaintext transmission
 or successful encrypted delivery; preserve the reported unresolved result and
 do not send a parallel provider message. Continue ordered backend remediation.
+### 2026-10-04 UTC — S04-01 Digest engineering delivery; human UAT pending
+
+Product `6390a40dbaccdc205de0e58531af90aaee7dfe7d` has a verified Shopkeeper
+signature. Normal commit/push security gates pass1433 library tests/0failed/
+38 explicit native skips; fresh origin feature-branch equality is0ahead/0behind,
+clean, with all352 signed compiler inputs equal the executed native manifest.
+This supersedes the source-admission record's pending signing/sync status.
+
+The independently reviewed qualified wrapper SHA2c3e5571 and unchanged activator
+SHA182ed66a passed both staged preflights, then installed exact application
+`6858843875bdb1c5f3a859e2916ce10b13308a3176f372d0b01d521e4b7ef8ea`
+on mail's helper first, then obsd1's helper/web. Fresh authoritative-mail helper
+linkage verifies matching source/binary before obsd1 activation. Configuration,
+retention values, native key agents and unrelated service states are preserved.
+The process memory image hash is not measured. Actual public obsd1 HTTPS/login
+returns200 with certificate verification0; this is access proof, not a login,
+authenticated action, mail delivery or human acceptance result.
+
+Retained normal-sync, native/Serve/browser, preflight/activation and narrow UAT
+records are under the stable Notifications sprint root. Operator steps are in
+`/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/notifications-preferences/UAT.md`:
+Settings/Notifications, save Daily UTC, reload, inspect original notices/read
+state/count, return to Individual, and restore the original preference. Empty
+history leaves grouping unobserved; optional read-state changes must be restored
+or explicitly skipped. No Send, fault injection or operator session revocation
+is required for this Digest UAT. Human results are NOT RUN.
+
+Only this private in-app Digest increment is engineering-delivered. Remaining
+PAGE17/S04/S08 notification dependencies, authoritative password change,
+operator ALLSEND/protected provider receipt/signature/return and full epic
+acceptance remain OPEN. Continue concrete isolated S04-02 fresh-action admission
+and durable independent rate-state work; do not enable a password form before
+the required backend/runtime qualification exists.

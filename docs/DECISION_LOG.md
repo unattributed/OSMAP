@@ -8867,3 +8867,13 @@ medium entries, validators, hooks, keys and policies. Normal signed GitHub sync
 and matching mail-first/obsd1 installation precede a narrow actionable Digest
 UAT. Full notification delivery dependencies, password workflow, protected
 provider delivery and whole-sprint/epic acceptance remain separate open work.
+### 2026-10-04 — deliver Digest with observable restoration and exact open scope
+
+Actual normal signed source/GitHub equality and matching mail-first/obsd1
+activation establish the notification Digest increment's engineering delivery.
+Offer explicit Daily/Individual save/reload, original-row/read/count and restore
+steps; human acceptance stays NOT RUN. Public TLS/login and process health are
+supporting evidence, not authenticated UAT or protected-provider receipt. Keep
+full PAGE17/S04/epic and the operator's encrypted-delivery result open. Continue
+the working password backend prerequisites with independent review before UI
+activation; avoid repeating delivered notifications or already passed checks.
