@@ -5561,3 +5561,82 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   row's native More disclosure before accessing its hidden link; no product PASS
   or UAT-readiness claim follows from this failed probe. Repair/execute the
   discriminating interaction before claiming installed controls qualify.
+
+### 2026-10-04 UTC — S02 installed interaction results and next native seam
+
+- Signed656351b1e88f6e11b92c6da42967e8cd03b65d3d normally synchronizes to
+  the current GitHub UX branch; fresh fetch proves equal SHAs and clean0/0.
+  All309 frozen native inputs match signed Git blobs. Activate exact app
+  3aff39fd4aa02256f3468cabd262f05a2417239ebc612bb272295e028f065cf4
+  on obsd1 web only, retaining compatible authoritative helper103b/caab.
+  Actual serve peer1003 is asserted rather than repaired in this web-only scope.
+  No environment, key-agent, helper or retention-policy change. Exclusive
+  rollback backup: /var/backups/osmap-ux-s02-all-search-656351b1e88f-20261004.
+- Corrected installed Archive/Bin attempt2 opens native More disclosures with
+  keyboard Space before inspecting visible review links. Actual selected Archive
+  destination loads, six current owned tuples are preserved, review Cancel/Delete
+  controls and keyboard layout pass360/1440, zero POST/Send. This assessment is
+  pinned to its actual prior103b/caab web, not relabelled a new-web rerun. The
+  initial hidden-link probe failure is retained. Human mutations remain NOT RUN.
+- First installed new-web All attempt fails: HTTP200 but zero Message rows.
+  Actual audit1791080829 records mailbox-helper-client transport/response
+  refusal; temporally correlated authoritative helper1791080828 reports six
+  results across40 folders. This bounded log correlation does not prove exact
+  request/nonce equality or client delivery; missing matches are not established
+  as the cause.
+  Exact client transport/response qualification failure remains unresolved; do
+  not invent a cold-start explanation, increase deadlines, or erase this failure.
+- Instrumented GET-only All projection subsequently passes on the same3aff binary:
+  actual six owned rows, All6/Messages6/People0, Documents Unavailable, exact GUID
+  controls, query Tab, native Manual Open/public body/All Back, category links and
+  Clear at1440/360. Saved Bin/Manual and six tuples unchanged; zero POST/Send/
+  outside requests; owned synthetic-session cleanup PASS. Native and later
+  installed passes do not prove uninterrupted availability or human login/UAT.
+- Current actionable All and Archive/Bin UAT handoffs are under the stable S02
+  revalidation root. Human, OnOpen installed POST, paging/People Open, live
+  mutations, Documents, normal Send, provider and full slice/sprint acceptance
+  remain OPEN. No operator-controlled message was submitted or retried.
+- Next concrete S02-03 execution gap: native reversible bulk Move/Archive/Restore
+  with exact identity transitions, partial refusal stopping, no replay, factual
+  selection/context and preserved same-UID foreign/neighbour records. Existing
+  Stub partial-move and real native single-move/permanent-delete evidence do not
+  qualify this path. Add the discriminating real fixture; repair production code
+  only for demonstrated failures, not inferred absence from missing evidence.
+
+### 2026-10-04 UTC — S02-03 actual reversible bulk qualification
+
+- Add one ignored opt-in native test and registration, without changing the
+  production executor or mutation guards. Initial execution fails on raw URL
+  ordering; semantic comparison follows the actual rendered Refresh link.
+  Second execution fails because the selector counts hidden message_guid fields;
+  require actual bulk-form checkboxes and canonical positive UID names. Both
+  failures remain retained, with no false product-defect or completion claim.
+- Actual nativeattempt3 runs1 exact integration,0 failures/0 ignored and all12
+  proof markers. BrowserApp/Runtime/authenticated same-UID helper/isolated
+  Dovecot performs7 exact moves: Archive first confirmed, stale second refused,
+  third unattempted; stale replay cannot repeat it; remaining records move to Bin
+  and3 restore to Inbox. Destination identity/Archive event, current context,
+  cleared selections/counters and neighbour/foreign bytes/flags/GUIDs pass.
+  No expunge, append, flag, SMTP or private crypto operation. Owned scratch and
+  standard host metadata cleanup PASS; synthetic sessions are not real login.
+- Frozen310 inputs match current canonical source. Fixture59723baeeddce1ca88435c4dfec697f1f2b08ab9b9353069e88874b555b382b1,
+  testef8b7cda521e0a6c31027cd345d010bb3fa341d14a3bb6e90b1c44bfe4713be0,
+  app3aff39fd4aa02256f3468cabd262f05a2417239ebc612bb272295e028f065cf4.
+  App is byte-identical to current installed web; no activation needed or made.
+  Independent final-checkbox-native-review.json pins actual310 manifest/result;
+  no concrete source blocker. Native same-UID proof is not applied confinement.
+- Local aggregateattempt2 passes before the final selector-only correction.
+  Matching aggregateattempt3 fails one separate sentinel spawn with ETXTBSY
+  (1311 passed/1 failed/29 ignored). Actual focused repeat executes1 and passes;
+  the failure remains recorded, not silently retried as a mutation or waived.
+  Matching aggregateattempt4 actually passes acceptance/security/v14 with1312
+  library tests/29 opted-in native tests ignored locally. No gate was relaxed;
+  actual native1 execution above is separate from ignored local registration.
+- bulk-move/UAT.md defines expected/native/human results and a nonconflicting
+  fixture06 Restore/Archive/Move/Restore browser sequence after its earlier
+  All/untouched-neighbour checks. Human operations remain NOT RUN. Whole S02-03,
+  S02, Send, provider, protected-mail and epic acceptance remain OPEN.
+- Scrum identifies next actual S02-01 production gap: approved All's From/Time/
+  Attachment/OpenPGP/Unread/Folder controls are absent and current filter inputs
+  return400. Repair real code with executed RED/green cases; do not substitute a
+  paper finding for remediation. Documents remains its explicit S08 dependency.

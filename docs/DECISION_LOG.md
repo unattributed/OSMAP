@@ -8358,3 +8358,32 @@ measured zero, project only validated public previews, and use actual GUID-bound
 opening/Back paths. Retain compile and zero-case QA failures. Documents is an
 explicit later adapter dependency, not a fabricated zero or silently removed
 requirement. Execute matching native and installed proof before delivery claims.
+
+2026-10-04 UTC — Qualify actual installed All-search interactions against the
+six owned public fixtures and preserve the initial helper transport/response
+refusal. A temporally correlated helper dispatch produced six rows, without
+proof of matching request or socket delivery; later matching installed results
+pass without a source/binary change. Do not infer the failure's exact transport
+cause or claim reliability from a later success. Keep finite safe runtime
+diagnostics and unchanged private data, identity and deadlines. Deliver current
+browser steps with measured results and unrun human cases explicitly separated.
+
+Continue S02 remediation with actual native reversible bulk operations, including
+partial failure and replay prevention. Existing isolated source/Stub evidence is
+not a substitute. Developer, native executor, independent reviewer and Scrum
+handoff writer share exact frozen input/output evidence; no role may close a
+slice from paperwork, zero-case execution or health alone.
+
+2026-10-04 UTC — Actual native reversible bulk qualification passes after two
+retained test-instrument corrections: compare semantic return context rather
+than URL order, and count actual bulk checkboxes rather than hidden GUID inputs.
+The application is byte-identical to the installed3aff binary; do not redeploy
+unchanged code. Seven exact moves, confirmed-prefix/stale stop, replay refusal,
+Restore, current context and preserved neighbour/foreign state are executed.
+The separate local aggregate ETXTBSY sentinel failure remains retained, with
+focused and matching whole-gate repeats required rather than waived.
+
+Next S02-01 product remediation is the approved All-search filter row: current
+All rejects validated message filter inputs. Reuse bounded existing filters,
+preserve actual context through category/Open/Back/paging, and state their
+category applicability truthfully. Keep Documents and human acceptance open.
