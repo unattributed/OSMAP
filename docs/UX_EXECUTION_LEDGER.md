@@ -6137,3 +6137,64 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   receipt from self-readable encrypted Sent; it never treats public fixture
   outcomes as human acceptance. Next remaining combined seam is generated
   formatting/Preview through normal Runtime MIME and actual isolated Sent.
+
+### 2026-10-04 UTC — signed origin delivery and formatted integration admission
+
+- Origin21580d49a329ed74b28b5cf9651b9e1a1fed13c0 has a verified Good
+  Shopkeeper signature, passing normal commit/push hooks, fresh UX-origin SHA
+  equality, zero ahead/behind and clean delivery state. All312 signed compile
+  inputs match native attempt2. Final UAT distinguishes direct Reply/Forward
+  from saved/resumed Reply-all; saved/resumed Reply/Forward remain NOT RUN.
+  This is engineering qualification only; human/provider/crypto acceptance OPEN.
+- Admit reviewed S03-03 formatted candidate9c0fe4f56e7a7a584fd2c378a24bac07293fecab472b568adb95c12f10e1dc69:
+  one new cfg(test) native module plus additive parent registration. Required
+  generated formatting/image/Preview and real draft persistence proceed through
+  normal Runtime MIME, one loopback-only sink admission and authenticated real
+  disposable Sent. Compare Preview plain/HTML alternatives and decoded text/PNG
+  attachments; refuse invalid inputs without draft/transport mutation, preserve
+  replay/neighbour/identity/state/cleanup controls. Native HTTP UTF16 values do
+  not qualify actual browser JavaScript/keyboard selection. No production edit,
+  activation, operator Send or private-key/policy change is authorized by proof.
+- Actual local compileattempt1 exits101: MessageViewDecision was not imported
+  in the new fixture. Zero tests executed; source correction and new matching
+  compilation/execution required. Keep the failed log; no readiness inferred.
+- Developer corrected only the missing MessageViewDecision import; final
+  formatted fixture171df0431e756cef2f9d8885c6e4ce1a18b7b15ec7864ec1aea00775fccc9353.
+  Removing that import reconstructs the reviewed candidate byte-for-byte;
+  parent module registration is additive and earlier guards remain unchanged.
+  Local compileattempt2 exits0, with zero tests executed by compilation.
+- Actual formatted native attempt1 executes the exact ignored case:1PASS,
+  zero failed/ignored, all15 final markers and313 compiler inputs matching
+  canonical source before/after. Test4237dc1d19700f10039ff0912db8c2545c4669ded32297571d733ac9c4d257a8;
+  application457d1f4d5fe2e0e6a589871cd39b7e1d78c17c6b50899eca24ddd1f094d59290
+  unchanged from ordinary/origin qualification; no activation. Generated native
+  HTTP Bold/list/link/emoji/image actions use explicit UTF16 selection values,
+  persist actual drafts and Preview, and perform exactlyone normal Runtime
+  loopback submission/authenticated real isolated Sent append. Actual Preview
+  plain/HTML MIME alternatives and decoded text/PNG downloads match exactly.
+  Invalid link/image/formatted Send preserves source/stored draft and sends
+  nothing; replay makes no second dispatch/append. Bcc privacy, current/stale/
+  foreign identity, neighbour bytes/flags/GUIDs, zero move/expunge/flag/private
+  crypto, scratch cleanup and standard metadata preservation PASS.
+- These executed HTTP actions do not qualify actual browser JS or keyboard
+  selection; previous narrower browser tests retain their earlier bounds.
+  Full matching developer gate/signing remain pending; human Send/provider
+  receipt/private-key/sprint/epic acceptance remain OPEN. Retained native result
+  and root reconciliation are under formatted-submit; compile1 remains FAIL.
+- Matching aggregateattempt1 failed Clippy len_zero at fixture sink admission.
+  Replace len()<1 with is_empty(), preserving the exactzero-record guard; no
+  lint waiver. Earlier native result remains valid for its old source only.
+  Rebuild/re-execute matching native source and rerun the full gate required.
+- Corrected formatted nativeattempt2 now executes1PASS/zero failed/ignored/
+  all15 markers on313 matching inputs. Source1576e9160457fa7dcfe4f3e3e3771cc809b6db06004d2a00dcf2846e043b18f9;
+  test7d668916edbae0281abbfa0963e7deb87d9a3d07b203f47e838baeb60ab86e2e;
+  unchanged application457d1f4d... remains unactivated. Previous native1 PASS
+  remains scoped to its prior source and aggregate1 remains FAIL. Current-source
+  aggregate/signing/human acceptance are still pending, with no lint waiver.
+- Matching formatted aggregateattempt2 exits0:1334 library PASS/zero failed/
+  32 explicit local native skips and remaining security/format/Clippy/mapping
+  gates complete without waiver. Actual native attempt2, not local skips,
+  qualifies correctedsource; independent review7b47642ffc55eb6905c3d3da71caebd9779868b8bee461e4ee2a931200f8c214
+  reconciles its actual1/15/313. Next scoped seam is accepted localSMTP plus
+  failed Sent storage reconciliation. Human UAT/ALLSEND/provider/crypto/whole
+  S03 and epic acceptance remain OPEN; final signed sync follows normal hooks.

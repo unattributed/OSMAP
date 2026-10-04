@@ -4060,3 +4060,6 @@ mod ordinary_send_native_tests;
 // Separate exact-three generated origin submission proof; ordinary guards unchanged.
 #[path = "mailbox_helper_native_origin_send_tests.rs"]
 mod origin_send_native_tests;
+
+#[path = "mailbox_helper_native_formatted_send_tests.rs"]
+mod formatted_send_native_tests;

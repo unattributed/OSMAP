@@ -6,13 +6,13 @@ V10 Slice 4 classifies Rust assumptions that can affect fail-closed confidence. 
 
 ## Current UX source snapshot — 2026-10-04
 
-The current generated register is `maint/security/v10-rust-assumption-audit.json`, generated at UTC `2026-10-04T07:19:02Z`. These counts supersede the June 2026 numbers for the current source snapshot; they do not rewrite the original June assessed-source record below. This document update does not claim a new runtime remediation, deployment, completed UX slice or human acceptance.
+The current generated register is `maint/security/v10-rust-assumption-audit.json`, generated at UTC `2026-10-04T07:44:34Z`. These counts supersede the June 2026 numbers for the current source snapshot; they do not rewrite the original June assessed-source record below. This document update does not claim a new runtime remediation, deployment, completed UX slice or human acceptance.
 
 | Signal | Current value |
 | --- | --- |
-| Current normalized scanner count | `5124` |
-| Inventory SHA-256 | `c4dec562f7c4f9433f19cac3993d9b95da9a35404fc94e3f86da80453569af2d` |
-| Register file SHA-256 | `84ab333d2728512180f086f070b9025f635b88aa907a3fada109e755b3349abb` |
+| Current normalized scanner count | `5236` |
+| Inventory SHA-256 | `79e159d8e9ac6f0564e31d92023ddfb3d4a57f3ba76a36d526257f17996fc6fc` |
+| Register file SHA-256 | `e80fd5ef9302c355b8104894b44be1b2bc38aa1b0cc284e10d9f760768248d9a` |
 | Classification complete | `true` |
 | Original Slice 0 carried-forward intake signal | `712` (historical, not a current count) |
 | Refined register | `maint/security/v10-fail-closed-remediation.json` |
@@ -22,10 +22,10 @@ The current generated register is `maint/security/v10-rust-assumption-audit.json
 
 | Signal | Count |
 | --- | ---: |
-| expect_call | `981` |
-| panic_macro | `178` |
+| expect_call | `985` |
+| panic_macro | `183` |
 | unreachable_macro | `18` |
-| unwrap_call | `3947` |
+| unwrap_call | `4050` |
 
 ### Current baseline fail-closed classification
 
@@ -35,17 +35,17 @@ The current generated register is `maint/security/v10-rust-assumption-audit.json
 | panic_path_assumption | `70` |
 | production_adjacent_assumption | `1950` |
 | startup_or_global_invariant | `8` |
-| test_or_fixture_assumption | `3091` |
+| test_or_fixture_assumption | `3203` |
 
 ### Current baseline fail-closed relevance
 
 | Signal | Count |
 | --- | ---: |
 | high | `2020` |
-| low | `3091` |
+| low | `3203` |
 | medium | `13` |
 
-The baseline scanner is intentionally coarse: its `2020` high-relevance entries are not the refined production-path queue. The matching refinement reclassifies source test modules, recording `5038` source-test-module assumptions, `5119` final test/fixture assumptions, zero high-relevance entries and five medium-relevance entries. Zero refined high relevance does **not** prove all runtime paths safe or panic-free; it is a classification result at these exact generated inventory hashes.
+The baseline scanner is intentionally coarse: its `2020` high-relevance entries are not the refined production-path queue. The matching refinement reclassifies source test modules, recording `5150` source-test-module assumptions, `5231` final test/fixture assumptions, zero high-relevance entries and five medium-relevance entries. Zero refined high relevance does **not** prove all runtime paths safe or panic-free; it is a classification result at these exact generated inventory hashes.
 
 ## Preserved June 2026 record
 

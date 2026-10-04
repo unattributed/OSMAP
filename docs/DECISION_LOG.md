@@ -8567,3 +8567,27 @@ Matching final aggregate and signed synchronization must still complete before
 this engineering checkpoint is delivered. Reported ALLSEND failures, human origin
 UAT, real receipt/protected-provider qualification and whole S03 remain open;
 missing prior integrated coverage is not a production root-cause finding.
+
+
+### 2026-10-04 — Formatted submission qualifies the combined native path
+
+Actual formatted native attempt1 passes one complete case with 313 frozen source
+inputs, zero failed or ignored cases and all 15 final markers. Generated native
+HTTP Bold/list/link/emoji/local-image and Preview actions with supplied UTF-16
+selection values, private disposable draft persistence, plain/HTML alternatives,
+one loopback submission and one authenticated real disposable Dovecot Sent
+append now have combined execution proof. Exact public text/PNG downloads,
+invalid-input state preservation, Bcc privacy, replay refusal, scoped identities
+and neighbouring state/cleanup are checked. Preserve local compile attempt1's
+missing-import failure with zero executed tests; corrected compile attempt2 is
+compilation evidence, distinct from the complete native execution.
+
+The added cfg(test) fixture does not change production runtime behavior and
+requires no application activation solely for this qualification. It supplies
+selection offsets directly: it is not new browser keyboard or JavaScript proof,
+provider delivery, private-key, operator login or human UAT evidence. Existing
+formatter/browser/store/MIME proofs retain their scopes; absent prior combined
+coverage does not demonstrate a product defect or explain the operator's Send
+failures. Matching aggregate gates and signed synchronization remain pending at
+this entry. Reported ALLSEND, human formatted-message UAT, protected-provider
+acceptance and the full S03 sprint remain open, with no agent real-mail Send.
