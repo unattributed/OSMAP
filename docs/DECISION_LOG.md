@@ -8984,3 +8984,22 @@ Treat failed native fixtures as failures, preserve their exact source and diagno
 Repair all three mutation endpoint wrappers with the ordinary relay's existing OpenBSD libc getpeereid ABI when Python lacks that socket method. Preserve exact peer checks before reading/spawning, Linux behavior and default-off activation. Distinguish native relay causality from source-confirmed related gaps; retain actual REDs and matching25-case native scope. Signed source and primitive checks do not enable the full password workflow.
 
 Correct evidence projection: controlled Postfix attempt5 scratch_gone was true; only its root code stage remained. Keep its discarded SMTP response unknown. Admit only explicit certificate-required evidence in the disposable fixture, never generic handshake failure. Preserve attempt7's actual startup UID refusal and qualified cleanup without claiming a production defect or mail-delivery success.
+
+### 2026-10-04 — prioritize workflow closure and reduce avoidable iteration
+
+The operator asked for practical process improvements and their incorporation
+into current SOPs. Extend the existing agent framework and OSMAP adoption rather
+than create another policy system or edit the signed plan. Keep one integration
+objective, assigned dependency owners, early actual native probes, reuse of
+working paths, positive journey evidence and review of exact immutable deltas.
+After two failures at the same boundary, the parent and independent reviewer
+reassess the cause and fixture before another attempt. Retain all failed cases;
+do not weaken original security requirements or deadlines to manufacture a pass.
+
+Use focused checks plus matching integration gates and mandatory hooks, without
+duplicated full suites or unchanged UAT requests. Distinguish model capacity
+from connectivity and application failure. Resume the interrupted bounded
+assignment after reconciling side effects; internet reachability alone does not
+resolve a capacity error. Source/documentation delivery is not deployed workflow,
+human acceptance, encrypted provider receipt or epic completion. Existing
+engineering authority and immediate signed synchronization remain in force.

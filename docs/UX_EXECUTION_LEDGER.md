@@ -7073,3 +7073,23 @@ Continue the persistent-service native primitive, authoritative disposable SQL/e
 
 
 The peer checkpoint's normal commit attempt1 retained1568 library passes, one failure and38 explicit native skips. Existing valid_reply_without_eof_times_out_and_never_yields_success_receipt computed its Python reply inside a100ms client deadline; the server write refused and its join panicked, so it did not demonstrate a valid reply lacking EOF. Repair only that fixture: precompute the exact signed request/reply before timing, compare the actual server frame, witness the actual write, then use original1s client versus withheld1.5s EOF, assert Uncertain/quarantine and elapsed<1.3s. Matching focused1 PASS; independent review303ce0f5. No production timeout, EOF check or native qualification changed. Native25 scope excludes this later Rust fixture correction.
+
+#### Execution SOP improvement, 2026-10-04
+
+The operator requested recommendations and their incorporation into current
+project SOPs. On signed synchronized cb6fbe5baa598cf40d32a0721a97d2f39a236fb4,
+update only the existing agent framework, OSMAP adoption, decision log and this
+ledger. The accepted R2 anchor and all32 frozen plan/design checks remain valid.
+Root owns the documentation delta; Scrum independently reviews its consistency
+with the current plan and authority. Existing developers continue their concrete
+S04-02 assignments; no service, password, policy, provider or source activation
+is part of this documentation change.
+
+The operational changes are one active workflow integration objective, early
+native dependency probes, reuse of suitable working paths, explicit positive
+journey evidence, failure diagnosis before changed retries and immutable native
+inputs with a single executor. Use current records and required gates rather
+than extra boards or duplicated full suites. Agent capacity failure is retained
+as a capacity failure; the interrupted Crypto assignment was reactivated on the
+same model. This SOP delivery does not close S04-02, human Send/OpenPGP cases or
+the epic, and does not invite UAT of an unfinished password workflow.

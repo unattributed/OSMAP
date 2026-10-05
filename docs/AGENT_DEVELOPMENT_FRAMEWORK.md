@@ -91,6 +91,52 @@ journey results; **on reported failure**, the parent reopens the affected result
 and assigns root-cause work. Missing evidence changes the claim or blocks that
 case; it cannot be replaced by another agent's agreement.
 
+## Close the workflow, not just its components
+
+Use these execution rules within the existing scope, ledger and review gates;
+they add no status board, approval ceremony or acceptance requirement:
+
+- **Keep one active integration objective.** Developers can work in parallel on
+  its independent dependencies. Every component handoff names the remaining
+  connection to the promised user outcome and its owner. The parent completes
+  that connection; accumulating reviewed helpers is not the objective.
+- **Probe the riskiest real dependency early.** Before expanding implementation,
+  check the applicable native API, runtime version, transport, schema and
+  configured authority with the smallest authorized discriminating probe.
+  Establish actual behaviour before building a large fixture around an assumed
+  platform interface. Keep its scope explicit; a probe is not workflow QA.
+- **Reuse working paths first.** Compare a gap with the existing application
+  and deployed backend. Extend the narrowest suitable path. Introduce a helper,
+  protocol or service only for a demonstrated functional or security need;
+  explain the need and the integration cost in the existing decision record.
+- **Test the successful outcome as well as refusal.** A negative security test
+  cannot qualify a feature whose successful path has not run. Exercise the
+  actual frontend-to-backend boundary before asking the user to qualify it.
+  Keep required provider observations pending when outside agent authority.
+- **Diagnose a failed attempt before another attempt.** Retain the failing
+  case, stage and bounded sanitized diagnostic. Fix missing diagnostics before
+  repeating a fixture whose cause is unknown. Change only a justified boundary;
+  preserve original assertions, budgets and security requirements. Two failed
+  attempts at the same boundary trigger parent/independent-review reassessment
+  of the fixture and architecture before further iteration, not a new ceremony.
+- **Freeze once, review the delta, then integrate.** Native execution uses
+  immutable exact inputs, a single executor and explicit cleanup ownership.
+  Never edit a packaged candidate during execution. Run focused developer
+  checks and one matching aggregate integration pass; repeat only for relevant
+  changes, unresolved failures or mandatory repository hooks. Do not add full
+  suite repetitions merely to count another review.
+- **Treat interruption accurately.** Network reachability, agent/model capacity,
+  host execution and application failures are different causes. Reconcile
+  possible side effects, then retry the interrupted assignment when safe.
+  A capacity failure does not diagnose the user's internet or the application.
+  Reuse or reassign the bounded task instead of restarting the epic.
+
+At each handoff, the Scrum leader identifies the next executable step toward the
+same outcome, removes duplicate assignments and escalates only a concrete
+dependency needing the user's action. Progress reports lead with delivered
+behaviour and remaining acceptance; commit and test counts are supporting facts,
+not substitutes for usability. Retain the user's requested message frequency.
+
 ## Work order: one entry in the existing ledger
 
 Use this short record before implementation; link existing requirements instead

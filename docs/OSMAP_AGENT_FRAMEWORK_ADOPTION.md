@@ -77,6 +77,42 @@ Use available concurrency efficiently: active implementation plus independent
 review when there is concrete work; queue roles otherwise. Do not require six
 simultaneous agents or repeat passed audits after documentation-only changes.
 
+## Current execution improvements
+
+The operator requested these process improvements on 2026-10-04. Apply the
+framework's workflow-closure rules to existing OSMAP assignments immediately;
+the approved plan, slice order, security gates and authority remain unchanged.
+
+- Parent integration ownership stays with the earliest active gap, currently
+  S04-02's authoritative own-password journey. Separate worker, listener,
+  session, SQL/epoch and mail-containment components remain prerequisites until
+  their composed path works. Each agent handoff identifies its next integration
+  dependency and owner; no checkpoint creates a completed password slice.
+- Establish native dependencies before scaling fixtures. The measured missing
+  OpenBSD Python peer API and controlled Postfix startup/TLS results demonstrate
+  why runtime behaviour must be observed rather than inferred. Keep failed
+  attempts and investigate the exact stage before a changed invocation.
+- Reuse the existing Rust, mailbox and native relay paths when suitable. Any
+  additional privileged helper or protocol must address a concrete boundary and
+  include how it will connect to the working user journey. Do not build new
+  process infrastructure merely to produce another isolated passing test.
+- Native proposals contain executable ownership, deadlines, diagnostics and
+  cleanup, not only a case list. Independent review targets the frozen inputs;
+  one executor records the actual result. A source reviewer does not need to
+  rerun unchanged full suites already performed by the integration owner.
+- Ordinary mail and selected OpenPGP each need their own positive journey proof.
+  Continue to preserve the user's reported failures. No policy refusal, private
+  key probe, local sink, encrypted MIME label or healthy service establishes
+  Proton receipt. The operator remains the sole actor for the next provider Send.
+- Report application progress by the existing sprint milestones: implemented,
+  deployed, independently verified and human accepted are separate facts.
+  Keep unresolved cases visible and completion messages within the user's
+  requested fewer-than-50-word limit. Do not repeat unchanged UAT invitations.
+
+These improvements use the current ledger, decision log and sprint-root evidence.
+They introduce no extra approval gate, no repeated management audit and no
+change to operator keys, policies, services or the frozen plan.
+
 ## Baseline functions to preserve
 
 Historical pre-V14 source and recorded pilot evidence support usable ordinary
