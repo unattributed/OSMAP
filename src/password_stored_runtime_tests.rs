@@ -113,6 +113,14 @@ fn runtime_real_stored_lease_challenge_ack_changed_then_unlocked_cleanup() {
                 SystemTimeProvider.unix_timestamp(),
             )
             .unwrap();
+        // Cross a real wall-clock second under the existing deadline. The
+        // live transport uses SystemTimeProvider; freezing only the caller's
+        // cleanup clock would turn a valid response into containment.
+        let issued = request.issued();
+        while SystemTimeProvider.unix_timestamp() <= issued {
+            assert!(Instant::now() < deadline);
+            std::thread::sleep(Duration::from_millis(1));
+        }
         let reply = request
             .response(
                 crate::account_mutation::Outcome::Changed {
@@ -132,7 +140,7 @@ fn runtime_real_stored_lease_challenge_ack_changed_then_unlocked_cleanup() {
             &f.context,
             &f.token,
             f.prepared(),
-            (f.epoch.clone(), &f.clock),
+            (f.epoch.clone(), &SystemTimeProvider),
             &client,
             Instant::now() + Duration::from_secs(8),
         )
@@ -151,8 +159,14 @@ fn runtime_real_stored_lease_challenge_ack_changed_then_unlocked_cleanup() {
         .is_some());
     assert_eq!(std::fs::read(bob_path).unwrap(), bob_bytes);
     // A fresh new-epoch login after completion proves the real store lock was released.
-    let service = SessionService::new(f.store(), &f.clock, SystemRandomSource, 3600, 1800)
-        .with_epoch_authority(f.epoch.clone());
+    let service = SessionService::new(
+        f.store(),
+        SystemTimeProvider,
+        SystemRandomSource,
+        3600,
+        1800,
+    )
+    .with_epoch_authority(f.epoch.clone());
     let fresh = service
         .issue_with_epoch(
             &f.context,

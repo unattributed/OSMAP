@@ -9057,3 +9057,11 @@ The dormant native factory previously checked metadata alone, accepting include/
 ### 2026-10-05 — own pending SMTP authentication through publication
 
 Actual Postfix19 showed frontend proxy cancellation alone leaves a pending Postfix upstream TCP connection alive. Admit the reviewed disabled broker lifecycle: register exact peer/process-bound SASL channels before credential dispatch, consume a parsed one-use success receipt, and hold the shared account lock through captured-epoch recheck and success publication. Mutation cancellation derives its cutoff from the durable pending record, preserves Bob and newer epochs, and runs under the mutation's existing lock. Nineteen local tests and two failing seam mutants distinguish this source behavior. Native TCP closure, trusted production loader/control transport and full ingress coverage remain separate qualifications. Preserve the original three-second closure allowance across both kick and cancellation; no renewed post-kick allowance or frontend-only completion claim.
+
+### 2026-10-05 — keep real transport fixtures on one clock
+
+The normal push gate exposed a successful stored-mutation fixture mixing its fixed initial caller clock with live terminal timestamps. Force the real second rollover under the existing deadline, retain RED, and use the actual clock for positive cleanup and subsequent new-epoch login. Preserve production clock-regression/expiry checks and every authority/cleanup assertion. Commit the reviewed test repair separately without rewriting the signed source checkpoint or bypassing gates.
+
+### 2026-10-05 — diagnose SMTP success framing before widening its parser
+
+Actual diagnostic22 locates refusal in backend verification: seven-field real OK with matching canonical user/request, whereas source expects three. Preserve raw unknown extras and the failure; bind any parser repair to supported Dovecot/Postfix protocol and measured fixed metadata classes. Unknown metadata cannot mint authority or reset deadlines. Keep publication/containment native qualification and password form disabled until their complete owning path passes.
