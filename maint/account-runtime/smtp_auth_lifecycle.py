@@ -68,9 +68,23 @@ def _socket_identity(stream):
     return info.st_dev, info.st_ino
 
 
+@dataclass(frozen=True, repr=False)
+class DovecotProxyOkProfile:
+    """Closed supported passdb metadata, bound by trusted broker startup.
+
+    The loopback topology and TLS requirement are fixed. Metadata never chooses
+    the backend connection, process identity, account, epoch or operation budget.
+    """
+    backend_port: int
+
+    def __post_init__(self):
+        if type(self.backend_port) is not int or not 1024 <= self.backend_port <= 65535:
+            raise Refused('SMTP authentication OK profile refused')
+
+
 class OwnedSmtpPeerAuthority:
     """Fixed broker startup dependencies; no request can choose principals."""
-    def __init__(self, postfix_peer, backend_peer, backend_port, inspector):
+    def __init__(self, postfix_peer, backend_peer, backend_port, inspector, *, ok_profile=None):
         if (any(type(p) is not tuple or len(p) != 2 or
                 any(type(v) is not int or not 0 <= v < 2**32 - 1 for v in p)
                 for p in (postfix_peer, backend_peer))
@@ -81,6 +95,22 @@ class OwnedSmtpPeerAuthority:
         self._backend = backend_peer
         self._port = backend_port
         self._inspect = inspector
+        if ok_profile is None:
+            self._ok_fields = ()
+        elif type(ok_profile) is DovecotProxyOkProfile and ok_profile.backend_port == backend_port:
+            self._ok_fields = (b'proxy', b'host=127.0.0.1',
+                               b'port=' + str(backend_port).encode('ascii'), b'ssl=yes')
+        else:
+            raise Refused('SMTP authentication OK profile refused')
+
+    def check_ok(self, fields, request, account):
+        expected = (b'user=' + account.encode('ascii'),) + self._ok_fields
+        # Dovecot serializes fields in insertion order. Only their closed set
+        # matters; cardinality plus equality also rejects every duplicate.
+        if (len(fields) != 2 + len(expected) or fields[:2] != [b'OK', request]
+                or len(set(fields[2:])) != len(expected)
+                or set(fields[2:]) != set(expected)):
+            raise Refused('SMTP authentication backend success refused')
 
     def check(self, client, upstream, pid, budget):
         if type(budget) is not OperationBudget or type(pid) is not int or not 1 < pid <= 2**31 - 1:
@@ -264,9 +294,9 @@ class SmtpAuthLifecycle:
             with self._guard(channel.budget):
                 self._owned(channel)
                 fields = self._fields(line)
-                if (channel.verified or channel.published or len(fields) != 3
-                        or fields != [b'OK', channel.request, b'user=' + channel.account.encode('ascii')]):
+                if channel.verified or channel.published:
                     raise Refused('SMTP authentication backend success refused')
+                self._authority.check_ok(fields, channel.request, channel.account)
                 channel.verified = True
                 receipt = _Verified(channel, line)
                 channel._receipt = receipt

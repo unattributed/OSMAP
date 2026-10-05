@@ -9065,3 +9065,7 @@ The normal push gate exposed a successful stored-mutation fixture mixing its fix
 ### 2026-10-05 — diagnose SMTP success framing before widening its parser
 
 Actual diagnostic22 locates refusal in backend verification: seven-field real OK with matching canonical user/request, whereas source expects three. Preserve raw unknown extras and the failure; bind any parser repair to supported Dovecot/Postfix protocol and measured fixed metadata classes. Unknown metadata cannot mint authority or reset deadlines. Keep publication/containment native qualification and password form disabled until their complete owning path passes.
+
+### 2026-10-05 — accept only the measured supported SMTP proxy success profile
+
+Bind extra Dovecot OK fields to typed trusted startup: exact loopback host, configured owned backend port, ssl=yes and bare proxy, complete unique set plus matching request/canonical account. Keep minimal profile strict, reject unknown/credential/identity/TLS changes, and forward verified original bytes under the existing shared lock. Preserve actual24 startup/cleanup failure before AUTH as unqualified; neither metadata categories nor parser source tests prove native session cancellation or whole password acceptance.
