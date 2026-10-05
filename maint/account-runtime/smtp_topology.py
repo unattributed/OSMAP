@@ -63,7 +63,7 @@ class FixedSmtpRouting:
                     or before.st_mode & 0o077 or before.st_nlink != 1
                     or not 0 < before.st_size <= cls.LIMIT):
                 raise ValueError
-            fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW)
+            fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
             try:
                 opened = os.fstat(fd)
                 if cls._identity(opened) != cls._identity(before):

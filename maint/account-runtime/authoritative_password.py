@@ -45,7 +45,7 @@ class AuthoritativePasswordAdapter:
     HASH_PROGRAM = '/usr/local/bin/doveadm'
     SQL_ARGS = ('--defaults-file=/etc/osmap/account-mariadb.cnf', '-N', '-B',
                 '--raw', '--database=postfixadmin')
-    HASH_ARGS = ('pw', '-s', 'ARGON2ID')
+    HASH_ARGS = ('-O', 'pw', '-s', 'ARGON2ID')
     LIMIT_SECONDS = 10
     OUTPUT_LIMIT = 4096
 
@@ -231,10 +231,18 @@ class NativeExecutor:
         # Capture before spawning: process creation consumes this phase's
         # original allowance, independently of the enclosing operation budget.
         deadline=time.monotonic()+operation_seconds
+        environment={'PATH':'/usr/bin:/usr/local/bin','LC_ALL':'C'}
+        if (program,args)==(AuthoritativePasswordAdapter.HASH_PROGRAM,
+                            AuthoritativePasswordAdapter.HASH_ARGS):
+            # Tagged Dovecot opens its config path before parsing -O. Bind
+            # that pre-option attempt to a non-socket device; -O then skips
+            # configuration input. Its default stats writer is disabled too.
+            # No inherited setting, credential or caller override is accepted.
+            environment.update(CONFIG_FILE='/dev/null',STATS_WRITER_SOCKET_PATH='')
         child=subprocess.Popen((program,)+args,stdin=subprocess.PIPE,
                                stdout=subprocess.PIPE,stderr=subprocess.PIPE,
                                shell=False,close_fds=True,
-                               env={'PATH':'/usr/bin:/usr/local/bin','LC_ALL':'C'})
+                               env=environment)
         output=bytearray();error=bytearray();offset=0
         try:
             with selectors.DefaultSelector() as selector:

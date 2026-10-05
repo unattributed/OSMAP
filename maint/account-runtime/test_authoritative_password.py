@@ -42,7 +42,7 @@ class PasswordTests(unittest.TestCase):
         self.assertTrue(receipt.credential_written);self.assertFalse(receipt.sessions_revoked)
         self.assertEqual(receipt.changed_at,'20261004170001')
         hashcall,sqlcall=self.executor.calls[-2:]
-        self.assertEqual(hashcall[1],('pw','-s','ARGON2ID'))
+        self.assertEqual(hashcall[1],('-O','pw','-s','ARGON2ID'))
         self.assertEqual(hashcall[2],(PASSPHRASE+'\n'+PASSPHRASE+'\n').encode())
         self.assertNotIn(PASSPHRASE,str(hashcall[1]));self.assertNotIn(PASSPHRASE,sqlcall[2].decode())
         query=sqlcall[2].decode()

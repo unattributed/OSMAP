@@ -9069,3 +9069,11 @@ Actual diagnostic22 locates refusal in backend verification: seven-field real OK
 ### 2026-10-05 — accept only the measured supported SMTP proxy success profile
 
 Bind extra Dovecot OK fields to typed trusted startup: exact loopback host, configured owned backend port, ssl=yes and bare proxy, complete unique set plus matching request/canonical account. Keep minimal profile strict, reject unknown/credential/identity/TLS changes, and forward verified original bytes under the existing shared lock. Preserve actual24 startup/cleanup failure before AUTH as unqualified; neither metadata categories nor parser source tests prove native session cancellation or whole password acceptance.
+
+### 2026-10-05 — isolate hash configuration and keep metadata reads bounded
+
+Metadata qualification does not authorize dispatch of ordinary `doveadm pw`: tagged startup opens its configuration path before parsing `-O`. Review closed hash-only bindings to `/dev/null` and empty stats-writer settings alongside `-O`; keep SQL environment unchanged and compile-defined module custody/native confinement separate. Require actual synthetic native format/full-tail controls before dispatch qualification. Refuse special-file replacement without entering a blocking open in every privileged material reader; the routing-plan repair adds nonblocking admission while preserving exact regular-file identity, ancestry, owner and deadline checks. Fix test-private `/tmp` fixtures instead of weakening production ancestry.
+
+### 2026-10-05 — separate owned startup cleanup from authentication admission
+
+Native24 left its private Dovecot fixture alive after startup expiry. Fresh reviewed read-only observations establish current numeric/namespace facts only; they do not authorize signalling a historical PID or prove why startup expired. Future fixture cleanup must retain born namespace and exclusive unreaped Popen session/group custody, while strict steady-state child identity still controls authentication admission. Unavailable/deferred children must not defeat cleanup of that exact owned group. Preserve original budgets and uncertainty; no blanket process stop, unchanged retry, standard-service mutation or password activation.
