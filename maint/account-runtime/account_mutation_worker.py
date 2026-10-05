@@ -7,6 +7,7 @@ are still required. No existing admission worker, startup or browser route
 imports this module. A failed reply never implies a failed credential write.
 """
 from contextlib import contextmanager
+import ctypes
 import fcntl
 import hashlib
 import json
@@ -28,6 +29,41 @@ NATIVE_CONFINEMENT_QUALIFIED = False
 
 class Unavailable(Exception):
     """No trustworthy no-write outcome; reconcile rather than retry."""
+
+
+def _peer(stream):
+    try:
+        if hasattr(stream,'getpeereid'):
+            uid,gid=stream.getpeereid()
+        elif sys.platform.startswith('openbsd'):
+            # Match the already reviewed ordinary relay's native ABI. OpenBSD
+            # Python need not expose a socket.getpeereid method; the kernel
+            # credential boundary remains mandatory, never a mode/UID waiver.
+            fd=stream.fileno()
+            if type(fd) is not int or not 0<=fd<=2**31-1:
+                raise Unavailable('mutation native peer descriptor unavailable')
+            libc=ctypes.CDLL(None,use_errno=True)
+            function=getattr(libc,'getpeereid',None)
+            if function is None:
+                raise Unavailable('mutation native peer symbol unavailable')
+            function.argtypes=[ctypes.c_int,ctypes.POINTER(ctypes.c_uint),ctypes.POINTER(ctypes.c_uint)]
+            function.restype=ctypes.c_int
+            native_uid=ctypes.c_uint();native_gid=ctypes.c_uint()
+            ctypes.set_errno(0)
+            if function(fd,ctypes.byref(native_uid),ctypes.byref(native_gid))!=0:
+                number=ctypes.get_errno()
+                raise Unavailable(f'mutation native peer failed errno {number}')
+            uid,gid=native_uid.value,native_gid.value
+        elif sys.platform.startswith('linux'):
+            _pid,uid,gid=struct.unpack('3i',stream.getsockopt(socket.SOL_SOCKET,socket.SO_PEERCRED,12))
+        else:
+            raise Unavailable('mutation peer platform unavailable')
+        if any(type(v) is not int or not 0<=v<2**32-1 for v in (uid,gid)):
+            raise Unavailable('mutation peer identity unavailable')
+        return uid
+    except Unavailable:raise
+    except Exception:raise Unavailable('mutation peer unavailable') from None
+
 
 
 class IntentStore(EpochStore):
@@ -406,16 +442,10 @@ class MutationWorker:
     def _connection(self, stream, trusted_web_uid, original_budget=False, *, guarded_session=False,
                     continuous_issuer=False):
         """Private finite reviewed transport seam; tests use actual local peers."""
-        if type(trusted_web_uid) is not int or trusted_web_uid <= 0:
+        if type(trusted_web_uid) is not int or not 0 < trusted_web_uid < 2**32-1:
             raise Unavailable('mutation peer unavailable')
         try:
-            if hasattr(stream, 'getpeereid'):
-                uid, _ = stream.getpeereid()
-            elif sys.platform.startswith('linux'):
-                _, uid, _ = struct.unpack('3i', stream.getsockopt(socket.SOL_SOCKET, socket.SO_PEERCRED, 12))
-            else:
-                raise Unavailable('mutation peer unavailable')
-            if uid != trusted_web_uid:
+            if _peer(stream) != trusted_web_uid:
                 raise Unavailable('mutation peer unavailable')
             deadline = self._monotonic() + 60
             def read_exact(size):

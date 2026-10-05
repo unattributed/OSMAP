@@ -8977,3 +8977,10 @@ Keep the actual controlled Postfix startup failure and unknown cleanup distinct 
 Replace one-shot native service dispatch with the reviewed serial listener, preserving granted namespace identity, independent request authority and original in-flight deadlines. Repair the demonstrated stop-during-accept race before admission; preserve original candidate, actual RED and both superseding reviews. Graceful admission stop does not prove forced remote worker termination. Keep native construction and the password form disabled until the composed authoritative workflow is actually qualified.
 
 Treat failed native fixtures as failures, preserve their exact source and diagnose missing evidence rather than issuing cosmetic completion. Retain relay19/two failures/root case unexecuted. Correct the measured Postfix master.cf column interpretation without broadening unrelated child identities; exact private stop after live lease/config/pid binding is authorized owned-resource cleanup, not a production stop or a rewritten native pass.
+
+
+### 2026-10-04 — use measured native kernel peers without relaxing admission
+
+Repair all three mutation endpoint wrappers with the ordinary relay's existing OpenBSD libc getpeereid ABI when Python lacks that socket method. Preserve exact peer checks before reading/spawning, Linux behavior and default-off activation. Distinguish native relay causality from source-confirmed related gaps; retain actual REDs and matching25-case native scope. Signed source and primitive checks do not enable the full password workflow.
+
+Correct evidence projection: controlled Postfix attempt5 scratch_gone was true; only its root code stage remained. Keep its discarded SMTP response unknown. Admit only explicit certificate-required evidence in the disposable fixture, never generic handshake failure. Preserve attempt7's actual startup UID refusal and qualified cleanup without claiming a production defect or mail-delivery success.

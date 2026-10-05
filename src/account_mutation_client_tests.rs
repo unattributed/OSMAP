@@ -334,23 +334,29 @@ fn original_caller_deadline_bounds_reply_timeout_without_new_phase_budget() {
 fn valid_reply_without_eof_times_out_and_never_yields_success_receipt() {
     let scratch = Scratch::new();
     let (client, listener) = scratch.client();
+    // Prepare the exact signed reply before starting the transport deadline.
+    // Python fixture startup must not consume the EOF timeout discriminator.
+    let prepared = request();
+    let expected_frame = prepared.bytes().unwrap();
+    let reply = python_reply(&expected_frame, changed());
+    let clock = Clock::new();
+    let (written, observed) = std::sync::mpsc::channel();
     let server = std::thread::spawn(move || {
         let (mut stream, _) = listener.accept().unwrap();
-        let deadline = Instant::now() + Duration::from_secs(1);
+        let deadline = Instant::now() + Duration::from_secs(2);
         let raw = read_frame(&mut stream, MAX_FRAME, deadline).unwrap();
-        write_frame(&mut stream, &python_reply(&raw, changed()), deadline).unwrap();
-        std::thread::sleep(Duration::from_millis(150));
+        assert_eq!(raw, expected_frame);
+        write_frame(&mut stream, &reply, deadline).unwrap();
+        written.send(()).unwrap();
+        std::thread::sleep(Duration::from_millis(1500));
     });
-    assert_eq!(
-        client
-            .execute_with(
-                request(),
-                Instant::now() + Duration::from_millis(100),
-                &Clock::new()
-            )
-            .unwrap_err(),
-        Error::Uncertain
-    );
+    let began = Instant::now();
+    let outcome = client.execute_with(prepared, began + Duration::from_secs(1), &clock);
+    let elapsed = began.elapsed();
+    observed.recv_timeout(Duration::from_secs(1)).unwrap();
+    assert_eq!(outcome.unwrap_err(), Error::Uncertain);
+    assert_eq!(client.0.state.lock().unwrap().quarantine.len(), 1);
+    assert!(elapsed < Duration::from_millis(1300));
     server.join().unwrap();
 }
 #[test]

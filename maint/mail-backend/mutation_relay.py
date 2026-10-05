@@ -6,6 +6,7 @@ Unverified frame deadlines may only shorten this relay's60s resource cap; they
 never authorize an account operation. Local SSH cleanup is not remote stop proof.
 """
 import json
+import ctypes
 import math
 import os
 from pathlib import Path
@@ -90,10 +91,38 @@ class _Deadline:
         return remaining
 
 def _peer(stream):
-    if hasattr(stream,'getpeereid'):return stream.getpeereid()[0]
-    if sys.platform.startswith('linux'):
-        return struct.unpack('3i',stream.getsockopt(socket.SOL_SOCKET,socket.SO_PEERCRED,12))[1]
-    raise Unavailable('mutation peer unavailable')
+    try:
+        if hasattr(stream,'getpeereid'):
+            uid,gid=stream.getpeereid()
+        elif sys.platform.startswith('openbsd'):
+            # Match the already reviewed ordinary relay's native ABI. OpenBSD
+            # Python need not expose a socket.getpeereid method; the kernel
+            # credential boundary remains mandatory, never a mode/UID waiver.
+            fd=stream.fileno()
+            if type(fd) is not int or not 0<=fd<=2**31-1:
+                raise Unavailable('mutation native peer descriptor unavailable')
+            libc=ctypes.CDLL(None,use_errno=True)
+            function=getattr(libc,'getpeereid',None)
+            if function is None:
+                raise Unavailable('mutation native peer symbol unavailable')
+            function.argtypes=[ctypes.c_int,ctypes.POINTER(ctypes.c_uint),ctypes.POINTER(ctypes.c_uint)]
+            function.restype=ctypes.c_int
+            native_uid=ctypes.c_uint();native_gid=ctypes.c_uint()
+            ctypes.set_errno(0)
+            if function(fd,ctypes.byref(native_uid),ctypes.byref(native_gid))!=0:
+                number=ctypes.get_errno()
+                raise Unavailable(f'mutation native peer failed errno {number}')
+            uid,gid=native_uid.value,native_gid.value
+        elif sys.platform.startswith('linux'):
+            _pid,uid,gid=struct.unpack('3i',stream.getsockopt(socket.SOL_SOCKET,socket.SO_PEERCRED,12))
+        else:
+            raise Unavailable('mutation peer platform unavailable')
+        if any(type(v) is not int or not 0<=v<2**32-1 for v in (uid,gid)):
+            raise Unavailable('mutation peer identity unavailable')
+        return uid
+    except Unavailable:raise
+    except Exception:raise Unavailable('mutation peer unavailable') from None
+
 
 def ssh_argv():
     return (SSH,'-F','/dev/null','-T','-a','-x','-i',str(IDENTITY),
