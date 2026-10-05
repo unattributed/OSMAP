@@ -77,6 +77,93 @@ impl Fixture {
         .authorization
         .unwrap()
     }
+    fn prepared_before(&self, deadline: std::time::Instant) -> password_change::Prepared<'_> {
+        let primary = Primary::new(&self.epoch);
+        let factor = SecondFactorService::new(AuthenticationPolicy::default(), Factor::accepted());
+        password_change::prepare_before(
+            Services {
+                primary: &primary,
+                factor: &factor,
+                epoch: &*self.epoch,
+                rate: &self.rate,
+                clock: &self.clock,
+                policy: AuthenticationPolicy::default(),
+            },
+            Attempt {
+                context: &self.context,
+                session: &self.session,
+                request: request(),
+            },
+            deadline,
+        )
+        .authorization
+        .unwrap()
+    }
+}
+
+struct DelayedChangedEpoch {
+    epoch: Arc<Epoch>,
+    original: std::time::Instant,
+    changed_calls: AtomicUsize,
+}
+impl EpochAuthority for DelayedChangedEpoch {
+    fn admit(&self, account: &str, epoch: u64) -> Result<(), crate::account_admission::Error> {
+        self.epoch.admit(account, epoch)?;
+        if epoch == 4 {
+            self.changed_calls.fetch_add(1, Ordering::SeqCst);
+            if let Some(remaining) = self
+                .original
+                .checked_duration_since(std::time::Instant::now())
+            {
+                std::thread::sleep(remaining + std::time::Duration::from_millis(20));
+            }
+        }
+        Ok(())
+    }
+}
+
+#[test]
+fn captured_preparation_deadline_bounds_post_receipt_epoch_and_browser_cleanup() {
+    let f = Fixture::new();
+    let path = f.store().session_path(&f.session.record.session_id);
+    let before = std::fs::read(&path).unwrap();
+    let original = std::time::Instant::now() + std::time::Duration::from_millis(400);
+    let prepared = f.prepared_before(original);
+    let authority = Arc::new(DelayedChangedEpoch {
+        epoch: f.epoch.clone(),
+        original,
+        changed_calls: AtomicUsize::new(0),
+    });
+    let dispatched = AtomicUsize::new(0);
+    let quarantined = AtomicUsize::new(0);
+    let result = f
+        .gateway
+        .password_completion_for_test(
+            &f.context,
+            &f.token,
+            prepared,
+            (authority.clone(), &f.clock),
+            std::time::Instant::now() + std::time::Duration::from_secs(2),
+            |action| {
+                assert!(std::time::Instant::now() < original);
+                dispatched.fetch_add(1, Ordering::SeqCst);
+                f.epoch.value.store(4, Ordering::SeqCst);
+                Ok(completion_receipt(action, changed_outcome()))
+            },
+            |account| {
+                assert_eq!(account, "alice@example.test");
+                quarantined.fetch_add(1, Ordering::SeqCst);
+            },
+        )
+        .unwrap();
+    assert_eq!(dispatched.load(Ordering::SeqCst), 1);
+    assert_eq!(authority.changed_calls.load(Ordering::SeqCst), 1);
+    assert_eq!(
+        result,
+        crate::session::BrowserRevocation::Contained { count: 0 }
+    );
+    assert_eq!(quarantined.load(Ordering::SeqCst), 1);
+    assert_eq!(std::fs::read(path).unwrap(), before);
 }
 #[test]
 fn stored_revocation_after_preparation_refuses_original_snapshot_consumption() {

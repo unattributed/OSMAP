@@ -9003,3 +9003,16 @@ assignment after reconciling side effects; internet reachability alone does not
 resolve a capacity error. Source/documentation delivery is not deployed workflow,
 human acceptance, encrypted provider receipt or epic completion. Existing
 engineering authority and immediate signed synchronization remain in force.
+
+### 2026-10-05 — carry preparation's deadline through complete browser cleanup
+
+Repair the independently identified completion boundary, rather than rely on
+the mutation transport's narrower deadline clamp. Derive the earlier of the
+caller's deadline and Prepared's captured original before constructing epoch
+authority, and use it at receipt, admission and browser cleanup. Preserve a
+shorter caller budget and legacy preparation without a captured deadline.
+Actual delayed new-epoch admission RED returned old-session revocation after
+the original deadline expired; repaired common completion contains instead and
+leaves browser bytes unchanged. Keep this narrow source increment separate
+from the unfinished real-worker/stored-lease composition and from native or
+human workflow acceptance. No timeout is extended and no activation is granted.

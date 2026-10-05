@@ -77,6 +77,7 @@ impl RuntimeBrowserGateway {
         mutation: &crate::account_mutation_client::Client,
         original_deadline: std::time::Instant,
     ) -> Result<crate::session::BrowserRevocation, password_change::Error> {
+        let original_deadline = prepared.bound_workflow_deadline(original_deadline);
         let Some(client) = &self.account_admission_client else {
             return Err(password_change::Error::Unavailable);
         };
@@ -123,6 +124,9 @@ impl RuntimeBrowserGateway {
         use crate::account_mutation::Outcome as MutationOutcome;
         use crate::session::BrowserRevocation;
         use std::time::{Duration, Instant};
+        // Preparation's captured budget also bounds receipt, epoch admission
+        // and browser cleanup; a later caller cannot renew it.
+        let deadline = prepared.bound_workflow_deadline(deadline);
         let now = Instant::now();
         if deadline <= now || deadline > now + Duration::from_secs(60) {
             return Err(password_change::Error::Expired);

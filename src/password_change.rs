@@ -386,6 +386,14 @@ fn failed<'a>(
     })
 }
 impl<'a> Prepared<'a> {
+    pub(crate) fn bound_workflow_deadline(
+        &self,
+        supplied: std::time::Instant,
+    ) -> std::time::Instant {
+        self.workflow_deadline
+            .map(|original| supplied.min(original))
+            .unwrap_or(supplied)
+    }
     /// Rechecks the authoritative account epoch and the supplied session record.
     /// A future mutation caller MUST revalidate the session from its durable
     /// SessionStore immediately before consumption; this borrowed snapshot does

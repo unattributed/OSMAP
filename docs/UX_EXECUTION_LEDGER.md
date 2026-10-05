@@ -7093,3 +7093,45 @@ than extra boards or duplicated full suites. Agent capacity failure is retained
 as a capacity failure; the interrupted Crypto assignment was reactivated on the
 same model. This SOP delivery does not close S04-02, human Send/OpenPGP cases or
 the epic, and does not invite UAT of an unfinished password workflow.
+
+#### S04-02 captured completion deadline repair, 2026-10-05
+
+Continue from signed synchronized100fa1db87427c1380319f35650a0ad8d9144152.
+Root owns a narrow three-source-path repair in password-change/
+completion-captured-deadline-increment1; Scrum independently reviews it.
+The full stored-lease Runtime candidate remains separate and unadmitted.
+Source scope is Prepared's captured-deadline accessor, common completion and
+its durable browser-session regression. Derived V10 inventories/claims and the
+decision log may refresh through unchanged generators; no plan, classifier,
+authentication, native flag, service, operator credential or provider action
+changes are authorized by this source increment.
+
+Independent review of the working Runtime found completion could use a later
+caller deadline for new-epoch admission and browser cleanup, although transport
+already clamps to preparation's original deadline. Actual common Runtime RED
+returned OldSessionsRevoked count1 after preparation expired; expected Contained
+count0. It uses an authenticated typed receipt and the actual browser store,
+not a native writer. Original wrongly exact-filtered zero-test invocation is
+retained separately and supplies no proof. The narrow fix takes the earlier
+deadline before public DeadlineAuthority construction and common receipt,
+epoch admission and browser cleanup. Legacy preparation without a captured
+deadline preserves existing behaviour. Actual minimal-candidate21 focused
+completion/session controls pass, zero failures/skips. Preserve this scope;
+normal gates, review, signed synchronization and native qualification are
+separate facts. S04-02, user Send/protected delivery and epic remain OPEN.
+
+The current native dependency failures are preserved in their original frozen
+packages. Reviewed Postfix10 diagnostic execution on obsd1 still FAILED, now
+attributed to auth-write-and-reply: expected235, observed454 with enhanced4.7.0.
+The certificate-required negative passed; both owned services were measured
+gone, scratch removed and standard metadata preserved. The root source stage
+remains retained. These facts do not diagnose the discarded older Bob reply or
+the new underlying auth failure. No mail/provider command was executed.
+
+Reviewed disposable SQL increment3 native attempt1 FAILED before its23 controls.
+Source parity passed, owned SQL-group cleanup and namespace removal were
+confirmed; its separate root source stage remains retained. Wrapper RuntimeError
+means rejection of a non-PASS keeper receipt, not an observed driver exception.
+Account's independently reviewed diagnostic increment4 preserves SQL assertions,
+budgets and cleanup; its changed execution custody is still pending before any
+new invocation. These failures create diagnosed-stage tasks, not native passes.
