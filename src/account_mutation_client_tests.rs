@@ -303,24 +303,31 @@ fn malformed_frame_eof_trailing_or_bad_mac_is_uncertain_and_quarantined_no_retry
 fn original_caller_deadline_bounds_reply_timeout_without_new_phase_budget() {
     let scratch = Scratch::new();
     let (client, listener) = scratch.client();
+    // Prepare before timing the reply-timeout branch. A short setup allowance
+    // could expire before any frame and correctly return Expired instead.
+    let prepared = request();
+    let clock = Clock::new();
+    let (received, observed) = std::sync::mpsc::channel();
     let server = std::thread::spawn(move || {
         let (mut stream, _) = listener.accept().unwrap();
         read_frame(
             &mut stream,
             MAX_FRAME,
-            Instant::now() + Duration::from_secs(1),
+            Instant::now() + Duration::from_secs(2),
         )
         .unwrap();
-        std::thread::sleep(Duration::from_millis(100));
+        received.send(()).unwrap();
+        std::thread::sleep(Duration::from_millis(1500));
     });
     let began = Instant::now();
-    assert_eq!(
-        client
-            .execute_with(request(), began + Duration::from_millis(30), &Clock::new())
-            .unwrap_err(),
-        Error::Uncertain
-    );
-    assert!(began.elapsed() < Duration::from_millis(200));
+    let outcome = client.execute_with(prepared, began + Duration::from_secs(1), &clock);
+    let elapsed = began.elapsed();
+    // Confirm actual submission; timeout must use the original caller bound,
+    // not a fresh phase or the later server EOF at 1.5 seconds.
+    observed.recv_timeout(Duration::from_secs(1)).unwrap();
+    assert_eq!(outcome.unwrap_err(), Error::Uncertain);
+    assert_eq!(client.0.state.lock().unwrap().quarantine.len(), 1);
+    assert!(elapsed < Duration::from_millis(1300));
     server.join().unwrap();
 }
 #[test]

@@ -109,10 +109,27 @@ impl Client {
     ) -> Result<TerminalReceipt, Error> {
         self.execute_guarded_with(action, &SystemTimeProvider)
     }
+    /// Guarded-only continuity: helper durably marks pending before its nonce
+    /// challenge, and this ACK is emitted while the actual session lock is held.
+    /// Fixed native routing/bootstrap remains disabled and unqualified.
+    pub fn execute_guarded_continuous(
+        &self,
+        action: crate::account_guarded_mutation::GuardedMutation<'_>,
+    ) -> Result<TerminalReceipt, Error> {
+        self.execute_guarded_mode(action, &SystemTimeProvider, true)
+    }
     fn execute_guarded_with(
         &self,
         action: crate::account_guarded_mutation::GuardedMutation<'_>,
         clock: &dyn TimeProvider,
+    ) -> Result<TerminalReceipt, Error> {
+        self.execute_guarded_mode(action, clock, false)
+    }
+    fn execute_guarded_mode(
+        &self,
+        action: crate::account_guarded_mutation::GuardedMutation<'_>,
+        clock: &dyn TimeProvider,
+        continuous: bool,
     ) -> Result<TerminalReceipt, Error> {
         action.consume(|request, frame, deadline| {
             let mut at = clock.unix_timestamp();
@@ -133,7 +150,7 @@ impl Client {
             check_time(&request, deadline, clock, &mut at)?;
             let stream = crate::openbsd::connect_unix_before(&self.0.socket, deadline)
                 .map_err(|_| Error::Unavailable)?;
-            self.exchange(request, frame, stream, deadline, clock, at)
+            self.exchange_mode(request, frame, stream, deadline, clock, at, continuous)
         })
     }
     #[cfg(test)]
@@ -206,10 +223,23 @@ impl Client {
         } else {
             request.bytes().map_err(|_| Error::Invalid)?
         };
-        self.exchange(request, frame, stream, deadline, clock, at)
+        self.exchange_mode(request, frame, stream, deadline, clock, at, false)
     }
 
+    #[cfg(test)]
     fn exchange(
+        &self,
+        request: Request,
+        frame: Vec<u8>,
+        stream: UnixStream,
+        deadline: Instant,
+        clock: &dyn TimeProvider,
+        at: u64,
+    ) -> Result<TerminalReceipt, Error> {
+        self.exchange_mode(request, frame, stream, deadline, clock, at, false)
+    }
+    #[allow(clippy::too_many_arguments)]
+    fn exchange_mode(
         &self,
         request: Request,
         frame: Vec<u8>,
@@ -217,6 +247,7 @@ impl Client {
         deadline: Instant,
         clock: &dyn TimeProvider,
         mut at: u64,
+        continuous: bool,
     ) -> Result<TerminalReceipt, Error> {
         // Socket path metadata alone cannot establish the connected peer.
         if crate::openbsd::unix_stream_peer_uid(&stream).map_err(|_| Error::Unavailable)?
@@ -232,12 +263,47 @@ impl Client {
             // Once frame submission starts, even a failed partial write is
             // ambiguous. Never reconnect or convert any error below to refusal.
             write_frame(&mut stream, &frame, deadline).map_err(|_| Error::Uncertain)?;
-            stream
-                .shutdown(std::net::Shutdown::Write)
-                .map_err(|_| Error::Uncertain)?;
+            if !continuous {
+                stream
+                    .shutdown(std::net::Shutdown::Write)
+                    .map_err(|_| Error::Uncertain)?;
+            }
             check_time(&request, deadline, clock, &mut at).map_err(|_| Error::Uncertain)?;
-            let bytes =
+            let mut bytes =
                 read_frame(&mut stream, MAX_FRAME, deadline).map_err(|_| Error::Uncertain)?;
+            let mut acknowledged = false;
+            if continuous {
+                let kind: serde_json::Value =
+                    serde_json::from_slice(&bytes).map_err(|_| Error::Uncertain)?;
+                if kind.get("schema").and_then(|v| v.as_str())
+                    == Some("osmap-account-mutation-continuity-v1")
+                {
+                    let sampled = std::time::SystemTime::now()
+                        .duration_since(std::time::UNIX_EPOCH)
+                        .map_err(|_| Error::Uncertain)?;
+                    let floor = u64::try_from(sampled.as_millis()).map_err(|_| Error::Uncertain)?;
+                    let millis = floor
+                        .checked_add(u64::from(sampled.subsec_nanos() % 1_000_000 != 0))
+                        .ok_or(Error::Uncertain)?;
+                    let ack = crate::account_mutation_continuity::acknowledge(
+                        &request,
+                        &frame,
+                        &bytes,
+                        &self.0.key,
+                        millis,
+                    )
+                    .map_err(|_| Error::Uncertain)?;
+                    check_time(&request, deadline, clock, &mut at).map_err(|_| Error::Uncertain)?;
+                    remaining(deadline).map_err(|_| Error::Uncertain)?;
+                    write_frame(&mut stream, &ack, deadline).map_err(|_| Error::Uncertain)?;
+                    stream
+                        .shutdown(std::net::Shutdown::Write)
+                        .map_err(|_| Error::Uncertain)?;
+                    acknowledged = true;
+                    bytes = read_frame(&mut stream, MAX_FRAME, deadline)
+                        .map_err(|_| Error::Uncertain)?;
+                }
+            }
             // One response and EOF is the connection contract; no trailing
             // bytes, persistent connection or second response is accepted.
             stream
@@ -255,6 +321,15 @@ impl Client {
                 .map_err(|_| Error::Uncertain)?
                 .terminal_response(request, &bytes, &self.0.key, at)
                 .map_err(|_| Error::Uncertain)?;
+            if continuous
+                && !acknowledged
+                && matches!(
+                    receipt.outcome(),
+                    crate::account_mutation::Outcome::Changed { .. }
+                )
+            {
+                return Err(Error::Uncertain);
+            }
             // Root's later cleanup keeps the caller's original deadline and
             // receipt expiry. A late verification never authorizes that cleanup.
             let final_at = clock.unix_timestamp();

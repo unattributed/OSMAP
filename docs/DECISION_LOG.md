@@ -8950,3 +8950,16 @@ Keep native construction and the password form disabled: a proof snapshot and fr
 - 2026-10-04 guarded-worker gate: preserve the shared-TMPDIR fixture failure and correct only its private socket scratch. Keep production ancestor checks and original deadlines unchanged; qualify the repaired test on a separate native source freeze rather than retroactively repinning the passing25-test attempt.
 
 - 2026-10-04 preserve explicit Result in the lease-escape compile-fail example and verify its actual lifetime diagnostic; keep V11 unchanged. Retain the native packaging race as unqualified and freeze future native inputs into an immutable snapshot before execution.
+
+
+### 2026-10-04 — publish pending epoch before confirming guarded issuer and assemble fixed worker
+
+Integrate exact reviewed continuity/supervisor/primary/factory source after604251a, preserving one original budget and independent session proof. Publish durable pending epoch before the nonce-bound issuer challenge; no valid current guarded ACK means no SQL. Do not characterize ACK as continued distributed lock ownership. Buffer terminal results until owned group cleanup and exit0 are confirmed. Compose the actual fixed private dependency graph; preserve required SMTP refusal and disabled native activation until authoritative grants, native writer/authentication/containment, cross-host routing and complete browser results exist.
+
+Preserve the measured listener fixture race and fix synchronization only. Reconcile native42 only to its exact398-input twelve-path continuity scope; later Python assembly does not inherit native qualification. Repair the controlled Postfix fixture's actual stale-group signal and pre-existing scratch deletion before any privileged execution. Neither source commits nor synthetic receipt checks establish human UAT, provider delivery or epic completion; continue concrete implementation and promptly signed synchronization.
+
+
+- 2026-10-04 continuity gate: move only the rejected test process constructor into the existing fixed test-only command boundary, preserve its bounded runner and propagate Result. Keep CWE/V11 rules unchanged and preserve native42 as its original frozen scope; a local repair cannot retroactively qualify changed native inputs.
+
+
+- 2026-10-04 preserve the actual timeout test Expired/Uncertain mismatch; establish frame submission explicitly and move setup before its timer without changing application budgets. Retain the first controlled Postfix native JSON decoding failure, investigate actual early refusal and fix diagnostic capture before any new native attempt; no successful topology is inferred.

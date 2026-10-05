@@ -377,3 +377,6 @@ fn expired_deadline_other_request_or_same_key_cannot_mint_proof() {
         assert!(result);
     }
 }
+
+#[path = "account_guarded_continuity_tests.rs"]
+mod continuity_tests;

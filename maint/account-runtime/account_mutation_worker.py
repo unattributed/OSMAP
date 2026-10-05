@@ -282,7 +282,7 @@ class MutationWorker:
             raise Unavailable('mutation budget unavailable') from None
         return self._execute_verified(proof.request, began, budget)
 
-    def execute_guarded(self, raw, *, clock_millis=None):
+    def execute_guarded(self, raw, *, clock_millis=None, _continuity_stream=None, _reply_budget=False):
         """Disabled fixed-dependency guarded proof entry, not a live lease claim.
 
         The exact independently authenticated session assertion is consumed
@@ -309,10 +309,20 @@ class MutationWorker:
             budget.remaining()
         except Exception:
             raise Unavailable('guarded mutation authority unavailable') from None
-        return self._execute_verified(guarded.budget.request, began, budget,
-                                      session_authority=guarded.authorize)
+        confirmation = None
+        if _continuity_stream is not None:
+            from account_mutation_continuity import PendingIssuerConfirmation
+            confirmation = PendingIssuerConfirmation(_continuity_stream, guarded, raw,
+                                                     self._key, budget, sample)
+        reply=self._execute_verified(guarded.budget.request, began, budget,
+                                      session_authority=guarded.authorize,
+                                      pending_confirmation=confirmation)
+        # Internal continuous listener carries this SAME budget through reply
+        # send and final return; no fresh connection-level timeout renews it.
+        return (reply,budget) if _reply_budget else reply
 
-    def _execute_verified(self, request, began, budget, *, session_authority=None):
+    def _execute_verified(self, request, began, budget, *, session_authority=None,
+                          pending_confirmation=None):
         def authorize(action, at):
             budget.remaining()
             request.verify(self._key, at)
@@ -330,6 +340,8 @@ class MutationWorker:
                         coordinator.clock is not self._clock):
                     raise Unavailable('mutation coordinator unavailable')
                 budget.remaining()
+                if pending_confirmation is not None:
+                    coordinator.pending_confirmation = _budgeted(pending_confirmation,budget)
                 coordinator.adapter = _BudgetedAdapter(coordinator.adapter, budget)
                 for attribute in ('verify_current', 'verify_changed', 'containment_ready',
                                   'invalidate_changed_auth', 'finish_containment'):
@@ -386,7 +398,13 @@ class MutationWorker:
             raise Unavailable('native guarded mutation worker unavailable')
         return self._connection(stream, trusted_web_uid, guarded_session=True)
 
-    def _connection(self, stream, trusted_web_uid, original_budget=False, *, guarded_session=False):
+    def continuous_guarded_connection(self, stream, trusted_web_uid):
+        if not NATIVE_CONFINEMENT_QUALIFIED:
+            raise Unavailable('native continuous guarded worker unavailable')
+        return self._connection(stream,trusted_web_uid,guarded_session=True,continuous_issuer=True)
+
+    def _connection(self, stream, trusted_web_uid, original_budget=False, *, guarded_session=False,
+                    continuous_issuer=False):
         """Private finite reviewed transport seam; tests use actual local peers."""
         if type(trusted_web_uid) is not int or trusted_web_uid <= 0:
             raise Unavailable('mutation peer unavailable')
@@ -418,22 +436,31 @@ class MutationWorker:
                 raise Unavailable('mutation frame unavailable')
             raw = read_exact(size)
             remaining = deadline - self._monotonic()
+            reply_budget=None
             if guarded_session:
                 # Current guarded client submits exactly one frame and a write
                 # half-close. EOF establishes framing only, NOT issuer liveness.
                 if self._session_key is None or remaining <= 0:
                     raise Unavailable('guarded mutation transport unavailable')
                 stream.settimeout(remaining)
-                if stream.recv(1) != b'':
-                    raise Unavailable('guarded mutation frame unavailable')
-                reply = self.execute_guarded(raw)
+                if continuous_issuer:
+                    # Bidirectional peer remains open for the authenticated ACK
+                    # only after the shared coordinator publishes epoch pending.
+                    reply,reply_budget = self.execute_guarded(raw,_continuity_stream=stream,_reply_budget=True)
+                else:
+                    if stream.recv(1) != b'':
+                        raise Unavailable('guarded mutation frame unavailable')
+                    reply = self.execute_guarded(raw)
             else:
                 reply = (self.execute_budget(raw) if original_budget else
                          self.execute(raw, maximum_seconds=min(60, remaining)))
             remaining = deadline - self._monotonic()
             if remaining <= 0:
                 raise Unavailable('mutation reply unavailable')
+            if reply_budget is not None:
+                remaining=min(remaining,reply_budget.remaining())
             stream.settimeout(remaining)
             stream.sendall(len(reply).to_bytes(4, 'big') + reply)
+            if reply_budget is not None:reply_budget.remaining()
         except Exception:
             raise Unavailable('mutation connection unavailable') from None

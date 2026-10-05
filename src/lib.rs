@@ -14,6 +14,7 @@ pub mod account_mutation;
 pub(crate) mod account_mutation_budget;
 #[cfg(unix)]
 pub mod account_mutation_client;
+mod account_mutation_continuity;
 pub mod after_archive;
 pub mod appearance;
 pub mod archive_event;

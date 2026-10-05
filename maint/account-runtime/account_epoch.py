@@ -142,7 +142,7 @@ class PasswordCoordinator:
                             lambda:self.verify_fresh(account,current,totp))
 
     def _change(self,account,expected_epoch,intent_reference,current,new,confirmation,
-                now,verify_action,fresh_before_write=None):
+                now,verify_action,fresh_before_write=None,pending_confirmation=None):
         """Private shared transaction; verifiers are helper dependencies, not fields."""
         self.adapter._account(account);self.adapter.validate_new(current,new,confirmation)
         if (not self.store._reference(intent_reference) or not valid_epoch(expected_epoch) or type(now) is not int or now<=0):raise Refused('change admission refused')
@@ -167,6 +167,16 @@ class PasswordCoordinator:
             pending=dict(value,state='pending',intent=intent_reference,
                          used_intents=used+[[intent_reference,now+300]])
             self.store._write(path,pending)
+            # Only a fixed authenticated helper dependency supplies this
+            # guarded-flow hook. Durable account pending precedes issuer ACK;
+            # disappearance/uncertainty before SQL cannot reopen old authority.
+            if pending_confirmation is not None:
+                try:
+                    if not callable(pending_confirmation) or pending_confirmation() is not True:
+                        raise ValueError
+                except BaseException:
+                    self.store._write(path,dict(pending,state='contained'))
+                    raise Unconfirmed('pending authority requires reconciliation') from None
             try:
                 receipt=self.adapter.replace(snapshot,account,current,new,confirmation)
             except Refused:

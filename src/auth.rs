@@ -109,6 +109,35 @@ pub(crate) fn mutation_compatibility_fixture(
     Ok(output)
 }
 
+/// Fixed public-only issuer-continuity fixture, compiled for unit tests only.
+#[cfg(all(test, unix))]
+pub(crate) fn mutation_continuity_fixture(
+    input: &[u8],
+) -> Result<Vec<u8>, crate::openpgp_crypto::Error> {
+    assert!(input.len() <= 32768);
+    let engine = if cfg!(target_os = "openbsd") {
+        "/usr/local/bin/python3"
+    } else {
+        "/usr/bin/python3"
+    };
+    let fixture = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("maint/account-runtime/account_mutation_continuity_fixture.py");
+    let mut command = Command::new(engine);
+    command
+        .arg("-B")
+        .arg(fixture)
+        .env_clear()
+        .env("LC_ALL", "C")
+        .current_dir("/");
+    let output = crate::openpgp_crypto_process::run_public_admin(
+        command,
+        input,
+        std::time::Instant::now() + std::time::Duration::from_secs(10),
+    )?;
+    assert!(output.len() <= 32768);
+    Ok(output)
+}
+
 #[cfg(all(test, unix))]
 pub(crate) fn mutation_budget_fixture(
     input: &[u8],

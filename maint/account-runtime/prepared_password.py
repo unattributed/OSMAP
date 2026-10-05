@@ -37,7 +37,7 @@ class PreparedAction:
 class PreparedPasswordCoordinator:
     def __init__(self, store, adapter, authorize_action, verify_current,
                  verify_changed, containment_ready, finish_containment,
-                 clock=lambda: int(time.time()), invalidate_changed_auth=None):
+                 clock=lambda: int(time.time()), invalidate_changed_auth=None, *, pending_confirmation=None):
         self.store = store
         self.adapter = adapter
         self.authorize_action = authorize_action
@@ -47,6 +47,7 @@ class PreparedPasswordCoordinator:
         self.finish_containment = finish_containment
         self.clock = clock
         self.invalidate_changed_auth = invalidate_changed_auth
+        self.pending_confirmation = pending_confirmation
 
     @staticmethod
     def _bounded(value):
@@ -101,4 +102,6 @@ class PreparedPasswordCoordinator:
         return transaction._change(
             action.account, action.epoch, action.intent_reference,
             action.current, action.new, action.confirmation, began,
-            authorize, fresh)
+            authorize, fresh,
+            None if self.pending_confirmation is None else
+            lambda: self.pending_confirmation(action))
