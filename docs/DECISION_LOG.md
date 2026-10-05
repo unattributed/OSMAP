@@ -9033,3 +9033,15 @@ after-write cleanup. Source tests with synthetic credentials/containment do not
 qualify real ingress coverage, current-password authentication, native cleanup,
 browser usability, operator mail delivery or the full password workflow.
 Complete those actual dependencies before activating the form.
+
+### 2026-10-05 — mobile-link resumption preserves qualification targets
+
+Operator resumed after router-maintenance pause using mobile connectivity. Measured obsd1 access timed out while authoritative mail/public-IP and GitHub access succeeded. Continue reviewed source engineering and defer only obsd1 native runs until access is restored; preserve frozen host identity, existing configurations and operator-controlled Send. This is a measured access limit, not a source defect or blanket Internet outage.
+
+### 2026-10-05 — include runtime Python regressions in the ordinary gate
+
+The accepted password-change workflow depends on Python account authority, durable epochs, conditional writes and mail containment. Static inspection found the existing developer gate did not run those regression suites. Add ordinary `python3 -B -m unittest discover` for account-runtime and mail-backend without removing any security guard or native conditional skip. Source review checked the default tests' synthetic/private scope; actual executed counts come from the matching gate, not method inventories. Retain the prior narrower candidate and final six-line patch under S04-02 `account-regression-gate-increment1`.
+
+### 2026-10-05 — deny recovered clocks after authentication fence failure
+
+Retained behavioural RED demonstrated that an oversized integer clock sample could escape the failure latch and permit a later fresh authentication pair. The disabled epoch-policy primitive now validates bounds before conversion and permanently latches all sampling/validation failures. No durable account state is written. Focused23 tests pass, but source admission requires independent review and the normal signed gate. Native endpoint, replay/cache/master-user coverage and the final session-establishment race remain explicit dependencies; this source repair does not enable the password form or establish human UAT.

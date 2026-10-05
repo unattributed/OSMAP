@@ -122,6 +122,12 @@ python3 maint/security/test-osmap-totp-recovery.py
 echo "==> validating native lifecycle qualification boundaries"
 python3 maint/security/test-osmap-totp-native-check.py
 
+echo "==> validating account mutation and epoch regressions"
+python3 -B -m unittest discover -s maint/account-runtime -p 'test_*.py'
+
+echo "==> validating mail backend regressions"
+python3 -B -m unittest discover -s maint/mail-backend -p 'test_*.py'
+
 echo "==> validating V7 boundary hardening invariants"
 sh maint/security/osmap-v7-boundary-hardening-gate.sh
 
