@@ -1,0 +1,5 @@
+#!/bin/ksh
+# Root-owned restricted authorized-key command, never an interactive shell grant.
+# Native provisioning/SSH confinement must be qualified before installing.
+[ "${SSH_ORIGINAL_COMMAND-}" = "osmap-account-mutation" ] || exit 1
+exec /usr/bin/nc -N -U /var/run/osmap-account-mutation/mutation.sock

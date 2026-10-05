@@ -8963,3 +8963,10 @@ Preserve the measured listener fixture race and fix synchronization only. Reconc
 
 
 - 2026-10-04 preserve the actual timeout test Expired/Uncertain mismatch; establish frame submission explicitly and move setup before its timer without changing application budgets. Retain the first controlled Postfix native JSON decoding failure, investigate actual early refusal and fix diagnostic capture before any new native attempt; no successful topology is inferred.
+
+
+### 2026-10-04 — preserve private mutation custody while providing dedicated connector reachability
+
+Admit the reviewed key-free purpose-exclusive relay and exact root-owned group-traverse/socket grant, keeping native flags and HTTP password form disabled. Do not distribute request/session MAC keys to the bridge or infer action authority from DAC access. Preserve the original request budget, full-duplex issuer challenge and cleanup uncertainty; qualify actual cross-principal access and fixed forced-command SSH independently before activation. Continue the missing persistent service seam rather than stopping at a signed source checkpoint.
+
+Keep the actual controlled Postfix startup failure and unknown cleanup distinct from production mail delivery. The measured owned-log-prefix mismatch warrants only an exact private fixture log prefix, not blanket /tmp permission or production configuration changes. An absence snapshot plus retained namespace identity must precede any failed-fixture cleanup. Preserve exact native boundaries, operator policies, keys and unresolved human delivery results.

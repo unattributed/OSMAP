@@ -31,7 +31,7 @@ NATIVE_CONFINEMENT_QUALIFIED = False
 AUTHORITY = 'mail.blackbagsecurity.com'
 PURPOSE = 'osmap-account-mutation'
 ROOT = Path('/etc/osmap/account-runtime')
-SOCKET = '/var/run/osmap-account/mutation.sock'
+SOCKET = '/var/run/osmap-account-mutation/mutation.sock'
 ENGINE = '/usr/local/bin/python3'
 WORKER = '/usr/local/libexec/osmap/account-runtime/account_mutation_entry.py'
 COMPLETE = b'osmap-guarded-worker-complete-v1\n'
@@ -340,24 +340,39 @@ class _Supervisor:
 class _Listener:
     """Private single-connection listener; native factory remains unavailable.
 
-    A fixed source transport is implemented; no account/config provision occurs
-    during startup. Root-owned socket is mode600 until a separately qualified
-    relay-private grant is installed. A missing grant is refusal, not a reason
-    to broaden permissions. One synchronous connection avoids authority races.
+    Native startup requires a separately qualified dedicated group grant. The
+    root-owned purpose namespace is searchable, never writable by the connector;
+    bootstrap keys/config stay owner-private. Old isolated private fixtures remain
+    mode600. One synchronous connection avoids authority races.
     """
-    def __init__(self, bootstrap):
+    def __init__(self, bootstrap, grant=None):
+        from account_mutation_grant import _ConnectorGrant
+        if grant is not None and (type(grant) is not _ConnectorGrant
+                or grant.connector_uid!=bootstrap.trusted_relay_uid
+                or grant.owner!=os.geteuid()):
+            raise Unavailable('mutation listener grant unavailable')
         self._supervisor = _Supervisor(bootstrap)
+        self._grant=grant
 
     @classmethod
     def native(cls):
         from account_mutation_native import NativeDependencies
         dependencies=NativeDependencies.native()
-        return cls(dependencies.bootstrap)
+        from account_mutation_grant import _ConnectorGrant
+        grant=_ConnectorGrant.native(dependencies.bootstrap)
+        return cls(dependencies.bootstrap,grant)
 
     def _one(self, path):
         # Native entry supplies SOCKET only; isolated tests supply an owned path.
         path = Path(path)
-        parent = _directory(path.parent,os.geteuid())
+        if self._grant is not None:
+            if path!=self._grant.path:
+                raise Unavailable('mutation listener purpose unavailable')
+            parent=self._grant.open_namespace()
+        else:
+            # Existing private fixtures remain owner-only; native always requires
+            # the separately qualified dedicated connector grant.
+            parent=_directory(path.parent,os.geteuid())
         listener = socket.socket(socket.AF_UNIX,socket.SOCK_STREAM)
         inode = None
         try:
@@ -365,10 +380,12 @@ class _Listener:
                 raise Unavailable('mutation listener unavailable')
             listener.bind(str(path))
             m = path.lstat(); inode = (m.st_dev,m.st_ino)
-            os.chmod(path,0o600)
+            if self._grant is None:os.chmod(path,0o600)
+            else:self._grant.publish(parent,inode)
             listener.listen(1);listener.settimeout(1)
             stream,_ = listener.accept()
             with stream:
+                if self._grant is not None:self._grant.verify(parent,inode)
                 self._supervisor.connection(stream)
         except Exception:
             raise Unavailable('mutation listener unavailable') from None

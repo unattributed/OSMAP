@@ -58257,7 +58257,7 @@
       "line": 521
     }
   ],
-  "generated_at_utc": "2026-10-05T01:04:18Z",
+  "generated_at_utc": "2026-10-05T01:25:43Z",
   "non_claims": [
     "This audit does not claim that all Rust assumptions are safe.",
     "This audit does not claim that production request paths are panic-free.",
