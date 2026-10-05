@@ -9016,3 +9016,20 @@ the original deadline expired; repaired common completion contains instead and
 leaves browser bytes unchanged. Keep this narrow source increment separate
 from the unfinished real-worker/stored-lease composition and from native or
 human workflow acceptance. No timeout is extended and no activation is granted.
+
+### 2026-10-05 — compose actual stored mutation authority before enabling password UI
+
+Integrate the reviewed real browser lease, separate private proof key, guarded
+worker pending/nonce acknowledgement and terminal EOF with post-lock cleanup.
+Keep preparation's captured deadline at every stage. Use actual new-epoch
+session issuance before cleanup as the preservation discriminator; a signed
+frame alone cannot establish completion. Preserve zero-write refusals and
+uncertain post-write outcomes without retry.
+
+Admit the reviewed typed REQUIRED SMTP/IMAP composition and fixed routing
+producer with all native qualification flags disabled. Recheck operator-owned
+configuration continuity immediately before SQL, and contain incomplete
+after-write cleanup. Source tests with synthetic credentials/containment do not
+qualify real ingress coverage, current-password authentication, native cleanup,
+browser usability, operator mail delivery or the full password workflow.
+Complete those actual dependencies before activating the form.

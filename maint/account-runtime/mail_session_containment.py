@@ -3,8 +3,10 @@
 Installed 2.3.21.1 syntax and upstream response parsers inform this source;
 neither help nor callback tests qualify actual cache invalidation or termination.
 The observed authoritative Postfix submission services have SASL enabled. SMTP
-is REQUIRED, and lacks qualified own-account connection termination. Therefore
-native pre-write admission remains unavailable. No browser/config opt-in exists.
+is REQUIRED, and lacks qualified complete entrypoint routing/termination.
+The typed composition below consumes helper-owned qualified topology material;
+its source fixtures cannot produce native qualification. Native pre-write
+admission remains unavailable. No browser/config opt-in exists.
 
 Cache invalidation occurs after the conditional password write and before new
 credential verification. Only the separate kick plus one who reconciliation
@@ -15,6 +17,7 @@ from dataclasses import dataclass
 from enum import Enum
 import hashlib
 import ipaddress
+import json
 import os
 from pathlib import Path
 import re
@@ -24,6 +27,7 @@ from authoritative_password import AuthoritativePasswordAdapter, Refused, Unconf
 from operation_budget import OperationBudget
 
 NATIVE_CONFINEMENT_QUALIFIED = False
+NATIVE_SMTP_TOPOLOGY_QUALIFIED = False
 
 
 class SmtpTerminationScope(Enum):
@@ -40,7 +44,8 @@ class MailSessionContainment:
     OUTPUT_LIMIT = 4096
     WHO_HEADER = b'username\t#\tproto\t(pids)\t(ips)\n'
 
-    def __init__(self, canonical_account, executor, budget, smtp_scope, *, proxy_control=None):
+    def __init__(self, canonical_account, executor, budget, smtp_scope, *, proxy_control=None,
+                 topology=None):
         self._account = AuthoritativePasswordAdapter._account(canonical_account)
         if (type(budget) is not OperationBudget or
                 type(smtp_scope) is not SmtpTerminationScope or not callable(executor)):
@@ -49,6 +54,10 @@ class MailSessionContainment:
                 or not proxy_control.bound_to(self._account, budget)):
             raise Refused('SMTP proxy binding unavailable')
         self._proxy_control = proxy_control
+        if topology is not None and (type(topology) is not OperatorOwnedSmtpTopology
+                or proxy_control is None or not topology.bound_to(proxy_control, budget)):
+            raise Refused('SMTP topology binding unavailable')
+        self._topology = topology
         self._execute = executor
         self._budget = budget
         self._smtp_scope = smtp_scope
@@ -56,7 +65,7 @@ class MailSessionContainment:
 
     def proxy_control(self, account):
         # Exposes the separately bound primitive, never topology admission.
-        # REQUIRED/UNKNOWN ready() still refuses even with this attachment.
+        # Attachment alone cannot supply REQUIRED topology admission.
         if account != self._account or self._proxy_control is None:
             raise Refused('SMTP proxy binding unavailable')
         self._budget.remaining()
@@ -115,27 +124,47 @@ class MailSessionContainment:
 
     def ready(self, account):
         self._owned(account, 'new')
-        if self._smtp_scope is not SmtpTerminationScope.NOT_APPLICABLE:
+        if (self._smtp_scope is SmtpTerminationScope.UNKNOWN or
+                (self._smtp_scope is SmtpTerminationScope.REQUIRED and
+                 (self._topology is None or self._proxy_control is None))):
             self._state = 'unavailable'
             raise Refused('SMTP termination dependency unavailable')
         try:
+            if self._smtp_scope is SmtpTerminationScope.REQUIRED:
+                self._topology.recheck(self._budget)
+                self._proxy_control.query(account)
+                self._topology.recheck(self._budget)
             self._who()
+            if self._topology is not None:
+                self._topology.recheck(self._budget)
         except Exception:
             self._state = 'unavailable'
             raise Refused('mail containment unavailable') from None
         self._state = 'ready'
         return True
 
+    def before_write(self, account):
+        # The adapter calls this AFTER hashing, immediately before its one SQL
+        # dispatch. Early ready() alone cannot attest unchanged routing.
+        self._owned(account, 'ready')
+        if self._smtp_scope is SmtpTerminationScope.REQUIRED:
+            self._topology.recheck(self._budget)
+        return True
+
     def invalidate_changed_auth(self, account):
         self._owned(account, 'ready')
         self._state = 'flush-dispatched'
         try:
+            if self._topology is not None:
+                self._topology.recheck(self._budget)
             code, data = self._run('flush', post_write=True)
             if code != 0 or not re.fullmatch(rb'(?:0|[1-9][0-9]{0,9}) cache entries flushed\n', data):
                 raise ValueError
             if int(data.split(b' ', 1)[0]) > 2**32 - 1:
                 raise ValueError
             self._budget.remaining()
+            if self._topology is not None:
+                self._topology.recheck(self._budget)
         except Exception:
             self._state = 'contained'
             raise Unconfirmed('authentication cache invalidation unconfirmed') from None
@@ -146,6 +175,10 @@ class MailSessionContainment:
         self._owned(account, 'flushed')
         self._state = 'kick-dispatched'
         try:
+            if self._smtp_scope is SmtpTerminationScope.REQUIRED:
+                self._topology.recheck(self._budget)
+                self._proxy_control.terminate(account)
+                self._topology.recheck(self._budget)
             code, data = self._run('kick', post_write=True)
             no_users = code == 68 and data == b'no users kicked\n'
             kicked = (code == 0 and data == b'kicked connections from the following users:\n'
@@ -153,6 +186,8 @@ class MailSessionContainment:
             if not (no_users or kicked) or self._who(post_write=True) != 0:
                 raise ValueError
             self._budget.remaining()
+            if self._topology is not None:
+                self._topology.recheck(self._budget)
         except Exception:
             self._state = 'contained'
             raise Unconfirmed('mail connection termination unconfirmed') from None
@@ -160,15 +195,29 @@ class MailSessionContainment:
         return True
 
 
-def build_native_containment(canonical_account, budget):
+def build_native_containment(canonical_account, budget, *, namespace=None, topology=None):
     """Helper-startup seam only. Native topology/SMTP/confinement is unqualified."""
-    if not NATIVE_CONFINEMENT_QUALIFIED:
+    if not NATIVE_CONFINEMENT_QUALIFIED or not NATIVE_SMTP_TOPOLOGY_QUALIFIED:
         raise Refused('native mail containment unavailable')
+    if namespace is None and topology is None:
+        from smtp_topology import FixedSmtpRouting
+        namespace, topology = FixedSmtpRouting.native(budget)
     # The actual currently observed scope is REQUIRED, not inferred N/A from
     # cache size0 or the earlier incomplete inet-only master-service parser.
+    # Only a separately qualified helper startup loader may supply material;
+    # there is no guessed production directory, backend, Boolean or browser
+    # pathname. Current native bootstrap does not yet supply this authority.
+    if (type(namespace) is not OperatorOwnedProxyNamespace or
+            type(topology) is not OperatorOwnedSmtpTopology or
+            topology._namespace is not namespace or namespace._owner != 0 or
+            topology._certificate_version != 2):
+        raise Refused('native SMTP topology unavailable')
+    proxy = SmtpProxyControl(canonical_account, namespace,
+                            ProxyControlExecutor(canonical_account, namespace, budget), budget)
     return MailSessionContainment(canonical_account,
                                   ContainmentExecutor(canonical_account, budget),
-                                  budget, SmtpTerminationScope.REQUIRED)
+                                  budget, SmtpTerminationScope.REQUIRED,
+                                  proxy_control=proxy, topology=topology)
 
 
 @dataclass(frozen=True)
@@ -287,6 +336,182 @@ class OperatorOwnedProxyNamespace:
         budget.remaining()
 
 
+class OperatorOwnedSmtpTopology:
+    """Helper-owned configuration-continuity authority, never caller consent.
+
+    The exact private certificate is produced only after independent complete
+    entrypoint/namespace routing qualification. This consumer checks nonempty
+    named coverage and unchanged native metadata; it does not discover hidden
+    ingress or manufacture that qualification. Native startup remains disabled
+    until that producer, listener coverage and post-write races are qualified.
+    Callback fixtures prove this consumer/state machine only.
+    """
+    PROGRAM = '/usr/local/sbin/postconf'
+    COMMANDS = {'master': ('-M',), 'services': ('-P',),
+                'global_auth': ('-h', 'smtpd_sasl_auth_enable')}
+    CERT_LIMIT = 8192
+    OUTPUT_LIMIT = 16384
+
+    def __init__(self, namespace, executor, budget, *, routing_plan=None):
+        if (type(namespace) is not OperatorOwnedProxyNamespace or
+                type(budget) is not OperationBudget or not callable(executor)):
+            raise Refused('SMTP topology authority unavailable')
+        self._namespace = namespace
+        self._execute = executor
+        self._budget = budget
+        self._path = namespace._root / 'smtp-topology.json'
+        namespace.recheck(budget)
+        self._captured, certificate = self._read()
+        self._validate(certificate)
+        self._certificate_version = certificate['version']
+        self._digests = certificate['metadata_sha256']
+        self._routing_digests = certificate.get('routing_sha256')
+        self._routing_plan = routing_plan
+        if self._certificate_version == 2:
+            from smtp_topology import PrivateRoutingPlan
+            if (type(routing_plan) is not PrivateRoutingPlan
+                    or not routing_plan.bound_to(namespace, budget)):
+                raise Refused('SMTP private routing plan binding unavailable')
+        elif routing_plan is not None:
+            raise Refused('SMTP routing plan version mismatch')
+        self.recheck(budget)
+
+    @staticmethod
+    def _unique(pairs):
+        value = {}
+        for key, item in pairs:
+            if key in value:
+                raise ValueError
+            value[key] = item
+        return value
+
+    def _read(self):
+        try:
+            before = self._path.lstat()
+            if (not stat.S_ISREG(before.st_mode) or before.st_uid != self._namespace._owner
+                    or before.st_nlink != 1 or before.st_mode & 0o077
+                    or not 0 < before.st_size <= self.CERT_LIMIT):
+                raise ValueError
+            fd = os.open(self._path, os.O_RDONLY | os.O_NOFOLLOW)
+            try:
+                opened = os.fstat(fd)
+                if (self._namespace._identity(opened) != self._namespace._identity(before)
+                        or opened.st_size != before.st_size):
+                    raise ValueError
+                data = bytearray()
+                while len(data) <= self.CERT_LIMIT:
+                    chunk = os.read(fd, min(4096, self.CERT_LIMIT + 1 - len(data)))
+                    if not chunk:
+                        break
+                    data.extend(chunk)
+                after = os.fstat(fd)
+                if (len(data) != opened.st_size or after.st_size != opened.st_size
+                        or after.st_mtime_ns != opened.st_mtime_ns
+                        or self._namespace._identity(after) != self._namespace._identity(opened)
+                        or self._namespace._identity(self._path.lstat()) != self._namespace._identity(opened)):
+                    raise ValueError
+            finally:
+                os.close(fd)
+            return ((self._namespace._identity(after), after.st_size, after.st_mtime_ns,
+                     hashlib.sha256(data).hexdigest()),
+                    json.loads(data.decode('ascii'), object_pairs_hook=self._unique))
+        except (OSError, ValueError, UnicodeError, RuntimeError):
+            raise Refused('SMTP topology certificate unavailable') from None
+
+    def _validate(self, value):
+        try:
+            keys = {'version', 'namespace_fingerprint', 'backend_address', 'backend_port',
+                    'entrypoints', 'metadata_sha256'}
+            if type(value) is dict and value.get('version') == 2:
+                keys.add('routing_sha256')
+            if (type(value) is not dict or set(value) != keys
+                    or type(value['version']) is not int or value['version'] not in (1, 2)
+                    or value['namespace_fingerprint'] != self._namespace._fingerprint
+                    or value['backend_address'] != self._namespace._backend_address
+                    or type(value['backend_port']) is not int
+                    or value['backend_port'] != self._namespace._backend_port):
+                raise ValueError
+            rows = value['entrypoints']
+            if type(rows) is not list or not 1 <= len(rows) <= 32:
+                raise ValueError
+            observed = set()
+            for row in rows:
+                if (type(row) is not dict or set(row) != {'address', 'port', 'service'}
+                        or type(row['address']) is not str
+                        or str(ipaddress.ip_address(row['address'])) != row['address']
+                        or type(row['port']) is not int or not 1 <= row['port'] <= 65535
+                        or row['service'] != 'submission'):
+                    raise ValueError
+                binding = row['address'], row['port']
+                if binding in observed:
+                    raise ValueError
+                observed.add(binding)
+            digests = value['metadata_sha256']
+            if (type(digests) is not dict or set(digests) != set(self.COMMANDS)
+                    or any(type(v) is not str or not re.fullmatch('[a-f0-9]{64}', v)
+                           for v in digests.values())):
+                raise ValueError
+            if value['version'] == 2:
+                routing = value['routing_sha256']
+                if (type(routing) is not dict or set(routing) != {'frontend', 'filter'}
+                        or any(type(v) is not str or not re.fullmatch('[a-f0-9]{64}', v)
+                               for v in routing.values())):
+                    raise ValueError
+        except (KeyError, ValueError, TypeError):
+            raise Refused('SMTP topology coverage unavailable') from None
+
+    def bound_to(self, proxy, budget):
+        return (type(proxy) is SmtpProxyControl and proxy._namespace is self._namespace
+                and budget is self._budget)
+
+    def recheck(self, budget):
+        if budget is not self._budget:
+            raise Refused('SMTP topology budget mismatch')
+        try:
+            if self._routing_plan is not None:
+                self._routing_plan.recheck(budget)
+            self._namespace.recheck(budget)
+            captured, _ = self._read()
+            if captured != self._captured:
+                raise ValueError
+            for name, args in self.COMMANDS.items():
+                seconds = budget.cap_seconds(10)
+                result = self._execute(self.PROGRAM, args, b'', seconds, self.OUTPUT_LIMIT)
+                budget.remaining()
+                if (type(result) is not tuple or len(result) != 3 or type(result[0]) is not int
+                        or result[0] != 0 or type(result[1]) is not bytes
+                        or type(result[2]) is not bytes or result[2]
+                        or len(result[1]) > self.OUTPUT_LIMIT
+                        or (name != 'services' and not result[1])
+                        or hashlib.sha256(result[1]).hexdigest() != self._digests[name]):
+                    raise ValueError
+            if self._routing_digests is not None:
+                for name, (program, args) in self.routing_commands(self._namespace).items():
+                    result = self._execute(program, args, b'', budget.cap_seconds(10), self.OUTPUT_LIMIT)
+                    budget.remaining()
+                    if (type(result) is not tuple or len(result) != 3 or type(result[0]) is not int
+                            or result[0] != 0 or type(result[1]) is not bytes
+                            or type(result[2]) is not bytes or result[2]
+                            or not 0 < len(result[1]) <= self.OUTPUT_LIMIT
+                            or hashlib.sha256(result[1]).hexdigest() != self._routing_digests[name]):
+                        raise ValueError
+            self._namespace.recheck(budget)
+            if self._read()[0] != self._captured:
+                raise ValueError
+            if self._routing_plan is not None:
+                self._routing_plan.recheck(budget)
+            budget.remaining()
+        except Exception:
+            raise Refused('SMTP topology continuity unavailable') from None
+
+    @staticmethod
+    def routing_commands(namespace):
+        if type(namespace) is not OperatorOwnedProxyNamespace:
+            raise Refused('SMTP routing namespace unavailable')
+        return {'frontend': ('/usr/local/bin/doveconf', ('-c', str(namespace._config), '-n')),
+                'filter': ('/sbin/pfctl', ('-a', '*', '-sr'))}
+
+
 class SmtpProxyControl:
     """Fixed command adapter only; no production topology promotion.
 
@@ -402,6 +627,8 @@ class ContainmentExecutor:
     qualification remain required. No password is accepted in this transport.
     """
     def __init__(self, canonical_account, budget):
+        self._program = MailSessionContainment.PROGRAM
+        self._output_limit = MailSessionContainment.OUTPUT_LIMIT
         self._commands = tuple(MailSessionContainment.commands(canonical_account).values())
         if type(budget) is not OperationBudget:
             raise Refused('mail containment budget unavailable')
@@ -414,10 +641,10 @@ class ContainmentExecutor:
         import subprocess
         import time
 
-        if (program != MailSessionContainment.PROGRAM or type(args) is not tuple or
-                args not in self._commands or type(stdin) is not bytes or stdin != b'' or
+        if (type(args) is not tuple or not self._allows(program, args)
+                or type(stdin) is not bytes or stdin != b'' or
                 type(seconds) not in (int, float) or not 0 < seconds <= 10 or
-                type(limit) is not int or limit != 4096):
+                type(limit) is not int or limit != self._output_limit):
             raise Refused('mail containment process authority refused')
         duration = self._budget.cap_seconds(seconds)
         inherited = self._budget.inherited_group()
@@ -473,6 +700,9 @@ class ContainmentExecutor:
                 if not pipe.closed:
                     pipe.close()
 
+    def _allows(self, program, args):
+        return program == self._program and args in self._commands
+
 
 class ProxyControlExecutor(ContainmentExecutor):
     """Same inherited worker budget/process supervision, fixed proxy argv only."""
@@ -481,8 +711,41 @@ class ProxyControlExecutor(ContainmentExecutor):
             raise Refused('SMTP proxy process authority unavailable')
         namespace.recheck(budget)
         self._commands = tuple(SmtpProxyControl.commands(canonical_account, namespace).values())
+        self._program = SmtpProxyControl.PROGRAM
+        self._output_limit = SmtpProxyControl.OUTPUT_LIMIT
         self._namespace = namespace
         self._budget = budget
+
+    def __call__(self, program, args, stdin, seconds, limit):
+        self._namespace.recheck(self._budget)
+        return super().__call__(program, args, stdin, seconds, limit)
+
+
+class TopologyExecutor(ContainmentExecutor):
+    """Only three fixed non-mutating Postfix metadata commands, private pipes."""
+    def __init__(self, budget):
+        if type(budget) is not OperationBudget:
+            raise Refused('SMTP topology process authority unavailable')
+        self._program = OperatorOwnedSmtpTopology.PROGRAM
+        self._output_limit = OperatorOwnedSmtpTopology.OUTPUT_LIMIT
+        self._commands = tuple(OperatorOwnedSmtpTopology.COMMANDS.values())
+        self._budget = budget
+
+
+class RoutingMetadataExecutor(ContainmentExecutor):
+    """Exact metadata tuples only; no shell, filter/config mutation or secrets input."""
+    def __init__(self, namespace, budget):
+        if type(namespace) is not OperatorOwnedProxyNamespace or type(budget) is not OperationBudget:
+            raise Refused('SMTP routing process authority unavailable')
+        self._namespace = namespace
+        self._pairs = tuple((OperatorOwnedSmtpTopology.PROGRAM, args)
+            for args in OperatorOwnedSmtpTopology.COMMANDS.values()) + tuple(
+                OperatorOwnedSmtpTopology.routing_commands(namespace).values())
+        self._output_limit = OperatorOwnedSmtpTopology.OUTPUT_LIMIT
+        self._budget = budget
+
+    def _allows(self, program, args):
+        return (program, args) in self._pairs
 
     def __call__(self, program, args, stdin, seconds, limit):
         self._namespace.recheck(self._budget)

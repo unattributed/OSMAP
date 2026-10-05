@@ -42,6 +42,7 @@ struct ClientState {
     socket: PathBuf,
     helper_uid: u32,
     key: Vec<u8>,
+    session_proof_key: Option<Vec<u8>>,
     verifier: Mutex<Verifier>,
     state: Mutex<State>,
     cleanup_unconfirmed: AtomicBool,
@@ -61,13 +62,43 @@ impl Client {
         }
         Self::qualified_files(socket, key, helper_uid)
     }
+    /// Separate helper session authority is loaded only at trusted startup.
+    /// Native enablement remains refused before any private file is inspected.
+    pub fn from_operator_files_with_session_proof(
+        socket: &Path,
+        key: &Path,
+        proof_key: &Path,
+        helper_uid: u32,
+    ) -> Result<Self, Error> {
+        if !NATIVE_CONFINEMENT_QUALIFIED {
+            return Err(Error::Unavailable);
+        }
+        Self::qualified_files_with_proof(socket, key, Some(proof_key), helper_uid)
+    }
     fn qualified_files(socket: &Path, key: &Path, helper_uid: u32) -> Result<Self, Error> {
+        Self::qualified_files_with_proof(socket, key, None, helper_uid)
+    }
+    fn qualified_files_with_proof(
+        socket: &Path,
+        key: &Path,
+        proof_key: Option<&Path>,
+        helper_uid: u32,
+    ) -> Result<Self, Error> {
         crate::openbsd::disable_core_dumps().map_err(|_| Error::Unavailable)?;
         validate_socket(socket, helper_uid).map_err(|_| Error::Unavailable)?;
+        let key = private_key(key)?;
+        let session_proof_key = proof_key.map(private_key).transpose()?;
+        if session_proof_key
+            .as_ref()
+            .is_some_and(|proof| proof == &key)
+        {
+            return Err(Error::Unavailable);
+        }
         Ok(Self(Arc::new(ClientState {
             socket: socket.into(),
             helper_uid,
-            key: private_key(key)?,
+            key,
+            session_proof_key,
             verifier: Mutex::new(Verifier::default()),
             state: Mutex::new(State {
                 active: BTreeSet::new(),
@@ -80,6 +111,36 @@ impl Client {
     pub fn issue(&self, dispatch: Dispatch<'_>) -> Result<Request, Error> {
         Request::issue(dispatch, &self.0.key, SystemTimeProvider.unix_timestamp())
             .map_err(|_| Error::Invalid)
+    }
+
+    /// Compose a real stored-session lease with independently configured proof
+    /// authority. The consumed lease remains held through challenge/ACK and the
+    /// verified terminal/EOF; no signed-frame or caller key enters Runtime.
+    pub fn execute_stored_continuous(
+        &self,
+        dispatch: Dispatch<'_>,
+        lease: crate::session::GuardedSessionLease<'_>,
+        original_deadline: Instant,
+    ) -> Result<TerminalReceipt, Error> {
+        let proof = self
+            .0
+            .session_proof_key
+            .as_ref()
+            .ok_or(Error::Unavailable)?;
+        let request = self.issue(dispatch)?;
+        let guarded = lease
+            .authorize_mutation(request, &self.0.key, proof, original_deadline)
+            .map_err(|_| Error::Unavailable)?;
+        self.execute_guarded_continuous(guarded)
+    }
+    #[cfg(test)]
+    pub(crate) fn stored_fixture_files(
+        socket: &Path,
+        key: &Path,
+        proof_key: &Path,
+        helper_uid: u32,
+    ) -> Result<Self, Error> {
+        Self::qualified_files_with_proof(socket, key, Some(proof_key), helper_uid)
     }
 
     pub fn execute(

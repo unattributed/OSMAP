@@ -82,11 +82,11 @@ class NativeDependencies:
             raise Unavailable('native mutation action unavailable')
         budget.remaining()
         executor=NativeExecutor(budget)
-        adapter=AuthoritativePasswordAdapter(executor)
         primary=NativePrimaryVerifier(action.account,budget)
         # Current fixed native factory correctly refuses: SMTP termination is
         # REQUIRED, not silently optional or inferred N/A from absent cache rows.
         containment=build_native_containment(action.account,budget)
+        adapter=AuthoritativePasswordAdapter(executor,before_write=containment.before_write)
         budget.remaining()
         return PreparedPasswordCoordinator(self.epoch_store,adapter,authorize,
             primary,primary,containment.ready,containment.finish,self.clock,

@@ -4798,7 +4798,7 @@
       "fail_closed_relevance": "high",
       "file": "src/auth.rs",
       "kind": "expect_call",
-      "line": 1529
+      "line": 1550
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4806,7 +4806,7 @@
       "fail_closed_relevance": "high",
       "file": "src/auth.rs",
       "kind": "expect_call",
-      "line": 1554
+      "line": 1575
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4814,7 +4814,7 @@
       "fail_closed_relevance": "high",
       "file": "src/auth.rs",
       "kind": "expect_call",
-      "line": 1564
+      "line": 1585
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4822,7 +4822,7 @@
       "fail_closed_relevance": "high",
       "file": "src/auth.rs",
       "kind": "unwrap_call",
-      "line": 1574
+      "line": 1595
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4830,7 +4830,7 @@
       "fail_closed_relevance": "high",
       "file": "src/auth.rs",
       "kind": "expect_call",
-      "line": 1754
+      "line": 1775
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4838,7 +4838,7 @@
       "fail_closed_relevance": "high",
       "file": "src/auth.rs",
       "kind": "expect_call",
-      "line": 1771
+      "line": 1792
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4846,7 +4846,7 @@
       "fail_closed_relevance": "high",
       "file": "src/auth.rs",
       "kind": "expect_call",
-      "line": 1814
+      "line": 1835
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4854,7 +4854,7 @@
       "fail_closed_relevance": "high",
       "file": "src/auth.rs",
       "kind": "expect_call",
-      "line": 1885
+      "line": 1906
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4862,7 +4862,7 @@
       "fail_closed_relevance": "high",
       "file": "src/auth.rs",
       "kind": "expect_call",
-      "line": 1977
+      "line": 1998
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4870,7 +4870,7 @@
       "fail_closed_relevance": "high",
       "file": "src/auth.rs",
       "kind": "expect_call",
-      "line": 1981
+      "line": 2002
     },
     {
       "classification": "production_adjacent_assumption",
@@ -48700,6 +48700,382 @@
       "classification": "test_or_fixture_assumption",
       "disposition": "accepted_test_or_fixture_assumption",
       "fail_closed_relevance": "low",
+      "file": "src/password_real_worker_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 14
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_real_worker_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 15
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_real_worker_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 16
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_real_worker_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 21
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_real_worker_runtime_tests.rs",
+      "kind": "panic_macro",
+      "line": 36
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_real_worker_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 43
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_real_worker_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 51
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_real_worker_runtime_tests.rs",
+      "kind": "panic_macro",
+      "line": 59
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_real_worker_runtime_tests.rs",
+      "kind": "panic_macro",
+      "line": 64
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_real_worker_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 71
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_real_worker_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 74
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_real_worker_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 76
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_real_worker_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 82
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_real_worker_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 97
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_real_worker_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 105
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_real_worker_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 108
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_real_worker_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 132
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_real_worker_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 134
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_real_worker_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 138
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_real_worker_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 139
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_real_worker_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 153
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_real_worker_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 155
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_real_worker_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 157
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_real_worker_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 159
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_real_worker_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 168
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_real_worker_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 170
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_real_worker_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 171
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_real_worker_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 172
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_real_worker_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 181
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_real_worker_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 200
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_real_worker_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 206
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_real_worker_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 211
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_real_worker_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 213
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_real_worker_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 218
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_real_worker_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 223
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_real_worker_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 225
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_real_worker_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 230
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_real_worker_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 234
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_real_worker_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 255
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_real_worker_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 256
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_real_worker_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 266
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_real_worker_runtime_tests.rs",
+      "kind": "expect_call",
+      "line": 269
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_real_worker_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 270
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_real_worker_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 279
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_real_worker_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 291
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_real_worker_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 303
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_real_worker_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 308
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
       "file": "src/password_session_action_tests.rs",
       "kind": "unwrap_call",
       "line": 25
@@ -49359,6 +49735,262 @@
       "file": "src/password_session_action_tests.rs",
       "kind": "panic_macro",
       "line": 889
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_stored_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 14
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_stored_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 24
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_stored_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 32
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_stored_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 33
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_stored_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 35
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_stored_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 36
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_stored_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 51
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_stored_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 59
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_stored_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 61
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_stored_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 68
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_stored_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 70
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_stored_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 74
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_stored_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 77
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_stored_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 82
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_stored_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 94
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_stored_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 100
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_stored_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 108
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_stored_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 111
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_stored_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 115
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_stored_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 125
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_stored_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 127
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_stored_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 139
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_stored_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 140
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_stored_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 148
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_stored_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 149
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_stored_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 152
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_stored_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 163
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_stored_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 175
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_stored_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 178
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_stored_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 195
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_stored_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 200
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/password_stored_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 227
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -58321,7 +58953,7 @@
       "line": 521
     }
   ],
-  "generated_at_utc": "2026-10-05T04:42:43Z",
+  "generated_at_utc": "2026-10-05T05:51:03Z",
   "non_claims": [
     "This audit does not claim that all Rust assumptions are safe.",
     "This audit does not claim that production request paths are panic-free.",
@@ -58363,25 +58995,25 @@
       "panic_path_assumption": 74,
       "production_adjacent_assumption": 2015,
       "startup_or_global_invariant": 8,
-      "test_or_fixture_assumption": 5188
+      "test_or_fixture_assumption": 5267
     },
     "by_fail_closed_relevance": {
       "high": 2089,
-      "low": 5188,
+      "low": 5267,
       "medium": 13
     },
     "by_kind": {
-      "expect_call": 1001,
-      "panic_macro": 238,
+      "expect_call": 1002,
+      "panic_macro": 241,
       "unreachable_macro": 20,
-      "unwrap_call": 6031
+      "unwrap_call": 6106
     },
     "classification_complete": true,
-    "inventory_sha256": "c272aae8daf03158899d4a95005c8d6e97db997be98c5753147287717c6fe608",
+    "inventory_sha256": "9a4cc4279e193833d18d7e22bcd4e4b794ba79999d89b9fc67dd43c81d8d465d",
     "live_host_state_changed": false,
     "product_behavior_changed": false,
     "production_state_changed": false,
     "slice0_carried_forward_rust_assumption_count": 712,
-    "total_count": 7290
+    "total_count": 7369
   }
 }

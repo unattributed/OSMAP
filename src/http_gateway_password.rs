@@ -85,21 +85,64 @@ impl RuntimeBrowserGateway {
             client: client.clone(),
             deadline: original_deadline,
         });
-        self.password_completion_guarded(
+        self.password_completion_with_client(
             context,
             token,
             prepared,
             (authority, &SystemTimeProvider),
+            mutation,
             original_deadline,
-            |dispatch| {
-                let request = mutation
-                    .issue(dispatch)
-                    .map_err(|_| password_change::Error::Unavailable)?;
+        )
+    }
+    #[allow(clippy::too_many_arguments)]
+    fn password_completion_with_client<'a>(
+        &self,
+        context: &AuthenticationContext,
+        token: &SessionToken,
+        prepared: password_change::Prepared<'a>,
+        services: (
+            std::sync::Arc<dyn crate::account_admission::EpochAuthority>,
+            &dyn crate::totp::TimeProvider,
+        ),
+        mutation: &crate::account_mutation_client::Client,
+        original_deadline: std::time::Instant,
+    ) -> Result<crate::session::BrowserRevocation, password_change::Error> {
+        let original_deadline = prepared.bound_workflow_deadline(original_deadline);
+        self.password_completion_guarded(
+            context,
+            token,
+            prepared,
+            services,
+            original_deadline,
+            |dispatch, lease| {
                 mutation
-                    .execute_budget(request, original_deadline)
+                    .execute_stored_continuous(dispatch, lease, original_deadline)
                     .map_err(|_| password_change::Error::Unavailable)
             },
             |account| mutation.quarantine_account(account),
+        )
+    }
+    #[cfg(test)]
+    #[allow(clippy::too_many_arguments)]
+    pub(crate) fn stored_completion_fixture<'a>(
+        &self,
+        context: &AuthenticationContext,
+        token: &SessionToken,
+        prepared: password_change::Prepared<'a>,
+        services: (
+            std::sync::Arc<dyn crate::account_admission::EpochAuthority>,
+            &dyn crate::totp::TimeProvider,
+        ),
+        mutation: &crate::account_mutation_client::Client,
+        original_deadline: std::time::Instant,
+    ) -> Result<crate::session::BrowserRevocation, password_change::Error> {
+        self.password_completion_with_client(
+            context,
+            token,
+            prepared,
+            services,
+            mutation,
+            original_deadline,
         )
     }
     #[allow(clippy::too_many_arguments)]
@@ -113,8 +156,9 @@ impl RuntimeBrowserGateway {
             &dyn crate::totp::TimeProvider,
         ),
         deadline: std::time::Instant,
-        dispatch: impl FnOnce(
+        dispatch: impl for<'guard> FnOnce(
             password_change::Dispatch<'a>,
+            crate::session::GuardedSessionLease<'guard>,
         ) -> Result<
             crate::account_mutation::TerminalReceipt,
             password_change::Error,
@@ -124,8 +168,9 @@ impl RuntimeBrowserGateway {
         use crate::account_mutation::Outcome as MutationOutcome;
         use crate::session::BrowserRevocation;
         use std::time::{Duration, Instant};
-        // Preparation's captured budget also bounds receipt, epoch admission
-        // and browser cleanup; a later caller cannot renew it.
+        // A later caller budget cannot renew preparation at receipt, admission
+        // or browser cleanup. Legacy preparation without a captured budget
+        // retains the caller's original deadline.
         let deadline = prepared.bound_workflow_deadline(deadline);
         let now = Instant::now();
         if deadline <= now || deadline > now + Duration::from_secs(60) {
@@ -133,17 +178,17 @@ impl RuntimeBrowserGateway {
         }
         let (authority, clock) = services;
         let mut binding = None;
-        let receipt = self.password_dispatch_guarded(
+        let receipt = self.password_dispatch_with_lease(
             context,
             token,
             prepared,
             (authority.clone(), clock),
-            |action| {
+            |action, lease| {
                 if Instant::now() >= deadline {
                     return Err(password_change::Error::Expired);
                 }
                 binding = Some(CompletionBinding::capture(&action));
-                dispatch(action)
+                dispatch(action, lease)
             },
         );
         // The guarded call has returned: its store lock has dropped on all paths.
@@ -229,7 +274,13 @@ impl RuntimeBrowserGateway {
         quarantine: impl FnMut(&str),
     ) -> Result<crate::session::BrowserRevocation, password_change::Error> {
         self.password_completion_guarded(
-            context, token, prepared, services, deadline, dispatch, quarantine,
+            context,
+            token,
+            prepared,
+            services,
+            deadline,
+            |action, _lease| dispatch(action),
+            quarantine,
         )
     }
     fn password_dispatch_guarded<'a, O>(
@@ -243,6 +294,24 @@ impl RuntimeBrowserGateway {
         ),
         dispatch: impl FnOnce(password_change::Dispatch<'a>) -> Result<O, password_change::Error>,
     ) -> Result<O, password_change::Error> {
+        self.password_dispatch_with_lease(context, token, prepared, services, |action, _lease| {
+            dispatch(action)
+        })
+    }
+    fn password_dispatch_with_lease<'a, O>(
+        &self,
+        context: &AuthenticationContext,
+        token: &SessionToken,
+        prepared: password_change::Prepared<'a>,
+        services: (
+            std::sync::Arc<dyn crate::account_admission::EpochAuthority>,
+            &dyn crate::totp::TimeProvider,
+        ),
+        dispatch: impl for<'guard> FnOnce(
+            password_change::Dispatch<'a>,
+            crate::session::GuardedSessionLease<'guard>,
+        ) -> Result<O, password_change::Error>,
+    ) -> Result<O, password_change::Error> {
         let (authority, clock) = services;
         let service = SessionService::new(
             FileSessionStore::new(self.session_dir.clone()),
@@ -253,13 +322,13 @@ impl RuntimeBrowserGateway {
         )
         .with_epoch_authority(authority.clone());
         service
-            .with_guarded_validated_session(context, token, |current| {
+            .with_guarded_session_lease(context, token, |current, lease| {
                 let action =
                     prepared.into_dispatch(context, &current, authority.as_ref(), clock)?;
                 service
                     .recheck_guarded_session(&current)
                     .map_err(guarded_error)?;
-                dispatch(action)
+                dispatch(action, lease)
             })
             .map_err(guarded_error)?
     }

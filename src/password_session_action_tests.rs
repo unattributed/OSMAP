@@ -891,3 +891,6 @@ fn composed_predispatch_stored_revocation_has_no_dispatch_or_quarantine() {
         Err(Error::Authentication)
     );
 }
+
+#[path = "password_stored_runtime_tests.rs"]
+mod stored_runtime_tests;

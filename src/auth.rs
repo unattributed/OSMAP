@@ -1415,6 +1415,27 @@ fn extract_doveadm_user_field(output: &str) -> Option<String> {
     })
 }
 
+/// Fixed actual-worker fixture, unit tests only; all credentials are public.
+#[cfg(all(test, unix))]
+pub(crate) fn mutation_real_worker_fixture_command(witness: &std::path::Path) -> Command {
+    let engine = if cfg!(target_os = "openbsd") {
+        "/usr/local/bin/python3"
+    } else {
+        "/usr/bin/python3"
+    };
+    let script = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("maint/account-runtime/runtime_real_worker_fixture.py");
+    let mut command = Command::new(engine);
+    command
+        .arg("-B")
+        .arg(script)
+        .env_clear()
+        .env("LC_ALL", "C")
+        .env("OSMAP_TEST_REAL_WORKER_WITNESS_ROOT", witness)
+        .current_dir("/");
+    command
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

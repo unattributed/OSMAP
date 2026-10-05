@@ -52,8 +52,11 @@ class AuthoritativePasswordAdapter:
     ARGON2_PATTERN = r'\{ARGON2ID\}\$argon2id\$v=19\$m=65536,t=3,p=1\$[A-Za-z0-9+/]{22}\$[A-Za-z0-9+/]{43}'
     BLF_PATTERN = r'\{BLF-CRYPT\}\$2[aby]\$\d{2}\$[./A-Za-z0-9]{53}'
 
-    def __init__(self, executor):
+    def __init__(self, executor, *, before_write=None):
+        if before_write is not None and not callable(before_write):
+            raise Refused('credential write admission unavailable')
         self._execute = executor
+        self._before_write = before_write
 
     @staticmethod
     def _account(value):
@@ -168,6 +171,14 @@ class AuthoritativePasswordAdapter:
             " AND modified=STR_TO_DATE('" + snapshot.modified + "','%Y%m%d%H%i%s');\n" +
             'SELECT ROW_COUNT();\nSELECT HEX(password),DATE_FORMAT(modified,\'%Y%m%d%H%i%s\') '
             'FROM mailbox WHERE username=' + account_sql + ';\nCOMMIT;\n')
+        # A composed containment dependency checks topology after hashing and
+        # before the one conditional SQL dispatch. Refusal here is pre-write.
+        if self._before_write is not None:
+            try:
+                if self._before_write(account) is not True:
+                    raise ValueError
+            except Exception:
+                raise Refused('credential write admission unavailable') from None
         text = self._run(self.SQL_PROGRAM, self.SQL_ARGS, query.encode('ascii'), dispatched=True)
         lines = text.splitlines()
         if len(lines) != 2:
