@@ -1,4 +1,6 @@
 import math
+import os
+from pathlib import Path
 import subprocess
 import sys
 import time
@@ -20,6 +22,22 @@ class Clock:
 
 
 class BudgetTests(unittest.TestCase):
+    def _owned_group_case(self):
+        # Transport positives require a real disposable session leader. Never
+        # turn a false ownership check into a test-only constant-True callback.
+        if os.getpid() == os.getpgrp():
+            return False
+        directory = str(Path(__file__).resolve().parent)
+        source = ('import sys,unittest; sys.path.insert(0,' + repr(directory) + '); '
+                  'suite=unittest.defaultTestLoader.loadTestsFromName(' +
+                  repr('test_operation_budget.BudgetTests.' + self._testMethodName) + '); '
+                  'result=unittest.TextTestRunner().run(suite); '
+                  'sys.exit(not result.wasSuccessful())')
+        result = subprocess.run((sys.executable, '-B', '-c', source),
+                                start_new_session=True, capture_output=True, timeout=3)
+        self.assertEqual(result.returncode, 0, result.stderr.decode('utf-8', 'replace'))
+        return True
+
     def test_shared_phases_cannot_restart_total_window(self):
         clock = Clock()
         budget = clock.budget()
@@ -64,6 +82,8 @@ class BudgetTests(unittest.TestCase):
             NativeExecutor(object())
 
     def test_real_child_uses_remaining_total_and_is_reaped_on_timeout(self):
+        if self._owned_group_case():
+            return
         script = 'import time; time.sleep(5)'
         children = []
         original = subprocess.Popen
@@ -74,6 +94,7 @@ class BudgetTests(unittest.TestCase):
             return child
 
         budget = OperationBudget(int(time.time()) + 300, maximum_seconds=0.08)
+        budget.attach_owned_process_group()
         began = time.monotonic()
         with patch.object(Adapter, 'SQL_PROGRAM', sys.executable), \
                 patch.object(Adapter, 'SQL_ARGS', ('-c', script)), \
@@ -95,8 +116,11 @@ class BudgetTests(unittest.TestCase):
             start.assert_not_called()
 
     def test_two_real_phases_share_one_deadline(self):
+        if self._owned_group_case():
+            return
         script = 'import time; time.sleep(0.05); print("fixture")'
         budget = OperationBudget(int(time.time()) + 300, maximum_seconds=0.14)
+        budget.attach_owned_process_group()
         executor = NativeExecutor(budget)
         with patch.object(Adapter, 'SQL_PROGRAM', sys.executable), \
                 patch.object(Adapter, 'SQL_ARGS', ('-c', script)):
@@ -106,13 +130,18 @@ class BudgetTests(unittest.TestCase):
                 executor(sys.executable, ('-c', script), b'fixture', 10, 4096)
 
     def test_successful_wait_cannot_return_after_prepared_wall_expiry(self):
+        if self._owned_group_case():
+            return
         clock = Clock()
         budget = clock.budget()
+        budget.attach_owned_process_group()
         script = 'pass'
         original = subprocess.Popen
+        children = []
 
         def track(*args, **kwargs):
             child = original(*args, **kwargs)
+            children.append(child)
             original_wait = child.wait
 
             def wait(*args, **kwargs):
@@ -128,6 +157,8 @@ class BudgetTests(unittest.TestCase):
                 patch.object(subprocess, 'Popen', track):
             with self.assertRaises(Refused):
                 NativeExecutor(budget)(sys.executable, ('-c', script), b'fixture', 10, 4096)
+        self.assertEqual(len(children), 1)
+        self.assertIsNotNone(children[0].returncode)
 
 
 if __name__ == '__main__':

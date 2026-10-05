@@ -13,18 +13,18 @@ from mutation_primary import NativePrimaryVerifier
 from operation_budget import OperationBudget
 import test_account_mutation_worker as f
 import test_guarded_mutation_worker as g
+from test_native_material import MaterialFixture
+from account_native_material import MaterialExecutor
 
-class NativeTests(unittest.TestCase):
+class NativeTests(MaterialFixture):
  def setUp(self):
-  self.tmp=tempfile.TemporaryDirectory();root=Path(self.tmp.name)
+  super().setUp();root=self.root
   epoch=root/'epoch';journal=root/'intent';epoch.mkdir(mode=0o700);journal.mkdir(mode=0o700)
   self.store=EpochStore(epoch,os.getuid());self.journal=IntentStore(journal,os.getuid())
   self.store.provision(f.ACCOUNT);self.journal.provision(f.ACCOUNT)
   self.bootstrap=_Bootstrap(f.KEY,g.SESSION_KEY,frozenset([f.ACCOUNT]),os.getuid())
-  self.dependencies=NativeDependencies(self.bootstrap,self.journal,self.store,lambda:1000)
+  self.dependencies=NativeDependencies(self.bootstrap,self.journal,self.store,lambda:1000,material=self.load())
   self.action=verify_request(f.frame(),f.KEY,1000).action
-  self.budget=OperationBudget(1300,monotonic=lambda:10.,wall=lambda:1000.)
- def tearDown(self):self.tmp.cleanup()
  def test_native_factory_listener_and_child_refuse_before_any_file_store_or_program(self):
   with patch('account_mutation_native._Bootstrap.native',side_effect=AssertionError),\
    patch('account_mutation_native._fixed_material',side_effect=AssertionError),\
@@ -55,7 +55,7 @@ class NativeTests(unittest.TestCase):
   self.assertIs(coordinator.store,self.store);self.assertIs(coordinator.authorize_action,authority)
   self.assertIs(coordinator.clock,self.dependencies.clock)
   self.assertIs(type(coordinator.adapter),AuthoritativePasswordAdapter)
-  self.assertIs(type(coordinator.adapter._execute),NativeExecutor)
+  self.assertIs(type(coordinator.adapter._execute),MaterialExecutor)
   self.assertIs(coordinator.adapter._execute._budget,self.budget)
   self.assertIs(type(coordinator.verify_current),NativePrimaryVerifier)
   self.assertIs(coordinator.verify_current,coordinator.verify_changed)
@@ -65,9 +65,15 @@ class NativeTests(unittest.TestCase):
    with self.assertRaises(Refused):coordinator.change(self.action)
   self.assertEqual(self.store.admission(f.ACCOUNT),(0,None))
  def test_missing_owned_group_or_foreign_action_refuses_before_dependency_build(self):
-  with patch('account_mutation_native.NativeExecutor',side_effect=AssertionError):
+  with patch('account_mutation_native.MaterialExecutor',side_effect=AssertionError),\
+   patch.object(self.budget,'inherited_group',return_value=False):
    with self.assertRaises(Unavailable):self.dependencies._build(self.action,self.budget,lambda *a:False)
    foreign=verify_request(f.frame(account='bob@example.test'),f.KEY,1000).action
    with self.assertRaises(Unavailable):self.dependencies._build(foreign,self.budget,lambda *a:False)
+ def test_missing_material_and_caller_report_refuse_before_dependency_construction(self):
+  absent=NativeDependencies(self.bootstrap,self.journal,self.store,lambda:1000)
+  with patch('account_mutation_native.MaterialExecutor',side_effect=AssertionError):
+   with self.assertRaises(Unavailable):absent._build(self.action,self.budget,lambda *a:False)
+  with self.assertRaises(Unavailable):NativeDependencies(self.bootstrap,self.journal,self.store,material={'PASS':True})
 
 if __name__=='__main__':unittest.main()

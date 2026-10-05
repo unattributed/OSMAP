@@ -226,13 +226,16 @@ class NativeExecutor:
                 limit!=AuthoritativePasswordAdapter.OUTPUT_LIMIT):
             raise Refused('native process bounds refused')
         operation_seconds=self._budget.cap_seconds(seconds) if self._budget else seconds
-        if self._budget:self._budget.inherited_group()
+        if self._budget and not self._budget.inherited_group():
+            raise Refused('native process ownership unavailable')
+        # Capture before spawning: process creation consumes this phase's
+        # original allowance, independently of the enclosing operation budget.
+        deadline=time.monotonic()+operation_seconds
         child=subprocess.Popen((program,)+args,stdin=subprocess.PIPE,
                                stdout=subprocess.PIPE,stderr=subprocess.PIPE,
                                shell=False,close_fds=True,
                                env={'PATH':'/usr/bin:/usr/local/bin','LC_ALL':'C'})
         output=bytearray();error=bytearray();offset=0
-        deadline=time.monotonic()+operation_seconds
         try:
             with selectors.DefaultSelector() as selector:
                 for pipe,event,kind in ((child.stdin,selectors.EVENT_WRITE,'in'),
