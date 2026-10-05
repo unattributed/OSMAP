@@ -25,7 +25,7 @@ use crate::totp::TimeProvider;
 
 #[path = "session_action.rs"]
 mod session_action;
-pub use session_action::GuardedSessionError;
+pub use session_action::{GuardedSessionError, GuardedSessionLease};
 #[path = "session_password_cleanup.rs"]
 mod session_password_cleanup;
 pub use session_password_cleanup::BrowserRevocation;

@@ -135,7 +135,10 @@ fn both_languages_reject_signed_shape_limits_and_unsigned_tamper_and_expiry() {
         );
     }
     for source in ["fe80::1%eth0", "*", "192.168.001.1"] {
-        let mut changed = Request(serde_json::from_slice(&request.bytes().unwrap()).unwrap());
+        let mut changed = Request(
+            serde_json::from_slice(&request.bytes().unwrap()).unwrap(),
+            None,
+        );
         changed.0.source = source.into();
         let bytes = resigned(changed);
         assert!(Verifier::default().request(&bytes, &KEY, 100).is_err());

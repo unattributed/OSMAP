@@ -220,7 +220,7 @@ class MutationWorker:
     a qualified dependency; HMAC alone is not a live session proof.
     """
     def __init__(self, key, accounts, journal, epoch_store, builder, session_authority,
-                 clock=lambda: int(time.time()), monotonic=time.monotonic):
+                 clock=lambda: int(time.time()), monotonic=time.monotonic, *, session_key=None):
         key_valid(key)
         if (type(accounts) is not frozenset or not 1 <= len(accounts) <= 128 or
                 type(journal) is not IntentStore or type(epoch_store) is not EpochStore or
@@ -236,6 +236,14 @@ class MutationWorker:
         self._session_authority = session_authority
         self._clock = clock
         self._monotonic = monotonic
+        # Native bootstrap owns a separate session-proof key. It is never a
+        # decoded field, ordinary request HMAC, callback Boolean or optional
+        # fallback to the legacy session authority dependency.
+        if session_key is not None:
+            key_valid(session_key)
+            if session_key == key:
+                raise Unavailable('guarded mutation dependency unavailable')
+        self._session_key = session_key
 
     def execute(self, raw, *, maximum_seconds=60):
         """Source component only; native dispatch enters through a qualified peer."""
@@ -274,12 +282,42 @@ class MutationWorker:
             raise Unavailable('mutation budget unavailable') from None
         return self._execute_verified(proof.request, began, budget)
 
-    def _execute_verified(self, request, began, budget):
+    def execute_guarded(self, raw, *, clock_millis=None):
+        """Disabled fixed-dependency guarded proof entry, not a live lease claim.
+
+        The exact independently authenticated session assertion is consumed
+        under the same budget as the durable intent and real coordinator. The
+        native issuer-continuity handshake remains a separate prerequisite.
+        """
+        from account_guarded_mutation import verify_guarded
+        from account_mutation_budget import wall_millis, operation_budget
+        if self._session_key is None:
+            raise Unavailable('guarded mutation dependency unavailable')
+        sample = clock_millis or wall_millis
+        received_mono = self._monotonic()
+        received_millis = sample()
+        try:
+            guarded = verify_guarded(raw, self._key, self._session_key, received_millis)
+            if guarded.budget.request.action.account not in self._accounts:
+                raise Invalid('guarded mutation account unavailable')
+            budget = operation_budget(guarded.budget, received_mono=received_mono,
+                                      received_millis=received_millis,
+                                      monotonic=self._monotonic, clock_millis=sample)
+            budget.attach_owned_process_group()
+            began = self._clock()
+            guarded.budget.request.verify(self._key, began)
+            budget.remaining()
+        except Exception:
+            raise Unavailable('guarded mutation authority unavailable') from None
+        return self._execute_verified(guarded.budget.request, began, budget,
+                                      session_authority=guarded.authorize)
+
+    def _execute_verified(self, request, began, budget, *, session_authority=None):
         def authorize(action, at):
             budget.remaining()
             request.verify(self._key, at)
             accepted = (action is request.action and
-                        self._session_authority(action, at) is True)
+                        (session_authority or self._session_authority)(action, at) is True)
             budget.remaining()
             return accepted
 
@@ -343,7 +381,12 @@ class MutationWorker:
             raise Unavailable('native mutation worker unavailable')
         return self._connection(stream, trusted_web_uid, original_budget=True)
 
-    def _connection(self, stream, trusted_web_uid, original_budget=False):
+    def guarded_connection(self, stream, trusted_web_uid):
+        if not NATIVE_CONFINEMENT_QUALIFIED:
+            raise Unavailable('native guarded mutation worker unavailable')
+        return self._connection(stream, trusted_web_uid, guarded_session=True)
+
+    def _connection(self, stream, trusted_web_uid, original_budget=False, *, guarded_session=False):
         """Private finite reviewed transport seam; tests use actual local peers."""
         if type(trusted_web_uid) is not int or trusted_web_uid <= 0:
             raise Unavailable('mutation peer unavailable')
@@ -371,12 +414,22 @@ class MutationWorker:
                 return bytes(data)
             size = int.from_bytes(read_exact(4), 'big')
             from account_mutation_budget import LIMIT as BUDGET_LIMIT
-            if not 1 <= size <= (BUDGET_LIMIT if original_budget else LIMIT):
+            if not 1 <= size <= (BUDGET_LIMIT if original_budget or guarded_session else LIMIT):
                 raise Unavailable('mutation frame unavailable')
             raw = read_exact(size)
             remaining = deadline - self._monotonic()
-            reply = (self.execute_budget(raw) if original_budget else
-                     self.execute(raw, maximum_seconds=min(60, remaining)))
+            if guarded_session:
+                # Current guarded client submits exactly one frame and a write
+                # half-close. EOF establishes framing only, NOT issuer liveness.
+                if self._session_key is None or remaining <= 0:
+                    raise Unavailable('guarded mutation transport unavailable')
+                stream.settimeout(remaining)
+                if stream.recv(1) != b'':
+                    raise Unavailable('guarded mutation frame unavailable')
+                reply = self.execute_guarded(raw)
+            else:
+                reply = (self.execute_budget(raw) if original_budget else
+                         self.execute(raw, maximum_seconds=min(60, remaining)))
             remaining = deadline - self._monotonic()
             if remaining <= 0:
                 raise Unavailable('mutation reply unavailable')

@@ -8940,3 +8940,13 @@ the three late logger error diagnostics and independent source interpretation
 without claiming the exact discarded service-fd parameters are known. Continue
 real guarded-session authority, authoritative mail-host routing and native
 workflow integration after signed synchronization; no checkpoint ends the epic.
+
+### 2026-10-04 — bind guarded worker authority without claiming distributed continuity
+
+Integrate the independently reviewed22-path authority/preparation/worker/SMTP delta after8126. Keep the original monotonic request budget from before authentication through transport, durable intent ownership, coordinator, native subprocesses and cleanup. Use a separate session proof key and a lifetime-bound actual store guard; do not substitute a Boolean, copied action, refreshed deadline or second TOTP consumption. The Python worker uses that verified exact authority with the real durable coordinator. Preserve legacy transport profiles.
+
+Keep native construction and the password form disabled: a proof snapshot and frame EOF cannot prove that a remote issuer remains alive and holds its lock. Next implement durable pending epoch before a bounded authenticated full-duplex challenge, with issuer-death uncertainty preventing SQL or leaving durable containment. Qualify exact owned native supervision and authoritative mail-host routing before activation. The exact-account proxy adapter remains unqualified for current Postfix topology; controlled Postfix/mTLS/direct-bypass evidence is still needed. Do not mutate operator credentials or infer human UAT from synthetic tests or signed checkpoints.
+
+- 2026-10-04 guarded-worker gate: preserve the shared-TMPDIR fixture failure and correct only its private socket scratch. Keep production ancestor checks and original deadlines unchanged; qualify the repaired test on a separate native source freeze rather than retroactively repinning the passing25-test attempt.
+
+- 2026-10-04 preserve explicit Result in the lease-escape compile-fail example and verify its actual lifetime diagnostic; keep V11 unchanged. Retain the native packaging race as unqualified and freeze future native inputs into an immutable snapshot before execution.

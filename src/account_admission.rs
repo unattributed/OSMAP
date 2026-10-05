@@ -36,6 +36,23 @@ pub struct Admission {
 
 pub trait EpochAuthority: Send + Sync {
     fn admit(&self, account: &str, epoch: u64) -> Result<(), Error>;
+    /// Default bounded callback contract; native transports override the I/O
+    /// cap with the caller's exact original deadline instead of a fresh timeout.
+    fn admit_before(
+        &self,
+        account: &str,
+        epoch: u64,
+        deadline: std::time::Instant,
+    ) -> Result<(), Error> {
+        if std::time::Instant::now() >= deadline {
+            return Err(Error::Expired);
+        }
+        let result = self.admit(account, epoch);
+        if std::time::Instant::now() >= deadline {
+            return Err(Error::Expired);
+        }
+        result
+    }
 }
 
 /// Exact existing authoritative adapter profile; never a Dovecot option/name glob.

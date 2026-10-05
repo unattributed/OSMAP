@@ -7,6 +7,8 @@
 pub mod account_admission;
 #[cfg(unix)]
 pub mod account_admission_runtime;
+#[cfg(unix)]
+pub mod account_guarded_mutation;
 pub mod account_mutation;
 #[cfg(unix)]
 pub(crate) mod account_mutation_budget;

@@ -363,6 +363,9 @@ impl EpochAuthority for Client {
             .map(|_| ())
             .ok_or(Error::Refused)
     }
+    fn admit_before(&self, account: &str, epoch: u64, deadline: Instant) -> Result<(), Error> {
+        Client::admit_before(self, account, epoch, deadline)
+    }
 }
 
 /// Primary credential adapter preserves the exact authenticated epoch alongside

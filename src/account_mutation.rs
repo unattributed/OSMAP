@@ -47,7 +47,7 @@ struct RequestWire {
     signature: String,
 }
 
-pub struct Request(RequestWire);
+pub struct Request(RequestWire, Option<std::time::Instant>);
 impl std::fmt::Debug for Request {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str("AccountMutationRequest(<redacted>)")
@@ -213,27 +213,40 @@ impl Request {
     /// The only request issuer consumes an actual sealed fresh-action dispatch.
     /// Signing retains its original deadline rather than granting a new window.
     pub fn issue(dispatch: Dispatch<'_>, key: &[u8], now: u64) -> Result<Self, Error> {
-        let mut request = Self(RequestWire {
-            schema: SCHEMA.into(),
-            action: ACTION.into(),
-            account: dispatch.account().into(),
-            epoch: dispatch.epoch(),
-            intent_reference: dispatch.intent_reference().into(),
-            session_id: dispatch.session_id().into(),
-            request_id: dispatch.request_id().into(),
-            source: dispatch.source().into(),
-            issued: dispatch.issued(),
-            expires: dispatch.expires(),
-            current: dispatch.current().into(),
-            new: dispatch.new_password().into(),
-            confirmation: dispatch.confirmation().into(),
-            signature: String::new(),
-        });
+        let workflow_deadline = dispatch.workflow_deadline();
+        if workflow_deadline.is_some_and(|value| std::time::Instant::now() >= value) {
+            return Err(Error::Expired);
+        }
+        let mut request = Self(
+            RequestWire {
+                schema: SCHEMA.into(),
+                action: ACTION.into(),
+                account: dispatch.account().into(),
+                epoch: dispatch.epoch(),
+                intent_reference: dispatch.intent_reference().into(),
+                session_id: dispatch.session_id().into(),
+                request_id: dispatch.request_id().into(),
+                source: dispatch.source().into(),
+                issued: dispatch.issued(),
+                expires: dispatch.expires(),
+                current: dispatch.current().into(),
+                new: dispatch.new_password().into(),
+                confirmation: dispatch.confirmation().into(),
+                signature: String::new(),
+            },
+            workflow_deadline,
+        );
         request.shape()?;
         request.time(now)?;
         request.0.signature = hex(&mac(key, &request.payload()?)?.finalize().into_bytes());
         request.bytes()?;
+        if workflow_deadline.is_some_and(|value| std::time::Instant::now() >= value) {
+            return Err(Error::Expired);
+        }
         Ok(request)
+    }
+    pub(crate) fn workflow_deadline(&self) -> Option<std::time::Instant> {
+        self.1
     }
     fn shape(&self) -> Result<(), Error> {
         let r = &self.0;
@@ -404,7 +417,10 @@ impl Verifier {
         if bytes.len() > MAX_FRAME {
             return Err(Error::Invalid);
         }
-        let r = Request(serde_json::from_slice(bytes).map_err(|_| Error::Invalid)?);
+        let r = Request(
+            serde_json::from_slice(bytes).map_err(|_| Error::Invalid)?,
+            None,
+        );
         r.valid(key, now)?;
         self.consume(&r, false, now)?;
         Ok(r)

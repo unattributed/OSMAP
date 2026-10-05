@@ -1,5 +1,7 @@
 """Public isolated fixtures only: no native account, authentication or mail."""
 import os
+import socket
+from unittest.mock import patch
 from pathlib import Path
 import tempfile
 import unittest
@@ -7,7 +9,9 @@ import unittest
 from account_epoch import EpochStore, PasswordCoordinator
 from authoritative_password import AuthoritativePasswordAdapter, Receipt, Refused, Unconfirmed
 from mail_session_containment import (MailSessionContainment, ContainmentExecutor,
-                                     SmtpTerminationScope, build_native_containment)
+                                     SmtpTerminationScope, build_native_containment, OperatorOwnedProxyNamespace,
+                                     SmtpProxyControl, ProxyControlExecutor,
+                                     SmtpProxyObservation, SmtpProxyTermination)
 from operation_budget import OperationBudget
 
 ACCOUNT = 'alice@example.test'
@@ -369,6 +373,239 @@ class PrivateProcessTests(unittest.TestCase):
             self.execute_public_child('import time; time.sleep(30)', maximum=0.1)
         self.assertLess(time.monotonic() - began, 2)
         self.assertIsNotNone(self.children[0].poll())
+
+
+
+class SmtpProxyControlTests(unittest.TestCase):
+    HEADER = b'username                 proto      src ip     dest ip    port\n'
+    OWN = ACCOUNT.encode() + b' submission 127.0.0.1 127.0.0.1 2525\n'
+    FOREIGN = b'bob@example.test submission 127.0.0.1 127.0.0.1 2525\n'
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory(prefix='osmap-proxy-control-', dir='/tmp')
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name)
+        self.root.chmod(0o700)
+        (self.root / 'run').mkdir(mode=0o700)
+        (self.root / 'run/login').mkdir(mode=0o700)
+        self.config = self.root / 'dovecot.conf'
+        self.config.write_bytes(b'# public source fixture only\n')
+        self.config.chmod(0o600)
+        self.socket = socket.socket(socket.AF_UNIX)
+        self.addCleanup(self.socket.close)
+        self.socket.bind(str(self.root / 'run/login/ipc-proxy'))
+        (self.root / 'run/login/ipc-proxy').chmod(0o600)
+        self.namespace = OperatorOwnedProxyNamespace(self.root, os.getuid(), '127.0.0.1', 2525)
+        self.clock = FixtureClock()
+        self.budget = OperationBudget(1300, monotonic=self.clock, wall=self.clock)
+        self.calls = []
+        self.results = []
+
+    def execute(self, program, args, data, seconds, limit):
+        self.calls.append((program, args, data, seconds, limit))
+        value = self.results.pop(0)
+        if isinstance(value, Exception): raise value
+        return value() if callable(value) else value
+
+    def control(self):
+        return SmtpProxyControl(ACCOUNT, self.namespace, self.execute, self.budget)
+
+    def test_own_query_one_kick_empty_reconciliation_typed_no_retry(self):
+        self.results = [(0, self.HEADER + self.OWN + self.FOREIGN, b''),
+                        (0, b'1 connections kicked\n', b''), (0, self.HEADER + self.FOREIGN, b'')]
+        control = self.control()
+        observed = control.query(ACCOUNT)
+        self.assertEqual(type(observed), SmtpProxyObservation)
+        self.assertEqual((observed.account, observed.connections), (ACCOUNT, 1))
+        result = control.terminate(ACCOUNT)
+        self.assertEqual(type(result), SmtpProxyTermination)
+        self.assertEqual((result.account, result.acknowledged_connections, result.remaining_connections),
+                         (ACCOUNT, 1, 0))
+        self.assertEqual(observed.namespace_fingerprint, result.namespace_fingerprint)
+        commands = SmtpProxyControl.commands(ACCOUNT, self.namespace)
+        self.assertEqual([call[1] for call in self.calls], [commands['list'], commands['kick'], commands['list']])
+        self.assertEqual(commands['kick'], ('-c', str(self.config), 'proxy', 'kick', '-a',
+            str(self.root / 'run/login/ipc-proxy'), ACCOUNT))
+        for call in self.calls:
+            self.assertEqual((call[0], call[2], call[3], call[4]), ('/usr/local/bin/doveadm', b'', 10, 4096))
+        with self.assertRaises(Refused): control.terminate(ACCOUNT)
+        self.assertEqual(len(self.calls), 3)
+        with self.assertRaises(Exception): result.account = 'bob@example.test'
+
+    def test_zero_connections_ack_requires_independent_empty_query(self):
+        self.results = [(0, self.HEADER, b''), (0, b'0 connections kicked\n', b''), (0, self.HEADER, b'')]
+        control = self.control(); control.query(ACCOUNT)
+        self.assertEqual(control.terminate(ACCOUNT).acknowledged_connections, 0)
+        self.assertEqual(len(self.calls), 3)
+
+    def test_entire_bounded_snapshot_validated_before_foreign_projection(self):
+        bad = self.FOREIGN.replace(b'127.0.0.1 2525', b'192.0.2.1 2525')
+        for output in (self.HEADER + self.OWN + bad,
+                       self.HEADER + self.FOREIGN.replace(b'submission', b'imap'),
+                       self.HEADER + self.FOREIGN.replace(b'bob@', b'bob?@')):
+            self.results = [(0, output, b'')]
+            control = self.control()
+            with self.assertRaises(Refused): control.query(ACCOUNT)
+        self.assertTrue(all('kick' not in call[1] for call in self.calls))
+
+    def test_malformed_partial_nonascii_and_overflow_queries_refuse(self):
+        cases = [b'', self.HEADER[:-1], self.HEADER + self.OWN[:-1],
+                 self.HEADER + b'partial\n', self.HEADER + b'\x00\n',
+                 self.HEADER + b'\xff\n', self.HEADER.replace(b'proto', b'wrong'),
+                 self.HEADER + self.OWN.replace(b'2525', b'02525'),
+                 self.HEADER + self.OWN * 65, b'x' * 4097]
+        for output in cases:
+            self.results = [(0, output, b'')]
+            control = self.control()
+            with self.assertRaises(Refused) as error: control.query(ACCOUNT)
+            self.assertEqual(str(error.exception), 'SMTP proxy query unavailable')
+            with self.assertRaises(Refused): control.query(ACCOUNT)
+        self.assertEqual(len(self.calls), len(cases))
+
+    def test_partial_termination_postread_failure_and_timeout_unconfirmed_once(self):
+        for outputs in [
+            [(0, b'1 connections kicked\n', b''), (0, self.HEADER + self.OWN, b'')],
+            [(0, b'1 connections kicked\n', b''), (0, b'partial', b'')],
+            [TimeoutError('public private diagnostic')],
+            [(0, b'1 connections kicked\n', b''), TimeoutError('public fixture')]]:
+            self.results = [(0, self.HEADER + self.OWN, b'')] + outputs
+            control = self.control(); control.query(ACCOUNT)
+            before = len(self.calls)
+            with self.assertRaises(Unconfirmed) as error: control.terminate(ACCOUNT)
+            self.assertEqual(str(error.exception), 'SMTP proxy termination unconfirmed')
+            after = len(self.calls)
+            with self.assertRaises(Refused): control.terminate(ACCOUNT)
+            self.assertEqual(len(self.calls), after)
+            self.assertEqual(sum('kick' in call[1] for call in self.calls[before:]), 1)
+
+    def test_bad_kick_ack_never_promotes_refusal_or_runs_reconciliation(self):
+        cases = [(0, b'01 connections kicked\n', b''), (0, b'65 connections kicked\n', b''),
+                 (0, b'1 connections kicked', b''), (0, b'1 connection kicked\n', b''),
+                 (68, b'0 connections kicked\n', b''), (0, b'1 connections kicked\n', b'warning'),
+                 (True, b'1 connections kicked\n', b''), (0, b'', b'')]
+        for response in cases:
+            self.results = [(0, self.HEADER, b''), response]
+            control = self.control(); control.query(ACCOUNT)
+            before = len(self.calls)
+            with self.assertRaises(Unconfirmed): control.terminate(ACCOUNT)
+            self.assertEqual(len(self.calls), before + 1)
+
+    def test_foreign_accounts_wildcards_early_finish_and_budget_mismatch_refuse(self):
+        control = self.control()
+        for account in ('bob@example.test', '*', '-a', 'alice?@example.test'):
+            with self.assertRaises(Refused): control.query(account)
+            with self.assertRaises(Refused): control.terminate(account)
+        with self.assertRaises(Refused): control.terminate(ACCOUNT)
+        self.assertEqual(self.calls, [])
+        for account in ('*', '-f', 'a?@example.test'):
+            with self.assertRaises(Refused): SmtpProxyControl.commands(account, self.namespace)
+        other = OperationBudget(1300, monotonic=self.clock, wall=self.clock)
+        with self.assertRaises(Refused):
+            MailSessionContainment(ACCOUNT, PublicExecutor(), other,
+                SmtpTerminationScope.REQUIRED, proxy_control=control)
+        with self.assertRaises(Refused):
+            MailSessionContainment('bob@example.test', PublicExecutor(), self.budget,
+                SmtpTerminationScope.REQUIRED, proxy_control=control)
+
+    def test_shared_deadline_late_callback_never_retry(self):
+        self.results = [(0, self.HEADER, b'')]
+        control = self.control(); control.query(ACCOUNT)
+        self.clock.now = 1055
+        def late():
+            self.assertEqual(self.calls[-1][3], 5)
+            self.clock.now = 1060
+            return (0, b'0 connections kicked\n', b'')
+        self.results = [late]
+        with self.assertRaises(Unconfirmed): control.terminate(ACCOUNT)
+        self.assertEqual(len(self.calls), 2)
+        with self.assertRaises(Refused): control.terminate(ACCOUNT)
+        self.assertEqual(len(self.calls), 2)
+
+    def test_namespace_changed_before_kick_refuses_without_command(self):
+        self.results = [(0, self.HEADER, b'')]
+        control = self.control(); control.query(ACCOUNT)
+        self.config.write_bytes(b'# changed public fixture\n')
+        with self.assertRaises(Unconfirmed): control.terminate(ACCOUNT)
+        self.assertEqual(len(self.calls), 1)
+        with self.assertRaises(Refused): control.terminate(ACCOUNT)
+
+    def test_namespace_symlink_hardlink_mode_owner_and_oversize_refuse(self):
+        link = self.root / 'extra-config'; os.link(self.config, link)
+        with self.assertRaises(Refused): OperatorOwnedProxyNamespace(self.root, os.getuid(), '127.0.0.1', 2525)
+        link.unlink()
+        for mode in (0o644, 0o666):
+            self.config.chmod(mode)
+            with self.assertRaises(Refused): OperatorOwnedProxyNamespace(self.root, os.getuid(), '127.0.0.1', 2525)
+        self.config.chmod(0o600)
+        with self.assertRaises(Refused): OperatorOwnedProxyNamespace(self.root, os.getuid()+1, '127.0.0.1', 2525)
+        self.config.write_bytes(b'x' * 16385)
+        with self.assertRaises(Refused): OperatorOwnedProxyNamespace(self.root, os.getuid(), '127.0.0.1', 2525)
+        self.config.unlink(); self.config.symlink_to(self.root / 'absent')
+        with self.assertRaises(Refused): OperatorOwnedProxyNamespace(self.root, os.getuid(), '127.0.0.1', 2525)
+
+    def test_proxy_attachment_never_qualifies_direct_postfix_topology(self):
+        control = self.control()
+        for scope in (SmtpTerminationScope.REQUIRED, SmtpTerminationScope.UNKNOWN):
+            normal = PublicExecutor()
+            dependency = MailSessionContainment(ACCOUNT, normal, self.budget, scope, proxy_control=control)
+            self.assertIs(dependency.proxy_control(ACCOUNT), control)
+            with self.assertRaises(Refused): dependency.ready(ACCOUNT)
+            self.assertEqual(normal.calls, [])
+        self.assertEqual(self.calls, [])
+        with self.assertRaises(Refused): build_native_containment(ACCOUNT, self.budget)
+
+    def test_proxy_process_executor_has_closed_literal_allowlist(self):
+        executor = ProxyControlExecutor(ACCOUNT, self.namespace, self.budget)
+        args = SmtpProxyControl.commands(ACCOUNT, self.namespace)['kick']
+        for program, command, data, seconds, cap in [('/bin/sh', args, b'', 10, 4096),
+                ('/usr/local/bin/doveadm', args[:-1]+('bob@example.test',), b'', 10, 4096),
+                ('/usr/local/bin/doveadm', ('proxy','kick','-f','*'), b'', 10, 4096),
+                ('/usr/local/bin/doveadm', args, b'public password', 10, 4096),
+                ('/usr/local/bin/doveadm', args, b'', True, 4096),
+                ('/usr/local/bin/doveadm', args, b'', float('nan'), 4096),
+                ('/usr/local/bin/doveadm', args, b'', 10, 8192)]:
+            with patch('subprocess.Popen') as child:
+                with self.assertRaises(Refused): executor(program, command, data, seconds, cap)
+                child.assert_not_called()
+
+    def test_expired_before_query_and_rollback_after_dispatch_fail_closed(self):
+        control = self.control()
+        self.clock.now = 1060
+        with self.assertRaises(Refused): control.query(ACCOUNT)
+        self.assertEqual(self.calls, [])
+        self.clock = FixtureClock()
+        self.budget = OperationBudget(1300, monotonic=self.clock, wall=self.clock)
+        self.results = [(0, self.HEADER, b'')]
+        control = self.control(); control.query(ACCOUNT)
+        def rollback():
+            self.clock.now = 999
+            return (0, b'0 connections kicked\n', b'')
+        self.results = [rollback]
+        with self.assertRaises(Unconfirmed): control.terminate(ACCOUNT)
+        self.assertEqual(len(self.calls), 2)
+        with self.assertRaises(Refused): control.terminate(ACCOUNT)
+        self.assertEqual(len(self.calls), 2)
+
+    def test_namespace_replacement_during_dispatch_is_unconfirmed_no_postread(self):
+        self.results = [(0, self.HEADER, b'')]
+        control = self.control(); control.query(ACCOUNT)
+        def replace_config():
+            replacement = self.root / 'replacement'
+            replacement.write_bytes(self.config.read_bytes())
+            replacement.chmod(0o600)
+            replacement.replace(self.config)
+            return (0, b'0 connections kicked\n', b'')
+        self.results = [replace_config]
+        with self.assertRaises(Unconfirmed): control.terminate(ACCOUNT)
+        self.assertEqual(len(self.calls), 2)
+        with self.assertRaises(Refused): control.terminate(ACCOUNT)
+        self.assertEqual(len(self.calls), 2)
+
+    def test_valid_uppercase_foreign_account_is_not_rewritten_or_selected(self):
+        self.results = [(0, self.HEADER + self.FOREIGN.replace(b'bob@', b'BOB@'), b'')]
+        result = self.control().query(ACCOUNT)
+        self.assertEqual(result.connections, 0)
+        self.assertEqual(result.account, ACCOUNT)
 
 
 if __name__ == '__main__':

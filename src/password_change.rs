@@ -57,16 +57,39 @@ impl<'a> Request<'a> {
 }
 pub trait EpochPrimaryBackend: PrimaryCredentialBackend {
     fn captured_admission(&self) -> Result<Admission, Error>;
+    fn verify_primary_before(
+        &self,
+        context: &AuthenticationContext,
+        account: &str,
+        password: &str,
+        deadline: std::time::Instant,
+    ) -> Result<PrimaryAuthVerdict, PrimaryAuthBackendError> {
+        let expired = || PrimaryAuthBackendError {
+            backend: "account-helper",
+            reason: "account authentication deadline unavailable".into(),
+        };
+        if std::time::Instant::now() >= deadline {
+            return Err(expired());
+        }
+        let result = self.verify_primary(context, account, password);
+        if std::time::Instant::now() >= deadline {
+            return Err(expired());
+        }
+        result
+    }
 }
-struct BorrowedBackend<'a, B>(&'a B);
-impl<B: PrimaryCredentialBackend> PrimaryCredentialBackend for BorrowedBackend<'_, B> {
+struct BorrowedBackend<'a, B>(&'a B, Option<std::time::Instant>);
+impl<B: EpochPrimaryBackend> PrimaryCredentialBackend for BorrowedBackend<'_, B> {
     fn verify_primary(
         &self,
         c: &AuthenticationContext,
         account: &str,
         password: &str,
     ) -> Result<PrimaryAuthVerdict, PrimaryAuthBackendError> {
-        self.0.verify_primary(c, account, password)
+        match self.1 {
+            Some(deadline) => self.0.verify_primary_before(c, account, password, deadline),
+            None => self.0.verify_primary(c, account, password),
+        }
     }
 }
 pub struct Services<'a, B, F> {
@@ -87,6 +110,7 @@ pub struct Outcome<'a> {
     pub audit_events: Vec<LogEvent>,
 }
 pub struct Prepared<'a> {
+    workflow_deadline: Option<std::time::Instant>,
     request: Request<'a>,
     account: String,
     epoch: u64,
@@ -101,6 +125,7 @@ pub struct Prepared<'a> {
 /// Typed input for a future qualified own-account mutation transport. This is
 /// not a database receipt, mutation success or permission to enable a helper.
 pub struct Dispatch<'a> {
+    workflow_deadline: Option<std::time::Instant>,
     account: String,
     epoch: u64,
     intent_reference: String,
@@ -114,6 +139,9 @@ pub struct Dispatch<'a> {
     confirmation: &'a str,
 }
 impl Dispatch<'_> {
+    pub(crate) fn workflow_deadline(&self) -> Option<std::time::Instant> {
+        self.workflow_deadline
+    }
     pub fn account(&self) -> &str {
         &self.account
     }
@@ -174,22 +202,79 @@ fn admit(authority: &dyn EpochAuthority, account: &str, epoch: u64) -> Result<()
             _ => Error::Unavailable,
         })
 }
+fn deadline_check(deadline: Option<std::time::Instant>) -> Result<(), Error> {
+    if deadline.is_some_and(|value| std::time::Instant::now() >= value) {
+        Err(Error::Expired)
+    } else {
+        Ok(())
+    }
+}
+fn admit_with_deadline(
+    authority: &dyn EpochAuthority,
+    account: &str,
+    epoch: u64,
+    deadline: Option<std::time::Instant>,
+) -> Result<(), Error> {
+    deadline_check(deadline)?;
+    match deadline {
+        Some(value) => {
+            authority
+                .admit_before(account, epoch, value)
+                .map_err(|error| match error {
+                    crate::account_admission::Error::Expired => Error::Expired,
+                    crate::account_admission::Error::Refused => Error::Stale,
+                    _ => Error::Unavailable,
+                })?
+        }
+        None => admit(authority, account, epoch)?,
+    }
+    deadline_check(deadline)
+}
 pub fn prepare<'a, B: EpochPrimaryBackend, F: SecondFactorVerifier>(
     services: Services<'_, B, F>,
     attempt: Attempt<'a>,
 ) -> Outcome<'a> {
+    prepare_internal(services, attempt, None)
+}
+/// One original workflow budget starts before password/factor preparation. The
+/// 300-second wall freshness rule remains a separate unextended constraint.
+pub fn prepare_before<'a, B: EpochPrimaryBackend, F: SecondFactorVerifier>(
+    services: Services<'_, B, F>,
+    attempt: Attempt<'a>,
+    original_deadline: std::time::Instant,
+) -> Outcome<'a> {
+    let now = std::time::Instant::now();
+    if original_deadline <= now || original_deadline > now + std::time::Duration::from_secs(60) {
+        return Outcome {
+            authorization: Err(Error::Expired),
+            audit_events: vec![],
+        };
+    }
+    prepare_internal(services, attempt, Some(original_deadline))
+}
+fn prepare_internal<'a, B: EpochPrimaryBackend, F: SecondFactorVerifier>(
+    services: Services<'_, B, F>,
+    attempt: Attempt<'a>,
+    deadline: Option<std::time::Instant>,
+) -> Outcome<'a> {
     let mut events = Vec::new();
     let result = (|| {
+        deadline_check(deadline)?;
         let began = services.clock.unix_timestamp();
+        deadline_check(deadline)?;
         let epoch = session_epoch(attempt.session, began)?;
         let account = &attempt.session.record.canonical_username;
-        admit(services.epoch, account, epoch)?;
+        admit_with_deadline(services.epoch, account, epoch, deadline)?;
+        deadline_check(deadline)?;
         let guard = services
             .rate
             .admit(account, &attempt.context.remote_addr, began)?;
-        let primary =
-            AuthenticationService::new(services.policy, BorrowedBackend(services.primary))
-                .authenticate(attempt.context, account, attempt.request.current);
+        deadline_check(deadline)?;
+        let primary = AuthenticationService::new(
+            services.policy,
+            BorrowedBackend(services.primary, deadline),
+        )
+        .authenticate(attempt.context, account, attempt.request.current);
         events.push(primary.audit_event);
         let primary_result = match primary.decision {
             AuthenticationDecision::MfaRequired {
@@ -202,9 +287,11 @@ pub fn prepare<'a, B: EpochPrimaryBackend, F: SecondFactorVerifier>(
             _ => Err(Error::Authentication),
         };
         if let Err(error) = primary_result {
-            return failed(guard, error, services.clock.unix_timestamp());
+            return failed(guard, error, services.clock, deadline);
         }
+        deadline_check(deadline)?;
         let captured = services.primary.captured_admission()?;
+        deadline_check(deadline)?;
         if captured.account != *account || captured.epoch != epoch {
             return Err(Error::Stale);
         }
@@ -221,24 +308,23 @@ pub fn prepare<'a, B: EpochPrimaryBackend, F: SecondFactorVerifier>(
             AuthenticationDecision::Denied {
                 public_reason: PublicFailureReason::TemporarilyUnavailable,
             } => return Err(Error::Unavailable),
-            _ => {
-                return failed(
-                    guard,
-                    Error::Authentication,
-                    services.clock.unix_timestamp(),
-                )
-            }
+            _ => return failed(guard, Error::Authentication, services.clock, deadline),
         }
+        deadline_check(deadline)?;
         let now = services.clock.unix_timestamp();
+        deadline_check(deadline)?;
         if now < began
             || began.checked_add(300).is_none_or(|expires| now >= expires)
             || session_epoch(attempt.session, now)? != epoch
         {
             return Err(Error::Expired);
         }
-        admit(services.epoch, account, epoch)?;
+        admit_with_deadline(services.epoch, account, epoch, deadline)?;
+        deadline_check(deadline)?;
         guard.confirm()?;
+        deadline_check(deadline)?;
         let final_now = services.clock.unix_timestamp();
+        deadline_check(deadline)?;
         if final_now < now
             || began
                 .checked_add(300)
@@ -252,7 +338,9 @@ pub fn prepare<'a, B: EpochPrimaryBackend, F: SecondFactorVerifier>(
         let expires = began.checked_add(300).ok_or(Error::Unavailable)?;
         let mut nonce = [0u8; 32];
         getrandom::getrandom(&mut nonce).map_err(|_| Error::Unavailable)?;
-        Ok(Prepared {
+        deadline_check(deadline)?;
+        let prepared = Prepared {
+            workflow_deadline: deadline,
             request: attempt.request,
             account: account.clone(),
             epoch,
@@ -263,21 +351,39 @@ pub fn prepare<'a, B: EpochPrimaryBackend, F: SecondFactorVerifier>(
             expires,
             intent_reference: nonce.iter().map(|b| format!("{b:02x}")).collect(),
             rate: services.rate.clone(),
-        })
+        };
+        deadline_check(deadline)?;
+        Ok(prepared)
     })();
     Outcome {
         authorization: result,
         audit_events: events,
     }
 }
-fn failed<'a>(guard: RateAdmission, error: Error, now: u64) -> Result<Prepared<'a>, Error> {
+fn failed<'a>(
+    guard: RateAdmission,
+    error: Error,
+    clock: &dyn TimeProvider,
+    deadline: Option<std::time::Instant>,
+) -> Result<Prepared<'a>, Error> {
     if error != Error::Authentication {
+        deadline_check(deadline)?;
         return Err(error);
     }
-    match guard.failed(now)? {
-        true => Err(Error::Throttled),
-        false => Err(Error::Authentication),
+    // A confirmed authentication rejection remains a durable failure even if
+    // a callback exhausted the workflow. Deadline expiry never resets history.
+    let now = clock.unix_timestamp();
+    let exhausted = deadline_check(deadline).is_err();
+    let throttled = guard.failed(now)?;
+    deadline_check(deadline)?;
+    if exhausted {
+        return Err(Error::Expired);
     }
+    Err(if throttled {
+        Error::Throttled
+    } else {
+        Error::Authentication
+    })
 }
 impl<'a> Prepared<'a> {
     /// Rechecks the authoritative account epoch and the supplied session record.
@@ -292,7 +398,9 @@ impl<'a> Prepared<'a> {
         epoch: &dyn EpochAuthority,
         clock: &dyn TimeProvider,
     ) -> Result<Dispatch<'a>, Error> {
+        deadline_check(self.workflow_deadline)?;
         let now = clock.unix_timestamp();
+        deadline_check(self.workflow_deadline)?;
         if now < self.issued || now >= self.expires {
             return Err(Error::Expired);
         }
@@ -304,9 +412,11 @@ impl<'a> Prepared<'a> {
         {
             return Err(Error::Stale);
         }
-        admit(epoch, &self.account, self.epoch)?;
+        admit_with_deadline(epoch, &self.account, self.epoch, self.workflow_deadline)?;
         self.rate.healthy()?;
+        deadline_check(self.workflow_deadline)?;
         let final_now = clock.unix_timestamp();
+        deadline_check(self.workflow_deadline)?;
         if final_now < now || final_now >= self.expires {
             return Err(Error::Expired);
         }
@@ -314,6 +424,7 @@ impl<'a> Prepared<'a> {
             return Err(Error::Stale);
         }
         Ok(Dispatch {
+            workflow_deadline: self.workflow_deadline,
             account: self.account,
             epoch: self.epoch,
             intent_reference: self.intent_reference,

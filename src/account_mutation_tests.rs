@@ -382,7 +382,7 @@ fn inner_intent_replay_resigning_and_clock_rollback_do_not_dispatch_twice() {
         v.request(&r.bytes().unwrap(), &KEY, 100).unwrap_err(),
         Error::Replay
     );
-    let mut other = Request(serde_json::from_slice(&r.bytes().unwrap()).unwrap());
+    let mut other = Request(serde_json::from_slice(&r.bytes().unwrap()).unwrap(), None);
     other.0.request_id = "new-outer-request".into();
     assert_eq!(
         v.request(&resigned(other), &KEY, 100).unwrap_err(),
@@ -520,7 +520,7 @@ fn exact_typed_responses_and_response_replay_are_bound_to_the_original_action() 
             .is_err());
     }
     let reply = r.response(Outcome::KnownRefused, &KEY, 101).unwrap();
-    let mut different = Request(serde_json::from_slice(&r.bytes().unwrap()).unwrap());
+    let mut different = Request(serde_json::from_slice(&r.bytes().unwrap()).unwrap(), None);
     different.0.current = "different-public-current".into();
     let bytes = resigned(different);
     let different = Verifier::default().request(&bytes, &KEY, 101).unwrap();
@@ -666,11 +666,11 @@ fn replay_cache_capacity_and_bad_mac_do_not_become_refusal_outcomes() {
     let r = request();
     let mut v = Verifier::default();
     for n in 0..128 {
-        let mut each = Request(serde_json::from_slice(&r.bytes().unwrap()).unwrap());
+        let mut each = Request(serde_json::from_slice(&r.bytes().unwrap()).unwrap(), None);
         each.0.intent_reference = format!("{n:064x}");
         v.request(&resigned(each), &KEY, 100).unwrap();
     }
-    let mut extra = Request(serde_json::from_slice(&r.bytes().unwrap()).unwrap());
+    let mut extra = Request(serde_json::from_slice(&r.bytes().unwrap()).unwrap(), None);
     extra.0.intent_reference = format!("{:064x}", 128);
     assert_eq!(
         v.request(&resigned(extra), &KEY, 100).unwrap_err(),

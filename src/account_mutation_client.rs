@@ -100,6 +100,59 @@ impl Client {
         self.execute_mode(request, workflow_deadline, &SystemTimeProvider, true)
     }
 
+    /// Source-only guarded path: the borrowed current-session lease stays alive
+    /// through peer authentication, exact frame exchange and verified receipt.
+    /// This does not qualify a remote distributed lease or activate a helper.
+    pub fn execute_guarded(
+        &self,
+        action: crate::account_guarded_mutation::GuardedMutation<'_>,
+    ) -> Result<TerminalReceipt, Error> {
+        self.execute_guarded_with(action, &SystemTimeProvider)
+    }
+    fn execute_guarded_with(
+        &self,
+        action: crate::account_guarded_mutation::GuardedMutation<'_>,
+        clock: &dyn TimeProvider,
+    ) -> Result<TerminalReceipt, Error> {
+        action.consume(|request, frame, deadline| {
+            let mut at = clock.unix_timestamp();
+            let deadline = bound_deadline(&request, deadline, at)?;
+            let _permit = self.enter(request.account())?;
+            let request = self
+                .0
+                .verifier
+                .try_lock()
+                .map_err(|_| Error::Unavailable)?
+                .request(
+                    &request.bytes().map_err(|_| Error::Invalid)?,
+                    &self.0.key,
+                    at,
+                )
+                .map_err(codec_error)?;
+            validate_socket(&self.0.socket, self.0.helper_uid).map_err(|_| Error::Unavailable)?;
+            check_time(&request, deadline, clock, &mut at)?;
+            let stream = crate::openbsd::connect_unix_before(&self.0.socket, deadline)
+                .map_err(|_| Error::Unavailable)?;
+            self.exchange(request, frame, stream, deadline, clock, at)
+        })
+    }
+    #[cfg(test)]
+    pub(crate) fn guarded_fixture_files(
+        socket: &Path,
+        key: &Path,
+        uid: u32,
+    ) -> Result<Self, Error> {
+        Self::qualified_files(socket, key, uid)
+    }
+    #[cfg(test)]
+    pub(crate) fn guarded_fixture_exchange(
+        &self,
+        action: crate::account_guarded_mutation::GuardedMutation<'_>,
+        clock: &dyn TimeProvider,
+    ) -> Result<TerminalReceipt, Error> {
+        self.execute_guarded_with(action, clock)
+    }
+
     fn execute_with(
         &self,
         request: Request,
@@ -302,6 +355,10 @@ fn remaining(deadline: Instant) -> Result<Duration, Error> {
         .ok_or(Error::Expired)
 }
 fn bound_deadline(request: &Request, supplied: Instant, at: u64) -> Result<Instant, Error> {
+    let supplied = request
+        .workflow_deadline()
+        .map(|original| supplied.min(original))
+        .unwrap_or(supplied);
     let duration = remaining(supplied)?;
     if duration > MAXIMUM || at < request.issued() || at >= request.expires() {
         return Err(Error::Expired);

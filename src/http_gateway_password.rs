@@ -6,10 +6,40 @@ impl EpochPrimaryBackend for crate::account_admission_runtime::CredentialBackend
         &self,
     ) -> Result<crate::account_admission::Admission, password_change::Error> {
         self.captured
-            .lock()
+            .try_lock()
             .ok()
             .and_then(|v| v.clone())
             .ok_or(password_change::Error::Unavailable)
+    }
+    fn verify_primary_before(
+        &self,
+        _: &AuthenticationContext,
+        account: &str,
+        password: &str,
+        deadline: std::time::Instant,
+    ) -> Result<crate::auth::PrimaryAuthVerdict, crate::auth::PrimaryAuthBackendError> {
+        let denied = || crate::auth::PrimaryAuthBackendError {
+            backend: "account-helper",
+            reason: "account authentication unavailable".into(),
+        };
+        let admission = self
+            .client
+            .authenticate_before(account, password, deadline)
+            .map_err(|_| denied())?;
+        if std::time::Instant::now() >= deadline {
+            return Err(denied());
+        }
+        let verdict = match &admission {
+            Some(value) => crate::auth::PrimaryAuthVerdict::Accept {
+                canonical_username: value.account.clone(),
+            },
+            None => crate::auth::PrimaryAuthVerdict::Reject,
+        };
+        *self.captured.try_lock().map_err(|_| denied())? = admission;
+        if std::time::Instant::now() >= deadline {
+            return Err(denied());
+        }
+        Ok(verdict)
     }
 }
 impl RuntimeBrowserGateway {
@@ -252,6 +282,26 @@ impl RuntimeBrowserGateway {
         session: &'a ValidatedSession,
         request: Request<'a>,
     ) -> Outcome<'a> {
+        self.prepare_password_action(context, session, request, None)
+    }
+    /// Source-only preparation on the exact budget later consumed by guarded
+    /// mutation/epoch checks and post-lock browser cleanup; no route enables it.
+    pub fn prepare_password_change_before<'a>(
+        &self,
+        context: &'a AuthenticationContext,
+        session: &'a ValidatedSession,
+        request: Request<'a>,
+        original_deadline: std::time::Instant,
+    ) -> Outcome<'a> {
+        self.prepare_password_action(context, session, request, Some(original_deadline))
+    }
+    fn prepare_password_action<'a>(
+        &self,
+        context: &'a AuthenticationContext,
+        session: &'a ValidatedSession,
+        request: Request<'a>,
+        deadline: Option<std::time::Instant>,
+    ) -> Outcome<'a> {
         let Some(client) = &self.account_admission_client else {
             return Outcome {
                 authorization: Err(password_change::Error::Unavailable),
@@ -262,23 +312,26 @@ impl RuntimeBrowserGateway {
             client: client.clone(),
             captured: Default::default(),
         };
-        password_change::prepare(
-            Services {
-                primary: &backend,
-                factor: &self.build_factor_service(),
-                epoch: client,
-                rate: &crate::password_change_rate::Store::new(
-                    self.settings_dir.join("password-stepup-rate"),
-                ),
-                clock: &SystemTimeProvider,
-                policy: self.authentication_policy,
-            },
-            Attempt {
-                context,
-                session,
-                request,
-            },
-        )
+        let rate =
+            crate::password_change_rate::Store::new(self.settings_dir.join("password-stepup-rate"));
+        let factor = self.build_factor_service();
+        let services = Services {
+            primary: &backend,
+            factor: &factor,
+            epoch: client,
+            rate: &rate,
+            clock: &SystemTimeProvider,
+            policy: self.authentication_policy,
+        };
+        let attempt = Attempt {
+            context,
+            session,
+            request,
+        };
+        match deadline {
+            Some(value) => password_change::prepare_before(services, attempt, value),
+            None => password_change::prepare(services, attempt),
+        }
     }
 }
 struct ActionClock<'a>(&'a dyn crate::totp::TimeProvider);

@@ -12,6 +12,8 @@ use std::sync::{
     atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering},
     Arc, Mutex,
 };
+#[path = "password_preparation_deadline_tests.rs"]
+mod preparation_deadline_tests;
 #[cfg(unix)]
 #[path = "password_session_action_tests.rs"]
 mod session_action_tests;
