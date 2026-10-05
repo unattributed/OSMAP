@@ -400,8 +400,55 @@ class _Listener:
                     pass
 
 
-def serve_native():
+    def _serve(self,path,_stop=None):
+        """Serial service: no idle exit, no retry of a failed operation.
+
+        A continuation means a new accepted request, never a reconnect/resend of
+        the previous frame. Uncertain owned-worker cleanup terminates admission.
+        The optional private stop predicate only removes admission; it supplies
+        no action authority and is absent from all request/config inputs.
+        """
+        path=Path(path)
+        if self._grant is None or path!=self._grant.path:
+            raise Unavailable('mutation persistent grant unavailable')
+        parent=self._grant.open_namespace()
+        listener=socket.socket(socket.AF_UNIX,socket.SOCK_STREAM);inode=None
+        try:
+            if path.exists() or path.is_symlink() or len(os.fsencode(path))>=100:
+                raise Unavailable('mutation listener unavailable')
+            listener.bind(str(path));m=path.lstat();inode=(m.st_dev,m.st_ino)
+            self._grant.publish(parent,inode)
+            listener.listen(1);listener.settimeout(.1)
+            while not self._supervisor._uncertain:
+                if _stop is not None and _stop():return
+                self._grant.verify(parent,inode)
+                try:stream,_=listener.accept()
+                except socket.timeout:continue
+                with stream:
+                    self._grant.verify(parent,inode)
+                    # Stop may arrive while accept blocks. Recheck at this
+                    # admission boundary before reading or dispatching a frame;
+                    # already-dispatched work keeps its original deadline.
+                    if _stop is not None and _stop():return
+                    try:self._supervisor.connection(stream)
+                    except Unavailable:
+                        if self._supervisor._uncertain:raise
+                        # A refused connection supplies no automatic resend.
+                        # Only a new separately authenticated peer may proceed.
+            raise Unavailable('mutation service cleanup unconfirmed')
+        except Exception:
+            raise Unavailable('mutation persistent listener unavailable') from None
+        finally:
+            listener.close();os.close(parent)
+            if inode is not None:
+                try:
+                    m=path.lstat()
+                    if stat.S_ISSOCK(m.st_mode) and (m.st_dev,m.st_ino)==inode:path.unlink()
+                except FileNotFoundError:pass
+
+
+def serve_native(_stop=None):
     listener = _Listener.native()
     # Native qualification still false. Exact native dependency construction,
     # relay grant and privilege/confinement are required before this is reachable.
-    listener._one(SOCKET)
+    listener._serve(SOCKET,_stop)

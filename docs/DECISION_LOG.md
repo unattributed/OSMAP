@@ -8970,3 +8970,10 @@ Preserve the measured listener fixture race and fix synchronization only. Reconc
 Admit the reviewed key-free purpose-exclusive relay and exact root-owned group-traverse/socket grant, keeping native flags and HTTP password form disabled. Do not distribute request/session MAC keys to the bridge or infer action authority from DAC access. Preserve the original request budget, full-duplex issuer challenge and cleanup uncertainty; qualify actual cross-principal access and fixed forced-command SSH independently before activation. Continue the missing persistent service seam rather than stopping at a signed source checkpoint.
 
 Keep the actual controlled Postfix startup failure and unknown cleanup distinct from production mail delivery. The measured owned-log-prefix mismatch warrants only an exact private fixture log prefix, not blanket /tmp permission or production configuration changes. An absence snapshot plus retained namespace identity must precede any failed-fixture cleanup. Preserve exact native boundaries, operator policies, keys and unresolved human delivery results.
+
+
+### 2026-10-04 — keep granted mutation service persistent and stop new admission at dispatch
+
+Replace one-shot native service dispatch with the reviewed serial listener, preserving granted namespace identity, independent request authority and original in-flight deadlines. Repair the demonstrated stop-during-accept race before admission; preserve original candidate, actual RED and both superseding reviews. Graceful admission stop does not prove forced remote worker termination. Keep native construction and the password form disabled until the composed authoritative workflow is actually qualified.
+
+Treat failed native fixtures as failures, preserve their exact source and diagnose missing evidence rather than issuing cosmetic completion. Retain relay19/two failures/root case unexecuted. Correct the measured Postfix master.cf column interpretation without broadening unrelated child identities; exact private stop after live lease/config/pid binding is authorized owned-resource cleanup, not a production stop or a rewritten native pass.

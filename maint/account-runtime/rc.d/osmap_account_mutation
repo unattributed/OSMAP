@@ -1,0 +1,12 @@
+#!/bin/ksh
+# Disabled fixed-purpose authoritative service; no ordinary profile imports it.
+# Native dependency/grant/confinement qualification precedes installation.
+daemon="/usr/local/bin/python3"
+script="/usr/local/libexec/osmap/account-runtime/account_mutation_service.py"
+daemon_user="root"
+daemon_flags="-I ${script}"
+rc_bg=YES
+rc_reload=NO
+. /etc/rc.d/rc.subr
+pexp="/usr/local/bin/python3 -I ${script}"
+rc_cmd "$1"
