@@ -79,6 +79,28 @@ pub(crate) fn account_admission_command() -> Command {
     command
 }
 
+/// Construct the fixed synthetic stored-session fixture process. No browser
+/// field, account value, or caller-selected program enters its command line.
+#[cfg(all(test, unix))]
+pub(crate) fn stored_issuer_fixture_command(worker_root: &std::path::Path) -> Command {
+    let python = if cfg!(target_os = "openbsd") {
+        "/usr/local/bin/python3"
+    } else {
+        "/usr/bin/python3"
+    };
+    let script = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("maint/account-runtime/runtime_native_stored_issuer_fixture.py");
+    let mut command = Command::new(python);
+    command
+        .arg("-B")
+        .arg(script)
+        .env_clear()
+        .env("LC_ALL", "C")
+        .env("OSMAP_TEST_REAL_WORKER_WITNESS_ROOT", worker_root)
+        .current_dir("/");
+    command
+}
+
 /// Fixed public-only codec fixture, compiled exclusively for unit tests.
 /// No environment, shell, browser field or credential selects the executable.
 #[cfg(all(test, unix))]

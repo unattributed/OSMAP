@@ -122,3 +122,6 @@ pub mod protected_message_gateway;
 pub mod protected_submission;
 
 pub mod sender_authority;
+
+#[cfg(all(test, unix))]
+mod native_stored_issuer_fixture;

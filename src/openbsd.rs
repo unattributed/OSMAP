@@ -520,6 +520,58 @@ pub(crate) fn unix_stream_peer_uid(stream: &UnixStream) -> Result<u32, String> {
     unix_stream_peer_uid_from_raw_fd(stream.as_raw_fd())
 }
 
+/// Inspect an inherited unnamed stream inside the reviewed Unix FFI boundary.
+/// The caller retains ownership and rechecks this tuple around every frame.
+#[cfg(all(test, unix))]
+pub(crate) fn fixture_unix_stream_identity(
+    stream: &UnixStream,
+) -> Result<(libc::dev_t, libc::ino_t, libc::mode_t), String> {
+    let mut info = std::mem::MaybeUninit::<libc::stat>::uninit();
+    if unsafe { libc::fstat(stream.as_raw_fd(), info.as_mut_ptr()) } != 0 {
+        return Err("fixture descriptor metadata unavailable".into());
+    }
+    let info = unsafe { info.assume_init() };
+    let mut kind: libc::c_int = 0;
+    let mut size = std::mem::size_of_val(&kind) as libc::socklen_t;
+    if info.st_mode & libc::S_IFMT != libc::S_IFSOCK
+        || unsafe {
+            libc::getsockopt(
+                stream.as_raw_fd(),
+                libc::SOL_SOCKET,
+                libc::SO_TYPE,
+                (&mut kind as *mut libc::c_int).cast(),
+                &mut size,
+            )
+        } != 0
+        || size as usize != std::mem::size_of_val(&kind)
+        || kind != libc::SOCK_STREAM
+        || !stream
+            .local_addr()
+            .map_err(|_| "fixture local address unavailable")?
+            .is_unnamed()
+        || !stream
+            .peer_addr()
+            .map_err(|_| "fixture peer address unavailable")?
+            .is_unnamed()
+        || unix_stream_peer_uid(stream)? != effective_uid()
+    {
+        return Err("fixture unnamed stream identity refused".into());
+    }
+    Ok((info.st_dev, info.st_ino, info.st_mode))
+}
+
+/// Take exactly one valid inherited fixture descriptor. The caller must not
+/// retain another owner of the raw descriptor after this transfer.
+#[cfg(all(test, unix))]
+pub(crate) fn fixture_owned_unix_stream(raw: i32) -> Result<UnixStream, String> {
+    use std::os::fd::FromRawFd;
+    if !(3..=1024).contains(&raw) {
+        return Err("fixture descriptor number refused".into());
+    }
+    let stream = unsafe { UnixStream::from_raw_fd(raw) };
+    Ok(stream)
+}
+
 /// Returns the effective Unix UID through the reviewed FFI boundary.
 #[cfg(unix)]
 pub(crate) fn effective_uid() -> u32 {

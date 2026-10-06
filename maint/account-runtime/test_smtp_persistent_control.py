@@ -23,7 +23,8 @@ class PersistentTests(unittest.TestCase):
             except Exception as error:self.results.append(error)
         self.thread=threading.Thread(target=serve);self.thread.start()
         self.addCleanup(self.stop.set);self.addCleanup(lambda:self.thread.join(2))
-        self.wait(lambda:self.path.exists());self.assertEqual(self.path.stat().st_mode&0o777,0o600)
+        self.wait(lambda:self.path.exists()and(self.path.stat().st_mode&0o777)==0o600)
+        self.assertEqual(self.path.stat().st_mode&0o777,0o600)
         return self.path.stat().st_dev,self.path.stat().st_ino
     def connect(self,raw=None):
         stream=socket.socket(socket.AF_UNIX);self.addCleanup(stream.close);stream.settimeout(1)
