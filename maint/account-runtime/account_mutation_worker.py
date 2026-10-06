@@ -256,7 +256,8 @@ class MutationWorker:
     a qualified dependency; HMAC alone is not a live session proof.
     """
     def __init__(self, key, accounts, journal, epoch_store, builder, session_authority,
-                 clock=lambda: int(time.time()), monotonic=time.monotonic, *, session_key=None):
+                 clock=lambda: int(time.time()), monotonic=time.monotonic, *, session_key=None,
+                 guarded_builder=None):
         key_valid(key)
         if (type(accounts) is not frozenset or not 1 <= len(accounts) <= 128 or
                 type(journal) is not IntentStore or type(epoch_store) is not EpochStore or
@@ -279,7 +280,10 @@ class MutationWorker:
             key_valid(session_key)
             if session_key == key:
                 raise Unavailable('guarded mutation dependency unavailable')
+        if guarded_builder is not None and (not callable(guarded_builder) or session_key is None):
+            raise Unavailable('guarded mutation builder unavailable')
         self._session_key = session_key
+        self._guarded_builder = guarded_builder
 
     def execute(self, raw, *, maximum_seconds=60):
         """Source component only; native dispatch enters through a qualified peer."""
@@ -329,6 +333,11 @@ class MutationWorker:
         from account_mutation_budget import wall_millis, operation_budget
         if self._session_key is None:
             raise Unavailable('guarded mutation dependency unavailable')
+        if self._guarded_builder is not None and (type(_continuity_stream) is not socket.socket
+                or _continuity_stream.family != socket.AF_UNIX
+                or _continuity_stream.type != socket.SOCK_STREAM
+                or _peer(_continuity_stream) != os.geteuid()):
+            raise Unavailable('guarded mutation issuer descriptor unavailable')
         sample = clock_millis or wall_millis
         received_mono = self._monotonic()
         received_millis = sample()
@@ -352,13 +361,24 @@ class MutationWorker:
                                                      self._key, budget, sample)
         reply=self._execute_verified(guarded.budget.request, began, budget,
                                       session_authority=guarded.authorize,
-                                      pending_confirmation=confirmation)
+                                      pending_confirmation=confirmation,
+                                      _verified_guarded=guarded,_guarded_frame=raw)
         # Internal continuous listener carries this SAME budget through reply
         # send and final return; no fresh connection-level timeout renews it.
         return (reply,budget) if _reply_budget else reply
 
     def _execute_verified(self, request, began, budget, *, session_authority=None,
-                          pending_confirmation=None):
+                          pending_confirmation=None,_verified_guarded=None,_guarded_frame=None):
+        from account_guarded_mutation import VerifiedGuardedMutation
+        if self._guarded_builder is not None:
+            if (type(_verified_guarded) is not VerifiedGuardedMutation or
+                    type(_guarded_frame) is not bytes or
+                    _verified_guarded.budget.request is not request):
+                raise Unavailable('guarded mutation original builder authority unavailable')
+            budget.require_original(sent_millis=_verified_guarded.budget.sent_millis,
+                deadline_millis=_verified_guarded.budget.deadline_millis,
+                expires_at=request.action.expires)
+
         def authorize(action, at):
             budget.remaining()
             request.verify(self._key, at)
@@ -369,7 +389,9 @@ class MutationWorker:
 
         with self._journal.claim(request, began, budget) as lease:
             try:
-                coordinator = self._builder(request.action, budget, authorize)
+                coordinator = (self._builder(request.action,budget,authorize)
+                    if self._guarded_builder is None else
+                    self._guarded_builder(_verified_guarded,_guarded_frame,budget,authorize))
                 if (type(coordinator) is not PreparedPasswordCoordinator or
                         coordinator.store is not self._epoch_store or
                         coordinator.authorize_action is not authorize or

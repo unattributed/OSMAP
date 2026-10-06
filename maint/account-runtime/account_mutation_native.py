@@ -15,6 +15,8 @@ from mutation_primary import NativePrimaryVerifier
 from operation_budget import OperationBudget
 from prepared_password import PreparedAction,PreparedPasswordCoordinator
 from account_native_material import NativeMaterial,MaterialExecutor,CONFIG as SQL_CONFIG
+from smtp_guarded_builder import GuardedSmtpBinding
+from account_guarded_mutation import VerifiedGuardedMutation
 
 NATIVE_DEPENDENCIES_QUALIFIED=False
 EPOCH_ROOT='/var/db/osmap-account/epoch'
@@ -32,17 +34,20 @@ def _fixed_material():
 
 
 class NativeDependencies:
-    def __init__(self,bootstrap,journal,epoch_store,clock=lambda:int(time.time()),*,material=None):
+    def __init__(self,bootstrap,journal,epoch_store,clock=lambda:int(time.time()),*,material=None,smtp_control=None):
         if (type(bootstrap) is not _Bootstrap or type(journal) is not IntentStore
                 or type(epoch_store) is not EpochStore or not callable(clock)
                 or journal.root==epoch_store.root or journal.uid!=epoch_store.uid
-                or (material is not None and type(material) is not NativeMaterial)):
+                or (material is not None and type(material) is not NativeMaterial)
+                or (smtp_control is not None and
+                    (type(smtp_control) is not GuardedSmtpBinding or smtp_control.bootstrap is not bootstrap))):
             raise Unavailable('native mutation dependency unavailable')
         self.bootstrap=bootstrap
         self.journal=journal
         self.epoch_store=epoch_store
         self.clock=clock
         self._material=material
+        self._smtp_control=smtp_control
 
     @classmethod
     def native(cls):
@@ -74,7 +79,15 @@ class NativeDependencies:
             primary,primary,containment.ready,containment.finish,self.clock,
             containment.invalidate_changed_auth)
 
+    def _build_guarded(self,original,frame,budget,authorize):
+        if (type(self._smtp_control) is not GuardedSmtpBinding
+                or type(original) is not VerifiedGuardedMutation):
+            raise Unavailable('native guarded SMTP dependency unavailable')
+        coordinator=self._build(original.budget.request.action,budget,authorize)
+        return self._smtp_control.compose(coordinator,original,frame,budget)
+
     def worker(self):
         return MutationWorker(self.bootstrap.mutation_key,self.bootstrap.accounts,
             self.journal,self.epoch_store,self._build,_legacy_authority_unavailable,
-            self.clock,session_key=self.bootstrap.session_key)
+            self.clock,session_key=self.bootstrap.session_key,
+            guarded_builder=None if self._smtp_control is None else self._build_guarded)

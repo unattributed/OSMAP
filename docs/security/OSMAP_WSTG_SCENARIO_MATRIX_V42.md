@@ -151,3 +151,13 @@ authorizations retire only under the durable journal lock/time high-water;
 replay, rollback, unresolved and legacy records refuse. Entry/byte limits stay
 fixed. These private-file controls do not qualify native key provisioning or
 the actual password workflow.
+
+
+Guarded worker-builder integration adds source-level BUSL/SESS/ATHZ controls:
+locally verified original frame and receipt, distinct-purpose minimal broker
+MAC, mandatory issuer ACK before pending capture, source-owned descriptor/group,
+held intent lock, invalid proof/nonce/EOF refusal and final descriptor cleanup.
+Five actual local worker children exercise this ordering; SQL/primary and
+external TCP/IMAP remain projected. Existing supervisor peer equality is not
+browser issuer custody. Native factory/listener/complete mail containment and
+human password UAT remain OPEN; no completed WSTG or release claim follows.

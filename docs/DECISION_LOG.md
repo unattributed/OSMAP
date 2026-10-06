@@ -9129,3 +9129,15 @@ For retained native24, actual stable PIDfile and socket names without matching n
 
 
 Completed SMTP control grants must not permanently exhaust the bounded32-entry journal. Retire completed records only after their independently signed original deadlines, under the same journal lock and durable monotonic wall-time high-water, atomically with a fresh claim. Never expire claimed/uncertain records, accept rollback replay, widen entry/byte limits, silently recreate old/corrupt journals or claim unqualified migration. A post-rename durability failure remains contained by a claimed record rather than an assurance that the old file is unchanged.
+
+
+### 2026-10-06 — distinguish immutable public hardlinks from private-file custody
+
+Actual native9 identifies a valid root-owned0444 system library with five hard links. A single-link predicate appropriate to private mutation material incorrectly rejects this immutable public dependency. The next repair uses a finite64-link bound only for source-classified public library/module leaves with no write bits, preserving nofollow/inode/hash/ancestry/second-read checks and existing byte/time/node caps. Programs, loader, staged source and private manifests retain their existing single-link requirements. Qualification is pending; do not infer the older generic refusal's cause or mint a production graph from a proposed repair.
+
+The signed407-test source checkpoint closes source integration only. Actual native workflow, disabled password form and human acceptance remain separate. Continue guarded issuer/broker composition and installed command/identity admission with meaningful positive and negative controls instead of repeating unchanged passing component suites.
+
+
+### 2026-10-06 — compose the guarded worker with existing issuer ordering
+
+The source worker must consume its locally verified original guarded frame when building SMTP containment. Register a typed startup binding with distinct control-purpose key and matching account set; derive the password-free broker authorization locally. Preserve the original issuer acknowledgement before pending capture and the existing intent/account locks. Require the existing supervisor-private Unix descriptor and inherited worker group; same-UID peer is not live browser issuer or unique broker PID evidence. Retain mandatory command material and refuse legacy entry when the guarded builder is configured. Actual source-owned children exercise this composition, but real installed key custody, native listener and independent mail-session closure still require composed qualification before enabling the password form.
