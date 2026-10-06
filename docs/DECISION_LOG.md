@@ -9323,3 +9323,9 @@ Documents route and field inventory to the existing WSTG surface declaration;
 preserve the unchanged route-completeness assertion. A passing focused test
 does not supersede the required full gate. Preserve the actual transport-driver
 cleanup uncertainty and do not repeat that driver or signal historical PIDs.
+
+Repair the demonstrated unlocked test-observer race with an actual publication
+witness, without relaxing durable journal inode checks, time bounds or normal
+push gates. This is a separate signed test repair; retain the failed first push.
+Keep current-owned temporary namespace cleanup separate from the failed
+qualifier and do not infer a Rust/Dovecot defect from the Python contrast.

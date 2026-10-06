@@ -7643,3 +7643,24 @@ first save was not reached. Original source mtimes caused the first build to
 reuse old3d733binary; it was detected and never executed. Byte-identical private
 source mtimes were refreshed, a changed build produced e33541cf, and complete
 source/binary transfers and exact hashes were checked before native execution.
+
+Documents source admission normal commit attempt4 PASS and Shopkeeper-signed
+commit b83d9b7 was created. Its first normal push refused on one existing SMTP
+control fixture: an unlocked journal poll raced actual atomic publication.
+The production guard correctly refused the unstable read. A reviewed test-only
+publication Event waits for actual claimed publication within the same1-second
+bound before changing intent; refusal/no cutoff/uncertain assertions remain.
+Service class13 and affected case100 consecutive local runs PASS. Keep the
+push refusal, separate signed repair and subsequent normal gate outcome.
+
+The revised one-command Python quota reproducer first refused OpenBSD's public
+platform string openbsd7 before creating state; after the reviewed exact guard
+repair it returned quota-get0, userdb counters1 each and verified owned cleanup.
+This contrasts with Rust native4 status75 but does not diagnose it: inherited
+environment/DEVNULL differed from the Rust bounded executor. A changed exact
+environment/empty-pipe discriminator is being assessed. No first-save or
+shared-quota acceptance is claimed. Separate fresh administrative cleanup of
+the failed transport namespace passed: two exact fstat snapshots, five held
+references, no other current refs/listener/process matches, four known files
+and current leased root removed. Historical continuity was not established;
+original native transport stays FAIL/NOT_QUALIFIED.

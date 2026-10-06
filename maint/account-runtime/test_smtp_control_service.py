@@ -136,15 +136,19 @@ class ServiceTests(unittest.TestCase):
         client=self.client(stream);client.capture(fixtures.ALICE);self.assertEqual(client.cancel(),0);thread.join(2)
         self.assertEqual(result,[0]);self.assertFalse(path.exists())
     def test_pending_intent_changed_after_admission_denies_before_source_cutoff(self):
-        self.fixture.state();stream,t=self.pair()
-        # Wait for the source to consume its grant; no control capture yet.
-        end=time.monotonic()+1
-        while not self.record()['entries']and time.monotonic()<end:time.sleep(.005)
-        with self.fixture.store.locked(fixtures.ALICE)as path:
-            value=self.fixture.store._read(path);value['intent']='c'*64;self.fixture.store._write(path,value)
-        stream.sendall(control.CAPTURE+fixtures.ALICE.encode()+b'\n');stream.settimeout(1)
-        self.assertEqual(stream.recv(1),b'');t.join(2)
-        self.assertEqual(len(self.fixture.registry._cutoffs),0);self.assertEqual(self.record()['entries'][0]['state'],'uncertain')
+        self.fixture.state();claimed=threading.Event();publish=self.journal._publish
+        def observed_publish(path,value):
+            result=publish(path,value)
+            if value['entries']and value['entries'][-1]['state']=='claimed':claimed.set()
+            return result
+        # Observe successful publication under the source claim lock; no capture yet.
+        with patch.object(self.journal,'_publish',side_effect=observed_publish):
+            stream,t=self.pair();self.assertTrue(claimed.wait(1),'source grant claim was not published within original wait')
+            with self.fixture.store.locked(fixtures.ALICE)as path:
+                value=self.fixture.store._read(path);value['intent']='c'*64;self.fixture.store._write(path,value)
+            stream.sendall(control.CAPTURE+fixtures.ALICE.encode()+b'\n');stream.settimeout(1)
+            self.assertEqual(stream.recv(1),b'');t.join(2)
+            self.assertEqual(len(self.fixture.registry._cutoffs),0);self.assertEqual(self.record()['entries'][0]['state'],'uncertain')
     def test_foreign_kernel_uid_refuses_before_initial_frame_or_journal_claim(self):
         left,right=socket.socketpair();self.addCleanup(right.close)
         with patch.object(service,'_kernel_peer',return_value=(os.getuid()+1,os.getgid())),patch.object(self.supervisor,'_frame')as frame:
