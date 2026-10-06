@@ -48,6 +48,18 @@ class CommandKernelSeal:
         # keep separate private config/socket identities; no role-wide drop.
         if (type(value)is not cls or value._budget is not budget or value._command_identity[3]!=role):raise Refused('native kernel seal unavailable')
         value._hash_identity_required=role=='hash'
+        value._hash_graph_required=role=='hash'
+        return value
+
+    @classmethod
+    def _hash_candidate(cls,budget):
+        # Private reviewed qualification lane only. No production composition
+        # calls it, and _PROFILES stays empty. Caller supplies no paths/profile,
+        # UID/GID/command/callback; admission occurs inside the original phase.
+        from account_hash_graph import HashInstalledGraph,PROMISES
+        value=cls._fixture(Adapter.HASH_PROGRAM,Adapter.HASH_ARGS,None,budget,
+                           HashInstalledGraph.rows(),PROMISES)
+        value._hash_identity_required=True;value._hash_graph_required=True
         return value
 
     @staticmethod
@@ -90,6 +102,7 @@ class CommandKernelSeal:
         value._command_identity=(program,args,account,role)
         value._rows=rows;value._promises=promises;value._budget=budget
         value._hash_identity_required=False
+        value._hash_graph_required=False
         return value
 
     def preexec(self,program,args,account=None,*,deadline=None):
@@ -99,7 +112,15 @@ class CommandKernelSeal:
             raise Refused('native kernel profile command mismatch')
         self._budget.remaining()
         if not self._budget.inherited_group():raise Refused('native kernel owned group unavailable')
-        identity=None
+        identity=None;graph=None
+        if self._hash_graph_required:
+            from account_hash_graph import HashInstalledGraph,PROMISES
+            if (role!='hash' or not self._hash_identity_required
+                    or self._rows!=HashInstalledGraph.rows() or self._promises!=PROMISES):
+                raise Refused('native hash fixed graph unavailable')
+            graph=HashInstalledGraph.native(self._budget,deadline)
+            if type(graph)is not HashInstalledGraph or graph._budget is not self._budget:
+                raise Refused('native hash graph unavailable')
         if self._hash_identity_required:
             if role!='hash':raise Refused('native hash identity role unavailable')
             from account_hash_identity import HashChildIdentity
@@ -112,6 +133,10 @@ class CommandKernelSeal:
             # and before exec. Parent keeps independent watchdog/reap authority.
             if not sys.platform.startswith('openbsd') or os.getuid()!=0 or os.geteuid()!=0:
                 raise Refused('native kernel platform authority unavailable')
+            if graph is not None:
+                # Recheck fixed public code, exact module membership and public
+                # startup database leases before losing privileged setup.
+                graph.recheck(self._budget,deadline)
             if identity is not None:
                 # Root custody recheck, empty groups and irreversible saved /
                 # real / effective IDs, before the final locked kernel graph.

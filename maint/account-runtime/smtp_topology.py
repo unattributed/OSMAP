@@ -198,7 +198,13 @@ class FixedSmtpRouting:
                     raise ValueError
                 service, kind = fields[:2]; program = fields[7]
                 pair = service, kind
-                if pair in seen or kind not in ('inet', 'unix', 'pass', 'fifo'):
+                # Postfix3.11 uses this exact local datagram logger. It is
+                # not an SMTP service; unknown datagram commands/extra options
+                # cannot acquire authenticated-entrypoint authority.
+                private_logger = (service == 'postlog' and kind == 'unix-dgram'
+                                  and program == 'postlogd' and len(fields) == 8)
+                if pair in seen or (kind not in ('inet', 'unix', 'pass', 'fifo')
+                                    and not private_logger):
                     raise ValueError
                 seen.add(pair)
                 if kind == 'inet' and program not in ('smtpd', 'postscreen'):
