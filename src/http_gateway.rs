@@ -4,6 +4,8 @@ use super::*;
 mod http_gateway_auth;
 #[path = "http_gateway_delete.rs"]
 mod http_gateway_delete;
+#[path = "http_gateway_documents.rs"]
+mod http_gateway_documents;
 #[path = "http_gateway_draft.rs"]
 mod http_gateway_draft;
 #[path = "http_gateway_flags.rs"]
@@ -361,6 +363,132 @@ impl RuntimeBrowserGateway {
 }
 
 impl BrowserGateway for RuntimeBrowserGateway {
+    fn documents_quota_status(
+        &self,
+        session: &ValidatedSession,
+    ) -> Option<crate::documents::QuotaStatus> {
+        self.document_store()
+            .ok()?
+            .quota_status(&session.record.canonical_username)
+            .ok()?
+    }
+    fn documents_quota_ready(&self, session: &ValidatedSession) -> bool {
+        self.document_store()
+            .and_then(|store| store.quota_ready(&session.record.canonical_username))
+            .unwrap_or(false)
+    }
+    fn create_document_folder(
+        &self,
+        session: &ValidatedSession,
+        revision: u64,
+        name: &str,
+    ) -> Result<crate::documents::Index, crate::documents::Error> {
+        self.document_store()?.create_folder(
+            &session.record.canonical_username,
+            revision,
+            name,
+            crate::totp::TimeProvider::unix_timestamp(&SystemTimeProvider),
+        )
+    }
+    fn move_document_to_folder(
+        &self,
+        session: &ValidatedSession,
+        revision: u64,
+        document_id: &str,
+        folder_id: &str,
+    ) -> Result<crate::documents::Index, crate::documents::Error> {
+        self.document_store()?.move_to_folder(
+            &session.record.canonical_username,
+            revision,
+            document_id,
+            folder_id,
+            crate::totp::TimeProvider::unix_timestamp(&SystemTimeProvider),
+        )
+    }
+    fn load_documents(
+        &self,
+        session: &ValidatedSession,
+    ) -> Result<crate::documents::Index, crate::documents::Error> {
+        self.document_store()?
+            .load(&session.record.canonical_username)
+    }
+    fn upload_document(
+        &self,
+        session: &ValidatedSession,
+        revision: u64,
+        name: &str,
+        media_type: &str,
+        bytes: &[u8],
+    ) -> Result<crate::documents::Index, crate::documents::Error> {
+        self.document_store()?.upload(
+            &session.record.canonical_username,
+            revision,
+            name,
+            media_type,
+            bytes,
+            crate::totp::TimeProvider::unix_timestamp(&SystemTimeProvider),
+        )
+    }
+    fn download_document(
+        &self,
+        session: &ValidatedSession,
+        id: &str,
+    ) -> Result<(String, Vec<u8>), crate::documents::Error> {
+        self.document_store()?
+            .download(&session.record.canonical_username, id)
+    }
+    fn bin_document(
+        &self,
+        session: &ValidatedSession,
+        revision: u64,
+        id: &str,
+    ) -> Result<crate::documents::Index, crate::documents::Error> {
+        self.document_store()?.bin(
+            &session.record.canonical_username,
+            revision,
+            id,
+            crate::totp::TimeProvider::unix_timestamp(&SystemTimeProvider),
+        )
+    }
+    fn restore_document(
+        &self,
+        session: &ValidatedSession,
+        revision: u64,
+        id: &str,
+    ) -> Result<crate::documents::Index, crate::documents::Error> {
+        self.document_store()?.restore(
+            &session.record.canonical_username,
+            revision,
+            id,
+            crate::totp::TimeProvider::unix_timestamp(&SystemTimeProvider),
+        )
+    }
+    fn delete_document(
+        &self,
+        session: &ValidatedSession,
+        revision: u64,
+        id: &str,
+    ) -> Result<crate::documents::Index, crate::documents::Error> {
+        self.document_store()?.delete_confirmed(
+            &session.record.canonical_username,
+            revision,
+            id,
+            crate::totp::TimeProvider::unix_timestamp(&SystemTimeProvider),
+        )
+    }
+    fn reconcile_document(
+        &self,
+        session: &ValidatedSession,
+        revision: u64,
+        id: &str,
+    ) -> Result<crate::documents::Index, crate::documents::Error> {
+        self.document_store()?.reconcile(
+            &session.record.canonical_username,
+            revision,
+            id,
+            crate::totp::TimeProvider::unix_timestamp(&SystemTimeProvider),
+        )
+    }
     fn retention_status(
         &self,
         session: &ValidatedSession,

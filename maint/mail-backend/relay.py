@@ -9,6 +9,7 @@ never accepts a client-supplied destination or remote command.
 import argparse
 import ctypes
 import errno
+import json
 import os
 import pathlib
 import re
@@ -25,6 +26,9 @@ import time
 CHUNK = 64 * 1024
 BUFFER_LIMIT = 256 * 1024
 MAILBOX_REQUEST_LIMIT = (48 * 1024 * 1024 // 3 * 4) + 8192
+DOCUMENTS_PREFIX = b"documents-v1\n"
+DOCUMENTS_RESPONSE_LIMIT = ((10 * 1024 * 1024 + 2) // 3 * 4) + 8192
+DOCUMENTS_READ_REQUEST_LIMIT = 8192
 PURPOSE_LIMITS = {
     "auth": (64 * 1024, 64 * 1024, 25.0),
     "mailbox": (MAILBOX_REQUEST_LIMIT, 1024 * 1024, 20.0),
@@ -138,7 +142,58 @@ def _interest(selector, fileobj, events, tag):
         selector.unregister(fileobj)
 
 
-def pump(client, process, request_limit, response_limit, lifetime):
+def _closed_object(pairs):
+    value = {}
+    for key, item in pairs:
+        if key in value:
+            raise ValueError("duplicate Documents field")
+        value[key] = item
+    return value
+
+
+def documents_read_request(payload):
+    """Classify only a complete, finite typed Read; remote helper verifies MAC.
+
+    Classification grants a transport byte budget, never account authority.
+    The forced remote socket helper retains the exact grant/peer/replay checks.
+    Unknown, duplicate, trailing and mixed ordinary frames retain ordinary caps.
+    """
+    if len(payload) > DOCUMENTS_READ_REQUEST_LIMIT or not payload.startswith(DOCUMENTS_PREFIX):
+        return False
+    try:
+        request = json.loads(payload[len(DOCUMENTS_PREFIX):], object_pairs_hook=_closed_object)
+        if not isinstance(request, dict) or set(request) != {"payload", "signature"}:
+            return False
+        value = request["payload"]
+        if not isinstance(value, dict) or set(value) != {"account", "operation", "issued_at", "expires_at", "nonce"}:
+            return False
+        account = value["account"]
+        if not isinstance(account, str) or not account or len(account.encode()) > 320 or any(
+            character.isspace() or not character.isprintable() or character in "<>,:" for character in account
+        ):
+            return False
+        issued, expires = value["issued_at"], value["expires_at"]
+        if type(issued) is not int or type(expires) is not int or not 0 <= issued < expires <= 0xFFFFFFFFFFFFFFFF or expires - issued != 60:
+            return False
+        for item, length in [(value["nonce"], 32), (request["signature"], 64)]:
+            if not isinstance(item, str) or not re.fullmatch(rf"[0-9a-f]{{{length}}}", item):
+                return False
+        operation = value["operation"]
+        if not isinstance(operation, dict) or set(operation) != {"action", "id", "location"} or operation["action"] != "read":
+            return False
+        if not isinstance(operation["id"], str) or not re.fullmatch(r"[0-9a-f]{32}", operation["id"]):
+            return False
+        location = operation["location"]
+        if not isinstance(location, dict) or set(location) != {"mailbox", "uid", "mailbox_guid", "message_guid"}:
+            return False
+        if location["mailbox"] not in ("OSMAP.Documents", "OSMAP.DocumentsBin") or type(location["uid"]) is not int or not 1 <= location["uid"] <= 0xFFFFFFFF:
+            return False
+        return all(isinstance(location[key], str) and re.fullmatch(r"[0-9a-f]{32}", location[key]) for key in ("mailbox_guid", "message_guid"))
+    except (ValueError, TypeError, KeyError, UnicodeError, RecursionError):
+        return False
+
+
+def pump(client, process, request_limit, response_limit, lifetime, *, documents=False):
     """Copy full duplex with independent EOF, byte caps, and one wall deadline."""
     if process.stdin is None or process.stdout is None:
         raise RelayError("SSH pipes were unavailable")
@@ -155,6 +210,9 @@ def pump(client, process, request_limit, response_limit, lifetime):
     remote_eof = False
     remote_input_closed = False
     deadline = time.monotonic() + lifetime
+    # Only the mailbox purpose enables this finite classifier. Keep at most
+    # 8 KiB; upload bodies are streamed unchanged and keep the ordinary reply cap.
+    classification = bytearray() if documents else None
 
     with selectors.DefaultSelector() as selector:
         while True:
@@ -193,7 +251,14 @@ def pump(client, process, request_limit, response_limit, lifetime):
                         chunk = client.recv(min(CHUNK, BUFFER_LIMIT - len(to_remote)))
                         if not chunk:
                             client_eof = True
+                            if classification is not None and documents_read_request(classification):
+                                response_limit = DOCUMENTS_RESPONSE_LIMIT
                         else:
+                            if classification is not None:
+                                if len(classification) + len(chunk) > DOCUMENTS_READ_REQUEST_LIMIT:
+                                    classification = None
+                                else:
+                                    classification.extend(chunk)
                             from_client += len(chunk)
                             if from_client > request_limit:
                                 raise RelayError("request byte limit exceeded")
@@ -227,7 +292,7 @@ def relay_connection(client, config):
         )
         try:
             request_limit, response_limit, lifetime = PURPOSE_LIMITS[config.purpose]
-            pump(client, process, request_limit, response_limit, lifetime)
+            pump(client, process, request_limit, response_limit, lifetime, documents=config.purpose == "mailbox")
         finally:
             if process.poll() is None:
                 try:

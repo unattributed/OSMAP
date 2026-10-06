@@ -162,6 +162,34 @@ where
             (HttpMethod::Get, "/labels") => self.handle_labels(request, &context, false),
             (HttpMethod::Post, "/labels/change") => self.handle_labels(request, &context, true),
             (HttpMethod::Get, "/contacts") => self.handle_contacts(request, &context),
+            (HttpMethod::Get, "/documents") => self.handle_documents(request, &context),
+            (HttpMethod::Post, "/documents/folders") => {
+                self.handle_document_folder_create(request, &context)
+            }
+            (HttpMethod::Post, "/documents/folder") => {
+                self.handle_document_folder_move(request, &context)
+            }
+            (HttpMethod::Get, "/documents/download") => {
+                self.handle_document_download(request, &context)
+            }
+            (HttpMethod::Post, "/documents/upload") => {
+                self.handle_document_upload(request, &context)
+            }
+            (HttpMethod::Post, "/documents/bin") => {
+                self.handle_document_move(request, &context, false)
+            }
+            (HttpMethod::Post, "/documents/restore") => {
+                self.handle_document_move(request, &context, true)
+            }
+            (HttpMethod::Get, "/documents/delete") => {
+                self.handle_document_delete_review(request, &context)
+            }
+            (HttpMethod::Post, "/documents/delete") => {
+                self.handle_document_delete_confirm(request, &context)
+            }
+            (HttpMethod::Post, "/documents/reconcile") => {
+                self.handle_document_reconcile(request, &context)
+            }
             (HttpMethod::Post, "/contacts/save") => {
                 self.handle_contact_change(request, &context, false)
             }

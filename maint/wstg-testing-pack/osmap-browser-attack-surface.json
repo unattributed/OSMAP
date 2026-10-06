@@ -1094,6 +1094,164 @@
         "OSMAP-WSTG-INPV-003",
         "OSMAP-WSTG-BUSL-005"
       ]
+    },
+    {
+      "method": "GET",
+      "path": "/documents",
+      "query_fields": [
+        "q",
+        "sort",
+        "view",
+        "bin",
+        "folder",
+        "selected"
+      ],
+      "form_fields": [],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/documents/download",
+      "query_fields": [
+        "id"
+      ],
+      "form_fields": [],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/documents/delete",
+      "query_fields": [
+        "id"
+      ],
+      "form_fields": [],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/documents/upload",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "revision",
+        "attachment"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/documents/folders",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "revision",
+        "name"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/documents/folder",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "revision",
+        "id",
+        "folder_id"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/documents/bin",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "revision",
+        "id"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/documents/restore",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "revision",
+        "id"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/documents/reconcile",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "revision",
+        "id"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/documents/delete",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "revision",
+        "id",
+        "confirm"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-BUSL-005"
+      ]
     }
   ]
 }

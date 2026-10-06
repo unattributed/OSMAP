@@ -325,3 +325,18 @@ log SHA256 bc9f53fcfa671a2d3a3d1b1f3280820a2498db9ff065b8dacb9dda9dcf50aced.
 Final bridge source SHA256938c404257e1c02d8319a1bbe64d7636250c1facf5b12771c0eb9dfefd67fc82;
 retain earlier native passes and the refused commit. Normal signed admission
 and synchronization remain required; provider/human acceptance stays OPEN.
+
+
+## 2026-10-06 — S08 Documents source controls; native and human acceptance open
+
+S08/PAGE07 adds source controls for account isolation, opaque document IDs,
+CSRF-bound writes, same-origin attachment downloads with original-name
+escaping, bounded 10 MiB body/response handling, helper peer/HMAC/replay
+checks, exact byte digest validation, and fail-closed unconfirmed mutations.
+The unconfigured synthetic page returns 503 with no upload/file input;
+existing Bin cleanup is separately testable when quota is unavailable.
+Local library controls and the first-upload native refusal are bounded
+development evidence. They do not close authenticated WSTG scenarios, native
+helper/Dovecot quota enforcement, configured-runtime UI, provider transport,
+or human UAT. Record separate exact native/browser results before promoting
+PAGE07 or whole-sprint status.

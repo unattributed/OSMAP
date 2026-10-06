@@ -17,6 +17,87 @@ pub enum BrowserSendRecoveryDecision {
 }
 
 pub trait BrowserGateway {
+    fn documents_quota_status(
+        &self,
+        _session: &ValidatedSession,
+    ) -> Option<crate::documents::QuotaStatus> {
+        None
+    }
+    fn documents_quota_ready(&self, _session: &ValidatedSession) -> bool {
+        false
+    }
+    fn create_document_folder(
+        &self,
+        _session: &ValidatedSession,
+        _revision: u64,
+        _name: &str,
+    ) -> Result<crate::documents::Index, crate::documents::Error> {
+        Err(crate::documents::Error::Unavailable)
+    }
+    fn move_document_to_folder(
+        &self,
+        _session: &ValidatedSession,
+        _revision: u64,
+        _document_id: &str,
+        _folder_id: &str,
+    ) -> Result<crate::documents::Index, crate::documents::Error> {
+        Err(crate::documents::Error::Unavailable)
+    }
+    fn load_documents(
+        &self,
+        _session: &ValidatedSession,
+    ) -> Result<crate::documents::Index, crate::documents::Error> {
+        Err(crate::documents::Error::Unavailable)
+    }
+    fn upload_document(
+        &self,
+        _session: &ValidatedSession,
+        _revision: u64,
+        _name: &str,
+        _media_type: &str,
+        _bytes: &[u8],
+    ) -> Result<crate::documents::Index, crate::documents::Error> {
+        Err(crate::documents::Error::Unavailable)
+    }
+    fn download_document(
+        &self,
+        _session: &ValidatedSession,
+        _id: &str,
+    ) -> Result<(String, Vec<u8>), crate::documents::Error> {
+        Err(crate::documents::Error::Unavailable)
+    }
+    fn bin_document(
+        &self,
+        _session: &ValidatedSession,
+        _revision: u64,
+        _id: &str,
+    ) -> Result<crate::documents::Index, crate::documents::Error> {
+        Err(crate::documents::Error::Unavailable)
+    }
+    fn restore_document(
+        &self,
+        _session: &ValidatedSession,
+        _revision: u64,
+        _id: &str,
+    ) -> Result<crate::documents::Index, crate::documents::Error> {
+        Err(crate::documents::Error::Unavailable)
+    }
+    fn delete_document(
+        &self,
+        _session: &ValidatedSession,
+        _revision: u64,
+        _id: &str,
+    ) -> Result<crate::documents::Index, crate::documents::Error> {
+        Err(crate::documents::Error::Unavailable)
+    }
+    fn reconcile_document(
+        &self,
+        _session: &ValidatedSession,
+        _revision: u64,
+        _id: &str,
+    ) -> Result<crate::documents::Index, crate::documents::Error> {
+        Err(crate::documents::Error::Unavailable)
+    }
     fn retention_status(
         &self,
         _session: &ValidatedSession,

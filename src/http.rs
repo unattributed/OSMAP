@@ -31,6 +31,7 @@ mod routes_composition_preferences;
 mod routes_contacts;
 mod routes_content;
 mod routes_display;
+mod routes_documents;
 mod routes_draft;
 #[path = "http/routes_draft_location.rs"]
 mod routes_draft_location;
@@ -992,6 +993,9 @@ mod tests {
     mod contact_tests {
         include!("http/contact_tests.rs");
     }
+    mod document_tests {
+        include!("http/document_tests.rs");
+    }
     mod draft_preservation_tests {
         include!("http/draft_preservation_tests.rs");
     }
@@ -1077,6 +1081,8 @@ mod tests {
         mark_read_policy_loads: Arc<std::sync::atomic::AtomicUsize>,
         mark_read_policy_sequence: Option<Arc<Mutex<Vec<crate::mark_read::Policy>>>>,
         contacts_store: Option<crate::contacts::ContactStore>,
+        document_store:
+            Option<crate::documents::Store<crate::documents::test_support::FixtureBackend>>,
         draft_store: Option<crate::draft::FileDraftStore>,
         fail_draft_delete: Option<String>,
         drafts: Arc<Mutex<BTreeMap<String, DraftRecord>>>,
@@ -1132,6 +1138,7 @@ mod tests {
                 mark_read_policy_loads: Arc::new(std::sync::atomic::AtomicUsize::new(0)),
                 mark_read_policy_sequence: None,
                 contacts_store: None,
+                document_store: None,
                 draft_store: None,
                 send_journal: fixture_send_journal(),
                 recovery_now: None,
@@ -1216,6 +1223,50 @@ mod tests {
     }
 
     impl BrowserGateway for StubGateway {
+        fn documents_quota_status(
+            &self,
+            session: &ValidatedSession,
+        ) -> Option<crate::documents::QuotaStatus> {
+            self.document_store
+                .as_ref()?
+                .quota_status(&session.record.canonical_username)
+                .ok()?
+        }
+        fn documents_quota_ready(&self, session: &ValidatedSession) -> bool {
+            self.document_store
+                .as_ref()
+                .and_then(|store| store.quota_ready(&session.record.canonical_username).ok())
+                .unwrap_or(false)
+        }
+        fn create_document_folder(
+            &self,
+            session: &ValidatedSession,
+            revision: u64,
+            name: &str,
+        ) -> Result<crate::documents::Index, crate::documents::Error> {
+            self.document_store
+                .as_ref()
+                .ok_or(crate::documents::Error::Unavailable)?
+                .create_folder(&session.record.canonical_username, revision, name, 100)
+        }
+        fn move_document_to_folder(
+            &self,
+            session: &ValidatedSession,
+            revision: u64,
+            document_id: &str,
+            folder_id: &str,
+        ) -> Result<crate::documents::Index, crate::documents::Error> {
+            self.document_store
+                .as_ref()
+                .ok_or(crate::documents::Error::Unavailable)?
+                .move_to_folder(
+                    &session.record.canonical_username,
+                    revision,
+                    document_id,
+                    folder_id,
+                    103,
+                )
+        }
         fn retention_status(
             &self,
             _session: &ValidatedSession,
@@ -1748,6 +1799,89 @@ mod tests {
                         &session.record.canonical_username,
                     ))
                 })
+        }
+        fn load_documents(
+            &self,
+            session: &ValidatedSession,
+        ) -> Result<crate::documents::Index, crate::documents::Error> {
+            self.document_store
+                .as_ref()
+                .ok_or(crate::documents::Error::Unavailable)?
+                .load(&session.record.canonical_username)
+        }
+        fn upload_document(
+            &self,
+            session: &ValidatedSession,
+            revision: u64,
+            name: &str,
+            media_type: &str,
+            bytes: &[u8],
+        ) -> Result<crate::documents::Index, crate::documents::Error> {
+            self.document_store
+                .as_ref()
+                .ok_or(crate::documents::Error::Unavailable)?
+                .upload(
+                    &session.record.canonical_username,
+                    revision,
+                    name,
+                    media_type,
+                    bytes,
+                    100,
+                )
+        }
+        fn download_document(
+            &self,
+            session: &ValidatedSession,
+            id: &str,
+        ) -> Result<(String, Vec<u8>), crate::documents::Error> {
+            self.document_store
+                .as_ref()
+                .ok_or(crate::documents::Error::Unavailable)?
+                .download(&session.record.canonical_username, id)
+        }
+        fn bin_document(
+            &self,
+            session: &ValidatedSession,
+            revision: u64,
+            id: &str,
+        ) -> Result<crate::documents::Index, crate::documents::Error> {
+            self.document_store
+                .as_ref()
+                .ok_or(crate::documents::Error::Unavailable)?
+                .bin(&session.record.canonical_username, revision, id, 101)
+        }
+        fn restore_document(
+            &self,
+            session: &ValidatedSession,
+            revision: u64,
+            id: &str,
+        ) -> Result<crate::documents::Index, crate::documents::Error> {
+            self.document_store
+                .as_ref()
+                .ok_or(crate::documents::Error::Unavailable)?
+                .restore(&session.record.canonical_username, revision, id, 102)
+        }
+        fn delete_document(
+            &self,
+            session: &ValidatedSession,
+            revision: u64,
+            id: &str,
+        ) -> Result<crate::documents::Index, crate::documents::Error> {
+            self.document_store
+                .as_ref()
+                .ok_or(crate::documents::Error::Unavailable)?
+                .delete_confirmed(&session.record.canonical_username, revision, id, 104)
+        }
+        fn reconcile_document(
+            &self,
+            session: &ValidatedSession,
+            revision: u64,
+            id: &str,
+        ) -> Result<crate::documents::Index, crate::documents::Error> {
+            self.document_store
+                .as_ref()
+                .ok_or(crate::documents::Error::Unavailable)?
+                .reconcile(&session.record.canonical_username, revision, id, 500)
         }
         fn change_contact(
             &self,

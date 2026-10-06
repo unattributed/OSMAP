@@ -106,8 +106,31 @@ pub struct FolderSnapshot {
     namespaces: Vec<FolderNamespace>,
     folders: Vec<FolderEntry>,
     transcript: Vec<u8>,
+    row_spans: Vec<(usize, usize)>,
 }
 impl FolderSnapshot {
+    /// Removes the reserved Documents Maildir from ordinary folder discovery.
+    /// The filtered transcript is reparsed so a client cannot receive raw LIST
+    /// rows naming a mailbox that the typed folder list hides.
+    pub fn without_reserved_documents(&self) -> Result<Self> {
+        let mut filtered = Vec::with_capacity(self.transcript.len());
+        if self.row_spans.len() != self.folders.len() {
+            return Err(FolderMetadataError::InvalidTranscript);
+        }
+        let mut cursor = 0usize;
+        for (entry, &(start, end)) in self.folders.iter().zip(&self.row_spans) {
+            if start < cursor || end <= start || end > self.transcript.len() {
+                return Err(FolderMetadataError::InvalidTranscript);
+            }
+            filtered.extend_from_slice(&self.transcript[cursor..start]);
+            if !crate::documents_doveadm::reserved_documents_mailbox(entry.name()) {
+                filtered.extend_from_slice(&self.transcript[start..end]);
+            }
+            cursor = end;
+        }
+        filtered.extend_from_slice(&self.transcript[cursor..]);
+        Self::parse(&self.account, &filtered)
+    }
     pub fn account(&self) -> &str {
         &self.account
     }
@@ -206,11 +229,13 @@ impl FolderSnapshot {
         p.take(b"\r\n")?;
         p.status(b"N1 OK")?;
         let mut folders = Vec::new();
+        let mut row_spans = Vec::new();
         let mut names = BTreeSet::new();
         while p.starts(b"* LIST ") {
             if folders.len() == MAX_FOLDERS {
                 return Err(FolderMetadataError::Limit);
             }
+            let row_start = p.pos;
             p.take(b"* LIST (")?;
             let start = p.pos;
             let mut flags = Vec::new();
@@ -243,6 +268,7 @@ impl FolderSnapshot {
             let name = decode_name(&p.string(true)?)?;
             validate_name(&name, false)?;
             p.take(b"\r\n")?;
+            row_spans.push((row_start, p.pos));
             let key = if name.eq_ignore_ascii_case("INBOX") {
                 "INBOX".into()
             } else {
@@ -287,6 +313,7 @@ impl FolderSnapshot {
             namespaces,
             folders,
             transcript: transcript.to_vec(),
+            row_spans,
         })
     }
 }
@@ -514,6 +541,19 @@ mod tests {
     }
     fn parse(ns: &str, rows: &str) -> Result<FolderSnapshot> {
         FolderSnapshot::parse("fixture", &transcript(ns, rows))
+    }
+
+    #[test]
+    fn reserved_documents_filter_removes_complete_literal_rows() {
+        let rows = "* LIST () \".\" INBOX\r\n* LIST () \".\" {15}\r\nOSMAP.Documents\r\n* LIST () \".\" OSMAP.DocumentsBin\r\n* LIST () \".\" Reports\r\n";
+        let snapshot = parse("((\"\" \".\")) NIL NIL", rows).unwrap();
+        let filtered = snapshot.without_reserved_documents().unwrap();
+        assert_eq!(filtered.folders().len(), 2);
+        assert_eq!(filtered.folders()[0].name(), "INBOX");
+        assert_eq!(filtered.folders()[1].name(), "Reports");
+        let wire = String::from_utf8(filtered.transcript().to_vec()).unwrap();
+        assert!(!wire.contains("OSMAP.Documents"));
+        assert!(!wire.contains("{15}"));
     }
     #[test]
     fn native_dot_slash_flags_and_account_binding() {

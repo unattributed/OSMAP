@@ -43,6 +43,12 @@ where
     MAB: MessageAppendBackend,
     MFB: MessageFlagBackend,
 {
+    if !super::mailbox_helper_protocol::ordinary_request_allowed(request) {
+        return MailboxHelperResponse::Error {
+            backend: "mailbox-helper-request".into(),
+            reason: "reserved Documents mailbox requires dedicated operation".into(),
+        };
+    }
     match request {
         MailboxHelperRequest::RetentionStatus {
             canonical_username,
@@ -73,7 +79,14 @@ where
         }
         MailboxHelperRequest::FolderMetadata {
             canonical_username, ..
-        } => match backends.mailbox_backend.folder_metadata(canonical_username) {
+        } => match backends
+            .mailbox_backend
+            .folder_metadata(canonical_username)
+            .and_then(|snapshot| {
+                snapshot
+                    .without_reserved_documents()
+                    .map_err(|_| crate::folder_metadata_backend::unavailable())
+            }) {
             Ok(snapshot) if snapshot.validate_for(canonical_username).is_ok() => {
                 MailboxHelperResponse::FolderMetadataOk { snapshot }
             }
@@ -118,7 +131,12 @@ where
         MailboxHelperRequest::MailboxList {
             canonical_username, ..
         } => match backends.mailbox_backend.list_mailboxes(canonical_username) {
-            Ok(mailboxes) => MailboxHelperResponse::MailboxListOk { mailboxes },
+            Ok(mut mailboxes) => {
+                mailboxes.retain(|entry| {
+                    !crate::documents_doveadm::reserved_documents_mailbox(&entry.name)
+                });
+                MailboxHelperResponse::MailboxListOk { mailboxes }
+            }
             Err(error) => MailboxHelperResponse::Error {
                 backend: error.backend.to_string(),
                 reason: error.reason,

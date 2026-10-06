@@ -9304,3 +9304,22 @@ log SHA256 bc9f53fcfa671a2d3a3d1b1f3280820a2498db9ff065b8dacb9dda9dcf50aced.
 Final bridge source SHA256938c404257e1c02d8319a1bbe64d7636250c1facf5b12771c0eb9dfefd67fc82;
 retain earlier native passes and the refused commit. Normal signed admission
 and synchronization remain required; provider/human acceptance stays OPEN.
+
+
+## 2026-10-06 — S08 source admission preserves unresolved native failure
+
+S08 source may be signed and synchronized after exact reviewed code plus
+matching regression without waiting for whole PAGE07 human acceptance. Keep
+runtime Documents activation and any working claim blocked until actual
+Dovecot first upload/download, effective account-bound shared quota,
+independent ordinary-mail/document concurrency, helper transport and browser
+journey pass. Current Duncan SQL quota is not proven effective Dovecot quota;
+do not silently enable it or alter mail behavior. The superseded diagnostic
+preflight and staged-before-dispatch overlap test are excluded from native
+acceptance. Preserve the actual first-upload quota failure and unknown cause.
+
+Keep normal source-admission refusals as executed evidence. Add only the actual
+Documents route and field inventory to the existing WSTG surface declaration;
+preserve the unchanged route-completeness assertion. A passing focused test
+does not supersede the required full gate. Preserve the actual transport-driver
+cleanup uncertainty and do not repeat that driver or signal historical PIDs.

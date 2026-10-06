@@ -7572,3 +7572,74 @@ log SHA256 bc9f53fcfa671a2d3a3d1b1f3280820a2498db9ff065b8dacb9dda9dcf50aced.
 Final bridge source SHA256938c404257e1c02d8319a1bbe64d7636250c1facf5b12771c0eb9dfefd67fc82;
 retain earlier native passes and the refused commit. Normal signed admission
 and synchronization remain required; provider/human acceptance stays OPEN.
+
+
+## 2026-10-06 — S08 Documents working source increment; native acceptance open
+
+The exact reviewed integrated-source-attempt5 adds 24 code/test paths over
+signed `a0ac6ad4ce13f52e69f1396a3a7ce8a0b78834b3`. It implements private
+account metadata, real Dovecot MIME storage commands, authenticated helper and
+Documents-only relay transport, upload/download, folders, views, search/sort,
+Bin/restore/confirmed expunge, reconciliation, and forced original-filename
+attachments. Ordinary helper response limits remain unchanged. Runtime service
+activation is not part of this source increment. Exact source and review are
+retained under `osmap-ux-s08/revalidation-20261006/documents/` evidence:
+`integrated-source-attempt5/INTEGRATION.json` and
+`independent-review/integrated-source-attempt5-admission.json`.
+
+Matching normal security gates, signature and sync must be recorded in the
+source-admission signed-sync proof after they actually complete. The earlier
+combined4 local 1614/0/41 result is retained but is not matching5 evidence. Its
+extra quota lookup could warm state; that diagnostic permission was retracted
+before native execution. The replacement observes only original executor calls.
+
+Actual first-upload attempt1 FAIL101, quota_ready/unavailable in 0.16 seconds,
+preceded any Store creation/save; exact cause remains UNKNOWN. Native binary
+339e529cdbb28bc93fb79a76afe4710303ec6f4fa550d617ef589afe1c64ed66 and
+`native-first-upload-attempt1/result.json` retain the outcome. The changed original-call
+discriminator was then run; its result follows. Two-host maximum-size relay, shared concurrent quota
+and configured-runtime browser journey remain unqualified. No PAGE07 completion,
+operator Documents UAT, deployment, provider delivery or epic acceptance is claimed.
+Duncan's recorded 102400000-byte quota is not active, while read-only metadata
+measured 222111976 bytes; do not enable that limit and disrupt existing mail.
+
+The changed original-call discriminator actually ran one case/FAIL101 in
+0.17 seconds, matching binary SHA2563d733b51b55ce4600aba41ce0d9a968d6ac4b934304bd72d8edbee0eba8dfba8.
+Doveconf returned0/1319 bytes and all readiness flags true. The original
+quota-get returned75/55 bytes/finitefalse with fixed error class userdb.
+This narrows this changed run to the userdb lookup; its precise cause and
+post-panic cleanup remain unknown. No save was reached. Retain the earlier
+UNKNOWN outcome and the procedural transfer-wait gap; preexec SHA matched
+the complete expected binary but does not prove transfer-wait ordering.
+
+Normal source admission attempts1 and2 each passed1614 library cases with
+zero failures/41 explicit native ignores, then refused before commit. Attempt1
+failed formatting; a reviewed tuple linebreak-only change repaired it. Attempt2
+found ten new Documents routes missing from the WSTG attack-surface inventory.
+The declarative route/field inventory was extended to match the implemented
+router; the focused unchanged inventory assertion PASS. Full normal gates,
+signature and synchronization are still required. No runner or gate was waived.
+
+The separately reviewed native transport driver actually exited1 without
+nested native assertions. Its retained result reports Toronto cleanup true
+and obsd1 cleanup unconfirmed for namespace6de5f0dde99edaf0. Exact first
+refusal and cleanup cause remain UNKNOWN. The driver has not been rerun;
+read-only fresh identity observation and retained-error repair precede any
+further action. Neither this nor local10MiB transport establishes native
+maximum-size Documents delivery.
+
+Normal attempt3 passed the repaired WSTG gate, then the unchanged CWE guard
+refused three unsafe UID calls and a shell fixture literal in newly added tests.
+Reviewed test-only repairs measure UID from fresh creator-owned files/directories
+and retain actual peer admission; the wrong-program negative uses a benign
+disallowed executable. No scanner or runtime policy was changed.
+
+Changed first-upload diagnostic attempt4 actually FAIL101 in0.20 seconds:
+config readiness true, quota-get75/stdout55/stderr156, same-call userdb
+accepted/requested/matched/replied each1. Its closed classifier returned
+protocol, but that may match the synthetic .invalid account string and does
+not identify a protocol defect. Subcause and post-panic cleanup remain UNKNOWN;
+first save was not reached. Original source mtimes caused the first build to
+reuse old3d733binary; it was detected and never executed. Byte-identical private
+source mtimes were refreshed, a changed build produced e33541cf, and complete
+source/binary transfers and exact hashes were checked before native execution.

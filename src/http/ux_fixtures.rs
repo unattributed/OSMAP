@@ -230,7 +230,7 @@ fn ux_synthetic_route_baselines() {
         ("settings-reading", "/settings?section=reading", true, 200),
         ("sent", "/mailbox?name=Sent", true, 200),
         ("bin", "/mailbox?name=Trash", true, 200),
-        ("documents-missing", "/documents", true, 404),
+        ("documents-missing", "/documents", true, 503),
         ("settings-security", "/settings?section=security", true, 200),
         ("settings-identity", "/settings?section=identity", true, 503),
         (
@@ -294,7 +294,7 @@ fn ux_synthetic_route_baselines() {
         ("PAGE-04", &["compose"], "route_rendered", "Rendering only; no Send exercised."),
         ("PAGE-05", &["sent"], "route_rendered", "Synthetic Sent list; no authoritative storage or delivery proof."),
         ("PAGE-06", &["drafts-populated"], "route_rendered", "Synthetic drafts; no live persisted draft proof."),
-        ("PAGE-07", &["documents-missing"], "missing_route", "Documents route returns404; required screen remains absent."),
+        ("PAGE-07", &["documents-missing"], "unavailable_fixture", "Authenticated Documents route returns503 without configured synthetic storage/quota; no native storage or PAGE07 acceptance."),
         ("PAGE-08", &["bin", "archive-unconfigured", "archive-missing"], "partial_route_rendered", "Current Bin and archive failures; no complete archive/bin acceptance."),
         ("PAGE-09", &["search", "search-empty"], "route_rendered", "Synthetic message search; ancillary search is not qualified."),
         ("PAGE-10", &["settings-security"], "route_rendered", "Current overview includes unavailable controls."),
@@ -570,6 +570,11 @@ fn ux_synthetic_route_baselines() {
             .map(|(_, value)| value.as_str())
             .expect("HTML has CSP");
         let html = redact_fixture_tokens(&body_text(&response));
+        if name == "documents-missing" {
+            assert!(html.contains("Document storage or its shared quota authority is unavailable."));
+            assert!(!html.contains("action=\"/documents/upload\""));
+            assert!(!html.contains("type=\"file\""));
+        }
         if matches!(name, "login" | "login-error") {
             assert!(html.contains("name=\"totp_code\""), "retained TOTP control");
             assert!(

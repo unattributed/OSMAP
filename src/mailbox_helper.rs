@@ -24,6 +24,9 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 #[path = "mailbox_helper_client.rs"]
 mod mailbox_helper_client;
+#[path = "mailbox_helper_documents.rs"]
+mod mailbox_helper_documents;
+pub use self::mailbox_helper_documents::MailboxHelperDocumentsBackend;
 #[path = "mailbox_helper_delete.rs"]
 mod mailbox_helper_delete;
 pub use self::mailbox_helper_delete::MailboxHelperMessageDeleteBackend;
@@ -213,6 +216,14 @@ pub fn run_mailbox_helper_server(config: &AppConfig, logger: &Logger) -> Result<
                 .with_operation_gate(mutation_gate)
                 .with_userdb_socket_path(config.doveadm_userdb_socket_path.clone()),
         );
+        let documents_backend = Arc::new(
+            crate::documents_doveadm::DoveadmDocumentsBackend::new(
+                SystemCommandExecutor,
+                "/usr/local/bin/doveadm",
+                "/usr/local/bin/doveconf",
+            )
+            .with_userdb_socket_path(config.doveadm_userdb_socket_path.clone()),
+        );
         let policy = MailboxHelperPolicy::default();
         let replay_cache = Arc::new(Mutex::new(BTreeMap::<String, u64>::new()));
         let active_connections = Arc::new(AtomicUsize::new(0));
@@ -265,6 +276,7 @@ pub fn run_mailbox_helper_server(config: &AppConfig, logger: &Logger) -> Result<
                     let message_append_backend = Arc::clone(&message_append_backend);
                     let message_flag_backend = Arc::clone(&message_flag_backend);
                     let message_delete_backend = Arc::clone(&message_delete_backend);
+                    let documents_backend = Arc::clone(&documents_backend);
                     let replay_cache = Arc::clone(&replay_cache);
                     let trusted_caller_policy = trusted_caller_policy.clone();
                     let worker_logger = logger.clone();
@@ -272,7 +284,7 @@ pub fn run_mailbox_helper_server(config: &AppConfig, logger: &Logger) -> Result<
                         .name("osmap-mailbox-helper".to_string())
                         .spawn(move || {
                             let _slot = slot;
-                            handle_helper_client_with_delete(
+                            handle_helper_client_with_documents(
                                 HelperBackends {
                                     mailbox_backend: mailbox_backend.as_ref(),
                                     message_list_backend: message_list_backend.as_ref(),
@@ -283,6 +295,7 @@ pub fn run_mailbox_helper_server(config: &AppConfig, logger: &Logger) -> Result<
                                     message_flag_backend: message_flag_backend.as_ref(),
                                 },
                                 Some(message_delete_backend.as_ref()),
+                                Some(documents_backend.as_ref()),
                                 &worker_logger,
                                 &mut stream,
                                 policy,
@@ -346,10 +359,42 @@ fn handle_helper_client<MB, MLB, MSB, MVB, MMB, MAB, MFB>(
     );
 }
 
-#[cfg(unix)]
+#[cfg(all(test, unix))]
 fn handle_helper_client_with_delete<MB, MLB, MSB, MVB, MMB, MAB, MFB>(
     backends: HelperBackends<'_, MB, MLB, MSB, MVB, MMB, MAB, MFB>,
     delete_backend: Option<&dyn crate::mailbox::MessageDeleteBackend>,
+    logger: &Logger,
+    stream: &mut UnixStream,
+    policy: MailboxHelperPolicy,
+    trusted_caller_policy: MailboxHelperTrustedCallerPolicy,
+    replay_cache: &Mutex<BTreeMap<String, u64>>,
+) where
+    MB: MailboxBackend,
+    MLB: MessageListBackend,
+    MSB: MessageSearchBackend,
+    MVB: MessageViewBackend,
+    MMB: MessageMoveBackend,
+    MAB: MessageAppendBackend,
+    MFB: MessageFlagBackend,
+{
+    handle_helper_client_with_documents(
+        backends,
+        delete_backend,
+        None,
+        logger,
+        stream,
+        policy,
+        trusted_caller_policy,
+        replay_cache,
+    );
+}
+
+#[cfg(unix)]
+#[allow(clippy::too_many_arguments)]
+fn handle_helper_client_with_documents<MB, MLB, MSB, MVB, MMB, MAB, MFB>(
+    backends: HelperBackends<'_, MB, MLB, MSB, MVB, MMB, MAB, MFB>,
+    delete_backend: Option<&dyn crate::mailbox::MessageDeleteBackend>,
+    documents_backend: Option<&dyn crate::documents::Backend>,
     logger: &Logger,
     stream: &mut UnixStream,
     policy: MailboxHelperPolicy,
@@ -390,7 +435,28 @@ fn handle_helper_client_with_delete<MB, MLB, MSB, MVB, MMB, MAB, MFB>(
         }
     }
 
-    let request = match read_bounded_from_stream(stream, policy.max_request_bytes)
+    let request_bytes = match mailbox_helper_documents::read_request_bytes(stream, policy) {
+        Ok(bytes) => bytes,
+        Err(reason) => {
+            let response = MailboxHelperResponse::Error {
+                backend: "mailbox-helper-request".into(),
+                reason,
+            };
+            let _ = write_response(stream, &response);
+            log_helper_response(logger, &response, None);
+            return;
+        }
+    };
+    if mailbox_helper_documents::handle(
+        &request_bytes,
+        documents_backend,
+        stream,
+        &trusted_caller_policy.grant_key,
+        replay_cache,
+    ) {
+        return;
+    }
+    let request = match Ok(request_bytes)
         .map_err(|reason| MailboxHelperResponse::Error {
             backend: "mailbox-helper-request".to_string(),
             reason,

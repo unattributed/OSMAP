@@ -447,7 +447,10 @@ fn bounded_bytes(
 }
 
 /// Decodes base64 attachment content without adding another dependency.
-fn decode_base64_bytes(input: &str, max_bytes: usize) -> Result<Vec<u8>, AttachmentDownloadError> {
+pub(crate) fn decode_base64_bytes(
+    input: &str,
+    max_bytes: usize,
+) -> Result<Vec<u8>, AttachmentDownloadError> {
     let cleaned = input
         .bytes()
         .filter(|byte| !byte.is_ascii_whitespace())

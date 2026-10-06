@@ -1410,7 +1410,7 @@ impl MessageAppendBackend for MailboxHelperMessageAppendBackend {
 }
 
 #[cfg(unix)]
-fn helper_request_deadline(policy: MailboxHelperPolicy) -> Instant {
+pub(super) fn helper_request_deadline(policy: MailboxHelperPolicy) -> Instant {
     Instant::now()
         + Duration::from_secs(
             policy
@@ -1432,7 +1432,7 @@ fn helper_deadline_remaining(deadline: Instant) -> Result<Duration, String> {
 // bounded connect, every partial write/read and final response qualification.
 // The legacy single-folder operations retain their existing transport path.
 #[cfg(unix)]
-fn helper_exchange_before(
+pub(super) fn helper_exchange_before(
     socket: &Path,
     request: &[u8],
     policy: MailboxHelperPolicy,
@@ -1441,7 +1441,7 @@ fn helper_exchange_before(
     helper_exchange_before_with_peer(socket, request, policy, deadline, None)
 }
 #[cfg(unix)]
-fn helper_exchange_before_with_peer(
+pub(super) fn helper_exchange_before_with_peer(
     socket: &Path,
     request: &[u8],
     policy: MailboxHelperPolicy,

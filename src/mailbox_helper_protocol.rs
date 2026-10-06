@@ -339,7 +339,7 @@ pub(super) fn parse_request(input: &str) -> Result<MailboxHelperRequest, String>
         return Err("invalid delete nonce".into());
     }
 
-    match operation {
+    let request = match operation {
         "retention_status" => {
             if input.len() > 4096 {
                 return Err("retention request too large".into());
@@ -585,6 +585,34 @@ pub(super) fn parse_request(input: &str) -> Result<MailboxHelperRequest, String>
             })
         }
         _ => Err(format!("unsupported helper operation: {operation}")),
+    }?;
+    if !ordinary_request_allowed(&request) {
+        return Err("reserved Documents mailbox requires dedicated operation".into());
+    }
+    Ok(request)
+}
+
+pub(super) fn ordinary_request_allowed(request: &MailboxHelperRequest) -> bool {
+    use MailboxHelperRequest::*;
+    let allowed = |name: &str| !crate::documents_doveadm::reserved_documents_mailbox(name);
+    match request {
+        MailboxList { .. } | FolderMetadata { .. } => true,
+        RetentionStatus { mailbox_name, .. }
+        | MailboxStatus { mailbox_name, .. }
+        | MessageList { mailbox_name, .. }
+        | MessageSearch { mailbox_name, .. }
+        | MessageView { mailbox_name, .. }
+        | AttachmentDownload { mailbox_name, .. }
+        | MessageAppend { mailbox_name, .. } => allowed(mailbox_name),
+        MessageSearchBatch { mailbox_names, .. } => mailbox_names.iter().all(|name| allowed(name)),
+        MessageMove {
+            source_mailbox_name,
+            destination_mailbox_name,
+            ..
+        } => allowed(source_mailbox_name) && allowed(destination_mailbox_name),
+        MessageFlag { request, .. } => allowed(&request.mailbox_name),
+        MessageDelete { request, .. } => allowed(&request.mailbox_name),
+        FolderCreate { request, .. } => allowed(request.parent()) && allowed(&request.child()),
     }
 }
 
@@ -2446,7 +2474,7 @@ fn validate_helper_string(
     Ok(())
 }
 
-fn encode_base64(bytes: &[u8]) -> String {
+pub(super) fn encode_base64(bytes: &[u8]) -> String {
     const BASE64: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
     if bytes.is_empty() {
