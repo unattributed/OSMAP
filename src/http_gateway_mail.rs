@@ -13,6 +13,33 @@ fn mailbox_is_browser_visible(mailbox_name: &str) -> bool {
     ) || mailbox_name.starts_with("INBOX.")
 }
 
+// The send path emits only fixed classifications here. Never copy a compose
+// value, backend detail or arbitrary future error into the audit event.
+fn send_preparation_audit_reason(reason: &'static str) -> &'static str {
+    match reason {
+        "invalid_request"
+        | "openpgp_binding_unavailable"
+        | "openpgp_binding_changed"
+        | "openpgp_recipient_encryption_required"
+        | "openpgp_recipient_encryption_disabled"
+        | "openpgp_recipient_key_unavailable"
+        | "openpgp_signing_required"
+        | "openpgp_signing_disabled"
+        | "openpgp_encryption_required"
+        | "openpgp_encryption_disabled"
+        | "openpgp_signing_key_unavailable"
+        | "openpgp_encrypted_bcc_unavailable"
+        | "openpgp_self_requires_encryption"
+        | "openpgp_self_key_unavailable"
+        | "openpgp_protection_blocked"
+        | "openpgp_inventory_unavailable"
+        | "openpgp_key_locked"
+        | "openpgp_message_too_large"
+        | "openpgp_submission_unavailable" => reason,
+        _ => "other",
+    }
+}
+
 fn batch_search_failure_code(error: &crate::mailbox::MailboxBackendError) -> &'static str {
     match error.backend {
         "message-search-parser" | "mailbox-parser" => "scope_request_invalid",
@@ -1064,9 +1091,23 @@ impl RuntimeBrowserGateway {
                     }
                     let prepared = self
                         .prepare_outbound_request(account, &request, now)
-                        .map_err(|reason| BrowserSendDecision::Denied {
-                            public_reason: reason.into(),
-                            retry_after_seconds: None,
+                        .map_err(|reason| {
+                            preparation_events.push(
+                                LogEvent::new(
+                                    LogLevel::Warn,
+                                    EventCategory::Submission,
+                                    "send_preparation_refused",
+                                    "outbound preparation refused before submission",
+                                )
+                                .with_field("stage", "pre_dispatch")
+                                .with_field("reason", send_preparation_audit_reason(reason))
+                                .with_field("request_id", context.request_id.clone())
+                                .with_field("session_id", validated_session.record.session_id.clone()),
+                            );
+                            BrowserSendDecision::Denied {
+                                public_reason: reason.into(),
+                                retry_after_seconds: None,
+                            }
                         })?;
                     *prepared_wire.borrow_mut() = Some(prepared);
                 }

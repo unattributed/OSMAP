@@ -55,7 +55,6 @@ pub fn prepare_for_delivery<E: CryptoExecutor>(
         || intent
             .binding_revision
             .is_some_and(|revision| revision != record.revision)
-        || record.revision != 0 && intent.binding_revision.is_none()
     {
         return Err(SubmissionError::StaleBinding);
     }

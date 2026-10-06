@@ -247,5 +247,46 @@ Superseding normal commit attempt2 was refused before signing by V11's unchanged
 
 Changed native13 endpoint-role source repairs the independently demonstrated administrative CLI listener mismatch, without attributing native12's underlying crash instruction. Its actual first proxy_list returns exit0/stdout216/stderr0, expected header and two canonical backend-matching rows. The full run still FAILS later: first worker topology_recheck Refused/topology_continuity, outer unexpected_TimeoutError,21 execution requests/resultsFailure with no exported inner cause. Original5s startup had2184ms left; current/fresh timing counters overlap and do not establish expiry. No issuer ACK/held-intent/capture/SQL; all four owned groups, both scratch roots and runtime gone, standard metadata preserved, cleanup reasons empty; rootstage `/tmp/osmap-pxp-stage-f89a3609d7f8e246` retained. Result0e5e4c1fe763b9b479b6bfd49800a8878cd1fabf1bab24df941402d0d2bf82a9/nested63e51ec1331e25a4091d91b7dfe240027bbd3e3cbbdb66ceb4bcfb4e23591284/independent scopef992a79dd5f57f19c9b69280854b635cb1745afab60124da5573004ae17fc2ea under `native-smtp-worker-composition-increment13`. Earlier failures retain separate UNKNOWN causes; partial SMTP/IMAP primitive success does not qualify current whole factory or human UAT.
 
+### 2026-10-06 — approved ordinary Send recovery and refusal correlation
+
+The operator-approved priority exception is recorded in
+`UX_MAIL_DELIVERY_REFOCUS_20261006.md`; frozen R2 requirements are unchanged.
+The actual Runtime Compose→Send regression reproduces a revisionless ordinary
+request refused as stale despite Optional account policy. Removing that
+redundant preparation clause changes the controlled route from HTTP503 to
+HTTP303 with one owned local submission. Explicit stale revisions, selected
+protection without a revision, Required-recipient plaintext and final binding
+locking remain enforced. Normal generated Compose includes its revision, so
+this regression does not diagnose the operator's historical fifteen503s.
+
+The real pre-dispatch preparation refusal now emits one allowlisted reason,
+request ID and hashed session reference; arbitrary error text, address,
+subject, message, key and credential material are excluded. The denied Runtime
+gateway test records exactly one event and zero submission/append; the HTTP
+route test checks the event and no additional owned sendmail invocation. This
+is diagnostic evidence, not acceptance of a Send journey. The local library
+regression before the final native-test reordering/path quoting passed1591/zero
+failed/39 explicit native ignores; focused route/compile checks passed after.
+Independent
+increment3 review cleared the six changed source/test paths; native HTTP
+tests run before the fixture deliberately stops its crypto helper. First
+obsd1 compilation failed its inherited1.5GiB data limit, not a measured
+application defect. A process-local8GiB compilation is separate from runtime
+budgets. Matching native execution, deployment, authoritative Sent/provider
+receipt and human UAT remain separately required. No provider Send or operator
+key/policy change is authorized by these test results.
+
+Superseding exact increment5 OpenBSD native attempt3 PASS1/zero failed/skipped:
+binary `ce8b6a7ebd887f0a30a2f2f58df007f9f8b2767958a2d49cac84bcd745d58389`,
+log SHA256 `332f4a0b52d2ad3de2fee4e94ab7871d229465a472ae29cd3c8799c99aec07f7`.
+Seven owned loopback submissions/controlled Sent saves include generated
+ordinary/encryption-only HTTP routes, exact decoded body, Required plaintext
+refusal, replay/stale/missing-helper negatives and ordinary submission with
+the private helper stopped. The two prior fixture failures remain retained:
+SMTP transport adds exactly one final CRLF for the unterminated plain body;
+decrypted MIME needs transfer decoding before comparing authored content.
+This is not authoritative mailbox/provider or human acceptance; matching
+normal signed synchronization and web-only activation remain separately required.
+
 
 Normal signed commit attempt3 was refused before signing by the unchanged CWE Top25 guard. Six test-only issuer patterns crossed its reviewed boundaries: direct process construction and five unsafe descriptor/FFI calls. The repair moves the same fixed synthetic process construction into `src/auth.rs` and the same socket type, identity, peer and owned-descriptor checks into the reviewed Unix FFI boundary `src/openbsd.rs`. The fixture invokes those bounded helpers; neither the guard nor its allowlist changed. Actual affected descriptor controls PASS2/0failed and the unchanged CWE guard PASS. Full matching issuer controls and strict clippy remain the final source gates. This is a defensive boundary repair, not production issuer activation; native browser/account/mail UAT remain OPEN. The refused attempt3 gate log and corrected checks are retained under `rust-stored-issuer-composition-increment1/canonical-integration-attempt1`.

@@ -1,4 +1,5 @@
 use super::*;
+use std::os::unix::fs::PermissionsExt;
 
 #[test]
 fn selected_protection_requires_exact_finite_form_and_version() {
@@ -58,7 +59,23 @@ impl OrdinaryContextFixture {
             ("OSMAP_OPENPGP_CRYPTO_HELPER_UID".into(), "1".into()),
         ]))
         .unwrap();
-        let gateway = RuntimeBrowserGateway::from_config(&config);
+        // A local-only owned sendmail process lets route tests cross the real
+        // Runtime gateway without ever using the workstation's MTA.
+        let script = root.join("fixture-sendmail");
+        let called = root.join("fixture-sendmail-called");
+        let called_literal =
+            serde_json::to_string(called.to_str().expect("owned fixture path is UTF-8")).unwrap();
+        std::fs::write(
+            &script,
+            format!(
+                "#!/usr/bin/env python3\nimport sys\nsys.stdin.buffer.read()\nwith open({}, 'ab') as recorder:\n    recorder.write(b'x')\n",
+                called_literal,
+            ),
+        )
+        .unwrap();
+        std::fs::set_permissions(&script, std::fs::Permissions::from_mode(0o700)).unwrap();
+        let gateway =
+            RuntimeBrowserGateway::from_config(&config).with_fixture_sendmail_path(script);
         assert!(gateway.crypto_client().is_none());
         let context = AuthenticationContext::new(
             crate::auth::AuthenticationPolicy::default(),
@@ -177,6 +194,64 @@ impl OrdinaryContextFixture {
             .gateway
             .test_prepare_outbound_request("alice@example.test", &request, self.now)
     }
+}
+
+#[test]
+fn actual_route_runtime_plain_self_submits_once_and_required_recipient_refuses() {
+    let fixture = OrdinaryContextFixture::new();
+    crate::sent_copy::Store::new(&fixture.settings)
+        .save("alice@example.test", 0, false)
+        .unwrap();
+    let post = |page: &HandledHttpResponse, to: &str| {
+        let html = std::str::from_utf8(&page.response.body).unwrap();
+        let intent = html
+            .split("name=\"send_intent\" value=\"")
+            .nth(1)
+            .unwrap()
+            .split('"')
+            .next()
+            .unwrap();
+        let _revision = fixture.rendered_revision(page);
+        let body = format!(
+            "csrf_token={}&send_intent={intent}&to={to}&subject=RouteOrdinary&body=RouteOrdinaryBody",
+            fixture.issued.record.csrf_token,
+        );
+        let raw = format!(
+            "POST /send HTTP/1.1\r\nHost: localhost\r\nUser-Agent: OSMAP/ordinary-context-fixture\r\nOrigin: http://localhost\r\nCookie: osmap_session={}\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: {}\r\n\r\n{body}",
+            fixture.issued.token.as_str(), body.len(),
+        );
+        let request = crate::http::parse_http_request(&raw, fixture.app.policy()).unwrap();
+        fixture.app.handle_request(&request, "127.0.0.1")
+    };
+    // This is the exact route form omission accepted by intent_from_form.
+    let plain = post(&fixture.page(), "alice%40example.test");
+    assert_eq!(plain.response.status_code, 303, "{:?}", plain.audit_events);
+    assert_eq!(
+        std::fs::read(fixture.root.join("fixture-sendmail-called")).unwrap(),
+        b"x"
+    );
+    assert!(!plain
+        .audit_events
+        .iter()
+        .any(|event| event.action == "send_preparation_refused"));
+
+    fixture.replace(
+        1,
+        crate::openpgp_bindings::ProtectionPolicy::default(),
+        true,
+    );
+    let required = post(&fixture.page(), "recipient%40example.test");
+    assert_eq!(required.response.status_code, 503);
+    assert!(required
+        .audit_events
+        .iter()
+        .any(|event| event.action == "send_preparation_refused"
+            && event.fields.iter().any(|field| field.key == "reason"
+                && field.value == "openpgp_recipient_encryption_required")));
+    assert_eq!(
+        std::fs::read(fixture.root.join("fixture-sendmail-called")).unwrap(),
+        b"x"
+    );
 }
 impl Drop for OrdinaryContextFixture {
     fn drop(&mut self) {

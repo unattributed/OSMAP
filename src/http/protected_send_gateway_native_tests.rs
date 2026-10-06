@@ -174,6 +174,33 @@ fn assert_decrypted_authored_entity(entity: &[u8]) {
     assert_eq!(download.body, [0, 1, 255], "decoded authored attachment");
 }
 
+fn assert_decrypted_route_body(entity: &[u8]) {
+    let raw = std::str::from_utf8(entity).unwrap();
+    let (headers, body) = raw.split_once("\r\n\r\n").unwrap();
+    let message = crate::mailbox::MessageView {
+        metadata: None,
+        mailbox_name: "INBOX".into(),
+        uid: 1,
+        flags: Vec::new(),
+        date_received: String::new(),
+        size_virtual: entity.len() as u64,
+        header_block: headers.into(),
+        body_text: body.into(),
+    };
+    let analysis = crate::mime::MimeAnalyzer::new(crate::mime::MimeAnalysisPolicy::default())
+        .analyze_message(&message)
+        .unwrap();
+    assert_eq!(analysis.selected_plain_text_body.as_deref(), Some("RouteEncryptedBody"));
+}
+
+#[test]
+fn decrypted_route_body_requires_actual_transfer_decoding() {
+    let encoded = b"MIME-Version: 1.0\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\nUm91dGVFbmNyeXB0ZWRCb2R5";
+    assert!(!encoded.windows(b"RouteEncryptedBody".len())
+        .any(|window| window == b"RouteEncryptedBody"));
+    assert_decrypted_route_body(encoded);
+}
+
 fn native_send_request<'a>(
     intent: &'a str,
     revision: u64,
@@ -280,7 +307,7 @@ fn native_crypto_gateway_protected_send_roundtrip() {
         .any(|k| k.primary.fingerprint == bfp));
     let mut gateway = RuntimeBrowserGateway::for_test(&scratch.0);
     gateway.crypto_client = Some(crypto.clone());
-    gateway.public_inventory_client = Some(inventory);
+    gateway.public_inventory_client = Some(inventory.clone());
     let now = SystemTimeProvider.unix_timestamp();
     let store =
         crate::openpgp_bindings::BindingStore::new(gateway.settings_dir.join("openpgp-bindings"));
@@ -321,9 +348,9 @@ fn native_crypto_gateway_protected_send_roundtrip() {
     let save=scratch.write("doveadm-save",format!("#!/usr/local/bin/python3\nimport sys\nassert sys.argv[1:]==['-o','stats_writer_socket_path=','save','-u','alice@example.test','-m','Sent']\nwith open({:?},'wb') as out: out.write(sys.stdin.buffer.read())\nwith open({:?},'ab') as out: out.write(b'1')\n",sent_path.to_string_lossy(),sent_count.to_string_lossy()).as_bytes(),0o700);
     let submission = SubmissionService::new(crate::send::SendmailSubmissionBackend::new(
         SystemCommandExecutor,
-        sendmail,
+        sendmail.clone(),
     ));
-    let append = crate::mailbox::DoveadmMessageAppendBackend::new(SystemCommandExecutor, save);
+    let append = crate::mailbox::DoveadmMessageAppendBackend::new(SystemCommandExecutor, save.clone());
     let mut session = validated_session();
     session.record.canonical_username = "alice@example.test".into();
     session.record.issued_at = now;
@@ -613,6 +640,99 @@ fn native_crypto_gateway_protected_send_roundtrip() {
         }).unwrap().unwrap();
     assert_decrypted_authored_entity(&draft_plain.content);
 
+    // Keep the same disposable native SMTP/append/helper processes and now
+    // cross the actual HTTP route with a persisted session and rendered form.
+    // The direct-gateway checks above cannot catch form/recipient transfer.
+    let mut route_gateway = RuntimeBrowserGateway::for_test(&scratch.0);
+    route_gateway.crypto_client = Some(crypto.clone());
+    route_gateway.public_inventory_client = Some(inventory.clone());
+    route_gateway.sendmail_path = sendmail.clone();
+    route_gateway.doveadm_path = save.clone();
+    let issued = crate::session::SessionService::new(
+        crate::session::FileSessionStore::new(scratch.0.join("sessions")),
+        SystemTimeProvider,
+        crate::session::SystemRandomSource,
+        3600,
+        1800,
+    ).issue(&context, "alice@example.test", crate::auth::RequiredSecondFactor::Totp)
+        .unwrap();
+    let app = crate::http::BrowserApp::new(crate::http::HttpPolicy::default(), route_gateway);
+    let route = |method: &str, body: &str| {
+        let raw = format!(
+            "{method} {} HTTP/1.1\r\nHost: localhost\r\nUser-Agent: Firefox/Test\r\nOrigin: http://localhost\r\nCookie: osmap_session={}\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: {}\r\n\r\n{body}",
+            if method == "GET" { "/compose" } else { "/send" },
+            issued.token.as_str(), body.len(),
+        );
+        let request = crate::http::parse_http_request(&raw, app.policy()).unwrap();
+        app.handle_request(&request, "127.0.0.1")
+    };
+    let form_intent = |html: &str| html.split("name=\"send_intent\" value=\"")
+        .nth(1).unwrap().split('"').next().unwrap().to_owned();
+    let route_page = route("GET", "");
+    assert_eq!(route_page.response.status_code, 200);
+    let route_html = std::str::from_utf8(&route_page.response.body).unwrap();
+    assert!(route_html.contains(&format!("name=\"pgp_binding_revision\" value=\"{}\"", record.revision)));
+    let plain_fields = format!(
+        "csrf_token={}&send_intent={}&to=alice%40example.test&subject=RoutePlain&body=RoutePlainBody&pgp_binding_revision={}",
+        issued.record.csrf_token, form_intent(route_html), record.revision,
+    );
+    let plain_response = route("POST", &plain_fields);
+    assert_eq!(plain_response.response.status_code, 303, "{:?}", plain_response.audit_events);
+    assert_eq!(smtp.lock().unwrap().len(), 5);
+    let plain_wire = smtp.lock().unwrap()[4].clone();
+    assert!(plain_response.audit_events.iter().any(|event| event.action == "sent_copy_stored"));
+    assert_eq!(fs::read(&sent_count).unwrap(), b"11111");
+    let plain_sent = fs::read(&sent_path).unwrap();
+    assert!(plain_sent.ends_with(b"RoutePlainBody"));
+    // The owned sendmail shim passes prepared bytes to Python smtplib. For a
+    // byte message with no terminal CRLF, SMTP.data adds exactly that CRLF
+    // before dot termination. Sent stores the original prepared message.
+    let mut smtp_normalized = plain_sent.clone();
+    smtp_normalized.extend_from_slice(b"\r\n");
+    assert_eq!(plain_wire, smtp_normalized);
+    assert!(plain_wire.windows(b"RoutePlainBody".len()).any(|w| w == b"RoutePlainBody"));
+    assert!(!plain_wire.windows(b"application/pgp-encrypted".len())
+        .any(|w| w == b"application/pgp-encrypted"));
+
+    let route_page = route("GET", "");
+    assert_eq!(route_page.response.status_code, 200);
+    let route_html = std::str::from_utf8(&route_page.response.body).unwrap();
+    let blocked_fields = format!(
+        "csrf_token={}&send_intent={}&to=bob%40example.test&subject=RouteBlocked&body=RouteBlockedBody&pgp_binding_revision={}",
+        issued.record.csrf_token, form_intent(route_html), record.revision,
+    );
+    let blocked_response = route("POST", &blocked_fields);
+    assert_eq!(blocked_response.response.status_code, 503);
+    assert!(blocked_response.audit_events.iter().any(|event|
+        event.action == "send_preparation_refused"
+            && event.fields.iter().any(|field| field.key == "reason"
+                && field.value == "openpgp_recipient_encryption_required")));
+    assert_eq!(smtp.lock().unwrap().len(), 5);
+    assert_eq!(fs::read(&sent_count).unwrap(), b"11111");
+
+    let route_page = route("GET", "");
+    assert_eq!(route_page.response.status_code, 200);
+    let route_html = std::str::from_utf8(&route_page.response.body).unwrap();
+    let encrypted_fields = format!(
+        "csrf_token={}&send_intent={}&to=bob%40example.test&subject=RouteEncrypted&body=RouteEncryptedBody&pgp_encrypt=on&pgp_binding_revision={}",
+        issued.record.csrf_token, form_intent(route_html), record.revision,
+    );
+    let encrypted_response = route("POST", &encrypted_fields);
+    assert_eq!(encrypted_response.response.status_code, 303, "{:?}", encrypted_response.audit_events);
+    assert_eq!(smtp.lock().unwrap().len(), 6);
+    let encrypted_wire = smtp.lock().unwrap()[5].clone();
+    assert_eq!(fs::read(&sent_path).unwrap(), encrypted_wire);
+    assert!(!encrypted_wire.windows(b"RouteEncryptedBody".len())
+        .any(|w| w == b"RouteEncryptedBody"));
+    let crate::pgp_mime::PgpMimeMessage::Encrypted { ciphertext, .. } =
+        crate::pgp_mime::classify(&encrypted_wire, crate::pgp_mime::PgpMimePolicy::default()).unwrap()
+    else { panic!("route delivery must be encrypted MIME"); };
+    let decrypted = crypto.execute("bob@example.test",
+        &crate::openpgp_crypto::Operation::Decrypt {
+            allowed_primary_fingerprints: vec![bfp.clone()], ciphertext,
+        }).unwrap().unwrap();
+    assert_decrypted_route_body(&decrypted.content);
+    assert_eq!(fs::read(&sent_count).unwrap(), b"111111");
     // Missing actual helper cannot silently fall back to a plaintext send.
     services.0[0].kill().unwrap();
     services.0[0].wait().unwrap();
@@ -627,8 +747,8 @@ fn native_crypto_gateway_protected_send_roundtrip() {
     assert!(
         matches!(unavailable.decision,BrowserSendDecision::Denied {ref public_reason,..} if public_reason=="openpgp_submission_unavailable")
     );
-    assert!(smtp.lock().unwrap().len() == 4);
-    assert!(fs::read(&sent_count).unwrap() == b"1111");
+    assert!(smtp.lock().unwrap().len() == 6);
+    assert!(fs::read(&sent_count).unwrap() == b"111111");
     assert!(
         crate::send_journal::SendJournal::new(gateway.settings_dir.join("send-journal"))
             .receipt("alice@example.test", &failed_intent, now)
@@ -650,14 +770,15 @@ fn native_crypto_gateway_protected_send_roundtrip() {
     assert!(matches!(ordinary.decision, BrowserSendDecision::Submitted {
         sent_copy_stored: true, receipt_persisted: true
     }));
-    assert_eq!(smtp.lock().unwrap().len(), 5);
-    let ordinary_wire = smtp.lock().unwrap()[4].clone();
+    assert_eq!(smtp.lock().unwrap().len(), 7);
+    let ordinary_wire = smtp.lock().unwrap()[6].clone();
     assert_eq!(fs::read(&sent_path).unwrap(), ordinary_wire);
-    assert_eq!(fs::read(&sent_count).unwrap(), b"11111");
+    assert_eq!(fs::read(&sent_count).unwrap(), b"1111111");
     assert!(ordinary_wire.windows("Synthetic café body".len())
         .any(|w| w == "Synthetic café body".as_bytes()));
     assert!(!ordinary_wire.windows(b"application/pgp-encrypted".len())
         .any(|w| w == b"application/pgp-encrypted"));
+
     for events in [
         &outcome.audit_events,
         &replay.audit_events,

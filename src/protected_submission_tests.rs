@@ -543,6 +543,47 @@ fn ordinary_delivery_with_existing_optional_bindings_needs_no_inventory_or_crypt
 }
 
 #[test]
+fn revisionless_ordinary_delivery_reevaluates_current_policy_without_crypto() {
+    // A plain form is permitted to omit the key revision. It must still use
+    // current trusted policy, rather than fail merely because bindings exist.
+    let request = request();
+    assert_eq!(request.protection.binding_revision, None);
+    let executor = mock(Vec::new());
+    let record = bindings();
+    let ordinary = prepare_for_delivery(&executor, &account(), &request, &record, None, 100)
+        .expect("optional policy permits an explicit plain message");
+    assert_eq!(ordinary.protection(), SubmissionProtection::Ordinary);
+    assert!(executor.operations.borrow().is_empty());
+
+    let mut required = record.clone();
+    required.policy.encryption = crate::openpgp_bindings::Requirement::Required;
+    assert_eq!(
+        prepare_for_delivery(&executor, &account(), &request, &required, None, 100).unwrap_err(),
+        SubmissionError::ProtectionBlocked(Some(
+            crate::openpgp_bindings::BlockReason::EncryptionRequired
+        ))
+    );
+    let mut required_recipient = record;
+    required_recipient.recipient_bindings[0].encryption =
+        crate::openpgp_bindings::Requirement::Required;
+    assert_eq!(
+        prepare_for_delivery(
+            &executor,
+            &account(),
+            &request,
+            &required_recipient,
+            None,
+            100
+        )
+        .unwrap_err(),
+        SubmissionError::ProtectionBlocked(Some(
+            crate::openpgp_bindings::BlockReason::RecipientRequiresEncryption
+        ))
+    );
+    assert!(executor.operations.borrow().is_empty());
+}
+
+#[test]
 fn stale_missing_foreign_binding_and_missing_inventory_refuse_before_engine() {
     let executor = mock(Vec::new());
     let mut request = request();

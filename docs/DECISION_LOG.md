@@ -9230,3 +9230,34 @@ Normal signed commit attempt3 was refused before signing by the unchanged CWE To
 Normal commit attempts4–6 exposed formatting, scanner vocabulary and listener test-readiness races before signing. Keep every unchanged gate. Apply only the formatter's indentation, use “unnamed” for the inherited Unix stream, and wait for the listener's 0600 mode within the original one-second test bound before asserting it. Do not change the production listener, TLS scanner, timeout or security predicate. The distinct failed logs remain evidence; final signed gates and synchronization must be re-established.
 
 The first independently reviewed disposable native SQL role attempt failed at fixed child-role validation before guarded SQL dispatch. Retain its root stage and private namespaces for exact disposition. Rename the three fixed labels within the existing lowercase/underscore contract, add a regression covering all fixed roles, and require a regenerated independently reviewed whole custody package before one changed native action. Do not loosen the validator, infer SQL authority, enable the factory or expose the password form from this result.
+
+### 2026-10-06 — operator-approved refocus on working mail delivery
+
+The operator accepted the independent delivery-drift audit and explicitly approved
+retooling, readjusting and refocusing development. Execute the additive work order
+in `UX_MAIL_DELIVERY_REFOCUS_20261006.md`: revisit ordinary Send first, then the
+existing protected Send/readable Sent/inbound return requirements. Park new
+S04-02 password fixture microdiagnostics at their retained checkpoints, without
+removing that required workflow or claiming it accepted. The explicit current
+operator approval authorizes this priority exception; frozen R2 requirements and
+their signed history remain intact.
+
+Fresh read-only installed-binary/policy/journal/log observations supersede the
+old all-fail generalization: some attempts were accepted/stored, while fifteen
+bounded all-session Send503s have no retained typed preparation reason. Neither
+finding establishes protected delivery or explains each failure. Fix only
+reproduced backend defects; add finite sanitized refusal correlation where it
+is absent. That telemetry alone cannot qualify Send repaired. Preserve approved
+keys/policies, operator control of provider Send and all unknown outcomes.
+
+The independently reviewed Send recovery keeps a narrow reproduced fix:
+revisionless ordinary requests now reach submission under current Optional
+policy, while Required policy and explicit stale revisions still refuse. Add
+only fixed sanitized preparation reasons for future attribution. Do not call
+this the cause or repair of every historical503. Actual disposable native
+qualification passes generated ordinary/encryption-only HTTP routes and their
+negative controls. Preserve both earlier failed assertions and their precise
+test corrections: one SMTP terminal CRLF and proper MIME transfer decoding.
+Activate the matching obsd1 web binary after normal signed sync; preserve the
+shared-binary helper's PID/mapped-image and all env/key/policy state. Provider
+and authoritative Sent acceptance require operator results, not this fixture.

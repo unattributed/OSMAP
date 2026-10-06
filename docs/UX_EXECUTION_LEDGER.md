@@ -7375,3 +7375,117 @@ Normal signed commit attempt3 was refused before signing by the unchanged CWE To
 Subsequent normal commit attempts4–6 were also refused before signing, with distinct retained causes: `cargo fmt --check` found one test-only chained-call indentation; the unchanged TLS policy scanner rejected two new test-only uses of “anonymous” outside a cipher context; and one of 518 account Python tests observed the Unix listener path between bind and its required 0600 chmod. The first two repairs change only formatting and “anonymous” to the Unix API term “unnamed”; the TLS guard now passes unchanged. The account test now waits for both path existence and mode 0600 within its original one-second readiness bound, then retains the exact mode assertion. The focused listener control passes. The attempt4/5/6 logs and independent formatting/TLS addenda remain under `rust-stored-issuer-composition-increment1/canonical-integration-attempt1`; no failed attempt signed a commit, and final normal gates/sign/sync remain pending.
 
 The separately admitted disposable restricted-SQL native attempt1 FAILED at `private_mysql_startup`: the initializer exited 0, then a fixed uppercase/digit-bearing child-role label was refused by the unchanged lowercase/underscore validator before the SQL readiness child spawned. Result SHA256 `69bc00f183397d0a91a0ba11b0d2d0449d0ee159eaf185d13a22f5dcf758bbd3`; independent scope SHA256 `bfda6e6e6f94cd0737044b0ea99ce08d043476e324202229c9c6a0462c3c5674`. Two of 27 controls passed, guarded SQL and native mutation child dispatch remained zero, and all three directly tracked children were reaped with the driver group absent. The failed root stage and both disposable namespaces remain retained for exact disposition; no operator SQL, password, mail or provider action occurred. Three fixed role labels need source-only repair and new whole-package review before a changed native attempt. Production profiles, factory and password form remain disabled; this is no S04-02 or human UAT acceptance.
+
+### 2026-10-06 — S04-02 current signed checkpoint and subsequent native diagnostics
+
+The real stored-session issuer test source is Good Shopkeeper signed at `f7f8c385e4087937b5683848bb39d583c0282434`, normally pushed to `origin/feat/ux-completion-20260929`, fresh-fetched equal and clean. Its normal commit and push gates each passed 1588 Rust tests/zero failed/39 explicit native ignores, 518 account Python tests and 22 mail cases. The authoritative mail host's standard checkout was source-only fast-forwarded from `6924976` to the same commit and verified clean/equal; no installed binary, service, profile or password form changed. Retained proof `rust-stored-issuer-composition-increment1/canonical-integration-attempt1/signed-sync-proof.json` SHA256 `d0cb2d88867cedf93ae16f51e45909b0f9793758f1fca94a4170f9f91a8943ce`, independently reconciled against pinned logs in `independent-review/signed-sync-proof-scope.json` SHA256 `656b57d340fe5bdbddd038384e12b6fe5fa0d1ad24c1a154f570074629fa1d3d`. Its native issuer entrypoint remains explicitly ignored, so this is a source checkpoint, not S04-02 UAT.
+
+After the three-label fixed-role repair and reviewed whole custody package, one changed disposable SQL native attempt2 FAILED at its first guarded `restricted_current_user` child. Guard receipt passed, but the child exited -6 with no stdout/stderr; the retained pledge event was errno1, mask65536, syscall54 (tty-class ioctl), without the request/fd. Result SHA256 `8e7eeccf509d8cdb28902c3c18d8ce2cda99525a1df84593f2ad4ec7e6c5434a`, independent scope `native-sql-role-installed-root-custody-increment2/independent-review/native-attempt1-failure-scope.json` SHA256 `4f092983ceb1f3907e556be624f54e6cf622b126fc575c229c0ce2233399d3cf`. Eight of 27 controls passed; 22/22 children were reaped and the driver group was gone. Failed root stage and two private namespaces remain retained. Exact ioctl need and remedy are unproven; no operator account, mail or provider mutation occurred.
+
+The independently reviewed changed SQL diagnostic increment3 also FAILED before recovering the ioctl request/fd. It reached the first guarded child, but the added trace saturated its fixed 131072-byte file cap: child exit -25, guard receipt UNCONFIRMED/count zero, `fixed_trace_record_bound`, eight of 27 controls. Read-only fresh stat of that exact retained trace reported `131072 root -rw-------`; the saved metadata log SHA256 is `81b30567b9feb2508c4ea22031afe15770d28a7b72ace420e17a125abf385aa1`. This cap match is consistent with an instrumentation-induced limit event and does not establish the original ioctl cause. Result SHA256 `f448f66ecad101162c92077d619d1cae74585e0755c14e0ef0d1693f8d391677`, independent failure scope SHA256 `c28734e10aef50e3b56cde1d4c4533b61e498bdc330328d8dcaf73da333b3577`, metadata addendum SHA256 `ec47c45888e10af3727193e95b8f1b72cfb66cc180593edf8b253034a2aa6b9d`. Direct children 22/22 reaped and group gone; stage/namespaces retained. No unchanged retry or operator SQL mutation. A narrower bounded diagnostic remains source work.
+
+Separately, one reviewed changed obsd1 topology diagnostic native attempt FAILED later than native13. Its preflight reached `ready_complete`, topology trace returned at `routing_plan` after 33 calls, and capture was true; the composed execution then failed at `filter/current_smtp_birth` `opcode_read` with `TimeoutError` and listener `Unconfirmed`. Its fixed-current and fresh-authority time samples overlap, so their sum cannot establish deadline causation. Three SMTP AUTH attempts/two completed, zero mail/provider transactions; four fixture groups and scratch paths gone, standard metadata preserved, failed root stage retained. Result SHA256 `d09afb79842fa5803ba0b830517349d83ccc26619a44602a8f6ab9a9e2698a9c`, independent scope `native-smtp-worker-topology-diagnostic-increment1/independent-review/native-attempt1-failure-scope.json` SHA256 `db45ae04d5a5e21c6ad290e7727ff51c691e673b24740bc1d6fa436b7a6d8ee0`. The changed temporal outcome does not retrodiagnose native13 or qualify a complete mutation. Current SQL, SMTP/IMAP, Rust issuer, primary authority, browser workflow and human UAT remain open.
+
+### 2026-10-06 — accepted delivery audit and active Send recovery
+
+Operator approval: "I accept and approve, retool readjust and refocus development".
+The independent auditor found delivery drift: repeated S04-02 password-native
+primitives displaced the visible mail-delivery outcome. The approved additive
+priority exception is `UX_MAIL_DELIVERY_REFOCUS_20261006.md`. Ordinary S03-04
+Send and existing S07 provider/Sent/return journeys now own active engineering;
+new password-native diagnostic dispatch is parked. No requirement, failed result
+or human acceptance gate is removed. Developer, QA and auditor are reassigned.
+The recurring readiness job is updated to this priority under the same schedule.
+
+Actual root read-only SSH checks confirm obsd1 and authoritative mail installed
+application SHA2566858843875bdb1c5f3a859e2916ce10b13308a3176f372d0b01d521e4b7ef8ea
+and affected services running. Public binding revision5 retains own
+signing/encryption Optional and Proton-recipient encryption Required with the
+existing full fingerprints. Duncan journal: six accepted_stored, twenty
+draft_saved; latest accepted intent2026-10-05T01:31:28Z. Bounded current log
+sinceOctober3: four Send303, one400, fifteen503 across all sessions; latest
+Send2026-10-05T01:32:12Z. No typed preparation refusal observed. These streams
+are not individually correlated, and no provider/decryption/whole-Send success
+is inferred. Retained metadata `osmap-ux-s05/send-refocus-20261006/live/` has no
+session, credentials, private body, raw log or mail dispatch. Keys, policy,
+runtime configuration, binary and services were not mutated.
+
+QA `send-refocus-20261006/qa/SEND-QUALIFICATION.md` defines ordinary self/allOff,
+Proton encryptOnly, sign/encrypt/self/readable Sent, inbound return and draft
+parity. Existing native/synthetic results do not close those actual paths.
+Human ALLSEND and protected round-trip remain OPEN. No completion notification
+or UAT-ready claim is issued for the priority change or the metadata read.
+
+The increment3 disposable obsd1 native run failed at the new Sent-wire parity
+assertion after ordinary HTTP303 and the fifth loopback submission passed.
+The fixture's Python smtplib transport appends a final CRLF to an unterminated
+plain message; the Sent writer stores the original prepared bytes. Retain
+`live/native-gateway-attempt1.log` SHA256
+`267a7082ebab5c749a6bf9610716f62e8f5d50404dc998025da003eb215abd77`.
+The independently reviewed increment4 test preserves that input and requires
+the stored-copy event, fifth append and exactly one transport CRLF. Its two
+local transport controls pass; matching native result remains separately
+required. This does not diagnose any historical operator failure. No live
+mail, key, policy or service changed during the disposable run.
+
+The separately reviewed increment4 native run failed later at the encrypted
+route's raw decrypted-MIME body assertion (line707), after the ordinary route
+and fifth stored copy, Required-recipient refusal, encrypted HTTP303, sixth
+loopback message, exact encrypted Sent parity and decryption completed. Retain
+`live/native-gateway-attempt2.log` SHA256
+`06c3ede7482da0b343f17fab6267ffb44a4910b74d758ea5667c2f069344613b`.
+Decode the MIME body through the existing analyzer before asserting authored
+content; do not infer plaintext body loss or provider success from this raw
+transfer-encoded comparison. No unchanged native retry is authorized by it.
+
+Matching increment5 native attempt3 PASS: one OpenBSD authenticated-helper
+test, zero failures/skips, seven finite loopback submissions and seven
+controlled Sent saves. Real Runtime-generated HTTP Compose→Send exercises
+ordinary self, Required-recipient refusal without dispatch, and encryption-only
+after the sender's disposable private keys were removed. The recipient's
+decrypted MIME body is exactly `RouteEncryptedBody`; replay, explicit stale
+bindings and missing-helper protection refusal retain their negatives, and
+ordinary mail still submits with the private helper stopped. Disposable agents
+and scratch were removed. Log SHA256
+`332f4a0b52d2ad3de2fee4e94ab7871d229465a472ae29cd3c8799c99aec07f7`,
+test binary `ce8b6a7ebd887f0a30a2f2f58df007f9f8b2767958a2d49cac84bcd745d58389`.
+This test's Sent writer is disposable, not authoritative Dovecot or Proton;
+historical operator failures and human/provider UAT remain OPEN. No provider
+message, operator key/policy or service changed. Normal signed source gates,
+sync and matching web activation remain the next delivery steps.
+
+Normal acceptance attempts1/2 refused before signing: the new work-order doc
+needed its existing docs-index entry, then the new owned local test recorder
+matched the unchanged CWE shell-execution guard. Add the one index line and
+replace only that test recorder with fixed Python3 and a JSON-quoted owned
+path. Independent reviews clear both corrections; the focused actual route
+with space/apostrophe TMPDIR and unchanged CWE guard pass. Production behavior,
+OpenBSD fixture, security predicates and hooks are unchanged. Preserve the
+two logs under `signed-source/`; superseding normal gates remain required.
+
+After that local test-only recorder change, the matching final native attempt4
+also PASS1/zero failed/skipped with the same seven-submission/seven-save and
+negative controls. Test binary
+`2bf043b95240fade69d1c43998f5e0b6622228dd80124e1478ae05e2fd9476cf`,
+log SHA256 `8fb39af510ed983134751cdea862c39942d32417db1924442d6c794dc92a00c5`.
+The matching release build remains
+`c305e5283a9d6631ee1032a07fcf67304489c287a7c4e29935ab932cfd1f0263`;
+the correction changes no release code. No authoritative/provider or human
+acceptance follows, and signed synchronization/activation remain separate.
+
+Acceptance attempt3 completed its developer security component, then exposed an
+inherited V10 claims/register mismatch. Parent f7f8c385 already had different
+refined inventory hashes in the claims and remediation reports; this is not a
+new Send defect. Refresh the three existing derived JSON reports using the
+unchanged audit generator, then the unchanged remediation generator, then their
+four claims mirrors. No scanner, hook, gate or policy was changed. Independent
+derived-only review706348c7 CLEAR; V10 and the remaining V11/V12/V13 components
+pass. Preserve attempts1–3 and the initial wrong refresh ordering. A complete
+unchanged-source acceptance attempt4 is running before signed admission.
+
+Superseding whole `make acceptance-check` attempt4 now exits0 on the final
+source: developer security plus V10/V11/V12/V13 pass, with1592 library passes,
+zero failed and39 explicit native ignores; the separately matching OpenBSD
+gateway case passes without a skip. Native controlled transport does not
+qualify authoritative/provider delivery. Normal commit/push hooks, signature,
+fresh remote equality and the reviewed web-only activation remain required.

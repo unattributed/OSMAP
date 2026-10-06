@@ -155,6 +155,46 @@ fn probes(fail_submission: bool, fail_append: bool) -> (SubmissionProbe, AppendP
         },
     )
 }
+
+#[test]
+fn runtime_preparation_refusal_audits_only_finite_stage_and_never_dispatches() {
+    let fixture = Fixture::new();
+    let session = validated_session();
+    let (_, draft) = fixture.save();
+    let intent = crate::send_journal::intent_for_draft(
+        &session.record.canonical_username,
+        &draft.draft_id,
+        draft.revision.unwrap(),
+        draft.updated_at,
+    )
+    .unwrap();
+    let (submission, append) = probes(false, false);
+    let service = SubmissionService::new(submission.clone());
+    let mut selected = send_request(&intent, &draft);
+    selected.protection.sign = true;
+    selected.protection.binding_revision = Some(0);
+    let context = test_context();
+    let result = fixture.gateway.send_message_with_backends(
+        &context, &session, selected, &service, &append,
+    );
+    assert!(matches!(result.decision,
+        BrowserSendDecision::Denied { ref public_reason, .. }
+            if public_reason == "openpgp_inventory_unavailable"));
+    assert!(submission.calls.lock().unwrap().is_empty());
+    assert!(append.calls.lock().unwrap().is_empty());
+    let events = result.audit_events.iter()
+        .filter(|event| event.action == "send_preparation_refused")
+        .collect::<Vec<_>>();
+    assert_eq!(events.len(), 1);
+    let event = events[0];
+    assert_eq!(event.category, EventCategory::Submission);
+    assert!(event.fields.iter().any(|field| field.key == "stage" && field.value == "pre_dispatch"));
+    assert!(event.fields.iter().any(|field| field.key == "reason" && field.value == "openpgp_inventory_unavailable"));
+    assert!(event.fields.iter().any(|field| field.key == "request_id" && field.value == context.request_id));
+    assert!(event.fields.iter().any(|field| field.key == "session_ref"));
+    assert!(!event.fields.iter().any(|field| matches!(field.key, "session_id" | "to" | "subject" | "body")));
+    assert_eq!(send_preparation_audit_reason("untrusted future value"), "other");
+}
 #[test]
 fn runtime_saved_handoff_replays_without_backend_or_append_and_cleanup_is_qualified() {
     for (fail_submission, fail_append) in [(false, false), (false, true), (true, false)] {
