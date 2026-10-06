@@ -105,6 +105,12 @@ they add no status board, approval ceremony or acceptance requirement:
   configured authority with the smallest authorized discriminating probe.
   Establish actual behaviour before building a large fixture around an assumed
   platform interface. Keep its scope explicit; a probe is not workflow QA.
+  Carry already measured platform limitations into subsequent work orders and
+  reviews. Reuse the existing qualified compatibility path rather than writing
+  the unsupported interface again. Include a discriminator for the interface
+  being absent; a method-bearing mock cannot establish native compatibility.
+  A known source/platform contradiction should be fixed before another host
+  invocation, without repeating a native failure merely to rediscover it.
 - **Reuse working paths first.** Compare a gap with the existing application
   and deployed backend. Extend the narrowest suitable path. Introduce a helper,
   protocol or service only for a demonstrated functional or security need;

@@ -9102,3 +9102,14 @@ The mutation worker cannot terminate broker-owned authenticated channels by a ca
 ### 2026-10-06 — distinguish native command success from production graph custody
 
 Actual disposable hash6 now passes all eleven fixed controls after measured open/WPATH and mmap/PROT_EXEC failures led to narrowly reviewed fixture changes. Full-tail ARGON2ID verification and kernel write refusal are demonstrated; installed nested ELF/module resolution and production null lifetime are not. Continue mandatory source-owned installed dependency inventory and child confinement integration instead of extrapolating a production graph from a successful command. Disposable SMTP28 similarly passes current cancellation/TCP/cleanup controls without proving historical24/25 cleanup or complete production ingress. Fresh administrative cleanup must reconcile actual namespace modes, cwd and current identity before fixed stop; retained pre-stop failures do not authorize blanket signals or unchanged retries.
+
+
+### 2026-10-06 — carry measured native limitations into subsequent implementation
+
+The complete administrative collectors repeated an unconditional Python getpeereid call despite native19 already proving that the installed interpreter needs the canonical fixed libc fallback. Root identified the contradiction before the proposed host invocations; independent native admission was withdrawn and the original reviews retained. Reuse the proven ABI path and exercise missing-method/foreign/error branches before another invocation. Add this concrete requirement to the existing development framework, without another approval ceremony or repeat native failure. Keep generic installed-inventory refusal UNKNOWN until bounded exact-stage diagnostics identify it; independent agreement and method-bearing mocks cannot replace platform evidence.
+
+
+### 2026-10-06 — original-budget SMTP delegation and measured native refusals
+
+- Integrate only the independently reviewed disabled SMTP composition2 source: use a minimal purpose-specific authenticated delegation after local original-proof verification, never forward current/new passwords or original proof keys to a broker. Consume durable grants before cutoff work; commit completion before terminal success. Preserve possible consumption and uncertainty on late failures. Native provisioning, worker/flock continuity and full containment are separate required dependencies, not supplied by a local descriptor test.
+- Preserve inventory4's measured loader execute-bit refusal and both administrative collectors' pre-wire peer-policy refusals. Public loader read custody and executable-program custody have distinct roles; observed socket ownership is not effective connected-peer authority. Require exact changed source, original budgets and independent review before one new observation; no blanket peer-group relaxation, historical PID signals or unchanged retries.

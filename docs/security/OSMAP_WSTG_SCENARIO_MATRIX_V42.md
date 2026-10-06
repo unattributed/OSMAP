@@ -127,3 +127,11 @@ ledger, not completed WSTG scenarios or release evidence. Local UID admission
 does not prove unique supervised-worker ownership, installed module custody,
 all authentication ingress, native factory activation or human password/Send
 acceptance. The password form and native qualification gates remain disabled.
+
+The next disabled control composition adds distinct-purpose password-free MAC
+delegation and a durable consumed-grant journal to ATHZ/SESS/BUSL/CRYP component
+coverage. Original receive-time budget and current source listener custody are
+rechecked; complete grant publication precedes terminal acknowledgement. Late
+acknowledgement failure remains unconfirmed after possible cutoff consumption.
+Native key/issuer custody, worker/flock continuity, production ingress and TCP
+absence remain unqualified. This does not close a WSTG scenario or password UAT.

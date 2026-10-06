@@ -13,7 +13,8 @@ import socket
 from authoritative_password import AuthoritativePasswordAdapter, Refused, Unconfirmed
 from mail_session_containment import OperatorOwnedProxyNamespace, OperatorOwnedSmtpTopology
 from operation_budget import OperationBudget
-from smtp_auth_lifecycle import SmtpAuthLifecycle, _kernel_peer, _socket_identity
+from smtp_auth_lifecycle import SmtpAuthLifecycle, _Cutoff, _kernel_peer, _socket_identity
+from smtp_control_authorization import VerifiedControlAuthorization
 
 NATIVE_CONTROL_QUALIFIED = False
 LIMIT = 512
@@ -45,7 +46,7 @@ def _send(stream, value, budget):
 
 class LifecycleControlOperation:
     """One trusted startup operation, never a wire factory or reusable budget."""
-    def __init__(self, registry, namespace, topology, budget):
+    def __init__(self, registry, namespace, topology, budget, *, admitted_account=None, admitted_authorization=None, listener_recheck=None):
         if (type(registry) is not SmtpAuthLifecycle
                 or type(namespace) is not OperatorOwnedProxyNamespace
                 or type(topology) is not OperatorOwnedSmtpTopology
@@ -64,6 +65,19 @@ class LifecycleControlOperation:
         self._topology = topology
         self._budget = budget
         self._state = 'new'
+        if admitted_account is not None:
+            AuthoritativePasswordAdapter._account(admitted_account)
+            if admitted_account not in registry._accounts:
+                raise Refused('SMTP control admitted account unavailable')
+        if admitted_authorization is not None:
+            if (type(admitted_authorization) is not VerifiedControlAuthorization
+                    or admitted_authorization.account != admitted_account):
+                raise Refused('SMTP control sealed binding unavailable')
+        self._admitted_account = admitted_account
+        if listener_recheck is not None and not callable(listener_recheck):
+            raise Refused('SMTP control listener continuity unavailable')
+        self._listener_recheck = listener_recheck
+        self._admitted_authorization = admitted_authorization
         topology.recheck(budget)
 
     @classmethod
@@ -78,8 +92,35 @@ class LifecycleControlOperation:
                 or _kernel_peer(stream)[0] != self._namespace._owner):
             raise Refused('SMTP control peer or continuity refused')
         self._topology.recheck(self._budget)
+        if self._listener_recheck is not None:
+            self._listener_recheck()
+
+    def _capture(self, account):
+        if self._admitted_authorization is None:
+            return self._registry.pending_cutoff_locked(account, self._budget)
+        # Mint from the SAME durable record checked against the independently
+        # MACed original operation; routing/journal time cannot swap its intent.
+        with self._registry._guard(self._budget):
+            value = self._registry._record(account)
+            authorization = self._admitted_authorization
+            if (value['state'] not in ('pending', 'contained')
+                    or value['epoch'] != authorization.epoch
+                    or value['intent'] != authorization.intent_reference
+                    or len(self._registry._cutoffs) >= self._registry.MAX_CUTOFFS):
+                raise Refused('SMTP control original pending binding changed')
+            cutoff = _Cutoff(self._registry, account, value['epoch'], value['intent'])
+            self._registry._cutoffs.add(cutoff)
+            return cutoff
 
     def serve(self, stream):
+        try:
+            return self._serve(stream, lambda value, budget: _send(stream, value, budget))
+        finally:
+            stream.close()
+
+    def _serve(self, stream, terminal_sink):
+        # Private trusted supervisor composition may defer terminal publication
+        # until its durable purpose grant is committed under this same budget.
         if self._state != 'new':
             raise Refused('SMTP control operation already consumed')
         self._state = 'serving'
@@ -92,13 +133,14 @@ class LifecycleControlOperation:
                 raise Refused('SMTP control request refused')
             account = raw[len(CAPTURE):-1].decode('ascii')
             AuthoritativePasswordAdapter._account(account)
-            if account not in self._registry._accounts:
+            if (account not in self._registry._accounts or
+                    self._admitted_account is not None and account != self._admitted_account):
                 raise Refused('SMTP control account refused')
             self._authority(stream, identity)
             # Trusted mutation owner already holds the same account flock.
             # Durable pending/contained state supplies epoch+intent; no RPC
             # field can choose either. Reacquiring that flock would deadlock.
-            cutoff = self._registry.pending_cutoff_locked(account, self._budget)
+            cutoff = self._capture(account)
             self._authority(stream, identity)
             _send(stream, CAPTURED, self._budget)
             if _line(stream, self._budget) != CANCEL:
@@ -108,7 +150,7 @@ class LifecycleControlOperation:
             if type(count) is not int or not 0 <= count <= self._registry.MAX_CHANNELS:
                 raise Unconfirmed('SMTP control closure unconfirmed')
             self._authority(stream, identity)
-            _send(stream, CLOSED + str(count).encode('ascii') + b'\n', self._budget)
+            terminal_sink(CLOSED + str(count).encode('ascii') + b'\n', self._budget)
             self._state = 'complete'
             return count
         except Exception:
@@ -119,8 +161,6 @@ class LifecycleControlOperation:
                 self._registry._control_uncertain = True
                 raise Unconfirmed('SMTP control requires reconciliation') from None
             raise Refused('SMTP control unavailable') from None
-        finally:
-            stream.close()
 
 
 class LifecycleControlClient:
