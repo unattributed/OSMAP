@@ -1,7 +1,8 @@
 """Mutation-only primary verifier on the original owned operation budget.
 
-No startup/relay/browser route imports this component. Native syntax is preserved
-from admission; actual mail-host authentication/confinement remains unqualified.
+No startup/relay/browser route imports this component. Client configuration and
+socket authority are fixed here; installed modules, native socket custody and
+actual mail-host authentication/confinement remain unqualified.
 Credentials enter stdin only; captured diagnostics never leave this function.
 """
 import os
@@ -13,7 +14,9 @@ from authoritative_password import AuthoritativePasswordAdapter, Refused
 from operation_budget import OperationBudget
 
 PROGRAM='/usr/local/bin/doveadm'
-ARGS=('-o','stats_writer_socket_path=','auth','test','-x','service=imap')
+AUTH_CLIENT_SOCKET='/var/dovecot/auth-client'
+ARGS=('-O','-o','stats_writer_socket_path=','auth','test','-a',AUTH_CLIENT_SOCKET,
+      '-x','service=imap')
 LIMIT=4096
 PHASE_SECONDS=25
 RESERVE=.05
@@ -66,7 +69,13 @@ class NativePrimaryVerifier:
         try:
             child=subprocess.Popen(self._command(),stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,stderr=subprocess.PIPE,close_fds=True,
-                start_new_session=False,env={'PATH':'/usr/local/bin:/usr/bin:/bin','LC_ALL':'C'})
+                # KEEP_CONFIG_OPEN runs before -O is parsed in Dovecot2.3.
+                # Bind that pre-option path to a non-socket device; -O skips
+                # client settings input. Late stats defaults are disabled by
+                # the fixed -o above; early inherited stats authority is empty.
+                # The auth daemon's policy/backend remains authoritative.
+                start_new_session=False,env={'PATH':'/usr/local/bin:/usr/bin:/bin','LC_ALL':'C',
+                    'CONFIG_FILE':'/dev/null','STATS_WRITER_SOCKET_PATH':''})
             with selectors.DefaultSelector() as selector:
                 for pipe in (child.stdin,child.stdout,child.stderr):os.set_blocking(pipe.fileno(),False)
                 selector.register(child.stdin,selectors.EVENT_WRITE,'input')
