@@ -9329,3 +9329,15 @@ witness, without relaxing durable journal inode checks, time bounds or normal
 push gates. This is a separate signed test repair; retain the failed first push.
 Keep current-owned temporary namespace cleanup separate from the failed
 qualifier and do not infer a Rust/Dovecot defect from the Python contrast.
+
+## 2026-10-06 — Repair measured S08 fixture defects without acceptance inflation
+
+Use the process primary GID for disposable Dovecot userdb; inherited scratch
+group is a cleanup lease, not process identity. Do not relax Dovecot minimum
+GID admission. Preserve the new actual first-save ConfirmedNoWrite failure.
+
+Positive child-exit fixture cleanup reservation must leave the original
+one-second request available; only the test outer lifetime changes. Neither
+repair qualifies full transport, authoritative quota, Documents UAT or the
+epic. Sign and promptly synchronize these reviewed changes through normal
+gates under the operator's standing authority; no runtime activation.

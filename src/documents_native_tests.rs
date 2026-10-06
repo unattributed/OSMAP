@@ -18,6 +18,31 @@ use std::time::{Duration, Instant};
 const ACCOUNT: &str = "alice@osmap-documents.invalid";
 const NATIVE_LIMIT: Duration = Duration::from_secs(120);
 
+fn process_numeric_id(flag: &str) -> u32 {
+    assert!(matches!(flag, "-u" | "-g"));
+    let result = SystemCommandExecutor
+        .run_with_stdin_bytes_timeout_and_output_limit(
+            "/usr/bin/id",
+            &[flag.to_string()],
+            b"",
+            Duration::from_secs(2),
+            32,
+        )
+        .unwrap();
+    assert_eq!(result.status_code, 0);
+    assert!(result.stderr.is_empty());
+    let bytes = result.stdout.as_bytes();
+    assert!(bytes.ends_with(b"\n") && bytes.len() <= 11);
+    let digits = &bytes[..bytes.len() - 1];
+    assert!(!digits.is_empty() && digits.iter().all(u8::is_ascii_digit));
+    digits.iter().fold(0u32, |value, digit| {
+        value
+            .checked_mul(10)
+            .and_then(|value| value.checked_add(u32::from(digit - b'0')))
+            .unwrap()
+    })
+}
+
 #[derive(Clone)]
 struct ScopedExecutor {
     config: PathBuf,
@@ -207,11 +232,24 @@ fn documents_native_executor_refuses_other_program_or_account_before_dispatch() 
 }
 
 #[test]
+#[ignore = "requires a non-root local developer identity"]
+fn documents_native_fixture_uses_process_identity_not_scratch_group() {
+    let uid = process_numeric_id("-u");
+    let gid = process_numeric_id("-g");
+    assert!(uid > 0 && gid > 0);
+    assert!(std::panic::catch_unwind(|| process_numeric_id("-G")).is_err());
+}
+
+#[test]
 #[ignore = "explicit disposable OpenBSD Dovecot quota and first document save"]
 fn isolated_openbsd_documents_first_upload_without_reserved_mailbox() {
     assert_eq!(std::env::consts::OS, "openbsd");
     let whole = Instant::now();
     let before = standard_metadata();
+    let process_uid = process_numeric_id("-u");
+    let process_gid = process_numeric_id("-g");
+    assert_ne!(process_uid, 0);
+    assert_ne!(process_gid, 0);
     let root = std::env::temp_dir().join(format!(
         "osmap-documents-native-{}-{}",
         std::process::id(),
@@ -219,14 +257,14 @@ fn isolated_openbsd_documents_first_upload_without_reserved_mailbox() {
     ));
     fs::DirBuilder::new().mode(0o700).create(&root).unwrap();
     let owner = fs::symlink_metadata(&root).unwrap();
-    assert_ne!(owner.uid(), 0);
-    assert_eq!(owner.mode() & 0o777, 0o700);
     let mut fixture = Fixture {
         root: root.clone(),
         root_lease: (owner.dev(), owner.ino(), owner.uid(), owner.gid(), owner.mode() & 0o777),
         stop: Arc::new(AtomicBool::new(false)),
         userdb: None,
     };
+    assert_eq!(owner.uid(), process_uid);
+    assert_eq!(owner.mode() & 0o777, 0o700);
     for directory in ["run", "state", "alice/Maildir/cur", "alice/Maildir/new", "alice/Maildir/tmp"] {
         fs::create_dir_all(root.join(directory)).unwrap();
     }
@@ -236,10 +274,12 @@ fn isolated_openbsd_documents_first_upload_without_reserved_mailbox() {
     let config = root.join("dovecot.conf");
     fs::write(&config, format!(
         "base_dir = {0}/run\nstate_dir = {0}/state\nmail_location = maildir:~/Maildir\nmail_uid = {1}\nmail_gid = {2}\nfirst_valid_uid = {1}\nprotocols =\nlisten = 127.0.0.1\nssl = no\nmail_plugins = quota\nmailbox_list_index = yes\nplugin {{\n quota = count:User quota\n quota_rule = *:storage=64K\n quota_grace = 0%\n quota_vsizes = yes\n}}\nstats_writer_socket_path =\nauth_socket_path = {0}/never-default\nlog_path = {0}/native.log\ninfo_log_path = {0}/native.log\nnamespace inbox {{\n inbox = yes\n separator =\n}}\n",
-        root.display(), owner.uid(), owner.gid()
+        root.display(), process_uid, process_gid
     )).unwrap();
     fs::set_permissions(&config, fs::Permissions::from_mode(0o600)).unwrap();
-    let userdb = fixture_userdb(&mut fixture, owner.uid(), owner.gid());
+    // On OpenBSD, a new directory can inherit the parent group. Its st_gid
+    // does not attest the process's primary GID for Dovecot userdb admission.
+    let userdb = fixture_userdb(&mut fixture, process_uid, process_gid);
     let backend = DoveadmDocumentsBackend::new(
         ScopedExecutor { config, diagnostic: true },
         "/usr/local/bin/doveadm",

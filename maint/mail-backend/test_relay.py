@@ -607,7 +607,9 @@ class NativeFixtureLifecycleTests(unittest.TestCase):
         native = NativeDocumentsRelayTests()
         began = time.monotonic()
         with patch.object(relay, "authorize_peer"), patch.object(relay, "peer_ids", return_value=(0, 0)), patch.object(NativeDocumentsRelayTests, "fixture_ssh_argv", return_value=command):
-            return native.exchange({}, b"fixture", began + 3, began + 1)
+            # The request keeps its original one-second budget. The fixture's
+            # absolute lifetime also includes exchange's three-second cleanup reserve.
+            return native.exchange({}, b"fixture", began + 4, began + 1)
 
     def test_complete_response_followed_by_nonzero_child_exit_is_refused(self):
         with self.assertRaisesRegex(AssertionError, "SSH transport exited nonzero"):

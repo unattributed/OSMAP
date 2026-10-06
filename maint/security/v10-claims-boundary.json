@@ -127,7 +127,7 @@
     "live_host_state_changed": false,
     "product_behavior_changed": false,
     "production_state_changed": false,
-    "refined_inventory_sha256": "0139af95aaafd1446369609505b2d6329ac84cb98da861b8d441124416478c56",
+    "refined_inventory_sha256": "b7f26eccfc23f17422a6f52a9ecea956fc112803be3fbe4e0bbd8743acaac89b",
     "remediation_document": "docs/V10_TARGETED_FAIL_CLOSED_REMEDIATION.md",
     "remediation_document_present": true,
     "remediation_register": "maint/security/v10-fail-closed-remediation.json",

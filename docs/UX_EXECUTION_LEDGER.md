@@ -7664,3 +7664,45 @@ the failed transport namespace passed: two exact fstat snapshots, five held
 references, no other current refs/listener/process matches, four known files
 and current leased root removed. Historical continuity was not established;
 original native transport stays FAIL/NOT_QUALIFIED.
+
+## 2026-10-06 — S08 native fixture identity and exit-reservation repairs
+
+Signed product b83d9b7 and test publication repair c3e8cac were normally
+synchronized; fresh GitHub equality and clean authoritative mail source-only
+fast-forward to c3e8cac are recorded under documents/source-admission. No
+Documents service, binary or form was activated.
+
+The original private synthetic quota-get failure is now measured: Dovecot
+refused userdb GID0. OpenBSD scratch inherited /tmp GID0, while the current
+process primary GID is1000. The test-only identity repair uses bounded fixed
+id -u/-g and preserves the scratch's actual lease; it does not lower
+first_valid_gid or alter product policy. Matching changed binary1ade5cde
+actually passes finite quota-get0/171bytes and quota-ready, then FAIL101
+at first_save ConfirmedNoWrite. Thus quota refusal is repaired but first
+save/download, shared all-writer quota and PAGE07 acceptance remain OPEN.
+A mistaken exact test selector ran zero cases and is retained as NOT_RUN,
+not a successful qualifier.
+
+The native relay fixture's positive/nonzero-child tests previously reserved
+three seconds from an absolute three-second lifetime, leaving zero time for
+clean child reaping. A test-only absolute lifetime4s gives the intended
+original1s request while retaining the3s cleanup reserve; production
+5s client/20s relay and hanging-child negatives are unchanged. Actual
+OpenBSD changed two-case control PASS2/.238s, child reaped and private root
+removed. Current two-host10MiB transport remains FAIL/unqualified: v5
+22cases/3failures/2skips, both cleanup confirmed; the third test's exact
+refusal is still UNKNOWN. Earlier failures remain retained.
+
+Evidence: /home/foo/Downloads/osmap-ux-s08/revalidation-20261006/documents/
+relay-lifecycle-reservation-repair/native-two-case-result.json;
+native-first-upload-process-gid-attempt1/native-test-correct-selector.log;
+native-first-upload-current-private-stderr-attempt1/private-evidence-custody.json.
+Only sanitized fixed diagnostic meaning is committed; no private stderr,
+operator credentials, message bytes or grant material enters Git.
+
+Normal fixture admission attempt1 passed1614library/0failed/42native ignores,
+518accountPython and32mail cases/2explicit local skips, then the unchanged
+V11 gate refused stale generated assertion inventory (7701 to7703). The
+existing generator refreshes only derived source offsets/counts/hashes and
+its matching claims hash; no scanner, assertion, gate or claim is waived.
+Normal superseding gates/signature/sync remain required.
