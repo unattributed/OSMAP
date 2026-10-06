@@ -43,7 +43,12 @@ class CommandKernelSeal:
         budget.remaining()
         # Observational inventory and local fixture guards are not profiles.
         # Installed full custody/null/socket admission must implement this path.
-        return cls.native()
+        value=cls.native()
+        # Required for every future source-admitted hash profile. SQL/primary
+        # keep separate private config/socket identities; no role-wide drop.
+        if (type(value)is not cls or value._budget is not budget or value._command_identity[3]!=role):raise Refused('native kernel seal unavailable')
+        value._hash_identity_required=role=='hash'
+        return value
 
     @staticmethod
     def _command(program,args,account):
@@ -84,20 +89,33 @@ class CommandKernelSeal:
         value=object.__new__(cls)
         value._command_identity=(program,args,account,role)
         value._rows=rows;value._promises=promises;value._budget=budget
+        value._hash_identity_required=False
         return value
 
-    def preexec(self,program,args,account=None):
+    def preexec(self,program,args,account=None,*,deadline=None):
         # Bind a closure before fork; never accept a caller preexec replacement.
         role=self._command(program,args,account)
         if (program,args,account,role)!=self._command_identity:
             raise Refused('native kernel profile command mismatch')
         self._budget.remaining()
         if not self._budget.inherited_group():raise Refused('native kernel owned group unavailable')
+        identity=None
+        if self._hash_identity_required:
+            if role!='hash':raise Refused('native hash identity role unavailable')
+            from account_hash_identity import HashChildIdentity
+            # Public record/null admission spends the captured original phase
+            # before Popen. Only typed fixed local source identity is accepted.
+            identity=HashChildIdentity.native(self._budget,deadline)
+            if type(identity)is not HashChildIdentity or identity._budget is not self._budget:raise Refused('native hash identity unavailable')
         def apply():
             # Pledge/unveil in the CHILD, after Python imports/material custody
             # and before exec. Parent keeps independent watchdog/reap authority.
             if not sys.platform.startswith('openbsd') or os.getuid()!=0 or os.geteuid()!=0:
                 raise Refused('native kernel platform authority unavailable')
+            if identity is not None:
+                # Root custody recheck, empty groups and irreversible saved /
+                # real / effective IDs, before the final locked kernel graph.
+                identity.drop(self._budget,deadline)
             libc=ctypes.CDLL(None,use_errno=True)
             unveil=libc.unveil;unveil.argtypes=(ctypes.c_char_p,ctypes.c_char_p);unveil.restype=ctypes.c_int
             pledge=libc.pledge;pledge.argtypes=(ctypes.c_char_p,ctypes.c_char_p);pledge.restype=ctypes.c_int
@@ -114,7 +132,7 @@ class CommandKernelSeal:
         if (type(deadline)not in (int,float) or not math.isfinite(deadline)
                 or deadline<=time.monotonic()):
             raise Refused('native command original phase unavailable')
-        guard=self.preexec(program,args,account)
+        guard=self.preexec(program,args,account,deadline=deadline)
         original_guard=guard
         def guard():
             # Creation and irreversible child setup spend the original phase;

@@ -169,3 +169,20 @@ queued kernel-accept countercases now refuse trusted stop or uncertainty before
 frame/journal/cutoff dispatch. Replay/terminal loss halt admission without grant
 or quarantine reset, and foreign namespace replacements remain untouched.
 Installed native startup, complete ingress and full password UAT remain OPEN.
+
+
+Hash-child configuration/authorization source controls require fixed public role
+records, unique IDs, exact nologin/home, bounded nofollow custody, unchanged
+original phase, empty supplemental groups and saved/real/effective GID/UID drop
+before irreversible child sealing. Unrelated UTF8 public fields remain accepted;
+public placeholders provide no private credential-lock evidence. Shared born
+worker tests add original issuer/intent/broker ordering, proof/nonce/deadline
+negatives and cleanup with actual local children. IDs/kernel APIs and native
+SQL/current-primary/Rust issuer and external mail remain projected.
+
+Actual native13 PASS11 qualifies bounded public metadata inventory and lossless
+report reconstruction, not a kernel profile, loader completeness, installed
+worker/factory or human password workflow. All production activation remains
+disabled; these entries establish no completed authenticated WSTG or release.
+
+- Hash/shared-worker normal commit attempt1 refused at the unchanged TLS policy guard: the Python identifier `NULL` for the fixed existing `/dev/null` device matched its prohibited-cipher token scanner. No commit was created. Earlier Rust library stage passed1577/0failed/38explicit native ignores; later gate stages are not inferred. The two-path identifier-only repair uses `NULL_DEVICE`, preserving fixed device metadata, custody, public-record and drop behavior; no scanner exclusion or policy waiver. Original failed log SHA256 1e3cc32b578431fdda1a1d8e5eec10b95c75866c1955c82b18c98add9844a5cf. Matching focused/source review and superseding normal gates remain separately required. No native identity provision, profile or form activation.
