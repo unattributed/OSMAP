@@ -7523,3 +7523,52 @@ historical ALLSEND, signed/self-readable Sent, draft parity, protected return,
 key lifecycle and full sprint/epic remain OPEN. A separately frozen three-path
 test-only Dovecot reader bridge has local compilation/focused tests but no
 native result; it is next concrete S07 work, not an acceptance claim.
+
+### 2026-10-06 — disposable protected Sent and inbound-return reader qualification
+
+The existing signed source `23e5feee16ebfae73656f35ec8b8863c9fc54594` and
+its deployed obsd1 web binary SHA256
+`c305e5283a9d6631ee1032a07fcf67304489c287a7c4e29935ab932cfd1f0263`
+remain unchanged by this test-only work. Over current source base
+`4801807b5c5e4f0145cadedbee666c7194a30dc2`, the reviewed protected
+reader patch SHA256 `44ed0066ed6bd413328d89cfdccd77bf35429339769a25bfe699a86befc5e16d`
+and inbound-return extension patch SHA256
+`7ccc3df07acfef1e67702c4d995c93417168f3eebf4f54519ac050346628b22b`
+change exactly three test-only paths: `src/mailbox_helper.rs`,
+`src/mailbox_helper_native_reader_tests.rs` and
+`src/http/protected_send_gateway_native_tests.rs`. They are not yet a signed
+product-source delivery.
+
+The reader native run passed one existing OpenBSD test, zero failures/ignores:
+binary SHA256 `d6ee7ccecde83c7578c337371b6e7ef7291091ad0b670c862704cc4c8fbe98ae`,
+log SHA256 `b7b60a244c17561a9b7e547a599a4dfeb5eb0644a2bf6bc8be8882ee4b492fa0`.
+The extension compiled with 385 pinned source inputs and zero mismatches, then
+passed one changed native test, zero failures/ignores: binary SHA256
+`4c7f590bdfa47eeed72b38a26a5e2254e8c39c5eb62401384480a4750a3394cc`,
+log SHA256 `bd58e18c4bfeecc1d432bae443a097ccf4fe61c8706c1ad438a5288d3dc3bd21`.
+Each run retains seven controlled loopback SMTP submissions and seven disposable
+Sent saves from the existing harness; the added reads and injected return make
+zero additional submissions or saves.
+
+The native assertions exercise real disposable Dovecot Sent and Inbox reads
+through the authenticated helper and Runtime BrowserApp. Alice's signed,
+encrypted-to-self Sent and Bob's signed return encrypted to Alice decrypt into
+the exact authored bodies. The return identifies Bob's approved full public
+fingerprint and reports a valid signature; withholding the disposable agent
+socket yields the locked-key refusal without rendering plaintext. Stored
+ciphertext, standard host metadata, and fixture cleanup are checked. The
+return ciphertext was injected only into the disposable Inbox; this is not
+provider transport or an authoritative operator mailbox. Proton receipt,
+human protected-send and return UAT, real authoritative Sent readability,
+S07 completion and the epic remain OPEN.
+
+Normal commit attempt1 refused the test-only bridge placement under Clippy
+items_after_test_module; no commit was created. The byte-identical bridge was
+moved before the test module without a lint allowance or runtime change.
+Focused Clippy passed. A changed native build, 385-source parity and final
+return attempt2 then PASS one exact case/zero failures, binary
+1f22e94ba30db10cf4d912b75d653fc414b6b5e40af5e60a5ee9e25bed9f1016,
+log SHA256 bc9f53fcfa671a2d3a3d1b1f3280820a2498db9ff065b8dacb9dda9dcf50aced.
+Final bridge source SHA256938c404257e1c02d8319a1bbe64d7636250c1facf5b12771c0eb9dfefd67fc82;
+retain earlier native passes and the refused commit. Normal signed admission
+and synchronization remain required; provider/human acceptance stays OPEN.

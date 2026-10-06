@@ -685,6 +685,29 @@ fn remove_stale_socket_if_needed(socket_path: &Path) -> Result<(), String> {
     }
 }
 
+// Test-only bridge: the outbound native crypto fixture supplies a disposable
+// protected wire message to the existing native Dovecot reader fixture.
+#[cfg(all(test, unix))]
+pub(crate) fn prove_native_protected_sent_reader(
+    wire: &[u8],
+    return_wire: &[u8],
+    crypto: &crate::openpgp_crypto_runtime::Client,
+    inventory: &crate::openpgp_inventory_runtime::Client,
+    fingerprint: &str,
+    bob_fingerprint: &str,
+    home: &Path,
+) {
+    tests::native_reader_tests::prove_protected_sent(
+        wire,
+        return_wire,
+        crypto,
+        inventory,
+        fingerprint,
+        bob_fingerprint,
+        home,
+    );
+}
+
 #[cfg(test)]
 mod tests {
     #[cfg(unix)]
@@ -694,7 +717,7 @@ mod tests {
     }
 
     #[cfg(unix)]
-    mod native_reader_tests {
+    pub(crate) mod native_reader_tests {
         include!("mailbox_helper_native_reader_tests.rs");
     }
     #[cfg(unix)]

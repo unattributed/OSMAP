@@ -9274,3 +9274,33 @@ attempt3 verifies env/helper/key-agent/service preservation. This qualifies
 deployment, not historical Send repair or provider delivery. Proceed with the
 two explicit operator-controlled UAT paths and the bounded existing-fixture
 Dovecot reader proof; do not wait idly or invent speculative production fixes.
+
+### 2026-10-06 — preserve the protected-reading evidence boundary
+
+Admit the three-path protected-reader and inbound-return candidate only as a
+test-only source increment after normal review, gates, signed commit and GitHub
+synchronization. The two matching OpenBSD native runs each passed one existing
+finite test with no failure, and the return build used 385 pinned source inputs
+with zero mismatches. They prove the disposable helper, Dovecot and BrowserApp
+reading chain for self-readable encrypted Sent and a Bob-signed, Alice-encrypted
+inbound fixture, including a real locked-key refusal and no repeated local
+submission. Retain both native logs and their distinct binary hashes. Do not
+change production key bindings, helper configuration, account policy or the
+deployed obsd1 binary for this test-only admission.
+
+The inbound wire was created with disposable keys and placed directly in a
+private fixture Inbox. Neither it nor seven loopback SMTP/Sent saves establishes
+Proton transport, the operator's authoritative mailbox, readable operator Sent,
+signature status in Proton, or human UAT. Keep those acceptance fields OPEN;
+the operator controls the next external Send and no ambiguous send is retried.
+
+Normal commit attempt1 refused the test-only bridge placement under Clippy
+items_after_test_module; no commit was created. The byte-identical bridge was
+moved before the test module without a lint allowance or runtime change.
+Focused Clippy passed. A changed native build, 385-source parity and final
+return attempt2 then PASS one exact case/zero failures, binary
+1f22e94ba30db10cf4d912b75d653fc414b6b5e40af5e60a5ee9e25bed9f1016,
+log SHA256 bc9f53fcfa671a2d3a3d1b1f3280820a2498db9ff065b8dacb9dda9dcf50aced.
+Final bridge source SHA256938c404257e1c02d8319a1bbe64d7636250c1facf5b12771c0eb9dfefd67fc82;
+retain earlier native passes and the refused commit. Normal signed admission
+and synchronization remain required; provider/human acceptance stays OPEN.

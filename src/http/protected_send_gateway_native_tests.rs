@@ -544,6 +544,42 @@ fn native_crypto_gateway_protected_send_roundtrip() {
     assert_eq!(verified_self.signature, crate::openpgp_crypto::SignatureState::Valid);
     assert_eq!(verified_self.primary_fingerprint.as_deref(), Some(afp.as_str()));
 
+    // A disposable Bob-signed/Alice-encrypted return is stored only in the
+    // owned Alice Inbox by the Dovecot reader fixture. No provider or SMTP
+    // delivery is implied by this native receive/read control.
+    let return_entity = b"Content-Type: text/plain; charset=utf-8\r\nContent-Transfer-Encoding: 7bit\r\n\r\nReturnExactBody\r\n";
+    let signed_return = crypto.execute("bob@example.test", &crate::openpgp_crypto::Operation::Sign {
+        signer_fingerprint: bfp.clone(), data: return_entity.to_vec(),
+    }).unwrap().unwrap();
+    let digest = match signed_return.hash_algorithm {
+        Some(8) => crate::pgp_mime::SignatureDigest::Sha256,
+        Some(10) => crate::pgp_mime::SignatureDigest::Sha512,
+        _ => panic!("unsupported disposable return signature digest"),
+    };
+    let signed_return = crate::pgp_mime::build_signed(
+        return_entity, &signed_return.content, digest,
+        "native-return-signed", crate::pgp_mime::PgpMimePolicy::default(),
+    ).unwrap();
+    let encrypted_return = crypto.execute("bob@example.test", &crate::openpgp_crypto::Operation::Encrypt {
+        recipient_fingerprints: vec![afp.clone()], data: signed_return,
+    }).unwrap().unwrap();
+    let encrypted_return = crate::pgp_mime::build_encrypted(
+        &encrypted_return.content, "native-return-encrypted",
+        crate::pgp_mime::PgpMimePolicy::default(),
+    ).unwrap();
+    let mut return_wire = b"From: Bob <bob@example.test>\r\nTo: alice@example.test\r\nSubject: Synthetic encrypted return\r\nMessage-ID: <native-return@fixture.test>\r\nMIME-Version: 1.0\r\n".to_vec();
+    return_wire.extend_from_slice(&encrypted_return);
+    assert!(!return_wire.windows(b"ReturnExactBody".len())
+        .any(|window| window == b"ReturnExactBody"));
+
+    // Reuse the actual owned Dovecot reader fixture for encrypted-to-self
+    // Sent and signed inbound return, including a real Locked refusal.
+    crate::mailbox_helper::prove_native_protected_sent_reader(
+        &self_wire, &return_wire, &crypto, &inventory, &afp, &bfp, &alice,
+    );
+    assert_eq!(smtp.lock().unwrap().len(), 2, "reader never repeats SMTP submission");
+    assert_eq!(fs::read(&sent_count).unwrap(), b"11");
+
     let required_intent = crate::send_journal::mint_intent(now).unwrap();
     let mut required_request = native_send_request(&required_intent, record.revision, &attachments);
     required_request.protection = crate::send::ProtectionIntent {

@@ -290,3 +290,38 @@ normal signed synchronization and web-only activation remain separately required
 
 
 Normal signed commit attempt3 was refused before signing by the unchanged CWE Top25 guard. Six test-only issuer patterns crossed its reviewed boundaries: direct process construction and five unsafe descriptor/FFI calls. The repair moves the same fixed synthetic process construction into `src/auth.rs` and the same socket type, identity, peer and owned-descriptor checks into the reviewed Unix FFI boundary `src/openbsd.rs`. The fixture invokes those bounded helpers; neither the guard nor its allowlist changed. Actual affected descriptor controls PASS2/0failed and the unchanged CWE guard PASS. Full matching issuer controls and strict clippy remain the final source gates. This is a defensive boundary repair, not production issuer activation; native browser/account/mail UAT remain OPEN. The refused attempt3 gate log and corrected checks are retained under `rust-stored-issuer-composition-increment1/canonical-integration-attempt1`.
+
+### 2026-10-06 — S06/S07 protected reading, disposable native controls
+
+Two source-matched OpenBSD runs each PASS one existing native case and zero
+failures/ignores. The protected Sent reader runs on reviewed patch
+`44ed0066ed6bd413328d89cfdccd77bf35429339769a25bfe699a86befc5e16d`
+(log SHA256 `b7b60a244c17561a9b7e547a599a4dfeb5eb0644a2bf6bc8be8882ee4b492fa0`).
+The three-test-path inbound-return extension runs on full patch
+`7ccc3df07acfef1e67702c4d995c93417168f3eebf4f54519ac050346628b22b`
+(385 compiler inputs/zero mismatches; log SHA256
+`bd58e18c4bfeecc1d432bae443a097ccf4fe61c8706c1ad438a5288d3dc3bd21`).
+
+Controls: exact encrypted wire is stored only in a private Dovecot Sent or
+Inbox fixture; the authenticated helper and Runtime `/message` route decrypt,
+MIME-decode and verify the signed body and Bob's approved fingerprint. A
+withheld disposable agent socket yields Locked and suppresses decoded content;
+source ciphertext is unchanged. The read and return probes add zero SMTP
+submissions and zero Sent saves beyond the harness's existing seven controlled
+loopback submissions and seven disposable saves. Fixture cleanup and standard
+metadata preservation are asserted. This does not test provider receipt,
+authoritative Dovecot mailbox state, operator keys, or human UAT. Signed source
+`23e5feee16ebfae73656f35ec8b8863c9fc54594` and deployed obsd1 binary
+`c305e5283a9d6631ee1032a07fcf67304489c287a7c4e29935ab932cfd1f0263`
+remain unchanged by the overlay; S07 and full epic acceptance remain OPEN.
+
+Normal commit attempt1 refused the test-only bridge placement under Clippy
+items_after_test_module; no commit was created. The byte-identical bridge was
+moved before the test module without a lint allowance or runtime change.
+Focused Clippy passed. A changed native build, 385-source parity and final
+return attempt2 then PASS one exact case/zero failures, binary
+1f22e94ba30db10cf4d912b75d653fc414b6b5e40af5e60a5ee9e25bed9f1016,
+log SHA256 bc9f53fcfa671a2d3a3d1b1f3280820a2498db9ff065b8dacb9dda9dcf50aced.
+Final bridge source SHA256938c404257e1c02d8319a1bbe64d7636250c1facf5b12771c0eb9dfefd67fc82;
+retain earlier native passes and the refused commit. Normal signed admission
+and synchronization remain required; provider/human acceptance stays OPEN.

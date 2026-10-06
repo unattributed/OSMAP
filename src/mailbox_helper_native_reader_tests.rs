@@ -17,6 +17,7 @@ use std::sync::atomic::AtomicBool;
 
 const ALICE: &str = "alice@fixture.test";
 const BOB: &str = "bob@fixture.test";
+const PROTECTED_ALICE: &str = "alice@example.test";
 const NATIVE_LIMIT: Duration = Duration::from_secs(180);
 
 #[derive(Clone)]
@@ -59,7 +60,7 @@ impl CommandExecutor for NativeExecutor {
             .iter()
             .position(|value| value == "-u")
             .expect("native canonical account");
-        assert!([ALICE, BOB].contains(&a[user + 1].as_str()));
+        assert!([ALICE, BOB, PROTECTED_ALICE].contains(&a[user + 1].as_str()));
         assert!(!a.iter().any(|value| matches!(
             value.as_str(),
             "-c" | "-A" | "-F" | "save" | "expunge"
@@ -177,7 +178,7 @@ fn serve_userdb(fixture: &mut Fixture, uid: u32, gid: u32) -> PathBuf {
                 let id = fields[1];
                 assert!(!id.is_empty() && id.bytes().all(|c| c.is_ascii_digit()));
                 let user = match fields[2] {
-                    ALICE => Some("alice"),
+                    ALICE | PROTECTED_ALICE => Some("alice"),
                     BOB => Some("bob"),
                     _ => None,
                 };
@@ -496,6 +497,192 @@ fn encode(value: &str) -> String {
             }
         })
         .collect()
+}
+
+// Called by the existing disposable native crypto/send fixture after it has
+// produced a real signed, encrypted-to-self MIME message. This keeps the
+// Dovecot reader boundary here rather than substituting a MessageView.
+pub(crate) fn prove_protected_sent(
+    wire: &[u8],
+    return_wire: &[u8],
+    crypto: &crate::openpgp_crypto_runtime::Client,
+    inventory: &crate::openpgp_inventory_runtime::Client,
+    fingerprint: &str,
+    bob_fingerprint: &str,
+    home: &Path,
+) {
+    use crate::totp::TimeProvider;
+    use std::os::unix::fs::FileTypeExt;
+    assert_eq!(std::env::consts::OS, "openbsd");
+    assert!(matches!(
+        crate::pgp_mime::classify(wire, crate::pgp_mime::PgpMimePolicy::default()).unwrap(),
+        crate::pgp_mime::PgpMimeMessage::Encrypted { .. }
+    ));
+    assert!(!wire.windows(b"Synthetic caf".len()).any(|w| w == b"Synthetic caf"));
+    assert!(matches!(
+        crate::pgp_mime::classify(return_wire, crate::pgp_mime::PgpMimePolicy::default()).unwrap(),
+        crate::pgp_mime::PgpMimeMessage::Encrypted { .. }
+    ));
+    assert!(!return_wire.windows(b"ReturnExactBody".len()).any(|w| w == b"ReturnExactBody"));
+    let before = standard_metadata();
+    let root = env::temp_dir().join(format!(
+        "osmap-protected-reader-native-{}-{}",
+        std::process::id(),
+        SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos()
+    ));
+    fs::DirBuilder::new().mode(0o700).create(&root).unwrap();
+    let mut fixture = Fixture {
+        root: root.clone(),
+        stop: Arc::new(AtomicBool::new(false)),
+        threads: vec![],
+    };
+    let uid = fs::metadata(&root).unwrap().uid();
+    assert_ne!(uid, 0);
+    let group = SystemCommandExecutor
+        .run_with_stdin_timeout("/usr/bin/id", &["-g".into()], "", Duration::from_secs(1))
+        .unwrap();
+    assert_eq!(group.status_code, 0);
+    let gid = group.stdout.trim().parse::<u32>().unwrap();
+    assert_ne!(gid, 0);
+    for directory in ["run", "state", "app-state"] {
+        fs::DirBuilder::new().mode(0o700).create(root.join(directory)).unwrap();
+    }
+    for folder in ["", ".Sent"] {
+        for part in ["cur", "new", "tmp"] {
+            fs::create_dir_all(root.join("alice/Maildir").join(folder).join(part)).unwrap();
+        }
+    }
+    let stored = root.join("alice/Maildir/.Sent/new/protected-self");
+    fs::write(&stored, wire).unwrap();
+    fs::set_permissions(&stored, fs::Permissions::from_mode(0o600)).unwrap();
+    let returned = root.join("alice/Maildir/new/protected-return");
+    fs::write(&returned, return_wire).unwrap();
+    fs::set_permissions(&returned, fs::Permissions::from_mode(0o600)).unwrap();
+    let config = root.join("dovecot.conf");
+    fs::write(&config, format!("base_dir = {0}/run\nstate_dir = {0}/state\nmail_location = maildir:~/Maildir\nmail_uid = {uid}\nmail_gid = {gid}\nfirst_valid_uid = {uid}\nprotocols =\nlisten = 127.0.0.1\nssl = no\nmail_plugins =\nstats_writer_socket_path =\nauth_socket_path = {0}/never-default\nlog_path = {0}/native.log\ninfo_log_path = {0}/native.log\nnamespace inbox {{\n inbox = yes\n separator =\n}}\n", root.display())).unwrap();
+    fs::set_permissions(&config, fs::Permissions::from_mode(0o600)).unwrap();
+    let userdb = serve_userdb(&mut fixture, uid, gid);
+    let executor = NativeExecutor {
+        config,
+        calls: Arc::new(AtomicUsize::new(0)),
+        bin_move_count: None,
+    };
+    let list = DoveadmMessageListBackend::new(
+        MessageListPolicy::default(), executor.clone(), "/usr/local/bin/doveadm"
+    ).with_userdb_socket_path(Some(userdb.clone()));
+    let sent_query = MessageListRequest::new(MessageListPolicy::default(), "Sent").unwrap();
+    let rows = list.list_messages(PROTECTED_ALICE, &sent_query).unwrap();
+    assert_eq!(rows.len(), 1);
+    let inbox_query = MessageListRequest::new(MessageListPolicy::default(), "INBOX").unwrap();
+    let inbox_rows = list.list_messages(PROTECTED_ALICE, &inbox_query).unwrap();
+    assert_eq!(inbox_rows.len(), 1);
+    let forbidden = Arc::new(AtomicUsize::new(0));
+    let helper = start_helper(
+        &mut fixture, executor, userdb, 0,
+        Arc::new(AtomicBool::new(false)), Arc::new(AtomicUsize::new(0)), forbidden.clone()
+    );
+    let key = root.join("fixture-grant.key");
+    fs::write(&key, test_helper_grant_key()).unwrap();
+    fs::set_permissions(&key, fs::Permissions::from_mode(0o600)).unwrap();
+    let app_config = AppConfig::from_env_map(&BTreeMap::from([
+        ("OSMAP_RUN_MODE".into(), "serve".into()),
+        ("OSMAP_STATE_DIR".into(), root.join("app-state").to_string_lossy().into_owned()),
+        ("OSMAP_MAILBOX_HELPER_SOCKET_PATH".into(), helper.to_string_lossy().into_owned()),
+        ("OSMAP_MAILBOX_HELPER_GRANT_KEY_PATH".into(), key.to_string_lossy().into_owned()),
+        ("OSMAP_MAILBOX_HELPER_PEER_UID".into(), uid.to_string()),
+        ("OSMAP_MAILBOX_WORKER_BUDGET".into(), "1".into()),
+    ])).unwrap();
+    let public = inventory.read(PROTECTED_ALICE).unwrap();
+    crate::openpgp_bindings::BindingStore::new(
+        app_config.state_layout.settings_dir.join("openpgp-bindings")
+    ).replace_operator(
+        PROTECTED_ALICE, 0,
+        crate::openpgp_bindings::Update {
+            account_binding: Some(crate::openpgp_bindings::AccountBinding {
+                primary_fingerprint: fingerprint.into(),
+                signing_fingerprint: Some(fingerprint.into()),
+                decrypt_primary_fingerprints: vec![fingerprint.into()],
+            }),
+            recipient_bindings: vec![crate::openpgp_bindings::RecipientBinding {
+                address: "bob@example.test".into(),
+                primary_fingerprint: bob_fingerprint.into(),
+                encryption: crate::openpgp_bindings::Requirement::Optional,
+            }],
+            policy: crate::openpgp_bindings::ProtectionPolicy::default(),
+        },
+        &public, SystemTimeProvider.unix_timestamp()
+    ).unwrap();
+    let context = AuthenticationContext::new(
+        AuthenticationPolicy::default(), "native-protected-reader-session",
+        "127.0.0.1", "OSMAP/native-reader"
+    ).unwrap();
+    let session = SessionService::new(
+        FileSessionStore::new(&app_config.state_layout.session_dir),
+        SystemTimeProvider, SystemRandomSource, 180, 180
+    ).issue(&context, PROTECTED_ALICE, RequiredSecondFactor::Totp).unwrap();
+    let mut gateway = RuntimeBrowserGateway::from_config(&app_config);
+    gateway.crypto_client = Some(crypto.clone());
+    gateway.public_inventory_client = Some(inventory.clone());
+    let app = BrowserApp::new(HttpPolicy::from_config(&app_config), gateway);
+    let path = format!("/message?mailbox=Sent&uid={}", rows[0].uid);
+    let positive = get(&app, &session, &path);
+    assert_eq!(positive.response.status_code, 200);
+    assert!(text(&positive).contains("Synthetic café body"));
+    assert!(text(&positive).contains("Second line"));
+    assert!(text(&positive).contains("Decrypted on mail host"));
+    assert!(text(&positive).contains("cryptographically valid"));
+    assert_eq!(fs::read(&stored).unwrap(), wire);
+    let return_path = format!("/message?mailbox=INBOX&uid={}", inbox_rows[0].uid);
+    let inbound = get(&app, &session, &return_path);
+    assert_eq!(inbound.response.status_code, 200);
+    assert!(text(&inbound).contains("ReturnExactBody"));
+    assert!(text(&inbound).contains("Decrypted on mail host"));
+    assert!(text(&inbound).contains("cryptographically valid"));
+    assert!(text(&inbound).contains("matches the confirmed sender binding"));
+    assert!(text(&inbound).contains(bob_fingerprint));
+    assert_eq!(fs::read(&returned).unwrap(), return_wire);
+
+    // Withhold only the disposable agent socket. The real crypto executor must
+    // report Locked before the UI can claim that exact refusal. Restore it for
+    // the native runner's normal agent cleanup even if the assertion panics.
+    struct AgentSocketHold { source: PathBuf, held: PathBuf }
+    impl Drop for AgentSocketHold {
+        fn drop(&mut self) { let _ = fs::rename(&self.held, &self.source); }
+    }
+    let agent = home.join("S.gpg-agent");
+    let metadata = fs::symlink_metadata(&agent).unwrap();
+    assert!(metadata.file_type().is_socket() && metadata.uid() == uid);
+    let held = home.join("S.gpg-agent.held-for-native-reader");
+    assert!(!held.exists());
+    fs::rename(&agent, &held).unwrap();
+    let hold = AgentSocketHold { source: agent.clone(), held };
+    let crate::pgp_mime::PgpMimeMessage::Encrypted { ciphertext, .. } =
+        crate::pgp_mime::classify(wire, crate::pgp_mime::PgpMimePolicy::default()).unwrap()
+    else { unreachable!() };
+    assert_eq!(
+        crypto.execute(PROTECTED_ALICE, &crate::openpgp_crypto::Operation::Decrypt {
+            allowed_primary_fingerprints: vec![fingerprint.into()], ciphertext
+        }).unwrap().err(),
+        Some(crate::openpgp_crypto::Error::Locked)
+    );
+    let locked = get(&app, &session, &path);
+    assert_eq!(locked.response.status_code, 200);
+    assert!(text(&locked).contains("The mailbox key is locked"));
+    assert!(!text(&locked).contains("Synthetic café body"));
+    assert!(!text(&locked).contains("cryptographically valid"));
+    assert_eq!(fs::read(&stored).unwrap(), wire);
+    let locked_return = get(&app, &session, &return_path);
+    assert_eq!(locked_return.response.status_code, 200);
+    assert!(text(&locked_return).contains("The mailbox key is locked"));
+    assert!(!text(&locked_return).contains("ReturnExactBody"));
+    assert_eq!(fs::read(&returned).unwrap(), return_wire);
+    drop(hold);
+    assert!(agent.exists());
+    assert_eq!(forbidden.load(Ordering::SeqCst), 0);
+    fixture.finish();
+    drop(fixture);
+    assert!(!root.exists());
+    assert_eq!(standard_metadata(), before);
 }
 fn attribute(tag: &str, name: &str) -> Option<String> {
     tag.split_once(&format!("{name}=\""))?
