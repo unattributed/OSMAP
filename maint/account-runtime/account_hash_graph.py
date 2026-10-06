@@ -8,7 +8,7 @@ import hashlib,os,socket,stat,sys
 from pathlib import Path
 from authoritative_password import Refused
 from account_hash_identity import _bound,_identity,AUTHORITY
-from account_hash_graph_pins import FILES,MODULE_DIRECTORY,MODULE_NAMES,MODULE_CUSTODY,MODULE_ANCESTRY
+from account_hash_graph_pins import FILES,MODULE_DIRECTORY,MODULE_NAMES,MODULE_CUSTODY,MODULE_ANCESTRY,SEARCH_DIRECTORY,SEARCH_CUSTODY,SEARCH_ANCESTRY,SEARCH_ENTRIES
 
 FILE_CAP=64*1024*1024;TOTAL_CAP=128*1024*1024;DIRECTORY_ENTRY_CAP=256
 # No public or private account database is unveiled to the hash child.
@@ -82,6 +82,49 @@ def _modules(budget,deadline):
         return MODULE_CUSTODY,parents,tuple(sorted(names))
     finally:os.close(fd)
 
+def _search_parents(path,budget,deadline):
+    rows=[]
+    for parent in path.parents:
+        _bound(budget,deadline);a=parent.lstat()
+        if not stat.S_ISDIR(a.st_mode) or a.st_uid!=0 or a.st_mode&0o022 or not a.st_mode&0o001:
+            raise Refused('hash search ancestry unavailable')
+        rows.append((str(parent),)+_identity(a))
+    return tuple(rows)
+
+def _search_directory(budget,deadline):
+    # One fixed public loader RPATH directory. Its read grant is recursive;
+    # this custody observes only ALL immediate names/metadata, not descendants.
+    path=Path(SEARCH_DIRECTORY);_bound(budget,deadline)
+    before=path.lstat();parents=_search_parents(path,budget,deadline)
+    if (not stat.S_ISDIR(before.st_mode) or before.st_uid!=0 or before.st_mode&0o022
+            or _identity(before)!=SEARCH_CUSTODY or parents!=SEARCH_ANCESTRY):
+        raise Refused('hash search directory unavailable')
+    fd=os.open(path,os.O_RDONLY|os.O_NOFOLLOW|os.O_NONBLOCK|os.O_DIRECTORY)
+    try:
+        if _identity(os.fstat(fd))!=SEARCH_CUSTODY:raise Refused('hash search directory changed')
+        def membership():
+            _bound(budget,deadline);os.lseek(fd,0,os.SEEK_SET);names=[];size=0
+            with os.scandir(fd) as entries:
+                for entry in entries:
+                    _bound(budget,deadline);raw=os.fsencode(entry.name);size+=len(raw)
+                    if not 1<=len(raw)<=255 or len(names)>=DIRECTORY_ENTRY_CAP or size>16384:
+                        raise Refused('hash search membership bound unavailable')
+                    names.append(raw)
+            rows=[]
+            for name in sorted(names):
+                _bound(budget,deadline);a=os.stat(name,dir_fd=fd,follow_symlinks=False)
+                if (not (stat.S_ISREG(a.st_mode) or stat.S_ISDIR(a.st_mode))
+                        or a.st_uid!=0 or a.st_mode&0o6022 or not a.st_mode&0o004):
+                    raise Refused('hash search public member unavailable')
+                rows.append((name,_identity(a)))
+            return tuple(rows)
+        rows=membership()
+        if (rows!=SEARCH_ENTRIES or membership()!=rows or _identity(os.fstat(fd))!=SEARCH_CUSTODY
+                or _identity(path.lstat())!=SEARCH_CUSTODY or _search_parents(path,budget,deadline)!=parents):
+            raise Refused('hash search membership changed')
+        _bound(budget,deadline);return SEARCH_CUSTODY,parents,rows
+    finally:os.close(fd)
+
 class HashInstalledGraph:
     def __init__(self,*_args,**_kwargs):raise Refused('hash graph construction unavailable')
     @classmethod
@@ -95,11 +138,12 @@ class HashInstalledGraph:
         value=object.__new__(cls);value._budget=budget;value._states=states;return value
     @staticmethod
     def _observe(budget,deadline):
-        _bound(budget,deadline);directory=_modules(budget,deadline);total=[0];states=[]
+        _bound(budget,deadline);directory=_modules(budget,deadline);search=_search_directory(budget,deadline);total=[0];states=[]
         for name,metadata,digest,parents in FILES:
             states.append(_read(Path(name),budget,deadline,total,FILE_CAP,(metadata,digest,parents)))
         if _modules(budget,deadline)!=directory:raise Refused('hash graph module directory changed')
-        _bound(budget,deadline);return tuple(states),directory
+        if _search_directory(budget,deadline)!=search:raise Refused('hash search directory changed')
+        _bound(budget,deadline);return tuple(states),directory,search
     def recheck(self,budget,deadline):
         if type(self)is not HashInstalledGraph or budget is not self._budget:
             raise Refused('hash graph original budget unavailable')
@@ -107,8 +151,9 @@ class HashInstalledGraph:
         _bound(budget,deadline)
     @staticmethod
     def rows():
-        # Source-owned exact leaves; only compiled module directory needs r for
-        # opendir/readdir. This inherits read to its five checked entries; it is
-        # not five independently isolated leaves. No directory write/create.
+        # Exact leaf/hash checks remain. One fixed loader search directory now
+        # grants recursive public read to reachable siblings/descendants; ALL
+        # immediate membership is pinned, recursive bytes/lifetime are not.
+        # Existing ALL-five module gate remains. No directory write/create.
         return tuple((name,b'rx' if name=='/usr/local/bin/doveadm' else b'r')
-            for name,*_ in FILES)+((MODULE_DIRECTORY,b'r'),('/dev/null',b'rwc'))
+            for name,*_ in FILES)+((MODULE_DIRECTORY,b'r'),(SEARCH_DIRECTORY,b'r'),('/dev/null',b'rwc'))

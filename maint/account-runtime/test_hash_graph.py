@@ -24,7 +24,10 @@ class GraphTests(unittest.TestCase):
   p=self.root/name;p.write_bytes(raw);p.chmod(mode);return p
  def row(self,p):return (str(p),g._identity(self.observed(p)),hashlib.sha256(p.read_bytes()).hexdigest(),self.parent_rows(p))
  def context(self,files,aux=(),directory=None,names=()):
-  s=contextlib.ExitStack();s.enter_context(patch.object(g,'FILES',tuple(files)));s.enter_context(patch.object(g,'FILES',tuple(files)+tuple(self.row(p) for p,_ in aux)))
+  search=self.root/'search';search.mkdir(exist_ok=True)
+  if not (search/'public-sibling').exists():(search/'public-sibling').write_bytes(b'local public member');(search/'public-sibling').chmod(0o644)
+  real_stat=os.stat
+  s=contextlib.ExitStack();s.enter_context(patch.object(g,'SEARCH_DIRECTORY',str(search)));s.enter_context(patch.object(g,'SEARCH_CUSTODY',g._identity(self.observed(search))));s.enter_context(patch.object(g,'SEARCH_ANCESTRY',tuple((str(p),)+g._identity(self.observed(p)) for p in search.parents)));s.enter_context(patch.object(g,'SEARCH_ENTRIES',tuple((os.fsencode(p.name),g._identity(self.observed(p))) for p in sorted(search.iterdir()))));s.enter_context(patch.object(g.os,'stat',lambda *args,**kwargs:self.project(real_stat(*args,**kwargs))));s.enter_context(patch.object(g,'FILES',tuple(files)));s.enter_context(patch.object(g,'FILES',tuple(files)+tuple(self.row(p) for p,_ in aux)))
   s.enter_context(patch.object(self.b,'inherited_group',return_value=True));s.enter_context(patch.object(Path,'lstat',lambda path:self.observed(path)));s.enter_context(patch.object(g.os,'fstat',lambda fd:self.project(self.real_fstat(fd))))
   if directory is not None:
    s.enter_context(patch.object(g,'MODULE_DIRECTORY',str(directory)));s.enter_context(patch.object(g,'MODULE_NAMES',tuple(names)));s.enter_context(patch.object(g,'MODULE_CUSTODY',g._directory_identity(self.observed(directory))));s.enter_context(patch.object(g,'MODULE_ANCESTRY',self.parent_rows(directory)))
@@ -136,7 +139,7 @@ class GraphTests(unittest.TestCase):
   with patch.object(self.b,'inherited_group',return_value=True),patch.object(g.HashInstalledGraph,'_observe',side_effect=AssertionError):
    with self.assertRaises(Refused):g.HashInstalledGraph.native(self.b,self.end)
  def test_source_rows_no_directory_write_create_or_socket_or_network(self):
-  rows=g.HashInstalledGraph.rows();self.assertEqual(len(rows),22)
-  self.assertEqual([row for row in rows if b'w'in row[1] or b'c'in row[1]],[('/dev/null',b'rwc')]);self.assertEqual([row for row in rows if b'x'in row[1]],[('/usr/local/bin/doveadm',b'rx')]);self.assertEqual(rows[-1],('/dev/null',b'rwc'));self.assertFalse({'/etc/pwd.db','/etc/group','/etc/passwd','/etc/spwd.db'}&{p for p,_ in rows})
+  rows=g.HashInstalledGraph.rows();self.assertEqual(len(rows),23)
+  self.assertEqual([row for row in rows if b'w'in row[1] or b'c'in row[1]],[('/dev/null',b'rwc')]);self.assertEqual([row for row in rows if b'x'in row[1]],[('/usr/local/bin/doveadm',b'rx')]);self.assertEqual(rows[-2],(pins.SEARCH_DIRECTORY,b'r'));self.assertEqual(rows[-1],('/dev/null',b'rwc'));self.assertFalse({'/etc/pwd.db','/etc/group','/etc/passwd','/etc/spwd.db'}&{p for p,_ in rows})
   self.assertEqual(g.PROMISES.split(),[b'stdio',b'rpath',b'wpath',b'cpath',b'prot_exec',b'exec']);self.assertEqual(k._PROFILES,())
 if __name__=='__main__':unittest.main(verbosity=2)
