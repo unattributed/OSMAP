@@ -70,6 +70,7 @@ WORKER=r'''
 import importlib.util,json,os,signal,subprocess,sys,time
 from pathlib import Path
 sys.path.insert(0,sys.argv[1])
+from native_transport_test_support import fixture_primary
 from operation_budget import OperationBudget
 exec(sys.argv[5])
 from authoritative_password import Refused
@@ -82,12 +83,12 @@ expected=('/usr/local/bin/doveadm','-O','-o','stats_writer_socket_path=','auth',
 environment={'PATH':'/usr/local/bin:/usr/bin:/bin','LC_ALL':'C','CONFIG_FILE':'/dev/null','STATS_WRITER_SOCKET_PATH':''}
 def spawn(args,**kwargs):
  assert tuple(args)==expected and kwargs['env']==environment
- assert kwargs['start_new_session']is False and kwargs['close_fds']is True and 'preexec_fn'not in kwargs
+ assert kwargs['start_new_session']is False and kwargs['close_fds']is True and callable(kwargs['preexec_fn']) and kwargs['shell']is False
  calls.append(True)
  return p.spawn((sys.executable,'-I','-B','-c',cli,mode)+tuple(args[1:]),kwargs,os.getuid(),real)
-m.subprocess.Popen=spawn
+subprocess.Popen=spawn
 try:
- v=m.NativePrimaryVerifier('alice@example.test',budget)
+ v=fixture_primary(m.NativePrimaryVerifier,'alice@example.test',budget)
  password='public synthetic password' if mode!='changed' else 'public synthetic passwore'
  try:accepted=v('alice@example.test',password)
  except Refused:refused=True
@@ -127,10 +128,11 @@ class PrimaryIsolation(unittest.TestCase):
             child.stdout.close();child.stderr.close()
     def test_exact_source_owned_socket_and_isolated_native_command(self):
         m=self.load();from operation_budget import OperationBudget
+        from native_transport_test_support import fixture_primary
         import time
-        v=m.NativePrimaryVerifier('alice@example.test',OperationBudget(int(time.time())+8,maximum_seconds=8))
+        v=fixture_primary(m.NativePrimaryVerifier,'alice@example.test',OperationBudget(int(time.time())+8,maximum_seconds=8))
         self.assertEqual(v._command(),('/usr/local/bin/doveadm','-O','-o','stats_writer_socket_path=','auth','test','-a','/var/dovecot/auth-client','-x','service=imap','alice@example.test'))
-        with self.assertRaises(TypeError):m.NativePrimaryVerifier('alice@example.test',v._budget,socket_path='/public/untrusted/socket')
+        with self.assertRaises(TypeError):m.NativePrimaryVerifier('alice@example.test',v._budget,v._material,socket_path='/public/untrusted/socket')
     def test_actual_owned_positive_closed_environment_and_cleanup(self):
         r=self.owned('positive');self.assertTrue(r['accepted']);self.assertFalse(r['refused'])
     def test_actual_changed_password_is_negative_and_clean(self):

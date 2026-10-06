@@ -9113,3 +9113,19 @@ The complete administrative collectors repeated an unconditional Python getpeere
 
 - Integrate only the independently reviewed disabled SMTP composition2 source: use a minimal purpose-specific authenticated delegation after local original-proof verification, never forward current/new passwords or original proof keys to a broker. Consume durable grants before cutoff work; commit completion before terminal success. Preserve possible consumption and uncertainty on late failures. Native provisioning, worker/flock continuity and full containment are separate required dependencies, not supplied by a local descriptor test.
 - Preserve inventory4's measured loader execute-bit refusal and both administrative collectors' pre-wire peer-policy refusals. Public loader read custody and executable-program custody have distinct roles; observed socket ownership is not effective connected-peer authority. Require exact changed source, original budgets and independent review before one new observation; no blanket peer-group relaxation, historical PID signals or unchanged retries.
+
+
+### 2026-10-06 — bounded installed-parser capacity and retained stop uncertainty
+
+- The unchanged64KiB ELF string-table cap rejects measured installed libdovecot.so.5.0 with unique tags and71242 bytes. Use a reasonable fixed1MiB parser bound instead of tuning to a single installed library's exact length; retain unique dynamic tags, coherent file/PT_LOAD mapping, bounded needed-name decoding,64MiB file and128MiB total-pass limits. Exact new boundary and oversize negatives plus native qualification remain required before profiles can be minted. This repairs a demonstrated compatibility gap without an unbounded parser or guard waiver.
+- Retain native24 administrative absence failure after a single successful stop CLI and process-absence snapshot. No automatic retry or unchanged native25 stop: path attribution and source cleanup semantics must be established independently. Kernel peer effective group0 and parent-derived filesystem group1000 remain distinct exact facts, with no broadened peer policy. Source checkpoints and component outcomes do not complete S04-02 or human UAT.
+
+
+### 2026-10-06 — preserve request provenance across command and mail delegation
+
+Equal expiry is insufficient original-budget provenance. Carry the verified original receipt and exact monotonic derivation through every delegated cancellation phase, preserving the same worker budget and issuer ordering. Make installed command custody and irreversible child confinement mandatory in SQL/hash/primary transports; absence of a qualified graph must refuse before spawn. Ship new authority and parser negatives in ordinary regression discovery rather than artifact-only suites. Native factory and human password acceptance remain separate from these source repairs.
+
+For retained native24, actual stable PIDfile and socket names without matching numeric process projections establish path retention only. Normal Dovecot deinitialization unlinks the PIDfile, so do not label both residual names expected or declare graceful shutdown. Keep the original failure and bounded observation; no automatic stop retry, removal or native25 action. This housekeeping does not hold unrelated concrete workflow engineering idle.
+
+
+Completed SMTP control grants must not permanently exhaust the bounded32-entry journal. Retire completed records only after their independently signed original deadlines, under the same journal lock and durable monotonic wall-time high-water, atomically with a fresh claim. Never expire claimed/uncertain records, accept rollback replay, widen entry/byte limits, silently recreate old/corrupt journals or claim unqualified migration. A post-rename durability failure remains contained by a claimed record rather than an assurance that the old file is unchanged.

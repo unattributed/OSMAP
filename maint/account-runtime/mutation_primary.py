@@ -7,7 +7,6 @@ Credentials enter stdin only; captured diagnostics never leave this function.
 """
 import os
 import selectors
-import subprocess
 import time
 import unicodedata
 from authoritative_password import AuthoritativePasswordAdapter, Refused
@@ -22,11 +21,18 @@ PHASE_SECONDS=25
 RESERVE=.05
 
 class NativePrimaryVerifier:
-    def __init__(self, canonical_account, budget):
+    def __init__(self, canonical_account, budget, material):
         self._account=AuthoritativePasswordAdapter._account(canonical_account)
         if type(budget) is not OperationBudget:
             raise Refused('mutation primary dependency unavailable')
-        self._budget=budget
+        from account_native_material import NativeMaterial
+        from account_command_kernel import CommandKernelSeal
+        if type(material)is not NativeMaterial:
+            raise Refused('mutation primary material unavailable')
+        self._budget=budget;self._material=material
+        self._seal=CommandKernelSeal._for_material('primary',material,budget,self._account)
+        if type(self._seal)is not CommandKernelSeal or self._seal._budget is not budget:
+            raise Refused('mutation primary original seal unavailable')
         self._uncertain=False
         self._retained=[]
 
@@ -67,15 +73,9 @@ class NativePrimaryVerifier:
         child=None
         output=bytearray();total=0
         try:
-            child=subprocess.Popen(self._command(),stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE,stderr=subprocess.PIPE,close_fds=True,
-                # KEEP_CONFIG_OPEN runs before -O is parsed in Dovecot2.3.
-                # Bind that pre-option path to a non-socket device; -O skips
-                # client settings input. Late stats defaults are disabled by
-                # the fixed -o above; early inherited stats authority is empty.
-                # The auth daemon's policy/backend remains authoritative.
-                start_new_session=False,env={'PATH':'/usr/local/bin:/usr/bin:/bin','LC_ALL':'C',
-                    'CONFIG_FILE':'/dev/null','STATS_WRITER_SOCKET_PATH':''})
+            self._material.recheck(self._budget)
+            if time.monotonic()>=deadline:raise Refused('mutation primary phase expired')
+            child=self._seal.spawn(PROGRAM,ARGS+(self._account,),deadline,self._account)
             with selectors.DefaultSelector() as selector:
                 for pipe in (child.stdin,child.stdout,child.stderr):os.set_blocking(pipe.fileno(),False)
                 selector.register(child.stdin,selectors.EVENT_WRITE,'input')

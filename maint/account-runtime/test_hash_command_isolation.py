@@ -2,13 +2,15 @@
 import json,os,subprocess,sys,time,unittest
 from pathlib import Path
 from unittest.mock import patch
-from authoritative_password import AuthoritativePasswordAdapter as Adapter,NativeExecutor,Refused
+from authoritative_password import AuthoritativePasswordAdapter as Adapter,Refused
+from native_transport_test_support import PublicFixtureExecutor as NativeExecutor
 
 FIXTURE=r'''
 import json,os,sys,time
 from unittest.mock import patch
 sys.path.insert(0,sys.argv[1])
-from authoritative_password import AuthoritativePasswordAdapter as Adapter,NativeExecutor
+from authoritative_password import AuthoritativePasswordAdapter as Adapter
+from native_transport_test_support import PublicFixtureExecutor as NativeExecutor
 from operation_budget import OperationBudget
 budget=OperationBudget(int(time.time())+8,maximum_seconds=8);budget.attach_owned_process_group()
 script="import json,os,sys;sys.stdin.buffer.read();print(json.dumps(dict(os.environ),sort_keys=True))"

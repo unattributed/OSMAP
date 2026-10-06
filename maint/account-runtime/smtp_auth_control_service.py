@@ -17,6 +17,7 @@ import time
 from account_epoch import EpochStore
 from smtp_control_authorization import (LIMIT, ControlAuthority, VerifiedControlAuthorization, verify_authorization)
 from account_mutation_budget import wall_millis
+from account_mutation_codec import uint
 from account_mutation_supervisor import _directory
 from account_mutation_worker import IntentStore
 from authoritative_password import Refused, Unconfirmed
@@ -37,7 +38,10 @@ class ControlGrantStore(IntentStore):
     """Separately provisioned durable control purpose; no credential/outcome data.
 
     Claimed grants never expire into reusable authority. A pending/uncertain
-    entry requires reconciliation. Lock order is mutation account -> this
+    entry requires reconciliation. Completed grants retire only after their
+    signed original deadlines under a durable time high-water mark. Closed
+    journal version2 refuses old/malformed records rather than recreating them.
+    Lock order is mutation account -> this
     purpose journal -> registry; this server never acquires the account flock.
     """
     RECORD_LIMIT = 8192
@@ -53,7 +57,7 @@ class ControlGrantStore(IntentStore):
         # Explicit source/operator preparation only, never a runtime fallback.
         with EpochStore.locked(self,account)as path:
             if path.exists()or path.is_symlink():raise Refused('SMTP control grant already exists')
-            self._publish(path,{'version':1,'entries':[]})
+            self._publish(path,{'version':2,'high_water_millis':0,'entries':[]})
 
     def _record(self,path):
         import json
@@ -62,22 +66,33 @@ class ControlGrantStore(IntentStore):
             with os.fdopen(fd,'rb')as handle:raw=handle.read(self.RECORD_LIMIT+1)
             if len(raw)>self.RECORD_LIMIT:raise ValueError
             value=json.loads(raw,object_pairs_hook=EpochStore._unique)
-            if (type(value)is not dict or set(value)!={'version','entries'}
-                    or type(value['version'])is not int or value['version']!=1
+            if (type(value)is not dict or set(value)!={'version','high_water_millis','entries'}
+                    or type(value['version'])is not int or value['version']!=2 or not uint(value['high_water_millis'])
                     or type(value['entries'])is not list or len(value['entries'])>self.MAX_ENTRIES):raise ValueError
             seen=set()
             for row in value['entries']:
-                if (type(row)is not dict or set(row)!={'intent','authorization_sha256','state'}
+                if (type(row)is not dict or set(row)!={'intent','authorization_sha256','state','deadline_millis'}
                         or not self._reference(row['intent'])or not self._reference(row['authorization_sha256'])
-                        or row['intent']in seen or row['state']not in ('claimed','complete','uncertain')):raise ValueError
+                        or row['intent']in seen or row['state']not in ('claimed','complete','uncertain')
+                        or not uint(row['deadline_millis'])or row['deadline_millis']<=0):raise ValueError
                 seen.add(row['intent'])
             return value
         except Exception:raise Refused('SMTP control grant unavailable')from None
+
+    @staticmethod
+    def _now(budget):
+        budget.remaining()
+        # Use the exact existing budget wall sample; no fresh clock/deadline.
+        millis=int(budget._last_wall*1000)
+        if not uint(millis):raise Refused('SMTP control grant time unavailable')
+        return millis
 
     @contextmanager
     def claim(self,action,authorization_digest,budget):
         if (type(action)is not VerifiedControlAuthorization or type(budget)is not OperationBudget
                 or not self._reference(authorization_digest)):raise Refused('SMTP control grant authority unavailable')
+        budget.require_original(sent_millis=action.sent_millis,
+            deadline_millis=action.deadline_millis,expires_at=action.expires)
         lock,path=self._paths(action.account);fd=self._private(lock,os.O_RDWR|os.O_CREAT)
         try:
             end=time.monotonic()+budget.cap_seconds(2)
@@ -89,13 +104,22 @@ class ControlGrantStore(IntentStore):
                     if remaining<=0:raise Refused('SMTP control grant lock unavailable')
                     time.sleep(min(.01,remaining))
             value=self._record(path)
-            if (any(e['state']!='complete'or e['intent']==action.intent_reference for e in value['entries'])
-                    or len(value['entries'])>=self.MAX_ENTRIES):raise Refused('SMTP control grant spent or uncertain')
-            row={'intent':action.intent_reference,'authorization_sha256':authorization_digest,'state':'claimed'}
-            value['entries'].append(row);self._publish(path,value);budget.remaining()
+            now=self._now(budget)
+            if now<value['high_water_millis']or any(e['state']!='complete'for e in value['entries']):
+                raise Refused('SMTP control grant spent or uncertain')
+            # Only completed grants past their independently signed original
+            # deadline can retire. Unresolved state never expires or resets.
+            entries=[e for e in value['entries']if e['deadline_millis']>now]
+            if (any(e['intent']==action.intent_reference for e in entries)
+                    or len(entries)>=self.MAX_ENTRIES):raise Refused('SMTP control grant spent or uncertain')
+            row={'intent':action.intent_reference,'authorization_sha256':authorization_digest,
+                 'deadline_millis':action.deadline_millis,'state':'claimed'}
+            value.update(high_water_millis=now,entries=entries+[row]);self._publish(path,value);budget.remaining()
             try:
                 yield row
-                budget.remaining();row['state']='complete';self._publish(path,value);budget.remaining()
+                now=self._now(budget)
+                if now<value['high_water_millis']:raise Refused('SMTP control grant time changed')
+                value['high_water_millis']=now;row['state']='complete';self._publish(path,value);budget.remaining()
             except BaseException:
                 row['state']='uncertain'
                 try:self._publish(path,value)

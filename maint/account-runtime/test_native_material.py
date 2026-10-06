@@ -9,6 +9,7 @@ import signal
 import subprocess
 import sys
 import tempfile
+import time
 from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
@@ -95,9 +96,11 @@ class NativeMaterialTests(MaterialFixture):
         material = self.load()
         replacement = self.root / 'replacement'; replacement.write_bytes(self.valid); replacement.chmod(0o600)
         replacement.replace(self.config)
-        executor = m.MaterialExecutor(self.budget, material)
-        with patch.object(NativeExecutor, '__call__', side_effect=AssertionError('dispatch forbidden')):
-            with self.assertRaises(Unavailable): executor(Adapter.SQL_PROGRAM, Adapter.SQL_ARGS, b'', 10, 4096)
+        from native_transport_test_support import sealed_actual_material
+        with sealed_actual_material(self.budget,material) as executor, \
+                patch('subprocess.Popen',side_effect=AssertionError('dispatch forbidden')) as spawn:
+            with self.assertRaises(Unavailable):executor(Adapter.SQL_PROGRAM,Adapter.SQL_ARGS,b'',10,4096)
+            spawn.assert_not_called()
     def test_content_change_restoring_size_and_mtime_is_not_continuity(self):
         material = self.load(); info = self.config.stat()
         self.config.write_bytes(self.valid.replace(b'123', b'124'))
@@ -179,12 +182,18 @@ class NativeMaterialTests(MaterialFixture):
         with patch.object(self.budget, 'inherited_group', return_value=False):
             with self.assertRaises(Unavailable): material.recheck(self.budget)
     def test_matching_executor_rechecks_each_dispatch_same_budget(self):
-        material = self.load(); executor = m.MaterialExecutor(self.budget, material)
-        with patch.object(NativeExecutor, '__call__', return_value=(0, b'', b'')) as dispatch:
-            for program, args in ((Adapter.SQL_PROGRAM, Adapter.SQL_ARGS), (Adapter.HASH_PROGRAM, Adapter.HASH_ARGS)):
-                self.assertEqual(executor(program, args, b'public only\n', 10, 4096), (0, b'', b''))
-        self.assertEqual(dispatch.call_count, 2); self.assertIs(executor._budget, self.budget)
-        self.assertIs(executor._material, material)
+        from native_transport_test_support import sealed_actual_material
+        from account_command_kernel import CommandKernelSeal
+        material=self.load();original=material.recheck
+        with sealed_actual_material(self.budget,material) as executor, \
+                patch.object(material,'recheck',side_effect=original) as checked, \
+                patch.object(CommandKernelSeal,'spawn',return_value=object()) as spawn:
+            for program,args in ((Adapter.SQL_PROGRAM,Adapter.SQL_ARGS),(Adapter.HASH_PROGRAM,Adapter.HASH_ARGS)):
+                deadline=time.monotonic()+10
+                self.assertIs(executor._spawn(program,args,deadline),spawn.return_value)
+        self.assertEqual(checked.call_count,2);self.assertEqual(spawn.call_count,2)
+        self.assertTrue(all(call.args==(self.budget,) for call in checked.call_args_list))
+        self.assertIs(executor._budget,self.budget);self.assertIs(executor._material,material)
     def test_native_authority_and_direct_constructor_refuse_before_private_reads(self):
         with patch.object(m, '_read', side_effect=AssertionError):
             with self.assertRaises(Unavailable): m.NativeMaterial.native()

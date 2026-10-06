@@ -37,7 +37,8 @@ class PreparedAction:
 class PreparedPasswordCoordinator:
     def __init__(self, store, adapter, authorize_action, verify_current,
                  verify_changed, containment_ready, finish_containment,
-                 clock=lambda: int(time.time()), invalidate_changed_auth=None, *, pending_confirmation=None):
+                 clock=lambda: int(time.time()), invalidate_changed_auth=None, *, pending_confirmation=None,
+                 release_containment=None):
         self.store = store
         self.adapter = adapter
         self.authorize_action = authorize_action
@@ -48,6 +49,8 @@ class PreparedPasswordCoordinator:
         self.clock = clock
         self.invalidate_changed_auth = invalidate_changed_auth
         self.pending_confirmation = pending_confirmation
+        # Trusted source builder owns this descriptor lifetime; no wire field.
+        self.release_containment = release_containment
 
     @staticmethod
     def _bounded(value):

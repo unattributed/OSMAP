@@ -376,8 +376,24 @@ class MutationWorker:
                         coordinator.clock is not self._clock):
                     raise Unavailable('mutation coordinator unavailable')
                 budget.remaining()
+                release_containment = coordinator.release_containment
+                if release_containment is not None and not callable(release_containment):
+                    raise Unavailable('mutation containment lifetime unavailable')
+                built_pending = coordinator.pending_confirmation
+                if built_pending is not None and not callable(built_pending):
+                    raise Unavailable('mutation pending dependency unavailable')
                 if pending_confirmation is not None:
-                    coordinator.pending_confirmation = _budgeted(pending_confirmation,budget)
+                    def confirmed_pending(action):
+                        # The original issuer ACK always precedes the trusted
+                        # builder's pending lifecycle capture. Neither callback
+                        # may substitute for the other or renew the budget.
+                        if pending_confirmation(action) is not True:
+                            return False
+                        budget.remaining()
+                        return built_pending is None or built_pending(action) is True
+                    coordinator.pending_confirmation = _budgeted(confirmed_pending,budget)
+                elif built_pending is not None:
+                    coordinator.pending_confirmation = _budgeted(built_pending,budget)
                 coordinator.adapter = _BudgetedAdapter(coordinator.adapter, budget)
                 for attribute in ('verify_current', 'verify_changed', 'containment_ready',
                                   'invalidate_changed_auth', 'finish_containment'):
@@ -409,6 +425,15 @@ class MutationWorker:
                                              'changed_at': stamp}, request.action.epoch)
                 except Exception:
                     raise Unavailable('mutation outcome unconfirmed') from None
+            finally:
+                # Release only the fixed builder's owned control descriptor,
+                # including after expiry, before durable outcome/lease release.
+                # Cleanup never renews budget or retries remote containment.
+                if release_containment is not None:
+                    try:
+                        release_containment()
+                    except BaseException:
+                        raise Unavailable('mutation containment release unconfirmed') from None
             now = self._clock()
             lease.complete(outcome, now)
             try:

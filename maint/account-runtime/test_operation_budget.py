@@ -9,6 +9,7 @@ from unittest.mock import patch
 
 from authoritative_password import AuthoritativePasswordAdapter as Adapter, NativeExecutor, Refused
 from operation_budget import OperationBudget
+from native_transport_test_support import OwnedFixtureExecutor
 
 
 class Clock:
@@ -100,7 +101,7 @@ class BudgetTests(unittest.TestCase):
                 patch.object(Adapter, 'SQL_ARGS', ('-c', script)), \
                 patch.object(subprocess, 'Popen', track):
             with self.assertRaises((Refused, TimeoutError)):
-                NativeExecutor(budget)(sys.executable, ('-c', script), b'fixture', 10, 4096)
+                OwnedFixtureExecutor(budget)(sys.executable, ('-c', script), b'fixture', 10, 4096)
         self.assertEqual(len(children), 1)
         self.assertIsNotNone(children[0].poll())
         self.assertLess(time.monotonic() - began, 1)
@@ -121,9 +122,9 @@ class BudgetTests(unittest.TestCase):
         script = 'import time; time.sleep(0.05); print("fixture")'
         budget = OperationBudget(int(time.time()) + 300, maximum_seconds=0.14)
         budget.attach_owned_process_group()
-        executor = NativeExecutor(budget)
         with patch.object(Adapter, 'SQL_PROGRAM', sys.executable), \
                 patch.object(Adapter, 'SQL_ARGS', ('-c', script)):
+            executor = OwnedFixtureExecutor(budget)
             self.assertEqual(executor(sys.executable, ('-c', script), b'fixture', 10, 4096)[0], 0)
             time.sleep(0.08)
             with self.assertRaises((Refused, TimeoutError)):
@@ -156,7 +157,7 @@ class BudgetTests(unittest.TestCase):
                 patch.object(Adapter, 'SQL_ARGS', ('-c', script)), \
                 patch.object(subprocess, 'Popen', track):
             with self.assertRaises(Refused):
-                NativeExecutor(budget)(sys.executable, ('-c', script), b'fixture', 10, 4096)
+                OwnedFixtureExecutor(budget)(sys.executable, ('-c', script), b'fixture', 10, 4096)
         self.assertEqual(len(children), 1)
         self.assertIsNotNone(children[0].returncode)
 

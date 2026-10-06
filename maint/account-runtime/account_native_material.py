@@ -253,13 +253,26 @@ class NativeMaterial:
 
 
 class MaterialExecutor(NativeExecutor):
-    """Recheck custody/peer before each fixed SQL/hash dispatch, same budget."""
+    """Mandatory typed custody and command seal on the same original phase."""
     def __init__(self, budget, material):
+        from account_command_kernel import CommandKernelSeal
         if type(material) is not NativeMaterial or type(budget) is not OperationBudget:
             raise Unavailable('native SQL executor material unavailable')
         super().__init__(budget)
-        self._material = material
+        self._material=material
+        self._seals={
+            (AuthoritativePasswordAdapter.SQL_PROGRAM,AuthoritativePasswordAdapter.SQL_ARGS):
+                CommandKernelSeal._for_material('sql',material,budget),
+            (AuthoritativePasswordAdapter.HASH_PROGRAM,AuthoritativePasswordAdapter.HASH_ARGS):
+                CommandKernelSeal._for_material('hash',material,budget)}
+        if any(type(seal)is not CommandKernelSeal or seal._budget is not budget for seal in self._seals.values()):
+            raise Unavailable('native command original seal unavailable')
 
-    def __call__(self, program, args, stdin, seconds, limit):
+    def _spawn(self, program, args, deadline):
+        # NativeExecutor captures the phase BEFORE this public/private material
+        # recheck; a slow recheck cannot reset or outlive the phase allowance.
         self._material.recheck(self._budget)
-        return super().__call__(program, args, stdin, seconds, limit)
+        if time.monotonic()>=deadline:raise Unavailable('native command phase expired')
+        seal=self._seals.get((program,args))
+        if seal is None:raise Unavailable('native command authority unavailable')
+        return seal.spawn(program,args,deadline)

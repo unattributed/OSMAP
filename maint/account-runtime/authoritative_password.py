@@ -212,10 +212,14 @@ class NativeExecutor:
                 raise Refused('native operation budget refused')
         self._budget=operation_budget
 
+    def _spawn(self, program, args, deadline):
+        # Bare native transport has no installed custody or kernel authority.
+        # MaterialExecutor supplies the source-owned typed sealed dispatch.
+        raise Refused('native command confinement unavailable')
+
     def __call__(self, program, args, stdin, seconds, limit):
         import os
         import selectors
-        import subprocess
         import time
         if (program,args) not in (
                 (AuthoritativePasswordAdapter.SQL_PROGRAM,AuthoritativePasswordAdapter.SQL_ARGS),
@@ -231,18 +235,7 @@ class NativeExecutor:
         # Capture before spawning: process creation consumes this phase's
         # original allowance, independently of the enclosing operation budget.
         deadline=time.monotonic()+operation_seconds
-        environment={'PATH':'/usr/bin:/usr/local/bin','LC_ALL':'C'}
-        if (program,args)==(AuthoritativePasswordAdapter.HASH_PROGRAM,
-                            AuthoritativePasswordAdapter.HASH_ARGS):
-            # Tagged Dovecot opens its config path before parsing -O. Bind
-            # that pre-option attempt to a non-socket device; -O then skips
-            # configuration input. Its default stats writer is disabled too.
-            # No inherited setting, credential or caller override is accepted.
-            environment.update(CONFIG_FILE='/dev/null',STATS_WRITER_SOCKET_PATH='')
-        child=subprocess.Popen((program,)+args,stdin=subprocess.PIPE,
-                               stdout=subprocess.PIPE,stderr=subprocess.PIPE,
-                               shell=False,close_fds=True,
-                               env=environment)
+        child=self._spawn(program,args,deadline)
         output=bytearray();error=bytearray();offset=0
         try:
             with selectors.DefaultSelector() as selector:

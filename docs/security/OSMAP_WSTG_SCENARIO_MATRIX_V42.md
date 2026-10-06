@@ -135,3 +135,19 @@ rechecked; complete grant publication precedes terminal acknowledgement. Late
 acknowledgement failure remains unconfirmed after possible cutoff consumption.
 Native key/issuer custody, worker/flock continuity, production ingress and TCP
 absence remain unqualified. This does not close a WSTG scenario or password UAT.
+
+
+The adjacent disabled integration requires original receipt provenance rather
+than equal-expiry budgets (BUSL/SESS) and mandatory typed command custody plus
+irreversible child confinement for SQL/hash/primary transport (CONF/ATHZ).
+Normal regression discovery now includes command authority, original phase,
+owned-child cleanup and strict ELF full-mapping/cap negatives. Kernel/custody
+calls are mocked in the portable fixtures; installed graph/profile/native
+factory and the composed authoritative password workflow remain unqualified.
+No completed WSTG scenario, release claim or human password UAT follows.
+
+Bounded grant retention adds BUSL/SESS component controls: completed expired
+authorizations retire only under the durable journal lock/time high-water;
+replay, rollback, unresolved and legacy records refuse. Entry/byte limits stay
+fixed. These private-file controls do not qualify native key provisioning or
+the actual password workflow.

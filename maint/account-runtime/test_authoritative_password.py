@@ -92,7 +92,7 @@ class HardeningTests(unittest.TestCase):
         with self.assertRaises(Refused):adapter.replace(row,ACCOUNT,'old',PASSPHRASE,PASSPHRASE)
         self.assertEqual(len(executor.calls),2)
     def test_native_executor_disallows_extra_commands_and_bounds(self):
-        from authoritative_password import NativeExecutor
+        from native_transport_test_support import PublicFixtureExecutor as NativeExecutor
         executor=NativeExecutor()
         for command,args,stdin,seconds,limit in [('/bin/sh',('-c','true'),b'',10,4096),
           (Adapter.SQL_PROGRAM,Adapter.SQL_ARGS,b'x'*16385,10,4096),
@@ -104,7 +104,7 @@ class NativeTransportTests(unittest.TestCase):
     def execute(self,script,data=b'public synthetic transport'):
         import sys
         from unittest.mock import patch
-        from authoritative_password import NativeExecutor
+        from native_transport_test_support import PublicFixtureExecutor as NativeExecutor
         with patch.object(Adapter,'SQL_PROGRAM',sys.executable),patch.object(Adapter,'SQL_ARGS',('-c',script)):
             return NativeExecutor()(sys.executable,('-c',script),data,10,4096)
     def test_actual_subprocess_stdin_and_bounded_stdout(self):
@@ -116,7 +116,7 @@ class NativeTransportTests(unittest.TestCase):
     def test_actual_deadline_kills_owned_child(self):
         import sys,time
         from unittest.mock import patch
-        from authoritative_password import NativeExecutor
+        from native_transport_test_support import PublicFixtureExecutor as NativeExecutor
         script='import time; time.sleep(30)'
         start=time.monotonic()
         with patch.object(Adapter,'SQL_PROGRAM',sys.executable),patch.object(Adapter,'SQL_ARGS',('-c',script)),patch.object(Adapter,'LIMIT_SECONDS',0.1):

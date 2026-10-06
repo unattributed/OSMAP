@@ -64,7 +64,7 @@ class NativeDependencies:
         budget.remaining()
         self._material.recheck(budget)
         executor=MaterialExecutor(budget,self._material)
-        primary=NativePrimaryVerifier(action.account,budget)
+        primary=NativePrimaryVerifier(action.account,budget,self._material)
         # Current fixed native factory correctly refuses: SMTP termination is
         # REQUIRED, not silently optional or inferred N/A from absent cache rows.
         containment=build_native_containment(action.account,budget)

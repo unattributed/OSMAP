@@ -2,7 +2,7 @@
 from pathlib import Path
 import json,os,sys,time
 sys.path.insert(0,str(Path(__file__).resolve().parent))
-from mutation_primary import NativePrimaryVerifier
+from native_transport_test_support import PublicFixturePrimary as NativePrimaryVerifier
 from operation_budget import OperationBudget
 from authoritative_password import Refused
 mode=sys.argv[1]

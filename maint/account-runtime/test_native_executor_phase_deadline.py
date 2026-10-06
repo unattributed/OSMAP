@@ -5,17 +5,19 @@ import time
 import unittest
 from unittest.mock import patch
 
-from authoritative_password import AuthoritativePasswordAdapter as Adapter, NativeExecutor
+from authoritative_password import AuthoritativePasswordAdapter as Adapter
+from native_transport_test_support import PublicFixtureExecutor as NativeExecutor
 from authoritative_password import Refused
 from operation_budget import OperationBudget
 
 
 class PhaseDeadlineTests(unittest.TestCase):
     def test_operation_without_owned_group_refuses_before_process_startup(self):
+        from authoritative_password import NativeExecutor as ProductionNativeExecutor
         budget = OperationBudget(int(time.time()) + 30)
         with patch('subprocess.Popen', side_effect=AssertionError('unowned process started')) as spawn:
             with self.assertRaises(Refused):
-                NativeExecutor(budget)(Adapter.SQL_PROGRAM, Adapter.SQL_ARGS, b'', 10, 4096)
+                ProductionNativeExecutor(budget)(Adapter.SQL_PROGRAM, Adapter.SQL_ARGS, b'', 10, 4096)
             spawn.assert_not_called()
 
     def test_process_startup_cannot_restart_phase_deadline(self):

@@ -6,10 +6,20 @@ workflow. The separate maximum does not change existing authentication or crypto
 process profiles. Native measurement and outer process-group cleanup remain
 required before enabling a mutation worker.
 """
+from dataclasses import dataclass
 import math
 import time
 
 from authoritative_password import Refused
+
+
+@dataclass(frozen=True)
+class _OriginalReceipt:
+    received_mono: float
+    received_millis: int
+    sent_millis: int
+    deadline_millis: int
+    expires_at: int
 
 
 class OperationBudget:
@@ -25,6 +35,7 @@ class OperationBudget:
         self._monotonic = monotonic
         self._wall = wall
         self._owned_group = None
+        self._original_receipt = None
         self._expires = expires_at
         self._last_mono = self._sample(monotonic())
         self._last_wall = self._sample(wall())
@@ -73,6 +84,11 @@ class OperationBudget:
             raise Refused('mutation original deadline unavailable')
         value = cls.__new__(cls)
         value._owned_group = None
+        # Minted only by the original-deadline constructor. Existing verified
+        # consumers capture these receipt samples before parsing/authentication.
+        # Generic same-expiry budgets cannot attest the original monotonic cap.
+        value._original_receipt = _OriginalReceipt(received_mono, received_millis,
+                                                   sent_millis, deadline_millis, expires_at)
         value._monotonic = monotonic
         value._wall = lambda: wall_millis() / 1000
         value._expires = min(expires_at, deadline_millis / 1000)
@@ -81,6 +97,20 @@ class OperationBudget:
         value._deadline = received_mono + (deadline_millis - received_millis) / 1000
         value.remaining()
         return value
+
+    def require_original(self, *, sent_millis, deadline_millis, expires_at):
+        receipt = self._original_receipt
+        if (type(receipt) is not _OriginalReceipt or
+                (receipt.sent_millis, receipt.deadline_millis, receipt.expires_at) !=
+                (sent_millis, deadline_millis, expires_at) or
+                self._expires != min(expires_at, deadline_millis / 1000) or
+                self._deadline != receipt.received_mono +
+                    (deadline_millis - receipt.received_millis) / 1000 or
+                not sent_millis <= receipt.received_millis < deadline_millis or
+                self._last_mono < receipt.received_mono or
+                self._last_wall < receipt.received_millis / 1000):
+            raise Refused('mutation original receipt unavailable')
+        self.remaining()
 
     def attach_owned_process_group(self):
         # Called only by the supervised private worker entry. A browser/wire

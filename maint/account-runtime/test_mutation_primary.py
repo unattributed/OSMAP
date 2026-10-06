@@ -3,7 +3,8 @@ from pathlib import Path
 import sys,time,unittest
 import json,os,signal,subprocess
 from unittest.mock import patch
-from mutation_primary import NativePrimaryVerifier,PROGRAM,ARGS
+from mutation_primary import PROGRAM,ARGS
+from native_transport_test_support import PublicFixturePrimary as NativePrimaryVerifier
 from operation_budget import OperationBudget
 from authoritative_password import Refused
 ACCOUNT='alice@example.test';PUBLIC='public synthetic password'
@@ -27,7 +28,7 @@ class PrimaryTests(unittest.TestCase):
    with self.subTest(mode=mode),self.assertRaises(Refused):self.run_fixture(mode)
  def test_missing_group_wrong_account_unbounded_input_never_spawns(self):
   v=self.verifier()
-  with patch('mutation_primary.subprocess.Popen',side_effect=AssertionError):
+  with patch('subprocess.Popen',side_effect=AssertionError):
    for account,password in [(ACCOUNT,PUBLIC),('bob@example.test',PUBLIC),
       (ACCOUNT,'bad\npassword'),(ACCOUNT,'x'*1025),(ACCOUNT,'\ud800')]:
     with self.subTest(account=account,length=len(password)),self.assertRaises(Refused):v(account,password)

@@ -15,6 +15,7 @@ import test_account_mutation_worker as f
 import test_guarded_mutation_worker as g
 from test_native_material import MaterialFixture
 from account_native_material import MaterialExecutor
+from native_transport_test_support import _construct
 
 class NativeTests(MaterialFixture):
  def setUp(self):
@@ -49,7 +50,8 @@ class NativeTests(MaterialFixture):
   c=MailSessionContainment(f.ACCOUNT,lambda *a:(_ for _ in ()).throw(AssertionError),
    self.budget,SmtpTerminationScope.REQUIRED)
   authority=lambda a,t:False
-  with patch.object(self.budget,'inherited_group',return_value=True),\
+  self.dependencies._material._private_test_only=True
+  with patch.object(self.budget,'inherited_group',return_value=True),_construct(),\
    patch('account_mutation_native.build_native_containment',return_value=c):
    coordinator=self.dependencies._build(self.action,self.budget,authority)
   self.assertIs(coordinator.store,self.store);self.assertIs(coordinator.authorize_action,authority)
