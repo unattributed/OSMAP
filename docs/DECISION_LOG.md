@@ -9341,3 +9341,15 @@ one-second request available; only the test outer lifetime changes. Neither
 repair qualifies full transport, authoritative quota, Documents UAT or the
 epic. Sign and promptly synchronize these reviewed changes through normal
 gates under the operator's standing authority; no runtime activation.
+
+## 2026-10-06 — repair first Documents mailbox provisioning; park projected transport retries
+
+Actual changed OpenBSD first-upload Save/exact download passed after a minimal
+status68-only reserved mailbox provisioning repair. Unknown lookup failures
+do not authorize creation; exact post-create GUID is required. Keep native
+storage proof distinct from shared quota/helper/browser acceptance. Preserve
+all failed source/native/transfer attempts; no operator mailbox or quota
+activation. Park projected-forward10MiB variants after exact-current cleanup;
+qualify future transport through the installed application channel. Continue
+real folder Rename and shared quota backend work rather than new fixture
+frameworks. Signed normal gates and immediate synchronization apply.

@@ -7706,3 +7706,61 @@ V11 gate refused stale generated assertion inventory (7701 to7703). The
 existing generator refreshes only derived source offsets/counts/hashes and
 its matching claims hash; no scanner, assertion, gate or claim is waived.
 Normal superseding gates/signature/sync remain required.
+
+## 2026-10-06 — S08 first Documents save repaired; quota acceptance remains open
+
+The actual OpenBSD first-upload discriminator now PASS1/0failed/0ignored in
+0.97 seconds. Exact matching candidate binary
+5e7ed95b3fe15a924f0dcfe9c67076930c80587ef1811533f02444edb1f03afd
+was built from458 verified inputs over signed d6d0a732 plus independently
+reviewed documents_doveadm source fd602a31. No reserved mailbox was precreated:
+finite quota readiness passed, the backend provisioned its fixed mailbox,
+first Save and exact five-byte download passed, owned scratch cleanup and
+two standard-file metadata checks passed. This is disposable-account storage
+evidence, not the actual helper/browser route, all-writer quota or PAGE07 UAT.
+
+The repaired backend checks exact mailbox status/GUID, permits create only
+for the measured missing68/empty output, then confirms exact GUID before
+Save/move. Unknown status75, unexpected output, malformed success or transport
+failure refuse before document dispatch; seven focused source controls PASS.
+Predispatch lookup failures no longer falsely strand a possible-write pending
+operation. Save/move are never automatically retried. Prior increments1–3
+are superseded and were not natively executed. Increment3's overwritten local
+test-log pointer is explicitly retained as stale, not assurance.
+
+The uncompressed binary transfer timed out60s without native dispatch. A
+changed gzip transfer completed, exact decompressed SHA was verified remotely
+before execution, and the original qualifier budgets were unchanged. A local
+proof read before transfer completion refused before dispatch and is retained
+as NOT_RUN. No runtime, operator mailbox, quota, policy or service was changed.
+
+Projected two-workstation-forward10MiB fixture v8 remains FAIL: original5s
+receive timeout, Toronto cleanup confirmed and obsd1 cleanup initially
+unconfirmed. Fresh metadata-only observation found retained private root
+7ee207bd975a4fdc but no selected argv/listener; it gives no historical cleanup
+authority. Reviewed exact-current administrative cleanup is pending. Further
+projected transport variants are parked; use installed authoritative topology
+when the real backend journey is qualified. Native timeout is not diagnosed
+as a production defect.
+
+D05 opt-in Dovecot prototype v5 has actual Linux three-writer overlap proof:
+paused IMAP reservation accepted, simultaneous LMTP and document saves refused.
+It remains an isolated prototype; OpenBSD, crash reconciliation, account-home
+binding and operator quota activation are open. Duncan's existing over-quota
+storage is preserved. No Documents activation or slice/UAT completion claim.
+
+Evidence: /home/foo/Downloads/osmap-ux-s08/revalidation-20261006/documents/
+native-first-upload-provision-increment4-attempt1/{native-test.log,binary-proof.json};
+independent-review/first-upload-provision-increment4.json;
+first-upload-provision-increment3/SUPERSEDED.md;
+native-transport-driver-v8-result.json; native-v8-current-observation/result.json.
+
+First-upload normal commit attempt1 passed1619library/0failed/42explicit
+native ignores, then strict Clippy refused a test tuple's type complexity
+before commit. An independently reviewed identical type alias repairs only
+that fixture declaration; focused7 and strict Clippy pass. Native first-save
+sourcefd602a31 remains the actual assessed product logic; the alias source
+d27b2184 has no new native result. Superseding normal gates remain required.
+The unchanged generated refined inventory/hash was refreshed for seven new
+local test assumptions and line offsets. Historical baseline inventory is
+unmodified; no full strict release or panic-free application claim is made.

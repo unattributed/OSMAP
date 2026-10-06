@@ -79,6 +79,67 @@ impl<E: CommandExecutor> DoveadmDocumentsBackend<E> {
             .map_err(|_| Error::Unavailable)
     }
 
+    // `doveadm save -m` opens an existing mailbox; it does not create one.
+    // Provision only the two account-private names owned by Documents, before
+    // dispatching any document bytes or a move to the Bin.
+    fn reserved_mailbox_openable(&self, account: &str, mailbox: &str) -> Result<bool, Error> {
+        if !matches!(mailbox, ACTIVE_MAILBOX | BIN_MAILBOX) {
+            return Err(Error::Invalid);
+        }
+        let mut args = self.base();
+        args.extend([
+            "mailbox".into(),
+            "status".into(),
+            "-u".into(),
+            account.into(),
+            "guid".into(),
+            mailbox.into(),
+        ]);
+        let response = self
+            .run(&self.doveadm, &args, b"", QUOTA_OUTPUT_MAX)
+            .map_err(|_| Error::PreDispatchUnavailable)?;
+        if response.status_code == 68 && response.stdout.is_empty() {
+            // Actual Dovecot 2.3.21.1 returns 68 with no stdout for an absent
+            // reserved Maildir. Other failures do not authorize a create.
+            return Ok(false);
+        }
+        if response.status_code != 0 {
+            return Err(Error::PreDispatchUnavailable);
+        }
+        let prefix = format!("{mailbox} guid=");
+        let guid = response
+            .stdout
+            .strip_prefix(&prefix)
+            .and_then(|value| value.strip_suffix('\n'))
+            .ok_or(Error::PreDispatchUnavailable)?;
+        if guid.len() != 32 || !guid.bytes().all(|byte| byte.is_ascii_hexdigit()) {
+            return Err(Error::PreDispatchUnavailable);
+        }
+        Ok(true)
+    }
+
+    fn ensure_reserved_mailbox(&self, account: &str, mailbox: &str) -> Result<(), Error> {
+        if self.reserved_mailbox_openable(account, mailbox)? {
+            return Ok(());
+        }
+        let mut args = self.base();
+        args.extend([
+            "mailbox".into(),
+            "create".into(),
+            "-u".into(),
+            account.into(),
+            mailbox.into(),
+        ]);
+        // A timeout or nonzero exit can have created a partial mailbox. Only
+        // a successful exact GUID status proves it is openable for Save/move.
+        let _ = self.run(&self.doveadm, &args, b"", QUOTA_OUTPUT_MAX);
+        if self.reserved_mailbox_openable(account, mailbox)? {
+            Ok(())
+        } else {
+            Err(Error::PreDispatchUnavailable)
+        }
+    }
+
     fn find(&self, account: &str, id: &str, mailbox: &str) -> Result<Option<Location>, Error> {
         let mut args = self.base();
         args.extend([
@@ -129,6 +190,18 @@ impl<E: CommandExecutor> DoveadmDocumentsBackend<E> {
             });
         }
         Ok(found)
+    }
+
+    fn pre_dispatch_find(
+        &self,
+        account: &str,
+        id: &str,
+        mailbox: &str,
+    ) -> Result<Option<Location>, Error> {
+        // The caller has not dispatched any document bytes or mutation yet.
+        // A failed lookup here must not strand a durable pending operation.
+        self.find(account, id, mailbox)
+            .map_err(|_| Error::PreDispatchUnavailable)
     }
 
     fn fetch_exact(&self, account: &str, id: &str, location: &Location) -> Result<Vec<u8>, Error> {
@@ -207,11 +280,12 @@ impl<E: CommandExecutor> DoveadmDocumentsBackend<E> {
             return Err(Error::PreDispatchUnavailable);
         }
         let current = self
-            .find(account, id, &location.mailbox)?
+            .pre_dispatch_find(account, id, &location.mailbox)?
             .ok_or(Error::NotFound)?;
-        if current != *location || self.find(account, id, destination)?.is_some() {
+        if current != *location || self.pre_dispatch_find(account, id, destination)?.is_some() {
             return Err(Error::Stale);
         }
+        self.ensure_reserved_mailbox(account, destination)?;
         let mut args = self.base();
         args.extend([
             "move".into(),
@@ -284,9 +358,13 @@ impl<E: CommandExecutor> Backend for DoveadmDocumentsBackend<E> {
         if !self.quota_ready(account).unwrap_or(false) {
             return Err(Error::PreDispatchUnavailable);
         }
-        if self.find(account, id, ACTIVE_MAILBOX)?.is_some() {
+        if self
+            .pre_dispatch_find(account, id, ACTIVE_MAILBOX)?
+            .is_some()
+        {
             return Err(Error::Stale);
         }
+        self.ensure_reserved_mailbox(account, ACTIVE_MAILBOX)?;
         let encoded = crate::send::base64_encode_wrapped(body);
         let message = format!("Message-ID: <osmap-document-{id}@osmap.invalid>\r\nX-OSMAP-Document-ID: {id}\r\nMIME-Version: 1.0\r\nContent-Type: application/octet-stream\r\nContent-Transfer-Encoding: base64\r\n\r\n{encoded}\r\n");
         let mut args = self.base();
@@ -332,7 +410,9 @@ impl<E: CommandExecutor> Backend for DoveadmDocumentsBackend<E> {
         if !valid_id(id) || location.mailbox != BIN_MAILBOX {
             return Err(Error::Invalid);
         }
-        let current = self.find(account, id, BIN_MAILBOX)?.ok_or(Error::Stale)?;
+        let current = self
+            .pre_dispatch_find(account, id, BIN_MAILBOX)?
+            .ok_or(Error::Stale)?;
         if current != *location {
             return Err(Error::Stale);
         }
@@ -559,6 +639,206 @@ fn quota_config_ready(output: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::auth::{CommandExecution, CommandExecutionError, CommandExecutor};
+    use std::collections::VecDeque;
+    use std::sync::{Arc, Mutex};
+
+    type MailboxScriptSteps = Arc<Mutex<VecDeque<(&'static str, i32, &'static str)>>>;
+
+    #[derive(Clone)]
+    struct MailboxScript(MailboxScriptSteps);
+
+    impl CommandExecutor for MailboxScript {
+        fn run_with_stdin_bytes(
+            &self,
+            _: &str,
+            _: &[String],
+            _: &[u8],
+        ) -> Result<CommandExecution, CommandExecutionError> {
+            panic!("Documents mailbox provisioning must use bounded execution")
+        }
+
+        fn run_with_stdin_bytes_timeout_and_output_limit(
+            &self,
+            program: &str,
+            args: &[String],
+            input: &[u8],
+            timeout: Duration,
+            output_cap: usize,
+        ) -> Result<CommandExecution, CommandExecutionError> {
+            assert_eq!(program, "/fixed/doveadm");
+            assert!(
+                input.is_empty() && timeout == COMMAND_TIMEOUT && output_cap == QUOTA_OUTPUT_MAX
+            );
+            let (expected, status_code, stdout) = self.0.lock().unwrap().pop_front().unwrap();
+            assert_eq!(args[2..].join(" "), expected);
+            Ok(CommandExecution {
+                status_code,
+                stdout: stdout.into(),
+                stderr: String::new(),
+            })
+        }
+    }
+
+    #[test]
+    fn first_reserved_mailbox_is_created_before_document_bytes() {
+        let script = MailboxScript(Arc::new(Mutex::new(VecDeque::from([
+            (
+                "mailbox status -u alice@example.test guid OSMAP.Documents",
+                68,
+                "",
+            ),
+            (
+                "mailbox create -u alice@example.test OSMAP.Documents",
+                0,
+                "",
+            ),
+            (
+                "mailbox status -u alice@example.test guid OSMAP.Documents",
+                0,
+                "OSMAP.Documents guid=0123456789abcdef0123456789abcdef\n",
+            ),
+            (
+                "mailbox status -u alice@example.test guid OSMAP.DocumentsBin",
+                0,
+                "OSMAP.DocumentsBin guid=0123456789abcdef0123456789abcdef\n",
+            ),
+        ]))));
+        let backend =
+            DoveadmDocumentsBackend::new(script.clone(), "/fixed/doveadm", "/fixed/doveconf");
+        assert_eq!(
+            backend.ensure_reserved_mailbox("alice@example.test", ACTIVE_MAILBOX),
+            Ok(())
+        );
+        assert_eq!(
+            backend.ensure_reserved_mailbox("alice@example.test", BIN_MAILBOX),
+            Ok(())
+        );
+        assert!(script.0.lock().unwrap().is_empty());
+    }
+
+    #[test]
+    fn unconfirmed_reserved_mailbox_create_refuses_before_save_or_move() {
+        let script = MailboxScript(Arc::new(Mutex::new(VecDeque::from([
+            (
+                "mailbox status -u alice@example.test guid OSMAP.Documents",
+                68,
+                "",
+            ),
+            (
+                "mailbox create -u alice@example.test OSMAP.Documents",
+                75,
+                "",
+            ),
+            (
+                "mailbox status -u alice@example.test guid OSMAP.Documents",
+                68,
+                "",
+            ),
+        ]))));
+        let backend =
+            DoveadmDocumentsBackend::new(script.clone(), "/fixed/doveadm", "/fixed/doveconf");
+        assert_eq!(
+            backend.ensure_reserved_mailbox("alice@example.test", ACTIVE_MAILBOX),
+            Err(Error::PreDispatchUnavailable)
+        );
+        assert_eq!(
+            backend.ensure_reserved_mailbox("alice@example.test", "INBOX"),
+            Err(Error::Invalid)
+        );
+        assert!(script.0.lock().unwrap().is_empty());
+    }
+
+    #[test]
+    fn unknown_reserved_mailbox_status_does_not_create() {
+        for (code, output) in [(75, ""), (68, "unexpected status output\n")] {
+            let script = MailboxScript(Arc::new(Mutex::new(VecDeque::from([(
+                "mailbox status -u alice@example.test guid OSMAP.Documents",
+                code,
+                output,
+            )]))));
+            let backend =
+                DoveadmDocumentsBackend::new(script.clone(), "/fixed/doveadm", "/fixed/doveconf");
+            assert_eq!(
+                backend.ensure_reserved_mailbox("alice@example.test", ACTIVE_MAILBOX),
+                Err(Error::PreDispatchUnavailable)
+            );
+            assert!(script.0.lock().unwrap().is_empty());
+        }
+    }
+
+    #[test]
+    fn reserved_mailbox_status_transport_failure_is_predispatch() {
+        struct FailedList;
+        impl CommandExecutor for FailedList {
+            fn run_with_stdin_bytes(
+                &self,
+                _: &str,
+                _: &[String],
+                _: &[u8],
+            ) -> Result<CommandExecution, CommandExecutionError> {
+                panic!("bounded executor expected")
+            }
+            fn run_with_stdin_bytes_timeout_and_output_limit(
+                &self,
+                program: &str,
+                args: &[String],
+                input: &[u8],
+                _: Duration,
+                _: usize,
+            ) -> Result<CommandExecution, CommandExecutionError> {
+                assert_eq!(program, "/fixed/doveadm");
+                assert_eq!(
+                    args[2..].join(" "),
+                    "mailbox status -u alice@example.test guid OSMAP.Documents"
+                );
+                assert!(input.is_empty());
+                Err(CommandExecutionError {
+                    reason: "synthetic list timeout".into(),
+                })
+            }
+        }
+        let backend = DoveadmDocumentsBackend::new(FailedList, "/fixed/doveadm", "/fixed/doveconf");
+        assert_eq!(
+            backend.ensure_reserved_mailbox("alice@example.test", ACTIVE_MAILBOX),
+            Err(Error::PreDispatchUnavailable)
+        );
+    }
+
+    #[test]
+    fn failed_pre_dispatch_document_lookup_does_not_claim_a_possible_write() {
+        struct FailedFetch;
+        impl CommandExecutor for FailedFetch {
+            fn run_with_stdin_bytes(
+                &self,
+                _: &str,
+                _: &[String],
+                _: &[u8],
+            ) -> Result<CommandExecution, CommandExecutionError> {
+                panic!("bounded executor expected")
+            }
+            fn run_with_stdin_bytes_timeout_and_output_limit(
+                &self,
+                program: &str,
+                args: &[String],
+                input: &[u8],
+                _: Duration,
+                _: usize,
+            ) -> Result<CommandExecution, CommandExecutionError> {
+                assert_eq!(program, "/fixed/doveadm");
+                assert!(args.iter().any(|arg| arg == "fetch") && input.is_empty());
+                Err(CommandExecutionError {
+                    reason: "synthetic fetch timeout".into(),
+                })
+            }
+        }
+        let backend =
+            DoveadmDocumentsBackend::new(FailedFetch, "/fixed/doveadm", "/fixed/doveconf");
+        assert_eq!(
+            backend.pre_dispatch_find("alice@example.test", &"a".repeat(32), ACTIVE_MAILBOX),
+            Err(Error::PreDispatchUnavailable)
+        );
+    }
 
     #[test]
     fn quota_requires_finite_account_limit_and_both_protocol_plugins() {
