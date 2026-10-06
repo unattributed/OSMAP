@@ -9261,3 +9261,16 @@ test corrections: one SMTP terminal CRLF and proper MIME transfer decoding.
 Activate the matching obsd1 web binary after normal signed sync; preserve the
 shared-binary helper's PID/mapped-image and all env/key/policy state. Provider
 and authoritative Sent acceptance require operator results, not this fixture.
+
+The deployed Send increment is now23e5fee/c305e528 on obsd1. Preserve both
+failed administrative activation records and the matching successful attempt3.
+The first checker rejected OpenBSD's documented unlinked executable-inode
+annotation; the second caller's30s supervision bound raced rcctl's own30s
+service loop and finalization, but its exact timed-out operation is unrecorded.
+Normalize only the optional INUM suffix, retain full helper identity equality,
+record closed operation stages and use a35s administrative caller margin with
+the service/native/mail deadlines unchanged. All three changes were reviewed;
+attempt3 verifies env/helper/key-agent/service preservation. This qualifies
+deployment, not historical Send repair or provider delivery. Proceed with the
+two explicit operator-controlled UAT paths and the bounded existing-fixture
+Dovecot reader proof; do not wait idly or invent speculative production fixes.

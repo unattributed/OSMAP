@@ -7489,3 +7489,37 @@ zero failed and39 explicit native ignores; the separately matching OpenBSD
 gateway case passes without a skip. Native controlled transport does not
 qualify authoritative/provider delivery. Normal commit/push hooks, signature,
 fresh remote equality and the reviewed web-only activation remain required.
+
+### 2026-10-06 — Send recovery deployment and actionable UAT
+
+Product23e5feee16ebfae73656f35ec8b8863c9fc54594 is Shopkeeper signed,
+normally synchronized to feat/ux-completion-20260929 and freshly equal0/0clean.
+Commit/push developer gates pass1592 library/zero failed/39 explicit native
+ignores. Authoritative mail's standard checkout is source-only fast-forwarded
+to23e5fee and clean; its binary/services were not activated.
+
+Matching applicationc305e5283a9d6631ee1032a07fcf67304489c287a7c4e29935ab932cfd1f0263
+is installed on obsd1 by changed activation attempt3. Only osmap_serve restarted;
+running helper PID/mapped-image, env hashes, service states, key agents and
+retention were preserved. HTTPS login200/TLSverify0 is access evidence only.
+Fresh binding revision5 remains own Optional/Proton Required. Retain failed
+attempt1: a valid OpenBSD fstat unlinked-inode suffix falsely refused image and
+rollback verification. Fresh observations established the restored old binary,
+same helper and seven healthy services. Changed attempt2 then timed out and
+positively completed rollback; its exact timed-out operation is UNKNOWN.
+The reviewed administrative repair accepts only the documented optional INUM
+suffix, adds closed activation-stage evidence, and gives rcctl35s to conclude
+its unchanged30s service budget. No native/mail/application deadline changed.
+Changed attempt3 passes all preservation checks; neither repair retrodiagnoses
+historical Send failures.
+
+Exact evidence: send-refocus-20261006/signed-source/signed-sync-proof.json,
+standard-mail-checkout-sync.log, live/obsd1-activated-attempt3.json,
+obsd1-postactivation-metadata.json and qa/UAT.md. Two one-shot operator checks
+are now engineering-ready: fresh exact-self allOff with authoritative readable
+Inbox/Sent, then Proton EncryptOn/SignOff/selfOff with actual receipt/decryption.
+No private unlock is needed for these two checks. Human results remain NOT RUN;
+historical ALLSEND, signed/self-readable Sent, draft parity, protected return,
+key lifecycle and full sprint/epic remain OPEN. A separately frozen three-path
+test-only Dovecot reader bridge has local compilation/focused tests but no
+native result; it is next concrete S07 work, not an acceptance claim.
