@@ -24,6 +24,7 @@ class HashKernelTests(unittest.TestCase):
   material=object.__new__(NativeMaterial)
   for role in ('hash','sql'):
    seal=self.make(role)
+   seal._material=material
    with patch.object(self.b,'inherited_group',return_value=True),patch.object(k.CommandKernelSeal,'native',return_value=seal):current=k.CommandKernelSeal._for_material(role,material,self.b)
    self.assertIs(current,seal);self.assertIs(current._hash_identity_required,role=='hash')
   other=OperationBudget(int(time.time())+8,maximum_seconds=8)

@@ -24,11 +24,33 @@ class CommandKernelSeal:
         raise Refused('native command kernel construction unavailable')
 
     @classmethod
-    def native(cls):
+    def native(cls,role=None,material=None,budget=None,account=None):
         # Empty source profiles refuse before operator files, libc or spawn.
         if not _PROFILES:
             raise Refused('native installed command kernel graph unavailable')
-        raise Refused('native installed custody qualification unavailable')
+        # This is the fixed hash producer only. SQL/private config and primary
+        # socket/identity profiles require separate installed qualification.
+        if _PROFILES!=('hash',) or role!='hash':
+            raise Refused('native installed custody qualification unavailable')
+        from account_native_material import NativeMaterial, _SqlEndpoint
+        from operation_budget import _OriginalReceipt
+        if (type(material)is not NativeMaterial or type(budget)is not OperationBudget
+                or account is not None or not budget.inherited_group()
+                or type(getattr(material,'_endpoint',None))is not _SqlEndpoint
+                or type(getattr(material,'_states',None))is not tuple
+                or len(material._states)!=4):
+            raise Refused('native command material dependency unavailable')
+        receipt=budget._original_receipt
+        if type(receipt)is not _OriginalReceipt:
+            raise Refused('native kernel original budget unavailable')
+        budget.require_original(sent_millis=receipt.sent_millis,
+            deadline_millis=receipt.deadline_millis,expires_at=receipt.expires_at)
+        from account_hash_graph import HashInstalledGraph,PROMISES
+        value=cls._mint(Adapter.HASH_PROGRAM,Adapter.HASH_ARGS,None,budget,
+                        HashInstalledGraph.rows(),PROMISES)
+        value._material=material
+        value._hash_identity_required=True;value._hash_graph_required=True
+        return value
 
     @classmethod
     def _for_material(cls,role,material,budget,account=None):
@@ -43,10 +65,11 @@ class CommandKernelSeal:
         budget.remaining()
         # Observational inventory and local fixture guards are not profiles.
         # Installed full custody/null/socket admission must implement this path.
-        value=cls.native()
+        value=cls.native(role,material,budget,account)
         # Required for every future source-admitted hash profile. SQL/primary
         # keep separate private config/socket identities; no role-wide drop.
-        if (type(value)is not cls or value._budget is not budget or value._command_identity[3]!=role):raise Refused('native kernel seal unavailable')
+        if (type(value)is not cls or value._budget is not budget or value._command_identity[3]!=role
+                or value._command_identity[2]!=account or value._material is not material):raise Refused('native kernel seal unavailable')
         value._hash_identity_required=role=='hash'
         value._hash_graph_required=role=='hash'
         return value
@@ -75,9 +98,13 @@ class CommandKernelSeal:
 
     @classmethod
     def _fixture(cls,program,args,account,budget,rows,promises):
-        # Private local discriminator seam; no production composition calls it.
-        # Its row/byte validation is the same irreversible syscall component
-        # that future fixed installed profiles will need to invoke.
+        # Private local discriminator only; no production constructor calls it.
+        return cls._mint(program,args,account,budget,rows,promises)
+
+    @classmethod
+    def _mint(cls,program,args,account,budget,rows,promises):
+        # Shared primitive validation. The native producer above supplies only
+        # its source-owned command/graph; private fixtures cannot admit profiles.
         role=cls._command(program,args,account)
         if type(budget)is not OperationBudget or not budget.inherited_group():
             raise Refused('native kernel original budget unavailable')
@@ -101,6 +128,7 @@ class CommandKernelSeal:
         value=object.__new__(cls)
         value._command_identity=(program,args,account,role)
         value._rows=rows;value._promises=promises;value._budget=budget
+        value._material=None
         value._hash_identity_required=False
         value._hash_graph_required=False
         return value

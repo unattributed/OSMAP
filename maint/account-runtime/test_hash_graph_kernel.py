@@ -27,7 +27,8 @@ class CompositionTests(unittest.TestCase):
   for role in ('hash','sql'):
    program,args=(A.HASH_PROGRAM,A.HASH_ARGS) if role=='hash' else (A.SQL_PROGRAM,A.SQL_ARGS)
    with patch.object(self.b,'inherited_group',return_value=True):seal=k.CommandKernelSeal._fixture(program,args,None,self.b,(('/fixed',b'rx'),),b'stdio rpath exec')
-   with patch.object(self.b,'inherited_group',return_value=True),patch.object(k.CommandKernelSeal,'native',return_value=seal):k.CommandKernelSeal._for_material(role,object.__new__(NativeMaterial),self.b)
+   material=object.__new__(NativeMaterial);seal._material=material
+   with patch.object(self.b,'inherited_group',return_value=True),patch.object(k.CommandKernelSeal,'native',return_value=seal):k.CommandKernelSeal._for_material(role,material,self.b)
    self.assertIs(seal._hash_graph_required,role=='hash');self.assertIs(seal._hash_identity_required,role=='hash')
  def test_graph_failure_type_budget_and_profile_change_prevent_identity_Popen(self):
   for value in (Refused('graph refused'),object(),self.graph()):
