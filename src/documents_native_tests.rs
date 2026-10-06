@@ -67,9 +67,14 @@ impl CommandExecutor for ScopedExecutor {
         timeout: Duration,
         output_limit: usize,
     ) -> Result<CommandExecution, CommandExecutionError> {
-        assert!(matches!(program, "/usr/local/bin/doveadm" | "/usr/local/bin/doveconf"));
+        assert!(matches!(
+            program,
+            "/usr/local/bin/doveadm" | "/usr/local/bin/doveconf"
+        ));
         assert!(timeout <= Duration::from_secs(5));
-        assert!(!args.iter().any(|arg| matches!(arg.as_str(), "-A" | "-F" | "-c")));
+        assert!(!args
+            .iter()
+            .any(|arg| matches!(arg.as_str(), "-A" | "-F" | "-c")));
         if program.ends_with("doveadm") {
             let position = args.iter().position(|arg| arg == "-u").unwrap();
             assert_eq!(args.get(position + 1).map(String::as_str), Some(ACCOUNT));
@@ -89,7 +94,8 @@ impl CommandExecutor for ScopedExecutor {
         if self.diagnostic {
             match (&result, program.ends_with("doveconf")) {
                 (Ok(done), true) => {
-                    let (ready, _) = crate::documents_doveadm::native_quota_probe_flags(&done.stdout, "");
+                    let (ready, _) =
+                        crate::documents_doveadm::native_quota_probe_flags(&done.stdout, "");
                     println!("native_documents_first_upload quota_config status={} bytes={} ready={} count={} vsizes={} grace_zero={} global_plugin={}",
                         done.status_code, done.stdout.len(), ready,
                         done.stdout.contains("quota = count:"),
@@ -98,23 +104,81 @@ impl CommandExecutor for ScopedExecutor {
                         done.stdout.contains("mail_plugins = quota"));
                 }
                 (Ok(done), false) if args.iter().any(|arg| arg == "quota") => {
-                    let (_, finite) = crate::documents_doveadm::native_quota_probe_flags("", &done.stdout);
+                    let (_, finite) =
+                        crate::documents_doveadm::native_quota_probe_flags("", &done.stdout);
                     let error = done.stderr.to_ascii_lowercase();
-                    let class = if error.contains("userdb") { "userdb" }
-                        else if error.contains("permission") { "permission" }
-                        else if error.contains("quota") { "quota" }
-                        else if error.contains("connect") { "connect" }
-                        else if error.is_empty() { "none" }
-                        else { "other" };
+                    let class = if error.contains("userdb") {
+                        "userdb"
+                    } else if error.contains("permission") {
+                        "permission"
+                    } else if error.contains("quota") {
+                        "quota"
+                    } else if error.contains("connect") {
+                        "connect"
+                    } else if error.is_empty() {
+                        "none"
+                    } else {
+                        "other"
+                    };
                     println!("native_documents_first_upload quota_get status={} bytes={} finite={} error_class={}",
                         done.status_code, done.stdout.len(), finite, class);
                 }
-                (Err(_), true) => println!("native_documents_first_upload quota_config transport=refused"),
-                (Err(_), false) if args.iter().any(|arg| arg == "quota") => println!("native_documents_first_upload quota_get transport=refused"),
+                (Err(_), true) => {
+                    println!("native_documents_first_upload quota_config transport=refused")
+                }
+                (Err(_), false) if args.iter().any(|arg| arg == "quota") => {
+                    println!("native_documents_first_upload quota_get transport=refused")
+                }
                 _ => {}
             }
         }
         result
+    }
+}
+
+// Deliberately fails the first reserved-mailbox status check in the same
+// native Store, after live quota and lookup preflights. No storage mutation
+// may be dispatched or left pending after this confirmed pre-dispatch fault.
+struct RefuseReservedStatus {
+    scoped: ScopedExecutor,
+}
+
+impl CommandExecutor for RefuseReservedStatus {
+    fn run_with_stdin_bytes(
+        &self,
+        _: &str,
+        _: &[String],
+        _: &[u8],
+    ) -> Result<CommandExecution, CommandExecutionError> {
+        panic!("Documents native qualification requires bounded commands")
+    }
+
+    fn run_with_stdin_bytes_timeout_and_output_limit(
+        &self,
+        program: &str,
+        args: &[String],
+        input: &[u8],
+        timeout: Duration,
+        output_limit: usize,
+    ) -> Result<CommandExecution, CommandExecutionError> {
+        if args.windows(2).any(|pair| pair == ["mailbox", "status"]) {
+            return Err(CommandExecutionError {
+                reason: "synthetic reserved status unavailable before mutation".into(),
+            });
+        }
+        assert!(
+            !args
+                .iter()
+                .any(|arg| matches!(arg.as_str(), "save" | "move" | "expunge")),
+            "pre-dispatch fault must not reach native mutation"
+        );
+        self.scoped.run_with_stdin_bytes_timeout_and_output_limit(
+            program,
+            args,
+            input,
+            timeout,
+            output_limit,
+        )
     }
 }
 
@@ -131,11 +195,19 @@ impl Drop for Fixture {
         if let Some(thread) = self.userdb.take() {
             let _ = thread.join();
         }
-        if fs::symlink_metadata(&self.root).ok().is_some_and(|metadata| {
-            metadata.is_dir()
-                && (metadata.dev(), metadata.ino(), metadata.uid(), metadata.gid(), metadata.mode() & 0o777)
-                    == self.root_lease
-        }) {
+        if fs::symlink_metadata(&self.root)
+            .ok()
+            .is_some_and(|metadata| {
+                metadata.is_dir()
+                    && (
+                        metadata.dev(),
+                        metadata.ino(),
+                        metadata.uid(),
+                        metadata.gid(),
+                        metadata.mode() & 0o777,
+                    ) == self.root_lease
+            })
+        {
             let _ = fs::remove_dir_all(&self.root);
         }
     }
@@ -158,8 +230,12 @@ fn fixture_userdb(fixture: &mut Fixture, uid: u32, gid: u32) -> PathBuf {
                 }
                 Err(error) => panic!("owned userdb accept: {error}"),
             };
-            stream.set_read_timeout(Some(Duration::from_secs(2))).unwrap();
-            stream.set_write_timeout(Some(Duration::from_secs(2))).unwrap();
+            stream
+                .set_read_timeout(Some(Duration::from_secs(2)))
+                .unwrap();
+            stream
+                .set_write_timeout(Some(Duration::from_secs(2)))
+                .unwrap();
             write!(stream, "VERSION\t1\t2\nSPID\t{}\n", std::process::id()).unwrap();
             let mut reader = BufReader::new(stream.try_clone().unwrap());
             for _ in 0..4 {
@@ -205,7 +281,11 @@ fn fixture_userdb(fixture: &mut Fixture, uid: u32, gid: u32) -> PathBuf {
 fn standard_metadata() -> Vec<Option<(u64, u64, u64)>> {
     ["/etc/dovecot/dovecot.conf", "/var/dovecot/auth-userdb"]
         .iter()
-        .map(|path| fs::symlink_metadata(path).ok().map(|m| (m.dev(), m.ino(), m.len())))
+        .map(|path| {
+            fs::symlink_metadata(path)
+                .ok()
+                .map(|m| (m.dev(), m.ino(), m.len()))
+        })
         .collect()
 }
 
@@ -227,8 +307,27 @@ fn documents_native_executor_refuses_other_program_or_account_before_dispatch() 
         })
     };
     assert!(run("/usr/bin/true", &["-n".into()]).is_err());
-    assert!(run("/usr/local/bin/doveadm", &["quota".into(), "get".into(), "-u".into(), "bob@osmap-documents.invalid".into()]).is_err());
-    assert!(run("/usr/local/bin/doveadm", &["-A".into(), "quota".into(), "get".into(), "-u".into(), ACCOUNT.into()]).is_err());
+    assert!(run(
+        "/usr/local/bin/doveadm",
+        &[
+            "quota".into(),
+            "get".into(),
+            "-u".into(),
+            "bob@osmap-documents.invalid".into()
+        ]
+    )
+    .is_err());
+    assert!(run(
+        "/usr/local/bin/doveadm",
+        &[
+            "-A".into(),
+            "quota".into(),
+            "get".into(),
+            "-u".into(),
+            ACCOUNT.into()
+        ]
+    )
+    .is_err());
 }
 
 #[test]
@@ -259,13 +358,25 @@ fn isolated_openbsd_documents_first_upload_without_reserved_mailbox() {
     let owner = fs::symlink_metadata(&root).unwrap();
     let mut fixture = Fixture {
         root: root.clone(),
-        root_lease: (owner.dev(), owner.ino(), owner.uid(), owner.gid(), owner.mode() & 0o777),
+        root_lease: (
+            owner.dev(),
+            owner.ino(),
+            owner.uid(),
+            owner.gid(),
+            owner.mode() & 0o777,
+        ),
         stop: Arc::new(AtomicBool::new(false)),
         userdb: None,
     };
     assert_eq!(owner.uid(), process_uid);
     assert_eq!(owner.mode() & 0o777, 0o700);
-    for directory in ["run", "state", "alice/Maildir/cur", "alice/Maildir/new", "alice/Maildir/tmp"] {
+    for directory in [
+        "run",
+        "state",
+        "alice/Maildir/cur",
+        "alice/Maildir/new",
+        "alice/Maildir/tmp",
+    ] {
         fs::create_dir_all(root.join(directory)).unwrap();
     }
     // Neither reserved Documents mailbox is provisioned in advance.
@@ -281,11 +392,14 @@ fn isolated_openbsd_documents_first_upload_without_reserved_mailbox() {
     // does not attest the process's primary GID for Dovecot userdb admission.
     let userdb = fixture_userdb(&mut fixture, process_uid, process_gid);
     let backend = DoveadmDocumentsBackend::new(
-        ScopedExecutor { config, diagnostic: true },
+        ScopedExecutor {
+            config: config.clone(),
+            diagnostic: true,
+        },
         "/usr/local/bin/doveadm",
         "/usr/local/bin/doveconf",
     )
-    .with_userdb_socket_path(Some(userdb));
+    .with_userdb_socket_path(Some(userdb.clone()));
     let quota = match backend.quota_status(ACCOUNT) {
         Ok(Some(quota)) => quota,
         Ok(None) => panic!("native_documents_first_upload stage=quota_ready result=unavailable"),
@@ -295,15 +409,115 @@ fn isolated_openbsd_documents_first_upload_without_reserved_mailbox() {
     assert!(whole.elapsed() < NATIVE_LIMIT);
     println!("native_documents_first_upload quota_ready=PASS reserved_mailboxes_precreated=false");
     let store = Store::new(root.join("documents-index"), backend);
-    let uploaded = match store.upload(ACCOUNT, 0, "first.bin", "application/octet-stream", b"first", 100) {
+    let uploaded = match store.upload(
+        ACCOUNT,
+        0,
+        "first.bin",
+        "application/octet-stream",
+        b"first",
+        100,
+    ) {
         Ok(uploaded) => uploaded,
         Err(error) => panic!("native_documents_first_upload stage=first_save result={error:?}"),
     };
     assert_eq!(uploaded.documents.len(), 1);
-    assert_eq!(store.download(ACCOUNT, &uploaded.documents[0].id).unwrap().1, b"first");
+    assert_eq!(
+        store
+            .download(ACCOUNT, &uploaded.documents[0].id)
+            .unwrap()
+            .1,
+        b"first"
+    );
     assert!(whole.elapsed() < NATIVE_LIMIT);
     println!("native_documents_first_upload first_save_and_exact_download=PASS bytes=5");
     assert!(root.join("alice/Maildir/.OSMAP.Documents").exists());
+    let id = uploaded.documents[0].id.clone();
+    let inspector = DoveadmDocumentsBackend::new(
+        ScopedExecutor {
+            config: config.clone(),
+            diagnostic: false,
+        },
+        "/usr/local/bin/doveadm",
+        "/usr/local/bin/doveconf",
+    )
+    .with_userdb_socket_path(Some(userdb.clone()));
+    assert_eq!(
+        inspector.inspect(ACCOUNT, &id).unwrap(),
+        vec![uploaded.documents[0].location.clone().unwrap()]
+    );
+    let binned = store.bin(ACCOUNT, uploaded.revision, &id, 101).unwrap();
+    assert_eq!(binned.documents[0].state, State::InBin);
+    assert_eq!(
+        binned.documents[0].location.as_ref().unwrap().mailbox,
+        "OSMAP.DocumentsBin"
+    );
+    assert!(root.join("alice/Maildir/.OSMAP.DocumentsBin").exists());
+    assert_eq!(store.download(ACCOUNT, &id), Err(Error::NotFound));
+    assert_eq!(
+        inspector.inspect(ACCOUNT, &id).unwrap(),
+        vec![binned.documents[0].location.clone().unwrap()]
+    );
+    assert_eq!(
+        inspector
+            .read(ACCOUNT, &id, binned.documents[0].location.as_ref().unwrap())
+            .unwrap(),
+        b"first"
+    );
+    println!("native_documents_bin first_move_and_reserved_bin=PASS");
+
+    let restored = store.restore(ACCOUNT, binned.revision, &id, 102).unwrap();
+    assert_eq!(restored.documents[0].state, State::Available);
+    assert_eq!(
+        restored.documents[0].location.as_ref().unwrap().mailbox,
+        "OSMAP.Documents"
+    );
+    assert_eq!(store.download(ACCOUNT, &id).unwrap().1, b"first");
+    assert_eq!(
+        inspector.inspect(ACCOUNT, &id).unwrap(),
+        vec![restored.documents[0].location.clone().unwrap()]
+    );
+    println!("native_documents_bin restore_and_exact_download=PASS bytes=5");
+
+    let binned_again = store.bin(ACCOUNT, restored.revision, &id, 103).unwrap();
+    let deleted = store
+        .delete_confirmed(ACCOUNT, binned_again.revision, &id, 104)
+        .unwrap();
+    assert!(deleted.documents.is_empty());
+    assert!(inspector.inspect(ACCOUNT, &id).unwrap().is_empty());
+    assert_eq!(
+        inspector.quota_status(ACCOUNT).unwrap().unwrap().used_bytes,
+        0
+    );
+    println!("native_documents_bin confirmed_expunge_and_quota_release=PASS");
+
+    let fault_backend = DoveadmDocumentsBackend::new(
+        RefuseReservedStatus {
+            scoped: ScopedExecutor {
+                config: config.clone(),
+                diagnostic: false,
+            },
+        },
+        "/usr/local/bin/doveadm",
+        "/usr/local/bin/doveconf",
+    )
+    .with_userdb_socket_path(Some(userdb));
+    let fault_store = Store::new(root.join("documents-index"), fault_backend);
+    assert_eq!(
+        fault_store.upload(
+            ACCOUNT,
+            deleted.revision,
+            "refused.bin",
+            "application/octet-stream",
+            b"no write",
+            105
+        ),
+        Err(Error::PreDispatchUnavailable)
+    );
+    let after_fault = fault_store.load(ACCOUNT).unwrap();
+    assert!(after_fault.documents.is_empty());
+    assert_eq!(after_fault.revision, deleted.revision + 2);
+    println!("native_documents_bin predispatch_refusal_no_pending_or_mutation=PASS");
+    assert!(whole.elapsed() < NATIVE_LIMIT);
     assert_eq!(standard_metadata(), before);
     drop(fixture);
     assert!(!Path::new(&root).exists());

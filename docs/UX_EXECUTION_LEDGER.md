@@ -7764,3 +7764,39 @@ d27b2184 has no new native result. Superseding normal gates remain required.
 The unchanged generated refined inventory/hash was refreshed for seven new
 local test assumptions and line offsets. Historical baseline inventory is
 unmodified; no full strict release or panic-free application claim is made.
+
+## 2026-10-06 — S08 native Documents lifecycle qualification increment
+
+Product5b8ee7f9b261b1045082fcefdbb2b961567e05e8 is Shopkeeper signed,
+normally synchronized and freshorigin0/0clean; all three OSMAP local branch
+heads match their origin references. Normal commit2/push1 each passed
+1619library/0failed/42explicitnative ignores,518accountPython and32mail cases
+with2explicit local native skips. Authoritative standard mail checkout is
+clean source-only fast-forwarded to5b; no runtime/service/quota activation.
+
+The same owned disposable OpenBSD Documents fixture was extended, not a new
+transport framework. Matching binary
+b4facab2f7ef92ba7ca4f826faf6593a7bc89184f9cd063df234467ff19fa079
+actually PASS1/0failed/0ignored in4.67seconds: absent reserved mailbox first
+Save/exact five-byte download, Bin creation and sole location, restore and
+exact bytes, Bin then confirmed expunge with quota0. An injected predispatch
+status refusal proves private Store rollback without pending row or mutation;
+it is a synthetic negative alongside real native positive operations. Owned
+cleanup and two standard-file metadata checks pass. Compiler458inputs matched
+final product d27b alias plus reviewed native test d1aa; completed compressed
+transfer and full remote binary hash precede the one execution.
+
+This does not qualify the installed helper/browser, concurrent all-writer
+quota, production account-home authority, operator Documents UAT or PAGE07
+completion. Prior first-upload and transport failures remain retained.
+Evidence: documents/native-bin-lifecycle-increment1/native-attempt1/
+{native-test.log,binary-proof.json,post-build-parity.log}; independent review
+native-bin-lifecycle-increment1-actual-result.json.
+
+Separate exact-current administrative cleanup of v8 private namespace
+7ee207bd975a4fdc PASS in0.088seconds: two strict fstat snapshots, ten held
+references, one exact cache child, cache directory, seven known files and
+empty root removed; no unknown refs/listener/selected argv or PID signals.
+Historical continuity remains unproved and native v8 stays FAIL. Further
+projected transport variants stay parked. Evidence: native-v8-administrative-
+cleanup-freeze-v1/actual-cleanup-result.json and independent actual-scope review.
