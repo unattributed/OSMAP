@@ -161,3 +161,11 @@ Five actual local worker children exercise this ordering; SQL/primary and
 external TCP/IMAP remain projected. Existing supervisor peer equality is not
 browser issuer custody. Native factory/listener/complete mail containment and
 human password UAT remain OPEN; no completed WSTG or release claim follows.
+
+
+Persistent control-listener BUSL/SESS source controls preserve one owned inode,
+independent account grants and original captured-operation budgets. Two actual
+queued kernel-accept countercases now refuse trusted stop or uncertainty before
+frame/journal/cutoff dispatch. Replay/terminal loss halt admission without grant
+or quarantine reset, and foreign namespace replacements remain untouched.
+Installed native startup, complete ingress and full password UAT remain OPEN.

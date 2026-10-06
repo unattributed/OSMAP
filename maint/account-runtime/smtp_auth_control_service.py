@@ -245,7 +245,7 @@ class PrivateControlListener:
         if (type(supervisor)is not GuardedControlSupervisor or not isinstance(path,Path)
                 or path.name!='control.sock'or owner!=supervisor._journal.uid or owner!=os.geteuid()):
             raise Refused('SMTP control listener startup unavailable')
-        self.path=path;self.owner=owner;self._supervisor=supervisor
+        self.path=path;self.owner=owner;self._supervisor=supervisor;self._serving=threading.Lock()
 
     @classmethod
     def native(cls,*_args):raise Refused('native SMTP control listener unavailable')
@@ -256,6 +256,22 @@ class PrivateControlListener:
         self._current_recheck()
 
     def one(self):
+        return self._run(None)
+
+    def serve(self,stop):
+        # The local bootstrap owns this event. It stops future admission only;
+        # an accepted operation retains its original authenticated budget.
+        if type(stop)is not threading.Event:
+            raise Refused('SMTP control service stop unavailable')
+        return self._run(stop)
+
+    def _run(self,stop):
+        if not self._serving.acquire(blocking=False):
+            raise Refused('SMTP control listener already serving')
+        try:return self._owned_run(stop)
+        finally:self._serving.release()
+
+    def _owned_run(self,stop):
         parent=_directory(self.path.parent,self.owner);server=socket.socket(socket.AF_UNIX,socket.SOCK_STREAM)
         inode=None
         def directory_identity(info):return info.st_dev,info.st_ino,info.st_uid,info.st_gid,info.st_mode
@@ -271,9 +287,28 @@ class PrivateControlListener:
             if self.path.exists()or self.path.is_symlink()or len(os.fsencode(self.path))>=100:
                 raise Refused('SMTP control listener preexisting path')
             server.bind(str(self.path));info=self.path.lstat();inode=(info.st_dev,info.st_ino)
-            os.chmod(self.path,0o600);recheck();server.listen(1);server.settimeout(1)
-            stream,_=server.accept()
-            with stream:recheck();return self._supervisor.connection(stream,_listener=self)
+            os.chmod(self.path,0o600);recheck();server.listen(1)
+            server.settimeout(1 if stop is None else .1)
+            completed=0
+            while True:
+                recheck()
+                if getattr(self._supervisor._registry,'_control_uncertain',False):
+                    raise Unconfirmed('SMTP control service reconciliation required')
+                if stop is not None and stop.is_set():return completed
+                try:stream,_=server.accept()
+                except socket.timeout:
+                    if stop is None:raise
+                    continue
+                with stream:
+                    recheck()
+                    if getattr(self._supervisor._registry,'_control_uncertain',False):
+                        raise Unconfirmed('SMTP control service reconciliation required')
+                    if stop is not None and stop.is_set():return completed
+                    # Every failure halts this service invocation. No automatic
+                    # request retry, renewed budget or quarantine reset.
+                    result=self._supervisor.connection(stream,_listener=self)
+                if stop is None:return result
+                completed+=1
         finally:
             server.close()
             try:
