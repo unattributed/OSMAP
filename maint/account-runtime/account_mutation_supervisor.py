@@ -57,7 +57,7 @@ def _directory(path, owner):
 
 
 def _private(root_fd, name, owner, limit):
-    fd = os.open(name, os.O_RDONLY | os.O_NOFOLLOW, dir_fd=root_fd)
+    fd = os.open(name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=root_fd)
     try:
         m = os.fstat(fd)
         if (not stat.S_ISREG(m.st_mode) or m.st_uid != owner or m.st_nlink != 1

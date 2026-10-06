@@ -9077,3 +9077,11 @@ Metadata qualification does not authorize dispatch of ordinary `doveadm pw`: tag
 ### 2026-10-05 — separate owned startup cleanup from authentication admission
 
 Native24 left its private Dovecot fixture alive after startup expiry. Fresh reviewed read-only observations establish current numeric/namespace facts only; they do not authorize signalling a historical PID or prove why startup expired. Future fixture cleanup must retain born namespace and exclusive unreaped Popen session/group custody, while strict steady-state child identity still controls authentication admission. Unavailable/deferred children must not defeat cleanup of that exact owned group. Preserve original budgets and uncertainty; no blanket process stop, unchanged retry, standard-service mutation or password activation.
+
+### 2026-10-06 — refuse special bootstrap material before blocking open
+
+Configuration and both independent helper keys require regular files, but the bootstrap reader previously opened them in blocking mode before fstat. Actual writerless FIFO and replace-at-open controls reproduced the hang. Add O_NONBLOCK only, retain the existing no-follow/owner/link/mode/size checks, and keep the ordinary-byte positive and all original supervisor controls. Source review and normal signed synchronization remain separate from native factory/password activation.
+
+### 2026-10-06 — reconcile native portability failures without widening authority
+
+The native25 fixture has a directly born separate session, but OpenBSD getsid(2) refuses a target outside the caller's session even for root. Its current leader checks succeeded immediately before that call and the observed PermissionError. Replace this unsupported observation with bounded kernel session metadata under equivalent exact ownership checks; do not accept EPERM as successful custody, remove the session requirement or extend time limits. The actual failed result and unconfirmed daemon absence remain retained until a changed reviewed invocation demonstrates cleanup. The separate hash-marker abort has no measured causal event yet; exit-6 with empty output is not pledge qualification. Administrative cleanup of an orphan needs a newly checked private namespace and explicit current-state evidence, never historical-PID authority.
