@@ -7800,3 +7800,67 @@ empty root removed; no unknown refs/listener/selected argv or PID signals.
 Historical continuity remains unproved and native v8 stays FAIL. Further
 projected transport variants stay parked. Evidence: native-v8-administrative-
 cleanup-freeze-v1/actual-cleanup-result.json and independent actual-scope review.
+
+
+## 2026-10-06 — S08-02 actual populated Rename and original-action recovery
+
+Admit the reviewed same-parent private leaf Rename implementation over signed
+2753e0435935483b64febf0ba04bcb85a849bf93. Settings folder tree now offers entry,
+review and explicit confirmation through genuine signed helper actions. Native
+rename retains folder contents and GUID; protected/system, configured roles,
+reserved Documents, shared/public, stale GUID and child-folder cases refuse.
+This replaces an earlier proposed empty-only restriction; no all-writer folder
+locking policy is invented. Browser pending gates and bounded helper completion
+records retain the exact original action across restart; a fresh read grant
+may settle only confirmed native identity or known original-action NoMutation
+plus current source/parent/destination proof. Unknown does not authorize retry.
+Label/Snooze names reconcile by folder GUID without changing message identity,
+label IDs or timestamps. Partial private-index repair remains pending.
+
+One actual coherent OpenBSD parent test PASS1/0failed in 3.50 seconds, binary
+49918a4f12343bd520538a010c93c8faa644c56a21de9fcb2deffd4be03c7100,
+464 compiler plus two transport plus one signed-context inputs. Eighteen closed
+stages cover populated GUID/UID/exact synthetic bytes, Bob isolation, real
+private Label/Snooze continuity, actual lost known-refusal reply and durable
+original-action recovery, no redispatch, wrong peer/nonce/stale GUID refusals,
+actual helper pledge/unveil and owned cleanup. Three named standard-path
+metadata observations match. The helper required flock promise is now present
+without new network/settings filesystem authority or wider deadlines.
+
+Prior native attempt1 FAIL101 in 0.15 seconds is retained; its earliest child
+guard remains UNKNOWN, not retrospectively assigned to the separately proven
+missing required fixture auth-socket field. The one-path test repair proves
+old missing-field rejection/new complete owned socket map with the same
+confinement plan, and forwards closed stage/panic locations without payloads.
+Local six fixture controls, strict Clippy and formatting pass; actual native
+uses parent only and retains helper5/backend10/child45/whole60/outer70 bounds.
+Independent source and actual-result scope reviews are retained under
+/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/
+rename-native-repair-v2/independent-review/. No operator credentials, private
+message contents, provider Send or policy/key change was used.
+
+Normal admission gates/sign/synchronization are pending for this increment.
+No Rename runtime activation, production peer/channel/HTTP/human UAT claim is
+made. Matching web and authoritative helper activation and installed-channel
+validation remain required; S08/PAGE16/epic acceptance remains OPEN.
+
+Parallel D05 quota backend work remains unactivated. Real local three-writer
+and instrumented crash/count controls are bounded Linux evidence. Actual
+OpenBSD private builds refused missing build macro then incomplete upstream
+bootstrap before configure/compile/runtime; failures and owned retained roots
+remain recorded. Do not infer operator quota, OpenBSD ABI or PAGE07 acceptance.
+
+
+### 2026-10-06 — Rename admission gate refusal and explicit attachment encoder repair
+
+Normal canonical admission attempt1 passed its executed regressions but V11
+refused the measured one high-relevance production `expect` in the existing
+public attachment descriptor encoder. This was already in the parent source;
+the refusal is retained, not attributed to Rename or waived. Replace that
+assumption with an explicit Result through all four response encoders. On
+serialization failure return only the existing bounded helper error response,
+never partial success metadata or a private serialization error. Actual focused
+three-test run passed, including an injected failing serializer and successful
+public descriptors. Matching final native/build and normal signed gates remain
+required; native Rename attempt2 remains evidence for its assessed earlier
+source. No running application, operator Send or human UAT change is claimed.

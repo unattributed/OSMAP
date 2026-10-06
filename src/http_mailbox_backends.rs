@@ -77,13 +77,14 @@ impl RuntimeBrowserGateway {
     ) -> MailboxListRuntimeBackend {
         match &self.mailbox_helper_socket_path {
             Some(socket_path) => match self.helper_grant_key_path() {
-                Some(grant_key_path) => {
-                    MailboxListRuntimeBackend::Helper(MailboxHelperMailboxListBackend::new(
+                Some(grant_key_path) => MailboxListRuntimeBackend::Helper(
+                    MailboxHelperMailboxListBackend::new(
                         socket_path,
                         grant_key_path,
                         self.expensive_route_helper_policy_with_timeout(timeout_secs),
-                    ))
-                }
+                    )
+                    .with_helper_uid(self.mailbox_helper_peer_uid),
+                ),
                 None => MailboxListRuntimeBackend::Unavailable(missing_helper_grant_error()),
             },
             None => MailboxListRuntimeBackend::Direct(
@@ -283,6 +284,28 @@ pub(super) enum MailboxListRuntimeBackend {
 }
 
 impl crate::mailbox::MailboxBackend for MailboxListRuntimeBackend {
+    fn folder_rename_completion(
+        &self,
+        r: &crate::folder_rename::RenameFolderRequest,
+    ) -> crate::folder_rename::Completion {
+        match self {
+            Self::Helper(b) => b.folder_rename_completion(r),
+            _ => crate::folder_rename::Completion::Unconfirmed,
+        }
+    }
+    fn rename_folder(
+        &self,
+        r: &crate::folder_rename::RenameFolderRequest,
+    ) -> crate::folder_rename::Outcome {
+        match self {
+            Self::Direct(b) => b.rename_folder(r),
+            Self::Helper(b) => b.rename_folder(r),
+            Self::Unavailable(_) => {
+                crate::folder_rename::Outcome::Refused(crate::folder_create::Refusal::Unavailable)
+            }
+        }
+    }
+
     fn create_folder(
         &self,
         r: &crate::folder_create::CreateFolderRequest,

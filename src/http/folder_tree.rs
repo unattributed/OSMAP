@@ -117,6 +117,15 @@ impl FolderTree {
             snapshot: snapshot.clone(),
         })
     }
+    pub(crate) fn can_rename(
+        &self,
+        account: &str,
+        name: &str,
+        status: &crate::mailbox_status::MailboxStatus,
+    ) -> bool {
+        self.selectable(name)
+            && crate::folder_rename::validate_source(account, name, &self.snapshot, status).is_ok()
+    }
     pub(crate) fn can_create(
         &self,
         account: &str,

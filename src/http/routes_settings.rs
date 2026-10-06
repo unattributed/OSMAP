@@ -296,9 +296,12 @@ where
                                 let draft_location_ready = draft_location.as_ref().is_some_and(|saved| self.gateway.draft_location_ready(&validated_session, saved.location));
                                 let sent_copy = self.gateway.load_sent_copy_preference(&validated_session).ok();
                                 let sent_location = self.gateway.load_sent_location_preference(&validated_session).ok();
+                                let rename_state = self.gateway.pending_folder_rename(&validated_session);
+                                let rename_pending = rename_state.as_ref().is_ok_and(|state| state.is_some());
+                                let rename = rename_state.is_ok() && !rename_pending && chosen.zip(status.as_ref()).zip(hierarchy.as_ref()).is_some_and(|((name, status), tree)| tree.can_rename(&canonical_username, name, status)) && chosen.zip(bin.as_ref()).zip(sent_location.as_ref()).is_some_and(|((name, bin), sent)| sent.valid() && !crate::folder_rename::role_conflict(&[Some(bin.mailbox_name.clone()), Some(sent.mailbox_name.clone()), model.archive_mailbox_name.map(str::to_owned)].into_iter().flatten().collect::<Vec<_>>(), name, name));
                                 let sent_location_choices = self.sent_location_choices(context, &validated_session, &mut audit_events);
                                 let bin_choices = self.bin_folder_choices(context, &validated_session, &mut audit_events);
-                                crate::http_ui::render_copies_page_with_state(&model, crate::http_ui::CopiesPageState { mailboxes: mailboxes.as_deref(), chosen, counts, status: status.as_ref(), hierarchy: hierarchy.as_ref(), creation, draft_location: draft_location.as_ref(), draft_location_ready, bin: bin.as_ref(), bin_choices: bin_choices.as_deref(), sent_copy: sent_copy.as_ref(), sent_location: sent_location.as_ref(), sent_location_choices: sent_location_choices.as_deref() })
+                                crate::http_ui::render_copies_page_with_state(&model, crate::http_ui::CopiesPageState { mailboxes: mailboxes.as_deref(), chosen, counts, status: status.as_ref(), hierarchy: hierarchy.as_ref(), creation, rename, rename_pending, draft_location: draft_location.as_ref(), draft_location_ready, bin: bin.as_ref(), bin_choices: bin_choices.as_deref(), sent_copy: sent_copy.as_ref(), sent_location: sent_location.as_ref(), sent_location_choices: sent_location_choices.as_deref() })
                             }
                         }
                     } else if section == "appearance" {

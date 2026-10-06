@@ -12,6 +12,7 @@ pub struct MailboxHelperMailboxListBackend {
     socket_path: PathBuf,
     grant_key_path: PathBuf,
     policy: MailboxHelperPolicy,
+    helper_uid: Option<u32>,
 }
 
 impl MailboxHelperMailboxListBackend {
@@ -25,11 +26,153 @@ impl MailboxHelperMailboxListBackend {
             socket_path: socket_path.into(),
             grant_key_path: grant_key_path.into(),
             policy,
+            helper_uid: None,
         }
+    }
+    pub fn with_helper_uid(mut self, uid: Option<u32>) -> Self {
+        self.helper_uid = uid;
+        self
+    }
+    fn folder_facts(
+        &self,
+        mut request: MailboxHelperRequest,
+        max_response: usize,
+    ) -> Result<MailboxHelperResponse, MailboxBackendError> {
+        let mut execute = || -> Result<MailboxHelperResponse, String> {
+            #[cfg(unix)]
+            let deadline = Instant::now()
+                + Duration::from_secs(
+                    self.policy
+                        .read_timeout_secs
+                        .max(1)
+                        .min(self.policy.write_timeout_secs.max(1)),
+                );
+            let bytes = encode_authorized_request(&self.grant_key_path, &mut request)?;
+            #[cfg(not(unix))]
+            {
+                let _ = (bytes, max_response);
+                Err("Unix helper unavailable".into())
+            }
+            #[cfg(unix)]
+            {
+                let policy = MailboxHelperPolicy {
+                    max_response_bytes: self.policy.max_response_bytes.min(max_response),
+                    ..self.policy
+                };
+                let bytes = helper_exchange_before_with_peer(
+                    &self.socket_path,
+                    &bytes,
+                    policy,
+                    deadline,
+                    self.helper_uid,
+                )?;
+                let response = parse_response(
+                    MailboxListingPolicy::default(),
+                    MessageListPolicy::default(),
+                    MessageSearchPolicy::default(),
+                    MessageViewPolicy::default(),
+                    std::str::from_utf8(&bytes).map_err(|_| "invalid folder facts")?,
+                )?;
+                if let MailboxHelperResponse::FolderRenameCompletionOk { nonce, .. } = &response {
+                    if nonce != &super::mailbox_helper_protocol::request_grant(&request).nonce {
+                        return Err("completion response nonce refused".into());
+                    }
+                }
+                helper_deadline_remaining(deadline)?;
+                Ok(response)
+            }
+        };
+        execute().map_err(|_| crate::folder_metadata_backend::unavailable())
     }
 }
 
 impl MailboxBackend for MailboxHelperMailboxListBackend {
+    fn folder_rename_completion(
+        &self,
+        value: &crate::folder_rename::RenameFolderRequest,
+    ) -> crate::folder_rename::Completion {
+        use crate::folder_rename::Completion;
+        if value.validate().is_err() || self.helper_uid.is_none() {
+            return Completion::Unconfirmed;
+        }
+        let request = MailboxHelperRequest::FolderRenameCompletion {
+            request: value.clone(),
+            grant: MailboxHelperGrant::unsigned(),
+        };
+        match self.folder_facts(request, 4096) {
+            Ok(MailboxHelperResponse::FolderRenameCompletionOk {
+                request,
+                completion,
+                ..
+            }) if value.accepts_response(&request) => completion,
+            _ => Completion::Unconfirmed,
+        }
+    }
+    fn rename_folder(
+        &self,
+        value: &crate::folder_rename::RenameFolderRequest,
+    ) -> crate::folder_rename::Outcome {
+        let execute = || -> Result<crate::folder_rename::Outcome, String> {
+            value.validate().map_err(|_| "invalid rename".to_owned())?;
+            let peer = self.helper_uid.ok_or("helper peer unavailable")?;
+            #[cfg(unix)]
+            let deadline = Instant::now()
+                + Duration::from_secs(
+                    self.policy
+                        .read_timeout_secs
+                        .max(1)
+                        .min(self.policy.write_timeout_secs.max(1)),
+                );
+            let mut request = MailboxHelperRequest::FolderRename {
+                request: value.clone(),
+                grant: MailboxHelperGrant::unsigned(),
+            };
+            let wire = encode_authorized_request(&self.grant_key_path, &mut request)?;
+            #[cfg(not(unix))]
+            {
+                let _ = (peer, wire);
+                Err("Unix helper unavailable".into())
+            }
+            #[cfg(unix)]
+            {
+                let policy = MailboxHelperPolicy {
+                    max_request_bytes: self.policy.max_request_bytes.min(4096),
+                    max_response_bytes: self.policy.max_response_bytes.min(4096),
+                    ..self.policy
+                };
+                let bytes = helper_exchange_before_with_peer(
+                    &self.socket_path,
+                    &wire,
+                    policy,
+                    deadline,
+                    Some(peer),
+                )?;
+                let response = parse_response(
+                    MailboxListingPolicy::default(),
+                    MessageListPolicy::default(),
+                    MessageSearchPolicy::default(),
+                    MessageViewPolicy::default(),
+                    std::str::from_utf8(&bytes).map_err(|_| "invalid response")?,
+                )?;
+                match response {
+                    MailboxHelperResponse::FolderRenameOk {
+                        request: returned,
+                        outcome,
+                        nonce,
+                    } if value.accepts_response(&returned)
+                        && nonce
+                            == super::mailbox_helper_protocol::request_grant(&request).nonce =>
+                    {
+                        helper_deadline_remaining(deadline)?;
+                        Ok(outcome)
+                    }
+                    _ => Err("rename response binding refused".into()),
+                }
+            }
+        };
+        execute().unwrap_or(crate::folder_rename::Outcome::Unknown)
+    }
+
     fn create_folder(
         &self,
         value: &crate::folder_create::CreateFolderRequest,
@@ -99,119 +242,42 @@ impl MailboxBackend for MailboxHelperMailboxListBackend {
         account: &str,
     ) -> Result<crate::folder_metadata::FolderSnapshot, MailboxBackendError> {
         crate::mailbox_status::validate_account(account)?;
-        let mut request = MailboxHelperRequest::FolderMetadata {
-            canonical_username: account.into(),
-            grant: MailboxHelperGrant::unsigned(),
-        };
-        let bytes = encode_authorized_request(&self.grant_key_path, &mut request)
-            .map_err(|_| crate::folder_metadata_backend::unavailable())?;
-        #[cfg(not(unix))]
-        {
-            let _ = bytes;
-            Err(crate::folder_metadata_backend::unavailable())
-        }
-        #[cfg(unix)]
-        {
-            let mut stream = UnixStream::connect(&self.socket_path)
-                .map_err(|_| crate::folder_metadata_backend::unavailable())?;
-            stream
-                .set_read_timeout(Some(Duration::from_secs(
-                    self.policy.read_timeout_secs.max(1),
-                )))
-                .map_err(|_| crate::folder_metadata_backend::unavailable())?;
-            stream
-                .set_write_timeout(Some(Duration::from_secs(
-                    self.policy.write_timeout_secs.max(1),
-                )))
-                .map_err(|_| crate::folder_metadata_backend::unavailable())?;
-            stream
-                .write_all(&bytes)
-                .map_err(|_| crate::folder_metadata_backend::unavailable())?;
-            stream
-                .shutdown(Shutdown::Write)
-                .map_err(|_| crate::folder_metadata_backend::unavailable())?;
-            let bytes = read_bounded_from_stream(
-                &mut stream,
-                self.policy.max_response_bytes.min(704 * 1024),
-            )
-            .map_err(|_| crate::folder_metadata_backend::unavailable())?;
-            let response = parse_response(
-                MailboxListingPolicy::default(),
-                MessageListPolicy::default(),
-                MessageSearchPolicy::default(),
-                MessageViewPolicy::default(),
-                std::str::from_utf8(&bytes)
-                    .map_err(|_| crate::folder_metadata_backend::unavailable())?,
-            )
-            .map_err(|_| crate::folder_metadata_backend::unavailable())?;
-            match response {
-                MailboxHelperResponse::FolderMetadataOk { snapshot } => {
-                    snapshot
-                        .validate_for(account)
-                        .map_err(|_| crate::folder_metadata_backend::unavailable())?;
-                    Ok(snapshot)
-                }
-                _ => Err(crate::folder_metadata_backend::unavailable()),
+        match self.folder_facts(
+            MailboxHelperRequest::FolderMetadata {
+                canonical_username: account.into(),
+                grant: MailboxHelperGrant::unsigned(),
+            },
+            704 * 1024,
+        )? {
+            MailboxHelperResponse::FolderMetadataOk { snapshot }
+                if snapshot.validate_for(account).is_ok() =>
+            {
+                Ok(snapshot)
             }
+            _ => Err(crate::folder_metadata_backend::unavailable()),
         }
     }
-
     fn mailbox_status(
         &self,
         account: &str,
         folder: &str,
     ) -> Result<crate::mailbox_status::MailboxStatus, MailboxBackendError> {
+        crate::mailbox_status::validate_account(account)?;
         crate::mailbox_status::validate_name(folder)?;
-        let mut request = MailboxHelperRequest::MailboxStatus {
-            canonical_username: account.into(),
-            mailbox_name: folder.into(),
-            grant: MailboxHelperGrant::unsigned(),
-        };
-        let bytes = encode_authorized_request(&self.grant_key_path, &mut request)
-            .map_err(|_| crate::mailbox_status::unavailable())?;
-        #[cfg(not(unix))]
-        {
-            let _ = bytes;
-            Err(crate::mailbox_status::unavailable())
-        }
-        #[cfg(unix)]
-        {
-            let mut stream = UnixStream::connect(&self.socket_path)
-                .map_err(|_| crate::mailbox_status::unavailable())?;
-            stream
-                .set_read_timeout(Some(Duration::from_secs(
-                    self.policy.read_timeout_secs.max(1),
-                )))
-                .map_err(|_| crate::mailbox_status::unavailable())?;
-            stream
-                .set_write_timeout(Some(Duration::from_secs(
-                    self.policy.write_timeout_secs.max(1),
-                )))
-                .map_err(|_| crate::mailbox_status::unavailable())?;
-            stream
-                .write_all(&bytes)
-                .map_err(|_| crate::mailbox_status::unavailable())?;
-            stream
-                .shutdown(Shutdown::Write)
-                .map_err(|_| crate::mailbox_status::unavailable())?;
-            let bytes =
-                read_bounded_from_stream(&mut stream, self.policy.max_response_bytes.min(4096))
-                    .map_err(|_| crate::mailbox_status::unavailable())?;
-            let response = parse_response(
-                MailboxListingPolicy::default(),
-                MessageListPolicy::default(),
-                MessageSearchPolicy::default(),
-                MessageViewPolicy::default(),
-                std::str::from_utf8(&bytes).map_err(|_| crate::mailbox_status::unavailable())?,
-            )
-            .map_err(|_| crate::mailbox_status::unavailable())?;
-            match response {
-                MailboxHelperResponse::MailboxStatusOk { status } => {
-                    status.validate(folder)?;
-                    Ok(status)
-                }
-                _ => Err(crate::mailbox_status::unavailable()),
+        match self.folder_facts(
+            MailboxHelperRequest::MailboxStatus {
+                canonical_username: account.into(),
+                mailbox_name: folder.into(),
+                grant: MailboxHelperGrant::unsigned(),
+            },
+            4096,
+        )? {
+            MailboxHelperResponse::MailboxStatusOk { status }
+                if status.validate(folder).is_ok() =>
+            {
+                Ok(status)
             }
+            _ => Err(crate::folder_metadata_backend::unavailable()),
         }
     }
 
@@ -267,6 +333,8 @@ impl MailboxBackend for MailboxHelperMailboxListBackend {
                 MailboxHelperResponse::RetentionStatus { .. }
                 | MailboxHelperResponse::MessageDelete { .. }
                 | MailboxHelperResponse::FolderCreateOk { .. }
+                | MailboxHelperResponse::FolderRenameCompletionOk { .. }
+                | MailboxHelperResponse::FolderRenameOk { .. }
                 | MailboxHelperResponse::FolderMetadataOk { .. }
                 | MailboxHelperResponse::MailboxStatusOk { .. }
                 | MailboxHelperResponse::MessageFlagOk { .. }
@@ -424,6 +492,8 @@ impl MessageListBackend for MailboxHelperMessageListBackend {
                 MailboxHelperResponse::RetentionStatus { .. }
                 | MailboxHelperResponse::MessageDelete { .. }
                 | MailboxHelperResponse::FolderCreateOk { .. }
+                | MailboxHelperResponse::FolderRenameCompletionOk { .. }
+                | MailboxHelperResponse::FolderRenameOk { .. }
                 | MailboxHelperResponse::FolderMetadataOk { .. }
                 | MailboxHelperResponse::MailboxStatusOk { .. }
                 | MailboxHelperResponse::MessageFlagOk { .. }
@@ -591,6 +661,8 @@ impl MessageSearchBackend for MailboxHelperMessageSearchBackend {
                 MailboxHelperResponse::RetentionStatus { .. }
                 | MailboxHelperResponse::MessageDelete { .. }
                 | MailboxHelperResponse::FolderCreateOk { .. }
+                | MailboxHelperResponse::FolderRenameCompletionOk { .. }
+                | MailboxHelperResponse::FolderRenameOk { .. }
                 | MailboxHelperResponse::FolderMetadataOk { .. }
                 | MailboxHelperResponse::MailboxStatusOk { .. }
                 | MailboxHelperResponse::MessageFlagOk { .. }
@@ -873,6 +945,8 @@ impl MessageViewBackend for MailboxHelperMessageViewBackend {
                 MailboxHelperResponse::RetentionStatus { .. }
                 | MailboxHelperResponse::MessageDelete { .. }
                 | MailboxHelperResponse::FolderCreateOk { .. }
+                | MailboxHelperResponse::FolderRenameCompletionOk { .. }
+                | MailboxHelperResponse::FolderRenameOk { .. }
                 | MailboxHelperResponse::FolderMetadataOk { .. }
                 | MailboxHelperResponse::MailboxStatusOk { .. }
                 | MailboxHelperResponse::MessageFlagOk { .. }
@@ -1025,6 +1099,8 @@ impl MailboxHelperAttachmentDownloadBackend {
                 MailboxHelperResponse::RetentionStatus { .. }
                 | MailboxHelperResponse::MessageDelete { .. }
                 | MailboxHelperResponse::FolderCreateOk { .. }
+                | MailboxHelperResponse::FolderRenameCompletionOk { .. }
+                | MailboxHelperResponse::FolderRenameOk { .. }
                 | MailboxHelperResponse::FolderMetadataOk { .. }
                 | MailboxHelperResponse::MailboxStatusOk { .. }
                 | MailboxHelperResponse::MessageFlagOk { .. }
@@ -1367,6 +1443,8 @@ impl MessageAppendBackend for MailboxHelperMessageAppendBackend {
                 MailboxHelperResponse::RetentionStatus { .. }
                 | MailboxHelperResponse::MessageDelete { .. }
                 | MailboxHelperResponse::FolderCreateOk { .. }
+                | MailboxHelperResponse::FolderRenameCompletionOk { .. }
+                | MailboxHelperResponse::FolderRenameOk { .. }
                 | MailboxHelperResponse::FolderMetadataOk { .. }
                 | MailboxHelperResponse::MailboxStatusOk { .. }
                 | MailboxHelperResponse::MessageFlagOk { .. }
@@ -1522,7 +1600,17 @@ pub(super) fn encode_authorized_request(
     request: &mut MailboxHelperRequest,
 ) -> Result<Vec<u8>, String> {
     let key = load_helper_grant_key(grant_key_path)?;
-    issue_request_grant(request, &key, current_unix_time_secs()?)?;
+    if let MailboxHelperRequest::FolderRename { request: value, .. } = request {
+        let nonce = value.action_nonce().to_owned();
+        super::mailbox_helper_protocol::issue_request_grant_with_nonce(
+            request,
+            &key,
+            current_unix_time_secs()?,
+            &nonce,
+        )?;
+    } else {
+        issue_request_grant(request, &key, current_unix_time_secs()?)?;
+    }
     Ok(encode_request(request).into_bytes())
 }
 

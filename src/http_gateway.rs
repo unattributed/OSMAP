@@ -575,6 +575,12 @@ impl BrowserGateway for RuntimeBrowserGateway {
         revision: u64,
         mailbox_name: &str,
     ) -> Result<crate::bin_folder::BinPreference, crate::bin_folder::Error> {
+        let Ok(_guard) = crate::folder_rename::settings_gate(
+            &self.settings_dir,
+            &session.record.canonical_username,
+        ) else {
+            return Err(crate::bin_folder::Error::Unavailable);
+        };
         crate::bin_folder::BinPreferencesStore::new(&self.settings_dir).save(
             &session.record.canonical_username,
             revision,
@@ -660,6 +666,12 @@ impl BrowserGateway for RuntimeBrowserGateway {
         name: &str,
         guid: &str,
     ) -> Result<crate::sent_location::Preference, crate::sent_location::Error> {
+        let Ok(_guard) = crate::folder_rename::settings_gate(
+            &self.settings_dir,
+            &session.record.canonical_username,
+        ) else {
+            return Err(crate::sent_location::Error::Unavailable);
+        };
         crate::sent_location::Store::new(&self.settings_dir).save(
             &session.record.canonical_username,
             revision,
@@ -742,6 +754,12 @@ impl BrowserGateway for RuntimeBrowserGateway {
         &self,
         session: &ValidatedSession,
     ) -> Result<crate::snooze::SnoozeRecord, crate::snooze::SnoozeError> {
+        let Ok(_guard) = crate::folder_rename::settings_gate(
+            &self.settings_dir,
+            &session.record.canonical_username,
+        ) else {
+            return Err(crate::snooze::SnoozeError::Unavailable);
+        };
         crate::snooze::SnoozeStore::new(&self.settings_dir)
             .load(&session.record.canonical_username, self.snooze_clock())
     }
@@ -752,6 +770,12 @@ impl BrowserGateway for RuntimeBrowserGateway {
         revision: u64,
         until: Option<u64>,
     ) -> Result<crate::snooze::SnoozeRecord, crate::snooze::SnoozeError> {
+        let Ok(_guard) = crate::folder_rename::settings_gate(
+            &self.settings_dir,
+            &session.record.canonical_username,
+        ) else {
+            return Err(crate::snooze::SnoozeError::Unavailable);
+        };
         let store = crate::snooze::SnoozeStore::new(&self.settings_dir);
         match until {
             Some(until) => store.set(
@@ -776,6 +800,16 @@ impl BrowserGateway for RuntimeBrowserGateway {
         folder: &str,
         rows: &[MessageSummary],
     ) -> crate::snooze::SnoozeProjection {
+        let Ok(_guard) = crate::folder_rename::settings_gate(
+            &self.settings_dir,
+            &session.record.canonical_username,
+        ) else {
+            return crate::snooze::SnoozeProjection {
+                hidden: vec![],
+                revision: None,
+                unavailable: Some(crate::snooze::SnoozeError::Unavailable),
+            };
+        };
         let store = crate::snooze::SnoozeStore::new(&self.settings_dir);
         store.project(
             &session.record.canonical_username,
@@ -870,6 +904,11 @@ impl BrowserGateway for RuntimeBrowserGateway {
         &self,
         s: &ValidatedSession,
     ) -> Result<crate::labels::LabelRecord, crate::labels::LabelError> {
+        let Ok(_guard) =
+            crate::folder_rename::settings_gate(&self.settings_dir, &s.record.canonical_username)
+        else {
+            return Err(crate::labels::LabelError::Unavailable);
+        };
         crate::labels::LabelStore::new(self.settings_dir.join("labels-v1"))
             .load(&s.record.canonical_username)
     }
@@ -879,6 +918,11 @@ impl BrowserGateway for RuntimeBrowserGateway {
         r: u64,
         c: crate::labels::LabelChange<'_>,
     ) -> Result<crate::labels::LabelRecord, crate::labels::LabelError> {
+        let Ok(_guard) =
+            crate::folder_rename::settings_gate(&self.settings_dir, &s.record.canonical_username)
+        else {
+            return Err(crate::labels::LabelError::Unavailable);
+        };
         crate::labels::LabelStore::new(self.settings_dir.join("labels-v1")).change(
             &s.record.canonical_username,
             r,
@@ -892,6 +936,11 @@ impl BrowserGateway for RuntimeBrowserGateway {
         a: &crate::labels::MessageIdentity,
         b: &crate::labels::MessageIdentity,
     ) -> Result<crate::labels::LabelRecord, crate::labels::LabelError> {
+        let Ok(_guard) =
+            crate::folder_rename::settings_gate(&self.settings_dir, &s.record.canonical_username)
+        else {
+            return Err(crate::labels::LabelError::Unavailable);
+        };
         crate::labels::LabelStore::new(self.settings_dir.join("labels-v1"))
             .reconcile_confirmed_move(&s.record.canonical_username, r, a, b)
     }
@@ -1209,6 +1258,17 @@ impl BrowserGateway for RuntimeBrowserGateway {
         session: &ValidatedSession,
         content: HtmlDisplayPreference,
     ) -> BrowserSettingsUpdateOutcome {
+        let Ok(_guard) = crate::folder_rename::settings_gate(
+            &self.settings_dir,
+            &session.record.canonical_username,
+        ) else {
+            return BrowserSettingsUpdateOutcome {
+                decision: BrowserSettingsUpdateDecision::Denied {
+                    public_reason: "temporarily_unavailable".into(),
+                },
+                audit_events: vec![],
+            };
+        };
         let result = crate::settings::FileUserSettingsStore::new(&self.settings_dir)
             .save_content(&session.record.canonical_username, content);
         self.partial_settings_outcome(context, session, "content", result)
@@ -1220,6 +1280,17 @@ impl BrowserGateway for RuntimeBrowserGateway {
         session: &ValidatedSession,
         archive: Option<&str>,
     ) -> BrowserSettingsUpdateOutcome {
+        let Ok(_guard) = crate::folder_rename::settings_gate(
+            &self.settings_dir,
+            &session.record.canonical_username,
+        ) else {
+            return BrowserSettingsUpdateOutcome {
+                decision: BrowserSettingsUpdateDecision::Denied {
+                    public_reason: "temporarily_unavailable".into(),
+                },
+                audit_events: vec![],
+            };
+        };
         let result = crate::settings::FileUserSettingsStore::new(&self.settings_dir)
             .save_archive(&session.record.canonical_username, archive);
         self.partial_settings_outcome(context, session, "archive", result)
@@ -1232,6 +1303,17 @@ impl BrowserGateway for RuntimeBrowserGateway {
         html_display_preference: HtmlDisplayPreference,
         archive_mailbox_name: Option<&str>,
     ) -> BrowserSettingsUpdateOutcome {
+        let Ok(_guard) = crate::folder_rename::settings_gate(
+            &self.settings_dir,
+            &validated_session.record.canonical_username,
+        ) else {
+            return BrowserSettingsUpdateOutcome {
+                decision: BrowserSettingsUpdateDecision::Denied {
+                    public_reason: "temporarily_unavailable".into(),
+                },
+                audit_events: vec![],
+            };
+        };
         self.update_settings_impl(
             context,
             validated_session,
@@ -1240,6 +1322,136 @@ impl BrowserGateway for RuntimeBrowserGateway {
         )
     }
 
+    fn pending_folder_rename(
+        &self,
+        session: &ValidatedSession,
+    ) -> Result<Option<crate::folder_rename::RenameFolderRequest>, crate::folder_create::Refusal>
+    {
+        crate::folder_rename::role_lease(&self.settings_dir, &session.record.canonical_username)
+            .map(|lease| lease.pending().cloned())
+    }
+    fn check_folder_rename(
+        &self,
+        _: &AuthenticationContext,
+        session: &ValidatedSession,
+    ) -> crate::folder_rename::CheckOutcome {
+        use crate::folder_rename::CheckOutcome;
+        if self.mailbox_helper_socket_path.is_some()
+            && (self.mailbox_helper_peer_uid.is_none()
+                || self.mailbox_helper_grant_key_path.is_none())
+        {
+            return CheckOutcome::Unavailable;
+        }
+        let Ok(mut lease) = crate::folder_rename::role_lease(
+            &self.settings_dir,
+            &session.record.canonical_username,
+        ) else {
+            return CheckOutcome::Unavailable;
+        };
+        let Some(request) = lease.pending().cloned() else {
+            return CheckOutcome::NoPending;
+        };
+        let backend = self.build_mailbox_list_backend();
+        let (Ok(snapshot), Ok(parent)) = (
+            crate::mailbox::MailboxBackend::folder_metadata(&backend, request.account()),
+            crate::mailbox::MailboxBackend::mailbox_status(
+                &backend,
+                request.account(),
+                request.parent(),
+            ),
+        ) else {
+            return CheckOutcome::Unconfirmed;
+        };
+        if let Ok(destination) = crate::mailbox::MailboxBackend::mailbox_status(
+            &backend,
+            request.account(),
+            &request.destination(),
+        ) {
+            if crate::folder_rename::confirmed_result(&request, &snapshot, &destination, &parent) {
+                if crate::folder_rename::reconcile_metadata(&self.settings_dir, &request).is_err()
+                    || lease.confirm().is_err()
+                {
+                    return CheckOutcome::Unavailable;
+                }
+                return CheckOutcome::Renamed {
+                    destination: request.destination(),
+                };
+            }
+        }
+        if crate::mailbox::MailboxBackend::folder_rename_completion(&backend, &request)
+            != crate::folder_rename::Completion::NoMutation
+        {
+            return CheckOutcome::Unconfirmed;
+        }
+        let Ok(source) = crate::mailbox::MailboxBackend::mailbox_status(
+            &backend,
+            request.account(),
+            request.source(),
+        ) else {
+            return CheckOutcome::Unconfirmed;
+        };
+        if !crate::folder_rename::confirmed_unchanged(&request, &snapshot, &source, &parent) {
+            return CheckOutcome::Unconfirmed;
+        }
+        if lease.confirm().is_err() {
+            return CheckOutcome::Unavailable;
+        }
+        CheckOutcome::Unchanged
+    }
+    fn rename_folder(
+        &self,
+        context: &AuthenticationContext,
+        session: &ValidatedSession,
+        request: &crate::folder_rename::RenameFolderRequest,
+    ) -> crate::folder_rename::Outcome {
+        use crate::{folder_create::Refusal, folder_rename::Outcome};
+        if self.mailbox_helper_socket_path.is_some()
+            && (self.mailbox_helper_peer_uid.is_none()
+                || self.mailbox_helper_grant_key_path.is_none())
+        {
+            return Outcome::Refused(Refusal::Unavailable);
+        }
+        let Ok(mut lease) = crate::folder_rename::settings_gate(
+            &self.settings_dir,
+            &session.record.canonical_username,
+        ) else {
+            return Outcome::Refused(Refusal::Unavailable);
+        };
+        if request.account() != session.record.canonical_username {
+            return Outcome::Refused(Refusal::Invalid);
+        }
+        let Ok(names) = crate::folder_rename::protected_destinations(self, context, session) else {
+            return Outcome::Refused(Refusal::Unavailable);
+        };
+        if crate::folder_rename::role_conflict(&names, request.source(), &request.destination()) {
+            return Outcome::Refused(Refusal::Invalid);
+        }
+        if crate::labels::LabelStore::new(self.settings_dir.join("labels-v1"))
+            .load(request.account())
+            .is_err()
+            || crate::snooze::SnoozeStore::new(&self.settings_dir)
+                .load(request.account(), self.snooze_clock())
+                .is_err()
+        {
+            return Outcome::Refused(Refusal::Unavailable);
+        }
+        if lease.begin(request).is_err() {
+            return Outcome::Refused(Refusal::Unavailable);
+        }
+        let outcome = crate::mailbox::MailboxBackend::rename_folder(
+            &self.build_mailbox_list_backend(),
+            request,
+        );
+        if outcome == Outcome::Renamed
+            && crate::folder_rename::reconcile_metadata(&self.settings_dir, request).is_err()
+        {
+            return Outcome::Unknown;
+        }
+        if outcome != Outcome::Unknown && lease.confirm().is_err() {
+            return Outcome::Unknown;
+        }
+        outcome
+    }
     fn create_folder(
         &self,
         context: &AuthenticationContext,

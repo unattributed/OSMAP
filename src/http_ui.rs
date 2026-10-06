@@ -8,6 +8,9 @@ mod folder_create_ui;
 #[path = "key_inventory_ui.rs"]
 pub(crate) mod key_inventory_ui;
 pub(crate) use folder_create_ui::render_folder_create;
+#[path = "folder_rename_ui.rs"]
+mod folder_rename_ui;
+pub(crate) use folder_rename_ui::{render_folder_rename, RenamePageModel};
 
 #[path = "snooze_ui.rs"]
 mod snooze_ui;

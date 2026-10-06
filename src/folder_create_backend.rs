@@ -7,9 +7,9 @@ use std::{
     path::Path,
     time::{Duration, Instant},
 };
-struct Deadline<'a, E> {
-    inner: &'a E,
-    until: Instant,
+pub(crate) struct Deadline<'a, E> {
+    pub(crate) inner: &'a E,
+    pub(crate) until: Instant,
 }
 impl<E: CommandExecutor> CommandExecutor for Deadline<'_, E> {
     fn run_with_stdin_bytes(

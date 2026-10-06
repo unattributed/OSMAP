@@ -279,6 +279,37 @@ impl LabelStore {
         lock.write(&bytes).map_err(|_| LabelError::Unconfirmed)?;
         Ok(r)
     }
+    /// Call only after native old/new-name and original folder-GUID confirmation.
+    /// Idempotent so a pending action can finish private metadata after a restart.
+    pub(crate) fn reconcile_folder_rename(
+        &self,
+        request: &crate::folder_rename::RenameFolderRequest,
+    ) -> Result<(), LabelError> {
+        request.validate().map_err(|_| LabelError::Invalid)?;
+        let account = request.account();
+        let lock = self
+            .file
+            .lock(account)
+            .map_err(|_| LabelError::Unavailable)?;
+        let mut record =
+            LabelRecord::parse(account, lock.read().map_err(|_| LabelError::Unavailable)?)?;
+        let mut changed = false;
+        for assignment in &mut record.assignments {
+            if assignment.key.folder == request.source()
+                && assignment.key.mailbox_guid == request.source_guid()
+            {
+                assignment.key.folder = request.destination();
+                changed = true;
+            }
+        }
+        if !changed {
+            return Ok(());
+        }
+        record.revision = record.revision.checked_add(1).ok_or(LabelError::Corrupt)?;
+        let bytes = serde_json::to_vec(&record).map_err(|_| LabelError::Corrupt)?;
+        LabelRecord::parse(account, Some(bytes.clone()))?;
+        lock.write(&bytes).map_err(|_| LabelError::Unconfirmed)
+    }
     pub fn change(
         &self,
         account: &str,

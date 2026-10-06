@@ -69,6 +69,17 @@ impl<E> MailboxBackend for DoveadmMailboxListBackend<E>
 where
     E: CommandExecutor,
 {
+    fn rename_folder(
+        &self,
+        request: &crate::folder_rename::RenameFolderRequest,
+    ) -> crate::folder_rename::Outcome {
+        crate::folder_rename_backend::rename(
+            &self.command_executor,
+            &self.doveadm_path,
+            self.userdb_socket_path.as_deref(),
+            request,
+        )
+    }
     fn create_folder(
         &self,
         request: &crate::folder_create::CreateFolderRequest,

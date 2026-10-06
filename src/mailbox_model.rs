@@ -1038,6 +1038,18 @@ pub struct MailboxBackendError {
 
 /// A backend capable of listing mailboxes for a canonical user.
 pub trait MailboxBackend {
+    fn folder_rename_completion(
+        &self,
+        _: &crate::folder_rename::RenameFolderRequest,
+    ) -> crate::folder_rename::Completion {
+        crate::folder_rename::Completion::Unconfirmed
+    }
+    fn rename_folder(
+        &self,
+        _: &crate::folder_rename::RenameFolderRequest,
+    ) -> crate::folder_rename::Outcome {
+        crate::folder_rename::Outcome::Refused(crate::folder_create::Refusal::Unavailable)
+    }
     fn create_folder(
         &self,
         _: &crate::folder_create::CreateFolderRequest,

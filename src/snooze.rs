@@ -273,6 +273,39 @@ impl SnoozeStore {
         }
         Ok(r)
     }
+    /// Only after authoritative folder-GUID continuity. Keeps all marker times intact.
+    pub(crate) fn reconcile_folder_rename(
+        &self,
+        request: &crate::folder_rename::RenameFolderRequest,
+    ) -> Result<(), SnoozeError> {
+        request.validate().map_err(|_| SnoozeError::Invalid)?;
+        let account = request.account();
+        let lock = self
+            .file
+            .lock(account)
+            .map_err(|_| SnoozeError::Unavailable)?;
+        let mut record =
+            SnoozeRecord::decode(account, lock.read().map_err(|_| SnoozeError::Unavailable)?)?;
+        let mut changed = false;
+        for marker in &mut record.markers {
+            if marker.identity.folder == request.source()
+                && marker.identity.mailbox_guid == request.source_guid()
+            {
+                marker.identity.folder = request.destination();
+                changed = true;
+            }
+        }
+        if !changed {
+            return Ok(());
+        }
+        record.revision = record
+            .revision
+            .checked_add(1)
+            .ok_or(SnoozeError::Capacity)?;
+        let bytes = serde_json::to_vec(&record).map_err(|_| SnoozeError::Corrupt)?;
+        SnoozeRecord::decode(account, Some(bytes.clone()))?;
+        lock.write(&bytes).map_err(|_| SnoozeError::Unconfirmed)
+    }
     pub fn load(&self, account: &str, now: u64) -> Result<SnoozeRecord, SnoozeError> {
         self.transact(account, now, None, |_| Ok(()))
     }

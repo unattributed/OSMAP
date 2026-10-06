@@ -129,7 +129,10 @@ pub fn validate_creation_parent(
     Ok(())
 }
 
-fn validate_private_namespace(snapshot: &FolderSnapshot, name: &str) -> Result<(), Refusal> {
+pub(crate) fn validate_private_namespace(
+    snapshot: &FolderSnapshot,
+    name: &str,
+) -> Result<(), Refusal> {
     let ns: Vec<_> = snapshot
         .namespaces()
         .iter()

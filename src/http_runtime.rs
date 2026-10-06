@@ -199,6 +199,18 @@ where
             (HttpMethod::Get, "/drafts") => self.handle_draft_list(request, &context),
             (HttpMethod::Get, "/draft") => self.handle_draft_resume(request, &context),
             (HttpMethod::Get, "/sessions") => self.handle_sessions_page(request, &context),
+            (HttpMethod::Get, "/settings/folders/rename/check") => {
+                self.handle_folder_rename_check(request, &context)
+            }
+            (HttpMethod::Post, "/settings/folders/rename/check") => {
+                self.handle_folder_rename_check(request, &context)
+            }
+            (HttpMethod::Get, "/settings/folders/rename") => {
+                self.handle_folder_rename(request, &context)
+            }
+            (HttpMethod::Post, "/settings/folders/rename") => {
+                self.handle_folder_rename(request, &context)
+            }
             (HttpMethod::Get, "/settings/folders/create") => {
                 self.handle_folder_create(request, &context)
             }

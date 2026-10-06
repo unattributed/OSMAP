@@ -38,6 +38,14 @@ pub(super) enum MailboxHelperRequest {
         request: crate::mailbox::MessageDeleteRequest,
         grant: MailboxHelperGrant,
     },
+    FolderRenameCompletion {
+        request: crate::folder_rename::RenameFolderRequest,
+        grant: MailboxHelperGrant,
+    },
+    FolderRename {
+        request: crate::folder_rename::RenameFolderRequest,
+        grant: MailboxHelperGrant,
+    },
     FolderCreate {
         request: crate::folder_create::CreateFolderRequest,
         grant: MailboxHelperGrant,
@@ -143,6 +151,16 @@ pub(crate) enum MailboxHelperResponse {
         result: Result<crate::mailbox::MessageDeleteResult, crate::mailbox::MessageDeleteError>,
         nonce: String,
     },
+    FolderRenameCompletionOk {
+        request: Box<crate::folder_rename::RenameFolderRequest>,
+        completion: crate::folder_rename::Completion,
+        nonce: String,
+    },
+    FolderRenameOk {
+        request: Box<crate::folder_rename::RenameFolderRequest>,
+        outcome: crate::folder_rename::Outcome,
+        nonce: String,
+    },
     FolderCreateOk {
         request: crate::folder_create::CreateFolderRequest,
         outcome: crate::folder_create::Outcome,
@@ -205,6 +223,8 @@ pub(super) fn encode_request(request: &MailboxHelperRequest) -> String {
             format!("operation=retention_status\ncanonical_username_b64={}\nmailbox_name_b64={}\n{}", encode_base64(canonical_username.as_bytes()), encode_base64(mailbox_name.as_bytes()), encode_grant_fields(grant)),
         MailboxHelperRequest::MessageDelete { request, grant } =>
             format!("operation=message_delete\n{}{}", encode_delete_fields(request), encode_grant_fields(grant)),
+        MailboxHelperRequest::FolderRenameCompletion {request,grant} => format!("operation=folder_rename_completion\ncanonical_username_b64={}\nrename_request_b64={}\n{}",encode_base64(request.account().as_bytes()),encode_base64(serde_json::to_string(request).unwrap_or_default().as_bytes()),encode_grant_fields(grant)),
+        MailboxHelperRequest::FolderRename {request,grant} => format!("operation=folder_rename\ncanonical_username_b64={}\nrename_request_b64={}\n{}",encode_base64(request.account().as_bytes()),encode_base64(serde_json::to_string(request).unwrap_or_default().as_bytes()),encode_grant_fields(grant)),
         MailboxHelperRequest::FolderCreate {request,grant} => format!("operation=folder_create\ncanonical_username_b64={}\ncreate_request_b64={}\n{}",encode_base64(request.account().as_bytes()),encode_base64(serde_json::to_string(request).unwrap_or_default().as_bytes()),encode_grant_fields(grant)),
         MailboxHelperRequest::FolderMetadata {canonical_username,grant} => format!("operation=folder_metadata\ncanonical_username_b64={}\n{}",encode_base64(canonical_username.as_bytes()),encode_grant_fields(grant)),
         MailboxHelperRequest::MailboxStatus {canonical_username,mailbox_name,grant} => format!("operation=mailbox_status\ncanonical_username_b64={}\nmailbox_name_b64={}\n{}",encode_base64(canonical_username.as_bytes()),encode_base64(mailbox_name.as_bytes()),encode_grant_fields(grant)),
@@ -361,6 +381,27 @@ pub(super) fn parse_request(input: &str) -> Result<MailboxHelperRequest, String>
                 request: parse_delete_fields(&fields)?,
                 grant,
             })
+        }
+        "folder_rename" | "folder_rename_completion" => {
+            if input.len() > 4096 {
+                return Err("rename request too large".into());
+            }
+            let bytes = decode_base64_bytes(
+                require_field(&fields, "rename_request_b64")?,
+                2048,
+                "rename_request",
+            )?;
+            let request: crate::folder_rename::RenameFolderRequest =
+                serde_json::from_slice(&bytes).map_err(|_| "invalid rename request")?;
+            request.validate().map_err(|_| "invalid rename request")?;
+            if request.account() != canonical_username {
+                return Err("rename account mismatch".into());
+            }
+            if operation == "folder_rename_completion" {
+                Ok(MailboxHelperRequest::FolderRenameCompletion { request, grant })
+            } else {
+                Ok(MailboxHelperRequest::FolderRename { request, grant })
+            }
         }
         "folder_create" => {
             let bytes = decode_base64_bytes(
@@ -612,6 +653,9 @@ pub(super) fn ordinary_request_allowed(request: &MailboxHelperRequest) -> bool {
         } => allowed(source_mailbox_name) && allowed(destination_mailbox_name),
         MessageFlag { request, .. } => allowed(&request.mailbox_name),
         MessageDelete { request, .. } => allowed(&request.mailbox_name),
+        FolderRenameCompletion { request, .. } | FolderRename { request, .. } => {
+            allowed(request.source()) && allowed(&request.destination())
+        }
         FolderCreate { request, .. } => allowed(request.parent()) && allowed(&request.child()),
     }
 }
@@ -632,18 +676,7 @@ fn encode_append_guid(guid: Option<&str>) -> String {
         .unwrap_or_default()
 }
 
-#[cfg(test)]
 pub(super) fn issue_request_grant_with_nonce(
-    request: &mut MailboxHelperRequest,
-    key: &[u8],
-    now_secs: u64,
-    nonce: &str,
-) -> Result<(), String> {
-    issue_request_grant_with_nonce_impl(request, key, now_secs, nonce)
-}
-
-#[cfg(not(test))]
-fn issue_request_grant_with_nonce(
     request: &mut MailboxHelperRequest,
     key: &[u8],
     now_secs: u64,
@@ -677,6 +710,11 @@ pub(super) fn verify_request_grant(
     now_secs: u64,
 ) -> Result<(), String> {
     let grant = request_grant(request);
+    if let MailboxHelperRequest::FolderRename { request, .. } = request {
+        if request.action_nonce() != grant.nonce {
+            return Err("rename original nonce mismatch".into());
+        }
+    }
     if grant.signature.is_empty() {
         return Err("helper request grant signature was missing".to_string());
     }
@@ -714,7 +752,9 @@ pub(super) fn request_grant(request: &MailboxHelperRequest) -> &MailboxHelperGra
         MailboxHelperRequest::RetentionStatus { grant, .. }
         | MailboxHelperRequest::MessageDelete { grant, .. }
         | MailboxHelperRequest::MessageFlag { grant, .. } => grant,
-        MailboxHelperRequest::FolderCreate { grant, .. }
+        MailboxHelperRequest::FolderRenameCompletion { grant, .. }
+        | MailboxHelperRequest::FolderRename { grant, .. }
+        | MailboxHelperRequest::FolderCreate { grant, .. }
         | MailboxHelperRequest::FolderMetadata { grant, .. }
         | MailboxHelperRequest::MailboxStatus { grant, .. }
         | MailboxHelperRequest::MailboxList { grant, .. }
@@ -733,7 +773,9 @@ fn set_request_grant(request: &mut MailboxHelperRequest, new_grant: MailboxHelpe
         MailboxHelperRequest::RetentionStatus { grant, .. }
         | MailboxHelperRequest::MessageDelete { grant, .. }
         | MailboxHelperRequest::MessageFlag { grant, .. } => *grant = new_grant,
-        MailboxHelperRequest::FolderCreate { grant, .. }
+        MailboxHelperRequest::FolderRenameCompletion { grant, .. }
+        | MailboxHelperRequest::FolderRename { grant, .. }
+        | MailboxHelperRequest::FolderCreate { grant, .. }
         | MailboxHelperRequest::FolderMetadata { grant, .. }
         | MailboxHelperRequest::MailboxStatus { grant, .. }
         | MailboxHelperRequest::MailboxList { grant, .. }
@@ -752,6 +794,8 @@ pub(super) fn helper_operation_label(request: &MailboxHelperRequest) -> &'static
         MailboxHelperRequest::RetentionStatus { .. } => "retention_status",
         MailboxHelperRequest::MessageDelete { .. } => "message_delete",
         MailboxHelperRequest::MessageFlag { .. } => "message_flag",
+        MailboxHelperRequest::FolderRenameCompletion { .. } => "folder_rename_completion",
+        MailboxHelperRequest::FolderRename { .. } => "folder_rename",
         MailboxHelperRequest::FolderCreate { .. } => "folder_create",
         MailboxHelperRequest::FolderMetadata { .. } => "folder_metadata",
         MailboxHelperRequest::MailboxStatus { .. } => "mailbox_status",
@@ -819,6 +863,15 @@ fn canonical_grant_payload(request: &MailboxHelperRequest, grant: &MailboxHelper
             request.version.mailbox_guid.clone(),
             request.version.message_guid.clone(),
             request.policy_revision.to_string(),
+        ]),
+        MailboxHelperRequest::FolderRenameCompletion { request, .. }
+        | MailboxHelperRequest::FolderRename { request, .. } => fields.extend([
+            request.account().into(),
+            request.source().into(),
+            request.source_guid().into(),
+            request.parent_guid().into(),
+            request.leaf().into(),
+            request.action_nonce().into(),
         ]),
         MailboxHelperRequest::FolderCreate { request, .. } => fields.extend([
             request.account().into(),
@@ -987,7 +1040,22 @@ fn parse_grant_fields(fields: &BTreeMap<String, String>) -> Result<MailboxHelper
 }
 
 pub(crate) fn encode_response(response: &MailboxHelperResponse) -> String {
-    match response {
+    encode_response_or_error(encode_response_checked(response))
+}
+
+fn encode_response_or_error(result: Result<String, String>) -> String {
+    match result {
+        Ok(output) => output,
+        Err(reason) => format!(
+            "status=error\nbackend_b64={}\nreason_b64={}\n",
+            encode_base64(b"mailbox_helper"),
+            encode_base64(reason.as_bytes())
+        ),
+    }
+}
+
+fn encode_response_checked(response: &MailboxHelperResponse) -> Result<String, String> {
+    Ok(match response {
         MailboxHelperResponse::RetentionStatus { canonical_username, mailbox_name, decision, nonce } => {
             let (state,revision) = match decision {
                 crate::mailbox::RetentionDecision::Allowed { revision } => ("allowed", *revision),
@@ -998,6 +1066,8 @@ pub(crate) fn encode_response(response: &MailboxHelperResponse) -> String {
         }
         MailboxHelperResponse::MessageDelete { request, result, nonce } =>
             format!("operation=message_delete\n{}delete_result={}\nrequest_nonce={}\n", encode_delete_fields(request), delete_result_value(*result), nonce),
+        MailboxHelperResponse::FolderRenameCompletionOk {request,completion,nonce} => format!("status=ok\noperation=folder_rename_completion\nrename_request_b64={}\nrename_completion_b64={}\nnonce={}\n", encode_base64(serde_json::to_string(request).unwrap_or_default().as_bytes()), encode_base64(serde_json::to_string(completion).unwrap_or_default().as_bytes()), nonce),
+        MailboxHelperResponse::FolderRenameOk {request,outcome,nonce} => format!("status=ok\noperation=folder_rename\nrename_request_b64={}\nrename_outcome_b64={}\nnonce={}\n", encode_base64(serde_json::to_string(request).unwrap_or_default().as_bytes()), encode_base64(serde_json::to_string(outcome).unwrap_or_default().as_bytes()), nonce),
         MailboxHelperResponse::FolderCreateOk {request,outcome}=>format!("status=ok\noperation=folder_create\ncreate_request_b64={}\ncreate_outcome_b64={}\n",encode_base64(serde_json::to_string(request).unwrap_or_default().as_bytes()),encode_base64(serde_json::to_string(outcome).unwrap_or_default().as_bytes())),
         MailboxHelperResponse::FolderMetadataOk {snapshot} => format!("status=ok\noperation=folder_metadata\ncanonical_username_b64={}\ntranscript_b64={}\n",encode_base64(snapshot.account().as_bytes()),encode_base64(snapshot.transcript())),
         MailboxHelperResponse::MailboxStatusOk {status} => format!("status=ok\noperation=mailbox_status\nmailbox_name_b64={}\nstatus_guid={}\nstatus_messages={}\nstatus_vsize={}\n",encode_base64(status.mailbox().as_bytes()),status.guid(),status.messages(),status.virtual_bytes()),
@@ -1054,7 +1124,7 @@ pub(crate) fn encode_response(response: &MailboxHelperResponse) -> String {
                 output.push_str("message_to_b64=");
                 output.push_str(&encode_base64(message.to.as_deref().unwrap_or("").as_bytes()));
                 output.push('\n');
-                output.push_str(&encode_message_metadata(message.metadata.as_ref()));
+                output.push_str(&encode_message_metadata(message.metadata.as_ref())?);
                 output.push_str("message_end=1\n");
             }
             output
@@ -1096,7 +1166,7 @@ pub(crate) fn encode_response(response: &MailboxHelperResponse) -> String {
                 output.push_str("message_from_b64=");
                 output.push_str(&encode_base64(result.from.as_deref().unwrap_or("").as_bytes()));
                 output.push('\n');
-                output.push_str(&encode_message_metadata(result.metadata.as_ref()));
+                output.push_str(&encode_message_metadata(result.metadata.as_ref())?);
                 output.push_str("message_end=1\n");
             }
             output
@@ -1138,7 +1208,7 @@ pub(crate) fn encode_response(response: &MailboxHelperResponse) -> String {
                 output.push_str("message_from_b64=");
                 output.push_str(&encode_base64(result.from.as_deref().unwrap_or("").as_bytes()));
                 output.push('\n');
-                output.push_str(&encode_message_metadata(result.metadata.as_ref()));
+                output.push_str(&encode_message_metadata(result.metadata.as_ref())?);
                 output.push_str("message_end=1\n");
             }
             output
@@ -1152,7 +1222,7 @@ pub(crate) fn encode_response(response: &MailboxHelperResponse) -> String {
             encode_base64(message.mailbox_name.as_bytes()),
             encode_base64(message.header_block.as_bytes()),
             encode_base64(message.body_text.as_bytes()),
-            encode_message_metadata(message.metadata.as_ref()),
+            encode_message_metadata(message.metadata.as_ref())?,
         ),
         MailboxHelperResponse::AttachmentDownloadOk { attachment } => format!(
             "status=ok\noperation=attachment_download\nattachment_mailbox_name_b64={}\nattachment_uid={}\nattachment_part_path_b64={}\nattachment_filename_b64={}\nattachment_content_type_b64={}\nattachment_body_b64={}\n",
@@ -1190,7 +1260,7 @@ pub(crate) fn encode_response(response: &MailboxHelperResponse) -> String {
                 encode_base64(reason.as_bytes())
             )
         }
-    }
+    })
 }
 
 pub(super) fn parse_response(
@@ -1213,6 +1283,65 @@ pub(super) fn parse_response(
         .any(|line| line == "operation=message_search_batch")
     {
         return parse_search_batch_response(search_policy, input);
+    }
+    if input
+        .lines()
+        .any(|line| line == "operation=folder_rename_completion")
+    {
+        if input.len() > 4096 {
+            return Err("rename response too large".into());
+        }
+        let f = parse_kv_lines(input)?;
+        if f.len() != 5 || require_field(&f, "status")? != "ok" {
+            return Err("invalid rename response".into());
+        }
+        let request: crate::folder_rename::RenameFolderRequest = serde_json::from_slice(
+            &decode_base64_bytes(require_field(&f, "rename_request_b64")?, 2048, "request")?,
+        )
+        .map_err(|_| "invalid rename request")?;
+        let completion: crate::folder_rename::Completion = serde_json::from_slice(
+            &decode_base64_bytes(require_field(&f, "rename_completion_b64")?, 256, "outcome")?,
+        )
+        .map_err(|_| "invalid rename outcome")?;
+        request.validate().map_err(|_| "invalid rename response")?;
+        let nonce = require_field(&f, "nonce")?.to_owned();
+        if nonce.len() != 32 || !nonce.bytes().all(|b| b.is_ascii_hexdigit()) {
+            return Err("invalid rename nonce".into());
+        }
+        return Ok(MailboxHelperResponse::FolderRenameCompletionOk {
+            request: Box::new(request),
+            completion,
+            nonce,
+        });
+    }
+    if input.lines().any(|line| line == "operation=folder_rename") {
+        if input.len() > 4096 {
+            return Err("rename response too large".into());
+        }
+        let f = parse_kv_lines(input)?;
+        if f.len() != 5 || require_field(&f, "status")? != "ok" {
+            return Err("invalid rename response".into());
+        }
+        let request: crate::folder_rename::RenameFolderRequest = serde_json::from_slice(
+            &decode_base64_bytes(require_field(&f, "rename_request_b64")?, 2048, "request")?,
+        )
+        .map_err(|_| "invalid rename request")?;
+        let outcome: crate::folder_rename::Outcome = serde_json::from_slice(&decode_base64_bytes(
+            require_field(&f, "rename_outcome_b64")?,
+            256,
+            "outcome",
+        )?)
+        .map_err(|_| "invalid rename outcome")?;
+        request.validate().map_err(|_| "invalid rename response")?;
+        let nonce = require_field(&f, "nonce")?.to_owned();
+        if nonce.len() != 32 || !nonce.bytes().all(|b| b.is_ascii_hexdigit()) {
+            return Err("invalid rename nonce".into());
+        }
+        return Ok(MailboxHelperResponse::FolderRenameOk {
+            request: Box::new(request),
+            outcome,
+            nonce,
+        });
     }
     if input.lines().any(|line| line == "operation=folder_create") {
         if input.len() > 4096 {
@@ -1723,6 +1852,15 @@ fn reject_unknown_request_fields(
             "grant_nonce",
             "grant_signature",
         ],
+        "folder_rename" | "folder_rename_completion" => &[
+            "operation",
+            "canonical_username_b64",
+            "rename_request_b64",
+            "grant_issued_at",
+            "grant_expires_at",
+            "grant_nonce",
+            "grant_signature",
+        ],
         "folder_create" => &[
             "operation",
             "canonical_username_b64",
@@ -1889,9 +2027,9 @@ fn parse_flag_fields(fields: &BTreeMap<String, String>) -> Result<MessageFlagReq
     MessageFlagRequest::new(mailbox, uid, version, flag, enabled).map_err(|error| error.reason)
 }
 
-fn encode_message_metadata(metadata: Option<&MessageMetadata>) -> String {
+fn encode_message_metadata(metadata: Option<&MessageMetadata>) -> Result<String, String> {
     let Some(metadata) = metadata else {
-        return String::new();
+        return Ok(String::new());
     };
     let mut encoded = format!(
         "message_mailbox_guid={}\nmessage_guid_b64={}\nmessage_attachment_count={}\n",
@@ -1916,8 +2054,7 @@ fn encode_message_metadata(metadata: Option<&MessageMetadata>) -> String {
     }
     if let Some(attachments) = &metadata.attachments {
         // Derived bounded public descriptors, never attachment file contents.
-        let data =
-            serde_json::to_vec(attachments).expect("public attachment descriptors serialize");
+        let data = encode_public_attachment_descriptors(attachments)?;
         encoded.push_str(&format!(
             "message_attachments_b64={}\n",
             encode_base64(&data)
@@ -1930,7 +2067,12 @@ fn encode_message_metadata(metadata: Option<&MessageMetadata>) -> String {
             }
         }
     }
-    encoded
+    Ok(encoded)
+}
+
+fn encode_public_attachment_descriptors(value: &impl serde::Serialize) -> Result<Vec<u8>, String> {
+    serde_json::to_vec(value)
+        .map_err(|_| "public attachment descriptors could not be encoded".to_string())
 }
 
 fn parse_message_metadata(
@@ -3072,6 +3214,31 @@ mod batch_protocol_tests {
                 );
             }
         }
+    }
+
+    #[test]
+    fn public_attachment_serialization_failure_returns_only_bounded_error_response() {
+        struct FailedDescriptor;
+        impl serde::Serialize for FailedDescriptor {
+            fn serialize<S: serde::Serializer>(&self, _: S) -> Result<S::Ok, S::Error> {
+                Err(serde::ser::Error::custom(
+                    "private fixture error must not appear",
+                ))
+            }
+        }
+        let failure =
+            encode_public_attachment_descriptors(&FailedDescriptor).map(|_| String::new());
+        let output = encode_response_or_error(failure);
+        assert!(!output.contains("status=ok"));
+        assert!(!output.contains("message_"));
+        assert!(!output.contains("private fixture"));
+        assert_eq!(
+            parse_batch(&output).unwrap(),
+            MailboxHelperResponse::Error {
+                backend: "mailbox_helper".into(),
+                reason: "public attachment descriptors could not be encoded".into(),
+            }
+        );
     }
 
     #[test]

@@ -26,6 +26,8 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 mod mailbox_helper_client;
 #[path = "mailbox_helper_documents.rs"]
 mod mailbox_helper_documents;
+#[path = "mailbox_helper_rename.rs"]
+pub(crate) mod mailbox_helper_rename;
 pub use self::mailbox_helper_documents::MailboxHelperDocumentsBackend;
 #[path = "mailbox_helper_delete.rs"]
 mod mailbox_helper_delete;
@@ -224,6 +226,10 @@ pub fn run_mailbox_helper_server(config: &AppConfig, logger: &Logger) -> Result<
             )
             .with_userdb_socket_path(config.doveadm_userdb_socket_path.clone()),
         );
+        let rename_completion_dir = config
+            .state_layout
+            .runtime_dir
+            .join("folder-rename-completions");
         let policy = MailboxHelperPolicy::default();
         let replay_cache = Arc::new(Mutex::new(BTreeMap::<String, u64>::new()));
         let active_connections = Arc::new(AtomicUsize::new(0));
@@ -280,11 +286,12 @@ pub fn run_mailbox_helper_server(config: &AppConfig, logger: &Logger) -> Result<
                     let replay_cache = Arc::clone(&replay_cache);
                     let trusted_caller_policy = trusted_caller_policy.clone();
                     let worker_logger = logger.clone();
+                    let rename_completion_dir = rename_completion_dir.clone();
                     if let Err(error) = thread::Builder::new()
                         .name("osmap-mailbox-helper".to_string())
                         .spawn(move || {
                             let _slot = slot;
-                            handle_helper_client_with_documents(
+                            handle_helper_client_with_documents_and_rename(
                                 HelperBackends {
                                     mailbox_backend: mailbox_backend.as_ref(),
                                     message_list_backend: message_list_backend.as_ref(),
@@ -299,8 +306,11 @@ pub fn run_mailbox_helper_server(config: &AppConfig, logger: &Logger) -> Result<
                                 &worker_logger,
                                 &mut stream,
                                 policy,
-                                trusted_caller_policy,
-                                replay_cache.as_ref(),
+                                HelperRequestAuthority {
+                                    trusted_caller_policy,
+                                    replay_cache: replay_cache.as_ref(),
+                                    rename_completion_dir: Some(&rename_completion_dir),
+                                },
                             );
                         })
                     {
@@ -389,7 +399,7 @@ fn handle_helper_client_with_delete<MB, MLB, MSB, MVB, MMB, MAB, MFB>(
     );
 }
 
-#[cfg(unix)]
+#[cfg(all(test, unix))]
 #[allow(clippy::too_many_arguments)]
 fn handle_helper_client_with_documents<MB, MLB, MSB, MVB, MMB, MAB, MFB>(
     backends: HelperBackends<'_, MB, MLB, MSB, MVB, MMB, MAB, MFB>,
@@ -409,6 +419,51 @@ fn handle_helper_client_with_documents<MB, MLB, MSB, MVB, MMB, MAB, MFB>(
     MAB: MessageAppendBackend,
     MFB: MessageFlagBackend,
 {
+    handle_helper_client_with_documents_and_rename(
+        backends,
+        delete_backend,
+        documents_backend,
+        logger,
+        stream,
+        policy,
+        HelperRequestAuthority {
+            trusted_caller_policy,
+            replay_cache,
+            rename_completion_dir: None,
+        },
+    );
+}
+
+#[cfg(unix)]
+struct HelperRequestAuthority<'a> {
+    trusted_caller_policy: MailboxHelperTrustedCallerPolicy,
+    replay_cache: &'a Mutex<BTreeMap<String, u64>>,
+    rename_completion_dir: Option<&'a Path>,
+}
+
+#[cfg(unix)]
+fn handle_helper_client_with_documents_and_rename<MB, MLB, MSB, MVB, MMB, MAB, MFB>(
+    backends: HelperBackends<'_, MB, MLB, MSB, MVB, MMB, MAB, MFB>,
+    delete_backend: Option<&dyn crate::mailbox::MessageDeleteBackend>,
+    documents_backend: Option<&dyn crate::documents::Backend>,
+    logger: &Logger,
+    stream: &mut UnixStream,
+    policy: MailboxHelperPolicy,
+    authority: HelperRequestAuthority<'_>,
+) where
+    MB: MailboxBackend,
+    MLB: MessageListBackend,
+    MSB: MessageSearchBackend,
+    MVB: MessageViewBackend,
+    MMB: MessageMoveBackend,
+    MAB: MessageAppendBackend,
+    MFB: MessageFlagBackend,
+{
+    let HelperRequestAuthority {
+        trusted_caller_policy,
+        replay_cache,
+        rename_completion_dir,
+    } = authority;
     configure_stream_timeouts(stream, policy);
 
     match helper_stream_peer_uid(stream)
@@ -494,7 +549,14 @@ fn handle_helper_client_with_documents<MB, MLB, MSB, MVB, MMB, MAB, MFB>(
         return;
     }
 
-    let response = dispatch_helper_request_with_delete(backends, delete_backend, &request);
+    let response = match mailbox_helper_rename::handle(
+        rename_completion_dir,
+        backends.mailbox_backend,
+        &request,
+    ) {
+        Some(response) => response,
+        None => dispatch_helper_request_with_delete(backends, delete_backend, &request),
+    };
 
     let _ = write_response(stream, &response);
     log_helper_response(logger, &response, Some(&request));
@@ -799,6 +861,13 @@ mod tests {
         include!("mailbox_helper_native_create_tests.rs");
     }
     #[cfg(unix)]
+    mod native_rename_tests {
+        include!("mailbox_helper_native_rename_tests.rs");
+    }
+    #[cfg(unix)]
+    mod rename_tests {
+        include!("mailbox_helper_rename_tests.rs");
+    }
     mod create_tests {
         include!("mailbox_helper_create_tests.rs");
     }

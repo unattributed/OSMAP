@@ -53,6 +53,7 @@ mod routes_all_search;
 mod routes_bulk_delete;
 mod routes_delete;
 mod routes_folder_create;
+mod routes_folder_rename;
 mod routes_moves;
 mod routes_notifications;
 #[path = "http/routes_people.rs"]
@@ -855,6 +856,9 @@ mod tests {
     mod folder_create_fixture {
         include!("http/folder_create_fixture.rs");
     }
+    mod folder_rename_tests {
+        include!("http/folder_rename_tests.rs");
+    }
     mod folder_create_tests {
         include!("http/folder_create_tests.rs");
     }
@@ -1050,6 +1054,7 @@ mod tests {
     #[derive(Debug, Clone)]
     struct StubGateway {
         created_folders: Arc<Mutex<BTreeMap<String, Vec<String>>>>,
+        renamed_folders: Arc<Mutex<Vec<crate::folder_rename::RenameFolderRequest>>>,
         send_journal: crate::send_journal::SendJournal,
         recovery_root: PathBuf,
         recovery_now: Option<u64>,
@@ -1114,6 +1119,7 @@ mod tests {
         fn default() -> Self {
             Self {
                 created_folders: Arc::new(Mutex::new(BTreeMap::new())),
+                renamed_folders: Arc::new(Mutex::new(Vec::new())),
                 labels_store: None,
                 signature_store: None,
                 autosave_store: None,
@@ -1175,6 +1181,16 @@ mod tests {
 
     impl StubGateway {
         fn created_folder_guid(&self, account: &str, name: &str) -> Option<String> {
+            if let Some(rename) = self
+                .renamed_folders
+                .lock()
+                .unwrap()
+                .iter()
+                .find(|r| r.account() == account && r.destination() == name)
+            {
+                return Some(rename.source_guid().into());
+            }
+
             use sha2::Digest;
             self.created_folders
                 .lock()
@@ -2709,6 +2725,231 @@ mod tests {
             }
         }
 
+        fn pending_folder_rename(
+            &self,
+            session: &ValidatedSession,
+        ) -> Result<Option<crate::folder_rename::RenameFolderRequest>, crate::folder_create::Refusal>
+        {
+            let store = self
+                .settings_store
+                .as_ref()
+                .ok_or(crate::folder_create::Refusal::Unavailable)?;
+            crate::folder_rename::role_lease(
+                store
+                    .settings_path_for_username(&session.record.canonical_username)
+                    .parent()
+                    .unwrap(),
+                &session.record.canonical_username,
+            )
+            .map(|lease| lease.pending().cloned())
+        }
+        fn check_folder_rename(
+            &self,
+            context: &AuthenticationContext,
+            session: &ValidatedSession,
+        ) -> crate::folder_rename::CheckOutcome {
+            use crate::folder_rename::CheckOutcome;
+            let Some(store) = &self.settings_store else {
+                return CheckOutcome::Unavailable;
+            };
+            let Ok(mut lease) = crate::folder_rename::role_lease(
+                store
+                    .settings_path_for_username(&session.record.canonical_username)
+                    .parent()
+                    .unwrap(),
+                &session.record.canonical_username,
+            ) else {
+                return CheckOutcome::Unavailable;
+            };
+            let Some(request) = lease.pending().cloned() else {
+                return CheckOutcome::NoPending;
+            };
+            let (Some(snapshot), Some(parent)) = (
+                self.folder_metadata(context, session).snapshot,
+                self.mailbox_status(context, session, request.parent())
+                    .status,
+            ) else {
+                return CheckOutcome::Unconfirmed;
+            };
+            if let Some(destination) = self
+                .mailbox_status(context, session, &request.destination())
+                .status
+            {
+                if crate::folder_rename::confirmed_result(
+                    &request,
+                    &snapshot,
+                    &destination,
+                    &parent,
+                ) {
+                    if self
+                        .labels_store
+                        .as_ref()
+                        .is_some_and(|store| store.reconcile_folder_rename(&request).is_err())
+                        || self
+                            .snooze_store
+                            .as_ref()
+                            .is_some_and(|store| store.reconcile_folder_rename(&request).is_err())
+                    {
+                        return CheckOutcome::Unavailable;
+                    }
+                    if lease.confirm().is_err() {
+                        return CheckOutcome::Unavailable;
+                    }
+                    return CheckOutcome::Renamed {
+                        destination: request.destination(),
+                    };
+                }
+            }
+            let completion_dir = store
+                .settings_path_for_username(request.account())
+                .parent()
+                .unwrap()
+                .join("fixture-helper-rename");
+            if crate::mailbox_helper::mailbox_helper_rename::completion(&completion_dir, &request)
+                != crate::folder_rename::Completion::NoMutation
+            {
+                return CheckOutcome::Unconfirmed;
+            }
+            let Some(source) = self
+                .mailbox_status(context, session, request.source())
+                .status
+            else {
+                return CheckOutcome::Unconfirmed;
+            };
+            if !crate::folder_rename::confirmed_unchanged(&request, &snapshot, &source, &parent) {
+                return CheckOutcome::Unconfirmed;
+            }
+            if lease.confirm().is_err() {
+                return CheckOutcome::Unavailable;
+            }
+            CheckOutcome::Unchanged
+        }
+        fn rename_folder(
+            &self,
+            context: &AuthenticationContext,
+            session: &ValidatedSession,
+            rename: &crate::folder_rename::RenameFolderRequest,
+        ) -> crate::folder_rename::Outcome {
+            use crate::{folder_create::Refusal, folder_rename::Outcome};
+            if rename.account() != session.record.canonical_username {
+                return Outcome::Refused(Refusal::Invalid);
+            }
+            let (Some(snapshot), Some(source), Some(parent)) = (
+                self.folder_metadata(context, session).snapshot,
+                self.mailbox_status(context, session, rename.source())
+                    .status,
+                self.mailbox_status(context, session, rename.parent())
+                    .status,
+            ) else {
+                return Outcome::Refused(Refusal::Unavailable);
+            };
+            if let Err(e) = rename.validate_before(&snapshot, &source, &parent) {
+                return Outcome::Refused(e);
+            }
+            let Some(store) = &self.settings_store else {
+                return Outcome::Refused(Refusal::Unavailable);
+            };
+            let Ok(mut lease) = crate::folder_rename::settings_gate(
+                store
+                    .settings_path_for_username(rename.account())
+                    .parent()
+                    .unwrap(),
+                rename.account(),
+            ) else {
+                return Outcome::Refused(Refusal::Unavailable);
+            };
+            if lease.begin(rename).is_err() {
+                return Outcome::Refused(Refusal::Unavailable);
+            }
+            if context.user_agent == "FolderCreateRenameRefusedLost" {
+                struct RefusingBackend;
+                impl crate::mailbox::MailboxBackend for RefusingBackend {
+                    fn list_mailboxes(
+                        &self,
+                        _: &str,
+                    ) -> Result<
+                        Vec<crate::mailbox::MailboxEntry>,
+                        crate::mailbox::MailboxBackendError,
+                    > {
+                        Ok(vec![])
+                    }
+                    fn rename_folder(
+                        &self,
+                        _: &crate::folder_rename::RenameFolderRequest,
+                    ) -> crate::folder_rename::Outcome {
+                        crate::folder_rename::Outcome::Refused(crate::folder_create::Refusal::Stale)
+                    }
+                }
+                let directory = store
+                    .settings_path_for_username(rename.account())
+                    .parent()
+                    .unwrap()
+                    .join("fixture-helper-rename");
+                assert_eq!(
+                    crate::mailbox_helper::mailbox_helper_rename::execute(
+                        &directory,
+                        &RefusingBackend,
+                        rename
+                    ),
+                    Outcome::Refused(Refusal::Stale)
+                );
+                return Outcome::Unknown;
+            }
+            if context.user_agent == "FolderCreateRenameUnknown" {
+                return Outcome::Unknown;
+            }
+            let mut folders = self.created_folders.lock().unwrap();
+            let Some(owned) = folders.get_mut(rename.account()) else {
+                return Outcome::Refused(Refusal::Unavailable);
+            };
+            if owned.iter().any(|name| name == &rename.destination()) {
+                return Outcome::Conflict;
+            }
+            let Some(source) = owned
+                .iter_mut()
+                .find(|name| name.as_str() == rename.source())
+            else {
+                return Outcome::Refused(Refusal::Stale);
+            };
+            *source = rename.destination();
+            self.renamed_folders.lock().unwrap().push(rename.clone());
+            if context.user_agent == "FolderCreateRenameUnknownCommitted" {
+                return Outcome::Unknown;
+            }
+            let _fixture_snooze_lock = if context.user_agent == "FolderCreateRenameMetadataFailure"
+            {
+                Some(
+                    crate::private_account_file::PrivateAccountFile::new(
+                        store
+                            .settings_path_for_username(rename.account())
+                            .parent()
+                            .unwrap()
+                            .to_path_buf(),
+                        "osmap-snooze-v1",
+                        512 * 1024,
+                    )
+                    .lock(rename.account())
+                    .unwrap(),
+                )
+            } else {
+                None
+            };
+            if self
+                .labels_store
+                .as_ref()
+                .is_some_and(|store| store.reconcile_folder_rename(rename).is_err())
+                || self
+                    .snooze_store
+                    .as_ref()
+                    .is_some_and(|store| store.reconcile_folder_rename(rename).is_err())
+            {
+                return Outcome::Unknown;
+            }
+            if lease.confirm().is_err() {
+                return Outcome::Unknown;
+            }
+            Outcome::Renamed
+        }
         fn create_folder(
             &self,
             context: &AuthenticationContext,

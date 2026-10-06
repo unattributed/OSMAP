@@ -270,11 +270,12 @@ const OPENBSD_SERVE_WITH_HELPER_PROMISES_AFTER_LOCK: &str =
 /// The promise set used while `unveil(2)` calls are still permitted in the
 /// local mailbox-helper runtime.
 const OPENBSD_HELPER_PROMISES_BEFORE_LOCK: &str =
-    "stdio rpath wpath cpath fattr unix proc exec unveil";
+    "stdio rpath wpath cpath fattr flock unix proc exec unveil";
 
 /// The narrower promise set kept after the filesystem view is locked in the
 /// local mailbox-helper runtime.
-const OPENBSD_HELPER_PROMISES_AFTER_LOCK: &str = "stdio rpath wpath cpath fattr unix proc exec";
+const OPENBSD_HELPER_PROMISES_AFTER_LOCK: &str =
+    "stdio rpath wpath cpath fattr flock unix proc exec";
 
 /// The system-library prefixes the helper-side `doveadm` execution currently
 /// resolves on the validated OpenBSD host.
@@ -1016,6 +1017,29 @@ mod tests {
         config.mailbox_retention_policy_path = None;
         let absent = OpenbsdConfinementPlan::from_config(&config);
         assert!(!absent.unveil_rules.iter().any(|rule| rule.path == policy));
+    }
+
+    #[test]
+    fn folder_rename_helper_completion_retains_only_required_flock_promise() {
+        let mut config = config_fixture(OpenbsdConfinementMode::Enforce);
+        config.run_mode = crate::config::AppRunMode::MailboxHelper;
+        let plan = OpenbsdConfinementPlan::from_config(&config);
+        assert_eq!(
+            plan.promises_before_lock,
+            "stdio rpath wpath cpath fattr flock unix proc exec unveil"
+        );
+        assert_eq!(
+            plan.promises_after_lock,
+            "stdio rpath wpath cpath fattr flock unix proc exec"
+        );
+        assert!(!plan
+            .promises_after_lock
+            .split_whitespace()
+            .any(|p| matches!(p, "inet" | "unveil")));
+        assert!(!plan
+            .unveil_rules
+            .iter()
+            .any(|r| r.path == config.state_layout.settings_dir && r.permissions.contains('w')));
     }
 
     #[test]

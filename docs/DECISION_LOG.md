@@ -9353,3 +9353,36 @@ activation. Park projected-forward10MiB variants after exact-current cleanup;
 qualify future transport through the installed application channel. Continue
 real folder Rename and shared quota backend work rather than new fixture
 frameworks. Signed normal gates and immediate synchronization apply.
+
+
+## 2026-10-06 — deliver real populated Rename before installed-path acceptance
+
+Use standard native same-parent Rename to preserve contents and mailbox GUID,
+with exact current authority and original-action recovery. Keep pending on
+ambiguous backend outcomes; a lost known refusal can clear only with durable
+NoMutation plus fresh native identity proof. Add only the missing helper flock
+promise needed by private completion storage. Preserve protected roles,
+operator keys/policies, unrelated settings, original deadlines and all actual
+failed attempts. The passing disposable confined test is backend evidence,
+not a human or production-channel claim. Admit reviewed native-matching code,
+run normal signed gates, immediately sync under standing operator authority,
+then activate matching web/helper only through the established preservation
+pattern. Do not count source checkout equality as running functionality.
+
+Keep D05 shared quota work separate and concrete: existing account transaction
+flock plus a strict pending record and fresh complete count can reconcile a
+crashed writer only after real count/all-writer authority is proved. No new
+broker framework, blind pending deletion, operator limit increase or standard
+Dovecot activation is authorized by a prototype test. Repair measured private
+build prerequisites using upstream bootstrap inputs, without optional network
+wiki fetching or unchanged native retry.
+
+
+## 2026-10-06 — preserve the normal V11 refusal and repair the actual encoder assumption
+
+Do not change classification or waive the commit gate for the pre-existing
+public attachment serialization `expect`. Propagate the failure through the
+existing response encoder and emit its bounded error wire form before any
+partial success. Preserve successful public descriptors and all Rename
+authority/recovery controls. Reassess final matching bytes before admission
+and deployment; passing prior native bytes alone does not qualify this change.

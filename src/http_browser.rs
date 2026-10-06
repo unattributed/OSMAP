@@ -686,6 +686,28 @@ pub trait BrowserGateway {
         archive_mailbox_name: Option<&str>,
     ) -> BrowserSettingsUpdateOutcome;
 
+    fn pending_folder_rename(
+        &self,
+        _: &ValidatedSession,
+    ) -> Result<Option<crate::folder_rename::RenameFolderRequest>, crate::folder_create::Refusal>
+    {
+        Err(crate::folder_create::Refusal::Unavailable)
+    }
+    fn check_folder_rename(
+        &self,
+        _: &AuthenticationContext,
+        _: &ValidatedSession,
+    ) -> crate::folder_rename::CheckOutcome {
+        crate::folder_rename::CheckOutcome::Unavailable
+    }
+    fn rename_folder(
+        &self,
+        _: &AuthenticationContext,
+        _: &ValidatedSession,
+        _: &crate::folder_rename::RenameFolderRequest,
+    ) -> crate::folder_rename::Outcome {
+        crate::folder_rename::Outcome::Refused(crate::folder_create::Refusal::Unavailable)
+    }
     fn create_folder(
         &self,
         _: &AuthenticationContext,

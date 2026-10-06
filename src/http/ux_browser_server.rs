@@ -42,6 +42,7 @@ fn ux_synthetic_browser_server() {
         ..HttpPolicy::default()
     };
     let gateway = StubGateway {
+        sent_location_store: (std::env::var("OSMAP_UX_FIXTURE_FOLDER_RENAME").ok().as_deref() == Some("1")).then(|| crate::sent_location::Store::new(root.join("settings"))),
         after_archive_store: Some(crate::after_archive::Store::new(root.join("settings"))),
         mark_read_store: Some(crate::mark_read::Store::new(root.join("settings"))),
         autosave_store: Some(crate::autosave::Store::new(root.join("settings"))),
