@@ -211,3 +211,8 @@ browser actions with expected results, pending acceptance and verified limits.
 Respect the user's single completion-message preference, with genuine blocker
 or necessary human-interaction exceptions. Documentation-only completion reports
 this framework delivery, not application repair or readiness.
+
+
+## Preserve the validated temporary directory through ordinary Git gates
+
+The integration owner uses the same validated owner-only TMPDIR for focused checks and both normal commit and push hooks, explicitly setting it for each invocation. Preserve inherited shared temporary directories. Retain setup failures and their corrected invocation; do not interpret an unchanged-source passing gate as a product repair, and never bypass a hook or weaken an assertion. This operational correction adds no approval gate.

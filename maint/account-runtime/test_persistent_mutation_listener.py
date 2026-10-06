@@ -23,7 +23,7 @@ class PersistentTests(unittest.TestCase):
   self.parent.chmod(0o710);self.path=self.parent/'mutation.sock'
   b=_Bootstrap(KEY,fixture.SESSION_KEY,frozenset([ACCOUNT]),os.getuid())
   self.listener=_Listener(b,_ConnectorGrant(self.path,os.getuid(),os.getuid(),os.getgid()))
-  self.stop=threading.Event();self.errors=[];self.thread=None;self.frames=0
+  self.stop=threading.Event();self.ready=threading.Event();self.errors=[];self.thread=None;self.frames=0
  def tearDown(self):
   self.stop.set()
   if self.thread is not None:self.thread.join(timeout=2);self.assertFalse(self.thread.is_alive())
@@ -35,19 +35,23 @@ class PersistentTests(unittest.TestCase):
   self.tmp.cleanup()
  def start(self,*,uncertain=False):
   script=str(Path(supervisor_fixture.__file__).with_name('account_mutation_supervisor_fixture.py'))
+  actual_listen=socket.socket.listen
+  def published(server,*args,**kwargs):
+   result=actual_listen(server,*args,**kwargs)
+   if server.getsockname()==str(self.path):self.ready.set()
+   return result
   def run():
    try:
-    with patch.object(self.listener._supervisor,'_command',return_value=(sys.executable,'-I',script,'reply')):
+    with patch.object(socket.socket,'listen',published),patch.object(self.listener._supervisor,'_command',return_value=(sys.executable,'-I',script,'reply')):
      if uncertain:
       with patch.object(self.listener._supervisor,'_cleanup',side_effect=Unavailable('public uncertainty')):
        self.listener._serve(self.path,self.stop.is_set)
      else:self.listener._serve(self.path,self.stop.is_set)
    except BaseException as exc:self.errors.append(type(exc))
   self.thread=threading.Thread(target=run);self.thread.start()
-  # Connected readiness probe would itself be a refused transaction. Observe
-  # mode publication only, then the real client handles bounded preframe refusal.
-  end=time.monotonic()+1
-  while not self.path.exists() and time.monotonic()<end:time.sleep(.001)
+  # Path existence precedes inode capture and grant publication. Wait for the
+  # actual owned listener to finish listen; no extra connection or frame is sent.
+  self.assertTrue(self.ready.wait(timeout=1),"owned listener publication incomplete")
  def exchange(self,raw=None):
   client=socket.socket(socket.AF_UNIX,socket.SOCK_STREAM);client.settimeout(1)
   end=time.monotonic()+1
@@ -104,6 +108,28 @@ class PersistentTests(unittest.TestCase):
    self.thread.join(timeout=1);self.assertFalse(self.thread.is_alive())
    self.assertEqual(self.errors,[Unavailable]);self.assertEqual(self.path.stat().st_ino,replacement_inode)
   finally:replacement.close()
+ def test_readiness_waits_for_actual_listener_publication_after_bind(self):
+  actual_bind=socket.socket.bind;bound=threading.Event();release=threading.Event();done=threading.Event();failures=[]
+  def delayed_bind(server,address):
+   result=actual_bind(server,address)
+   if address==str(self.path):
+    bound.set()
+    if not release.wait(timeout=1):raise AssertionError('owned bind release incomplete')
+   return result
+  def starting():
+   try:self.start()
+   except BaseException as error:failures.append(error)
+   finally:done.set()
+  caller=threading.Thread(target=starting)
+  with patch.object(socket.socket,'bind',delayed_bind):
+   caller.start()
+   try:
+    self.assertTrue(bound.wait(timeout=1),'actual owned bind not reached')
+    self.assertFalse(done.wait(timeout=.02),'path existence was treated as listener publication')
+   finally:
+    release.set();caller.join(timeout=1)
+   self.assertFalse(caller.is_alive());self.assertEqual(failures,[])
+  self.stop_and_check()
  def test_native_service_default_off_before_namespace_and_no_grant_cannot_run_persistent(self):
   from account_mutation_supervisor import serve_native
   with patch('account_mutation_grant._ConnectorGrant.native',side_effect=AssertionError),       patch('account_mutation_supervisor._directory',side_effect=AssertionError):

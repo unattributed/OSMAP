@@ -297,7 +297,7 @@ class OperatorOwnedProxyNamespace:
                     or before.st_nlink != 1 or before.st_mode & 0o077
                     or not 0 < before.st_size <= self.CONFIG_LIMIT):
                 raise ValueError
-            fd = os.open(self._config, os.O_RDONLY | os.O_NOFOLLOW)
+            fd = os.open(self._config, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
             try:
                 opened = os.fstat(fd)
                 if self._identity(opened) != self._identity(before) or opened.st_size != before.st_size:
@@ -392,7 +392,7 @@ class OperatorOwnedSmtpTopology:
                     or before.st_nlink != 1 or before.st_mode & 0o077
                     or not 0 < before.st_size <= self.CERT_LIMIT):
                 raise ValueError
-            fd = os.open(self._path, os.O_RDONLY | os.O_NOFOLLOW)
+            fd = os.open(self._path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
             try:
                 opened = os.fstat(fd)
                 if (self._namespace._identity(opened) != self._namespace._identity(before)
