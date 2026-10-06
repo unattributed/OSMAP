@@ -111,3 +111,19 @@ INPV/BUSL controls retain selector rejection before native reads, escaped stored
 source, exact decoded bytes, forced-download isolation and reusable budgets.
 This extends executable bounded evidence, not routes, permission or whole WSTG
 scenario/release acceptance. Actual source/binary/outcomes remain in the ledger.
+
+
+## UX S04-02 private mutation and SMTP-control development delta
+
+The disabled account-mutation components add command and private-descriptor
+boundaries. Existing ATHZ/SESS mappings cover canonical account scope, current
+kernel peer admission and channel-generation isolation; BUSL/INPV cover the
+source-derived cutoff, account lock prerequisite, finite frame grammar, one-use
+cancellation, original absolute budget and uncertainty latch. CRYP component
+checks exercise actual native ARGON2ID full-tail positive/negative verification;
+CONF component checks cover closed client configuration and disposable kernel
+write restrictions. These are bounded component results recorded in the UX
+ledger, not completed WSTG scenarios or release evidence. Local UID admission
+does not prove unique supervised-worker ownership, installed module custody,
+all authentication ingress, native factory activation or human password/Send
+acceptance. The password form and native qualification gates remain disabled.
