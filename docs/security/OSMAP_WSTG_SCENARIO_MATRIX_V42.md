@@ -208,3 +208,17 @@ The actual MaterialExecutor constructor now passes role, typed material, account
 
 
 S04-02 hash graph increment: actual authoritative fixed fixture PASS20 (result02234155, scopeee70e6ce) establishes six installed synthetic ARGON2ID operations, long-tail negatives and closed identity/kernel/cleanup controls only. Exact matching five-path source/ordinary-fixture candidate retains current role-bound kernel while adopting the qualified graph. Ordinary source11/graph3/ownedguard2 and affected role9 tests pass; profiles remain empty. Recursive public directory read/prot_exec reachability is disclosed, not complete recursive byte/module or production-null qualification. No authenticated application WSTG, full SQL/primary/issuer/password workflow, provider delivery, human UAT or S04/epic acceptance is claimed.
+
+
+### 2026-10-06 — S04-02 composed authority remains unqualified after delivered source
+
+Signed source65772b116ad023a788428c9c8621bda31b08392d passes both ordinary1577 Rust/510 account/22 mail gates, fresh GitHub equality and authoritative standard-mail source-only synchronization. Source9's two matching original-root continuity countercases repair the rejected source8 paired-root seam; source8 was not executed. These are bounded source/custody controls, not authenticated application WSTG completion.
+
+Actual composed9 obsd1 execution FAILED unexpected_Invalid before issuer ACK/held-intent/capture after original5s startup completed and11 execution-server requests returned. The underlying worker/frame outcome is UNKNOWN; historical timing fields overlap and no recorded inner server failure supplies a cause. SMTP3AUTH/2OK and startup IMAP2LOGIN/1BobNOOP remain partial native witnesses; supplemental relay diagnostic overflow prevents complete logging qualification. All four owned groups, both scratch roots and runtime root gone, standard metadata preserved; root code stage retained. Exact resultdb0480bd347e71e9189ab91643abc73a5b937829b6aa9c48bebc5be7c6fedf94/scopef9276daf7fab16f360c791b4e89c90699b6b2908222a72265ab81d4d480c0690. No provider mail or SQL/operator-password mutation. Native factory, current Rust issuer/ingress, SQL/primary composition, password form, human UAT and S04/epic acceptance remain OPEN/disabled.
+
+Branch equality/upstream preservation and the operator-reported manual Redmi fallback are operational context only; neither constitutes a security scenario, automated failover test, release qualification or slice acceptance.
+
+
+### 2026-10-06 — S04-02 fixed SQL producer source controls
+
+Seven-path disabled SQL source review073744ddf2c23b068de062819d165ed9fdb81204c27e8bfbfb264785d144cf2f and matching canonical10 tests establish bounded role/account/material/budget/public-byte and child transport controls. Actual OpenBSD kernel, loader, database grants, full factory/current issuer/primary/containment and password workflow remain unqualified. The fixed13-ELF/hints/17-row SQL graph does not inherit hash permissions. Profiles remain empty and password form disabled; authenticated application WSTG, release qualification and human UAT remain OPEN.

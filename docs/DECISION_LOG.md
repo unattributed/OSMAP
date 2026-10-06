@@ -9185,3 +9185,17 @@ Retain the distinct native failures and successful boundaries: composed7 now com
 ### 2026-10-06 — retain the working fixed Dovecot hash search directory
 
 Actual installed hash generation/verification and tail negatives now pass within the original bounds when the sole fixed public Dovecot search directory is readable. Carry that exact graph and its55 immediate metadata/ancestry rows into ordinary repository fixtures, preserving the19 exact ELF/hint checks, ALL-five module gate and existing kernel/identity primitives. Disclose inherited recursive read/mapping reachability instead of claiming leaf-only confinement or full recursive byte custody. Preserve the earlier loader failures without assigning an unobserved failed syscall. Do not activate a hash-only factory or password form: real SQL/primary producers, trusted issuer/ingress and composed containment are still required.
+
+
+### 2026-10-06 — preserve delivered source and unresolved composed exchange
+
+Retain signed/synchronized source65772b116ad023a788428c9c8621bda31b08392d and its normally passing1577 Rust/510 account/22 mail gates, fresh GitHub equality and actual authoritative source-only clean fast-forward e91d973→65772b. These establish delivered source, without service/configuration/binary/form activation or full factory qualification.
+
+Reject source8's paired mutable-root continuity seam before native execution; source9 captures the original SMTP/IMAP roots and refuses both changed command/server bindings with two independent discriminators. Preserve source8 CHANGES_REQUIRED and original budgets. The one changed native9 execution still fails before issuer ACK/capture: startup and11 server requests completed, but unexpected_Invalid exports no underlying worker/frame cause. Keep that cause UNKNOWN, do not add overlapping timing counters or treat partial SMTP/IMAP primitives as workflow success. Owned groups/scratch/runtime were removed and standard metadata preserved; exclusive root stage remains. Next engineering must discriminate the exact exchange and compose actual SQL/primary/current issuer authority, without unchanged native retries, deadline widening or password-form activation.
+
+Preserve the three observed local/GitHub branch heads and existing UX upstream without history changes or another push. The operator's Redmi phone network is a reported manual fallback if Trouble_5GHz fails, not a tested or automatic failover. Reference exact checkpoint/native/branch evidence in the accompanying ledger addendum; S04-02, authenticated application WSTG and human UAT remain OPEN.
+
+
+### 2026-10-06 — SQL authority stays distinct from hash authority
+
+Admit the independently reviewed seven-path fixed SQL producer as disabled source. Bind its public graph, configuration, endpoint, role, account and original operation budget before child dispatch; keep SQL and hash graph/identity obligations separate. Matching canonical10 tests pass. Require actual disposable restricted-principal/native material/kernel qualification before any installed profile, factory, operator credential workflow or password form is enabled. Reference the accompanying ledger's exact review/readiness/manifest and retained failures; no operator SQL mutation or human UAT is inferred.

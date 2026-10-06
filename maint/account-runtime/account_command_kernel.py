@@ -28,9 +28,10 @@ class CommandKernelSeal:
         # Empty source profiles refuse before operator files, libc or spawn.
         if not _PROFILES:
             raise Refused('native installed command kernel graph unavailable')
-        # This is the fixed hash producer only. SQL/private config and primary
-        # socket/identity profiles require separate installed qualification.
-        if _PROFILES!=('hash',) or role!='hash':
+        # Fixed hash and SQL producers remain disabled until independently
+        # qualified source registry admission. Primary needs separate socket/ID
+        # custody; no generic role/caller profile can select these graphs.
+        if _PROFILES not in (('hash',),('sql','hash')) or role not in _PROFILES:
             raise Refused('native installed custody qualification unavailable')
         from account_native_material import NativeMaterial, _SqlEndpoint
         from operation_budget import _OriginalReceipt
@@ -45,6 +46,11 @@ class CommandKernelSeal:
             raise Refused('native kernel original budget unavailable')
         budget.require_original(sent_millis=receipt.sent_millis,
             deadline_millis=receipt.deadline_millis,expires_at=receipt.expires_at)
+        if role=='sql':
+            from account_sql_graph import SqlInstalledGraph,PROMISES as SQL_PROMISES
+            value=cls._mint(Adapter.SQL_PROGRAM,Adapter.SQL_ARGS,None,budget,
+                            SqlInstalledGraph.rows(material),SQL_PROMISES)
+            value._material=material;value._sql_graph_required=True;return value
         from account_hash_graph import HashInstalledGraph,PROMISES
         value=cls._mint(Adapter.HASH_PROGRAM,Adapter.HASH_ARGS,None,budget,
                         HashInstalledGraph.rows(),PROMISES)
@@ -72,6 +78,7 @@ class CommandKernelSeal:
                 or value._command_identity[2]!=account or value._material is not material):raise Refused('native kernel seal unavailable')
         value._hash_identity_required=role=='hash'
         value._hash_graph_required=role=='hash'
+        value._sql_graph_required=role=='sql'
         return value
 
     @classmethod
@@ -128,7 +135,7 @@ class CommandKernelSeal:
         value=object.__new__(cls)
         value._command_identity=(program,args,account,role)
         value._rows=rows;value._promises=promises;value._budget=budget
-        value._material=None
+        value._material=None;value._sql_graph_required=False
         value._hash_identity_required=False
         value._hash_graph_required=False
         return value
@@ -140,7 +147,16 @@ class CommandKernelSeal:
             raise Refused('native kernel profile command mismatch')
         self._budget.remaining()
         if not self._budget.inherited_group():raise Refused('native kernel owned group unavailable')
-        identity=None;graph=None
+        identity=None;graph=None;sql_graph=None
+        if self._sql_graph_required:
+            from account_sql_graph import SqlInstalledGraph,PROMISES as SQL_PROMISES
+            if (role!='sql' or self._hash_identity_required or self._hash_graph_required
+                    or self._rows!=SqlInstalledGraph.rows(self._material) or self._promises!=SQL_PROMISES):
+                raise Refused('native SQL fixed graph unavailable')
+            sql_graph=SqlInstalledGraph.native(self._budget,deadline,self._material)
+            if (type(sql_graph)is not SqlInstalledGraph or sql_graph._budget is not self._budget
+                    or sql_graph._material is not self._material):
+                raise Refused('native SQL graph unavailable')
         if self._hash_graph_required:
             from account_hash_graph import HashInstalledGraph,PROMISES
             if (role!='hash' or not self._hash_identity_required
@@ -161,6 +177,10 @@ class CommandKernelSeal:
             # and before exec. Parent keeps independent watchdog/reap authority.
             if not sys.platform.startswith('openbsd') or os.getuid()!=0 or os.geteuid()!=0:
                 raise Refused('native kernel platform authority unavailable')
+            if sql_graph is not None:
+                # SQL has separate public/private/socket custody. No hash drop
+                # or null w/c authority is inherited; spend the captured phase.
+                sql_graph.recheck(self._budget,deadline)
             if graph is not None:
                 # Recheck fixed public code, exact module membership and public
                 # startup database leases before losing privileged setup.
