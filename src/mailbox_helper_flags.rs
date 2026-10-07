@@ -8,6 +8,7 @@ pub struct MailboxHelperMessageFlagBackend {
     socket_path: PathBuf,
     grant_key_path: PathBuf,
     policy: MailboxHelperPolicy,
+    helper_uid: Option<u32>,
 }
 
 impl MailboxHelperMessageFlagBackend {
@@ -20,7 +21,13 @@ impl MailboxHelperMessageFlagBackend {
             socket_path: socket_path.into(),
             grant_key_path: grant_key_path.into(),
             policy,
+            helper_uid: None,
         }
+    }
+
+    pub fn with_helper_uid(mut self, uid: Option<u32>) -> Self {
+        self.helper_uid = uid;
+        self
     }
 }
 
@@ -66,6 +73,14 @@ impl MessageFlagBackend for MailboxHelperMessageFlagBackend {
                     backend: "message-flag-unavailable",
                     reason: "flag helper is unavailable".into(),
                 })?;
+            if let Some(uid) = self.helper_uid {
+                if crate::openbsd::unix_stream_peer_uid(&stream).ok() != Some(uid) {
+                    return Err(MailboxBackendError {
+                        backend: "message-flag-unavailable",
+                        reason: "flag helper peer refused".into(),
+                    });
+                }
+            }
             let unavailable = |_| MailboxBackendError {
                 backend: "message-flag-unavailable",
                 reason: "flag helper transport deadline is unavailable".into(),

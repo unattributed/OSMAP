@@ -602,3 +602,19 @@ provider receipt/decryption/signature and human acceptance remain separate.
 All reported Send failures remain unresolved by this draft. Current policy,
 private-agent availability, backend identity and destination outcomes are not
 live-verified here; no keys/policy/service changes or email operations occurred.
+
+### 2026-10-06 — bounded active-peer admission and diagnostic precision
+
+Admit only the reviewed five active Search/Move/Flag peer paths over signed
+93016e6. Preserve grants, request/response limits and postwrite uncertainty;
+no policy expansion or unused-route work. Match native and installed source
+before claiming delivery. Preserve S07's seven native source tests separately
+from operator acceptance.
+
+A retained qualifier failure must identify a closed stage and first failed
+predicate on its initial result, without exporting private values. Apply this
+small rule to existing qualifiers rather than adding a diagnostic framework.
+A current operation baseline cannot retroactively clear an older failure.
+Continue independent UX/backend work while SDK module preparation proceeds;
+never broaden a quota build into whole-server bootstrap or activate a limit
+that would block the operator's over-limit existing mailbox.

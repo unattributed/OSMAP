@@ -84,7 +84,7 @@ fn metadata_survives_read_responses_and_partial_identity_fails() {
     let metadata = MessageMetadata {
         threading: None,
         attachments: None,
-            protection: crate::message_metadata::MessageProtection::Unknown,
+        protection: crate::message_metadata::MessageProtection::Unknown,
         preview: Some("Public synthetic preview".into()),
         version: flag_request().version,
         attachment_count: Some(2),
@@ -189,7 +189,8 @@ fn signed_flag_operation_crosses_the_helper_socket_boundary() {
     wait_for_socket(&socket);
     let key = temp_grant_key_path("message-flag-helper-ok");
     let client =
-        MailboxHelperMessageFlagBackend::new(&socket, &key, MailboxHelperPolicy::default());
+        MailboxHelperMessageFlagBackend::new(&socket, &key, MailboxHelperPolicy::default())
+            .with_helper_uid(Some(test_runtime_uid()));
     assert_eq!(
         client.set_message_flag("alice@example.test", &flag_request()),
         Ok(MessageFlagResult::Updated)
@@ -197,6 +198,28 @@ fn signed_flag_operation_crosses_the_helper_socket_boundary() {
     server.join().expect("helper exit");
     fs::remove_file(socket).expect("remove socket");
     fs::remove_file(key).expect("remove fixture key");
+}
+
+#[cfg(unix)]
+#[test]
+fn signed_flag_operation_refuses_wrong_peer_before_wire() {
+    let socket = temp_socket_path("message-flag-wrong-peer");
+    let server = spawn_wire_capture_helper(socket.clone());
+    wait_for_socket(&socket);
+    let key = temp_grant_key_path("message-flag-wrong-peer");
+    let client =
+        MailboxHelperMessageFlagBackend::new(&socket, &key, MailboxHelperPolicy::default())
+            .with_helper_uid(Some(test_runtime_uid().wrapping_add(1)));
+
+    let error = client
+        .set_message_flag("alice@example.test", &flag_request())
+        .expect_err("wrong helper peer must refuse before flag dispatch");
+    let received = server.join().expect("test helper should finish");
+    fs::remove_file(socket).expect("remove socket");
+    fs::remove_file(key).expect("remove fixture key");
+    assert_eq!(received, 0, "wrong peer received flag request bytes");
+    assert_eq!(error.backend, "message-flag-unavailable");
+    assert_eq!(error.reason, "flag helper peer refused");
 }
 
 #[cfg(unix)]

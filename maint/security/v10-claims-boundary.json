@@ -127,7 +127,7 @@
     "live_host_state_changed": false,
     "product_behavior_changed": false,
     "production_state_changed": false,
-    "refined_inventory_sha256": "f389445f64655a9adf95bd98f1d6e1c6bd158180f64eeb799630f2582da6942b",
+    "refined_inventory_sha256": "af11cc495d7b08eb413246b782357c41e463813213cdc24148c55fbe6ebb1d6b",
     "remediation_document": "docs/V10_TARGETED_FAIL_CLOSED_REMEDIATION.md",
     "remediation_document_present": true,
     "remediation_register": "maint/security/v10-fail-closed-remediation.json",
@@ -135,6 +135,6 @@
     "remediation_script": "maint/security/osmap-v10-fail-closed-remediation.py",
     "remediation_script_present": true,
     "selected_target": "src_test_module_assumption_reclassification",
-    "source_test_module_assumption_count": 7913
+    "source_test_module_assumption_count": 7966
   }
 }

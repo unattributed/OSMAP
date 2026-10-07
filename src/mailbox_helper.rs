@@ -2450,7 +2450,8 @@ mod tests {
             &socket_path,
             &grant_key_path,
             MailboxHelperPolicy::default(),
-        );
+        )
+        .with_helper_uid(Some(test_runtime_uid()));
         let request = MessageMoveRequest::new(
             MessageMovePolicy::default(),
             "INBOX",
@@ -2467,6 +2468,40 @@ mod tests {
 
         server.join().expect("helper thread should finish");
         let _ = fs::remove_file(&socket_path);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn client_message_move_refuses_wrong_peer_before_wire() {
+        let socket_path = temp_socket_path("message-move-wrong-peer");
+        let server = spawn_wire_capture_helper(socket_path.clone());
+        wait_for_socket(&socket_path);
+        let grant_key_path = temp_grant_key_path("message-move-wrong-peer");
+        let client = MailboxHelperMessageMoveBackend::new(
+            &socket_path,
+            &grant_key_path,
+            MailboxHelperPolicy::default(),
+        )
+        .with_helper_uid(Some(test_runtime_uid().wrapping_add(1)));
+        let request = MessageMoveRequest::new(
+            MessageMovePolicy::default(),
+            "INBOX",
+            "Archive/2026",
+            9,
+            crate::message_metadata::MessageVersion::new("a".repeat(32), "fixture-9".into())
+                .unwrap(),
+        )
+        .expect("request should parse");
+
+        let error = client
+            .move_message("alice@example.com", &request)
+            .expect_err("wrong helper peer must refuse before move dispatch");
+        let received = server.join().expect("test helper should finish");
+        let _ = fs::remove_file(&socket_path);
+        let _ = fs::remove_file(&grant_key_path);
+        assert_eq!(received, 0, "wrong peer received move request bytes");
+        assert_eq!(error.backend, "message-move-unavailable");
+        assert_eq!(error.reason, "move helper peer refused");
     }
 
     #[cfg(unix)]

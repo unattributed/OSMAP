@@ -7915,3 +7915,46 @@ only those root-authored derived edits from signed HEAD, preserve the baseline,
 and run the unchanged current-remediation generator plus its existing status
 hash/count fields. Retain the failed gate; no scanner, threshold or product
 change is used to clear it.
+
+### 2026-10-06 — S07 matching peer qualification and active-operation repair
+
+Signed 93016e606c7e8c6c76d19b10bc256c31a01fd7ea passed normal commit
+and push 1646 library cases, zero failures and 44 explicit native ignores.
+Fresh origin equality, all three local branch heads and the authoritative
+standard checkout clean source-only fast-forward were proved. Matching
+464-input OpenBSD library artifact 9cd174a544d477e384bc109d774974bd713725449453fb7e17eb98364645822e
+passed seven exact List/View peer, missing-UID and ordinary reader controls.
+Those tests use synthetic local sockets; no new application or provider Send
+was installed or executed, and human S07 acceptance remains open.
+
+The next independently reviewed five-path increment binds active Search
+(single and batch), Move and Flag clients to the configured peer before
+request bytes. Runtime missing peer UID refuses before connect. Local
+wrong-peer RED/GREEN measured Search [1,1] bytes to [0,0], and Move/Flag
+one byte to zero; correct-peer and unknown-after-write controls pass.
+Native and matching installed qualification are still required. The unused
+standalone AttachmentDownload route remains excluded.
+
+Installed Rename remains unqualified: read-only metadata diagnostic v4
+measured 27 semantic flag-set changes, zero order-only differences and no
+folder identity/count/size differences. No historical cause was inferred.
+A current operation baseline preserves the original failed interval rather
+than overwriting it; its verifyBefore refused nonfixture_row_refused before
+Rename, body read or baseline publication. A tiny reviewed successor retains
+all eight predicates and exposes only the fixed first-failed predicate ID.
+No setup, append or Rename retry is authorized by that diagnostic result.
+
+D05 installed SDK inventory v2 passed read-only on authoritative mail,
+Dovecot 2.3.21.1(d492236fa0), fixed 41 headers, nine programs, two libraries
+and two quota-plugin paths. The compiler's observed 114814024-byte size
+required a compiler-only 128MiB metadata cap; all other caps stayed intact.
+This proves SDK metadata only, not module ABI, all-writer quota or deployment.
+Whole-server bootstrap is parked in favour of eleven private SDK units.
+
+Active-peer normal admission attempt1 failed 18 fixture cases after 1636
+passed/44 explicit native ignores. Root supplied a misspelled TMPDIR ending
+0700 rather than the existing owner-private shorter gate directory. The
+measured failures include configuration refusal and SUN_LEN overflow before
+helper binding. Preserve the failed gate; correct only the invocation to the
+existing /tmp/osmap-primary-gate-bpz799rb, without product, assertion, socket
+limit or hook changes. No commit was created by the failed attempt.

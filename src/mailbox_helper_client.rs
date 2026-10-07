@@ -579,6 +579,7 @@ pub struct MailboxHelperMessageSearchBackend {
     grant_key_path: PathBuf,
     policy: MailboxHelperPolicy,
     search_policy: MessageSearchPolicy,
+    helper_uid: Option<u32>,
 }
 
 impl MailboxHelperMessageSearchBackend {
@@ -594,7 +595,13 @@ impl MailboxHelperMessageSearchBackend {
             grant_key_path: grant_key_path.into(),
             policy,
             search_policy,
+            helper_uid: None,
         }
+    }
+
+    pub fn with_helper_uid(mut self, uid: Option<u32>) -> Self {
+        self.helper_uid = uid;
+        self
     }
 }
 
@@ -636,6 +643,15 @@ impl MessageSearchBackend for MailboxHelperMessageSearchBackend {
                         self.socket_path.display()
                     ),
                 })?;
+
+            if let Some(uid) = self.helper_uid {
+                if crate::openbsd::unix_stream_peer_uid(&stream).ok() != Some(uid) {
+                    return Err(MailboxBackendError {
+                        backend: "mailbox-helper-client",
+                        reason: "helper peer refused".into(),
+                    });
+                }
+            }
 
             configure_stream_timeouts(&stream, self.policy);
             stream
@@ -802,12 +818,17 @@ impl MessageSearchBackend for MailboxHelperMessageSearchBackend {
                     reason: "helper batch request exceeded byte limit".into(),
                 });
             }
-            let response_bytes =
-                helper_exchange_before(&self.socket_path, &request_bytes, self.policy, deadline)
-                    .map_err(|reason| MailboxBackendError {
-                        backend: "mailbox-helper-client",
-                        reason,
-                    })?;
+            let response_bytes = helper_exchange_before_with_peer(
+                &self.socket_path,
+                &request_bytes,
+                self.policy,
+                deadline,
+                self.helper_uid,
+            )
+            .map_err(|reason| MailboxBackendError {
+                backend: "mailbox-helper-client",
+                reason,
+            })?;
             let response = parse_response(
                 MailboxListingPolicy::default(),
                 MessageListPolicy::default(),
@@ -1198,6 +1219,7 @@ pub struct MailboxHelperMessageMoveBackend {
     socket_path: PathBuf,
     grant_key_path: PathBuf,
     policy: MailboxHelperPolicy,
+    helper_uid: Option<u32>,
 }
 
 impl MailboxHelperMessageMoveBackend {
@@ -1211,7 +1233,13 @@ impl MailboxHelperMessageMoveBackend {
             socket_path: socket_path.into(),
             grant_key_path: grant_key_path.into(),
             policy,
+            helper_uid: None,
         }
+    }
+
+    pub fn with_helper_uid(mut self, uid: Option<u32>) -> Self {
+        self.helper_uid = uid;
+        self
     }
 }
 
@@ -1260,6 +1288,14 @@ impl MessageMoveBackend for MailboxHelperMessageMoveBackend {
                     backend: "message-move-unavailable",
                     reason: "move helper is unavailable".into(),
                 })?;
+            if let Some(uid) = self.helper_uid {
+                if crate::openbsd::unix_stream_peer_uid(&stream).ok() != Some(uid) {
+                    return Err(MailboxBackendError {
+                        backend: "message-move-unavailable",
+                        reason: "move helper peer refused".into(),
+                    });
+                }
+            }
             let unavailable = |_| MailboxBackendError {
                 backend: "message-move-unavailable",
                 reason: "move helper transport deadline is unavailable".into(),
@@ -1762,7 +1798,8 @@ mod batch_client_tests {
             &key,
             policy,
             MessageSearchPolicy::default(),
-        );
+        )
+        .with_helper_uid(Some(crate::openbsd::effective_uid()));
         let result = if single {
             client.search_messages(
                 "alice@example.com",
@@ -1796,6 +1833,77 @@ mod batch_client_tests {
         assert_eq!(policy.max_response_bytes, 1024 * 1024);
         assert_eq!(policy.read_timeout_secs, 5);
         assert_eq!(policy.max_concurrent_connections, 4);
+    }
+
+    #[test]
+    fn search_client_accepts_correct_peer_for_single_and_batch() {
+        let single_reply = MailboxHelperResponse::MessageSearchOk {
+            mailbox_name: "Folder/00".into(),
+            query: "literal É $(query)".into(),
+            field: MessageSearchField::Subject,
+            results: vec![],
+        };
+        assert!(transport(
+            encode_response(&single_reply),
+            MailboxHelperPolicy::default(),
+            true,
+        )
+        .unwrap()
+        .is_empty());
+        assert_eq!(
+            transport(
+                encode_response(&response(&request())),
+                MailboxHelperPolicy::default(),
+                false,
+            )
+            .unwrap()
+            .len(),
+            1
+        );
+    }
+
+    #[test]
+    fn search_client_refuses_wrong_peer_before_single_or_batch_wire() {
+        let root = FixtureRoot::new();
+        let socket = root.0.join("wrong-peer.sock");
+        let key = root.key();
+        let listener = UnixListener::bind(&socket).unwrap();
+        let server = std::thread::spawn(move || {
+            let mut observed = Vec::new();
+            for _ in 0..2 {
+                let (mut stream, _) = listener.accept().unwrap();
+                stream
+                    .set_read_timeout(Some(Duration::from_secs(2)))
+                    .unwrap();
+                let mut first = [0_u8; 1];
+                observed.push(stream.read(&mut first).unwrap());
+            }
+            observed
+        });
+        let client = MailboxHelperMessageSearchBackend::new(
+            &socket,
+            &key,
+            MailboxHelperPolicy::default(),
+            MessageSearchPolicy::default(),
+        )
+        .with_helper_uid(Some(crate::openbsd::effective_uid().wrapping_add(1)));
+        let single = MessageSearchRequest::new_with_field(
+            MessageSearchPolicy::default(),
+            "Folder/00",
+            "literal É $(query)",
+            MessageSearchField::Subject,
+        )
+        .unwrap();
+        let single_error = client
+            .search_messages("alice@example.com", &single)
+            .unwrap_err();
+        let batch_error = client
+            .search_messages_batch("alice@example.com", &request())
+            .unwrap_err();
+
+        assert_eq!(server.join().unwrap(), vec![0, 0]);
+        assert_eq!(single_error.reason, "helper peer refused");
+        assert_eq!(batch_error.reason, "helper peer refused");
     }
 
     #[test]

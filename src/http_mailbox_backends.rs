@@ -11,15 +11,18 @@ const MISSING_HELPER_GRANT_REASON: &str = "mailbox helper socket configured with
 impl RuntimeBrowserGateway {
     pub(super) fn build_message_flag_backend(&self) -> MessageFlagRuntimeBackend {
         match &self.mailbox_helper_socket_path {
-            Some(socket_path) => match self.helper_grant_key_path() {
-                Some(key) => {
-                    MessageFlagRuntimeBackend::Helper(MailboxHelperMessageFlagBackend::new(
+            Some(socket_path) => match (self.helper_grant_key_path(), self.mailbox_helper_peer_uid)
+            {
+                (Some(key), Some(helper_uid)) => MessageFlagRuntimeBackend::Helper(
+                    MailboxHelperMessageFlagBackend::new(
                         socket_path,
                         key,
                         self.expensive_route_helper_policy(),
-                    ))
-                }
-                None => MessageFlagRuntimeBackend::Unavailable(missing_helper_grant_error()),
+                    )
+                    .with_helper_uid(Some(helper_uid)),
+                ),
+                (None, _) => MessageFlagRuntimeBackend::Unavailable(missing_helper_grant_error()),
+                (_, None) => MessageFlagRuntimeBackend::Unavailable(missing_helper_peer_error()),
             },
             None => {
                 let gate = direct_mail_mutation_gate();
@@ -141,16 +144,19 @@ impl RuntimeBrowserGateway {
         timeout_secs: u64,
     ) -> MessageSearchRuntimeBackend {
         match &self.mailbox_helper_socket_path {
-            Some(socket_path) => match self.helper_grant_key_path() {
-                Some(grant_key_path) => {
-                    MessageSearchRuntimeBackend::Helper(MailboxHelperMessageSearchBackend::new(
+            Some(socket_path) => match (self.helper_grant_key_path(), self.mailbox_helper_peer_uid)
+            {
+                (Some(grant_key_path), Some(helper_uid)) => MessageSearchRuntimeBackend::Helper(
+                    MailboxHelperMessageSearchBackend::new(
                         socket_path,
                         grant_key_path,
                         self.expensive_route_helper_policy_with_timeout(timeout_secs),
                         MessageSearchPolicy::default(),
-                    ))
-                }
-                None => MessageSearchRuntimeBackend::Unavailable(missing_helper_grant_error()),
+                    )
+                    .with_helper_uid(Some(helper_uid)),
+                ),
+                (None, _) => MessageSearchRuntimeBackend::Unavailable(missing_helper_grant_error()),
+                (_, None) => MessageSearchRuntimeBackend::Unavailable(missing_helper_peer_error()),
             },
             None => MessageSearchRuntimeBackend::Direct(
                 DoveadmMessageSearchBackend::new(
@@ -200,15 +206,18 @@ impl RuntimeBrowserGateway {
     /// mailbox helper is configured for mailbox-authoritative operations.
     pub(super) fn build_message_move_backend(&self) -> MessageMoveRuntimeBackend {
         match &self.mailbox_helper_socket_path {
-            Some(socket_path) => match self.helper_grant_key_path() {
-                Some(grant_key_path) => {
-                    MessageMoveRuntimeBackend::Helper(MailboxHelperMessageMoveBackend::new(
+            Some(socket_path) => match (self.helper_grant_key_path(), self.mailbox_helper_peer_uid)
+            {
+                (Some(grant_key_path), Some(helper_uid)) => MessageMoveRuntimeBackend::Helper(
+                    MailboxHelperMessageMoveBackend::new(
                         socket_path,
                         grant_key_path,
                         self.expensive_route_helper_policy(),
-                    ))
-                }
-                None => MessageMoveRuntimeBackend::Unavailable(missing_helper_grant_error()),
+                    )
+                    .with_helper_uid(Some(helper_uid)),
+                ),
+                (None, _) => MessageMoveRuntimeBackend::Unavailable(missing_helper_grant_error()),
+                (_, None) => MessageMoveRuntimeBackend::Unavailable(missing_helper_peer_error()),
             },
             None => MessageMoveRuntimeBackend::Direct(
                 DoveadmMessageMoveBackend::new(SystemCommandExecutor, self.doveadm_path.clone())
@@ -621,6 +630,262 @@ mod tests {
                 .kind(),
             std::io::ErrorKind::WouldBlock
         );
+    }
+
+    #[cfg(unix)]
+    fn search_peer_test_requests() -> (
+        MessageSearchRequest,
+        crate::mailbox::MessageSearchBatchRequest,
+    ) {
+        let policy = MessageSearchPolicy::default();
+        (
+            MessageSearchRequest::new(policy, "INBOX", "fixture").expect("single request"),
+            crate::mailbox::MessageSearchBatchRequest::new(
+                policy,
+                vec!["INBOX".into()],
+                "fixture",
+                crate::mailbox::MessageSearchField::All,
+            )
+            .expect("batch request"),
+        )
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn runtime_search_without_expected_peer_never_connects() {
+        use std::os::unix::fs::PermissionsExt;
+        use std::os::unix::net::UnixListener;
+        use std::time::{SystemTime, UNIX_EPOCH};
+
+        let root = std::env::temp_dir().join(format!(
+            "osmap-search-missing-peer-{}-{}",
+            std::process::id(),
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir(&root).unwrap();
+        std::fs::set_permissions(&root, std::fs::Permissions::from_mode(0o700)).unwrap();
+        let socket = root.join("helper.sock");
+        let key = root.join("grant.key");
+        std::fs::write(&key, vec![b'k'; 64]).unwrap();
+        std::fs::set_permissions(&key, std::fs::Permissions::from_mode(0o600)).unwrap();
+        let listener = UnixListener::bind(&socket).unwrap();
+        listener.set_nonblocking(true).unwrap();
+        let mut gateway = RuntimeBrowserGateway::for_test(&root);
+        gateway.mailbox_helper_socket_path = Some(socket.clone());
+        gateway.mailbox_helper_grant_key_path = Some(key.clone());
+        gateway.mailbox_helper_peer_uid = None;
+        let (single, batch) = search_peer_test_requests();
+        let backend = gateway.build_message_search_backend();
+
+        let single_error = backend
+            .search_messages("alice@example.com", &single)
+            .unwrap_err();
+        let batch_error = backend
+            .search_messages_batch("alice@example.com", &batch)
+            .unwrap_err();
+        let connection = listener.accept();
+        let _ = std::fs::remove_file(&socket);
+        let _ = std::fs::remove_file(&key);
+        let _ = std::fs::remove_dir(&root);
+
+        assert_eq!(single_error.reason, "helper peer uid missing");
+        assert_eq!(batch_error.reason, "helper peer uid missing");
+        assert_eq!(
+            connection.expect_err("missing UID must not connect").kind(),
+            std::io::ErrorKind::WouldBlock
+        );
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn runtime_search_wrong_peer_sends_zero_single_and_batch_bytes() {
+        use std::io::Read;
+        use std::os::unix::fs::PermissionsExt;
+        use std::os::unix::net::UnixListener;
+        use std::thread;
+        use std::time::{Duration, SystemTime, UNIX_EPOCH};
+
+        let root = std::env::temp_dir().join(format!(
+            "osmap-search-wrong-peer-{}-{}",
+            std::process::id(),
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir(&root).unwrap();
+        std::fs::set_permissions(&root, std::fs::Permissions::from_mode(0o700)).unwrap();
+        let socket = root.join("helper.sock");
+        let key = root.join("grant.key");
+        std::fs::write(&key, vec![b'k'; 64]).unwrap();
+        std::fs::set_permissions(&key, std::fs::Permissions::from_mode(0o600)).unwrap();
+        let listener = UnixListener::bind(&socket).unwrap();
+        let server = thread::spawn(move || {
+            let mut observed = Vec::new();
+            for _ in 0..2 {
+                let (mut stream, _) = listener.accept().unwrap();
+                stream
+                    .set_read_timeout(Some(Duration::from_secs(2)))
+                    .unwrap();
+                let mut first = [0_u8; 1];
+                observed.push(stream.read(&mut first).unwrap());
+            }
+            observed
+        });
+        let mut gateway = RuntimeBrowserGateway::for_test(&root);
+        gateway.mailbox_helper_socket_path = Some(socket.clone());
+        gateway.mailbox_helper_grant_key_path = Some(key.clone());
+        gateway.mailbox_helper_peer_uid = Some(crate::openbsd::effective_uid().wrapping_add(1));
+        let (single, batch) = search_peer_test_requests();
+        let backend = gateway.build_message_search_backend();
+
+        let single_error = backend
+            .search_messages("alice@example.com", &single)
+            .unwrap_err();
+        let batch_error = backend
+            .search_messages_batch("alice@example.com", &batch)
+            .unwrap_err();
+        let observed = server.join().unwrap();
+        let _ = std::fs::remove_file(&socket);
+        let _ = std::fs::remove_file(&key);
+        let _ = std::fs::remove_dir(&root);
+
+        assert_eq!(observed, vec![0, 0]);
+        assert_eq!(single_error.reason, "helper peer refused");
+        assert_eq!(batch_error.reason, "helper peer refused");
+    }
+
+    #[cfg(unix)]
+    fn mutation_peer_test_requests() -> (MessageFlagRequest, MessageMoveRequest) {
+        let version =
+            crate::message_metadata::MessageVersion::new("a".repeat(32), "fixture-9".into())
+                .unwrap();
+        (
+            MessageFlagRequest::new(
+                "INBOX".into(),
+                9,
+                version.clone(),
+                crate::message_metadata::MessageFlag::Seen,
+                true,
+            )
+            .unwrap(),
+            MessageMoveRequest::new(MessageMovePolicy::default(), "INBOX", "Archive", 9, version)
+                .unwrap(),
+        )
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn runtime_flag_and_move_without_expected_peer_never_connect() {
+        use std::os::unix::fs::PermissionsExt;
+        use std::os::unix::net::UnixListener;
+        use std::time::{SystemTime, UNIX_EPOCH};
+
+        let root = std::env::temp_dir().join(format!(
+            "osmap-mutation-missing-peer-{}-{}",
+            std::process::id(),
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir(&root).unwrap();
+        std::fs::set_permissions(&root, std::fs::Permissions::from_mode(0o700)).unwrap();
+        let socket = root.join("helper.sock");
+        let key = root.join("grant.key");
+        std::fs::write(&key, vec![b'k'; 64]).unwrap();
+        std::fs::set_permissions(&key, std::fs::Permissions::from_mode(0o600)).unwrap();
+        let listener = UnixListener::bind(&socket).unwrap();
+        listener.set_nonblocking(true).unwrap();
+        let mut gateway = RuntimeBrowserGateway::for_test(&root);
+        gateway.mailbox_helper_socket_path = Some(socket.clone());
+        gateway.mailbox_helper_grant_key_path = Some(key.clone());
+        gateway.mailbox_helper_peer_uid = None;
+        gateway.expensive_request_timeout_secs = 1;
+        let (flag, move_request) = mutation_peer_test_requests();
+
+        let flag_error = gateway
+            .build_message_flag_backend()
+            .set_message_flag("alice@example.com", &flag)
+            .unwrap_err();
+        let move_error = gateway
+            .build_message_move_backend()
+            .move_message("alice@example.com", &move_request)
+            .unwrap_err();
+        let connection = listener.accept();
+        let _ = std::fs::remove_file(&socket);
+        let _ = std::fs::remove_file(&key);
+        let _ = std::fs::remove_dir(&root);
+
+        assert_eq!(
+            connection.expect_err("missing UID must not connect").kind(),
+            std::io::ErrorKind::WouldBlock
+        );
+        assert_eq!(flag_error.reason, "helper peer uid missing");
+        assert_eq!(move_error.reason, "helper peer uid missing");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn runtime_flag_and_move_wrong_peer_send_zero_bytes() {
+        use std::io::Read;
+        use std::os::unix::fs::PermissionsExt;
+        use std::os::unix::net::UnixListener;
+        use std::thread;
+        use std::time::{Duration, SystemTime, UNIX_EPOCH};
+
+        let root = std::env::temp_dir().join(format!(
+            "osmap-mutation-wrong-peer-{}-{}",
+            std::process::id(),
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir(&root).unwrap();
+        std::fs::set_permissions(&root, std::fs::Permissions::from_mode(0o700)).unwrap();
+        let socket = root.join("helper.sock");
+        let key = root.join("grant.key");
+        std::fs::write(&key, vec![b'k'; 64]).unwrap();
+        std::fs::set_permissions(&key, std::fs::Permissions::from_mode(0o600)).unwrap();
+        let listener = UnixListener::bind(&socket).unwrap();
+        let server = thread::spawn(move || {
+            let mut observed = Vec::new();
+            for _ in 0..2 {
+                let (mut stream, _) = listener.accept().unwrap();
+                stream
+                    .set_read_timeout(Some(Duration::from_secs(2)))
+                    .unwrap();
+                let mut first = [0_u8; 1];
+                observed.push(stream.read(&mut first).unwrap());
+            }
+            observed
+        });
+        let mut gateway = RuntimeBrowserGateway::for_test(&root);
+        gateway.mailbox_helper_socket_path = Some(socket.clone());
+        gateway.mailbox_helper_grant_key_path = Some(key.clone());
+        gateway.mailbox_helper_peer_uid = Some(crate::openbsd::effective_uid().wrapping_add(1));
+        let (flag, move_request) = mutation_peer_test_requests();
+
+        let flag_error = gateway
+            .build_message_flag_backend()
+            .set_message_flag("alice@example.com", &flag)
+            .unwrap_err();
+        let move_error = gateway
+            .build_message_move_backend()
+            .move_message("alice@example.com", &move_request)
+            .unwrap_err();
+        let observed = server.join().unwrap();
+        let _ = std::fs::remove_file(&socket);
+        let _ = std::fs::remove_file(&key);
+        let _ = std::fs::remove_dir(&root);
+
+        assert_eq!(observed, vec![0, 0]);
+        assert_eq!(flag_error.reason, "flag helper peer refused");
+        assert_eq!(move_error.reason, "move helper peer refused");
     }
 
     #[test]
