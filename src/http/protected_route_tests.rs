@@ -230,6 +230,10 @@ impl StoredHelper {
                 "OSMAP_MAILBOX_HELPER_GRANT_KEY_PATH".into(),
                 key.to_string_lossy().into_owned(),
             ),
+            (
+                "OSMAP_MAILBOX_HELPER_PEER_UID".into(),
+                crate::openbsd::effective_uid().to_string(),
+            ),
         ]))
         .unwrap();
         Self {

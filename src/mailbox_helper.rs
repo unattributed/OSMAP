@@ -2022,6 +2022,74 @@ mod tests {
 
     #[cfg(unix)]
     #[test]
+    fn client_message_list_accepts_correct_helper_peer() {
+        let socket_path = temp_socket_path("message-list-correct-peer");
+        let backend = StaticHelperBackend {
+            mailbox_result: Arc::new(Ok(Vec::new())),
+            message_list_result: Arc::new(Ok(Vec::new())),
+            message_search_result: Arc::new(Ok(Vec::new())),
+            message_view_result: Arc::new(Err(MailboxBackendError {
+                backend: "message-view-not-used",
+                reason: "unexpected message-view request".into(),
+            })),
+            message_move_result: Arc::new(Ok(())),
+        };
+        let server = spawn_test_helper(socket_path.clone(), backend);
+        wait_for_socket(&socket_path);
+        let grant_key_path = temp_grant_key_path("message-list-correct-peer");
+        let client = MailboxHelperMessageListBackend::new(
+            &socket_path,
+            &grant_key_path,
+            MailboxHelperPolicy::default(),
+            MessageListPolicy::default(),
+        )
+        .with_helper_uid(Some(test_runtime_uid()));
+        let request = MessageListRequest::new(MessageListPolicy::default(), "INBOX")
+            .expect("request should parse");
+
+        let messages = client
+            .list_messages("alice@example.com", &request)
+            .expect("matching helper peer should permit message list");
+        server.join().expect("test helper should finish");
+        let _ = fs::remove_file(&socket_path);
+        let _ = fs::remove_file(&grant_key_path);
+        assert!(messages.is_empty());
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn client_message_list_refuses_wrong_helper_peer_before_wire() {
+        let socket_path = temp_socket_path("message-list-wrong-peer");
+        let server = spawn_wire_capture_helper(socket_path.clone());
+        wait_for_socket(&socket_path);
+        let grant_key_path = temp_grant_key_path("message-list-wrong-peer");
+        let client = MailboxHelperMessageListBackend::new(
+            &socket_path,
+            &grant_key_path,
+            MailboxHelperPolicy::default(),
+            MessageListPolicy::default(),
+        )
+        .with_helper_uid(Some(test_runtime_uid().wrapping_add(1)));
+        let request = MessageListRequest::new(MessageListPolicy::default(), "INBOX")
+            .expect("request should parse");
+
+        let error = client
+            .list_messages("alice@example.com", &request)
+            .expect_err("wrong helper peer must be refused");
+        let bytes_received = server.join().expect("test helper should finish");
+        let _ = fs::remove_file(&socket_path);
+        let _ = fs::remove_file(&grant_key_path);
+
+        assert_eq!(
+            bytes_received, 0,
+            "wrong peer must receive no request bytes"
+        );
+        assert_eq!(error.backend, "mailbox-helper-client");
+        assert_eq!(error.reason, "helper peer refused");
+    }
+
+    #[cfg(unix)]
+    #[test]
     fn client_searches_messages_over_helper_socket() {
         let socket_path = temp_socket_path("message-search-helper-ok");
         let backend = StaticHelperBackend {
@@ -2134,7 +2202,8 @@ mod tests {
             &grant_key_path,
             MailboxHelperPolicy::default(),
             MessageViewPolicy::default(),
-        );
+        )
+        .with_helper_uid(Some(test_runtime_uid()));
         let request = MessageViewRequest::new(MessageViewPolicy::default(), "INBOX", 12)
             .expect("request should parse");
 
@@ -2148,6 +2217,38 @@ mod tests {
         assert_eq!(message.uid, 12);
         assert_eq!(message.header_block, "Subject: Test message\n");
         assert_eq!(message.body_text, "Hello world\n");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn client_message_view_refuses_wrong_helper_peer_before_wire() {
+        let socket_path = temp_socket_path("message-view-wrong-peer");
+        let server = spawn_wire_capture_helper(socket_path.clone());
+        wait_for_socket(&socket_path);
+        let grant_key_path = temp_grant_key_path("message-view-wrong-peer");
+        let client = MailboxHelperMessageViewBackend::new(
+            &socket_path,
+            &grant_key_path,
+            MailboxHelperPolicy::default(),
+            MessageViewPolicy::default(),
+        )
+        .with_helper_uid(Some(test_runtime_uid().wrapping_add(1)));
+        let request = MessageViewRequest::new(MessageViewPolicy::default(), "INBOX", 12)
+            .expect("request should parse");
+
+        let error = client
+            .fetch_message("alice@example.com", &request)
+            .expect_err("wrong helper peer must be refused");
+        let bytes_received = server.join().expect("test helper should finish");
+        let _ = fs::remove_file(&socket_path);
+        let _ = fs::remove_file(&grant_key_path);
+
+        assert_eq!(
+            bytes_received, 0,
+            "wrong peer must receive no request bytes"
+        );
+        assert_eq!(error.backend, "mailbox-helper-client");
+        assert_eq!(error.reason, "helper peer refused");
     }
 
     #[cfg(unix)]
@@ -2477,6 +2578,22 @@ mod tests {
                 .read_to_end(&mut request)
                 .expect("test helper should read request");
             thread::sleep(Duration::from_secs(3));
+        })
+    }
+
+    #[cfg(unix)]
+    fn spawn_wire_capture_helper(socket_path: PathBuf) -> thread::JoinHandle<usize> {
+        thread::spawn(move || {
+            let _ = remove_stale_socket_if_needed(&socket_path);
+            let listener = UnixListener::bind(&socket_path).expect("test helper should bind");
+            let (mut stream, _) = listener.accept().expect("test helper should accept");
+            stream
+                .set_read_timeout(Some(Duration::from_secs(2)))
+                .expect("test helper read should be bounded");
+            let mut first_byte = [0_u8; 1];
+            stream
+                .read(&mut first_byte)
+                .expect("test helper should observe request or EOF")
         })
     }
 

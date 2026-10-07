@@ -105,16 +105,19 @@ impl RuntimeBrowserGateway {
     /// runtime's authority when a local helper is configured.
     pub(super) fn build_message_list_backend(&self) -> MessageListRuntimeBackend {
         match &self.mailbox_helper_socket_path {
-            Some(socket_path) => match self.helper_grant_key_path() {
-                Some(grant_key_path) => {
-                    MessageListRuntimeBackend::Helper(MailboxHelperMessageListBackend::new(
+            Some(socket_path) => match (self.helper_grant_key_path(), self.mailbox_helper_peer_uid)
+            {
+                (Some(grant_key_path), Some(helper_uid)) => MessageListRuntimeBackend::Helper(
+                    MailboxHelperMessageListBackend::new(
                         socket_path,
                         grant_key_path,
                         MailboxHelperPolicy::default(),
                         MessageListPolicy::default(),
-                    ))
-                }
-                None => MessageListRuntimeBackend::Unavailable(missing_helper_grant_error()),
+                    )
+                    .with_helper_uid(Some(helper_uid)),
+                ),
+                (None, _) => MessageListRuntimeBackend::Unavailable(missing_helper_grant_error()),
+                (_, None) => MessageListRuntimeBackend::Unavailable(missing_helper_peer_error()),
             },
             None => MessageListRuntimeBackend::Direct(
                 DoveadmMessageListBackend::new(
@@ -167,16 +170,19 @@ impl RuntimeBrowserGateway {
     /// mailbox helper is configured for read-path proxying.
     pub(super) fn build_message_view_backend(&self) -> MessageViewRuntimeBackend {
         match &self.mailbox_helper_socket_path {
-            Some(socket_path) => match self.helper_grant_key_path() {
-                Some(grant_key_path) => {
-                    MessageViewRuntimeBackend::Helper(MailboxHelperMessageViewBackend::new(
+            Some(socket_path) => match (self.helper_grant_key_path(), self.mailbox_helper_peer_uid)
+            {
+                (Some(grant_key_path), Some(helper_uid)) => MessageViewRuntimeBackend::Helper(
+                    MailboxHelperMessageViewBackend::new(
                         socket_path,
                         grant_key_path,
                         self.expensive_route_helper_policy(),
                         MessageViewPolicy::default(),
-                    ))
-                }
-                None => MessageViewRuntimeBackend::Unavailable(missing_helper_grant_error()),
+                    )
+                    .with_helper_uid(Some(helper_uid)),
+                ),
+                (None, _) => MessageViewRuntimeBackend::Unavailable(missing_helper_grant_error()),
+                (_, None) => MessageViewRuntimeBackend::Unavailable(missing_helper_peer_error()),
             },
             None => MessageViewRuntimeBackend::Direct(
                 DoveadmMessageViewBackend::new(
@@ -245,6 +251,13 @@ fn missing_helper_grant_error() -> crate::mailbox::MailboxBackendError {
     crate::mailbox::MailboxBackendError {
         backend: MISSING_HELPER_GRANT_BACKEND,
         reason: MISSING_HELPER_GRANT_REASON.to_string(),
+    }
+}
+
+fn missing_helper_peer_error() -> crate::mailbox::MailboxBackendError {
+    crate::mailbox::MailboxBackendError {
+        backend: "mailbox-helper-client",
+        reason: "helper peer uid missing".into(),
     }
 }
 
@@ -481,6 +494,134 @@ mod tests {
         MailboxBackend, MessageAppendBackend, MessageListBackend, MessageMoveBackend,
         MessageSearchBackend, MessageViewBackend,
     };
+
+    #[cfg(unix)]
+    #[test]
+    fn runtime_message_reads_refuse_configured_wrong_peer_before_wire() {
+        use std::io::Read;
+        use std::os::unix::fs::PermissionsExt;
+        use std::os::unix::net::UnixListener;
+        use std::thread;
+        use std::time::{Duration, SystemTime, UNIX_EPOCH};
+
+        let temp_root = std::env::temp_dir().join(format!(
+            "osmap-message-read-peer-{}-{}",
+            std::process::id(),
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .expect("clock should follow epoch")
+                .as_nanos()
+        ));
+        std::fs::create_dir(&temp_root).expect("test root should be created");
+        std::fs::set_permissions(&temp_root, std::fs::Permissions::from_mode(0o700))
+            .expect("test root should be private");
+        let socket_path = temp_root.join("helper.sock");
+        let key_path = temp_root.join("grant.key");
+        std::fs::write(&key_path, vec![b'k'; 64]).expect("test key should be written");
+        std::fs::set_permissions(&key_path, std::fs::Permissions::from_mode(0o600))
+            .expect("test key should be private");
+        let listener = UnixListener::bind(&socket_path).expect("test helper should bind");
+        let server = thread::spawn(move || {
+            let mut observed = Vec::new();
+            for _ in 0..2 {
+                let (mut stream, _) = listener.accept().expect("test helper should accept");
+                stream
+                    .set_read_timeout(Some(Duration::from_secs(2)))
+                    .expect("test read should be bounded");
+                let mut first_byte = [0_u8; 1];
+                observed.push(
+                    stream
+                        .read(&mut first_byte)
+                        .expect("test read should finish"),
+                );
+            }
+            observed
+        });
+        let mut gateway = RuntimeBrowserGateway::for_test(&temp_root);
+        gateway.mailbox_helper_socket_path = Some(socket_path.clone());
+        gateway.mailbox_helper_grant_key_path = Some(key_path.clone());
+        gateway.mailbox_helper_peer_uid = Some(crate::openbsd::effective_uid().wrapping_add(1));
+        let list = MessageListRequest::new(MessageListPolicy::default(), "INBOX")
+            .expect("list request should parse");
+        let view = MessageViewRequest::new(MessageViewPolicy::default(), "INBOX", 1)
+            .expect("view request should parse");
+
+        let list_error = gateway
+            .build_message_list_backend()
+            .list_messages("alice@example.com", &list)
+            .expect_err("configured wrong peer must refuse list");
+        let view_error = gateway
+            .build_message_view_backend()
+            .fetch_message("alice@example.com", &view)
+            .expect_err("configured wrong peer must refuse view");
+        let observed = server.join().expect("test helper should finish");
+        let _ = std::fs::remove_file(&socket_path);
+        let _ = std::fs::remove_file(&key_path);
+        let _ = std::fs::remove_dir(&temp_root);
+
+        assert_eq!(observed, vec![0, 0], "wrong peer received request bytes");
+        assert_eq!(list_error.reason, "helper peer refused");
+        assert_eq!(view_error.reason, "helper peer refused");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn runtime_message_reads_without_configured_peer_never_connect() {
+        use std::os::unix::fs::PermissionsExt;
+        use std::os::unix::net::UnixListener;
+        use std::time::{SystemTime, UNIX_EPOCH};
+
+        let temp_root = std::env::temp_dir().join(format!(
+            "osmap-message-read-missing-peer-{}-{}",
+            std::process::id(),
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .expect("clock should follow epoch")
+                .as_nanos()
+        ));
+        std::fs::create_dir(&temp_root).expect("test root should be created");
+        std::fs::set_permissions(&temp_root, std::fs::Permissions::from_mode(0o700))
+            .expect("test root should be private");
+        let socket_path = temp_root.join("helper.sock");
+        let key_path = temp_root.join("grant.key");
+        std::fs::write(&key_path, vec![b'k'; 64]).expect("test key should be written");
+        std::fs::set_permissions(&key_path, std::fs::Permissions::from_mode(0o600))
+            .expect("test key should be private");
+        let listener = UnixListener::bind(&socket_path).expect("test helper should bind");
+        listener
+            .set_nonblocking(true)
+            .expect("test accept should not block");
+        let mut gateway = RuntimeBrowserGateway::for_test(&temp_root);
+        gateway.mailbox_helper_socket_path = Some(socket_path.clone());
+        gateway.mailbox_helper_grant_key_path = Some(key_path.clone());
+        gateway.mailbox_helper_peer_uid = None;
+        let list = MessageListRequest::new(MessageListPolicy::default(), "INBOX")
+            .expect("list request should parse");
+        let view = MessageViewRequest::new(MessageViewPolicy::default(), "INBOX", 1)
+            .expect("view request should parse");
+
+        let list_error = gateway
+            .build_message_list_backend()
+            .list_messages("alice@example.com", &list)
+            .expect_err("missing expected peer must refuse list");
+        let view_error = gateway
+            .build_message_view_backend()
+            .fetch_message("alice@example.com", &view)
+            .expect_err("missing expected peer must refuse view");
+        let connection = listener.accept();
+        let _ = std::fs::remove_file(&socket_path);
+        let _ = std::fs::remove_file(&key_path);
+        let _ = std::fs::remove_dir(&temp_root);
+
+        assert_eq!(list_error.reason, "helper peer uid missing");
+        assert_eq!(view_error.reason, "helper peer uid missing");
+        assert_eq!(
+            connection
+                .expect_err("missing peer must not connect")
+                .kind(),
+            std::io::ErrorKind::WouldBlock
+        );
+    }
 
     #[test]
     fn expensive_route_helper_policy_never_exceeds_route_timeout() {

@@ -7864,3 +7864,54 @@ three-test run passed, including an injected failing serializer and successful
 public descriptors. Matching final native/build and normal signed gates remain
 required; native Rename attempt2 remains evidence for its assessed earlier
 source. No running application, operator Send or human UAT change is claimed.
+
+
+### 2026-10-06 — installed Rename pair and message-read peer remediation
+
+Signed fd7cf95417c239f11086052e285c16188eda297d passed normal commit/push
+1641 library cases with zero failures and 44 explicit local native ignores.
+Fresh origin equality and all three existing branch heads were proved. Matching
+464 compiler inputs passed final native Rename (one case, eighteen closed
+stages) plus three public attachment encoder cases. Application
+a1e0bb1744bbf0193fc1c80901d93a3fbb07b9347354ec20ddcb5dc92f104227
+was installed authoritative helper first, then obsd1 web; preservation checks
+passed for configuration, keys, retention and unrelated services.
+
+Installed strict-peer preparation created one fresh public synthetic Duncan
+folder and appended one public message. The subsequent authoritative check
+refused an unrelated mailbox metadata difference before Rename. Its cause
+remains UNKNOWN; no Rename or automatic cleanup retry occurred. Retain the
+public fixture and the original checkpoint under rename-installed-activation-
+attempt1. Neither installed Rename completion nor browser/human UAT is claimed.
+
+Independent source review e3f1d894 cleared the exact three-file S07 List/View
+peer patch based on fd7. Configured helper reads now bind the configured expected
+UID before sending request bytes; missing expected UID refuses before connect.
+Actual local wrong-peer zero-wire, correct-peer, legacy and Runtime missing-UID
+RED/GREEN controls are retained in message-read-peer-increment2. Native and
+installed S07 qualification remain required; normal admission is pending.
+The current browser attachment route uses MessageView, not the unused standalone
+AttachmentDownload client. Other active helper operations remain separately open.
+
+D05 whole-server private build attempt5 failed on an omitted upstream Unicode
+build input, before plugin qualification. Further whole-server bootstrap retries
+are parked. The narrower installed-SDK read-only observation refused
+public_sdk_file_refused; exact predicate remains UNKNOWN. No standard quota
+configuration, operator limit/password or provider mail was changed.
+
+Normal S07 admission attempt1 failed three protected-reader fixture cases
+after 1643 passed/44 explicit native ignores. Their synthetic helper configured
+socket/grant without expected UID, so the new product refusal was correct.
+Retain the failed log. The independently reviewed one-entry test fixture repair
+sets the same-process helper creator UID and preserves all original protected
+reader, ordinary download and legacy selector assertions. Those three focused
+cases passed; the product missing-UID negative remains unchanged. Matching
+normal admission/native/installed qualification is still required.
+
+Normal S07 admission attempt2 passed 1646 library cases/44 explicit native
+ignores, then refused stale V10 remediation data. Root had regenerated the
+historical baseline inventory instead of the current refined register. Restore
+only those root-authored derived edits from signed HEAD, preserve the baseline,
+and run the unchanged current-remediation generator plus its existing status
+hash/count fields. Retain the failed gate; no scanner, threshold or product
+change is used to clear it.

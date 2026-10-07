@@ -396,6 +396,7 @@ pub struct MailboxHelperMessageListBackend {
     grant_key_path: PathBuf,
     policy: MailboxHelperPolicy,
     message_policy: MessageListPolicy,
+    helper_uid: Option<u32>,
 }
 
 impl MailboxHelperMessageListBackend {
@@ -411,7 +412,13 @@ impl MailboxHelperMessageListBackend {
             grant_key_path: grant_key_path.into(),
             policy,
             message_policy,
+            helper_uid: None,
         }
+    }
+
+    pub fn with_helper_uid(mut self, uid: Option<u32>) -> Self {
+        self.helper_uid = uid;
+        self
     }
 }
 
@@ -451,6 +458,15 @@ impl MessageListBackend for MailboxHelperMessageListBackend {
                         self.socket_path.display()
                     ),
                 })?;
+
+            if let Some(uid) = self.helper_uid {
+                if crate::openbsd::unix_stream_peer_uid(&stream).ok() != Some(uid) {
+                    return Err(MailboxBackendError {
+                        backend: "mailbox-helper-client",
+                        reason: "helper peer refused".into(),
+                    });
+                }
+            }
 
             configure_stream_timeouts(&stream, self.policy);
             stream
@@ -848,6 +864,7 @@ pub struct MailboxHelperMessageViewBackend {
     grant_key_path: PathBuf,
     policy: MailboxHelperPolicy,
     message_view_policy: MessageViewPolicy,
+    helper_uid: Option<u32>,
 }
 
 impl MailboxHelperMessageViewBackend {
@@ -863,7 +880,13 @@ impl MailboxHelperMessageViewBackend {
             grant_key_path: grant_key_path.into(),
             policy,
             message_view_policy,
+            helper_uid: None,
         }
+    }
+
+    pub fn with_helper_uid(mut self, uid: Option<u32>) -> Self {
+        self.helper_uid = uid;
+        self
     }
 }
 
@@ -904,6 +927,15 @@ impl MessageViewBackend for MailboxHelperMessageViewBackend {
                         self.socket_path.display()
                     ),
                 })?;
+
+            if let Some(uid) = self.helper_uid {
+                if crate::openbsd::unix_stream_peer_uid(&stream).ok() != Some(uid) {
+                    return Err(MailboxBackendError {
+                        backend: "mailbox-helper-client",
+                        reason: "helper peer refused".into(),
+                    });
+                }
+            }
 
             configure_stream_timeouts(&stream, self.policy);
             stream

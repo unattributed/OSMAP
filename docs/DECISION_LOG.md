@@ -9386,3 +9386,14 @@ existing response encoder and emit its bounded error wire form before any
 partial success. Preserve successful public descriptors and all Rename
 authority/recovery controls. Reassess final matching bytes before admission
 and deployment; passing prior native bytes alone does not qualify this change.
+
+
+## 2026-10-06 — bind real read routes and retain installed Rename refusal
+
+Apply the existing configured Unix peer check to actual MessageList/MessageView
+Runtime paths, including missing-UID refusal before connect. Do not invent an
+AttachmentDownload Runtime call path to justify a patch. Preserve the installed
+Rename metadata refusal and original checkpoint; obtain a closed read-only
+field discriminator before retrying any mutation or changing preservation scope.
+Park whole-Dovecot bootstrap work in favour of the same-version installed SDK
+module path. A public SDK metadata refusal is not plugin ABI qualification.
