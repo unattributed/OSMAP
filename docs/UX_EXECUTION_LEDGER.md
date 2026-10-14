@@ -8091,3 +8091,84 @@ documentation guard then passes. No commit/signature or synchronization was
 claimed from the refused attempt. Final formatted 464-input native application
 build passes with source parity, image11085bca5ecaf7f382426098e4cecc939ad0fc54a5688dfa40a0f92994074814;
 this is a build identity, not yet an installed mail outcome.
+
+### 2026-10-14 — installed ordinary-mail repair; authoritative delivery measured
+
+Product commit90461aa1f6530ce16f0c86bdc6e456d80f19dc17 has a verified
+Shopkeeper signature. Normal commit/push gates pass1662 library cases with
+zero failures and44 explicit native ignores; fresh origin equality is clean0/0.
+All464 final native compiler inputs equal the signed source. Application
+11085bca5ecaf7f382426098e4cecc939ad0fc54a5688dfa40a0f92994074814 was installed
+authoritative helper first, then obsd1 web. Environment hashes, retention,
+completion records and native key agents were preserved; the unused local
+rollback helper image was preserved rather than represented as restarted.
+The standard mail checkout is clean and source-only fast-forwarded to90461aa.
+
+Actual existing-Draft browser continuation passed real A/B password/TOTP login,
+ordinary Pre-send review, exactly three submissions (original/reply/forward),
+receipt reload without resubmission, sender Sent, recipient Inbox, decoded text,
+attachment byte equality and reply threading. The old-image controlled Draft
+survived helper/web upgrade and reopened/submitted with both attachments intact;
+reuse this bounded CORE09 persistence evidence rather than restart again.
+Independent authoritative verification passed all six exact public copies and
+MIME payload/thread checks. No provider Send occurred. A later flag stage timed
+out before any flag POST; Star was hidden under More. The remaining-only runner
+then encountered an ambiguous descendant summary before flag dispatch. Preserve
+both harness failures and the source-supported selector corrections; neither
+establishes a flag backend defect. No submission is repeated.
+
+Four fixed startup hooks and the reviewed root helper are installed. The initial
+rehearsal stopped auth but failed before creating its test socket; its discarded
+child error remains UNKNOWN. Root restored auth through one normal start. A
+reviewed single-auth continuation with safe child cwd/native groups then proved
+owned abandoned-socket recovery, one start, all six services healthy and a117-byte
+Dovecot VERSION greeting with zero AUTH. Application/configuration hashes remain
+unchanged. This does not qualify all four installed stale cases or a full reboot.
+
+Actual UI Revoke All removed prior A/B sessions; subsequent Mailboxes requires
+login. Controlled mail/account/factor cleanup is pending the remaining basic
+interaction check and current identity reconciliation. Current Duncan policy
+was read without mutation: revision5, signing/encryption Optional, Proton
+recipient encryption Required. Ordinary self-mail UAT is defined in
+/home/foo/Downloads/osmap-ux-s00/service-recovery-20261014/UAT.md.
+Full CORE01–09, original catalogue slices, protected provider receipt/signature/
+return and human acceptance remain OPEN. The existing four-hour continuation
+job was reactivated with current baseline priorities and minimum essential QA.
+
+The changed remaining-only browser run passed four Star/read toggle-and-restore
+POSTs and subject/unread-filter context. One Bin move completed authoritatively
+to Trash, but its test row selector refused. A read-only Bin page subsequently
+showed the controlled subject while that legacy class was absent. Root opened
+the exact current authoritative Trash identity and submitted one rendered Restore
+form. Native reconciliation proved Inbox UID1 to2, unchanged opaque GUID, body
+and attachment bytes; all six copies pass at current identities. Six conjoined
+tuple expunges then completed once, with zero remaining messages. No Send was
+repeated. UI session revocation passed. Factor cleanup refused before deletion
+because its source assumed session-directory0700 while the installed protected
+directory is0750. Preserve that refusal; reconcile exact existing custody without
+changing global permissions before removing the leased factors/accounts.
+
+The exact measured-context cleanup successor preserves600 record/lock checks
+and active-session refusal, without changing the shared0750 parent. It removed
+only leased factors/replay data,16 revoked fixture session records and the
+private obsd1 lease. Unchanged mail cleanup then confirmed exact A/B SQL/alias
+and empty Maildir removal plus private authoritative lease removal. Local
+credentials were removed after identity/mutation metadata recheck; an earlier
+full-stat equality assertion refused before deletion and is retained. No
+operator credential/key/policy changed. Source now confirms Bin rows use
+archive-subject, explaining the legacy selector refusal without a backend
+data-loss finding. Repeatable source curation and broader negative/core/human
+acceptance remain pending; ordinary-mail repair UAT is ready within stated limits.
+
+A separate read-only check found the manual Crypto service stopped, not configured
+enabled, with its abandoned0755 crypto.sock and no kernel listener. Preserve that
+manual/disabled status; do not equate it with secret-key readiness. The existing
+recovery helper gains only the fifth fixed Crypto mapping and its generated
+rc_pre; original guards are unchanged. Nineteen local controls pass, including
+one new fixed Crypto/stale0755 case. Exact native dead-socket recovery and hook
+installation remain pending; no agent unlock or runtime cryptography is performed.
+
+Normal followup commit attempt1 refused a real primary-address example in the
+public current-status document. Replace that example with the canonical account
+placeholder; keep the operator-specific UAT only in the private sprint artifact.
+No waiver, unsigned commit or synchronization was used for the refused attempt.

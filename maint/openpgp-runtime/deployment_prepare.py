@@ -193,9 +193,8 @@ def main():
             # The script runs under ksh.  rc.subr's default pexp is the
             # wrapper path alone, which cannot match its process arguments.
             rc = '#!/bin/ksh\ndaemon="' + str(wrapper) + '"\ndaemon_user="' + HELPER + '"\nrc_bg=YES\nrc_reload=NO\n. /etc/rc.d/rc.subr\npexp="/bin/ksh ' + str(wrapper) + '"\n'
-            # Public services recover only independently proved abandoned listeners.
-            if service == "osmap_public_inventory":
-                rc += 'rc_pre() {\n /usr/local/bin/python3 /usr/local/libexec/osmap/service_socket_recovery.py osmap_public_inventory\n}\n'
+            # Both fixed services recover only independently proved abandoned listeners.
+            rc += 'rc_pre() {\n /usr/local/bin/python3 /usr/local/libexec/osmap/service_socket_recovery.py ' + service + '\n}\n'
             rc += 'rc_cmd "$1"\n'
             write(pathlib.Path("/etc/rc.d", service), rc, 0, 0, 0o555)
             run(["/usr/sbin/rcctl", "disable", service])

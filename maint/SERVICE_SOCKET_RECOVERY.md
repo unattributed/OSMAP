@@ -1,6 +1,6 @@
 # OSMAP abandoned listener recovery
 
-The four public/transport services need a root rc_pre hook because their Unix
+The five public/transport/crypto services need a root rc_pre hook because their Unix
 listeners live in persistent /var/lib directories. A hard reboot cannot run
 the normal service cleanup trap. Existing application startup refuses every
 pre-existing socket; that refusal remains unchanged.
@@ -14,7 +14,7 @@ unsafe custody. Relay rc_pre also fails closed if the helper is absent.
 Existing OpenPGP installations receive only the additive fixed service rc_pre
 hook; never rerun preparation over existing account homes or grant material.
 
-The root-only helper accepts one of four fixed service names, not caller paths
+The root-only helper accepts one of five fixed service names, not caller paths
 or UIDs. It derives the existing bridge/GPG principal, exclusively locks a
 fixed root-owned private lockfile, checks directory/socket custody, confirms
 the exact service wrapper/child processes absent, and makes a zero-byte
@@ -26,6 +26,12 @@ The fixed public modes include observed abandoned 0755 sockets; private parent
 custody and current absence remain mandatory. Relay historical 0700 and current
 0660 sockets are included. No key, policy, configuration or SSH control socket
 is read or changed, no process is killed, and no protocol bytes are sent.
+
+The crypto mapping covers only `/var/lib/osmap-gpg/run/crypto.sock` and its
+fixed existing wrapper/helper processes. Its rc_pre hook also applies to a
+manual start when that service is disabled at boot. This recovery does not
+enable the service, start/unlock a mailbox key agent, or perform cryptography.
+The existing disabled preparation and native operation-level key checks remain.
 
 The helper's lock serializes its own bounded inspection/unlink critical section;
 it is not authority for arbitrary competing manual root administration. A

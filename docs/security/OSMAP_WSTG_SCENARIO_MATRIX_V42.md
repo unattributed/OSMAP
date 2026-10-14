@@ -365,3 +365,14 @@ one protected native fixture is explicitly ignored. Current Send preparation
 and locked revision checks are unchanged. Matching native and installed
 ordinary-mail qualification remain required; authenticated WSTG, protected
 provider delivery, original slice acceptance and full release remain OPEN.
+
+Signed90461aa is now installed as image11085bca on the authoritative helper
+and obsd1 web. Real controlled A/B password/TOTP login, ordinary Pre-send,
+original/reply/forward submission and six authoritative Inbox/Sent MIME copies
+pass, including exact attachment bytes and reply threading. Zero provider Send.
+The retained Draft survived the actual application upgrade. One installed
+auth-relay stale-socket recovery passes with all six required services healthy
+and unchanged application/configuration; full reboot and other installed stale
+cases remain unqualified. Later harness flag-navigation timeouts dispatched no
+flag mutation and remain retained. These bounded results do not close the
+complete authenticated WSTG, core baseline, protected-provider or release scope.

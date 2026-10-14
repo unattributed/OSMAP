@@ -2,6 +2,12 @@
 
 This directory holds the public-safe documentation set for OSMAP.
 
+Current operational checkpoint, 2026-10-14: the ordinary-mail repair is signed,
+synchronized and installed; controlled original/reply/forward delivery has
+authoritative Inbox/Sent MIME evidence. `CURRENT_PROJECT_STATUS.md` and the
+latest `UX_EXECUTION_LEDGER.md` distinguish that bounded result from pending
+whole-baseline, OpenPGP-provider and original sprint acceptance.
+
 The 2026-09-29/30 UX engineering stream has completed intake and implemented
 the S01 appearance and shared-shell work locally. `UX_EXECUTION_LEDGER.md`
 records signed checkpoints, synthetic browser/persistence evidence, remaining

@@ -14,6 +14,35 @@ statement as provenance rather than current release posture.
 
 ## Current source posture
 
+### Installed ordinary-mail repair, 2026-10-14
+
+Signed source `90461aa1f6530ce16f0c86bdc6e456d80f19dc17` is synchronized on
+`feat/ux-completion-20260929`. Matching image
+`11085bca5ecaf7f382426098e4cecc939ad0fc54a5688dfa40a0f92994074814` is installed
+on the authoritative Toronto mailbox helper and obsd1 development web. This
+supersedes the source-only/deployment statements in the older checkpoints below.
+
+The reproduced ordinary Pre-send refusal on unavailable unused public-key
+inventory is repaired while retaining Required protection and stale-revision
+enforcement. Real controlled password/TOTP login and exactly three original,
+reply and forward submissions passed installed Inbox/Sent/body/attachment
+checks. Independent authoritative inspection verified all six MIME copies and
+reply threading. The retained Draft survived the actual upgrade. Four Star/read
+toggle-and-restore actions, subject/unread-filter context and a controlled Bin
+move/Restore also have bounded actual results. Test selector failures remain
+retained; the restored message's new Inbox UID and unchanged payload were
+independently reconciled. No provider mail was sent.
+
+All six required development services are healthy. Four fixed startup hooks are
+installed; one actual abandoned auth socket recovered through normal startup,
+preserving application/configuration. This is not a full-device reboot claim.
+Ordinary self-mail UAT: fresh Compose to your canonical account address, turn all
+three OpenPGP selections off, Save Draft, Resume, Pre-send check, Send once,
+then compare Inbox and Sent. Current account signing/encryption are Optional;
+the Proton recipient's Required encryption policy is preserved. Protected
+provider delivery, full CORE acceptance and original sprint/epic closure remain
+open. See `UX_FUNCTIONAL_BASELINE.md` and the latest execution-ledger entries.
+
 ### Public inventory engineering checkpoint, 2026-10-01
 
 Resumed the preserved work after signed checkpoint `f70d74c`. OpenPGP Settings

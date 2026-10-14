@@ -9453,3 +9453,43 @@ then qualify one matching installed mail journey. Reuse passed bounded evidence;
 avoid repeated native test compilation for formatter-only changes and avoid
 new peripheral diagnostic work. Preserve exact evidence attribution and human
 acceptance limits while moving working code into the development application.
+
+## 2026-10-14 — qualify the actual ordinary-mail repair without upgrading scope
+
+Signed synchronized90461aa and native image11085bca are installed on the
+authoritative helper and development web. Three finite controlled submissions
+and all six authoritative Inbox/Sent MIME copies now demonstrate ordinary
+original, reply and forward delivery. Keep operator provider Sends separate;
+Required Proton encryption policy is preserved. Offer bounded ordinary self-
+mail Draft/Pre-send/Send UAT, not protected-provider or whole-baseline readiness.
+
+Reuse the measured old-image Draft persistence across actual deployment and
+the single installed auth stale-socket recovery. Do not repeat restarts merely
+to obtain duplicate assurance. Preserve the stopped-service test-fixture failure
+and its UNKNOWN child error; the corrected qualifier's pass does not diagnose
+it retrospectively. Restore/reconcile exact partial state before continuing.
+Harness-only hidden/ambiguous controls require current rendered selectors,
+not speculative product changes or repeated mail. Use the existing six public
+messages for remaining basic interactions, then current native tuples for
+cleanup. Curate repeatable sanitized runner sources at baseline closeout;
+Downloads-only scripts are not an adequate permanent source record.
+
+Treat the actual Bin movement and native UID-changing Restore as successful
+bounded backend outcomes; its absent legacy row class is a test contract issue,
+not evidence of missing authoritative data. Clean only current conjoined tuples.
+Reconcile cleanup's measured0750 session parent against exact ownership/inode
+and600 records; do not chmod the shared parent to satisfy a700-only assumption.
+
+Exact cleanup is complete for six messages, two accounts/aliases/Maildirs,
+leased factors/replay entries,16 revoked sessions and both host/local credential
+leases. Preserve the original predicate refusals as test/executor evidence;
+do not convert their corrected execution into a product-security defect claim.
+Keep the ordinary-mail UAT boundary explicit while further epic engineering
+continues under the resumed minimum-essential-QA direction.
+
+Cover the separately witnessed abandoned Crypto listener through the same fixed
+recovery mechanism, so an authorized later manual start does not encounter an
+old endpoint. Preserve its configured-disabled status and key agents; do not
+enable Crypto or infer signing/encryption readiness from listener recovery.
+Python-only mapping/hook changes need their focused control and exact native
+path proof, not another unchanged Rust application build.

@@ -1,5 +1,5 @@
 #!/usr/local/bin/python3
-"""Root rc_pre recovery of four fixed, abandoned OSMAP Unix listeners.
+"""Root rc_pre recovery of five fixed, abandoned OSMAP Unix listeners.
 
 Never reads keys/configuration or sends protocol bytes. The unprivileged
 daemons retain their existing refusal to replace any existing listener.
@@ -26,6 +26,9 @@ SERVICES = {
     "osmap_public_admin": ("_osmapgpg", "/var/lib/osmap-gpg/run/admin.sock",
                            ("/bin/ksh /var/lib/osmap-gpg/bin/osmap_public_admin-run.ksh",
                             "/var/lib/osmap-gpg/bin/osmap_public_admin_helper "), (0o600, 0o660, 0o755)),
+    "osmap_crypto": ("_osmapgpg", "/var/lib/osmap-gpg/run/crypto.sock",
+                      ("/bin/ksh /var/lib/osmap-gpg/bin/osmap_crypto-run.ksh",
+                       "/var/lib/osmap-gpg/bin/osmap_crypto_helper "), (0o600, 0o660, 0o755)),
 }
 LOCK = "/var/run/osmap-service-socket-recovery.lock"
 

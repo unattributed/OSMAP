@@ -52,6 +52,16 @@ class RecoveryTests(unittest.TestCase):
         self.assertEqual(recovery.recover(self.path, self.uid, (), self.stopped, modes=modes), "recovered")
         self.assertFalse(self.path.exists())
 
+    def test_fixed_crypto_mapping_recovers_abandoned_0755_without_agent_access(self):
+        owner, path, prefixes, modes = recovery.SERVICES["osmap_crypto"]
+        self.assertEqual(owner, "_osmapgpg")
+        self.assertEqual(path, "/var/lib/osmap-gpg/run/crypto.sock")
+        self.assertEqual(prefixes, ("/bin/ksh /var/lib/osmap-gpg/bin/osmap_crypto-run.ksh",
+                                    "/var/lib/osmap-gpg/bin/osmap_crypto_helper "))
+        self.stale(); self.path.chmod(0o755)
+        self.assertEqual(recovery.recover(self.path, self.uid, prefixes, self.stopped, modes=modes), "recovered")
+        self.assertFalse(self.path.exists())
+
     def test_observed_relay_0700_recovers_and_other_modes_refuse(self):
         self.stale(); self.path.chmod(0o700)
         modes = recovery.SERVICES["osmap_auth_relay"][3]
