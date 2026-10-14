@@ -777,7 +777,15 @@ where
                 protection,
             );
             match current {
-                Some(view) if view.runtime_configured => {
+                Some(view)
+                    if view.runtime_configured
+                        || !(protection.sign
+                            || protection.encrypt
+                            || protection.encrypt_to_self) =>
+                {
+                    // Ordinary review requires current trusted policy/revision,
+                    // not a private-key client. Required policy remains blocked
+                    // by evaluation and is rechecked under the Send binding lock.
                     match (view.revision, view.preflight.as_ref()) {
                         (Some(revision), Some(preflight)) if preflight.revision == revision => {
                             protection.binding_revision = Some(revision);

@@ -7958,3 +7958,136 @@ measured failures include configuration refusal and SUN_LEN overflow before
 helper binding. Preserve the failed gate; correct only the invocation to the
 existing /tmp/osmap-primary-gate-bpz799rb, without product, assertion, socket
 limit or hook changes. No commit was created by the failed attempt.
+
+### 2026-10-06 — approved functional baseline, wider epic paused
+
+The operator authorized codifying and completing preservation plus a verified
+ordinary core-mail baseline. `UX_FUNCTIONAL_BASELINE.md` consolidates the six
+agreed deliverables, exact CORE-01–09 outcomes, two-host conditions, narrow
+repair authority, account/secret custody, independent review and separate
+human acceptance. The accepted R2 anchor remains
+6b3ce8fff27ca3dabf87039d54098bd9967a2e42; its manifest verified unchanged.
+No frozen-plan requirement or wider epic completion is implied.
+
+Initial source ee360329d2051a0ea93b36411dab523a54fd37bb and both installed
+images 6394c41ae7a373faf155044dbf36dbaeaea5ad4331a3f94f4d2d98cafac1cbc2
+were measured. All 22 Git references were preserved in an all-ref bundle
+e47a6877c67aaefe87549c167bffaa43f4d8553e34bb60da980a0e3d1f671db6.
+An actual isolated mirror restoration passed fsck, HEAD signature and exact
+22-ref equality. Canonical, 8bcc and d82f worktrees were clean; unfinished
+isolated Move work remains preserved and paused. Host image/configuration
+identity capture is read-only; runtime private preservation/rehearsal and
+installed CORE cases remain pending at this work-order entry.
+
+The complete 403-control inventory retains original acceptance statuses.
+Candidate source pointers are TO_RECONCILE, not implementation proof. The
+legacy same-host password-changing harness is not run unchanged. Fresh
+controlled A/B account setup and installed QA are being implemented against
+the actual authoritative schema, with credentials outside retained evidence.
+All CORE results are NOT RUN until actual matching execution. Historical
+component tests and human failures are preserved without reinterpretation.
+
+Evidence root: /home/foo/Downloads/osmap-ux-s00/functional-baseline-20261006/.
+This entry authorizes no provider Send, operator policy/credential changes,
+unrelated services or resumption of the paused epic. Next: independent review
+of exact private preservation/account setup executables, actual installed
+core qualification, minimal demonstrated repair and honest result reconciliation.
+
+### 2026-10-14 — epic resumed; recover real services before baseline qualification
+
+The operator explicitly resumed the epic and supplied four failed enabled
+obsd1 services. Root is PM/integration/host/Git executor; service_engineer owns
+the bounded startup fix, baseline_qa owns executable baseline compatibility,
+and scrum_security_review provides independent Scrum/security/QA reconciliation.
+Work resumes against signed ee360329d2051a0ea93b36411dab523a54fd37bb and the
+unchanged accepted R2 anchor. Existing uncommitted baseline/ledger/decision work
+was preserved. Ordinary-mail baseline remains the first functional dependency;
+provider Send remains operator controlled and no original acceptance is inferred.
+
+Actual obsd1 observations confirmed serve/helper OK but auth/mailbox relays and
+public inventory/admin stopped after the 14:13:50 boot. Four older persistent
+Unix sockets had no kernel listener. Exact owner/type/dev/inode checks and
+zero-byte ECONNREFUSED probes preceded removal of those four abandoned sockets.
+Each enabled service then started; all six OSMAP checks and four expected
+listeners passed. Binary remains 6394c41ae7a373faf155044dbf36dbaeaea5ad4331a3f94f4d2d98cafac1cbc2.
+No environment, key, policy, private-agent cache or unrelated service changed.
+This is service recovery, not login or Send qualification. The original boot
+exit was not captured directly; source existing-path guards and observed stale
+state establish the startup obstruction, not the preceding power-loss cause.
+
+An initial root doas-to-web probe refused; corrected direct UID/GID/group drop
+received the authoritative Dovecot VERSION greeting (117 bytes), without AUTH
+or password. The refused invocation is retained and is not a product defect.
+The durable fixed-service root rc_pre helper preserves live/foreign/replaced
+listeners and application existing-path refusal. Independent local 18 controls
+passed. First native invocation used Python isolated mode with module lookup
+and refused import before any test; unchanged source with the exact test script
+path passed 18 OpenBSD controls. Both owned stages were removed. Actual installed
+rc_pre qualification and signed synchronization remain pending at this entry.
+
+Baseline source repair aligns the unfinished browser runner with the actual
+private producer credential schema and labels every browser case subset-only.
+Independent 15 contract controls pass. Direct controlled vmail identity dispatch
+replaces the refused doas invocation; 11 provisioner controls pass, preserving
+actual session locking/serialization and untouched-account cleanup. These are
+source-only prerequisites. Actual installed A/B login, mail, authoritative
+Inbox/Sent MIME and full CORE-01–09 acceptance remain NOT RUN.
+
+Evidence: /home/foo/Downloads/osmap-ux-s00/service-recovery-20261014/.
+Only demonstrated service recovery and executable baseline prerequisites are
+active; no password/SDK diagnostic expansion or protected-provider claim.
+
+Normal signed admission attempt1 refused before signing because current RustSec
+0157/0158 advisories flag locked ammonia4.1.4. Preserve the gate failure; no
+waiver or unsigned commit was used. The independently reviewed closest patched
+4.1.7 update changes only that locked package among82, with requirement~4.1.7,
+existing V15 admission metadata and two existing sanitizer regressions. Current
+OSMAP removes style/SVG, so no actual application exploit is asserted. Official
+advisories and old-library positive/negative probes are retained. Fresh matching
+OpenBSD compile (464 inputs) passed nine sanitizer and59 MIME-filter cases;
+one separate native fixture is explicitly ignored. Before/after parity holds,
+test artifact09ce79e43505a0224ab8fbe4a84aa3fe5c4d3533e44fa6d69080438b1ac9f062.
+This does not install a new application or qualify the ignored fixture.
+
+Actual first installed browser attempt logged in A/B and saved one controlled
+Draft with two public attachments, then timed out. Source inspection identified
+the hidden Resume selector as a supported harness cause, without an exported
+original failing line;
+zero Send requests occurred. Exact owned Draft/body/attachments were reconciled,
+one UI-confirmed deletion removed it, and logout passed. That reconciliation
+observed one transient Mailboxes503; a later200 does not explain its cause.
+Changed runner uses the real Draft actions menu and fixed LAN hostname mapping
+with TLS validation. Actual attempt2 passed login/save/resume/reload but its
+pre-send Draft refresh returned503, still with zero Sends. A separate current-
+Draft probe reproduced the finite public-inventory-unavailable notice. Preserve
+the controlled Draft and current sessions; inspect authoritative policy versus
+unused inventory dependencies before any product change or new submission.
+
+The reproduced ordinary Pre-send 503 has an independently reviewed three-path
+repair: evaluate trusted current/default BindingRecord policy against explicit
+unavailable inventory, and permit allOff review without a private crypto client.
+No key capability is inferred. Actual source RED3 to GREEN12, protected18 PASS
+with one explicit native ignore, and stale recovery3 PASS preserve Required
+account/recipient policies, selected protection refusal, corrupt-store refusal
+and locked Send revision enforcement. Native and installed current-Draft
+qualification are pending; no ordinary Send or recipient delivery is yet proved.
+
+Actual changed OpenBSD native source compilation (464 inputs, 56.985 seconds)
+passed the same 12 compose, 18 protected-submission and three stale-recovery
+controls; one separate protected fixture remains explicitly ignored. Source
+parity holds for that pre-format test artifact 8b57e26421c978dbbbe5744f5c455211bd783db6919caf0c0753a1bf542b78d4.
+The required formatter subsequently changed only the added match guard/tests;
+its check and 12 focused controls pass. Preserve both source versions rather
+than attributing the older native artifact to final formatted bytes. Final
+application build and installed behavior will qualify the admitted version.
+Explicit A/B Revoke All through genuine browser sessions removed prior fixture
+sessions; both post-revocation Mailboxes requests require login. Zero Send.
+Operator directs minimum necessary QA: retain required gates and one changed
+installed journey; do not repeat passed unchanged checks or expand diagnostics.
+
+Normal commit attempt2 passed Rust/security phases then refused the missing
+baseline-document index link. Add only that required README reference; the
+documentation guard then passes. No commit/signature or synchronization was
+claimed from the refused attempt. Final formatted 464-input native application
+build passes with source parity, image11085bca5ecaf7f382426098e4cecc939ad0fc54a5688dfa40a0f92994074814;
+this is a build identity, not yet an installed mail outcome.

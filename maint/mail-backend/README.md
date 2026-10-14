@@ -19,6 +19,14 @@ unqualified host.
 
 Required obsd1 layout:
 
+Install the reviewed root-owned `maint/service_socket_recovery.py` at
+`/usr/local/libexec/osmap/service_socket_recovery.py` before the updated relay
+rc.d files. Their `rc_pre` hooks recover only a proved abandoned fixed listener;
+live or uncertain sockets are preserved. See
+[`SERVICE_SOCKET_RECOVERY.md`](../SERVICE_SOCKET_RECOVERY.md) for custody,
+installation and qualification details. Missing recovery prerequisites refuse
+startup rather than bypassing the existing relay safeguards.
+
 | Path | Ownership and mode | Purpose |
 | --- | --- | --- |
 | `/var/lib/osmap-bridge` | `_osmapbridge:osmaprt` `0710` | Private service root, group-searchable by web |

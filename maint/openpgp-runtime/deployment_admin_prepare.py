@@ -51,6 +51,13 @@ def main():
     if not args.prepare:
         print(json.dumps({"target": HOST, "prepared": receipt.is_file(), "service": SERVICE}))
         return
+    recovery = pathlib.Path("/usr/local/libexec/osmap/service_socket_recovery.py")
+    assert recovery.resolve() == recovery, "install reviewed root-owned socket recovery helper first"
+    for path in (recovery, *recovery.parents):
+        metadata = path.lstat()
+        assert metadata.st_uid == 0 and not metadata.st_mode & 0o022
+        assert stat.S_ISREG(metadata.st_mode) if path == recovery else stat.S_ISDIR(metadata.st_mode)
+    assert recovery.stat().st_nlink == 1, "socket recovery helper must be singly linked"
     sources = {
         "osmap_public_admin_helper": args.binary,
         "admin-inventory-worker": args.inventory_worker,
@@ -146,7 +153,8 @@ def main():
     exclusive(wrapper, wrapper_text.encode(), helper.pw_uid, group.gr_gid, 0o700)
     # rc.subr defaults pexp to the wrapper path alone.  The running script's
     # full process arguments include the ksh interpreter.
-    rc_text = f'#!/bin/ksh\ndaemon="{wrapper}"\ndaemon_user="{HELPER}"\nrc_bg=YES\nrc_reload=NO\n. /etc/rc.d/rc.subr\npexp="/bin/ksh {wrapper}"\nrc_cmd "$1"\n'
+    rc_text = f'#!/bin/ksh\ndaemon="{wrapper}"\ndaemon_user="{HELPER}"\nrc_bg=YES\nrc_reload=NO\n. /etc/rc.d/rc.subr\npexp="/bin/ksh {wrapper}"\n'
+    rc_text += 'rc_pre() {\n /usr/local/bin/python3 /usr/local/libexec/osmap/service_socket_recovery.py osmap_public_admin\n}\nrc_cmd "$1"\n'
     exclusive(rc, rc_text.encode(), 0, 0, 0o555)
     subprocess.run(["/usr/sbin/rcctl", "disable", SERVICE], check=True, timeout=10)
     addition = (

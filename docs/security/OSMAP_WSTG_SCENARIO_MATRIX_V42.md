@@ -340,3 +340,28 @@ development evidence. They do not close authenticated WSTG scenarios, native
 helper/Dovecot quota enforcement, configured-runtime UI, provider transport,
 or human UAT. Record separate exact native/browser results before promoting
 PAGE07 or whole-sprint status.
+
+## 2026-10-14 — startup custody, sanitizer patch and ordinary preflight
+
+Four required development helpers were restored after exact abandoned-socket
+identification. The fixed-service root startup helper has 18 local and 18
+OpenBSD controls for live/foreign/replaced path refusal and zero-byte recovery;
+installed rc_pre qualification remains pending. This does not qualify host
+reboot recovery, authentication or mail delivery.
+
+The mandatory audit refused ammonia 4.1.4 under RUSTSEC-2021-0157/0158.
+The compatible 4.1.7 update preserves OSMAP's style/SVG exclusions. Fresh
+matching OpenBSD source tests passed nine sanitizer and 59 MIME cases, with
+one separate fixture explicitly ignored; no installed release claim follows.
+
+Actual installed allOff Pre-send review returned 503 on missing unused public
+inventory, before any Send. The three-path repair evaluates authoritative
+binding policy against explicitly unavailable inventory; it grants no public
+key capability or private-client authority. Source RED3 to GREEN12 covers
+ordinary default/existing revisions, Required account/recipient protection,
+selected protection, stale Send pins, corrupt policy and zero crypto dispatch.
+Eighteen protected-submission and three stale-recovery controls also pass;
+one protected native fixture is explicitly ignored. Current Send preparation
+and locked revision checks are unchanged. Matching native and installed
+ordinary-mail qualification remain required; authenticated WSTG, protected
+provider delivery, original slice acceptance and full release remain OPEN.

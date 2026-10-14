@@ -16,6 +16,7 @@ import resource
 import re
 import shutil
 import socket
+import stat
 import subprocess
 import tempfile
 
@@ -43,6 +44,13 @@ def main():
     if not args.prepare:
         print(json.dumps({"target": HOST, "prepared": ROOT.exists(), "services": ["osmap_crypto", "osmap_public_inventory"], "activation": "separate operator step; running web unchanged"}))
         return
+    recovery = pathlib.Path("/usr/local/libexec/osmap/service_socket_recovery.py")
+    assert recovery.resolve() == recovery, "install reviewed root-owned socket recovery helper first"
+    for path in (recovery, *recovery.parents):
+        metadata = path.lstat()
+        assert metadata.st_uid == 0 and not metadata.st_mode & 0o022
+        assert stat.S_ISREG(metadata.st_mode) if path == recovery else stat.S_ISDIR(metadata.st_mode)
+    assert recovery.stat().st_nlink == 1, "socket recovery helper must be singly linked"
     assert all(getattr(args, n) for n in ("source", "binaries", "duncan_public", "proton_public"))
     addresses = [args.account, args.test_account, args.correspondent]
     assert all(address and len(address) <= 254 and re.fullmatch(r"[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?", address) for address in addresses), "supply canonical operator-approved account and correspondent addresses"
@@ -184,7 +192,11 @@ def main():
             write(wrapper, content, helper.pw_uid, gid, 0o700)
             # The script runs under ksh.  rc.subr's default pexp is the
             # wrapper path alone, which cannot match its process arguments.
-            rc = '#!/bin/ksh\ndaemon="' + str(wrapper) + '"\ndaemon_user="' + HELPER + '"\nrc_bg=YES\nrc_reload=NO\n. /etc/rc.d/rc.subr\npexp="/bin/ksh ' + str(wrapper) + '"\nrc_cmd "$1"\n'
+            rc = '#!/bin/ksh\ndaemon="' + str(wrapper) + '"\ndaemon_user="' + HELPER + '"\nrc_bg=YES\nrc_reload=NO\n. /etc/rc.d/rc.subr\npexp="/bin/ksh ' + str(wrapper) + '"\n'
+            # Public services recover only independently proved abandoned listeners.
+            if service == "osmap_public_inventory":
+                rc += 'rc_pre() {\n /usr/local/bin/python3 /usr/local/libexec/osmap/service_socket_recovery.py osmap_public_inventory\n}\n'
+            rc += 'rc_cmd "$1"\n'
             write(pathlib.Path("/etc/rc.d", service), rc, 0, 0, 0o555)
             run(["/usr/sbin/rcctl", "disable", service])
         receipt = {"version": 1, "target": HOST, "helper_uid": helper.pw_uid, "web_uid": web.pw_uid, "socket_group": GROUP, "previous_web_group_ids": previous_groups, "binary_sha256": hashes, "public_fingerprints": [DUNCAN, PROTON], "services_enabled": False, "live_web_binary_and_environment_modified": False, "private_keys_provisioned": False}

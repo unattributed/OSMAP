@@ -98,10 +98,17 @@ impl RuntimeBrowserGateway {
             .inventory_client()
             .as_ref()
             .and_then(|client| client.read(account).ok());
+        // A missing public inventory establishes no key capability. As in
+        // prepare_for_delivery, trusted policy can still be evaluated for an
+        // ordinary message and can still require protection before submission.
+        let unavailable = crate::openpgp_inventory::Inventory::parse(
+            br#"{"version":1,"ok":false,"error":"inventory_unavailable"}"#,
+        )
+        .ok()?;
         let parse =
             |raw: &str| crate::mail_address::parse_address_list(ComposePolicy::default(), raw).ok();
         let preflight = match (
-            inventory.as_ref(),
+            Some(inventory.as_ref().unwrap_or(&unavailable)),
             parse(to),
             parse(cc),
             parse(bcc),

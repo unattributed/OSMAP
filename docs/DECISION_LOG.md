@@ -9397,3 +9397,59 @@ Rename metadata refusal and original checkpoint; obtain a closed read-only
 field discriminator before retrying any mutation or changing preservation scope.
 Park whole-Dovecot bootstrap work in favour of the same-version installed SDK
 module path. A public SDK metadata refusal is not plugin ABI qualification.
+
+## 2026-10-06 — one trustworthy functional baseline before epic resumption
+
+Apply the operator-approved baseline action through
+`UX_FUNCTIONAL_BASELINE.md`. Preserve and rehearse source/runtime recovery,
+pin historical/current references, inventory every approved control, then
+execute genuine installed ordinary mail journeys with fresh authoritative
+account pairs and independent recipient/Sent checks. Repair measured core
+regressions only; retain all failed and unexecuted outcomes. Matching builds,
+synthetic sinks, public keys and page rendering do not establish the baseline.
+
+The broader epic remains paused. External provider Sends remain controlled
+by the operator. Do not mutate Duncan's credentials, key/policy state,
+correspondence or quotas to demonstrate ordinary delivery. Engineering
+verification and human acceptance remain separate. A baseline checkpoint
+cannot retroactively close any of the original 48 slices or 12 sprints.
+
+## 2026-10-14 — resume with boot recovery and real installed mail as the dependency
+
+The operator resumed development and asked whether four failed obsd1 services
+were expected. They are required configured transports/public helpers, not
+expected private-key cache expiry. Restore only exact proved abandoned listener
+files, then add bounded fixed-service rc_pre recovery without weakening daemon
+startup refusal. Preserve live, foreign, replaced or uncertain sockets; keep
+private key unlocking separate from public-service availability.
+
+Use the restored environment to execute the unfinished ordinary-mail baseline.
+Repair measured runner/provisioner incompatibilities and reuse current source
+and evidence. A browser subset, service check or remote VERSION greeting cannot
+close full CORE acceptance. Preserve all failed invocations and original user
+outcomes. Resume signing and prompt synchronization after the operator's newly
+confirmed workstation agent unlock; do not confuse it with mail-host key custody.
+
+The mandatory audit's new ammonia advisories block source admission. Apply the
+closest compatible patched4.1.7 and keep the same dependency graph/features;
+extend existing CSS/SVG exclusions' regressions and require matching native
+source proof. Do not claim a demonstrated OSMAP exploit or installed repair
+from a dependency scan. Ordinary pre-send refusal on fresh controlled accounts
+is now reproduced as public inventory unavailable; investigate real policy and
+selection requirements before changing that boundary. Required protection,
+unknown policy and explicit stale revisions must continue to refuse safely.
+
+Repair the demonstrated projection/preflight dependency using the same explicit
+unavailable-inventory semantics already enforced in delivery preparation.
+Trusted Optional policy allows ordinary composition review without unused key
+inventory/private clients; Required policy, selected protection, unknown policy
+and explicit stale Send revision remain enforced. Keep delivery preparation
+and binding locks unchanged. Require matching installed actual ordinary mail,
+authoritative Inbox/Sent and exact fixture cleanup before baseline verification.
+
+Apply the operator's minimum-QA direction immediately: verify the demonstrated
+repair and essential protection negatives, run mandatory normal signing gates,
+then qualify one matching installed mail journey. Reuse passed bounded evidence;
+avoid repeated native test compilation for formatter-only changes and avoid
+new peripheral diagnostic work. Preserve exact evidence attribution and human
+acceptance limits while moving working code into the development application.

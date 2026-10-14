@@ -13,4 +13,7 @@ rc_reload=NO
 
 # rc.subr uses pgrep -xf: the expression must cover the complete argument list.
 pexp="/usr/local/bin/python3 ${script} --purpose auth --listen .*"
+rc_pre() {
+ /usr/local/bin/python3 /usr/local/libexec/osmap/service_socket_recovery.py osmap_auth_relay
+}
 rc_cmd "$1"
