@@ -8263,3 +8263,96 @@ complete changed V14 target then passes. This is a gate classification repair,
 not additional browser script permission. Matching application
 98032ab9cc5271168367e8ea13ffb0d62d58e712bbc7045d904dc974443adf71 builds once
 from the qualified464 compiler inputs in26.854s; installation is separate.
+
+### 2026-10-14 — actual protected delivery UAT and stale private-agent repair
+
+Signed source ba170efa0ab7e38392eb16e470ee3d0e3f16db43 has verified normal
+commit/push gates and fresh origin equality, clean0/0. Matching web image
+98032ab9cc5271168367e8ea13ffb0d62d58e712bbc7045d904dc974443adf71 was installed
+on obsd1, preserving authoritative helper11085bca and all existing environments,
+retention, agents and unrelated services. Toronto's standard checkout was clean
+source-only fast-forwarded to the same source. Those are separate actual
+records under encrypted-bcc-20261014, not inferred from source synchronization.
+
+The operator's first protected message reached Proton with readable content and
+an explicit PGP-encrypted message status; Bcc privacy was reported PASS. The
+literal body-match answer was ambiguous, so exact original-text equality is not
+separately credited. The second test establishes readable authoritative Inbox
+Bcc content in Thunderbird and its matching encrypted OSMAP Sent row. Initial
+Thunderbird failures remain historical. No verified signature, second-message
+Proton receipt, OSMAP body decryption or encrypted return is inferred. Retained
+UAT-RESULTS-20261014.json and UAT-SECOND-TEST-20261014.json preserve these scopes.
+
+Read-only obsd1 inspection found revision5/exact own binding, matching runtime
+mapping/public encryption subkey and all three private-key-file metadata entries.
+The helper-owned agent socket returned ECONNREFUSED61. An empty failed secret
+listing did not establish absent keys. Agent death cause remains UNKNOWN.
+The existing message decrypted with the expected account subkey on parrot;
+Thunderbird's external-GnuPG/hidden-recipient integration was separately repaired
+under explicit operator approval. No secret-key export, provider resend or
+plaintext-retained diagnostic occurred. Workstation Pinentry and key-priority
+changes are outside the obsd1 runtime qualification.
+
+Four reviewed paths under stale-private-agent-20261014 now implement a bounded
+private-only live owned-peer check, existing Locked refusal, exact stale socket
+recovery and serialized native launcher. Unchanged 300-second/default/max cache,
+native Pinentry, stopped-helper checks and public-operation behavior remain.
+Manifest8893fd5a / patch51d28b7e match the integrated files. Independent attempt2
+review confirms only the added imported-module hash changed after original
+review; all five native inputs, including unchanged engine, were copied/pinned.
+
+Actual native-attempt1 exits0 in4.546s, reusing exact existing Rust test binary
+0ca6370e6f95339162dcaec0ae868be6b0538d6125d5f032d4f8a8a9665c0059 without a
+Rust rebuild. Stale Sign returns Locked/no body, public Encrypt/Verify pass,
+the existing launcher recovers the disposable agent and real Sign then passes.
+All existing Bcc/recipient/signature/self controls and agent/scratch cleanup pass.
+No operator agent, service, mailbox or provider action occurs. A deployment C
+artifact was separately built from exact qualified source9a5b79e0 with the same
+compiler/link flags; SHA93658dd0. Its existing strcpy linker warning is retained,
+not waived or attributed to this change. Installation is not yet credited.
+
+Canonical integration initially refused the stale attached-worktree path before
+any edit; absolute canonical paths then matched all four candidate hashes.
+Signing preflight returns No pinentry after the workstation cache reload.
+An operator native Shopkeeper unlock is requested once; no unsigned commit,
+hook bypass or synchronization occurs. Continue independent preparation while
+that input is pending. Full S05/S07 and epic acceptance remain OPEN.
+
+Independent S08-02 Move preparation progressed while signing remained blocked.
+The separately frozen thirteen-path candidate was built once from464 matching
+compiler inputs, fresh=false, in58.491s, producing test binary542014c2. Its one
+existing native Rename/Move case failed101 at child signed_move line881 after
+the Move outcome, authoritative confirmation, stable folder GUID and message
+count checks passed. The full-summary equality, later payload/private metadata,
+recovery and cleanup markers were not credited. The fixture was retained with
+cleanup UNCONFIRMED; no unchanged retry or historical-PID signal occurred.
+The developer identified an invalid whole-summary comparison across different
+mailbox_name fields. A test-only expected-name correction is under review;
+other potentially differing fields and complete native acceptance remain open.
+The exact result and private lease are retained under folder-move-20261014/
+native-attempt1, with an independent failure-scope review. No Move source was
+admitted, signed or installed, and no operator mailbox/provider action occurred.
+
+The superseding compact test-only summary correction checks exact old/new names
+and compares the full summary after changing only the expected mailbox_name.
+Matching local control passes; the original RED and accidentally old-candidate
+invocation remain retained and uncredited. Exact readinessd6409b8d and package
+9bfb6fcd independently CLEAR. One changed native build passed57.758s/fresh=false
+with464 matching inputs, producing d1b9c73bec45d48fe0769abdaa1c45dc29b70f7a776a0166e8c54cb9dfdcb841.
+One native case then passed2.122s/all seven markers: populated folder GUID,
+full normalized summary and exact body, Label/Snooze continuity, Bob isolation,
+lost-result/no-redispatch recovery, authority refusal, actual confinement and
+new-fixture cleanup/standard metadata preservation. Independent actual scope
+review5fb8cb39 is CLEAR. This does not retrospectively close the earlier failed
+fixture's cleanup uncertainty. Root packaging KeyError and scp option refusal
+occurred before native dispatch and are retained separately without product
+repair claims. Move source remains isolated, not signed/installed or human
+accepted; no provider email or operator mailbox mutation was performed.
+
+The operator refreshed gpg-agent and clarified that the Shopkeeper signing key
+has no private-key passphrase. A fresh noninteractive detached signing check
+now succeeds. The earlier No pinentry error is retained as an observed failure;
+its cause was not established and must not be described as proof of password
+protection or a cold credential cache. No further unlock request is required.
+Proceed through normal signed commit/push gates; detached signing success alone
+does not establish a completed commit, synchronization or installation.

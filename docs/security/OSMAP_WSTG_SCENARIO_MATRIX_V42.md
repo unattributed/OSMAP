@@ -392,3 +392,15 @@ Retained invocation/MIME/assertion failures are superseded only within their
 corrected test scopes. Evidence is under osmap-ux-s07/encrypted-bcc-20261014.
 No browser, SMTP, authoritative Sent storage, provider receipt, full WSTG or
 release acceptance follows from this disposable envelope/ciphertext proof.
+
+## 2026-10-14 — stale native private-agent endpoint
+
+Exact source9a5b79e0 and launcher2d3df2b3 pass one changed outgoing native fixture
+with existing Rust binary0ca6370e. A deliberately abandoned owned socket returns
+Locked with no body for Sign; public Encrypt and Verify pass unchanged. Exact
+stale recovery through the existing bounded launcher is followed by real Sign.
+The prior Bcc, recipient, self-decryption, signature/tamper and cleanup controls
+remain passing. All five source inputs match, including the imported launcher.
+This does not qualify a full restart, operator private unlock or installed reader.
+Actual operator Proton-first and Thunderbird-second delivery outcomes are kept
+separate in the UAT records. No broad WSTG/release or full sprint claim is made.

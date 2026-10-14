@@ -12,7 +12,10 @@ import pathlib
 import re
 import socket
 import subprocess
+import struct
 import tempfile
+import time
+from deployment_unlock import restart_bounded_agent
 
 
 def main():
@@ -27,7 +30,7 @@ def main():
     assert listing.returncode == 0 and (test + ": test").encode() in listing.stdout
     print(json.dumps({"native_test_binary_sha256": hashlib.sha256(binary.read_bytes()).hexdigest(),
                       "source_sha256": {name: hashlib.sha256((source / name).read_bytes()).hexdigest()
-                                        for name in ("crypto.c", "crypto_engine.c", pathlib.Path(__file__).name)}}), flush=True)
+                                        for name in ("crypto.c", "crypto_engine.c", "deployment_unlock.py", pathlib.Path(__file__).name)}}), flush=True)
     with tempfile.TemporaryDirectory(prefix="osmap-crypto-fixture-") as directory:
         root = pathlib.Path(directory)
         homes = []
@@ -98,6 +101,39 @@ def main():
                        for line in recipient_packets), "every recipient key identity must be hidden"
             assert packets.returncode == 0, "bounded public packet inspection refused"
             print("encrypted_bcc_pkesk_count=2 all_recipient_keyids_hidden=PASS", flush=True)
+            # The same disposable Alice keys distinguish a dead endpoint from
+            # missing private material, then exercise the existing repair.
+            def worker_operation(code, content, selected=(), signature=b"", expected=True):
+                frame = b"OSMC" + bytes([code, len(selected), 0, 0]) + struct.pack(">II", len(content), len(signature))
+                frame += b"".join(fp.encode().ljust(64, b"\0") for fp in selected) + content + signature
+                response = run([str(worker), str(homes[0]), str(engine)], frame, timeout=15)
+                assert len(response.stdout) >= 8
+                metadata_size, body_size = struct.unpack(">II", response.stdout[:8])
+                assert metadata_size <= 65536 and body_size <= 16 * 1024 * 1024
+                assert len(response.stdout) == 8 + metadata_size + body_size
+                metadata = json.loads(response.stdout[8:8 + metadata_size])
+                body = response.stdout[8 + metadata_size:]
+                assert metadata["ok"] == expected and (response.returncode == 0) == expected
+                if not expected:
+                    assert body == b"" and metadata["error"] == "locked"
+                return body
+
+            public_fixture = b"Synthetic stale-agent discriminator.\n"
+            signature = worker_operation(3, public_fixture, [fingerprints[0]])
+            stopped = run(["/usr/local/bin/gpgconf", "--homedir", str(homes[0]), "--kill", "gpg-agent"], timeout=15)
+            assert stopped.returncode == 0
+            until = time.monotonic() + 5
+            while (homes[0] / "S.gpg-agent").exists():
+                assert time.monotonic() < until
+                time.sleep(0.02)
+            with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as abandoned:
+                abandoned.bind(str(homes[0] / "S.gpg-agent"))
+            worker_operation(3, public_fixture, [fingerprints[0]], expected=False)
+            worker_operation(4, public_fixture, [fingerprints[1]])
+            worker_operation(2, public_fixture, signature=signature)
+            restart_bounded_agent(homes[0], env, None)
+            worker_operation(3, public_fixture, [fingerprints[0]])
+            print("stale_private_agent_locked_without_plaintext=PASS stale_public_encrypt_verify=PASS bounded_agent_recovery_sign=PASS", flush=True)
         finally:
             for home in homes:
                 stopped = run(["/usr/local/bin/gpgconf", "--homedir", str(home), "--kill", "gpg-agent"], timeout=15)

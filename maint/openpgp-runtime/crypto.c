@@ -13,6 +13,11 @@
 #include <string.h>
 #include <stdint.h>
 #include <time.h>
+#ifdef __OpenBSD__
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <poll.h>
+#endif
 #define CONTENT_LIMIT (16U * 1024U * 1024U)
 #define KEY_LIMIT 50
 #ifndef CRYPTO_GPG
@@ -68,6 +73,32 @@ static int trusted_paths(const char *home, const char *engine) {
  for (size_t i=0;i<3;i++) { if (snprintf(path,sizeof(path),"%s/%s",home,configs[i]) >= (int)sizeof(path) || !lstat(path,&st)) return 0; }
  return 1;
 }
+#ifdef __OpenBSD__
+/* A pathname alone does not establish a running agent. Exchange no protocol or
+ * secret; refuse a dead/foreign/replaced endpoint before GPG can misreport it
+ * as absent private material. Public operations never call this preflight. */
+static int live_private_agent(const char *path, const struct stat *before) {
+ struct sockaddr_un address; memset(&address,0,sizeof(address));
+ if(strlen(path)>=sizeof(address.sun_path))return 0;
+ address.sun_family=AF_UNIX;address.sun_len=sizeof(address);
+ strlcpy(address.sun_path,path,sizeof(address.sun_path));
+ int fd=socket(AF_UNIX,SOCK_STREAM|SOCK_NONBLOCK|SOCK_CLOEXEC,0);
+ if(fd<0)return 0;
+ int ok=connect(fd,(struct sockaddr *)&address,sizeof(address))==0;
+ if(!ok && (errno==EINPROGRESS || errno==EAGAIN)) {
+  struct pollfd ready={fd,POLLOUT,0};int error=0;socklen_t size=sizeof(error);
+  ok=poll(&ready,1,250)>0 && (ready.revents&POLLOUT) &&
+   getsockopt(fd,SOL_SOCKET,SO_ERROR,&error,&size)==0 && error==0;
+ }
+ uid_t uid;gid_t gid;struct stat after;
+ ok=ok && getpeereid(fd,&uid,&gid)==0 && uid==geteuid() && !lstat(path,&after) &&
+  after.st_dev==before->st_dev && after.st_ino==before->st_ino &&
+  after.st_uid==before->st_uid && after.st_gid==before->st_gid &&
+  after.st_mode==before->st_mode && after.st_nlink==before->st_nlink &&
+  after.st_ctim.tv_sec==before->st_ctim.tv_sec && after.st_ctim.tv_nsec==before->st_ctim.tv_nsec;
+ close(fd);return ok;
+}
+#endif
 static int confine(const char *home, const char *engine, int agent_required) {
 #ifdef __OpenBSD__
  char path[4096]; struct stat st;
@@ -76,7 +107,7 @@ static int confine(const char *home, const char *engine, int agent_required) {
  int present[sizeof(files)/sizeof(files[0])];
  for(size_t i=0;i<sizeof(files)/sizeof(files[0]);i++)present[i]=!stat(files[i],&st);
  char agent[4096];
- if(agent_required && (snprintf(agent,sizeof(agent),"%s/S.gpg-agent",home)>=(int)sizeof(agent) || lstat(agent,&st) || !S_ISSOCK(st.st_mode) || st.st_uid!=geteuid()))return 0;
+ if(agent_required && (snprintf(agent,sizeof(agent),"%s/S.gpg-agent",home)>=(int)sizeof(agent) || lstat(agent,&st) || !S_ISSOCK(st.st_mode) || st.st_uid!=geteuid() || st.st_nlink!=1 || !live_private_agent(agent,&st)))return 0;
  if (unveil(home, "") || unveil(engine,"rx")) return 0;
  const char *public_files[] = {"pubring.kbx", "trustdb.gpg"};
  for (size_t i=0;i<2;i++) { if (snprintf(path,sizeof(path),"%s/%s",home,public_files[i]) >= (int)sizeof(path) || unveil(path,"r")) return 0; }

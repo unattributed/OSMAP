@@ -14,6 +14,29 @@ statement as provenance rather than current release posture.
 
 ## Current source posture
 
+### Private key-agent recovery engineering, 2026-10-14
+
+The installed obsd1 account's expected binding, public encryption subkey and
+private-key file metadata were present, but its native agent socket refused
+connections. A socket pathname did not establish a running agent. The repair
+checks a bounded live connection and the same owned peer before private
+operations, and the existing native launcher recovers only an exact abandoned
+socket under its stopped-helper prerequisite and exclusive launcher lock.
+Native Pinentry and the 300-second cache policy remain unchanged.
+
+One matching OpenBSD qualification passes stale private-operation refusal with
+no plaintext, public Encrypt/Verify availability, bounded agent recovery and
+real signing afterward. Existing recipient, self-decryption, signature and Bcc
+privacy checks also pass. This is source/native evidence; signed synchronization,
+installation and actual account reading remain separate pending outcomes.
+
+Operator UAT separately establishes first-message Proton receipt, readable
+PGP-encrypted content and reported Bcc privacy. A second message has actual
+readable Thunderbird Bcc delivery and a matching OSMAP encrypted Sent row.
+These supersede the old unexecuted-provider statement for their exact cases.
+OSMAP's own decryption, verified signatures, encrypted return and full S07/epic
+acceptance remain open. No agent provider Send occurred.
+
 ### S07 encrypted-Bcc engineering, 2026-10-14
 
 The configured Crypto runtime was restored and an authenticated public-only

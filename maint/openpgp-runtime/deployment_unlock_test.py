@@ -48,7 +48,10 @@ class AgentPolicyTests(unittest.TestCase):
         with tempfile.TemporaryDirectory(prefix="osmap-unlock-policy-") as directory:
             home = pathlib.Path(directory)
             agent_socket = home / "S.gpg-agent"
-            agent_socket.touch()
+            listener = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+            self.addCleanup(listener.close)
+            listener.bind(str(agent_socket))
+            listener.listen(4)
             calls = []
 
             def run(command, **kwargs):
@@ -60,6 +63,7 @@ class AgentPolicyTests(unittest.TestCase):
                 self.assertEqual(kwargs["timeout"], 15)
                 self.assertNotIn("input", kwargs)
                 if command[0].endswith("gpgconf"):
+                    listener.close()
                     agent_socket.unlink()
                 return subprocess.CompletedProcess(command, 0)
 
@@ -95,10 +99,13 @@ class AgentPolicyTests(unittest.TestCase):
                 unlock.restart_bounded_agent(home, {}, None, startup_failure)
             self.assertEqual(len(calls), 2)
 
-    def test_stale_socket_refuses_new_daemon_after_bounded_wait(self):
+    def test_live_socket_refuses_new_daemon_after_original_bounded_wait(self):
         with tempfile.TemporaryDirectory(prefix="osmap-unlock-policy-") as directory:
             home = pathlib.Path(directory)
-            (home / "S.gpg-agent").touch()
+            listener = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+            self.addCleanup(listener.close)
+            listener.bind(str(home / "S.gpg-agent"))
+            listener.listen(4)
             calls = []
 
             def stopped(command, **_):
@@ -108,6 +115,72 @@ class AgentPolicyTests(unittest.TestCase):
             with patch.object(unlock.time, "monotonic", side_effect=[0, 6]), self.assertRaises(AssertionError):
                 unlock.restart_bounded_agent(home, {}, None, stopped)
             self.assertEqual(len(calls), 1)
+
+    def test_stale_owned_socket_is_removed_before_bounded_daemon_start(self):
+        with tempfile.TemporaryDirectory(prefix="osmap-unlock-stale-") as directory:
+            home = pathlib.Path(directory)
+            path = home / "S.gpg-agent"
+            with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as peer:
+                peer.bind(str(path))
+            calls = []
+            def run(command, **_):
+                calls.append(command)
+                if command[0].endswith("gpg-agent"):
+                    self.assertFalse(path.exists())
+                return subprocess.CompletedProcess(command, 0)
+            unlock.restart_bounded_agent(home, {}, None, run)
+            self.assertEqual(len(calls), 2)
+            self.assertFalse(path.exists())
+
+    def test_foreign_symlink_and_replaced_socket_are_never_removed(self):
+        with tempfile.TemporaryDirectory(prefix="osmap-unlock-refusal-") as directory:
+            home = pathlib.Path(directory)
+            path = home / "S.gpg-agent"
+            path.touch()
+            with self.assertRaises(AssertionError):
+                unlock.remove_stale_agent_socket(home)
+            self.assertTrue(path.is_file())
+            path.unlink()
+            path.symlink_to(home / "missing")
+            with self.assertRaises(AssertionError):
+                unlock.remove_stale_agent_socket(home)
+            self.assertTrue(path.is_symlink())
+            path.unlink()
+            with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as old:
+                old.bind(str(path))
+            original = path.lstat()
+            actual_lstat = pathlib.Path.lstat
+            foreign = type("ForeignSocket", (), {"st_mode": original.st_mode,
+                           "st_uid": original.st_uid + 1, "st_nlink": 1})()
+            with patch.object(pathlib.Path, "lstat", autospec=True,
+                              side_effect=lambda item: foreign if item == path else actual_lstat(item)):
+                with self.assertRaises(AssertionError):
+                    unlock.remove_stale_agent_socket(home)
+            self.assertTrue(path.exists())
+            with patch.object(unlock, "agent_endpoint", return_value=(original, False)):
+                path.unlink()
+                path.touch()
+                with self.assertRaises(AssertionError):
+                    unlock.remove_stale_agent_socket(home)
+            self.assertTrue(path.is_file())
+            path.unlink()
+            with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as live:
+                live.bind(str(path))
+                live.listen(4)
+                with patch.object(unlock, "peer_uid", return_value=os.geteuid() + 1):
+                    with self.assertRaises(AssertionError):
+                        unlock.remove_stale_agent_socket(home)
+                self.assertTrue(path.exists())
+
+    def test_launcher_serialization_refuses_a_second_owner(self):
+        with tempfile.TemporaryDirectory(prefix="osmap-unlock-lock-") as directory:
+            path = pathlib.Path(directory) / "launcher.lock"
+            with unlock.launcher_lock(path):
+                with self.assertRaises(BlockingIOError):
+                    with unlock.launcher_lock(path):
+                        self.fail("concurrent unlock admitted")
+            with unlock.launcher_lock(path):
+                pass
 
     @unittest.skipUnless(os.environ.get("OSMAP_UNLOCK_NATIVE") == "1", "requires disposable obsd1 native agent")
     def test_native_existing_agent_is_replaced_and_actual_flags_are_bounded(self):

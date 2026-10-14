@@ -9532,3 +9532,24 @@ classification while retaining unknown-script, production-reference and CSP
 refusals. These necessary acceptance-maintenance changes do not waive gates
 or establish release security from generated counts. Original failed checks
 remain in the S07 evidence root.
+
+## 2026-10-14 — recover the measured private-agent dependency
+
+Credit actual operator delivery outcomes separately: first Proton receipt and
+PGP decryption, reported Bcc privacy, and second readable Thunderbird Bcc copy
+with matching OSMAP Sent storage. Preserve OSMAP reader, signature and return
+acceptance as open. Do not repeat mail to diagnose an existing message.
+
+An owned socket with ECONNREFUSED is an unavailable agent, not proof that the
+operator's private keys are absent. Add a bounded live/same-peer check only to
+private operations and reuse the existing Locked result. Repair the existing
+native launcher to remove only its exact abandoned endpoint after stopped-helper
+and owner/type/inode checks, with exclusive launcher serialization. Retain native
+Pinentry, 300-second cache bounds and no automatic key import or web passphrase.
+Do not introduce an agent supervisor or extend cache policy to hide the fault.
+
+Use one existing outgoing native fixture with changed C/module inputs and the
+already qualified Rust binary; no unchanged Rust rebuild or assurance matrix is
+needed. Its actual stale/private refusal, public positives, recovery and signing
+positive passed. Operator account warming and installed body decryption remain
+distinct. Keep native failure history and actual signing-cache blocker visible.

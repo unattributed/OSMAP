@@ -6,6 +6,10 @@ itself; this script never reads a passphrase. No workstation signing agent is
 used. Terminal ownership is restored even after cancellation/failure.
 """
 import os
+import contextlib
+import ctypes
+import errno
+import fcntl
 import pathlib
 import pwd
 import resource
@@ -13,6 +17,8 @@ import signal
 import socket
 import stat
 import subprocess
+import struct
+import sys
 import time
 
 HOME = pathlib.Path("/var/lib/osmap-gpg/accounts/duncan")
@@ -20,6 +26,86 @@ PRIMARY = "E401B0FDCA3A712DE8E15BB23DAB198EA2E96BBE"
 SIGNER = "83A5689C7C52CE43DB88C8A5322909FC05BF68BB"
 CACHE_SECONDS = 300
 PINENTRY_PROGRAM = "/usr/local/bin/pinentry-tty"
+LAUNCHER_LOCK = pathlib.Path("/var/run/osmap-duncan-agent-unlock.lock")
+
+
+@contextlib.contextmanager
+def launcher_lock(path=LAUNCHER_LOCK):
+    fd = os.open(path, os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW | os.O_NONBLOCK | os.O_CLOEXEC, 0o600)
+    try:
+        original = os.fstat(fd)
+        assert stat.S_ISREG(original.st_mode) and original.st_uid == os.geteuid()
+        assert stat.S_IMODE(original.st_mode) == 0o600 and original.st_nlink == 1
+        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        current = path.lstat()
+        assert (current.st_dev, current.st_ino) == (original.st_dev, original.st_ino)
+        yield
+    finally:
+        os.close(fd)
+
+
+def identity(info):
+    return (info.st_dev, info.st_ino, info.st_uid, info.st_gid, info.st_mode, info.st_nlink, info.st_ctime_ns)
+
+
+def peer_uid(peer):
+    if hasattr(peer, "getpeereid"):
+        return peer.getpeereid()[0]
+    if sys.platform.startswith("openbsd"):
+        uid, gid = ctypes.c_uint(), ctypes.c_uint()
+        libc = ctypes.CDLL(None, use_errno=True)
+        libc.getpeereid.argtypes = [ctypes.c_int, ctypes.POINTER(ctypes.c_uint), ctypes.POINTER(ctypes.c_uint)]
+        libc.getpeereid.restype = ctypes.c_int
+        assert libc.getpeereid(peer.fileno(), ctypes.byref(uid), ctypes.byref(gid)) == 0
+        return uid.value
+    # Local socket-only tests; the operator entrypoint itself admits obsd1 only.
+    assert sys.platform.startswith("linux")
+    return struct.unpack("3i", peer.getsockopt(socket.SOL_SOCKET, socket.SO_PEERCRED, 12))[1]
+
+
+def agent_endpoint(home, deadline=None):
+    home_info = home.lstat()
+    assert home.resolve() == home and stat.S_ISDIR(home_info.st_mode)
+    assert stat.S_IMODE(home_info.st_mode) == 0o700
+    path = home / "S.gpg-agent"
+    try:
+        before = path.lstat()
+    except FileNotFoundError:
+        return None
+    assert stat.S_ISSOCK(before.st_mode) and before.st_uid == home_info.st_uid and before.st_nlink == 1
+    with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as peer:
+        remaining = 0.25 if deadline is None else min(0.25, deadline - time.monotonic())
+        assert remaining > 0, "mailbox agent socket did not close"
+        peer.settimeout(remaining)
+        try:
+            peer.connect(str(path))
+        except OSError as error:
+            if error.errno == errno.ENOENT:
+                assert not path.exists() and not path.is_symlink(), "mailbox agent socket changed during check"
+                assert identity(home.lstat())[:5] == identity(home_info)[:5], "mailbox home changed during agent check"
+                return None
+            assert error.errno == errno.ECONNREFUSED, "mailbox agent state is uncertain"
+            live = False
+        else:
+            assert peer_uid(peer) == home_info.st_uid, "foreign mailbox agent peer"
+            live = True
+    assert identity(home.lstat())[:5] == identity(home_info)[:5], "mailbox home changed during agent check"
+    assert identity(path.lstat()) == identity(before), "mailbox agent socket changed during check"
+    return before, live
+
+
+def remove_stale_agent_socket(home, deadline=None):
+    endpoint = agent_endpoint(home, deadline)
+    if endpoint is None:
+        return True
+    before, live = endpoint
+    if live:
+        return False
+    path = home / "S.gpg-agent"
+    assert identity(path.lstat()) == identity(before), "mailbox agent socket replaced before removal"
+    path.unlink()
+    assert not path.exists(), "mailbox agent socket reappeared"
+    return True
 
 
 def require_stopped_helpers(env, run=subprocess.run):
@@ -33,13 +119,14 @@ def require_stopped_helpers(env, run=subprocess.run):
 def restart_bounded_agent(home, env, demote, run=subprocess.run):
     # An existing socket does not establish the agent's cache policy. Replace
     # the stopped-service account agent rather than reuse an unqualified TTL.
+    agent_endpoint(home)  # Refuse foreign paths/peers before the existing stop.
     stopped = run(["/usr/local/bin/gpgconf", "--homedir", str(home), "--kill", "gpg-agent"],
                   stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
                   stderr=subprocess.DEVNULL, env=env, cwd=home,
                   preexec_fn=demote, timeout=15)
     assert stopped.returncode == 0, "mailbox agent stop refused"
     until = time.monotonic() + 5
-    while (home / "S.gpg-agent").exists():
+    while not remove_stale_agent_socket(home, until):
         assert time.monotonic() < until, "mailbox agent socket did not close"
         time.sleep(0.02)
     agent = run(["/usr/local/bin/gpg-agent", "--no-options", "--homedir", str(home),
@@ -56,6 +143,12 @@ def restart_bounded_agent(home, env, demote, run=subprocess.run):
 
 
 def main():
+    assert os.geteuid() == 0 and socket.gethostname() == "obsd1.blackbagsecurity.com"
+    with launcher_lock():
+        warm_mailbox_agent()
+
+
+def warm_mailbox_agent():
     assert os.geteuid() == 0 and socket.gethostname() == "obsd1.blackbagsecurity.com"
     assert os.isatty(0), "use the operator SSH terminal, not a captured tool/log session"
     tty = pathlib.Path(os.ttyname(0))
