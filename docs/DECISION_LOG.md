@@ -9493,3 +9493,42 @@ old endpoint. Preserve its configured-disabled status and key agents; do not
 enable Crypto or infer signing/encryption readiness from listener recovery.
 Python-only mapping/hook changes need their focused control and exact native
 path proof, not another unchanged Rust application build.
+
+## 2026-10-14 — return to epic delivery after ordinary-mail repair
+
+Follow the operator's explicit epic refocus: retain the extra CORE01 candidate
+without running it and resume S07 functional development. One normal manual
+Crypto start and one authenticated public-only Encrypt request succeeded with
+unchanged configuration, keys and policy. Keep boot enablement unchanged and
+distinguish this available public operation from private-key readiness and
+actual protected delivery. The operator still controls the next provider Send.
+
+Address S07-03's concrete blanket encrypted-Bcc refusal through the existing
+binding/submission boundaries and outbound native fixture. Admission requires
+actual hidden recipient packet IDs, no Bcc header/Sent leak, exact envelope
+routing, intended-recipient decryption and outsider denial. Do not remove that
+refusal merely because the worker contains THROW_KEYIDS or a local mock passes.
+Use focused tests and the required normal gates; do not expand another fixture
+framework or resume parked password/SDK/quota diagnostics.
+
+After actual public encryption passed, enable only the existing Crypto daemon
+at boot under the standing development-host authority. This registers an already
+qualified service, without starting/unlocking a private-key agent. Preserve the
+private rc.conf.local backup and exact enabled-service/configuration delta;
+full reboot and private-key readiness remain separate. Read-only reconciliation
+confirms only the pkg_scripts membership addition, with unrelated assignments
+and existing startup order preserved.
+
+Native Bcc confidentiality checks assert the observable contract rather than an
+invented underlying-library error: intended recipients decrypt, an excluded
+sender returns no plaintext with usable-key positive controls, and only defined
+typed refusals are accepted. Record the actual Unavailable result without
+diagnosing its hidden GPG cause. The failed raw-MIME and exact-error assertions
+remain retained as test-assumption failures.
+
+Keep current V10 inventories reproducible with their unchanged scanners and
+preserve the old registers in Git. Fix V14's exact existing test-artifact
+classification while retaining unknown-script, production-reference and CSP
+refusals. These necessary acceptance-maintenance changes do not waive gates
+or establish release security from generated counts. Original failed checks
+remain in the S07 evidence root.

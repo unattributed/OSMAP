@@ -54,7 +54,7 @@ if [ -n "$frontend_paths" ]; then
   exit 2
 fi
 
-js_paths="$(git ls-files --cached --others --exclude-standard | grep -E '\.(js|mjs|cjs|jsx|ts|tsx|wasm)$' | grep -Fvx 'src/http/compose_local.js' || true)"
+js_paths="$(git ls-files --cached --others --exclude-standard | grep -E '\.(js|mjs|cjs|jsx|ts|tsx|wasm)$' | grep -Fvx -e 'src/http/compose_local.js' -e 'maint/ux/folder_rename_workflows.cjs' || true)"
 if [ -n "$js_paths" ]; then
   echo "error: script artifacts outside the exact R2 composer allowance" >&2
   printf '%s\n' "$js_paths" >&2
@@ -129,6 +129,7 @@ print(f"composer source/CSP negative controls passed: {len(mutations)}")
 allowed_callers = {"src/http/routes_compose.rs", "src/http/routes_draft.rs"}
 for path in Path("src").rglob("*.rs"):
     production = path.read_text().split("\n#[cfg(test)]", 1)[0]
+    assert "folder_rename_workflows.cjs" not in production, f"browser test fixture referenced by runtime: {path}"
     if "compose_enhancement::response(" in production:
         assert str(path) in allowed_callers, f"scripted response escaped composer: {path}"
 

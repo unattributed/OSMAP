@@ -249,24 +249,30 @@ fn invalid_mutated_request_and_invalid_plan_refuse_before_crypto() {
 }
 
 #[test]
-fn bcc_is_envelope_only_and_encrypted_bcc_stays_unqualified() {
-    let executor = mock(Vec::new());
+fn bcc_is_envelope_only_in_ordinary_and_encrypted_messages_and_request_bound() {
+    let executor = mock(vec![Ok(encrypted())]);
     let mut request = request();
     request.bcc_recipients.push("hidden@example.test".into());
     let result = prepare(&executor, &account(), &request, &plan(false, false)).unwrap();
     assert!(!std::str::from_utf8(result.as_bytes())
         .unwrap()
         .contains("hidden@example.test"));
-    assert_eq!(
-        prepare(&executor, &account(), &request, &plan(false, true)).unwrap_err(),
-        SubmissionError::EncryptedBccUnqualified
-    );
+    let protected = prepare(&executor, &account(), &request, &plan(false, true)).unwrap();
+    let wire = std::str::from_utf8(protected.as_bytes()).unwrap();
+    assert!(!wire.contains("hidden@example.test"));
+    assert!(!wire
+        .lines()
+        .any(|line| line.to_ascii_lowercase().starts_with("bcc:")));
     request.bcc_recipients[0] = "different@example.test".into();
     assert_eq!(
         result.validate_for(&account(), &request),
         Err(SubmissionError::RequestMismatch)
     );
-    assert!(executor.operations.borrow().is_empty());
+    assert_eq!(
+        protected.validate_for(&account(), &request),
+        Err(SubmissionError::RequestMismatch)
+    );
+    assert_eq!(executor.operations.borrow().len(), 1);
 }
 
 #[test]
@@ -465,6 +471,72 @@ fn delivery_reevaluates_exact_final_recipients_and_confirmed_revision() {
             crate::openpgp_bindings::BlockReason::RecipientKeyUnavailable
         ))
     );
+    assert!(executor.operations.borrow().is_empty());
+}
+
+#[test]
+fn encrypted_bcc_requires_approved_hidden_key_and_encrypts_the_full_unique_union() {
+    use crate::openpgp_bindings::{RecipientBinding, Requirement};
+    let mut request = request();
+    request.bcc_recipients.push("hidden@example.test".into());
+    request.protection = crate::send::ProtectionIntent {
+        encrypt: true,
+        binding_revision: Some(7),
+        ..crate::send::ProtectionIntent::default()
+    };
+    let mut record = bindings();
+    let executor = mock(Vec::new());
+    assert_eq!(
+        prepare_for_delivery(
+            &executor,
+            &account(),
+            &request,
+            &record,
+            Some(&inventory()),
+            100
+        )
+        .unwrap_err(),
+        SubmissionError::ProtectionBlocked(Some(
+            crate::openpgp_bindings::BlockReason::RecipientKeyUnavailable
+        ))
+    );
+    assert!(executor.operations.borrow().is_empty());
+    record.recipient_bindings.push(RecipientBinding {
+        address: "hidden@example.test".into(),
+        primary_fingerprint: SIGNER.into(),
+        encryption: Requirement::Required,
+    });
+    let executor = mock(vec![Ok(encrypted())]);
+    let prepared = prepare_for_delivery(
+        &executor,
+        &account(),
+        &request,
+        &record,
+        Some(&inventory()),
+        100,
+    )
+    .unwrap();
+    assert_eq!(prepared.protection(), SubmissionProtection::Encrypted);
+    assert!(
+        matches!(&executor.operations.borrow()[..], [Operation::Encrypt { recipient_fingerprints, .. }]
+        if recipient_fingerprints == &[SIGNER.to_string(), RECIPIENT.to_string()])
+    );
+    assert!(!std::str::from_utf8(prepared.as_bytes())
+        .unwrap()
+        .contains("hidden@example.test"));
+    request.protection.encrypt = false;
+    let executor = mock(Vec::new());
+    assert!(matches!(
+        prepare_for_delivery(
+            &executor,
+            &account(),
+            &request,
+            &record,
+            Some(&inventory()),
+            100,
+        ),
+        Err(SubmissionError::ProtectionBlocked(_))
+    ));
     assert!(executor.operations.borrow().is_empty());
 }
 

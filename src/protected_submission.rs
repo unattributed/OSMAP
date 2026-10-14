@@ -257,9 +257,6 @@ fn validate_plan(request: &ComposeRequest, plan: &OperationPlan) -> Result<(), S
     {
         return Err(SubmissionError::InvalidPlan);
     }
-    if !plan.recipient_fingerprints.is_empty() && !request.bcc_recipients.is_empty() {
-        return Err(SubmissionError::EncryptedBccUnqualified);
-    }
     Ok(())
 }
 

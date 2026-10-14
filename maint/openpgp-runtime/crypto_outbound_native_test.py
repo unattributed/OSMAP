@@ -9,6 +9,7 @@ import hashlib
 import json
 import os
 import pathlib
+import re
 import socket
 import subprocess
 import tempfile
@@ -56,7 +57,7 @@ def main():
                                 str(source / name)] + libs + ["-o", str(path)])
                 assert compiled.returncode == 0, "native worker compile refused"
             fingerprints = []
-            for name in ("alice", "bob"):
+            for name in ("alice", "bob", "hidden"):
                 home = root / name
                 home.mkdir(mode=0o700)
                 homes.append(home)
@@ -65,15 +66,38 @@ def main():
                 fingerprint = next(line.split(":")[9] for line in listed.splitlines() if line.startswith("fpr:"))
                 fingerprints.append(fingerprint)
                 gpg(home, ["--quick-add-key", fingerprint, "rsa3072", "encrypt", "0"])
-            for target, origin, fp in [(homes[0], homes[1], fingerprints[1]), (homes[1], homes[0], fingerprints[0])]:
-                gpg(target, ["--import"], gpg(origin, ["--export", fp]))
+            for target in homes:
+                for origin, fp in zip(homes, fingerprints):
+                    if target != origin:
+                        gpg(target, ["--import"], gpg(origin, ["--export", fp]))
             native_env = dict(env, OSMAP_CRYPTO_NATIVE_WORKER=str(worker), OSMAP_CRYPTO_NATIVE_ENGINE=str(engine),
                               OSMAP_CRYPTO_NATIVE_ALICE_HOME=str(homes[0]), OSMAP_CRYPTO_NATIVE_BOB_HOME=str(homes[1]),
-                              OSMAP_CRYPTO_NATIVE_ALICE_FP=fingerprints[0], OSMAP_CRYPTO_NATIVE_BOB_FP=fingerprints[1])
+                              OSMAP_CRYPTO_NATIVE_HIDDEN_HOME=str(homes[2]),
+                              OSMAP_CRYPTO_NATIVE_ALICE_FP=fingerprints[0], OSMAP_CRYPTO_NATIVE_BOB_FP=fingerprints[1],
+                              OSMAP_CRYPTO_NATIVE_HIDDEN_FP=fingerprints[2])
             result = subprocess.run([str(binary), test, "--exact", "--ignored", "--test-threads=1", "--nocapture"],
                                     env=native_env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=120)
             print(result.stdout.decode(), flush=True)
+            if result.returncode != 0:
+                print(json.dumps({"native_test_exit": result.returncode,
+                                  "synthetic_stderr": result.stderr[:16384].decode("utf-8", errors="replace"),
+                                  "stderr_truncated": len(result.stderr) > 16384}), flush=True)
             assert result.returncode == 0, "actual native outgoing MIME roundtrip refused"
+            # Inspect public packet structure with a fresh empty home: no private
+            # key, decryption, mailbox state or provider traffic is involved.
+            packet_home = root / "packet-inspection"
+            packet_home.mkdir(mode=0o700)
+            packets = run(["/usr/local/bin/gpg", "--no-options", "--homedir", str(packet_home),
+                           "--batch", "--no-autostart", "--list-only", "--list-packets"],
+                          (root / "bcc-ciphertext.asc").read_bytes(), timeout=15)
+            assert len(packets.stdout) <= 65536 and len(packets.stderr) <= 65536
+            lines = packets.stdout.decode("ascii").splitlines()
+            recipient_packets = [line for line in lines if line.startswith(":pubkey enc packet:")]
+            assert len(recipient_packets) == 2, "two distinct intended recipient packets required"
+            assert all(re.search(r"\bkeyid 0000000000000000\b", line)
+                       for line in recipient_packets), "every recipient key identity must be hidden"
+            assert packets.returncode == 0, "bounded public packet inspection refused"
+            print("encrypted_bcc_pkesk_count=2 all_recipient_keyids_hidden=PASS", flush=True)
         finally:
             for home in homes:
                 stopped = run(["/usr/local/bin/gpgconf", "--homedir", str(home), "--kill", "gpg-agent"], timeout=15)

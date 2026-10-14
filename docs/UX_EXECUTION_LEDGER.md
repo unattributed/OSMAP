@@ -8172,3 +8172,94 @@ Normal followup commit attempt1 refused a real primary-address example in the
 public current-status document. Replace that example with the canonical account
 placeholder; keep the operator-specific UAT only in the private sprint artifact.
 No waiver, unsigned commit or synchronization was used for the refused attempt.
+
+### 2026-10-14 — epic refocus; public encryption runtime restored
+
+The operator directed work back to the EPIC. Additional CORE01 expired-session/
+foreign-Draft preparation is retained but PARKED and NOT RUN. No new accounts,
+browser execution or Send resulted from that preparation. Continue the accepted
+mail-delivery refocus at S07, with minimum essential QA.
+
+Signed followup cfa140a6d562d3e6bae896356d080f69171e9620 passed normal gates and
+fresh origin equality, clean0/0. The authoritative standard checkout is clean
+and source-only fast-forwarded to the same commit. The fifth fixed recovery hook
+was installed and removed its exact abandoned Crypto socket once; all six
+required services and application/configuration hashes were preserved. Crypto
+remained stopped/disabled at that action; no cryptography or agent action ran.
+
+The subsequent S07 preflight found that configured runtime still stopped.
+One normal manual start restored Crypto; the enabled-service list, application,
+configuration and other six healthy services remained unchanged. Crypto is now
+running but remains disabled at boot. The exact existing public-only probe was
+compiled against the current native library with all464 compiler inputs checked,
+then executed once as the web UID1001. Authenticated Encrypt produced330 bytes;
+no Sign, Decrypt, Send, retained ciphertext or binding/policy write occurred.
+Its owned executable stage was removed. Independent scope review is CLEAR.
+Evidence: /home/foo/Downloads/osmap-ux-s05/send-refocus-20261014/.
+
+This repairs the measured stopped-runtime dependency, not provider delivery or
+private-key readiness. The next concrete S07-03 backend gap is blanket encrypted
+Bcc refusal. Implementation must retain recipient/policy checks and prove hidden
+recipient packets, header/Sent privacy, intended-recipient decryption and outsider
+refusal through the existing native outbound fixture before admission. Full S07,
+provider receipt/signature/return, human UAT and epic acceptance remain OPEN.
+
+### 2026-10-14 — S07-03 encrypted Bcc implementation and native privacy proof
+
+Work order: /home/foo/Downloads/osmap-ux-s07/encrypted-bcc-20261014/WORK_ORDER.md.
+Exactly six existing paths implement this increment. Only the two blanket
+encrypted-Bcc refusals are removed; trusted key/inventory/policy checks,
+revision enforcement, recipient limits, request binding and crypto-result
+validation remain. Missing hidden-recipient approval still refuses before
+cryptography; changing Bcc invalidates a prepared submission. Local predecessor
+RED2 and candidate bindings17/submission18 PASS are retained.
+
+The existing native outbound fixture now uses three disposable key homes.
+Matching native attempt4 passes at test binary
+0ca6370e6f95339162dcaec0ae868be6b0538d6125d5f032d4f8a8a9665c0059:
+both visible and hidden recipients decrypt identical MIME and decoded text;
+the excluded sender returns no plaintext, while actual signing and explicit
+self-decryption prove its private key remains usable. Its measured outsider
+error is Unavailable; the underlying library cause remains UNKNOWN, not a
+claimed NO_SECKEY diagnosis. Exactly two actual recipient packets have zero
+key IDs. The real submission backend's disposable capture proves the intended
+envelope and identical emitted/Sent-request bytes without Bcc headers or hidden
+addresses. Existing signature, tamper and attachment assertions also pass.
+Disposable agent-stop and scratch-cleanup markers pass; no operator key,
+mailbox, SMTP or provider action occurs. All464 compiler and three qualification
+inputs retain exact parity. Independent source/native-scope reviews are CLEAR.
+
+Retain the failed root environment-key invocation before fixture creation,
+the first new test's raw-text assumption on base64 MIME, and its over-specific
+MissingKey expectation. Corrections affect only test/executor assumptions;
+they do not establish repaired cryptographic product defects. No unchanged
+native run or broader fixture matrix was repeated. Normal gates, signed sync,
+installed binary and human/provider outcomes remain separately recorded.
+This increment does not close all S07-03 requirements, the sprint or epic.
+
+Current V10 inventory checks refused stale generated counts/hashes. Unchanged
+original/refined scanners refreshed their current registers and matching claim
+fields; no scanner or assertion was waived. V10/V11/V13 then pass. The V14 run
+reaches its no-runtime-JavaScript gate and rejects an already tracked browser
+test harness as a runtime artifact. Preserve that actual refusal and correct
+only its exact test-artifact classification, retaining the production CSP and
+unknown-script refusals before the remaining V14 checks.
+
+After public-operation qualification, only the existing Crypto daemon was enabled
+at boot to avoid requiring a manual service start after reboot. Its private
+rc.conf.local backup is retained on obsd1. The enabled set adds only Crypto;
+read-only reconciliation confirms only pkg_scripts changes, all other assignments
+and package startup order are preserved, and all seven services stay healthy.
+An initial literal-line comparison and subsequent diagnostic parser attempts
+refused; no enable operation was repeated. Keys, agents, application and crypto
+configuration remain unchanged. Boot registration is not a full reboot test or
+private-key unlock. Evidence remains in the S05 runtime restoration directory.
+
+The exact existing browser-test artifact is now separated from runtime script
+classification. Its literal production Rust reference is refused, all unknown
+script/build artifacts remain refused, and composer CSP/hash/API controls remain
+unchanged. An isolated positive and owned unexpected-CJS negative pass; the
+complete changed V14 target then passes. This is a gate classification repair,
+not additional browser script permission. Matching application
+98032ab9cc5271168367e8ea13ffb0d62d58e712bbc7045d904dc974443adf71 builds once
+from the qualified464 compiler inputs in26.854s; installation is separate.

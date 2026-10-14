@@ -376,3 +376,19 @@ and unchanged application/configuration; full reboot and other installed stale
 cases remain unqualified. Later harness flag-navigation timeouts dispatched no
 flag mutation and remain retained. These bounded results do not close the
 complete authenticated WSTG, core baseline, protected-provider or release scope.
+
+## 2026-10-14 — bounded native encrypted-Bcc privacy
+
+S07-03 removes only the blanket runtime Bcc refusals after existing trusted
+recipient/policy/revision checks and one changed native privacy qualification.
+The three-home outgoing fixture proves visible/hidden recipient decryption,
+excluded-sender no plaintext with usable-key positive controls, exactly two
+hidden recipient packet IDs, no Bcc header/address in emitted or Sent-request
+bytes, and exact real-backend envelope capture. Native test
+0ca6370e6f95339162dcaec0ae868be6b0538d6125d5f032d4f8a8a9665c0059 passes with
+matching464 compiler/three qualification inputs and disposable cleanup markers.
+The measured outsider Unavailable error has no established underlying cause.
+Retained invocation/MIME/assertion failures are superseded only within their
+corrected test scopes. Evidence is under osmap-ux-s07/encrypted-bcc-20261014.
+No browser, SMTP, authoritative Sent storage, provider receipt, full WSTG or
+release acceptance follows from this disposable envelope/ciphertext proof.

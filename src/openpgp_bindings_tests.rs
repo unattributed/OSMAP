@@ -390,10 +390,11 @@ fn recipient_policy_bcc_and_encrypt_self_must_be_resolved_explicitly() {
         100,
     )
     .unwrap();
-    assert!(result
-        .reasons
-        .contains(&BlockReason::EncryptedBccUnqualified));
-    assert!(result.plan.is_none());
+    assert!(result.reasons.is_empty());
+    assert_eq!(
+        result.plan.unwrap().recipient_fingerprints,
+        ["D".repeat(40)]
+    );
     let result = evaluate_to(
         &record,
         &inventory,

@@ -14,6 +14,22 @@ statement as provenance rather than current release posture.
 
 ## Current source posture
 
+### S07 encrypted-Bcc engineering, 2026-10-14
+
+The configured Crypto runtime was restored and an authenticated public-only
+Encrypt operation passed without a private unlock, policy change or Send.
+The encrypted-Bcc implementation resolves hidden recipients through the same
+approved key and policy checks as visible recipients. Actual OpenBSD fixtures
+prove two intended recipients decrypt, an excluded sender receives no plaintext,
+both recipient key IDs are hidden, and the real submission backend with a
+disposable capture emits exact private wire bytes with Bcc only in its envelope. Explicit
+self decryption, signature/tamper and attachment checks also pass.
+
+These are source/native engineering results, retained under osmap-ux-s07/
+encrypted-bcc-20261014. Synchronization and installation require their own
+matching records. Browser/provider receipt, private-key availability and
+human acceptance remain separate; this does not close S07 or the epic.
+
 ### Installed ordinary-mail repair, 2026-10-14
 
 Signed source `90461aa1f6530ce16f0c86bdc6e456d80f19dc17` is synchronized on

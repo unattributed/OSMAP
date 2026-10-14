@@ -563,9 +563,6 @@ pub fn evaluate(
     if selection.sign && signing != KeyStatus::Ready {
         reasons.push(BlockReason::SigningUnavailable);
     }
-    if selection.encrypt && !recipients.bcc.is_empty() {
-        reasons.push(BlockReason::EncryptedBccUnqualified);
-    }
     if selection.encrypt_to_self {
         if !selection.encrypt {
             reasons.push(BlockReason::SelfRequiresEncryption);
