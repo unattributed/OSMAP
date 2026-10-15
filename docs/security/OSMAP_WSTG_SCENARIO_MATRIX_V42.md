@@ -714,3 +714,21 @@ The fixed managed native broker entry/rc has source audit294bd12b and two
 essential source controls. It establishes own PID=PGID=SID before native factory
 work, core0 and bounded startup, with restored signal handlers. Source flags
 remain closed; no managed service is installed/enabled or natively qualified.
+
+Signed4f20 passes normal commit/push1744Rust/579accountPython and fresh clean
+source-only standard-mail parity. Actual worker17 four-role/eight-control actor
+and owned-disposition positives remain separate from overall strictstderr FAIL;
+lost216-byte content stays UNKNOWN. Its thread-before-fork fixture defect is
+being corrected without suppression, widened limits or repeated assurance runs.
+Actual control17 fixed-code observation identifies registry quarantine while
+client capture times out; initiating writer/order remains UNKNOWN. Keep
+retained broker runtime/scratch and all safety latches. No full native factory,
+installed password workflow, authenticated WSTG or release acceptance follows.
+
+Actual composed admission worker18 now passes strict8 with zero stderr, both
+source-parity checks and complete owned cleanup. Independent006ca0ad retains
+material/profile/binder/controlled-epoch/unsigned-envelope projections. Real
+worker sealing, private-primary acceptance and fault/no-password-IO boundaries
+are proven in that component scope; full native factory/authenticated Rust
+ingress/managed broker/installed password workflow remain OPEN and flags closed.
+Parent5 and worker18 are reused without unchanged assurance reruns.

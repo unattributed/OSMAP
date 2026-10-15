@@ -9943,6 +9943,8 @@ discriminator alongside the same binding production repair; no broader QA scope.
     "maint/account-runtime/smtp_native_peer.py",
     "maint/account-runtime/test_smtp_native_peer.py",
     "maint/account-runtime/smtp_auth_lifecycle.py",
+    "maint/account-runtime/smtp_auth_control.py",
+    "maint/account-runtime/test_smtp_auth_control.py",
     "maint/account-runtime/smtp_auth_broker.py",
     "maint/account-runtime/test_smtp_auth_broker.py",
     "maint/account-runtime/smtp_auth_control_service.py",
@@ -10123,7 +10125,7 @@ discriminator alongside the same binding production repair; no broader QA scope.
     "status": "PENDING",
     "reference": "Only minimal well-defined own-password usability after all agent-owned development/matching deployed QA/independent audit PASS. No operator password is changed by agent qualification; use controlled disposable Alice and preserve Bob/operator state. NOT RUN."
   },
-  "next_action": "Signedce3 source synchronized and standard Toronto source-only clean matches; installed324b unchanged. Integrate independently reviewed private native seal-token parent and typed-phase worker corrections grounded in actual empty-unveil ancestor ENOENT observation, reuse the now-passed original complete parent5 and finish finite composed worker native qualification. Reuse primary16 seven passed controls without rerun. Reviewed paired exact metadata scheduling preserves all seven observations and original0.5s absolute phase; actualbroker15 passes Alice/Bob AUTH and idle termination/Bob isolation but fails pending signed control capture/cancel with Unconfirmed. Preserve retained runtime/scratch and inspect only original control stage/context; no unique inner cause or full cleanup is established. Finish managed native broker entry and finite worker qualification, then actual full factory. Complete actual trusted factory/ingress/epoch/session/mail containment and installed controlled Alice password workflow before form/profile activation. No operator password mutation; S08-02 remains accepted."
+  "next_action": "Signed4f20 source synchronized and standard Toronto clean source-only matches; installed324b unchanged. Reuse actual original full parent5 and composed worker18 native component PASS with explicit projections, no unchanged reruns or flag promotion. Resolve initiating SMTP control capture timeout/quarantine writer order with every guard and original client1s/close3s budget intact, then complete actual guarded native factory, real stored Rust issuer/session/epoch and SMTP/IMAP/cache containment in one controlled Alice password transaction with Bob/mail preservation. Native dependency activation and operator password changes remain prohibited until matching complete qualification. S08-02 remains accepted."
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->
@@ -11024,3 +11026,66 @@ only; actual managed lifecycle/full factory remain unqualified and flags closed.
 Worker composed native proposal's first freeze is superseded before execution
 by born-session-successor1 readinessb00a9d44; final independent admission and
 one matching native action are pending. No original primary16 rerun is needed.
+
+
+## 2026-10-15 — signed sealed-admission source synchronization and actual limits
+
+Signed source `4f20b6e5b21184d4debd7bf570b86d244047449e` passes both normal
+commit/push gates1744 library/zero failed/44 explicit native ignores and579
+account Python tests. Shopkeeper signature, fresh origin equality/clean0/0 and
+all three local branches matching origin pass. Standard authoritative Toronto
+source checkout cleanly fast-forwardsce3→4f20 in4.963s; no binary/service/config
+activation, installed324b unchanged. Retained signed-sync proof
+`sealed-admission-broker-integration-20261015/signed-sync-proof.json` SHA256
+`1edfc29805a82cdce848fdbffe5370096b3233a31d4c8e1b430964928308f538`.
+
+Root preflight caught impossible seven/eight worker qualifier admission and
+stale external seven-control consumers before host execution. Prior whole
+clearance is explicitly superseded; unchanged actor58 sources are retained.
+The wrapper-only correction shares the complete strict eight-control validator
+across root/runner, with oldRED/new complete/changed-count/cleanup refusals.
+Actual worker17 then reports all four actors/eight controls PASS, two private
+proofs and Alice acceptance, with all four born groups/driver/launcher reaped,
+daemon/socket/epoch/scratch/tempidentity removed and standard metadata preserved.
+Overall remains FAIL: strict root rejects216 stderr bytes (hash1ee9e965),
+original content/cause UNKNOWN; rootstage58b4b3eb9ea0cbe1 remains retained.
+Independent actual scope54928811 permits the next separate queue action, not
+overall worker/factory acceptance. Source inspection finds a live capture thread
+before four os.fork calls: a concrete independent fixture defect. Defer capture
+with explicit late-cap/backpressure semantics and preserve owned daemon cleanup
+on capture failure; no warning suppression or stderr tolerance.
+
+Original control observation16 identifies client capture timeout and server
+compound authority refusal before cutoff, exact term initially UNKNOWN. The
+reviewed two-path source discriminator preserves short-circuit order, one
+socket/peer observation and all budget/topology/listener guards, with separate
+fixed quarantine/continuity/peer codes. Actual changed17 identifies registry
+quarantine at server authority; client capture still times out. The initiating
+flag writer/ordering cause remains UNKNOWN and may precede that terminal state.
+Both daemon groups are gone and standard metadata preserved, while broker
+cleanup/private runtime/scratch remain unconfirmed. Keep all controls, original
+client1s/close3s budgets and no automatic retry/quarantine reset. The exact two
+control paths are admitted to the existing S04-02 work order.
+
+
+## 2026-10-15 — composed native admission worker accepted in exact component scope
+
+Actual single-thread-fork successor18 passes the complete strict eight-control
+root/runner qualification with zero stderr and exact source parity before/after.
+Result `b7e70cc6f1a14fec42953dcf45261094fd128540aabb9565bbbaa7d2cb413248`,
+log `796b3c94fb352eedfde7f200f29c0cc377f0d6b55e73b57f98bf21aaca548bd1`,
+independent scope `006ca0ad026b2e26eabdc61c59c5755ac8ac81f7cc42df658a6589bf5bbb5a76`
+under admission-worker-native-composition-20261015/single-thread-fork-successor3/
+execution-custody. Early native failure precedes input; admit/authenticate
+actually seal own epoch access and refuse Bob/outside leaves; actual private
+primary accepts Alice after sealing; postspawn fault sends zero password bytes
+and kills/reaps its child. All four born groups, driver/launcher, daemon/socket,
+epoch/scratch/tempidentity and rootstage are removed with public records and
+standard metadata preserved, cleanup reasons empty.
+
+This closes only the composed admission-worker component. Synthetic material,
+profile/binder, controlled epoch namespace and unsigned parent-envelope
+projections remain explicit. Full native factory, authenticated Rust ingress,
+managed broker and installed password transaction remain OPEN; no flags change.
+Worker17's strictstderr failure and unknown discarded content remain historical.
+Do not rerun either passed parent5 or worker18 merely for assurance.

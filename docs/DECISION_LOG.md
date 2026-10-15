@@ -10376,3 +10376,34 @@ AuthBroker.native/serve has no production managed entry. Add a fixed entry and
 one rc script through the existing S04-02 allowlist, using native closed gates,
 owned startup/session/signal cleanup and no ordinary-auth fallback. Source
 entry tests do not authorize enabling the service or qualify full factory.
+
+
+## 2026-10-15 — correct qualifier consumers before host and unsafe thread/fork order
+
+Root detects the qualifier's stale seven/eight admission and external consumers
+before execution. Preserve the erroneous clearance and blocked freeze, then
+share the existing complete strict eight-control validator between root and
+runner. One matching receipt plus changed-count/cleanup refusals qualifies the
+changed consumers; no actor campaign is repeated merely for confidence.
+
+Actual worker17 actor/disposition positives do not override strict stderr
+refusal or establish overall PASS. Its216-byte stderr cause remains UNKNOWN.
+A separately demonstrated source defect starts a Python drain thread before
+forking workers. Correct thread/fork order without suppressing warnings.
+Deferred capture changes live-buffer/cap-enforcement semantics: preserve the
+original cap/deadline, disclose pipe-backpressure refusal and still stop/reap
+the owned daemon if capture construction fails.
+
+Actual control17 narrows refusal to registry quarantine, while client capture
+times out. Keep the initiating cause UNKNOWN until original writer/order is
+established; never reset the safety latch or relax budgets to obtain PASS.
+
+
+## 2026-10-15 — reuse the accepted composed admission-worker evidence
+
+Actual worker18 strict8/zero-stderr/full-cleanup result and independent006ca0ad
+close the composed admission-worker component. Reuse parent5 and worker18; do
+not repeat them for general confidence or infer full native factory authority
+from projected material/profile/binder/epoch/envelope fixtures. Keep worker17's
+unknown historical stderr. Concentrate the next integration on original SMTP
+control writer/event ordering and one real guarded password transaction.

@@ -145,4 +145,29 @@ class ControlTests(unittest.TestCase):
         with patch.object(control,'NATIVE_CONTROL_QUALIFIED',True):
             with self.assertRaises(Refused):control.LifecycleControlOperation.native()
 
+    def test_authority_refusal_codes_preserve_short_circuit_and_no_extra_observations(self):
+        server,peer=socket.socketpair();self.addCleanup(server.close);self.addCleanup(peer.close)
+        operation=control.LifecycleControlOperation(self.registry,self.namespace,self.topology,self.budget)
+        identity=(100,200)
+        for term,expected in [('quarantine','SMTP control registry quarantine refused'),
+                              ('socket','SMTP control socket continuity refused'),
+                              ('peer','SMTP control kernel peer refused')]:
+            with self.subTest(term=term):
+                self.registry._control_uncertain=term=='quarantine';calls=[]
+                def socket_identity(stream):calls.append('socket');return identity if term!='socket' else(100,201)
+                def kernel_peer(stream):calls.append('peer');return(self.namespace._owner+1,0)
+                with patch.object(control,'_socket_identity',side_effect=socket_identity), \
+                     patch.object(control,'_kernel_peer',side_effect=kernel_peer), \
+                     patch.object(self.topology,'recheck',side_effect=AssertionError('refused topology accessed')):
+                    with self.assertRaises(Refused)as raised:operation._authority(server,identity)
+                    self.assertEqual(str(raised.exception),expected)
+                self.assertEqual(calls,[]if term=='quarantine'else['socket']if term=='socket'else['socket','peer'])
+                self.assertEqual(len(self.registry._cutoffs),0)
+        self.registry._control_uncertain=False
+        with patch.object(control,'_socket_identity',return_value=identity)as sock, \
+             patch.object(control,'_kernel_peer',return_value=(self.namespace._owner,0))as peer, \
+             patch.object(self.topology,'recheck',wraps=self.topology.recheck)as topology:
+            operation._authority(server,identity)
+            sock.assert_called_once_with(server);peer.assert_called_once_with(server);topology.assert_called_once_with(self.budget)
+
 if __name__=='__main__':unittest.main(verbosity=2)

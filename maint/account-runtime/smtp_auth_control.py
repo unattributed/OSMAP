@@ -87,10 +87,15 @@ class LifecycleControlOperation:
 
     def _authority(self, stream, identity):
         self._budget.remaining()
-        if (getattr(self._registry, '_control_uncertain', False)
-                or _socket_identity(stream) != identity
-                or _kernel_peer(stream)[0] != self._namespace._owner):
-            raise Refused('SMTP control peer or continuity refused')
+        # Preserve original short-circuit order and exactly the original
+        # observations. Fixed refusal codes distinguish existing authority terms
+        # without another peer/stat probe or exporting any runtime value.
+        if getattr(self._registry, '_control_uncertain', False):
+            raise Refused('SMTP control registry quarantine refused')
+        if _socket_identity(stream) != identity:
+            raise Refused('SMTP control socket continuity refused')
+        if _kernel_peer(stream)[0] != self._namespace._owner:
+            raise Refused('SMTP control kernel peer refused')
         self._topology.recheck(self._budget)
         if self._listener_recheck is not None:
             self._listener_recheck()

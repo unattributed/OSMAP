@@ -16,14 +16,13 @@ statement as provenance rather than current release posture.
 
 ### Active password delivery, 2026-10-15
 
-Predecessor checkpoint `ce3e920cfbbe2e105c28bce35746674ecc9e5293` is synchronized with
-GitHub and the clean authoritative standard source checkout. Normal commit and
-push gates each pass1743 Rust/zero failed/44 explicit native ignores and569
-account Python tests. This revision adds the reviewed sealed parent/worker,
-paired SMTP metadata schedule and fixed managed broker entry. Their combined
-normal source gate/signed synchronization remain pending; actual results will
-be retained under sealed-admission-broker-integration-20261015. Installed pair324b is unchanged; no password form, new
-service or qualification flag is activated.
+Signed checkpoint `4f20b6e5b21184d4debd7bf570b86d244047449e` is synchronized
+with GitHub and the clean authoritative standard source checkout. Both normal
+commit/push gates pass1744 Rust/zero failed/44 explicit native ignores and579
+account Python tests. Signature, fresh0/0 and all three branch heads match.
+Proof is sealed-admission-broker-integration-20261015/signed-sync-proof.json.
+Installed pair324b is unchanged; no password form, new service or native
+qualification flag is activated.
 
 Actual disposable restricted SQL3 passes27 controls. Private-primary16 passes
 its original seven controls, including correct-password acceptance, changed-
@@ -42,26 +41,27 @@ post-seal exact target path/descriptor/hash checks. Kernel directory binding
 replaces repeated ancestor pathname checks; it does not continuously attest
 ancestor owner or mode. No directory read grant is broadened.
 
-The Python worker correction has passed independent source review; matching
-composed native execution is still pending. Its typed phase becomes sealed only
-after actual locked unveil and final pledge succeed. Early pledge,
-original-budget binding, durable epoch serialization, typed post-spawn sealing
-before password I/O, and owned child cleanup remain required.
+The composed Python admission worker now passes its exact strict eight-control
+native qualification and independent audit, with zero stderr and complete
+owned cleanup. It proves early failure before input, actual own-epoch sealing
+and outside refusals, private-primary acceptance after sealing, and postspawn
+fault cleanup without password I/O. Synthetic material/profile/binder/epoch/
+parent-envelope authority remains explicit; this is a component proof.
+Worker17's overall stderr failure remains historical with unknown content.
+The corrected fixture defers capture to avoid threads before fork, retaining
+the original cap/deadline and explicit backpressure semantics.
 
-The SMTP broker supports Dovecot's compatible1.2 greeting and OpenBSD's
-single-PID ps selector. Reviewed paired execution retains every current
-process/TCP observation and the original0.5s phase. Actual native15 passes
-Alice/Bob AUTH publication, idle termination and Bob isolation, then fails the
-pending signed-control seam with Unconfirmed. Capture versus cancel/server
-cutoff cause is unknown; original AUTH expiry occurs in the held fixture
-publication. Daemon groups are gone and standard metadata preserved, but broker
-cleanup is unconfirmed and private scratch/runtime remain. Preserve that
-failure and inspect original control calls without widening budgets. A missing
-managed broker entry now has independent source review, with activation still
-closed and actual managed lifecycle pending.
+The SMTP broker passes two real AUTH publications, idle termination and Bob
+isolation with the reviewed paired metadata schedule. Pending signed control
+still fails: client capture times out and actual17 identifies server registry
+quarantine. The initiating writer/order remains unknown. Both daemon groups
+are gone and standard metadata preserved; broker runtime/scratch remain
+unconfirmed. Preserve every guard and original client1s/close3s budget. The
+fixed managed broker entry is source-reviewed and synchronized, with actual
+managed lifecycle and complete factory still pending.
 
-Next: finish the sealed parent/worker path, resolve the measured SMTP refusal,
-then qualify the actual factory, browser session/epoch and IMAP/SMTP/cache
+Next: reuse the accepted parent/worker components, resolve the initiating SMTP
+control failure, then qualify the actual factory, browser session/epoch and IMAP/SMTP/cache
 containment together in the installed controlled password workflow. No Duncan
 password action is required. Exact source/native/failed/retained-state evidence
 and next owners remain in UX_EXECUTION_LEDGER.md and DECISION_LOG.md. The dated
