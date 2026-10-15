@@ -963,6 +963,7 @@ mod tests {
 
     fn config_fixture(mode: OpenbsdConfinementMode) -> AppConfig {
         AppConfig {
+            account_runtime: None,
             openpgp_inventory: None,
             openpgp_crypto: None,
             openpgp_public_admin: None,

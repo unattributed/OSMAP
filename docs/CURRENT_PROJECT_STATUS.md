@@ -31,6 +31,13 @@ closed. Real control broker/topology/SQL/hash/primary authority, paired Runtime
 clients/form and controlled authoritative workflow remain unfinished. No password
 form, service, credential or native profile is enabled by this source change.
 
+The next reviewed source increment adds a paired account Runtime capability:
+complete explicit configuration, unavailable-mode refusal without legacy auth/
+session fallback, three distinct purpose keys and capability-owned mutation.
+Independent fresh-binary QA passes three discriminators; the earlier zero-test
+stale-artifact refusal remains retained. Native services/confinement/containment
+and the installed Settings password workflow remain unqualified and disabled.
+
 Signed source `c4e318bf2602998885ea1b4aa9432ff0a572031b` is synchronized to
 `feat/ux-completion-20260929` after normal commit/push gates:1723 Rust passes,
 zero failures,44 explicit native ignores and519 account Python passes. Fresh

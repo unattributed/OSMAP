@@ -551,3 +551,12 @@ qualify root/OpenBSD broker/topology/SQL/password workflow or enable a form.
 S08-02's later prescribed human usability/attachment PASS and independent closure
 review permit functional slice acceptance; S09 visual/accessibility and broader
 WSTG/release acceptance remain separate. No unchanged test campaign is repeated.
+
+S04-02 paired account capability99d1a44c/source reviewf2b6e7a8 independently passes
+three exact fresh-binary controls23614873: configured-unavailable primary refuses
+an accepting legacy executable, legacy stored session refuses without rewriting,
+and real admission/TOTP/captured-epoch issuance preserves changed-epoch refusal.
+Three-purpose-key pairing and original completion guards have focused source
+evidence; this is not native/helper/SQL/installed password or release acceptance.
+The initial stale shared artifact selected zero tests and earned no PASS; one
+candidate-only rebuild establishes matching test execution without weakened tests.

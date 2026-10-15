@@ -1468,6 +1468,7 @@ mod tests {
         fs::set_permissions(&grant_key_path, fs::Permissions::from_mode(0o600))
             .expect("grant key permissions should be restricted");
         let config = AppConfig {
+            account_runtime: None,
             openpgp_inventory: None,
             openpgp_crypto: None,
             openpgp_public_admin: None,
@@ -1552,6 +1553,7 @@ mod tests {
             .uid();
         let mismatched_uid = actual_uid.saturating_add(1);
         let config = AppConfig {
+            account_runtime: None,
             openpgp_inventory: None,
             openpgp_crypto: None,
             openpgp_public_admin: None,

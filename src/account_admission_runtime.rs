@@ -242,6 +242,13 @@ impl PartialEq for Client {
 }
 impl Eq for Client {}
 impl Client {
+    pub(crate) fn has_purpose_key(&self, key: &[u8]) -> bool {
+        self.0.key == key
+    }
+    #[cfg(test)]
+    pub(crate) fn paired_fixture_files(socket: &Path, key: &Path, uid: u32) -> Result<Self, Error> {
+        Self::qualified_files(socket, key, uid)
+    }
     pub fn from_operator_files(socket: &Path, key: &Path, helper_uid: u32) -> Result<Self, Error> {
         if !NATIVE_CONFINEMENT_QUALIFIED {
             return Err(Error::Unavailable);

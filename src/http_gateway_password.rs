@@ -54,9 +54,10 @@ impl RuntimeBrowserGateway {
         prepared: password_change::Prepared<'a>,
         dispatch: impl FnOnce(password_change::Dispatch<'a>) -> Result<(), password_change::Error>,
     ) -> Result<(), password_change::Error> {
-        let Some(client) = &self.account_admission_client else {
+        let Some(ready) = self.account_runtime.ready() else {
             return Err(password_change::Error::Unavailable);
         };
+        let client = ready.admission();
         self.password_dispatch_guarded(
             context,
             token,
@@ -74,13 +75,13 @@ impl RuntimeBrowserGateway {
         context: &AuthenticationContext,
         token: &SessionToken,
         prepared: password_change::Prepared<'a>,
-        mutation: &crate::account_mutation_client::Client,
         original_deadline: std::time::Instant,
     ) -> Result<crate::session::BrowserRevocation, password_change::Error> {
         let original_deadline = prepared.bound_workflow_deadline(original_deadline);
-        let Some(client) = &self.account_admission_client else {
+        let Some(ready) = self.account_runtime.ready() else {
             return Err(password_change::Error::Unavailable);
         };
+        let client = ready.admission();
         let authority = std::sync::Arc::new(DeadlineAuthority {
             client: client.clone(),
             deadline: original_deadline,
@@ -90,7 +91,7 @@ impl RuntimeBrowserGateway {
             token,
             prepared,
             (authority, &SystemTimeProvider),
-            mutation,
+            ready.mutation(),
             original_deadline,
         )
     }
@@ -375,12 +376,13 @@ impl RuntimeBrowserGateway {
         request: Request<'a>,
         deadline: Option<std::time::Instant>,
     ) -> Outcome<'a> {
-        let Some(client) = &self.account_admission_client else {
+        let Some(ready) = self.account_runtime.ready() else {
             return Outcome {
                 authorization: Err(password_change::Error::Unavailable),
                 audit_events: vec![],
             };
         };
+        let client = ready.admission();
         let backend = crate::account_admission_runtime::CredentialBackend {
             client: client.clone(),
             captured: Default::default(),

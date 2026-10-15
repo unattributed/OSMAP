@@ -9922,9 +9922,18 @@ discriminator alongside the same binding production repair; no broader QA scope.
     "src/settings_security_ui.rs",
     "maint/account-runtime/account_mutation_native.py",
     "maint/account-runtime/mail_session_containment.py",
+    "maint/account-runtime/account_command_kernel.py",
+    "maint/account-runtime/mutation_primary.py",
+    "maint/account-runtime/test_command_kernel.py",
+    "maint/account-runtime/test_primary_command_isolation.py",
+    "maint/account-runtime/account_primary_identity.py",
+    "maint/account-runtime/account_primary_graph.py",
+    "maint/account-runtime/test_primary_identity.py",
+    "maint/account-runtime/test_primary_kernel_integration.py",
     "maint/account-runtime/smtp_guarded_builder.py",
     "maint/account-runtime/smtp_mutation_containment.py",
     "maint/account-runtime/account_admission_worker.py",
+    "maint/account-runtime/PERSISTENT_MUTATION_SERVICE.md",
     "src/account_admission_runtime_tests.rs",
     "src/account_mutation_client_tests.rs",
     "src/password_stored_runtime_tests.rs",
@@ -10075,7 +10084,7 @@ discriminator alongside the same binding production repair; no broader QA scope.
     "status": "PENDING",
     "reference": "Only minimal well-defined own-password usability after all agent-owned development/matching deployed QA/independent audit PASS. No operator password is changed by agent qualification; use controlled disposable Alice and preserve Bob/operator state. NOT RUN."
   },
-  "next_action": "Normally sign/sync reviewed startup composition; implement paired Runtime capability with configured-unavailable refusal, then actual native authority/form and one controlled authoritative password change. S08-02 is accepted; waiting separate S09/provider human results does not halt this work."
+  "next_action": "Normally sign/sync the reviewed paired Runtime capability, then complete actual native service/factory/containment authority and the installed controlled authoritative password workflow/form. Preserve matching source and independent fresh-binary QA scope; no flag activation shortcut or operator password mutation. S08-02 is accepted; separate S09/provider human results do not halt this work."
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->
@@ -10134,3 +10143,72 @@ primary and form qualification must complete one controlled Alice workflow with
 Bob/session/mail preservation. No unchanged native campaign or flag shortcut.
 All broad S04-02 outcome stages remain PENDING; component proof is not parent
 closure. Normal integrated signed commit/push gates are the next source action.
+
+## 2026-10-15 — paired browser account capability integrated; native workflow open
+
+Startup repair e0b34a871b13a0fae73c7aa55186e593a7dfddc1 is Good Shopkeeper signed
+and normally synchronized, fresh origin equality/clean0/0/all three branch heads
+equal. Commit/push each1723 Rust PASS/0fail/44explicit native ignores and523 account
+Python PASS. Standard Toronto checkout source-only clean FFc497 to e0; no service
+or credential action. Retained signed-sync-proof.json and standard-mail-checkout-
+sync.json under native-guarded-startup-composition-20261015/canonical-integration.
+
+Next exact11 Rust paths implement reviewed paired capability99d1a44c/readiness
+2a4aff80/manifest22973eab/securityreviewf2b6e7a8. Explicit seven-field configuration
+is all-or-none. Disabled preserves legacy mode; configured failure becomes
+ConfiguredUnavailable and refuses legacy primary authentication and unbound
+session admission. Ready owns both real typed admission/mutation clients, requires
+three separate loaded purpose keys, and supplies its own mutation to password
+completion. Existing consumed step-up/session lease/original deadlines/receipt/
+quarantine semantics remain; native flags and password form stay disabled.
+
+Candidate source-local five discriminators/two existing completion controls and
+fmt/Clippy PASS; baseline RED means missing NEW configuration support, not an old
+deployed bypass. Independent essential QA initially selected zero tests from a
+shared stale executable despite Cargo fresh=true: retain qualification refusal,
+no PASS or product failure credited. Refresh only candidate input mtimes; exact
+source bytes remain unchanged. Actual fresh=false24.453s rebuild and privately
+copied/hashed exact binary pass3/3 exact discriminators, each1PASS/0fail/0ignore;
+scratch removed. Evidence independent-essential-qa/result-attempt2.json23614873.
+No broad test rerun or native action. Existing V10 generators refresh only derived
+offsets/counts/hashes and their checks PASS; scanners/classifications unchanged.
+
+This source increment is not actual authoritative mutation/containment proof.
+Native factory/command profiles/SQL/hash/primary/control broker/topology/IMAP+SMTP
+and cache/ingress authority, actual confinement of the new paths, password form
+and one controlled Alice installed workflow with Bob preservation remain required.
+All broad S04-02 stages stay PENDING. Signed normal gates/sync are pending for
+this exact integrated increment; do not enable by flags or use operator passwords.
+
+Normal commit attempt1 fails the unchanged CWE guard on a shell fixture within
+the named inventory test module;1727 Rust/523 account Python already PASS, no
+commit is created. Move only the byte-identical discriminator into the existing
+auth cfg(test) mod tests recognised by that unchanged scanner. Independent
+test-relocation reviewa2dc3ffd confirms exact body879aab97, unchanged assertions/
+cfg(unix), other nine source pins exact and no production/scanner waiver. Regenerate
+derived V10 offsets only; run the moved discriminator and CWE guard, then normal
+commit2. Preserve the actual first refusal; do not repeat three independent QA
+controls or infer a product defect from this fixture organisation finding.
+
+Admit the exact eight primary-producer paths listed in this same work order:
+fixed private identity/listener and primary graph built from existing Doveadm
+graph, existing command-kernel/verifier and focused integration/refusal tests.
+Current authoritative read-only metadata (primary-runtime-composition-20261015/
+metadata-discovery.json) confirms OpenBSD7.9/mail hostname, existing auth-client
+0600 fileowner518, proposed private listener absent and _osmapprimary absent.
+Zero socket connections/protocol bytes, no state mutation. Fileowner is not
+kernelpeer; skip the irrelevant existing-listener peer probe and keep the proposed
+endpoint peer unqualified. No service/config/identity provisioning or profile
+activation follows from metadata. Root alone executes any later controlled native
+qualification; no SDK/loader framework or repeated diagnostic campaign.
+
+Normal attempt2 passes the CWE guard but fails the separate unchanged global
+banned-shell scan on the same synthetic fixture. Retain both failures; after two
+refusals reassess the full boundary instead of another placement/exclusion change.
+Replace only that temporary executable with direct fixed Python3 execution and
+a JSON-quoted private marker path; discard synthetic stdin, preserve exact public
+auth result, positive/negative assertions and original executor deadline. No shell,
+package, scanner, exclusion or production logic change. Independent successor
+reviewf57d24a5 CLEAR; both existing static guards PASS, actual moved discriminator
+PASS1/0fail/0ignore after fresh6.40s compile. Other independent controls remain
+reused in their unchanged scope. Normal commit3 is required; no unsigned/bypass.

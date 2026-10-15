@@ -36,3 +36,30 @@ fixtures return public transport responses without native SQL/current-password
 or mail effects; this is not password-change success, native qualification or
 human UAT. Native profile confinement, connector grant/SSH route and complete
 SMTP containment remain open; no operator credential/config/service was changed.
+
+## Paired browser client configuration (source-only, 2026-10-15)
+
+The browser now distinguishes absent account configuration (legacy mode), a
+complete but unavailable configuration (refuse authentication/session admission),
+and a qualified Ready capability owning both admission and mutation clients.
+It never enables admission alone or falls back after configured construction
+fails. The complete group is:
+
+- `OSMAP_ACCOUNT_ADMISSION_SOCKET`
+- `OSMAP_ACCOUNT_ADMISSION_KEY_FILE`
+- `OSMAP_ACCOUNT_ADMISSION_HELPER_UID`
+- `OSMAP_ACCOUNT_MUTATION_SOCKET`
+- `OSMAP_ACCOUNT_MUTATION_KEY_FILE`
+- `OSMAP_ACCOUNT_MUTATION_SESSION_PROOF_KEY_FILE`
+- `OSMAP_ACCOUNT_MUTATION_HELPER_UID`
+
+Partial configuration, malformed/relative/shared paths and invalid explicit peer
+UIDs are refused. The two typed clients must load three distinct purpose keys;
+password completion uses the mutation client owned by that same capability.
+Configuration Debug output is redacted. Existing native qualification gates
+remain false, so configuring this group currently refuses rather than enabling
+password changes. No deployed environment, grant, key, account or service was
+changed. Actual peer/relay/native factory and full required containment must be
+qualified, and the new paths admitted to the real OpenBSD confinement, before
+installation/activation. Existing legacy cookies do not become epoch-bound:
+configured-unavailable/Ready admission rejects them without rewriting records.

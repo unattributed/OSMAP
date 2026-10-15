@@ -1,5 +1,9 @@
 use super::*;
 
+#[path = "http_gateway_account.rs"]
+mod http_gateway_account;
+use http_gateway_account::AccountRuntimeCapability;
+
 #[path = "http_gateway_auth.rs"]
 mod http_gateway_auth;
 #[path = "http_gateway_delete.rs"]
@@ -27,7 +31,7 @@ mod http_mailbox_backends;
 /// The concrete runtime gateway built from the existing OSMAP services.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RuntimeBrowserGateway {
-    pub(crate) account_admission_client: Option<crate::account_admission_runtime::Client>,
+    pub(crate) account_runtime: AccountRuntimeCapability,
     pub(crate) public_inventory_client: Option<crate::openpgp_inventory_runtime::Client>,
     pub(crate) crypto_client: Option<crate::openpgp_crypto_runtime::Client>,
     pub(crate) public_admin_client: Option<crate::openpgp_public_admin_runtime::Client>,
@@ -115,7 +119,7 @@ impl RuntimeBrowserGateway {
     /// Builds the runtime gateway from validated configuration.
     pub fn from_config(config: &AppConfig) -> Self {
         Self {
-            account_admission_client: None, // No unqualified config/environment activation.
+            account_runtime: AccountRuntimeCapability::from_config(config.account_runtime.as_ref()),
             public_admin_client: config.openpgp_public_admin.as_ref().and_then(|c| {
                 crate::openpgp_public_admin_runtime::Client::from_operator_files(
                     &c.socket,
@@ -307,7 +311,7 @@ impl RuntimeBrowserGateway {
     #[cfg(test)]
     pub(crate) fn for_test(temp_root: &std::path::Path) -> Self {
         Self {
-            account_admission_client: None,
+            account_runtime: AccountRuntimeCapability::Disabled,
             public_inventory_client: None,
             crypto_client: None,
             public_admin_client: None,

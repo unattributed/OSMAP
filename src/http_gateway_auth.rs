@@ -47,9 +47,14 @@ impl RuntimeBrowserGateway {
             self.session_lifetime_seconds,
             self.session_idle_timeout_seconds,
         );
-        match &self.account_admission_client {
-            Some(client) => service.with_epoch_authority(std::sync::Arc::new(client.clone())),
-            None => service,
+        match &self.account_runtime {
+            AccountRuntimeCapability::Ready(ready) => {
+                service.with_epoch_authority(std::sync::Arc::new(ready.admission().clone()))
+            }
+            AccountRuntimeCapability::ConfiguredUnavailable => service.with_epoch_authority(
+                std::sync::Arc::new(super::http_gateway_account::UnavailableAccountAuthority),
+            ),
+            AccountRuntimeCapability::Disabled => service,
         }
     }
 
@@ -126,18 +131,23 @@ impl RuntimeBrowserGateway {
         }
 
         let captured_admission = std::sync::Arc::new(std::sync::Mutex::new(None));
-        let auth_outcome = if let Some(client) = &self.account_admission_client {
-            AuthenticationService::new(
+        let auth_outcome = match &self.account_runtime {
+            AccountRuntimeCapability::Ready(ready) => AuthenticationService::new(
                 self.authentication_policy,
                 crate::account_admission_runtime::CredentialBackend {
-                    client: client.clone(),
+                    client: ready.admission().clone(),
                     captured: captured_admission.clone(),
                 },
             )
-            .authenticate(context, username, password)
-        } else {
-            self.build_auth_service()
-                .authenticate(context, username, password)
+            .authenticate(context, username, password),
+            AccountRuntimeCapability::ConfiguredUnavailable => AuthenticationService::new(
+                self.authentication_policy,
+                super::http_gateway_account::UnavailableAccountAuthority,
+            )
+            .authenticate(context, username, password),
+            AccountRuntimeCapability::Disabled => self
+                .build_auth_service()
+                .authenticate(context, username, password),
         };
         audit_events.push(auth_outcome.audit_event.clone());
 
@@ -652,6 +662,79 @@ fn session_device_label(user_agent: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[cfg(unix)]
+    #[test]
+    fn configured_account_failure_never_uses_accepted_legacy_doveadm() {
+        use std::os::unix::fs::PermissionsExt;
+        for configured in [false, true] {
+            let root = std::env::temp_dir().join(format!(
+                "osmap-account-fallback-{}",
+                crate::draft::generate_draft_id().unwrap()
+            ));
+            std::fs::create_dir(&root).unwrap();
+            std::fs::set_permissions(&root, std::fs::Permissions::from_mode(0o700)).unwrap();
+            let marker = root.join("accepted-primary");
+            let executable = root.join("doveadm");
+            let interpreter = if cfg!(target_os = "openbsd") {
+                "/usr/local/bin/python3"
+            } else {
+                "/usr/bin/python3"
+            };
+            let marker_literal = serde_json::to_string(&marker).unwrap();
+            std::fs::write(
+                &executable,
+                format!(
+                    "#!{interpreter}\nimport sys\nfrom pathlib import Path\nsys.stdin.read()\nPath({marker_literal}).write_bytes(b'called\\n')\nprint('passdb: alice@example.test auth succeeded')\nprint('extra fields:')\nprint('  user=alice@example.test')\n"
+                ),
+            )
+            .unwrap();
+            std::fs::set_permissions(&executable, std::fs::Permissions::from_mode(0o700)).unwrap();
+            let mut env = std::collections::BTreeMap::new();
+            env.insert("OSMAP_STATE_DIR".into(), root.to_str().unwrap().into());
+            if configured {
+                for (name, file) in [
+                    ("OSMAP_ACCOUNT_ADMISSION_SOCKET", "admission.sock"),
+                    ("OSMAP_ACCOUNT_ADMISSION_KEY_FILE", "admission.key"),
+                    ("OSMAP_ACCOUNT_MUTATION_SOCKET", "mutation.sock"),
+                    ("OSMAP_ACCOUNT_MUTATION_KEY_FILE", "mutation.key"),
+                    ("OSMAP_ACCOUNT_MUTATION_SESSION_PROOF_KEY_FILE", "proof.key"),
+                ] {
+                    env.insert(name.into(), root.join(file).to_str().unwrap().into());
+                }
+                env.insert("OSMAP_ACCOUNT_ADMISSION_HELPER_UID".into(), "1003".into());
+                env.insert("OSMAP_ACCOUNT_MUTATION_HELPER_UID".into(), "1004".into());
+            }
+            let config = AppConfig::from_env_map(&env).unwrap();
+            let mut gateway = RuntimeBrowserGateway::from_config(&config);
+            gateway.doveadm_path = executable;
+            let context = AuthenticationContext {
+                request_id: "account-fallback".into(),
+                remote_addr: "127.0.0.1".into(),
+                user_agent: "public fixture".into(),
+            };
+            let outcome = gateway.login(
+                &context,
+                "alice@example.test",
+                "public synthetic credential",
+                "123456",
+            );
+            let called = marker.exists();
+            let accepted = outcome
+                .audit_events
+                .iter()
+                .any(|event| event.action == "login_mfa_required");
+            std::fs::remove_dir_all(&root).unwrap();
+            assert_eq!(
+                called, !configured,
+                "configured failure invoked legacy primary"
+            );
+            assert_eq!(
+                accepted, !configured,
+                "the Disabled control must accept actual legacy primary"
+            );
+        }
+    }
 
     #[test]
     fn normalizes_second_factor_rejection_to_generic_login_failure_reason() {

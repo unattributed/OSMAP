@@ -9996,3 +9996,46 @@ fallback. A configured-but-unavailable pair must refuse legacy auth/session
 admission. Admit src/http_gateway_account.rs for this product boundary and only
 additive test AppConfig initializers in bootstrap.rs/openbsd.rs/mailbox_helper.rs;
 no operational edits in those three files and no new QA framework.
+
+## 2026-10-15 — bind browser authentication and mutation as one capability
+
+Admit independently reviewed eleven-path Rust candidate99d1a44c/f2b6e7a8 and
+independent essential QA23614873. Disabled is the only legacy mode; configured
+construction failure cannot erase intent and fall back to Doveadm/unbound cookie
+validation. Ready privately owns both typed clients with three distinct loaded
+purpose keys; completion selects its owned mutation client. No caller Boolean,
+forged session, native-flag change or form enablement. New configuration is not
+installed by this change, and its actual OpenBSD confinement remains required.
+
+Record the zero-test/stale shared executable qualification refusal separately
+from product correctness. One changed-test-crate rebuild fresh=false preserves
+frozen bytes and passes exactly three independent controls with binary custody;
+no generic repeat campaign. Existing V10 inventories are regenerated unchanged,
+not scanner/classification waivers. S04-02 remains open until real native services,
+required containment and the installed controlled password-change workflow pass.
+
+The first normal gate catches the accepting-shell test inside a named inventory
+test module. Retain this failed admission; the source tests passed but scanner
+test isolation did not. Move its exact unchanged body into existing auth
+cfg(test) mod tests. Independenta2dc3ffd/body879aab97 verifies this test-only change;
+the CWE scanner and all assertions remain unchanged, and other nine source pins
+are exact. One moved-test check plus unchanged guard, then normal commit2; no
+broad repeat QA or production-defect claim.
+
+Next actual native primary dependency uses the fixed proposed private listener,
+purpose identity and existing Doveadm graph. Current metadata proves that listener
+and identity absent; existing auth-client fileowner518 supplies no kernel-peer
+authority. Admit exact eight source/test paths in the active order before edits,
+keep profile/peer gates closed, and require the selected listener's actual native
+identity/authentication/confinement before enablement. No guessed principal,
+ordinary credential capture, service change or new SDK/framework is authorised
+by an observational result.
+
+The second admission still fails the separate global banned-shell scan. After
+two failures at this fixture boundary, remove shell execution itself: use the
+installed fixed Python3 interpreter and JSON-quoted marker in the synthetic
+accepting executable. Assertions, account output and budgets are preserved;
+no production code, scanner or exemption changes. Independentauditf57d24a5 and
+one actual fresh-compiled discriminator PASS plus both unchanged static guards
+support normal commit3. Preserve both original gate refusals and do not repeat
+the other independent controls merely for reassurance.

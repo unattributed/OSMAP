@@ -294,6 +294,7 @@ mod tests {
     #[test]
     fn startup_report_is_operator_readable() {
         let config = AppConfig {
+            account_runtime: None,
             openpgp_inventory: None,
             openpgp_crypto: None,
             openpgp_public_admin: None,

@@ -32,6 +32,7 @@ pub const DEFAULT_AUTH_BACKEND_TIMEOUT_SECONDS: u64 = 20;
 /// output because it excludes secret-bearing fields.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AppConfig {
+    pub account_runtime: Option<AccountRuntimeConfig>,
     pub openpgp_inventory: Option<OpenPgpInventoryConfig>,
     pub openpgp_crypto: Option<OpenPgpCryptoConfig>,
     pub openpgp_public_admin: Option<OpenPgpAdminConfig>,
@@ -246,6 +247,71 @@ pub struct OpenPgpInventoryConfig {
     pub socket: PathBuf,
     pub key_file: PathBuf,
     pub helper_uid: u32,
+}
+
+/// Complete private account-service configuration; absence retains legacy mode.
+#[derive(Clone, PartialEq, Eq)]
+pub struct AccountRuntimeConfig {
+    pub admission_socket: PathBuf,
+    pub admission_key_file: PathBuf,
+    pub admission_helper_uid: u32,
+    pub mutation_socket: PathBuf,
+    pub mutation_key_file: PathBuf,
+    pub session_proof_key_file: PathBuf,
+    pub mutation_helper_uid: u32,
+}
+impl std::fmt::Debug for AccountRuntimeConfig {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("AccountRuntimeConfig(<private configuration>)")
+    }
+}
+fn parse_account_runtime(
+    env: &BTreeMap<String, String>,
+) -> Result<Option<AccountRuntimeConfig>, BootstrapError> {
+    const FIELDS: [&str; 7] = [
+        "OSMAP_ACCOUNT_ADMISSION_SOCKET",
+        "OSMAP_ACCOUNT_ADMISSION_KEY_FILE",
+        "OSMAP_ACCOUNT_ADMISSION_HELPER_UID",
+        "OSMAP_ACCOUNT_MUTATION_SOCKET",
+        "OSMAP_ACCOUNT_MUTATION_KEY_FILE",
+        "OSMAP_ACCOUNT_MUTATION_SESSION_PROOF_KEY_FILE",
+        "OSMAP_ACCOUNT_MUTATION_HELPER_UID",
+    ];
+    let error = || {
+        BootstrapError::InvalidConfig { field: "OSMAP_ACCOUNT_ADMISSION_SOCKET", reason: "complete distinct admission/mutation endpoints, purpose keys, session proof and explicit decimal peer UIDs are required together".into() }
+    };
+    if FIELDS.iter().all(|field| !env.contains_key(*field)) {
+        return Ok(None);
+    }
+    if FIELDS.iter().any(|field| !env.contains_key(*field)) {
+        return Err(error());
+    }
+    let path = |field| parse_optional_absolute_optional_path(env, field)?.ok_or_else(error);
+    let uid = |field: &str| -> Result<u32, BootstrapError> {
+        let text = env.get(field).ok_or_else(error)?;
+        let value = text.parse::<u32>().map_err(|_| error())?;
+        if value.to_string() != *text {
+            return Err(error());
+        }
+        Ok(value)
+    };
+    let value = AccountRuntimeConfig {
+        admission_socket: path(FIELDS[0])?,
+        admission_key_file: path(FIELDS[1])?,
+        admission_helper_uid: uid(FIELDS[2])?,
+        mutation_socket: path(FIELDS[3])?,
+        mutation_key_file: path(FIELDS[4])?,
+        session_proof_key_file: path(FIELDS[5])?,
+        mutation_helper_uid: uid(FIELDS[6])?,
+    };
+    if value.admission_socket == value.mutation_socket
+        || value.admission_key_file == value.mutation_key_file
+        || value.admission_key_file == value.session_proof_key_file
+        || value.mutation_key_file == value.session_proof_key_file
+    {
+        return Err(error());
+    }
+    Ok(Some(value))
 }
 fn parse_openpgp_inventory(
     env: &BTreeMap<String, String>,
@@ -783,6 +849,7 @@ impl AppConfig {
         )?;
 
         Ok(Self {
+            account_runtime: parse_account_runtime(env_map)?,
             openpgp_inventory: parse_openpgp_inventory(env_map)?,
             openpgp_crypto: parse_openpgp_crypto(env_map)?,
             openpgp_public_admin: parse_openpgp_public_admin(env_map)?,
@@ -1119,6 +1186,55 @@ fn is_loopback_listener(listen_addr: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn account_runtime_config_requires_complete_explicit_distinct_authority() {
+        let fields = [
+            ("OSMAP_ACCOUNT_ADMISSION_SOCKET", "/private/admission.sock"),
+            ("OSMAP_ACCOUNT_ADMISSION_KEY_FILE", "/private/admission.key"),
+            ("OSMAP_ACCOUNT_ADMISSION_HELPER_UID", "1003"),
+            ("OSMAP_ACCOUNT_MUTATION_SOCKET", "/private/mutation.sock"),
+            ("OSMAP_ACCOUNT_MUTATION_KEY_FILE", "/private/mutation.key"),
+            (
+                "OSMAP_ACCOUNT_MUTATION_SESSION_PROOF_KEY_FILE",
+                "/private/proof.key",
+            ),
+            ("OSMAP_ACCOUNT_MUTATION_HELPER_UID", "1004"),
+        ];
+        assert!(AppConfig::from_env_map(&BTreeMap::new())
+            .unwrap()
+            .account_runtime
+            .is_none());
+        let values = fields
+            .iter()
+            .map(|(k, v)| (k.to_string(), v.to_string()))
+            .collect::<BTreeMap<_, _>>();
+        let config = AppConfig::from_env_map(&values).unwrap();
+        assert!(config.account_runtime.is_some());
+        assert_eq!(
+            format!("{:?}", config.account_runtime.unwrap()),
+            "AccountRuntimeConfig(<private configuration>)"
+        );
+        for (field, _) in fields {
+            let mut incomplete = values.clone();
+            incomplete.remove(field);
+            assert!(AppConfig::from_env_map(&incomplete).is_err(), "{field}");
+        }
+        for (field, value) in [
+            (fields[0].0, "relative"),
+            (fields[1].0, ""),
+            (fields[2].0, "+1"),
+            (fields[2].0, "4294967296"),
+            (fields[6].0, "-1"),
+            (fields[6].0, "01"),
+            (fields[3].0, fields[0].1),
+            (fields[4].0, fields[1].1),
+            (fields[5].0, fields[4].1),
+        ] {
+            let mut changed = values.clone();
+            changed.insert(field.into(), value.into());
+            assert!(AppConfig::from_env_map(&changed).is_err(), "{field}");
+        }
+    }
     #[test]
     fn sender_identity_authority_config_is_optional_absolute_and_not_alias_provisioning() {
         let mut values = BTreeMap::new();

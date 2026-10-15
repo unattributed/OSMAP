@@ -185,9 +185,25 @@ fn actual_runtime_login_mfa_session_and_changed_epoch_refusal_no_primary_fallbac
                 .unwrap();
             }
         });
-        let mut gateway = RuntimeBrowserGateway::for_test(&root);
-        gateway.account_admission_client =
-            Some(Client::qualified_files(&socket, &key, uid).unwrap());
+        let mutation_socket = root.join("mutation.sock");
+        let mutation_key = root.join("mutation.key");
+        let proof_key = root.join("session-proof.key");
+        let _mutation_listener = UnixListener::bind(&mutation_socket).unwrap();
+        std::fs::set_permissions(&mutation_socket, std::fs::Permissions::from_mode(0o660)).unwrap();
+        for (path, bytes) in [(&mutation_key, [17_u8; 32]), (&proof_key, [19_u8; 32])] {
+            std::fs::write(path, bytes).unwrap();
+            std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o600)).unwrap();
+        }
+        let gateway = RuntimeBrowserGateway::for_test(&root).with_account_fixture_clients(
+            Client::qualified_files(&socket, &key, uid).unwrap(),
+            crate::account_mutation_client::Client::stored_fixture_files(
+                &mutation_socket,
+                &mutation_key,
+                &proof_key,
+                uid,
+            )
+            .unwrap(),
+        );
         // for_test has a nonexistent primary backend, so any accidental fallback fails.
         let totp_root = root.join("totp");
         std::fs::create_dir(&totp_root).unwrap();

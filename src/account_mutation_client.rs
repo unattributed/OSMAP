@@ -56,6 +56,16 @@ impl std::fmt::Debug for Client {
 }
 
 impl Client {
+    pub(crate) fn purpose_separated_from(
+        &self,
+        admission: &crate::account_admission_runtime::Client,
+    ) -> bool {
+        self.0.session_proof_key.as_ref().is_some_and(|proof| {
+            proof != &self.0.key
+                && !admission.has_purpose_key(&self.0.key)
+                && !admission.has_purpose_key(proof)
+        })
+    }
     pub fn from_operator_files(socket: &Path, key: &Path, helper_uid: u32) -> Result<Self, Error> {
         if !NATIVE_CONFINEMENT_QUALIFIED {
             return Err(Error::Unavailable);
