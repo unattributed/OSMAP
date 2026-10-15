@@ -8387,3 +8387,181 @@ bounded authenticated account-private atomic CAS assignment/removal. Retained
 Edge/Firefox results are historical synthetic evidence, not current installed
 UAT. Assessment9598bc5d/SOURCEb8eb2e15 confirms unchanged source; zero duplicate
 implementation or tests. The existing work order was corrected accordingly.
+
+## Current delivery work order — auditor corrections approved 2026-10-14
+
+This is the current execution index. Operator approval: “apply recommendations,
+all of them”; agents own development and decisions end to end. Goal: a freely
+available, high-quality secure/reliable frontend and OpenBSD mail backend.
+Subsequent direction permits human engagement only after agent development,
+QA and independent audit PASS. See `UX_PLAN_AMENDMENT_R3.md`; original R2 anchor
+`6b3ce8fff27ca3dabf87039d54098bd9967a2e42` and reference bytes remain preserved.
+The signed commit introducing the supplement becomes its execution anchor;
+record its SHA after signature/sync verification rather than self-pin.
+
+### Facts, owners and executable dependencies
+
+- Source base: signed/synchronized `afc02239b832a2ebc7904f99549740d824d10809`,
+  parent `7c2345525e37a8986b4719429ae18bcf3454c5a5`; fresh origin equality and
+  clean canonical checkout observed before these edits. Main remains separate.
+- Root owns PM, integration, canonical Git/host/native execution and technical
+  writing. `crypto_supervision_repair` owns isolated lifecycle code;
+  `acceptance_reconciliation` owns existing case/evidence accounting;
+  `independent_progress_auditor` reviews the frozen delta independently.
+  QA/security reviewers are assigned per frozen boundary; developers do not
+  certify their own independent review. Idle management roles need no slot.
+- One integration objective: restore public Crypto supervision. Activation
+  failed at `crypto_start` and `rollback_crypto_start`; original files were
+  restored. Later read-only evidence shows a live helper/listener without the
+  expected wrapper, not proof of a full Crypto outage. Re-observe exact current
+  role before action; no historical PID signals or live-socket unlink. Preserve
+  private agents, keys, policy and unrelated services.
+- Next: matching mail-helper-first/web Move installation, then Delete/Bin/Restore
+  and the functional Folders page. Existing selected Labels are reused.
+- No signing-unlock question is pending. Actual signed commits succeeded and
+  the user confirms the signing key has no passphrase. Operator controls provider
+  Send; reuse October14 observations, never send a parallel/repeated message.
+
+| Work order / owner | Prerequisite and observable exit | Investigation/test bound and next action |
+| --- | --- | --- |
+| Crypto lifecycle / root + developer | Actual rc.subr identity, safe existing socket recovery; supervised stop/start/rollback and bounded public operation PASS | One focused old/new process fixture and one reviewed changed native/deployment attempt. Two failures at one boundary trigger diagnosis/review before retry. Root observes current role first. |
+| Acceptance / developer + auditor | Preserve 110 legacy cases and 403 obligations; map exact existing outcomes with explicit remaining criteria | Inspect evidence once; existing validator and changed validator cases only, no 403-case campaign. Freeze delta for root. |
+| Move installation / root + reviewer | Crypto restored; already qualified source/native image and exact stage custody | Reuse image `9685ba07f58d8ed5ac47a2d45c7c1416d676df32d7174831c0b36850f2584b9e`; one helper-first/web activation and composed controlled check. Failure pauses deployment queue. |
+| Empty Delete / developer + reviewer | Corrected stored-wire oracle, current candidate/native inputs | One changed native case using package `bcf8ca63c6575718626255ccade1bdc9c6c8ae8b8813559aee56330ccd810035` under existing bounds. Retain native1 failure and old cleanup uncertainty; empty-leaf scope only. |
+| Bin/Restore and Folders / next developer | Current hierarchy, Move/Delete and durable preservation receipts | One bounded interface-owned unit at a time; read-only hierarchy/page work may run independently. Parent S08-02 closes only after integrated lifecycle proof. |
+
+Required hooks run normally. `make acceptance-check` includes security and
+V10–V13; do not duplicate the same aggregate checks separately outside mandatory
+hooks. Run V14/native checks for changed boundaries. Skipped native checks are
+not passes. Short private gate TMPDIR `/tmp/og-ae7aec7b` must be checked for
+ownership/existence before reuse; retain the earlier long-path gate failure.
+
+### Deployment recovery acceptance
+
+Record exact old/new binaries/config/RC identities, owned process/listener,
+unrelated-service baseline, backups and rollback before mutation. Prove selected
+role drained after stop; prove expected supervision and a bounded functional
+operation after start. Rollback must prove restored bytes AND supervised role
+AND functional operation. Failure assigns operational restoration immediately;
+independent local work continues. Do not weaken peer checks, remove live sockets,
+change key policy or repeat ambiguous actions. Root owns cleanup; historical
+uncertain fixtures remain explicitly retained rather than retrospectively closed.
+
+### All-slice remaining actions
+
+This is a work queue, not 48 new tests or acceptance claims. Reconcile existing
+proof first; run only uncovered/changed required behavior. Root owns integration
+and closure for every row; each activated work order names its developer and
+independent reviewer. No row is declared fully accepted by this entry.
+
+| Slice | Remaining action / dependency |
+| --- | --- |
+| S00-01 | Reconcile approved controls/current workflow baseline against existing intake evidence. |
+| S00-02 | Link resolved interaction/crypto/custody decisions; preserve outstanding key-lifecycle claims. |
+| S00-03 | Reconcile D04/D05 resources/recovery/quota/deployment decisions with remaining backend work. |
+| S00-04 | Populate existing acceptance results by actual scope and validate register consistency. |
+| S01-01 | Reconcile persisted-theme/isolation proof; final cross-site comparison follows completed pages. |
+| S01-02 | Implement Folders navigation/dashboard and real account hierarchy links. |
+| S01-03 | Reconcile runtime-derived status, search, shared forms and unavailable states. |
+| S01-04 | Close uncovered appearance/accessibility states after UI integration, without unchanged recaptures. |
+| S02-01 | Reconcile filters/sort/pagination/selection proof and uncovered category dependencies. |
+| S02-02 | Reconcile list/reader/Back/focus/isolation; test changed Folders navigation. |
+| S02-03 | Qualify requested cross-Inbox whole-email/attachment moves and remaining deletion conditions. |
+| S02-04 | Reconcile reader/source/download/retry; finish protected attachment integration through S06. |
+| S03-01 | Reconcile sender/contact/address/reply-threading proof and actual alias capability limits. |
+| S03-02 | Reconcile drafts/autosave/concurrency and uncovered hidden-page/attachment behavior. |
+| S03-03 | Reconcile formatting/preview/MIME safety; finish uncovered actual toolbar journeys. |
+| S03-04 | Reconcile installed ordinary Compose/Draft/Reply/Forward/attachments and Sent/recovery results. |
+| S04-01 | Reconcile settings/session/Digest; finish uncovered preferences in owning workflows. |
+| S04-02 | Finish authoritative password/runtime/epoch/containment integration and qualified form. |
+| S04-03 | Finish recovery-contact token/proof/change/remove/notification lifecycle. |
+| S04-04 | Finish recovery coordinator/containment and independent identity-policy audit; agent rehearsal precedes human identity judgment. |
+| S05-01 | Reconcile authorized bounded Crypto protocol and failure semantics. |
+| S05-02 | Finish current key import/bind/remove/rotation integration and controlled lifecycle proof. |
+| S05-03 | Restore supervision and qualify stale-agent recovery integration without operator-secret capture. |
+| S05-04 | Reconcile native confinement/dependencies/start-stop/recovery against installed build. |
+| S06-01 | Reconcile PGP/MIME classification/canonicalization and uncovered supported profiles. |
+| S06-02 | Qualify actual signatures and signer/key-state display; icons are insufficient. |
+| S06-03 | Finish OSMAP own Inbox/Sent decryption/recovery; Thunderbird PASS stays separate. |
+| S06-04 | Reconcile decrypted sanitization/source/download/account binding and uncovered reader states. |
+| S07-01 | Reconcile policy/preflight/defaults against current bindings and permitted reduced protection. |
+| S07-02 | Finish agent-owned emitted-signature verification before necessary provider observation. |
+| S07-03 | Reuse Proton Bcc encryption result; finish signed/self modes, own readable Sent and key lifecycle. |
+| S07-04 | Finish protected Compose/Draft/Reply/Forward/Sent/return and original-action recovery. |
+| S08-01 | Preserve Documents; finish authoritative shared mail/document quota/concurrency and secondary entry. |
+| S08-02 | Install Move; finish safe Delete/populated Bin/Restore/hierarchy/Folders; qualify existing Labels. |
+| S08-03 | Inspect/reuse snooze; finish uncovered scheduler/cancel/restart/timezone/duplicate suppression. |
+| S08-04 | Finish uncovered event/preferences/consented desktop delivery; Digest alone is insufficient. |
+| S09-01 | Final themes/responsive/zoom/focus checks concentrate on changed/uncovered surfaces. |
+| S09-02 | Compare mail/Folders pages and security/error states to R2 plus approved R3 overlay. |
+| S09-03 | Compare final Settings/key/account/Documents and retained Login/TOTP with working backends. |
+| S09-04 | Independent agent accessibility audit PASS, then minimal human usability/accessibility acceptance. |
+| S10-01 | Qualify uncovered complete journeys with actual helpers/controlled accounts; reuse matching results. |
+| S10-02 | Independent security audit; fix and retest findings, never recast failures as passes. |
+| S10-03 | Finish uncovered native resource/storage/concurrency/fault/restart qualification. |
+| S10-04 | Assemble exact release source/build/config and current required release evidence. |
+| S11-01 | Prove exact candidate/backup/upgrade/rollback and target identity. |
+| S11-02 | Agent functional/native QA and audit PASS before minimal reserved human observations. |
+| S11-03 | Monitored staged deployment and bounded real workflows; failed rollback remains incident. |
+| S11-04 | Reconcile retained state/cleanup/all parent results/signed sync/final operator acceptance. |
+
+### Provisional effort and forecast
+
+Initial planning ranges below are effective engineering hours, not compute spend,
+measured velocity or a delivery promise. Assume one integration executor with
+useful parallel developers/reviewers and reachable hosts. No trustworthy whole-
+sprint velocity exists. External/human waits are excluded; root refines each next
+milestone after its actual integrated outcome and newly reconciled coverage.
+
+| Milestone / slices | Remaining deliverable | Effort / confidence | Dependency |
+| --- | --- | --- | --- |
+| Operational restoration / S05-03/04 | Narrow lifecycle fix, native review, supervised recovery and functional check | 2–8 hours; medium-low | Immediate integration objective. |
+| Evidence reconciliation / S00/all | Existing proof mapped, exact gaps/owners and current handoff | 4–12 hours; medium | Parallel; no baseline retest. |
+| Usable Folders / S01-02/S02-03/S08-02 | Move install, Delete/Bin/Restore, page, full-message movement and independent QA | 16–48 hours; low | Service recovery and lifecycle native outcomes. |
+| Mail closeout / S02/03/05–07 | Key lifecycle, own reading, signatures/self/return and integrated evidence | 16–48 hours; low | Current runtime; human/provider wait separate. |
+| Account/recovery / S04 | Authoritative password/contact/recovery/containment and qualified forms | 40–120 hours; low | Trusted backend/runtime and identity-policy audit. |
+| Ancillary backend / S08-01/03/04 | Shared quota, remaining scheduling/snooze/notifications | 32–96 hours; low | Actual storage/transport authorities. |
+| Integrated UI/release / S01/S09–11 | Uncovered visual/accessibility/security/resource/upgrade/rollback and closeout | 24–72 hours; low | Functional dependencies delivered. |
+
+Aggregate initial envelope: **134–404 effective engineering hours**, with overlap
+possible; this is not a calendar ETA. A credible date range requires reconciled
+remaining controls and the next integrated milestone outcome. Root owns refining
+the estimate; no requirement is omitted and no estimation task is handed to the
+user. Do not count commits/tests as delivery velocity or sum parallel work as
+serial elapsed time.
+
+### Minimum human handoff and continuation
+
+Before inviting the user, root records exact scope, signed source, matching
+installed image/config, essential positive/negative functional QA PASS and
+independent audit PASS. Resolve every agent-owned required failure/unknown.
+Provide one concise plan with prerequisites, steps, expected outcomes and only
+the remaining human judgment/reserved observation. Reuse supplied results; no
+debugging assignment, repeated unlock request or ambiguous resend. Pending
+human acceptance remains separate and never idles unrelated engineering.
+
+The recurring job/current continuation file read this entry and R3, then verify
+actual Git/runtime state. Historical ba170ef/signing-pending snapshots are
+superseded. Root refreshes outcomes after delivery or deployment failure.
+Issue78 remains open until functional acceptance; issue77 closes reference
+promotion only. Compact source accounting is not an epic-completion claim.
+
+### Acceptance reconciliation implementation
+
+The existing register now links actual retained portions for 49 controls as
+PARTIALLY_VERIFIED and records two observed OSMAP protected-body/Sent reading
+failures as FAILED. The other 352 controls explicitly remain execution-
+unreconciled, with ownership and next action pointers; this does not establish
+missing code or absence of historical engineering. All 110 historical cases,
+403 IDs and original positive/negative obligations remain unchanged. Direct
+Reply toolbar/footer controls were deliberately left uncredited because the
+inspected installed evidence explicitly exercised Reply-all instead.
+
+The existing validator now permits FAILED only with executed=true and typed
+execution evidence, and BLOCKED only with executed=false and dependency/gap
+evidence. Existing success/ACCEPTED rules remain. Actual integrated validator
+PASS403/110/27 and 23 focused counterexamples PASS; no workflow campaign or host
+action was performed for this accounting change. Candidate patchf87de8b8 and
+evidence-pins.json are retained under osmap-ux-s00/agentic-delivery-20261014/
+acceptance-candidate. Independent review and normal signed gates follow; this
+entry does not establish a completed application slice or sprint.

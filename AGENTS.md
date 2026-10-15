@@ -19,6 +19,16 @@ operator's explicit instructions.
 
 ## Coordinated agent development
 
+The operator's 2026-10-14 end-to-end delegation and approved auditor corrections
+are codified in `docs/UX_PLAN_AMENDMENT_R3.md`. Agents own implementation,
+technical decisions, integration, essential QA, independent audit coordination
+and authorized delivery. Follow the current ledger's technical dependencies;
+pending human acceptance does not halt independent engineering. Invite the
+operator only when all agent-owned development, matching deployed QA and
+independent audit requirements PASS for that exact scope. Never use operator
+UAT to troubleshoot unfinished engineering. Preserve the original R2 anchor
+and its byte-exact references alongside the signed R3 execution supplement.
+
 For operator-authorized multi-agent work, apply
 `docs/AGENT_DEVELOPMENT_FRAMEWORK.md` and its OSMAP mapping in
 `docs/OSMAP_AGENT_FRAMEWORK_ADOPTION.md`. Assign project management, Scrum

@@ -1,5 +1,29 @@
 # Decision Log
 
+## 2026-10-14 — operator-approved agent-owned delivery corrections
+
+The operator approves all independent audit recommendations and delegates
+development decisions, implementation, testing and end-to-end completion.
+The product is a freely available, high-quality secure web frontend to a secure
+OpenBSD mail backend; the existing ISC licence remains. Revision3 supplements
+the preserved signed R2 plan with current authority and technical dependency
+rules, bounded implementation units and the issue78 navigation overlay. Parent
+requirements, security gates, real results and human identity judgments remain.
+
+Human involvement is a minimal, defined acceptance handoff only after agent
+development, matching installation, essential functional QA and independent
+audit PASS for that scope. Agents own setup, diagnosis, remediation and recovery;
+pending operator-only observations cannot be invented or used to idle unrelated
+engineering. One integration objective, finite investigations and one host/Git
+executor enforce existing efficiency rules. Current work restores Crypto
+supervision before further deployment, then closes the Folders lifecycle.
+
+Existing acceptance results are reconciled by actual scope, not blanket PASS or
+a new test campaign. The current ledger owns assignments, remaining effort and
+forecasts; continuation instructions reference that state instead of carrying
+obsolete signing and deployment assumptions. Original Documents obligations
+remain pending in S08-01 although Folders replaces primary navigation.
+
 ## 2026-10-14 — complete S08-02 folder workflows and record Folders navigation
 
 The operator requests sprint movement and explicitly directs replacing the

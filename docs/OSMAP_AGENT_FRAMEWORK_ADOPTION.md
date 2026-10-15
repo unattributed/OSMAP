@@ -1,5 +1,24 @@
 # OSMAP adoption of the functional agent framework
 
+## Current authority — 2026-10-14
+
+The approved `UX_PLAN_AMENDMENT_R3.md` supersedes historical sequential/human-wait
+and permission defaults below. Agents own the full delivery path and technical
+decisions within the epic. Root is integration/PM/Git/host owner; named developer
+agents own isolated changes; independent QA/security/auditor findings must be
+resolved before a human handoff. Root performs technical writing in existing
+records. Management roles need not consume permanent concurrent slots.
+
+Use the latest ledger work order and effort assessment. S04-02 is preserved but
+is not the current integration objective: restore Crypto supervision first,
+then deliver the complete Folders lifecycle. The earlier dated paragraphs below
+are provenance, not instructions to restart parked microdiagnostics.
+
+Human acceptance is a minimal final judgment after agent development, matching
+installation, essential functional QA and independent audit all PASS. Root
+prepares prerequisites and one concise combined UAT, reuses supplied outcomes
+and owns remediation. No unresolved agent-owned failure is handed to the user.
+
 2026-10-03. Applies the portable
 [agent development framework](AGENT_DEVELOPMENT_FRAMEWORK.md) to the approved
 OSMAP full-functional UX epic. This is an execution/documentation framework,

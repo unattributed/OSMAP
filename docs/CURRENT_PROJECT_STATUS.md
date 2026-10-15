@@ -14,6 +14,31 @@ statement as provenance rather than current release posture.
 
 ## Current source posture
 
+### Agent-owned delivery correction, 2026-10-14
+
+The operator approves all six independent-auditor recommendations and delegates
+end-to-end technical delivery. `UX_PLAN_AMENDMENT_R3.md` records execution
+authority, dependency/sizing corrections and the approved Folders navigation
+overlay while preserving the R2 requirements and reference bytes. The latest
+ledger entry contains named owners, all-slice remaining actions and provisional
+effort ranges. Human acceptance is engaged only after the submitted scope's
+agent-owned development, matching deployed functional QA and independent audit
+PASS; it is not a debugging assignment for the operator.
+
+Signed source `afc02239b832a2ebc7904f99549740d824d10809` and its predecessor
+`7c2345525e37a8986b4719429ae18bcf3454c5a5` are synchronized to the UX branch.
+Folder Move has native proof but matching installation remains pending. Crypto
+activation failed at startup and rollback startup; original worker/launcher
+bytes were restored. A later read-only observation found a live public helper
+without its expected wrapper supervision. Operational restoration is the first
+integration objective; neither full outage nor successful deployment is inferred.
+These are retained observations, not a fresh service-health claim.
+
+GitHub issue77 closes only approved-reference lock/promotion. Issue78 remains
+open for the functional Folders journey. No whole-sprint or epic acceptance is
+established by these records. Acceptance reconciliation links existing evidence
+without repeating a baseline QA campaign.
+
 ### S08-02 private folder Move engineering, 2026-10-14
 
 Private leaf folders can be moved beneath another permitted private parent using

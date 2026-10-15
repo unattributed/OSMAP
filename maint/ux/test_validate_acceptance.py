@@ -94,6 +94,34 @@ class TraceabilityTests(unittest.TestCase):
     def test_legacy_result_cannot_be_rewritten(self):
         self.refused(lambda m: m["cases"][0].update(status="NOT_YET_ACCEPTED"), "legacy case content")
 
+    def test_executed_failure_is_recordable_without_acceptance(self):
+        candidate = copy.deepcopy(self.pending_matrix)
+        candidate["approved_control_cases"][0]["result"] = {
+            "status": "FAILED", "executed": True,
+            "evidence": [{"kind": "native_execution", "path": "synthetic-failed-result", "scope": "validator counterexample only; required assertion failed"}],
+        }
+        self.assertEqual(self.run_check(candidate)["approved_cases"], 403)
+        candidate["approved_control_cases"][0]["result"]["executed"] = False
+        with self.assertRaisesRegex(ValueError, "false or unsupported progress"):
+            self.run_check(candidate)
+
+    def test_failure_cannot_use_planned_test_as_execution(self):
+        self.refused(lambda m: m["approved_control_cases"][0].update(result={"status": "FAILED", "executed": True, "evidence": [{"kind": "planned_test", "path": "future-test", "scope": "not run"}]}), "planned pointer")
+
+    def test_blocked_dependency_is_recordable_without_execution(self):
+        candidate = copy.deepcopy(self.pending_matrix)
+        candidate["approved_control_cases"][0]["result"] = {
+            "status": "BLOCKED", "executed": False,
+            "evidence": [{"kind": "dependency", "path": "synthetic-dependency-reference", "scope": "validator counterexample only; prerequisite missing"}],
+        }
+        self.assertEqual(self.run_check(candidate)["approved_cases"], 403)
+        candidate["approved_control_cases"][0]["result"]["executed"] = True
+        with self.assertRaisesRegex(ValueError, "blocked case requires non-execution"):
+            self.run_check(candidate)
+
+    def test_blocked_case_cannot_hide_an_executed_result(self):
+        self.refused(lambda m: m["approved_control_cases"][0].update(result={"status": "BLOCKED", "executed": False, "evidence": [{"kind": "native_execution", "path": "actual-result", "scope": "must retain actual execution as FAILED or partial"}]}), "blocked evidence must describe")
+
 
 if __name__ == "__main__":
     unittest.main()

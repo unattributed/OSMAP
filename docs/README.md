@@ -83,6 +83,7 @@ Current public documentation map:
 - `UX_S00_INTAKE.md`
 - `UX_DECISIONS.md`
 - `UX_PLAN_AMENDMENT_R2.md` — final approved 25-image / 27-page reference correction
+- `UX_PLAN_AMENDMENT_R3.md` — approved end-to-end agent delivery authority, technical dependencies, minimal human acceptance and Folders navigation overlay; preserves R2 references
 - `design/osmap-ux-final-approved-20260919/` — byte-preserved approved bundle
 - `design/osmap-ux-final-approved-20260919/APPROVAL_LOCK_FINAL.md`
 - `design/osmap-ux-final-approved-20260919/README.md`

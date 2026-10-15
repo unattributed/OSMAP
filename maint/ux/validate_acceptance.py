@@ -11,7 +11,7 @@ import sys
 
 LEGACY_SHA256 = "987e7384fd6b698f783f95bfe6e48b57d05fa0fbd56500dfc110a83ee72abefd"
 POINTER_KINDS = {"source", "test", "candidate_source", "candidate_test", "planned_test", "fixture", "baseline", "gap", "dependency", "legacy_evidence"}
-PROGRESS_STATUSES = {"PARTIALLY_IMPLEMENTED", "PARTIALLY_VERIFIED", "IMPLEMENTED_VERIFIED_LOCAL", "QA_VERIFIED", "UAT_READY", "ACCEPTED"}
+PROGRESS_STATUSES = {"PARTIALLY_IMPLEMENTED", "PARTIALLY_VERIFIED", "IMPLEMENTED_VERIFIED_LOCAL", "QA_VERIFIED", "UAT_READY", "ACCEPTED", "FAILED"}
 EXECUTED_KINDS = {"source_execution", "native_execution", "qa_execution", "human_uat"}
 
 
@@ -79,6 +79,11 @@ def validate(matrix, inventory, catalogue, repo):
         require(type(result["executed"]) is bool and isinstance(result["evidence"], list), identifier + ": invalid execution/evidence type")
         if result["status"] == "NOT_YET_ACCEPTED":
             require(not result["executed"] and not result["evidence"], identifier + ": planned case cannot claim execution")
+        elif result["status"] == "BLOCKED":
+            require(not result["executed"] and result["evidence"], identifier + ": blocked case requires non-execution evidence")
+            for evidence in result["evidence"]:
+                require(isinstance(evidence, dict) and set(evidence) == {"kind", "path", "scope"}, identifier + ": invalid blocked evidence")
+                require(text(evidence["kind"]) and evidence["kind"] in {"dependency", "gap"} and text(evidence["path"]) and text(evidence["scope"]), identifier + ": blocked evidence must describe a dependency or gap")
         else:
             require(text(result["status"]) and result["status"] in PROGRESS_STATUSES and result["executed"] and result["evidence"], identifier + ": false or unsupported progress claim")
             for evidence in result["evidence"]:
