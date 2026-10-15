@@ -751,3 +751,24 @@ unique cost/old17 cause unknown. Standard metadata and daemon stops pass, but
 broker runtime/scratch cleanup is unconfirmed and retained. Next qualification
 uses actual factory executors/current product guards and explicit private paths,
 not extra substituted metadata inventories. No full workflow/WSTG/release claim.
+
+### 2026-10-15 — configured account Serve confinement and composed password limits
+
+The S04-02 source increment adds only the configured account admission/mutation
+socket rw leaves, three purpose-key r leaves and the existing helper Unix
+promise profile. The selected actual configuration-to-plan regression passes;
+independent source review7c735118 checks exact added rules and unchanged
+ancestry/client/native gates. No installed Serve/password acceptance follows.
+
+Actual composed factory1 e43d02fb fails during SQL bootstrap before any SQL
+child or Rust role; source custody and owned driver reap/group absence are
+measured, while failed root/worker/SQL stages are retained. The fixture reader
+return-contract error is source-reproduced and separately corrected; its
+native exception subtype remains unexported. No authentication, credential
+write, containment workflow, provider action or broader WSTG PASS is claimed.
+
+Changed native2 result26d8ca5e reaches12 private SQL children, all reaped, and
+provisioned purpose identity/context, then refuses before Rust role/credential
+transaction. The exact remaining preparation guard is unexported. Preserve
+failed stages and apply two-failure source reassessment; no required workflow
+or additional WSTG case is accepted from these preparation results.

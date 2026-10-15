@@ -10456,3 +10456,63 @@ substitute inventories/hashes per command are extra work, not product guards.
 Do not change production deadlines/protocol or add another diagnostic framework
 to accommodate that substituted timing. Preserve old results/retained namespaces
 and qualify the real composed workflow.
+
+
+## 2026-10-15 — reuse one matching compiled fixture while completing the workflow
+
+The final test-only admission and stored-issuer source compiles on both the
+workstation and OpenBSD with exact before/after manifests. Keep the qualified
+native binary and independent custody proof; do not rebuild it when only Python
+composition or outer custody changes. A build is not a test or native workflow
+result. Replace stale draft source pointers with a distinct exact successor;
+retain old snapshots and do not infer full current Git parity from provenance.
+Continue the actual composed transaction under the existing source-owned
+executors, fixed private paths and original budgets.
+
+## 2026-10-15 — preserve reduced signed deadlines across composed qualification
+
+Independent review rejects the first complete factory custody before host
+execution: its success consumer incorrectly requires a full 60,000 ms wire
+interval. The real stored-session authorization signs the remaining original
+deadline after password preparation, admission, TOTP and lease checks. Accept
+only an integer in 1..60,000; keep the issuer's original 60,000 ms budget and
+authenticated frame/deadline binding unchanged. Retain the rejected package.
+The distinct receipt successor demonstrates the old refusal at 59,999 ms,
+new acceptance and rejection of zero, 60,001 and Boolean values. No Rust rebuild,
+production guard, phase cap or deadline extension follows from this correction.
+
+The complete disposable case also retains its previously qualified finite
+512/512 descriptor limit, confined to the born root/driver process tree. It
+does not change host or service limits. Generated worker context and exact
+source/template inventory are explicitly checked; native execution still
+requires complete independent package admission.
+
+## 2026-10-15 — repair the real Serve plan; retain the failed fixture boundary
+
+The actual web confinement plan is applied before Runtime gateway construction
+and omitted configured account sockets/keys. Admit the independently reviewed
+five exact leaf grants and existing Unix helper promise selection. Keep client
+ancestry/custody and native qualification gates unchanged; this source repair
+alone does not enable normal Serve or qualify an installed password workflow.
+
+The first full-factory qualification fails before any SQL child. Its closed
+result exports Other, so preserve the exact subtype as unknown. The fixture's
+public-reader None.clear incompatibility is independently source-demonstrated
+and locally reproduced; repair only that driver return-contract use. Do not
+modify the product reader, allocate public executable content or rebuild the
+unchanged native binary. Future execution uses a distinct source package and
+fresh owned runtime/SQL stages; the failed stages remain retained.
+
+## 2026-10-15 — apply two-failure reassessment to the real composition
+
+The corrected public-reader case reaches SQL/bootstrap work but still refuses
+before any Rust role. Its broad phase and fixed exception class do not identify
+the exact failing guard. Reassess actual remaining render/material/API contracts
+locally before admitting another changed native action. Preserve both failed
+results, owned cleanup limits and retained namespaces. Do not widen deadlines
+or treat this failure as a reason to stop independent reviewed Serve integration.
+
+The first normal source commit gate refuses five new constant assertions under
+Clippy warnings-as-errors. Retain that gate failure and use existing OS-equality
+and const-assert patterns without changing their conditions or lint policy.
+Normal signed admission must pass again; no unsigned checkpoint is created.

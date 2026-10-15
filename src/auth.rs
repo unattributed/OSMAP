@@ -141,6 +141,39 @@ pub(crate) fn admission_parent_interpreter_fixture_command() -> std::io::Result<
     Ok(command)
 }
 
+/// Only the reviewed full-factory root stage selects this exact test wrapper;
+/// no request account, option or arbitrary program/path enters the command.
+#[cfg(all(test, unix))]
+pub(crate) fn full_factory_admission_fixture_command(
+    stage: &std::path::Path,
+) -> std::io::Result<Command> {
+    let fixed_stage = stage.parent() == Some(std::path::Path::new("/var/run"))
+        && stage
+            .file_name()
+            .and_then(|v| v.to_str())
+            .is_some_and(|name| {
+                name.strip_prefix("osmap-primary-root-")
+                    .is_some_and(|suffix| {
+                        suffix.len() == 16
+                            && suffix
+                                .bytes()
+                                .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+                    })
+            });
+    if !fixed_stage {
+        return Err(std::io::Error::from(std::io::ErrorKind::PermissionDenied));
+    }
+    let mut command = Command::new("/usr/local/bin/python3.13");
+    command
+        .arg("-I")
+        .arg(stage.join("native_factory_admission_worker.py"))
+        .env_clear()
+        .env("PATH", "/usr/bin:/bin:/usr/local/bin")
+        .env("LC_ALL", "C")
+        .env("TZ", "UTC");
+    Ok(command)
+}
+
 /// Construct the fixed synthetic stored-session fixture process. No browser
 /// field, account value, or caller-selected program enters its command line.
 #[cfg(all(test, unix))]

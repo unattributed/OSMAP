@@ -9994,6 +9994,8 @@ discriminator alongside the same binding production repair; no broader QA scope.
     "maint/account-runtime/test_account_admission_worker.py",
     "maint/account-runtime/test_mutation_primary.py",
     "src/auth.rs",
+    "src/lib.rs",
+    "src/native_factory_stored_issuer_fixture.rs",
     "maint/account-runtime/account_hash_graph.py",
     "maint/account-runtime/test_hash_search_directory.py",
     "maint/account-runtime/smtp_topology.py",
@@ -10125,7 +10127,7 @@ discriminator alongside the same binding production repair; no broader QA scope.
     "status": "PENDING",
     "reference": "Only minimal well-defined own-password usability after all agent-owned development/matching deployed QA/independent audit PASS. No operator password is changed by agent qualification; use controlled disposable Alice and preserve Bob/operator state. NOT RUN."
   },
-  "next_action": "Signedd945 source synchronized and standard Toronto clean source-only matches; installed324b unchanged. Reuse actual original full parent5 and composed worker18 native component PASS with explicit projections, no unchanged reruns or flag promotion. Reuse actual19 native peer positives while preserving its pending-control failure; qualify the actual current-factory executors with exclusive fixture custody and explicit fixed private-command projection, every product guard and original budgets intact, then complete actual guarded native factory, real stored Rust issuer/session/epoch and SMTP/IMAP/cache containment in one controlled Alice password transaction with Bob/mail preservation. Native dependency activation and operator password changes remain prohibited until matching complete qualification. S08-02 remains accepted."
+  "next_action": "Signedfc87 source synchronized and standard Toronto clean source-only matches; installed324b unchanged. Reuse actual original full parent5 and composed worker18 native component PASS with explicit projections, no unchanged reruns or flag promotion. Reuse actual19 native peer positives while preserving its pending-control failure; qualify the actual current-factory executors with exclusive fixture custody and explicit fixed private-command projection, every product guard and original budgets intact, then complete actual guarded native factory, real stored Rust issuer/session/epoch and SMTP/IMAP/cache containment in one controlled Alice password transaction with Bob/mail preservation. Native dependency activation and operator password changes remain prohibited until matching complete qualification. S08-02 remains accepted."
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->
@@ -11199,3 +11201,123 @@ fixed private-command projection and exclusive fixture custody around the real
 workflow. Do not introduce more product scheduling/protocol changes to offset
 unrepresentative substitute-executor work. Full factory/password/S04-02 remain
 OPEN; the existing reviewed scheduler component is admitted with these limits.
+
+
+## 2026-10-15 — synchronized scheduling source and matching future Rust build
+
+Signed source `fc87b65f5e0cef7ee67a79fa0bc31c2d3343e0e4` passes both normal
+commit and push gates: 1,744 Rust tests, zero failures, 44 explicitly ignored
+native cases, and 581 account Python tests. Shopkeeper verification, fresh
+origin equality, clean active branch and all three matching branch references
+pass. The standard Toronto checkout makes a clean source-only fast-forward
+from d945 to fc87 in 4.568 seconds. Installed pair324b is unchanged.
+Proof native-tail-dag-integration-20261015/signed-sync-proof.json SHA256
+`c3e31cf6a8fbc3f785e3b3f6f448af942aa657f8df72112e9cae504cb68ef49e`.
+
+The separate actual-factory Rust source has four reviewed test-only changes:
+fixed auth command constructor, real admission Service entry, real stored
+issuer with file-backed TOTP/epoch/lease/ACK/revocation, and module registration.
+Source review0e8ab07d and exact 1,242-file archive39542b5b control the inherited
+snapshot; no full current Git parity is assumed. An additional source report/
+constructor change superseded the earlier Linux binary before any execution.
+Final Linux compile22.388 and one matching OpenBSD offline no-run build79.538
+pass with fresh output and source parity. The native build group is gone with
+no forced stop or cleanup error. Actual build audit7ce9a12e pins binary
+`5c20fa256971b3d32ec4e7c7244929296b094cd584ddebfa6918a2b2e0bc3382`,
+53,647,568 bytes, also preserved locally with exact hash/size.
+
+No Rust test or composed native case has executed. Full Python driver, native
+role/material/private paths, born processes/descriptors and all execution result
+consumers require a complete frozen review before that case. Reuse this exact
+binary if compiler inputs stay unchanged; do not repeat successful compilation
+or substitute a build for the complete password transaction. A transient agent
+capacity failure was handled by transferring the unfinished composition to the
+available engineer; development remains on the same S04-02 objective.
+
+## 2026-10-15 — complete actual-factory source frozen; execution consumer corrected
+
+Composition readiness df52c99c freezes 54 source/data leaves plus the manifest,
+49 Python modules and 35 byte-identical current fc87 product references. It
+uses the preserved OpenBSD binary5c20, actual admission/stored issuer, shared
+restricted SQL/passdb, production metadata executor, account cache flush and
+Alice/Bob session/mail continuity. Three changed source controls pass. No native
+case has run; bootstrap, separate SMTP cache, held AUTH race and installed
+production topology remain explicit open limits.
+
+Before execution, independent review catches template inventory, generated
+worker context, bytecode and driver-ceiling mismatches. The corrected custody
+retains root180/keeper150/driver120 and cleanup25, fixed single-threaded child
+signal-mask restoration and the previously accepted disposable512 descriptor
+profile. Its first complete consumer also incorrectly demands a full60000 ms
+wire interval. Real stored authorization signs the reduced remaining deadline.
+The distinct execution-custody-receipt-successor1 accepts only integer1..60000,
+with original issuer60000 and authenticated frame binding unchanged. Eleven
+changed consumer/carrier controls pass, including old59999 refusal/new59999
+acceptance and zero/widened/Boolean refusal. Old packages remain unexecuted.
+Whole independent execution admission is pending; no source54/Rust rebuild or
+production activation follows.
+
+The same S04-02 work order now includes the exact test module registration
+paths src/lib.rs and src/native_factory_stored_issuer_fixture.rs. A separate
+source assessment identifies the missing configured account socket/key leaves
+in the actual Serve confinement plan, applied before gateway construction.
+The assigned minimum repair adds exact leaves and helper promises only; client
+ancestry checks and closed native gates remain. This is necessary integration
+work, not permission to activate all users or claim an installed password form.
+
+## 2026-10-15 — actual factory1 fails before dispatch; necessary Serve plan repaired
+
+Whole reviewc8044e0d admits the corrected receipt package. Actual factory1
+result e43d02fb68ad5096fb658ed073846ac7a5c716cbd015f747a64d6dcb65a1fc33
+fails at sql_bootstrap/Other after668 ms, before any SQL child or Rust role.
+Driver exit1, complete streams/zero stderr, reap/group absence and source-before
+parity are measured. The three reported controls are predispatch scope only;
+root/worker/backend/client stages remain retained and source-after is absent.
+No transaction, authentication, mail, provider or activation is established.
+Independent actual scope20ac1a47 retains these limits and supplies no historical
+PID or failed-namespace deletion authority.
+
+Exact API inspection finds the fixture calling clear() on the None content
+returned by the real public material reader. Local old AttributeError/new exact
+state-preservation control passes15 ms; the actual native subtype remains
+unexported. Distinct public-reader-contract-successor2/readinessb7765706 changes
+one of54 inputs, preserving53, all product modules, result contract and native
+binary5c20. Fresh separately reviewed native execution is pending; no rebuild
+or unchanged retry. The previous whole review's missed return contract is
+acknowledged rather than presented as a production defect.
+
+Serve-plan source readiness1c31829c/independent7c735118 closes the demonstrated
+configuration wiring gap in src/openbsd.rs. Exactly two account sockets rw,
+three separate purpose keys r and existing helper Unix promises are added.
+Actual selected regression1 PASS/zero failed/zero ignored,22.086s/fresh artifact,
+1241 before/after inputs exact. No ancestor/account-state/SQL grant, fallback,
+client custody or native-flag change. Root integrates this reviewed source with
+four reviewed test-only actual admission/stored-issuer paths; normal mandatory
+gates/signature/synchronization remain pending. Ordinary configured Serve is
+still unavailable until qualification; no installed password UAT is claimed.
+
+## 2026-10-15 — second composed refusal; reassess before another case
+
+Changed native2 result26d8ca5e8e063eba27015fcff93639e741ac8b0a6e8e66fabf89eeb35a949b1d
+now reaches12 tracked/reaped private SQL children, temporary identity1005 and
+preserved generated worker context. It refuses with sql_bootstrap/Refused after
+6816 ms, before any Rust role or credential transaction. That broad phase
+covers additional preparation; the exact failing term is not exported. Driver
+reap/group absence and zero stderr are measured; owned runtime/scratch are
+reported gone without cleanup reasons, while failed root/worker/SQL stages are
+retained. No new source-after, provider, transaction or activation claim.
+
+Two consecutive failures trigger source/API reassessment before another native
+case. Inspect real pure render/material contracts and preserve original limits;
+no guessed diagnosis, unchanged replay, retained-stage cleanup or budget change.
+Canonical review additionally catches three existing compiler-reported unused
+imports in the new test-only fixture. Remove only those imports and rustfmt
+before mandatory Clippy; native5c20 remains bound to its own immutable snapshot,
+not asserted as full current source parity. No runtime body or lint rule changes.
+
+Normal commit attempt1 is retained as FAIL before signing: mandatory Clippy
+rejects five constant assertions in the newly admitted fixture/plan tests.
+Use existing project patterns instead: OpenBSD platform assert_eq and const
+blocks for intentionally closed native flags. No assertion, gate, lint or
+activation condition is waived. The earlier compiled native fixture stays
+bound to its original source; current source is a separate normal-gate snapshot.

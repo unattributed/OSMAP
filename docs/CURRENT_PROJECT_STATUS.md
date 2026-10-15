@@ -16,13 +16,43 @@ statement as provenance rather than current release posture.
 
 ### Active password delivery, 2026-10-15
 
-Signed checkpoint `d945cd94a4c7a5f9941195d2838769cd0d34d3aa` is synchronized
+Signed checkpoint `fc87b65f5e0cef7ee67a79fa0bc31c2d3343e0e4` is synchronized
 with GitHub and the clean authoritative standard source checkout. Both normal
-commit/push gates pass1744 Rust/zero failed/44 explicit native ignores and580
+commit/push gates pass1744 Rust/zero failed/44 explicit native ignores and581
 account Python tests. Signature, fresh0/0 and all three branch heads match.
-Proof is control-authority-code-integration-20261015/signed-sync-proof.json.
+Proof is native-tail-dag-integration-20261015/signed-sync-proof.json.
 Installed pair324b is unchanged; no password form, new service or native
 qualification flag is activated.
+
+The next composed workflow now has a reviewed test-only Rust admission service
+and real stored issuer using persistent TOTP, epoch and session checks. Its
+matching OpenBSD test binary compiled successfully in 79.538 seconds with fresh
+output and exact source parity. The complete Python
+composition is now frozen: 54 source/data inputs, plus its manifest, include
+35 product modules identical to fc87. It uses the actual factory executors,
+shared disposable SQL/passdb, warmed account cache and real Rust issuer.
+The first composed case failed during SQL bootstrap before its first SQL child
+or Rust role. Its driver was reaped and group absence confirmed; the failed
+root/worker/SQL stages are retained. Source inspection then found the fixture
+clearing a public-reader result that is deliberately None. A distinct one-input
+repair is frozen for independent execution review. The original failure remains
+recorded as Other, because its exact exception subtype was not exported.
+The changed second case reaches 12 tracked and reaped SQL children, temporary
+identity provisioning and generated context, then refuses before any Rust role
+or credential transaction. Its driver group is gone and failed root/SQL stages
+remain retained. After two failures, reassess the exact remaining source
+contracts before another changed case; no unchanged retry is authorized.
+Review also caught a receipt-consumer error before execution: the signed
+remaining interval is reduced by preparation, so it must be positive and at
+most 60 seconds; the original issuer budget remains exactly 60 seconds.
+No budget was extended. Source controls do not establish functional acceptance.
+
+The current source increment additionally repairs configured account authority
+in the actual Serve confinement plan: two exact socket rules, three exact
+purpose-key rules and the existing Unix helper promises. One distinguishing
+configuration-to-plan test passes and independent source review is clear.
+Native gates, client ancestry checks and the installed instance are unchanged;
+the complete configured frontend/password workflow remains unqualified.
 
 Actual disposable restricted SQL3 passes27 controls. Private-primary16 passes
 its original seven controls, including correct-password acceptance, changed-

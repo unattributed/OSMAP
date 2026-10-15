@@ -546,6 +546,22 @@ impl OpenbsdConfinementPlan {
                     add_parent_dir_rules(&mut rules, grant_key_path);
                 }
 
+                // Account authority stays at the two authenticated endpoints
+                // and three separate purpose keys. No account state, SQL
+                // material or additional ancestor directory is exposed here.
+                if let Some(account) = &config.account_runtime {
+                    for socket in [&account.admission_socket, &account.mutation_socket] {
+                        add_rule(&mut rules, socket, "rw");
+                    }
+                    for key in [
+                        &account.admission_key_file,
+                        &account.mutation_key_file,
+                        &account.session_proof_key_file,
+                    ] {
+                        add_rule(&mut rules, key, "r");
+                    }
+                }
+
                 // Web access stops at authenticated helper sockets and its own
                 // grants. Mailbox key homes are never part of the web unveil view.
                 for client in [
@@ -567,6 +583,7 @@ impl OpenbsdConfinementPlan {
                         || config.openpgp_inventory.is_some()
                         || config.openpgp_crypto.is_some()
                         || config.openpgp_public_admin.is_some()
+                        || config.account_runtime.is_some()
                     {
                         OPENBSD_SERVE_WITH_HELPER_PROMISES_BEFORE_LOCK
                     } else {
@@ -576,6 +593,7 @@ impl OpenbsdConfinementPlan {
                         || config.openpgp_inventory.is_some()
                         || config.openpgp_crypto.is_some()
                         || config.openpgp_public_admin.is_some()
+                        || config.account_runtime.is_some()
                     {
                         OPENBSD_SERVE_WITH_HELPER_PROMISES_AFTER_LOCK
                     } else {
@@ -1300,6 +1318,76 @@ mod tests {
             .unveil_rules
             .iter()
             .any(|r| r.path == config.state_layout.settings_dir && r.permissions.contains('w')));
+    }
+
+    #[test]
+    fn configured_account_pair_adds_only_exact_endpoint_and_purpose_key_rules() {
+        use std::collections::BTreeMap;
+        let mut env = BTreeMap::from([
+            ("OSMAP_RUN_MODE".into(), "serve".into()),
+            ("OSMAP_STATE_DIR".into(), "/var/lib/osmap".into()),
+            ("OSMAP_OPENBSD_CONFINEMENT_MODE".into(), "enforce".into()),
+        ]);
+        let disabled = OpenbsdConfinementPlan::from_config(&AppConfig::from_env_map(&env).unwrap());
+        let expected = [
+            ("/var/lib/osmap/account-helper/admission.sock", "rw"),
+            ("/var/lib/osmap/account-helper/mutation.sock", "rw"),
+            ("/var/lib/osmap/account-helper/admission.key", "r"),
+            ("/var/lib/osmap/account-helper/mutation.key", "r"),
+            ("/var/lib/osmap/account-helper/session-proof.key", "r"),
+        ];
+        for (name, value) in [
+            ("OSMAP_ACCOUNT_ADMISSION_SOCKET", expected[0].0),
+            ("OSMAP_ACCOUNT_ADMISSION_KEY_FILE", expected[2].0),
+            ("OSMAP_ACCOUNT_ADMISSION_HELPER_UID", "0"),
+            ("OSMAP_ACCOUNT_MUTATION_SOCKET", expected[1].0),
+            ("OSMAP_ACCOUNT_MUTATION_KEY_FILE", expected[3].0),
+            (
+                "OSMAP_ACCOUNT_MUTATION_SESSION_PROOF_KEY_FILE",
+                expected[4].0,
+            ),
+            ("OSMAP_ACCOUNT_MUTATION_HELPER_UID", "0"),
+        ] {
+            env.insert(name.into(), value.into());
+        }
+        let configured = AppConfig::from_env_map(&env).unwrap();
+        let plan = OpenbsdConfinementPlan::from_config(&configured);
+        let added: Vec<_> = plan
+            .unveil_rules
+            .iter()
+            .filter(|rule| !disabled.unveil_rules.contains(rule))
+            .map(|rule| (rule.path.as_path(), rule.permissions.as_str()))
+            .collect();
+        let mut expected: Vec<_> = expected
+            .into_iter()
+            .map(|(path, permissions)| (Path::new(path), permissions))
+            .collect();
+        expected.sort_by_key(|row| row.0);
+        assert_eq!(added, expected);
+        assert!(disabled
+            .unveil_rules
+            .iter()
+            .all(|rule| plan.unveil_rules.contains(rule)));
+        assert_eq!(
+            plan.promises_before_lock,
+            OPENBSD_SERVE_WITH_HELPER_PROMISES_BEFORE_LOCK
+        );
+        assert_eq!(
+            plan.promises_after_lock,
+            OPENBSD_SERVE_WITH_HELPER_PROMISES_AFTER_LOCK
+        );
+        assert!(!disabled
+            .promises_before_lock
+            .split_whitespace()
+            .any(|p| p == "unix"));
+        assert!(!disabled
+            .promises_after_lock
+            .split_whitespace()
+            .any(|p| p == "unix"));
+        const {
+            assert!(!crate::account_admission_runtime::NATIVE_CONFINEMENT_QUALIFIED);
+            assert!(!crate::account_mutation_client::NATIVE_CONFINEMENT_QUALIFIED);
+        }
     }
 
     #[test]

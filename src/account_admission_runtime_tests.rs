@@ -830,3 +830,119 @@ fn helper_worker_capacity_is_two_and_one_per_account_without_queue() {
 
 #[path = "account_admission_deadline_tests.rs"]
 mod original_deadline;
+
+// Append only to account_admission_runtime_tests.rs in the isolated candidate.
+// Real Service/Engine/parent seal/frame/MAC/replay/worker receipt/quarantine.
+// Only root fixture socket/key/module/worker paths and trusted root issuer UID
+// are projected; the production activation gate remains false.
+#[cfg(unix)]
+#[test]
+#[ignore = "root-reviewed single full-factory composition only"]
+fn native_full_factory_admission_entrypoint() {
+    assert_eq!(std::env::consts::OS, "openbsd");
+    #[derive(serde::Deserialize)]
+    #[serde(deny_unknown_fields)]
+    struct FixtureBootstrap {
+        version: u8,
+        root: PathBuf,
+        stage: PathBuf,
+    }
+    assert_eq!(crate::openbsd::effective_uid(), 0);
+    const {
+        assert!(!NATIVE_CONFINEMENT_QUALIFIED);
+    }
+    crate::openbsd::disable_core_dumps().unwrap();
+    std::env::set_current_dir("/").unwrap();
+    let fd = std::env::var("OSMAP_TEST_FULL_FACTORY_ADMISSION_FD")
+        .ok()
+        .and_then(|v| v.parse::<i32>().ok())
+        .filter(|v| (3..=1024).contains(v))
+        .expect("fixed born bootstrap required");
+    let mut control =
+        crate::openbsd::fixture_owned_unix_stream(fd).expect("fixed born bootstrap refused");
+    let setup = Instant::now() + Duration::from_secs(20);
+    let raw = read_frame(&mut control, 2048, setup).expect("fixed bootstrap refused");
+    let boot: FixtureBootstrap = serde_json::from_slice(&raw).expect("fixed shape refused");
+    let fixed_name = |path: &Path, prefix: &str| {
+        path.parent() == Some(Path::new("/var/run"))
+            && path
+                .file_name()
+                .and_then(|v| v.to_str())
+                .is_some_and(|name| {
+                    name.strip_prefix(prefix).is_some_and(|suffix| {
+                        suffix.len() == 16
+                            && suffix
+                                .bytes()
+                                .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+                    })
+                })
+    };
+    assert!(
+        boot.version == 1
+            && fixed_name(&boot.root, "osmap-pxp-")
+            && fixed_name(&boot.stage, "osmap-primary-root-")
+    );
+    private_dir(&boot.root.join("admission"), 0, true).unwrap();
+    private_dir(&boot.stage, 0, false).unwrap();
+    worker_module_custody(&boot.stage, 0).unwrap();
+    let worker = boot.stage.join("native_factory_admission_worker.py");
+    let adapter = boot.stage.join("native_factory_worker.py");
+    file(&worker, 0, false, 65536).unwrap();
+    file(&adapter, 0, false, 65536).unwrap();
+    let key = secret(&boot.root.join("bootstrap/account-admission.key")).unwrap();
+    let engine = InstalledEngine::observe(
+        Path::new(ENGINE),
+        0,
+        Instant::now() + Duration::from_secs(5),
+    )
+    .unwrap();
+    let service = Service {
+        active: Mutex::new(BTreeSet::new()),
+        cleanup_unconfirmed: std::sync::atomic::AtomicBool::new(false),
+        config: Config {
+            version: 1,
+            socket: boot.root.join("admission/admission.sock"),
+            trusted_web_uid: 0,
+            accounts: vec![
+                "alice@osmap-proxy.invalid".into(),
+                "bob@osmap-proxy.invalid".into(),
+            ],
+        },
+        key,
+        verifier: Mutex::new(Verifier::default()),
+        engine: Some(engine),
+    };
+    let signals = crate::openbsd::AccountAdmissionSignals::install().unwrap();
+    let execute = |request: &Request, deadline: Instant| {
+        if std::env::current_dir().map_err(unavailable)? != Path::new("/") {
+            return Err(Error::Unavailable);
+        }
+        service
+            .engine
+            .as_ref()
+            .ok_or(Error::Unavailable)?
+            .recheck(deadline)?;
+        // Same strict fixed_worker_command, changing only the reviewed private
+        // wrapper pathname. No credentials/options/UIDs from a request enter argv.
+        let command = crate::auth::full_factory_admission_fixture_command(&boot.stage)
+            .map_err(unavailable)?;
+        Service::fixed_worker_command(request, deadline, command)
+    };
+    let result = service.serve_with_policy(signals.stop_flag(), &execute, &|endpoint| {
+        service
+            .engine
+            .as_ref()
+            .ok_or(Error::Unavailable)?
+            .confine_parent(endpoint)?;
+        // READY follows actual native sealing, not mere pathname publication.
+        write_frame(
+            &mut control.try_clone().map_err(unavailable)?,
+            b"READY",
+            setup,
+        )
+        .map_err(unavailable)
+    });
+    assert_eq!(result, Ok(()), "full-factory admission disposition refused");
+    assert!(!service.cleanup_unconfirmed.load(Ordering::SeqCst));
+    println!("full_factory_admission_stopped=PASS");
+}

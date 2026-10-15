@@ -1780,6 +1780,118 @@
       "classification": "test_or_fixture_assumption",
       "disposition": "accepted_test_or_fixture_assumption",
       "fail_closed_relevance": "low",
+      "file": "src/account_admission_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 854
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/account_admission_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 855
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/account_admission_runtime_tests.rs",
+      "kind": "expect_call",
+      "line": 860
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/account_admission_runtime_tests.rs",
+      "kind": "expect_call",
+      "line": 862
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/account_admission_runtime_tests.rs",
+      "kind": "expect_call",
+      "line": 864
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/account_admission_runtime_tests.rs",
+      "kind": "expect_call",
+      "line": 865
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/account_admission_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 885
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/account_admission_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 886
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/account_admission_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 887
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/account_admission_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 890
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/account_admission_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 891
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/account_admission_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 892
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/account_admission_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 898
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/account_admission_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 915
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
       "file": "src/account_admission_tests.rs",
       "kind": "unwrap_call",
       "line": 11
@@ -5806,7 +5918,7 @@
       "fail_closed_relevance": "medium",
       "file": "src/auth.rs",
       "kind": "unwrap_call",
-      "line": 311
+      "line": 344
     },
     {
       "classification": "startup_or_global_invariant",
@@ -5814,7 +5926,7 @@
       "fail_closed_relevance": "medium",
       "file": "src/auth.rs",
       "kind": "unwrap_call",
-      "line": 345
+      "line": 378
     },
     {
       "classification": "production_adjacent_assumption",
@@ -5822,7 +5934,7 @@
       "fail_closed_relevance": "high",
       "file": "src/auth.rs",
       "kind": "expect_call",
-      "line": 1711
+      "line": 1744
     },
     {
       "classification": "production_adjacent_assumption",
@@ -5830,7 +5942,7 @@
       "fail_closed_relevance": "high",
       "file": "src/auth.rs",
       "kind": "expect_call",
-      "line": 1736
+      "line": 1769
     },
     {
       "classification": "production_adjacent_assumption",
@@ -5838,7 +5950,7 @@
       "fail_closed_relevance": "high",
       "file": "src/auth.rs",
       "kind": "expect_call",
-      "line": 1746
+      "line": 1779
     },
     {
       "classification": "production_adjacent_assumption",
@@ -5846,7 +5958,7 @@
       "fail_closed_relevance": "high",
       "file": "src/auth.rs",
       "kind": "unwrap_call",
-      "line": 1756
+      "line": 1789
     },
     {
       "classification": "production_adjacent_assumption",
@@ -5854,7 +5966,7 @@
       "fail_closed_relevance": "high",
       "file": "src/auth.rs",
       "kind": "expect_call",
-      "line": 1936
+      "line": 1969
     },
     {
       "classification": "production_adjacent_assumption",
@@ -5862,7 +5974,7 @@
       "fail_closed_relevance": "high",
       "file": "src/auth.rs",
       "kind": "expect_call",
-      "line": 1953
+      "line": 1986
     },
     {
       "classification": "production_adjacent_assumption",
@@ -5870,7 +5982,7 @@
       "fail_closed_relevance": "high",
       "file": "src/auth.rs",
       "kind": "expect_call",
-      "line": 1996
+      "line": 2029
     },
     {
       "classification": "production_adjacent_assumption",
@@ -5878,7 +5990,7 @@
       "fail_closed_relevance": "high",
       "file": "src/auth.rs",
       "kind": "expect_call",
-      "line": 2067
+      "line": 2100
     },
     {
       "classification": "production_adjacent_assumption",
@@ -5886,7 +5998,7 @@
       "fail_closed_relevance": "high",
       "file": "src/auth.rs",
       "kind": "expect_call",
-      "line": 2190
+      "line": 2223
     },
     {
       "classification": "production_adjacent_assumption",
@@ -5894,7 +6006,7 @@
       "fail_closed_relevance": "high",
       "file": "src/auth.rs",
       "kind": "expect_call",
-      "line": 2194
+      "line": 2227
     },
     {
       "classification": "production_adjacent_assumption",
@@ -54692,6 +54804,86 @@
       "classification": "test_or_fixture_assumption",
       "disposition": "accepted_test_or_fixture_assumption",
       "fail_closed_relevance": "low",
+      "file": "src/native_factory_stored_issuer_fixture.rs",
+      "kind": "expect_call",
+      "line": 341
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/native_factory_stored_issuer_fixture.rs",
+      "kind": "expect_call",
+      "line": 343
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/native_factory_stored_issuer_fixture.rs",
+      "kind": "expect_call",
+      "line": 345
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/native_factory_stored_issuer_fixture.rs",
+      "kind": "expect_call",
+      "line": 349
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/native_factory_stored_issuer_fixture.rs",
+      "kind": "expect_call",
+      "line": 352
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/native_factory_stored_issuer_fixture.rs",
+      "kind": "expect_call",
+      "line": 353
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/native_factory_stored_issuer_fixture.rs",
+      "kind": "expect_call",
+      "line": 373
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/native_factory_stored_issuer_fixture.rs",
+      "kind": "expect_call",
+      "line": 376
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/native_factory_stored_issuer_fixture.rs",
+      "kind": "unwrap_call",
+      "line": 396
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/native_factory_stored_issuer_fixture.rs",
+      "kind": "expect_call",
+      "line": 401
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
       "file": "src/native_stored_issuer_fixture.rs",
       "kind": "unwrap_call",
       "line": 65
@@ -55894,7 +56086,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "unwrap_call",
-      "line": 1102
+      "line": 1120
     },
     {
       "classification": "startup_or_global_invariant",
@@ -55902,7 +56094,7 @@
       "fail_closed_relevance": "medium",
       "file": "src/openbsd.rs",
       "kind": "unwrap_call",
-      "line": 1119
+      "line": 1137
     },
     {
       "classification": "production_adjacent_assumption",
@@ -55910,7 +56102,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "unwrap_call",
-      "line": 1125
+      "line": 1143
     },
     {
       "classification": "production_adjacent_assumption",
@@ -55918,7 +56110,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "unwrap_call",
-      "line": 1140
+      "line": 1158
     },
     {
       "classification": "production_adjacent_assumption",
@@ -55926,7 +56118,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "unwrap_call",
-      "line": 1146
+      "line": 1164
     },
     {
       "classification": "startup_or_global_invariant",
@@ -55934,7 +56126,7 @@
       "fail_closed_relevance": "medium",
       "file": "src/openbsd.rs",
       "kind": "unwrap_call",
-      "line": 1155
+      "line": 1173
     },
     {
       "classification": "production_adjacent_assumption",
@@ -55942,7 +56134,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "unwrap_call",
-      "line": 1165
+      "line": 1183
     },
     {
       "classification": "production_adjacent_assumption",
@@ -55950,7 +56142,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "expect_call",
-      "line": 1203
+      "line": 1221
     },
     {
       "classification": "production_adjacent_assumption",
@@ -55958,7 +56150,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "unwrap_call",
-      "line": 1463
+      "line": 1331
     },
     {
       "classification": "production_adjacent_assumption",
@@ -55966,7 +56158,23 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "unwrap_call",
-      "line": 1466
+      "line": 1353
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/openbsd.rs",
+      "kind": "unwrap_call",
+      "line": 1551
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/openbsd.rs",
+      "kind": "unwrap_call",
+      "line": 1554
     },
     {
       "classification": "production_adjacent_assumption",
@@ -55974,7 +56182,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "expect_call",
-      "line": 1591
+      "line": 1679
     },
     {
       "classification": "production_adjacent_assumption",
@@ -55982,7 +56190,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "expect_call",
-      "line": 1594
+      "line": 1682
     },
     {
       "classification": "production_adjacent_assumption",
@@ -55990,7 +56198,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "expect_call",
-      "line": 1595
+      "line": 1683
     },
     {
       "classification": "production_adjacent_assumption",
@@ -55998,7 +56206,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "expect_call",
-      "line": 1596
+      "line": 1684
     },
     {
       "classification": "production_adjacent_assumption",
@@ -56006,7 +56214,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "expect_call",
-      "line": 1597
+      "line": 1685
     },
     {
       "classification": "production_adjacent_assumption",
@@ -56014,7 +56222,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "expect_call",
-      "line": 1600
+      "line": 1688
     },
     {
       "classification": "production_adjacent_assumption",
@@ -56022,7 +56230,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "expect_call",
-      "line": 1610
+      "line": 1698
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -70961,7 +71169,7 @@
       "line": 521
     }
   ],
-  "generated_at_utc": "2026-10-15T19:38:10Z",
+  "generated_at_utc": "2026-10-15T22:22:44Z",
   "non_claims": [
     "This audit does not claim that all Rust assumptions are safe.",
     "This audit does not claim that production request paths are panic-free.",
@@ -71001,27 +71209,27 @@
     "by_classification": {
       "control_flow_invariant": 7,
       "panic_path_assumption": 80,
-      "production_adjacent_assumption": 2237,
+      "production_adjacent_assumption": 2239,
       "startup_or_global_invariant": 10,
-      "test_or_fixture_assumption": 6536
+      "test_or_fixture_assumption": 6560
     },
     "by_fail_closed_relevance": {
-      "high": 2317,
-      "low": 6536,
+      "high": 2319,
+      "low": 6560,
       "medium": 17
     },
     "by_kind": {
-      "expect_call": 1063,
+      "expect_call": 1076,
       "panic_macro": 272,
       "unreachable_macro": 24,
-      "unwrap_call": 7511
+      "unwrap_call": 7524
     },
     "classification_complete": true,
-    "inventory_sha256": "5aebc8240f0f5e846565f4c9fbb28fab4b660ce3774db781ee9a7d4de26306fd",
+    "inventory_sha256": "b5a2b30cafcc1fd4de4bb0584234f7f5ae6ab36c52b7b48146036610e9dfb0a6",
     "live_host_state_changed": false,
     "product_behavior_changed": false,
     "production_state_changed": false,
     "slice0_carried_forward_rust_assumption_count": 712,
-    "total_count": 8870
+    "total_count": 8896
   }
 }
