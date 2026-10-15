@@ -237,6 +237,7 @@ const CHILD_STAGES: &[&str] = &[
     "confinement_plan",
     "apply_confinement",
     "native_preflight",
+    "readonly_batch_facts",
     "private_indexes",
     "signed_rename",
     "rename_confirmation",

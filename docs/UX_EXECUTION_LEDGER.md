@@ -9478,3 +9478,24 @@ existing native fixture must pass under original45/60s budgets. Package
 3e7e3248/811ccdbf passes independent481-input/source/driver review; actual native,
 matching installed read-only latency and remaining thirteen requests are pending.
 Unchanged V10 generators refresh only derived offsets/hashes; no scanner waiver.
+
+
+### 2026-10-15 — current facts qualification and closed test-stage repair
+
+Signed a902761d is normally synchronized after1720 library passes/0 failures/44
+explicit native ignores and519 account Python passes. Native attempt1 built
+matching481-input source but failed before FolderFacts dispatch: the closed test
+stage list omitted its new readonly_batch_facts token. Preserve exit101/0.304s
+and retained scratch cleanupUNCONFIRMED; it is not a product operation failure
+or successful cleanup. The reviewed successor adds only that test-stage entry.
+Corrected actual fresh test build83c7d3e7/481-input parity passes60.998s, followed
+by the one native case13.287s/all12 required markers/zero failures. This proves
+read-only account-bound batched facts alongside existing subtree/content/index/
+authority/confinement controls and owned cleanup under original45/60/70s bounds.
+No operator services/mail or provider Send were mutated by the native fixture.
+Applicationf47200d4 was compiled from signed a902:480 unchanged runtime inputs
+and one excluded cfg(test) fixture difference are independently reviewed. Do not
+claim the old481-input manifest equals the corrected test source. Matching
+helper-first installation, actual installed read-only facts latency and remaining
+thirteen requests are still pending. Current installed pair remains945f/a391;
+original GET18 failure and seventeen completed requests stay retained.

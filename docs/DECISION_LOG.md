@@ -9811,3 +9811,16 @@ uses the measured installed argv and original shared deadline, not a larger
 timeout. Require the changed native marker and fresh installed read-only latency
 before admitting the remaining thirteen-request continuation. All old failed
 intervals and completed mutations remain untouched.
+
+
+## 2026-10-15 — repair the test stage without rebuilding unchanged product code
+
+The first facts native case refused before operation dispatch because its new
+closed stage token was unregistered. Admit only the reviewed single array entry,
+preserve its failed result and unconfirmed old scratch, and run one corrected
+case against a freshly compiled test binary. Actual corrected case passes all
+twelve markers within original budgets. Reuse signed-source applicationf472
+only with explicit480 unchanged runtime inputs/one excluded cfg(test) delta;
+never label the old complete manifest equal. No second product build is needed.
+Normal signing/synchronization and matching helper-first deployment remain
+required before the installed read-only latency check and finite continuation.
