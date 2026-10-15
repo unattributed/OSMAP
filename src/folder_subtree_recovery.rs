@@ -143,8 +143,9 @@ pub(crate) fn placement<B: MailboxBackend>(
         for name in [&before, &after] {
             crate::folder_create::validate_private_namespace(&snapshot, name)?;
             if let Ok(entry) = snapshot.folder(original.account(), name) {
-                if entry.has_flag("\\Noselect") {
+                if entry.has_flag("\\Noselect") || entry.has_flag("\\NonExistent") {
                     if entry.delimiter() != Some('.')
+                        || !entry.special_use().is_empty()
                         || entry.flags().iter().any(|f| {
                             ![
                                 "\\Noselect",
@@ -233,7 +234,7 @@ pub(crate) fn placement<B: MailboxBackend>(
         // an existing selectable destination or an unbound child.
         if snapshot
             .folder(original.account(), &target)
-            .is_ok_and(|entry| !entry.has_flag("\\Noselect"))
+            .is_ok_and(|entry| !entry.has_flag("\\Noselect") && !entry.has_flag("\\NonExistent"))
         {
             return Err(Refusal::Stale);
         }

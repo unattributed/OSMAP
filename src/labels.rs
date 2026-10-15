@@ -62,14 +62,33 @@ impl MessageIdentity {
         expected_folder: &str,
         row: &MessageSummary,
     ) -> Result<Self, LabelError> {
+        Self::from_current_metadata(
+            account,
+            returned_account,
+            expected_folder,
+            &row.mailbox_name,
+            row.uid,
+            row.metadata.as_ref(),
+        )
+    }
+    /// Read-only projection shared by current list and rendered-reader tuples.
+    /// It grants no mutation and preserves the same complete owner/key checks.
+    pub(crate) fn from_current_metadata(
+        account: &str,
+        returned_account: &str,
+        expected_folder: &str,
+        folder: &str,
+        uid: u64,
+        metadata: Option<&crate::message_metadata::MessageMetadata>,
+    ) -> Result<Self, LabelError> {
         account_valid(account)?;
-        if account != returned_account || row.mailbox_name != expected_folder {
+        if account != returned_account || folder != expected_folder {
             return Err(LabelError::Invalid);
         }
-        let m = row.metadata.as_ref().ok_or(LabelError::Invalid)?;
+        let m = metadata.ok_or(LabelError::Invalid)?;
         let key = Key {
-            folder: row.mailbox_name.clone(),
-            uid: row.uid,
+            folder: folder.into(),
+            uid,
             mailbox_guid: m.version.mailbox_guid.clone(),
             message_guid: m.version.message_guid.clone(),
         };

@@ -24,6 +24,7 @@ struct State {
     recovery_error: Cell<bool>,
     measured_reaped_error: Cell<bool>,
     original_noop: Cell<bool>,
+    virtual_flags: RefCell<String>,
     original_source: RefCell<String>,
     original_destination: RefCell<String>,
 }
@@ -32,6 +33,7 @@ struct Exec(Rc<State>);
 impl Exec {
     fn wire(&self) -> String {
         let folders = self.0.folders.borrow();
+        let virtual_flags = self.0.virtual_flags.borrow();
         let mut names: BTreeSet<_> = folders.keys().cloned().collect();
         for name in folders.keys() {
             let mut parent = name.as_str();
@@ -49,7 +51,7 @@ impl Exec {
                 if name == "Trash" {
                     "\\Trash"
                 } else if !folders.contains_key(&name) {
-                    "\\Noselect \\HasChildren"
+                    &virtual_flags
                 } else if children {
                     "\\HasChildren"
                 } else {
@@ -258,6 +260,7 @@ impl Fixture {
             recovery_error: Cell::new(false),
             measured_reaped_error: Cell::new(false),
             original_noop: Cell::new(false),
+            virtual_flags: RefCell::new("\\Noselect \\HasChildren".into()),
             original_source: RefCell::new("INBOX.Alpha".into()),
             original_destination: RefCell::new("INBOX.Beta".into()),
         }));
@@ -293,6 +296,105 @@ impl Fixture {
 impl Drop for Fixture {
     fn drop(&mut self) {
         std::fs::remove_dir_all(&self.root).unwrap();
+    }
+}
+
+#[test]
+fn subtree_recovery_nonexistent_virtual_nodes_complete_known_split_without_noselect() {
+    let _case = crate::folder_rename_backend::TEST_GATE.lock().unwrap();
+    let f = Fixture::new();
+    f.start();
+    *f.backend.exec.0.virtual_flags.borrow_mut() = "\\NonExistent \\HasChildren".into();
+    {
+        let mut folders = f.backend.exec.0.folders.borrow_mut();
+        let grand = folders.remove("INBOX.Alpha.Child.Grand").unwrap();
+        folders.insert("INBOX.Beta.Child.Grand".into(), grand);
+    }
+    let snapshot = f.backend.folder_metadata(ALICE).unwrap();
+    for name in ["INBOX.Alpha", "INBOX.Beta.Child"] {
+        let entry = snapshot.folder(ALICE, name).unwrap();
+        assert!(entry.has_flag("\\NonExistent"));
+        assert!(!entry.has_flag("\\Noselect"));
+        assert!(entry.has_flag("\\HasChildren"));
+        assert!(entry.special_use().is_empty());
+    }
+    assert_eq!(placement(&f.backend, &f.original).unwrap().old.len(), 2);
+    for digit in ["1", "2"] {
+        assert_eq!(
+            recover(&f.root, &f.backend, ALICE, &digit.repeat(32)),
+            RecoveryOutcome::Progress
+        );
+    }
+    assert_eq!(
+        f.backend.folder_rename_completion(&f.original),
+        Completion::Renamed
+    );
+    assert_eq!(f.backend.exec.0.calls.borrow().len(), 3);
+    assert_eq!(
+        recover(&f.root, &f.backend, ALICE, &"2".repeat(32)),
+        RecoveryOutcome::Progress
+    );
+    assert_eq!(f.backend.exec.0.calls.borrow().len(), 3);
+    for suffix in ["", ".Child", ".Child.Grand", ".Other"] {
+        assert_eq!(
+            f.backend.exec.0.folders.borrow()[&format!("INBOX.Beta{suffix}")],
+            f.before[&format!("INBOX.Alpha{suffix}")]
+        );
+    }
+}
+
+#[test]
+fn subtree_recovery_nonexistent_virtual_wrong_role_extra_foreign_and_selectable_target_refuse() {
+    let _case = crate::folder_rename_backend::TEST_GATE.lock().unwrap();
+    for mode in 0..6 {
+        let f = Fixture::new();
+        f.start();
+        *f.backend.exec.0.virtual_flags.borrow_mut() = "\\NonExistent \\HasChildren".into();
+        {
+            let mut folders = f.backend.exec.0.folders.borrow_mut();
+            let grand = folders.remove("INBOX.Alpha.Child.Grand").unwrap();
+            folders.insert("INBOX.Beta.Child.Grand".into(), grand);
+            match mode {
+                0 => {
+                    *f.backend.exec.0.virtual_flags.borrow_mut() =
+                        "\\NonExistent \\HasChildren \\Trash".into()
+                }
+                1 => {
+                    folders.insert(
+                        "INBOX.Beta.Child.Extra".into(),
+                        Container {
+                            guid: "7".repeat(32),
+                            body: vec![],
+                        },
+                    );
+                }
+                2 => folders.get_mut("INBOX.Alpha.Child").unwrap().guid = "7".repeat(32),
+                3 => {
+                    folders.insert(
+                        "INBOX.Beta.Child".into(),
+                        Container {
+                            guid: "7".repeat(32),
+                            body: vec![],
+                        },
+                    );
+                }
+                4 => {
+                    *f.backend.exec.0.virtual_flags.borrow_mut() =
+                        "\\NonExistent \\HasChildren \\Unsupported".into()
+                }
+                _ => {
+                    *f.backend.exec.0.virtual_flags.borrow_mut() =
+                        "\\Noselect \\HasChildren \\Trash".into()
+                }
+            }
+        }
+        assert!(placement(&f.backend, &f.original).is_err(), "mode{mode}");
+        assert_eq!(
+            recover(&f.root, &f.backend, ALICE, &"1".repeat(32)),
+            RecoveryOutcome::Refused,
+            "mode{mode}"
+        );
+        assert_eq!(f.backend.exec.0.calls.borrow().len(), 1);
     }
 }
 

@@ -712,47 +712,51 @@ where
                         audit_events,
                     };
                 }
-                if let Err(reason) = self.filter_labeled_messages(
+                let labels = match self.filter_labeled_messages(
                     &validated_session,
                     &mut view,
                     &canonical_username,
                     &mailbox_name,
                     &mut messages,
                 ) {
-                    let mut cleared = request.clone();
-                    for key in [
-                        "label",
-                        "selected_mailbox",
-                        "selected_uid",
-                        "selected_mailbox_guid",
-                        "selected_message_guid",
-                        "opened_read",
-                        "select",
-                        "page",
-                    ] {
-                        cleared.query_params.remove(key);
+                    Ok(record) => record,
+                    Err(reason) => {
+                        let mut cleared = request.clone();
+                        for key in [
+                            "label",
+                            "selected_mailbox",
+                            "selected_uid",
+                            "selected_mailbox_guid",
+                            "selected_message_guid",
+                            "opened_read",
+                            "select",
+                            "page",
+                        ] {
+                            cleared.query_params.remove(key);
+                        }
+                        let clear = list_origin(&cleared).unwrap_or_else(|| {
+                            format!("/mailbox?name={}", url_encode(&mailbox_name))
+                        });
+                        return HandledHttpResponse {
+                            response: html_response(
+                                409,
+                                "Conflict",
+                                "Label filter unavailable",
+                                TrustedHtml::from_template(format!(
+                                    "{}<p><a href=\"{}\">Clear label filter</a></p>",
+                                    render_navigation_notice(
+                                        &canonical_username,
+                                        &validated_session.record.csrf_token,
+                                        "Label filter unavailable",
+                                        reason
+                                    ),
+                                    escape_html(&clear)
+                                )),
+                            ),
+                            audit_events,
+                        };
                     }
-                    let clear = list_origin(&cleared)
-                        .unwrap_or_else(|| format!("/mailbox?name={}", url_encode(&mailbox_name)));
-                    return HandledHttpResponse {
-                        response: html_response(
-                            409,
-                            "Conflict",
-                            "Label filter unavailable",
-                            TrustedHtml::from_template(format!(
-                                "{}<p><a href=\"{}\">Clear label filter</a></p>",
-                                render_navigation_notice(
-                                    &canonical_username,
-                                    &validated_session.record.csrf_token,
-                                    "Label filter unavailable",
-                                    reason
-                                ),
-                                escape_html(&clear)
-                            )),
-                        ),
-                        audit_events,
-                    };
-                }
+                };
                 let archive_mailbox_name = self.validated_archive_mailbox_name(
                     context,
                     &validated_session,
@@ -785,6 +789,7 @@ where
                     view.recover_opened_messages(messages);
                 }
                 let mut reader = MailReaderContext {
+                    labels,
                     pane: self.selected_message_pane(
                         context,
                         &validated_session,
@@ -1082,6 +1087,7 @@ where
                 );
                 let mut reader = MailReaderContext {
                     pane,
+                    labels: self.owned_label_record(&validated_session),
                     bin_mailbox_name: self
                         .gateway
                         .load_bin_preference(&validated_session)
@@ -1356,6 +1362,7 @@ where
                 };
 
                 let reader_context = MailReaderContext {
+                    labels: self.owned_label_record(&validated_session),
                     sent_role: self.confirmed_sent_folder_role(
                         context,
                         &validated_session,

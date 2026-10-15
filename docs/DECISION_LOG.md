@@ -9759,3 +9759,29 @@ Labels/CreateMove/RestoreDelete actions or commission a generic QA framework.
 Reconcile scoped actual evidence in the original acceptance registers, retain
 all legacy requirements/failures, and keep human acceptance separate until
 agent-owned implementation, matching deployed QA and independent audit PASS.
+
+## 2026-10-15 — measure native virtual metadata before changing recovery policy
+
+The changed native qualifier refused before its child repair. Preserve that
+failure, exact retained role/helper facts and unconfirmed fixture cleanup.
+Use one closed diagnostic successor under unchanged caps rather than retrying
+unchanged source or reviving a completed fixture. Its actual NonExistent without
+Noselect metadata establishes a concrete source-model mismatch. Correct only
+virtual-node recognition and its target-existence discriminator, retain all
+original identities/roles/namespace/extra-child guards, and require a source
+RED/GREEN plus matching native result before qualified installation. Native
+fault/UI injection tests remain distinct from actual process-crash evidence.
+
+## 2026-10-15 — implement missing assigned badges, reuse unchanged evidence
+
+Treat original reader/list label badges after reload as required functionality.
+Earlier Labels10 proves its bounded CRUD/filter/cleanup journey but cannot pass
+an absent badge projection. Implement only owned current-identity escaped
+badges, reusing local records and existing rendering without mail reads/writes.
+Preserve safe unavailable and stale/foreign behavior. Extend the unexecuted
+subtree qualifier only for the changed label-relocation/reload seam and exact
+own cleanup; preflight capacity/revision/baseline before any mutation.
+Reuse matching unchanged native backend and existing Preview/Contacts/menu
+proof within exact source/semantic boundaries rather than launching another
+baseline or repeating passing actions. Full original acceptance stays open
+until the changed deployed seam and independent audit pass.

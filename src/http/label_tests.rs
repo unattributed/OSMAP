@@ -251,3 +251,103 @@ fn labels_wrong_owner_and_storage_failure_never_turn_move_into_retry() {
     );
     fs::remove_dir_all(p).unwrap();
 }
+
+fn badge_get(app: &BrowserApp<StubGateway>, path: &str, agent: &str, bob: bool) -> HandledHttpResponse {
+    let mut r = request("GET", path, &authenticated_same_origin_headers(), "");
+    r.headers.insert("user-agent".into(), agent.into());
+    if bob {
+        r.headers.insert("cookie".into(), format!("osmap_session={}", "b".repeat(64)));
+    }
+    app.handle_request(&r, "127.0.0.1")
+}
+
+#[test]
+fn assigned_label_badges_owned_list_reader_and_reload_escape_names_without_writes() {
+    let (app, root, store) = fixture();
+    let account = "alice@example.com";
+    let name = "Review <img src=x> & \"quoted\"";
+    assert_eq!(call(&app, &format!("revision=0&action=create&name={}", url_encode(name))).response.status_code, 200);
+    let id = store.load(account).unwrap().labels()[0].id().to_owned();
+    assert_eq!(call(&app, &format!("revision=1&action=attach&label_id={id}&{}", reference(&app))).response.status_code, 200);
+    let saved = store.load(account).unwrap();
+    let version = app.gateway.fixture_current_metadata(account, "INBOX", 9).unwrap().version;
+    let standalone = format!("/message?mailbox=INBOX&uid=9&mailbox_guid={}&message_guid={}", url_encode(&version.mailbox_guid), url_encode(&version.message_guid));
+    let coordinated = format!("/mailbox?name=INBOX&selected_mailbox=INBOX&selected_uid=9&selected_mailbox_guid={}&selected_message_guid={}", url_encode(&version.mailbox_guid), url_encode(&version.message_guid));
+    // A new request and a new application reading the same durable store both
+    // project the current assignment, rather than cached form state.
+    let reload = BrowserApp::new(HttpPolicy::default(), StubGateway { labels_store: Some(store.clone()), ..StubGateway::default() });
+    for current in [&app, &reload] {
+        for (path, count) in [("/mailbox?name=INBOX", 1), (standalone.as_str(), 1), (coordinated.as_str(), 2)] {
+            let response = badge_get(current, path, "", false);
+            assert_eq!(response.response.status_code, 200, "{path}");
+            let html = body_text(&response);
+            assert_eq!(html.matches(&format!("class=\"badge message-label\" data-label-id=\"{id}\"")).count(), count, "{path}");
+            assert!(html.contains("Review &lt;img src=x&gt; &amp; &quot;quoted&quot;"));
+            assert!(!html.contains(name));
+            assert!(!html.contains("<img src=x>"));
+        }
+        assert!(current.gateway.submitted.lock().unwrap().is_empty());
+        assert_eq!(current.gateway.fixture_current_metadata(account, "INBOX", 9).unwrap().version, version);
+    }
+    assert_eq!(store.load(account).unwrap(), saved);
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn assigned_label_badges_do_not_transfer_to_foreign_or_reused_message_identity() {
+    let (app, root, store) = fixture();
+    assert_eq!(call(&app, "revision=0&action=create&name=PrivateOwned").response.status_code, 200);
+    let id = store.load("alice@example.com").unwrap().labels()[0].id().to_owned();
+    assert_eq!(call(&app, &format!("revision=1&action=attach&label_id={id}&{}", reference(&app))).response.status_code, 200);
+    let saved = store.load("alice@example.com").unwrap();
+    let mut metadata = app.gateway.fixture_current_metadata("alice@example.com", "INBOX", 9).unwrap();
+    metadata.version.message_guid = "replacement-current-message".into();
+    let replacement = MessageSummary { mailbox_name:"INBOX".into(), uid:9, flags:vec![], date_received:String::new(), size_virtual:1, subject:Some("Replacement".into()), from:None, to:None, metadata:Some(metadata) };
+    let changed = BrowserApp::new(HttpPolicy::default(), StubGateway { labels_store:Some(store.clone()), browser_fixture_accounts:true, message_list_override:Some(vec![replacement]), ..StubGateway::default() });
+    for (path, bob) in [("/mailbox?name=INBOX", false), ("/message?mailbox=INBOX&uid=9", false), ("/mailbox?name=INBOX", true), ("/message?mailbox=INBOX&uid=9", true)] {
+        let response = badge_get(&changed, path, "", bob);
+        assert_eq!(response.response.status_code, 200, "{path} bob={bob}");
+        assert!(!body_text(&response).contains(&format!("data-label-id=\"{id}\"")));
+    }
+    *changed.gateway.delete_list_decision.lock().unwrap() = Some(BrowserMessageListDecision::Listed { canonical_username:"bob@example.com".into(), mailbox_name:"INBOX".into(), messages:vec![] });
+    let foreign = badge_get(&changed, "/mailbox?name=INBOX", "", false);
+    assert_eq!(foreign.response.status_code, 503);
+    assert!(!body_text(&foreign).contains("PrivateOwned"));
+    assert_eq!(store.load("alice@example.com").unwrap(), saved);
+    assert!(changed.gateway.submitted.lock().unwrap().is_empty());
+    assert!(changed.gateway.fixture_current_metadata("alice@example.com", "INBOX", 9).is_some());
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn assigned_label_badges_metadata_or_private_store_failure_is_unavailable() {
+    let (app, root, store) = fixture();
+    assert_eq!(call(&app, "revision=0&action=create&name=PrivateOwned").response.status_code, 200);
+    let id = store.load("alice@example.com").unwrap().labels()[0].id().to_owned();
+    assert_eq!(call(&app, &format!("revision=1&action=attach&label_id={id}&{}", reference(&app))).response.status_code, 200);
+    let saved = store.load("alice@example.com").unwrap();
+    for path in ["/mailbox?name=INBOX", "/message?mailbox=INBOX&uid=9"] {
+        let response = badge_get(&app, path, "OSMAP/LegacyMetadata", false);
+        assert_eq!(response.response.status_code, 200);
+        let html = body_text(&response);
+        assert!(html.contains("message-labels-unavailable\">Labels unavailable"));
+        assert!(!html.contains(&format!("data-label-id=\"{id}\"")));
+        assert!(!html.contains("message-labels-empty\">No labels"));
+    }
+    assert_eq!(store.load("alice@example.com").unwrap(), saved);
+    let file = fs::read_dir(root.join("labels")).unwrap().map(|item| item.unwrap().path()).find(|path| path.extension().is_some_and(|ext| ext == "json")).unwrap();
+    fs::write(&file, b"corrupt retained record").unwrap();
+    let unavailable = BrowserApp::new(HttpPolicy::default(), StubGateway::default());
+    for current in [&app, &unavailable] {
+        for path in ["/mailbox?name=INBOX", "/message?mailbox=INBOX&uid=9"] {
+            let response = badge_get(current, path, "", false);
+            assert_eq!(response.response.status_code, 200);
+            let html = body_text(&response);
+            assert!(html.contains("message-labels-unavailable\">Labels unavailable"));
+            assert!(!html.contains(&format!("data-label-id=\"{id}\"")));
+            assert!(!html.contains("message-labels-empty\">No labels"));
+        }
+    }
+    assert_eq!(fs::read(&file).unwrap(), b"corrupt retained record");
+    fs::remove_dir_all(root).unwrap();
+}

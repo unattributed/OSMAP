@@ -1,6 +1,16 @@
 //! Resolve one private label against fresh current tuples before list pagination.
 use super::*;
 impl<G: BrowserGateway> BrowserApp<G> {
+    pub(super) fn owned_label_record(
+        &self,
+        session: &ValidatedSession,
+    ) -> Option<crate::labels::LabelRecord> {
+        let account = &session.record.canonical_username;
+        self.gateway
+            .load_labels(session)
+            .ok()
+            .filter(|record| record.owned_labels(account).is_ok())
+    }
     pub(super) fn filter_labeled_messages(
         &self,
         session: &ValidatedSession,
@@ -8,20 +18,16 @@ impl<G: BrowserGateway> BrowserApp<G> {
         returned_account: &str,
         folder: &str,
         rows: &mut Vec<MessageSummary>,
-    ) -> Result<(), &'static str> {
+    ) -> Result<Option<crate::labels::LabelRecord>, &'static str> {
         let account = &session.record.canonical_username;
         if returned_account != account {
             return Err("The current mailbox owner could not be confirmed. No unfiltered results are displayed.");
         }
-        let record = self.gateway.load_labels(session);
-        let Some(record) = record
-            .ok()
-            .filter(|record| record.owned_labels(account).is_ok())
-        else {
+        let Some(record) = self.owned_label_record(session) else {
             return if view.label.is_some() {
                 Err("The private label record is unavailable. Clear the label filter or reload; no unfiltered results are displayed.")
             } else {
-                Ok(())
+                Ok(None)
             };
         };
         view.label_choices = record
@@ -30,7 +36,7 @@ impl<G: BrowserGateway> BrowserApp<G> {
             .map(|label| (label.id().into(), label.name().into()))
             .collect();
         let Some(id) = &view.label else {
-            return Ok(());
+            return Ok(Some(record));
         };
         if !record.labels().iter().any(|label| label.id() == id) {
             return Err("The selected label is no longer available in this account. Return to Labels or clear the filter.");
@@ -68,6 +74,6 @@ impl<G: BrowserGateway> BrowserApp<G> {
         }
         let mut matches = keep.into_iter();
         rows.retain(|_| matches.next().unwrap_or(false));
-        Ok(())
+        Ok(Some(record))
     }
 }

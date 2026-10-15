@@ -9041,7 +9041,8 @@ state. Only then name exact human-only observations. No fake ETA or new status b
       "/root"
     ],
     "qa": [
-      "/root/delivery_qa"
+      "/root/subtree_delivery_qa",
+      "/root"
     ],
     "security_review": [
       "/root/scrum_security_review"
@@ -9103,13 +9104,17 @@ state. Only then name exact human-only observations. No fake ETA or new status b
     "src/folder_delete_ui.rs",
     "src/settings_copies_ui.rs",
     "src/http/routes_mail.rs",
+    "src/http_ui.rs",
+    "src/http/archive_ui.rs",
+    "src/http/label_tests.rs",
     "src/http/label_filter.rs",
     "src/http/label_filter_tests.rs",
     "src/http/label_selection_tests.rs",
     "src/http/routes_label_selection.rs",
     "src/labels.rs",
     "src/labels_ui.rs",
-    "src/label_selection_ui.rs"
+    "src/label_selection_ui.rs",
+    "src/http/reader_toolbar.rs"
   ],
   "outcomes": [
     {
@@ -9128,15 +9133,32 @@ state. Only then name exact human-only observations. No fake ETA or new status b
       "dependencies": [],
       "essential_qa": "Reuse native complete-message/body/attachment and identity evidence. Changed partial/merged target recovery, replay/single-use nonce, protected/cyclic/stale/foreign/missing/extra folder, concurrent authority and receipt/history compatibility countercases; qualify typed quiescence only when actually proven. Safe UNKNOWN retention is not successful recovery.",
       "stages": {
-        "implementation": "PENDING",
-        "source_tests": "PENDING",
-        "native_tests": "PENDING",
+        "implementation": "PASS",
+        "source_tests": "PASS",
+        "native_tests": "PASS",
         "deployed_qa": "PENDING",
         "independent_review": "PENDING",
-        "recovery": "PENDING"
+        "recovery": "PASS"
       },
-      "evidence": [],
-      "next_action": "Integrate independently reviewed20 recovery delta plus frozen retained-disposition7 guard/usable-UNKNOWN UI/runbook after exact independent review; preserve b307 corrected native fixture. Then matching combined native/source-UX qualification, normal signed sync and matching helper-first/web installation; no PASS inferred from source freeze."
+      "evidence": [
+        {
+          "stage": "implementation",
+          "reference": "Reviewed recovery20/core7/banner3 + measured virtual fix f01d16e3; 3d0 signed source baseline, final incremental admission pending."
+        },
+        {
+          "stage": "source_tests",
+          "reference": "folder-recovery-nonexistent-virtual-20261015 actual old-productionRED1/new focused13GREEN; root merged exact two new casesPASS; existing106 merged folder controlsPASS. Cycle guard unchanged, not a new focused cycle test."
+        },
+        {
+          "stage": "native_tests",
+          "reference": "folder-recovery-integration-20261015/native-virtual-fix-attempt3/independent-native-delivery-scope.json actual989c/481inputs/freshbuild61.293s/native13.179s/all11markers; signed native child repair/no root replay/data/index/Bob controls."
+        },
+        {
+          "stage": "recovery",
+          "reference": "Matching native3 known injected partial split + typed settlement, actual signed child repair/lost reply/consumed nonce replay and cleanupPASS. Safe retained before-witness native controlPASS separately. No actual crash/quiescence claim; prior failed fixtures explicitly retained cleanupUNCONFIRMED."
+        }
+      ],
+      "next_action": "Integrate reviewed badge projection, preserve exact qualified backend/fixture source parity, normal signed sync and final matching native app build/helper-first installation; execute once the independently reviewed changed installed subtree/label seam. No repeated unchanged native case or old completed mutation journeys."
     },
     {
       "id": "hierarchy-and-selected-facts",
@@ -9169,36 +9191,50 @@ state. Only then name exact human-only observations. No fake ETA or new status b
         "R2-03-007",
         "UX04-007"
       ],
-      "owner": "/root/delivery_qa",
-      "frontend_backend_outcome": "Create/rename label, attach it to the controlled complete message, filter current mailbox through actual menu, read body/attachment, clear filter, detach and delete while preserving unrelated labels/assignments.",
+      "owner": "/root/folder_subtree_backend",
+      "frontend_backend_outcome": "Original R2-03-007 requires backend label state AND assigned reader/list badges to agree after reload. Preserve completed create/rename/attach/filter/reader/Clear/detach/delete; implement minimal escaped account-owned badge projection in list/coordinated/standalone reader and Archive/Bin, including current message identity after relocation. Missing badges are a real remaining original requirement, not a new feature.",
       "dependencies": [
         {
           "owner": "/root",
           "condition": "Reviewed CreateMove produces the actual terminal Created-Mail folder/message GUID/UID/body/attachment witness under current matching pair and cleaned lease.",
           "status": "PASS",
           "next_action": "Consume actual eddc649d CreateMove terminal4694f897/root independent delivery audit under b307/ad16; no guessed identities or repeat of completed Create/Move."
+        },
+        {
+          "owner": "/root/folder_subtree_backend",
+          "condition": "Minimal assigned-badge projection and essential account/current-tuple/reload/escape/refusal tests are source-reviewed; root supplies matching native/installed source before the narrow new QA seam.",
+          "status": "PASS",
+          "next_action": "Badge7 dd93817f is integrated and independently CLEAR with merged label9 PASS. Matching final native app and the independently reviewed installed relocation/reload seam remain pending; no replay of prior Labels10 or provider Send."
         }
       ],
-      "essential_qa": "Execute frozen attempt2 ten real HTTP requests once: five own metadata writes, prior logical values plus revision+5, exact owned message/attachment oracle and exact lease revoke/remove. Preserve original895 draft as unexecuted.",
+      "essential_qa": "Reuse audited Labels10 source/native/CAS/own-cleanup proof. New changed seam only: attach an owned label, show the same escaped assigned badge on current list and reader after reload and relocation, then detach/delete and verify badge removal plus own logical/lease cleanup. Essential source negatives: stale/foreign current tuple, hostile label, unreadable/foreign label record, account isolation and no invented badges. Preserve body/attachment/indexes and original895 unexecuted draft; no broad menu or repeated Labels10 campaign.",
       "stages": {
-        "implementation": "PENDING",
-        "source_tests": "PENDING",
+        "implementation": "PASS",
+        "source_tests": "PASS",
         "native_tests": "PENDING",
-        "deployed_qa": "PASS",
-        "independent_review": "PASS",
+        "deployed_qa": "PENDING",
+        "independent_review": "PENDING",
         "recovery": "PENDING"
       },
       "evidence": [
         {
           "stage": "deployed_qa",
-          "reference": "S08 labels-folders/folders-disposition-integration-20261015/installed-labels-journey-attempt2/actual-labels-attempt1.json and actual-labels-journal-summary.json;623a9896/bb8da377/b307/ad16;22.952s ten200s/five own CAS writes/complete body+attachment/exact lease cleanup; terminal8351e794"
+          "reference": "Component-only PASS: S08 labels-folders/folders-disposition-integration-20261015/installed-labels-journey-attempt2/actual-labels-attempt1.json and actual-labels-journal-summary.json;623a9896/bb8da377/b307/ad16;22.952s ten200s/five own CAS writes/complete body+attachment/exact lease cleanup; terminal8351e794. Original assigned-list/reader badge and relocation/reload seam was not assessed and remains pending."
+        },
+        {
+          "stage": "implementation",
+          "reference": "label-badges-20261015 reviewed seven-path patch dd93817f; exact current canonical parity, original current-identity escaped badge projection with unchanged record/mutation/mail contracts."
+        },
+        {
+          "stage": "source_tests",
+          "reference": "label-badges-20261015/readiness.json baseline RED1/new focused9+Archive1; merged-label-badges-attempt1.log actual9PASS; independent source CLEAR and native-final-application package all481 current inputs verified."
         },
         {
           "stage": "independent_review",
-          "reference": "S08 labels-folders/folders-disposition-integration-20261015/installed-labels-journey-attempt2/independent-delivery-scope.json PASS_BOUNDED_INSTALLED_LABELS_JOURNEY; Reader Seen side effects unassessed, no authentication/human/fullS08 claim"
+          "reference": "Component-only review: S08 labels-folders/folders-disposition-integration-20261015/installed-labels-journey-attempt2/independent-delivery-scope.json PASS_BOUNDED_INSTALLED_LABELS_JOURNEY; missing original badge criterion prevents whole Label closure. Reader Seen side effects unassessed, no authentication/human/fullS08 claim."
         }
       ],
-      "next_action": "Preserve audited installed Labels PASS; reconcile existing matching implementation/source/native/own-cleanup evidence without a new QA campaign. No workflow repeat absent a concrete change; folder recovery remains separately open."
+      "next_action": "Reviewed badge7 dd93817f is integrated; old-source RED1/new focused9+Archive1 and merged label9 PASS. Native final app package6689e030/481inputs is independently CLEAR, build pending; then matching helper-first installation and one changed installed relocation/reload-badge seam. Preserve bounded Labels10 proof without whole-criterion inflation."
     },
     {
       "id": "finite-menus",
@@ -9229,7 +9265,7 @@ state. Only then name exact human-only observations. No fake ETA or new status b
   "checkpoints": {
     "labels_ten_http_journey": {
       "status": "PASS",
-      "scope": "Actual Create/Rename/Attach/current tuple filter menu/filtered reader/Clear/Detach/Delete; five own metadata writes, unrelated logical rows preserved, exact own lease cleanup. No folder recovery, authentication or human acceptance inferred.",
+      "scope": "Actual Create/Rename/Attach/current tuple filter menu/filtered reader/Clear/Detach/Delete; five own metadata writes, unrelated logical rows preserved, exact own lease cleanup. Original assigned reader/list badge and relocation/reload criterion was NOT assessed and remains pending. No whole Label/folder recovery/authentication/human acceptance inferred.",
       "evidence": "S08 labels-folders/folders-disposition-integration-20261015/installed-labels-journey-attempt2/independent-delivery-scope.json;623a9896/bb8da377/b307/ad16; terminal8351e794;22.952s ten200s"
     },
     "create_and_complete_email_move": {
@@ -9243,7 +9279,7 @@ state. Only then name exact human-only observations. No fake ETA or new status b
       "evidence": "S08 labels-folders/folders-disposition-integration-20261015/installed-lifecycle-qualification/remaining-restore-delete-continuation-attempt2; actual53.964s, root witnessf5a6, actual-record proof4b83"
     }
   },
-  "next_action": "Root integrates reviewed policy/recovery20 and independently reviewed frozen retained-disposition7 guard/UI/runbook, preserving current corrected native fixture; qualify matching combined native/install outcomes. Preserve actual Labels/CreateMove/remaining lifecycle passes without repeat QA absent concrete change. No unilateral S08 parking, operator troubleshooting or source-freeze completion claim."
+  "next_action": "Integrate reviewed badge projection, preserve exact qualified backend/fixture source parity, normal signed sync and final matching native app build/helper-first installation; execute once the independently reviewed changed installed subtree/label seam. No repeated unchanged native case or old completed mutation journeys."
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->
@@ -9280,3 +9316,90 @@ root alone reviews/adopts and executes any finite mutation once. No provider
 Send, key action, incident replay or whole-slice/sprint/epic closure is implied.
 Evidence: S08 labels-folders/folder-recovery-integration-20261015 and the retained
 reviewed source/component records; current human handoff remains NOT_READY.
+
+## 2026-10-15 — signed source admission and measured virtual-folder mismatch
+
+Signed source3d0c9ed8f1da402f8e02cacc2ad59ffb7ab32615 is synchronized to
+feat/ux-completion-20260929 with Good Shopkeeper signature, normal commit3/push1
+PASS1709 library/zero failures/44 explicit native ignores/519 account Python,
+fresh origin equality0/0/clean and all three branch heads preserved. Toronto's
+standard checkout is clean source-only fast-forwarded b307→3d0; the installed
+ad167622 pair, configuration, agents and services remain unchanged.
+Commit1's missing runbook index and commit2's initialization-only fixture refusal
+remain retained. The index was added and the same mandatory work-order checks
+moved after environment initialization, before all checks; existing18 checkout
+initialization cases PASS. Neither gates nor assertions were waived.
+
+Matching native1 actual FAIL11.674s at the new injected recovery stage;
+481input parity PASS, no outer timeout. Read-only exact retained role/helper
+records establish pending original, no recovery intent/child step, Unknown
+original with native_settled=true. No original or child action was repeated.
+A separately reviewed test-only diagnostic successor actual FAIL11.596s measures
+both virtual original-root and intended-child entries as NonExistent=true,
+Noselect=false, HasChildren=true, zero special-use roles; placement returns
+Invalid and recovery Refused before child dispatch. Actual Dovecot's virtual
+flag representation differs from the synthetic Noselect-only assumption.
+Both failed fixture cleanups remain UNCONFIRMED with exact retained leases;
+no historical PID signal, namespace revival or unchanged retry occurred.
+Three separate matching native controlled before-witness/owned Check UI tests
+PASS, preserving no replay/nonsuccess boundaries; they do not pass child repair.
+
+The assigned minimal successor will recognize only these virtual identities
+while preserving namespace/delimiter/role/flag/GUID/parent/no-extra constraints,
+with old-source RED/new-source GREEN and one changed native qualification.
+Matching installation, installed non-leaf journey, fullS08 and human acceptance
+remain open. Evidence is under folder-recovery-integration-20261015/native-attempt1
+and native-diagnostic-attempt2; no provider/private-key actions were performed.
+
+## 2026-10-15 — matching virtual-node repair qualification
+
+Reviewed two-path fix f01d16e3 passes old-production RED1/new focused13 GREEN
+and the two merged changed controls. Matching481-input native3 build is fresh
+(61.293s, binary989c2580); actual one confined case PASS13.179s with all11 markers,
+same measured NonExistent-without-Noselect flags, placement_ready and recovery
+Progress. Real signed configured-peer/Dovecot child repair, consumed-nonce/lost
+reply, full GUID/message/attachment/index/Bob continuity and owned cleanup pass.
+Independent delivered-component review PASS. Earlier native1/2 failed intervals
+and unconfirmed retained cleanup are not retrospectively passed; partial setup
+and settlement were deliberately injected, not an actual process crash.
+
+Final frontend badge work may reuse this unchanged backend/fixture proof after
+exact component parity and matching final native application build; repeating
+an unchanged passing backend case is unnecessary. Original R2-03-007's assigned
+list/reader badges after reload were genuinely absent and are assigned as real
+code, with one changed installed label/relocation seam. WholeS08 and human
+acceptance remain pending until that implementation and installed audit pass.
+
+## 2026-10-15 — assigned label badges restore an original functional criterion
+
+Independent acceptance reconciliation found real missing code: label metadata,
+assignment/filter/edit worked, but list/reader did not render assigned names as
+required by R2-03-007 after reload. Do not mark that original criterion complete
+from the earlier bounded Labels10 result. Reviewed badge7 dd93817f now projects
+one account-owned record onto current complete message identities in mailbox,
+Search, Archive/Bin and coordinated/standalone reader views. Names and IDs are
+escaped; stale/foreign/unavailable identity/record states cannot invent badges.
+Valid empty labels are distinct from unavailable. Existing store, revision,
+attach/detach/relocation semantics and mail requests remain unchanged.
+
+Actual old-source RED1 (zero instead of one badge) discriminates the repair.
+New focused9 plus affected Archive1 pass; merged exact canonical label9 PASS,
+Clippy/format/plan checks PASS and independent source review CLEAR. The seventh
+source path is only compatible toolbar destructuring; no new CSS/script/route
+permission or backend mail read. Final native app input parity differs from
+qualified native3 only in these seven reviewed frontend/identity-sharing paths;
+helper/fixture/relocation behavior is unchanged and component evidence is reused.
+
+One unexecuted installed subtree successor adds only controlled label attach,
+actual relocation/reload badges and own logical cleanup to the remaining
+non-leaf lifecycle seam. Revision/assignment-capacity preflight must finish
+before journal/session/mutation admission; source assumptions cannot strand
+real controlled folders. Matching final image, essential installed outcome and
+independent delivery audit remain pending. No user troubleshooting/UAT yet.
+
+The final app-only native build passes27.408s with actual fresh=false compiler
+artifact945f8a64 and all481 frozen inputs unchanged before/after. It reuses the
+qualified unchanged native3 recovery component; installed QA is not inferred.
+Normal commit admission initially refused a PASS-stage declaration without its
+stage evidence; add the existing actual badge implementation/source references,
+preserve the refusal and run the unchanged normal gate. No validator waiver.

@@ -17,6 +17,7 @@ pub(super) fn render(
         archive,
         bin,
         mailboxes,
+        ..
     } = folders;
     let icon_button = |label: &str, icon: &str, action: &str, enabled: bool| {
         format!("<button type=\"{}\" name=\"action\" value=\"{action}\" aria-label=\"{label}\" title=\"{label}\"{}>{}</button>", if enabled { "submit" } else { "button" }, if enabled { "" } else { " disabled" }, reader_icon(icon))

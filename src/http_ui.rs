@@ -131,6 +131,7 @@ pub(crate) struct MailReaderContext {
     pub sent_role: Option<SentFolderRole>,
     pub mailboxes: Vec<MailboxEntry>,
     pub archive_events: Option<crate::archive_event::Snapshot>,
+    pub labels: Option<crate::labels::LabelRecord>,
 }
 
 impl Default for MailReaderContext {
@@ -143,6 +144,7 @@ impl Default for MailReaderContext {
             sent_role: Some(SentFolderRole::legacy()),
             mailboxes: Vec::new(),
             archive_events: None,
+            labels: None,
         }
     }
 }
@@ -198,6 +200,8 @@ impl SentFolderRole {
 
 #[derive(Clone, Copy)]
 struct ReaderFolders<'a> {
+    account: &'a str,
+    labels: Option<&'a crate::labels::LabelRecord>,
     archive: Option<&'a str>,
     bin: Option<&'a str>,
     mailboxes: &'a [MailboxEntry],
@@ -1186,11 +1190,12 @@ fn render_coordinated_reader(
     view: &ListViewState,
     csrf: &str,
     reader: &MailReaderContext,
+    account: &str,
 ) -> String {
     let mut cleared = view.clone();
     cleared.selection = None;
     let back = list_navigation_href(base, &cleared, view.page);
-    render_coordinated_reader_with_back(base, view, csrf, reader, &back)
+    render_coordinated_reader_with_back(base, view, csrf, reader, &back, account)
 }
 
 fn render_coordinated_reader_with_focus(
@@ -1202,7 +1207,7 @@ fn render_coordinated_reader_with_focus(
     targets: &[Option<String>],
 ) -> String {
     let back = back_focus::back_href(account, base, view, reader, targets);
-    render_coordinated_reader_with_back(base, view, csrf, reader, &back)
+    render_coordinated_reader_with_back(base, view, csrf, reader, &back, account)
 }
 
 fn render_coordinated_reader_with_back(
@@ -1211,6 +1216,7 @@ fn render_coordinated_reader_with_back(
     csrf: &str,
     reader: &MailReaderContext,
     back: &str,
+    account: &str,
 ) -> String {
     match &reader.pane {
         SelectedMessagePane::Unselected => "<article class=\"reading-pane reader-empty\" aria-label=\"Reading pane\"><h2>Choose a message</h2><p class=\"muted\">Open a subject to read it alongside this list.</p></article>".into(),
@@ -1220,7 +1226,7 @@ fn render_coordinated_reader_with_back(
                 Some(page) if page != view.page => format!("<p class=\"reader-locate\"><a href=\"{}\">Locate selected message on page {page}</a></p>", escape_html(&list_navigation_href(base, view, page))),
                 _ => String::new(),
             };
-            format!("<div class=\"reader-column\">{locate}{}</div>", render_reader_fragment(csrf, rendered, ReaderFolders { archive: reader.archive_mailbox_name.as_deref(), bin: reader.bin_mailbox_name.as_deref(), mailboxes: &reader.mailboxes }, back, &list_navigation_href(base, view, view.page), Some(&reader.neighbours)))
+            format!("<div class=\"reader-column\">{locate}{}</div>", render_reader_fragment(csrf, rendered, ReaderFolders { account, labels: reader.labels.as_ref(), archive: reader.archive_mailbox_name.as_deref(), bin: reader.bin_mailbox_name.as_deref(), mailboxes: &reader.mailboxes }, back, &list_navigation_href(base, view, view.page), Some(&reader.neighbours)))
         }
     }
 }
@@ -1649,6 +1655,53 @@ fn render_search_field_select(active_field: MessageSearchField) -> String {
     )
 }
 
+fn render_message_label_badges(
+    record: Option<&crate::labels::LabelRecord>,
+    account: &str,
+    expected_folder: &str,
+    folder: &str,
+    uid: u64,
+    metadata: Option<&MessageMetadata>,
+    show_empty: bool,
+) -> String {
+    let unavailable =
+        || "<span class=\"muted message-labels-unavailable\">Labels unavailable</span>".to_owned();
+    let Some(record) = record else {
+        return unavailable();
+    };
+    let Ok(identity) = crate::labels::MessageIdentity::from_current_metadata(
+        account,
+        account,
+        expected_folder,
+        folder,
+        uid,
+        metadata,
+    ) else {
+        return unavailable();
+    };
+    let Ok(labels) = record.labels_for(&identity) else {
+        return unavailable();
+    };
+    if labels.is_empty() {
+        return if show_empty {
+            "<span class=\"muted message-labels-empty\">No labels</span>".into()
+        } else {
+            String::new()
+        };
+    }
+    let badges: String = labels
+        .into_iter()
+        .map(|label| {
+            format!(
+                "<span class=\"badge message-label\" data-label-id=\"{}\" dir=\"auto\">{}</span>",
+                escape_html(label.id()),
+                escape_html(label.name())
+            )
+        })
+        .collect();
+    format!("<span class=\"message-labels\" aria-label=\"Assigned labels\">{badges}</span>")
+}
+
 struct MessageCard<'a> {
     focus_target: Option<&'a str>,
     open_on_select: bool,
@@ -1661,6 +1714,7 @@ struct MessageCard<'a> {
     flags: &'a [String],
     metadata: Option<&'a MessageMetadata>,
     size: u64,
+    labels: &'a str,
 }
 
 fn render_message_card(
@@ -1714,7 +1768,7 @@ fn render_message_card(
             "<div class=\"message-card-main\"><span class=\"message-avatar\" aria-hidden=\"true\" title=\"{initials_hint}\">{}</span><span class=\"message-sender\" title=\"{}\" dir=\"auto\">{}</span>",
             "<span class=\"message-date\" title=\"{}\">{}</span>",
             "{subject_control}<span class=\"message-body-preview\" dir=\"auto\">{}</span></div>",
-            "<div class=\"message-card-footer message-preview-meta\"><span class=\"message-mailbox\">{}</span><div class=\"message-star-cell\">{star}</div>{}{protection}",
+            "<div class=\"message-card-footer message-preview-meta\"><span class=\"message-mailbox\">{}</span><div class=\"message-star-cell\">{star}</div>{}{labels}{protection}",
             "<details class=\"message-more\"><summary aria-label=\"More for message #{} in {}\"><span aria-hidden=\"true\">⋮</span><span class=\"sr-only\">More</span></summary>",
             "<div class=\"message-more-content\"><p class=\"muted\">Message #{} · {} bytes</p><p><strong>{party_label}:</strong> {}</p><p><strong>Subject:</strong> {}</p>{attachment_details}{read_action}{}</div></details></div></li>"
         ),
@@ -1739,6 +1793,7 @@ fn render_message_card(
         read_action = read_action,
         protection = render_public_message_protection(message.metadata),
         attachment_details = render_public_attachment_details(message.metadata),
+        labels = message.labels,
         subject_control = message_open_control(csrf, href, "message-subject-link", message.subject.unwrap_or("(No subject)"), selected, message.open_on_select, None),
     )
 }
@@ -1792,6 +1847,7 @@ fn render_reader_move_controls(
         archive,
         bin,
         mailboxes,
+        ..
     } = folders;
     let Some(fields) = move_identity_fields(
         csrf,
@@ -1937,6 +1993,15 @@ pub(crate) fn render_message_list_page(
         .archive_mailbox_name
         .is_some_and(|archive_mailbox_name| archive_mailbox_name != mailbox_name);
     for (index, message) in messages.iter().enumerate() {
+        let labels = render_message_label_badges(
+            sort_links.reader.labels.as_ref(),
+            canonical_username,
+            mailbox_name,
+            &message.mailbox_name,
+            message.uid,
+            message.metadata.as_ref(),
+            false,
+        );
         let message_href = if message.metadata.is_some() {
             selected_message_href(
                 &navigation_base,
@@ -1987,6 +2052,7 @@ pub(crate) fn render_message_list_page(
                     on_open: sort_links.view.open_on_select,
                     is_bin: sort_links.reader.bin_mailbox_name.as_deref() == Some(mailbox_name),
                 },
+                &labels,
             ));
             continue;
         }
@@ -2008,6 +2074,7 @@ pub(crate) fn render_message_list_page(
                 flags: &message.flags,
                 metadata: message.metadata.as_ref(),
                 size: message.size_virtual,
+                labels: &labels,
             },
             csrf_token,
             &message_href,
@@ -2266,7 +2333,7 @@ pub(crate) fn render_message_search_page(
                 )
             };
             rows.push_str(&format!(
-                "<li class=\"message-row search-result-row\" data-selected=\"{}\"{focus_attributes}><span class=\"search-result-type\">{}</span><div class=\"search-result-title\">{subject_control}<span class=\"message-sender\" dir=\"auto\"><span class=\"sr-only\">From</span> {}{preview}</span></div><span class=\"search-result-location message-mailbox\" dir=\"auto\">{}</span><time class=\"search-result-date\">{}</time><details class=\"search-result-more\"><summary aria-label=\"More for message #{} in {}\">More</summary><div>{}</div></details></li>",
+                "<li class=\"message-row search-result-row\" data-selected=\"{}\"{focus_attributes}><span class=\"search-result-type\">{}</span><div class=\"search-result-title\">{subject_control}<span class=\"message-sender\" dir=\"auto\"><span class=\"sr-only\">From</span> {}{preview}</span>{labels}</div><span class=\"search-result-location message-mailbox\" dir=\"auto\">{}</span><time class=\"search-result-date\">{}</time><details class=\"search-result-more\"><summary aria-label=\"More for message #{} in {}\">More</summary><div>{}</div></details></li>",
                 view.is_selected(&result.mailbox_name, result.uid), shell_icon("inbox"),
                 escape_html(result.from.as_deref().unwrap_or("Sender unavailable")), escape_html(&result.mailbox_name), escape_html(&result.date_received),
                 result.uid, escape_html(&result.mailbox_name),
@@ -2274,6 +2341,7 @@ pub(crate) fn render_message_search_page(
                 focus_attributes = back_focus::attributes(focus_targets.get(index).and_then(Option::as_deref)),
                 subject_control = message_open_control(csrf_token, &message_href, "message-subject-link", result.subject.as_deref().unwrap_or("(No subject)"), view.is_selected(&result.mailbox_name, result.uid), view.open_on_select, None),
                 preview = result.metadata.as_ref().and_then(|metadata| metadata.preview.as_deref()).filter(|preview| crate::message_metadata::valid_message_preview(preview)).map(|preview| format!(" · {}", escape_html(preview))).unwrap_or_default(),
+                labels = render_message_label_badges(context.reader.labels.as_ref(),canonical_username,mailbox_name.unwrap_or(&result.mailbox_name),&result.mailbox_name,result.uid,result.metadata.as_ref(),false),
             ));
         }
     }
@@ -2418,7 +2486,7 @@ pub(crate) fn render_message_view_page_with_context(
     TrustedHtml::from_template(format!(
         "{}<main id=\"main-content\" class=\"page-shell standalone-reader\" tabindex=\"-1\"><div class=\"page-intro\"><h1>Message Reader</h1><p>Protected reading with message details, isolated attachments and source view.</p></div>{}</main>",
         header,
-        render_reader_fragment(csrf_token, rendered, ReaderFolders { archive: archive_mailbox_name, bin: bin_mailbox_name, mailboxes: user_visible_mailboxes }, &back, &current, Some(neighbours))))
+        render_reader_fragment(csrf_token, rendered, ReaderFolders { account: canonical_username, labels: context.labels.as_ref(), archive: archive_mailbox_name, bin: bin_mailbox_name, mailboxes: user_visible_mailboxes }, &back, &current, Some(neighbours))))
 }
 
 fn render_reader_fragment(
@@ -2434,7 +2502,16 @@ fn render_reader_fragment(
         .map(|value| value.html_with_policy(csrf_token))
         .unwrap_or_default();
     let snooze_control=rendered.metadata.as_ref().map(|m|format!("<a class=\"reader-snooze\" aria-label=\"Snooze message\" title=\"Snooze message\" href=\"/snooze?mailbox={}&amp;uid={}&amp;mailbox_guid={}&amp;message_guid={}&amp;return_to={}\"><span aria-hidden=\"true\">◷</span></a>",escape_html(&url_encode(&rendered.mailbox_name)),rendered.uid,escape_html(&url_encode(&m.version.mailbox_guid)),escape_html(&url_encode(&m.version.message_guid)),escape_html(&url_encode(return_to)))).unwrap_or_else(||"<button class=\"reader-snooze\" aria-label=\"Snooze unavailable\" disabled><span aria-hidden=\"true\">◷</span></button>".into());
-    let label_control = rendered.metadata.as_ref().map(|metadata| format!("<details class=\"reader-labels\"><summary>Labels</summary><div><p>Manage private labels for this message. Its current identity is checked before changes.</p><a class=\"button-link secondary\" href=\"/labels?mailbox={}&amp;uid={}&amp;mailbox_guid={}&amp;message_guid={}\">Edit message labels</a></div></details>", escape_html(&url_encode(&rendered.mailbox_name)), rendered.uid, escape_html(&url_encode(&metadata.version.mailbox_guid)), escape_html(&url_encode(&metadata.version.message_guid)))).unwrap_or_else(|| "<span class=\"muted\" aria-disabled=\"true\">Labels unavailable</span>".into());
+    let badges = render_message_label_badges(
+        folders.labels,
+        folders.account,
+        &rendered.mailbox_name,
+        &rendered.mailbox_name,
+        rendered.uid,
+        rendered.metadata.as_ref(),
+        true,
+    );
+    let label_control = rendered.metadata.as_ref().map(|metadata| format!("{badges}<details class=\"reader-labels\"><summary>Labels</summary><div><p>Manage private labels for this message. Its current identity is checked before changes.</p><a class=\"button-link secondary\" href=\"/labels?mailbox={}&amp;uid={}&amp;mailbox_guid={}&amp;message_guid={}\">Edit message labels</a></div></details>", escape_html(&url_encode(&rendered.mailbox_name)), rendered.uid, escape_html(&url_encode(&metadata.version.mailbox_guid)), escape_html(&url_encode(&metadata.version.message_guid)))).unwrap_or(badges);
     let displayed_attachments = rendered
         .attachments
         .iter()

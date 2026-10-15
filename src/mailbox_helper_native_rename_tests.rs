@@ -251,6 +251,19 @@ const CHILD_STAGES: &[&str] = &[
     "bin_restore",
     "subtree",
     "injected_partial_recovery",
+    "recovery_metadata_unavailable",
+    "recovery_placement_ready",
+    "recovery_placement_invalid",
+    "recovery_placement_stale",
+    "recovery_placement_unavailable",
+    "recovery_placement_capacity",
+    "recovery_return_complete",
+    "recovery_return_unchanged",
+    "recovery_return_progress",
+    "recovery_return_inspected",
+    "recovery_return_refused",
+    "recovery_return_unknown",
+    "recovery_return_unavailable",
     "complete",
 ];
 static CHILD_STAGE: AtomicUsize = AtomicUsize::new(0);
@@ -308,6 +321,14 @@ fn closed_child_diagnostic(line: &str) -> bool {
         return CHILD_STAGES.contains(&stage);
     }
     let fields: Vec<_> = line.split_whitespace().collect();
+    if fields.len() == 7 && fields[0] == "native_rename" && fields[1].starts_with("recovery_node=") {
+        return ["recovery_node=source_root","recovery_node=intended_child"].contains(&fields[1])
+            && ["exists=true","exists=false"].contains(&fields[2])
+            && ["noselect=true","noselect=false"].contains(&fields[3])
+            && ["nonexistent=true","nonexistent=false"].contains(&fields[4])
+            && ["haschildren=true","haschildren=false"].contains(&fields[5])
+            && fields[6].strip_prefix("special_use_count=").is_some_and(|v| !v.is_empty() && v.len()<=2 && v.bytes().all(|b|b.is_ascii_digit()) && v.parse::<usize>().is_ok_and(|n|n<=32));
+    }
     if fields.len() != 8 || fields[..2] != ["native_rename", "child_panic"] {
         return false;
     }
@@ -1454,7 +1475,35 @@ fn isolated_openbsd_folder_rename_confined_worker() {
     assert_eq!(service.mailbox_status(ALICE,&format!("{source_name}.Child")).unwrap().guid(),recovery_before[1].1.guid());
     let nonce = crate::draft::generate_draft_id().unwrap();
     service.lose_bin_reply.set(true);
-    assert_eq!(crate::folder_subtree_recovery::recover(&settings,&service,ALICE,&nonce),crate::folder_rename::RecoveryOutcome::Progress);
+    // Closed, test-only diagnostic facts. No path/GUID/body/command is exported
+    // and no product flag policy is changed before the original assertion.
+    match service.folder_metadata(ALICE) {
+        Ok(snapshot) => {
+            for (label,name) in [("source_root",source_name),("intended_child","INBOX.Target.RecoveredTree.Child")] {
+                let entry=snapshot.folder(ALICE,name).ok();
+                println!("native_rename recovery_node={label} exists={} noselect={} nonexistent={} haschildren={} special_use_count={}",entry.is_some(),entry.is_some_and(|e|e.has_flag("\\Noselect")),entry.is_some_and(|e|e.has_flag("\\NonExistent")),entry.is_some_and(|e|e.has_flag("\\HasChildren")),entry.map_or(0,|e|e.special_use().len()));
+            }
+        }
+        Err(_) => mark_child_stage("recovery_metadata_unavailable"),
+    }
+    mark_child_stage(match crate::folder_subtree_recovery::placement(&service,&request) {
+        Ok(_) => "recovery_placement_ready",
+        Err(crate::folder_create::Refusal::Invalid) => "recovery_placement_invalid",
+        Err(crate::folder_create::Refusal::Stale) => "recovery_placement_stale",
+        Err(crate::folder_create::Refusal::Unavailable) => "recovery_placement_unavailable",
+        Err(crate::folder_create::Refusal::Capacity) => "recovery_placement_capacity",
+    });
+    let recovered=crate::folder_subtree_recovery::recover(&settings,&service,ALICE,&nonce);
+    mark_child_stage(match &recovered {
+        crate::folder_rename::RecoveryOutcome::Complete { .. } => "recovery_return_complete",
+        crate::folder_rename::RecoveryOutcome::Unchanged => "recovery_return_unchanged",
+        crate::folder_rename::RecoveryOutcome::Progress => "recovery_return_progress",
+        crate::folder_rename::RecoveryOutcome::Inspected => "recovery_return_inspected",
+        crate::folder_rename::RecoveryOutcome::Refused => "recovery_return_refused",
+        crate::folder_rename::RecoveryOutcome::Unknown => "recovery_return_unknown",
+        crate::folder_rename::RecoveryOutcome::Unavailable => "recovery_return_unavailable",
+    });
+    assert_eq!(recovered,crate::folder_rename::RecoveryOutcome::Progress);
     assert_eq!(count.load(Ordering::SeqCst),9);
     assert_eq!(crate::folder_subtree_recovery::recover(&settings,&service,ALICE,&nonce),crate::folder_rename::RecoveryOutcome::Progress);
     assert_eq!(count.load(Ordering::SeqCst),9);
@@ -1587,6 +1636,10 @@ fn native_rename_child_diagnostics_are_closed_and_redact_payloads() {
     }
     let safe = "native_rename child_panic stage=config_parse file=native_test line=600 column=5 kind=unwrap_result diagnostic=v1";
     assert!(closed_child_diagnostic(safe));
+    let node="native_rename recovery_node=source_root exists=true noselect=false nonexistent=true haschildren=true special_use_count=0";
+    assert!(closed_child_diagnostic(node));
+    assert!(closed_child_diagnostic(&node.replace("source_root","intended_child")));
+    for bad in [node.replace("source_root","/private/mailbox"),node.replace("special_use_count=0","special_use_count=33"),node.replace("exists=true","exists=private-secret"),format!("{node} raw_secret")] {assert!(!closed_child_diagnostic(&bad));}
     for bad in ["native_rename child_stage=private-body", "raw secret stderr", "native_rename child_panic stage=config_parse file=/tmp/private line=1 column=1 kind=unwrap_result diagnostic=v1", "native_rename child_panic stage=config_parse file=native_test line=1 column=1 kind=private-secret diagnostic=v1"] { assert!(!closed_child_diagnostic(bad)); }
     assert!(!closed_child_diagnostic(&format!("{safe} private_secret")));
     assert_eq!(
