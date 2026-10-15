@@ -39,6 +39,13 @@ independent audit requirements PASS for that exact scope. Never use operator
 UAT to troubleshoot unfinished engineering. Preserve the original R2 anchor
 and its byte-exact references alongside the signed R3 execution supplement.
 
+When adding or optimizing a backend trait operation, verify its delegation
+through the actual browser Runtime wrapper with a distinguishing regression.
+Concrete helper/native tests alone do not qualify a wrapper's inherited default.
+The 2026-10-15 folder-facts repair demonstrated this integration gap; reuse
+unchanged backend evidence and test the changed composition, without a new QA
+framework or blanket repeat of passing workflows.
+
 For operator-authorized multi-agent work, apply
 `docs/AGENT_DEVELOPMENT_FRAMEWORK.md` and its OSMAP mapping in
 `docs/OSMAP_AGENT_FRAMEWORK_ADOPTION.md`. Assign project management, Scrum

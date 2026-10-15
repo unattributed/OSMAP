@@ -16,65 +16,46 @@ statement as provenance rather than current release posture.
 
 ### Latest scoped folder and label delivery, 2026-10-15
 
-Signed source `d8cdc822725c60bedb26dbbebf787362e11d1c39` is synchronized
-to the UX branch after normal commit/push gates (1721 library passes, zero
-failures, 44 explicit native ignores and 519 account Python passes). Product
-application9570ff6d is installed helper-first on authoritative Toronto
-and then obsd1 web; configuration, key agents, retention and unrelated services remain
-preserved. The native-phase application has479 unchanged manifest inputs and two
-independently reviewed excluded unit-fixture differences from final signed d8;
-complete481-input equality is not claimed. Actual corrected
-native qualification passes all12 markers in13.287s, including batched current
-account-bound facts, subtree/content/index isolation, authority and confinement.
-The first test-stage failure remains retained with old cleanup unconfirmed. Assigned label badges are now
-implemented in current list and reader views; source tests and review pass.
+S08-02's original17 controls are engineering-delivered through composed executed
+source/native/installed evidence and independent audit. Human usability and
+final-reference visual acceptance remain NOT RUN; broader S08 and the epic are
+OPEN. This is a functional delivery, not full release qualification.
 
-Actual installed finite journeys now pass: eight Restore/Delete requests with
-complete-message/attachment preservation and exact authoritative Delete witness;
-ten Create plus complete-email Move requests into a newly created private leaf;
-and ten Labels requests covering Create, Rename, Attach, actual filter menu,
-filtered reader, Clear, Detach and confirmed Delete. The five label changes
-preserve unrelated logical metadata and advance its revision by five. Each
-qualification session is revoked and its exact record removed; independent
-actual delivery reviews pass for these scopes. No additional message, provider
-Send, expunge, ambiguous automatic retry or private-key action occurred.
+Signed source `c4e318bf2602998885ea1b4aa9432ff0a572031b` is synchronized to
+`feat/ux-completion-20260929` after normal commit/push gates:1723 Rust passes,
+zero failures,44 explicit native ignores and519 account Python passes. Fresh
+origin equality and all three local branch heads are verified. Matching application
+`324b1cb90a7d8d86ea0290dcff953118e5e26f2ac49fc4f9a7ab0c267be5261e`
+is installed helper-first on authoritative Toronto, then obsd1 web. All481
+compiled inputs exactly match signed source with no exclusions. Configuration,
+key agents, retention, completion records and unrelated services are preserved.
 
-The earlier Bin HTTP timeout remains historical: its complete303 was unobserved.
-Read-only exact-operation reconciliation established Binned state, followed by a
-separately admitted successful Restore/Delete continuation. Those later results
-do not retrospectively pass the failed HTTP interval. Reader Seen effects were
-not separately assessed. Partial-tree repair and usable UNKNOWN handling have
-bounded native proof; actual crash/quiescence is not inferred. The new installed
-journey passes its first17 requests, including two descendant Creates, owned
-label assignment and populated subtree Rename/Move with continuity. Request18
-times out opening read-only Bin entry before any Bin POST: client10s/server
-attempted200 after10258ms. Its test lease is removed, but the subtree/label stay
-retained. The typed repair replaces repeated remote reads with separately fresh pre/post
-facts; no authority or deadline is weakened. One actual installed five-name
-read-only phase passes in3812ms within the original5s helper bound, with its
-journal/environment preserved. The one remaining13 qualification passes entry/review200, then fails at Apply3
-reply: client10s/server attempted303 at12223ms. Its seven-row journal and exact
-lease cleanup are retained; no Bin retry is authorized. Read-only reconciliation proves the current unique Binned receipt/nativeRenamed
-witness, clear role, original three GUIDs and assigned label revision10; it does
-not retrospectively observe the client reply. The further two-path native batching
-repair passes all12 native markers in11.427s. Matching signed application9570
-is installed with independent pair review. One distinct Restore continuation
-again passes entry/review200 but fails at Apply3's10s client read limit; server
-attempts303 after12463ms/Broken pipe. The exact typed request and nonce were
-recorded before dispatch; its session is revoked/removed and process reaped.
-Do not repeat Restore. Exact read-only reconciliation confirms recorded native
-completion, all three restored GUIDs, absent receipt/clear role and owned label
-revision11. The concrete remaining integration defect is missing folder_facts
-forwarding in the actual web Runtime enum; its trait fallback expands the batch
-into serial remote reads. The one-path repair has an actual old-wire RED/new
-runtime11-pass regression and independent source review. Its fresh native build
-passes both Runtime regressions and matching application324b1cb9 builds with all
-481 inputs exact. Normal signed admission, matching installation, current response
-and remaining hierarchy/badge/label cleanup are pending.
-Full S08-02 and sprint/epic acceptance
-remain OPEN. Earlier account/OpenPGP requirements remain independently open.
-The operator requires current S08 work to continue with strict program management;
-no unilateral agent parking is authorized.
+Actual current populated Bin/Restore and final selected-folder/list/reader/label
+journey passes13 HTTP outcomes in60.695s. Explicit Bin and Restore replies are
+observed303 at3937ms and4007ms under the unchanged10s limit. Three folder GUIDs,
+UID/message GUID, saved headers/body and decoded attachment are preserved;
+current parent/owner/direct counts and reloaded assigned badges agree. Own label
+Detach/Delete restores prior logical rows at actual revision15, and the exact
+qualification session is revoked and removed. Independent auditd64a8890 joins
+this result to prior actual Create/Rename/Move/Delete, Labels and finite-menu
+proofs for the unchanged original17 obligations.
+
+The concrete integration repair forwards folder_facts through the actual Runtime
+enum; its inherited default had expanded one batch into serial metadata/status
+reads. A signed socket-wire regression fails on old code, then the complete
+Runtime module passes11 cases. Fresh native compilation passes both affected
+Runtime controls; unchanged native backend/lifecycle/recovery evidence is reused
+in its independently reviewed component scope. No new protocol or weaker bound
+is introduced.
+
+All historical client timeouts remain failed/unobserved. Exact read-only durable
+reconciliation precedes distinct new intents; no recorded operation is replayed.
+Known injected partial repair and safe retained UNKNOWN/restart/corruption controls
+are qualified; actual process-crash/quiescence and old failed-fixture cleanup
+remain unproved. Reader Seen effects are not separately assessed. The minimal
+human handoff only browses the retained tree and opens its email/attachment;
+no new mail or folder mutation is required. Earlier account/OpenPGP requirements
+remain independent and open; human judgment does not halt authorized engineering.
 
 ### Agent-owned delivery correction, 2026-10-14
 

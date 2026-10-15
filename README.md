@@ -68,7 +68,9 @@ Local route, browser, persistence and accessibility-oriented checks are recorded
 native-host qualification, independent human acceptance and deployment remain
 separate. Follow the
 [execution ledger](docs/UX_EXECUTION_LEDGER.md) for signed slice deliveries.
-Runtime cryptographic capability remains unavailable.
+That historical intake did not qualify runtime cryptography; current bounded
+OpenPGP outcomes and their remaining acceptance are recorded in
+[Current Project Status](docs/CURRENT_PROJECT_STATUS.md).
 The operator reports Roundcube removed; this epic is not a retirement project.
 
 The earlier TOTP lifecycle sprint is administratively closed with controlled
@@ -76,14 +78,18 @@ recovery and live-account cleanup residuals. Recovery requires a short-lived
 signed human operator approval. See the [sprint record](docs/TOTP_LIFECYCLE_SPRINT.md).
 The mail host has migrated to Vultr; historical on-premises validation does not
 establish qualification of that instance.
-The operator selected obsd1 at `192.168.1.44` for this sprint's validation;
-Vultr is outside the sprint's validation scope.
+The earlier TOTP sprint selected obsd1 at `192.168.1.44` for its validation;
+its historical evidence does not qualify the current authoritative Vultr host.
 
-Current Folders work is recorded in the execution ledger and current project
-status. Matching installed Create, complete-email Move, Restore/Delete and Labels
-journeys have finite functional proof and independent delivery review. Partial-
-tree recovery safety and full S08 acceptance remain open; the original Bin HTTP
-timeout is retained separately from its reconciled outcome and later passes.
+S08-02 folder/label engineering is delivered on the signed UX branch with
+matching installed helper/web application324b1cb9. Authoritative Inbox hierarchy,
+Create/Rename/Move, complete-email attachment-preserving Move, reviewed Bin/Restore,
+confirmed empty Delete, labels/reloaded badges and finite menus have scoped
+functional evidence and independent review. The repaired public Bin and Restore
+responses complete within the existing10s bound. Historical failures stay
+retained. Human usability/final-reference visual acceptance, broader S08 and
+epic/release completion remain separate and open. See the
+[execution ledger](docs/UX_EXECUTION_LEDGER.md) for the exact evidence and limits.
 
 OSMAP is actively developed and security-sensitive. The crate is currently
 version `0.1.0`. The repository contains production-validated and deployed

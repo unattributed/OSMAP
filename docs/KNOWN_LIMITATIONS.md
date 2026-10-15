@@ -1,37 +1,25 @@
 # Known Limitations
 
-## Current UX folder lifecycle limit
+## Current UX folder lifecycle boundary
 
-The original Bin client HTTP timeout remains retained; its operation was safely
-reconciled read-only, then a separate Restore/Delete journey passed. Installed
-Create, complete-email Move and Labels journeys also pass their finite scopes.
-Do not repeat ambiguous actions. Signed a391/945f adds reviewed assigned badges
-and native-qualified partial repair/usable safe UNKNOWN handling. Its matching
-installed extension completes17 requests through populated subtree Rename/Move,
-then times out at read-only Bin entry18 before any Bin POST. Preserve that
-failure, assigned label and controlled subtree; final Bin/Restore/reload-badge
-cleanup and full S08-02 acceptance remain pending. Read amplification is being
-repaired without weakening fresh mutation authority or extending deadlines.
-The signed typed-facts repaira902/f472 is now installed helper-first; current
-signed source39d2 adds only its excluded native test-stage correction. One
-installed five-name read passes3812ms within5s. The finite continuation now
-passes entry/review200, but Apply3 reply exceeds10s/server attempts303 at12223ms.
-No Bin retry is authorized. Read-only reconciliation proves the unique current
-Binned receipt/nativeRenamed witness, original three GUIDs and label revision10.
-Further batching has passed native qualification and signedd8/application9570
-is installed helper-first with independent pair review. The distinct Restore10
-passes entry/review200, but Apply3's reply again exceeds10s; server attempts303
-after12463ms/Broken pipe. Exact typed request/nonce are retained, qualification
-lease revoked/removed and process reaped. No Restore retry is permitted by this
-result. Read-only reconciliation now confirms exact native completion, restored
-three-GUID placement, absent receipt/clear role and relocated label revision11.
-The actual Runtime wrapper omits batch-facts forwarding; its minimal one-path
-repair has source tests/review but matching installed qualification is pending.
-Final hierarchy/badge/label cleanup remains unresolved. Neither earlier
-client failure is retroactively passed by later state evidence.
-Injected native partial placement is not actual crash/quiescence evidence.
-Reader Seen effects and human acceptance remain separate.
-See UX_EXECUTION_LEDGER.md for current outcomes.
+S08-02 is engineering-delivered with matching signedc4e/application324b and
+independent original17 review. The current distinct13-request installed journey
+observes successful populated Bin and Restore replies at3937ms/4007ms, exact
+three-folder/message/attachment continuity, selected facts, reloaded label badges
+and own logical/session cleanup. Current Runtime batch delegation has a real
+counterfactual wire regression and matching native proof. Human usability and
+final-reference visual acceptance remain NOT RUN; broader S08/epic/release
+acceptance remains OPEN.
+
+Historical Bin/Restore client replies were unobserved and remain failures;
+later exact durable observations do not retrospectively pass them. Distinct new
+intents use fresh recorded nonces, never automatic replay. Native injected
+partial-placement/restart/no-witness/no-replay controls and safe UNKNOWN retention
+are bounded evidence, not actual process-crash/quiescence proof. Old failed
+fixture cleanup is retained as unconfirmed. Reader Seen side effects were not
+separately assessed. No provider mail, private-key or operator-policy action
+was part of the current folder qualification. See UX_EXECUTION_LEDGER.md for
+exact per-control evidence and the minimal nonmutating human handoff.
 
 ## Full-functional UX epic execution boundary
 

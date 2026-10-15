@@ -38,6 +38,11 @@ change follows from this policy.
   UNKNOWN required outcome remains open; a planned case or running service is
   insufficient. Safe retained uncertainty may be an explicitly reviewed recovery
   disposition, never proof of an unobserved side effect or permission to replay it.
+- Verify the actual user-facing composition when a trait method, adapter or
+  batching path changes. A concrete helper pass cannot establish Runtime
+  delegation. Use one distinguishing integration regression for that seam and
+  reuse unchanged component evidence. The October15 missing folder-facts forward
+  is the measured counterexample; do not expand this into blanket repeat testing.
 - Human acceptance stays separate. Pending human judgment does not prevent
   engineering progress, but agents cannot manufacture it or mark the parent slice
   ACCEPTED. Invite only the minimal human-only observations after all agent-owned

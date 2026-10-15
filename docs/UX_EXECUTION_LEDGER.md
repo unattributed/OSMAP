@@ -9027,7 +9027,7 @@ state. Only then name exact human-only observations. No fake ETA or new status b
   "slice": "S08-02",
   "original_requirement": "Labels/tags/finite menus plus page 16 mailbox subfolder create/rename/move/delete and hierarchy",
   "source_baseline": "b3075df9307504a3770cf9f9f8da2b523dd9d9ff",
-  "state": "IN_PROGRESS",
+  "state": "UAT_READY",
   "integration_owner": "/root",
   "roles": {
     "project_manager": [
@@ -9141,9 +9141,9 @@ state. Only then name exact human-only observations. No fake ETA or new status b
       "stages": {
         "implementation": "PASS",
         "source_tests": "PASS",
-        "native_tests": "PENDING",
-        "deployed_qa": "FAIL",
-        "independent_review": "PENDING",
+        "native_tests": "PASS",
+        "deployed_qa": "PASS",
+        "independent_review": "PASS",
         "recovery": "PASS"
       },
       "evidence": [
@@ -9162,9 +9162,33 @@ state. Only then name exact human-only observations. No fake ETA or new status b
         {
           "stage": "recovery",
           "reference": "Matching native3 known injected partial split + typed settlement, actual signed child repair/lost reply/consumed nonce replay and cleanupPASS. Safe retained before-witness native controlPASS separately. No actual crash/quiescence claim; prior failed fixtures explicitly retained cleanupUNCONFIRMED."
+        },
+        {
+          "stage": "implementation",
+          "reference": "Signedc4e318bf/current324b; original17-engineering-closeout-proposal-20261015.json SHA483e664c maps each unchanged obligation to implemented source and composed actual evidence. Runtime wrapper batch delegation is fixed with no new protocol."
+        },
+        {
+          "stage": "source_tests",
+          "reference": "Normal c4 commit/push1723Rust/0failed/44explicit native ignores and519Python; sourcee8fa old actualsigned-wire RED/new completeRuntime11PASS; existing exact positive/foreign/stale/CSRF/corruption/no-replay controls in independent483e evidence_groups."
+        },
+        {
+          "stage": "native_tests",
+          "reference": "Current actualb4d3 Runtime wire/unavailable2PASS0.037s/all481signed inputs; unchanged native2fdf subtree/data/authority/lifecycle12markers and989c injected partial repair reused only as independently audited components. Original17 audit483e gives control-specific native/menu reuse limits."
+        },
+        {
+          "stage": "deployed_qa",
+          "reference": "Independent fresh public13 auditd64a8890/terminal73d3e025 PASS60.695s/current324b:13complete replies, distinct BinApply3937ms and Restore4007ms, all3GUIDs/fullbody+attachment/currentselectedfacts+reader/listbadges/ownlabel cleanuprev15+exactlease cleanup. Joined to successful originalprefix17, separateDelete8/CreateMove10/Labels10; old failed intervals remain failed."
+        },
+        {
+          "stage": "independent_review",
+          "reference": "independent-current-public13-delivery-scope.json SHAd64a88905527814201c8d72c7f4dc051a9699304ca84e51602c073fd5f1339da and original17-engineering-closeout-proposal-20261015.json SHA483e664ccc45935688eb116261b58f74ff5e1b70243e1e4a998c7840f401ec3a: original17 engineering-delivered/no new concrete gap; human/finalvisual NOTRUN."
+        },
+        {
+          "stage": "recovery",
+          "reference": "Actual own logical-label baseline/session cleanup PASS in73d3; original unknowns safely retained and reconciled exact read-only without replay. Existing executed reservation/restart/corruption/no-witness/stale/foreign/no-root-replay and injected partial repair controls per483e. No actual process-crash/quiescence or historical cleanup success is inferred."
         }
       ],
-      "next_action": "Preserve original Bin and distinct Restore Apply reply failures; never retry either. Read exact retained Restore request/native completion/current facts without mutation. Repair missing folder_facts forwarding in actual MailboxListRuntimeBackend with a real-wrapper signed wire regression, matching native/app/normal signed sync/helper-first install and only changed unfinished functional evidence. No new protocol or deadline extension."
+      "next_action": "Engineering delivered under original17 audit483e. Preserve all historical failures and scoped component limits; invite only the nonmutating four-step usability check after signed closeout. Human/final-reference acceptance remains separate; no generic QA rerun."
     },
     {
       "id": "hierarchy-and-selected-facts",
@@ -9184,9 +9208,9 @@ state. Only then name exact human-only observations. No fake ETA or new status b
         "implementation": "PASS",
         "source_tests": "PASS",
         "native_tests": "PASS",
-        "deployed_qa": "PENDING",
-        "independent_review": "PENDING",
-        "recovery": "PENDING"
+        "deployed_qa": "PASS",
+        "independent_review": "PASS",
+        "recovery": "PASS"
       },
       "evidence": [
         {
@@ -9200,9 +9224,33 @@ state. Only then name exact human-only observations. No fake ETA or new status b
         {
           "stage": "native_tests",
           "reference": "a87d878e joins actual two named native Folders route controls/83ed with current2fdf twelve-marker metadata/status/GUID/authority case and independently audited component reuse. Native component composition only; actual web wrapper batch integration is a separate discovered gap."
+        },
+        {
+          "stage": "implementation",
+          "reference": "Signedc4e318bf/current324b; original17-engineering-closeout-proposal-20261015.json SHA483e664c maps each unchanged obligation to implemented source and composed actual evidence. Runtime wrapper batch delegation is fixed with no new protocol."
+        },
+        {
+          "stage": "source_tests",
+          "reference": "Normal c4 commit/push1723Rust/0failed/44explicit native ignores and519Python; sourcee8fa old actualsigned-wire RED/new completeRuntime11PASS; existing exact positive/foreign/stale/CSRF/corruption/no-replay controls in independent483e evidence_groups."
+        },
+        {
+          "stage": "native_tests",
+          "reference": "Current actualb4d3 Runtime wire/unavailable2PASS0.037s/all481signed inputs; unchanged native2fdf subtree/data/authority/lifecycle12markers and989c injected partial repair reused only as independently audited components. Original17 audit483e gives control-specific native/menu reuse limits."
+        },
+        {
+          "stage": "deployed_qa",
+          "reference": "Independent fresh public13 auditd64a8890/terminal73d3e025 PASS60.695s/current324b:13complete replies, distinct BinApply3937ms and Restore4007ms, all3GUIDs/fullbody+attachment/currentselectedfacts+reader/listbadges/ownlabel cleanuprev15+exactlease cleanup. Joined to successful originalprefix17, separateDelete8/CreateMove10/Labels10; old failed intervals remain failed."
+        },
+        {
+          "stage": "independent_review",
+          "reference": "independent-current-public13-delivery-scope.json SHAd64a88905527814201c8d72c7f4dc051a9699304ca84e51602c073fd5f1339da and original17-engineering-closeout-proposal-20261015.json SHA483e664ccc45935688eb116261b58f74ff5e1b70243e1e4a998c7840f401ec3a: original17 engineering-delivered/no new concrete gap; human/finalvisual NOTRUN."
+        },
+        {
+          "stage": "recovery",
+          "reference": "Actual own logical-label baseline/session cleanup PASS in73d3; original unknowns safely retained and reconciled exact read-only without replay. Existing executed reservation/restart/corruption/no-witness/stale/foreign/no-root-replay and injected partial repair controls per483e. No actual process-crash/quiescence or historical cleanup success is inferred."
         }
       ],
-      "next_action": "Preserve actual CreateMove/hierarchy components. Final current selected panel/list/reader seam remains pending because Restore10 stopped at Apply3. Do not repeat Create or Move."
+      "next_action": "Engineering delivered under original17 audit483e. Preserve all historical failures and scoped component limits; invite only the nonmutating four-step usability check after signed closeout. Human/final-reference acceptance remains separate; no generic QA rerun."
     },
     {
       "id": "labels",
@@ -9211,7 +9259,7 @@ state. Only then name exact human-only observations. No fake ETA or new status b
         "UX04-007"
       ],
       "owner": "/root/folder_subtree_backend",
-      "frontend_backend_outcome": "Original R2-03-007 requires backend label state AND assigned reader/list badges to agree after reload. Preserve completed create/rename/attach/filter/reader/Clear/detach/delete; implement minimal escaped account-owned badge projection in list/coordinated/standalone reader and Archive/Bin, including current message identity after relocation. Missing badges are a real remaining original requirement, not a new feature.",
+      "frontend_backend_outcome": "Original R2-03-007 backend label state AND assigned reader/list badges agree after reload. Create/rename/attach/filter/reader/Clear/detach/delete and escaped account-owned badges in list/coordinated/standalone reader and Archive/Bin are implemented, including current message identity after relocation. Actual public13 plus existing Labels10 and independent original17 composition qualify the delivered engineering scope; human/final-reference acceptance remains separate.",
       "dependencies": [
         {
           "owner": "/root",
@@ -9223,17 +9271,17 @@ state. Only then name exact human-only observations. No fake ETA or new status b
           "owner": "/root/folder_subtree_backend",
           "condition": "Minimal assigned-badge projection and essential account/current-tuple/reload/escape/refusal tests are source-reviewed; root supplies matching native/installed source before the narrow new QA seam.",
           "status": "PASS",
-          "next_action": "Badge7 dd93817f is integrated and independently CLEAR with merged label9 PASS. Matching final native app and the independently reviewed installed relocation/reload seam remain pending; no replay of prior Labels10 or provider Send."
+          "next_action": "Badge7 dd93817f and merged label9 proof are retained; current signedc4e/app324b/public13d64 qualify the final relocation/reload seam. No replay of prior Labels10 or provider Send."
         }
       ],
       "essential_qa": "Reuse audited Labels10 source/native/CAS/own-cleanup proof. New changed seam only: attach an owned label, show the same escaped assigned badge on current list and reader after reload and relocation, then detach/delete and verify badge removal plus own logical/lease cleanup. Essential source negatives: stale/foreign current tuple, hostile label, unreadable/foreign label record, account isolation and no invented badges. Preserve body/attachment/indexes and original895 unexecuted draft; no broad menu or repeated Labels10 campaign.",
       "stages": {
         "implementation": "PASS",
         "source_tests": "PASS",
-        "native_tests": "PENDING",
-        "deployed_qa": "PENDING",
-        "independent_review": "PENDING",
-        "recovery": "PENDING"
+        "native_tests": "PASS",
+        "deployed_qa": "PASS",
+        "independent_review": "PASS",
+        "recovery": "PASS"
       },
       "evidence": [
         {
@@ -9251,9 +9299,33 @@ state. Only then name exact human-only observations. No fake ETA or new status b
         {
           "stage": "independent_review",
           "reference": "Component-only review: S08 labels-folders/folders-disposition-integration-20261015/installed-labels-journey-attempt2/independent-delivery-scope.json PASS_BOUNDED_INSTALLED_LABELS_JOURNEY; missing original badge criterion prevents whole Label closure. Reader Seen side effects unassessed, no authentication/human/fullS08 claim."
+        },
+        {
+          "stage": "implementation",
+          "reference": "Signedc4e318bf/current324b; original17-engineering-closeout-proposal-20261015.json SHA483e664c maps each unchanged obligation to implemented source and composed actual evidence. Runtime wrapper batch delegation is fixed with no new protocol."
+        },
+        {
+          "stage": "source_tests",
+          "reference": "Normal c4 commit/push1723Rust/0failed/44explicit native ignores and519Python; sourcee8fa old actualsigned-wire RED/new completeRuntime11PASS; existing exact positive/foreign/stale/CSRF/corruption/no-replay controls in independent483e evidence_groups."
+        },
+        {
+          "stage": "native_tests",
+          "reference": "Current actualb4d3 Runtime wire/unavailable2PASS0.037s/all481signed inputs; unchanged native2fdf subtree/data/authority/lifecycle12markers and989c injected partial repair reused only as independently audited components. Original17 audit483e gives control-specific native/menu reuse limits."
+        },
+        {
+          "stage": "deployed_qa",
+          "reference": "Independent fresh public13 auditd64a8890/terminal73d3e025 PASS60.695s/current324b:13complete replies, distinct BinApply3937ms and Restore4007ms, all3GUIDs/fullbody+attachment/currentselectedfacts+reader/listbadges/ownlabel cleanuprev15+exactlease cleanup. Joined to successful originalprefix17, separateDelete8/CreateMove10/Labels10; old failed intervals remain failed."
+        },
+        {
+          "stage": "independent_review",
+          "reference": "independent-current-public13-delivery-scope.json SHAd64a88905527814201c8d72c7f4dc051a9699304ca84e51602c073fd5f1339da and original17-engineering-closeout-proposal-20261015.json SHA483e664ccc45935688eb116261b58f74ff5e1b70243e1e4a998c7840f401ec3a: original17 engineering-delivered/no new concrete gap; human/finalvisual NOTRUN."
+        },
+        {
+          "stage": "recovery",
+          "reference": "Actual own logical-label baseline/session cleanup PASS in73d3; original unknowns safely retained and reconciled exact read-only without replay. Existing executed reservation/restart/corruption/no-witness/stale/foreign/no-root-replay and injected partial repair controls per483e. No actual process-crash/quiescence or historical cleanup success is inferred."
         }
       ],
-      "next_action": "Reviewed badge7 dd93817f is integrated; old-source RED1/new focused9+Archive1 and merged label9 PASS. Native final app package6689e030/481inputs is independently CLEAR, build pending; then matching helper-first installation and one changed installed relocation/reload-badge seam. Preserve bounded Labels10 proof without whole-criterion inflation."
+      "next_action": "Engineering delivered under original17 audit483e. Preserve all historical failures and scoped component limits; invite only the nonmutating four-step usability check after signed closeout. Human/final-reference acceptance remains separate; no generic QA rerun."
     },
     {
       "id": "finite-menus",
@@ -9268,10 +9340,10 @@ state. Only then name exact human-only observations. No fake ETA or new status b
       "stages": {
         "implementation": "PASS",
         "source_tests": "PASS",
-        "native_tests": "PENDING",
-        "deployed_qa": "PENDING",
-        "independent_review": "PENDING",
-        "recovery": "PENDING"
+        "native_tests": "PASS",
+        "deployed_qa": "PASS",
+        "independent_review": "PASS",
+        "recovery": "PASS"
       },
       "evidence": [
         {
@@ -9281,14 +9353,38 @@ state. Only then name exact human-only observations. No fake ETA or new status b
         {
           "stage": "source_tests",
           "reference": "a87d878e joins exact Preview/Contacts positive and session/origin/CSRF/CAS/stale/persistence/refusal controls plus source-pinned historical native evidence. One current Contacts200 does not promote aggregate native/deployed/recovery stages."
+        },
+        {
+          "stage": "implementation",
+          "reference": "Signedc4e318bf/current324b; original17-engineering-closeout-proposal-20261015.json SHA483e664c maps each unchanged obligation to implemented source and composed actual evidence. Runtime wrapper batch delegation is fixed with no new protocol."
+        },
+        {
+          "stage": "source_tests",
+          "reference": "Normal c4 commit/push1723Rust/0failed/44explicit native ignores and519Python; sourcee8fa old actualsigned-wire RED/new completeRuntime11PASS; existing exact positive/foreign/stale/CSRF/corruption/no-replay controls in independent483e evidence_groups."
+        },
+        {
+          "stage": "native_tests",
+          "reference": "Current actualb4d3 Runtime wire/unavailable2PASS0.037s/all481signed inputs; unchanged native2fdf subtree/data/authority/lifecycle12markers and989c injected partial repair reused only as independently audited components. Original17 audit483e gives control-specific native/menu reuse limits."
+        },
+        {
+          "stage": "deployed_qa",
+          "reference": "Independent fresh public13 auditd64a8890/terminal73d3e025 PASS60.695s/current324b:13complete replies, distinct BinApply3937ms and Restore4007ms, all3GUIDs/fullbody+attachment/currentselectedfacts+reader/listbadges/ownlabel cleanuprev15+exactlease cleanup. Joined to successful originalprefix17, separateDelete8/CreateMove10/Labels10; old failed intervals remain failed."
+        },
+        {
+          "stage": "independent_review",
+          "reference": "independent-current-public13-delivery-scope.json SHAd64a88905527814201c8d72c7f4dc051a9699304ca84e51602c073fd5f1339da and original17-engineering-closeout-proposal-20261015.json SHA483e664ccc45935688eb116261b58f74ff5e1b70243e1e4a998c7840f401ec3a: original17 engineering-delivered/no new concrete gap; human/finalvisual NOTRUN."
+        },
+        {
+          "stage": "recovery",
+          "reference": "Actual own logical-label baseline/session cleanup PASS in73d3; original unknowns safely retained and reconciled exact read-only without replay. Existing executed reservation/restart/corruption/no-witness/stale/foreign/no-root-replay and injected partial repair controls per483e. No actual process-crash/quiescence or historical cleanup success is inferred."
         }
       ],
-      "next_action": "Reconcile original action-specific current and unchanged component records; retain historical source/native/keyboard/Back limits. No generic all-menu campaign or whole-slice inference."
+      "next_action": "Engineering delivered under original17 audit483e. Preserve all historical failures and scoped component limits; invite only the nonmutating four-step usability check after signed closeout. Human/final-reference acceptance remains separate; no generic QA rerun."
     }
   ],
   "human_acceptance": {
     "status": "PENDING",
-    "reference": "Minimal combined operator usability only after all agent-owned scope PASS; no operator debugging or provider Send in this work order."
+    "reference": "S08 labels-folders/s08-02-engineering-closeout-20261015/UAT.md: normal sign-in, browse retained controlled hierarchy/selected facts, open saved email+small attachment, report usability. Agentic development/QA/audit PASS; no new mail or folder mutation required. NOT RUN."
   },
   "checkpoints": {
     "labels_ten_http_journey": {
@@ -9307,7 +9403,7 @@ state. Only then name exact human-only observations. No fake ETA or new status b
       "evidence": "S08 labels-folders/folders-disposition-integration-20261015/installed-lifecycle-qualification/remaining-restore-delete-continuation-attempt2; actual53.964s, root witnessf5a6, actual-record proof4b83"
     }
   },
-  "next_action": "Preserve original Bin and distinct Restore Apply reply failures; never retry either. Read exact retained Restore request/native completion/current facts without mutation. Repair missing folder_facts forwarding in actual MailboxListRuntimeBackend with a real-wrapper signed wire regression, matching native/app/normal signed sync/helper-first install and only changed unfinished functional evidence. No new protocol or deadline extension."
+  "next_action": "Finish signed current closeout and minimal nonmutating usability handoff; human NOTRUN does not halt independent approved epic engineering. Original S08-01/S08-03/S08-04 and earlier unresolved requirements remain open; no unilateral parking or whole-sprint claim."
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->
@@ -9691,3 +9787,56 @@ installation and the new distinct installed response remain pending at this
 source checkpoint. Existing V10 scanners only refresh derived entries/offsets in
 http_mailbox_backends.rs; refined high relevance remains zero, classifications
 and validators unchanged. No human acceptance or full-slice closure follows.
+
+## 2026-10-15 — S08-02 original17 engineering delivered; minimal usability ready
+
+Normal signed commit/push for c4e318bf2602998885ea1b4aa9432ff0a572031b pass1723
+Rust/0failed/44 explicit native ignores and519 account Python checks. Good
+Shopkeeper, fresh GitHub0/0 clean and all three local branch heads equal their
+origin references. All481 compiled inputs exactly match signed source with no
+exclusions. Matching application324b1cb9 is installed helper-first on Toronto
+and then obsd1 web; configuration, key agents, retention, completion integrity
+and unrelated services are preserved. Standard mail checkout is clean source-only
+c4e. Initial caller backup-prefix refusal is retained; the unchanged guard
+refuses before service work. Corrected exact owned staging/name uses the same
+inode and candidate bytes; no activator or guard relaxation occurs.
+
+One distinct current public13 journey passes60.695s, thirteen complete replies
+and thirty-nine journal rows. New populated BinApply and exact receipt Restore
+return303 at3937ms and4007ms within unchanged10s. Three original folder GUIDs,
+UID/opaque message GUID, saved headers/bodyca16 and decoded attachment26a66
+remain exact. Current selected name/parent/owner/direct totals and reloaded
+reader/list badges agree. Own label Detach/Delete preserves prior logical rows
+at actual final revision15; the exact qualification session is revoked/removed,
+born process reaped and old seven journals unchanged. No Append, Send, expunge,
+private-key action, historical nonce or automatic mutation retry occurs.
+
+Independent current delivery auditd64a8890 and per-original17 audit483e664c
+join this result to successful prior Create/Rename/Move, Delete8, CreateMove10,
+Labels10, action-specific menus and executed authority/refusal/recovery controls.
+All four functional outcomes and six required engineering stages PASS in their
+explicit composed scopes; no new concrete engineering gap is demonstrated.
+This is UAT_READY, not human ACCEPTED or whole S08/sprint/epic completion.
+Native component reuse is not a claim every source test reran natively; injected
+partial repair is not actual process-crash/quiescence proof. Historical failed
+HTTP intervals and old failed-fixture cleanup remain permanently retained.
+
+Retained final evidence: labels-folders/installed-subtree-lifecycle-20261015/
+remaining13-after-bin-read-repair/current-public-bin-restore13-proposal1/
+root-custody-proposal3-activated-final/actual-public13-attempt1.json;
+actual-public13-journal-and-timing.jsonl (journal73d3e025);
+independent-current-public13-delivery-scope.json (d64a8890). Per-control composition
+is pm-delivery-policy-20261015/original17-engineering-closeout-proposal-20261015.json
+(483e664c). Normal signed/native/deployment proofs are under
+bin-preparation-latency-20261015/runtime-folder-facts-forwarding-successor1/.
+
+The minimal human check is labels-folders/s08-02-engineering-closeout-20261015/
+UAT.md: sign in normally, browse retained Renamed-Mail/Child/Grand and selected
+facts, open the controlled email/small attachment, report usability. No new mail,
+folder mutation or repeated engineering QA is required. Human/final-reference
+visual acceptance is NOT RUN. Existing AGENTS/framework now requires a
+distinguishing regression through actual Runtime delegation for a changed trait
+or batching seam, addressing this concrete missed integration without a new
+framework. After normal signed closeout, continue the next approved concrete
+epic gap; pending human judgment does not pause engineering or erase earlier
+S04–S07 and other S08 obligations.

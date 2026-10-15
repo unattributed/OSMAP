@@ -8,6 +8,13 @@ authoritative Inbox/Sent MIME evidence. `CURRENT_PROJECT_STATUS.md` and the
 latest `UX_EXECUTION_LEDGER.md` distinguish that bounded result from pending
 whole-baseline, OpenPGP-provider and original sprint acceptance.
 
+October15 S08-02 engineering delivery: signed sourcec4e318bf and installed
+application324b1cb9 have independent folder/label/menu delivery review. The
+distinct current populated Bin/Restore and final hierarchy/badges/owned cleanup
+journey passes13 HTTP outcomes; original timeouts are preserved. A minimal
+nonmutating human usability check remains separately NOT RUN. S08 and the full
+epic are not closed by this engineering delivery.
+
 The 2026-09-29/30 UX engineering stream has completed intake and implemented
 the S01 appearance and shared-shell work locally. `UX_EXECUTION_LEDGER.md`
 records signed checkpoints, synthetic browser/persistence evidence, remaining

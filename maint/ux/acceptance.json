@@ -3950,17 +3950,47 @@
           "kind": "dependency",
           "path": "docs/UX_EXECUTION_LEDGER.md",
           "scope": "2026-10-15 actual executed reconciliation supersedes older absence/unreconciled pointers for the exact scope above only. Recovery successor/final combined visual/human criteria remain open; not whole S08 closure."
+        },
+        {
+          "kind": "dependency",
+          "path": "docs/UX_EXECUTION_LEDGER.md",
+          "scope": "2026-10-15 independent original17 audit and current actual public13 establish QA_VERIFIED agentic engineering scope for this unchanged criterion. Supersedes earlier pending combined proof only; original historical failures, human/final-reference visual acceptance and other sprint obligations stay separately recorded. No ACCEPTED or full-epic claim."
         }
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "PARTIALLY_VERIFIED",
+        "status": "QA_VERIFIED",
         "executed": true,
         "evidence": [
           {
             "kind": "qa_execution",
             "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/folders-disposition-integration-20261015/installed-labels-journey-attempt2/independent-delivery-scope.json",
             "scope": "Installed b307/ad16 Labels10 PASS22.952s: create/rename/attach current tuple/filter menu/filtered reader/Clear/detach/delete; five own CAS writes/revision+5, unrelated logical rows restored and exact lease cleanup. Reader Seen side effects unassessed; not full badge/visual/human acceptance. Retained sha256=ae82d890d26a0a37d4e4277a147212951bfb4d765fbe413c7ef8c58b0d9a1e43."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/installed-subtree-lifecycle-20261015/remaining13-after-bin-read-repair/current-public-bin-restore13-proposal1/root-custody-proposal3-activated-final/actual-public13-attempt1.json",
+            "scope": "Actual label Create/Attach in first17 plus final13 current-identity list and reader badges and own Detach/Delete with unrelated logical rows preserved. Current actualc4e/324b fresh13 result PASS60.695s/exact13 replies; reference artifact SHA256=931675824e37b8dec01f8bc248f61df88e305a279d61df324ad52809ccfd2150. Composed agentic engineering QA only; human and final-reference visual acceptance NOT_RUN."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/installed-subtree-lifecycle-20261015/remaining13-after-bin-read-repair/current-public-bin-restore13-proposal1/root-custody-proposal3-activated-final/actual-public13-journal-and-timing.jsonl",
+            "scope": "Actual fresh public13 journal73d3e025 has39rows/exact13 completed replies, both pre-Apply typed request hashes, original3GUIDs, digestca16fc5b/attachment26a66b, own logical cleanup at observed revision15 and exact new lease removal. Both historical Bin/Restore HTTP replies remain unobserved; c042/640/a50 retained unchanged. Artifact SHA256=ea6d7af68f1bf06d8402d54553bdf29b4e453ad1b125a7f852216e46cbe17e2e."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/bin-preparation-latency-20261015/runtime-folder-facts-forwarding-successor1/push-attempt1.log",
+            "scope": "Actually passed current signedc4e normal push gate, positive/negative controls relevant to this control: native_labels_persist_validate_csrf_cas_identity_and_delete_confirmation; assigned_label_badges_do_not_transfer_to_foreign_or_reused_message_identity; assigned_label_badges_metadata_or_private_store_failure_is_unavailable. Full log SHA256=382c571b969917c71b6b80a049785349638e78bba75afc4ac75effd58375674f. These are source/fixture executions, not new installed negative or human tests."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/installed-subtree-lifecycle-20261015/remaining13-after-bin-read-repair/current-public-bin-restore13-proposal1/root-custody-proposal3-activated-final/independent-current-public13-delivery-scope.json",
+            "scope": "Independent actual currentpublic13 delivered-scope PASS, SHA256=d64a88905527814201c8d72c7f4dc051a9699304ca84e51602c073fd5f1339da. New Bin/Restore observed3033937ms/4007ms; bodyca16/attachment26a66/threeGUIDs/badges/selected facts/own label logical cleanup at observedrevision15/exact lease cleanup; historical c042/640/a50 failed HTTP intervals retained."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/pm-delivery-policy-20261015/original17-engineering-closeout-proposal-20261015.json",
+            "scope": "Independent original17 engineering reconciliation PASS_COMPOSED_EXECUTED_SCOPE for R2-03-007, SHA256=483e664ccc45935688eb116261b58f74ff5e1b70243e1e4a998c7840f401ec3a. Existing executed positive/negative/refusal/recovery evidence joined without reruns or inventing uninterrupted30PASS. System-role/parent-open/count-transition compositional scope explicitly accepted. All4 outcomes/all6 engineering stages PASS; human/final-reference visuals NOT_RUN."
           }
         ]
       }
@@ -14015,17 +14045,52 @@
           "kind": "dependency",
           "path": "docs/UX_EXECUTION_LEDGER.md",
           "scope": "2026-10-15 actual executed reconciliation supersedes older absence/unreconciled pointers for the exact scope above only. Recovery successor/final combined visual/human criteria remain open; not whole S08 closure."
+        },
+        {
+          "kind": "dependency",
+          "path": "docs/UX_EXECUTION_LEDGER.md",
+          "scope": "2026-10-15 independent original17 audit and current actual public13 establish QA_VERIFIED agentic engineering scope for this unchanged criterion. Supersedes earlier pending combined proof only; original historical failures, human/final-reference visual acceptance and other sprint obligations stay separately recorded. No ACCEPTED or full-epic claim."
         }
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "PARTIALLY_VERIFIED",
+        "status": "QA_VERIFIED",
         "executed": true,
         "evidence": [
           {
             "kind": "qa_execution",
             "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/folders-disposition-integration-20261015/installed-create-and-complete-email-move-attempt1/independent-delivery-scope.json",
             "scope": "Installed b307/ad16 actual Create entry/review/confirm creates exclusive absent child under exact parent2309; new GUID62572 and empty state observed. Complete-message Move preserves actual destination UID/GUID/saved body/decoded attachment. Not partial-tree recovery proof. Retained sha256=5e463e4157afecb7a9eeb6916ba5f27a1bfde92dd78886ac55485672b377594e."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/installed-subtree-lifecycle-20261015/remaining13-after-bin-read-repair/current-public-bin-restore13-proposal1/root-custody-proposal3-activated-final/actual-public13-attempt1.json",
+            "scope": "Actual first17 creates Child and Child.Grand with exact parent/GUID bindings; reuse earlier exclusive CreateMove journey. Current actualc4e/324b fresh13 result PASS60.695s/exact13 replies; reference artifact SHA256=931675824e37b8dec01f8bc248f61df88e305a279d61df324ad52809ccfd2150. Composed agentic engineering QA only; human and final-reference visual acceptance NOT_RUN."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/installed-subtree-lifecycle-20261015/remaining13-after-bin-read-repair/current-public-bin-restore13-proposal1/root-custody-proposal3-activated-final/actual-public13-journal-and-timing.jsonl",
+            "scope": "Actual fresh public13 journal73d3e025 has39rows/exact13 completed replies, both pre-Apply typed request hashes, original3GUIDs, digestca16fc5b/attachment26a66b, own logical cleanup at observed revision15 and exact new lease removal. Both historical Bin/Restore HTTP replies remain unobserved; c042/640/a50 retained unchanged. Artifact SHA256=ea6d7af68f1bf06d8402d54553bdf29b4e453ad1b125a7f852216e46cbe17e2e."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/bin-preparation-latency-20261015/runtime-folder-facts-forwarding-successor1/push-attempt1.log",
+            "scope": "Actually passed current signedc4e normal push gate, positive/negative controls relevant to this control: folder_creation_review_csrf_guid_conflict_and_unknown_keep_authority; folder_create_namespace_and_capacity_boundaries; folder_create_grant_response_and_foreign_binding. Full log SHA256=382c571b969917c71b6b80a049785349638e78bba75afc4ac75effd58375674f. These are source/fixture executions, not new installed negative or human tests."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/installed-subtree-lifecycle-20261015/review-successor6-contacts-destination/actual-failure-journal-summary.json",
+            "scope": "Originalc042 first17 complete replies actually settled two Creates/owned label attach/populated Rename/Move and exact tree/content. Failed readonlyGET18 remains FAIL; successful current13 does not turn original30 into PASS. Retained artifact SHA256=68b0f35875630f67bdcc863d71f07061c3e61b6bada0099c683ad7353528605d."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/installed-subtree-lifecycle-20261015/remaining13-after-bin-read-repair/current-public-bin-restore13-proposal1/root-custody-proposal3-activated-final/independent-current-public13-delivery-scope.json",
+            "scope": "Independent actual currentpublic13 delivered-scope PASS, SHA256=d64a88905527814201c8d72c7f4dc051a9699304ca84e51602c073fd5f1339da. New Bin/Restore observed3033937ms/4007ms; bodyca16/attachment26a66/threeGUIDs/badges/selected facts/own label logical cleanup at observedrevision15/exact lease cleanup; historical c042/640/a50 failed HTTP intervals retained."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/pm-delivery-policy-20261015/original17-engineering-closeout-proposal-20261015.json",
+            "scope": "Independent original17 engineering reconciliation PASS_COMPOSED_EXECUTED_SCOPE for R2-16-009, SHA256=483e664ccc45935688eb116261b58f74ff5e1b70243e1e4a998c7840f401ec3a. Existing executed positive/negative/refusal/recovery evidence joined without reruns or inventing uninterrupted30PASS. System-role/parent-open/count-transition compositional scope explicitly accepted. All4 outcomes/all6 engineering stages PASS; human/final-reference visuals NOT_RUN."
           }
         ]
       }
@@ -14063,11 +14128,16 @@
           "kind": "dependency",
           "path": "docs/UX_EXECUTION_LEDGER.md",
           "scope": "2026-10-15 actual executed reconciliation supersedes older absence/unreconciled pointers for the exact scope above only. Recovery successor/final combined visual/human criteria remain open; not whole S08 closure."
+        },
+        {
+          "kind": "dependency",
+          "path": "docs/UX_EXECUTION_LEDGER.md",
+          "scope": "2026-10-15 independent original17 audit and current actual public13 establish QA_VERIFIED agentic engineering scope for this unchanged criterion. Supersedes earlier pending combined proof only; original historical failures, human/final-reference visual acceptance and other sprint obligations stay separately recorded. No ACCEPTED or full-epic claim."
         }
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "PARTIALLY_VERIFIED",
+        "status": "QA_VERIFIED",
         "executed": true,
         "evidence": [
           {
@@ -14079,6 +14149,41 @@
             "kind": "native_execution",
             "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/folders-next-integration-20261015/native-attempt3/independent-native-delivery-scope.json",
             "scope": "Matching b307 native bounded populated subtree Rename and exact stored-body/GUID/index/Bob continuity PASS. Prior installed leaf Rename evidence retained. Explicit partial/merged-tree successor and combined installed non-leaf recovery remain pending. Retained sha256=9d28f18bef60dc98aa1de3a6b139f880cfd4fe3b2c2cdee6138cdb8df75e2ffb."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/installed-subtree-lifecycle-20261015/remaining13-after-bin-read-repair/current-public-bin-restore13-proposal1/root-custody-proposal3-activated-final/actual-public13-attempt1.json",
+            "scope": "Actual first17 Rename settles root/two descendants preserving GUIDs/current message body/attachment/label relocation. Current actualc4e/324b fresh13 result PASS60.695s/exact13 replies; reference artifact SHA256=931675824e37b8dec01f8bc248f61df88e305a279d61df324ad52809ccfd2150. Composed agentic engineering QA only; human and final-reference visual acceptance NOT_RUN."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/installed-subtree-lifecycle-20261015/remaining13-after-bin-read-repair/current-public-bin-restore13-proposal1/root-custody-proposal3-activated-final/actual-public13-journal-and-timing.jsonl",
+            "scope": "Actual fresh public13 journal73d3e025 has39rows/exact13 completed replies, both pre-Apply typed request hashes, original3GUIDs, digestca16fc5b/attachment26a66b, own logical cleanup at observed revision15 and exact new lease removal. Both historical Bin/Restore HTTP replies remain unobserved; c042/640/a50 retained unchanged. Artifact SHA256=ea6d7af68f1bf06d8402d54553bdf29b4e453ad1b125a7f852216e46cbe17e2e."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/bin-preparation-latency-20261015/runtime-folder-facts-forwarding-successor1/push-attempt1.log",
+            "scope": "Actually passed current signedc4e normal push gate, positive/negative controls relevant to this control: folder_rename_route_review_confirmation_csrf_stale_unknown_and_continuity; folder_rename_pending_result_is_account_bound_and_never_retried; folder_subtree_recovery_review_is_read_only_and_post_requires_current_session_csrf. Full log SHA256=382c571b969917c71b6b80a049785349638e78bba75afc4ac75effd58375674f. These are source/fixture executions, not new installed negative or human tests."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/folder-recovery-integration-20261015/native-virtual-fix-attempt3/independent-native-delivery-scope.json",
+            "scope": "Actual matching recovery component native3 PASS13.179s/all11markers proves configured-peer/Dovecot owned child repair, consumed nonce/lost reply/no redispatch and complete GUID/body/attachment/index/Bob continuity. Deliberate partial durable state injection is not actual process-crash/quiescence. SHA256=9455ef904a31c968e0391ac4e318a5c4b38c0d234521bce77ed1024a66854b77. Earlier failed fixture cleanupUNKNOWN remains preserved."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/installed-subtree-lifecycle-20261015/review-successor6-contacts-destination/actual-failure-journal-summary.json",
+            "scope": "Originalc042 first17 complete replies actually settled two Creates/owned label attach/populated Rename/Move and exact tree/content. Failed readonlyGET18 remains FAIL; successful current13 does not turn original30 into PASS. Retained artifact SHA256=68b0f35875630f67bdcc863d71f07061c3e61b6bada0099c683ad7353528605d."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/installed-subtree-lifecycle-20261015/remaining13-after-bin-read-repair/current-public-bin-restore13-proposal1/root-custody-proposal3-activated-final/independent-current-public13-delivery-scope.json",
+            "scope": "Independent actual currentpublic13 delivered-scope PASS, SHA256=d64a88905527814201c8d72c7f4dc051a9699304ca84e51602c073fd5f1339da. New Bin/Restore observed3033937ms/4007ms; bodyca16/attachment26a66/threeGUIDs/badges/selected facts/own label logical cleanup at observedrevision15/exact lease cleanup; historical c042/640/a50 failed HTTP intervals retained."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/pm-delivery-policy-20261015/original17-engineering-closeout-proposal-20261015.json",
+            "scope": "Independent original17 engineering reconciliation PASS_COMPOSED_EXECUTED_SCOPE for R2-16-010, SHA256=483e664ccc45935688eb116261b58f74ff5e1b70243e1e4a998c7840f401ec3a. Existing executed positive/negative/refusal/recovery evidence joined without reruns or inventing uninterrupted30PASS. System-role/parent-open/count-transition compositional scope explicitly accepted. All4 outcomes/all6 engineering stages PASS; human/final-reference visuals NOT_RUN."
           }
         ]
       }
@@ -14116,11 +14221,16 @@
           "kind": "dependency",
           "path": "docs/UX_EXECUTION_LEDGER.md",
           "scope": "2026-10-15 actual executed reconciliation supersedes older absence/unreconciled pointers for the exact scope above only. Recovery successor/final combined visual/human criteria remain open; not whole S08 closure."
+        },
+        {
+          "kind": "dependency",
+          "path": "docs/UX_EXECUTION_LEDGER.md",
+          "scope": "2026-10-15 independent original17 audit and current actual public13 establish QA_VERIFIED agentic engineering scope for this unchanged criterion. Supersedes earlier pending combined proof only; original historical failures, human/final-reference visual acceptance and other sprint obligations stay separately recorded. No ACCEPTED or full-epic claim."
         }
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "PARTIALLY_VERIFIED",
+        "status": "QA_VERIFIED",
         "executed": true,
         "evidence": [
           {
@@ -14132,6 +14242,41 @@
             "kind": "native_execution",
             "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/folders-next-integration-20261015/native-attempt3/independent-native-delivery-scope.json",
             "scope": "Matching b307 native bounded populated subtree Move and GUID/body/index/Bob/authority/lost-result-no-redispatch checks PASS. Installed complete-email Message Move is a separate operation, not proof of installed subtree Move/recovery. Retained sha256=9d28f18bef60dc98aa1de3a6b139f880cfd4fe3b2c2cdee6138cdb8df75e2ffb."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/installed-subtree-lifecycle-20261015/remaining13-after-bin-read-repair/current-public-bin-restore13-proposal1/root-custody-proposal3-activated-final/actual-public13-attempt1.json",
+            "scope": "Actual first17 Move settles exact Target.Payload parent/root/descendants and complete message/owned label continuity. Current actualc4e/324b fresh13 result PASS60.695s/exact13 replies; reference artifact SHA256=931675824e37b8dec01f8bc248f61df88e305a279d61df324ad52809ccfd2150. Composed agentic engineering QA only; human and final-reference visual acceptance NOT_RUN."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/installed-subtree-lifecycle-20261015/remaining13-after-bin-read-repair/current-public-bin-restore13-proposal1/root-custody-proposal3-activated-final/actual-public13-journal-and-timing.jsonl",
+            "scope": "Actual fresh public13 journal73d3e025 has39rows/exact13 completed replies, both pre-Apply typed request hashes, original3GUIDs, digestca16fc5b/attachment26a66b, own logical cleanup at observed revision15 and exact new lease removal. Both historical Bin/Restore HTTP replies remain unobserved; c042/640/a50 retained unchanged. Artifact SHA256=ea6d7af68f1bf06d8402d54553bdf29b4e453ad1b125a7f852216e46cbe17e2e."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/bin-preparation-latency-20261015/runtime-folder-facts-forwarding-successor1/push-attempt1.log",
+            "scope": "Actually passed current signedc4e normal push gate, positive/negative controls relevant to this control: folder_move_review_confirm_and_current_parent_authority; folder_move_unknown_original_action_is_inspected_without_redispatch; folder_subtree_review_binds_children_and_refuses_changed_tree_before_dispatch. Full log SHA256=382c571b969917c71b6b80a049785349638e78bba75afc4ac75effd58375674f. These are source/fixture executions, not new installed negative or human tests."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/folder-recovery-integration-20261015/native-virtual-fix-attempt3/independent-native-delivery-scope.json",
+            "scope": "Actual matching recovery component native3 PASS13.179s/all11markers proves configured-peer/Dovecot owned child repair, consumed nonce/lost reply/no redispatch and complete GUID/body/attachment/index/Bob continuity. Deliberate partial durable state injection is not actual process-crash/quiescence. SHA256=9455ef904a31c968e0391ac4e318a5c4b38c0d234521bce77ed1024a66854b77. Earlier failed fixture cleanupUNKNOWN remains preserved."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/installed-subtree-lifecycle-20261015/review-successor6-contacts-destination/actual-failure-journal-summary.json",
+            "scope": "Originalc042 first17 complete replies actually settled two Creates/owned label attach/populated Rename/Move and exact tree/content. Failed readonlyGET18 remains FAIL; successful current13 does not turn original30 into PASS. Retained artifact SHA256=68b0f35875630f67bdcc863d71f07061c3e61b6bada0099c683ad7353528605d."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/installed-subtree-lifecycle-20261015/remaining13-after-bin-read-repair/current-public-bin-restore13-proposal1/root-custody-proposal3-activated-final/independent-current-public13-delivery-scope.json",
+            "scope": "Independent actual currentpublic13 delivered-scope PASS, SHA256=d64a88905527814201c8d72c7f4dc051a9699304ca84e51602c073fd5f1339da. New Bin/Restore observed3033937ms/4007ms; bodyca16/attachment26a66/threeGUIDs/badges/selected facts/own label logical cleanup at observedrevision15/exact lease cleanup; historical c042/640/a50 failed HTTP intervals retained."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/pm-delivery-policy-20261015/original17-engineering-closeout-proposal-20261015.json",
+            "scope": "Independent original17 engineering reconciliation PASS_COMPOSED_EXECUTED_SCOPE for R2-16-011, SHA256=483e664ccc45935688eb116261b58f74ff5e1b70243e1e4a998c7840f401ec3a. Existing executed positive/negative/refusal/recovery evidence joined without reruns or inventing uninterrupted30PASS. System-role/parent-open/count-transition compositional scope explicitly accepted. All4 outcomes/all6 engineering stages PASS; human/final-reference visuals NOT_RUN."
           }
         ]
       }
@@ -14169,17 +14314,47 @@
           "kind": "dependency",
           "path": "docs/UX_EXECUTION_LEDGER.md",
           "scope": "2026-10-15 actual executed reconciliation supersedes older absence/unreconciled pointers for the exact scope above only. Recovery successor/final combined visual/human criteria remain open; not whole S08 closure."
+        },
+        {
+          "kind": "dependency",
+          "path": "docs/UX_EXECUTION_LEDGER.md",
+          "scope": "2026-10-15 independent original17 audit and current actual public13 establish QA_VERIFIED agentic engineering scope for this unchanged criterion. Supersedes earlier pending combined proof only; original historical failures, human/final-reference visual acceptance and other sprint obligations stay separately recorded. No ACCEPTED or full-epic claim."
         }
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "PARTIALLY_VERIFIED",
+        "status": "QA_VERIFIED",
         "executed": true,
         "evidence": [
           {
             "kind": "qa_execution",
             "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/folders-disposition-integration-20261015/installed-lifecycle-qualification/remaining-restore-delete-continuation-attempt2/actual-remaining-attempt1.json",
             "scope": "Installed b307/ad16 separate remaining Restore/Delete eight HTTP outcomes PASS53.964s; exact owned lease cleanup. Root exact Delete witness and independent composed audit recorded in ledger. Original Bin303 unobserved, no Append/Bin/expunge replay; partial-tree recovery pending. Retained sha256=7c2da79e392786526fe4ecf0b1516fa2b62921c56dbc17abd7df094c227a6fd9."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/installed-subtree-lifecycle-20261015/remaining13-after-bin-read-repair/current-public-bin-restore13-proposal1/root-custody-proposal3-activated-final/actual-public13-attempt1.json",
+            "scope": "Reuse existing actual remaining Restore/Delete eight-request journey and exact Delete witness; actual fresh public13 never deletes another folder. Current actualc4e/324b fresh13 result PASS60.695s/exact13 replies; reference artifact SHA256=931675824e37b8dec01f8bc248f61df88e305a279d61df324ad52809ccfd2150. Composed agentic engineering QA only; human and final-reference visual acceptance NOT_RUN."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/installed-subtree-lifecycle-20261015/remaining13-after-bin-read-repair/current-public-bin-restore13-proposal1/root-custody-proposal3-activated-final/actual-public13-journal-and-timing.jsonl",
+            "scope": "Actual fresh public13 journal73d3e025 has39rows/exact13 completed replies, both pre-Apply typed request hashes, original3GUIDs, digestca16fc5b/attachment26a66b, own logical cleanup at observed revision15 and exact new lease removal. Both historical Bin/Restore HTTP replies remain unobserved; c042/640/a50 retained unchanged. Artifact SHA256=ea6d7af68f1bf06d8402d54553bdf29b4e453ad1b125a7f852216e46cbe17e2e."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/bin-preparation-latency-20261015/runtime-folder-facts-forwarding-successor1/push-attempt1.log",
+            "scope": "Actually passed current signedc4e normal push gate, positive/negative controls relevant to this control: folder_delete_review_confirm_authority_and_original_result; folder_delete_unknown_does_not_clear_from_absence_or_retry; folder_delete_pending_preserves_legacy_rename_and_cross_kind_exclusion. Full log SHA256=382c571b969917c71b6b80a049785349638e78bba75afc4ac75effd58375674f. These are source/fixture executions, not new installed negative or human tests."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/installed-subtree-lifecycle-20261015/remaining13-after-bin-read-repair/current-public-bin-restore13-proposal1/root-custody-proposal3-activated-final/independent-current-public13-delivery-scope.json",
+            "scope": "Independent actual currentpublic13 delivered-scope PASS, SHA256=d64a88905527814201c8d72c7f4dc051a9699304ca84e51602c073fd5f1339da. New Bin/Restore observed3033937ms/4007ms; bodyca16/attachment26a66/threeGUIDs/badges/selected facts/own label logical cleanup at observedrevision15/exact lease cleanup; historical c042/640/a50 failed HTTP intervals retained."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/pm-delivery-policy-20261015/original17-engineering-closeout-proposal-20261015.json",
+            "scope": "Independent original17 engineering reconciliation PASS_COMPOSED_EXECUTED_SCOPE for R2-16-012, SHA256=483e664ccc45935688eb116261b58f74ff5e1b70243e1e4a998c7840f401ec3a. Existing executed positive/negative/refusal/recovery evidence joined without reruns or inventing uninterrupted30PASS. System-role/parent-open/count-transition compositional scope explicitly accepted. All4 outcomes/all6 engineering stages PASS; human/final-reference visuals NOT_RUN."
           }
         ]
       }
@@ -14237,17 +14412,47 @@
           "kind": "dependency",
           "path": "docs/UX_EXECUTION_LEDGER.md",
           "scope": "2026-10-15 actual executed reconciliation supersedes older absence/unreconciled pointers for the exact scope above only. Recovery successor/final combined visual/human criteria remain open; not whole S08 closure."
+        },
+        {
+          "kind": "dependency",
+          "path": "docs/UX_EXECUTION_LEDGER.md",
+          "scope": "2026-10-15 independent original17 audit and current actual public13 establish QA_VERIFIED agentic engineering scope for this unchanged criterion. Supersedes earlier pending combined proof only; original historical failures, human/final-reference visual acceptance and other sprint obligations stay separately recorded. No ACCEPTED or full-epic claim."
         }
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "PARTIALLY_VERIFIED",
+        "status": "QA_VERIFIED",
         "executed": true,
         "evidence": [
           {
             "kind": "qa_execution",
             "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/folders-page-20261014/installed-get-qualification/session-root-precondition-attempt2/actual-result.json",
             "scope": "Actual installed authoritative Folders hierarchy/select/open PASS with controlled leaf same-GUID/empty state and exact session cleanup; no operator cookies/message selection. Current Create confirms real new-child navigation. Final combined visual/human criteria remain separate. Retained sha256=242ab6cafb04e883306cda4d6dc5683710ad124d1784ffc82d49e127138fa59a."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/installed-subtree-lifecycle-20261015/remaining13-after-bin-read-repair/current-public-bin-restore13-proposal1/root-custody-proposal3-activated-final/actual-public13-attempt1.json",
+            "scope": "Reuse installed Folders select/open; first17 current root/tree and actual fresh public13 selected Folders/list/current reader GETs retain exact hierarchy. Current actualc4e/324b fresh13 result PASS60.695s/exact13 replies; reference artifact SHA256=931675824e37b8dec01f8bc248f61df88e305a279d61df324ad52809ccfd2150. Composed agentic engineering QA only; human and final-reference visual acceptance NOT_RUN."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/installed-subtree-lifecycle-20261015/remaining13-after-bin-read-repair/current-public-bin-restore13-proposal1/root-custody-proposal3-activated-final/actual-public13-journal-and-timing.jsonl",
+            "scope": "Actual fresh public13 journal73d3e025 has39rows/exact13 completed replies, both pre-Apply typed request hashes, original3GUIDs, digestca16fc5b/attachment26a66b, own logical cleanup at observed revision15 and exact new lease removal. Both historical Bin/Restore HTTP replies remain unobserved; c042/640/a50 retained unchanged. Artifact SHA256=ea6d7af68f1bf06d8402d54553bdf29b4e453ad1b125a7f852216e46cbe17e2e."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/bin-preparation-latency-20261015/runtime-folder-facts-forwarding-successor1/push-attempt1.log",
+            "scope": "Actually passed current signedc4e normal push gate, positive/negative controls relevant to this control: folders_page_uses_owned_hierarchy_and_existing_review_routes; folders_page_refuses_foreign_and_malformed_selection_without_dispatch; folder_hierarchy_authority_and_ambiguous_fallback. Full log SHA256=382c571b969917c71b6b80a049785349638e78bba75afc4ac75effd58375674f. These are source/fixture executions, not new installed negative or human tests."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/installed-subtree-lifecycle-20261015/remaining13-after-bin-read-repair/current-public-bin-restore13-proposal1/root-custody-proposal3-activated-final/independent-current-public13-delivery-scope.json",
+            "scope": "Independent actual currentpublic13 delivered-scope PASS, SHA256=d64a88905527814201c8d72c7f4dc051a9699304ca84e51602c073fd5f1339da. New Bin/Restore observed3033937ms/4007ms; bodyca16/attachment26a66/threeGUIDs/badges/selected facts/own label logical cleanup at observedrevision15/exact lease cleanup; historical c042/640/a50 failed HTTP intervals retained."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/pm-delivery-policy-20261015/original17-engineering-closeout-proposal-20261015.json",
+            "scope": "Independent original17 engineering reconciliation PASS_COMPOSED_EXECUTED_SCOPE for R2-16-013, SHA256=483e664ccc45935688eb116261b58f74ff5e1b70243e1e4a998c7840f401ec3a. Existing executed positive/negative/refusal/recovery evidence joined without reruns or inventing uninterrupted30PASS. System-role/parent-open/count-transition compositional scope explicitly accepted. All4 outcomes/all6 engineering stages PASS; human/final-reference visuals NOT_RUN."
           }
         ]
       }
@@ -14305,17 +14510,47 @@
           "kind": "dependency",
           "path": "docs/UX_EXECUTION_LEDGER.md",
           "scope": "2026-10-15 actual executed reconciliation supersedes older absence/unreconciled pointers for the exact scope above only. Recovery successor/final combined visual/human criteria remain open; not whole S08 closure."
+        },
+        {
+          "kind": "dependency",
+          "path": "docs/UX_EXECUTION_LEDGER.md",
+          "scope": "2026-10-15 independent original17 audit and current actual public13 establish QA_VERIFIED agentic engineering scope for this unchanged criterion. Supersedes earlier pending combined proof only; original historical failures, human/final-reference visual acceptance and other sprint obligations stay separately recorded. No ACCEPTED or full-epic claim."
         }
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "PARTIALLY_VERIFIED",
+        "status": "QA_VERIFIED",
         "executed": true,
         "evidence": [
           {
             "kind": "native_execution",
             "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/folders-next-integration-20261015/native-attempt3/independent-native-delivery-scope.json",
             "scope": "Matching native authority/protection and Bob/account checks PASS; existing hierarchy special-use/nonselectable metadata rendering proof retained. No guessed operational roles or current all-role visual/human acceptance inferred. Retained sha256=9d28f18bef60dc98aa1de3a6b139f880cfd4fe3b2c2cdee6138cdb8df75e2ffb."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/installed-subtree-lifecycle-20261015/remaining13-after-bin-read-repair/current-public-bin-restore13-proposal1/root-custody-proposal3-activated-final/actual-public13-attempt1.json",
+            "scope": "Reuse existing owned hierarchy/role rendering and protected-role native controls; actual fresh public13 binds configured Bin/current roles but does not relabel every system folder. Current actualc4e/324b fresh13 result PASS60.695s/exact13 replies; reference artifact SHA256=931675824e37b8dec01f8bc248f61df88e305a279d61df324ad52809ccfd2150. Composed agentic engineering QA only; human and final-reference visual acceptance NOT_RUN."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/installed-subtree-lifecycle-20261015/remaining13-after-bin-read-repair/current-public-bin-restore13-proposal1/root-custody-proposal3-activated-final/actual-public13-journal-and-timing.jsonl",
+            "scope": "Actual fresh public13 journal73d3e025 has39rows/exact13 completed replies, both pre-Apply typed request hashes, original3GUIDs, digestca16fc5b/attachment26a66b, own logical cleanup at observed revision15 and exact new lease removal. Both historical Bin/Restore HTTP replies remain unobserved; c042/640/a50 retained unchanged. Artifact SHA256=ea6d7af68f1bf06d8402d54553bdf29b4e453ad1b125a7f852216e46cbe17e2e."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/bin-preparation-latency-20261015/runtime-folder-facts-forwarding-successor1/push-attempt1.log",
+            "scope": "Actually passed current signedc4e normal push gate, positive/negative controls relevant to this control: folder_hierarchy_authority_and_ambiguous_fallback; folder_rename_route_rechecks_changed_roles_and_refuses_missing_authority. Full log SHA256=382c571b969917c71b6b80a049785349638e78bba75afc4ac75effd58375674f. These are source/fixture executions, not new installed negative or human tests."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/installed-subtree-lifecycle-20261015/remaining13-after-bin-read-repair/current-public-bin-restore13-proposal1/root-custody-proposal3-activated-final/independent-current-public13-delivery-scope.json",
+            "scope": "Independent actual currentpublic13 delivered-scope PASS, SHA256=d64a88905527814201c8d72c7f4dc051a9699304ca84e51602c073fd5f1339da. New Bin/Restore observed3033937ms/4007ms; bodyca16/attachment26a66/threeGUIDs/badges/selected facts/own label logical cleanup at observedrevision15/exact lease cleanup; historical c042/640/a50 failed HTTP intervals retained."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/pm-delivery-policy-20261015/original17-engineering-closeout-proposal-20261015.json",
+            "scope": "Independent original17 engineering reconciliation PASS_COMPOSED_EXECUTED_SCOPE for R2-16-014, SHA256=483e664ccc45935688eb116261b58f74ff5e1b70243e1e4a998c7840f401ec3a. Existing executed positive/negative/refusal/recovery evidence joined without reruns or inventing uninterrupted30PASS. System-role/parent-open/count-transition compositional scope explicitly accepted. All4 outcomes/all6 engineering stages PASS; human/final-reference visuals NOT_RUN."
           }
         ]
       }
@@ -14373,17 +14608,47 @@
           "kind": "dependency",
           "path": "docs/UX_EXECUTION_LEDGER.md",
           "scope": "2026-10-15 actual executed reconciliation supersedes older absence/unreconciled pointers for the exact scope above only. Recovery successor/final combined visual/human criteria remain open; not whole S08 closure."
+        },
+        {
+          "kind": "dependency",
+          "path": "docs/UX_EXECUTION_LEDGER.md",
+          "scope": "2026-10-15 independent original17 audit and current actual public13 establish QA_VERIFIED agentic engineering scope for this unchanged criterion. Supersedes earlier pending combined proof only; original historical failures, human/final-reference visual acceptance and other sprint obligations stay separately recorded. No ACCEPTED or full-epic claim."
         }
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "PARTIALLY_VERIFIED",
+        "status": "QA_VERIFIED",
         "executed": true,
         "evidence": [
           {
             "kind": "qa_execution",
             "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/folders-page-20261014/installed-get-qualification/session-root-precondition-attempt2/actual-result.json",
             "scope": "Actual installed selected owned hierarchy identity and same-GUID leaf verified; b307 CreateMove confirms new child identity. Existing escaped hostile-name and foreign/malformed metadata refusal proof retained. No final whole-page visual/human acceptance inferred. Retained sha256=242ab6cafb04e883306cda4d6dc5683710ad124d1784ffc82d49e127138fa59a."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/installed-subtree-lifecycle-20261015/remaining13-after-bin-read-repair/current-public-bin-restore13-proposal1/root-custody-proposal3-activated-final/actual-public13-attempt1.json",
+            "scope": "Actual fresh public13 final Folders response asserts the escaped current moved root and tree GUID; first17 proves actual location. Current actualc4e/324b fresh13 result PASS60.695s/exact13 replies; reference artifact SHA256=931675824e37b8dec01f8bc248f61df88e305a279d61df324ad52809ccfd2150. Composed agentic engineering QA only; human and final-reference visual acceptance NOT_RUN."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/installed-subtree-lifecycle-20261015/remaining13-after-bin-read-repair/current-public-bin-restore13-proposal1/root-custody-proposal3-activated-final/actual-public13-journal-and-timing.jsonl",
+            "scope": "Actual fresh public13 journal73d3e025 has39rows/exact13 completed replies, both pre-Apply typed request hashes, original3GUIDs, digestca16fc5b/attachment26a66b, own logical cleanup at observed revision15 and exact new lease removal. Both historical Bin/Restore HTTP replies remain unobserved; c042/640/a50 retained unchanged. Artifact SHA256=ea6d7af68f1bf06d8402d54553bdf29b4e453ad1b125a7f852216e46cbe17e2e."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/bin-preparation-latency-20261015/runtime-folder-facts-forwarding-successor1/push-attempt1.log",
+            "scope": "Actually passed current signedc4e normal push gate, positive/negative controls relevant to this control: folders_page_refuses_foreign_and_malformed_selection_without_dispatch; folder_hierarchy_authority_and_ambiguous_fallback. Full log SHA256=382c571b969917c71b6b80a049785349638e78bba75afc4ac75effd58375674f. These are source/fixture executions, not new installed negative or human tests."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/installed-subtree-lifecycle-20261015/remaining13-after-bin-read-repair/current-public-bin-restore13-proposal1/root-custody-proposal3-activated-final/independent-current-public13-delivery-scope.json",
+            "scope": "Independent actual currentpublic13 delivered-scope PASS, SHA256=d64a88905527814201c8d72c7f4dc051a9699304ca84e51602c073fd5f1339da. New Bin/Restore observed3033937ms/4007ms; bodyca16/attachment26a66/threeGUIDs/badges/selected facts/own label logical cleanup at observedrevision15/exact lease cleanup; historical c042/640/a50 failed HTTP intervals retained."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/pm-delivery-policy-20261015/original17-engineering-closeout-proposal-20261015.json",
+            "scope": "Independent original17 engineering reconciliation PASS_COMPOSED_EXECUTED_SCOPE for R2-16-015, SHA256=483e664ccc45935688eb116261b58f74ff5e1b70243e1e4a998c7840f401ec3a. Existing executed positive/negative/refusal/recovery evidence joined without reruns or inventing uninterrupted30PASS. System-role/parent-open/count-transition compositional scope explicitly accepted. All4 outcomes/all6 engineering stages PASS; human/final-reference visuals NOT_RUN."
           }
         ]
       }
@@ -14441,17 +14706,47 @@
           "kind": "dependency",
           "path": "docs/UX_EXECUTION_LEDGER.md",
           "scope": "2026-10-15 actual executed reconciliation supersedes older absence/unreconciled pointers for the exact scope above only. Recovery successor/final combined visual/human criteria remain open; not whole S08 closure."
+        },
+        {
+          "kind": "dependency",
+          "path": "docs/UX_EXECUTION_LEDGER.md",
+          "scope": "2026-10-15 independent original17 audit and current actual public13 establish QA_VERIFIED agentic engineering scope for this unchanged criterion. Supersedes earlier pending combined proof only; original historical failures, human/final-reference visual acceptance and other sprint obligations stay separately recorded. No ACCEPTED or full-epic claim."
         }
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "PARTIALLY_VERIFIED",
+        "status": "QA_VERIFIED",
         "executed": true,
         "evidence": [
           {
             "kind": "qa_execution",
             "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/folders-disposition-integration-20261015/installed-create-and-complete-email-move-attempt1/independent-delivery-scope.json",
             "scope": "Actual b307 Create binds child to exact owned parent2309/GUID62572 and current authoritative hierarchy; complete-message Move verifies parent/source emptiness and destination. Existing structural-parent projection proof retained; not arbitrary namespace mutation authority. Retained sha256=5e463e4157afecb7a9eeb6916ba5f27a1bfde92dd78886ac55485672b377594e."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/installed-subtree-lifecycle-20261015/remaining13-after-bin-read-repair/current-public-bin-restore13-proposal1/root-custody-proposal3-activated-final/actual-public13-attempt1.json",
+            "scope": "Actual fresh public13 final selected panel asserts exact escaped Target.Payload parent matching current authoritative GUID map. Current actualc4e/324b fresh13 result PASS60.695s/exact13 replies; reference artifact SHA256=931675824e37b8dec01f8bc248f61df88e305a279d61df324ad52809ccfd2150. Composed agentic engineering QA only; human and final-reference visual acceptance NOT_RUN."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/installed-subtree-lifecycle-20261015/remaining13-after-bin-read-repair/current-public-bin-restore13-proposal1/root-custody-proposal3-activated-final/actual-public13-journal-and-timing.jsonl",
+            "scope": "Actual fresh public13 journal73d3e025 has39rows/exact13 completed replies, both pre-Apply typed request hashes, original3GUIDs, digestca16fc5b/attachment26a66b, own logical cleanup at observed revision15 and exact new lease removal. Both historical Bin/Restore HTTP replies remain unobserved; c042/640/a50 retained unchanged. Artifact SHA256=ea6d7af68f1bf06d8402d54553bdf29b4e453ad1b125a7f852216e46cbe17e2e."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/bin-preparation-latency-20261015/runtime-folder-facts-forwarding-successor1/push-attempt1.log",
+            "scope": "Actually passed current signedc4e normal push gate, positive/negative controls relevant to this control: folders_page_uses_owned_hierarchy_and_existing_review_routes; folders_page_refuses_foreign_and_malformed_selection_without_dispatch. Full log SHA256=382c571b969917c71b6b80a049785349638e78bba75afc4ac75effd58375674f. These are source/fixture executions, not new installed negative or human tests."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/installed-subtree-lifecycle-20261015/remaining13-after-bin-read-repair/current-public-bin-restore13-proposal1/root-custody-proposal3-activated-final/independent-current-public13-delivery-scope.json",
+            "scope": "Independent actual currentpublic13 delivered-scope PASS, SHA256=d64a88905527814201c8d72c7f4dc051a9699304ca84e51602c073fd5f1339da. New Bin/Restore observed3033937ms/4007ms; bodyca16/attachment26a66/threeGUIDs/badges/selected facts/own label logical cleanup at observedrevision15/exact lease cleanup; historical c042/640/a50 failed HTTP intervals retained."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/pm-delivery-policy-20261015/original17-engineering-closeout-proposal-20261015.json",
+            "scope": "Independent original17 engineering reconciliation PASS_COMPOSED_EXECUTED_SCOPE for R2-16-016, SHA256=483e664ccc45935688eb116261b58f74ff5e1b70243e1e4a998c7840f401ec3a. Existing executed positive/negative/refusal/recovery evidence joined without reruns or inventing uninterrupted30PASS. System-role/parent-open/count-transition compositional scope explicitly accepted. All4 outcomes/all6 engineering stages PASS; human/final-reference visuals NOT_RUN."
           }
         ]
       }
@@ -14504,17 +14799,47 @@
           "kind": "dependency",
           "path": "docs/UX_EXECUTION_LEDGER.md",
           "scope": "2026-10-15 actual executed reconciliation supersedes older absence/unreconciled pointers for the exact scope above only. Recovery successor/final combined visual/human criteria remain open; not whole S08 closure."
+        },
+        {
+          "kind": "dependency",
+          "path": "docs/UX_EXECUTION_LEDGER.md",
+          "scope": "2026-10-15 independent original17 audit and current actual public13 establish QA_VERIFIED agentic engineering scope for this unchanged criterion. Supersedes earlier pending combined proof only; original historical failures, human/final-reference visual acceptance and other sprint obligations stay separately recorded. No ACCEPTED or full-epic claim."
         }
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "PARTIALLY_VERIFIED",
+        "status": "QA_VERIFIED",
         "executed": true,
         "evidence": [
           {
             "kind": "qa_execution",
             "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/folders-disposition-integration-20261015/installed-create-and-complete-email-move-attempt1/independent-delivery-scope.json",
             "scope": "Actual new child empty state and subsequent one-message destination/current reader tuple verified. Existing authoritative total/virtual-size and bounded loaded-unread evidence retained; no quota/disk/unbounded server-count claim. Retained sha256=5e463e4157afecb7a9eeb6916ba5f27a1bfde92dd78886ac55485672b377594e."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/installed-subtree-lifecycle-20261015/remaining13-after-bin-read-repair/current-public-bin-restore13-proposal1/root-custody-proposal3-activated-final/actual-public13-attempt1.json",
+            "scope": "Actual fresh public13 final selected panel asserts direct total1 alongside exact current complete message tuple/body/attachment; no total mailbox/quota/disk claim. Current actualc4e/324b fresh13 result PASS60.695s/exact13 replies; reference artifact SHA256=931675824e37b8dec01f8bc248f61df88e305a279d61df324ad52809ccfd2150. Composed agentic engineering QA only; human and final-reference visual acceptance NOT_RUN."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/installed-subtree-lifecycle-20261015/remaining13-after-bin-read-repair/current-public-bin-restore13-proposal1/root-custody-proposal3-activated-final/actual-public13-journal-and-timing.jsonl",
+            "scope": "Actual fresh public13 journal73d3e025 has39rows/exact13 completed replies, both pre-Apply typed request hashes, original3GUIDs, digestca16fc5b/attachment26a66b, own logical cleanup at observed revision15 and exact new lease removal. Both historical Bin/Restore HTTP replies remain unobserved; c042/640/a50 retained unchanged. Artifact SHA256=ea6d7af68f1bf06d8402d54553bdf29b4e453ad1b125a7f852216e46cbe17e2e."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/bin-preparation-latency-20261015/runtime-folder-facts-forwarding-successor1/push-attempt1.log",
+            "scope": "Actually passed current signedc4e normal push gate, positive/negative controls relevant to this control: mailbox_status_page_keeps_total_and_loaded_unread_separate; copies_selection_uses_one_owned_summary_read_and_retains_archive. Full log SHA256=382c571b969917c71b6b80a049785349638e78bba75afc4ac75effd58375674f. These are source/fixture executions, not new installed negative or human tests."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/installed-subtree-lifecycle-20261015/remaining13-after-bin-read-repair/current-public-bin-restore13-proposal1/root-custody-proposal3-activated-final/independent-current-public13-delivery-scope.json",
+            "scope": "Independent actual currentpublic13 delivered-scope PASS, SHA256=d64a88905527814201c8d72c7f4dc051a9699304ca84e51602c073fd5f1339da. New Bin/Restore observed3033937ms/4007ms; bodyca16/attachment26a66/threeGUIDs/badges/selected facts/own label logical cleanup at observedrevision15/exact lease cleanup; historical c042/640/a50 failed HTTP intervals retained."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/pm-delivery-policy-20261015/original17-engineering-closeout-proposal-20261015.json",
+            "scope": "Independent original17 engineering reconciliation PASS_COMPOSED_EXECUTED_SCOPE for R2-16-017, SHA256=483e664ccc45935688eb116261b58f74ff5e1b70243e1e4a998c7840f401ec3a. Existing executed positive/negative/refusal/recovery evidence joined without reruns or inventing uninterrupted30PASS. System-role/parent-open/count-transition compositional scope explicitly accepted. All4 outcomes/all6 engineering stages PASS; human/final-reference visuals NOT_RUN."
           }
         ]
       }
@@ -14572,17 +14897,52 @@
           "kind": "dependency",
           "path": "docs/UX_EXECUTION_LEDGER.md",
           "scope": "2026-10-15 actual executed reconciliation supersedes older absence/unreconciled pointers for the exact scope above only. Recovery successor/final combined visual/human criteria remain open; not whole S08 closure."
+        },
+        {
+          "kind": "dependency",
+          "path": "docs/UX_EXECUTION_LEDGER.md",
+          "scope": "2026-10-15 independent original17 audit and current actual public13 establish QA_VERIFIED agentic engineering scope for this unchanged criterion. Supersedes earlier pending combined proof only; original historical failures, human/final-reference visual acceptance and other sprint obligations stay separately recorded. No ACCEPTED or full-epic claim."
         }
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "PARTIALLY_VERIFIED",
+        "status": "QA_VERIFIED",
         "executed": true,
         "evidence": [
           {
             "kind": "native_execution",
             "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/folders-next-integration-20261015/native-attempt3/independent-native-delivery-scope.json",
             "scope": "Matching native bounded root/descendant before/after hierarchy identities PASS; installed exclusive new child and remaining Delete parent witness exist. Existing visible immediate-child count rendering proof retained; fresh combined displayed count transition is not inferred. Retained sha256=9d28f18bef60dc98aa1de3a6b139f880cfd4fe3b2c2cdee6138cdb8df75e2ffb."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/installed-subtree-lifecycle-20261015/remaining13-after-bin-read-repair/current-public-bin-restore13-proposal1/root-custody-proposal3-activated-final/actual-public13-attempt1.json",
+            "scope": "First17 creates Child/Grand; actual fresh public13 final selected root panel asserts directchildren1, two descendants, exact Child/Grand GUIDs. Current actualc4e/324b fresh13 result PASS60.695s/exact13 replies; reference artifact SHA256=931675824e37b8dec01f8bc248f61df88e305a279d61df324ad52809ccfd2150. Composed agentic engineering QA only; human and final-reference visual acceptance NOT_RUN."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/installed-subtree-lifecycle-20261015/remaining13-after-bin-read-repair/current-public-bin-restore13-proposal1/root-custody-proposal3-activated-final/actual-public13-journal-and-timing.jsonl",
+            "scope": "Actual fresh public13 journal73d3e025 has39rows/exact13 completed replies, both pre-Apply typed request hashes, original3GUIDs, digestca16fc5b/attachment26a66b, own logical cleanup at observed revision15 and exact new lease removal. Both historical Bin/Restore HTTP replies remain unobserved; c042/640/a50 retained unchanged. Artifact SHA256=ea6d7af68f1bf06d8402d54553bdf29b4e453ad1b125a7f852216e46cbe17e2e."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/bin-preparation-latency-20261015/runtime-folder-facts-forwarding-successor1/push-attempt1.log",
+            "scope": "Actually passed current signedc4e normal push gate, positive/negative controls relevant to this control: folder_hierarchy_authority_and_ambiguous_fallback; folders_page_uses_owned_hierarchy_and_existing_review_routes. Full log SHA256=382c571b969917c71b6b80a049785349638e78bba75afc4ac75effd58375674f. These are source/fixture executions, not new installed negative or human tests."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/installed-subtree-lifecycle-20261015/review-successor6-contacts-destination/actual-failure-journal-summary.json",
+            "scope": "Originalc042 first17 complete replies actually settled two Creates/owned label attach/populated Rename/Move and exact tree/content. Failed readonlyGET18 remains FAIL; successful current13 does not turn original30 into PASS. Retained artifact SHA256=68b0f35875630f67bdcc863d71f07061c3e61b6bada0099c683ad7353528605d."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/installed-subtree-lifecycle-20261015/remaining13-after-bin-read-repair/current-public-bin-restore13-proposal1/root-custody-proposal3-activated-final/independent-current-public13-delivery-scope.json",
+            "scope": "Independent actual currentpublic13 delivered-scope PASS, SHA256=d64a88905527814201c8d72c7f4dc051a9699304ca84e51602c073fd5f1339da. New Bin/Restore observed3033937ms/4007ms; bodyca16/attachment26a66/threeGUIDs/badges/selected facts/own label logical cleanup at observedrevision15/exact lease cleanup; historical c042/640/a50 failed HTTP intervals retained."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/pm-delivery-policy-20261015/original17-engineering-closeout-proposal-20261015.json",
+            "scope": "Independent original17 engineering reconciliation PASS_COMPOSED_EXECUTED_SCOPE for R2-16-018, SHA256=483e664ccc45935688eb116261b58f74ff5e1b70243e1e4a998c7840f401ec3a. Existing executed positive/negative/refusal/recovery evidence joined without reruns or inventing uninterrupted30PASS. System-role/parent-open/count-transition compositional scope explicitly accepted. All4 outcomes/all6 engineering stages PASS; human/final-reference visuals NOT_RUN."
           }
         ]
       }
@@ -14640,17 +15000,47 @@
           "kind": "dependency",
           "path": "docs/UX_EXECUTION_LEDGER.md",
           "scope": "2026-10-15 actual executed reconciliation supersedes older absence/unreconciled pointers for the exact scope above only. Recovery successor/final combined visual/human criteria remain open; not whole S08 closure."
+        },
+        {
+          "kind": "dependency",
+          "path": "docs/UX_EXECUTION_LEDGER.md",
+          "scope": "2026-10-15 independent original17 audit and current actual public13 establish QA_VERIFIED agentic engineering scope for this unchanged criterion. Supersedes earlier pending combined proof only; original historical failures, human/final-reference visual acceptance and other sprint obligations stay separately recorded. No ACCEPTED or full-epic claim."
         }
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "PARTIALLY_VERIFIED",
+        "status": "QA_VERIFIED",
         "executed": true,
         "evidence": [
           {
             "kind": "qa_execution",
             "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/folders-page-20261014/installed-get-qualification/session-root-precondition-attempt2/actual-result.json",
             "scope": "Actual installed account-scoped owned Folders reads and exact lease cleanup; matching b307 native Bob/authority refusal and CreateMove/Labels unrelated-row preservation. Existing owner/foreign-metadata rendering proof retained. Synthetic post-auth does not qualify login/TOTP. Retained sha256=242ab6cafb04e883306cda4d6dc5683710ad124d1784ffc82d49e127138fa59a."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/installed-subtree-lifecycle-20261015/remaining13-after-bin-read-repair/current-public-bin-restore13-proposal1/root-custody-proposal3-activated-final/actual-public13-attempt1.json",
+            "scope": "Actual fresh public13 selected panel asserts canonical authenticated owner, while existing native Bob/foreign refusal and unrelated state isolation remain separate. Current actualc4e/324b fresh13 result PASS60.695s/exact13 replies; reference artifact SHA256=931675824e37b8dec01f8bc248f61df88e305a279d61df324ad52809ccfd2150. Composed agentic engineering QA only; human and final-reference visual acceptance NOT_RUN."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/installed-subtree-lifecycle-20261015/remaining13-after-bin-read-repair/current-public-bin-restore13-proposal1/root-custody-proposal3-activated-final/actual-public13-journal-and-timing.jsonl",
+            "scope": "Actual fresh public13 journal73d3e025 has39rows/exact13 completed replies, both pre-Apply typed request hashes, original3GUIDs, digestca16fc5b/attachment26a66b, own logical cleanup at observed revision15 and exact new lease removal. Both historical Bin/Restore HTTP replies remain unobserved; c042/640/a50 retained unchanged. Artifact SHA256=ea6d7af68f1bf06d8402d54553bdf29b4e453ad1b125a7f852216e46cbe17e2e."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/bin-preparation-latency-20261015/runtime-folder-facts-forwarding-successor1/push-attempt1.log",
+            "scope": "Actually passed current signedc4e normal push gate, positive/negative controls relevant to this control: mailbox_status_page_keeps_total_and_loaded_unread_separate; folders_page_refuses_foreign_and_malformed_selection_without_dispatch; folder_hierarchy_authority_and_ambiguous_fallback. Full log SHA256=382c571b969917c71b6b80a049785349638e78bba75afc4ac75effd58375674f. These are source/fixture executions, not new installed negative or human tests."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/installed-subtree-lifecycle-20261015/remaining13-after-bin-read-repair/current-public-bin-restore13-proposal1/root-custody-proposal3-activated-final/independent-current-public13-delivery-scope.json",
+            "scope": "Independent actual currentpublic13 delivered-scope PASS, SHA256=d64a88905527814201c8d72c7f4dc051a9699304ca84e51602c073fd5f1339da. New Bin/Restore observed3033937ms/4007ms; bodyca16/attachment26a66/threeGUIDs/badges/selected facts/own label logical cleanup at observedrevision15/exact lease cleanup; historical c042/640/a50 failed HTTP intervals retained."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/pm-delivery-policy-20261015/original17-engineering-closeout-proposal-20261015.json",
+            "scope": "Independent original17 engineering reconciliation PASS_COMPOSED_EXECUTED_SCOPE for R2-16-019, SHA256=483e664ccc45935688eb116261b58f74ff5e1b70243e1e4a998c7840f401ec3a. Existing executed positive/negative/refusal/recovery evidence joined without reruns or inventing uninterrupted30PASS. System-role/parent-open/count-transition compositional scope explicitly accepted. All4 outcomes/all6 engineering stages PASS; human/final-reference visuals NOT_RUN."
           }
         ]
       }
@@ -14688,11 +15078,16 @@
           "kind": "dependency",
           "path": "docs/UX_EXECUTION_LEDGER.md",
           "scope": "2026-10-15 actual executed reconciliation supersedes older absence/unreconciled pointers for the exact scope above only. Recovery successor/final combined visual/human criteria remain open; not whole S08 closure."
+        },
+        {
+          "kind": "dependency",
+          "path": "docs/UX_EXECUTION_LEDGER.md",
+          "scope": "2026-10-15 independent original17 audit and current actual public13 establish QA_VERIFIED agentic engineering scope for this unchanged criterion. Supersedes earlier pending combined proof only; original historical failures, human/final-reference visual acceptance and other sprint obligations stay separately recorded. No ACCEPTED or full-epic claim."
         }
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "PARTIALLY_VERIFIED",
+        "status": "QA_VERIFIED",
         "executed": true,
         "evidence": [
           {
@@ -14704,6 +15099,36 @@
             "kind": "native_execution",
             "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/folders-next-integration-20261015/native-attempt3/independent-native-delivery-scope.json",
             "scope": "Matching native protected/cycle/stale/account authority/confinement checks PASS; current normal source gate preserves HTTP CSRF/owner refusals. Not an unexecuted destructive real-account negative or pending recovery successor qualification. Retained sha256=9d28f18bef60dc98aa1de3a6b139f880cfd4fe3b2c2cdee6138cdb8df75e2ffb."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/installed-subtree-lifecycle-20261015/remaining13-after-bin-read-repair/current-public-bin-restore13-proposal1/root-custody-proposal3-activated-final/actual-public13-attempt1.json",
+            "scope": "Reuse actually executed native protected/cycle/stale/account controls plus current HTTP origin/CSRF/confirmation tests; no destructive operator-account negative. Current actualc4e/324b fresh13 result PASS60.695s/exact13 replies; reference artifact SHA256=931675824e37b8dec01f8bc248f61df88e305a279d61df324ad52809ccfd2150. Composed agentic engineering QA only; human and final-reference visual acceptance NOT_RUN."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/installed-subtree-lifecycle-20261015/remaining13-after-bin-read-repair/current-public-bin-restore13-proposal1/root-custody-proposal3-activated-final/actual-public13-journal-and-timing.jsonl",
+            "scope": "Actual fresh public13 journal73d3e025 has39rows/exact13 completed replies, both pre-Apply typed request hashes, original3GUIDs, digestca16fc5b/attachment26a66b, own logical cleanup at observed revision15 and exact new lease removal. Both historical Bin/Restore HTTP replies remain unobserved; c042/640/a50 retained unchanged. Artifact SHA256=ea6d7af68f1bf06d8402d54553bdf29b4e453ad1b125a7f852216e46cbe17e2e."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/bin-preparation-latency-20261015/runtime-folder-facts-forwarding-successor1/push-attempt1.log",
+            "scope": "Actually passed current signedc4e normal push gate, positive/negative controls relevant to this control: folder_rename_route_protected_destinations_and_accounts; folder_rename_route_rechecks_changed_roles_and_refuses_missing_authority; folder_subtree_refuses_stale_protected_foreign_capacity_and_retains_partial_uncertainty. Full log SHA256=382c571b969917c71b6b80a049785349638e78bba75afc4ac75effd58375674f. These are source/fixture executions, not new installed negative or human tests."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/folder-recovery-integration-20261015/native-virtual-fix-attempt3/independent-native-delivery-scope.json",
+            "scope": "Actual matching recovery component native3 PASS13.179s/all11markers proves configured-peer/Dovecot owned child repair, consumed nonce/lost reply/no redispatch and complete GUID/body/attachment/index/Bob continuity. Deliberate partial durable state injection is not actual process-crash/quiescence. SHA256=9455ef904a31c968e0391ac4e318a5c4b38c0d234521bce77ed1024a66854b77. Earlier failed fixture cleanupUNKNOWN remains preserved."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/installed-subtree-lifecycle-20261015/remaining13-after-bin-read-repair/current-public-bin-restore13-proposal1/root-custody-proposal3-activated-final/independent-current-public13-delivery-scope.json",
+            "scope": "Independent actual currentpublic13 delivered-scope PASS, SHA256=d64a88905527814201c8d72c7f4dc051a9699304ca84e51602c073fd5f1339da. New Bin/Restore observed3033937ms/4007ms; bodyca16/attachment26a66/threeGUIDs/badges/selected facts/own label logical cleanup at observedrevision15/exact lease cleanup; historical c042/640/a50 failed HTTP intervals retained."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/pm-delivery-policy-20261015/original17-engineering-closeout-proposal-20261015.json",
+            "scope": "Independent original17 engineering reconciliation PASS_COMPOSED_EXECUTED_SCOPE for R2-16-020, SHA256=483e664ccc45935688eb116261b58f74ff5e1b70243e1e4a998c7840f401ec3a. Existing executed positive/negative/refusal/recovery evidence joined without reruns or inventing uninterrupted30PASS. System-role/parent-open/count-transition compositional scope explicitly accepted. All4 outcomes/all6 engineering stages PASS; human/final-reference visuals NOT_RUN."
           }
         ]
       }
@@ -14741,17 +15166,52 @@
           "kind": "dependency",
           "path": "docs/UX_EXECUTION_LEDGER.md",
           "scope": "2026-10-15 actual executed reconciliation supersedes older absence/unreconciled pointers for the exact scope above only. Recovery successor/final combined visual/human criteria remain open; not whole S08 closure."
+        },
+        {
+          "kind": "dependency",
+          "path": "docs/UX_EXECUTION_LEDGER.md",
+          "scope": "2026-10-15 independent original17 audit and current actual public13 establish QA_VERIFIED agentic engineering scope for this unchanged criterion. Supersedes earlier pending combined proof only; original historical failures, human/final-reference visual acceptance and other sprint obligations stay separately recorded. No ACCEPTED or full-epic claim."
         }
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "PARTIALLY_VERIFIED",
+        "status": "QA_VERIFIED",
         "executed": true,
         "evidence": [
           {
             "kind": "qa_execution",
             "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/folders-disposition-integration-20261015/installed-lifecycle-qualification/remaining-restore-delete-continuation-attempt2/actual-remaining-attempt1.json",
             "scope": "Installed separate Restore/Delete explicit review/confirmation, saved body/decoded attachment and exact identities PASS; original Bin reached Binned receipt but HTTP303 timed out and remains FAIL_OR_UNCONFIRMED. Matching b307 native non-empty subtree Bin/Restore PASS. No implicit expunge/retry; successor pending. Retained sha256=7c2da79e392786526fe4ecf0b1516fa2b62921c56dbc17abd7df094c227a6fd9."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/installed-subtree-lifecycle-20261015/remaining13-after-bin-read-repair/current-public-bin-restore13-proposal1/root-custody-proposal3-activated-final/actual-public13-attempt1.json",
+            "scope": "Actual new explicit populated two-descendant Bin Review/Apply3033937ms then its exact receipt-bound Restore Review/Apply3034007ms; currentGUID/savedheadersbody/decodedattachment/labels continuity, noexpunge. Both new typedrequests recorded beforeApply; old failures notpassed. Current actualc4e/324b fresh13 result PASS60.695s/exact13 replies; reference artifact SHA256=931675824e37b8dec01f8bc248f61df88e305a279d61df324ad52809ccfd2150. Composed agentic engineering QA only; human and final-reference visual acceptance NOT_RUN."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/installed-subtree-lifecycle-20261015/remaining13-after-bin-read-repair/current-public-bin-restore13-proposal1/root-custody-proposal3-activated-final/actual-public13-journal-and-timing.jsonl",
+            "scope": "Actual fresh public13 journal73d3e025 has39rows/exact13 completed replies, both pre-Apply typed request hashes, original3GUIDs, digestca16fc5b/attachment26a66b, own logical cleanup at observed revision15 and exact new lease removal. Both historical Bin/Restore HTTP replies remain unobserved; c042/640/a50 retained unchanged. Artifact SHA256=ea6d7af68f1bf06d8402d54553bdf29b4e453ad1b125a7f852216e46cbe17e2e."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/bin-preparation-latency-20261015/runtime-folder-facts-forwarding-successor1/push-attempt1.log",
+            "scope": "Actually passed current signedc4e normal push gate, positive/negative controls relevant to this control: folder_disposition_routes_review_csrf_ownership_and_no_get_mutation; folder_disposition_unknown_requires_original_witness_and_never_redispatches; folder_disposition_receipt_corruption_and_no_witness_do_not_clear_pending; folder_disposition_stale_bin_parent_occupied_original_and_forged_purpose_refuse. Full log SHA256=382c571b969917c71b6b80a049785349638e78bba75afc4ac75effd58375674f. These are source/fixture executions, not new installed negative or human tests."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/folder-recovery-integration-20261015/native-virtual-fix-attempt3/independent-native-delivery-scope.json",
+            "scope": "Actual matching recovery component native3 PASS13.179s/all11markers proves configured-peer/Dovecot owned child repair, consumed nonce/lost reply/no redispatch and complete GUID/body/attachment/index/Bob continuity. Deliberate partial durable state injection is not actual process-crash/quiescence. SHA256=9455ef904a31c968e0391ac4e318a5c4b38c0d234521bce77ed1024a66854b77. Earlier failed fixture cleanupUNKNOWN remains preserved."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/installed-subtree-lifecycle-20261015/remaining13-after-bin-read-repair/current-public-bin-restore13-proposal1/root-custody-proposal3-activated-final/independent-current-public13-delivery-scope.json",
+            "scope": "Independent actual currentpublic13 delivered-scope PASS, SHA256=d64a88905527814201c8d72c7f4dc051a9699304ca84e51602c073fd5f1339da. New Bin/Restore observed3033937ms/4007ms; bodyca16/attachment26a66/threeGUIDs/badges/selected facts/own label logical cleanup at observedrevision15/exact lease cleanup; historical c042/640/a50 failed HTTP intervals retained."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/pm-delivery-policy-20261015/original17-engineering-closeout-proposal-20261015.json",
+            "scope": "Independent original17 engineering reconciliation PASS_COMPOSED_EXECUTED_SCOPE for R2-16-021, SHA256=483e664ccc45935688eb116261b58f74ff5e1b70243e1e4a998c7840f401ec3a. Existing executed positive/negative/refusal/recovery evidence joined without reruns or inventing uninterrupted30PASS. System-role/parent-open/count-transition compositional scope explicitly accepted. All4 outcomes/all6 engineering stages PASS; human/final-reference visuals NOT_RUN."
           }
         ]
       }

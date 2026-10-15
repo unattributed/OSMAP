@@ -9892,3 +9892,29 @@ are observations of separate calls, not old Apply attribution. A new explicit
 controlled round trip after the wrapper repair is a distinct intent with fresh
 nonce/receipt; never replay either recorded operation. Record both future typed
 Apply requests before dispatch and stop on any new ambiguity.
+
+## 2026-10-15 — close original S08-02 engineering on actual installed outcomes
+
+Signed c4e318bf/application324b is synchronized and installed helper-first with
+all481 compiled inputs exact to signed source. The first activation invocation
+refused an invalid caller backup-name prefix before backup/service work; preserve
+that failure. Correct only the exact owned stage/name, preserving its inode and
+unchanged activator guard. The changed invocation and subsequent web activation
+pass independent pair scope; no configuration, key agent, retention or completion
+reset occurs. Standard authoritative mail checkout is clean source-only c4e.
+
+Current fresh public13 passes60.695s and all13 complete replies. New BinApply
+and RestoreApply return303 at3937ms/4007ms under unchanged10s; original failed
+operations are not repeated or retrospectively passed. Exact data/identities,
+selected facts, reloaded badges, label logical baseline and qualification lease
+cleanup pass. Independent auditd64a8890 and per-original17 reconciliation483e664c
+support all four outcomes and six engineering stages. Reuse exact unchanged
+menu/native/source evidence; no further generic QA is justified.
+
+Engineering delivery and human judgment remain distinct. Activate only the
+reviewed four-step nonmutating usability check on the retained folder/email/
+attachment; withdraw suggested human repetitions of already-qualified mutations.
+Human and final-reference visual acceptance remain NOT RUN, S08/epic OPEN.
+Document the actual Runtime-wrapper regression lesson in existing AGENTS/framework
+instructions without adding a new testing framework or approval ceremony. After
+signed closeout, continue the next approved concrete epic gap independently.

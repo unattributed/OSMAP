@@ -531,3 +531,14 @@ application324b1cb9 builds27.245s with complete current481 parity. No operator
 mail/services are touched by these regressions. Unchanged native backend proof
 is component evidence, not a repeated whole-workflow run. Normal signed delivery
 and installed current response are still required before acceptance.
+
+Actual matching c4e/324b installed fresh public13 now passes13 complete replies
+in60.695s, independent auditd64a8890: explicit populated BinApply3937ms and
+receipt-bound Restore4007ms return303 within unchanged10s, all3GUIDs/message/
+decoded attachment/current selected facts and reloaded labels agree; own label
+logical baseline and exact qualification lease are cleaned. Both fresh typed
+requests are recorded before dispatch. Earlier failed responses remain failed;
+no historical nonce/operation is replayed. Original17 engineering reconciliation
+483e664c composes this result with unchanged executed authority/refusal/recovery/
+menu evidence. No new blanket WSTG campaign, process-crash proof, provider mail,
+human/final-reference acceptance or whole-release/sprint claim follows.
