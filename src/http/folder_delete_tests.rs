@@ -298,3 +298,60 @@ fn folder_delete_unknown_does_not_clear_from_absence_or_retry() {
         .unwrap()
         .is_some());
 }
+
+#[test]
+fn folder_disposition_apply_reuses_expected_once_review_stays_fresh() {
+    let f = Fixture::new();
+    let account = "alice@example.com";
+    let bin = crate::folder_disposition::Receipt::bin_request(
+        account, "INBOX.Alpha",
+        &f.app.gateway.created_folder_guid(account, "INBOX.Alpha").unwrap(),
+        "1234567890abcdef1234567890abcdef",
+        &crate::bin_folder::BinPreference::default(), &"d".repeat(32),
+    ).unwrap();
+    let csrf = StubGateway::validated_session().record.csrf_token;
+    let form = |r: &crate::folder_rename::RenameFolderRequest, confirm: &str| format!(
+        "csrf_token={csrf}&expected_request={}&confirm={confirm}",
+        url_encode(&serde_json::to_string(r).unwrap())
+    );
+    assert_eq!(f.run("GET", "/settings/folders/bin?source=INBOX.Alpha", "", "FolderCreateValid", false).response.status_code, 200);
+    assert_eq!(f.run("POST", "/settings/folders/bin", &form(&bin, "review"), "FolderCreateValid", false).response.status_code, 200);
+    assert_eq!(f.app.gateway.disposition_prepares.lock().unwrap().len(), 2);
+    let c = bin.disposition().unwrap().context();
+    let receipt = crate::folder_disposition::Receipt {
+        id: c.receipt_id.clone(), source: bin.source().into(),
+        parent_guid: bin.source_parent_guid().into(), folder_guid: bin.source_guid().into(),
+        bin: c.bin.clone(), bin_guid: c.bin_guid.clone(), bin_revision: c.bin_revision,
+        original_action: c.original_action.clone(), restore_action: None,
+        descendants: bin.descendants().to_vec(),
+        state: crate::folder_disposition::State::Binned,
+    };
+    let restore = receipt.restore_request(account).unwrap();
+    for (path, expected) in [("/settings/folders/bin", &bin), ("/settings/folders/restore", &restore)] {
+        let before = f.app.gateway.disposition_applies.lock().unwrap().len();
+        let body = form(expected, "apply");
+        // Invalid transport/session/request authority must never reach Apply.
+        assert_eq!(f.run("POST", path, &body.replace(&csrf, "bad"), "FolderDispositionApplySpy", false).response.status_code, 403);
+        assert_eq!(f.run("POST", path, &body, "FolderDispositionApplySpy", true).response.status_code, 403);
+        assert_eq!(f.run("POST", path, &body.replace("confirm=apply", "confirm=again"), "FolderDispositionApplySpy", false).response.status_code, 400);
+        assert_eq!(f.app.gateway.disposition_applies.lock().unwrap().len(), before);
+        let result = f.run("POST", path, &body, "FolderDispositionApplySpy", false);
+        assert_eq!(result.response.status_code, 503);
+        assert!(body_text(&result).contains("No action was retried"));
+        let calls = f.app.gateway.disposition_applies.lock().unwrap();
+        assert_eq!(calls.len(), before + 1);
+        assert_eq!(&calls[before], expected);
+    }
+    assert_eq!(f.app.gateway.disposition_prepares.lock().unwrap().len(), 2);
+    assert_eq!(f.app.gateway.disposition_receipt_loads.load(std::sync::atomic::Ordering::SeqCst), 0);
+    let mut stale = serde_json::to_value(&bin).unwrap();
+    stale["disposition"]["Bin"]["bin_revision"] = 1.into();
+    let stale: crate::folder_rename::RenameFolderRequest = serde_json::from_value(stale).unwrap();
+    assert_eq!(f.run("POST", "/settings/folders/bin", &form(&stale, "review"), "FolderCreateValid", false).response.status_code, 409);
+    assert_eq!(f.app.gateway.disposition_prepares.lock().unwrap().len(), 3);
+    assert_eq!(f.app.gateway.disposition_applies.lock().unwrap().len(), 2);
+    assert_eq!(f.run("GET", "/settings/folders/restore?id=missing", "", "FolderCreateValid", false).response.status_code, 409);
+    assert_eq!(f.app.gateway.disposition_receipt_loads.load(std::sync::atomic::Ordering::SeqCst), 1);
+    assert!(f.app.gateway.renamed_folders.lock().unwrap().is_empty());
+    assert!(f.app.gateway.submitted.lock().unwrap().is_empty());
+}

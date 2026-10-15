@@ -1,7 +1,7 @@
+use super::TEST_GATE as BACKEND_CASES;
 use super::*;
 use crate::auth::{CommandExecution, CommandExecutionError};
 use std::sync::Mutex;
-static BACKEND_CASES: Mutex<()> = Mutex::new(());
 struct Exec {
     mode: u8,
     writes: Mutex<usize>,
@@ -29,7 +29,9 @@ impl CommandExecutor for Exec {
         let mut code = 0;
         let stdout = if args[0] == "exec" {
             assert_eq!(input, crate::folder_metadata_backend::TRANSCRIPT);
-            let namespace = if self.mode == 14 {
+            let namespace = if self.mode == 37 {
+                "((\"\" \".\")) ((\"INBOX.Alpha.Child.\" \".\")) NIL"
+            } else if self.mode == 14 {
                 "((\"\" \".\")) ((\"INBOX.Alpha.\" \".\")) NIL"
             } else if self.mode == 11 {
                 "NIL ((\"\" \".\")) NIL"
@@ -37,7 +39,7 @@ impl CommandExecutor for Exec {
                 "((\"\" \".\")) NIL NIL"
             };
             let mut rows = "* LIST (\\HasChildren) \".\" INBOX\r\n".to_owned();
-            if self.mode >= 20 {
+            if (20..30).contains(&self.mode) {
                 rows.push_str(&format!(
                     "* LIST ({}) \".\" INBOX.Target\r\n",
                     if self.mode == 23 {
@@ -50,6 +52,8 @@ impl CommandExecutor for Exec {
             if *writes == 0 || self.mode == 8 {
                 let flags = if self.mode == 4 {
                     "\\Sent"
+                } else if self.mode >= 30 {
+                    "\\HasChildren"
                 } else {
                     "\\HasNoChildren"
                 };
@@ -57,6 +61,27 @@ impl CommandExecutor for Exec {
             }
             if self.mode == 3 {
                 rows.push_str("* LIST () \".\" INBOX.Alpha.Child\r\n");
+            }
+            if self.mode >= 30 {
+                let root = if *writes == 0 || self.mode == 32 {
+                    "INBOX.Alpha"
+                } else {
+                    "INBOX.Beta"
+                };
+                rows.push_str(&format!(
+                    "* LIST ({}) \".\" {root}.Child\r\n",
+                    if self.mode == 36 {
+                        "\\Sent"
+                    } else {
+                        "\\HasNoChildren"
+                    }
+                ));
+                if self.mode == 37 {
+                    rows.push_str("* LIST (\\HasNoChildren) \".\" INBOX.Alpha.Child.Shared\r\n");
+                }
+                if self.mode == 35 || self.mode == 34 && *writes > 0 {
+                    rows.push_str("* LIST (\\HasNoChildren) \".\" INBOX.Beta.Orphan\r\n");
+                }
             }
             if *writes > 0 || self.mode == 5 || self.mode == 24 {
                 let flags = if self.mode == 12 {
@@ -66,7 +91,7 @@ impl CommandExecutor for Exec {
                 };
                 rows.push_str(&format!(
                     "* LIST ({flags}) \".\" {}\r\n",
-                    if self.mode >= 20 {
+                    if (20..30).contains(&self.mode) {
                         "INBOX.Target.Alpha"
                     } else {
                         "INBOX.Beta"
@@ -87,7 +112,7 @@ impl CommandExecutor for Exec {
                     "-u",
                     "alice@fixture.test",
                     "INBOX.Alpha",
-                    if self.mode >= 20 {
+                    if (20..30).contains(&self.mode) {
                         "INBOX.Target.Alpha"
                     } else {
                         "INBOX.Beta"
@@ -108,7 +133,13 @@ impl CommandExecutor for Exec {
             String::new()
         } else {
             let name = args.last().unwrap();
-            let guid = if name == "INBOX.Target" {
+            let guid = if name.ends_with(".Child") {
+                if self.mode == 31 || self.mode == 33 && *writes > 0 {
+                    "f"
+                } else {
+                    "e"
+                }
+            } else if name == "INBOX.Target" {
                 if self.mode == 22 {
                     "c"
                 } else {
@@ -141,6 +172,62 @@ impl CommandExecutor for Exec {
             stderr: String::new(),
         })
     }
+}
+
+#[test]
+fn folder_subtree_backend_exact_children_preflight_and_partial_result_boundaries() {
+    let _case = BACKEND_CASES.lock().unwrap();
+    let leaf = RenameFolderRequest::new(
+        "alice@fixture.test",
+        "INBOX.Alpha",
+        &"a".repeat(32),
+        &"b".repeat(32),
+        "Beta",
+    )
+    .unwrap();
+    let mut fields = serde_json::to_value(&leaf).unwrap();
+    fields["descendants"] = serde_json::json!([{"suffix":".Child","guid":"e".repeat(32)}]);
+    let request: RenameFolderRequest = serde_json::from_value(fields).unwrap();
+    for (mode, expected, writes) in [
+        (30, Outcome::Renamed, 1),
+        (31, Outcome::Refused(Refusal::Stale), 0),
+        (32, Outcome::Unknown, 1),
+        (33, Outcome::Unknown, 1),
+        (34, Outcome::Unknown, 1),
+        (35, Outcome::Conflict, 0),
+        (36, Outcome::Refused(Refusal::Invalid), 0),
+        (37, Outcome::Refused(Refusal::Invalid), 0),
+    ] {
+        let executor = Exec {
+            mode,
+            writes: Mutex::new(0),
+        };
+        assert_eq!(
+            rename(
+                &executor,
+                Path::new("/fixed/doveadm"),
+                Some(Path::new("/private/userdb")),
+                &request
+            ),
+            expected,
+            "mode{mode}"
+        );
+        assert_eq!(*executor.writes.lock().unwrap(), writes, "mode{mode}");
+    }
+    let executor = Exec {
+        mode: 30,
+        writes: Mutex::new(0),
+    };
+    assert_eq!(
+        rename(
+            &executor,
+            Path::new("/fixed/doveadm"),
+            Some(Path::new("/private/userdb")),
+            &leaf
+        ),
+        Outcome::Refused(Refusal::Invalid)
+    );
+    assert_eq!(*executor.writes.lock().unwrap(), 0);
 }
 
 #[test]

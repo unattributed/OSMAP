@@ -945,6 +945,10 @@ fn canonical_grant_payload(request: &MailboxHelperRequest, grant: &MailboxHelper
                 fields.push("folder_disposition_v1".into());
                 fields.push(serde_json::to_string(purpose).unwrap_or_default());
             }
+            if !request.descendants().is_empty() {
+                fields.push("folder_subtree_v1".into());
+                fields.push(serde_json::to_string(request.descendants()).unwrap_or_default());
+            }
         }
         MailboxHelperRequest::FolderCreate { request, .. } => fields.extend([
             request.account().into(),

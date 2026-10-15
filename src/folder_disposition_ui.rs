@@ -29,7 +29,7 @@ pub(crate) fn render_folder_disposition(
             }
         }
     }
-    html.push_str("<p>Only private folders without subfolders are supported. Restore needs the unchanged original parent and an unused original name. Bin retention may remove mail independently; no restoration window is promised.</p><p><a href=\"/folders/deleted\">Deleted folders / Restore</a> · <a href=\"/settings/folders/disposition/check\">Check original result without retry</a> · <a href=\"/folders\">Folders</a></p></section></main>");
+    html.push_str("<p>A private folder with at most eight private descendant folders is supported. All descendant identities must still match; a partial or ambiguous result is preserved without retry. Restore needs the unchanged original parent and an unused original name. Bin retention may remove mail independently; no restoration window is promised.</p><p><a href=\"/folders/deleted\">Deleted folders / Restore</a> · <a href=\"/settings/folders/disposition/check\">Check original result without retry</a> · <a href=\"/folders\">Folders</a></p></section></main>");
     TrustedHtml::from_template(html)
 }
 

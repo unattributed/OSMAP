@@ -20,6 +20,7 @@ mod http_browser;
 mod http_gateway;
 #[path = "http_runtime.rs"]
 mod http_runtime;
+mod label_filter;
 mod notification_badge;
 mod routes_after_archive;
 mod routes_appearance;
@@ -994,6 +995,9 @@ mod tests {
     mod label_tests {
         include!("http/label_tests.rs");
     }
+    mod label_filter_tests {
+        include!("http/label_filter_tests.rs");
+    }
     mod people_tests {
         include!("http/people_tests.rs");
     }
@@ -1062,6 +1066,9 @@ mod tests {
         created_folders: Arc<Mutex<BTreeMap<String, Vec<String>>>>,
         renamed_folders: Arc<Mutex<Vec<crate::folder_rename::RenameFolderRequest>>>,
         deleted_folders: Arc<Mutex<Vec<crate::folder_delete::DeleteFolderRequest>>>,
+        disposition_prepares: Arc<Mutex<Vec<String>>>,
+        disposition_applies: Arc<Mutex<Vec<crate::folder_rename::RenameFolderRequest>>>,
+        disposition_receipt_loads: Arc<std::sync::atomic::AtomicUsize>,
         send_journal: crate::send_journal::SendJournal,
         recovery_root: PathBuf,
         recovery_now: Option<u64>,
@@ -1128,6 +1135,9 @@ mod tests {
                 created_folders: Arc::new(Mutex::new(BTreeMap::new())),
                 renamed_folders: Arc::new(Mutex::new(Vec::new())),
                 deleted_folders: Arc::new(Mutex::new(Vec::new())),
+                disposition_prepares: Default::default(),
+                disposition_applies: Default::default(),
+                disposition_receipt_loads: Default::default(),
                 labels_store: None,
                 signature_store: None,
                 autosave_store: None,
@@ -1189,14 +1199,16 @@ mod tests {
 
     impl StubGateway {
         fn created_folder_guid(&self, account: &str, name: &str) -> Option<String> {
-            if let Some(rename) = self
+            if let Some(guid) = self
                 .renamed_folders
                 .lock()
                 .unwrap()
                 .iter()
-                .find(|r| r.account() == account && r.destination() == name)
+                .rev()
+                .filter(|r| r.account() == account)
+                .find_map(|r| r.fixture_destination_guid(name))
             {
-                return Some(rename.source_guid().into());
+                return Some(guid);
             }
 
             use sha2::Digest;
@@ -2888,6 +2900,8 @@ mod tests {
             session: &ValidatedSession,
         ) -> Result<Vec<crate::folder_disposition::Receipt>, crate::folder_create::Refusal>
         {
+            self.disposition_receipt_loads
+                .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
             let store = self
                 .settings_store
                 .as_ref()
@@ -2907,6 +2921,10 @@ mod tests {
             source: &str,
         ) -> Result<crate::folder_rename::RenameFolderRequest, crate::folder_create::Refusal>
         {
+            self.disposition_prepares
+                .lock()
+                .unwrap()
+                .push(source.into());
             let guid = self
                 .created_folder_guid(&session.record.canonical_username, source)
                 .ok_or(crate::folder_create::Refusal::Invalid)?;
@@ -2938,6 +2956,24 @@ mod tests {
                 &bin,
                 &"d".repeat(32),
             )
+        }
+        fn apply_folder_disposition(
+            &self,
+            context: &AuthenticationContext,
+            _: &ValidatedSession,
+            request: &crate::folder_rename::RenameFolderRequest,
+        ) -> crate::folder_rename::Outcome {
+            self.disposition_applies
+                .lock()
+                .unwrap()
+                .push(request.clone());
+            // Spy only: distinguish actual Apply dispatch from preparatory reads.
+            // Production Runtime independently calls the guarded execute engine.
+            if context.user_agent == "FolderDispositionApplySpy" {
+                crate::folder_rename::Outcome::Unknown
+            } else {
+                crate::folder_rename::Outcome::Refused(crate::folder_create::Refusal::Unavailable)
+            }
         }
         fn pending_folder_rename(
             &self,
@@ -3150,13 +3186,19 @@ mod tests {
             if owned.iter().any(|name| name == &rename.destination()) {
                 return Outcome::Conflict;
             }
-            let Some(source) = owned
-                .iter_mut()
-                .find(|name| name.as_str() == rename.source())
-            else {
+            if !owned.iter().any(|name| name == rename.source()) {
                 return Outcome::Refused(Refusal::Stale);
-            };
-            *source = rename.destination();
+            }
+            for name in owned.iter_mut().filter(|name| {
+                name.as_str() == rename.source()
+                    || name.starts_with(&format!("{}.", rename.source()))
+            }) {
+                *name = format!(
+                    "{}{}",
+                    rename.destination(),
+                    name.strip_prefix(rename.source()).unwrap()
+                );
+            }
             self.renamed_folders.lock().unwrap().push(rename.clone());
             if context.user_agent == "FolderCreateRenameUnknownCommitted" {
                 return Outcome::Unknown;

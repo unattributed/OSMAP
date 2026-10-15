@@ -108,7 +108,12 @@ impl DeleteFolderRequest {
         if source.guid() != self.source_guid() || parent.guid() != self.parent_guid() {
             return Err(Refusal::Stale);
         }
-        if source.messages() != 0 {
+        if source.messages() != 0
+            || snapshot
+                .folders()
+                .iter()
+                .any(|f| f.name().starts_with(&format!("{}.", self.source())))
+        {
             return Err(Refusal::Invalid);
         }
         Ok(())

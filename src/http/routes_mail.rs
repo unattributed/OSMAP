@@ -30,6 +30,9 @@ fn list_view_state(
     request: &HttpRequest,
     saved: Option<crate::reading_preferences::ReadingPreferences>,
 ) -> Result<ListViewState, HttpResponse> {
+    if request.path != "/mailbox" && request.query_params.contains_key("label") {
+        return Err(invalid_list_response("Label filtering applies to mailbox lists. Return to the mailbox to clear it before searching."));
+    }
     if let Some(preferences) = saved {
         return ListViewState::from_query(&request.query_params)
             .map(|mut view| {
@@ -215,6 +218,7 @@ where
             return neighbours;
         }
         let mut origin_request = request.clone();
+        origin_request.path = path.into();
         origin_request.query_params = fields.clone();
         let preferences = self.gateway.load_reading_preferences(context, session).ok();
         let Ok(view) = list_view_state(&origin_request, preferences) else {
@@ -233,6 +237,19 @@ where
                     messages,
                 } = &mut summaries.decision
                 {
+                    let mut view = view.clone();
+                    if self
+                        .filter_labeled_messages(
+                            session,
+                            &mut view,
+                            canonical_username,
+                            mailbox_name,
+                            messages,
+                        )
+                        .is_err()
+                    {
+                        return ReaderNeighbours::unavailable(Some(origin.clone()));
+                    }
                     self.apply_snooze(session, canonical_username, mailbox_name, messages);
                     let mut reader_view = opened_reader_view(&view, rendered);
                     let mut filtered = messages.clone();
@@ -691,6 +708,47 @@ where
                             "Service Unavailable",
                             "Mailbox unavailable",
                             "<p>The returned mailbox summaries could not be verified.</p>",
+                        ),
+                        audit_events,
+                    };
+                }
+                if let Err(reason) = self.filter_labeled_messages(
+                    &validated_session,
+                    &mut view,
+                    &canonical_username,
+                    &mailbox_name,
+                    &mut messages,
+                ) {
+                    let mut cleared = request.clone();
+                    for key in [
+                        "label",
+                        "selected_mailbox",
+                        "selected_uid",
+                        "selected_mailbox_guid",
+                        "selected_message_guid",
+                        "opened_read",
+                        "select",
+                        "page",
+                    ] {
+                        cleared.query_params.remove(key);
+                    }
+                    let clear = list_origin(&cleared)
+                        .unwrap_or_else(|| format!("/mailbox?name={}", url_encode(&mailbox_name)));
+                    return HandledHttpResponse {
+                        response: html_response(
+                            409,
+                            "Conflict",
+                            "Label filter unavailable",
+                            TrustedHtml::from_template(format!(
+                                "{}<p><a href=\"{}\">Clear label filter</a></p>",
+                                render_navigation_notice(
+                                    &canonical_username,
+                                    &validated_session.record.csrf_token,
+                                    "Label filter unavailable",
+                                    reason
+                                ),
+                                escape_html(&clear)
+                            )),
                         ),
                         audit_events,
                     };

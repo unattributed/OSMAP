@@ -1,4 +1,4 @@
-//! Explicitly reviewed private leaf rename or move, with fresh authority on confirmation.
+//! Explicitly reviewed private subtree rename or move, with fresh authority on confirmation.
 use super::*;
 use crate::logging::EventCategory;
 use crate::{
@@ -110,6 +110,11 @@ impl<G: BrowserGateway> BrowserApp<G> {
         let mut parents = Vec::new();
         let mut source_guid = get("source_guid").to_owned();
         let mut parent_guid = get("parent_guid").to_owned();
+        let mut descendants = if get("descendants").is_empty() {
+            "[]".to_owned()
+        } else {
+            get("descendants").to_owned()
+        };
         let mut code = 200;
         let mut stage = "entry";
         let mut notice = None;
@@ -125,6 +130,7 @@ impl<G: BrowserGateway> BrowserApp<G> {
                             | "leaf"
                             | "action"
                             | "confirm"
+                            | "descendants"
                     )
             } else {
                 key == "source"
@@ -137,6 +143,7 @@ impl<G: BrowserGateway> BrowserApp<G> {
             || parent_guid.len() > 64
             || source_parent_guid.len() > 64
             || destination_parent.len() > 255
+            || descendants.len() > 2048
             || (post && !matches!(get("action"), "review" | "rename"))
         {
             code = 400;
@@ -200,7 +207,7 @@ impl<G: BrowserGateway> BrowserApp<G> {
             {
                 code = 409;
                 stage = "refused";
-                notice = Some("Only private user folders without subfolders can be renamed. System folders and saved mail destinations are protected. Reload before trying again.");
+                notice = Some("Only bounded private user folders can be renamed. System folders and saved mail destinations are protected. Reload before trying again.");
             } else if post {
                 let rename = if moving {
                     RenameFolderRequest::for_move(
@@ -221,6 +228,43 @@ impl<G: BrowserGateway> BrowserApp<G> {
                     )
                 }
                 .and_then(|r| {
+                    let declared = if get("action") == "review" {
+                        None
+                    } else {
+                        Some(
+                            serde_json::from_str::<Vec<crate::folder_subtree::Descendant>>(
+                                &descendants,
+                            )
+                            .map_err(|_| Refusal::Invalid)?,
+                        )
+                    };
+                    let r = {
+                        let (guard, event) = self
+                            .acquire_mailbox_budget(context, &session, "folder_subtree_preflight")
+                            .map_err(|_| Refusal::Unavailable)?;
+                        audit.push(event);
+                        let captured = crate::folder_subtree::capture_from(&snapshot, &r, |name| {
+                            let outcome = self.gateway.mailbox_status(context, &session, name);
+                            audit.extend(outcome.audit_events);
+                            if outcome.canonical_username != session.record.canonical_username {
+                                return Err(Refusal::Invalid);
+                            }
+                            outcome.status.ok_or(Refusal::Unavailable)
+                        });
+                        audit.push(self.release_request_budget(
+                            guard,
+                            "folder_subtree_preflight",
+                            context,
+                            &session,
+                        ));
+                        let captured = captured?;
+                        if declared.is_some_and(|expected| expected != captured) {
+                            return Err(Refusal::Stale);
+                        }
+                        r.with_descendants(captured)?
+                    };
+                    descendants =
+                        serde_json::to_string(r.descendants()).map_err(|_| Refusal::Unavailable)?;
                     r.validate_before(&snapshot, &status, &parent)?;
                     if moving {
                         r.validate_source_parent(&snapshot, &source_parent)?;
@@ -346,6 +390,7 @@ impl<G: BrowserGateway> BrowserApp<G> {
                     "Rename folder"
                 },
                 crate::http_ui::render_folder_rename(crate::http_ui::RenamePageModel {
+                    descendants: &descendants,
                     account: &session.record.canonical_username,
                     csrf: &session.record.csrf_token,
                     source,

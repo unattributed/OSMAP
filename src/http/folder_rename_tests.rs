@@ -57,6 +57,36 @@ impl Drop for Fixture {
     }
 }
 #[test]
+fn folder_subtree_review_binds_children_and_refuses_changed_tree_before_dispatch() {
+    let f = Fixture::new();
+    let account = "alice@example.com";
+    f.app.gateway.created_folders.lock().unwrap().get_mut(account).unwrap()
+        .extend(["INBOX.Alpha.Child".into(), "INBOX.Alpha.Child.Grand".into()]);
+    let child = f.app.gateway.created_folder_guid(account, "INBOX.Alpha.Child").unwrap();
+    let grand = f.app.gateway.created_folder_guid(account, "INBOX.Alpha.Child.Grand").unwrap();
+    let binding = serde_json::json!([{"suffix":".Child","guid":child}, {"suffix":".Child.Grand","guid":grand}]).to_string();
+    // Struct serialization has stable suffix/guid order, independently of map key order.
+    let parsed: Vec<crate::folder_subtree::Descendant> = serde_json::from_str(&binding).unwrap();
+    let binding = serde_json::to_string(&parsed).unwrap();
+    let review = f.run("POST", "/settings/folders/rename", &f.form(), "FolderCreateValid", false);
+    assert_eq!(review.response.status_code, 200);
+    assert!(body_text(&review).contains(&format!("name=\"descendants\" value=\"{}\"", crate::http_support::escape_html(&binding))));
+    assert!(f.app.gateway.renamed_folders.lock().unwrap().is_empty());
+    let confirm = format!("{}&confirm=rename&descendants={}", f.form().replace("action=review", "action=rename"), crate::http_support::url_encode(&binding));
+    f.app.gateway.created_folders.lock().unwrap().get_mut(account).unwrap().push("INBOX.Alpha.ArrivedFolder".into());
+    assert_eq!(f.run("POST", "/settings/folders/rename", &confirm, "FolderCreateValid", false).response.status_code, 409);
+    assert!(f.app.gateway.renamed_folders.lock().unwrap().is_empty());
+    f.app.gateway.created_folders.lock().unwrap().get_mut(account).unwrap().retain(|name| name != "INBOX.Alpha.ArrivedFolder");
+    assert_eq!(f.run("POST", "/settings/folders/rename", &confirm, "FolderCreateValid", false).response.status_code, 303);
+    assert_eq!(f.app.gateway.renamed_folders.lock().unwrap()[0].descendants().len(), 2);
+    let owned = f.app.gateway.created_folders.lock().unwrap()[account].clone();
+    for name in ["INBOX.Beta", "INBOX.Beta.Child", "INBOX.Beta.Child.Grand"] { assert!(owned.iter().any(|n| n == name)); }
+    assert!(!owned.iter().any(|name| name == "INBOX.Alpha" || name.starts_with("INBOX.Alpha.")));
+    assert_eq!(f.app.gateway.created_folder_guid(account, "INBOX.Beta.Child").unwrap(), child);
+    assert_eq!(f.app.gateway.created_folder_guid(account, "INBOX.Beta.Child.Grand").unwrap(), grand);
+    assert!(f.app.gateway.submitted.lock().unwrap().is_empty());
+}
+#[test]
 fn folders_page_uses_owned_hierarchy_and_existing_review_routes() {
     let f = Fixture::new();
     let inbox = f.run("GET", "/folders", "", "FolderCreateValid", false);

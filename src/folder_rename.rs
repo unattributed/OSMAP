@@ -1,4 +1,4 @@
-//! Confirmed rename or leaf move of a private user folder.
+//! Confirmed native rename or move of one private user-folder subtree.
 use crate::{
     folder_create::Refusal, folder_metadata::FolderSnapshot, mailbox_status::MailboxStatus,
 };
@@ -27,6 +27,8 @@ pub struct RenameFolderRequest {
     source_parent_guid: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     disposition: Option<crate::folder_disposition::Purpose>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    descendants: Vec<crate::folder_subtree::Descendant>,
 }
 impl RenameFolderRequest {
     pub fn new(
@@ -58,6 +60,7 @@ impl RenameFolderRequest {
             destination_parent: None,
             source_parent_guid: None,
             disposition: None,
+            descendants: Vec::new(),
         })
     }
     pub fn for_move(
@@ -104,6 +107,7 @@ impl RenameFolderRequest {
             destination_parent: Some(destination_parent.into()),
             source_parent_guid: Some(source_parent_guid.into()),
             disposition: None,
+            descendants: Vec::new(),
         })
     }
     #[allow(clippy::too_many_arguments)]
@@ -128,12 +132,35 @@ impl RenameFolderRequest {
             destination_parent: Some(parent.into()),
             source_parent_guid: Some(source_parent_guid.into()),
             disposition: Some(purpose),
+            descendants: Vec::new(),
         };
         crate::folder_disposition::validate_request(&result)?;
         Ok(result)
     }
     pub fn disposition(&self) -> Option<&crate::folder_disposition::Purpose> {
         self.disposition.as_ref()
+    }
+    pub(crate) fn descendants(&self) -> &[crate::folder_subtree::Descendant] {
+        &self.descendants
+    }
+    #[cfg(test)]
+    pub(crate) fn fixture_destination_guid(&self, name: &str) -> Option<String> {
+        crate::folder_subtree::fixture_destination_guid(self, name)
+    }
+    pub(crate) fn with_descendants(
+        mut self,
+        children: Vec<crate::folder_subtree::Descendant>,
+    ) -> Result<Self, Refusal> {
+        self.descendants = children;
+        self.validate()?;
+        Ok(self)
+    }
+    pub(crate) fn bind_subtree<B: crate::mailbox::MailboxBackend>(
+        &self,
+        backend: &B,
+    ) -> Result<Self, Refusal> {
+        self.clone()
+            .with_descendants(crate::folder_subtree::capture(backend, self)?)
     }
     pub fn is_move(&self) -> bool {
         self.destination_parent.is_some()
@@ -173,6 +200,7 @@ impl RenameFolderRequest {
         &self.action_nonce
     }
     pub fn validate(&self) -> Result<(), Refusal> {
+        crate::folder_subtree::validate_bindings(self)?;
         if self.disposition.is_some() {
             return crate::folder_disposition::validate_request(self);
         }
@@ -341,17 +369,20 @@ pub(crate) fn validate_source(
     if !crate::sent_location::selectable(snapshot, account, name)
         || folder.delimiter() != Some('.')
         || folder.flags().iter().any(|flag| {
-            !["\\HasNoChildren", "\\Subscribed", "\\Marked", "\\Unmarked"]
-                .iter()
-                .any(|allowed| flag.eq_ignore_ascii_case(allowed))
-        })
-        || snapshot
-            .folders()
+            ![
+                "\\HasChildren",
+                "\\HasNoChildren",
+                "\\Subscribed",
+                "\\Marked",
+                "\\Unmarked",
+            ]
             .iter()
-            .any(|f| f.name().starts_with(&format!("{name}.")))
+            .any(|allowed| flag.eq_ignore_ascii_case(allowed))
+        })
     {
         return Err(Refusal::Invalid);
     }
+    crate::folder_subtree::names(snapshot, account, name, false)?;
     // Ancestor role facts also protect user-looking children of system folders.
     for ancestor in snapshot
         .folders()

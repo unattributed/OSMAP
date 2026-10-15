@@ -13,6 +13,7 @@ pub(crate) struct RenamePageModel<'a> {
     pub destination_parent: &'a str,
     pub source_parent_guid: &'a str,
     pub parents: &'a [String],
+    pub descendants: &'a str,
 }
 pub(crate) fn render_folder_rename(model: RenamePageModel<'_>) -> TrustedHtml {
     if model.moving {
@@ -27,8 +28,13 @@ pub(crate) fn render_folder_rename(model: RenamePageModel<'_>) -> TrustedHtml {
         leaf,
         stage,
         notice,
+        descendants,
         ..
     } = model;
+    let descendant_field = format!(
+        "<input type=\"hidden\" name=\"descendants\" value=\"{}\">",
+        escape_html(descendants)
+    );
     let mut html = format!("{}<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\"><div class=\"page-intro\"><h1>Rename folder</h1><p>Rename a private user folder in its current parent. System folders and saved mail destinations are protected.</p></div><section class=\"panel\"><h2>{}</h2><p>Current folder: <strong>{}</strong></p>", app_header(account, csrf, "settings-copies"), if stage == "review" { "Review rename" } else { "New name" }, escape_html(source));
     if let Some(notice) = notice {
         html.push_str(&format!(
@@ -37,7 +43,8 @@ pub(crate) fn render_folder_rename(model: RenamePageModel<'_>) -> TrustedHtml {
         ));
     }
     if matches!(stage, "entry" | "review") {
-        html.push_str(&format!("<form method=\"post\" action=\"/settings/folders/rename\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"source\" value=\"{}\"><input type=\"hidden\" name=\"source_guid\" value=\"{}\"><input type=\"hidden\" name=\"parent_guid\" value=\"{}\"><input type=\"hidden\" name=\"action\" value=\"{}\"><label for=\"rename-leaf\">Folder name</label><input id=\"rename-leaf\" name=\"leaf\" maxlength=\"128\" value=\"{}\" required{}><p>Use a single name without a dot or slash. Contents stay with the renamed folder, including messages that arrive during the rename. This does not open or delete message bodies.</p>{}</form>", escape_html(csrf), escape_html(source), escape_html(source_guid), escape_html(parent_guid), if stage == "review" { "rename" } else { "review" }, escape_html(leaf), if stage == "review" { " readonly" } else { "" }, if stage == "review" { "<button name=\"confirm\" value=\"rename\">Confirm rename folder</button>" } else { "<button>Review rename</button>" }));
+        html.push_str("<p>Descendant identities are rechecked before the change. A changed or partial tree is retained as unconfirmed without retry.</p>");
+        html.push_str(&format!("<form method=\"post\" action=\"/settings/folders/rename\">{descendant_field}<input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"source\" value=\"{}\"><input type=\"hidden\" name=\"source_guid\" value=\"{}\"><input type=\"hidden\" name=\"parent_guid\" value=\"{}\"><input type=\"hidden\" name=\"action\" value=\"{}\"><label for=\"rename-leaf\">Folder name</label><input id=\"rename-leaf\" name=\"leaf\" maxlength=\"128\" value=\"{}\" required{}><p>Use a single name without a dot or slash. Contents and up to eight private subfolders stay with the renamed folder, including messages that arrive during the rename. This does not open or delete message bodies.</p>{}</form>", escape_html(csrf), escape_html(source), escape_html(source_guid), escape_html(parent_guid), if stage == "review" { "rename" } else { "review" }, escape_html(leaf), if stage == "review" { " readonly" } else { "" }, if stage == "review" { "<button name=\"confirm\" value=\"rename\">Confirm rename folder</button>" } else { "<button>Review rename</button>" }));
     }
     if stage == "pending" {
         html.push_str("<p><a href=\"/settings/folders/rename/check\">Check rename result</a></p>");
@@ -47,8 +54,12 @@ pub(crate) fn render_folder_rename(model: RenamePageModel<'_>) -> TrustedHtml {
 }
 
 fn render_folder_move(model: RenamePageModel<'_>) -> TrustedHtml {
+    let descendant_field = format!(
+        "<input type=\"hidden\" name=\"descendants\" value=\"{}\">",
+        escape_html(model.descendants)
+    );
     let review = model.stage == "review";
-    let mut html = format!("{}<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\"><div class=\"page-intro\"><h1>Move folder</h1><p>Move one private leaf folder beneath a different existing private parent. Its name and contents stay together. System folders and saved mail destinations are protected.</p></div><section class=\"panel\"><h2>{}</h2><p>Current folder: <strong>{}</strong></p>", app_header(model.account, model.csrf, "settings-copies"), if review { "Review move" } else { "Choose destination parent" }, escape_html(model.source));
+    let mut html = format!("{}<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\"><div class=\"page-intro\"><h1>Move folder</h1><p>Move one private folder and its bounded private subfolders beneath a different existing private parent. Its name and contents stay together. System folders and saved mail destinations are protected.</p></div><section class=\"panel\"><h2>{}</h2><p>Current folder: <strong>{}</strong></p>", app_header(model.account, model.csrf, "settings-copies"), if review { "Review move" } else { "Choose destination parent" }, escape_html(model.source));
     if let Some(notice) = model.notice {
         html.push_str(&format!(
             "<p class=\"notice\" role=\"alert\">{}</p>",
@@ -77,7 +88,7 @@ fn render_folder_move(model: RenamePageModel<'_>) -> TrustedHtml {
                 .collect::<String>();
             format!("<label for=\"move-parent\">Destination parent</label><select id=\"move-parent\" name=\"destination_parent\" required>{options}</select>")
         };
-        html.push_str(&format!("<form method=\"post\" action=\"/settings/folders/move\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"source\" value=\"{}\"><input type=\"hidden\" name=\"source_guid\" value=\"{}\"><input type=\"hidden\" name=\"source_parent_guid\" value=\"{}\"><input type=\"hidden\" name=\"parent_guid\" value=\"{}\"><input type=\"hidden\" name=\"action\" value=\"{}\">{parent}<p>Messages, labels and snooze markers stay with this folder. No message is sent or deleted.</p>{}</form>", escape_html(model.csrf), escape_html(model.source), escape_html(model.source_guid), escape_html(model.source_parent_guid), escape_html(model.parent_guid), if review { "rename" } else { "review" }, if review { "<button name=\"confirm\" value=\"rename\">Confirm move folder</button>" } else if model.parents.is_empty() { "<p>No eligible destination parent is available.</p><button disabled>Review move</button>" } else { "<button>Review move</button>" }));
+        html.push_str(&format!("<form method=\"post\" action=\"/settings/folders/move\">{descendant_field}<input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"source\" value=\"{}\"><input type=\"hidden\" name=\"source_guid\" value=\"{}\"><input type=\"hidden\" name=\"source_parent_guid\" value=\"{}\"><input type=\"hidden\" name=\"parent_guid\" value=\"{}\"><input type=\"hidden\" name=\"action\" value=\"{}\">{parent}<p>Messages, labels and snooze markers stay with this folder. No message is sent or deleted.</p>{}</form>", escape_html(model.csrf), escape_html(model.source), escape_html(model.source_guid), escape_html(model.source_parent_guid), escape_html(model.parent_guid), if review { "rename" } else { "review" }, if review { "<button name=\"confirm\" value=\"rename\">Confirm move folder</button>" } else if model.parents.is_empty() { "<p>No eligible destination parent is available.</p><button disabled>Review move</button>" } else { "<button>Review move</button>" }));
     }
     if model.stage == "pending" {
         html.push_str("<p><a href=\"/settings/folders/rename/check\">Check folder result</a></p>");

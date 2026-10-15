@@ -127,7 +127,15 @@ impl<G: BrowserGateway> BrowserApp<G> {
                 Err(r) => return r,
             };
         audit_events.push(event);
-        let prepared = if restoring {
+        let prepared = if post && get("confirm") == "apply" {
+            // Apply consumes the already typed, account-bound review request.
+            // Runtime's execute engine reloads current roles, identities and
+            // receipt state under its locks before its single native dispatch.
+            // Re-preparing here adds remote reads without granting authority.
+            supplied
+                .clone()
+                .ok_or(crate::folder_create::Refusal::Invalid)
+        } else if restoring {
             let id = supplied
                 .as_ref()
                 .and_then(|r| r.disposition())
@@ -174,6 +182,7 @@ impl<G: BrowserGateway> BrowserApp<G> {
                             || expected.source_parent_guid() != fresh.source_parent_guid()
                             || expected.parent() != fresh.parent()
                             || expected.parent_guid() != fresh.parent_guid()
+                            || expected.descendants() != fresh.descendants()
                             || a.bin != b.bin
                             || a.bin_guid != b.bin_guid
                             || a.bin_revision != b.bin_revision

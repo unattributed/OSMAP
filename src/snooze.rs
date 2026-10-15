@@ -288,10 +288,12 @@ impl SnoozeStore {
             SnoozeRecord::decode(account, lock.read().map_err(|_| SnoozeError::Unavailable)?)?;
         let mut changed = false;
         for marker in &mut record.markers {
-            if marker.identity.folder == request.source()
-                && marker.identity.mailbox_guid == request.source_guid()
-            {
-                marker.identity.folder = request.destination();
+            if let Some(destination) = crate::folder_subtree::relocated(
+                request,
+                &marker.identity.folder,
+                &marker.identity.mailbox_guid,
+            ) {
+                marker.identity.folder = destination;
                 changed = true;
             }
         }

@@ -856,6 +856,9 @@ fn render_search_sort_controls(
 }
 
 fn append_list_filter_selection(href: &mut String, view: &ListViewState) {
+    if let Some(label) = &view.label {
+        href.push_str(&format!("&label={}", url_encode(label)));
+    }
     for (key, value) in [("after", &view.dates.after), ("before", &view.dates.before)] {
         if let Some(value) = value {
             href.push_str(&format!("&{key}={}", url_encode(value)));
@@ -917,6 +920,12 @@ fn list_form_state(view: &ListViewState) -> String {
         "<input type=\"hidden\" name=\"filter\" value=\"{}\">",
         view.filter.value()
     );
+    if let Some(label) = &view.label {
+        fields.push_str(&format!(
+            "<input type=\"hidden\" name=\"label\" value=\"{}\">",
+            escape_html(label)
+        ));
+    }
     if view.conversation_order.is_none() {
         fields.push_str(&format!("<input type=\"hidden\" name=\"sort\" value=\"{}\"><input type=\"hidden\" name=\"dir\" value=\"{}\">", view.sort.column.query_value(), view.sort.direction.query_value()));
     }
@@ -1383,8 +1392,41 @@ fn render_filter_choices(view: &ListViewState, href: impl Fn(&ListViewState) -> 
         render_read_filter_choices(view, &href),
         render_attachment_filter_choices(view, &href),
         render_protection_filter_choices(view, &href),
+        render_label_filter_choices(view, &href),
     ]
     .concat()
+}
+
+fn render_label_filter_choices(
+    view: &ListViewState,
+    href: &impl Fn(&ListViewState) -> String,
+) -> String {
+    if view.label_choices.is_empty() {
+        return String::new();
+    }
+    let name = view
+        .label
+        .as_ref()
+        .and_then(|id| view.label_choices.iter().find(|(value, _)| value == id))
+        .map(|(_, name)| name.as_str())
+        .unwrap_or("All messages");
+    let mut html = format!("<details class=\"label-filter\"><summary>Labels: {}</summary><nav aria-label=\"Label filter\"><a href=\"{}\">Clear label filter</a>",escape_html(name),escape_html(&href(&view.clear_label())));
+    for (id, name) in &view.label_choices {
+        let mut target = view.clear_label();
+        target.label = Some(id.clone());
+        html.push_str(&format!(
+            "<a class=\"filter-link\" href=\"{}\"{}>{}</a>",
+            escape_html(&href(&target)),
+            if view.label.as_ref() == Some(id) {
+                " aria-current=\"page\""
+            } else {
+                ""
+            },
+            escape_html(name)
+        ));
+    }
+    html.push_str("</nav><p class=\"muted\">Private labels filter current identities in this mailbox before pagination. Clearing preserves the other mailbox filters and sorting.</p></details>");
+    html
 }
 
 pub(crate) fn category_filter_hidden(
@@ -2058,10 +2100,20 @@ pub(crate) fn render_message_list_page(
         sort_links.search_query,
         sort_links.search_scope,
     );
+    let search_view = if sort_links.view.label.is_some() {
+        sort_links.view.clear_label()
+    } else {
+        sort_links.view.clone()
+    };
+    let label_search_notice = if sort_links.view.label.is_some() {
+        "<p class=\"muted\">Search opens a separate query without this mailbox label filter.</p>"
+    } else {
+        ""
+    };
     let search_controls = format!(concat!(
         "<details class=\"mail-search-disclosure\" name=\"list-tools\"><summary>Search this mailbox</summary><div class=\"mail-tools-panel\">",
         "<form class=\"search-row compact-search\" method=\"get\" action=\"/search\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\">{}<label for=\"mailbox-search\">Search query<input id=\"mailbox-search\" type=\"text\" name=\"q\" value=\"{}\" autocomplete=\"off\"></label><button type=\"submit\">Search</button><details class=\"search-options\"><summary>Search options</summary><div>{}<label><input type=\"checkbox\" name=\"scope\" value=\"all\"> Search all mailboxes</label></div></details></form></div></details>"
-    ), escape_html(mailbox_name), list_form_state(sort_links.view), escape_html(sort_links.search_query.unwrap_or("")), render_search_field_select(MessageSearchField::All));
+    ), escape_html(mailbox_name), list_form_state(&search_view), escape_html(sort_links.search_query.unwrap_or("")), render_search_field_select(MessageSearchField::All)) + label_search_notice;
     let action_controls = format!(concat!(
         "<details class=\"bulk-actions\" name=\"list-tools\"><summary>Bulk actions</summary><div class=\"mail-tools-panel\">{}<p class=\"muted\">Use the row checkboxes to select messages for an action.</p><div class=\"toolbar\" aria-label=\"Mailbox actions\">{}{}</div></div></details>"
     ), archive_notice, bulk_move_form, bulk_archive_form);

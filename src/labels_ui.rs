@@ -83,6 +83,7 @@ pub(crate) fn render_labels_page(m: &LabelPageModel<'_>) -> TrustedHtml {
                 ""
             };
             html.push_str(&format!("<article class=\"label-item\"><h3 dir=\"auto\">{}</h3><div class=\"label-item-controls\">",escape_html(label.name())));
+            html.push_str(&format!("<a class=\"button-link secondary\" href=\"/mailbox?name=INBOX&amp;label={}\">Show Inbox messages</a>",url_encode(label.id())));
             if let Some(c) = m.message {
                 let attached = c.attached_label_ids.iter().any(|id| id == label.id());
                 html.push_str(&format!("<span class=\"label-assignment-state\">{}</span>{}<button type=\"submit\">{}</button></fieldset></form>",if !m.editable {"Assignment unknown"} else if attached{"Assigned"}else{"Not assigned"},start(if attached{"detach"}else{"attach"},label.id()),if attached{"Detach label"}else{"Attach label"}));

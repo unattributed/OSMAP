@@ -8871,3 +8871,97 @@ actual selected test PASS0.137s; a wrong-classname invocation is separately
 retained. No production source/native input or workflow enablement changes.
 Delta c0f6141e awaits exact independent review and normal admission. This narrow
 mandatory-gate repair does not resume parked account/password diagnostics.
+
+### 2026-10-15 — signed folder disposition delivery and retained installed timeout
+
+Signed source `b974064183b43eb6f03ae744925a3a1d60fd82d3` is synchronized
+with the UX origin branch, fresh equality and a clean checkout at admission.
+Normal commit attempt5 and push attempt1 PASS1688library/0failed/44explicit
+native ignores and519account Python tests. All three local branch heads match
+their origin references. Toronto standard checkout clean source-only advances
+bd0dcf4→b974064. Earlier refused normal attempts remain retained.
+
+Matching native2 passes the existing confined nine-marker folder case against
+473compiler+3qualification inputs; matching app SHA256
+`6eda887383393f065d1ce3f5916fdef24755298f99741e41f2dc5edd2d790708`
+is installed helper-first on Toronto then web on obsd1. Configuration, key
+agents, unrelated services and existing completions are preserved. Actual web
+start crossed the durable admission barrier: no downlevel pair rollback or
+completion reset is permitted. Independent source/native/activation review PASS
+within its recorded scope; this does not qualify the entire installed journey.
+
+The once-only installed lifecycle attempt FAIL_OR_UNCONFIRMED after35.138s:
+one new controlled multipart Append confirms, Bin entry/review return200, then
+Bin apply is dispatched but its complete HTTP reply is unobserved before the
+client's original10s read cap. Server log records generated303/write-failed at
+15.208s; entry/review took6.040s/6.058s. Do not convert that failed interval to
+PASS. Current exact original-request completion is Renamed, private receipt is
+Binned and role intent is clear. Actual completion owner is vmail2000; an initial
+incorrect1001 readonly custody predicate refused before body access. Corrected
+exact-request readonly witness PASS. Per-RPC latency/cause remain UNKNOWN.
+
+Original Append/Bin and expunge are never repeated. Reviewed readonly content,
+identity and receipt reconciliation precedes a separate explicit remaining
+Restore/Delete continuation. No operator troubleshooting or UAT is requested.
+Source inspection identifies redundant APPLY preparation; a narrow route repair
+retains core fresh authority and all original budgets. Bounded non-leaf lifecycle
+and actual Quick Labels filtering are separate source candidates. Partial-tree
+repair, installed remaining lifecycle/email Move/Create/Labels, affected visuals
+and full S08-02/sprint/epic acceptance remain OPEN.
+
+Evidence: `folders-disposition-integration-20261015/signed-sync-proof.json`,
+`deployment/`, `native-attempt2/` and `installed-lifecycle-qualification/`
+under the stable S08 labels-folders evidence root.
+
+Current original-Bin readonly reconciliation now PASS: native observer binary
+a5b7aaf7 against exact b974 library pins, exit0/10.556s/reaped, no HTTP/session
+or application/mail mutations. Original journal6002b987 remains byte-identical;
+current Renamed witness/Binned receipt/roleclear, parent/root GUIDs and saved
+body/decoded attachment match. Independent delivered-scope PASS. Exclusive
+installation of this read-only observer is a root custody write, not a zero-host-
+write claim. Original timeout/303-unobserved remain retained. First observer
+compile refused ambiguous multiple cached libc artifacts; successor selected
+actual matching Cargo libc artifact before compilation. No mutation retry.
+
+Next combined source admission joins three independently reviewed candidates:
+bounded non-leaf Rename/Move/Bin/Restore with at most eight exact descendant
+GUID bindings, real private label filtering before pagination, and APPLY-only
+removal of redundant HTTP preparation. Current engine checks, account/CSRF,
+limits, deadlines and purpose-bound dispatch remain. Source merge preserves
+subtree review comparison and label registration. The Apply test receipt needs
+the new descendant vector; initial missing-field and wrong slice-clone compile
+failures are retained, corrected with the request's actual descendant vector.
+Only the existing mailbox WSTG query inventory gains label. Matching merged
+local/native/installed outcomes are separately required. Partial-tree repair is
+not yet implemented and remains a full S08-02 closure dependency.
+
+Combined native2 build PASS59.152s/fresh=false/all476+3 parity, but actual
+confined subtree case FAILED8.913s at its new post-Bin raw-byte assertion.
+Earlier native stages pass; the failed synthetic fixture is retained with
+cleanupUNCONFIRMED, no operator service/mail mutation. The new assertion used
+raw MESSAGE for a doveadm-saved arrival, while the existing leaf case preserves
+Dovecot's actual pre-rename stored bytes. Test-only successor requires two
+captured complete known payloads and exact captured wire equality after Bin and
+Restore; original root/grandchild raw-byte, identity/index/Bob checks stay.
+No product defect, cleanup success or native PASS is inferred from this repair.
+Actual successor qualification remains required. WSTG inventory also records
+the real descendants form field for Rename and Move POST; no scanner waiver.
+
+Test-only arrival successor independently CLEAR32b8505c. Matching combined
+native3 build PASS58.836s/fresh=false/test026e5218/all476+3 parity. Existing
+confined case PASS10.343s, all ten required markers including subtree
+Rename/Move/lost-reply Bin/Restore, complete stored arrival bytes, original and
+Bob identities/indexes, current authority/confinement and owned cleanup with
+standard three-path metadata unchanged. Original failed fixture remains retained;
+this pass does not retrospectively clean it. Two real label-filter route tests
+and the Apply dispatch discriminator pass in the matching native binary. A root
+route-wrapper syntax typo stopped before those tests; corrected path expression
+passes, no product edit or repeat of the passed confined case. Matching app build
+and normal signed source admission/sync precede installation. No provider Send,
+operator private crypto, installed new-flow PASS or human acceptance inferred.
+
+Remaining Restore/Delete auxiliary review found an evidence version mismatch:
+original b974 journal/observer cannot be relabelled as the new deployment.
+Successor366d2b5a keeps immutable original/observer source separately from current
+source/image pins, with meaningful swapped-source negatives; independent CLEAR.
+Original59546978 proposal remains unchanged, CHANGES_REQUIRED and unexecuted.

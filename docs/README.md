@@ -312,6 +312,12 @@ In practice, the repository should follow this policy:
   is a clear platform-specific reason not to
 
 
+Current Folders work is recorded in the execution ledger and current project
+status: recoverable leaf Bin/Restore and empty Delete are installed, but the
+combined installed journey is still open after a retained HTTP timeout. Bounded
+subtree operations and owned-label filtering are under matching qualification;
+partial-tree recovery and full S08 acceptance are not complete.
+
 ## Current Status Authority
 
 Use `CURRENT_PROJECT_STATUS.md` as the short current-state authority. Historical

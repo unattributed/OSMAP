@@ -1,5 +1,5 @@
-//! Preserve one private leaf container in the exact Bin, then restore by receipt.
-//! No message copy/delete, recursive operation, expunge, or uncertain replay.
+//! Preserve one bounded private folder subtree in the exact Bin, then restore by receipt.
+//! One native container rename, no message copy/delete, expunge, or uncertain replay.
 use crate::{
     bin_folder::BinPreference,
     folder_create::Refusal,
@@ -64,6 +64,8 @@ pub struct Receipt {
     pub original_action: String,
     pub restore_action: Option<String>,
     pub state: State,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub(crate) descendants: Vec<crate::folder_subtree::Descendant>,
 }
 impl Receipt {
     pub fn stored_name(&self) -> String {
@@ -122,7 +124,8 @@ impl Receipt {
             leaf,
             &nonce,
             Purpose::Restore(self.context()),
-        )
+        )?
+        .with_descendants(self.descendants.clone())
     }
     fn validate(&self, account: &str) -> Result<(), Refusal> {
         if !nonce(&self.id)
@@ -153,6 +156,18 @@ impl Receipt {
         MailboxStatus::new(&self.bin, &self.bin_guid, 0, 0).map_err(|_| Refusal::Invalid)?;
         crate::bin_folder::parse_mailbox_name(&self.bin).map_err(|_| Refusal::Invalid)?;
         crate::mailbox_status::validate_name(&self.stored_name()).map_err(|_| Refusal::Invalid)?;
+        let binding = RenameFolderRequest::for_disposition(
+            account,
+            &self.source,
+            &self.folder_guid,
+            &self.parent_guid,
+            &self.bin,
+            &self.bin_guid,
+            &format!("OSMAP-Deleted-{}", self.id),
+            &self.original_action,
+            Purpose::Bin(self.context()),
+        )?;
+        binding.with_descendants(self.descendants.clone())?;
         Ok(())
     }
     pub(crate) fn matches(&self, request: &RenameFolderRequest) -> bool {
@@ -160,6 +175,7 @@ impl Receipt {
             return false;
         };
         purpose.context() == &self.context()
+            && request.descendants() == self.descendants
             && request.source_guid() == self.folder_guid
             && if purpose.restoring() {
                 request.source() == self.stored_name()
@@ -186,6 +202,7 @@ fn nonce(value: &str) -> bool {
 }
 
 pub(crate) fn validate_request(request: &RenameFolderRequest) -> Result<(), Refusal> {
+    crate::folder_subtree::validate_bindings(request)?;
     let purpose = request.disposition().ok_or(Refusal::Invalid)?;
     let context = purpose.context();
     if !request.is_move()
@@ -334,17 +351,20 @@ fn validate_stored_leaf(
     }
     if folder.delimiter() != Some('.')
         || folder.flags().iter().any(|flag| {
-            !["\\HasNoChildren", "\\Subscribed", "\\Marked", "\\Unmarked"]
-                .iter()
-                .any(|v| flag.eq_ignore_ascii_case(v))
-        })
-        || snapshot
-            .folders()
+            ![
+                "\\HasChildren",
+                "\\HasNoChildren",
+                "\\Subscribed",
+                "\\Marked",
+                "\\Unmarked",
+            ]
             .iter()
-            .any(|f| f.name().starts_with(&format!("{name}.")))
+            .any(|v| flag.eq_ignore_ascii_case(v))
+        })
     {
         return Err(Refusal::Invalid);
     }
+    crate::folder_subtree::names(snapshot, request.account(), name, true)?;
     Ok(())
 }
 pub(crate) fn validate_source_parent(
@@ -580,6 +600,9 @@ fn fresh_result<B: MailboxBackend>(
     if validate_source_parent(request, &snapshot, &source_parent).is_err() {
         return false;
     }
+    if crate::folder_subtree::check(backend, request, &snapshot, changed).is_err() {
+        return false;
+    }
     if changed {
         backend
             .mailbox_status(request.account(), &request.destination())
@@ -694,7 +717,8 @@ pub(crate) fn prepare_bin<B: MailboxBackend>(
         parent.guid(),
         &bin,
         bin_status.guid(),
-    )?;
+    )?
+    .bind_subtree(backend)?;
     if crate::folder_rename::role_conflict(&names, source, &request.destination())
         || !fresh_result(backend, &request, false)
     {
@@ -754,6 +778,7 @@ fn reserve_before_dispatch(
             original_action: request.action_nonce().into(),
             restore_action: None,
             state: State::BinReserved,
+            descendants: request.descendants().to_vec(),
         });
         let mut future = receipts
             .record

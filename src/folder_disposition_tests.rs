@@ -138,12 +138,28 @@ impl MailboxBackend for Backend {
         if self.mode.get() == 2 {
             return Outcome::Unknown;
         }
-        let value = self.folders.borrow_mut().remove(request.source()).unwrap();
-        assert!(self
+        let moving: Vec<_> = self
             .folders
-            .borrow_mut()
-            .insert(request.destination(), value)
-            .is_none());
+            .borrow()
+            .keys()
+            .filter(|name| {
+                name.as_str() == request.source()
+                    || name.starts_with(&format!("{}.", request.source()))
+            })
+            .cloned()
+            .collect();
+        for old in moving {
+            if self.mode.get() == 4 && old != request.source() {
+                continue;
+            }
+            let value = self.folders.borrow_mut().remove(&old).unwrap();
+            let new = format!(
+                "{}{}",
+                request.destination(),
+                old.strip_prefix(request.source()).unwrap()
+            );
+            assert!(self.folders.borrow_mut().insert(new, value).is_none());
+        }
         self.witnesses.borrow_mut().insert(
             request.action_nonce().into(),
             (request.clone(), Completion::Renamed),
@@ -154,6 +170,271 @@ impl MailboxBackend for Backend {
             Outcome::Renamed
         }
     }
+}
+
+#[test]
+fn folder_subtree_bin_restore_preserves_child_identity_bytes_indexes_and_lost_reply() {
+    let f = Fixture::new();
+    let original = f.backend.folders.borrow()["INBOX.Alpha"].clone();
+    for (name, guid) in [("INBOX.Alpha.Child", "f"), ("INBOX.Alpha.Child.Grand", "8")] {
+        f.backend.folders.borrow_mut().insert(
+            name.into(),
+            Container {
+                guid: guid.repeat(32),
+                messages: original.messages.clone(),
+            },
+        );
+    }
+    let mut row = crate::mailbox::MessageSummary {
+        uid: 7,
+        mailbox_name: "INBOX.Alpha.Child".into(),
+        to: None,
+        flags: vec![],
+        date_received: String::new(),
+        size_virtual: 100,
+        subject: None,
+        from: None,
+        metadata: Some(crate::message_metadata::MessageMetadata {
+            threading: None,
+            attachments: None,
+            protection: crate::message_metadata::MessageProtection::Unknown,
+            version: crate::message_metadata::MessageVersion::new(
+                "f".repeat(32),
+                "opaque-child-seven".into(),
+            )
+            .unwrap(),
+            attachment_count: Some(1),
+            preview: None,
+        }),
+    };
+    let labels = crate::labels::LabelStore::new(f.root.join("labels-v1"));
+    let created = labels
+        .change(ALICE, 0, crate::labels::LabelChange::Create("Child label"))
+        .unwrap();
+    let id = created.labels()[0].id().to_owned();
+    labels
+        .change(
+            ALICE,
+            created.revision(),
+            crate::labels::LabelChange::Attach {
+                id: &id,
+                message: &crate::labels::MessageIdentity::from_summary(
+                    ALICE,
+                    ALICE,
+                    &row.mailbox_name,
+                    &row,
+                )
+                .unwrap(),
+            },
+        )
+        .unwrap();
+    let snooze = crate::snooze::SnoozeStore::new(&f.root);
+    snooze
+        .set(
+            ALICE,
+            &crate::snooze::MessageIdentity::from_summary(ALICE, ALICE, &row.mailbox_name, &row)
+                .unwrap(),
+            0,
+            700,
+            100,
+        )
+        .unwrap();
+    let bob_labels = labels.load(BOB).unwrap();
+    let bob_snooze = snooze.load(BOB, 100).unwrap();
+    let request = f.prepare();
+    assert_eq!(request.descendants().len(), 2);
+    // Native container contents may grow after advisory reads.
+    f.backend
+        .folders
+        .borrow_mut()
+        .get_mut("INBOX.Alpha.Child")
+        .unwrap()
+        .messages
+        .push(b"new arrival including attachment".to_vec());
+    let before = f.backend.folders.borrow().clone();
+    f.backend.mode.set(1);
+    assert_eq!(
+        execute(&f.root, &f.backend, &request, 100),
+        Outcome::Unknown
+    );
+    assert_eq!(f.backend.writes.get(), 1);
+    assert_eq!(
+        execute(&f.root, &f.backend, &request, 100),
+        Outcome::Refused(Refusal::Unavailable)
+    );
+    assert!(matches!(
+        check(&f.root, &f.backend, ALICE),
+        crate::folder_rename::CheckOutcome::Renamed { .. }
+    ));
+    assert_eq!(f.backend.writes.get(), 1);
+    let receipt = list(&f.root, ALICE).unwrap().remove(0);
+    assert_eq!(receipt.descendants, request.descendants());
+    for suffix in ["", ".Child", ".Child.Grand"] {
+        assert_eq!(
+            f.backend.folders.borrow()[&format!("{}{suffix}", receipt.stored_name())],
+            before[&format!("INBOX.Alpha{suffix}")]
+        );
+    }
+    row.mailbox_name = format!("{}.Child", receipt.stored_name());
+    assert_eq!(
+        labels
+            .load(ALICE)
+            .unwrap()
+            .labels_for(
+                &crate::labels::MessageIdentity::from_summary(
+                    ALICE,
+                    ALICE,
+                    &row.mailbox_name,
+                    &row
+                )
+                .unwrap()
+            )
+            .unwrap()[0]
+            .id(),
+        id
+    );
+    assert_eq!(
+        snooze.load(ALICE, 100).unwrap().markers()[0]
+            .identity()
+            .folder(),
+        row.mailbox_name
+    );
+    f.backend.mode.set(0);
+    let restore = receipt.restore_request(ALICE).unwrap();
+    assert_eq!(restore.descendants(), request.descendants());
+    assert_eq!(
+        execute(&f.root, &f.backend, &restore, 100),
+        Outcome::Renamed
+    );
+    assert_eq!(*f.backend.folders.borrow(), before);
+    row.mailbox_name = "INBOX.Alpha.Child".into();
+    assert_eq!(
+        labels
+            .load(ALICE)
+            .unwrap()
+            .labels_for(
+                &crate::labels::MessageIdentity::from_summary(
+                    ALICE,
+                    ALICE,
+                    &row.mailbox_name,
+                    &row
+                )
+                .unwrap()
+            )
+            .unwrap()[0]
+            .id(),
+        id
+    );
+    assert_eq!(
+        snooze.load(ALICE, 100).unwrap().markers()[0]
+            .identity()
+            .folder(),
+        row.mailbox_name
+    );
+    assert_eq!(labels.load(BOB).unwrap(), bob_labels);
+    assert_eq!(snooze.load(BOB, 100).unwrap(), bob_snooze);
+    assert!(list(&f.root, ALICE).unwrap().is_empty());
+    assert_eq!(f.backend.writes.get(), 2);
+}
+
+#[test]
+fn folder_subtree_refuses_stale_protected_foreign_capacity_and_retains_partial_uncertainty() {
+    let f = Fixture::new();
+    f.backend.folders.borrow_mut().insert(
+        "INBOX.Alpha.Child".into(),
+        Container {
+            guid: "f".repeat(32),
+            messages: vec![b"child bytes".to_vec()],
+        },
+    );
+    let request = f.prepare();
+    f.backend
+        .folders
+        .borrow_mut()
+        .get_mut("INBOX.Alpha.Child")
+        .unwrap()
+        .guid = "9".repeat(32);
+    assert_eq!(
+        execute(&f.root, &f.backend, &request, 100),
+        Outcome::Refused(Refusal::Stale)
+    );
+    assert_eq!(f.backend.writes.get(), 0);
+    f.backend.folders.borrow_mut().insert(
+        "INBOX.Alpha.Sent".into(),
+        Container {
+            guid: "7".repeat(32),
+            messages: vec![],
+        },
+    );
+    assert!(prepare_bin(&f.root, &f.backend, ALICE, "INBOX.Alpha").is_err());
+    f.backend.folders.borrow_mut().remove("INBOX.Alpha.Sent");
+    assert!(prepare_bin(&f.root, &f.backend, BOB, "INBOX.Alpha").is_err());
+    let request = f.prepare();
+    f.backend.mode.set(4);
+    assert_eq!(
+        execute(&f.root, &f.backend, &request, 100),
+        Outcome::Unknown
+    );
+    assert_eq!(
+        check(&f.root, &f.backend, ALICE),
+        crate::folder_rename::CheckOutcome::Unconfirmed
+    );
+    assert_eq!(f.backend.writes.get(), 1);
+    assert_eq!(
+        execute(&f.root, &f.backend, &request, 100),
+        Outcome::Refused(Refusal::Unavailable)
+    );
+    assert_eq!(f.backend.writes.get(), 1);
+    assert!(f.backend.folders.borrow().contains_key("INBOX.Alpha.Child"));
+    assert!(f
+        .backend
+        .folders
+        .borrow()
+        .contains_key(&request.destination()));
+    assert!(crate::folder_rename::settings_gate(&f.root, ALICE).is_err());
+    let capacity = Fixture::new();
+    for i in 0..9 {
+        capacity.backend.folders.borrow_mut().insert(
+            format!("INBOX.Alpha.Child{i}"),
+            Container {
+                guid: format!("{:032x}", 100 + i),
+                messages: vec![],
+            },
+        );
+    }
+    assert_eq!(
+        prepare_bin(&capacity.root, &capacity.backend, ALICE, "INBOX.Alpha"),
+        Err(Refusal::Capacity)
+    );
+    assert_eq!(capacity.backend.writes.get(), 0);
+    let wire_capacity = Fixture::new();
+    let long_parent = format!("INBOX.Alpha.P{}", "x".repeat(124));
+    wire_capacity.backend.folders.borrow_mut().insert(
+        long_parent.clone(),
+        Container {
+            guid: format!("{:032x}", 100),
+            messages: vec![],
+        },
+    );
+    for i in 0..7 {
+        wire_capacity.backend.folders.borrow_mut().insert(
+            format!("{long_parent}.C{i}{}", "x".repeat(65)),
+            Container {
+                guid: format!("{:032x}", 200 + i),
+                messages: vec![],
+            },
+        );
+    }
+    assert_eq!(
+        prepare_bin(
+            &wire_capacity.root,
+            &wire_capacity.backend,
+            ALICE,
+            "INBOX.Alpha"
+        ),
+        Err(Refusal::Capacity)
+    );
+    assert_eq!(wire_capacity.backend.writes.get(), 0);
 }
 struct Fixture {
     root: PathBuf,
@@ -518,6 +799,7 @@ fn folder_disposition_capacity_reserves_exact_later_bytes_before_mutation() {
             original_action: id,
             restore_action: None,
             state: State::Binned,
+            descendants: Vec::new(),
         };
         receipts.record.receipts.push(receipt);
         if receipts.reserved_bytes().is_err() {
@@ -616,6 +898,7 @@ fn folder_disposition_settled_no_mutation_witness_releases_only_its_receipt() {
 
 #[test]
 fn folder_disposition_native_adapter_uses_one_exact_rename_and_keeps_container() {
+    let _case = crate::folder_rename_backend::TEST_GATE.lock().unwrap();
     use crate::auth::{CommandExecution, CommandExecutionError, CommandExecutor};
     use std::time::Duration;
     struct Exec<'a> {
@@ -720,6 +1003,7 @@ fn folder_disposition_native_adapter_uses_one_exact_rename_and_keeps_container()
         original_action: bin.action_nonce().into(),
         restore_action: None,
         state: State::Binned,
+        descendants: Vec::new(),
     };
     let restore = receipt.restore_request(ALICE).unwrap();
     let exec = Exec {

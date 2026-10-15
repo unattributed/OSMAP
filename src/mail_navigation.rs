@@ -5,7 +5,7 @@ use crate::mail_list::ListViewState;
 use crate::mailbox::{MailboxEntry, MailboxListingPolicy, MessageSearchField};
 
 // Finite mail-context allowlists plus the expected selected GUID pair.
-pub(crate) const MAIL_RETURN_MAX_FIELDS: usize = 19;
+pub(crate) const MAIL_RETURN_MAX_FIELDS: usize = 20;
 
 /// Validated mail filters carried through mixed search; not contact metadata.
 #[derive(Clone)]
@@ -243,6 +243,7 @@ pub fn safe_mail_return(value: &str) -> Option<String> {
             ListViewState::from_query(&fields).ok()?;
             &[
                 "name",
+                "label",
                 "sort",
                 "dir",
                 "filter",

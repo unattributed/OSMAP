@@ -79,6 +79,12 @@ establish qualification of that instance.
 The operator selected obsd1 at `192.168.1.44` for this sprint's validation;
 Vultr is outside the sprint's validation scope.
 
+Current Folders work is recorded in the execution ledger and current project
+status: recoverable leaf Bin/Restore and empty Delete are installed, but the
+combined installed journey is still open after a retained HTTP timeout. Bounded
+subtree operations and owned-label filtering are under matching qualification;
+partial-tree recovery and full S08 acceptance are not complete.
+
 OSMAP is actively developed and security-sensitive. The crate is currently
 version `0.1.0`. The repository contains production-validated and deployed
 slices, but those results are bounded to the documented OpenBSD host,

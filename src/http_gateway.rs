@@ -1546,7 +1546,9 @@ impl BrowserGateway for RuntimeBrowserGateway {
             request.account(),
             &request.destination(),
         ) {
-            if crate::folder_rename::confirmed_result(&request, &snapshot, &destination, &parent) {
+            if crate::folder_rename::confirmed_result(&request, &snapshot, &destination, &parent)
+                && crate::folder_subtree::check(&backend, &request, &snapshot, true).is_ok()
+            {
                 if crate::folder_rename::reconcile_metadata(&self.settings_dir, &request).is_err()
                     || lease.confirm().is_err()
                 {
@@ -1570,6 +1572,9 @@ impl BrowserGateway for RuntimeBrowserGateway {
             return CheckOutcome::Unconfirmed;
         };
         if !crate::folder_rename::confirmed_unchanged(&request, &snapshot, &source, &parent) {
+            return CheckOutcome::Unconfirmed;
+        }
+        if crate::folder_subtree::check(&backend, &request, &snapshot, false).is_err() {
             return CheckOutcome::Unconfirmed;
         }
         if request.is_move() {

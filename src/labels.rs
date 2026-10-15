@@ -118,6 +118,13 @@ impl LabelRecord {
     pub fn labels(&self) -> &[Label] {
         &self.labels
     }
+    pub(crate) fn owned_labels(&self, account: &str) -> Result<&[Label], LabelError> {
+        account_valid(account)?;
+        if self.account != account {
+            return Err(LabelError::Invalid);
+        }
+        Ok(&self.labels)
+    }
     pub fn assigned_messages(&self) -> usize {
         self.assignments.len()
     }
@@ -191,7 +198,7 @@ fn account_valid(account: &str) -> Result<(), LabelError> {
         .map(|_| ())
         .map_err(|_| LabelError::Invalid)
 }
-fn valid_id(id: &str) -> bool {
+pub(crate) fn valid_id(id: &str) -> bool {
     id.len() == 32
         && id
             .bytes()
@@ -295,10 +302,12 @@ impl LabelStore {
             LabelRecord::parse(account, lock.read().map_err(|_| LabelError::Unavailable)?)?;
         let mut changed = false;
         for assignment in &mut record.assignments {
-            if assignment.key.folder == request.source()
-                && assignment.key.mailbox_guid == request.source_guid()
-            {
-                assignment.key.folder = request.destination();
+            if let Some(destination) = crate::folder_subtree::relocated(
+                request,
+                &assignment.key.folder,
+                &assignment.key.mailbox_guid,
+            ) {
+                assignment.key.folder = destination;
                 changed = true;
             }
         }

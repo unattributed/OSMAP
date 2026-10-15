@@ -8,6 +8,8 @@ use std::{
     path::Path,
     time::{Duration, Instant},
 };
+#[cfg(test)]
+pub(crate) static TEST_GATE: std::sync::Mutex<()> = std::sync::Mutex::new(());
 pub(crate) fn rename<E: CommandExecutor>(
     executor: &E,
     path: &Path,
@@ -49,8 +51,15 @@ pub(crate) fn rename<E: CommandExecutor>(
     if before
         .folder(request.account(), &request.destination())
         .is_ok()
+        || before
+            .folders()
+            .iter()
+            .any(|f| f.name().starts_with(&format!("{}.", request.destination())))
     {
         return Outcome::Conflict;
+    }
+    if let Err(reason) = crate::folder_subtree::check(&backend, request, &before, false) {
+        return Outcome::Refused(reason);
     }
     let mut args = vec!["-o".into(), "stats_writer_socket_path=".into()];
     if let Some(socket) = socket {
@@ -88,6 +97,9 @@ pub(crate) fn rename<E: CommandExecutor>(
         return Outcome::Unknown;
     };
     if !crate::folder_rename::confirmed_result(request, &after, &destination, &parent) {
+        return Outcome::Unknown;
+    }
+    if crate::folder_subtree::check(&backend, request, &after, true).is_err() {
         return Outcome::Unknown;
     }
     Outcome::Renamed

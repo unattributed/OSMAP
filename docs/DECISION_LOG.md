@@ -9705,3 +9705,17 @@ The feature-aware activator also requires integrity validation after new web
 admission: legitimate completion publication must not cause a false failure by
 comparing to a pre-start snapshot. Keep equality before admission, validate live
 bounded record integrity afterward, and never reset concurrent state.
+
+## 2026-10-15 — original Bin completion reconciliation without replay
+
+Keep the installed HTTP timeout as FAIL_OR_UNCONFIRMED even when its exact
+current helper witness is Renamed and receipt Binned. Matching readonly native
+observation now confirms the original journal, parent/root identities and saved
+body/attachment; independent delivered-scope review PASS. Do not repeat its
+Append/Bin or older expunge. A separate once-only remaining Restore/Delete
+continuation records its own actual outcome and cannot manufacture the missing
+original303. Remove redundant APPLY preparation only after typed/account/CSRF
+validation; core fresh locked authority and all budgets remain unchanged.
+Non-leaf recovery and real label filtering remain required engineering work;
+partial native tree uncertainty is not full S08-02 completion. No human handoff
+until the submitted agent-owned workflow and independent audit pass.

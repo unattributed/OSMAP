@@ -1,4 +1,28 @@
 use super::*;
+
+#[test]
+fn folder_subtree_grant_binds_every_suffix_guid_and_preserves_legacy_leaf_payload() {
+    let legacy = crate::folder_rename::RenameFolderRequest::new("alice@fixture.test", "INBOX.Alpha", &"a".repeat(32), &"b".repeat(32), "Beta").unwrap();
+    let wire = serde_json::to_value(&legacy).unwrap();
+    assert!(wire.get("descendants").is_none());
+    let mut bound = wire;
+    bound["descendants"] = serde_json::json!([{"suffix":".Child","guid":"e".repeat(32)}, {"suffix":".Child.Grand","guid":"f".repeat(32)}]);
+    let request: crate::folder_rename::RenameFolderRequest = serde_json::from_value(bound).unwrap();
+    request.validate().unwrap();
+    let nonce = request.action_nonce().to_owned();
+    let mut action = MailboxHelperRequest::FolderRename { request, grant: MailboxHelperGrant::unsigned() };
+    issue_request_grant_with_nonce(&mut action, &test_helper_grant_key(), 100, &nonce).unwrap();
+    assert!(verify_request_grant(&action, &test_helper_grant_key(), 101).is_ok());
+    for change in [serde_json::json!([{"suffix":".Other","guid":"e".repeat(32)}]), serde_json::json!([{"suffix":".Child","guid":"9".repeat(32)}]), serde_json::json!([])] {
+        let mut changed = action.clone();
+        if let MailboxHelperRequest::FolderRename { request, .. } = &mut changed {
+            let mut wire = serde_json::to_value(&*request).unwrap();
+            wire["descendants"] = change;
+            *request = serde_json::from_value(wire).unwrap();
+        }
+        assert!(verify_request_grant(&changed, &test_helper_grant_key(), 101).is_err());
+    }
+}
 pub(super) fn rename_through_helper<B: MailboxBackend + Send + 'static>(
     root: &Path,
     backend: B,
@@ -203,6 +227,7 @@ fn folder_disposition_grant_binds_exact_purpose_bin_revision_receipt_and_restore
         original_action: value.action_nonce().into(),
         restore_action: None,
         state: crate::folder_disposition::State::Binned,
+        descendants: Vec::new(),
     };
     let restore = receipt.restore_request("alice@fixture.test").unwrap();
     let mut restore_action = MailboxHelperRequest::FolderRename {

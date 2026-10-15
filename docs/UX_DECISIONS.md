@@ -618,3 +618,18 @@ A current operation baseline cannot retroactively clear an older failure.
 Continue independent UX/backend work while SDK module preparation proceeds;
 never broaden a quota build into whole-server bootstrap or activate a limit
 that would block the operator's over-limit existing mailbox.
+
+### 2026-10-15 — preserve ambiguous installed folder outcome and repair work
+
+The installed Bin request timed out at its unchanged client read limit despite
+a later server-generated303 and exact current Renamed witness/Binned receipt.
+Preserve the original failure, original request and durable journal. Reconcile
+current identity/content read-only; never repeat Append/Bin or clear the marker.
+A separately admitted remaining Restore/Delete continuation may use the proven
+current result without fabricating an earlier observed reply. Remove only
+redundant APPLY preparation while retaining engine fresh authority, capacity,
+CSRF and original budgets. Do not infer the entire latency cause from source.
+After new web admission, keep matching new pair images and completion state;
+stop admission on activation failure rather than downgrade stateful readers.
+Continue real non-leaf and label-filter implementation; no leaf-only waiver or
+human UAT before matching installed functional QA and independent audit PASS.

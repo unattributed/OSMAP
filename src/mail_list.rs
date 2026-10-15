@@ -288,6 +288,10 @@ pub struct ListSelection {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ListViewState {
+    /// A display filter only; the authenticated route resolves its private record.
+    pub(crate) label: Option<String>,
+    pub(crate) label_choices: Vec<(String, String)>,
+    pub(crate) label_backend_truncated: bool,
     pub dates: ReceivedDateRange,
     pub bulk_selection: BulkSelection,
     pub sort: MessageSort,
@@ -316,6 +320,20 @@ pub struct ListViewState {
 }
 
 impl ListViewState {
+    pub(crate) fn clear_label(&self) -> Self {
+        let mut cleared = self.clone();
+        cleared.label = None;
+        cleared.label_backend_truncated = false;
+        cleared.selection = None;
+        cleared.requested_version = None;
+        cleared.selected_version = None;
+        cleared.selection_page = None;
+        cleared.opened_read = false;
+        cleared.bulk_selection = BulkSelection::None;
+        cleared.page = 1;
+        cleared.requested_page = 1;
+        cleared
+    }
     pub fn from_query(query: &BTreeMap<String, String>) -> Result<Self, &'static str> {
         let bulk_selection = match query.get("select").map(String::as_str) {
             None | Some("none") => BulkSelection::None,
@@ -397,6 +415,13 @@ impl ListViewState {
             _ => return Err("The opened reader context requires Unread and both selected GUIDs."),
         };
         Ok(Self {
+            label: match query.get("label") {
+                None => None,
+                Some(id) if crate::labels::valid_id(id) => Some(id.clone()),
+                Some(_) => return Err("Choose a valid owned label."),
+            },
+            label_choices: Vec::new(),
+            label_backend_truncated: false,
             dates: ReceivedDateRange::parse(query)?,
             bulk_selection,
             sort: MessageSort::from_query_values(
@@ -451,7 +476,8 @@ impl ListViewState {
     /// Keep the complete bounded, filtered order for reader navigation.
     pub(crate) fn order_messages(&mut self, messages: &mut Vec<MessageSummary>) {
         self.backend_limit = DEFAULT_MAX_MESSAGES;
-        self.backend_truncated = messages.len() > self.backend_limit;
+        self.backend_truncated =
+            self.label_backend_truncated || messages.len() > self.backend_limit;
         messages.truncate(self.backend_limit);
         messages.retain(|message| {
             self.dates.matches(&message.date_received)

@@ -14,6 +14,21 @@ statement as provenance rather than current release posture.
 
 ## Current source posture
 
+### Latest folder lifecycle delivery and unresolved installed result, 2026-10-15
+
+Signed synchronized source b974064 delivers recoverable leaf Bin/Restore and
+empty Delete. Matching application6eda8873 is installed on authoritative Toronto
+helper and obsd1 web after matching native qualification. The installed journey
+remains OPEN: its one new controlled message appended, Bin apply timed out at
+the client, and later exact completion/receipt confirm current Binned state.
+Original HTTP303 was not observed; no automatic mutation retry is allowed.
+Read-only identity/content reconciliation and explicit remaining Restore/Delete
+qualification precede readiness. Non-leaf lifecycle, partial-tree repair,
+installed complete-email Move/Create/Labels and affected visual acceptance remain
+required. No full S08-02, sprint or epic closure is claimed. See the latest
+execution-ledger entry for exact source, runtime and retained failure evidence.
+
+
 ### Agent-owned delivery correction, 2026-10-14
 
 The operator approves all six independent-auditor recommendations and delegates

@@ -91,11 +91,18 @@ impl CommandExecutor for ScopedExecutor {
                 if (source == "INBOX.Alpha" && destination == "INBOX.Beta")
                 || (source == "INBOX.Beta" && destination == "INBOX.Target.Beta")
                 || (source == "INBOX.Target.Beta" && owned_disposition_name(destination))
-                || (owned_disposition_name(source) && destination == "INBOX.Target.Beta")));
-            if a[pos + 2] == "INBOX.Target.Beta"
+                || (owned_disposition_name(source) && destination == "INBOX.Target.Beta")
+                || (source == "INBOX.Tree" && destination == "INBOX.RenamedTree")
+                || (source == "INBOX.RenamedTree" && destination == "INBOX.Target.RenamedTree")
+                || (source == "INBOX.Target.RenamedTree" && owned_disposition_name(destination))
+                || (owned_disposition_name(source) && destination == "INBOX.Target.RenamedTree")));
+            if matches!(a[pos + 2].as_str(), "INBOX.Target.Beta" | "INBOX.Target.RenamedTree")
                 && owned_disposition_name(&a[pos + 3])
                 && self.bin_arrival.swap(false, Ordering::SeqCst)
             {
+                let arriving = if a[pos + 2] == "INBOX.Target.RenamedTree" {
+                    "INBOX.Target.RenamedTree.Child"
+                } else { "INBOX.Target.Beta" };
                 let append = scoped_args(
                     &self.config,
                     &[
@@ -110,7 +117,7 @@ impl CommandExecutor for ScopedExecutor {
                         "-u".into(),
                         ALICE.into(),
                         "-m".into(),
-                        "INBOX.Target.Beta".into(),
+                        arriving.into(),
                     ],
                 );
                 let remaining = timeout
@@ -127,7 +134,7 @@ impl CommandExecutor for ScopedExecutor {
                 *self.arrival_bytes.lock().unwrap() = Some(bodies(
                     self.config.parent().unwrap(),
                     "alice",
-                    "INBOX.Target.Beta",
+                    arriving,
                 ));
             }
             self.renames.fetch_add(1, Ordering::SeqCst);
@@ -241,6 +248,7 @@ const CHILD_STAGES: &[&str] = &[
     "recovery_check",
     "authority_controls",
     "bin_restore",
+    "subtree",
     "complete",
 ];
 static CHILD_STAGE: AtomicUsize = AtomicUsize::new(0);
@@ -706,7 +714,7 @@ fn isolated_openbsd_folder_rename_populated_and_recovery() {
             .unwrap();
     }
     for who in ["alice", "bob"] {
-        for folder in ["", ".INBOX.Alpha", ".INBOX.Target", ".INBOX.Empty", ".INBOX.Arriving", ".Trash"] {
+        for folder in ["", ".INBOX.Alpha", ".INBOX.Target", ".INBOX.Empty", ".INBOX.Arriving", ".Trash", ".INBOX.Tree", ".INBOX.Tree.Child", ".INBOX.Tree.Child.Grand"] {
             for part in ["new", "cur", "tmp"] {
                 fs::create_dir_all(root.join(who).join("Maildir").join(folder).join(part)).unwrap();
             }
@@ -717,6 +725,9 @@ fn isolated_openbsd_folder_rename_populated_and_recovery() {
             MESSAGE,
         )
         .unwrap();
+        for folder in [".INBOX.Tree", ".INBOX.Tree.Child", ".INBOX.Tree.Child.Grand"] {
+            fs::write(root.join(who).join("Maildir").join(folder).join("new/owned-tree-message"), MESSAGE).unwrap();
+        }
     }
     fs::write(
         root.join("helper/fixture-grant.key"),
@@ -762,6 +773,7 @@ fn isolated_openbsd_folder_rename_populated_and_recovery() {
         "move_populated_guid_bytes_labels_snooze_bob=PASS",
         "delete_empty_and_mutation_time_arrival_refusal=PASS",
         "bin_restore_complete_arrival_labels_snooze_bob=PASS",
+        "subtree_rename_move_bin_restore_guid_bytes_arrival_indexes_bob=PASS",
         "lost_no_mutation=PASS",
         "authority_refusals=PASS",
         "confinement=PASS",
@@ -1318,6 +1330,94 @@ fn isolated_openbsd_folder_rename_confined_worker() {
     assert!(snooze.load(BOB, 1001).unwrap().markers().is_empty());
     assert_eq!(count.load(Ordering::SeqCst), 4);
     println!("native_rename bin_restore_complete_arrival_labels_snooze_bob=PASS");
+    mark_child_stage("subtree");
+    let tree_before = summaries(ALICE, "INBOX.Tree");
+    let child_before = summaries(ALICE, "INBOX.Tree.Child");
+    let grand_before = summaries(ALICE, "INBOX.Tree.Child.Grand");
+    let bob_tree = [summaries(BOB, "INBOX.Tree"), summaries(BOB, "INBOX.Tree.Child"), summaries(BOB, "INBOX.Tree.Child.Grand")];
+    assert_eq!(tree_before.len(), 1);
+    assert_eq!(child_before.len(), 1);
+    assert_eq!(grand_before.len(), 1);
+    let revision = labels.load(ALICE).unwrap().revision();
+    labels.change(ALICE, revision, crate::labels::LabelChange::Attach {
+        id: &id,
+        message: &crate::labels::MessageIdentity::from_summary(ALICE, ALICE, "INBOX.Tree.Child", &child_before[0]).unwrap(),
+    }).unwrap();
+    let revision = snooze.load(ALICE, 1001).unwrap().revision();
+    snooze.set(ALICE, &crate::snooze::MessageIdentity::from_summary(ALICE, ALICE, "INBOX.Tree.Child", &child_before[0]).unwrap(), revision, 4600, 1001).unwrap();
+    for (source_name, destination_name) in [("INBOX.Tree", "INBOX.RenamedTree"), ("INBOX.RenamedTree", "INBOX.Target.RenamedTree")] {
+        let source = service.mailbox_status(ALICE, source_name).unwrap();
+        let request = if source_name == "INBOX.Tree" {
+            RenameFolderRequest::new(ALICE, source_name, source.guid(), parent.guid(), "RenamedTree").unwrap()
+        } else {
+            RenameFolderRequest::for_move(ALICE, source_name, source.guid(), parent.guid(), "INBOX.Target", target_parent.guid()).unwrap()
+        }.bind_subtree(&service).unwrap();
+        assert_eq!(request.descendants().len(), 2);
+        let mut role = crate::folder_rename::settings_gate(&settings, ALICE).unwrap();
+        role.begin(&request).unwrap();
+        assert_eq!(service.rename_folder(&request), Outcome::Renamed);
+        crate::folder_rename::reconcile_metadata(&settings, &request).unwrap();
+        role.confirm().unwrap();
+        for (suffix, before) in [("", &tree_before), (".Child", &child_before), (".Child.Grand", &grand_before)] {
+            let name = format!("{destination_name}{suffix}");
+            let current = summaries(ALICE, &name);
+            assert_eq!(current.len(), 1);
+            assert_eq!(current[0].uid, before[0].uid);
+            assert_eq!(current[0].metadata, before[0].metadata);
+            assert_eq!(bodies(root, "alice", &name), vec![MESSAGE.to_vec()]);
+        }
+    }
+    crate::bin_folder::BinPreferencesStore::new(&settings).save(ALICE, 1, "Trash").unwrap();
+    let tree_bin = crate::folder_disposition::prepare_bin(&settings, &service, ALICE, "INBOX.Target.RenamedTree").unwrap();
+    service.lose_bin_reply.set(true);
+    executor.bin_arrival.store(true, Ordering::SeqCst);
+    assert_eq!(crate::folder_disposition::execute(&settings, &service, &tree_bin, 1001), Outcome::Unknown);
+    assert_eq!(count.load(Ordering::SeqCst), 7);
+    // Dovecot save owns the arriving wire representation. Preserve the exact
+    // pre-rename bytes, as in the leaf-arrival case above, then compare both
+    // the Bin and Restore results without treating raw input as stored wire.
+    assert!(!executor.bin_arrival.load(Ordering::SeqCst));
+    let tree_arrival = executor.arrival_bytes.lock().unwrap().clone().unwrap();
+    assert_eq!(tree_arrival.len(), 2);
+    for message in &tree_arrival {
+        assert_known_arrival_payload(message);
+    }
+    assert!(matches!(crate::folder_disposition::check(&settings, &service, ALICE), crate::folder_rename::CheckOutcome::Renamed { .. }));
+    assert_eq!(count.load(Ordering::SeqCst), 7);
+    let receipt = crate::folder_disposition::list(&settings, ALICE).unwrap().remove(0);
+    let child_name = format!("{}.Child", receipt.stored_name());
+    assert_eq!(bodies(root, "alice", &child_name), tree_arrival);
+    let binned_child = summaries(ALICE, &child_name);
+    let original_child = binned_child.iter().find(|row| row.uid == child_before[0].uid).unwrap();
+    assert_eq!(original_child.metadata, child_before[0].metadata);
+    assert_eq!(labels.load(ALICE).unwrap().labels_for(&crate::labels::MessageIdentity::from_summary(ALICE, ALICE, &child_name, original_child).unwrap()).unwrap()[0].id(), id);
+    assert!(snooze.load(ALICE, 1001).unwrap().markers().iter().any(|m| m.identity().folder() == child_name));
+    let restore = receipt.restore_request(ALICE).unwrap();
+    assert_eq!(crate::folder_disposition::execute(&settings, &service, &restore, 1001), Outcome::Renamed);
+    assert_eq!(count.load(Ordering::SeqCst), 8);
+    for (suffix, before, messages) in [("", &tree_before, 1), (".Child", &child_before, 2), (".Child.Grand", &grand_before, 1)] {
+        let name = format!("INBOX.Target.RenamedTree{suffix}");
+        let current = summaries(ALICE, &name);
+        assert_eq!(current.len(), messages);
+        let original = current.iter().find(|row| row.uid == before[0].uid).unwrap();
+        assert_eq!(original.metadata, before[0].metadata);
+        if suffix == ".Child" {
+            assert_eq!(bodies(root, "alice", &name), tree_arrival);
+        } else {
+            assert_eq!(bodies(root, "alice", &name), vec![MESSAGE.to_vec(); messages]);
+        }
+    }
+    let restored_child = summaries(ALICE, "INBOX.Target.RenamedTree.Child");
+    let original = restored_child.iter().find(|row| row.uid == child_before[0].uid).unwrap();
+    assert_eq!(labels.load(ALICE).unwrap().labels_for(&crate::labels::MessageIdentity::from_summary(ALICE, ALICE, "INBOX.Target.RenamedTree.Child", original).unwrap()).unwrap()[0].id(), id);
+    assert!(snooze.load(ALICE, 1001).unwrap().markers().iter().any(|m| m.identity().folder() == "INBOX.Target.RenamedTree.Child"));
+    for ((suffix, original), name) in ["", ".Child", ".Child.Grand"].into_iter().zip(bob_tree).zip(["INBOX.Tree", "INBOX.Tree.Child", "INBOX.Tree.Child.Grand"]) {
+        assert_eq!(name, format!("INBOX.Tree{suffix}"));
+        assert_eq!(summaries(BOB, name), original);
+        assert_eq!(bodies(root, "bob", name), vec![MESSAGE.to_vec()]);
+    }
+    assert!(crate::folder_disposition::list(&settings, ALICE).unwrap().is_empty());
+    println!("native_rename subtree_rename_move_bin_restore_guid_bytes_arrival_indexes_bob=PASS");
     mark_child_stage("complete");
 }
 
