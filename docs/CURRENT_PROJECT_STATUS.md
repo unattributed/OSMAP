@@ -34,6 +34,19 @@ without its expected wrapper supervision. Operational restoration is the first
 integration objective; neither full outage nor successful deployment is inferred.
 These are retained observations, not a fresh service-health claim.
 
+Superseding restoration: root reconciled the current exact orphan and measured
+ignored TERM, then recorded a bounded current-role forced stop after normal TERM
+failed. Strict dead-socket recovery and old supervised startup passed; all seven
+service checks and the actual parent relation PASS. Functional crypto was not
+tested by that restoration. The permanent four-path repair has matching native
+signal/wrapper qualification; installed lifecycle/function remain pending.
+No private agent or mail action occurred.
+
+The final regression reuses the central bounded executor; cheap static guards
+and matching native signal/helper qualification PASS. Earlier CWE/direct-spawn
+gate refusals are retained. Permanent installation and functional rollback remain
+unverified until their actual activation outcomes are recorded.
+
 GitHub issue77 closes only approved-reference lock/promotion. Issue78 remains
 open for the functional Folders journey. No whole-sprint or epic acceptance is
 established by these records. Acceptance reconciliation links existing evidence

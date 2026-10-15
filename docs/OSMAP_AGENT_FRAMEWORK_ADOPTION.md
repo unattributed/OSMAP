@@ -19,6 +19,11 @@ installation, essential functional QA and independent audit all PASS. Root
 prepares prerequisites and one concise combined UAT, reuses supplied outcomes
 and owns remediation. No unresolved agent-owned failure is handed to the user.
 
+Root verifies actual worker state when dispatching: a follow-up assignment must
+activate an idle/completed worker; a queued message alone does not restart it.
+Do not wait for an assignment that was never activated. Reuse the same owner
+and bounded work order rather than creating another management thread.
+
 2026-10-03. Applies the portable
 [agent development framework](AGENT_DEVELOPMENT_FRAMEWORK.md) to the approved
 OSMAP full-functional UX epic. This is an execution/documentation framework,

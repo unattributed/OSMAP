@@ -18,6 +18,17 @@ use std::path::{Path, PathBuf};
 use crate::config::{AppConfig, LogLevel, OpenbsdConfinementMode};
 use crate::logging::{EventCategory, LogEvent, Logger};
 
+/// Restore the foreground Crypto helper's native rc.subr stop signal.
+/// Exec preserves inherited ignored dispositions; call before serving requests.
+#[cfg(unix)]
+pub fn restore_crypto_termination_signal() -> io::Result<()> {
+    if unsafe { libc::signal(libc::SIGTERM, libc::SIG_DFL) } == libc::SIG_ERR {
+        Err(io::Error::last_os_error())
+    } else {
+        Ok(())
+    }
+}
+
 /// Disable and verify helper core dumps before loading authentication material.
 #[cfg(unix)]
 pub(crate) fn disable_core_dumps() -> io::Result<()> {
@@ -909,6 +920,46 @@ mod tests {
     use crate::config::{AppRunMode, LogFormat, RuntimeEnvironment};
     use crate::state::{StateLayout, StateLayoutPaths};
     use std::time::{SystemTime, UNIX_EPOCH};
+
+    #[cfg(unix)]
+    #[test]
+    fn inherited_ignored_term_is_restored_in_a_disposable_process() {
+        use crate::auth::{CommandExecutor, SystemCommandExecutor};
+        use std::io::Write as _;
+        const CHILD: &str = "OSMAP_TEST_CRYPTO_TERMINATION_CHILD";
+        if std::env::var_os(CHILD).is_some() {
+            unsafe { libc::signal(libc::SIGTERM, libc::SIG_IGN) };
+            restore_crypto_termination_signal().unwrap();
+            assert_eq!(
+                unsafe { libc::signal(libc::SIGTERM, libc::SIG_DFL) },
+                libc::SIG_DFL
+            );
+            println!("crypto_termination_default_restored=PASS");
+            std::io::stdout().flush().unwrap();
+            unsafe { libc::raise(libc::SIGTERM) };
+            std::process::exit(77);
+        }
+        let result = SystemCommandExecutor
+            .run_with_stdin_bytes_timeout_and_output_limit(
+                "/usr/bin/env",
+                &[
+                    format!("{CHILD}=1"),
+                    std::env::current_exe().unwrap().to_str().unwrap().into(),
+                    "--exact".into(),
+                    "openbsd::tests::inherited_ignored_term_is_restored_in_a_disposable_process"
+                        .into(),
+                    "--nocapture".into(),
+                ],
+                &[],
+                std::time::Duration::from_secs(2),
+                4096,
+            )
+            .unwrap();
+        assert_eq!(result.status_code, -1);
+        assert!(result
+            .stdout
+            .contains("crypto_termination_default_restored=PASS\n"));
+    }
 
     fn config_fixture(mode: OpenbsdConfinementMode) -> AppConfig {
         AppConfig {

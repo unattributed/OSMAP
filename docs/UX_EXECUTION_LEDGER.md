@@ -8565,3 +8565,75 @@ action was performed for this accounting change. Candidate patchf87de8b8 and
 evidence-pins.json are retained under osmap-ux-s00/agentic-delivery-20261014/
 acceptance-candidate. Independent review and normal signed gates follow; this
 entry does not establish a completed application slice or sprint.
+
+### Crypto supervision repair — actual restoration and native source admission
+
+Root's bounded current-role TERM stop failed to drain. Fresh native metadata
+shows ignored SIGTERM with mask0; origin of that disposition remains UNKNOWN.
+A separately recorded restoration checks current exact argv/UID/GID/orphan
+state/no children and ignored TERM before native current-role KILL selection,
+never a historical PID. Strict socket recovery and original startup then pass.
+All seven rcctl checks and the actual helper-parent/wrapper relation PASS. This
+restores supervision, not functional crypto. No private agent/key/policy/mail
+action occurs; both attempts remain retained.
+
+The first exec-only candidate inherits ignored TERM: an actual discriminator
+failed, so it is superseded. Reviewed patch39667429 makes Crypto's wrapper exec
+the foreground helper, matches exact helper/config/key RC arguments, and resets
+only SIGTERM to default before configuration/serve. No new handler/supervisor
+or private-agent behavior; existing strict socket recovery remains unchanged.
+
+One matching native qualification PASS26.785s with 464 compiler and three
+qualification inputs before/after parity. OpenBSD inherited-signal regression
+PASS1(signal15), wrapper/process/recovery PASS4, frozen helper image
+9b9c79ba8cc53c9b11cd196f9de25a909131cae15456209e713510f04b52cf0f.
+Independent source/native review CLEAR for normal admission. No operator service
+or crypto action occurs in that qualifier. Installed normal TERM/drain/start/
+restart, public operation and rollback remain required before permanent repair
+delivery or human UAT. Evidence: stale-private-agent-20261014/deployment/
+restoration-attempt*.json and supervision-repair-candidate/native-attempt1/.
+
+The R3 correction itself is signed/synchronized f2a117c17dbd93b634f9914c5608473dc682d8e0:
+normal commit/push gates1668 library PASS/0failed/44 explicit native ignores,
+519 account tests PASS, signature good, fresh origin equality0/0 and clean.
+That commit anchors the approved R3 supplement; no full release claim follows.
+
+The first normal permanent-repair commit was refused by the CWE gate because
+the libc call was outside the existing reviewed OpenBSD FFI module. No commit
+or waiver occurred; commit-attempt1.log remains. Corrected four-path patch
+ac88ca98 moves the fixed SIGTERM reset and its isolated-child regression into
+src/openbsd.rs; the Crypto entry calls only its safe API. Existing generator
+and wrapper test bytes are unchanged. Independent delta review CLEAR and
+the unchanged CWE guard now PASS.
+
+One changed matching native build passes83.764s with all 464+3 input parity,
+actual signal regression PASS1 and helper7e70e45259fcfdf63eca3e7e1c2207f701932541fdc934b0b075024b743846ff
+frozen at osmap-crypto-supervision-3508f919062f3382. The unchanged prior native
+wrapper controls PASS4 are reused, not rerun. No operator service/mail/private
+crypto action occurs. The earlier three-path native result remains historical.
+Normal signed admission and coherent five-leaf lifecycle/public-operation
+activation are next; permanent installed readiness is still unclaimed.
+
+Normal commit-attempt2 then refused the regression's direct process spawn
+outside the existing central executor. This second gate failure triggered a
+bounded reassessment, not another unchanged attempt. Reuse the existing bounded
+SystemCommandExecutor in the isolated-child test; production signal behavior
+does not change. Run the cheap existing CWE/direct-spawn checks before a changed
+native qualification and subsequent mandatory hooks. No allowlist or scanner
+waiver is permitted. Root also corrected idle-worker dispatch: queued messages
+do not activate a completed agent, so follow-up assignments must actually wake
+their named owner before waiting. All earlier native and gate results retain
+their exact source scope.
+
+Final test-only patch013aa336 uses the existing bounded executor (2 seconds,
+4096 bytes). Child verifies prior default disposition, flushes a closed marker
+and self-raises TERM; parent requires marker and normalized signalled status-1.
+Timeout/error cannot pass; this result does not independently report signal15.
+Cheap unchanged CWE/direct-spawn guards PASS before qualification. Independent
+source review CLEAR. Matching native-attempt3 PASS82.765s, 464+3 parity and
+signal regression PASS1; the production helper hash remains exactly7e70e452.
+Unchanged wrapper PASS4 is reused. No operator service or crypto/mail action
+occurs in qualification. Normal signed commit-attempt3 follows; prior two gate
+refusals remain retained. The user reiterates completion-only notifications or
+human-interaction blockers; documentation/decisions stay current without routine
+operator status requests.

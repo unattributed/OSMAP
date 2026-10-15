@@ -414,3 +414,21 @@ remain passing. All five source inputs match, including the imported launcher.
 This does not qualify a full restart, operator private unlock or installed reader.
 Actual operator Proton-first and Thunderbird-second delivery outcomes are kept
 separate in the UAT records. No broad WSTG/release or full sprint claim is made.
+
+## 2026-10-14 — Crypto service ownership and inherited signal disposition
+
+The retained startup/rollback failure exposed lost wrapper supervision. Native
+metadata and failed bounded TERM show the current orphan ignores TERM. Reviewed
+three-path repair makes RC own the foreground helper and restores SIGTERM's
+default before serving; strict owned dead-socket recovery remains unchanged.
+Matching native464+3 source parity, inherited-signal PASS1 and wrapper/recovery
+PASS4 establish bounded source/native behavior, not installed lifecycle or
+functional rollback. Current-role forced restoration of the old service is
+separate operational evidence. No private agent, provider mail, broad WSTG,
+release or full-sprint acceptance is claimed.
+
+Superseding FFI correction: the normal CWE gate rejected a libc call outside
+src/openbsd.rs. Four-path ac88ca98 uses the existing safe boundary; unchanged
+CWE guard PASS and matching native signal PASS1/helper build/source parity.
+The earlier three-path native build is historical, and unchanged wrapper
+PASS4 is reused. Installed lifecycle remains pending; no scanner waiver.

@@ -30,6 +30,36 @@ SIGNER = "83A5689C7C52CE43DB88C8A5322909FC05BF68BB"
 PROTON = "C384498B2CC97D8D9EB7B20162C21B767540D006"
 
 
+def crypto_service_scripts():
+    """Let rc.subr own the foreground listener, without a shell supervisor.
+
+    A stopped helper can leave its socket inode behind. The existing root
+    rc_pre recovery is the only component allowed to remove that dead socket.
+    """
+    wrapper = ROOT / "bin/osmap_crypto-run.ksh"
+    binary = ROOT / "bin/osmap_crypto_helper"
+    config = ROOT / "config/crypto.json"
+    key = ROOT / "config/crypto.key"
+    content = (
+        '#!/bin/ksh\nset -eu\nulimit -c 0\n'
+        f'socket="{ROOT}/run/crypto.sock"\n'
+        '[ ! -e "$socket" ] || exit 1\n'
+        f'exec "{binary}" "{config}" "{key}"\n'
+    )
+    # These fixed paths contain only dots requiring escaping in the exact
+    # extended regular expression used by rc.subr's pgrep/pkill -xf.
+    process = f"{binary} {config} {key}".replace(".", r"\.")
+    rc = (
+        f'#!/bin/ksh\ndaemon="{wrapper}"\ndaemon_user="{HELPER}"\n'
+        'rc_bg=YES\nrc_reload=NO\n. /etc/rc.d/rc.subr\n'
+        f'pexp="{process}"\n'
+        'rc_pre() {\n'
+        ' /usr/local/bin/python3 /usr/local/libexec/osmap/service_socket_recovery.py osmap_crypto\n'
+        '}\nrc_cmd "$1"\n'
+    )
+    return content, rc
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--prepare", action="store_true")
@@ -189,13 +219,15 @@ def main():
         for label, service, binary in [("crypto", "osmap_crypto", "osmap_crypto_helper"), ("inventory", "osmap_public_inventory", "osmap_public_inventory_helper")]:
             wrapper = ROOT / "bin" / (service + "-run.ksh")
             content = '#!/bin/ksh\nset -eu\nulimit -c 0\nsocket="' + str(ROOT / "run" / (label + ".sock")) + '"\n[ ! -e "$socket" ] || exit 1\n"' + str(ROOT / "bin" / binary) + '" "' + str(config_root / (label + ".json")) + '" "' + str(config_root / (label + ".key")) + '" &\nchild=$!\ncleanup() { kill "$child" 2>/dev/null || true; wait "$child" 2>/dev/null || true; [ ! -S "$socket" ] || rm -f "$socket"; }\ntrap cleanup EXIT HUP INT TERM\nwait "$child"\n'
-            write(wrapper, content, helper.pw_uid, gid, 0o700)
             # The script runs under ksh.  rc.subr's default pexp is the
             # wrapper path alone, which cannot match its process arguments.
             rc = '#!/bin/ksh\ndaemon="' + str(wrapper) + '"\ndaemon_user="' + HELPER + '"\nrc_bg=YES\nrc_reload=NO\n. /etc/rc.d/rc.subr\npexp="/bin/ksh ' + str(wrapper) + '"\n'
             # Both fixed services recover only independently proved abandoned listeners.
             rc += 'rc_pre() {\n /usr/local/bin/python3 /usr/local/libexec/osmap/service_socket_recovery.py ' + service + '\n}\n'
             rc += 'rc_cmd "$1"\n'
+            if service == "osmap_crypto":
+                content, rc = crypto_service_scripts()
+            write(wrapper, content, helper.pw_uid, gid, 0o700)
             write(pathlib.Path("/etc/rc.d", service), rc, 0, 0, 0o555)
             run(["/usr/sbin/rcctl", "disable", service])
         receipt = {"version": 1, "target": HOST, "helper_uid": helper.pw_uid, "web_uid": web.pw_uid, "socket_group": GROUP, "previous_web_group_ids": previous_groups, "binary_sha256": hashes, "public_fingerprints": [DUNCAN, PROTON], "services_enabled": False, "live_web_binary_and_environment_modified": False, "private_keys_provisioned": False}

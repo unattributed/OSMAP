@@ -1,5 +1,30 @@
 # Decision Log
 
+## 2026-10-14 — own Crypto listener directly and restore native termination
+
+Actual current helper metadata shows ignored TERM; the first bounded native stop
+did not drain. A distinct guarded current-role forced stop plus strict socket
+recovery restores existing supervision, without private-agent or mail actions.
+The extra shell supervisor is removed for Crypto only: wrapper execs helper and
+RC matches its exact arguments. Exec alone preserves inherited ignored signals,
+so helper entry explicitly restores SIGTERM default before serving. The original
+orphan origin remains UNKNOWN. Focused old/new and matching OpenBSD results
+justify this narrow change; installed lifecycle/functional rollback still must
+pass. Existing recovery refuses live endpoints, and new normal TERM acceptance
+must not be replaced by a fallback KILL success.
+
+The normal CWE gate refused the initial libc call in the binary entry. Preserve
+that refusal and use the existing reviewed src/openbsd.rs FFI boundary with a
+fixed safe API. Do not weaken the scanner. A matching changed native build and
+actual isolated-process signal test pass; unchanged wrapper controls are reused.
+
+The next gate rejected direct spawning in the regression. Reuse the existing
+bounded executor instead of granting a new call-site exception. The final test
+proves default disposition and controlled signalled termination within two
+seconds; normalized status does not identify a signal number. Cheap existing
+static checks run before another native qualification. Matching changed native
+test/helper build passes; production helper bytes are identical to prior native2.
+
 ## 2026-10-14 — operator-approved agent-owned delivery corrections
 
 The operator approves all independent audit recommendations and delegates

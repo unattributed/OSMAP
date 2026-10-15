@@ -1,6 +1,11 @@
 //! Operator-created crypto service. Private material never enters CLI arguments.
 use osmap::openpgp_crypto_runtime::Service;
+
 fn main() -> std::process::ExitCode {
+    if osmap::openbsd::restore_crypto_termination_signal().is_err() {
+        eprintln!("Crypto service unavailable.");
+        return std::process::ExitCode::FAILURE;
+    }
     let args = std::env::args_os().skip(1).collect::<Vec<_>>();
     let result = if args.len() == 2 {
         Service::from_operator_files(
