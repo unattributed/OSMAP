@@ -1,5 +1,57 @@
 # OSMAP adoption of the functional agent framework
 
+## Mandatory project delivery policy — 2026-10-15
+
+This is the controlling project-manager policy under the operator's strict
+direction. Follow higher-priority instructions and explicit operator directions;
+preserve the signed R2/R3 requirements, all 403 controls and 110 legacy cases.
+Deliver professional, secure, verified functional software with its ISC licence
+and freely available public source. Commercial support for openbsd-mailstack
+using OSMAP is compatible with that purpose; no pricing, licence or hosting
+change follows from this policy.
+
+- Keep exactly one machine-readable active work order in the existing execution
+  ledger. It names the original parent slice, all its mapped obligations, concrete
+  frontend/backend outcomes, six role responsibilities, technical dependencies,
+  essential positive/negative QA, allowed changed files and next actions.
+  Project management owns outcomes; Scrum coordinates bounded dispatch; developers
+  implement; QA and security reviewers independently assess the delivered scope;
+  the technical writer maintains these existing records. Root alone integrates,
+  signs/synchronizes and executes hosts/native/browser workflows. Role assignment
+  does not imply another live agent or permission checkpoint.
+- Continue the active operator-assigned work. No agent may pause, park, reorder
+  or relabel it merely because a component was signed/deployed, a review ended,
+  compute was consumed, or another backlog item exists. Explicit operator pause
+  overrides this rule. A concrete dependency/blocker names an owner and exact next
+  action; useful independent authorized work continues. Reassess the cause after
+  two failures at one boundary; do not rerun unchanged broad suites or side effects.
+- Changed files must belong to the active work-order allowlist. Its stable
+  admission baseline scopes successive commits; it is not an equality pin to
+  each new HEAD. Add a genuinely necessary file/dependency to that same work order
+  with its purpose before editing; this needs no new operator approval within
+  existing authority. Preserve unrelated concurrent changes; they cannot be
+  smuggled into the active delivery by widening the allowlist after the fact.
+- Component/source/native/deployment checkpoints remain scoped facts. Required
+  implementation, source/native checks, matching deployed frontend-to-backend QA,
+  independent review and recovery/cleanup must all PASS before engineering closure
+  or UAT readiness. Each PASS names retained evidence for its stage. A failed or
+  UNKNOWN required outcome remains open; a planned case or running service is
+  insufficient. Safe retained uncertainty may be an explicitly reviewed recovery
+  disposition, never proof of an unobserved side effect or permission to replay it.
+- Human acceptance stays separate. Pending human judgment does not prevent
+  engineering progress, but agents cannot manufacture it or mark the parent slice
+  ACCEPTED. Invite only the minimal human-only observations after all agent-owned
+  requirements for the submitted scope pass. Do not delegate troubleshooting or
+  agent-accessible setup to the operator. Preserve provider-Send/private-passphrase
+  boundaries and explicit failed UAT history.
+
+The existing developer gate validates work-order structure, scope and contradictory
+closure declarations. It cannot prove evidence truth, usability, installed state
+or security; independent functional QA/audit remain essential. No parallel board,
+new QA framework, routine approval ceremony or automatic product completion is
+introduced. Historical records below remain historical where this policy and R3
+supersede their execution defaults.
+
 ## Current authority — 2026-10-14
 
 The approved `UX_PLAN_AMENDMENT_R3.md` supersedes historical sequential/human-wait

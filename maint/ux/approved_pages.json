@@ -582,7 +582,9 @@
             "src/label_selection_ui.rs",
             "maint/ux/label_selection_workflows.py",
             "S04/label_selection-toolbar-selection-{edge,firefox}/report.json",
-            "Native confirmed selection assignment is atomic for up to ten freshly verified messages. Folder lifecycle remains separate."
+            "Native confirmed selection assignment is atomic for up to ten freshly verified messages. Folder lifecycle remains separate.",
+            "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/folders-disposition-integration-20261015/installed-labels-journey-attempt2/independent-delivery-scope.json",
+            "2026-10-15 actual executed scope: Installed b307/ad16 Labels10 PASS22.952s: create/rename/attach current tuple/filter menu/filtered reader/Clear/detach/delete; five own CAS writes/revision+5, unrelated logical rows restored and exact lease cleanup. Reader Seen side effects unassessed; not full badge/visual/human acceptance."
           ],
           "engineering_note": "Native private label management and verified single-message assignment; CAS, account isolation, restart persistence and confirmed-move continuity qualified locally. Bulk label assignment and final whole-page approval remain pending."
         },
@@ -2863,26 +2865,37 @@
             "src/http/routes_folder_create.rs",
             "maint/ux/folder_create_workflows.py",
             "S04/folder-create-final-{edge,firefox}/report.json",
-            "Explicit account-bound review and confirmation for one private dot-delimited INBOX child. Native helper qualification pending. External IMAP races are detected by reconciliation where possible; create is not atomic with parent GUID validation."
+            "Explicit account-bound review and confirmation for one private dot-delimited INBOX child. Native helper qualification pending. External IMAP races are detected by reconciliation where possible; create is not atomic with parent GUID validation.",
+            "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/folders-disposition-integration-20261015/installed-create-and-complete-email-move-attempt1/independent-delivery-scope.json",
+            "2026-10-15 actual executed scope: Installed b307/ad16 actual Create entry/review/confirm creates exclusive absent child under exact parent2309; new GUID62572 and empty state observed. Complete-message Move preserves actual destination UID/GUID/saved body/decoded attachment. Not partial-tree recovery proof."
           ]
         },
         {
           "id": "R2-16-010",
           "label": "Rename subfolder",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "PARTIAL_FUNCTIONAL",
+          "evidence": [
+            "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/folders-next-integration-20261015/native-attempt3/independent-native-delivery-scope.json",
+            "2026-10-15 actual executed scope: Matching b307 native bounded populated subtree Rename and exact stored-body/GUID/index/Bob continuity PASS. Prior installed leaf Rename evidence retained. Explicit partial/merged-tree successor and combined installed non-leaf recovery remain pending."
+          ]
         },
         {
           "id": "R2-16-011",
           "label": "Move subfolder",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "PARTIAL_FUNCTIONAL",
+          "evidence": [
+            "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/folders-next-integration-20261015/native-attempt3/independent-native-delivery-scope.json",
+            "2026-10-15 actual executed scope: Matching b307 native bounded populated subtree Move and GUID/body/index/Bob/authority/lost-result-no-redispatch checks PASS. Installed complete-email Message Move is a separate operation, not proof of installed subtree Move/recovery."
+          ]
         },
         {
           "id": "R2-16-012",
           "label": "Delete subfolder",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "PARTIAL_FUNCTIONAL",
+          "evidence": [
+            "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/folders-disposition-integration-20261015/installed-lifecycle-qualification/remaining-restore-delete-continuation-attempt2/actual-remaining-attempt1.json",
+            "2026-10-15 actual executed scope: Installed b307/ad16 separate remaining Restore/Delete eight HTTP outcomes PASS53.964s; exact owned lease cleanup. Root exact Delete witness and independent composed audit recorded in ledger. Original Bin303 unobserved, no Append/Bin/expunge replay; partial-tree recovery pending."
+          ]
         },
         {
           "id": "R2-16-013",
@@ -2895,7 +2908,9 @@
             "src/settings_copies_ui.rs",
             "maint/ux/folder_hierarchy_workflows.py",
             "S04/folder-tree-final-{edge,firefox}/report.json",
-            "Hierarchy uses verified namespaces/delimiters. Select/Open remains within the existing owned navigation allowlist; other verified namespaces display only."
+            "Hierarchy uses verified namespaces/delimiters. Select/Open remains within the existing owned navigation allowlist; other verified namespaces display only.",
+            "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/folders-page-20261014/installed-get-qualification/session-root-precondition-attempt2/actual-result.json",
+            "2026-10-15 actual executed scope: Actual installed authoritative Folders hierarchy/select/open PASS with controlled leaf same-GUID/empty state and exact session cleanup; no operator cookies/message selection. Current Create confirms real new-child navigation. Final combined visual/human criteria remain separate."
           ]
         },
         {
@@ -2909,13 +2924,15 @@
             "src/settings_copies_ui.rs",
             "maint/ux/folder_hierarchy_workflows.py",
             "S04/folder-tree-final-{edge,firefox}/report.json",
-            "Reported special-use roles and nonselectable/nonexistent states are factual; they do not establish a folder protection or mutation policy."
+            "Reported special-use roles and nonselectable/nonexistent states are factual; they do not establish a folder protection or mutation policy.",
+            "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/folders-next-integration-20261015/native-attempt3/independent-native-delivery-scope.json",
+            "2026-10-15 actual executed scope: Matching native authority/protection and Bob/account checks PASS; existing hierarchy special-use/nonselectable metadata rendering proof retained. No guessed operational roles or current all-role visual/human acceptance inferred."
           ]
         },
         {
           "id": "R2-16-015",
           "label": "Selected-folder name",
-          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "status": "PARTIAL_FUNCTIONAL",
           "evidence": [
             "src/folder_metadata.rs",
             "src/folder_metadata_backend.rs",
@@ -2923,13 +2940,15 @@
             "src/settings_copies_ui.rs",
             "maint/ux/folder_hierarchy_workflows.py",
             "S04/folder-tree-final-{edge,firefox}/report.json",
-            "Exact selected owned identity and account; malformed/wrong-owner metadata keeps verified flat fallback."
+            "Exact selected owned identity and account; malformed/wrong-owner metadata keeps verified flat fallback.",
+            "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/folders-page-20261014/installed-get-qualification/session-root-precondition-attempt2/actual-result.json",
+            "2026-10-15 actual executed scope: Actual installed selected owned hierarchy identity and same-GUID leaf verified; b307 CreateMove confirms new child identity. Existing escaped hostile-name and foreign/malformed metadata refusal proof retained. No final whole-page visual/human acceptance inferred."
           ]
         },
         {
           "id": "R2-16-016",
           "label": "Parent",
-          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "status": "PARTIAL_FUNCTIONAL",
           "evidence": [
             "src/folder_metadata.rs",
             "src/folder_metadata_backend.rs",
@@ -2937,7 +2956,9 @@
             "src/settings_copies_ui.rs",
             "maint/ux/folder_hierarchy_workflows.py",
             "S04/folder-tree-final-{edge,firefox}/report.json",
-            "Exact structural parent or reported namespace at root; no guessed delimiter."
+            "Exact structural parent or reported namespace at root; no guessed delimiter.",
+            "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/folders-disposition-integration-20261015/installed-create-and-complete-email-move-attempt1/independent-delivery-scope.json",
+            "2026-10-15 actual executed scope: Actual b307 Create binds child to exact owned parent2309/GUID62572 and current authoritative hierarchy; complete-message Move verifies parent/source emptiness and destination. Existing structural-parent projection proof retained; not arbitrary namespace mutation authority."
           ]
         },
         {
@@ -2955,7 +2976,9 @@
             "Separate authoritative total and virtual message size, plus bounded loaded unread. Virtual size is not quota or disk use. Native helper qualification follows signed export.",
             "S04/native-m/result.json",
             "S04/native-n/result.json",
-            "Authoritative total and virtual-size helper qualified on isolated obsd1; virtual bytes are not quota/disk use."
+            "Authoritative total and virtual-size helper qualified on isolated obsd1; virtual bytes are not quota/disk use.",
+            "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/folders-disposition-integration-20261015/installed-create-and-complete-email-move-attempt1/independent-delivery-scope.json",
+            "2026-10-15 actual executed scope: Actual new child empty state and subsequent one-message destination/current reader tuple verified. Existing authoritative total/virtual-size and bounded loaded-unread evidence retained; no quota/disk/unbounded server-count claim."
           ]
         },
         {
@@ -2969,13 +2992,15 @@
             "src/settings_copies_ui.rs",
             "maint/ux/folder_hierarchy_workflows.py",
             "S04/folder-tree-final-{edge,firefox}/report.json",
-            "Visible direct subfolders counts immediate displayed nodes, not all server descendants."
+            "Visible direct subfolders counts immediate displayed nodes, not all server descendants.",
+            "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/folders-next-integration-20261015/native-attempt3/independent-native-delivery-scope.json",
+            "2026-10-15 actual executed scope: Matching native bounded root/descendant before/after hierarchy identities PASS; installed exclusive new child and remaining Delete parent witness exist. Existing visible immediate-child count rendering proof retained; fresh combined displayed count transition is not inferred."
           ]
         },
         {
           "id": "R2-16-019",
           "label": "Mailbox owner",
-          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "status": "PARTIAL_FUNCTIONAL",
           "evidence": [
             "src/folder_metadata.rs",
             "src/folder_metadata_backend.rs",
@@ -2983,20 +3008,28 @@
             "src/settings_copies_ui.rs",
             "maint/ux/folder_hierarchy_workflows.py",
             "S04/folder-tree-final-{edge,firefox}/report.json",
-            "Exact selected owned identity and account; malformed/wrong-owner metadata keeps verified flat fallback."
+            "Exact selected owned identity and account; malformed/wrong-owner metadata keeps verified flat fallback.",
+            "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/folders-page-20261014/installed-get-qualification/session-root-precondition-attempt2/actual-result.json",
+            "2026-10-15 actual executed scope: Actual installed account-scoped owned Folders reads and exact lease cleanup; matching b307 native Bob/authority refusal and CreateMove/Labels unrelated-row preservation. Existing owner/foreign-metadata rendering proof retained. Synthetic post-auth does not qualify login/TOTP."
           ]
         },
         {
           "id": "R2-16-020",
           "label": "Protected-folder refusal",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "PARTIAL_FUNCTIONAL",
+          "evidence": [
+            "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/folders-next-integration-20261015/native-attempt3/independent-native-delivery-scope.json",
+            "2026-10-15 actual executed scope: Matching native protected/cycle/stale/account authority/confinement checks PASS; current normal source gate preserves HTTP CSRF/owner refusals. Not an unexecuted destructive real-account negative or pending recovery successor qualification."
+          ]
         },
         {
           "id": "R2-16-021",
           "label": "Non-empty explicit disposition and confirmation",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "PARTIAL_FUNCTIONAL",
+          "evidence": [
+            "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/folders-disposition-integration-20261015/installed-lifecycle-qualification/remaining-restore-delete-continuation-attempt2/actual-remaining-attempt1.json",
+            "2026-10-15 actual executed scope: Installed separate Restore/Delete explicit review/confirmation, saved body/decoded attachment and exact identities PASS; original Bin reached Binned receipt but HTTP303 timed out and remains FAIL_OR_UNCONFIRMED. Matching b307 native non-empty subtree Bin/Restore PASS. No implicit expunge/retry; successor pending."
+          ]
         }
       ]
     },

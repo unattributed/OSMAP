@@ -301,6 +301,26 @@ impl<G: BrowserGateway> BrowserApp<G> {
         } else if !request.query_params.is_empty() {
             code = 400;
         }
-        HandledHttpResponse { response: html_response(code, if code == 200 { "OK" } else { "Conflict" }, "Check folder result", crate::html::TrustedHtml::from_template(format!("{}<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\"><h1>Check folder preservation result</h1><p role=\"status\">{}</p><form method=\"post\" action=\"/settings/folders/disposition/check\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button name=\"confirm\" value=\"check\">Check original result</button></form><a href=\"/folders/deleted\">Deleted folders / Restore</a></main>", crate::http_ui::app_header(&session.record.canonical_username, &session.record.csrf_token, "folders"), escape_html(notice), escape_html(&session.record.csrf_token)))), audit_events }
+        let pending = self
+            .gateway
+            .pending_folder_rename(&session)
+            .ok()
+            .flatten()
+            .filter(|r| {
+                r.account() == session.record.canonical_username && r.disposition().is_some()
+            });
+        let retained = pending
+            .as_ref()
+            .map(super::routes_folder_rename::retained_folder_notice)
+            .unwrap_or_default();
+        let recovery = if pending
+            .as_ref()
+            .is_some_and(|r| !r.descendants().is_empty())
+        {
+            "<p><a href=\"/settings/folders/rename/recover\">Review bounded partial recovery</a></p>"
+        } else {
+            ""
+        };
+        HandledHttpResponse { response: html_response(code, if code == 200 { "OK" } else { "Conflict" }, "Check folder result", crate::html::TrustedHtml::from_template(format!("{}<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\"><h1>Check folder preservation result</h1><p role=\"status\">{}</p>{retained}<form method=\"post\" action=\"/settings/folders/disposition/check\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button name=\"confirm\" value=\"check\">Check original result</button></form>{recovery}<a href=\"/folders/deleted\">Deleted folders / Restore</a></main>", crate::http_ui::app_header(&session.record.canonical_username, &session.record.csrf_token, "folders"), escape_html(notice), escape_html(&session.record.csrf_token)))), audit_events }
     }
 }

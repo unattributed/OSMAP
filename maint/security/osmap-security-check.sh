@@ -13,6 +13,9 @@ cd "$repo_root"
 mkdir -p "$TMPDIR" "$CARGO_HOME" "$CARGO_TARGET_DIR"
 export TMPDIR CARGO_HOME CARGO_TARGET_DIR
 
+python3 -B maint/ux/validate_acceptance.py --work-order-only
+python3 -B maint/ux/test_validate_acceptance.py WorkOrderTests
+
 version_lt() {
 	left=$1
 	right=$2

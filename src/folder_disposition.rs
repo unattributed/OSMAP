@@ -874,7 +874,7 @@ pub(crate) fn execute<B: MailboxBackend>(
     request: &RenameFolderRequest,
     now: u64,
 ) -> Outcome {
-    if validate_request(request).is_err() {
+    if request.is_recovery() || validate_request(request).is_err() {
         return Outcome::Refused(Refusal::Invalid);
     }
     let Ok(mut role) = crate::folder_rename::settings_gate(directory, request.account()) else {
@@ -963,6 +963,9 @@ pub(crate) fn check<B: MailboxBackend>(
     let Ok(mut role) = crate::folder_rename::role_lease(directory, account) else {
         return CheckOutcome::Unavailable;
     };
+    if role.recovery().is_some() {
+        return CheckOutcome::Unconfirmed;
+    }
     let Some(request) = role.pending().cloned() else {
         if role.pending_delete().is_some() {
             return CheckOutcome::Unavailable;

@@ -1,6 +1,29 @@
 use super::*;
 
 #[test]
+fn folder_subtree_recovery_grant_binds_original_action_and_new_single_use_nonce() {
+    let original = crate::folder_rename::RenameFolderRequest::new("alice@fixture.test", "INBOX.Alpha", &"a".repeat(32), &"b".repeat(32), "Beta").unwrap();
+    let mut wire = serde_json::to_value(original).unwrap();
+    wire["descendants"] = serde_json::json!([{"suffix":".Child","guid":"e".repeat(32)}]);
+    let original: crate::folder_rename::RenameFolderRequest = serde_json::from_value(wire).unwrap();
+    let step = "1".repeat(32);
+    let request = original.for_recovery(&step).unwrap();
+    assert_eq!(request.recovery_original().unwrap(), original);
+    let mut action = MailboxHelperRequest::FolderRename { request: request.clone(), grant: MailboxHelperGrant::unsigned() };
+    issue_request_grant_with_nonce(&mut action, &test_helper_grant_key(), 100, &step).unwrap();
+    assert_eq!(parse_request(&encode_request(&action)).unwrap(), action);
+    verify_request_grant(&action, &test_helper_grant_key(), 101).unwrap();
+    for (field, value) in [("recovery_original_action", "2".repeat(32)), ("action_nonce", "3".repeat(32)), ("source_guid", "f".repeat(32))] {
+        let mut changed = action.clone();
+        if let MailboxHelperRequest::FolderRename { request, .. } = &mut changed {
+            let mut fields = serde_json::to_value(&*request).unwrap(); fields[field] = value.into();
+            *request = serde_json::from_value(fields).unwrap();
+        }
+        assert!(verify_request_grant(&changed, &test_helper_grant_key(), 101).is_err(), "{field}");
+    }
+}
+
+#[test]
 fn folder_subtree_grant_binds_every_suffix_guid_and_preserves_legacy_leaf_payload() {
     let legacy = crate::folder_rename::RenameFolderRequest::new("alice@fixture.test", "INBOX.Alpha", &"a".repeat(32), &"b".repeat(32), "Beta").unwrap();
     let wire = serde_json::to_value(&legacy).unwrap();

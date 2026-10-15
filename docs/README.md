@@ -77,6 +77,7 @@ Current public documentation map:
 - `UX_EXECUTION_LEDGER.md`
 - `UX_FUNCTIONAL_BASELINE.md` — approved preservation and installed ordinary-mail verification work order; results and repairs remain in the execution ledger
 - `UX_MAIL_DELIVERY_REFOCUS_20261006.md` — operator-approved ordinary and protected Send recovery priority
+- `UX_FOLDER_RETAINED_RECONCILIATION.md` — engineering-owned bounded diagnosis and safe retained disposition for unconfirmed folder changes; no automatic replay or inferred child settlement
 - `ARCHIVE_EVENT_METADATA.md` — persisted known Archive action dates, destination identity and independent metadata uncertainty
 - `AGENT_DEVELOPMENT_FRAMEWORK.md` — portable six-role framework for complete user journeys, independent review and actionable UAT
 - `OSMAP_AGENT_FRAMEWORK_ADOPTION.md` — application to existing OSMAP records and unresolved acceptance
@@ -313,10 +314,10 @@ In practice, the repository should follow this policy:
 
 
 Current Folders work is recorded in the execution ledger and current project
-status: recoverable leaf Bin/Restore and empty Delete are installed, but the
-combined installed journey is still open after a retained HTTP timeout. Bounded
-subtree operations and owned-label filtering are under matching qualification;
-partial-tree recovery and full S08 acceptance are not complete.
+status. Matching installed Create, complete-email Move, Restore/Delete and Labels
+journeys have finite functional proof and independent delivery review. Partial-
+tree recovery safety and full S08 acceptance remain open; the original Bin HTTP
+timeout is retained separately from its reconciled outcome and later passes.
 
 ## Current Status Authority
 

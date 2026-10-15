@@ -5,6 +5,19 @@ use crate::{
     folder_create::Refusal,
     folder_rename::{Outcome, RenameFolderRequest},
 };
+
+pub(super) fn retained_folder_notice(request: &RenameFolderRequest) -> String {
+    let reference = if request.is_recovery() {
+        request
+            .recovery_original()
+            .ok()
+            .map(|original| original.action_nonce().to_owned())
+    } else {
+        Some(request.action_nonce().to_owned())
+    };
+    let reference = reference.as_deref().unwrap_or("unavailable");
+    format!("<section aria-label=\"Pending folder change\"><h2>Folder change still pending</h2><p>This is not a successful completion. Affected folder changes remain paused; you can continue reading mail. Do not repeat the folder action or delete either location.</p><p>Give the mail service administrator this account and operation reference for reconciliation. The administrator is responsible for diagnosis and safe repair; you do not need to troubleshoot.</p><dl><dt>Account</dt><dd>{}</dd><dt>Operation reference</dt><dd><code>{}</code></dd></dl></section>", escape_html(request.account()), escape_html(reference))
+}
 impl<G: BrowserGateway> BrowserApp<G> {
     pub(super) fn rename_preflight(
         &self,
@@ -411,6 +424,120 @@ impl<G: BrowserGateway> BrowserApp<G> {
 }
 
 impl<G: BrowserGateway> BrowserApp<G> {
+    pub(super) fn handle_folder_rename_recover(
+        &self,
+        request: &HttpRequest,
+        context: &AuthenticationContext,
+    ) -> HandledHttpResponse {
+        use crate::folder_rename::RecoveryOutcome;
+        let (session, mut audit_events) = match self.require_validated_session(request, context) {
+            Ok(v) => v,
+            Err(r) => return r,
+        };
+        let pending =
+            match self.gateway.pending_folder_rename(&session) {
+                Ok(Some(value)) if !value.descendants().is_empty() => value,
+                _ => return HandledHttpResponse {
+                    response: html_response(
+                        409,
+                        "Conflict",
+                        "Recovery unavailable",
+                        "<p>No bounded subtree recovery is available. No folder was changed.</p>",
+                    ),
+                    audit_events,
+                },
+            };
+        let mut notice = "This repairs one remaining original subfolder only after its original helper record proves native settlement and every current original GUID has exactly one safe placement. It never repeats the original root rename. Changed, missing, duplicated or foreign identities refuse recovery. A completely unchanged original tree can be released without moving any folder.";
+        let mut code = 200;
+        let mut nonce = if pending.is_recovery() {
+            pending.action_nonce().to_owned()
+        } else {
+            crate::draft::generate_draft_id().unwrap_or_default()
+        };
+        let post = request.method == HttpMethod::Post;
+        if post {
+            let fields = if request.query_params.is_empty()
+                && allows_urlencoded_request_body(
+                    request.headers.get("content-type").map(String::as_str),
+                ) {
+                parse_urlencoded_form(&request.body, 3, 512).ok()
+            } else {
+                None
+            };
+            let Some(fields) = fields.filter(|f| {
+                f.keys()
+                    .all(|k| matches!(k.as_str(), "csrf_token" | "confirm" | "recovery_nonce"))
+                    && f.get("confirm").map(String::as_str) == Some("recover")
+            }) else {
+                return HandledHttpResponse {
+                    response: html_response(
+                        400,
+                        "Bad Request",
+                        "Invalid recovery",
+                        "<p>No recovery was dispatched.</p>",
+                    ),
+                    audit_events,
+                };
+            };
+            if let Some(r) = self.require_valid_csrf(
+                request,
+                fields.get("csrf_token").map(String::as_str),
+                &session,
+                context,
+            ) {
+                return r;
+            }
+            nonce = fields.get("recovery_nonce").cloned().unwrap_or_default();
+            if nonce.len() != 32
+                || !nonce
+                    .bytes()
+                    .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+            {
+                return HandledHttpResponse {
+                    response: html_response(
+                        400,
+                        "Bad Request",
+                        "Invalid recovery",
+                        "<p>No recovery was dispatched.</p>",
+                    ),
+                    audit_events,
+                };
+            }
+            let (guard, event) =
+                match self.acquire_mailbox_budget(context, &session, "folder_subtree_recovery") {
+                    Ok(v) => v,
+                    Err(r) => return r,
+                };
+            audit_events.push(event);
+            let outcome = self
+                .gateway
+                .recover_folder_rename(context, &session, &nonce);
+            audit_events.push(self.release_request_budget(
+                guard,
+                "folder_subtree_recovery",
+                context,
+                &session,
+            ));
+            match outcome {
+                RecoveryOutcome::Complete { destination } => return HandledHttpResponse { response: redirect_response(303, "See Other", &format!("/folders?folder={}", url_encode(&destination))), audit_events },
+                RecoveryOutcome::Unchanged => return HandledHttpResponse { response: html_response(200, "OK", "Original folders unchanged", "<p>The original native operation is settled and all original folders remain in their original locations. The pending action was released without repeating it.</p><p><a href=\"/folders\">Folders</a></p>"), audit_events },
+                RecoveryOutcome::Progress => notice = "This recovery step is confirmed. Other original subfolders remain pending. Review the next bounded recovery; no root rename was repeated.",
+                RecoveryOutcome::Inspected => notice = "The previous recovery is settled or proved undispatched. It was not repeated. Review current recovery to continue only if the remaining identities qualify.",
+                RecoveryOutcome::Refused => { code = 409; notice = "Recovery was refused before a new native change. Current authority, settlement, identities or capacity did not qualify. The original pending result is preserved."; },
+                RecoveryOutcome::Unknown => { code = 409; notice = "Recovery remains unconfirmed. Its original nonce is retained; reopening recovery inspects that attempt without dispatching it again."; },
+                RecoveryOutcome::Unavailable => { code = 503; notice = "Recovery authority or durable state is unavailable. The original pending result is preserved."; },
+            }
+        } else if !request.query_params.is_empty() {
+            code = 400;
+        }
+        let form = if !post && code == 200 && nonce.len() == 32 {
+            format!("<form method=\"post\" action=\"/settings/folders/rename/recover\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"recovery_nonce\" value=\"{}\"><button name=\"confirm\" value=\"recover\">{}</button></form>", escape_html(&session.record.csrf_token), escape_html(&nonce), if pending.is_recovery() { "Inspect previous recovery" } else { "Confirm recover next subfolder" })
+        } else {
+            String::new()
+        };
+        let retained = retained_folder_notice(&pending);
+        HandledHttpResponse { response: html_response(code, if code == 200 { "OK" } else if code == 503 { "Service Unavailable" } else { "Conflict" }, "Recover partial folder change", crate::html::TrustedHtml::from_template(format!("{}<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\"><h1>Recover partial folder change</h1><p role=\"status\">{}</p><dl><dt>Original folder</dt><dd>{}</dd><dt>Intended folder</dt><dd>{}</dd></dl>{retained}{form}<p><a href=\"/settings/folders/rename/recover\">Review current recovery</a> · <a href=\"/settings/folders/rename/check\">Check original result</a> · <a href=\"/folders\">Folders</a></p></main>", crate::http_ui::app_header(&session.record.canonical_username, &session.record.csrf_token, "folders"), escape_html(notice), escape_html(pending.source()), escape_html(&pending.destination())))), audit_events }
+    }
     pub(super) fn handle_folder_rename_check(
         &self,
         request: &HttpRequest,
@@ -514,7 +641,7 @@ impl<G: BrowserGateway> BrowserApp<G> {
         } else if !request.query_params.is_empty() {
             code = 400;
         }
-        let details = pending.as_ref().ok().and_then(Option::as_ref).map(|r| format!("<dl><dt>Original folder</dt><dd>{}</dd><dt>Requested folder</dt><dd>{}</dd></dl>", escape_html(r.source()), escape_html(&r.destination()))).unwrap_or_default();
+        let details = pending.as_ref().ok().and_then(Option::as_ref).map(|r| format!("<dl><dt>Original folder</dt><dd>{}</dd><dt>Requested folder</dt><dd>{}</dd></dl>{}{}", escape_html(r.source()), escape_html(&r.destination()), retained_folder_notice(r), if r.descendants().is_empty() { "" } else { "<p><a href=\"/settings/folders/rename/recover\">Review bounded partial recovery</a></p>" })).unwrap_or_default();
         let check = if pending.as_ref().is_ok_and(|p| p.is_some()) {
             format!("<form method=\"post\" action=\"/settings/folders/rename/check\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button name=\"confirm\" value=\"check\">Check current result</button></form>", escape_html(&session.record.csrf_token))
         } else {

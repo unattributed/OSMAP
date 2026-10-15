@@ -1502,7 +1502,13 @@ impl BrowserGateway for RuntimeBrowserGateway {
                 if lease.pending_delete().is_some() {
                     Err(crate::folder_create::Refusal::Unavailable)
                 } else {
-                    Ok(lease.pending().cloned())
+                    lease
+                        .pending()
+                        .map(|r| match lease.recovery() {
+                            Some(intent) => r.for_recovery(&intent.nonce),
+                            None => Ok(r.clone()),
+                        })
+                        .transpose()
                 }
             })
     }
@@ -1527,6 +1533,9 @@ impl BrowserGateway for RuntimeBrowserGateway {
         let Some(request) = lease.pending().cloned() else {
             return CheckOutcome::NoPending;
         };
+        if lease.recovery().is_some() {
+            return CheckOutcome::Unconfirmed;
+        }
         if request.disposition().is_some() {
             return CheckOutcome::Unconfirmed;
         }
@@ -1546,9 +1555,13 @@ impl BrowserGateway for RuntimeBrowserGateway {
             request.account(),
             &request.destination(),
         ) {
-            if crate::folder_rename::confirmed_result(&request, &snapshot, &destination, &parent)
-                && crate::folder_subtree::check(&backend, &request, &snapshot, true).is_ok()
-            {
+            if crate::folder_rename::confirmed_settled_result(
+                &backend,
+                &request,
+                &snapshot,
+                &destination,
+                &parent,
+            ) {
                 if crate::folder_rename::reconcile_metadata(&self.settings_dir, &request).is_err()
                     || lease.confirm().is_err()
                 {
@@ -1616,7 +1629,9 @@ impl BrowserGateway for RuntimeBrowserGateway {
         ) else {
             return Outcome::Refused(Refusal::Unavailable);
         };
-        if request.account() != session.record.canonical_username || request.disposition().is_some()
+        if request.is_recovery()
+            || request.account() != session.record.canonical_username
+            || request.disposition().is_some()
         {
             return Outcome::Refused(Refusal::Invalid);
         }
@@ -1659,6 +1674,47 @@ impl BrowserGateway for RuntimeBrowserGateway {
             return Outcome::Unknown;
         }
         outcome
+    }
+    fn recover_folder_rename(
+        &self,
+        context: &AuthenticationContext,
+        session: &ValidatedSession,
+        nonce: &str,
+    ) -> crate::folder_rename::RecoveryOutcome {
+        use crate::folder_rename::{CheckOutcome, RecoveryOutcome};
+        if self.mailbox_helper_socket_path.is_none()
+            || self.mailbox_helper_peer_uid.is_none()
+            || self.mailbox_helper_grant_key_path.is_none()
+        {
+            return RecoveryOutcome::Unavailable;
+        }
+        let pending = match self.pending_folder_rename(session) {
+            Ok(Some(value)) => value,
+            _ => return RecoveryOutcome::Unavailable,
+        };
+        let result = crate::folder_subtree_recovery::recover(
+            &self.settings_dir,
+            &self.build_mailbox_list_backend(),
+            &session.record.canonical_username,
+            nonce,
+        );
+        if !matches!(
+            result,
+            RecoveryOutcome::Progress | RecoveryOutcome::Inspected
+        ) {
+            return result;
+        }
+        let checked = if pending.disposition().is_some() {
+            self.check_folder_disposition(context, session)
+        } else {
+            self.check_folder_rename(context, session)
+        };
+        match checked {
+            CheckOutcome::Renamed { destination } => RecoveryOutcome::Complete { destination },
+            CheckOutcome::Unchanged => RecoveryOutcome::Unchanged,
+            CheckOutcome::Unconfirmed => result,
+            _ => RecoveryOutcome::Unavailable,
+        }
     }
     fn create_folder(
         &self,

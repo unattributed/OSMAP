@@ -1,5 +1,5 @@
 use crate::{
-    auth::{CommandExecution, CommandExecutionError, CommandExecutor},
+    auth::{CommandExecution, CommandExecutionError, CommandExecutor, FolderCommandAttempt},
     folder_create::{CreateFolderRequest, Outcome, Refusal},
     mailbox::{DoveadmMailboxListBackend, MailboxBackend, MailboxListingPolicy},
 };
@@ -12,6 +12,29 @@ pub(crate) struct Deadline<'a, E> {
     pub(crate) until: Instant,
 }
 impl<E: CommandExecutor> CommandExecutor for Deadline<'_, E> {
+    fn run_folder_mutation(
+        &self,
+        p: &str,
+        a: &[String],
+        input: &[u8],
+        timeout: Duration,
+        limit: usize,
+    ) -> FolderCommandAttempt {
+        let Some(remaining) = self
+            .until
+            .checked_duration_since(Instant::now())
+            .filter(|d| !d.is_zero())
+        else {
+            return FolderCommandAttempt {
+                result: Err(CommandExecutionError {
+                    reason: "folder operation deadline exceeded".into(),
+                }),
+                settled: true,
+            };
+        };
+        self.inner
+            .run_folder_mutation(p, a, input, timeout.min(remaining), limit)
+    }
     fn run_with_stdin_bytes(
         &self,
         p: &str,
@@ -138,6 +161,16 @@ pub(crate) fn create<E: CommandExecutor>(
     }
 }
 impl<E: CommandExecutor> CommandExecutor for &Deadline<'_, E> {
+    fn run_folder_mutation(
+        &self,
+        p: &str,
+        a: &[String],
+        i: &[u8],
+        t: Duration,
+        l: usize,
+    ) -> FolderCommandAttempt {
+        (**self).run_folder_mutation(p, a, i, t, l)
+    }
     fn run_with_stdin_bytes(
         &self,
         p: &str,

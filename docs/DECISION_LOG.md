@@ -9719,3 +9719,43 @@ validation; core fresh locked authority and all budgets remain unchanged.
 Non-leaf recovery and real label filtering remain required engineering work;
 partial native tree uncertainty is not full S08-02 completion. No human handoff
 until the submitted agent-owned workflow and independent audit pass.
+
+## 2026-10-15 — strict PM ownership enforces functional delivery without parking
+
+The operator rejects unilateral S08 parking and directs a mandatory PM policy.
+Resume the existing original S08-02 objective, retain all R2/R3 obligations and
+failed intervals, and finish concrete engineering and deployed QA. Root retains
+sole Git/host/native/browser execution; named developers and independent reviewers
+work on disjoint actionable boundaries. CreateMove's actual controlled message
+witness precedes Labels10; earlier open S04–S07 work is not its prerequisite.
+Partial-tree source continues in parallel. Crash uncertainty needs actual
+quiescence or reviewed safe retained refusal, never inferred replay authority or
+an invented universal crash supervisor. Human troubleshooting is not a substitute.
+
+AGENTS points to the controlling policy in the existing adoption document. One
+JSON work order in the existing ledger declares scope, owners, dependencies,
+functional stages and next actions. The existing developer gate checks that
+declaration and changed-file scope; no parallel board/framework is introduced.
+Unfinished/failed scope cannot become engineering-complete/UAT-ready/accepted;
+explicit operator pause remains immediate and human acceptance stays separate.
+The validator is not evidence truth, security proof or permission to close work.
+ISC/free public source remains the product; support contracts around
+openbsd-mailstack/OSMAP are compatible without a licence/pricing/hosting change.
+
+## 2026-10-15 — completion witnesses govern folder success and safe uncertainty
+
+Fix the demonstrated Runtime original-result path that could treat destination
+GUID placement alone as success. Require the original durable helper Renamed
+witness and unchanged parent/full-tree authority before clearing pending state.
+Expose only explicit bounded child repair with helper-derived native settlement;
+missing settlement never permits original or child redispatch. A usable retained
+nonsuccess state keeps the account/original-operation reference and assigns
+finite diagnosis/reconciliation to engineering. It does not claim arbitrary
+crashed-child automatic recovery, kernel quiescence or successful completion.
+
+Reuse existing local/native fixtures and matching deployed journey evidence.
+Extend only the remaining installed non-leaf boundary; do not repeat completed
+Labels/CreateMove/RestoreDelete actions or commission a generic QA framework.
+Reconcile scoped actual evidence in the original acceptance registers, retain
+all legacy requirements/failures, and keep human acceptance separate until
+agent-owned implementation, matching deployed QA and independent audit PASS.

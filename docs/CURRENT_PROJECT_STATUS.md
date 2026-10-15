@@ -14,20 +14,35 @@ statement as provenance rather than current release posture.
 
 ## Current source posture
 
-### Latest folder lifecycle delivery and unresolved installed result, 2026-10-15
+### Latest scoped folder and label delivery, 2026-10-15
 
-Signed synchronized source b974064 delivers recoverable leaf Bin/Restore and
-empty Delete. Matching application6eda8873 is installed on authoritative Toronto
-helper and obsd1 web after matching native qualification. The installed journey
-remains OPEN: its one new controlled message appended, Bin apply timed out at
-the client, and later exact completion/receipt confirm current Binned state.
-Original HTTP303 was not observed; no automatic mutation retry is allowed.
-Read-only identity/content reconciliation and explicit remaining Restore/Delete
-qualification precede readiness. Non-leaf lifecycle, partial-tree repair,
-installed complete-email Move/Create/Labels and affected visual acceptance remain
-required. No full S08-02, sprint or epic closure is claimed. See the latest
-execution-ledger entry for exact source, runtime and retained failure evidence.
+Signed source `b3075df9307504a3770cf9f9f8da2b523dd9d9ff` is synchronized
+to the UX branch after normal commit/push gates (1696 library passes, zero
+failures, 44 explicit native ignores and 519 account Python passes). Matching
+application ad167622 is installed helper-first on authoritative Toronto and then
+obsd1 web; configuration, key agents, retention and unrelated services remain
+preserved. Native qualification passes the bounded subtree, identity/content,
+account isolation, authority and confinement controls against 476+3 inputs.
 
+Actual installed finite journeys now pass: eight Restore/Delete requests with
+complete-message/attachment preservation and exact authoritative Delete witness;
+ten Create plus complete-email Move requests into a newly created private leaf;
+and ten Labels requests covering Create, Rename, Attach, actual filter menu,
+filtered reader, Clear, Detach and confirmed Delete. The five label changes
+preserve unrelated logical metadata and advance its revision by five. Each
+qualification session is revoked and its exact record removed; independent
+actual delivery reviews pass for these scopes. No additional message, provider
+Send, expunge, ambiguous automatic retry or private-key action occurred.
+
+The earlier Bin HTTP timeout remains historical: its complete303 was unobserved.
+Read-only exact-operation reconciliation established Binned state, followed by a
+separately admitted successful Restore/Delete continuation. Those later results
+do not retrospectively pass the failed HTTP interval. Reader Seen effects were
+not separately assessed. Partial-tree recovery safety and usable UNKNOWN
+handling are still under implementation; full S08-02 and sprint/epic acceptance
+remain OPEN. Earlier account/OpenPGP requirements remain independently open.
+The operator requires current S08 work to continue with strict program management;
+no unilateral agent parking is authorized.
 
 ### Agent-owned delivery correction, 2026-10-14
 

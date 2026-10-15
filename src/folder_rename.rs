@@ -1,4 +1,5 @@
 //! Confirmed native rename or move of one private user-folder subtree.
+pub use crate::folder_subtree_recovery::RecoveryOutcome;
 use crate::{
     folder_create::Refusal, folder_metadata::FolderSnapshot, mailbox_status::MailboxStatus,
 };
@@ -11,6 +12,58 @@ pub enum Outcome {
     Conflict,
     Refused(Refusal),
     Unknown,
+}
+/// Internal native lifecycle evidence. This is never a caller-supplied grant.
+pub struct NativeAttempt {
+    pub(crate) outcome: Outcome,
+    pub(crate) settled: bool,
+}
+impl NativeAttempt {
+    pub(crate) fn undispatched(outcome: Outcome) -> Self {
+        Self {
+            outcome,
+            settled: true,
+        }
+    }
+    pub(crate) fn unsettled(outcome: Outcome) -> Self {
+        Self {
+            outcome,
+            settled: false,
+        }
+    }
+    pub(crate) fn returned(outcome: Outcome) -> Self {
+        Self {
+            outcome,
+            settled: true,
+        }
+    }
+}
+pub struct NativeRecoveryAttempt {
+    pub(crate) attempt: NativeAttempt,
+    pub(crate) complete: bool,
+}
+/// Not serializable or cloneable; only the authenticated helper creates this
+/// while it holds the exact original completion-record lock and settlement.
+pub struct RecoveryPermit<'a> {
+    original: &'a RenameFolderRequest,
+    _step: &'a str,
+    _lock: &'a crate::private_account_file::LockedAccountFile,
+}
+impl<'a> RecoveryPermit<'a> {
+    pub(crate) fn new(
+        original: &'a RenameFolderRequest,
+        step: &'a str,
+        lock: &'a crate::private_account_file::LockedAccountFile,
+    ) -> Self {
+        Self {
+            original,
+            _step: step,
+            _lock: lock,
+        }
+    }
+    pub(crate) fn original(&self) -> &RenameFolderRequest {
+        self.original
+    }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -29,6 +82,8 @@ pub struct RenameFolderRequest {
     disposition: Option<crate::folder_disposition::Purpose>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     descendants: Vec<crate::folder_subtree::Descendant>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    recovery_original_action: Option<String>,
 }
 impl RenameFolderRequest {
     pub fn new(
@@ -61,6 +116,7 @@ impl RenameFolderRequest {
             source_parent_guid: None,
             disposition: None,
             descendants: Vec::new(),
+            recovery_original_action: None,
         })
     }
     pub fn for_move(
@@ -108,6 +164,7 @@ impl RenameFolderRequest {
             source_parent_guid: Some(source_parent_guid.into()),
             disposition: None,
             descendants: Vec::new(),
+            recovery_original_action: None,
         })
     }
     #[allow(clippy::too_many_arguments)]
@@ -133,12 +190,52 @@ impl RenameFolderRequest {
             source_parent_guid: Some(source_parent_guid.into()),
             disposition: Some(purpose),
             descendants: Vec::new(),
+            recovery_original_action: None,
         };
         crate::folder_disposition::validate_request(&result)?;
         Ok(result)
     }
     pub fn disposition(&self) -> Option<&crate::folder_disposition::Purpose> {
         self.disposition.as_ref()
+    }
+    pub(crate) fn is_recovery(&self) -> bool {
+        self.recovery_original_action.is_some()
+    }
+    pub(crate) fn reserved_recovery_bytes(&self) -> Result<usize, Refusal> {
+        let mut recovery = self.clone();
+        recovery.recovery_original_action = Some(self.action_nonce.clone());
+        // Both action nonces have fixed width. This is a capacity projection,
+        // not a valid request or a dispatch authority.
+        serde_json::to_vec(&recovery)
+            .map(|b| b.len())
+            .map_err(|_| Refusal::Unavailable)
+    }
+    pub(crate) fn recovery_original(&self) -> Result<Self, Refusal> {
+        let action = self
+            .recovery_original_action
+            .as_ref()
+            .ok_or(Refusal::Invalid)?;
+        if action == self.action_nonce() {
+            return Err(Refusal::Invalid);
+        }
+        let mut original = self.clone();
+        original.action_nonce = action.clone();
+        original.recovery_original_action = None;
+        original.validate()?;
+        if original.descendants().is_empty() {
+            return Err(Refusal::Invalid);
+        }
+        Ok(original)
+    }
+    pub(crate) fn for_recovery(&self, nonce: &str) -> Result<Self, Refusal> {
+        if self.is_recovery() {
+            return Err(Refusal::Invalid);
+        }
+        let mut request = self.clone();
+        request.recovery_original_action = Some(self.action_nonce.clone());
+        request.action_nonce = nonce.into();
+        request.validate()?;
+        Ok(request)
     }
     pub(crate) fn descendants(&self) -> &[crate::folder_subtree::Descendant] {
         &self.descendants
@@ -200,6 +297,25 @@ impl RenameFolderRequest {
         &self.action_nonce
     }
     pub fn validate(&self) -> Result<(), Refusal> {
+        if self.is_recovery() {
+            if self.action_nonce.len() != 32
+                || !self
+                    .action_nonce
+                    .bytes()
+                    .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+            {
+                return Err(Refusal::Invalid);
+            }
+            self.recovery_original()?;
+            if serde_json::to_vec(self)
+                .map_err(|_| Refusal::Unavailable)?
+                .len()
+                > 2048
+            {
+                return Err(Refusal::Capacity);
+            }
+            return Ok(());
+        }
         crate::folder_subtree::validate_bindings(self)?;
         if self.disposition.is_some() {
             return crate::folder_disposition::validate_request(self);
@@ -260,7 +376,7 @@ impl RenameFolderRequest {
         }
         Ok(())
     }
-    fn validate_destination_parent(
+    pub(crate) fn validate_destination_parent(
         &self,
         snapshot: &FolderSnapshot,
         parent: &MailboxStatus,
@@ -396,6 +512,12 @@ pub(crate) fn validate_source(
     Ok(())
 }
 /// One account-bound pending rename; role writers use the same private lock.
+#[derive(Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct RecoveryIntent {
+    pub(crate) nonce: String,
+    pub(crate) dispatched: bool,
+}
 #[derive(Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct RoleRecord {
@@ -404,20 +526,43 @@ struct RoleRecord {
     pending: Option<RenameFolderRequest>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pending_delete: Option<crate::folder_delete::DeleteFolderRequest>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    recovery: Option<RecoveryIntent>,
 }
 pub(crate) struct RoleLease {
     file: crate::private_account_file::LockedAccountFile,
     account: String,
     pending: Option<RenameFolderRequest>,
     pending_delete: Option<crate::folder_delete::DeleteFolderRequest>,
+    recovery: Option<RecoveryIntent>,
 }
 impl RoleLease {
+    pub(crate) fn recovery(&self) -> Option<&RecoveryIntent> {
+        self.recovery.as_ref()
+    }
+    pub(crate) fn set_recovery(&mut self, recovery: Option<RecoveryIntent>) -> Result<(), Refusal> {
+        let bytes = serde_json::to_vec(&RoleRecord {
+            version: 1,
+            account: self.account.clone(),
+            pending: self.pending.clone(),
+            pending_delete: self.pending_delete.clone(),
+            recovery: recovery.clone(),
+        })
+        .map_err(|_| Refusal::Unavailable)?;
+        if bytes.len() > 4096 {
+            return Err(Refusal::Capacity);
+        }
+        self.file.write(&bytes).map_err(|_| Refusal::Unavailable)?;
+        self.recovery = recovery;
+        Ok(())
+    }
     pub(crate) fn account(&self) -> &str {
         &self.account
     }
     pub(crate) fn can_begin(&self, request: &RenameFolderRequest) -> Result<(), Refusal> {
         request.validate()?;
-        if request.account() != self.account
+        if request.is_recovery()
+            || request.account() != self.account
             || self.pending.is_some()
             || self.pending_delete.is_some()
         {
@@ -428,6 +573,7 @@ impl RoleLease {
             account: self.account.clone(),
             pending: Some(request.clone()),
             pending_delete: None,
+            recovery: None,
         })
         .map_err(|_| Refusal::Unavailable)?;
         if bytes.len() > 4096 {
@@ -471,11 +617,19 @@ impl RoleLease {
             account: self.account.clone(),
             pending: pending.clone(),
             pending_delete: pending_delete.clone(),
+            recovery: if pending.is_some() {
+                self.recovery.clone()
+            } else {
+                None
+            },
         })
         .map_err(|_| Refusal::Unavailable)?;
         self.file.write(&bytes).map_err(|_| Refusal::Unavailable)?;
         self.pending = pending;
         self.pending_delete = pending_delete;
+        if self.pending.is_none() {
+            self.recovery = None;
+        }
         Ok(())
     }
     fn publish(&mut self, pending: Option<RenameFolderRequest>) -> Result<(), Refusal> {
@@ -484,6 +638,11 @@ impl RoleLease {
             account: self.account.clone(),
             pending: pending.clone(),
             pending_delete: self.pending_delete.clone(),
+            recovery: if pending.is_some() {
+                self.recovery.clone()
+            } else {
+                None
+            },
         })
         .map_err(|_| Refusal::Unavailable)?;
         self.file.write(&bytes).map_err(|_| Refusal::Unavailable)?;
@@ -500,8 +659,8 @@ pub(crate) fn role_lease(directory: &std::path::Path, account: &str) -> Result<R
     )
     .lock(account)
     .map_err(|_| Refusal::Unavailable)?;
-    let (pending, pending_delete) = match file.read().map_err(|_| Refusal::Unavailable)? {
-        None => (None, None),
+    let (pending, pending_delete, recovery) = match file.read().map_err(|_| Refusal::Unavailable)? {
+        None => (None, None, None),
         Some(bytes) => {
             let record: RoleRecord =
                 serde_json::from_slice(&bytes).map_err(|_| Refusal::Unavailable)?;
@@ -514,6 +673,13 @@ pub(crate) fn role_lease(directory: &std::path::Path, account: &str) -> Result<R
             {
                 return Err(Refusal::Unavailable);
             }
+            if record
+                .pending
+                .as_ref()
+                .is_some_and(RenameFolderRequest::is_recovery)
+            {
+                return Err(Refusal::Unavailable);
+            }
             if record.pending.is_some() && record.pending_delete.is_some()
                 || record
                     .pending_delete
@@ -522,7 +688,21 @@ pub(crate) fn role_lease(directory: &std::path::Path, account: &str) -> Result<R
             {
                 return Err(Refusal::Unavailable);
             }
-            (record.pending, record.pending_delete)
+            if let Some(intent) = &record.recovery {
+                if record.pending.as_ref().is_none_or(|r| {
+                    r.descendants().is_empty()
+                        || r.is_recovery()
+                        || r.action_nonce() == intent.nonce
+                }) || intent.nonce.len() != 32
+                    || !intent
+                        .nonce
+                        .bytes()
+                        .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+                {
+                    return Err(Refusal::Unavailable);
+                }
+            }
+            (record.pending, record.pending_delete, record.recovery)
         }
     };
     Ok(RoleLease {
@@ -530,6 +710,7 @@ pub(crate) fn role_lease(directory: &std::path::Path, account: &str) -> Result<R
         account: account.into(),
         pending,
         pending_delete,
+        recovery,
     })
 }
 pub(crate) fn settings_gate(
@@ -575,6 +756,20 @@ pub(crate) fn confirmed_result(
         )
         .is_ok()
         && parent.validate(request.parent()).is_ok()
+}
+
+/// A current placement alone cannot settle a consumed command whose child
+/// lifecycle was never durably witnessed by the authoritative helper.
+pub(crate) fn confirmed_settled_result<B: crate::mailbox::MailboxBackend>(
+    backend: &B,
+    request: &RenameFolderRequest,
+    snapshot: &FolderSnapshot,
+    destination: &MailboxStatus,
+    parent: &MailboxStatus,
+) -> bool {
+    backend.folder_rename_completion(request) == Completion::Renamed
+        && confirmed_result(request, snapshot, destination, parent)
+        && crate::folder_subtree::check(backend, request, snapshot, true).is_ok()
 }
 
 pub(crate) fn protected_destinations<G: crate::http::BrowserGateway>(
@@ -623,6 +818,8 @@ pub enum Completion {
     NoMutation,
     Renamed,
     Unconfirmed,
+    /// Only a recovery step: its native child settled, its result is still partial.
+    SettledRecovery,
 }
 pub(crate) fn confirmed_unchanged(
     request: &RenameFolderRequest,

@@ -460,3 +460,19 @@ src/openbsd.rs. Four-path ac88ca98 uses the existing safe boundary; unchanged
 CWE guard PASS and matching native signal PASS1/helper build/source parity.
 The earlier three-path native build is historical, and unchanged wrapper
 PASS4 is reused. Installed lifecycle remains pending; no scanner waiver.
+
+## 2026-10-15 — explicit bounded folder repair and retained uncertainty
+
+S08-02 adds authenticated GET review and CSRF-confirmed POST at
+`/settings/folders/rename/recover`; the only fields are `csrf_token`, `confirm`
+and an account/original-operation-bound `recovery_nonce`. Existing configured
+helper peer/grant checks, finite GUID-bound descendants, consumed nonces and
+original native budgets govern one explicit child repair. Generic executor
+errors never supply settlement. Original Check requires the authoritative
+`Renamed` witness as well as current parent/tree identities before success.
+Missing settlement retains nonsuccess, mail/indexes and the original reference
+for engineering-owned reconciliation; neither snapshots nor a lock prove
+child quiescence. The existing native fixture labels its partial-placement and
+settlement setup as injected; this does not qualify an actual process crash.
+Source integration and matching native/installed qualification are pending.
+No broad WSTG, release, human or whole-slice completion claim follows.

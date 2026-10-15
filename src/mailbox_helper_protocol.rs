@@ -949,6 +949,15 @@ fn canonical_grant_payload(request: &MailboxHelperRequest, grant: &MailboxHelper
                 fields.push("folder_subtree_v1".into());
                 fields.push(serde_json::to_string(request.descendants()).unwrap_or_default());
             }
+            if request.is_recovery() {
+                fields.push("folder_subtree_recovery_v1".into());
+                fields.push(
+                    request
+                        .recovery_original()
+                        .map(|r| r.action_nonce().to_owned())
+                        .unwrap_or_default(),
+                );
+            }
         }
         MailboxHelperRequest::FolderCreate { request, .. } => fields.extend([
             request.account().into(),

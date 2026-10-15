@@ -8,6 +8,16 @@ use crate::{
 use serde::{Deserialize, Serialize};
 
 pub(crate) const MAX_DESCENDANTS: usize = 8;
+pub(crate) fn identities(request: &RenameFolderRequest) -> Vec<(String, String)> {
+    let mut rows = vec![(String::new(), request.source_guid().to_owned())];
+    rows.extend(
+        request
+            .descendants()
+            .iter()
+            .map(|child| (child.suffix.clone(), child.guid.clone())),
+    );
+    rows
+}
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -47,12 +57,7 @@ pub(crate) fn validate_bindings(request: &RenameFolderRequest) -> Result<(), Ref
     if request.descendants().len() > MAX_DESCENDANTS {
         return Err(Refusal::Capacity);
     }
-    if !request.descendants().is_empty()
-        && serde_json::to_vec(request)
-            .map_err(|_| Refusal::Unavailable)?
-            .len()
-            > 2048
-    {
+    if !request.descendants().is_empty() && request.reserved_recovery_bytes()? > 2048 {
         return Err(Refusal::Capacity);
     }
     let mut last = "";

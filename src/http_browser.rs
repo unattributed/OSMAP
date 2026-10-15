@@ -751,6 +751,14 @@ pub trait BrowserGateway {
     ) -> crate::folder_rename::CheckOutcome {
         crate::folder_rename::CheckOutcome::Unavailable
     }
+    fn recover_folder_rename(
+        &self,
+        _: &AuthenticationContext,
+        _: &ValidatedSession,
+        _: &str,
+    ) -> crate::folder_rename::RecoveryOutcome {
+        crate::folder_rename::RecoveryOutcome::Unavailable
+    }
     fn rename_folder(
         &self,
         _: &AuthenticationContext,

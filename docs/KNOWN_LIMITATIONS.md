@@ -2,12 +2,13 @@
 
 ## Current UX folder lifecycle limit
 
-The installed leaf disposition path has a retained client HTTP timeout despite
-confirmed current Binned state; exact remaining Restore/Delete qualification is
-open. Do not repeat ambiguous actions. Bounded subtree source does not yet
-repair every partial native Rename outcome; explicit recovery, installed
-complete-email movement and current Labels/Create journeys remain required
-before full S08-02 acceptance. See UX_EXECUTION_LEDGER.md for current outcomes.
+The original Bin client HTTP timeout remains retained; its operation was safely
+reconciled read-only, then a separate Restore/Delete journey passed. Installed
+Create, complete-email Move and Labels journeys also pass their finite scopes.
+Do not repeat ambiguous actions. Partial native subtree repair and usable safe
+UNKNOWN handling still require their final source/native/installed proof before
+full S08-02 acceptance. Reader Seen effects and human acceptance remain separate.
+See UX_EXECUTION_LEDGER.md for current outcomes.
 
 ## Full-functional UX epic execution boundary
 

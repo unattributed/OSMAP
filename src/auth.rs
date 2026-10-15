@@ -777,6 +777,14 @@ pub struct CommandExecutionError {
     pub reason: String,
 }
 
+/// Process-lifecycle result for the fixed folder mutation path. This is never
+/// serialized or supplied by a request. Generic adapter errors stay uncertain.
+#[derive(Debug)]
+pub struct FolderCommandAttempt {
+    pub(crate) result: Result<CommandExecution, CommandExecutionError>,
+    pub(crate) settled: bool,
+}
+
 /// Runs an external command with supplied standard input.
 pub trait CommandExecutor {
     fn run_with_stdin_bytes(
@@ -805,6 +813,27 @@ pub trait CommandExecutor {
         _output_max_bytes: usize,
     ) -> Result<CommandExecution, CommandExecutionError> {
         self.run_with_stdin_bytes_timeout(program, args, stdin_data, timeout)
+    }
+
+    fn run_folder_mutation(
+        &self,
+        program: &str,
+        args: &[String],
+        stdin_data: &[u8],
+        timeout: Duration,
+        output_max_bytes: usize,
+    ) -> FolderCommandAttempt {
+        let result = self.run_with_stdin_bytes_timeout_and_output_limit(
+            program,
+            args,
+            stdin_data,
+            timeout,
+            output_max_bytes,
+        );
+        FolderCommandAttempt {
+            settled: result.is_ok(),
+            result,
+        }
     }
 
     fn run_with_stdin(
@@ -870,41 +899,81 @@ impl CommandExecutor for SystemCommandExecutor {
         timeout: Duration,
         output_max_bytes: usize,
     ) -> Result<CommandExecution, CommandExecutionError> {
-        let mut child = Command::new(program)
-            .args(args)
-            .env_clear()
-            .env("PATH", SAFE_COMMAND_PATH)
-            .env("LC_ALL", "C")
-            .stdin(Stdio::piped())
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .spawn()
-            .map_err(|error| CommandExecutionError {
-                reason: format!("failed to spawn command: {error}"),
-            })?;
-
-        let stdin = child.stdin.take().ok_or_else(|| CommandExecutionError {
-            reason: "failed to open command stdin".to_string(),
-        })?;
-        let stdout = child.stdout.take().ok_or_else(|| CommandExecutionError {
-            reason: "failed to open command stdout".to_string(),
-        })?;
-        let stderr = child.stderr.take().ok_or_else(|| CommandExecutionError {
-            reason: "failed to open command stderr".to_string(),
-        })?;
-        let stdin_data = stdin_data.to_vec();
-        let (stdin_tx, stdin_rx) = mpsc::channel();
-        thread::spawn(move || {
-            let result = write_command_stdin(stdin, &stdin_data)
-                .map_err(|error| format!("failed to write command stdin: {error}"));
-            let _ = stdin_tx.send(result);
-        });
-
-        let stdout_handle = spawn_bounded_output_reader(stdout, output_max_bytes, "stdout");
-        let stderr_handle = spawn_bounded_output_reader(stderr, output_max_bytes, "stderr");
-
-        wait_for_command_with_timeout(child, stdin_rx, stdout_handle, stderr_handle, timeout)
+        self.run_folder_mutation(program, args, stdin_data, timeout, output_max_bytes)
+            .result
     }
+
+    fn run_folder_mutation(
+        &self,
+        program: &str,
+        args: &[String],
+        stdin_data: &[u8],
+        timeout: Duration,
+        output_max_bytes: usize,
+    ) -> FolderCommandAttempt {
+        let mut settled = true; // no child exists until spawn succeeds
+        let result = run_system_command(
+            program,
+            args,
+            stdin_data,
+            timeout,
+            output_max_bytes,
+            &mut settled,
+        );
+        FolderCommandAttempt { result, settled }
+    }
+}
+
+fn run_system_command(
+    program: &str,
+    args: &[String],
+    stdin_data: &[u8],
+    timeout: Duration,
+    output_max_bytes: usize,
+    settled: &mut bool,
+) -> Result<CommandExecution, CommandExecutionError> {
+    let mut child = Command::new(program)
+        .args(args)
+        .env_clear()
+        .env("PATH", SAFE_COMMAND_PATH)
+        .env("LC_ALL", "C")
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .map_err(|error| CommandExecutionError {
+            reason: format!("failed to spawn command: {error}"),
+        })?;
+    *settled = false;
+
+    let stdin = child.stdin.take().ok_or_else(|| CommandExecutionError {
+        reason: "failed to open command stdin".to_string(),
+    })?;
+    let stdout = child.stdout.take().ok_or_else(|| CommandExecutionError {
+        reason: "failed to open command stdout".to_string(),
+    })?;
+    let stderr = child.stderr.take().ok_or_else(|| CommandExecutionError {
+        reason: "failed to open command stderr".to_string(),
+    })?;
+    let stdin_data = stdin_data.to_vec();
+    let (stdin_tx, stdin_rx) = mpsc::channel();
+    thread::spawn(move || {
+        let result = write_command_stdin(stdin, &stdin_data)
+            .map_err(|error| format!("failed to write command stdin: {error}"));
+        let _ = stdin_tx.send(result);
+    });
+
+    let stdout_handle = spawn_bounded_output_reader(stdout, output_max_bytes, "stdout");
+    let stderr_handle = spawn_bounded_output_reader(stderr, output_max_bytes, "stderr");
+
+    wait_for_command_with_timeout(
+        child,
+        stdin_rx,
+        stdout_handle,
+        stderr_handle,
+        timeout,
+        settled,
+    )
 }
 
 fn write_command_stdin(mut stdin: std::process::ChildStdin, stdin_data: &[u8]) -> io::Result<()> {
@@ -919,6 +988,7 @@ fn wait_for_command_with_timeout(
     stdout_handle: thread::JoinHandle<Result<Vec<u8>, CommandExecutionError>>,
     stderr_handle: thread::JoinHandle<Result<Vec<u8>, CommandExecutionError>>,
     timeout: Duration,
+    settled: &mut bool,
 ) -> Result<CommandExecution, CommandExecutionError> {
     let deadline = Instant::now() + timeout;
     let mut stdin_result: Option<Result<(), String>> = None;
@@ -940,9 +1010,10 @@ fn wait_for_command_with_timeout(
             Some(_) => break,
             None if Instant::now() >= deadline => {
                 let _ = child.kill();
-                let _ = child.wait();
-                let _ = stdout_handle.join();
-                let _ = stderr_handle.join();
+                let reaped = child.wait().is_ok();
+                let stdout_joined = stdout_handle.join().is_ok();
+                let stderr_joined = stderr_handle.join().is_ok();
+                *settled = reaped && stdout_joined && stderr_joined;
                 return Err(CommandExecutionError {
                     reason: format!("command timed out after {} seconds", timeout.as_secs()),
                 });
@@ -955,19 +1026,25 @@ fn wait_for_command_with_timeout(
         reason: format!("failed waiting for command status: {error}"),
     })?;
 
-    match stdin_result.unwrap_or_else(|| {
+    let input_result = stdin_result.unwrap_or_else(|| {
         stdin_rx
             .recv()
             .unwrap_or_else(|_| Err("stdin writer stopped unexpectedly".to_string()))
-    }) {
+    });
+    // Inspect both readers after a measured reap even if one reports an I/O
+    // refusal. This preserves the lifecycle witness without accepting output.
+    let stdout = join_output_reader(stdout_handle, "stdout");
+    let stderr = join_output_reader(stderr_handle, "stderr");
+    *settled = true;
+    match input_result {
         Ok(()) => {}
         Err(reason) => {
             return Err(CommandExecutionError { reason });
         }
     }
 
-    let stdout = join_output_reader(stdout_handle, "stdout")?;
-    let stderr = join_output_reader(stderr_handle, "stderr")?;
+    let stdout = stdout?;
+    let stderr = stderr?;
 
     Ok(CommandExecution {
         status_code: status_code_or_signal(status),
@@ -1952,6 +2029,37 @@ mod tests {
             started_at.elapsed() < Duration::from_secs(2),
             "timeout should return before the command's requested sleep completes"
         );
+    }
+
+    #[test]
+    #[cfg(unix)]
+    fn folder_command_attempt_retains_actual_reap_without_accepting_timeout_or_output() {
+        let attempt = SystemCommandExecutor.run_folder_mutation(
+            "/bin/sleep",
+            &["2".into()],
+            b"",
+            Duration::from_millis(100),
+            64,
+        );
+        assert!(attempt.settled);
+        assert!(attempt
+            .result
+            .unwrap_err()
+            .reason
+            .contains("command timed out"));
+        let attempt = SystemCommandExecutor.run_folder_mutation(
+            "/usr/bin/printf",
+            &["123456789".into()],
+            b"",
+            Duration::from_secs(1),
+            4,
+        );
+        assert!(attempt.settled);
+        assert!(attempt
+            .result
+            .unwrap_err()
+            .reason
+            .contains("stdout exceeded"));
     }
 
     #[test]

@@ -91,6 +91,28 @@ where
             request,
         )
     }
+    fn rename_folder_attempt(
+        &self,
+        request: &crate::folder_rename::RenameFolderRequest,
+    ) -> crate::folder_rename::NativeAttempt {
+        crate::folder_rename_backend::rename_attempt(
+            &self.command_executor,
+            &self.doveadm_path,
+            self.userdb_socket_path.as_deref(),
+            request,
+        )
+    }
+    fn recover_folder_subtree(
+        &self,
+        permit: &crate::folder_rename::RecoveryPermit<'_>,
+    ) -> crate::folder_rename::NativeRecoveryAttempt {
+        crate::folder_subtree_recovery::native_recover(
+            &self.command_executor,
+            &self.doveadm_path,
+            self.userdb_socket_path.as_deref(),
+            permit,
+        )
+    }
     fn create_folder(
         &self,
         request: &crate::folder_create::CreateFolderRequest,

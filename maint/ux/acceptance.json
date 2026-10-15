@@ -3945,13 +3945,24 @@
           "kind": "legacy_evidence",
           "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/bulk-labels-20261014/ASSESSMENT.md",
           "scope": "2026-10-14 source-only reassessment identifies already wired selected-GUID review/apply/atomic CAS Labels flow; zero source changes or tests rerun. Historical synthetic Edge/Firefox is not current installed/human execution. Reuse implementation and assess exact installed journey; no duplicate Labels feature."
+        },
+        {
+          "kind": "dependency",
+          "path": "docs/UX_EXECUTION_LEDGER.md",
+          "scope": "2026-10-15 actual executed reconciliation supersedes older absence/unreconciled pointers for the exact scope above only. Recovery successor/final combined visual/human criteria remain open; not whole S08 closure."
         }
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/folders-disposition-integration-20261015/installed-labels-journey-attempt2/independent-delivery-scope.json",
+            "scope": "Installed b307/ad16 Labels10 PASS22.952s: create/rename/attach current tuple/filter menu/filtered reader/Clear/detach/delete; five own CAS writes/revision+5, unrelated logical rows restored and exact lease cleanup. Reader Seen side effects unassessed; not full badge/visual/human acceptance. Retained sha256=ae82d890d26a0a37d4e4277a147212951bfb4d765fbe413c7ef8c58b0d9a1e43."
+          }
+        ]
       }
     },
     {
@@ -13999,13 +14010,24 @@
           "kind": "gap",
           "path": "docs/UX_EXECUTION_LEDGER.md",
           "scope": "2026-10-14 accounting: control R2-16-009 (New subfolder) remains unaccepted. Owner: Assigned implementation agent; root integration owner. Control-specific execution is unreconciled unless result evidence below identifies the exact executed portion. Next action: S08-02: Install qualified Move, complete safe empty Delete/populated Bin/Restore/hierarchy, implement Folders page and complete-message attachment-preserving moves; reuse existing Labels implementation. Required positive/negative criteria and final-reference/human acceptance are unchanged; this assessment does not establish absence of existing implementation."
+        },
+        {
+          "kind": "dependency",
+          "path": "docs/UX_EXECUTION_LEDGER.md",
+          "scope": "2026-10-15 actual executed reconciliation supersedes older absence/unreconciled pointers for the exact scope above only. Recovery successor/final combined visual/human criteria remain open; not whole S08 closure."
         }
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/folders-disposition-integration-20261015/installed-create-and-complete-email-move-attempt1/independent-delivery-scope.json",
+            "scope": "Installed b307/ad16 actual Create entry/review/confirm creates exclusive absent child under exact parent2309; new GUID62572 and empty state observed. Complete-message Move preserves actual destination UID/GUID/saved body/decoded attachment. Not partial-tree recovery proof. Retained sha256=5e463e4157afecb7a9eeb6916ba5f27a1bfde92dd78886ac55485672b377594e."
+          }
+        ]
       }
     },
     {
@@ -14036,6 +14058,11 @@
           "kind": "gap",
           "path": "docs/UX_EXECUTION_LEDGER.md",
           "scope": "2026-10-14 accounting: control R2-16-010 (Rename subfolder) remains unaccepted. Owner: Assigned implementation agent; root integration owner. Control-specific execution is unreconciled unless result evidence below identifies the exact executed portion. Next action: S08-02: Install qualified Move, complete safe empty Delete/populated Bin/Restore/hierarchy, implement Folders page and complete-message attachment-preserving moves; reuse existing Labels implementation. Required positive/negative criteria and final-reference/human acceptance are unchanged; this assessment does not establish absence of existing implementation."
+        },
+        {
+          "kind": "dependency",
+          "path": "docs/UX_EXECUTION_LEDGER.md",
+          "scope": "2026-10-15 actual executed reconciliation supersedes older absence/unreconciled pointers for the exact scope above only. Recovery successor/final combined visual/human criteria remain open; not whole S08 closure."
         }
       ],
       "legacy_case_ids": [],
@@ -14047,6 +14074,11 @@
             "kind": "native_execution",
             "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/rename-installed-freeze-v6/independent-review/installed-delivery-scope.json",
             "scope": "Installed Renamev6 controlled populated TorontoBefore-toTorontoAfter proof with exact public tuple/body, original-action recovery/completion and one conjoined expunge; human NOT RUN. Empty After leaf retained; earlier failed interval not retrospectively preserved. Not full folder lifecycle. Retained artifact sha256=e1e7c3a84ef4c1261f5a17da4984388ca4880fc5d3498ecf1314bad16f149803."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/folders-next-integration-20261015/native-attempt3/independent-native-delivery-scope.json",
+            "scope": "Matching b307 native bounded populated subtree Rename and exact stored-body/GUID/index/Bob continuity PASS. Prior installed leaf Rename evidence retained. Explicit partial/merged-tree successor and combined installed non-leaf recovery remain pending. Retained sha256=9d28f18bef60dc98aa1de3a6b139f880cfd4fe3b2c2cdee6138cdb8df75e2ffb."
           }
         ]
       }
@@ -14079,6 +14111,11 @@
           "kind": "gap",
           "path": "docs/UX_EXECUTION_LEDGER.md",
           "scope": "2026-10-14 accounting: control R2-16-011 (Move subfolder) remains unaccepted. Owner: Assigned implementation agent; root integration owner. Control-specific execution is unreconciled unless result evidence below identifies the exact executed portion. Next action: S08-02: Install qualified Move, complete safe empty Delete/populated Bin/Restore/hierarchy, implement Folders page and complete-message attachment-preserving moves; reuse existing Labels implementation. Required positive/negative criteria and final-reference/human acceptance are unchanged; this assessment does not establish absence of existing implementation."
+        },
+        {
+          "kind": "dependency",
+          "path": "docs/UX_EXECUTION_LEDGER.md",
+          "scope": "2026-10-15 actual executed reconciliation supersedes older absence/unreconciled pointers for the exact scope above only. Recovery successor/final combined visual/human criteria remain open; not whole S08 closure."
         }
       ],
       "legacy_case_ids": [],
@@ -14090,6 +14127,11 @@
             "kind": "native_execution",
             "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/folder-move-20261014/signed-sync-proof.json",
             "scope": "Signed synchronizedafc0223 native Move attempt2 PASS/all7markers: populated leaf GUID/body/full normalized summary, Label/Snooze continuity, Bob isolation, authority refusal and lost-result recovery/no redispatch. Matching image staged but NOT INSTALLED; earlier failed fixture cleanup remains UNKNOWN. Ordinary Move does not qualify protected Bin or non-leaf hierarchy. Retained artifact sha256=d1343017c799aeb443325b6cef078eb96258b6adb21419d193145efd22682896."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/folders-next-integration-20261015/native-attempt3/independent-native-delivery-scope.json",
+            "scope": "Matching b307 native bounded populated subtree Move and GUID/body/index/Bob/authority/lost-result-no-redispatch checks PASS. Installed complete-email Message Move is a separate operation, not proof of installed subtree Move/recovery. Retained sha256=9d28f18bef60dc98aa1de3a6b139f880cfd4fe3b2c2cdee6138cdb8df75e2ffb."
           }
         ]
       }
@@ -14122,13 +14164,24 @@
           "kind": "gap",
           "path": "docs/UX_EXECUTION_LEDGER.md",
           "scope": "2026-10-14 accounting: control R2-16-012 (Delete subfolder) remains unaccepted. Owner: Assigned implementation agent; root integration owner. Control-specific execution is unreconciled unless result evidence below identifies the exact executed portion. Next action: S08-02: Install qualified Move, complete safe empty Delete/populated Bin/Restore/hierarchy, implement Folders page and complete-message attachment-preserving moves; reuse existing Labels implementation. Required positive/negative criteria and final-reference/human acceptance are unchanged; this assessment does not establish absence of existing implementation."
+        },
+        {
+          "kind": "dependency",
+          "path": "docs/UX_EXECUTION_LEDGER.md",
+          "scope": "2026-10-15 actual executed reconciliation supersedes older absence/unreconciled pointers for the exact scope above only. Recovery successor/final combined visual/human criteria remain open; not whole S08 closure."
         }
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/folders-disposition-integration-20261015/installed-lifecycle-qualification/remaining-restore-delete-continuation-attempt2/actual-remaining-attempt1.json",
+            "scope": "Installed b307/ad16 separate remaining Restore/Delete eight HTTP outcomes PASS53.964s; exact owned lease cleanup. Root exact Delete witness and independent composed audit recorded in ledger. Original Bin303 unobserved, no Append/Bin/expunge replay; partial-tree recovery pending. Retained sha256=7c2da79e392786526fe4ecf0b1516fa2b62921c56dbc17abd7df094c227a6fd9."
+          }
+        ]
       }
     },
     {
@@ -14179,13 +14232,24 @@
           "kind": "gap",
           "path": "docs/UX_EXECUTION_LEDGER.md",
           "scope": "2026-10-14 accounting: control R2-16-013 (Hierarchy navigation) remains unaccepted. Owner: Assigned implementation agent; root integration owner. Control-specific execution is unreconciled unless result evidence below identifies the exact executed portion. Next action: S08-02: Install qualified Move, complete safe empty Delete/populated Bin/Restore/hierarchy, implement Folders page and complete-message attachment-preserving moves; reuse existing Labels implementation. Required positive/negative criteria and final-reference/human acceptance are unchanged; this assessment does not establish absence of existing implementation."
+        },
+        {
+          "kind": "dependency",
+          "path": "docs/UX_EXECUTION_LEDGER.md",
+          "scope": "2026-10-15 actual executed reconciliation supersedes older absence/unreconciled pointers for the exact scope above only. Recovery successor/final combined visual/human criteria remain open; not whole S08 closure."
         }
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/folders-page-20261014/installed-get-qualification/session-root-precondition-attempt2/actual-result.json",
+            "scope": "Actual installed authoritative Folders hierarchy/select/open PASS with controlled leaf same-GUID/empty state and exact session cleanup; no operator cookies/message selection. Current Create confirms real new-child navigation. Final combined visual/human criteria remain separate. Retained sha256=242ab6cafb04e883306cda4d6dc5683710ad124d1784ffc82d49e127138fa59a."
+          }
+        ]
       }
     },
     {
@@ -14236,13 +14300,24 @@
           "kind": "gap",
           "path": "docs/UX_EXECUTION_LEDGER.md",
           "scope": "2026-10-14 accounting: control R2-16-014 (System-folder identification) remains unaccepted. Owner: Assigned implementation agent; root integration owner. Control-specific execution is unreconciled unless result evidence below identifies the exact executed portion. Next action: S08-02: Install qualified Move, complete safe empty Delete/populated Bin/Restore/hierarchy, implement Folders page and complete-message attachment-preserving moves; reuse existing Labels implementation. Required positive/negative criteria and final-reference/human acceptance are unchanged; this assessment does not establish absence of existing implementation."
+        },
+        {
+          "kind": "dependency",
+          "path": "docs/UX_EXECUTION_LEDGER.md",
+          "scope": "2026-10-15 actual executed reconciliation supersedes older absence/unreconciled pointers for the exact scope above only. Recovery successor/final combined visual/human criteria remain open; not whole S08 closure."
         }
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/folders-next-integration-20261015/native-attempt3/independent-native-delivery-scope.json",
+            "scope": "Matching native authority/protection and Bob/account checks PASS; existing hierarchy special-use/nonselectable metadata rendering proof retained. No guessed operational roles or current all-role visual/human acceptance inferred. Retained sha256=9d28f18bef60dc98aa1de3a6b139f880cfd4fe3b2c2cdee6138cdb8df75e2ffb."
+          }
+        ]
       }
     },
     {
@@ -14293,13 +14368,24 @@
           "kind": "gap",
           "path": "docs/UX_EXECUTION_LEDGER.md",
           "scope": "2026-10-14 accounting: control R2-16-015 (Selected-folder name) remains unaccepted. Owner: Assigned implementation agent; root integration owner. Control-specific execution is unreconciled unless result evidence below identifies the exact executed portion. Next action: S08-02: Install qualified Move, complete safe empty Delete/populated Bin/Restore/hierarchy, implement Folders page and complete-message attachment-preserving moves; reuse existing Labels implementation. Required positive/negative criteria and final-reference/human acceptance are unchanged; this assessment does not establish absence of existing implementation."
+        },
+        {
+          "kind": "dependency",
+          "path": "docs/UX_EXECUTION_LEDGER.md",
+          "scope": "2026-10-15 actual executed reconciliation supersedes older absence/unreconciled pointers for the exact scope above only. Recovery successor/final combined visual/human criteria remain open; not whole S08 closure."
         }
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/folders-page-20261014/installed-get-qualification/session-root-precondition-attempt2/actual-result.json",
+            "scope": "Actual installed selected owned hierarchy identity and same-GUID leaf verified; b307 CreateMove confirms new child identity. Existing escaped hostile-name and foreign/malformed metadata refusal proof retained. No final whole-page visual/human acceptance inferred. Retained sha256=242ab6cafb04e883306cda4d6dc5683710ad124d1784ffc82d49e127138fa59a."
+          }
+        ]
       }
     },
     {
@@ -14350,13 +14436,24 @@
           "kind": "gap",
           "path": "docs/UX_EXECUTION_LEDGER.md",
           "scope": "2026-10-14 accounting: control R2-16-016 (Parent) remains unaccepted. Owner: Assigned implementation agent; root integration owner. Control-specific execution is unreconciled unless result evidence below identifies the exact executed portion. Next action: S08-02: Install qualified Move, complete safe empty Delete/populated Bin/Restore/hierarchy, implement Folders page and complete-message attachment-preserving moves; reuse existing Labels implementation. Required positive/negative criteria and final-reference/human acceptance are unchanged; this assessment does not establish absence of existing implementation."
+        },
+        {
+          "kind": "dependency",
+          "path": "docs/UX_EXECUTION_LEDGER.md",
+          "scope": "2026-10-15 actual executed reconciliation supersedes older absence/unreconciled pointers for the exact scope above only. Recovery successor/final combined visual/human criteria remain open; not whole S08 closure."
         }
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/folders-disposition-integration-20261015/installed-create-and-complete-email-move-attempt1/independent-delivery-scope.json",
+            "scope": "Actual b307 Create binds child to exact owned parent2309/GUID62572 and current authoritative hierarchy; complete-message Move verifies parent/source emptiness and destination. Existing structural-parent projection proof retained; not arbitrary namespace mutation authority. Retained sha256=5e463e4157afecb7a9eeb6916ba5f27a1bfde92dd78886ac55485672b377594e."
+          }
+        ]
       }
     },
     {
@@ -14402,13 +14499,24 @@
           "kind": "gap",
           "path": "docs/UX_EXECUTION_LEDGER.md",
           "scope": "2026-10-14 accounting: control R2-16-017 (Message count) remains unaccepted. Owner: Assigned implementation agent; root integration owner. Control-specific execution is unreconciled unless result evidence below identifies the exact executed portion. Next action: S08-02: Install qualified Move, complete safe empty Delete/populated Bin/Restore/hierarchy, implement Folders page and complete-message attachment-preserving moves; reuse existing Labels implementation. Required positive/negative criteria and final-reference/human acceptance are unchanged; this assessment does not establish absence of existing implementation."
+        },
+        {
+          "kind": "dependency",
+          "path": "docs/UX_EXECUTION_LEDGER.md",
+          "scope": "2026-10-15 actual executed reconciliation supersedes older absence/unreconciled pointers for the exact scope above only. Recovery successor/final combined visual/human criteria remain open; not whole S08 closure."
         }
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/folders-disposition-integration-20261015/installed-create-and-complete-email-move-attempt1/independent-delivery-scope.json",
+            "scope": "Actual new child empty state and subsequent one-message destination/current reader tuple verified. Existing authoritative total/virtual-size and bounded loaded-unread evidence retained; no quota/disk/unbounded server-count claim. Retained sha256=5e463e4157afecb7a9eeb6916ba5f27a1bfde92dd78886ac55485672b377594e."
+          }
+        ]
       }
     },
     {
@@ -14459,13 +14567,24 @@
           "kind": "gap",
           "path": "docs/UX_EXECUTION_LEDGER.md",
           "scope": "2026-10-14 accounting: control R2-16-018 (Subfolder count) remains unaccepted. Owner: Assigned implementation agent; root integration owner. Control-specific execution is unreconciled unless result evidence below identifies the exact executed portion. Next action: S08-02: Install qualified Move, complete safe empty Delete/populated Bin/Restore/hierarchy, implement Folders page and complete-message attachment-preserving moves; reuse existing Labels implementation. Required positive/negative criteria and final-reference/human acceptance are unchanged; this assessment does not establish absence of existing implementation."
+        },
+        {
+          "kind": "dependency",
+          "path": "docs/UX_EXECUTION_LEDGER.md",
+          "scope": "2026-10-15 actual executed reconciliation supersedes older absence/unreconciled pointers for the exact scope above only. Recovery successor/final combined visual/human criteria remain open; not whole S08 closure."
         }
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/folders-next-integration-20261015/native-attempt3/independent-native-delivery-scope.json",
+            "scope": "Matching native bounded root/descendant before/after hierarchy identities PASS; installed exclusive new child and remaining Delete parent witness exist. Existing visible immediate-child count rendering proof retained; fresh combined displayed count transition is not inferred. Retained sha256=9d28f18bef60dc98aa1de3a6b139f880cfd4fe3b2c2cdee6138cdb8df75e2ffb."
+          }
+        ]
       }
     },
     {
@@ -14516,13 +14635,24 @@
           "kind": "gap",
           "path": "docs/UX_EXECUTION_LEDGER.md",
           "scope": "2026-10-14 accounting: control R2-16-019 (Mailbox owner) remains unaccepted. Owner: Assigned implementation agent; root integration owner. Control-specific execution is unreconciled unless result evidence below identifies the exact executed portion. Next action: S08-02: Install qualified Move, complete safe empty Delete/populated Bin/Restore/hierarchy, implement Folders page and complete-message attachment-preserving moves; reuse existing Labels implementation. Required positive/negative criteria and final-reference/human acceptance are unchanged; this assessment does not establish absence of existing implementation."
+        },
+        {
+          "kind": "dependency",
+          "path": "docs/UX_EXECUTION_LEDGER.md",
+          "scope": "2026-10-15 actual executed reconciliation supersedes older absence/unreconciled pointers for the exact scope above only. Recovery successor/final combined visual/human criteria remain open; not whole S08 closure."
         }
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/folders-page-20261014/installed-get-qualification/session-root-precondition-attempt2/actual-result.json",
+            "scope": "Actual installed account-scoped owned Folders reads and exact lease cleanup; matching b307 native Bob/authority refusal and CreateMove/Labels unrelated-row preservation. Existing owner/foreign-metadata rendering proof retained. Synthetic post-auth does not qualify login/TOTP. Retained sha256=242ab6cafb04e883306cda4d6dc5683710ad124d1784ffc82d49e127138fa59a."
+          }
+        ]
       }
     },
     {
@@ -14553,6 +14683,11 @@
           "kind": "gap",
           "path": "docs/UX_EXECUTION_LEDGER.md",
           "scope": "2026-10-14 accounting: control R2-16-020 (Protected-folder refusal) remains unaccepted. Owner: Assigned implementation agent; root integration owner. Control-specific execution is unreconciled unless result evidence below identifies the exact executed portion. Next action: S08-02: Install qualified Move, complete safe empty Delete/populated Bin/Restore/hierarchy, implement Folders page and complete-message attachment-preserving moves; reuse existing Labels implementation. Required positive/negative criteria and final-reference/human acceptance are unchanged; this assessment does not establish absence of existing implementation."
+        },
+        {
+          "kind": "dependency",
+          "path": "docs/UX_EXECUTION_LEDGER.md",
+          "scope": "2026-10-15 actual executed reconciliation supersedes older absence/unreconciled pointers for the exact scope above only. Recovery successor/final combined visual/human criteria remain open; not whole S08 closure."
         }
       ],
       "legacy_case_ids": [],
@@ -14564,6 +14699,11 @@
             "kind": "native_execution",
             "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/folder-move-20261014/signed-sync-proof.json",
             "scope": "Signed synchronizedafc0223 native Move attempt2 PASS/all7markers: populated leaf GUID/body/full normalized summary, Label/Snooze continuity, Bob isolation, authority refusal and lost-result recovery/no redispatch. Matching image staged but NOT INSTALLED; earlier failed fixture cleanup remains UNKNOWN. Ordinary Move does not qualify protected Bin or non-leaf hierarchy. Retained artifact sha256=d1343017c799aeb443325b6cef078eb96258b6adb21419d193145efd22682896."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/folders-next-integration-20261015/native-attempt3/independent-native-delivery-scope.json",
+            "scope": "Matching native protected/cycle/stale/account authority/confinement checks PASS; current normal source gate preserves HTTP CSRF/owner refusals. Not an unexecuted destructive real-account negative or pending recovery successor qualification. Retained sha256=9d28f18bef60dc98aa1de3a6b139f880cfd4fe3b2c2cdee6138cdb8df75e2ffb."
           }
         ]
       }
@@ -14596,13 +14736,24 @@
           "kind": "gap",
           "path": "docs/UX_EXECUTION_LEDGER.md",
           "scope": "2026-10-14 accounting: control R2-16-021 (Non-empty explicit disposition and confirmation) remains unaccepted. Owner: Assigned implementation agent; root integration owner. Control-specific execution is unreconciled unless result evidence below identifies the exact executed portion. Next action: S08-02: Install qualified Move, complete safe empty Delete/populated Bin/Restore/hierarchy, implement Folders page and complete-message attachment-preserving moves; reuse existing Labels implementation. Required positive/negative criteria and final-reference/human acceptance are unchanged; this assessment does not establish absence of existing implementation."
+        },
+        {
+          "kind": "dependency",
+          "path": "docs/UX_EXECUTION_LEDGER.md",
+          "scope": "2026-10-15 actual executed reconciliation supersedes older absence/unreconciled pointers for the exact scope above only. Recovery successor/final combined visual/human criteria remain open; not whole S08 closure."
         }
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/folders-disposition-integration-20261015/installed-lifecycle-qualification/remaining-restore-delete-continuation-attempt2/actual-remaining-attempt1.json",
+            "scope": "Installed separate Restore/Delete explicit review/confirmation, saved body/decoded attachment and exact identities PASS; original Bin reached Binned receipt but HTTP303 timed out and remains FAIL_OR_UNCONFIRMED. Matching b307 native non-empty subtree Bin/Restore PASS. No implicit expunge/retry; successor pending. Retained sha256=7c2da79e392786526fe4ecf0b1516fa2b62921c56dbc17abd7df094c227a6fd9."
+          }
+        ]
       }
     },
     {

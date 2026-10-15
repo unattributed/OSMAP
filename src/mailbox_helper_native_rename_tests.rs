@@ -95,7 +95,8 @@ impl CommandExecutor for ScopedExecutor {
                 || (source == "INBOX.Tree" && destination == "INBOX.RenamedTree")
                 || (source == "INBOX.RenamedTree" && destination == "INBOX.Target.RenamedTree")
                 || (source == "INBOX.Target.RenamedTree" && owned_disposition_name(destination))
-                || (owned_disposition_name(source) && destination == "INBOX.Target.RenamedTree")));
+                || (owned_disposition_name(source) && destination == "INBOX.Target.RenamedTree")
+                || (source == "INBOX.Target.RenamedTree.Child" && destination == "INBOX.Target.RecoveredTree.Child")));
             if matches!(a[pos + 2].as_str(), "INBOX.Target.Beta" | "INBOX.Target.RenamedTree")
                 && owned_disposition_name(&a[pos + 3])
                 && self.bin_arrival.swap(false, Ordering::SeqCst)
@@ -249,6 +250,7 @@ const CHILD_STAGES: &[&str] = &[
     "authority_controls",
     "bin_restore",
     "subtree",
+    "injected_partial_recovery",
     "complete",
 ];
 static CHILD_STAGE: AtomicUsize = AtomicUsize::new(0);
@@ -774,6 +776,7 @@ fn isolated_openbsd_folder_rename_populated_and_recovery() {
         "delete_empty_and_mutation_time_arrival_refusal=PASS",
         "bin_restore_complete_arrival_labels_snooze_bob=PASS",
         "subtree_rename_move_bin_restore_guid_bytes_arrival_indexes_bob=PASS",
+        "injected_partial_signed_native_child_recovery_no_root_replay=PASS",
         "lost_no_mutation=PASS",
         "authority_refusals=PASS",
         "confinement=PASS",
@@ -1134,6 +1137,7 @@ fn isolated_openbsd_folder_rename_confined_worker() {
         executor: ScopedExecutor,
         peer: u32,
         lose_bin_reply: std::cell::Cell<bool>,
+        inject_partial: std::cell::Cell<bool>,
     }
     impl ServiceBackend {
         fn native(&self) -> DoveadmMailboxListBackend<ScopedExecutor> {
@@ -1163,6 +1167,14 @@ fn isolated_openbsd_folder_rename_confined_worker() {
             self.native().mailbox_status(account, name)
         }
         fn rename_folder(&self, request: &RenameFolderRequest) -> Outcome {
+            if self.inject_partial.replace(false) {
+                return super::rename_tests::rename_through_helper(
+                    &self.helper,
+                    InjectedPartial { native: self.native(), config: self.executor.config.clone() },
+                    request,
+                    self.peer,
+                );
+            }
             if self.lose_bin_reply.replace(false) {
                 super::rename_tests::with_rename_helper(
                     &self.helper,
@@ -1214,6 +1226,7 @@ fn isolated_openbsd_folder_rename_confined_worker() {
         executor: executor.clone(),
         peer: lease.uid,
         lose_bin_reply: std::cell::Cell::new(true),
+        inject_partial: std::cell::Cell::new(false),
     };
     let bin =
         crate::folder_disposition::prepare_bin(&settings, &service, ALICE, "INBOX.Target.Beta")
@@ -1418,7 +1431,107 @@ fn isolated_openbsd_folder_rename_confined_worker() {
     }
     assert!(crate::folder_disposition::list(&settings, ALICE).unwrap().is_empty());
     println!("native_rename subtree_rename_move_bin_restore_guid_bytes_arrival_indexes_bob=PASS");
+    // INJECTED fixture state and settlement, not a reproduced Dovecot fault or
+    // actual crash proof. The following repair runs the real signed helper and
+    // native Dovecot under the same confined child and unchanged total budget.
+    mark_child_stage("injected_partial_recovery");
+    let source_name = "INBOX.Target.RenamedTree";
+    let destination_name = "INBOX.Target.RecoveredTree";
+    let recovery_bob: Vec<_> = ["INBOX.Tree","INBOX.Tree.Child","INBOX.Tree.Child.Grand"].into_iter().map(|name|(name,summaries(BOB,name),bodies(root,"bob",name))).collect();
+    let recovery_before: Vec<_> = ["", ".Child", ".Child.Grand"].into_iter().map(|suffix| {
+        let name = format!("{source_name}{suffix}");
+        (suffix, service.mailbox_status(ALICE, &name).unwrap(), summaries(ALICE,&name), bodies(root,"alice",&name))
+    }).collect();
+    let request = RenameFolderRequest::new(ALICE,source_name,recovery_before[0].1.guid(),target_parent.guid(),"RecoveredTree").unwrap().bind_subtree(&service).unwrap();
+    let mut role = crate::folder_rename::settings_gate(&settings,ALICE).unwrap();
+    role.begin(&request).unwrap();
+    drop(role);
+    service.inject_partial.set(true);
+    assert_eq!(service.rename_folder(&request),Outcome::Unknown);
+    assert_eq!(count.load(Ordering::SeqCst),8);
+    assert_eq!(service.mailbox_status(ALICE,destination_name).unwrap().guid(),recovery_before[0].1.guid());
+    assert_eq!(service.mailbox_status(ALICE,&format!("{destination_name}.Child.Grand")).unwrap().guid(),recovery_before[2].1.guid());
+    assert_eq!(service.mailbox_status(ALICE,&format!("{source_name}.Child")).unwrap().guid(),recovery_before[1].1.guid());
+    let nonce = crate::draft::generate_draft_id().unwrap();
+    service.lose_bin_reply.set(true);
+    assert_eq!(crate::folder_subtree_recovery::recover(&settings,&service,ALICE,&nonce),crate::folder_rename::RecoveryOutcome::Progress);
+    assert_eq!(count.load(Ordering::SeqCst),9);
+    assert_eq!(crate::folder_subtree_recovery::recover(&settings,&service,ALICE,&nonce),crate::folder_rename::RecoveryOutcome::Progress);
+    assert_eq!(count.load(Ordering::SeqCst),9);
+    assert_eq!(service.folder_rename_completion(&request),Completion::Renamed);
+    for (suffix,status,rows,wire) in recovery_before {
+        let name=format!("{destination_name}{suffix}");
+        assert_eq!(service.mailbox_status(ALICE,&name).unwrap().guid(),status.guid());
+        assert!(move_summaries_preserved(&rows,&summaries(ALICE,&name),&format!("{source_name}{suffix}"),&name));
+        assert_eq!(bodies(root,"alice",&name),wire);
+    }
+    crate::folder_rename::reconcile_metadata(&settings,&request).unwrap();
+    crate::folder_rename::role_lease(&settings,ALICE).unwrap().confirm().unwrap();
+    let rows=summaries(ALICE,&format!("{destination_name}.Child"));
+    let original=rows.iter().find(|row|row.uid==child_before[0].uid).unwrap();
+    assert_eq!(labels.load(ALICE).unwrap().labels_for(&crate::labels::MessageIdentity::from_summary(ALICE,ALICE,&format!("{destination_name}.Child"),original).unwrap()).unwrap()[0].id(),id);
+    assert!(snooze.load(ALICE,1001).unwrap().markers().iter().any(|m|m.identity().folder()==format!("{destination_name}.Child")));
+    for (name,rows,wire) in recovery_bob {
+        assert_eq!(summaries(BOB,name),rows);
+        assert_eq!(bodies(root,"bob",name),wire);
+    }
+    assert!(labels.load(BOB).unwrap().labels().is_empty());
+    assert!(snooze.load(BOB,1001).unwrap().markers().is_empty());
+    assert!(crate::folder_disposition::list(&settings,ALICE).unwrap().is_empty());
+    println!("native_rename injected_partial_signed_native_child_recovery_no_root_replay=PASS");
     mark_child_stage("complete");
+}
+
+// Test-only injection has no general path or mutation authority: fixed owned
+// fixture containers only, exactly one root+Grand split. Every actual repair
+// uses the ordinary production native backend, not this injected witness.
+struct InjectedPartial {
+    native: DoveadmMailboxListBackend<ScopedExecutor>,
+    config: PathBuf,
+}
+impl MailboxBackend for InjectedPartial {
+    fn list_mailboxes(&self,account:&str)->Result<Vec<MailboxEntry>,MailboxBackendError>{self.native.list_mailboxes(account)}
+    fn folder_metadata(&self,account:&str)->Result<crate::folder_metadata::FolderSnapshot,MailboxBackendError>{self.native.folder_metadata(account)}
+    fn mailbox_status(&self,account:&str,name:&str)->Result<crate::mailbox_status::MailboxStatus,MailboxBackendError>{self.native.mailbox_status(account,name)}
+    fn rename_folder_attempt(&self,request:&RenameFolderRequest)->crate::folder_rename::NativeAttempt {
+        let until=std::time::Instant::now()+Duration::from_secs(10);
+        assert_eq!(request.account(),ALICE);
+        assert_eq!(request.source(),"INBOX.Target.RenamedTree");
+        assert_eq!(request.destination(),"INBOX.Target.RecoveredTree");
+        assert_eq!(request.descendants().len(),2);
+        let snapshot=self.native.folder_metadata(ALICE).unwrap();
+        let source=self.native.mailbox_status(ALICE,request.source()).unwrap();
+        let parent=self.native.mailbox_status(ALICE,request.parent()).unwrap();
+        request.validate_before(&snapshot,&source,&parent).unwrap();
+        crate::folder_subtree::check(&self.native,request,&snapshot,false).unwrap();
+        assert!(snapshot.folder(ALICE,"INBOX.Target.RecoveredTree").is_err());
+        assert!(snapshot.folder(ALICE,"INBOX.RecoveryHold").is_err());
+        // Four fixed, actually reaped native setup commands construct the
+        // injected split without adding direct Maildir write confinement.
+        // The original root command runs once while its children are held;
+        // its genuine success is deliberately represented as injected partial
+        // uncertainty, not a reproduced error from Dovecot.
+        let mut completed=0;
+        for (source,target) in [
+            ("INBOX.Target.RenamedTree.Child","INBOX.RecoveryHold"),
+            ("INBOX.Target.RenamedTree","INBOX.Target.RecoveredTree"),
+            ("INBOX.RecoveryHold","INBOX.Target.RenamedTree.Child"),
+            ("INBOX.Target.RenamedTree.Child.Grand","INBOX.Target.RecoveredTree.Child.Grand"),
+        ] {
+            let args=scoped_args(&self.config,&[
+                "-o".into(),"stats_writer_socket_path=".into(),"-o".into(),
+                format!("auth_socket_path={}",self.config.parent().unwrap().join("userdb").display()),
+                "mailbox".into(),"rename".into(),"-u".into(),ALICE.into(),source.into(),target.into(),
+            ]);
+            let remaining=until.checked_duration_since(std::time::Instant::now()).filter(|d|!d.is_zero()).expect("injected native setup original budget");
+            let result=SystemCommandExecutor.run_with_stdin_bytes_timeout_and_output_limit("/usr/local/bin/doveadm",&args,b"",remaining,4096).unwrap();
+            assert_eq!(result.status_code,0);
+            assert!(result.stderr.is_empty());
+            completed+=1;
+        }
+        assert_eq!(completed,4);
+        crate::folder_rename::NativeAttempt::returned(Outcome::Unknown)
+    }
 }
 
 #[test]

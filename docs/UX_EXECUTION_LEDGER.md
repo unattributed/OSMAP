@@ -8965,3 +8965,318 @@ original b974 journal/observer cannot be relabelled as the new deployment.
 Successor366d2b5a keeps immutable original/observer source separately from current
 source/image pins, with meaningful swapped-source negatives; independent CLEAR.
 Original59546978 proposal remains unchanged, CHANGES_REQUIRED and unexecuted.
+
+
+## 2026-10-15 — strict PM-owned active S08-02 delivery work order
+
+Operator direction supersedes the earlier root-only S08 parking/reprioritization.
+S08-02 is IN_PROGRESS. PM owns requirements/outcomes, Scrum coordinates dispatch,
+root alone owns canonical integration/Git/host/native/browser execution. Named
+roles below are assignments, not a claim that every reviewer is running at once.
+R2 anchor6b3ce8f and R3 anchorf2a117c signatures plus current plan hashes verified.
+No frozen plan/reference or 403/110 obligation changed.
+
+Current admission is signed/synchronized b3075df with matching ad167622 helper/web
+pair installed. Normal1696Rust/zero failures/44explicit native ignores and519Python
+checks remain scoped source evidence. Actual remaining Restore/Delete eight HTTP
+outcomes PASS53.964s, complete stored body/decoded attachment continuity and exact
+lease cleanup. Exact root Delete witnessf5a6 and independent delivery audit PASS
+are separate conjuncts, reconciled by root's actual-record proof4b83. The original
+Bin timeout and unobserved303 remain failed/unconfirmed;
+never repeat original Append/Bin/Delete to manufacture missing evidence.
+
+The preserved recovery18 increment (patchb662872b; local99PASS/four native ignores)
+is unfinished source, not closure. Its stale PARKED artifacts remain historical;
+current operator instruction reactivates successor engineering. Developer now
+addresses merged child destinations, legacy-compatible terminal records and narrow
+actual reap/quiescence evidence. Helper crash before durable settlement remains
+UNKNOWN unless exact child quiescence is established. No unbounded automatic crash
+self-healing is invented: safe retained/refused state must be visible, independently
+reviewed against the failure contract, and cannot be called recoverable or replayed
+merely because a flock was obtained.
+
+CreateMove eddc649d/binarycc435 is now an independently reviewed installed PASS:
+exit0/70.000s, ten codes200/200/303/200/200/200/303/200/200/200, one Create and
+one Move, actual created GUID62572/parent2309, UID1/same opaque message GUID,
+saved bodyca16/attachment26a66 and exact lease cleanup/terminal4694f897. This is
+its bounded component result, not full hierarchy/recovery or S08 closure.
+Labels attempt2 source623a9896/native qualifierbb8da377 now PASS22.952s against
+b307/ad16: ten actual200s, five own CAS writes revisions1..5, current tuple/menu/
+filter/reader/Clear, saved bodyca16/attachment26a66, prior logical labels and
+assignments restored, and exact lease cleanup/terminal8351e794. Matching native
+compilation and independent bounded delivery review PASS. Reader Seen side effects
+remain unassessed; no authentication, provider or full-S08 claim follows. Its
+concrete CreateMove terminal/root-audit dependency is satisfied. Never repeat
+either completed workflow merely to refresh evidence. Backend work continues. Earlier
+S04–S07 and current S05 binding work remain OPEN/queued, not invented S08 prerequisites.
+
+Only changed required boundaries receive focused QA, matching native proof and
+affected browser comparison; reuse current passes and mandatory hooks. After two
+failures at one boundary diagnose before another attempt. Independent Scrum/source
+and delivered-scope review must pass before the minimal combined human handoff.
+A component commit, installed process, local test or completed review cannot park,
+reorder or close S08. Next closure checklist: actual CreateMove+Labels; usable safe
+partial-recovery/compatibility qualification; current hierarchy/finite-menu evidence;
+matching signed pair; independent audit; verified cleanup or explicit safe retained
+state. Only then name exact human-only observations. No fake ETA or new status board.
+
+<!-- OSMAP_ACTIVE_WORK_ORDER -->
+```json
+{
+  "version": 1,
+  "slice": "S08-02",
+  "original_requirement": "Labels/tags/finite menus plus page 16 mailbox subfolder create/rename/move/delete and hierarchy",
+  "source_baseline": "b3075df9307504a3770cf9f9f8da2b523dd9d9ff",
+  "state": "IN_PROGRESS",
+  "integration_owner": "/root",
+  "roles": {
+    "project_manager": [
+      "/root/project_manager"
+    ],
+    "scrum_lead": [
+      "/root/scrum_security_review"
+    ],
+    "developers": [
+      "/root/folder_subtree_backend",
+      "/root"
+    ],
+    "qa": [
+      "/root/delivery_qa"
+    ],
+    "security_review": [
+      "/root/scrum_security_review"
+    ],
+    "technical_writer": [
+      "/root/project_manager",
+      "/root"
+    ]
+  },
+  "allowed_paths": [
+    "AGENTS.md",
+    "docs/OSMAP_AGENT_FRAMEWORK_ADOPTION.md",
+    "docs/UX_EXECUTION_LEDGER.md",
+    "docs/DECISION_LOG.md",
+    "maint/ux/validate_acceptance.py",
+    "maint/ux/test_validate_acceptance.py",
+    "maint/security/osmap-security-check.sh",
+    "README.md",
+    "docs/README.md",
+    "docs/CURRENT_PROJECT_STATUS.md",
+    "docs/KNOWN_LIMITATIONS.md",
+    "docs/UX_DECISIONS.md",
+    "docs/UX_FOLDER_RETAINED_RECONCILIATION.md",
+    "maint/ux/approved_pages.json",
+    "maint/ux/acceptance.json",
+    "maint/security/v10-fail-closed-remediation.json",
+    "maint/security/v10-rust-assumption-audit.json",
+    "maint/wstg-testing-pack/osmap-browser-attack-surface.json",
+    "docs/security/OSMAP_WSTG_SCENARIO_MATRIX_V42.md",
+    "maint/security/v10-claims-boundary.json",
+    "src/folder_disposition.rs",
+    "src/folder_disposition_tests.rs",
+    "src/folder_rename.rs",
+    "src/folder_rename_backend.rs",
+    "src/folder_create_backend.rs",
+    "src/folder_rename_backend_tests.rs",
+    "src/folder_subtree.rs",
+    "src/folder_subtree_recovery.rs",
+    "src/folder_subtree_recovery_tests.rs",
+    "src/http/folder_rename_tests.rs",
+    "src/http/folder_delete_tests.rs",
+    "src/http/routes_folder_disposition.rs",
+    "src/http/routes_folder_rename.rs",
+    "src/http_browser.rs",
+    "src/http.rs",
+    "src/http_gateway.rs",
+    "src/http_runtime.rs",
+    "src/lib.rs",
+    "src/mailbox_backend.rs",
+    "src/mailbox_helper_protocol.rs",
+    "src/mailbox_helper_rename.rs",
+    "src/mailbox_helper_rename_tests.rs",
+    "src/mailbox_helper_native_rename_tests.rs",
+    "src/mailbox_model.rs",
+    "src/auth.rs",
+    "src/http/folder_tree.rs",
+    "src/folder_rename_ui.rs",
+    "src/folder_disposition_ui.rs",
+    "src/folder_delete_ui.rs",
+    "src/settings_copies_ui.rs",
+    "src/http/routes_mail.rs",
+    "src/http/label_filter.rs",
+    "src/http/label_filter_tests.rs",
+    "src/http/label_selection_tests.rs",
+    "src/http/routes_label_selection.rs",
+    "src/labels.rs",
+    "src/labels_ui.rs",
+    "src/label_selection_ui.rs"
+  ],
+  "outcomes": [
+    {
+      "id": "folder-lifecycle-and-recovery",
+      "requirement_ids": [
+        "R2-16-009",
+        "R2-16-010",
+        "R2-16-011",
+        "R2-16-012",
+        "R2-16-014",
+        "R2-16-020",
+        "R2-16-021"
+      ],
+      "owner": "/root/folder_subtree_backend",
+      "frontend_backend_outcome": "Authenticated Folders/Settings controls create, rename, move, safely bin/restore and explicitly delete authoritative bounded user subtrees; confirmations bind original GUIDs, contents and descendants. Explicit partial recovery settles only proven-owned placements; no root redispatch or guessed timeout/crash settlement.",
+      "dependencies": [],
+      "essential_qa": "Reuse native complete-message/body/attachment and identity evidence. Changed partial/merged target recovery, replay/single-use nonce, protected/cyclic/stale/foreign/missing/extra folder, concurrent authority and receipt/history compatibility countercases; qualify typed quiescence only when actually proven. Safe UNKNOWN retention is not successful recovery.",
+      "stages": {
+        "implementation": "PENDING",
+        "source_tests": "PENDING",
+        "native_tests": "PENDING",
+        "deployed_qa": "PENDING",
+        "independent_review": "PENDING",
+        "recovery": "PENDING"
+      },
+      "evidence": [],
+      "next_action": "Integrate independently reviewed20 recovery delta plus frozen retained-disposition7 guard/usable-UNKNOWN UI/runbook after exact independent review; preserve b307 corrected native fixture. Then matching combined native/source-UX qualification, normal signed sync and matching helper-first/web installation; no PASS inferred from source freeze."
+    },
+    {
+      "id": "hierarchy-and-selected-facts",
+      "requirement_ids": [
+        "R2-16-013",
+        "R2-16-015",
+        "R2-16-016",
+        "R2-16-017",
+        "R2-16-018",
+        "R2-16-019"
+      ],
+      "owner": "/root",
+      "frontend_backend_outcome": "Folders rail/dashboard and page browse actual owned hierarchy, open folder mail and expose accurate selected name, parent, counts and owner with the approved R3 overlay.",
+      "dependencies": [],
+      "essential_qa": "Reuse existing hierarchy/browser proof; qualify only changed lifecycle/recovery controls at desktop/mobile, keyboard, empty/error/long names. Real authoritative reads and preserved complete-email attachments; no cosmetic placeholder or fictitious counts.",
+      "stages": {
+        "implementation": "PENDING",
+        "source_tests": "PENDING",
+        "native_tests": "PENDING",
+        "deployed_qa": "PENDING",
+        "independent_review": "PENDING",
+        "recovery": "PENDING"
+      },
+      "evidence": [],
+      "next_action": "Preserve actual CreateMove PASS and exact terminal identity/lease cleanup; retain affected real hierarchy/navigation outcomes without repeating Create or Move."
+    },
+    {
+      "id": "labels",
+      "requirement_ids": [
+        "R2-03-007",
+        "UX04-007"
+      ],
+      "owner": "/root/delivery_qa",
+      "frontend_backend_outcome": "Create/rename label, attach it to the controlled complete message, filter current mailbox through actual menu, read body/attachment, clear filter, detach and delete while preserving unrelated labels/assignments.",
+      "dependencies": [
+        {
+          "owner": "/root",
+          "condition": "Reviewed CreateMove produces the actual terminal Created-Mail folder/message GUID/UID/body/attachment witness under current matching pair and cleaned lease.",
+          "status": "PASS",
+          "next_action": "Consume actual eddc649d CreateMove terminal4694f897/root independent delivery audit under b307/ad16; no guessed identities or repeat of completed Create/Move."
+        }
+      ],
+      "essential_qa": "Execute frozen attempt2 ten real HTTP requests once: five own metadata writes, prior logical values plus revision+5, exact owned message/attachment oracle and exact lease revoke/remove. Preserve original895 draft as unexecuted.",
+      "stages": {
+        "implementation": "PENDING",
+        "source_tests": "PENDING",
+        "native_tests": "PENDING",
+        "deployed_qa": "PASS",
+        "independent_review": "PASS",
+        "recovery": "PENDING"
+      },
+      "evidence": [
+        {
+          "stage": "deployed_qa",
+          "reference": "S08 labels-folders/folders-disposition-integration-20261015/installed-labels-journey-attempt2/actual-labels-attempt1.json and actual-labels-journal-summary.json;623a9896/bb8da377/b307/ad16;22.952s ten200s/five own CAS writes/complete body+attachment/exact lease cleanup; terminal8351e794"
+        },
+        {
+          "stage": "independent_review",
+          "reference": "S08 labels-folders/folders-disposition-integration-20261015/installed-labels-journey-attempt2/independent-delivery-scope.json PASS_BOUNDED_INSTALLED_LABELS_JOURNEY; Reader Seen side effects unassessed, no authentication/human/fullS08 claim"
+        }
+      ],
+      "next_action": "Preserve audited installed Labels PASS; reconcile existing matching implementation/source/native/own-cleanup evidence without a new QA campaign. No workflow repeat absent a concrete change; folder recovery remains separately open."
+    },
+    {
+      "id": "finite-menus",
+      "requirement_ids": [
+        "UX08-009",
+        "UX04-008"
+      ],
+      "owner": "/root",
+      "frontend_backend_outcome": "Retain every original assigned finite-menu action with an actual authorized destination or operation; label and security/back state persist through the original compose/reader context.",
+      "dependencies": [],
+      "essential_qa": "Reconcile existing finite action inventory and executed cases once; run only missing/changed assigned menu actions and unauthorized/cross-account/stale context refusals. Do not create new actions from ellipses.",
+      "stages": {
+        "implementation": "PENDING",
+        "source_tests": "PENDING",
+        "native_tests": "PENDING",
+        "deployed_qa": "PENDING",
+        "independent_review": "PENDING",
+        "recovery": "PENDING"
+      },
+      "evidence": [],
+      "next_action": "Map these original two menu obligations to current real source/evidence, then implement or execute any concrete missing assigned action before closure."
+    }
+  ],
+  "human_acceptance": {
+    "status": "PENDING",
+    "reference": "Minimal combined operator usability only after all agent-owned scope PASS; no operator debugging or provider Send in this work order."
+  },
+  "checkpoints": {
+    "labels_ten_http_journey": {
+      "status": "PASS",
+      "scope": "Actual Create/Rename/Attach/current tuple filter menu/filtered reader/Clear/Detach/Delete; five own metadata writes, unrelated logical rows preserved, exact own lease cleanup. No folder recovery, authentication or human acceptance inferred.",
+      "evidence": "S08 labels-folders/folders-disposition-integration-20261015/installed-labels-journey-attempt2/independent-delivery-scope.json;623a9896/bb8da377/b307/ad16; terminal8351e794;22.952s ten200s"
+    },
+    "create_and_complete_email_move": {
+      "status": "PASS",
+      "scope": "Ten actual installed HTTP outcomes, one Create/one Move, current authoritative complete-message/attachment identity and exact owned lease cleanup only; not whole hierarchy/recovery acceptance.",
+      "evidence": "S08 labels-folders/folders-disposition-integration-20261015/installed-create-and-complete-email-move-attempt1/independent-delivery-scope.json; source eddc649d, binary cc435, b307/ad16; terminal4694f897, exit0/70.000s"
+    },
+    "remaining_restore_delete": {
+      "status": "PASS",
+      "scope": "Separate remaining eight HTTP outcomes plus exact root Delete witness and independent delivery audit; original Bin timeout remains failed/unconfirmed and no Append/Bin retry occurred.",
+      "evidence": "S08 labels-folders/folders-disposition-integration-20261015/installed-lifecycle-qualification/remaining-restore-delete-continuation-attempt2; actual53.964s, root witnessf5a6, actual-record proof4b83"
+    }
+  },
+  "next_action": "Root integrates reviewed policy/recovery20 and independently reviewed frozen retained-disposition7 guard/UI/runbook, preserving current corrected native fixture; qualify matching combined native/install outcomes. Preserve actual Labels/CreateMove/remaining lifecycle passes without repeat QA absent concrete change. No unilateral S08 parking, operator troubleshooting or source-freeze completion claim."
+}
+```
+<!-- /OSMAP_ACTIVE_WORK_ORDER -->
+
+## 2026-10-15 — reviewed explicit subtree repair and retained-state integration
+
+Active S08-02 source integrates reviewed recovery20, retained-disposition7 and
+leaf Check banner3 over signed b3075df, preserving its APPLY optimization,
+Labels wiring and corrected stored-arrival native oracle. Original-result Check
+now requires the exact authoritative Renamed witness plus current parent/tree
+identities; fully placed snapshots cannot erase an unconfirmed operation.
+Explicit child recovery consumes its own nonce under the original helper lock,
+uses only proven original GUID placements and preserves unknown lifecycle state.
+The failure path provides the original reference and engineering-owned bounded
+reconciliation, rather than asking the end user to troubleshoot or replay.
+
+Actual merged focused source regression: 106 PASS, zero failures, four explicit
+native ignores; formatting, active-scope and diff checks PASS. Independent
+integrated source review CLEAR; banner scope correction CLEAR. The refreshed
+V10 registers use unchanged generators and retain high_relevance_after=0.
+The existing native fixture adds one explicitly injected partial-placement/
+settlement setup followed by actual configured-peer helper/Dovecot child repair;
+matching native, application installation and affected installed qualification
+are pending. Injected state is not an actual process crash/quiescence result.
+
+Fourteen original S08 R2 records now reference actual scoped native/installed
+results and remain partial. All110 immutable legacy rows and all403 original
+requirement labels/owners/scenarios remain unchanged. Existing finite Compose
+More and Reader security/More/Back evidence is historical interaction proof,
+not a new S08-03 prerequisite or current human acceptance. The prior actual
+Labels/CreateMove/remaining lifecycle results are preserved without repetition.
+A minimal installed non-leaf extension is assigned to /root/subtree_delivery_qa;
+root alone reviews/adopts and executes any finite mutation once. No provider
+Send, key action, incident replay or whole-slice/sprint/epic closure is implied.
+Evidence: S08 labels-folders/folder-recovery-integration-20261015 and the retained
+reviewed source/component records; current human handoff remains NOT_READY.

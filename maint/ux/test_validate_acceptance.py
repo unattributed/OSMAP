@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 import unittest
 
-from validate_acceptance import validate
+from validate_acceptance import active_work_order, validate, validate_work_order
 
 
 REPO = Path(__file__).resolve().parents[2]
@@ -121,6 +121,65 @@ class TraceabilityTests(unittest.TestCase):
 
     def test_blocked_case_cannot_hide_an_executed_result(self):
         self.refused(lambda m: m["approved_control_cases"][0].update(result={"status": "BLOCKED", "executed": False, "evidence": [{"kind": "native_execution", "path": "actual-result", "scope": "must retain actual execution as FAILED or partial"}]}), "blocked evidence must describe")
+
+
+class WorkOrderTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.order = active_work_order((REPO / "docs/UX_EXECUTION_LEDGER.md").read_text())
+        cls.matrix = json.loads((REPO / "maint/ux/acceptance.json").read_text())
+        cls.catalogue = (REPO / "docs/UX_FULL_FUNCTIONAL_SLICES.md").read_text()
+
+    def check(self, order, changed=()):
+        return validate_work_order(order, self.matrix, self.catalogue, changed)
+
+    def test_valid_active_work_order_does_not_claim_human_acceptance(self):
+        order = copy.deepcopy(self.order)
+        order["state"] = "IN_PROGRESS"
+        order["human_acceptance"] = {"status": "PENDING"}
+        self.assertEqual(self.check(order)["active_slice"], order["slice"])
+
+    def test_invalid_scope_and_undeclared_file_are_refused(self):
+        order = copy.deepcopy(self.order)
+        order["slice"] = "S99-99"
+        with self.assertRaisesRegex(ValueError, "original slice"):
+            self.check(order)
+        with self.assertRaisesRegex(ValueError, "outside active work order"):
+            self.check(self.order, ["src/unassigned-product-change.rs"])
+        order = copy.deepcopy(self.order)
+        missing = order["outcomes"][0]["requirement_ids"][0]
+        for outcome in order["outcomes"]:
+            outcome["requirement_ids"] = [identifier for identifier in outcome["requirement_ids"] if identifier != missing]
+        order["outcomes"] = [outcome for outcome in order["outcomes"] if outcome["requirement_ids"]]
+        with self.assertRaisesRegex(ValueError, "all original mapped obligations"):
+            self.check(order)
+
+    def test_unfinished_or_failed_scope_cannot_close(self):
+        for state in ("ENGINEERING_COMPLETE", "UAT_READY", "ACCEPTED"):
+            order = copy.deepcopy(self.order)
+            order["state"] = state
+            order["outcomes"][0]["stages"]["deployed_qa"] = "FAIL"
+            with self.subTest(state=state), self.assertRaisesRegex(ValueError, "unfinished or failed"):
+                self.check(order)
+
+    def test_missing_owner_is_refused(self):
+        order = copy.deepcopy(self.order)
+        order["roles"]["qa"] = []
+        with self.assertRaisesRegex(ValueError, "owner missing"):
+            self.check(order)
+        order = copy.deepcopy(self.order)
+        order["outcomes"][0]["owner"] = "unassigned"
+        with self.assertRaisesRegex(ValueError, "outcome owner"):
+            self.check(order)
+
+    def test_agent_cannot_park_or_pause_active_work(self):
+        for state in ("PARKED", "PAUSED"):
+            order = copy.deepcopy(self.order)
+            order["state"] = state
+            with self.subTest(state=state), self.assertRaises(ValueError):
+                self.check(order)
+        order["operator_pause"] = {"actor": "operator", "reference": "synthetic explicit pause"}
+        self.assertEqual(self.check(order)["state"], "PAUSED")
 
 
 if __name__ == "__main__":

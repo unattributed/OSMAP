@@ -219,6 +219,9 @@ where
             (HttpMethod::Get, "/settings/folders/rename/check") => {
                 self.handle_folder_rename_check(request, &context)
             }
+            (HttpMethod::Get | HttpMethod::Post, "/settings/folders/rename/recover") => {
+                self.handle_folder_rename_recover(request, &context)
+            }
             (HttpMethod::Post, "/settings/folders/rename/check") => {
                 self.handle_folder_rename_check(request, &context)
             }

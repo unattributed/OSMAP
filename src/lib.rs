@@ -100,6 +100,7 @@ mod folder_metadata_backend;
 pub mod folder_rename;
 mod folder_rename_backend;
 mod folder_subtree;
+mod folder_subtree_recovery;
 pub mod openpgp_bindings;
 pub mod openpgp_crypto;
 #[cfg(unix)]

@@ -1065,6 +1065,7 @@ mod tests {
     struct StubGateway {
         created_folders: Arc<Mutex<BTreeMap<String, Vec<String>>>>,
         renamed_folders: Arc<Mutex<Vec<crate::folder_rename::RenameFolderRequest>>>,
+        folder_recovery_outcome: Option<crate::folder_rename::RecoveryOutcome>,
         deleted_folders: Arc<Mutex<Vec<crate::folder_delete::DeleteFolderRequest>>>,
         disposition_prepares: Arc<Mutex<Vec<String>>>,
         disposition_applies: Arc<Mutex<Vec<crate::folder_rename::RenameFolderRequest>>>,
@@ -1134,6 +1135,7 @@ mod tests {
             Self {
                 created_folders: Arc::new(Mutex::new(BTreeMap::new())),
                 renamed_folders: Arc::new(Mutex::new(Vec::new())),
+                folder_recovery_outcome: None,
                 deleted_folders: Arc::new(Mutex::new(Vec::new())),
                 disposition_prepares: Default::default(),
                 disposition_applies: Default::default(),
@@ -2974,6 +2976,16 @@ mod tests {
             } else {
                 crate::folder_rename::Outcome::Refused(crate::folder_create::Refusal::Unavailable)
             }
+        }
+        fn recover_folder_rename(
+            &self,
+            _: &AuthenticationContext,
+            _: &ValidatedSession,
+            _: &str,
+        ) -> crate::folder_rename::RecoveryOutcome {
+            self.folder_recovery_outcome
+                .clone()
+                .unwrap_or(crate::folder_rename::RecoveryOutcome::Unavailable)
         }
         fn pending_folder_rename(
             &self,

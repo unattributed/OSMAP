@@ -1,7 +1,7 @@
 use crate::{
     auth::CommandExecutor,
     folder_create::Refusal,
-    folder_rename::{Outcome, RenameFolderRequest},
+    folder_rename::{NativeAttempt, Outcome, RenameFolderRequest},
     mailbox::{DoveadmMailboxListBackend, MailboxBackend, MailboxListingPolicy},
 };
 use std::{
@@ -10,18 +10,29 @@ use std::{
 };
 #[cfg(test)]
 pub(crate) static TEST_GATE: std::sync::Mutex<()> = std::sync::Mutex::new(());
+pub(crate) static GATE: std::sync::Mutex<()> = std::sync::Mutex::new(());
 pub(crate) fn rename<E: CommandExecutor>(
     executor: &E,
     path: &Path,
     socket: Option<&Path>,
     request: &RenameFolderRequest,
 ) -> Outcome {
-    if let Err(e) = request.validate() {
-        return Outcome::Refused(e);
+    rename_attempt(executor, path, socket, request).outcome
+}
+pub(crate) fn rename_attempt<E: CommandExecutor>(
+    executor: &E,
+    path: &Path,
+    socket: Option<&Path>,
+    request: &RenameFolderRequest,
+) -> NativeAttempt {
+    if request.is_recovery() {
+        return NativeAttempt::undispatched(Outcome::Refused(Refusal::Invalid));
     }
-    static GATE: std::sync::Mutex<()> = std::sync::Mutex::new(());
+    if let Err(e) = request.validate() {
+        return NativeAttempt::undispatched(Outcome::Refused(e));
+    }
     let Ok(_guard) = GATE.try_lock() else {
-        return Outcome::Refused(Refusal::Unavailable);
+        return NativeAttempt::undispatched(Outcome::Refused(Refusal::Unavailable));
     };
     let limited = crate::folder_create_backend::Deadline {
         inner: executor,
@@ -34,18 +45,18 @@ pub(crate) fn rename<E: CommandExecutor>(
         backend.mailbox_status(request.account(), request.source()),
         backend.mailbox_status(request.account(), request.parent()),
     ) else {
-        return Outcome::Refused(Refusal::Unavailable);
+        return NativeAttempt::undispatched(Outcome::Refused(Refusal::Unavailable));
     };
     if let Err(e) = request.validate_before(&before, &source, &parent) {
-        return Outcome::Refused(e);
+        return NativeAttempt::undispatched(Outcome::Refused(e));
     }
     if request.is_move() {
         let Ok(source_parent) = backend.mailbox_status(request.account(), request.source_parent())
         else {
-            return Outcome::Refused(Refusal::Unavailable);
+            return NativeAttempt::undispatched(Outcome::Refused(Refusal::Unavailable));
         };
         if let Err(e) = request.validate_source_parent(&before, &source_parent) {
-            return Outcome::Refused(e);
+            return NativeAttempt::undispatched(Outcome::Refused(e));
         }
     }
     if before
@@ -56,10 +67,10 @@ pub(crate) fn rename<E: CommandExecutor>(
             .iter()
             .any(|f| f.name().starts_with(&format!("{}.", request.destination())))
     {
-        return Outcome::Conflict;
+        return NativeAttempt::undispatched(Outcome::Conflict);
     }
     if let Err(reason) = crate::folder_subtree::check(&backend, request, &before, false) {
-        return Outcome::Refused(reason);
+        return NativeAttempt::undispatched(Outcome::Refused(reason));
     }
     let mut args = vec!["-o".into(), "stats_writer_socket_path=".into()];
     if let Some(socket) = socket {
@@ -76,33 +87,37 @@ pub(crate) fn rename<E: CommandExecutor>(
         request.source().into(),
         request.destination(),
     ]);
-    let result = limited.run_with_stdin_bytes_timeout_and_output_limit(
+    let attempt = limited.run_folder_mutation(
         &path.to_string_lossy(),
         &args,
         b"",
         Duration::from_secs(10),
         4096,
     );
-    let Ok(result) = result else {
-        return Outcome::Unknown;
+    let Ok(result) = attempt.result else {
+        return if attempt.settled {
+            NativeAttempt::returned(Outcome::Unknown)
+        } else {
+            NativeAttempt::unsettled(Outcome::Unknown)
+        };
     };
     if result.status_code != 0 {
-        return Outcome::Unknown;
+        return NativeAttempt::returned(Outcome::Unknown);
     }
     let (Ok(after), Ok(destination), Ok(parent)) = (
         backend.folder_metadata(request.account()),
         backend.mailbox_status(request.account(), &request.destination()),
         backend.mailbox_status(request.account(), request.parent()),
     ) else {
-        return Outcome::Unknown;
+        return NativeAttempt::returned(Outcome::Unknown);
     };
     if !crate::folder_rename::confirmed_result(request, &after, &destination, &parent) {
-        return Outcome::Unknown;
+        return NativeAttempt::returned(Outcome::Unknown);
     }
     if crate::folder_subtree::check(&backend, request, &after, true).is_err() {
-        return Outcome::Unknown;
+        return NativeAttempt::returned(Outcome::Unknown);
     }
-    Outcome::Renamed
+    NativeAttempt::returned(Outcome::Renamed)
 }
 
 #[cfg(test)]

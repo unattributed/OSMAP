@@ -19,6 +19,16 @@ operator's explicit instructions.
 
 ## Coordinated agent development
 
+The operator's 2026-10-15 strict project-manager direction makes the delivery
+policy in `docs/OSMAP_AGENT_FRAMEWORK_ADOPTION.md` mandatory for this epic.
+Its one active work order lives in `docs/UX_EXECUTION_LEDGER.md` and is checked
+by the existing developer gate. Within repository instructions this policy
+controls agent execution; system/developer instructions, direct operator
+directions and the frozen R2/R3 product/security obligations retain precedence.
+Agents cannot park active work, substitute checkpoints for functional closure,
+or invent prerequisite approvals. A concrete blocker is recorded while useful
+independent authorized work continues; an explicit operator pause is immediate.
+
 The operator's 2026-10-14 end-to-end delegation and approved auditor corrections
 are codified in `docs/UX_PLAN_AMENDMENT_R3.md`. Agents own implementation,
 technical decisions, integration, essential QA, independent audit coordination
