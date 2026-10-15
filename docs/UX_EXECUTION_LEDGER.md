@@ -9895,11 +9895,10 @@ discriminator alongside the same binding production repair; no broader QA scope.
     ],
     "developers": [
       "/root/bin_preparation_engineer",
-      "/root/subtree_delivery_qa",
+      "/root/account_serve_engineer",
       "/root"
     ],
     "qa": [
-      "/root/subtree_delivery_qa",
       "/root"
     ],
     "security_review": [
@@ -10127,7 +10126,7 @@ discriminator alongside the same binding production repair; no broader QA scope.
     "status": "PENDING",
     "reference": "Only minimal well-defined own-password usability after all agent-owned development/matching deployed QA/independent audit PASS. No operator password is changed by agent qualification; use controlled disposable Alice and preserve Bob/operator state. NOT RUN."
   },
-  "next_action": "Signedfc87 source synchronized and standard Toronto clean source-only matches; installed324b unchanged. Reuse actual original full parent5 and composed worker18 native component PASS with explicit projections, no unchanged reruns or flag promotion. Reuse actual19 native peer positives while preserving its pending-control failure; qualify the actual current-factory executors with exclusive fixture custody and explicit fixed private-command projection, every product guard and original budgets intact, then complete actual guarded native factory, real stored Rust issuer/session/epoch and SMTP/IMAP/cache containment in one controlled Alice password transaction with Bob/mail preservation. Native dependency activation and operator password changes remain prohibited until matching complete qualification. S08-02 remains accepted."
+  "next_action": "Signedffb source synchronized and standard Toronto clean source-only matches; installed324b unchanged. Reviewed Serve14 source batch has normal gates/sign/sync pending. First establish freshly reviewed current administrative disposition of retained actual4 private Postfix and controlled identities; never signal historical PIDs or reconstruct expired leases. Then qualify exact signed matching Serve seal/typed clients, actual current guarded factory and genuine nonroot HTTP/stored-session/password workflow with required SQL/hash/primary/SMTP/IMAP/cache authority, controlled Alice transaction and Bob/mail preservation. Preserve original budgets, failed outcomes and projections; no unchanged reruns, fabricated activation flags or operator password mutation. S08-02 remains accepted."
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->
@@ -11299,7 +11298,8 @@ still unavailable until qualification; no installed password UAT is claimed.
 ## 2026-10-15 — second composed refusal; reassess before another case
 
 Changed native2 result26d8ca5e8e063eba27015fcff93639e741ac8b0a6e8e66fabf89eeb35a949b1d
-now reaches12 tracked/reaped private SQL children, temporary identity1005 and
+now reaches12 tracked/reaped SQL-fixture children including metadata observers,
+temporary identity1005 and
 preserved generated worker context. It refuses with sql_bootstrap/Refused after
 6816 ms, before any Rust role or credential transaction. That broad phase
 covers additional preparation; the exact failing term is not exported. Driver
@@ -11321,3 +11321,113 @@ Use existing project patterns instead: OpenBSD platform assert_eq and const
 blocks for intentionally closed native flags. No assertion, gate, lint or
 activation condition is waived. The earlier compiled native fixture stays
 bound to its original source; current source is a separate normal-gate snapshot.
+
+## 2026-10-15 — signed Serve prerequisite synchronized; actual factory reaches admission
+
+Normal commit2/push1 admit ffb861322ba6df88df70e354373c5f4748d96863,
+Good Shopkeeper verified,1745 Rust/zero failed/46 explicit native ignores and581
+account Python passes. Fresh GitHub equality/clean0/0/all three branch heads
+and authoritative standard source-only fast-forward pass. Proof8c9dc985 is
+factory-serve-source-integration-20261015/signed-sync-proof.json. Installed324b
+and native flags remain unchanged. The full OpenBSD fixture5c20 is bound to its
+own earlier exact source, not asserted as matching the later import/assertion
+and Serve-plan changes.
+
+Changed native3 resultcf8093ae reaches18 tracked/reaped SQL-fixture children,
+including observers, then fails seed_controlled_rows/Other before Rust roles.
+Both exact temporary identities are removed and public records restored; root,
+worker and SQL stages remain retained. The invalid fixed child role label
+verify_schema17 is source-demonstrated and locally refused before dispatch;
+correct only that label to verify_schema_columns. This does not retroactively
+identify the unexported native exception subtype. Independent actual3 audit
+0966cf93 and exact successor5 whole reviewcc7e1d3a retain those limits.
+
+One changed native4 resultdfcc025d reaches six controls: source custody,
+restricted SQL17 grants, shared SQL passdb, purpose-private primary peer, real
+production metadata broker and admission parent/worker. Its24 SQL-fixture
+children include observers and are all reaped. It fails rust_admission_startup/
+Refused; first Rust role exits0 with238 captured stdout bytes, second exits101
+and is killed/reaped with group absence. Discarded undrained output is not
+proof of no panic. No credential transaction or full workflow succeeds.
+
+Independent actual4 audit32e3d3d0 distinguishes measured Dovecot/root-driver
+group absence from unconfirmed Postfix/capture/runtime/scratch/public metadata
+and retained primary/hash identities. Source-after parity and external stage
+cleanup are absent; all failed stages remain retained. No historical PID
+signals, guessed identity deletion or unchanged native retry follows. The
+assigned engineer prepares fresh lease-grounded read-only assessment and
+source-backed exact cleanup/startup fixes.
+
+The separate Serve engineer addresses the actual preseal/postseal account-client
+composition: current full ancestry reads cannot run after exact-leaf unveil.
+Independent review requires a real native seal and preserved exact leaf/peer
+custody, with no broad ancestor/directory read grants. That source successor
+remains pending; no installed password or S04-02 acceptance is claimed. Root
+owns essential QA after the earlier QA agent capacity failure, and the active
+roles above name the actual Serve engineer. Actionable continuation of a
+completed agent uses followup_task; send_message alone does not activate it.
+
+## 2026-10-15 — real Serve account clients preserve leaf custody after confinement
+
+Integrate final eight-path source readinessd6bb0d6f/patchf36d3869, independent
+source review39de8770, over signedffb. Only paired account clients are prepared
+before actual Serve enforcement; remaining gateway constructors stay after it.
+Full protected ancestry, exact immediate-parent identity and purpose separation
+are rechecked by concrete paired clients immediately before native apply_plan.
+Only successful actual Enforce Serve can mint the opaque exact-config token.
+Disabled/LogOnly/non-OpenBSD paths cannot fabricate it.
+
+After sealing, exact key leaf descriptors/content/path identity, socket identity
+and fresh connected kernel peer checks preserve the account boundary without
+reading hidden ancestor path metadata. No directory descriptor/read grant or
+broad ancestor unveil rule is retained. Parent/ancestor administrative custody
+is an explicit trusted invariant, not continuously measured ownership/mode.
+Unsealed clients retain full protected checks; request framing, purpose keys,
+deadlines, quarantine, no retry/fallback and native activation flags are unchanged.
+
+Initial Linux compile/11 selected controls/strict Clippy pass on the precursor.
+The least-authority successor compiles warning-free and its one new same-leaf/
+changed-parent refusal discriminator passes; no unchanged controls are repeated.
+Final two nativecfg fixture corrections create state before custody capture and
+use Error logging to fit the existing zero-stderr case contract. That ignored
+OpenBSD body is uncompiled/NOT RUN; a fresh matching native build and exact
+actual-seal entry are required. Normal canonical gates/signature/sync pending.
+No installed password, complete factory, S04-02 or human UAT claim follows.
+
+The independently admitted retained4 observer3 actually passes SSH0/4.797s,
+2926 public output bytes/zero stderr. Final source Dovecot bytes match while
+the original plan bytes differ. Current private master/shell and exact public
+controlled identity rows are observed; no purpose UID process rows appear in
+that snapshot. Observation supplies no stop/deletion authority. Fresh reviewed
+administrative custody must recheck current process/config/identity authority
+and preserve unrelated current records; original pre-run restoration stays
+unknown when its baseline is unavailable. No repeated observation or historical
+PID signal is authorized.
+
+## 2026-10-15 — normal source gate exposes parent-directory link-count regression
+
+The first Serve14 normal commit gate fails: five existing Runtime/guarded cases
+report FAILED, while fixture accept threads then stall before normal completion.
+Root records current libtest birth/parent and zero descendants, stops only that
+owned test with SIGTERM, and retains exit1/323.398s plus the incomplete aggregate
+log. No commit/signature, gate waiver, provider action or host mutation occurs.
+
+Source reassessment2fe00a5b supersedes the earlier parent-custody admission. The
+new client snapshot reused a socket/key identity tuple containing st_nlink for a
+directory. Existing actual Runtime constructs clients before creating a sibling
+TOTP directory; real-worker setup similarly creates a sibling witness directory.
+These legitimate operations change directory link count without changing its
+device/inode/owner/group/mode. Refusing them prevents connection and exposes
+unbounded waits in older server fixtures. Moving test setup earlier would mask
+the production regression.
+
+A bounded old-source discriminator fails before any accept thread. The minimum
+repair gives only AccountClientPaths a five-field parent authority; socket/key
+hardlink refusal and existing AdmissionEndpoint semantics remain unchanged.
+The corrected source compiles warning-free; nine focused cases pass in1.28s,
+including all five reported failures, the previously stalled real-worker journey,
+replacement/mode/leaf negatives and legitimate sibling creation. Exact source
+freeze80ce95c4/independent correction review2da81169 pass; canonical combined
+refreeze/admission and superseding normal gate are pending.
+This does not explain the separate native4 issuer101. No unchanged full suite
+is repeated before the actual source correction.

@@ -13,7 +13,7 @@ use crate::http_support::{
     build_http_info_event, build_http_warning_event, html_response, plain_text_response,
 };
 use crate::logging::{EventCategory, LogEvent, Logger};
-use crate::openbsd::apply_runtime_confinement;
+use crate::openbsd::apply_runtime_confinement_for_accounts;
 
 use super::{
     BrowserApp, BrowserGateway, HandledHttpResponse, HttpMethod, HttpPolicy, HttpRequest,
@@ -400,11 +400,19 @@ pub fn run_http_server(config: &AppConfig, logger: &Logger) -> Result<(), String
         return Ok(());
     }
 
-    apply_runtime_confinement(config, logger)?;
+    // Only account custody needs the complete protected ancestry before seal.
+    // The rest of gateway startup retains its existing postconfinement order.
+    let account_runtime = RuntimeBrowserGateway::prepare_account_runtime(config);
+    let account_seal = apply_runtime_confinement_for_accounts(
+        config,
+        logger,
+        account_runtime.confinement_clients(),
+    )?;
+    let account_runtime = account_runtime.after_confinement(account_seal.as_ref());
 
     let listener = TcpListener::bind(&config.listen_addr)
         .map_err(|error| format!("failed to bind {}: {error}", config.listen_addr))?;
-    let gateway = RuntimeBrowserGateway::from_config(config);
+    let gateway = RuntimeBrowserGateway::from_config_with_account(config, account_runtime);
     for event in gateway.helper_client_status_events() {
         logger.emit(&event);
     }

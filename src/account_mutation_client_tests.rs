@@ -99,6 +99,28 @@ fn native_disabled_even_when_private_paths_do_not_exist() {
         Error::Unavailable
     );
 }
+
+#[test]
+fn changed_purpose_key_refuses_before_mutation_connection() {
+    let scratch = Scratch::new();
+    let (client, listener) = scratch.client();
+    listener.set_nonblocking(true).unwrap();
+    std::fs::write(scratch.0.join("grant.key"), [18; 32]).unwrap();
+    assert_eq!(
+        client
+            .execute_with(
+                request(),
+                Instant::now() + Duration::from_secs(1),
+                &Clock::new()
+            )
+            .unwrap_err(),
+        Error::Unavailable
+    );
+    assert_eq!(
+        listener.accept().unwrap_err().kind(),
+        std::io::ErrorKind::WouldBlock
+    );
+}
 #[test]
 fn actual_private_unix_exchange_python_three_outcomes_returns_only_sealed_receipt() {
     for outcome in [Outcome::KnownRefused, changed(), Outcome::Contained] {

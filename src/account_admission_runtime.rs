@@ -748,12 +748,165 @@ impl Drop for Permit<'_> {
         }
     }
 }
+/// Account-only custody captured with full protected pathname checks before
+/// confinement. After an actual Serve seal, unveil pins the admitted leaves;
+/// retained exact key descriptors and current socket identity avoid hidden
+/// ancestor pathname reads. No directory read capability survives startup.
+/// Parent/ancestor custody after locked unveil is administrative trust, not
+/// continuous postseal ownership/mode observation.
+pub(crate) struct AccountClientPaths {
+    socket: PathBuf,
+    helper_uid: u32,
+    socket_identity: EndpointIdentity,
+    parent_identity: (u64, u64, u32, u32, u32),
+    keys: Vec<(PathBuf, File, EndpointIdentity, Vec<u8>)>,
+    seal: std::sync::OnceLock<Arc<crate::openbsd::ServeAccountSeal>>,
+}
+impl AccountClientPaths {
+    // Child directory creation changes nlink without changing this protected
+    // parent's identity or authority. Socket/key single-link checks stay exact.
+    fn parent_identity(info: &fs::Metadata) -> (u64, u64, u32, u32, u32) {
+        (info.dev(), info.ino(), info.uid(), info.gid(), info.mode())
+    }
+    pub(crate) fn observe(
+        socket: &Path,
+        helper_uid: u32,
+        keys: &[(&Path, &[u8])],
+    ) -> Result<Self, Error> {
+        validate_socket(socket, helper_uid).map_err(unavailable)?;
+        let socket_identity =
+            AdmissionEndpoint::identity(&fs::symlink_metadata(socket).map_err(unavailable)?);
+        if socket_identity.5 != 1 {
+            return Err(Error::Unavailable);
+        }
+        let parent_path = socket.parent().ok_or(Error::Invalid)?;
+        let parent_identity =
+            Self::parent_identity(&fs::symlink_metadata(parent_path).map_err(unavailable)?);
+        let mut retained_keys = Vec::new();
+        for (path, bytes) in keys {
+            let handle =
+                file(path, crate::openbsd::effective_uid(), false, 1024).map_err(unavailable)?;
+            let identity = AdmissionEndpoint::identity(&handle.metadata().map_err(unavailable)?);
+            if identity.5 != 1
+                || !crate::openbsd::descriptor_is_cloexec(handle.as_raw_fd())
+                    .map_err(unavailable)?
+            {
+                return Err(Error::Unavailable);
+            }
+            retained_keys.push(((*path).into(), handle, identity, bytes.to_vec()));
+        }
+        let value = Self {
+            socket: socket.into(),
+            helper_uid,
+            socket_identity,
+            parent_identity,
+            keys: retained_keys,
+            seal: std::sync::OnceLock::new(),
+        };
+        value.recheck()?;
+        Ok(value)
+    }
+    pub(crate) fn finalize(
+        &self,
+        seal: Arc<crate::openbsd::ServeAccountSeal>,
+    ) -> Result<(), Error> {
+        let paths: Vec<_> = self
+            .keys
+            .iter()
+            .map(|(path, _, _, _)| path.clone())
+            .collect();
+        if !seal.permits(&self.socket, &paths, self.helper_uid) {
+            return Err(Error::Unavailable);
+        }
+        // Enforcement has already hidden ancestor metadata. No weakened phase
+        // is reachable until the exact native capability has been verified.
+        self.recheck_leaves()?;
+        self.seal.set(seal).map_err(unavailable)?;
+        Ok(())
+    }
+    pub(crate) fn recheck(&self) -> Result<(), Error> {
+        if self.seal.get().is_none() {
+            validate_socket(&self.socket, self.helper_uid).map_err(unavailable)?;
+            if Self::parent_identity(
+                &fs::symlink_metadata(self.socket.parent().ok_or(Error::Invalid)?)
+                    .map_err(unavailable)?,
+            ) != self.parent_identity
+            {
+                return Err(Error::Unavailable);
+            }
+            for (path, _, _, _) in &self.keys {
+                crate::openpgp_inventory_runtime::exact_path(path, crate::openbsd::effective_uid())
+                    .map_err(unavailable)?;
+            }
+        }
+        self.recheck_leaves()
+    }
+    fn recheck_leaves(&self) -> Result<(), Error> {
+        if AdmissionEndpoint::identity(&fs::symlink_metadata(&self.socket).map_err(unavailable)?)
+            != self.socket_identity
+        {
+            return Err(Error::Unavailable);
+        }
+        for (path, handle, identity, expected) in &self.keys {
+            if AdmissionEndpoint::identity(&handle.metadata().map_err(unavailable)?) != *identity
+                || AdmissionEndpoint::identity(&fs::symlink_metadata(path).map_err(unavailable)?)
+                    != *identity
+            {
+                return Err(Error::Unavailable);
+            }
+            // Positioned reads preserve the retained descriptor's shared
+            // offset across concurrent clients; a changed key is never adopted.
+            let mut bytes = [0; 1025];
+            let mut length = 0;
+            while length < bytes.len() {
+                let count = handle
+                    .read_at(&mut bytes[length..], length as u64)
+                    .map_err(unavailable)?;
+                if count == 0 {
+                    break;
+                }
+                length += count;
+            }
+            if &bytes[..length] != expected
+                || AdmissionEndpoint::identity(&handle.metadata().map_err(unavailable)?)
+                    != *identity
+                || AdmissionEndpoint::identity(&fs::symlink_metadata(path).map_err(unavailable)?)
+                    != *identity
+            {
+                return Err(Error::Unavailable);
+            }
+        }
+        Ok(())
+    }
+    pub(crate) fn preflight_serve(
+        &self,
+        socket: &Path,
+        keys: &[&Path],
+        helper_uid: u32,
+    ) -> Result<(), Error> {
+        if self.seal.get().is_some()
+            || self.socket != socket
+            || self.helper_uid != helper_uid
+            || self.keys.len() != keys.len()
+            || self
+                .keys
+                .iter()
+                .zip(keys)
+                .any(|((actual, _, _, _), expected)| actual.as_path() != *expected)
+        {
+            return Err(Error::Unavailable);
+        }
+        self.recheck()
+    }
+}
+
 struct ClientState {
     socket: PathBuf,
     key_file: PathBuf,
     helper_uid: u32,
     key: Vec<u8>,
     verifier: Mutex<Verifier>,
+    paths: AccountClientPaths,
 }
 #[derive(Clone)]
 pub struct Client(Arc<ClientState>);
@@ -772,8 +925,24 @@ impl PartialEq for Client {
 }
 impl Eq for Client {}
 impl Client {
+    pub(crate) fn preflight_serve(
+        &self,
+        config: &crate::config::AccountRuntimeConfig,
+    ) -> Result<(), Error> {
+        self.0.paths.preflight_serve(
+            &config.admission_socket,
+            &[&config.admission_key_file],
+            config.admission_helper_uid,
+        )
+    }
     pub(crate) fn has_purpose_key(&self, key: &[u8]) -> bool {
         self.0.key == key
+    }
+    pub(crate) fn finalize_serve(
+        &self,
+        seal: Arc<crate::openbsd::ServeAccountSeal>,
+    ) -> Result<(), Error> {
+        self.0.paths.finalize(seal)
     }
     #[cfg(test)]
     pub(crate) fn paired_fixture_files(socket: &Path, key: &Path, uid: u32) -> Result<Self, Error> {
@@ -788,12 +957,15 @@ impl Client {
     fn qualified_files(socket: &Path, key: &Path, helper_uid: u32) -> Result<Self, Error> {
         crate::openbsd::disable_core_dumps().map_err(unavailable)?;
         validate_socket(socket, helper_uid).map_err(unavailable)?;
+        let bytes = secret(key).map_err(unavailable)?;
+        let paths = AccountClientPaths::observe(socket, helper_uid, &[(key, &bytes)])?;
         Ok(Self(Arc::new(ClientState {
             socket: socket.into(),
             key_file: key.into(),
             helper_uid,
-            key: secret(key).map_err(unavailable)?,
+            key: bytes,
             verifier: Mutex::new(Verifier::default()),
+            paths,
         })))
     }
     fn execute(&self, account: &str, operation: Operation) -> Result<Option<Admission>, Error> {
@@ -835,7 +1007,7 @@ impl Client {
             previous = at;
             Ok(at)
         };
-        validate_socket(&self.0.socket, self.0.helper_uid).map_err(unavailable)?;
+        self.0.paths.recheck()?;
         check()?;
         let mut stream =
             crate::openbsd::connect_unix_before(&self.0.socket, deadline).map_err(unavailable)?;
@@ -843,6 +1015,7 @@ impl Client {
         {
             return Err(Error::Authentication);
         }
+        self.0.paths.recheck()?;
         check()?;
         write_frame(&mut stream, &request.bytes()?, deadline).map_err(unavailable)?;
         check()?;

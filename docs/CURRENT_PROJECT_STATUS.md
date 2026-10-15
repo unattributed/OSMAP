@@ -16,43 +16,67 @@ statement as provenance rather than current release posture.
 
 ### Active password delivery, 2026-10-15
 
-Signed checkpoint `fc87b65f5e0cef7ee67a79fa0bc31c2d3343e0e4` is synchronized
-with GitHub and the clean authoritative standard source checkout. Both normal
-commit/push gates pass1744 Rust/zero failed/44 explicit native ignores and581
-account Python tests. Signature, fresh0/0 and all three branch heads match.
-Proof is native-tail-dag-integration-20261015/signed-sync-proof.json.
-Installed pair324b is unchanged; no password form, new service or native
-qualification flag is activated.
+Signed checkpoint `ffb861322ba6df88df70e354373c5f4748d96863` is synchronized
+with GitHub and the clean authoritative standard source checkout. Normal
+commit/push gates pass1745 Rust/zero failed/46 explicit native ignores and581
+account Python tests; Good Shopkeeper signature, fresh0/0 and all three branch
+heads match. Proof8c9dc985 is
+factory-serve-source-integration-20261015/signed-sync-proof.json.
+Installed pair324b is unchanged; no password form, service or native flag is
+activated. This is source synchronization, not workflow completion.
 
-The next composed workflow now has a reviewed test-only Rust admission service
-and real stored issuer using persistent TOTP, epoch and session checks. Its
-matching OpenBSD test binary compiled successfully in 79.538 seconds with fresh
-output and exact source parity. The complete Python
-composition is now frozen: 54 source/data inputs, plus its manifest, include
-35 product modules identical to fc87. It uses the actual factory executors,
-shared disposable SQL/passdb, warmed account cache and real Rust issuer.
-The first composed case failed during SQL bootstrap before its first SQL child
-or Rust role. Its driver was reaped and group absence confirmed; the failed
-root/worker/SQL stages are retained. Source inspection then found the fixture
-clearing a public-reader result that is deliberately None. A distinct one-input
-repair is frozen for independent execution review. The original failure remains
-recorded as Other, because its exact exception subtype was not exported.
-The changed second case reaches 12 tracked and reaped SQL children, temporary
-identity provisioning and generated context, then refuses before any Rust role
-or credential transaction. Its driver group is gone and failed root/SQL stages
-remain retained. After two failures, reassess the exact remaining source
-contracts before another changed case; no unchanged retry is authorized.
-Review also caught a receipt-consumer error before execution: the signed
-remaining interval is reduced by preparation, so it must be positive and at
-most 60 seconds; the original issuer budget remains exactly 60 seconds.
-No budget was extended. Source controls do not establish functional acceptance.
+The actual admission/stored-issuer fixture compiled fresh on obsd1 in79.538s
+and remains bound to its own exact earlier source/binary5c20. Later import,
+constant-assertion and Serve-plan source changes have separate normal gates;
+no full current-source parity is inferred for that older native artifact.
+Its complete disposable composition uses actual factory executors and shared
+restricted SQL/passdb. Bootstrap/private topology, separate SMTP cache and
+held-AUTH race remain explicit qualification limits.
 
-The current source increment additionally repairs configured account authority
-in the actual Serve confinement plan: two exact socket rules, three exact
-purpose-key rules and the existing Unix helper promises. One distinguishing
-configuration-to-plan test passes and independent source review is clear.
-Native gates, client ancestry checks and the installed instance are unchanged;
-the complete configured frontend/password workflow remains unqualified.
+Four changed disposable cases are retained. Case1 fails before SQL children;
+case2 reaches12 reaped SQL-fixture children and fails during preparation;
+case3 reaches18 and fails at controlled seeding, with both purpose identities
+removed and public rows restored. Counts include metadata observers, not SQL
+statements. Source-demonstrated fixture return/budget/restoration/role-label
+contracts are separately repaired without extending deadlines or claiming an
+unexported historical exception subtype.
+
+Case4 resultdfcc025d reaches six component controls,24 reaped SQL-fixture
+children and real admission startup. Admission READY is measured; the stored
+issuer exits101 and is reaped, but discarded output prevents precise panic
+classification. No password transaction succeeds. Dovecot/root-driver group
+absence is measured. Private Postfix/capture/runtime/scratch/public-state
+preservation and two purpose-identity cleanups remain unconfirmed/retained.
+Independent audit32e3d3d0 supplies no historical PID or deletion authority.
+The next action is fresh lease-grounded assessment and source-backed repairs,
+not an unchanged native retry.
+
+The reviewed eight-path Serve successor now prepares only paired account
+clients before confinement and couples their final full protected preflight to
+actual native enforcement. Its opaque exact-config seal permits exact key leaf
+FD/content, socket identity and fresh-peer checks after hidden ancestor metadata
+becomes unavailable. It retains no directory FD or broader ancestor grant;
+postseal administrative ancestry is trusted, not continuously observed.
+The first reviewed source batch fails its normal gate: five existing integration
+cases fail and blocking fixture accepts stall. Root retains the incomplete
+323.398s exit1 and freshly owned-process SIGTERM disposition; no commit or
+signature occurs. Review2fe00a5b supersedes the earlier parent-custody clearance.
+A bounded RED proves that legitimate sibling creation changes only directory
+link count and is incorrectly refused. The minimum correction compares parent
+device/inode/UID/GID/mode while retaining socket/key hardlink checks. Nine
+focused corrected cases, including the affected real Runtime/worker journeys,
+pass. Correction review2da81169 passes; final combined admission and superseding
+normal gate/sync are pending.
+The ignored OpenBSD fixture body remains uncompiled/NOT RUN; matching native
+and HTTP qualification remain pending. Native4 issuer101 is a separate unknown.
+Full S04-02 and installed password UAT remain OPEN.
+
+One bounded retained4 read-only observation passes, with no mutation. It measures
+final Dovecot configuration matching the source transformation and the stale
+original plan mismatch. Current private master/shell and exact controlled public
+principal rows remain present; snapshot purpose-UID process rows are empty.
+This supplies no cleanup authority. Fresh reviewed administrative custody must
+recheck the current instance and preserve unrelated current records.
 
 Actual disposable restricted SQL3 passes27 controls. Private-primary16 passes
 its original seven controls, including correct-password acceptance, changed-

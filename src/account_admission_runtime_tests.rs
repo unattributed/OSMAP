@@ -62,6 +62,201 @@ fn listener_root() -> PathBuf {
 }
 
 #[test]
+fn account_client_custody_refuses_key_content_replacement_links_endpoint_and_parent_drift() {
+    let root = fs::canonicalize("/tmp").unwrap().join(format!(
+        "osmap-client-custody-{}",
+        crate::draft::generate_draft_id().unwrap()
+    ));
+    fs::create_dir(&root).unwrap();
+    fs::set_permissions(&root, fs::Permissions::from_mode(0o700)).unwrap();
+    let socket = root.join("account.sock");
+    let key = root.join("purpose.key");
+    fs::write(&key, [29; 32]).unwrap();
+    fs::set_permissions(&key, fs::Permissions::from_mode(0o600)).unwrap();
+    let listener = UnixListener::bind(&socket).unwrap();
+    fs::set_permissions(&socket, fs::Permissions::from_mode(0o660)).unwrap();
+    let uid = crate::openbsd::effective_uid();
+    let paths = AccountClientPaths::observe(&socket, uid, &[(&key, &[29; 32])]).unwrap();
+    assert_eq!(paths.recheck(), Ok(()));
+    assert!(paths.seal.get().is_none());
+    fs::write(&key, [30; 32]).unwrap();
+    assert_eq!(paths.recheck(), Err(Error::Unavailable));
+    fs::write(&key, [29; 32]).unwrap();
+    assert_eq!(paths.recheck(), Ok(()));
+    fs::set_permissions(&root, fs::Permissions::from_mode(0o750)).unwrap();
+    assert_eq!(paths.recheck(), Err(Error::Unavailable));
+    fs::set_permissions(&root, fs::Permissions::from_mode(0o700)).unwrap();
+    fs::hard_link(&key, root.join("linked.key")).unwrap();
+    assert_eq!(paths.recheck(), Err(Error::Unavailable));
+    assert!(AccountClientPaths::observe(&socket, uid, &[(&key, &[29; 32])]).is_err());
+    fs::remove_file(root.join("linked.key")).unwrap();
+    let replacement = root.join("replacement.key");
+    fs::write(&replacement, [29; 32]).unwrap();
+    fs::set_permissions(&replacement, fs::Permissions::from_mode(0o600)).unwrap();
+    fs::rename(&replacement, &key).unwrap();
+    assert_eq!(paths.recheck(), Err(Error::Unavailable));
+    let paths = AccountClientPaths::observe(&socket, uid, &[(&key, &[29; 32])]).unwrap();
+    fs::set_permissions(&socket, fs::Permissions::from_mode(0o600)).unwrap();
+    assert_eq!(paths.recheck(), Err(Error::Unavailable));
+    fs::set_permissions(&socket, fs::Permissions::from_mode(0o660)).unwrap();
+    fs::remove_file(&socket).unwrap();
+    let replacement_listener = UnixListener::bind(&socket).unwrap();
+    fs::set_permissions(&socket, fs::Permissions::from_mode(0o660)).unwrap();
+    assert_eq!(paths.recheck(), Err(Error::Unavailable));
+    drop((listener, replacement_listener, paths));
+    fs::remove_file(socket).unwrap();
+    fs::remove_file(key).unwrap();
+    fs::remove_dir(root).unwrap();
+}
+
+#[test]
+fn account_client_preseal_ancestry_remains_enforced() {
+    let root = fs::canonicalize("/tmp").unwrap().join(format!(
+        "osmap-client-ancestry-{}",
+        crate::draft::generate_draft_id().unwrap()
+    ));
+    fs::create_dir(&root).unwrap();
+    fs::set_permissions(&root, fs::Permissions::from_mode(0o700)).unwrap();
+    let parent = root.join("private");
+    fs::create_dir(&parent).unwrap();
+    fs::set_permissions(&parent, fs::Permissions::from_mode(0o700)).unwrap();
+    let socket = parent.join("account.sock");
+    let key = parent.join("purpose.key");
+    fs::write(&key, [29; 32]).unwrap();
+    fs::set_permissions(&key, fs::Permissions::from_mode(0o600)).unwrap();
+    let listener = UnixListener::bind(&socket).unwrap();
+    fs::set_permissions(&socket, fs::Permissions::from_mode(0o660)).unwrap();
+    let paths = AccountClientPaths::observe(
+        &socket,
+        crate::openbsd::effective_uid(),
+        &[(&key, &[29; 32])],
+    )
+    .unwrap();
+    fs::set_permissions(&root, fs::Permissions::from_mode(0o777)).unwrap();
+    assert_eq!(paths.recheck(), Err(Error::Unavailable));
+    assert!(AccountClientPaths::observe(
+        &socket,
+        crate::openbsd::effective_uid(),
+        &[(&key, &[29; 32])]
+    )
+    .is_err());
+    fs::set_permissions(&root, fs::Permissions::from_mode(0o700)).unwrap();
+    assert_eq!(paths.recheck(), Ok(()));
+    drop((paths, listener));
+    fs::remove_file(socket).unwrap();
+    fs::remove_file(key).unwrap();
+    fs::remove_dir(parent).unwrap();
+    fs::remove_dir(root).unwrap();
+}
+
+#[test]
+fn account_client_final_preseal_refuses_relocated_same_leaves_in_replaced_parent() {
+    let root = fs::canonicalize("/tmp").unwrap().join(format!(
+        "osmap-parent-custody-{}",
+        crate::draft::generate_draft_id().unwrap()
+    ));
+    fs::create_dir(&root).unwrap();
+    fs::set_permissions(&root, fs::Permissions::from_mode(0o700)).unwrap();
+    let parent = root.join("private");
+    fs::create_dir(&parent).unwrap();
+    fs::set_permissions(&parent, fs::Permissions::from_mode(0o700)).unwrap();
+    let socket = parent.join("account.sock");
+    let key = parent.join("purpose.key");
+    fs::write(&key, [29; 32]).unwrap();
+    fs::set_permissions(&key, fs::Permissions::from_mode(0o600)).unwrap();
+    let listener = UnixListener::bind(&socket).unwrap();
+    fs::set_permissions(&socket, fs::Permissions::from_mode(0o660)).unwrap();
+    let uid = crate::openbsd::effective_uid();
+    let paths = AccountClientPaths::observe(&socket, uid, &[(&key, &[29; 32])]).unwrap();
+    assert_eq!(paths.preflight_serve(&socket, &[&key], uid), Ok(()));
+    assert_eq!(
+        paths.preflight_serve(&socket, &[&key], uid.wrapping_add(1)),
+        Err(Error::Unavailable)
+    );
+    assert_eq!(
+        paths.preflight_serve(&socket, &[&socket], uid),
+        Err(Error::Unavailable)
+    );
+    let old_parent = root.join("old-private");
+    fs::rename(&parent, &old_parent).unwrap();
+    fs::create_dir(&parent).unwrap();
+    fs::set_permissions(&parent, fs::Permissions::from_mode(0o700)).unwrap();
+    fs::rename(old_parent.join("account.sock"), &socket).unwrap();
+    fs::rename(old_parent.join("purpose.key"), &key).unwrap();
+    // Same allowed leaf inodes/content and fully protected new pathname are
+    // insufficient: the final preseal parent identity must still match.
+    validate_socket(&socket, uid).unwrap();
+    assert_eq!(paths.recheck_leaves(), Ok(()));
+    assert_eq!(
+        paths.preflight_serve(&socket, &[&key], uid),
+        Err(Error::Unavailable)
+    );
+    assert!(AccountClientPaths::observe(&socket, uid, &[(&key, &[29; 32])]).is_ok());
+    drop((paths, listener));
+    fs::remove_file(socket).unwrap();
+    fs::remove_file(key).unwrap();
+    fs::remove_dir(parent).unwrap();
+    fs::remove_dir(old_parent).unwrap();
+    fs::remove_dir(root).unwrap();
+}
+
+#[test]
+fn account_client_parent_allows_new_private_sibling_without_custody_change() {
+    let root = fs::canonicalize("/tmp").unwrap().join(format!(
+        "osmap-parent-sibling-{}",
+        crate::draft::generate_draft_id().unwrap()
+    ));
+    fs::create_dir(&root).unwrap();
+    fs::set_permissions(&root, fs::Permissions::from_mode(0o700)).unwrap();
+    let socket = root.join("account.sock");
+    let key = root.join("purpose.key");
+    fs::write(&key, [29; 32]).unwrap();
+    fs::set_permissions(&key, fs::Permissions::from_mode(0o600)).unwrap();
+    let listener = UnixListener::bind(&socket).unwrap();
+    fs::set_permissions(&socket, fs::Permissions::from_mode(0o660)).unwrap();
+    let uid = crate::openbsd::effective_uid();
+    let paths = AccountClientPaths::observe(&socket, uid, &[(&key, &[29; 32])]).unwrap();
+    let before = fs::symlink_metadata(&root).unwrap();
+    let sibling = root.join("late-runtime-private-state");
+    fs::create_dir(&sibling).unwrap();
+    fs::set_permissions(&sibling, fs::Permissions::from_mode(0o700)).unwrap();
+    let after = fs::symlink_metadata(&root).unwrap();
+    assert_eq!(
+        (
+            before.dev(),
+            before.ino(),
+            before.uid(),
+            before.gid(),
+            before.mode()
+        ),
+        (
+            after.dev(),
+            after.ino(),
+            after.uid(),
+            after.gid(),
+            after.mode()
+        )
+    );
+    assert!(
+        after.nlink() > before.nlink(),
+        "fixture must demonstrate the directory-link-count change"
+    );
+    assert_eq!(paths.recheck_leaves(), Ok(()));
+    let result = paths.preflight_serve(&socket, &[&key], uid);
+    drop((paths, listener));
+    fs::remove_file(socket).unwrap();
+    fs::remove_file(key).unwrap();
+    fs::remove_dir(sibling).unwrap();
+    fs::remove_dir(root).unwrap();
+    // Bounded RED witness: no server accept thread or private frame is needed.
+    assert_eq!(
+        result,
+        Ok(()),
+        "a new private sibling is not parent identity or custody drift"
+    );
+}
+
+#[test]
 fn parent_policy_is_narrow_and_failed_seal_prevents_accept_then_removes_owned_endpoint() {
     let root = listener_root();
     let socket = root.join("admission.sock");

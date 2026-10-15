@@ -10516,3 +10516,60 @@ The first normal source commit gate refuses five new constant assertions under
 Clippy warnings-as-errors. Retain that gate failure and use existing OS-equality
 and const-assert patterns without changing their conditions or lint policy.
 Normal signed admission must pass again; no unsigned checkpoint is created.
+
+## 2026-10-15 — retain failed owned resources; fix executed integration contracts
+
+Native3 reaches controlled seeding and native4 reaches real admission startup,
+but neither completes the guarded credential transaction. Preserve the exact
+results, discarded-output limitation and unconfirmed actual4 cleanup instead of
+claiming successful ownership restoration. Diagnose current source and obtain
+fresh lease-grounded facts before any retained-resource administration; an old
+PID, failed original deadline or numeric identity alone supplies no authority.
+Do not retry unchanged cases or extend lifecycle budgets.
+
+Continue the demonstrated actual Serve account-client seam independently.
+Protected ancestry belongs before locked unveil; any postseal alternative must
+be bound to actual enforced policy and exact leaf/current kernel peer. A
+retained directory read capability is not required by the operator. Prefer the
+smallest leaf-only authority and explicitly state the trusted administrative
+ancestry invariant; do not invent directory contents policy to justify broader
+capability. Independent review and native execution remain separate.
+
+Keep task dispatch concrete: followup_task activates completed agents;
+send_message alone only delivers context. Root assumes unfinished QA when an
+agent cannot run and records actual role ownership without another framework.
+
+## 2026-10-15 — admit account-only real Serve seal; retain private cleanup boundary
+
+Choose the reviewed leaf-only account client successor. Prepare only these
+clients before enforcement and couple final full protected/purpose preflight to
+the actual locked Serve plan. A private token binds precisely configured leaves
+and helpers; retained key descriptors and fresh socket/peer checks replace
+hidden ancestor metadata reads only after that real seal. Do not retain a
+directory-listing FD, widen ancestor grants or silently fall back from configured
+account authority. Administrative postseal ancestry remains a documented trust
+invariant. Matching OpenBSD execution and full HTTP/password pilot remain open.
+
+The single admitted retained4 observation measures the final Dovecot plan
+mismatch and current retained instance/principal facts without mutation. A
+separate fresh administrative cleanup can bind only those current controlled
+resources and preserve unrelated current rows. It cannot reconstruct expired
+original leases or establish original pre-run restoration without evidence.
+No further unchanged observation or qualifier run is needed.
+
+## 2026-10-15 — parent authority excludes directory child-count metadata
+
+Retain directory device/inode/UID/GID/mode authority without treating st_nlink as
+immutable. Creating an authorized sibling directory changes link count; that is
+not a parent replacement or ownership failure. Keep exact socket/key single-link
+checks and existing listener semantics. The first source review missed this real
+Runtime composition; the normal gate and bounded RED/GREEN controls correct it
+without masking test setup or waiving checks.
+
+For a changed client constructor/custody rule, include one existing complete
+Runtime and stored-worker journey in essential changed-boundary validation, not
+only new direct transport controls. The earlier selected controls missed this
+integration effect. Use bounded discriminators before fixtures with blocking
+accepts; retain interrupted aggregate evidence honestly and stop only freshly
+proved owned processes. This selects relevant existing QA rather than adding
+a framework or repeating passing workflows.

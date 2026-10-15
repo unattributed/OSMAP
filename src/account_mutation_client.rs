@@ -46,6 +46,7 @@ struct ClientState {
     verifier: Mutex<Verifier>,
     state: Mutex<State>,
     cleanup_unconfirmed: AtomicBool,
+    paths: crate::account_admission_runtime::AccountClientPaths,
 }
 #[derive(Clone)]
 pub struct Client(Arc<ClientState>);
@@ -56,6 +57,25 @@ impl std::fmt::Debug for Client {
 }
 
 impl Client {
+    pub(crate) fn preflight_serve(
+        &self,
+        config: &crate::config::AccountRuntimeConfig,
+    ) -> Result<(), Error> {
+        self.0
+            .paths
+            .preflight_serve(
+                &config.mutation_socket,
+                &[&config.mutation_key_file, &config.session_proof_key_file],
+                config.mutation_helper_uid,
+            )
+            .map_err(|_| Error::Unavailable)
+    }
+    pub(crate) fn finalize_serve(
+        &self,
+        seal: Arc<crate::openbsd::ServeAccountSeal>,
+    ) -> Result<(), Error> {
+        self.0.paths.finalize(seal).map_err(|_| Error::Unavailable)
+    }
     pub(crate) fn purpose_separated_from(
         &self,
         admission: &crate::account_admission_runtime::Client,
@@ -96,7 +116,8 @@ impl Client {
     ) -> Result<Self, Error> {
         crate::openbsd::disable_core_dumps().map_err(|_| Error::Unavailable)?;
         validate_socket(socket, helper_uid).map_err(|_| Error::Unavailable)?;
-        let key = private_key(key)?;
+        let key_path = key;
+        let key = private_key(key_path)?;
         let session_proof_key = proof_key.map(private_key).transpose()?;
         if session_proof_key
             .as_ref()
@@ -104,6 +125,14 @@ impl Client {
         {
             return Err(Error::Unavailable);
         }
+        let mut keys = vec![(key_path, key.as_slice())];
+        if let (Some(path), Some(bytes)) = (proof_key, session_proof_key.as_ref()) {
+            keys.push((path, bytes.as_slice()));
+        }
+        let paths = crate::account_admission_runtime::AccountClientPaths::observe(
+            socket, helper_uid, &keys,
+        )
+        .map_err(|_| Error::Unavailable)?;
         Ok(Self(Arc::new(ClientState {
             socket: socket.into(),
             helper_uid,
@@ -115,6 +144,7 @@ impl Client {
                 quarantine: BTreeSet::new(),
             }),
             cleanup_unconfirmed: AtomicBool::new(false),
+            paths,
         })))
     }
 
@@ -217,7 +247,7 @@ impl Client {
                     at,
                 )
                 .map_err(codec_error)?;
-            validate_socket(&self.0.socket, self.0.helper_uid).map_err(|_| Error::Unavailable)?;
+            self.0.paths.recheck().map_err(|_| Error::Unavailable)?;
             check_time(&request, deadline, clock, &mut at)?;
             let stream = crate::openbsd::connect_unix_before(&self.0.socket, deadline)
                 .map_err(|_| Error::Unavailable)?;
@@ -272,7 +302,7 @@ impl Client {
                 at,
             )
             .map_err(codec_error)?;
-        validate_socket(&self.0.socket, self.0.helper_uid).map_err(|_| Error::Unavailable)?;
+        self.0.paths.recheck().map_err(|_| Error::Unavailable)?;
         check_time(&request, deadline, clock, &mut at)?;
         let stream = crate::openbsd::connect_unix_before(&self.0.socket, deadline)
             .map_err(|_| Error::Unavailable)?;
@@ -326,6 +356,7 @@ impl Client {
         {
             return Err(Error::Unavailable);
         }
+        self.0.paths.recheck().map_err(|_| Error::Unavailable)?;
         check_time(&request, deadline, clock, &mut at)?;
         let account = request.account().to_owned();
         let original_issued = request.issued();

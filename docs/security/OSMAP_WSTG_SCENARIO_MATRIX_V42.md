@@ -767,8 +767,48 @@ return-contract error is source-reproduced and separately corrected; its
 native exception subtype remains unexported. No authentication, credential
 write, containment workflow, provider action or broader WSTG PASS is claimed.
 
-Changed native2 result26d8ca5e reaches12 private SQL children, all reaped, and
+Changed native2 result26d8ca5e reaches12 SQL-fixture children, including metadata
+observers, all reaped, and
 provisioned purpose identity/context, then refuses before Rust role/credential
 transaction. The exact remaining preparation guard is unexported. Preserve
 failed stages and apply two-failure source reassessment; no required workflow
 or additional WSTG case is accepted from these preparation results.
+
+### 2026-10-15 — actual factory admission reached; complete workflow still unqualified
+
+Actual3 cf8093ae reaches18 reaped SQL-fixture children (including observers),
+then fails before Rust roles; both exact principals are restored. Correcting
+one invalid fixed role label separately admits actual4 dfcc025d. That case
+reaches six component controls and24 reaped SQL-fixture children, then refuses
+during Rust admission/issuer startup. The second role's discarded output does
+not identify its exception. Dovecot and root-driver group absence are measured;
+Postfix, capture, public-state preservation, runtime/scratch and two temporary
+principal cleanups remain unconfirmed/retained. Audits0966cf93/32e3d3d0 preserve
+these limits. No credential change, required containment workflow, installed
+password journey or additional WSTG acceptance is established.
+
+### 2026-10-15 — source-level Serve account sealed transport repair
+
+Independent39de8770 admits eight paths with concrete paired full protected
+preflight immediately before actual native Serve locking, opaque exact-config
+seal and postseal exact key/socket/fresh-peer custody. No retained directory FD,
+ancestor grant, purpose/deadline/peer relaxation or native flag changes. Linux
+precursor controls and final changed-parent discriminator pass; the final
+ignored OpenBSD entry remains uncompiled/NOT RUN. No installed HTTP/password
+workflow or additional required WSTG acceptance is claimed.
+
+Retained4 observer3 passes read-only: final source Dovecot bytes match and
+original-plan bytes do not; current controlled instance/public identities are
+observed without stop/deletion authority. Original cleanup remains unresolved
+until separately reviewed fresh current administrative custody succeeds.
+
+### 2026-10-15 — normal gate rejects overstrict client parent metadata
+
+The first source batch fails five reported existing integration cases and stalls
+in fixture accepts; its aggregate is interrupted only after current owned-test
+identity/parent and zero descendants are confirmed. No complete-suite PASS or
+commit follows. Independent2fe00a5b supersedes parent-custody clearance: directory
+nlink changes during legitimate sibling creation. Bounded RED and nine focused
+GREEN controls support a parent dev/inode/UID/GID/mode comparison, keeping exact
+socket/key hardlink guards. Normal signed admission/native/full password WSTG
+qualification remain pending; native4 issuer101 is not diagnosed by this finding.

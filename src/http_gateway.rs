@@ -118,8 +118,15 @@ impl RuntimeBrowserGateway {
 
     /// Builds the runtime gateway from validated configuration.
     pub fn from_config(config: &AppConfig) -> Self {
+        Self::from_config_with_account(config, Self::prepare_account_runtime(config))
+    }
+
+    pub(crate) fn from_config_with_account(
+        config: &AppConfig,
+        account_runtime: AccountRuntimeCapability,
+    ) -> Self {
         Self {
-            account_runtime: AccountRuntimeCapability::from_config(config.account_runtime.as_ref()),
+            account_runtime,
             public_admin_client: config.openpgp_public_admin.as_ref().and_then(|c| {
                 crate::openpgp_public_admin_runtime::Client::from_operator_files(
                     &c.socket,

@@ -656,16 +656,68 @@ impl OpenbsdConfinementPlan {
 
 /// Applies the current OpenBSD confinement mode for the serve runtime.
 pub fn apply_runtime_confinement(config: &AppConfig, logger: &Logger) -> Result<(), String> {
+    apply_runtime_confinement_for_accounts(config, logger, None).map(|_| ())
+}
+
+/// Authority for precisely the account leaves admitted by an actual locked
+/// Serve plan. No constructor, caller flag or log-only path can mint it.
+pub(crate) struct ServeAccountSeal {
+    account: crate::config::AccountRuntimeConfig,
+}
+impl ServeAccountSeal {
+    pub(crate) fn permits(&self, socket: &Path, keys: &[PathBuf], helper_uid: u32) -> bool {
+        (socket == self.account.admission_socket
+            && helper_uid == self.account.admission_helper_uid
+            && keys == [self.account.admission_key_file.clone()])
+            || (socket == self.account.mutation_socket
+                && helper_uid == self.account.mutation_helper_uid
+                && keys
+                    == [
+                        self.account.mutation_key_file.clone(),
+                        self.account.session_proof_key_file.clone(),
+                    ])
+    }
+}
+
+pub(crate) fn apply_runtime_confinement_for_accounts(
+    config: &AppConfig,
+    logger: &Logger,
+    clients: Option<(
+        &crate::account_admission_runtime::Client,
+        &crate::account_mutation_client::Client,
+    )>,
+) -> Result<Option<std::sync::Arc<ServeAccountSeal>>, String> {
     match config.openbsd_confinement_mode {
-        OpenbsdConfinementMode::Disabled => Ok(()),
+        OpenbsdConfinementMode::Disabled => Ok(None),
         OpenbsdConfinementMode::LogOnly => {
             let plan = OpenbsdConfinementPlan::from_config(config);
             logger.emit(&build_plan_event(config, &plan, "plan_logged"));
-            Ok(())
+            Ok(None)
         }
         OpenbsdConfinementMode::Enforce => {
             let plan = OpenbsdConfinementPlan::from_config(config);
             logger.emit(&build_plan_event(config, &plan, "plan_enforcing"));
+            // Concrete paired preflight immediately precedes actual apply.
+            // A constructor-time snapshot alone cannot authorize the seal.
+            let prepared_account = if config.run_mode == crate::config::AppRunMode::Serve {
+                match (config.account_runtime.as_ref(), clients) {
+                    (Some(account), Some((admission, mutation))) => {
+                        if !mutation.purpose_separated_from(admission) {
+                            return Err("account Serve custody unavailable".into());
+                        }
+                        admission
+                            .preflight_serve(account)
+                            .map_err(|_| "account Serve custody unavailable")?;
+                        mutation
+                            .preflight_serve(account)
+                            .map_err(|_| "account Serve custody unavailable")?;
+                        Some(account.clone())
+                    }
+                    _ => None,
+                }
+            } else {
+                None
+            };
 
             #[cfg(target_os = "openbsd")]
             {
@@ -684,11 +736,13 @@ pub fn apply_runtime_confinement(config: &AppConfig, logger: &Logger) -> Result<
                     .with_field("unveil_rule_count", plan.unveil_rules.len().to_string())
                     .with_field("promises_after_lock", plan.promises_after_lock),
                 );
-                Ok(())
+                Ok(prepared_account
+                    .map(|account| std::sync::Arc::new(ServeAccountSeal { account })))
             }
 
             #[cfg(not(target_os = "openbsd"))]
             {
+                let _ = prepared_account;
                 Err(
                     "OpenBSD confinement enforcement was requested on a non-OpenBSD platform"
                         .to_string(),
@@ -1487,6 +1541,29 @@ mod tests {
         let logger = Logger::new(LogFormat::Text, LogLevel::Info);
 
         assert!(apply_runtime_confinement(&config, &logger).is_ok());
+    }
+
+    #[test]
+    fn account_serve_seal_is_absent_without_actual_native_enforcement() {
+        let logger = Logger::new(LogFormat::Text, LogLevel::Info);
+        for mode in [
+            OpenbsdConfinementMode::Disabled,
+            OpenbsdConfinementMode::LogOnly,
+        ] {
+            let config = config_fixture(mode);
+            assert!(
+                apply_runtime_confinement_for_accounts(&config, &logger, None)
+                    .unwrap()
+                    .is_none()
+            );
+        }
+        #[cfg(not(target_os = "openbsd"))]
+        assert!(apply_runtime_confinement_for_accounts(
+            &config_fixture(OpenbsdConfinementMode::Enforce),
+            &logger,
+            None
+        )
+        .is_err());
     }
 
     #[test]
