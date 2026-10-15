@@ -16,6 +16,27 @@ statement as provenance rather than current release posture.
 
 ### Latest scoped folder and label delivery, 2026-10-15
 
+Latest password source `a22fee6f97ca9c63040397889a2da3a505c31f10` is signed and
+synchronized; both normal gates pass1732 Rust/537 account Python cases, fresh
+origin equality/clean0/0 and source-only standard Toronto parity are verified.
+Installed pair324b remains unchanged and the password form unavailable. Fresh
+retained test-state cleanup passes independently with exact public-record/socket
+preservation. Subsequent primary3 authentication fails with underlying cause
+UNKNOWN; fixture cleanup passes, only its root code stage remains retained.
+Closed failure instrumentation, restricted SQL qualification and actual shared
+native SMTP broker startup remain in active S04-02. No Duncan action is needed
+until the installed controlled workflow and independent audit pass. Detailed
+dated paragraphs below retain earlier checkpoints rather than superseding this
+current outcome.
+
+The next reviewed source increment extracts endpoint-independent private control
+authority for broker startup and refreshes only two measured loader-cache pin
+rows. Five focused startup controls pass; the other28 public objects and ancestry
+match. A controlled SQL attempt fails at the old cache metadata before guarded
+spawn; its namespaces/stage remain retained and the earlier ioctl cause remains
+unknown. Native broker/CPID/TCP ownership and the complete password workflow stay
+open; neither this source increment nor public metadata qualifies activation.
+
 S08-02 is functionally ACCEPTED: original17 obligations have composed executed
 source/native/installed evidence and independent audit, followed by the operator's
 normal login/Folders/subfolder navigation/Search/message viewing and prescribed

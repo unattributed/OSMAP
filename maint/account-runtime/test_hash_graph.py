@@ -43,6 +43,9 @@ class GraphTests(unittest.TestCase):
  def test_source_pins_exact_observation_and_selected_transitive_closure(self):
   d=json.loads((R/'fixtures/hash-installed-inventory13.json').read_text());nodes={n['path']:n for n in d['public_nodes']}
   self.assertEqual(hashlib.sha256((R/'fixtures/hash-installed-inventory13.json').read_bytes()).hexdigest(),pins.INVENTORY_SHA256)
+  refreshed=(R/'fixtures/loader-hints-observation-20261015.json').read_bytes();self.assertEqual(hashlib.sha256(refreshed).hexdigest(),'ff848accd71d67770782962026b4fbe09f2124f97f5a5e405a5de819880ebdbc')
+  hints=json.loads(refreshed);self.assertEqual(hints['source_observation_sha256'],'b5e427934a8094d83b1f18384e59e92edb1ba77ae6941c58d8a4944b71f68e40');self.assertEqual(hints['previous'],nodes['/var/run/ld.so.hints'])
+  self.assertEqual(hints['current']['path'],'/var/run/ld.so.hints');self.assertEqual(hints['current']['ancestry'],hints['previous']['ancestry']);nodes['/var/run/ld.so.hints']=hints['current']
   needed={'/usr/local/bin/doveadm','/usr/libexec/ld.so'}|{pins.MODULE_DIRECTORY+'/'+n for n in pins.MODULE_NAMES}
   while True:
    old=set(needed)

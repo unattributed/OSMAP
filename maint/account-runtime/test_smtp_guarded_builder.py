@@ -10,6 +10,8 @@ from mail_session_containment import MailSessionContainment,SmtpProxyControl,Smt
 from prepared_password import PreparedPasswordCoordinator
 from smtp_control_authorization import ControlAuthority
 from smtp_guarded_builder import GuardedSmtpBinding
+from smtp_control_startup import ControlStartup
+from smtp_mutation_containment import PrivateControlEndpoint
 import test_smtp_mutation_containment as fixtures
 import test_account_mutation_supervisor as supervisor_fixtures
 import test_guarded_mutation_worker as guarded_fixtures
@@ -107,6 +109,20 @@ class Startup(unittest.TestCase):
         for name,raw in (('config.json',json.dumps(configuration).encode()),('mutation.key',self.boot.mutation_key),('session-proof.key',self.boot.session_key),('smtp-control.key',bytes([23])*32)):
             path=root/name;path.write_bytes(raw);path.chmod(0o600)
         return root
+    def test_shared_control_authority_loads_before_endpoint_without_creation_or_dispatch(self):
+        root=self.startup_root();before=tuple(sorted(path.name for path in root.iterdir()))
+        with patch('socket.socket',side_effect=AssertionError),patch('subprocess.Popen',side_effect=AssertionError),patch.object(PrivateControlEndpoint,'native',side_effect=AssertionError):
+            startup=ControlStartup._read(self.boot,root,os.getuid(),self.case.budget)
+            startup.recheck(self.case.budget)
+        self.assertEqual(startup.authority,ControlAuthority(bytes([23])*32,self.boot.accounts))
+        self.assertEqual(tuple(sorted(path.name for path in root.iterdir())),before)
+        self.assertFalse((root/'control.sock').exists());self.assertEqual(self.case.sql.sql_updates,0)
+        binding=GuardedSmtpBinding._read(self.boot,root,os.getuid(),self.case.endpoint,self.case.budget)
+        self.assertEqual(binding.authority,startup.authority);self.assertEqual(binding._custody,startup._custody)
+    def test_shared_native_loader_refuses_foreign_platform_before_private_reads(self):
+        import smtp_control_startup as module
+        with patch.object(module.os,'geteuid',return_value=0),patch.object(module.sys,'platform','linux'),patch.object(module,'_directory',side_effect=AssertionError):
+            with self.assertRaises(Refused):ControlStartup.native(self.boot,self.case.budget)
     def test_private_startup_loader_binds_exact_bootstrap_key_accounts_endpoint_and_custody(self):
         root=self.startup_root()
         with patch('subprocess.Popen',side_effect=AssertionError):
@@ -134,7 +150,7 @@ class Startup(unittest.TestCase):
                     with self.assertRaises(Refused):GuardedSmtpBinding._read(boot,root,os.getuid(),endpoint,self.case.budget)
         self.assertEqual(self.case.sql.sql_updates,0)
     def test_private_startup_replacement_same_key_bytes_and_read_race_refuse(self):
-        import smtp_guarded_builder as module
+        import smtp_control_startup as module
         root=self.startup_root();key=root/'smtp-control.key'
         binding=GuardedSmtpBinding._read(self.boot,root,os.getuid(),self.case.endpoint,self.case.budget)
         replacement=root/'replacement';replacement.write_bytes(key.read_bytes());replacement.chmod(0o600);replacement.replace(key)

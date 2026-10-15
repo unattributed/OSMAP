@@ -37,6 +37,9 @@ class SqlRoleTests(unittest.TestCase):
     finally:setattr(self.material,field,old)
  def test_fixed_exact13_ELF_hints_inventory_and_minimum_rows(self):
   raw=(R/'fixtures/hash-installed-inventory13.json').read_bytes();d=json.loads(raw);self.assertEqual(hashlib.sha256(raw).hexdigest(),pins.INVENTORY_SHA256);nodes={n['path']:n for n in d['public_nodes']};needed={A.SQL_PROGRAM,'/usr/libexec/ld.so'}
+  refreshed=(R/'fixtures/loader-hints-observation-20261015.json').read_bytes();self.assertEqual(hashlib.sha256(refreshed).hexdigest(),'ff848accd71d67770782962026b4fbe09f2124f97f5a5e405a5de819880ebdbc')
+  hints=json.loads(refreshed);self.assertEqual(hints['source_observation_sha256'],'b5e427934a8094d83b1f18384e59e92edb1ba77ae6941c58d8a4944b71f68e40');self.assertEqual(hints['previous'],nodes['/var/run/ld.so.hints'])
+  self.assertEqual(hints['current']['path'],'/var/run/ld.so.hints');self.assertEqual(hints['current']['ancestry'],hints['previous']['ancestry']);nodes['/var/run/ld.so.hints']=hints['current']
   while True:
    old=set(needed)
    for edge in d['dependency_edges']:

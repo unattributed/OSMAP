@@ -578,3 +578,14 @@ controls plus one successor control pass; local DOM projection and three changed
 script-guard negatives remain source evidence only. Native/installed authoritative
 password change and full WSTG/release acceptance remain OPEN. Primary transport
 attempt1 FAIL is retained without claiming root dispatch or cleanup.
+
+S04-02 shared control-startup source dba2e057/audit7ea7ad43 preserves existing
+private bootstrap/account/purpose-key/replacement/race checks while removing the
+loader's prerequisite live endpoint. Five focused local methods PASS5c7cbf95;
+the mutation binding separately rechecks its endpoint. Fixed two loader-cache
+pin rows match readonly29-leaf observationb5e42793/auditb2a1172a, other28 unchanged.
+No custody/permission/graph/promise/deadline waiver or native activation follows.
+Actual fresh retained cleanup PASS6ab7 is separate from primary3 authentication
+FAILc692 and SQL metadata FAIL696f9bab. Their original failures, uncertainty and
+retained root/namespaces remain recorded. No full workflow, installed browser,
+credential-backed WSTG or release acceptance is inferred.

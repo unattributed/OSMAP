@@ -89,3 +89,20 @@ The fixed visibility-only script has a page-specific exact hash CSP and no
 network/storage permission. Server128-scalar/512UTF8 policy is authoritative;
 HTML new/confirmation limits256 UTF-16 units so astral Unicode values fit.
 Password history remains Unknown until an authoritative event supplies it.
+
+## Shared SMTP control authority (source-only)
+
+`smtp_control_startup.py` loads the existing fixed private bootstrap and distinct
+control-purpose key without requiring a live control socket. Broker startup can
+therefore obtain the same immutable authority before creating its endpoint;
+guarded mutation independently validates that endpoint and rechecks both file
+custody and accounts/keys. The loader creates no directory, key, socket or record.
+Native broker, peer/CPID/TCP inspector and full workflow qualification remain
+required; all native activation flags stay closed. Include this module in every
+matching source/deployment manifest that imports the guarded builder.
+
+The fixed public SQL/hash graph records now pin the October15 measured loader
+cache. Only that leaf's content, size and timestamps changed in the read-only
+comparison; all28 other public objects and ancestry matched. This refresh keeps
+the same paths, permissions and custody checks, and does not explain the cache's
+change origin or qualify the earlier failed SQL/primary command outcomes.

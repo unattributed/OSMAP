@@ -9895,6 +9895,7 @@ discriminator alongside the same binding production repair; no broader QA scope.
     ],
     "developers": [
       "/root/bin_preparation_engineer",
+      "/root/subtree_delivery_qa",
       "/root"
     ],
     "qa": [
@@ -9928,10 +9929,19 @@ discriminator alongside the same binding production repair; no broader QA scope.
     "maint/account-runtime/test_primary_command_isolation.py",
     "maint/account-runtime/account_primary_identity.py",
     "maint/account-runtime/account_primary_graph.py",
+    "maint/account-runtime/account_hash_graph_pins.py",
+    "maint/account-runtime/account_sql_graph_pins.py",
+    "maint/account-runtime/test_hash_graph.py",
+    "maint/account-runtime/test_sql_role_producer.py",
+    "maint/account-runtime/fixtures/loader-hints-observation-20261015.json",
     "maint/account-runtime/test_primary_identity.py",
     "maint/account-runtime/test_primary_kernel_integration.py",
     "maint/account-runtime/test_role_bound_mint.py",
     "maint/account-runtime/smtp_guarded_builder.py",
+    "maint/account-runtime/smtp_control_startup.py",
+    "maint/account-runtime/smtp_native_peer.py",
+    "maint/account-runtime/test_smtp_native_peer.py",
+    "maint/account-runtime/smtp_auth_lifecycle.py",
     "maint/account-runtime/smtp_mutation_containment.py",
     "maint/account-runtime/account_admission_worker.py",
     "maint/account-runtime/PERSISTENT_MUTATION_SERVICE.md",
@@ -10094,7 +10104,7 @@ discriminator alongside the same binding production repair; no broader QA scope.
     "status": "PENDING",
     "reference": "Only minimal well-defined own-password usability after all agent-owned development/matching deployed QA/independent audit PASS. No operator password is changed by agent qualification; use controlled disposable Alice and preserve Bob/operator state. NOT RUN."
   },
-  "next_action": "Normally sign/sync the reviewed browser password route/Runtime/form source, complete fresh exact retained-state cleanup and the narrow primary fixture repairs, then execute one new independently reviewed native action and finish actual SQL/material/broker/containment authority for the installed controlled authoritative workflow. Runtime bd7a9e3 and primary391d718 are signed/synchronized; transport1 and fixture2 FAILs remain retained, authentication unqualified. Preserve matching source and independent QA scope; no flag activation shortcut or operator password mutation. S08-02 is accepted; separate S09/provider human results do not halt this work."
+  "next_action": "Browser a22fee6, Runtime bd7a9e3 and primary391d718 are signed/synchronized; standard Toronto checkout matches a22. Fresh retained-state cleanup PASS with independent scope6ab7. Primary3 fails accepted authentication with exact underlying cause UNKNOWN; its fixture cleanup PASS, only root code stage retained. Complete closed primary failure instrumentation and one changed reviewed qualification, current-source restricted SQL qualification, and actual source-owned shared control broker/material/containment authority before the installed controlled authoritative workflow. Preserve all earlier failures and original budgets; no flag activation shortcut or operator password mutation. S08-02 is accepted; separate S09/provider human results do not halt this work."
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->
@@ -10339,3 +10349,83 @@ current leases/process absence/public records and use only native userdel/groupd
 transactions preserving current unrelated rows. No old lease fabrication, snapshot
 restoration, historical PID signals or unchanged native retry. Actual cleanup and
 new primary authentication remain pending; keep both failures and prefix proofs.
+
+## 2026-10-15 — browser source synchronized; fresh cleanup and primary3 outcomes
+
+Browser source `a22fee6f97ca9c63040397889a2da3a505c31f10` is normally signed,
+verified and synchronized. Both normal gates pass1732 Rust/0fail/44 explicit native
+ignores and537 account Python cases. Fresh origin equality/clean0/0/all three
+branch heads and clean source-only standard Toronto FF391 to a22 are established.
+Proof: password-browser-integration-20261015/successor1/canonical-integration.
+Installed pair324b remains unchanged; no password form or service activation.
+
+Fresh retained cleanup sourceb381 and whole custodyfa9a/a138/65b3 independently
+pass reviewf0ff/f64f. One actual execution PASS, SSH0/2.210s, NEW25s custodian
+0.861s: exact old scratch, old stage and fixed private identity removed; fresh
+unrelated public rows/defaults/ordinary socket preserved, private endpoint absent,
+all owned children reaped, driver group and new root stage gone, source parity.
+No historical PID signal, expired qualification revival or operator credential/
+service action. Actual scope6ab7 qualifies cleanup only. Records live under
+primary-runtime-composition-20261015/native-qualification-attempt1/
+retained-cleanup-new-authority1/successor2/execution-custody.
+
+After that HOLD is satisfied, one reviewed primary3 runs and FAILS at accepted
+authentication: three prefix controls, outer actual_primary_auth_outcome refusal,
+no returned native command/proof/parser result. ProductRefused collapses several
+boundaries; the underlying cause and actual AUTH count remain UNKNOWN. Zero
+returned-command counter does not prove zero attempted child or authentication.
+Actual fixture cleanup passes: daemon/socket/scratch/private identity removed,
+all direct children reaped, current public records restored and ordinary socket
+preserved. Only the success-only root code stage is retained; root after-parity
+is not established. Local source after-parity PASS. Independent scopec692 and
+result/log3a3b under native-qualification-successor2/execution-custody retain this
+failure. Next is closed stage/refusal instrumentation, without weakening guards
+or changing budgets; never retry unchanged or mark authentication qualified.
+
+Current-source SQL snapshotbd97 keeps original32 inputs/33 staged files and
+corrected first-original-unveil trace seam. Five production pins refresh to a22;
+primary-only imports are unreachable in its SQL/hash lane. Native SQL remains
+unqualified pending whole-custody review and one changed disposable execution.
+Independent source inspection also confirms native shared control-broker startup
+is missing: explicit fixture constructors cannot supply its trusted peer/CPID/TCP
+inspector or native listener. Implement that real dependency in this same slice,
+without caller callbacks or Boolean qualification shortcuts. All broad S04-02
+stages remain PENDING; no new human test or operator password change.
+
+Actual current-source restricted SQL execution FAILs after8/27 prefix controls
+at S115 (SQL graph measured custody unavailable), before zero guarded spawn
+attempts/receipts; trace is absent and the original ioctl remains UNKNOWN.
+Twenty owned children are reaped, driver group gone; both exclusive namespaces
+and root stage remain retained by the success-only custody policy. Scope696f9bab
+and resultb733ea52 live under native-sql-startup-repair-20261015/
+current-source-a22-attempt1/native-attempt1. No unchanged retry or tty expansion.
+
+Necessary read-only public comparison then measures29 exact leaves: only
+/var/run/ld.so.hints differs in size/mtime/ctime/hash; all28 other contents/full
+metadata/parents match. Independent141b qualifies that observation and the SQL
+metadata blocker, not the original ioctl or primary3 cause. Change origin UNKNOWN.
+The first observer fails its guessed32-byte pidfile cap; changed observer retains
+that refusal and emits the public comparison. Separate bounded process/socket
+observation confirms root master/birth/group and right-justified33-byte pidfile,
+_postfix507/507 and zero-protocol private/auth kernel bindpeer0/0 versus fs507/507.
+It does not qualify a future private broker, accepting PID or complete ingress.
+
+Admit two exact hints-pin rows from readiness23728b1e/auditb2a1172a and three
+startup-loader paths from readiness8881a6de/audit7ea7ad43. Existing bootstrap,
+three purpose keys/accounts/private file replacement/race checks remain intact;
+endpoint-independent loading closes the broker's circular startup dependency,
+while guarded mutation separately checks its endpoint. Five focused local
+methods PASS, with no repeated child campaign. Two pins are literal-only AST
+updates matching observationb5e42793; no guard, membership, permission, promise
+or deadline change. All native flags remain closed. Native packages must include
+the new imported startup module and exact current pins before execution; earlier
+frozen snapshots remain historical, not implied current delivery evidence.
+
+Normal commit1 retains1732 Rust PASS/44 native ignores and539 account Python
+cases with two inventory-test failures: both still require every current source
+pin to match the historical inventory13 loader cache. Preserve inventory13 bytes.
+Admit one additive public loader-cache observation fixture and update only those
+two tests to bind its exact checksum/old node/current node while retaining all
+original transitive membership, ancestry, metadata, hash and permission checks.
+The two changed controls PASS/0fail in0.002s. No source-five change, scanner waiver
+or repeated focused campaign; independent review and normal commit2 follow.

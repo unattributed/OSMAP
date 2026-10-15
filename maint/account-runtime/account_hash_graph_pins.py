@@ -2,6 +2,8 @@
 Source constants only; never decode caller reports at runtime. This selects a
 hash qualification candidate, not a complete loader resolution attestation.
 """
+# Loader hints only refreshed from read-only authoritative observation20261015
+# SHA256 b5e427934a8094d83b1f18384e59e92edb1ba77ae6941c58d8a4944b71f68e40. Other inventory13 pins unchanged; change origin UNKNOWN.
 INVENTORY_SHA256='16e5526f6a175c33380fdd116def99212d99f0d12a3752aba09a39a881bb21b9'
 FILES=(('/usr/lib/libc.so.103.0',
   (1024, 51955, 0, 7, 33060, 1, 4062696, 1790865178039241635, 1790865178039241635),
@@ -138,8 +140,8 @@ FILES=(('/usr/lib/libc.so.103.0',
    ('/usr', 1024, 51840, 0, 0, 16877),
    ('/', 1024, 2, 0, 0, 16877))),
  ('/var/run/ld.so.hints',
-  (1024, 237369, 0, 0, 33060, 1, 17257, 1791266414135822800, 1791266414135822800),
-  'b1c6cdab2ab2f9af8be4f1aa65515368aa9e905b47d01a83eeef84f1046b6f34',
+  (1024, 237369, 0, 0, 33060, 1, 17719, 1791768825795821092, 1791768825795821092),
+  '46f1bde8cdb9bd9c6527b4b3031d9009bc0548f4c4bc10a83c2e4fcb0ad45405',
   (('/var/run', 1024, 233316, 0, 0, 16877), ('/var', 1024, 233281, 0, 0, 16877), ('/', 1024, 2, 0, 0, 16877))))
 MODULE_DIRECTORY='/usr/local/lib/dovecot/doveadm'
 MODULE_NAMES=('lib10_doveadm_acl_plugin.so', 'lib10_doveadm_quota_plugin.so', 'lib10_doveadm_sieve_plugin.so', 'lib20_doveadm_fts_plugin.so', 'libdoveadm_mail_crypt_plugin.so')

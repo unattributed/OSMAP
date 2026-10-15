@@ -1,0 +1,89 @@
+{
+  "version": 1,
+  "source_observation_sha256": "b5e427934a8094d83b1f18384e59e92edb1ba77ae6941c58d8a4944b71f68e40",
+  "scope": "Exact readonly public loader-cache refresh; origin unknown; historical inventory preserved. No native workflow qualification.",
+  "previous": {
+    "ancestry": [
+      [
+        "/var/run",
+        1024,
+        233316,
+        0,
+        0,
+        16877
+      ],
+      [
+        "/var",
+        1024,
+        233281,
+        0,
+        0,
+        16877
+      ],
+      [
+        "/",
+        1024,
+        2,
+        0,
+        0,
+        16877
+      ]
+    ],
+    "metadata": {
+      "bytes": 17257,
+      "ctime_ns": 1791266414135822800,
+      "device": 1024,
+      "gid": 0,
+      "inode": 237369,
+      "links": 1,
+      "mode": 33060,
+      "mtime_ns": 1791266414135822800,
+      "uid": 0
+    },
+    "path": "/var/run/ld.so.hints",
+    "public_shared_library": false,
+    "sha256": "b1c6cdab2ab2f9af8be4f1aa65515368aa9e905b47d01a83eeef84f1046b6f34"
+  },
+  "current": {
+    "ancestry": [
+      [
+        "/var/run",
+        1024,
+        233316,
+        0,
+        0,
+        16877
+      ],
+      [
+        "/var",
+        1024,
+        233281,
+        0,
+        0,
+        16877
+      ],
+      [
+        "/",
+        1024,
+        2,
+        0,
+        0,
+        16877
+      ]
+    ],
+    "metadata": {
+      "device": 1024,
+      "inode": 237369,
+      "uid": 0,
+      "gid": 0,
+      "mode": 33060,
+      "links": 1,
+      "bytes": 17719,
+      "mtime_ns": 1791768825795821092,
+      "ctime_ns": 1791768825795821092
+    },
+    "path": "/var/run/ld.so.hints",
+    "public_shared_library": false,
+    "sha256": "46f1bde8cdb9bd9c6527b4b3031d9009bc0548f4c4bc10a83c2e4fcb0ad45405"
+  }
+}

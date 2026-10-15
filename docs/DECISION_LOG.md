@@ -10104,3 +10104,37 @@ other guards and budgets. Root/daemon/socket disposition is measured, but retain
 scratch/identity/stage require a NEW finite custodian with fresh exact authority,
 not revived expired fixture ownership or historical PID signals. Preserve current
 unrelated public records through native account transactions, never snapshot restore.
+
+## 2026-10-15 — cleanup success is not authentication success
+
+Independent fresh-cleanup scope6ab7 establishes exact retained-state removal and
+current public-record preservation only. Primary3 subsequently fails its accepted
+authentication assertion; underlying material/seal/preexec/transport/parser cause
+remains unknown. Do not infer absence of attempted children/AUTH from a counter
+incremented only after a successful returned handle. Keep actual fixture cleanup
+separate from the retained success-only root code stage and failed authentication.
+Use closed phase/refusal metadata around the failing seam before one changed
+action, preserving all guards, assertions and original deadlines.
+
+Current source inspection identifies a separate real blocker to complete password
+delivery: native shared SMTP broker/control startup has no trusted peer/CPID/TCP
+inspector producer. Explicit synthetic fixture constructors are insufficient.
+Implement source-owned exact authority and one shared epoch/lifecycle composition;
+never replace this dependency with a caller callback, ready flag or guessed peer.
+Browser a22 source sync and ordinary helper health do not activate this workflow.
+
+The SQL S115 refusal is now tied to one measured current public-cache mismatch:
+ld.so.hints size/timestamps/hash changed; all28 other fixed public leaves and
+ancestry match. Refresh only the two corresponding source pin rows after exact
+independent review; never relax custody checks or infer the cache-change origin,
+old ioctl cause or primary3 cause. Include the new shared control startup loader
+in matching native packages rather than silently reusing historical dependency
+manifests. Its endpoint-independent private authority removes a real circular
+broker startup requirement without constructing or enabling a native broker.
+
+The normal gate correctly exposes two test assumptions requiring the current
+loader-cache pin to equal historical inventory13. Preserve that inventory and
+the failed gate. Add only the exact public observed cache node with its checksum;
+the two tests independently retain old-node provenance and current-node equality,
+all original graph/ancestry/permission assertions. Do not overwrite old evidence,
+skip these tests or loosen production admission to make the gate pass.
