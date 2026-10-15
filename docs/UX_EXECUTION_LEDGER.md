@@ -10125,7 +10125,7 @@ discriminator alongside the same binding production repair; no broader QA scope.
     "status": "PENDING",
     "reference": "Only minimal well-defined own-password usability after all agent-owned development/matching deployed QA/independent audit PASS. No operator password is changed by agent qualification; use controlled disposable Alice and preserve Bob/operator state. NOT RUN."
   },
-  "next_action": "Signed4f20 source synchronized and standard Toronto clean source-only matches; installed324b unchanged. Reuse actual original full parent5 and composed worker18 native component PASS with explicit projections, no unchanged reruns or flag promotion. Resolve initiating SMTP control capture timeout/quarantine writer order with every guard and original client1s/close3s budget intact, then complete actual guarded native factory, real stored Rust issuer/session/epoch and SMTP/IMAP/cache containment in one controlled Alice password transaction with Bob/mail preservation. Native dependency activation and operator password changes remain prohibited until matching complete qualification. S08-02 remains accepted."
+  "next_action": "Signedd945 source synchronized and standard Toronto clean source-only matches; installed324b unchanged. Reuse actual original full parent5 and composed worker18 native component PASS with explicit projections, no unchanged reruns or flag promotion. Reuse actual19 native peer positives while preserving its pending-control failure; qualify the actual current-factory executors with exclusive fixture custody and explicit fixed private-command projection, every product guard and original budgets intact, then complete actual guarded native factory, real stored Rust issuer/session/epoch and SMTP/IMAP/cache containment in one controlled Alice password transaction with Bob/mail preservation. Native dependency activation and operator password changes remain prohibited until matching complete qualification. S08-02 remains accepted."
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->
@@ -11089,3 +11089,113 @@ projections remain explicit. Full native factory, authenticated Rust ingress,
 managed broker and installed password transaction remain OPEN; no flags change.
 Worker17's strictstderr failure and unknown discarded content remain historical.
 Do not rerun either passed parent5 or worker18 merely for assurance.
+
+
+## 2026-10-15 — synchronized SMTP authority discriminator and next actual composition
+
+Signed `d945cd94a4c7a5f9941195d2838769cd0d34d3aa` admits the exact six-path
+source freeze44480c7b/independent6de052e7. Both normal commit/push gates pass
+1744 Rust/zero failed/44 explicit native ignores and580 account Python tests.
+Good Shopkeeper signature, fresh origin equality/clean0/0 and all three matching
+branch heads pass. Standard authoritative Toronto source checkout cleanly
+fast-forwards4f20→d945 in4.322s; no binary/service/config/form activation.
+Proof control-authority-code-integration-20261015/signed-sync-proof.json SHA256
+`9e838df8b1cc61d6a39fd8eb0ffa3a7b6cb87d04286ba007e9936d39a2b630a3`.
+Installed324b remains unchanged and S04-02 remains OPEN.
+
+The next fixture-only original-event observation is held before execution:
+root finds its cross-thread len/append collector can exceed the promised32
+slots. Prior whole clearance2154526b is superseded for this exact bound. One
+forced-interleaving control reproduces old33/false and corrected32/true using
+fixed slots and reservation ordering; explicit empty/pending slots remain
+visible. No clocks, I/O, locks, product guards, budgets or historical causes
+change. Fixed-cap successor source769afd9b is under whole review; no old
+blocked observer is executed.
+
+Current full-workflow source assessment confirms NativeDependencies already
+composes the real material, primary verifier, required mail containment and
+guarded SMTP binding. No duplicate product builder is added. The old composed
+fixture's substituted SQL/primary witnesses cannot qualify it. The next real
+composition uses one disposable restricted SQL backend with Dovecot SQL passdb,
+so changed-password verification reads that same authoritative row, plus actual
+production executor bodies and Rust stored issuer. Private command/config paths
+and any remaining admission projections must be explicit. Production original
+whole-operation ceiling60s starts at initial receipt; existing phase caps stay
+unchanged. Original issuer3's3s proof is retained, not retroactively widened.
+
+
+## 2026-10-15 — changed event observation stops before the target control phase
+
+Fixed-cap observer whole audit23d99707 permits one changed actual native18.
+Result `1ab8c423babc15220745f0facbae16153e5f56e91db2f6b4bceecb63db6b0068`
+under smtp-control-event-order-20261015/fixed-cap-successor1/native-attempt1
+FAILS earlier at alice-connect: SMTP454 versus235. Bob's preceding registered,
+verified and published AUTH passes; Alice registry_begin refuses at native
+inspector305/paired executor84, the unchanged time-before-work check during
+PS-after scheduling under the original0.5s phase. Which individual command
+consumed that interval remains unmeasured; no production budget is widened.
+
+Pending publication/control server/capture never execute; the32-slot observer
+contains only fixture-close followed by31 empty slots. It cannot diagnose
+actual17's initiating control/quarantine cause. This run confirms both daemon
+groups, broker runtime and scratch gone, broker cleanup true/thread stopped,
+standard metadata preserved and no cleanup reasons; rootstage1a7fb7898ed63109
+is retained. No mail/provider action. Preserve the prior retained runtime
+failures separately; this cleanup does not reconcile them.
+
+Reassess the measured native peer scheduling boundary before another changed
+qualification. Keep all seven process/descriptor observations, birth/PCB/UID/
+file fences and original0.5s bound. Do not retry unchanged or import fixture
+metadata overhead into the current production executor composition. Full
+factory/password/S04-02 and native activation remain OPEN.
+
+
+## 2026-10-15 — reviewed cross-process interval-preserving metadata repair
+
+Two-path native tail scheduler readiness34da2d3e/product31a921f9/test1b90f1b2
+passes independent source audit4640b22d. It retains both PS-before validations,
+all seven exact observations and existing process/descriptor/PCB/final custody
+checks. Only child PS-after may overlap master FSTAT; master PS-after waits for
+both FSTAT validations and final child FSTAT waits for both PS-after rows. No
+fully independent chains, wider deadline, cache or broader PID enumeration.
+At most two actual owned child handles, original0.5s/0.01s cleanup reserve,
+private pipes/caps and retained uncertainty quarantine remain unchanged.
+
+Retained real local discriminator reproduces old global-barrier refusal and
+new success with uneven jobs under the same cap, checks the dependency edges,
+second-tail-spawn disposition and changed final PCB refusal. Three existing
+negative selectors pass; local test-development errors remain failures of those
+test attempts, not attributed product bugs. No repeated native primitive suite.
+Matching42 native proposal276db179 changes only this product and two existing
+static diagnostic maps; operational fixture/case/observer and40 inputs match
+actual18. Whole execution review and one changed native action remain pending.
+
+
+## 2026-10-15 — native scheduler positives; qualify the actual factory executor next
+
+Actual tail-DAG19 result
+`87305853e703dffa9e824a4c21d3041c1325bda31ff8f8d9c649ea2860fc439c`
+under smtp-native-tail-scheduling-20261015/native-candidate1/native-attempt1
+reaches all three registered/verified native AUTH attempts, two publications,
+exact idle list/kick/closure, Bob continuity and pending barrier/list. Overall
+FAIL persists at client capture TimeoutError; held third AUTH deadline expires.
+For this run the bounded reservation events place broker-cleanup quarantine
+enter/return after the observed client exception and fixture close. Quarantine
+is downstream of that observed failure, not its demonstrated initiating cause;
+no retrospective diagnosis of17 or individual command timing is claimed.
+
+Independent actual scopeca1b2ec5 confirms both daemon groups gone, Dovecot owned
+stop, broker thread stopped and preserved standard metadata. Broker cleanup is
+unconfirmed; runtime/scratch and rootstage06ba82300c7d6e7e remain retained, with
+explicit cleanup reasons. Next queue action must be different, reviewed and
+freshly owned; no historical PID signals or retained-state removal.
+
+The audit recommends the actual current-factory executors next. Source confirms
+the substitute fixture metadata callback inventories the daemon and hashes two
+configuration files both before and after each command. Production
+RoutingMetadataExecutor/ContainmentExecutor has different current namespace/
+command supervision. Preserve every product check and original budget, explicit
+fixed private-command projection and exclusive fixture custody around the real
+workflow. Do not introduce more product scheduling/protocol changes to offset
+unrepresentative substitute-executor work. Full factory/password/S04-02 remain
+OPEN; the existing reviewed scheduler component is admitted with these limits.

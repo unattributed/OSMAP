@@ -16,11 +16,11 @@ statement as provenance rather than current release posture.
 
 ### Active password delivery, 2026-10-15
 
-Signed checkpoint `4f20b6e5b21184d4debd7bf570b86d244047449e` is synchronized
+Signed checkpoint `d945cd94a4c7a5f9941195d2838769cd0d34d3aa` is synchronized
 with GitHub and the clean authoritative standard source checkout. Both normal
-commit/push gates pass1744 Rust/zero failed/44 explicit native ignores and579
+commit/push gates pass1744 Rust/zero failed/44 explicit native ignores and580
 account Python tests. Signature, fresh0/0 and all three branch heads match.
-Proof is sealed-admission-broker-integration-20261015/signed-sync-proof.json.
+Proof is control-authority-code-integration-20261015/signed-sync-proof.json.
 Installed pair324b is unchanged; no password form, new service or native
 qualification flag is activated.
 
@@ -59,9 +59,23 @@ are gone and standard metadata preserved; broker runtime/scratch remain
 unconfirmed. Preserve every guard and original client1s/close3s budget. The
 fixed managed broker entry is source-reviewed and synchronized, with actual
 managed lifecycle and complete factory still pending.
+Latest changed event observation stops earlier at Alice registry_begin: the
+native peer metadata phase expires during paired PS-after scheduling under its
+original0.5s cap. Bob publication passes; pending/control are not reached. This
+run cleans both daemon groups, broker runtime and scratch with standard state
+preserved. It does not diagnose or reconcile the earlier control failure.
 
-Next: reuse the accepted parent/worker components, resolve the initiating SMTP
-control failure, then qualify the actual factory, browser session/epoch and IMAP/SMTP/cache
+The changed narrow scheduler now passes all three native authentication
+registrations/verifications, two publications, idle closure and Bob continuity
+in actual19. Pending capture still times out. Its observed cleanup quarantine
+follows the client failure; initiating individual costs and older17 cause remain
+unknown. This run preserves standard state/stops daemon groups but retains
+unconfirmed broker runtime/scratch. Independent audit directs the next test to
+actual factory executors with explicit private paths, because the substitute
+metadata executor adds extra inventories/hashes per command.
+
+Next: reuse accepted components and qualify the actual factory executors,
+browser session/epoch and IMAP/SMTP/cache
 containment together in the installed controlled password workflow. No Duncan
 password action is required. Exact source/native/failed/retained-state evidence
 and next owners remain in UX_EXECUTION_LEDGER.md and DECISION_LOG.md. The dated

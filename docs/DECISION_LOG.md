@@ -10407,3 +10407,52 @@ not repeat them for general confidence or infer full native factory authority
 from projected material/profile/binder/epoch/envelope fixtures. Keep worker17's
 unknown historical stderr. Concentrate the next integration on original SMTP
 control writer/event ordering and one real guarded password transaction.
+
+
+## 2026-10-15 — qualify the actual factory without importing old fixture witnesses
+
+Reuse accepted parent5/worker18/SQL3 components; no unchanged reruns. Current
+NativeDependencies already composes material, primary and mail/SMTP authority.
+Use one controlled SQL-backed Dovecot fixture for the complete coordinator so
+postwrite authentication cannot read a stale passwd-file projection. Preserve
+real executor bodies, original receipt ceiling60s and existing phase caps;
+private paths and remaining projections stay explicit. No flags or installed
+form promotion follows an intermediate composition.
+
+Preserve the blocked event-observer collector race and superseded clearance;
+fixed32 reservation slots expose gaps without locks/clocks or flag-store
+linearization claims. Original control cause remains unknown until the changed
+observation executes and its original events reconcile.
+
+
+## 2026-10-15 — preserve cross-process authority while scheduling metadata
+
+Actual18 identifies exhaustion of the existing peer-inspection work allowance
+before a later PS-after spawn; individual command costs remain unmeasured.
+Fully independent master/child chains are rejected: the master's birth interval
+must span the child's first TCP capture, and the child's TCP sandwich must span
+the master's final process observation. The reviewed minimal scheduler permits
+only child PS-after to overlap unfinished master FSTAT. Master PS-after waits
+for both first FSTAT validations; final child FSTAT waits for both PS-after
+validations. Both initial process rows and final custody remain mandatory.
+
+Exact source34da2d3e/independent4640b22d preserves all seven singleton queries,
+the original0.5s absolute bound/0.01s cleanup reserve, at most two owned children,
+one selector, output caps and uncertain-cleanup quarantine. Real local uneven
+jobs distinguish old refusal/new success; second-spawn cleanup and final PCB
+mismatch refusal remain essential evidence. Actual native compatibility/timing
+is pending; no unique historical cause, safety-latch reset or full workflow
+acceptance is inferred.
+
+
+## 2026-10-15 — stop compensating for a substitute executor
+
+Actual19 passes the changed peer path and all three native registrations/
+verifications, but pending capture times out. Observed cleanup quarantine follows
+that client failure; no unique command timing or historical17 diagnosis follows.
+Independentca1b2ec5 directs the next qualification to actual factory executor
+bodies with explicit private paths and exclusive controlled custody. The old
+substitute inventories/hashes per command are extra work, not product guards.
+Do not change production deadlines/protocol or add another diagnostic framework
+to accommodate that substituted timing. Preserve old results/retained namespaces
+and qualify the real composed workflow.

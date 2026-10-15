@@ -43,6 +43,8 @@ class NativePeerTests(unittest.TestCase):
             side_effect=lambda executor,program,arguments,deadline:tuple(
                 self.execute(executor,program,args,b'',min(.5,deadline-time.monotonic()),native.LIMIT)for args in arguments))
         pair.start();self.addCleanup(pair.stop)
+        tail=patch.object(native._MetadataExecutor,'inspect_tail',autospec=True,side_effect=self.execute_tail)
+        tail.start();self.addCleanup(tail.stop)
         self.inspector=native.NativeSmtpPeerInspector._read(self.namespace,self.topology,self.budget)
         self.fixture.registry._authority=OwnedSmtpPeerAuthority((os.getuid(),os.getgid()),(os.getuid(),os.getgid()),2525,self.inspector)
         self.ps_calls=0;self.calls=[]
@@ -68,6 +70,20 @@ class NativePeerTests(unittest.TestCase):
                 if self.tcp_hook and self.tcp_calls%2==0:self.tcp_hook()
             data=self.fstat(int(args[-1]))
         return 0,data,b''
+
+    def execute_tail(self,executor,inspector,rows,pids,deadline):
+        # Existing projected-identity controls retain all old validation paths;
+        # the separate real-child scheduler control exercises the new transport.
+        programs=dict(inspector._files_custody);master,child=pids
+        def query(program,args):
+            result=self.execute(executor,program,args,b'',min(.5,deadline-time.monotonic()),native.LIMIT)
+            return inspector._checked(result,self.budget,deadline)
+        inspector._fstat(query(native.FSTAT,('-n','-p',str(master))),master,'master',programs[str(native.MASTER)][0])
+        connection=inspector._fstat(query(native.FSTAT,('-n','-p',str(child))),child,'smtpd',programs[str(native.SMTPD)][0],inspector._namespace._backend_port)
+        for pid in pids:
+            native._require(inspector._rows(query(native.PS,('-p',str(pid),'-o',native.PS_FIELDS)),(pid,))[pid]==rows[pid])
+        native._require(inspector._fstat(query(native.FSTAT,('-n','-p',str(child))),child,'smtpd',programs[str(native.SMTPD)][0],inspector._namespace._backend_port)==connection)
+        return connection
 
     def test_openbsd_singular_pid_selectors_preserve_original_snapshot_authority(self):
         deadline=time.monotonic()+.5
@@ -159,6 +175,7 @@ class PerChannelOwnershipTests(unittest.TestCase):
     setUp=NativePeerTests.setUp
     fstat=NativePeerTests.fstat
     execute=NativePeerTests.execute
+    execute_tail=NativePeerTests.execute_tail
     def fresh(self):
         budget=OperationBudget(int(time.time())+60)
         owned=patch.object(budget,'inherited_group',return_value=True);owned.start();self.addCleanup(owned.stop)
@@ -203,6 +220,107 @@ class PerChannelOwnershipTests(unittest.TestCase):
 
 
 class MetadataPairTests(unittest.TestCase):
+    def test_tail_preserves_cross_pid_intervals_with_uneven_jobs_and_owned_fault_cleanup(self):
+        # Actual local child supervision; only fixed public CLI data/programs
+        # are projected. This is not installed OpenBSD latency qualification.
+        from types import SimpleNamespace
+        class PreviousInspector(native.NativeSmtpPeerInspector):
+            # Exact prior phase barriers, retained inline so the repository test
+            # never depends on an external evidence directory or Git checkout.
+            def inspect(self,pid,deadline,budget):
+                native._require(type(pid)is int and 1<pid<=2**31-1 and type(budget)is OperationBudget
+                         and budget is self._budget and type(deadline)in (int,float)and time.monotonic()<deadline
+                         and deadline-time.monotonic()<=0.5)
+                self._current(budget,deadline)
+                pids=(self._master[0],pid);executor=native._MetadataExecutor(budget,pids)
+                rows=self._process_rows(executor,pids,budget,deadline);child=rows[pid]
+                native._require(rows[self._master[0]]==self._master and child[1:5]==(self._master[0],self._master[0],*self._postfix)and child[-1]=='smtpd')
+                programs=dict(self._files_custody)
+                results=executor.pair(native.FSTAT,tuple(('-n','-p',str(value))for value in pids),deadline)
+                native._require(type(results)is tuple and len(results)==2)
+                master_raw,child_raw=tuple(self._checked(result,budget,deadline)for result in results)
+                self._fstat(master_raw,self._master[0],'master',programs[str(native.MASTER)][0])
+                connection=self._fstat(child_raw,pid,'smtpd',programs[str(native.SMTPD)][0],self._namespace._backend_port)
+                native._require(self._process_rows(executor,pids,budget,deadline)==rows)
+                native._require(self._fstat(self._query(executor,native.FSTAT,('-n','-p',str(pid)),budget,deadline),pid,'smtpd',programs[str(native.SMTPD)][0],self._namespace._backend_port)==connection)
+                self._current(budget,deadline)
+                return native.NativeSmtpIdentity(child,self._master,*connection)
+        previous=SimpleNamespace(NativeSmtpPeerInspector=PreviousInspector,PS=native.PS,FSTAT=native.FSTAT,
+            MASTER=native.MASTER,SMTPD=native.SMTPD,PS_FIELDS=native.PS_FIELDS)
+        real=subprocess.Popen
+        def exercise(module,*,uneven=False,fail_second_tail=False,changed_final=False):
+            budget=OperationBudget(int(time.time())+30)
+            inspector=object.__new__(module.NativeSmtpPeerInspector)
+            master=b'777 1 777 0 0 Thu Oct 1 14:33:31 2026 master\n'
+            child=b'123 777 777 507 507 Thu Oct 15 14:19:43 2026 smtpd\n'
+            records=module.NativeSmtpPeerInspector._rows(master+child,(777,123))
+            inspector._master=records[777];inspector._postfix=(507,507);inspector._budget=budget
+            inspector._namespace=SimpleNamespace(_backend_port=2525)
+            inspector._files_custody=tuple((str(path),((os.makedev(4,3),ino,0,7,0o100755,1,100,1,1),()))
+                for path,ino in ((module.MASTER,259311),(module.SMTPD,259323)))
+            events=[];children=[];calls={};validated={};custody=[]
+            inspector._current=lambda b,d:custody.append((b,d))
+            original_rows=inspector._rows;original_fstat=inspector._fstat
+            def rows(raw,pids):
+                result=original_rows(raw,pids)
+                for pid in pids:
+                    key=('ps',pid);validated[key]=validated.get(key,0)+1
+                    events.append(('validated',('master'if pid==777 else'child')+('_before'if validated[key]==1 else'_after')))
+                return result
+            def fstat(raw,pid,*args):
+                result=original_fstat(raw,pid,*args);key=('fstat',pid);validated[key]=validated.get(key,0)+1
+                events.append(('validated','master_fstat'if pid==777 else'child_fstat'if validated[key]==1 else'child_final'))
+                return result
+            inspector._rows=rows;inspector._fstat=fstat
+            def launch(command,**options):
+                program=command[0];pid=int(command[2]if program==module.PS else command[-1])
+                self.assertIn(pid,(777,123));self.assertIs(options['shell'],False)
+                self.assertTrue(options['close_fds']);self.assertIs(options['start_new_session'],False)
+                self.assertEqual(options['env'],{'PATH':'/usr/bin:/usr/local/bin','LC_ALL':'C'})
+                key=(program,pid);calls[key]=calls.get(key,0)+1
+                name=('master'if pid==777 else'child')+('_before'if calls[key]==1 else'_after')if program==module.PS else'master_fstat'if pid==777 else'child_fstat'if calls[key]==1 else'child_final'
+                events.append(('launch',name))
+                self.assertLessEqual(sum(c.poll()is None for c in children),1)
+                if fail_second_tail and name=='child_fstat':raise OSError('fixed local second-tail-spawn')
+                if program==module.PS:
+                    self.assertEqual(command,(module.PS,'-p',str(pid),'-o',module.PS_FIELDS));raw=master if pid==777 else child
+                else:
+                    self.assertEqual(command,(module.FSTAT,'-n','-p',str(pid)))
+                    raw=HEADER+(b'root master 777 text 4,3 259311 100755 r 100\n'if pid==777 else
+                        b'_postfix smtpd 123 text 4,3 259323 100755 r 100\n_postfix smtpd 123 14* internet stream tcp 0xffff800000d2b900 127.0.0.1:2525 <-- 127.0.0.1:3130\n')
+                    if changed_final and name=='child_final':raw=raw.replace(b'0xffff800000d2b900',b'0xffff800000d2b901')
+                delay=.24 if uneven and name in ('master_fstat','child_after')else .001
+                if fail_second_tail and name=='master_fstat':delay=.24
+                process=real((sys.executable,'-I','-c','import sys,time;time.sleep(float(sys.argv[1]));sys.stdout.write(sys.argv[2])',str(delay),raw.decode('ascii')),**options)
+                children.append(process);return process
+            error=None;result=None;deadline=time.monotonic()+.5
+            with patch.object(budget,'inherited_group',return_value=True),patch('subprocess.Popen',side_effect=launch),patch.object(module.NativeSmtpPeerInspector,'_rows',staticmethod(rows)):
+                try:result=inspector.inspect(123,deadline,budget)
+                except (Refused,TimeoutError,OSError)as caught:error=caught
+            self.assertTrue(all(c.returncode is not None and c.stdout.closed and c.stderr.closed for c in children))
+            self.assertTrue(all(b is budget and d==deadline for b,d in custody))
+            return error,result,events,children,custody
+        old_error,_,_,_,_=exercise(previous,uneven=True)
+        self.assertIsNotNone(old_error)  # Old global barriers exceed same .5s.
+        error,result,events,children,custody=exercise(native,uneven=True)
+        self.assertIsNone(error);self.assertEqual(result.projection(),(123,'127.0.0.1',2525,3130))
+        self.assertEqual(len(children),7);self.assertEqual(len(custody),2)
+        positions={event:i for i,event in enumerate(events)}
+        for name in ('master_fstat','child_fstat'):
+            for before in ('master_before','child_before'):
+                self.assertLess(positions[('validated',before)],positions[('launch',name)])
+        self.assertLess(positions[('validated','child_fstat')],positions[('launch','child_after')])
+        self.assertLess(positions[('launch','child_after')],positions[('validated','master_fstat')])
+        for first in ('master_fstat','child_fstat'):
+            self.assertLess(positions[('validated',first)],positions[('launch','master_after')])
+        for after in ('master_after','child_after'):
+            self.assertLess(positions[('validated',after)],positions[('launch','child_final')])
+        for mode in ('second_spawn','final_mismatch'):
+            with self.subTest(mode=mode):
+                error,_,events,children,custody=exercise(native,fail_second_tail=mode=='second_spawn',changed_final=mode=='final_mismatch')
+                self.assertIsNotNone(error);self.assertEqual(len(custody),1)
+                self.assertEqual(len(children),3 if mode=='second_spawn'else 7)
+
     def test_original_deadline_pair_preserves_exact_rows_and_reaps_both_children(self):
         # Same sub-.5s cap: two .18s public jobs cannot fit serially. This uses
         # actual owned local children but projects the fixed native command.

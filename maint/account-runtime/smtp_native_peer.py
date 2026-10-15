@@ -131,6 +131,96 @@ class _MetadataExecutor(ContainmentExecutor):
                 type(self)._quarantined=True
                 raise Refused('SMTP native metadata cleanup unconfirmed')from None
 
+    def inspect_tail(self,inspector,rows,pids,deadline):
+        # Both PS-before rows have already validated. Only child PS-after may
+        # overlap the unfinished master FSTAT. Master PS-after still follows
+        # BOTH first FSTAT validations, and final child FSTAT still follows
+        # BOTH PS-after validations. These cross-PID intervals are authority.
+        _require(type(inspector)is NativeSmtpPeerInspector and inspector._budget is self._budget
+                 and type(pids)is tuple and len(pids)==2 and pids[0]!=pids[1]
+                 and type(rows)is dict and set(rows)==set(pids)
+                 and rows[pids[0]]==inspector._master
+                 and type(deadline)in (int,float)and math.isfinite(deadline)
+                 and 0<deadline-time.monotonic()<=.5 and self._budget.inherited_group()
+                 and not self._retained and not self._quarantined)
+        master,child=pids;programs=dict(inspector._files_custody)
+        queries={'master_fstat':(FSTAT,('-n','-p',str(master))),
+                 'child_fstat':(FSTAT,('-n','-p',str(child))),
+                 'master_after':(PS,('-p',str(master),'-o',PS_FIELDS)),
+                 'child_after':(PS,('-p',str(child),'-o',PS_FIELDS)),
+                 'child_final':(FSTAT,('-n','-p',str(child)))}
+        reserve=.01;work=deadline-reserve;children=[];active={};launched=set();done=set()
+        selector=None;uncertain=False;connection=None
+        def launch(name):
+            program,args=queries[name]
+            _require(name not in launched and len(active)<2 and self._allows(program,args))
+            self._budget.remaining();_require(time.monotonic()<work)
+            process=subprocess.Popen((program,)+args,stdin=subprocess.DEVNULL,
+                stdout=subprocess.PIPE,stderr=subprocess.PIPE,shell=False,close_fds=True,
+                start_new_session=False,env={'PATH':'/usr/bin:/usr/local/bin','LC_ALL':'C'})
+            # Retain the actual handle before any registration can fail.
+            children.append(process);launched.add(name)
+            active[name]={'child':process,'out':bytearray(),'err':bytearray(),'pipes':2}
+            for pipe,kind in ((process.stdout,'out'),(process.stderr,'err')):
+                os.set_blocking(pipe.fileno(),False);selector.register(pipe,selectors.EVENT_READ,(name,kind))
+        try:
+            selector=selectors.DefaultSelector();launch('master_fstat');launch('child_fstat')
+            while active:
+                remaining=min(work-time.monotonic(),self._budget.remaining())
+                if remaining<=0:raise TimeoutError
+                for key,_ in selector.select(min(remaining,.01)):
+                    try:data=os.read(key.fd,4096)
+                    except BlockingIOError:continue
+                    name,kind=key.data;state=active[name]
+                    if not data:
+                        selector.unregister(key.fileobj);key.fileobj.close();state['pipes']-=1
+                    else:
+                        state[kind].extend(data)
+                        if len(state[kind])>LIMIT:raise Refused('SMTP native metadata output unavailable')
+                for name,state in tuple(active.items()):
+                    if state['pipes']:continue
+                    remaining=min(work-time.monotonic(),self._budget.remaining())
+                    if remaining<=0:raise TimeoutError
+                    code=state['child'].wait(timeout=remaining)
+                    raw=inspector._checked((code,bytes(state['out']),bytes(state['err'])),self._budget,deadline)
+                    if name=='master_fstat':
+                        inspector._fstat(raw,master,'master',programs[str(MASTER)][0])
+                    elif name=='child_fstat':
+                        connection=inspector._fstat(raw,child,'smtpd',programs[str(SMTPD)][0],inspector._namespace._backend_port)
+                    elif name in ('master_after','child_after'):
+                        pid=master if name=='master_after'else child
+                        _require(inspector._rows(raw,(pid,))[pid]==rows[pid])
+                    else:
+                        _require(name=='child_final'and inspector._fstat(raw,child,'smtpd',
+                            programs[str(SMTPD)][0],inspector._namespace._backend_port)==connection)
+                    done.add(name);del active[name]
+                if 'child_fstat'in done and 'child_after'not in launched:launch('child_after')
+                if {'master_fstat','child_fstat'}<=done and 'master_after'not in launched:launch('master_after')
+                if {'master_after','child_after'}<=done and 'child_final'not in launched:launch('child_final')
+            _require(done==set(queries)and connection is not None and time.monotonic()<work)
+            self._budget.remaining();return connection
+        finally:
+            if selector is not None:
+                try:selector.close()
+                except BaseException:uncertain=True
+            for process in children:
+                try:
+                    if process.poll()is None:
+                        process.kill()
+                        remaining=min(deadline-time.monotonic(),self._budget.remaining())
+                        process.wait(timeout=max(0,remaining))
+                except BaseException:
+                    if process not in self._retained:self._retained.append(process)
+                    uncertain=True
+                finally:
+                    for pipe in (process.stdout,process.stderr):
+                        try:
+                            if not pipe.closed:pipe.close()
+                        except BaseException:uncertain=True
+            if uncertain:
+                type(self)._quarantined=True
+                raise Refused('SMTP native metadata cleanup unconfirmed')from None
+
 
 class NativeSmtpPeerInspector:
     @staticmethod
@@ -296,14 +386,7 @@ class NativeSmtpPeerInspector:
         pids=(self._master[0],pid);executor=_MetadataExecutor(budget,pids)
         rows=self._process_rows(executor,pids,budget,deadline);child=rows[pid]
         _require(rows[self._master[0]]==self._master and child[1:5]==(self._master[0],self._master[0],*self._postfix)and child[-1]=='smtpd')
-        programs=dict(self._files_custody)
-        results=executor.pair(FSTAT,tuple(('-n','-p',str(value))for value in pids),deadline)
-        _require(type(results)is tuple and len(results)==2)
-        master_raw,child_raw=tuple(self._checked(result,budget,deadline)for result in results)
-        self._fstat(master_raw,self._master[0],'master',programs[str(MASTER)][0])
-        connection=self._fstat(child_raw,pid,'smtpd',programs[str(SMTPD)][0],self._namespace._backend_port)
-        _require(self._process_rows(executor,pids,budget,deadline)==rows)
-        _require(self._fstat(self._query(executor,FSTAT,('-n','-p',str(pid)),budget,deadline),pid,'smtpd',programs[str(SMTPD)][0],self._namespace._backend_port)==connection)
+        connection=executor.inspect_tail(self,rows,pids,deadline)
         self._current(budget,deadline)
         return NativeSmtpIdentity(child,self._master,*connection)
 

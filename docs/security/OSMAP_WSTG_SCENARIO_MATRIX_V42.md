@@ -732,3 +732,22 @@ worker sealing, private-primary acceptance and fault/no-password-IO boundaries
 are proven in that component scope; full native factory/authenticated Rust
 ingress/managed broker/installed password workflow remain OPEN and flags closed.
 Parent5 and worker18 are reused without unchanged assurance reruns.
+
+
+Reviewed native peer scheduling repair34da2d3e/4640b22d retains both initial
+process rows, all seven metadata observations, master-birth/child-TCP interval
+checks and final custody. Child PS-after alone may overlap master FSTAT; the
+other cross-process barriers remain. Original0.5s/0.01s reserve/two-child/output/
+cleanup-quarantine boundaries remain. Local real-child oldRED/newPASS and owned
+spawn-fault/PCB refusals qualify the changed scheduler only. Matching native
+compatibility/performance, full factory and installed password remain pending;
+no authenticated WSTG/release/activation claim follows.
+
+
+Matching actual19 source42/result87305853/auditca1b2ec5 passes three native
+registrations/verifications, two publications and idle/Bob boundaries; pending
+capture remains FAIL. Observed cleanup quarantine follows client timeout;
+unique cost/old17 cause unknown. Standard metadata and daemon stops pass, but
+broker runtime/scratch cleanup is unconfirmed and retained. Next qualification
+uses actual factory executors/current product guards and explicit private paths,
+not extra substituted metadata inventories. No full workflow/WSTG/release claim.
