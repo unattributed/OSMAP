@@ -560,3 +560,11 @@ Three-purpose-key pairing and original completion guards have focused source
 evidence; this is not native/helper/SQL/installed password or release acceptance.
 The initial stale shared artifact selected zero tests and earned no PASS; one
 candidate-only rebuild establishes matching test execution without weakened tests.
+
+S04-02 primary producer patch77fc1598/source audit2ba379cf independently passes
+18 focused local controls527e184b with exact eight changed-file/all99 Python
+input parity. Account-bound original-budget/kernel construction, mandatory graph
+and private identity, unknown-peer refusal and local synthetic auth/socket
+controls are covered. OpenBSD loader/UID-drop/kernel/selected-listener authority
+remain projected, profiles empty and native authentication NOT RUN. This source
+evidence is not authoritative password mutation, installed form or release proof.

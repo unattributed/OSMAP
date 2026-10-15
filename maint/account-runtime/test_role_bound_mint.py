@@ -41,10 +41,16 @@ class BoundMintTests(unittest.TestCase):
    with patch.object(self.b,'inherited_group',return_value=True),patch.object(k.CommandKernelSeal,'native',return_value=seal):
     with self.assertRaises(Refused):k.CommandKernelSeal._for_material('hash',self.material,self.b)
    setattr(seal,field,original)
- def test_sql_primary_source_profiles_and_caller_rows_promises_options_remain_closed(self):
+ def test_unadmitted_source_profiles_and_caller_rows_promises_options_remain_closed(self):
+  self.assertEqual(k._PROFILES,())
+  for profiles in ((),('primary',),('sql','primary'),('primary','sql','hash'),('sql','hash','primary','caller')):
+   with patch.object(k,'_PROFILES',profiles),patch.object(self.b,'inherited_group',return_value=True):
+    for role in ('sql','hash','primary'):
+     with self.assertRaises(Refused):k.CommandKernelSeal.native(role,self.material,self.b)
+  # The source-owned full registry is now constructible, but primary still
+  # requires its canonical account; it does not inherit hash/SQL authority.
   with patch.object(k,'_PROFILES',('sql','hash','primary')),patch.object(self.b,'inherited_group',return_value=True):
-   for role in ('sql','hash','primary'):
-    with self.assertRaises(Refused):k.CommandKernelSeal.native(role,self.material,self.b)
+   with self.assertRaises(Refused):k.CommandKernelSeal.native('primary',self.material,self.b)
   for kwargs in ({'rows':(('/tmp',b'r'),)},{'promises':b'stdio'},{'profile':{'qualified':True}},{'preexec_fn':lambda:None}):
    with self.assertRaises(TypeError):k.CommandKernelSeal.native('hash',self.material,self.b,**kwargs)
  def test_no_deadline_receipt_reset_or_operator_read_in_mint(self):

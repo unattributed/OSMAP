@@ -53,7 +53,7 @@ class Processes:
 PUBLIC_CLI=r'''
 import os,sys
 mode=sys.argv[1];args=tuple(sys.argv[2:]);public='public synthetic password'
-expected=('-O','-o','stats_writer_socket_path=','auth','test','-a','/var/dovecot/auth-client','-x','service=imap','alice@example.test')
+expected=('-O','-o','stats_writer_socket_path=','auth','test','-a','/var/dovecot/osmap-account-auth-client','-x','service=imap','alice@example.test')
 environment={'PATH':'/usr/local/bin:/usr/bin:/bin','LC_ALL':'C','CONFIG_FILE':'/dev/null','STATS_WRITER_SOCKET_PATH':''}
 if args!=expected or {k:os.environ.get(k) for k in environment}!=environment:
  raise SystemExit(78)
@@ -79,7 +79,7 @@ mode=sys.argv[3];cli=sys.argv[4]
 budget=OperationBudget(int(time.time())+8,maximum_seconds=8);budget.attach_owned_process_group()
 p=Processes(budget);real=subprocess.Popen
 calls=[];accepted=False;refused=False
-expected=('/usr/local/bin/doveadm','-O','-o','stats_writer_socket_path=','auth','test','-a','/var/dovecot/auth-client','-x','service=imap','alice@example.test')
+expected=('/usr/local/bin/doveadm','-O','-o','stats_writer_socket_path=','auth','test','-a','/var/dovecot/osmap-account-auth-client','-x','service=imap','alice@example.test')
 environment={'PATH':'/usr/local/bin:/usr/bin:/bin','LC_ALL':'C','CONFIG_FILE':'/dev/null','STATS_WRITER_SOCKET_PATH':''}
 def spawn(args,**kwargs):
  assert tuple(args)==expected and kwargs['env']==environment
@@ -131,7 +131,7 @@ class PrimaryIsolation(unittest.TestCase):
         from native_transport_test_support import fixture_primary
         import time
         v=fixture_primary(m.NativePrimaryVerifier,'alice@example.test',OperationBudget(int(time.time())+8,maximum_seconds=8))
-        self.assertEqual(v._command(),('/usr/local/bin/doveadm','-O','-o','stats_writer_socket_path=','auth','test','-a','/var/dovecot/auth-client','-x','service=imap','alice@example.test'))
+        self.assertEqual(v._command(),('/usr/local/bin/doveadm','-O','-o','stats_writer_socket_path=','auth','test','-a','/var/dovecot/osmap-account-auth-client','-x','service=imap','alice@example.test'))
         with self.assertRaises(TypeError):m.NativePrimaryVerifier('alice@example.test',v._budget,v._material,socket_path='/public/untrusted/socket')
     def test_actual_owned_positive_closed_environment_and_cleanup(self):
         r=self.owned('positive');self.assertTrue(r['accepted']);self.assertFalse(r['refused'])

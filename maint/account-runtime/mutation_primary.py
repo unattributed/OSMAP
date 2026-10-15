@@ -13,7 +13,7 @@ from authoritative_password import AuthoritativePasswordAdapter, Refused
 from operation_budget import OperationBudget
 
 PROGRAM='/usr/local/bin/doveadm'
-AUTH_CLIENT_SOCKET='/var/dovecot/auth-client'
+AUTH_CLIENT_SOCKET='/var/dovecot/osmap-account-auth-client'
 ARGS=('-O','-o','stats_writer_socket_path=','auth','test','-a',AUTH_CLIENT_SOCKET,
       '-x','service=imap')
 LIMIT=4096

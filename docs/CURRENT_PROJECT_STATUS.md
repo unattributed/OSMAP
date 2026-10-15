@@ -31,14 +31,30 @@ closed. Real control broker/topology/SQL/hash/primary authority, paired Runtime
 clients/form and controlled authoritative workflow remain unfinished. No password
 form, service, credential or native profile is enabled by this source change.
 
-The next reviewed source increment adds a paired account Runtime capability:
+Signed source `bd7a9e3e6b6d29aecbc3f2be302169f645272dc5` adds a paired account Runtime capability:
 complete explicit configuration, unavailable-mode refusal without legacy auth/
 session fallback, three distinct purpose keys and capability-owned mutation.
 Independent fresh-binary QA passes three discriminators; the earlier zero-test
 stale-artifact refusal remains retained. Native services/confinement/containment
 and the installed Settings password workflow remain unqualified and disabled.
 
-Signed source `c4e318bf2602998885ea1b4aa9432ff0a572031b` is synchronized to
+That Runtime source is normally signed and synchronized with fresh origin
+equality; commit/push each1727 Rust PASS/zero failures/44 explicit native ignores
+and523 account Python PASS. The authoritative standard checkout is clean at the
+same SHA after a source-only fast-forward. No installed service or form changed.
+
+The current reviewed primary producer adds account-bound private authentication
+with a separate fixed listener, dedicated identity, exact public-code graph and
+irreversible identity drop before locked confinement. Independent source audit
+and18 focused local controls pass against all99 frozen Python inputs. Native
+identity/kernel controls remain projected locally: the selected listener and
+identity are absent and its kernel peer is unobserved. Profiles remain empty;
+one controlled native qualification and the complete authoritative workflow
+remain required. Actual browser form/route wiring is proceeding under the same
+S04-02 work order, with no activation or new human request.
+
+The installed folder/label application baseline is signed source
+`c4e318bf2602998885ea1b4aa9432ff0a572031b`, synchronized to
 `feat/ux-completion-20260929` after normal commit/push gates:1723 Rust passes,
 zero failures,44 explicit native ignores and519 account Python passes. Fresh
 origin equality and all three local branch heads are verified. Matching application

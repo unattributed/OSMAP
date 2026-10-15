@@ -10039,3 +10039,32 @@ no production code, scanner or exemption changes. Independentauditf57d24a5 and
 one actual fresh-compiled discriminator PASS plus both unchanged static guards
 support normal commit3. Preserve both original gate refusals and do not repeat
 the other independent controls merely for reassurance.
+
+## 2026-10-15 — primary construction and actual password-page integration
+
+Normally signed/synchronized Runtimebd7a9e3 and source-only standard-mail parity
+complete the paired-client source increment, not S04-02. Integrate reviewed exact
+primary8 patch77fc1598/source audit2ba379cf/independent QA527e184b. The private
+primary purpose identity/socket, mandatory exact-leaf graph and irreversible
+drop are separate from hash/SQL authority; unknown kernel binder remains None
+and source profiles empty. Fileowner518 is not a peer identity. No production
+configuration or operator credential is changed by source admission.
+
+Use one owned native primary fixture with existing bounded custody/process
+infrastructure and actual selected private peer before any credential protocol.
+Its synthetic passdb/projected SQL material must remain explicitly primary-only
+evidence, never full authoritative workflow acceptance. Implement the actual
+password browser route/Runtime delegation concurrently within the same active
+slice. Derive availability from the paired capability, retain CSRF/account/session
+and one original deadline, and classify completion errors conservatively as
+unconfirmed because they cannot establish absence of a database write. Do not
+redisplay/log/store credentials or suggest automatic replay. Exact local Show/Hide
+script custody can extend the existing allowlist only for this fixed source;
+global CSP/unknown-script refusal and native activation gates are unchanged.
+
+The primary gate identifies one obsolete future-registry test assumption, not
+a deployed native authentication result. Preserve the537-case/one-failure gate;
+update only that test to retain actual empty-registry and malformed/incomplete/
+reordered/caller-extension refusal, canonical primary account requirement and
+prohibited caller-option TypeErrors. Source8 remains exact; changed control1PASS
+and independent3188f828 support normal commit2 without guard/profile changes.

@@ -14,6 +14,12 @@ class SealTests(unittest.TestCase):
   with patch.object(m.ctypes,'CDLL',side_effect=AssertionError),patch.object(m.os,'open',side_effect=AssertionError):
    with self.assertRaises(Refused):m.CommandKernelSeal.native()
    with self.assertRaises(Refused):m.CommandKernelSeal({'PASS':True})
+ def test_primary_registry_stays_empty_and_unobserved_private_endpoint_not_admitted(self):
+  from account_primary_identity import PEER_BIND_UID,SOCKET
+  self.assertEqual(m._PROFILES,());self.assertIsNone(PEER_BIND_UID)
+  self.assertEqual(str(SOCKET),'/var/dovecot/osmap-account-auth-client')
+  with patch.object(m.os,'open',side_effect=AssertionError),patch.object(m.subprocess,'Popen',side_effect=AssertionError):
+   with self.assertRaises(Refused):m.CommandKernelSeal.native('primary',None,self.b,'alice@example.test')
  def test_rows_and_promises_cannot_transport_traversal_duplicate_or_network(self):
   for rows in ((('/fixed/../operator',b'r'),),(('/fixed//operator',b'r'),),(('/fixed',b'rr'),),(('/fixed',b'r'),('/fixed',b'w'))):
    with self.assertRaises(Refused):self.make(rows)

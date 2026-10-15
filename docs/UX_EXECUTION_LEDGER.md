@@ -9930,6 +9930,7 @@ discriminator alongside the same binding production repair; no broader QA scope.
     "maint/account-runtime/account_primary_graph.py",
     "maint/account-runtime/test_primary_identity.py",
     "maint/account-runtime/test_primary_kernel_integration.py",
+    "maint/account-runtime/test_role_bound_mint.py",
     "maint/account-runtime/smtp_guarded_builder.py",
     "maint/account-runtime/smtp_mutation_containment.py",
     "maint/account-runtime/account_admission_worker.py",
@@ -9944,6 +9945,15 @@ discriminator alongside the same binding production repair; no broader QA scope.
     "src/http/routes_password.rs",
     "src/settings_password_ui.rs",
     "src/http/password_tests.rs",
+    "src/http/password_local.js",
+    "src/http_browser.rs",
+    "src/http_runtime.rs",
+    "src/http.rs",
+    "src/settings_ui.rs",
+    "src/http_ui.rs",
+    "src/http/routes_settings.rs",
+    "maint/security/osmap-v14-account-security-openpgp-controls-gate.sh",
+    "maint/security/osmap-v14-no-js-low-sbom-gate.sh",
     "AGENTS.md",
     "docs/UX_EXECUTION_LEDGER.md",
     "docs/DECISION_LOG.md",
@@ -10084,7 +10094,7 @@ discriminator alongside the same binding production repair; no broader QA scope.
     "status": "PENDING",
     "reference": "Only minimal well-defined own-password usability after all agent-owned development/matching deployed QA/independent audit PASS. No operator password is changed by agent qualification; use controlled disposable Alice and preserve Bob/operator state. NOT RUN."
   },
-  "next_action": "Normally sign/sync the reviewed paired Runtime capability, then complete actual native service/factory/containment authority and the installed controlled authoritative password workflow/form. Preserve matching source and independent fresh-binary QA scope; no flag activation shortcut or operator password mutation. S08-02 is accepted; separate S09/provider human results do not halt this work."
+  "next_action": "Normally sign/sync the reviewed primary producer, execute its one reviewed controlled native qualification, and finish real password browser route/Runtime integration and actual native service/factory/containment authority for the installed controlled authoritative workflow. Runtime bd7a9e3 is signed/synchronized. Preserve matching source and independent QA scope; no flag activation shortcut or operator password mutation. S08-02 is accepted; separate S09/provider human results do not halt this work."
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->
@@ -10212,3 +10222,52 @@ package, scanner, exclusion or production logic change. Independent successor
 reviewf57d24a5 CLEAR; both existing static guards PASS, actual moved discriminator
 PASS1/0fail/0ignore after fresh6.40s compile. Other independent controls remain
 reused in their unchanged scope. Normal commit3 is required; no unsigned/bypass.
+
+## 2026-10-15 — paired Runtime synchronized; private primary producer integrated
+
+Runtime `bd7a9e3e6b6d29aecbc3f2be302169f645272dc5` is Good Shopkeeper signed
+and normally synchronized. Commit3/push1 each1727 Rust PASS/0failed/44 explicit
+native ignores and523 account Python PASS. Fresh origin equality/clean0/0/all
+three branch heads equal was captured before the next owned integration.
+Toronto standard checkout source-only clean FF e0 to bd7. Proofs live under
+runtime-account-capability-20261015/canonical-integration; both earlier gate
+refusals remain retained. No installed application/service/config/password action.
+
+Integrate exactly eight independently reviewed primary producer paths from
+primary-runtime-composition-20261015: readinesscec6afcb, patch77fc1598,
+manifestd974edab, source CLEAR2ba379cf and independent essential QA527e184b.
+All eight changed files/all99 Python inputs match before and after18 local
+PASS/0failed/0skip in0.932s. An initial QA manifest-parser TypeError occurred
+before dispatch and remains a preparation refusal, not a product failure.
+Baseline missing primary branch RED1 is retained; no deployed bypass is inferred.
+
+The source binds canonical account/material/original budget to the primary
+kernel producer and fixed private listener; mandatory exact-leaf graph and
+unique private identity precede irreversible saved/real/effective ID reduction
+and locked unveil/pledge. No broad recursive hash-library grant or null write
+is inherited. Production profiles remain empty and PEER_BIND_UID remains None.
+Actual local synthetic CLI/Linux socket controls are distinguished from projected
+OpenBSD platform/identity/graph/kernel controls. Selected private listener/user
+remain absent; no host provisioning or native authentication has occurred.
+
+The next native action is one reviewed owned primary fixture reusing existing
+identity/process/Dovecot infrastructure, with actual selected zero-wire peer
+observation before credentials and exact owned cleanup. A disposable passdb and
+projected SQL material can qualify primary only, never authoritative production
+material or the whole workflow. Admit the actual bounded password browser
+route/trait/Runtime/UI/static-script paths in the sole active order before edits;
+unknown-script/CSP refusal remains unchanged. Preparation refusals can be known
+prewrite, but completion errors remain unconfirmed with session-cookie cleanup,
+no automatic retry and no assertion that nothing changed. Full S04-02 stages
+remain PENDING until installed end-to-end evidence; no operator password or Send.
+
+The first normal primary admission fails one preserved role-mint assertion:
+537 account cases run, one still expects the newly implemented full source
+registry to be wholly unrecognised. Keep that gate failure. Update only this
+test: actual production registry is empty; incomplete/reordered/caller-extended
+registries refuse all roles; full source registry still refuses primary without
+its canonical account; caller rows/promises/options remain TypeErrors. The exact
+changed control passes1/0fail in0.001s, independent successor review3188f828 CLEAR.
+All eight product/source pins remain unchanged. No test exemption, profile
+activation, assertion weakening or repeated18-case focused campaign; normal
+commit2 follows with this one admitted legacy-test update.

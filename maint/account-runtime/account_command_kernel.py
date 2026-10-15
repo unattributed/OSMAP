@@ -31,12 +31,12 @@ class CommandKernelSeal:
         # Fixed hash and SQL producers remain disabled until independently
         # qualified source registry admission. Primary needs separate socket/ID
         # custody; no generic role/caller profile can select these graphs.
-        if _PROFILES not in (('hash',),('sql','hash')) or role not in _PROFILES:
+        if _PROFILES not in (('hash',),('sql','hash'),('sql','hash','primary')) or role not in _PROFILES:
             raise Refused('native installed custody qualification unavailable')
         from account_native_material import NativeMaterial, _SqlEndpoint
         from operation_budget import _OriginalReceipt
         if (type(material)is not NativeMaterial or type(budget)is not OperationBudget
-                or account is not None or not budget.inherited_group()
+                or (role!='primary' and account is not None) or not budget.inherited_group()
                 or type(getattr(material,'_endpoint',None))is not _SqlEndpoint
                 or type(getattr(material,'_states',None))is not tuple
                 or len(material._states)!=4):
@@ -46,6 +46,14 @@ class CommandKernelSeal:
             raise Refused('native kernel original budget unavailable')
         budget.require_original(sent_millis=receipt.sent_millis,
             deadline_millis=receipt.deadline_millis,expires_at=receipt.expires_at)
+        if role=='primary':
+            canonical=Adapter._account(account)
+            from account_primary_graph import PrimaryInstalledGraph,PROMISES as PRIMARY_PROMISES
+            value=cls._mint(PRIMARY_PROGRAM,PRIMARY_ARGS+(canonical,),canonical,budget,
+                            PrimaryInstalledGraph.rows(),PRIMARY_PROMISES)
+            value._material=material
+            value._primary_identity_required=True;value._primary_graph_required=True
+            return value
         if role=='sql':
             from account_sql_graph import SqlInstalledGraph,PROMISES as SQL_PROMISES
             value=cls._mint(Adapter.SQL_PROGRAM,Adapter.SQL_ARGS,None,budget,
@@ -79,6 +87,8 @@ class CommandKernelSeal:
         value._hash_identity_required=role=='hash'
         value._hash_graph_required=role=='hash'
         value._sql_graph_required=role=='sql'
+        value._primary_identity_required=role=='primary'
+        value._primary_graph_required=role=='primary'
         return value
 
     @classmethod
@@ -138,6 +148,7 @@ class CommandKernelSeal:
         value._material=None;value._sql_graph_required=False
         value._hash_identity_required=False
         value._hash_graph_required=False
+        value._primary_identity_required=False;value._primary_graph_required=False
         return value
 
     def preexec(self,program,args,account=None,*,deadline=None):
@@ -147,7 +158,22 @@ class CommandKernelSeal:
             raise Refused('native kernel profile command mismatch')
         self._budget.remaining()
         if not self._budget.inherited_group():raise Refused('native kernel owned group unavailable')
-        identity=None;graph=None;sql_graph=None
+        identity=None;graph=None;sql_graph=None;primary_identity=None;primary_graph=None
+        if self._primary_identity_required or self._primary_graph_required:
+            from account_primary_identity import PrimaryChildIdentity
+            from account_primary_graph import PrimaryInstalledGraph,PROMISES as PRIMARY_PROMISES
+            if (role!='primary' or not self._primary_identity_required or not self._primary_graph_required
+                    or self._hash_identity_required or self._hash_graph_required or self._sql_graph_required
+                    or self._rows!=PrimaryInstalledGraph.rows() or self._promises!=PRIMARY_PROMISES):
+                raise Refused('native primary fixed graph unavailable')
+            # Selected private endpoint admission refuses an unobserved binder
+            # before any public file/socket access; no ordinary-listener fallback.
+            primary_identity=PrimaryChildIdentity.native(self._budget,deadline)
+            if type(primary_identity)is not PrimaryChildIdentity or primary_identity._budget is not self._budget:
+                raise Refused('native primary identity unavailable')
+            primary_graph=PrimaryInstalledGraph.native(self._budget,deadline)
+            if type(primary_graph)is not PrimaryInstalledGraph or primary_graph._budget is not self._budget:
+                raise Refused('native primary graph unavailable')
         if self._sql_graph_required:
             from account_sql_graph import SqlInstalledGraph,PROMISES as SQL_PROMISES
             if (role!='sql' or self._hash_identity_required or self._hash_graph_required
@@ -177,6 +203,10 @@ class CommandKernelSeal:
             # and before exec. Parent keeps independent watchdog/reap authority.
             if not sys.platform.startswith('openbsd') or os.getuid()!=0 or os.geteuid()!=0:
                 raise Refused('native kernel platform authority unavailable')
+            if primary_graph is not None:
+                primary_graph.recheck(self._budget,deadline)
+            if primary_identity is not None:
+                primary_identity.drop(self._budget,deadline)
             if sql_graph is not None:
                 # SQL has separate public/private/socket custody. No hash drop
                 # or null w/c authority is inherited; spend the captured phase.

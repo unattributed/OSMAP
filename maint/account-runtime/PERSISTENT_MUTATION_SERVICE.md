@@ -63,3 +63,14 @@ changed. Actual peer/relay/native factory and full required containment must be
 qualified, and the new paths admitted to the real OpenBSD confinement, before
 installation/activation. Existing legacy cookies do not become epoch-bound:
 configured-unavailable/Ready admission rejects them without rewriting records.
+
+## Private primary command source (not provisioned)
+
+The mutation-only primary command selects the separate fixed
+`/var/dovecot/osmap-account-auth-client` listener and dedicated `_osmapprimary`
+identity. Existing ordinary auth-client0600 is untouched. The account-bound
+producer requires exact public executable/library/module custody, private socket
+DAC plus a separately measured kernel peer, then irreversible private IDs before
+locked confinement. Neither the listener nor identity is currently provisioned;
+PEER_BIND_UID remains None and the source profile registry remains empty. Local
+construction tests cannot authorize production authentication or activation.
