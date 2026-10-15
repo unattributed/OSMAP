@@ -643,3 +643,30 @@ reviewed fixed search-directory read repair adds no executable/writable grant
 or promise and retains the original private-ID/outside/null controls. Recursive
 read and immediate-only custody are explicit; native compatibility and whole
 workflow security remain pending, with no earlier termination retrodiagnosis.
+
+Signed source065 normally passes 1741 Rust and 564 account Python tests in both
+commit/push gates, with fresh equality and clean standard-mail source parity.
+Two refused test-only FFI placement attempts remain retained. Actual metadata
+shows exact target custody but only unrelated ancestor size/timestamp changes;
+the reviewed five-field ancestor correction preserves fixed identity/permissions,
+full target/member metadata and hashes. Primary12 reaches private-child proof
+and full input, but not authentication; primary13 receives no daemon greeting.
+Neither failure is accepted or used to diagnose older cases.
+
+The admission parent policy uses exact endpoint/interpreter grants, empty
+ancestors, checked root cwd and server-owned sealing before credential reads.
+Native semantics and the separate exec'd worker confinement remain pending;
+the unused finite entry permanently refuses. Broker8 passes its 20 metadata
+observations then fails the final original-budget inventory. No ownership check
+or deadline is relaxed. No installed workflow, credential-backed WSTG, release,
+slice, sprint or epic acceptance follows from these source/component outcomes.
+<!-- 2026-10-15 account private-primary qualification addendum -->
+
+Actual private-primary successor16 passes the original seven identity/kernel/
+authentication controls and all owned cleanup. Three typed outcomes distinguish
+correct password, changed password and foreign canonical identity; source flags
+remain false. Evidence is password-change/primary-search-custody-repair-20261015/
+receipt-compaction-successor5/execution-custody/native-primary-attempt16;
+log SHA256681b079f9580f835137331ec30f302ea72ac48388e079eb108df290532d009d9.
+The separate admission-parent native case fails101 with retained scratch, and
+broker9 fails AUTH454 after ready topology. These are not full workflow passes.

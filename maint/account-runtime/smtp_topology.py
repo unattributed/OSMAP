@@ -336,7 +336,7 @@ class FixedSmtpRouting:
         execute = executor if executor is not None else RoutingMetadataExecutor(namespace, budget)
         if not callable(execute):
             raise Refused('SMTP bootstrap metadata dependency unavailable')
-        metadata = {}; routing = {}
+        metadata = {}; routing = {}; captured_commands = {}
         commands = [(name, OperatorOwnedSmtpTopology.PROGRAM, args, metadata, plan['metadata_sha256'])
                     for name, args in OperatorOwnedSmtpTopology.COMMANDS.items()]
         commands += [(name, program, args, routing, plan['routing_sha256'])
@@ -351,6 +351,7 @@ class FixedSmtpRouting:
                     or hashlib.sha256(result[1]).hexdigest() != pins[name]):
                 raise Refused('SMTP bootstrap metadata continuity unavailable')
             destination[name] = result[1]
+            captured_commands[(program, args)] = result
         cls._postfix(metadata, plan)
         cls._frontend(routing['frontend'], plan)
         # Filter bytes are a continuity witness only. A separately qualified
@@ -367,13 +368,36 @@ class FixedSmtpRouting:
             'routing_sha256': plan['routing_sha256']}
         encoded = json.dumps(certificate, sort_keys=True, separators=(',', ':')).encode('ascii')
         path = namespace_root / 'smtp-topology.json'
+        def current_topology():
+            # These exact five results were just read and validated under this
+            # same original budget. Consume them only inside this constructor;
+            # namespace, routing-plan and certificate guards still run fully.
+            capture_active = True
+            def consume_current(program, args, data, seconds, limit):
+                if not capture_active:
+                    return execute(program, args, data, seconds, limit)
+                if (data != b'' or limit != OperatorOwnedSmtpTopology.OUTPUT_LIMIT
+                        or type(seconds) not in (int, float) or not 0 < seconds <= 10
+                        or (program, args) not in captured_commands):
+                    raise Refused('SMTP bootstrap metadata continuity unavailable')
+                return captured_commands.pop((program, args))
+            try:
+                topology = OperatorOwnedSmtpTopology(namespace, consume_current, budget, routing_plan=witness)
+                if captured_commands:
+                    raise Refused('SMTP bootstrap metadata continuity unavailable')
+                topology._execute = execute
+                if topology._read()[1] != certificate:
+                    raise Refused('SMTP topology certificate changed') from None
+                return topology
+            finally:
+                # Even an exception-retained constructor cannot reuse a result:
+                # its local adapter delegates to the real executor thereafter.
+                capture_active = False
+                captured_commands.clear()
         try:
             fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
         except FileExistsError:
-            existing = OperatorOwnedSmtpTopology(namespace, execute, budget, routing_plan=witness)
-            if existing._read()[1] != certificate:
-                raise Refused('SMTP topology certificate changed') from None
-            return namespace, existing
+            return namespace, current_topology()
         except OSError:
             raise Refused('SMTP topology publication unavailable') from None
         try:
@@ -396,7 +420,7 @@ class FixedSmtpRouting:
         namespace.recheck(budget)
         if cls._private_read(root, owner, budget)[0] != captured:
             raise Refused('SMTP routing plan changed')
-        topology = OperatorOwnedSmtpTopology(namespace, execute, budget, routing_plan=witness)
+        topology = current_topology()
         budget.remaining()
         return namespace, topology
 

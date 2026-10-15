@@ -89,6 +89,90 @@ class ProducerTests(unittest.TestCase):
         self.assertEqual(self.produce()[1]._certificate_version,2)
         self.assertEqual(path.stat().st_ino,identity)
 
+    def test_existing_constructor_consumes_current_five_once_then_rechecks_real(self):
+        self.produce()  # Only the existing-certificate branch changes.
+        self.calls.clear()
+        original = containment.OperatorOwnedSmtpTopology.recheck
+        observed = []; retained = []
+        def recheck(value, budget):
+            consume = value._execute; retained.append(consume)
+            def once(*args):
+                observed.append((args[0], args[1]))
+                return consume(*args)
+            value._execute = once
+            try:
+                original(value, budget)
+            finally:
+                value._execute = consume
+            # Neither an unknown selector nor a consumed selector dispatches.
+            with self.assertRaises(Refused):
+                consume('/not-a-selector', (), b'', 1, 16384)
+            with self.assertRaises(Refused):
+                consume(containment.OperatorOwnedSmtpTopology.PROGRAM,
+                        containment.OperatorOwnedSmtpTopology.COMMANDS['master'], b'', 1, 16384)
+        with patch.object(containment.OperatorOwnedSmtpTopology, 'recheck', recheck):
+            _, topology = self.produce()
+        self.assertEqual(self.calls, ['master', 'services', 'global_auth', 'frontend', 'filter'])
+        self.assertEqual(len(observed), 5)
+        self.assertEqual(len(set(observed)), 5)
+        self.assertEqual(topology._execute, self.execute)
+        self.calls.clear(); topology.recheck(self.budget)
+        self.assertEqual(self.calls, ['master', 'services', 'global_auth', 'frontend', 'filter'])
+        # Any exception-retained adapter is also inactive after the call.
+        self.calls.clear(); retained[0](containment.OperatorOwnedSmtpTopology.PROGRAM,
+            containment.OperatorOwnedSmtpTopology.COMMANDS['master'], b'', 1, 16384)
+        self.assertEqual(self.calls, ['master'])
+        failed_adapter = []
+        def failed_constructor(value, budget):
+            failed_adapter.append(value._execute)
+            original(value, budget)
+            raise Refused('fixture constructor interrupted')
+        with patch.object(containment.OperatorOwnedSmtpTopology, 'recheck', failed_constructor):
+            with self.assertRaises(Refused): self.produce()
+        self.calls.clear(); failed_adapter[0](containment.OperatorOwnedSmtpTopology.PROGRAM,
+            containment.OperatorOwnedSmtpTopology.COMMANDS['master'], b'', 1, 16384)
+        self.assertEqual(self.calls, ['master'])
+        path = self.namespace/'smtp-topology.json'
+        original_files = {p:p.read_bytes() for p in (self.config, self.planpath, path)}
+        for changed in ('namespace', 'plan', 'certificate'):
+            with self.subTest(changed=changed):
+                def mutate(name):
+                    if name != 'filter': return
+                    if changed == 'namespace': self.config.write_bytes(b'# changed public config\n')
+                    elif changed == 'plan': self.planpath.write_text('{}')
+                    else: path.write_text('{}')
+                self.hook = mutate
+                with self.assertRaises(Refused): self.produce()
+                self.hook = None
+                for p, raw in original_files.items(): p.write_bytes(raw); p.chmod(0o600)
+
+    def test_new_constructor_consumes_once_and_before_write_rechecks_real(self):
+        namespace, topology = self.produce()
+        self.assertEqual(self.calls, ['master', 'services', 'global_auth', 'frontend', 'filter'])
+        self.assertEqual(topology._execute, self.execute)
+        proxy = containment.SmtpProxyControl('alice@example.test', namespace,
+            lambda *args:(0,b'username proto src ip dest ip port\n',b''), self.budget)
+        dependency = containment.MailSessionContainment('alice@example.test',
+            lambda *args:(0,containment.MailSessionContainment.WHO_HEADER,b''),
+            self.budget, containment.SmtpTerminationScope.REQUIRED, proxy_control=proxy, topology=topology)
+        self.assertTrue(dependency.ready('alice@example.test'))
+        self.calls.clear(); self.assertTrue(dependency.before_write('alice@example.test'))
+        self.assertEqual(self.calls, ['master', 'services', 'global_auth', 'frontend', 'filter'])
+        path = self.namespace/'smtp-topology.json'
+        original_files = {p:p.read_bytes() for p in (self.config, self.planpath)}
+        original = containment.OperatorOwnedSmtpTopology.recheck
+        for changed in ('namespace', 'plan', 'certificate'):
+            with self.subTest(changed=changed):
+                path.unlink()
+                def mutate(value, budget):
+                    if changed == 'namespace': self.config.write_bytes(b'# changed public config\n')
+                    elif changed == 'plan': self.planpath.write_text('{}')
+                    else: path.write_text('{}')
+                    return original(value, budget)
+                with patch.object(containment.OperatorOwnedSmtpTopology, 'recheck', mutate):
+                    with self.assertRaises(Refused): self.produce()
+                for p, raw in original_files.items(): p.write_bytes(raw); p.chmod(0o600)
+
     def test_missing_plan_refuses_before_metadata_or_publication(self):
         self.planpath.unlink()
         with self.assertRaises(Refused): self.produce()

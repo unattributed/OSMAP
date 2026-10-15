@@ -10261,3 +10261,52 @@ location scanner, then Clippy's items-after-test-module rule. Keep both failures
 and correct placement inside the existing FFI module before its tests, with
 unchanged semantics. Check that exact failed boundary before another normal
 gate; never waive the rules or treat an earlier library pass as a full gate pass.
+
+## 2026-10-15 — preserve authority without volatile ancestor pins
+
+Measured public search-directory metadata matches exactly, while only ancestor
+size/timestamps differ. Use the existing FILES/MODULE ancestor policy:
+path, device, inode, UID, GID and mode, with root ownership, safe permissions and
+repeated checks. Retain full search-directory/member metadata and fixed file
+hashes. Do not repeatedly repin unrelated parent activity or infer its origin.
+Actual primary authentication and the changed shared hash helper remain separate
+native qualifications; the older hash proof is not upgraded to new-source parity.
+
+## 2026-10-15 — confine the admission parent before credential processing
+
+Apply one steady-state parent policy after exact socket bind/chown/chmod and
+before accept/read. Grant only the purpose-owned endpoint and fixed interpreter;
+ancestor entries have empty permissions, because recursive ancestor read grants
+would defeat the boundary. Set and verify root cwd before lock/spawn rather than
+granting read access to `/` for chdir. Keep test command constructors inside
+auth.rs and use bounded transport. Permanently refuse the unused finite entry
+that could otherwise bypass the server-owned policy after future activation.
+
+The parent policy does not confine the exec'd Python supervisor: the existing
+unset exec-promises path clears confinement at exec. Keep qualification false
+until actual parent and worker/native workflow results establish their distinct
+boundaries. Native tests must verify empty-ancestor metadata, inherited cwd,
+outside access refusal and owned socket cleanup. No operator diagnosis is needed.
+
+Retain useful, bounded, scrubbed errors from the already-captured exclusively
+synthetic no-AUTH daemon. Remove generated credentials, cookies, private-looking
+fields and fixture/account identifiers; preserve nonsecret error words and errno.
+Hash-only unknown errors must not force repeated diagnostic executions when safe
+actionable text is available. This changes no capture I/O, readiness or authority.
+
+## 2026-10-15 — reuse constructor samples only before action authority
+
+The SMTP topology producer consumes its source-owned five immutable results
+once per constructor, on both certificate branches. This deliberately removes a
+second sample and changes bootstrap freshness across certificate publication.
+It is not a cross-call cache or an action authorization: the returned executor
+is restored, and peer/admission/containment-before-write boundaries still run
+all real fresh checks. Atomic publication and file/namespace continuity remain.
+Actual broker9 passes startup but fails synthetic Bob AUTH; keep that failure
+and investigate the original refusal rather than removing live action checks.
+
+Only the exclusively born fixture Dovecot receives the checked512/512 descriptor
+profile after measured EMFILE in primary14. Parent/private-primary/global
+limits and time budgets stay unchanged. Primary15's absent driver receipt does
+not establish fixture cleanup or acceptance; preserve the retained namespace
+and correct finite result/disposition handling from measured evidence.

@@ -114,16 +114,42 @@ impl Service {
         {
             return Err(Error::Unavailable);
         }
-        self.serve_with(stop, &|request, deadline| {
-            self.native_worker(request, deadline)
-        })
+        // Process-global setup precedes both confinement and connection threads.
+        std::env::set_current_dir("/").map_err(unavailable)?;
+        self.serve_with_policy(
+            stop,
+            &|request, deadline| self.native_worker(request, deadline),
+            &|endpoint| {
+                endpoint.recheck()?;
+                crate::openbsd::apply_account_admission_parent_confinement(&endpoint.path)
+                    .map_err(unavailable)
+            },
+        )
     }
 
+    #[cfg(test)]
     fn serve_with<F>(&self, stop: &AtomicBool, execute: &F) -> Result<(), Error>
     where
         F: Fn(&Request, Instant) -> Result<Option<u64>, Error> + Sync,
     {
+        self.serve_with_policy(stop, execute, &|_| Ok(()))
+    }
+
+    fn serve_with_policy<F, P>(
+        &self,
+        stop: &AtomicBool,
+        execute: &F,
+        confine: &P,
+    ) -> Result<(), Error>
+    where
+        F: Fn(&Request, Instant) -> Result<Option<u64>, Error> + Sync,
+        P: Fn(&AdmissionEndpoint) -> Result<(), Error>,
+    {
         let mut endpoint = AdmissionEndpoint::bind(&self.config.socket)?;
+        // Publication is complete, so the steady-state policy needs neither
+        // chown nor fattr. Failure drops only this exact owned endpoint; no
+        // accept or credential frame is permitted before successful sealing.
+        confine(&endpoint)?;
         let result = std::thread::scope(|scope| {
             let mut active: Vec<std::thread::ScopedJoinHandle<'_, ()>> = Vec::new();
             loop {
@@ -275,7 +301,15 @@ impl Service {
             account: account.into(),
         })
     }
+    #[cfg(test)]
     fn fixed_worker(request: &Request, deadline: Instant) -> Result<Option<u64>, Error> {
+        Self::fixed_worker_command(request, deadline, crate::auth::account_admission_command())
+    }
+    fn fixed_worker_command(
+        request: &Request,
+        deadline: Instant,
+        command: std::process::Command,
+    ) -> Result<Option<u64>, Error> {
         // Interpreter, script and module roots are fixed and operator-owned.
         // Credential JSON is exclusively stdin under the existing private,
         // nonblocking process-group transport and quarantine-on-cleanup policy.
@@ -302,7 +336,6 @@ impl Service {
         }
         let worker_deadline = wall_millis.checked_add(left_millis).ok_or(Error::Expired)?;
         let frame = request.worker_bytes(worker_deadline)?;
-        let command = crate::auth::account_admission_command();
         let bytes = crate::openpgp_crypto_process::run_account_admission(command, &frame, deadline)
             .map_err(unavailable)?;
         if bytes.len() > MAX_FRAME {
@@ -341,21 +374,26 @@ impl Service {
         }
     }
     fn native_worker(&self, request: &Request, deadline: Instant) -> Result<Option<u64>, Error> {
+        // The fixed command inherits startup's `/`; a pre-exec chdir would
+        // require a broad root read grant. No connection changes process cwd.
+        if std::env::current_dir().map_err(unavailable)? != Path::new("/") {
+            return Err(Error::Unavailable);
+        }
         self.engine
             .as_ref()
             .ok_or(Error::Unavailable)?
             .recheck(deadline)?;
-        Self::fixed_worker(request, deadline)
+        Self::fixed_worker_command(
+            request,
+            deadline,
+            crate::auth::account_admission_inherited_root_command().map_err(unavailable)?,
+        )
     }
-    /// Caller accepts one finite connection only after a reviewed supervisor
-    /// has applied the actual account-helper native confinement policy.
-    pub fn connection(&self, mut stream: UnixStream) -> Result<(), Error> {
-        if !NATIVE_CONFINEMENT_QUALIFIED {
-            return Err(Error::Unavailable);
-        }
-        self.connection_with(&mut stream, |request, deadline| {
-            self.native_worker(request, deadline)
-        })
+    /// Retained closed finite-connection API. Only `serve` owns mandatory
+    /// parent sealing before reaching the private connection implementation;
+    /// later qualification must never open a caller-supervised bypass.
+    pub fn connection(&self, _stream: UnixStream) -> Result<(), Error> {
+        Err(Error::Unavailable)
     }
     fn connection_with(
         &self,

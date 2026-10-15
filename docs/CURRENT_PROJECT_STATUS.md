@@ -16,9 +16,34 @@ statement as provenance rather than current release posture.
 
 ### Active password delivery, 2026-10-15
 
-Latest signed/synchronized source is03dfd4ab2645ca684da10e6388640e013093fc2c:
-normal commit/push1732 Rust/560 account Python passes, fresh origin equality and
-clean authoritative standard source-only parity. Installed pair324b is unchanged.
+Latest signed/synchronized source is `065054793c4a158f79f8355219284e1fe903eabd`:
+normal commit and push each pass 1741 Rust and 564 account Python tests, with
+fresh origin equality and clean authoritative standard source-only parity.
+Installed pair324b is unchanged.
+The current uncommitted repair adds parent confinement, stable ancestor custody
+and one-call SMTP topology construction. Actual broker9 now completes startup
+and topology admission, then fails the synthetic Bob AUTH with454/4.7.0 instead
+of235. Both daemon groups, broker runtime and scratch are removed; standard
+metadata is preserved. The underlying authentication refusal remains unknown.
+Primary14 separately measures synthetic Dovecot pipe() EMFILE errors. A checked
+daemon-only NOFILE512 profile is attempted by primary15, but its driver produces
+no valid receipt: exit1/stdout0/stderr763. Only driver-group disappearance and
+reap are established by that outer result; fixture cleanup and authentication
+must not be inferred. Root code stages remain retained. Parent native build
+custody is being repaired for exception-safe child disposition before execution.
+All complete password-workflow qualification and activation remain open.
+Superseding primary16 passes all seven original native controls, including real
+private-child correct-password acceptance, changed-password rejection and
+foreign-canonical rejection. Three actual saved/real/effective private identities,
+kernel/null proofs and owned cleanup pass; the rootstage is removed. Its daemon
+reports VERSION1.2 with checked512/512 capacity and unchanged parent128/1024.
+The complete factory remains disabled. The separate Rust admission-parent native
+case fails exit101 with retained scratch; its original inner cause remains
+unknown. A custodian-only useful diagnostic using the existing binary is next.
+Source-proven SMTP minor-version compatibility is integrated; matching broker10
+still fails Bob AUTH454/4.7.0 before internal registration. Both daemon groups,
+runtime and scratch are removed with standard metadata preserved. Its original
+per-connection failing call and broker9's unique cause remain unproven.
 Actual disposable restricted SQL native3 passes27 controls,14 strict confinement
 receipts and complete owned cleanup. Primary8 still fails after one private
 child proof at first-input EPIPE; earlier identity failure cause remains unknown.
@@ -49,6 +74,32 @@ observation is null; daemons, broker runtime and scratch are gone and standard
 metadata is preserved. Neither failure establishes native compatibility or
 diagnoses the older failures. Narrow public-metadata and original-call
 observations are required; no unchanged retry or broader permission is admitted.
+
+The public metadata observation identifies the current search-custody mismatch:
+the search directory matches all nine fields, while only unrelated ancestor
+size and timestamps differ. The reviewed correction uses the existing five-field
+ancestor identity and permission policy, retaining full directory/member custody
+and fixed file hashes. Primary12 passes that guard and actual private-child
+confinement, then times out after writing its complete credential input without
+readable output. Primary13 separately receives no server greeting before its
+bounded wait; no private authentication is established. Owned cleanup passes and
+failed root code stages remain retained. A bounded scrub of existing synthetic
+daemon errors is the next diagnostic; neither result diagnoses older failures.
+
+Broker8 reaches the shared listener barrier after all 20 metadata observations
+and native topology checks pass, then fails the final ownership inventory under
+the original startup deadline. Its fixture cleanup and public-state preservation
+pass. Final and per-command ownership checks remain mandatory; adjacent repeated
+metadata construction is being assessed without extending deadlines.
+
+Reviewed source now adds actual confinement for the persistent Rust admission
+parent after socket publication and before credential processing. Exact endpoint
+and interpreter grants, empty-permission ancestors and checked root cwd avoid
+recursive public-directory read grants. The unused finite-connection entry stays
+unavailable. Native compatibility is pending. This is parent-only: the exec'd
+Python supervisor still requires its own confinement and full workflow proof.
+No qualification flag, installed service, password form or operator password
+is activated by these source repairs.
 
 Active source remediation supplies the missing persistent account-admission
 endpoint, shared original-deadline private-primary worker and bounded early

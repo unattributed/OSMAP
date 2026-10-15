@@ -64,8 +64,24 @@ pub(crate) fn public_inventory_command(
 }
 
 /// Fixed account-admission worker; no browser field becomes argv/environment.
-#[cfg(unix)]
+#[cfg(all(unix, test))]
 pub(crate) fn account_admission_command() -> Command {
+    let mut command = fixed_account_admission_command();
+    command.current_dir("/");
+    command
+}
+
+/// Admission's confined parent has already established and rechecked `/`.
+/// Do not issue a pre-exec chdir requiring recursive read authority for `/`.
+#[cfg(unix)]
+pub(crate) fn account_admission_inherited_root_command() -> std::io::Result<Command> {
+    if std::env::current_dir()? != std::path::Path::new("/") {
+        return Err(std::io::ErrorKind::PermissionDenied.into());
+    }
+    Ok(fixed_account_admission_command())
+}
+#[cfg(unix)]
+fn fixed_account_admission_command() -> Command {
     let mut command = Command::new("/usr/local/bin/python3");
     command
         .args([
@@ -74,9 +90,49 @@ pub(crate) fn account_admission_command() -> Command {
         ])
         .env_clear()
         .env("PATH", "/usr/local/bin:/usr/bin:/bin")
-        .env("LC_ALL", "C")
-        .current_dir("/");
+        .env("LC_ALL", "C");
     command
+}
+
+#[cfg(all(test, unix))]
+pub(crate) fn admission_root_cwd_fixture_command() -> std::io::Result<Command> {
+    let mut command = Command::new(std::env::current_exe()?);
+    command.env("OSMAP_TEST_ADMISSION_ROOT_CWD_CHILD", "1").args([
+        "--exact",
+        "account_admission_runtime::tests::inherited_worker_cwd_refuses_changed_root_in_disposable_process",
+    ]);
+    Ok(command)
+}
+
+#[cfg(all(test, target_os = "openbsd"))]
+pub(crate) fn admission_parent_native_fixture_command(
+    root: &std::path::Path,
+    outside: &std::path::Path,
+) -> std::io::Result<Command> {
+    let mut command = Command::new(std::env::current_exe()?);
+    command.env("OSMAP_TEST_ADMISSION_PARENT_NATIVE_CHILD", root)
+        .env("OSMAP_TEST_ADMISSION_PARENT_NATIVE_OUTSIDE", outside).args([
+            "--exact",
+            "account_admission_runtime::tests::native_parent_confinement_preserves_metadata_spawn_and_owned_unlink",
+            "--ignored", "--nocapture",
+        ]);
+    Ok(command)
+}
+
+#[cfg(all(test, target_os = "openbsd"))]
+pub(crate) fn admission_parent_interpreter_fixture_command() -> std::io::Result<Command> {
+    let fixed = account_admission_inherited_root_command()?;
+    let mut command = Command::new(fixed.get_program());
+    command
+        .args([
+            "-I",
+            "-c",
+            "import os; assert os.getcwd() == '/'; print('inherited_root_exec=PASS')",
+        ])
+        .env_clear()
+        .env("PATH", "/usr/local/bin:/usr/bin:/bin")
+        .env("LC_ALL", "C");
+    Ok(command)
 }
 
 /// Construct the fixed synthetic stored-session fixture process. No browser

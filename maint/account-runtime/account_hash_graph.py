@@ -83,13 +83,9 @@ def _modules(budget,deadline):
     finally:os.close(fd)
 
 def _search_parents(path,budget,deadline):
-    rows=[]
-    for parent in path.parents:
-        _bound(budget,deadline);a=parent.lstat()
-        if not stat.S_ISDIR(a.st_mode) or a.st_uid!=0 or a.st_mode&0o022 or not a.st_mode&0o001:
-            raise Refused('hash search ancestry unavailable')
-        rows.append((str(parent),)+_identity(a))
-    return tuple(rows)
+    # Same authority as fixed ELF/module ancestors: path, device/inode and
+    # owner/group/mode. Unrelated directory activity changes size/timestamps.
+    return _parents(path,budget,deadline)
 
 def _search_directory(budget,deadline):
     # One fixed public loader RPATH directory. Its read grant is recursive;
@@ -97,7 +93,8 @@ def _search_directory(budget,deadline):
     path=Path(SEARCH_DIRECTORY);_bound(budget,deadline)
     before=path.lstat();parents=_search_parents(path,budget,deadline)
     if (not stat.S_ISDIR(before.st_mode) or before.st_uid!=0 or before.st_mode&0o022
-            or _identity(before)!=SEARCH_CUSTODY or parents!=SEARCH_ANCESTRY):
+            or _identity(before)!=SEARCH_CUSTODY
+            or parents!=tuple(row[:6]for row in SEARCH_ANCESTRY)):
         raise Refused('hash search directory unavailable')
     fd=os.open(path,os.O_RDONLY|os.O_NOFOLLOW|os.O_NONBLOCK|os.O_DIRECTORY)
     try:

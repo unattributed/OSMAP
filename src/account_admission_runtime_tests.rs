@@ -60,6 +60,177 @@ fn listener_root() -> PathBuf {
     fs::set_permissions(&root, fs::Permissions::from_mode(0o700)).unwrap();
     root
 }
+
+#[test]
+fn parent_policy_is_narrow_and_failed_seal_prevents_accept_then_removes_owned_endpoint() {
+    let root = listener_root();
+    let socket = root.join("admission.sock");
+    let plan = crate::openbsd::account_admission_parent_plan(&socket).unwrap();
+    let rows: std::collections::BTreeMap<_, _> = plan
+        .unveil_rules
+        .iter()
+        .map(|r| (r.path.as_path(), r.permissions.as_str()))
+        .collect();
+    assert_eq!(rows.get(socket.as_path()), Some(&"rwc"));
+    assert_eq!(rows.get(root.as_path()), Some(&"r"));
+    assert_eq!(rows.get(Path::new("/usr/local/bin/python3")), Some(&"rx"));
+    assert_eq!(
+        rows.get(Path::new("/usr/local/bin/python3.13")),
+        Some(&"rx")
+    );
+    for ancestor in ["/", "/usr", "/usr/local", "/usr/local/bin"] {
+        assert_eq!(rows.get(Path::new(ancestor)), Some(&""));
+    }
+    assert_eq!(
+        plan.promises_after_lock,
+        "stdio rpath wpath cpath unix proc exec"
+    );
+    assert_eq!(
+        plan.promises_before_lock,
+        "stdio rpath wpath cpath unix proc exec unveil"
+    );
+    assert!(!rows
+        .keys()
+        .any(|p| p.starts_with("/etc/osmap") || p.starts_with(EPOCH_ROOT)));
+    let calls = AtomicUsize::new(0);
+    let policy_calls = AtomicUsize::new(0);
+    let mut s = service(crate::openbsd::effective_uid());
+    s.config.socket = socket.clone();
+    let result = s.serve_with_policy(
+        &AtomicBool::new(false),
+        &|_, _| {
+            calls.fetch_add(1, Ordering::SeqCst);
+            Ok(Some(0))
+        },
+        &|endpoint| {
+            policy_calls.fetch_add(1, Ordering::SeqCst);
+            endpoint.recheck()?;
+            assert_eq!(fs::symlink_metadata(&socket).unwrap().mode() & 0o777, 0o660);
+            // A queued connection cannot reach peer/frame processing after refusal.
+            let _queued = UnixStream::connect(&socket).unwrap();
+            Err(Error::Unavailable)
+        },
+    );
+    assert_eq!(result, Err(Error::Unavailable));
+    assert_eq!(policy_calls.load(Ordering::SeqCst), 1);
+    assert_eq!(calls.load(Ordering::SeqCst), 0);
+    assert!(fs::symlink_metadata(&socket).is_err());
+    fs::remove_dir(root).unwrap();
+}
+
+#[test]
+fn inherited_worker_cwd_refuses_changed_root_in_disposable_process() {
+    const CHILD: &str = "OSMAP_TEST_ADMISSION_ROOT_CWD_CHILD";
+    if std::env::var_os(CHILD).is_some() {
+        std::env::set_current_dir(std::env::temp_dir()).unwrap();
+        assert_eq!(
+            crate::auth::account_admission_inherited_root_command()
+                .unwrap_err()
+                .kind(),
+            std::io::ErrorKind::PermissionDenied
+        );
+        std::env::set_current_dir("/").unwrap();
+        let inherited = crate::auth::account_admission_inherited_root_command().unwrap();
+        let ordinary = crate::auth::account_admission_command();
+        assert_eq!(inherited.get_program(), ordinary.get_program());
+        assert_eq!(
+            inherited.get_args().collect::<Vec<_>>(),
+            ordinary.get_args().collect::<Vec<_>>()
+        );
+        assert_eq!(
+            inherited.get_envs().collect::<Vec<_>>(),
+            ordinary.get_envs().collect::<Vec<_>>()
+        );
+        assert_eq!(ordinary.get_current_dir(), Some(Path::new("/")));
+        assert_eq!(inherited.get_current_dir(), None);
+        return;
+    }
+    let output = crate::openpgp_crypto_process::run_account_admission(
+        crate::auth::admission_root_cwd_fixture_command().unwrap(),
+        b"",
+        Instant::now() + Duration::from_secs(2),
+    )
+    .unwrap();
+    assert!(String::from_utf8_lossy(&output).contains("1 passed"));
+}
+
+// Existing libtest/subprocess qualification lane; never enables the production
+// gate, consumes credentials or authenticates. Root executes this once against
+// the exact reviewed native build and installed interpreter custody.
+#[cfg(target_os = "openbsd")]
+#[test]
+#[ignore = "requires root-owned disposable OpenBSD parent confinement qualification"]
+fn native_parent_confinement_preserves_metadata_spawn_and_owned_unlink() {
+    const CHILD: &str = "OSMAP_TEST_ADMISSION_PARENT_NATIVE_CHILD";
+    const OUTSIDE: &str = "OSMAP_TEST_ADMISSION_PARENT_NATIVE_OUTSIDE";
+    const MARKER: &str = "admission_parent_metadata_spawn_denial_unlink=PASS";
+    assert_eq!(crate::openbsd::effective_uid(), 0);
+    if let Some(root) = std::env::var_os(CHILD) {
+        let root = PathBuf::from(root);
+        let outside = PathBuf::from(std::env::var_os(OUTSIDE).unwrap());
+        assert!(root.is_absolute() && outside.is_absolute() && root != outside);
+        private_dir(&root, 0, false).unwrap();
+        private_dir(&outside, 0, false).unwrap();
+        crate::openbsd::disable_core_dumps().unwrap();
+        std::env::set_current_dir("/").unwrap();
+        let deadline = Instant::now() + Duration::from_secs(20);
+        let engine = InstalledEngine::observe(Path::new(ENGINE), 0, deadline).unwrap();
+        let mut endpoint = AdmissionEndpoint::bind(&root.join("admission.sock")).unwrap();
+        crate::openbsd::apply_account_admission_parent_confinement(&endpoint.path).unwrap();
+        endpoint.recheck().unwrap();
+        engine.recheck(deadline).unwrap();
+        // Only harmless fixture bytes are used for outside-access negatives.
+        assert!(fs::read(outside.join("public-fixture")).is_err());
+        assert!(OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(outside.join("forbidden-create"))
+            .is_err());
+        let fixed = crate::auth::account_admission_inherited_root_command().unwrap();
+        assert_eq!(fixed.get_current_dir(), None);
+        // Interpreter-only public control. It deliberately does not invoke the
+        // installed private worker or pretend its module closure is qualified.
+        let command = crate::auth::admission_parent_interpreter_fixture_command().unwrap();
+        let output =
+            crate::openpgp_crypto_process::run_account_admission(command, b"", deadline).unwrap();
+        assert_eq!(output, b"inherited_root_exec=PASS\n");
+        endpoint.remove().unwrap();
+        assert!(fs::symlink_metadata(root.join("admission.sock")).is_err());
+        println!("{MARKER}");
+        return;
+    }
+    let root = listener_root();
+    let outside = listener_root();
+    let root_identity = AdmissionEndpoint::identity(&fs::symlink_metadata(&root).unwrap());
+    let outside_identity = AdmissionEndpoint::identity(&fs::symlink_metadata(&outside).unwrap());
+    fs::write(outside.join("public-fixture"), b"harmless public fixture\n").unwrap();
+    let command = crate::auth::admission_parent_native_fixture_command(&root, &outside).unwrap();
+    // Existing strict owned-group cleanup is mandatory; on any uncertainty,
+    // leave both exact leases retained instead of recursively deleting them.
+    let output = crate::openpgp_crypto_process::run_account_admission(
+        command,
+        b"",
+        Instant::now() + Duration::from_secs(30),
+    )
+    .unwrap();
+    assert!(String::from_utf8_lossy(&output).contains(MARKER));
+    assert_eq!(
+        AdmissionEndpoint::identity(&fs::symlink_metadata(&root).unwrap()),
+        root_identity
+    );
+    assert_eq!(
+        AdmissionEndpoint::identity(&fs::symlink_metadata(&outside).unwrap()),
+        outside_identity
+    );
+    assert!(!outside.join("forbidden-create").exists());
+    assert_eq!(
+        fs::read(outside.join("public-fixture")).unwrap(),
+        b"harmless public fixture\n"
+    );
+    fs::remove_file(outside.join("public-fixture")).unwrap();
+    fs::remove_dir(outside).unwrap();
+    fs::remove_dir(root).unwrap();
+}
 #[test]
 fn fixed_python_alias_admits_only_exact_target_and_refuses_target_replacement() {
     let root = listener_root();

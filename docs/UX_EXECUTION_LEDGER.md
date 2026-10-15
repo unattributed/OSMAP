@@ -9989,7 +9989,12 @@ discriminator alongside the same binding production repair; no broader QA scope.
     "maint/account-runtime/account_native_material.py",
     "maint/account-runtime/test_native_material.py",
     "maint/account-runtime/test_account_admission_worker.py",
-    "maint/account-runtime/test_mutation_primary.py"
+    "maint/account-runtime/test_mutation_primary.py",
+    "src/auth.rs",
+    "maint/account-runtime/account_hash_graph.py",
+    "maint/account-runtime/test_hash_search_directory.py",
+    "maint/account-runtime/smtp_topology.py",
+    "maint/account-runtime/test_smtp_topology_producer.py"
   ],
   "outcomes": [
     {
@@ -10117,7 +10122,7 @@ discriminator alongside the same binding production repair; no broader QA scope.
     "status": "PENDING",
     "reference": "Only minimal well-defined own-password usability after all agent-owned development/matching deployed QA/independent audit PASS. No operator password is changed by agent qualification; use controlled disposable Alice and preserve Bob/operator state. NOT RUN."
   },
-  "next_action": "Signed03dfd4 current source is synchronized and standard Toronto source-only clean matches. Actual restricted SQL qualification now passes original27 controls/all14strict48 receipts and owned cleanup; preserve earlier envelope/overflow failures. Close real admission endpoint/private-primary original-budget worker and measured early-input-close transport gap, with actual33-module startup custody and safe native signal boundary, in one reviewed signed source integration. Run matching current private-primary and shared SMTP broker controlled qualification; preserve unknown earlier child causes, exact version/empty-multiinstance guard and original budgets. Continue full trusted factory/ingress/epoch/session/mail containment and installed controlled Alice new-password/new-login/old-refusal/Bob continuity. No operator password mutation or native qualification flag shortcut; S08-02 stays accepted."
+  "next_action": "Signed065 source synchronized and standard Toronto source-only clean matches. Sign/synchronize reviewed ancestor authority, Rust admission parent confinement, one-call broker constructor metadata and source-proven server minor compatibility through normal gates. Primary16 actual7 controls/authentication/private proofs/ownedcleanupPASS; reuse without rerun, retain primary15 cause/dispositionUNKNOWN. Parent native1 fails101 with retained scratch: use same compiled binary existingchild branch with bounded useful diagnostics and original custody/assertions. Broker10 still fails Bob AUTH454 before registration: expose original connection fixedstage/refusal and useful captured error, preserve all live ownership/deadline checks. Finish separate Python worker confinement, full trusted factory/ingress/epoch/session/mail containment and installed controlled password workflow. No shortcut or operator password mutation; S08-02 remains accepted."
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->
@@ -10710,3 +10715,181 @@ runtime defect. Move the exact helper before the test module, preserving its
 cfg(test)/exact-mode guard and all descriptor/test behavior. Refresh only the
 existing derived V10 registers and run the focused Clippy boundary before a new
 normal gate. No lint allowance, hook waiver or unchanged retry is used.
+
+
+## 2026-10-15 — signed admission source and next composed native repairs
+
+Source `065054793c4a158f79f8355219284e1fe903eabd` is normally Shopkeeper
+signed and synchronized after both gates pass 1741 Rust/zero failed/44 explicit
+native ignores and 564 account Python tests. Fresh origin equality, clean0/0 and
+all three matching branch heads pass; standard Toronto checkout source-only
+fast-forwards cleanly from03df to065. Installed pair324b remains unchanged.
+Proof `admission-private-runtime-integration-20261015/signed-sync-proof.json`
+SHA256 `b23f96c3b47ffa46225ab69ce04085897cf480771f4b0d73afc65e57187837a3`,
+standard sync `0a44c6ad40af4c3681eae7263df6d6cf4ffbdc45624ca25460758ac442b8ee52`,
+independent checkpoint scope `6b7b8c50ae605028e164cc3c01d84dd033bbec69e4e51c2a804948ecf791b9c3`.
+Both earlier mandatory test-only FFI placement failures remain retained.
+
+Actual five-node public observation passes with stable exact target custody;
+only `/usr/local/lib` size/timestamps and root timestamps differ. The reviewed
+ancestor correction uses existing FILES/MODULE five-field authority without
+rewriting historical pin bytes, while preserving full target/member/hash checks.
+Source review `527795007eeda0903adeb5290bd1f9149eab49a0d62e3668f60a39c7b8f0e920`;
+local old RED1 becomes GREEN2. The new common helper affects primary and hash,
+so earlier hash-native proof is not described as exact new-source qualification.
+
+Primary12 passes actual private saved/real/effective UID/GID1005, empty groups,
+mask7/null3/device514 and original outside-read control. It writes all49 bytes
+to stdin, then receives no stdout/stderr event before the original phase limit;
+the source kills once and waits once, with no decoded authentication. Fixture
+cleanup and public-state preservation pass; rootstage
+`/var/run/osmap-primary-root-b5355a3cd64b5d31` remains. Scope SHA256
+`a6439a8e8e68f4fccf9bc278cf916d01871f90267498b5aea765747f2811d9b0`.
+Primary13 separately connects a root diagnostic socket but reads no server
+greeting in its bounded wait, before private-primary dispatch. Cleanup passes;
+rootstage `/var/run/osmap-primary-root-fddc13c8d404be47` remains. Scope
+`1d2b6413eb378effed125014d3447dfa9a7336f60487314ef44d9b69e3e1db60`.
+No zero-AUTH wire count, private authentication or earlier cause is invented.
+A bounded scrubbed useful excerpt from the already-captured synthetic daemon
+errors is prepared, with no new capture I/O or credential submission.
+
+Broker7 measures `process_inventory_original_deadline` during the filter
+metadata's second current check; prior returned tuples match. Broker8 removes
+only duplicated inventories within each same fresh current check. It passes all
+20 metadata observations/native topology checks and observes backend peer0/0,
+then refuses its final ownership inventory under the unchanged ready deadline.
+No final check or per-command fence is removed. Both fixtures clean up daemons,
+broker runtime and scratch with standard metadata preserved; code stages
+`/tmp/osmap-pxp-stage-25cdc55bc859abe4` and
+`/tmp/osmap-pxp-stage-482dbc21c5e13a6f` remain respectively. Exact broker8
+scope `0525457dbec9b00f90383051ee16bb39e070c78bd77c7e7b2000cb0aa8fcc5ca`.
+No AUTH/scenario acceptance or retrospective explanation of older failures.
+Assess adjacent repeated existing-certificate metadata within one source-owned
+constructor call, preserving real command fences and every later fresh recheck.
+
+Reviewed four-path admission parent source applies one steady policy after
+owned socket publication and before credential processing. Exact endpoint and
+interpreter grants plus empty ancestors avoid recursive public read authority;
+checked root cwd avoids a root read grant. The unused finite connection entry
+permanently refuses. Review first found direct/unbounded test constructors and
+the future finite-entry bypass; the corrected candidate uses existing auth.rs
+constructors/bounded transport, with focused changed-cwd/CWE/Clippy passes and
+review `edda169810ef1eaf56f7cc3caad276ec0fcdf5da08e31380aa4fa98db4613bb3`.
+Native parent control is NOT RUN. Its exact signed-base archive plus four
+reviewed overlays is prepared for one existing libtest control, not installation.
+The policy confines the Rust parent only; exec'd Python worker confinement and
+all complete password workflow obligations remain pending. Native flag stays
+false; no operator credential, configuration, service or password form changes.
+
+Same S04-02 allowlist adds only these concrete authentication/ancestor/producer
+repair paths; original20 obligations and all48 parent slices/403R2/110 legacy
+rows remain unchanged. No slice/sprint/epic completion or human request follows.
+
+## 2026-10-15 — measured daemon capacity and SMTP constructor repair
+
+Primary14 reports bounded scrubbed synthetic Dovecot errors: pipe() fails with
+Too many open files for director, dict, dict-async and config. Greeting0 and
+primary dispatch0 are measured. Owned cleanup passes; exact rootstage
+`/var/run/osmap-primary-root-95ad9303c93f6ec0` remains. Independent scope
+`3b8c4e60893e4a444931eba654c8b586ee1deff7ffc52dfd84386a0a9d0bfe99`.
+A separate current root-launch observation measures NOFILE128/1024; it is not
+the historical child's recorded limit. The reviewed qualifier applies checked
+512/512 only to the exact born Dovecot child, leaving parent/private-primary
+limits and all deadlines unchanged. This is a preexec resource profile, not
+irreversible confinement of a privileged daemon. Whole review
+`5c6f0545664743a7ec969855d346c473e9774f43ce4501e6e90321007a80f447`.
+Actual primary15 fails root result validation: driver exit1/stdout0/stderr763;
+driver group is gone/reaped, but fixture disposition is not established by the
+outer receipt. Retain log `7f0b7e94d8e55d2804b1f2a020d1c224b6e19f5802376ccf87c5a7ef1400078e`
+and rootstage `/var/run/osmap-primary-root-b6d5d1ae8f9f601b`. No unchanged retry
+or invented greeting/authentication/cleanup result is permitted.
+
+Reviewed producer source now consumes five validated immutable metadata tuples
+once within each new or existing routing-certificate constructor. This changes
+bootstrap freshness: the first sample replaces a second later sample, including
+across publication. Namespace/plan/certificate/publication checks remain; the
+adapter is disabled and real executor restored before return. All later peer,
+admission and before-write checks still collect fresh real metadata. Focused
+two controls pass; source+whole review
+`dd0976d31413ff98fcc8f304ee8d5fbecca20f469263286e3a30685fa5cf2891`.
+Actual broker9 reaches ready after topology and final ownership checks, then
+fails Bob AUTH with454/4.7.0 rather than235. Result SHA256
+`30a5c673597f9b3e77396724687d5b5b816ca9333ca018fada5a3877992de068`,
+independent scope `771e7c5a4b14ec9f8d823ea551c79e74b546ca44a9ebd1669695523ec66e946a`.
+Current no-mechanisms classifier and submission-login proxy error do not yet
+establish the underlying cause. Both daemon groups/runtime/scratch are gone,
+standard metadata preserved and cleanup reasons empty; rootstage
+`/tmp/osmap-pxp-stage-8b513804628b199c` remains. No MAIL/provider transaction or
+full scenario pass is claimed. The package is historical03df plus reviewed
+producer overlay, not complete current065 native-factory qualification.
+
+Admission parent build/root custody review finds post-Popen exception paths
+could skip bounded kill/reap. Repair the two scripts' same-deadline finally
+disposition before their first execution; no original reserve/cap is extended.
+All S04-02 activation flags remain false and no operator action is required.
+
+Normal source15 commit1 is refused by the TLS guard because the new Rust
+documentation says `NULL execpromises`, matching its prohibited-cipher token.
+No commit is created. Change that comment to unset exec promises and refresh
+only existing derived V10 records; the unchanged TLS guard then passes. No
+cipher/scanner/policy behavior is altered. Retain the failed normal gate log.
+The separately prepared offline native archive retains its previous comment
+bytes: its parent component result cannot establish byte-exact parity with the
+later signed source. Full installed workflow qualification remains pending.
+
+## 2026-10-15 — actual private-primary qualification and protocol compatibility
+
+Primary16 passes all original seven native controls. Correct-password result0
+accepts exact Alice; changed-password77 rejects; foreign-canonical result0 names
+Bob but the verifier refuses identity mismatch. Three actual private children
+prove saved/real/effective UID/GID1005, empty supplementary groups, original
+40-byte kernel/null proof and no source kill requests. All children, daemon,
+selected socket, scratch and temporary identity are removed; public records and
+standard endpoint metadata are preserved. Exact rootstage
+`/var/run/osmap-primary-root-7f0f8d08ed077312` is removed. Log SHA256
+`681b079f9580f835137331ec30f302ea72ac48388e079eb108df290532d009d9`.
+Its checked daemon capacity512/512 preserves parent128/1024, and the bounded
+root greeting measures protocol1.2. The lossless row receipt is8164 wire bytes,
+within unchanged16KiB; exact original validators pass after expansion. Actual15
+missing-receipt cause/disposition remains unknown. Synthetic material and
+source-profile projections remain explicit; this is private-primary component
+proof, not SQL/mutation/full ingress/installed password acceptance.
+
+Pinned official Dovecot2.3.21.1 interface source
+`https://raw.githubusercontent.com/dovecot/core/2.3.21.1/src/lib-auth/auth-client-interface.h`
+SHA256 `73fef15d91782fb1959b26ff6a0dc263ae34e5104d5a5dc753e3065cb1745cde`
+defines major1/minor2 and permits ignoring minor numbers. The server source
+`921b03c42c8e2ed86314965fd7154092bc38b8c57ec82b05995769c7c7098281`
+emits those constants. Current broker's exact1.0 server predicate is therefore
+source-incompatible. The distinguishing real local1.2 test is RED before repair
+and passes afterwards, alongside malformed/unknown-major/minor-shape negatives.
+Preserve exact client1.0 requests, accept only server major1 plus canonical
+unsigned32 decimal minor and forward its actual greeting unchanged. No new
+feature authority, deadline, peer/epoch/CPID/cancellation or registry bypass.
+Source+whole review `0eb37a7a1028f666db4044de3c1a1ad3518b08c909fb0ca1de950cdeb12245d3`;
+matching broker10 native subsequently fails Bob AUTH454/4.7.0. Do not claim this uniquely
+caused broker9's unexported refusal.
+
+Admission-parent offline native build passes77.985s with fresh=false, exact1246
+source files before/after, a53,437,968-byte library test binary
+`63079c919091e65be57b85e7707a4cd61ad76651107b2d369f0d5b08074dc33b`
+and owned build group gone/reaped without forced stop. The exact reviewed root
+case then fails exit101 in0.05s: custody unchanged/group gone, but scratch is
+nonempty and `/tmp/osmap-adp-8b3f19f645a076c2` remains. Outer stdout365/stderr314
+were retained only as hashes; the failing inner cause is unknown. Reuse the
+same compiled binary's existing child branch with bounded useful public
+diagnostics and original assertions/custody, rather than rebuilding or retrying
+the unchanged blind wrapper. No parent/worker/full-workflow PASS is inferred.
+
+Primary16 independent component scope is
+`a807f5c6080ce6ad57e0919bfa63f8cc697f20a9240a1ce07911ecb1a989a004`.
+Actual broker10 result SHA256
+`362abff72168f3fd5401ddca19ec34e21d5f67d15242e4c14fad1e59a8d7f58e`
+retains failed Bob AUTH and unchanged zero internal registration/publication
+counters. Current auth-failure classifier is true; the earlier submission-login
+proxy error is absent. The original per-connection failing call remains unknown.
+Both daemon groups/runtime/scratch are removed, standard metadata preserved;
+rootstage remains retained. Reassess at this second post-startup failure: expose
+the original connection's fixed stage/refusal and useful bounded scrubbed
+existing error text before further repair. No extra probe, budget extension,
+authority waiver or unchanged native retry is permitted.

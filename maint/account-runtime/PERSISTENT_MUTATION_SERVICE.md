@@ -163,3 +163,17 @@ the existing hash graph. Its read-only grant is recursive, while the reused
 custody checks cover immediate entries and metadata. Private identity, empty
 groups, DAC and outside-read denial remain necessary; neither descendant
 immutability nor native authentication follows from this source increment.
+
+Search ancestors use the same fixed identity/permission policy as ELF/module
+ancestors; unrelated parent size/timestamp changes do not invalidate that
+authority. Full search-directory/member custody and fixed leaf hashes remain.
+
+The persistent Rust admission parent seals its purpose-specific policy after
+publishing the exact owned socket and before accepting credentials. Only the
+protected endpoint, fixed interpreter alias/target and empty-permission ancestor
+visibility are admitted. Root cwd is established before sealing and verified
+before spawn; no recursive `/` or `/usr` read grant is used. The finite public
+connection entry remains unavailable so it cannot bypass server-owned sealing.
+This is a parent boundary only. The exec'd Python worker requires separate
+confinement; native flags and the password workflow remain disabled pending
+actual composed qualification. Source construction does not provision anything.

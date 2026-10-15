@@ -7,6 +7,7 @@ filesystem owner. A native front acceptor/complete ingress qualification remains
 required. Only actual backend OK can publish under the shared epoch registry.
 """
 import os
+import re
 from pathlib import Path
 import socket
 import select
@@ -137,6 +138,16 @@ class AuthBroker:
     def _send(stream,line,budget):
         stream.settimeout(budget.cap_seconds(1));stream.sendall(line);budget.remaining()
 
+    @staticmethod
+    def _server_version(fields):
+        # Dovecot2.3.21.1 auth-client-interface.h declares1.2 and explicitly
+        # allows ignoring minor versions. Keep the client1.0 wire unchanged;
+        # a compatible server minor does not grant any new protocol feature.
+        _require(type(fields)is list and len(fields)==3 and all(type(v)is bytes for v in fields)
+                 and fields[:2]==[b'VERSION',b'1']
+                 and re.fullmatch(rb'0|[1-9][0-9]{0,9}',fields[2])is not None
+                 and int(fields[2])<2**32)
+
     def connection(self,client,budget):
         """One accepted descriptor, one AUTH; no credentials are retained.
 
@@ -165,7 +176,7 @@ class AuthBroker:
                 _require(fields[0]in (b'VERSION',b'MECH',b'SPID',b'CUID',b'COOKIE',b'DONE'))
                 if fields[0]in (b'VERSION',b'SPID',b'CUID',b'COOKIE',b'DONE'):
                     _require(fields[0]not in seen);seen.add(fields[0])
-                if fields[0]==b'VERSION':_require(fields==[b'VERSION',b'1',b'0'])
+                if fields[0]==b'VERSION':self._server_version(fields)
                 if fields[0]==b'DONE':_require(fields==[b'DONE']and b'VERSION'in seen)
                 self._send(client,line,budget)
                 if fields[0]==b'DONE':break

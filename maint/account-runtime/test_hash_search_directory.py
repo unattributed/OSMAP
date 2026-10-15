@@ -24,6 +24,44 @@ class SearchTests(unittest.TestCase):
  def parents(self):return tuple((str(p),)+g._identity(self.observed(p)) for p in self.search.parents)
  def context(self):
   s=contextlib.ExitStack();s.enter_context(patch.object(self.b,'inherited_group',return_value=True));s.enter_context(patch.object(g,'SEARCH_DIRECTORY',str(self.search)));s.enter_context(patch.object(g,'SEARCH_CUSTODY',g._identity(self.observed(self.search))));s.enter_context(patch.object(g,'SEARCH_ANCESTRY',self.parents()));s.enter_context(patch.object(g,'SEARCH_ENTRIES',self.rows()));s.enter_context(patch.object(Path,'lstat',lambda p:self.observed(p)));s.enter_context(patch.object(g.os,'fstat',lambda fd:self.project(self.fstat(fd))));s.enter_context(patch.object(g.os,'stat',lambda *args,**kwargs:self.project(self.stat(*args,**kwargs))));return s
+ def test_stable_ancestor_authority_allows_benign_times_but_refuses_identity_and_leaf_changes(self):
+  ancestors=set(self.search.parents)
+  with self.context():
+   original=Path.lstat
+   def benign(path):
+    a=original(path)
+    if path in ancestors:
+     a.st_size+=512;a.st_mtime_ns+=1000;a.st_ctime_ns+=2000;a.st_nlink+=1
+    return a
+   with patch.object(Path,'lstat',benign):
+    state=g._search_directory(self.b,self.end)
+    self.assertEqual(state[1],tuple(row[:6]for row in g.SEARCH_ANCESTRY))
+    self.assertEqual(state[0],g.SEARCH_CUSTODY);self.assertEqual(state[2],g.SEARCH_ENTRIES)
+  for field,value in (('st_dev',9876),('st_ino',9876),('st_uid',9876),('st_gid',9876),('st_mode',stat.S_IFDIR|0o775)):
+   with self.context():
+    original=Path.lstat
+    def authority(path):
+     a=original(path)
+     if path==self.search.parent:setattr(a,field,value)
+     return a
+    with patch.object(Path,'lstat',authority):
+     with self.assertRaises(Refused):g._search_directory(self.b,self.end)
+  with self.context():
+   original=Path.lstat
+   def directory(path):
+    a=original(path)
+    if path==self.search:a.st_mtime_ns+=1
+    return a
+   with patch.object(Path,'lstat',directory):
+    with self.assertRaises(Refused):g._search_directory(self.b,self.end)
+  with self.context():
+   original=g.os.stat
+   def member(*args,**kwargs):
+    a=original(*args,**kwargs)
+    if args[0]==b'liba.so':a.st_mtime_ns+=1
+    return a
+   with patch.object(g.os,'stat',member):
+    with self.assertRaises(Refused):g._search_directory(self.b,self.end)
  def test_exact_actual_observation_source_rows_and_only_new_read_grant(self):
   raw=(R/'fixtures/hash-search-directory-observation.json').read_bytes();v=json.loads(raw);keys=('dev','ino','uid','gid','mode','nlink','size','mtime_ns','ctime_ns')
   self.assertEqual(hashlib.sha256(raw).hexdigest(),pins.SEARCH_OBSERVATION_SHA256)
@@ -92,8 +130,9 @@ class SearchTests(unittest.TestCase):
     return a
    with patch.object(g.os,'stat',change):
     with self.assertRaisesRegex(Refused,'membership changed'):g._search_directory(self.b,self.end)
-  with self.context(),patch.object(g,'_search_parents',side_effect=(self.parents(),())):
+  with self.context(),patch.object(g,'_search_parents',side_effect=(tuple(row[:6]for row in self.parents()),())) as parents:
    with self.assertRaises(Refused):g._search_directory(self.b,self.end)
+  self.assertEqual(parents.call_count,2)
  def test_actual_entry_and_name_byte_bounds_refuse_same_phase(self):
   for i in range(257):(self.search/('entry'+str(i))).write_bytes(b'x')
   with self.context():

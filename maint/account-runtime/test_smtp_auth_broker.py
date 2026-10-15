@@ -66,7 +66,7 @@ class BrokerTests(unittest.TestCase):
                     if not version:return
                     self.assertEqual(version,b'VERSION\t1\t0\n')
                     self.assertEqual(self.line(stream),b'CPID\t123\n')
-                    stream.sendall(b'VERSION\t1\t0\nMECH\tPLAIN\tplaintext\nSPID\t1234\nCUID\t1\nCOOKIE\tpublic-synthetic-cookie\nDONE\n')
+                    stream.sendall(getattr(self,'backend_version',b'VERSION\t1\t0\n')+b'MECH\tPLAIN\tplaintext\nSPID\t1234\nCUID\t1\nCOOKIE\tpublic-synthetic-cookie\nDONE\n')
                     raw=self.line(stream)
                     if not raw:return
                     self.assertEqual(len(self.service.registry._channels),1,'credentials forwarded before shared registration')
@@ -104,6 +104,20 @@ class BrokerTests(unittest.TestCase):
         self.assertTrue(self.closed.wait(1));thread.join(1)
         self.assertEqual(self.backend_errors,[]);self.assertTrue(channel.closed)
         self.assertEqual(front.recv(1),b'')
+
+    def test_source_version_1_2_real_backend_ok_shared_pending_cutoff(self):
+        self.backend_version = b'VERSION\t1\t2\n'
+        self.test_real_accepted_channel_actual_backend_ok_stays_shared_for_pending_cutoff()
+
+    def test_server_major_shape_and_canonical_minor_boundary(self):
+        for minor in (b'0', b'2', b'999', b'4294967295'):
+            broker.AuthBroker._server_version([b'VERSION', b'1', minor])
+        for fields in ([b'VERSION', b'0', b'2'], [b'VERSION', b'2', b'0'],
+                       [b'VERSION', b'1'], [b'VERSION', b'1', b'2', b'extra'],
+                       [b'VERSION', b'1', b'-1'], [b'VERSION', b'1', b'02'],
+                       [b'VERSION', b'1', b'not-a-number'], [b'VERSION', b'1', b'4294967296']):
+            with self.subTest(fields=fields), self.assertRaises(Refused):
+                broker.AuthBroker._server_version(fields)
 
     def test_pending_epoch_refuses_before_backend_credential_dispatch(self):
         self.fixture.state();thread=self.backend_start();server,_=self.accepted()

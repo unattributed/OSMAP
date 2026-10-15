@@ -412,6 +412,71 @@ pub struct OpenbsdConfinementPlan {
     pub unveil_rules: Vec<OpenbsdUnveilRule>,
 }
 
+/// Admission's Rust supervisor only. The fixed worker starts without inherited
+/// pledge/unveil (unset exec promises); its separate native command policy and
+/// full workflow qualification remain required. Never grant the supervisor
+/// recursive reads of public ancestors or epoch/private-material directories.
+pub(crate) fn account_admission_parent_plan(
+    socket: &Path,
+) -> Result<OpenbsdConfinementPlan, String> {
+    use std::path::Component;
+    if !socket.is_absolute()
+        || socket.file_name().is_none()
+        || socket
+            .components()
+            .any(|c| matches!(c, Component::CurDir | Component::ParentDir))
+    {
+        return Err("account admission endpoint unavailable".into());
+    }
+    let parent = socket
+        .parent()
+        .ok_or("account admission endpoint unavailable")?;
+    // The bound namespace is root-private; no public tree is an eligible
+    // recursive directory read grant. Service additionally holds its inode.
+    crate::openpgp_inventory_runtime::private_dir(parent, effective_uid(), true)
+        .map_err(|_| "account admission namespace unavailable")?;
+    let mut rules = BTreeMap::new();
+    for path in [
+        socket,
+        Path::new("/usr/local/bin/python3"),
+        Path::new("/usr/local/bin/python3.13"),
+    ] {
+        for ancestor in path.ancestors().skip(1) {
+            // Empty permissions expose metadata, never read/open/list or
+            // write/create/execute. Native qualification must prove these
+            // exact stat/realpath semantics and outside-access refusals.
+            add_rule(&mut rules, ancestor, "");
+        }
+    }
+    add_rule(&mut rules, parent, "r");
+    add_rule(&mut rules, socket, "rwc");
+    add_rule(&mut rules, Path::new("/usr/local/bin/python3"), "rx");
+    add_rule(&mut rules, Path::new("/usr/local/bin/python3.13"), "rx");
+    Ok(OpenbsdConfinementPlan {
+        promises_before_lock: "stdio rpath wpath cpath unix proc exec unveil",
+        promises_after_lock: "stdio rpath wpath cpath unix proc exec",
+        unveil_rules: rules
+            .into_iter()
+            .map(|(path, permissions)| OpenbsdUnveilRule { path, permissions })
+            .collect(),
+    })
+}
+
+/// Called after exact socket publication and before any accept or frame read.
+/// No disabled/log-only branch exists for this mandatory parent policy.
+pub(crate) fn apply_account_admission_parent_confinement(socket: &Path) -> Result<(), String> {
+    let plan = account_admission_parent_plan(socket)?;
+    #[cfg(target_os = "openbsd")]
+    {
+        imp::apply_plan(&plan)
+    }
+    #[cfg(not(target_os = "openbsd"))]
+    {
+        let _ = plan;
+        Err("account admission native parent confinement unavailable".into())
+    }
+}
+
 impl OpenbsdConfinementPlan {
     /// Builds the current confinement plan from validated runtime configuration.
     pub fn from_config(config: &AppConfig) -> Self {
