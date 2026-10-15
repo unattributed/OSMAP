@@ -1,5 +1,16 @@
 # OSMAP WSTG v4.2 Scenario Matrix
 
+S08-02 Folders navigation increment: authenticated GET `/folders` accepts only
+the bounded account-owned folder selection and reuses existing metadata/status
+and reviewed Create/Rename/Move routes. Alice/Bob, malformed selection and
+no-mutation-on-GET controls pass locally. One synthetic browser journey passes
+keyboard Create/review/confirm, persisted hierarchy, existing edit forms, mailbox
+opening, Bob isolation and light/dark wide/narrow layout with no scripts or
+external/Send requests. This is frontend evidence, not authoritative installed
+folder mutation, whole WSTG or slice acceptance. The attack surface declares the
+actual new route/query; authentication, CSRF, helper and existing route checks
+remain unchanged.
+
 S08-02 private leaf Move source/native increment, 2026-10-14: exact helper grant
 binds current source/destination parent identities and existing account/current
 role/session/request authority. Matching native-attempt2 binaryd1b9c73b passes

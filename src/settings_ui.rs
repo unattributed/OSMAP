@@ -19,7 +19,9 @@ mod settings_privacy_ui;
 pub(crate) use settings_privacy_ui::render_privacy_page;
 #[path = "settings_copies_ui.rs"]
 mod settings_copies_ui;
-pub(crate) use settings_copies_ui::{render_copies_page_with_state, CopiesPageState};
+pub(crate) use settings_copies_ui::{
+    render_copies_page_with_state, render_folders_page_with_state, CopiesPageState,
+};
 
 #[path = "settings_general_ui.rs"]
 mod settings_general_ui;

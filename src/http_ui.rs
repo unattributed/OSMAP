@@ -40,9 +40,10 @@ use crate::rendering::{HtmlDisplayPreference, RenderedMessageView};
 pub(crate) use settings_ui::render_openpgp_settings;
 pub(crate) use settings_ui::{
     render_appearance_page, render_composition_page_with_signature, render_copies_page_with_state,
-    render_general_page_with_mark_read, render_identity_page, render_identity_page_with_signature,
-    render_notifications_page, render_privacy_page, render_reading_page_with_state,
-    render_security_page, CopiesPageState, IdentityPageModel, ReadingFoldersState,
+    render_folders_page_with_state, render_general_page_with_mark_read, render_identity_page,
+    render_identity_page_with_signature, render_notifications_page, render_privacy_page,
+    render_reading_page_with_state, render_security_page, CopiesPageState, IdentityPageModel,
+    ReadingFoldersState,
 };
 
 /// Defense-in-depth cap for attachment metadata rows rendered by one route.
@@ -372,7 +373,7 @@ pub(crate) fn app_header(canonical_username: &str, csrf_token: &str, current: &s
         ("inbox", "Inbox", "/mailbox?name=INBOX", "inbox"),
         ("drafts", "Drafts", "/drafts", "drafts"),
         ("sent", "Sent", "/mailbox/shortcut?kind=sent", "sent"),
-        ("documents", "Documents", "", "drafts"),
+        ("folders", "Folders", "/folders", "folders"),
         (
             "archive",
             "Archive / Bin",
@@ -388,10 +389,6 @@ pub(crate) fn app_header(canonical_username: &str, csrf_token: &str, current: &s
         ("settings", "Settings", "/settings", "settings"),
         ("search", "Search", "/search", "search"),
     ] {
-        if name == "documents" {
-            links.push_str(&format!("<span class=\"rail-link\" role=\"link\" aria-disabled=\"true\" aria-label=\"Documents, unavailable\" aria-describedby=\"documents-unavailable\" title=\"Documents are unavailable\">{}<span class=\"rail-label\">Documents</span></span><span id=\"documents-unavailable\" class=\"sr-only\">Document storage and browsing are unavailable.</span>", shell_icon(icon)));
-            continue;
-        }
         links.push_str(&format!(
             "<a class=\"rail-link{}\" href=\"{}\" aria-label=\"{}\" title=\"{}\"{}>{}<span class=\"rail-label\">{}</span></a>",
             if name == "compose" { " rail-compose" } else { "" },

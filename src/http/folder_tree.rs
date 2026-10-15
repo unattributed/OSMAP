@@ -140,7 +140,15 @@ impl FolderTree {
         self.nodes.iter().any(|n| n.name == name && n.selectable)
     }
     pub(crate) fn render(&self, chosen: Option<&str>) -> String {
-        fn children(tree: &FolderTree, parent: Option<usize>, chosen: Option<&str>) -> String {
+        self.render_at(chosen, "/settings?section=copies&amp;folder=")
+    }
+    pub(crate) fn render_at(&self, chosen: Option<&str>, destination: &str) -> String {
+        fn children(
+            tree: &FolderTree,
+            parent: Option<usize>,
+            chosen: Option<&str>,
+            destination: &str,
+        ) -> String {
             let mut ids: Vec<_> = tree
                 .nodes
                 .iter()
@@ -158,10 +166,10 @@ impl FolderTree {
                     ));
                     last_namespace = n.namespace.clone();
                 }
-                let child = children(tree, Some(i), chosen);
+                let child = children(tree, Some(i), chosen, destination);
                 let name = escape_html(&n.name);
                 let label = if n.selectable {
-                    format!("<a href=\"/settings?section=copies&amp;folder={}\"{}><span class=\"folder-line-icon\" aria-hidden=\"true\"></span>{name}</a>",url_encode(&n.name),if chosen==Some(n.name.as_str()){" aria-current=\"true\""}else{""})
+                    format!("<a href=\"{destination}{}\"{}><span class=\"folder-line-icon\" aria-hidden=\"true\"></span>{name}</a>",url_encode(&n.name),if chosen==Some(n.name.as_str()){" aria-current=\"true\""}else{""})
                 } else {
                     format!(
                         "<span class=\"folder-display-only\">{name} <small>{}</small></span>",
@@ -172,7 +180,7 @@ impl FolderTree {
             }
             html
         }
-        children(self, None, chosen)
+        children(self, None, chosen, destination)
     }
     pub(crate) fn primary(&self, name: &str) -> (String, String) {
         self.nodes

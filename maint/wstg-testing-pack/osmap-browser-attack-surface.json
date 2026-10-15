@@ -1064,6 +1064,20 @@
     },
     {
       "method": "GET",
+      "path": "/folders",
+      "query_fields": [
+        "folder"
+      ],
+      "form_fields": [],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "GET",
       "path": "/settings/folders/create",
       "query_fields": [
         "parent"

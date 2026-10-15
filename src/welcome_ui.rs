@@ -81,7 +81,12 @@ pub(crate) fn render_mailboxes_page_with_policy(
             "inbox",
             inbox.then_some("/mailbox?name=INBOX"),
         ),
-        ("Documents", "Unavailable", "drafts", None),
+        (
+            "Folders",
+            "Browse and manage mail folders",
+            "folders",
+            Some("/folders"),
+        ),
         (
             "Security",
             "Account protection",
@@ -95,7 +100,7 @@ pub(crate) fn render_mailboxes_page_with_policy(
             Some("/settings"),
         ),
     ] {
-        // Archive / Bin occupies its approved position between Documents and Security.
+        // Archive / Bin occupies its approved position between Folders and Security.
         if label == "Security" {
             shortcuts.push_str(&format!("<details class=\"welcome-shortcut welcome-shortcut-menu\"><summary><span class=\"welcome-icon\">{}</span><span><strong>Archive / Bin</strong><span>Mailbox shortcuts</span></span></summary><div><a href=\"/mailbox/shortcut?kind=archive\">Open configured Archive</a>{}</div></details>", shell_icon("archive"), "<a href=\"/mailbox/shortcut?kind=bin\">Open Bin</a>"));
         }

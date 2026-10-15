@@ -8637,3 +8637,69 @@ occurs in qualification. Normal signed commit-attempt3 follows; prior two gate
 refusals remain retained. The user reiterates completion-only notifications or
 human-interaction blockers; documentation/decisions stay current without routine
 operator status requests.
+
+### Crypto five-leaf delivery — matching installed lifecycle and public operation
+
+Permanent repair source bd0dcf4045e5a0de805fa78b103aa88b317baee0 has a verified
+Shopkeeper signature. Normal commit-attempt3 and push-attempt1 PASS1669 library/
+0failed/44 explicit native ignores; fresh fetch proves exact UX origin equality
+and a clean checkout. Both earlier normal gate refusals remain without waiver.
+
+After exact final activation-pin review, one obsd1 activation passes: helper
+7e70e452, C worker93658dd0, unlock launcher2d3df2b3, wrapper4dea5e15 and
+RCc6da8fb6 installed with original ownership/modes. Old service stops normally
+in0.582s with forced_old_stop=false. New direct helper has no wrapper process
+and default/unblocked TERM. Actual normal new stop is kind ok/exit0 in0.579s,
+never killed; recovery/start and the restarted mapped image pass. Authenticated
+public Encrypt passes before and after with330 ciphertext bytes. Keys/private
+agent metadata/configuration, unrelated services and exact owned probe cleanup
+pass. Independent delivery scope review PASS. No private-agent action, native
+unlock, operator body reading or provider Send occurs. Rollback was not exercised;
+prior failed activations remain historical with their unknown causes retained.
+
+Evidence: stale-private-agent-20261014/supervision-repair-candidate/
+signed-sync-proof.json, native-attempt3/result.json,
+activation/activation-attempt1.{stdout,stderr,exit} and
+activation/independent-delivery-scope.json. This closes the bounded operational
+repair only; S05-03/S07 protected-reading acceptance remains open. Continue
+Folders implementation and installed essential QA without a repeat baseline
+campaign or premature human troubleshooting handoff.
+
+### S08-02 actual Move pair installation and Folders page implementation
+
+Fresh per-host image and exact stage lease checks pass. Reused reviewed pair
+activator11e3d732 installs qualified application9685ba07 on Toronto helper
+first, then obsd1 web; both exit0/stderr0. Original config/env, completion state,
+retention, native key agents and unrelated services remain preserved. Independent
+pair-activation scope PASS. This is installation, not composed Move acceptance;
+the existing installed Rename qualifier is being minimally adapted for that
+single controlled journey. Evidence: folder-move-20261014/deployment/.
+
+Folders page candidateedff0225 is integrated over signed bd0dcf4: ten reviewed
+source/test paths reuse the existing account-bound tree/status, Create/Rename/
+Move review routes and complete-message movement. No new backend store, script,
+CSS or dependency. Root matching local folder subset PASS80/0failed/5explicit
+native ignores; no ignored case counts as native proof. Existing source review
+CLEAR. One finite synthetic Edge155 browser attempt4 PASS: dashboard/rail,
+keyboard Create review/confirm, persisted hierarchy, Rename/Move forms, Open,
+Bob selection isolation and light/dark1440/360 layout/focus/no overflow. Zero
+external/Send/script requests; fixture exit0 and scratch removed. Images were
+inspected. Attempt3's selector timeout is retained: existing url_encode emits+
+for spaces, while the harness assumed%20; changed selectors pass with unchanged
+product source. It is not a demonstrated product defect.
+
+The attack-surface register adds only actual GET/folders with folder query;
+authentication/CSRF/helper authority and existing route-completeness checks
+remain. One reviewed native compile/route-test/app package464+3 follows. Installed
+Folders journey and Delete/Bin/Restore remain open; no operator UAT invitation.
+The populated disposition developer works in isolation on existing approved
+mechanisms; root remains the sole canonical Git/host/native/browser executor.
+
+Matching native Folders attempt1 now PASS82.506s, all464 compiler+3qualification
+inputs before/after parity, both actual named route controls PASS2/0failed/
+0ignored. Native app f6b4946253950cfc3630b2677c90918fea202b903e22a5c158da73b2eb9bc2a4
+is frozen at osmap-folders-page-411f3a43de3627cf/qualified-osmap. Both native
+compiler artifacts are fresh=false; no operator service, mail or private crypto
+action occurred. Evidence: folders-page-20261014/native-attempt1/result.json.
+Normal signed source admission/sync and matching installed Folders journey
+remain required; this native route proof does not stand in for the gateway.

@@ -25,6 +25,18 @@ where
                 Ok(result) => result,
                 Err(response) => return response,
             };
+        let folders_page = request.path == "/folders";
+        if folders_page && request.query_params.keys().any(|key| key != "folder") {
+            return HandledHttpResponse {
+                response: html_response(
+                    400,
+                    "Bad Request",
+                    "Invalid Folder Selection",
+                    "<p>Select a folder from Folders.</p>",
+                ),
+                audit_events,
+            };
+        }
         if request.query_params.contains_key("folder") && request.query_params.contains_key("q") {
             return HandledHttpResponse {
                 response: html_response(
@@ -71,11 +83,15 @@ where
             None
         };
 
-        let section = request
-            .query_params
-            .get("section")
-            .map(String::as_str)
-            .unwrap_or("general");
+        let section = if folders_page {
+            "copies"
+        } else {
+            request
+                .query_params
+                .get("section")
+                .map(String::as_str)
+                .unwrap_or("general")
+        };
         if !matches!(
             section,
             "general"
@@ -265,7 +281,7 @@ where
                 canonical_username,
                 settings,
             } => HandledHttpResponse {
-                response: html_response(200, "OK", "Settings", {
+                response: html_response(200, "OK", if folders_page { "Folders" } else { "Settings" }, {
                     let model = SettingsPageModel {
                         canonical_username: &canonical_username,
                         csrf_token: &validated_session.record.csrf_token,
@@ -281,7 +297,7 @@ where
                         let mailboxes = owned_mailboxes.as_ref().map(|entries| super::routes_mail::filter_user_visible_mailboxes(entries));
                         let hierarchy = owned_mailboxes.as_ref().and_then(|entries| self.folder_hierarchy(context, &validated_session, entries, &mut audit_events));
                         let chosen = request.query_params.get("folder").map(String::as_str)
-                            .or(model.archive_mailbox_name).filter(|name| hierarchy.as_ref().is_none_or(|tree| tree.selectable(name))).filter(|name| mailboxes.as_ref().is_some_and(|entries| entries.iter().any(|v| v.name == *name)))
+                            .or(if folders_page { Some("INBOX") } else { model.archive_mailbox_name }).filter(|name| hierarchy.as_ref().is_none_or(|tree| tree.selectable(name))).filter(|name| mailboxes.as_ref().is_some_and(|entries| entries.iter().any(|v| v.name == *name)))
                             .or_else(|| if request.query_params.contains_key("folder") { None } else { mailboxes.as_ref().and_then(|v| v.iter().find(|m| hierarchy.as_ref().is_none_or(|tree| tree.selectable(&m.name)))).map(|v| v.name.as_str()) });
                         if request.query_params.contains_key("folder") && mailboxes.is_some() && chosen.is_none() {
                             return HandledHttpResponse { response: html_response(400, "Bad Request", "Folder Unavailable", "<p>Select a folder from Copies &amp; Folders.</p>"), audit_events };
@@ -301,7 +317,8 @@ where
                                 let rename = rename_state.is_ok() && !rename_pending && chosen.zip(status.as_ref()).zip(hierarchy.as_ref()).is_some_and(|((name, status), tree)| tree.can_rename(&canonical_username, name, status)) && chosen.zip(bin.as_ref()).zip(sent_location.as_ref()).is_some_and(|((name, bin), sent)| sent.valid() && !crate::folder_rename::role_conflict(&[Some(bin.mailbox_name.clone()), Some(sent.mailbox_name.clone()), model.archive_mailbox_name.map(str::to_owned)].into_iter().flatten().collect::<Vec<_>>(), name, name));
                                 let sent_location_choices = self.sent_location_choices(context, &validated_session, &mut audit_events);
                                 let bin_choices = self.bin_folder_choices(context, &validated_session, &mut audit_events);
-                                crate::http_ui::render_copies_page_with_state(&model, crate::http_ui::CopiesPageState { mailboxes: mailboxes.as_deref(), chosen, counts, status: status.as_ref(), hierarchy: hierarchy.as_ref(), creation, rename, rename_pending, draft_location: draft_location.as_ref(), draft_location_ready, bin: bin.as_ref(), bin_choices: bin_choices.as_deref(), sent_copy: sent_copy.as_ref(), sent_location: sent_location.as_ref(), sent_location_choices: sent_location_choices.as_deref() })
+                                let state = crate::http_ui::CopiesPageState { mailboxes: mailboxes.as_deref(), chosen, counts, status: status.as_ref(), hierarchy: hierarchy.as_ref(), creation, rename, rename_pending, draft_location: draft_location.as_ref(), draft_location_ready, bin: bin.as_ref(), bin_choices: bin_choices.as_deref(), sent_copy: sent_copy.as_ref(), sent_location: sent_location.as_ref(), sent_location_choices: sent_location_choices.as_deref() };
+                                if folders_page { crate::http_ui::render_folders_page_with_state(&model, state) } else { crate::http_ui::render_copies_page_with_state(&model, state) }
                             }
                         }
                     } else if section == "appearance" {

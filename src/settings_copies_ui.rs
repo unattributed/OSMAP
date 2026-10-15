@@ -63,6 +63,21 @@ pub(crate) fn render_copies_page_with_state(
     model: &SettingsPageModel<'_>,
     state: CopiesPageState<'_>,
 ) -> TrustedHtml {
+    render_folder_settings(model, state, false)
+}
+
+pub(crate) fn render_folders_page_with_state(
+    model: &SettingsPageModel<'_>,
+    state: CopiesPageState<'_>,
+) -> TrustedHtml {
+    render_folder_settings(model, state, true)
+}
+
+fn render_folder_settings(
+    model: &SettingsPageModel<'_>,
+    state: CopiesPageState<'_>,
+    folders_page: bool,
+) -> TrustedHtml {
     let CopiesPageState {
         mailboxes,
         chosen,
@@ -133,10 +148,15 @@ pub(crate) fn render_copies_page_with_state(
         ));
     }
     let unavailable = mailboxes.is_none();
+    let destination = if folders_page {
+        "/folders?folder="
+    } else {
+        "/settings?section=copies&amp;folder="
+    };
     let mut rows = String::new();
     for entry in entries.iter().take(DEFAULT_RENDERED_MAILBOXES_MAX) {
         rows.push_str(&format!(
-            "<li><a href=\"/settings?section=copies&amp;folder={}\"{}>{}<span>{}</span></a></li>",
+            "<li><a href=\"{destination}{}\"{}>{}<span>{}</span></a></li>",
             url_encode(&entry.name),
             if chosen == Some(entry.name.as_str()) {
                 " aria-current=\"true\""
@@ -148,7 +168,11 @@ pub(crate) fn render_copies_page_with_state(
         ));
     }
     if let Some(tree) = hierarchy {
-        rows = tree.render(chosen);
+        rows = if folders_page {
+            tree.render_at(chosen, destination)
+        } else {
+            tree.render(chosen)
+        };
     }
     if rows.is_empty() {
         rows.push_str("<li>No available mailbox listing.</li>");
@@ -204,6 +228,13 @@ pub(crate) fn render_copies_page_with_state(
         v.map(|v| format!("<p class=\"notice\" role=\"{role}\">{}</p>", escape_html(v)))
     })
     .collect::<String>();
+    if folders_page {
+        return TrustedHtml::from_template(format!(concat!(
+            "{header}<main id=\"main-content\" class=\"page-shell settings-copies-page folders-page\" tabindex=\"-1\"><div class=\"page-intro\"><h1>Folders</h1><p>Browse your Inbox subfolders and other account mail folders.</p></div>{notices}",
+            "<section class=\"copies-management\"><div class=\"copies-management-heading\"><div><h2>Mail folders</h2><p>Select a folder to inspect it, then open its messages or manage a private user folder.</p></div><div class=\"copies-management-actions\">{create}{rename}{move_folder}</div></div>",
+            "<div class=\"copies-browser\"><section class=\"copies-tree\" aria-label=\"Account folder hierarchy\"><h2>Folder hierarchy</h2><ul>{rows}</ul>{limit}{tree_notice}</section><section class=\"copies-details\"><h2>Selected folder</h2>{selected}<div class=\"copies-safety\"><h3>Folder safety</h3><p>System folders and saved mail destinations are protected. Rename and folder Move require review and confirmation. Folder deletion and restore are not available here yet.</p><p>To move complete emails, open a folder and use the message Move controls. Attachments stay with their email.</p><a href=\"/settings?section=copies\">Copies and folder preferences</a></div></section></div></section></main>"
+        ), header=app_header(model.canonical_username, model.csrf_token, "folders"), notices=notices, create=create, rename=rename, move_folder=move_folder, rows=rows, selected=selected, limit=if entries.len()>DEFAULT_RENDERED_MAILBOXES_MAX {"<p>Mailbox display limit reached.</p>"}else{""}, tree_notice=if hierarchy.is_some(){""}else{"<p role=\"status\">Hierarchy unavailable. Only verified account folders can be opened; folder editing is unavailable.</p>"}));
+    }
     TrustedHtml::from_template(format!(concat!(
         "{header}<main id=\"main-content\" class=\"page-shell settings-page settings-copies-page\" tabindex=\"-1\"><div class=\"page-intro\"><h1>Settings</h1><p>Review storage locations and choose Archive and Bin folders.</p></div>{notices}<div class=\"settings-layout\">{nav}<div class=\"copies-content\"><div class=\"copies-top-grid\">",
         "<section class=\"general-card\"><h2>Copies</h2>{sent_copy_form}{sent_location_form}{draft_location_form}<div class=\"general-field\"><span>Keep Bcc private</span><span>Bcc omitted from message headers</span></div><div class=\"copies-links\">{sent}<a href=\"/drafts\">Open drafts</a></div></section>",

@@ -42,10 +42,18 @@ tested by that restoration. The permanent four-path repair has matching native
 signal/wrapper qualification; installed lifecycle/function remain pending.
 No private agent or mail action occurred.
 
-The final regression reuses the central bounded executor; cheap static guards
-and matching native signal/helper qualification PASS. Earlier CWE/direct-spawn
-gate refusals are retained. Permanent installation and functional rollback remain
-unverified until their actual activation outcomes are recorded.
+Superseding permanent repair: signed source
+`bd0dcf4045e5a0de805fa78b103aa88b317baee0` passed normal commit/push gates
+and fresh origin equality with a clean checkout. Five exact Crypto leaves are
+installed on obsd1: helper, C worker, native unlock launcher, foreground wrapper
+and RC script. Actual normal TERM stop completed in 0.579 seconds without a
+forced kill; restart preserves the direct helper role and default, unblocked
+TERM. Authenticated public Encrypt passed before and after activation (330
+ciphertext bytes), with private agents, keys, configuration and unrelated
+service states preserved. Exact probe cleanup passed; independent delivery
+review PASS. Earlier failures remain retained without retrospectively diagnosing
+unknown causes. Rollback was not exercised. No private unlock, operator message
+decryption or provider Send occurred.
 
 GitHub issue77 closes only approved-reference lock/promotion. Issue78 remains
 open for the functional Folders journey. No whole-sprint or epic acceptance is
@@ -60,15 +68,28 @@ grant bind both current parent identities; protected/system, cycle, stale and
 cross-account restrictions remain. One matching confined OpenBSD case passes
 populated Rename and Move with folder/message identity, exact content,
 Label/Snooze continuity, account isolation, uncertain-result recovery and current
-fixture cleanup. Installation and the operator's combined folder-lifecycle UAT
-remain pending. The earlier failed fixture's cleanup remains unconfirmed.
+fixture cleanup. The matching application9685ba07 is now installed helper-first
+on Toronto and then web on obsd1, with configuration, completion state, key
+agents and unrelated services preserved. Installed composed Move QA and the
+operator's combined folder-lifecycle UAT remain pending. The earlier failed
+fixture's cleanup remains unconfirmed.
 
 Operator engineering request [#78](https://github.com/unattributed/OSMAP/issues/78)
 assigns the Documents-to-Folders navigation/page change, Inbox hierarchy, folder
 management and movement of complete emails including attachments to S08-02,
 before combined acceptance and affected S09 visual checks. These requested
-navigation changes are not yet installed. Existing bulk Labels are implemented;
-their current installed/human journey still needs qualification.
+navigation changes are not yet installed. The real authenticated Folders page
+is implemented and passes focused local account/selection controls and one
+synthetic browser journey: keyboard Create/review/confirm, persisted hierarchy,
+existing Rename/Move forms, mailbox opening, Bob isolation, and wide/narrow
+light/dark layout. No external or Send requests or runtime scripts occurred;
+the disposable fixture exited and its scratch was removed. Native compilation
+and both named route controls PASS against exact464+3 inputs, producing app
+f6b49462. Installed frontend/backend qualification remains pending. A failed earlier
+selector assumed `%20` where the existing encoder emits `+`; the corrected
+harness passes without changing product code. Delete/Bin/Restore remain separate
+dependencies. Existing bulk Labels are implemented; their current installed/human
+journey still needs qualification.
 
 ### Private key-agent recovery engineering, 2026-10-14
 
@@ -83,8 +104,9 @@ Native Pinentry and the 300-second cache policy remain unchanged.
 One matching OpenBSD qualification passes stale private-operation refusal with
 no plaintext, public Encrypt/Verify availability, bounded agent recovery and
 real signing afterward. Existing recipient, self-decryption, signature and Bcc
-privacy checks also pass. This is source/native evidence; signed synchronization,
-installation and actual account reading remain separate pending outcomes.
+privacy checks also pass. These source/native controls are complemented by the
+five-leaf installed lifecycle and public-operation proof above. Actual account
+reading and native operator unlock remain separate pending outcomes.
 
 Operator UAT separately establishes first-message Proton receipt, readable
 PGP-encrypted content and reported Bcc privacy. A second message has actual

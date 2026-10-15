@@ -58,7 +58,7 @@ fn shell_primary_order_single_selection_and_foreign_archive_refusal() {
             "Inbox",
             "Drafts",
             "Sent",
-            "Documents",
+            "Folders",
             "Archive / Bin",
             "Security",
             "Settings",
@@ -69,9 +69,7 @@ fn shell_primary_order_single_selection_and_foreign_archive_refusal() {
                 .unwrap()
                 .1;
         }
-        assert!(nav.contains(
-            "role=\"link\" aria-disabled=\"true\" aria-label=\"Documents, unavailable\""
-        ));
+        assert!(nav.contains("href=\"/folders\" aria-label=\"Folders\""));
         assert!(!nav.contains("href=\"\""));
     }
     for agent in ["SettingsWrongOwner", "CopiesWrongOwner"] {

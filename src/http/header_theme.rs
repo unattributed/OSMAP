@@ -17,6 +17,7 @@ pub(super) fn safe_return(value: &str) -> Option<String> {
     .ok()?;
     let allowed: &[&str] = match path {
         "/settings" => &["section", "q", "folder"],
+        "/folders" => &["folder"],
         "/settings/keys" | "/sessions" | "/mailboxes" | "/contacts" | "/snoozed" => &[],
         "/drafts" => {
             crate::draft_list::DraftListView::parse(&fields).ok()?;
@@ -69,8 +70,8 @@ pub(super) fn safe_return(value: &str) -> Option<String> {
         return None;
     }
     if let Some(folder) = fields.get("folder") {
-        if path != "/settings"
-            || fields.get("section").map(String::as_str) != Some("copies")
+        if !(path == "/folders"
+            || (path == "/settings" && fields.get("section").map(String::as_str) == Some("copies")))
             || fields.contains_key("q")
             || MailboxEntry::new(
                 crate::mailbox::MailboxListingPolicy::default(),

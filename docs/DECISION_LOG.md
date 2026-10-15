@@ -9634,3 +9634,28 @@ already qualified Rust binary; no unchanged Rust rebuild or assurance matrix is
 needed. Its actual stale/private refusal, public positives, recovery and signing
 positive passed. Operator account warming and installed body decryption remain
 distinct. Keep native failure history and actual signing-cache blocker visible.
+
+## 2026-10-14 — deliver coherent Crypto supervision without broadening acceptance
+
+Install the five reviewed and matching-qualified leaves together after normal
+signed synchronization. Actual normal TERM/drain/start/restart and authenticated
+public encryption establish this bounded operational repair; file publication
+or rcctl alone cannot. Preserve keys, native agents, configuration and unrelated
+services. The successful action does not establish an unexercised fault rollback,
+private unlock, operator body decryption, reboot or full protected-mail acceptance.
+Keep historical failed activations and unknown causes visible. Independent
+delivery review PASS precedes any completion claim. Continue the already
+qualified Move delivery and Folders implementation without operator debugging.
+
+## 2026-10-14 — deliver the requested Folders navigation through existing authority
+
+Reuse the verified owned hierarchy and lifecycle review routes for authenticated
+Folders navigation, replacing Documents in the primary rail/dashboard under R3.
+Keep original Documents obligations; do not advertise unqualified storage or
+Delete/Bin/Restore. Preserve complete-message attachments through existing mail
+movement, rather than inventing standalone file semantics. Qualify the native
+and installed paths after focused frontend controls; synthetic browser success
+alone cannot establish the composed workflow. Correct the measured space-encoding
+test selector without changing product URL semantics or weakening assertions.
+The operator receives one minimal combined acceptance only after all submitted
+agent-owned implementation, matching installed QA and independent audit pass.

@@ -137,6 +137,7 @@ where
             (HttpMethod::Post, "/login") => self.handle_login(request, &context),
             (HttpMethod::Get, "/") => self.handle_root_redirect(request, &context),
             (HttpMethod::Get, "/mailboxes") => self.handle_mailboxes(request, &context),
+            (HttpMethod::Get, "/folders") => self.handle_settings_page(request, &context),
             (HttpMethod::Get, "/mailbox/shortcut") => {
                 self.handle_mailbox_shortcut(request, &context)
             }
