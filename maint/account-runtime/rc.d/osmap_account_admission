@@ -1,0 +1,11 @@
+#!/bin/ksh
+# Fixed startup contract only; native worker/factory qualification precedes install.
+# These operator-private files are not created or inferred by this script.
+daemon="/usr/local/bin/osmap_account_admission_helper"
+daemon_user="root"
+daemon_flags="/etc/osmap/account-admission.json /etc/osmap/account-admission.key"
+rc_bg=YES
+rc_reload=NO
+. /etc/rc.d/rc.subr
+pexp="${daemon} ${daemon_flags}"
+rc_cmd "$1"

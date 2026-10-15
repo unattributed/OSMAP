@@ -3,20 +3,20 @@
     "by_classification": {
       "control_flow_invariant": 7,
       "panic_path_assumption": 80,
-      "production_adjacent_assumption": 2233,
-      "startup_or_global_invariant": 9,
-      "test_or_fixture_assumption": 6413
+      "production_adjacent_assumption": 2237,
+      "startup_or_global_invariant": 10,
+      "test_or_fixture_assumption": 6488
     },
     "by_fail_closed_relevance": {
-      "high": 2313,
-      "low": 6413,
-      "medium": 16
+      "high": 2317,
+      "low": 6488,
+      "medium": 17
     },
-    "inventory_sha256": "f53009f97d4ee7c1c0cb73351121d3da26c09ec75a50b3de921a84189ea46d74",
+    "inventory_sha256": "d0f3db0474325b131172856d9fd45f9d590027716999153ef2aa74d236725e12",
     "schema_version": 1,
     "slice": "V10 Slice 4",
     "source": "maint/security/v10-rust-assumption-audit.json",
-    "total_count": 8742
+    "total_count": 8822
   },
   "explicit_non_claims": [
     "This slice does not claim production Rust paths are panic-free.",
@@ -24,21 +24,21 @@
     "This slice does not claim broad public release readiness.",
     "This slice does not change production deployment state."
   ],
-  "generated_at_utc": "2026-10-15T13:19:22Z",
+  "generated_at_utc": "2026-10-15T17:30:34Z",
   "purpose": "Targeted fail-closed remediation register for Rust assumption handling after the Slice 4 audit.",
   "refined_current": {
     "by_classification": {
       "control_flow_invariant": 4,
       "startup_or_global_invariant": 2,
-      "test_or_fixture_assumption": 8736
+      "test_or_fixture_assumption": 8816
     },
     "by_fail_closed_relevance": {
-      "low": 8736,
+      "low": 8816,
       "medium": 6
     },
     "high_relevance_top_files": {},
-    "inventory_sha256": "482a1082d2dd2434ba4387274e71021833cffd6c56fd1e6a8a1836e74a2855df",
-    "total_count": 8742
+    "inventory_sha256": "6b5fc7e19deb385abcf50b36472faffad5b1a0b04af4c6430ab4be6151fd9ec3",
+    "total_count": 8822
   },
   "required_followups": [
     "Use the refined high-relevance list to select the first concrete runtime code remediation.",
@@ -47,7 +47,7 @@
   ],
   "schema_version": 1,
   "selected_remediation": {
-    "classification_change_count": 8655,
+    "classification_change_count": 8735,
     "live_host_state_changed": false,
     "product_behavior_changed": false,
     "production_state_changed": false,
@@ -57,16 +57,16 @@
   },
   "slice": "V10 Slice 5",
   "summary": {
-    "baseline_total_count": 8742,
+    "baseline_total_count": 8822,
     "classification_complete": true,
     "high_relevance_after": 0,
-    "high_relevance_before": 2313,
+    "high_relevance_before": 2317,
     "live_host_state_changed": false,
     "product_behavior_changed": false,
     "production_state_changed": false,
-    "refined_total_count": 8742,
-    "source_test_module_assumption_count": 8655,
-    "test_or_fixture_after": 8736,
-    "test_or_fixture_before": 6413
+    "refined_total_count": 8822,
+    "source_test_module_assumption_count": 8735,
+    "test_or_fixture_after": 8816,
+    "test_or_fixture_before": 6488
   }
 }

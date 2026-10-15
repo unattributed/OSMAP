@@ -1,5 +1,33 @@
 use super::*;
 const KEY: [u8; 32] = [17; 32];
+#[test]
+fn private_worker_receipt_caps_both_operations_by_original_bound_and_signed_expiry() {
+    for operation in [
+        Operation::Authenticate {
+            password: "synthetic only".into(),
+        },
+        Operation::Admit { epoch: 3 },
+    ] {
+        let request = Request::issue("alice@example.test", operation, 100, &KEY).unwrap();
+        let before = request.bytes().unwrap();
+        for (bound, expected) in [(123456, 123456), (200000, 135000)] {
+            let frame: serde_json::Value =
+                serde_json::from_slice(&request.worker_bytes(bound).unwrap()).unwrap();
+            assert_eq!(frame["sent_millis"], 100000);
+            assert_eq!(frame["deadline_millis"], expected);
+            assert_eq!(frame["expires_at"], 135);
+            assert_eq!(frame["account"], "alice@example.test");
+            assert_eq!(frame.as_object().unwrap().len(), 7);
+        }
+        assert_eq!(request.worker_bytes(100000), Err(Error::Expired));
+        assert_eq!(request.worker_bytes(99999), Err(Error::Expired));
+        assert_eq!(request.bytes().unwrap(), before);
+        assert!(request.valid(&KEY, 100).is_ok());
+    }
+    let mut overflow = authenticate();
+    overflow.issued = u64::MAX;
+    assert_eq!(overflow.worker_bytes(u64::MAX), Err(Error::Invalid));
+}
 fn authenticate() -> Request {
     Request::issue(
         "alice@example.test",

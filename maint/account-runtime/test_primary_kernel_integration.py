@@ -39,21 +39,28 @@ class PrimaryKernelTests(unittest.TestCase):
    seal=self.seal()
    with patch.object(graph.PrimaryInstalledGraph,'native',side_effect=AssertionError),patch.object(k.subprocess,'Popen',side_effect=AssertionError):
     with self.assertRaises(Refused):seal.spawn(PROGRAM,ARGS+(self.account,),self.end,self.account)
- def test_primary_rows_allow_only_fixed_null_startup_without_recursive_search(self):
+ def test_primary_rows_bind_fixed_readonly_search_and_refuse_changed_custody(self):
   import account_primary_graph as graph
   import account_primary_identity as identity
   import account_hash_graph as common
-  rows=graph.PrimaryInstalledGraph.rows();self.assertEqual(len(rows),len(common.FILES)+3)
-  self.assertNotIn((common.SEARCH_DIRECTORY,b'r'),rows)
+  rows=graph.PrimaryInstalledGraph.rows();self.assertEqual(len(rows),len(common.FILES)+4)
+  self.assertEqual(self.seal()._rows,rows)
+  self.assertEqual([row for row in rows if row[0]==common.SEARCH_DIRECTORY],[(common.SEARCH_DIRECTORY,b'r')])
   self.assertEqual([row for row in rows if row[0]=='/dev/null'],[('/dev/null',b'rwc')])
   self.assertEqual(rows[-1],(str(identity.SOCKET),b'rw'))
   self.assertEqual(graph.PROMISES,b'stdio rpath unix prot_exec exec wpath cpath')
   self.assertEqual([name for name,access in rows if b'w'in access or b'c'in access],['/dev/null',str(identity.SOCKET)])
-  with patch.object(self.b,'inherited_group',return_value=True),patch.object(common,'_modules',return_value='fixed-five') as modules,patch.object(common,'_read',return_value='fixed-leaf') as reader,patch.object(common,'_search_directory',side_effect=AssertionError):
+  self.assertEqual([name for name,access in rows if b'x'in access],[PROGRAM])
+  with patch.object(self.b,'inherited_group',return_value=True),patch.object(common,'_modules',return_value='fixed-five') as modules,patch.object(common,'_read',return_value='fixed-leaf') as reader,patch.object(common,'_search_directory',return_value='fixed-search') as search:
    states=graph.PrimaryInstalledGraph._observe(self.b,self.end)
-  self.assertEqual(states,(('fixed-leaf',)*len(common.FILES),'fixed-five'))
+  self.assertEqual(states,(('fixed-leaf',)*len(common.FILES),'fixed-five','fixed-search'))
   self.assertEqual(modules.call_count,2);self.assertEqual(reader.call_count,len(common.FILES))
   self.assertEqual([str(call.args[0]) for call in reader.call_args_list],[row[0] for row in common.FILES])
+  self.assertEqual(search.call_args_list,[unittest.mock.call(self.b,self.end)]*2)
+  with patch.object(self.b,'inherited_group',return_value=True),patch.object(common,'_modules',return_value='fixed-five'),patch.object(common,'_read',side_effect=AssertionError),patch.object(common,'_search_directory',side_effect=Refused('search custody unavailable')):
+   with self.assertRaisesRegex(Refused,'search custody unavailable'):graph.PrimaryInstalledGraph._observe(self.b,self.end)
+  with patch.object(self.b,'inherited_group',return_value=True),patch.object(common,'_modules',return_value='fixed-five'),patch.object(common,'_read',return_value='fixed-leaf'),patch.object(common,'_search_directory',side_effect=['fixed-search','changed-search']):
+   with self.assertRaisesRegex(Refused,'search directory changed'):graph.PrimaryInstalledGraph._observe(self.b,self.end)
  def projected(self):
   import account_primary_identity as identity
   import account_primary_graph as graph

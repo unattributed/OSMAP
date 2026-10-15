@@ -71,6 +71,7 @@ class NativePrimaryVerifier:
         if seconds<=RESERVE:raise Refused('mutation primary deadline unavailable')
         deadline=time.monotonic()+seconds-RESERVE
         child=None
+        input_incomplete=False
         output=bytearray();total=0
         try:
             self._material.recheck(self._budget)
@@ -88,7 +89,12 @@ class NativePrimaryVerifier:
                         pipe=key.fileobj
                         try:
                             if key.data=='input':
-                                pending=pending[os.write(pipe.fileno(),pending):]
+                                try:pending=pending[os.write(pipe.fileno(),pending):]
+                                except BrokenPipeError:
+                                    # Reconcile the original owned child and pipes;
+                                    # an early input close never authorizes success.
+                                    input_incomplete=True
+                                    selector.unregister(pipe);pipe.close();continue
                                 if not pending:selector.unregister(pipe);pipe.close()
                             else:
                                 data=os.read(pipe.fileno(),4096)
@@ -102,6 +108,7 @@ class NativePrimaryVerifier:
                 if remaining<=0:raise Refused('mutation primary deadline unavailable')
                 code=child.wait(timeout=remaining)
             accepted,users=self._result(code,bytes(output))
+            if accepted and input_incomplete:raise Refused('mutation primary unavailable')
             if accepted and users!=[self._account]:raise Refused('mutation primary identity unavailable')
             self._budget.remaining()
             return accepted

@@ -137,3 +137,29 @@ Unveil c intrinsically includes leaf mutation, so the private identity/DAC are
 mandatory; qualification never removes/renames/creates the actual device or
 writes it. Original primary proof/cases and a distinct existing-null proof remain
 required before native admission. This source increment does not enable services.
+
+## Private account admission endpoint, 2026-10-15
+
+The paired browser Runtime also requires the persistent
+`osmap_account_admission_helper` endpoint. Its fixed rc entry proposes
+`/etc/osmap/account-admission.json` and `/etc/osmap/account-admission.key`;
+this source contract does not provision those files or qualify a peer UID.
+The existing native confinement gate remains false until actual composition
+passes. Do not infer an enabled password workflow from either endpoint alone.
+
+Admission preserves peer-before-read, authenticated request/replay checks,
+two-connection bounds, cleanup quarantine and exact owned socket removal. The
+internal worker receives the smaller remaining original connection deadline
+and authenticated request expiry. Its actual fixed material/private-primary
+factory uses that same budget while the durable account epoch lock remains
+held. There is no ordinary broad-config authentication fallback or fresh
+operation startup allowance. Startup custody covers the fixed 33-module import
+closure and exact `python3` to `python3.13` engine lease; native dispatch
+rechecks that engine lease under the original deadline. No caller module,
+identity, program, path or readiness Boolean supplies native authority.
+
+The primary loader also requires the fixed library search directory used by
+the existing hash graph. Its read-only grant is recursive, while the reused
+custody checks cover immediate entries and metadata. Private identity, empty
+groups, DAC and outside-read denial remain necessary; neither descendant
+immutability nor native authentication follows from this source increment.

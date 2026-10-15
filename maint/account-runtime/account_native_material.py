@@ -22,7 +22,7 @@ from account_epoch import EpochStore
 from account_mutation_supervisor import AUTHORITY, PURPOSE, ENGINE, WORKER, _peer
 from account_mutation_worker import Unavailable
 from authoritative_password import AuthoritativePasswordAdapter, NativeExecutor
-from operation_budget import OperationBudget
+from operation_budget import OperationBudget, _OriginalReceipt
 
 ROOT = Path('/etc/osmap/account-runtime')
 PLAN = ROOT / 'sql-endpoint.json'
@@ -199,14 +199,23 @@ class NativeMaterial:
         return pwd.getpwnam(SERVER).pw_uid
 
     @classmethod
-    def native(cls):
+    def native(cls, budget=None):
         if (os.geteuid() != 0 or not sys.platform.startswith('openbsd')
                 or socket.gethostname() != AUTHORITY):
             raise Unavailable('native SQL authority unavailable')
-        # This is startup only. Every operation below uses its original signed
-        # budget; rechecks never create or reset a mutation deadline.
-        budget = OperationBudget(int(time.time()) + STARTUP_SECONDS,
-                                 maximum_seconds=STARTUP_SECONDS)
+        if budget is None:
+            # Existing mutation startup retains its fixed startup-only allowance.
+            budget = OperationBudget(int(time.time()) + STARTUP_SECONDS,
+                                     maximum_seconds=STARTUP_SECONDS)
+        else:
+            # Admission is already inside the helper's original authenticated
+            # receipt. Material custody must never mint a replacement startup cap.
+            receipt=getattr(budget,'_original_receipt',None)
+            if (type(budget)is not OperationBudget or type(receipt)is not _OriginalReceipt
+                    or not budget.inherited_group()):
+                raise Unavailable('native SQL original budget unavailable')
+            budget.require_original(sent_millis=receipt.sent_millis,
+                deadline_millis=receipt.deadline_millis,expires_at=receipt.expires_at)
         return cls._load(PLAN, CONFIG, 0, cls._server, budget)
 
     @classmethod

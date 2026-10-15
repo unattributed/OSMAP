@@ -224,8 +224,14 @@ impl Request {
             Ok(b)
         }
     }
-    pub(crate) fn worker_bytes(&self) -> Result<Vec<u8>, Error> {
-        let v = match &self.operation {
+    pub(crate) fn worker_bytes(&self, original_deadline_millis: u64) -> Result<Vec<u8>, Error> {
+        let sent_millis = self.issued.checked_mul(1000).ok_or(Error::Invalid)?;
+        let expires_millis = self.expires.checked_mul(1000).ok_or(Error::Invalid)?;
+        let deadline_millis = original_deadline_millis.min(expires_millis);
+        if sent_millis == 0 || deadline_millis <= sent_millis {
+            return Err(Error::Expired);
+        }
+        let mut v = match &self.operation {
             Operation::Authenticate { password } => {
                 serde_json::json!({"schema":"osmap-account-admission-worker-v1","operation":"authenticate","account":self.account,"password":password})
             }
@@ -233,6 +239,12 @@ impl Request {
                 serde_json::json!({"schema":"osmap-account-admission-worker-v1","operation":"admit","account":self.account,"epoch":epoch})
             }
         };
+        // Only the authenticated parent emits this private stdin receipt. The
+        // worker receives neither a renewed phase timer nor a wire authority
+        // override; its deadline is also capped by the signed request expiry.
+        v["sent_millis"] = sent_millis.into();
+        v["deadline_millis"] = deadline_millis.into();
+        v["expires_at"] = self.expires.into();
         serde_json::to_vec(&v).map_err(|_| Error::Invalid)
     }
     pub(crate) fn response(

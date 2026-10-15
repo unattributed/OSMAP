@@ -14,6 +14,51 @@ statement as provenance rather than current release posture.
 
 ## Current source posture
 
+### Active password delivery, 2026-10-15
+
+Latest signed/synchronized source is03dfd4ab2645ca684da10e6388640e013093fc2c:
+normal commit/push1732 Rust/560 account Python passes, fresh origin equality and
+clean authoritative standard source-only parity. Installed pair324b is unchanged.
+Actual disposable restricted SQL native3 passes27 controls,14 strict confinement
+receipts and complete owned cleanup. Primary8 still fails after one private
+child proof at first-input EPIPE; earlier identity failure cause remains unknown.
+The actual shared broker fixture fails its old exact version expectation before
+daemon construction; authoritative3.11.7/empty multi-instance observation is
+retained for a narrowly changed qualifier. These are component outcomes.
+
+Subsequent primary9 now drains55 stderr bytes and reaches strict parsing, with
+library_load classification and no source-issued kill; the exact library and
+termination cause remain unknown. The corrected-version broker qualifier reaches
+owned-startup but still refuses. Both controlled failures preserve confirmed
+fixture cleanup and retained root code stages; neither is workflow acceptance.
+
+Primary10 identifies the fixed public libdovecot.so.5.0 dependency in original
+loader output. The exact errno/termination cause remains unknown. Its narrowly
+reviewed search-directory read/custody repair preserves private identities and
+all original native controls; matching native compatibility is pending. This
+same-slice repair joins the admission source before normal signing, without a
+second duplicate full gate cycle or a workflow completion claim.
+
+Changed primary11 refuses fixed search-directory custody during preexec
+preparation, before command dispatch or child confinement proof. Three prefix
+controls pass; fixture children, socket, scratch and temporary identity are
+removed, with the root code stage retained. The exact directory/ancestry
+comparison remains unknown. Broker5 also fails during routing-producer
+construction before the newly observed topology recheck is reached. Its
+observation is null; daemons, broker runtime and scratch are gone and standard
+metadata is preserved. Neither failure establishes native compatibility or
+diagnoses the older failures. Narrow public-metadata and original-call
+observations are required; no unchanged retry or broader permission is admitted.
+
+Active source remediation supplies the missing persistent account-admission
+endpoint, shared original-deadline private-primary worker and bounded early
+stdin-close reconciliation. It preserves incomplete-input refusal, shared epoch
+locking, peer/MAC/replay/custody/cleanup controls and closed native activation.
+No new service, binary, password form or operator password is activated. Full
+S04-02 trusted factory/ingress/session/mail containment and installed controlled
+workflow remain unqualified; no Duncan action is required. Dated records below
+retain prior checkpoint scope rather than superseding these current outcomes.
+
 ### Latest scoped folder and label delivery, 2026-10-15
 
 Latest signed/synchronized source is `ef757944dfb223241347fdd6b2d4490c23ce0ade`:

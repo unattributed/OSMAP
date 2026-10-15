@@ -6,20 +6,85 @@ use crate::openpgp_inventory_runtime::{
     file, now, private_dir, read_frame, secret, validate_socket, write_frame,
 };
 use serde::Deserialize;
+use sha2::{Digest, Sha256};
 use std::collections::BTreeSet;
+use std::fs::{self, File, OpenOptions};
 use std::io::Read;
-use std::os::unix::net::UnixStream;
+use std::os::unix::fs::{FileTypeExt, MetadataExt, OpenOptionsExt, PermissionsExt};
+use std::os::unix::net::{UnixListener, UnixStream};
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 /// Source construction cannot opt out of actual native/helper confinement qualification.
 pub const NATIVE_CONFINEMENT_QUALIFIED: bool = false;
 const WORKER: &str = "/usr/local/libexec/osmap/account-runtime/account_admission_worker.py";
+// Closed sibling source closure of the private worker, including the material
+// and command factory's function-local imports. No request/config can add one.
+const WORKER_MODULES: [&str; 33] = [
+    "account_admission_worker.py",
+    "account_command_kernel.py",
+    "account_epoch.py",
+    "account_guarded_mutation.py",
+    "account_hash_graph.py",
+    "account_hash_graph_pins.py",
+    "account_hash_identity.py",
+    "account_mutation_budget.py",
+    "account_mutation_codec.py",
+    "account_mutation_continuity.py",
+    "account_mutation_grant.py",
+    "account_mutation_native.py",
+    "account_mutation_supervisor.py",
+    "account_mutation_worker.py",
+    "account_native_material.py",
+    "account_primary_graph.py",
+    "account_primary_identity.py",
+    "account_sql_graph.py",
+    "account_sql_graph_pins.py",
+    "authoritative_password.py",
+    "mail_session_containment.py",
+    "mutation_primary.py",
+    "operation_budget.py",
+    "prepared_password.py",
+    "smtp_auth_control.py",
+    "smtp_auth_control_service.py",
+    "smtp_auth_lifecycle.py",
+    "smtp_control_authorization.py",
+    "smtp_control_startup.py",
+    "smtp_guarded_builder.py",
+    "smtp_mutation_containment.py",
+    "smtp_native_peer.py",
+    "smtp_topology.py",
+];
 const ENGINE: &str = "/usr/local/bin/python3";
+const ENGINE_TARGET: &str = "python3.13";
 const EPOCH_ROOT: &str = "/var/db/osmap-account/epoch";
 fn unavailable<T>(_: T) -> Error {
     Error::Unavailable
+}
+fn worker_module_custody(root: &Path, owner: u32) -> Result<(), Error> {
+    // Root and all ancestors use the existing guarded directory/file readers.
+    // Only native startup selects the fixed installed root and owner0.
+    private_dir(root, owner, true).map_err(unavailable)?;
+    let root_before =
+        AdmissionEndpoint::identity(&fs::symlink_metadata(root).map_err(unavailable)?);
+    for name in WORKER_MODULES {
+        let path = root.join(name);
+        let before = installed_identity(&fs::symlink_metadata(&path).map_err(unavailable)?);
+        let descriptor = file(&path, owner, false, 128 * 1024).map_err(unavailable)?;
+        if before.5 != 1
+            || before != installed_identity(&descriptor.metadata().map_err(unavailable)?)
+            || before != installed_identity(&fs::symlink_metadata(&path).map_err(unavailable)?)
+        {
+            return Err(Error::Unavailable);
+        }
+    }
+    if root_before != AdmissionEndpoint::identity(&fs::symlink_metadata(root).map_err(unavailable)?)
+    {
+        return Err(Error::Unavailable);
+    }
+    Ok(())
 }
 
 #[derive(Deserialize)]
@@ -36,8 +101,88 @@ pub struct Service {
     config: Config,
     key: Vec<u8>,
     verifier: Mutex<Verifier>,
+    engine: Option<InstalledEngine>,
 }
 impl Service {
+    /// Fixed helper entry only. The existing native gate must qualify the
+    /// private-primary worker and its supervisor before listener activation;
+    /// source construction never authorizes the ordinary auth-test fallback.
+    pub fn serve(self, stop: &AtomicBool) -> Result<(), Error> {
+        if !cfg!(target_os = "openbsd")
+            || !NATIVE_CONFINEMENT_QUALIFIED
+            || crate::openbsd::effective_uid() != 0
+        {
+            return Err(Error::Unavailable);
+        }
+        self.serve_with(stop, &|request, deadline| {
+            self.native_worker(request, deadline)
+        })
+    }
+
+    fn serve_with<F>(&self, stop: &AtomicBool, execute: &F) -> Result<(), Error>
+    where
+        F: Fn(&Request, Instant) -> Result<Option<u64>, Error> + Sync,
+    {
+        let mut endpoint = AdmissionEndpoint::bind(&self.config.socket)?;
+        let result = std::thread::scope(|scope| {
+            let mut active: Vec<std::thread::ScopedJoinHandle<'_, ()>> = Vec::new();
+            loop {
+                endpoint.recheck()?;
+                if self.cleanup_unconfirmed.load(Ordering::SeqCst) {
+                    return Err(Error::CleanupUnconfirmed);
+                }
+                // Admission stops; dispatched connections retain their one
+                // existing deadline. Scoped joins complete before unlink.
+                if stop.load(Ordering::SeqCst) {
+                    return Ok(());
+                }
+                let mut pending = Vec::new();
+                for handle in active.drain(..) {
+                    if handle.is_finished() {
+                        handle.join().map_err(unavailable)?;
+                    } else {
+                        pending.push(handle);
+                    }
+                }
+                active = pending;
+                if active.len() == 2 {
+                    std::thread::sleep(Duration::from_millis(10));
+                    continue;
+                }
+                match endpoint.listener.accept() {
+                    Ok((mut stream, _)) => {
+                        endpoint.recheck()?;
+                        if stop.load(Ordering::SeqCst) {
+                            return Ok(());
+                        }
+                        if self.cleanup_unconfirmed.load(Ordering::SeqCst) {
+                            return Err(Error::CleanupUnconfirmed);
+                        }
+                        active.push(scope.spawn(move || {
+                            // Existing exact kernel-peer admission precedes
+                            // reading any frame; MAC/replay/account checks and
+                            // quarantine remain on the persistent Service.
+                            let _ = self.connection_with(&mut stream, execute);
+                        }));
+                    }
+                    Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
+                        std::thread::sleep(Duration::from_millis(10));
+                    }
+                    Err(_) => return Err(Error::Unavailable),
+                }
+            }
+        });
+        let result = result.and_then(|()| {
+            if self.cleanup_unconfirmed.load(Ordering::SeqCst) {
+                Err(Error::CleanupUnconfirmed)
+            } else {
+                Ok(())
+            }
+        });
+        let cleanup = endpoint.remove();
+        result.and(cleanup)
+    }
+
     pub fn from_operator_files(config: &Path, key: &Path) -> Result<Self, Error> {
         if !NATIVE_CONFINEMENT_QUALIFIED {
             return Err(Error::Unavailable);
@@ -72,26 +217,21 @@ impl Service {
         }
         private_dir(c.socket.parent().ok_or(Error::Invalid)?, 0, true).map_err(unavailable)?;
         private_dir(Path::new(EPOCH_ROOT), 0, false).map_err(unavailable)?;
-        file(Path::new(ENGINE), 0, true, 64 * 1024 * 1024).map_err(unavailable)?;
-        for name in [
-            "account_admission_worker.py",
-            "account_epoch.py",
-            "authoritative_password.py",
-        ] {
-            file(
-                &Path::new(WORKER).parent().ok_or(Error::Invalid)?.join(name),
-                0,
-                false,
-                128 * 1024,
-            )
-            .map_err(unavailable)?;
-        }
+        // Match NativeMaterial's one observed package alias; no general
+        // following or caller-selected interpreter target is admitted.
+        let engine = InstalledEngine::observe(
+            Path::new(ENGINE),
+            0,
+            Instant::now() + Duration::from_secs(5),
+        )?;
+        worker_module_custody(Path::new(WORKER).parent().ok_or(Error::Invalid)?, 0)?;
         Ok(Self {
             active: Mutex::new(BTreeSet::new()),
             cleanup_unconfirmed: std::sync::atomic::AtomicBool::new(false),
             config: c,
             key: secret(key).map_err(unavailable)?,
             verifier: Mutex::new(Verifier::default()),
+            engine: Some(engine),
         })
     }
     fn process(
@@ -139,13 +279,32 @@ impl Service {
         // Interpreter, script and module roots are fixed and operator-owned.
         // Credential JSON is exclusively stdin under the existing private,
         // nonblocking process-group transport and quarantine-on-cleanup policy.
-        let command = crate::auth::account_admission_command();
-        let bytes = crate::openpgp_crypto_process::run_account_admission(
-            command,
-            &request.worker_bytes()?,
-            deadline,
+        // Translate only the remaining original connection allowance, rounding
+        // down. Sample wall time first so elapsed sampling/serialization time
+        // cannot enlarge the monotonic budget. The parent still enforces this
+        // exact original Instant through spawn, transfer, cleanup and response.
+        let wall_millis = u64::try_from(
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map_err(unavailable)?
+                .as_millis(),
         )
         .map_err(unavailable)?;
+        let left_millis = u64::try_from(
+            deadline
+                .checked_duration_since(Instant::now())
+                .ok_or(Error::Expired)?
+                .as_millis(),
+        )
+        .map_err(unavailable)?;
+        if left_millis == 0 {
+            return Err(Error::Expired);
+        }
+        let worker_deadline = wall_millis.checked_add(left_millis).ok_or(Error::Expired)?;
+        let frame = request.worker_bytes(worker_deadline)?;
+        let command = crate::auth::account_admission_command();
+        let bytes = crate::openpgp_crypto_process::run_account_admission(command, &frame, deadline)
+            .map_err(unavailable)?;
         if bytes.len() > MAX_FRAME {
             return Err(Error::Unavailable);
         }
@@ -181,13 +340,22 @@ impl Service {
             _ => Err(Error::Refused),
         }
     }
+    fn native_worker(&self, request: &Request, deadline: Instant) -> Result<Option<u64>, Error> {
+        self.engine
+            .as_ref()
+            .ok_or(Error::Unavailable)?
+            .recheck(deadline)?;
+        Self::fixed_worker(request, deadline)
+    }
     /// Caller accepts one finite connection only after a reviewed supervisor
     /// has applied the actual account-helper native confinement policy.
     pub fn connection(&self, mut stream: UnixStream) -> Result<(), Error> {
         if !NATIVE_CONFINEMENT_QUALIFIED {
             return Err(Error::Unavailable);
         }
-        self.connection_with(&mut stream, Self::fixed_worker)
+        self.connection_with(&mut stream, |request, deadline| {
+            self.native_worker(request, deadline)
+        })
     }
     fn connection_with(
         &self,
@@ -205,6 +373,233 @@ impl Service {
             execute(r, deadline)
         })?;
         write_frame(stream, &response, deadline).map_err(unavailable)
+    }
+}
+
+type InstalledIdentity = (u64, u64, u32, u32, u32, u64, u64, i64, i64, i64, i64);
+fn installed_identity(info: &fs::Metadata) -> InstalledIdentity {
+    (
+        info.dev(),
+        info.ino(),
+        info.uid(),
+        info.gid(),
+        info.mode(),
+        info.nlink(),
+        info.len(),
+        info.mtime(),
+        info.mtime_nsec(),
+        info.ctime(),
+        info.ctime_nsec(),
+    )
+}
+struct InstalledEngine {
+    alias: PathBuf,
+    owner: u32,
+    alias_identity: InstalledIdentity,
+    target_identity: InstalledIdentity,
+    target_sha256: [u8; 32],
+}
+impl InstalledEngine {
+    fn observe(alias: &Path, owner: u32, deadline: Instant) -> Result<Self, Error> {
+        if alias.file_name() != Some(std::ffi::OsStr::new("python3")) || Instant::now() >= deadline
+        {
+            return Err(Error::Unavailable);
+        }
+        let before = fs::symlink_metadata(alias).map_err(unavailable)?;
+        if !before.file_type().is_symlink()
+            || before.uid() != owner
+            || before.nlink() != 1
+            || fs::read_link(alias).map_err(unavailable)? != Path::new(ENGINE_TARGET)
+        {
+            return Err(Error::Unavailable);
+        }
+        let target = alias.parent().ok_or(Error::Invalid)?.join(ENGINE_TARGET);
+        let target_before =
+            installed_identity(&fs::symlink_metadata(&target).map_err(unavailable)?);
+        let mut descriptor = file(&target, owner, true, 64 * 1024 * 1024).map_err(unavailable)?;
+        if target_before.5 != 1
+            || target_before.6 == 0
+            || installed_identity(&descriptor.metadata().map_err(unavailable)?) != target_before
+        {
+            return Err(Error::Unavailable);
+        }
+        let mut digest = Sha256::new();
+        let mut count = 0u64;
+        let mut bytes = [0; 4096];
+        loop {
+            if Instant::now() >= deadline {
+                return Err(Error::Expired);
+            }
+            let read = descriptor.read(&mut bytes).map_err(unavailable)?;
+            if read == 0 {
+                break;
+            }
+            count += read as u64;
+            if count > 64 * 1024 * 1024 {
+                return Err(Error::Unavailable);
+            }
+            digest.update(&bytes[..read]);
+        }
+        let alias_identity = installed_identity(&before);
+        if count != target_before.6
+            || installed_identity(&descriptor.metadata().map_err(unavailable)?) != target_before
+            || installed_identity(&fs::symlink_metadata(&target).map_err(unavailable)?)
+                != target_before
+            || installed_identity(&fs::symlink_metadata(alias).map_err(unavailable)?)
+                != alias_identity
+            || fs::read_link(alias).map_err(unavailable)? != Path::new(ENGINE_TARGET)
+            || Instant::now() >= deadline
+        {
+            return Err(Error::Unavailable);
+        }
+        Ok(Self {
+            alias: alias.into(),
+            owner,
+            alias_identity,
+            target_identity: target_before,
+            target_sha256: digest.finalize().into(),
+        })
+    }
+    fn recheck(&self, deadline: Instant) -> Result<(), Error> {
+        let current = Self::observe(&self.alias, self.owner, deadline)?;
+        if current.alias_identity != self.alias_identity
+            || current.target_identity != self.target_identity
+            || current.target_sha256 != self.target_sha256
+        {
+            return Err(Error::Unavailable);
+        }
+        Ok(())
+    }
+}
+
+type EndpointIdentity = (u64, u64, u32, u32, u32, u64);
+struct AdmissionEndpoint {
+    listener: UnixListener,
+    path: PathBuf,
+    parent: File,
+    parent_identity: EndpointIdentity,
+    socket_identity: EndpointIdentity,
+    removed: bool,
+}
+impl AdmissionEndpoint {
+    fn identity(info: &fs::Metadata) -> EndpointIdentity {
+        (
+            info.dev(),
+            info.ino(),
+            info.uid(),
+            info.gid(),
+            info.mode(),
+            info.nlink(),
+        )
+    }
+    fn bind(path: &Path) -> Result<Self, Error> {
+        let owner = crate::openbsd::effective_uid();
+        let parent_path = path.parent().ok_or(Error::Invalid)?;
+        private_dir(parent_path, owner, true).map_err(unavailable)?;
+        let parent = OpenOptions::new()
+            .read(true)
+            .custom_flags(libc::O_DIRECTORY | libc::O_NOFOLLOW | libc::O_NONBLOCK)
+            .open(parent_path)
+            .map_err(unavailable)?;
+        let parent_identity = Self::identity(&parent.metadata().map_err(unavailable)?);
+        if Self::identity(&fs::symlink_metadata(parent_path).map_err(unavailable)?)
+            != parent_identity
+        {
+            return Err(Error::Unavailable);
+        }
+        match fs::symlink_metadata(path) {
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+            _ => return Err(Error::Unavailable),
+        }
+        let listener = UnixListener::bind(path).map_err(unavailable)?;
+        let info = fs::symlink_metadata(path).map_err(unavailable)?;
+        if !info.file_type().is_socket() || info.uid() != owner || info.nlink() != 1 {
+            return Err(Error::Unavailable);
+        }
+        let mut endpoint = Self {
+            listener,
+            path: path.into(),
+            parent,
+            parent_identity,
+            socket_identity: Self::identity(&info),
+            removed: false,
+        };
+        endpoint.recheck()?;
+        // The source-owned namespace's group grants only reachability. It
+        // never substitutes for the independently checked exact kernel UID.
+        std::os::unix::fs::chown(path, Some(owner), Some(parent_identity.3))
+            .map_err(unavailable)?;
+        let group_info = fs::symlink_metadata(path).map_err(unavailable)?;
+        if (
+            group_info.dev(),
+            group_info.ino(),
+            group_info.uid(),
+            group_info.gid(),
+            group_info.mode(),
+            group_info.nlink(),
+        ) != (
+            info.dev(),
+            info.ino(),
+            owner,
+            parent_identity.3,
+            info.mode(),
+            1,
+        ) {
+            return Err(Error::Unavailable);
+        }
+        endpoint.socket_identity = Self::identity(&group_info);
+        fs::set_permissions(path, fs::Permissions::from_mode(0o660)).map_err(unavailable)?;
+        let published = fs::symlink_metadata(path).map_err(unavailable)?;
+        if (
+            published.dev(),
+            published.ino(),
+            published.uid(),
+            published.gid(),
+            published.mode(),
+            published.nlink(),
+        ) != (
+            info.dev(),
+            info.ino(),
+            owner,
+            parent_identity.3,
+            libc::S_IFSOCK | 0o660,
+            1,
+        ) {
+            return Err(Error::Unavailable);
+        }
+        endpoint.socket_identity = Self::identity(&published);
+        endpoint.recheck()?;
+        endpoint
+            .listener
+            .set_nonblocking(true)
+            .map_err(unavailable)?;
+        Ok(endpoint)
+    }
+    fn recheck(&self) -> Result<(), Error> {
+        let parent_path = self.path.parent().ok_or(Error::Invalid)?;
+        if Self::identity(&self.parent.metadata().map_err(unavailable)?) != self.parent_identity
+            || Self::identity(&fs::symlink_metadata(parent_path).map_err(unavailable)?)
+                != self.parent_identity
+            || Self::identity(&fs::symlink_metadata(&self.path).map_err(unavailable)?)
+                != self.socket_identity
+        {
+            return Err(Error::Unavailable);
+        }
+        Ok(())
+    }
+    fn remove(&mut self) -> Result<(), Error> {
+        self.recheck()?;
+        fs::remove_file(&self.path).map_err(unavailable)?;
+        self.removed = true;
+        Ok(())
+    }
+}
+impl Drop for AdmissionEndpoint {
+    fn drop(&mut self) {
+        if !self.removed {
+            // Never delete a stale, replaced or foreign inode on an error path.
+            let _ = self.remove();
+        }
     }
 }
 struct Permit<'a> {

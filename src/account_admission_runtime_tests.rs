@@ -14,6 +14,7 @@ fn service(uid: u32) -> Service {
         },
         key: vec![29; 32],
         verifier: Mutex::new(Verifier::default()),
+        engine: None,
     }
 }
 #[test]
@@ -37,6 +38,260 @@ fn unqualified_production_never_constructs_or_dispatches() {
         service(crate::openbsd::effective_uid()).connection(stream),
         Err(Error::Unavailable)
     );
+    let mut unqualified = service(crate::openbsd::effective_uid());
+    let path = std::env::temp_dir().join(format!(
+        "osmap-unqualified-admission-{}",
+        crate::draft::generate_draft_id().unwrap()
+    ));
+    unqualified.config.socket = path.clone();
+    assert_eq!(
+        unqualified.serve(&AtomicBool::new(false)),
+        Err(Error::Unavailable)
+    );
+    assert!(fs::symlink_metadata(path).is_err());
+}
+
+fn listener_root() -> PathBuf {
+    let root = std::env::temp_dir().join(format!(
+        "adm-{}",
+        crate::draft::generate_draft_id().unwrap()
+    ));
+    fs::create_dir(&root).unwrap();
+    fs::set_permissions(&root, fs::Permissions::from_mode(0o700)).unwrap();
+    root
+}
+#[test]
+fn fixed_python_alias_admits_only_exact_target_and_refuses_target_replacement() {
+    let root = listener_root();
+    let alias = root.join("python3");
+    let target = root.join("python3.13");
+    let owner = crate::openbsd::effective_uid();
+    fs::write(&target, b"synthetic executable custody bytes\n").unwrap();
+    fs::set_permissions(&target, fs::Permissions::from_mode(0o700)).unwrap();
+    std::os::unix::fs::symlink("python3.13", &alias).unwrap();
+    // Historical ordinary-file guard refuses this legitimate fixed alias.
+    assert!(file(&alias, owner, true, 64 * 1024 * 1024).is_err());
+    let deadline = Instant::now() + Duration::from_secs(2);
+    let first = InstalledEngine::observe(&alias, owner, deadline).unwrap();
+    assert_eq!(first.recheck(deadline), Ok(()));
+    fs::remove_file(&alias).unwrap();
+    std::os::unix::fs::symlink("python3.12", &alias).unwrap();
+    assert!(InstalledEngine::observe(&alias, owner, deadline).is_err());
+    fs::remove_file(&alias).unwrap();
+    std::os::unix::fs::symlink("python3.13", &alias).unwrap();
+    let current = InstalledEngine::observe(&alias, owner, deadline).unwrap();
+    let replacement = root.join("replacement");
+    fs::write(&replacement, b"synthetic executable custody bytes\n").unwrap();
+    fs::set_permissions(&replacement, fs::Permissions::from_mode(0o700)).unwrap();
+    fs::rename(&replacement, &target).unwrap();
+    assert_eq!(current.recheck(deadline), Err(Error::Unavailable));
+    let parent_alias = root.join("alias-parent");
+    std::os::unix::fs::symlink(&root, &parent_alias).unwrap();
+    assert!(InstalledEngine::observe(&parent_alias.join("python3"), owner, deadline).is_err());
+    fs::remove_file(parent_alias).unwrap();
+    fs::remove_file(alias).unwrap();
+    fs::remove_file(target).unwrap();
+    fs::remove_dir(root).unwrap();
+}
+#[test]
+fn expanded_worker_custody_refuses_missing_or_writable_private_primary_module() {
+    let root = listener_root();
+    let owner = crate::openbsd::effective_uid();
+    for name in WORKER_MODULES {
+        let path = root.join(name);
+        fs::write(&path, b"# synthetic module custody fixture\n").unwrap();
+        fs::set_permissions(path, fs::Permissions::from_mode(0o600)).unwrap();
+    }
+    assert_eq!(worker_module_custody(&root, owner), Ok(()));
+    let primary = root.join("mutation_primary.py");
+    fs::remove_file(&primary).unwrap();
+    assert_eq!(worker_module_custody(&root, owner), Err(Error::Unavailable));
+    fs::write(&primary, b"# synthetic replacement\n").unwrap();
+    fs::set_permissions(&primary, fs::Permissions::from_mode(0o666)).unwrap();
+    assert_eq!(worker_module_custody(&root, owner), Err(Error::Unavailable));
+    fs::set_permissions(&primary, fs::Permissions::from_mode(0o600)).unwrap();
+    assert_eq!(worker_module_custody(&root, owner), Ok(()));
+    fs::set_permissions(&root, fs::Permissions::from_mode(0o770)).unwrap();
+    assert_eq!(worker_module_custody(&root, owner), Err(Error::Unavailable));
+    fs::set_permissions(&root, fs::Permissions::from_mode(0o700)).unwrap();
+    for name in WORKER_MODULES {
+        fs::remove_file(root.join(name)).unwrap();
+    }
+    fs::remove_dir(root).unwrap();
+}
+#[test]
+fn expired_original_connection_refuses_before_worker_dispatch() {
+    let request = Request::issue(
+        "alice@example.test",
+        Operation::Admit { epoch: 0 },
+        now().unwrap(),
+        &[17; 32],
+    )
+    .unwrap();
+    assert_eq!(
+        Service::fixed_worker(&request, Instant::now()),
+        Err(Error::Expired)
+    );
+}
+fn wait_listener(path: &Path) {
+    assert!(path.as_os_str().len() <= 100);
+    let end = Instant::now() + Duration::from_secs(2);
+    while !path.exists() {
+        assert!(Instant::now() < end);
+        std::thread::sleep(Duration::from_millis(5));
+    }
+}
+
+#[test]
+fn listener_shutdown_retains_late_worker_cleanup_uncertainty() {
+    let root = listener_root();
+    let path = root.join("admission.sock");
+    let mut s = service(crate::openbsd::effective_uid());
+    s.config.socket = path.clone();
+    let stop = AtomicBool::new(false);
+    let entered = std::sync::Barrier::new(2);
+    let release = std::sync::Barrier::new(2);
+    let execute = |_: &Request, _: Instant| {
+        entered.wait();
+        release.wait();
+        Err(Error::CleanupUnconfirmed)
+    };
+    std::thread::scope(|scope| {
+        let server = scope.spawn(|| s.serve_with(&stop, &execute));
+        wait_listener(&path);
+        let request = Request::issue(
+            "alice@example.test",
+            Operation::Admit { epoch: 0 },
+            now().unwrap(),
+            &s.key,
+        )
+        .unwrap();
+        let mut stream = UnixStream::connect(&path).unwrap();
+        let deadline = Instant::now() + Duration::from_secs(2);
+        write_frame(&mut stream, &request.bytes().unwrap(), deadline).unwrap();
+        entered.wait();
+        stop.store(true, Ordering::SeqCst);
+        release.wait();
+        assert!(read_frame(&mut stream, MAX_FRAME, deadline).is_err());
+        assert_eq!(server.join().unwrap(), Err(Error::CleanupUnconfirmed));
+    });
+    assert!(s.cleanup_unconfirmed.load(Ordering::SeqCst));
+    assert!(!path.exists());
+    fs::remove_dir(root).unwrap();
+}
+#[test]
+fn persistent_listener_keeps_replay_state_and_finishes_dispatched_work_before_stop() {
+    let root = listener_root();
+    let path = root.join("admission.sock");
+    let mut s = service(crate::openbsd::effective_uid());
+    s.config.socket = path.clone();
+    let stop = AtomicBool::new(false);
+    let calls = AtomicUsize::new(0);
+    let entered = std::sync::Barrier::new(2);
+    let release = std::sync::Barrier::new(2);
+    let execute = |_: &Request, deadline: Instant| {
+        let index = calls.fetch_add(1, Ordering::SeqCst);
+        assert!(deadline > Instant::now());
+        assert!(deadline.duration_since(Instant::now()) <= Duration::from_secs(30));
+        if index == 1 {
+            entered.wait();
+            release.wait();
+        }
+        Ok(Some(3))
+    };
+    std::thread::scope(|scope| {
+        let server = scope.spawn(|| s.serve_with(&stop, &execute));
+        wait_listener(&path);
+        let at = now().unwrap();
+        let first = Request::issue(
+            "alice@example.test",
+            Operation::Admit { epoch: 3 },
+            at,
+            &s.key,
+        )
+        .unwrap();
+        let mut stream = UnixStream::connect(&path).unwrap();
+        let deadline = Instant::now() + Duration::from_secs(2);
+        write_frame(&mut stream, &first.bytes().unwrap(), deadline).unwrap();
+        let reply = read_frame(&mut stream, MAX_FRAME, deadline).unwrap();
+        assert_eq!(
+            Verifier::default()
+                .response(&first, &reply, &s.key, now().unwrap())
+                .unwrap()
+                .unwrap()
+                .epoch,
+            3
+        );
+        drop(stream);
+        // A separately accepted connection still uses the same verifier.
+        let mut replay = UnixStream::connect(&path).unwrap();
+        write_frame(&mut replay, &first.bytes().unwrap(), deadline).unwrap();
+        assert!(read_frame(&mut replay, MAX_FRAME, deadline).is_err());
+        assert_eq!(calls.load(Ordering::SeqCst), 1);
+        drop(replay);
+        let second = Request::issue(
+            "alice@example.test",
+            Operation::Admit { epoch: 3 },
+            now().unwrap(),
+            &s.key,
+        )
+        .unwrap();
+        let mut admitted = UnixStream::connect(&path).unwrap();
+        write_frame(&mut admitted, &second.bytes().unwrap(), deadline).unwrap();
+        entered.wait();
+        stop.store(true, Ordering::SeqCst);
+        release.wait();
+        let reply = read_frame(&mut admitted, MAX_FRAME, deadline).unwrap();
+        assert!(Verifier::default()
+            .response(&second, &reply, &s.key, now().unwrap())
+            .unwrap()
+            .is_some());
+        assert_eq!(server.join().unwrap(), Ok(()));
+    });
+    assert_eq!(calls.load(Ordering::SeqCst), 2);
+    assert!(!path.exists());
+    fs::remove_dir(root).unwrap();
+}
+
+#[test]
+fn listener_rejects_wrong_peer_before_read_and_refuses_foreign_socket_cleanup() {
+    let root = listener_root();
+    let path = root.join("admission.sock");
+    let mut s = service(crate::openbsd::effective_uid().wrapping_add(1));
+    s.config.socket = path.clone();
+    let stop = AtomicBool::new(false);
+    let calls = AtomicUsize::new(0);
+    let execute = |_: &Request, _: Instant| {
+        calls.fetch_add(1, Ordering::SeqCst);
+        Ok(Some(0))
+    };
+    std::thread::scope(|scope| {
+        let server = scope.spawn(|| s.serve_with(&stop, &execute));
+        wait_listener(&path);
+        let mut peer = UnixStream::connect(&path).unwrap();
+        peer.set_read_timeout(Some(Duration::from_secs(2))).unwrap();
+        let mut byte = [0];
+        assert_eq!(peer.read(&mut byte).unwrap(), 0);
+        stop.store(true, Ordering::SeqCst);
+        assert_eq!(server.join().unwrap(), Ok(()));
+    });
+    assert_eq!(calls.load(Ordering::SeqCst), 0);
+    assert!(!path.exists());
+    let mut owned = AdmissionEndpoint::bind(&path).unwrap();
+    assert_eq!(fs::symlink_metadata(&path).unwrap().mode() & 0o777, 0o660);
+    assert!(AdmissionEndpoint::bind(&path).is_err());
+    fs::remove_file(&path).unwrap();
+    let foreign = UnixListener::bind(&path).unwrap();
+    let identity = AdmissionEndpoint::identity(&fs::symlink_metadata(&path).unwrap());
+    assert_eq!(owned.remove(), Err(Error::Unavailable));
+    drop(owned);
+    assert_eq!(
+        AdmissionEndpoint::identity(&fs::symlink_metadata(&path).unwrap()),
+        identity
+    );
+    drop(foreign);
+    fs::remove_file(&path).unwrap();
+    fs::remove_dir(root).unwrap();
 }
 #[test]
 fn wrong_peer_foreign_account_and_replay_never_dispatch_worker() {

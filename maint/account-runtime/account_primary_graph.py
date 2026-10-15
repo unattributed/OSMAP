@@ -1,7 +1,9 @@
 """Fixed primary public-code custody; no profile activation or caller graph.
 
-Reuse the installed Doveadm leaf reader and exact ALL-five plugin membership.
-Do not inherit hash's recursive library search-directory. Existing null rwc
+Reuse the installed Doveadm leaf reader, exact ALL-five plugin membership and
+fixed read-only loader search directory. Its read grant is recursive; existing
+custody measures immediate entries, not all descendant bytes or immutability.
+Private-ID drop and ordinary filesystem DAC remain necessary. Existing null rwc
 and wpath/cpath support tagged Doveadm lib_init/debug-sink startup only, after
 fixed private-ID drop and existing null/device-parent custody. Actual primary
 loader/authentication compatibility remains unqualified.
@@ -37,13 +39,16 @@ class PrimaryInstalledGraph:
     @staticmethod
     def _observe(budget,deadline):
         _bound(budget,deadline);_command()
-        directory=common._modules(budget,deadline);total=[0];states=[]
+        directory=common._modules(budget,deadline)
+        search=common._search_directory(budget,deadline);total=[0];states=[]
         for name,metadata,digest,parents in common.FILES:
             states.append(common._read(Path(name),budget,deadline,total,common.FILE_CAP,
                                        (metadata,digest,parents)))
         if common._modules(budget,deadline)!=directory:
             raise Refused('primary plugin membership changed')
-        _bound(budget,deadline);return tuple(states),directory
+        if common._search_directory(budget,deadline)!=search:
+            raise Refused('primary search directory changed')
+        _bound(budget,deadline);return tuple(states),directory,search
     def recheck(self,budget,deadline):
         if type(self)is not PrimaryInstalledGraph or budget is not self._budget:
             raise Refused('primary graph original budget unavailable')
@@ -55,4 +60,5 @@ class PrimaryInstalledGraph:
         _command()
         return tuple((name,b'rx' if name==PROGRAM else b'r')
             for name,*_ in common.FILES)+((common.MODULE_DIRECTORY,b'r'),
+                                        (common.SEARCH_DIRECTORY,b'r'),
                                         ('/dev/null',b'rwc'),(str(SOCKET),b'rw'))

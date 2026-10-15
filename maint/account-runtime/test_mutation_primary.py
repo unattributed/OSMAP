@@ -1,7 +1,7 @@
 """Public synthetic source controls; no operator authentication/SQL changes."""
 from pathlib import Path
 import sys,time,unittest
-import json,os,signal,subprocess
+import json,os,signal,subprocess,select
 from unittest.mock import patch
 from mutation_primary import PROGRAM,ARGS
 from native_transport_test_support import PublicFixturePrimary as NativePrimaryVerifier
@@ -64,5 +64,35 @@ class PrimaryTests(unittest.TestCase):
    patch.object(v,'_command',return_value=(sys.executable,'-I',script,'good')),\
    patch.object(v,'_result',side_effect=result):
    with self.assertRaises(Refused):v(ACCOUNT,PUBLIC)
+
+ def test_early_input_close_drains_owned_child_without_accepting_unwritten_password(self):
+  for mode in ('failed','success','empty'):
+   with self.subTest(mode=mode):
+    v=self.verifier();real_write=os.write;real_read=os.read;observed={'broken':False,'stderr_bytes':0}
+    body="import os;os.close(0);os.write(2,b'public early-close diagnostic');"
+    if mode=='failed':body+="os.write(1,b'auth failed\\n');os._exit(77)"
+    elif mode=='success':body+="os.write(1,b'auth succeeded\\nuser=alice@example.test\\n');os._exit(0)"
+    else:body+="os._exit(1)"
+    parent=os.getpid()
+    def write(fd,data):
+     if os.getpid()==parent and bytes(data)==(PUBLIC+'\n').encode():
+      poll=select.poll();poll.register(fd,select.POLLERR)
+      end=time.monotonic()+v._budget.remaining()
+      while not poll.poll(5):self.assertLess(time.monotonic(),end)
+      try:return real_write(fd,data)
+      except BrokenPipeError:observed['broken']=True;raise
+     return real_write(fd,data)
+    def read(fd,size):
+     raw=real_read(fd,size)
+     if os.getpid()==parent and raw==b'public early-close diagnostic':observed['stderr_bytes']+=len(raw)
+     return raw
+    with patch.object(v._budget,'inherited_group',return_value=True),\
+      patch.object(v,'_command',return_value=(sys.executable,'-I','-c',body)),\
+      patch('mutation_primary.os.write',side_effect=write),patch('mutation_primary.os.read',side_effect=read):
+     if mode=='failed':self.assertIs(v(ACCOUNT,PUBLIC),False)
+     else:
+      with self.assertRaises(Refused):v(ACCOUNT,PUBLIC)
+    self.assertTrue(observed['broken']);self.assertEqual(observed['stderr_bytes'],len(b'public early-close diagnostic'))
+    self.assertFalse(v._uncertain);self.assertEqual(v._retained,[])
 
 if __name__=='__main__':unittest.main()

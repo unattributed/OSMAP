@@ -29,6 +29,78 @@ pub fn restore_crypto_termination_signal() -> io::Result<()> {
     }
 }
 
+#[cfg(unix)]
+static ACCOUNT_ADMISSION_STOP: std::sync::atomic::AtomicBool =
+    std::sync::atomic::AtomicBool::new(false);
+#[cfg(unix)]
+static ACCOUNT_ADMISSION_SIGNALS_ACTIVE: std::sync::atomic::AtomicBool =
+    std::sync::atomic::AtomicBool::new(false);
+#[cfg(unix)]
+extern "C" fn stop_account_admission(_: libc::c_int) {
+    ACCOUNT_ADMISSION_STOP.store(true, std::sync::atomic::Ordering::SeqCst);
+}
+
+/// Process-owned termination handlers; expose only the safe admission stop flag.
+#[cfg(unix)]
+pub struct AccountAdmissionSignals {
+    previous: [(libc::c_int, libc::sighandler_t); 2],
+    installed: usize,
+}
+#[cfg(unix)]
+impl AccountAdmissionSignals {
+    pub fn install() -> io::Result<Self> {
+        if ACCOUNT_ADMISSION_SIGNALS_ACTIVE
+            .compare_exchange(
+                false,
+                true,
+                std::sync::atomic::Ordering::SeqCst,
+                std::sync::atomic::Ordering::SeqCst,
+            )
+            .is_err()
+        {
+            return Err(io::ErrorKind::AlreadyExists.into());
+        }
+        ACCOUNT_ADMISSION_STOP.store(false, std::sync::atomic::Ordering::SeqCst);
+        let mut value = Self {
+            previous: [
+                (libc::SIGTERM, libc::SIG_DFL),
+                (libc::SIGINT, libc::SIG_DFL),
+            ],
+            installed: 0,
+        };
+        for (index, signal) in [libc::SIGTERM, libc::SIGINT].into_iter().enumerate() {
+            // SAFETY: static C-ABI handler only stores an atomic flag. No I/O,
+            // allocation, credentials, locks or process signalling in handler.
+            let previous = unsafe {
+                libc::signal(
+                    signal,
+                    stop_account_admission as *const () as libc::sighandler_t,
+                )
+            };
+            if previous == libc::SIG_ERR {
+                return Err(io::Error::last_os_error());
+            }
+            value.previous[index] = (signal, previous);
+            value.installed += 1;
+        }
+        Ok(value)
+    }
+    pub fn stop_flag(&self) -> &'static std::sync::atomic::AtomicBool {
+        &ACCOUNT_ADMISSION_STOP
+    }
+}
+#[cfg(unix)]
+impl Drop for AccountAdmissionSignals {
+    fn drop(&mut self) {
+        for (signal, previous) in self.previous.iter().take(self.installed) {
+            // SAFETY: restore only exact captured dispositions installed by
+            // this exclusive guard, including a partially failed setup.
+            unsafe { libc::signal(*signal, *previous) };
+        }
+        ACCOUNT_ADMISSION_SIGNALS_ACTIVE.store(false, std::sync::atomic::Ordering::SeqCst);
+    }
+}
+
 /// Disable and verify helper core dumps before loading authentication material.
 #[cfg(unix)]
 pub(crate) fn disable_core_dumps() -> io::Result<()> {
@@ -914,12 +986,65 @@ mod imp {
     }
 }
 
+/// Test child only: expose EOF while the owned disposable leader stays alive.
+#[cfg(test)]
+pub(crate) fn close_disposable_fixture_output() -> Result<(), String> {
+    if std::env::var("OSMAP_CRYPTO_PROCESS_FIXTURE").as_deref() != Ok("closed_output_running") {
+        return Err("disposable output fixture required".into());
+    }
+    for descriptor in [libc::STDOUT_FILENO, libc::STDERR_FILENO] {
+        // The exact test child owns these standard descriptors; production
+        // builds do not contain this helper or its fixture-only entrypoint.
+        if unsafe { libc::close(descriptor) } != 0 {
+            return Err("disposable output close failed".into());
+        }
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::config::{AppRunMode, LogFormat, RuntimeEnvironment};
     use crate::state::{StateLayout, StateLayoutPaths};
     use std::time::{SystemTime, UNIX_EPOCH};
+
+    #[cfg(unix)]
+    #[test]
+    fn account_admission_stop_signal_is_exclusive_and_restored_in_disposable_process() {
+        use crate::auth::{CommandExecutor, SystemCommandExecutor};
+        const CHILD: &str = "OSMAP_TEST_ACCOUNT_ADMISSION_SIGNAL_CHILD";
+        if std::env::var_os(CHILD).is_some() {
+            unsafe { libc::signal(libc::SIGTERM, libc::SIG_IGN) };
+            let guard = AccountAdmissionSignals::install().unwrap();
+            assert!(!guard.stop_flag().load(std::sync::atomic::Ordering::SeqCst));
+            assert!(AccountAdmissionSignals::install().is_err());
+            assert_eq!(unsafe { libc::raise(libc::SIGTERM) }, 0);
+            assert!(guard.stop_flag().load(std::sync::atomic::Ordering::SeqCst));
+            drop(guard);
+            assert_eq!(
+                unsafe { libc::signal(libc::SIGTERM, libc::SIG_DFL) },
+                libc::SIG_IGN
+            );
+            println!("account_admission_stop_and_restore=PASS");
+            return;
+        }
+        let result = SystemCommandExecutor.run_with_stdin_bytes_timeout_and_output_limit(
+            "/usr/bin/env",
+            &[
+                format!("{CHILD}=1"),
+                std::env::current_exe().unwrap().to_str().unwrap().into(),
+                "--exact".into(),
+                "openbsd::tests::account_admission_stop_signal_is_exclusive_and_restored_in_disposable_process".into(),
+                "--nocapture".into(),
+            ],
+            &[], std::time::Duration::from_secs(2), 4096,
+        ).unwrap();
+        assert_eq!(result.status_code, 0);
+        assert!(result
+            .stdout
+            .contains("account_admission_stop_and_restore=PASS\n"));
+    }
 
     #[cfg(unix)]
     #[test]

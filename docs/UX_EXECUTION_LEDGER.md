@@ -9980,7 +9980,16 @@ discriminator alongside the same binding production repair; no broader QA scope.
     "maint/security/v10-fail-closed-remediation.json",
     "README.md",
     "docs/README.md",
-    "docs/OSMAP_AGENT_FRAMEWORK_ADOPTION.md"
+    "docs/OSMAP_AGENT_FRAMEWORK_ADOPTION.md",
+    "src/account_admission.rs",
+    "src/openpgp_crypto_process.rs",
+    "src/account_admission_tests.rs",
+    "src/bin/osmap_account_admission_helper.rs",
+    "maint/account-runtime/rc.d/osmap_account_admission",
+    "maint/account-runtime/account_native_material.py",
+    "maint/account-runtime/test_native_material.py",
+    "maint/account-runtime/test_account_admission_worker.py",
+    "maint/account-runtime/test_mutation_primary.py"
   ],
   "outcomes": [
     {
@@ -10108,7 +10117,7 @@ discriminator alongside the same binding production repair; no broader QA scope.
     "status": "PENDING",
     "reference": "Only minimal well-defined own-password usability after all agent-owned development/matching deployed QA/independent audit PASS. No operator password is changed by agent qualification; use controlled disposable Alice and preserve Bob/operator state. NOT RUN."
   },
-  "next_action": "Shared startup/hints ef757944 is signed/synchronized and standard Toronto source-only clean matches. Complete reviewed SQL-only measured stdin-ioctl compatibility, source-required primary null-device startup profile, and real shared broker/per-channel native ownership/acceptor in one normal signed source integration. Then run matching reviewed current-source restricted SQL/primary and broker native qualifications before full installed controlled Alice authoritative password/session/mail-containment workflow. Preserve broader tty/null capability limits, original guards/budgets, prior failures and unrelated state; no native flag shortcut or operator password mutation. S08-02 remains accepted; separate human results do not halt engineering."
+  "next_action": "Signed03dfd4 current source is synchronized and standard Toronto source-only clean matches. Actual restricted SQL qualification now passes original27 controls/all14strict48 receipts and owned cleanup; preserve earlier envelope/overflow failures. Close real admission endpoint/private-primary original-budget worker and measured early-input-close transport gap, with actual33-module startup custody and safe native signal boundary, in one reviewed signed source integration. Run matching current private-primary and shared SMTP broker controlled qualification; preserve unknown earlier child causes, exact version/empty-multiinstance guard and original budgets. Continue full trusted factory/ingress/epoch/session/mail containment and installed controlled Alice new-password/new-login/old-refusal/Bob continuity. No operator password mutation or native qualification flag shortcut; S08-02 stays accepted."
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->
@@ -10560,3 +10569,144 @@ port metadata retains the same shared registry. Native factory supplies no
 profile, no flags/peer/limits change; independent incremental review follows.
 This supports the existing finite born-Dovecot fixture without tolerating
 arbitrary backend OK fields or inferring the deployed backend's profile.
+
+## 2026-10-15 — authoritative admission delivery and bounded native outcomes
+
+Signed03dfd4ab2645ca684da10e6388640e013093fc2c normally synchronizes after
+1732 Rust/560 account Python passes in both hooks. Fresh origin equality/clean0/0
+and clean authoritative source-only fast-forward are retained in admission
+proofd43647fc/sourceparityb9f69123/standard1b6d9ad9. Installed pair324b remains
+unchanged. This source checkpoint is not S04-02 acceptance.
+
+Actual restricted SQL native3 now passes all original27 controls and14 actual
+strict48 child receipts: original saved IDs/mask63, separate marker7 and born
+driver/session/parent equality. Actual column negatives1143 and INSERT/Delete/
+DDL/other-schema negatives1142 pass; Alice CAS/stale CAS and Bob all17 fields
+are qualified in this disposable scope. Fifty children are tracked/reaped,
+source before/after parity passes, and root plus both namespaces are removed.
+Resultdb8238acfd27d875b14a2cf30a65990a4059f90fcc77ca69a9c0cc7ccf214292
+is under native-sql-permission-envelope-20261015/native-attempt3. Original
+16KiB cap is unchanged: repeated constant metadata is losslessly factored on
+the wire and expanded before the original unchanged root validator. Earlier
+query-envelope failure and native2 complete-control-but17007-byte overflow
+remain FAIL, with their retained namespaces. No retrospective correction.
+
+Primary7 fails an original child identity recheck before drop; exact comparison
+cause remains unknown. Changed diagnostic8 measures all five comparisons equal
+and one actual private-ID/mask7/null3/device514 proof, then first-input EPIPE32/
+zero bytes; source kills/waits terminal-9 before reading output. Both fixture
+cleanups pass and root code stages remain retained. This does not establish
+primary authentication or diagnose the earlier transient failure. The narrow
+product repair closes incomplete stdin, drains original pipes and reaps on
+the original budget, while permanently refusing success after incomplete input.
+Actual old RED becomes one PASS with failed/success/empty early-exit subcases;
+no new trace framework, retry, terminal promise or parser tolerance is added.
+
+Broker cleanup review finds that an exited outer thread could hide retained
+control-thread uncertainty. The fixture now independently refuses runtime
+removal unless cleanup is confirmed and no errors, uncertainty, channels or
+live outer thread remain. Changed native1 then fails before scratch/daemon
+construction at its historical exact Postfix3.11.6 expectation. A single bounded
+read-only observation measures authoritative3.11.7 and empty multi-instance
+directories; only that exact literal is repinned, without ABI or compatibility
+claim. Overall failure/root-stage retention remains recorded; no unchanged retry.
+
+The next real source integration closes a demonstrated missing production
+admission listener/entry: Service had per-connection handling but no listener,
+helper binary or rc entry. It preserves peer-before-read, MAC/replay/quarantine,
+two-connection limits, original30s connection budget and exact owned socket
+cleanup. Internal worker receipt derives a conservative remaining parent
+deadline, bounded by authenticated35s request expiry. The worker replaces broad
+ordinary doveadm/fresh25s with actual fixed material and sealed private-primary
+verification under the shared epoch lock; operation material uses the inherited
+original budget rather than a fresh5s startup allowance. All actual native
+activation/confinement/factory/ingress requirements remain open and closed to
+activation. Fixed33-module custody and safe existing FFI signal boundary are
+required before source admission; no operator credential/configuration action.
+
+The combined admission source now includes fixed python3-to-python3.13 alias
+custody/recheck under the original Instant and safe signal FFI in openbsd.rs;
+source reviews536ebbd4/f3cc4548 pass. Root's matching six Python controls pass
+in0.112s (ae037a8d), without a broad repeat. The admission process transport
+selects its existing strict owned-group cleanup path instead of releasing leader
+PID custody before group confirmation; one real closed-output/running-child
+discriminator passes and subsequent immediate admission is not quarantined.
+Review8e52f885 retains original30s/4096/reserve and strict cleanup uncertainty.
+
+Matching primary9 reaches the unchanged result parser after original stdout/
+stderr drain: source kill0/wait1,55 stderr bytes/EOF and finite library_load
+classification, zero stdout and terminal-9. Five identity comparisons and one
+private-ID/kernel/null proof pass; full authentication still FAILs and the
+specific library/termination cause is unknown. Source did not issue a kill;
+this does not identify who did. Fixture cleanup passes; exact rootstage6e996
+is retained. Independent scope03e00378 preserves all earlier causes separately.
+The next qualifier only classifies a fixed public library enum on existing
+stderr reads, with no extra I/O, raw bytes or permission expansion.
+
+Exact-version broker3 then reaches owned-startup and FAILs unexpected_Refused
+after2base/1extra markers. Both daemons/broker runtime/scratch are gone,
+standard metadata is preserved and cleanup reasons empty; rootstagee47bf is
+retained. No AUTH counter was exported, so none is invented. Add only closed
+startup stage/source-literal refusal classification before another changed
+qualification; do not retry unchanged or guess the first failed predicate.
+
+Normal commit attempt1 refuses the new disposable strict-cleanup fixture's
+unsafe libc close outside src/openbsd.rs. Independent source review missed
+that mandatory scanner boundary; no commit/signature is created and no hook
+is waived. Move only the test descriptor close behind a cfg(test) safe helper
+in the existing FFI module, guarded by the exact disposable fixture mode.
+Production strict cleanup, original limits and test assertions stay unchanged.
+The existing CWE guard passes; normal attempt2 must establish admission.
+
+Primary10 classifies its original55 stderr bytes through fixed public enum
+index13: libdovecot.so.5.0. Loader errno and terminal-9 origin remain unknown;
+no authentication result is decoded. Independent scopea2ed0c38 preserves prior
+causes. Reviewed primary-search source9e4f6ed4/audit31253b9f adds only the same
+fixed search-directory r grant already used by hash and reuses its typed
+custody observation before/after leaf reads on the original budget. Actual old
+RED becomes one focused PASS; no x, write, create, tty or command change.
+Directory r is recursive; custody covers immediate membership/metadata, with
+private identity/empty groups/DAC and outside-read denial still required. No
+descendant immutability/private-data absence or native compatibility is claimed
+before one matching changed qualification. Combine this actual code repair with
+the current admission source before normal attempt2 to avoid duplicate full
+gate cycles; frozen plan and all original acceptance controls stay unchanged.
+
+Broker diagnostic4 narrows only its own owned-startup failure to the exact
+native_topology_recheck source literal SMTP topology continuity unavailable.
+Cleanup/public preservation pass, rootstagee83def8b remains retained, and no
+AUTH counter is fabricated. Independent scopeabe3a96d does not diagnose older
+generic refusals. Observe only the original recheck's comparison calls before
+changing configuration, authority or budgets; no causal repair is presumed.
+
+Changed primary11 reaches seal construction but refuses fixed search-directory
+custody in preexec preparation: `hash search directory unavailable`. Three
+prefix controls pass, with zero primary command dispatches, no child proof and
+no authentication outcome. All directly owned fixture children/driver group,
+socket, scratch and temporary identity are gone; exact root code stage
+`/var/run/osmap-primary-root-ad7a2ffe0fc7bc41` is retained. Log SHA256
+`bf729198ae35dcee6ac939e54a1b8ae9b66895ff4e3048e5397dee565a861c90`,
+independent scope `f6498c9f7f623e8facac190b36acf735b6c27b3c79c7ca8a85725db3fefa16c5`.
+The failed directory/ancestry comparison is still unknown; this does not diagnose
+primary10's loader error. Observe only the fixed public metadata before repair.
+
+Broker5's original-call observation is not reached: routing-producer construction
+refuses `SMTP topology continuity unavailable` before startup_step, leaving
+`topology_original_call_observation` null. Original metadata calls are measured
+as global_auth/master/services three each, frontend three and filter two; these
+are not AUTH counts. Both daemons, broker runtime and scratch are gone, standard
+metadata is preserved and cleanup reasons are empty. Exact root code stage
+`/tmp/osmap-pxp-stage-122357bddad6cfe7` is retained. Result lives under
+smtp-broker-native-composition-20261015/topology-comparison-diagnostic-successor5/
+native-attempt1. Move the finite observational boundary to the actual constructor
+calls; preserve original I/O, comparisons and deadlines. No speculative source
+repair, activation or full S04-02 outcome is claimed.
+
+Normal commit2 reaches and passes the library tests but refuses Clippy's
+`items_after_test_module`: the root's test-only safe FFI helper followed the
+existing test module. No commit or signature is created. Reassessment after two
+gate failures identifies the same test-only FFI-placement boundary, not a native
+runtime defect. Move the exact helper before the test module, preserving its
+cfg(test)/exact-mode guard and all descriptor/test behavior. Refresh only the
+existing derived V10 registers and run the focused Clippy boundary before a new
+normal gate. No lint allowance, hook waiver or unchanged retry is used.

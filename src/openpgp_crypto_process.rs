@@ -58,7 +58,7 @@ pub(crate) fn run_account_admission(
         deadline,
         4096,
         Duration::from_secs(30),
-        false,
+        true,
     )?;
     if !success {
         return Err(Error::Unavailable);
@@ -317,6 +317,12 @@ mod tests {
             .as_str()
         {
             "blocked_stdin" => std::thread::sleep(Duration::from_secs(5)),
+            "closed_output_running" => {
+                // Exact existing disposable test child only. EOF precedes exit;
+                // the admission owner must kill before releasing its leader PID.
+                crate::openbsd::close_disposable_fixture_output().unwrap();
+                std::thread::sleep(Duration::from_secs(5));
+            }
             "account_auth_delay" => {
                 std::thread::sleep(Duration::from_secs(11));
                 std::io::stdout()
@@ -345,6 +351,28 @@ mod tests {
         }
     }
 
+    #[test]
+    fn admission_eof_before_exit_uses_owned_group_cleanup_without_false_quarantine() {
+        let began = Instant::now();
+        assert!(matches!(
+            run_account_admission(
+                fixture("closed_output_running"),
+                b"",
+                began + Duration::from_secs(2)
+            ),
+            Err(Error::Unavailable)
+        ));
+        // Existing strict cleanup kills/reaps/confirms absence immediately after
+        // both EOFs; the old try_wait path waits for its original deadline.
+        assert!(began.elapsed() < Duration::from_secs(1));
+        assert!(run_account_admission(
+            crate::auth::mutation_immediate_fixture(),
+            b"",
+            Instant::now() + Duration::from_secs(1)
+        )
+        .unwrap()
+        .is_empty());
+    }
     #[test]
     fn account_auth_delay_profile_preserves_crypto_admin_ten_second_cap() {
         // Synthetic current-executable children only; no native authentication,

@@ -325,3 +325,15 @@ with contextlib.nullcontext(sys.argv[4]) as namespace:
 
 
 if __name__ == '__main__': unittest.main()
+
+
+class OriginalOperationMaterialTests(unittest.TestCase):
+    def test_native_material_uses_exact_original_budget_and_refuses_generic_before_load(self):
+        budget=OperationBudget.from_original_deadline(1035,received_mono=100.,received_millis=1000000,
+            sent_millis=1000000,deadline_millis=1030000,monotonic=lambda:100.,wall_millis=lambda:1000000)
+        with patch.object(m.os,'geteuid',return_value=0),patch.object(m.sys,'platform','openbsd7'),patch.object(m.socket,'gethostname',return_value=m.AUTHORITY),patch.object(budget,'inherited_group',return_value=True),patch.object(m.time,'time',side_effect=AssertionError('fresh startup clock')),patch.object(m.NativeMaterial,'_load',return_value=object())as load:
+            value=m.NativeMaterial.native(budget)
+            self.assertIs(value,load.return_value);load.assert_called_once_with(m.PLAN,m.CONFIG,0,m.NativeMaterial._server,budget)
+        generic=OperationBudget(1035,monotonic=lambda:100.,wall=lambda:1000.)
+        with patch.object(m.os,'geteuid',return_value=0),patch.object(m.sys,'platform','openbsd7'),patch.object(m.socket,'gethostname',return_value=m.AUTHORITY),patch.object(generic,'inherited_group',return_value=True),patch.object(m.NativeMaterial,'_load',side_effect=AssertionError('generic private read')):
+            with self.assertRaises(Unavailable):m.NativeMaterial.native(generic)

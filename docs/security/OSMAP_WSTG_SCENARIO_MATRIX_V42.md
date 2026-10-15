@@ -613,3 +613,33 @@ nullrwc and wpath/cpath are added. Leaf mutation risk is bounded by irreversible
 private IDs/empty groups and root-directory DAC, not dismissed by the c grant.
 Native original7/mask7 and separate nullmask3/device514/strict40 proof remain
 required. No actual null mutation, primary5 retrodiagnosis or installed claim.
+
+S04-02 restricted SQL native3 resultdb8238ac passes actual27controls/14strict48
+receipts/50reaps/sourceparity and complete root+namespace cleanup on disposable
+restricted role. Column and other forbidden operations retain actual1143/1142
+negatives; no operator SQL/authentication or full factory qualification follows.
+Earlier envelope and output-bound failures remain retained. Lossless wire
+metadata factoring preserves the original16KiB cap and original root validator.
+
+Primary8 confirms one private-ID/mask7/null3 proof before first-input EPIPE,
+without establishing authentication; original earlier identity cause remains
+unknown. Product input-close reconciliation must retain incomplete-credential
+success refusal while draining/reaping on the original deadline. Account
+admission endpoint/worker changes preserve fixed peer/MAC/replay, shared epoch
+lock, original parent deadline and quarantine; native confinement, complete
+ingress/session/mail containment and installed workflow remain unqualified.
+No credential-backed WSTG, release, sprint or epic acceptance is inferred.
+
+Admission source now selects the existing strict owned-group cleanup branch,
+with one actual disposable closed-output/running-child discriminator and exact
+fixed interpreter alias/target custody. Primary9 reaches original output drain
+and strict parser (55 stderr bytes/library_load, source kill0/terminal-9), but
+specific library/termination cause and authentication remain unqualified.
+Corrected-version broker startup still refuses; no AUTH counter is fabricated.
+All native activation and complete installed workflow obligations remain open.
+
+Primary10 identifies the fixed public libdovecot.so.5.0 loader token. The
+reviewed fixed search-directory read repair adds no executable/writable grant
+or promise and retains the original private-ID/outside/null controls. Recursive
+read and immediate-only custody are explicit; native compatibility and whole
+workflow security remain pending, with no earlier termination retrodiagnosis.

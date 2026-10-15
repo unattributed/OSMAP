@@ -10202,3 +10202,62 @@ Never test by unlinking, renaming or creating the actual device. The qualifier
 opens only the existing lease, writes nothing, preserves original mask7 and
 adds distinct nullmask3/device514 proof. This source-required compatibility gap
 does not retrospectively diagnose primary5 or establish native authentication.
+
+## 2026-10-15 — complete admission wiring without renewing authority
+
+S04-02 owns the missing persistent account-admission helper/listener and its
+fixed startup entry; per-connection tests do not supply a running endpoint.
+Reuse existing peer/MAC/replay, bounded worker and quarantine mechanisms. A
+source constructor check of three Python files is insufficient after the
+private-primary bridge imports its fixed transitive closure: inspect and admit
+only that closed33-module list under existing root/file guards. Native signal
+calls belong in the existing openbsd FFI boundary, not a new unsafe binary block.
+
+The authenticated admission request lives35s, while its original connection
+budget is30s before parsing. Internal worker deadline must preserve the smaller
+remaining original Instant and authenticated expiry; neither a fresh Python25s
+clock nor material5s startup clock may extend it. Shared durable epoch lock
+stays held across authentication and returned epoch. Closed gates remain closed
+until actual native/factory/complete installed qualification.
+
+Actual first-stdin EPIPE is reconciled by closing that input, draining the
+original owned output pipes and reaping within existing limits. Never retry or
+accept success when credential input was incomplete, even if output claims
+success. This repairs disposition, not an unsupported claim about the child's
+earlier exit cause. Factor repeated SQL proof metadata without changing the
+16KiB cap or original validator; a passing new fixture cannot retroactively
+clear retained failures. Repin only measured exact Postfix3.11.7 plus empty
+multiinstance expectation when reusing an older host fixture.
+
+Use the existing strict admission subprocess cleanup path so group confirmation
+precedes release of the owned leader PID; do not infer descendant cleanup from
+a reaped leader. Exact fixed interpreter alias and target lease are rechecked
+before dispatch on the original deadline. A source constructor compatibility
+fix and passing local cleanup controls do not authorize native activation.
+
+The mandatory unsafe-location rule also applies to disposable test fixtures.
+Keep their raw descriptor operations inside src/openbsd.rs behind cfg(test)
+and an exact fixture-mode guard; preserve the real-child discriminator and
+record the refused normal gate rather than weakening its scanner.
+
+Measured primary loader output now names the fixed public libdovecot.so.5.0
+dependency. Reuse the hash graph's exact fixed search-directory read grant and
+typed custody for primary, with no new executable/writable grant or promise.
+Its recursive read and immediate-only custody are explicit: private-ID/DAC and
+outside-path refusal remain mandatory. Changed native compatibility must pass;
+the public dependency name alone does not prove a loader errno or diagnose an
+earlier child termination.
+
+The changed primary qualifier refuses search custody before dispatch. Reconcile
+the fixed public directory and ancestry against their exact pins before changing
+them; a grant is not proof of current installed metadata. Preserve the failed
+native result and earlier loader uncertainty. Broker comparison observation must
+cover the constructor's actual original recheck, rather than a later method
+wrapper that is never reached. Do not add reads or relax continuity guards to
+make the diagnostic run. These repairs remain in the same active password slice.
+
+Two normal integration attempts refuse test-only FFI placement: first the unsafe
+location scanner, then Clippy's items-after-test-module rule. Keep both failures
+and correct placement inside the existing FFI module before its tests, with
+unchanged semantics. Check that exact failed boundary before another normal
+gate; never waive the rules or treat an earlier library pass as a full gate pass.
