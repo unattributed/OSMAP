@@ -16,10 +16,20 @@ statement as provenance rather than current release posture.
 
 ### Latest scoped folder and label delivery, 2026-10-15
 
-S08-02's original17 controls are engineering-delivered through composed executed
-source/native/installed evidence and independent audit. Human usability and
-final-reference visual acceptance remain NOT RUN; broader S08 and the epic are
-OPEN. This is a functional delivery, not full release qualification.
+S08-02 is functionally ACCEPTED: original17 obligations have composed executed
+source/native/installed evidence and independent audit, followed by the operator's
+normal login/Folders/subfolder navigation/Search/message viewing and prescribed
+controlled attachment-download PASS on October15. Independent closure review
+confirms the defined minimal human gate is complete. S09 final-reference visual/
+accessibility acceptance, broader S08 and the epic remain OPEN; no release claim.
+
+The sole active slice is S04-02 authoritative own-password change. Its first
+reviewed source repair supplies the exact guarded SMTP binding missing from
+native dependency construction and checks fixed private key/endpoint custody.
+Old-factory RED1 becomes15 focused local passes; native qualification gates stay
+closed. Real control broker/topology/SQL/hash/primary authority, paired Runtime
+clients/form and controlled authoritative workflow remain unfinished. No password
+form, service, credential or native profile is enabled by this source change.
 
 Signed source `c4e318bf2602998885ea1b4aa9432ff0a572031b` is synchronized to
 `feat/ux-completion-20260929` after normal commit/push gates:1723 Rust passes,

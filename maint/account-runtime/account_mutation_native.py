@@ -33,6 +33,11 @@ def _fixed_material():
     return NativeMaterial.native()
 
 
+def _fixed_stores():
+    # Existing provisioned stores only; construction never creates/resets them.
+    return IntentStore(INTENT_ROOT,0),EpochStore(EPOCH_ROOT,0)
+
+
 class NativeDependencies:
     def __init__(self,bootstrap,journal,epoch_store,clock=lambda:int(time.time()),*,material=None,smtp_control=None):
         if (type(bootstrap) is not _Bootstrap or type(journal) is not IntentStore
@@ -56,9 +61,11 @@ class NativeDependencies:
             raise Unavailable('native mutation dependencies unavailable')
         bootstrap=_Bootstrap.native()
         material=_fixed_material()
+        smtp_control=GuardedSmtpBinding.native(bootstrap)
         # No record/root creation, recovery/reset, imported session or callback
         # attestation occurs here. Missing/corrupt owned stores remain unavailable.
-        return cls(bootstrap,IntentStore(INTENT_ROOT,0),EpochStore(EPOCH_ROOT,0),material=material)
+        journal,epoch_store=_fixed_stores()
+        return cls(bootstrap,journal,epoch_store,material=material,smtp_control=smtp_control)
 
     def _build(self,action,budget,authorize):
         if (type(action) is not PreparedAction or type(budget) is not OperationBudget

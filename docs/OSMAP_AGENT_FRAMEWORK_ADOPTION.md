@@ -66,10 +66,13 @@ agents own isolated changes; independent QA/security/auditor findings must be
 resolved before a human handoff. Root performs technical writing in existing
 records. Management roles need not consume permanent concurrent slots.
 
-Use the latest ledger work order and effort assessment. S04-02 is preserved but
-is not the current integration objective: restore Crypto supervision first,
-then deliver the complete Folders lifecycle. The earlier dated paragraphs below
-are provenance, not instructions to restart parked microdiagnostics.
+Use the latest ledger work order and effort assessment. The original S08-02
+engineering scope is delivered at signed c497b9c with human usability pending.
+S04-02 authoritative password change is the sole active integration objective
+under approved mail-delivery refocus priority3. Reuse existing components and
+repair actual native factory/containment and Runtime/form gaps; do not restart
+parked primitive microdiagnostics or begin queued Schedule work. Earlier dated
+paragraphs below are provenance, not competing active assignments.
 
 Human acceptance is a minimal final judgment after agent development, matching
 installation, essential functional QA and independent audit all PASS. Root

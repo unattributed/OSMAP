@@ -1,13 +1,25 @@
-"""Trusted disabled worker startup binding; original bytes stay local."""
+"""Fixed guarded startup composition; native qualification remains closed.
+
+New source-owned contract: smtp-control.key under the existing supervisor ROOT
+is the broker's distinct MAC purpose key. No existing provision is inferred and
+this loader creates no file; the eventual broker factory must use this contract.
+"""
+import os
+import time
 from account_guarded_mutation import VerifiedGuardedMutation
 from account_mutation_codec import key_valid
-from account_mutation_supervisor import _Bootstrap
+from account_mutation_supervisor import _Bootstrap,ROOT,_directory,_private
+from account_mutation_budget import wall_millis
 from authoritative_password import AuthoritativePasswordAdapter,Refused
 from mail_session_containment import MailSessionContainment
 from operation_budget import OperationBudget
 from prepared_password import PreparedPasswordCoordinator
 from smtp_control_authorization import ControlAuthority,derive_authorization
 from smtp_mutation_containment import PrivateControlEndpoint,GuardedSmtpContainment
+
+CONTROL_KEY_NAME='smtp-control.key'
+STARTUP_SECONDS=5
+_FILES=('config.json','mutation.key','session-proof.key',CONTROL_KEY_NAME)
 
 class GuardedSmtpBinding:
     def __init__(self,bootstrap,authority,endpoint,*,clock_millis):
@@ -37,6 +49,7 @@ class GuardedSmtpBinding:
             raise Refused('guarded SMTP mail binding unavailable')
         budget.require_original(sent_millis=original.budget.sent_millis,
             deadline_millis=original.budget.deadline_millis,expires_at=original.budget.request.action.expires)
+        self.recheck(budget)
         # Independently reverify exact original MACs locally. No password-bearing
         # frame, original keys, SQL authority or issuer Boolean reaches broker.
         minimal=derive_authorization(frame,self.bootstrap.mutation_key,
@@ -49,8 +62,61 @@ class GuardedSmtpBinding:
         coordinator.pending_confirmation=bridge.capture_pending
         coordinator.release_containment=bridge.abandon
         return coordinator
+    @staticmethod
+    def _identity(info):
+        return (info.st_dev,info.st_ino,info.st_uid,info.st_gid,info.st_mode,
+                info.st_nlink,info.st_size,info.st_mtime_ns,info.st_ctime_ns)
+
     @classmethod
-    def native(cls,*_args):
-        # Fixed operator key/endpoint custody and unique worker/issuer bootstrap
-        # are not qualified. No flag patch can cause private file access.
-        raise Refused('native guarded SMTP startup unavailable')
+    def _read(cls,bootstrap,root,owner,endpoint,budget):
+        # Private source/test seam, never a wire-selected path or owner. Native
+        # supplies fixed ROOT/owner0 and the fixed endpoint constructor below.
+        if (type(bootstrap)is not _Bootstrap or type(endpoint)is not PrivateControlEndpoint
+                or type(budget)is not OperationBudget or endpoint.owner!=owner):
+            raise Refused('guarded SMTP startup authority unavailable')
+        descriptor=None
+        try:
+            budget.remaining();descriptor=_directory(root,owner)
+            root_identity=cls._identity(os.fstat(descriptor))[:5]
+            before=tuple(cls._identity(os.stat(name,dir_fd=descriptor,follow_symlinks=False))for name in _FILES)
+            # Bootstrap reread independently binds the complete account set and
+            # both original purpose keys to this same private directory.
+            if _Bootstrap._read(root,owner)!=bootstrap:
+                raise Refused('guarded SMTP bootstrap changed')
+            budget.remaining()
+            control=_private(descriptor,CONTROL_KEY_NAME,owner,1024)
+            authority=ControlAuthority(control,bootstrap.accounts)
+            value=cls(bootstrap,authority,endpoint,clock_millis=wall_millis)
+            after=tuple(cls._identity(os.stat(name,dir_fd=descriptor,follow_symlinks=False))for name in _FILES)
+            if (before!=after or cls._identity(os.fstat(descriptor))[:5]!=root_identity
+                    or cls._identity(root.lstat())[:5]!=root_identity):
+                raise Refused('guarded SMTP startup custody changed')
+            endpoint.recheck(budget);budget.remaining()
+            value._custody=(root,owner,root_identity,before)
+            return value
+        except Exception:
+            raise Refused('guarded SMTP startup binding unavailable')from None
+        finally:
+            if descriptor is not None:os.close(descriptor)
+
+    def recheck(self,budget):
+        custody=getattr(self,'_custody',None)
+        if custody is None:
+            # Existing explicitly constructed source fixtures remain unchanged;
+            # the native factory always uses the fixed custody loader.
+            return
+        root,owner,root_identity,files=custody
+        current=type(self)._read(self.bootstrap,root,owner,self.endpoint,budget)
+        if (current._custody!=(root,owner,root_identity,files)
+                or current.authority!=self.authority):
+            raise Refused('guarded SMTP startup binding changed')
+
+    @classmethod
+    def native(cls,bootstrap=None):
+        if type(bootstrap)is not _Bootstrap:
+            raise Refused('native guarded SMTP startup unavailable')
+        # Endpoint qualification remains closed. No caller or flag here can
+        # bypass fixed host/owner/socket admission or create a broker service.
+        endpoint=PrivateControlEndpoint.native()
+        budget=OperationBudget(int(time.time())+STARTUP_SECONDS,maximum_seconds=STARTUP_SECONDS)
+        return cls._read(bootstrap,ROOT,0,endpoint,budget)

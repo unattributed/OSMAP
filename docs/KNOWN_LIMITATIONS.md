@@ -7,8 +7,10 @@ independent original17 review. The current distinct13-request installed journey
 observes successful populated Bin and Restore replies at3937ms/4007ms, exact
 three-folder/message/attachment continuity, selected facts, reloaded label badges
 and own logical/session cleanup. Current Runtime batch delegation has a real
-counterfactual wire regression and matching native proof. Human usability and
-final-reference visual acceptance remain NOT RUN; broader S08/epic/release
+counterfactual wire regression and matching native proof. Human Folders usability
+and the controlled attachment download now PASS; independent review permits
+S08-02 functional acceptance. S09 final-reference visual/accessibility remains
+NOT RUN; broader S08/epic/release
 acceptance remains OPEN.
 
 Historical Bin/Restore client replies were unobserved and remain failures;

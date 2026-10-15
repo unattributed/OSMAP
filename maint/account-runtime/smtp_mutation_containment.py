@@ -10,7 +10,8 @@ import json
 from pathlib import Path
 import socket
 import stat
-from account_mutation_supervisor import _directory
+import sys
+from account_mutation_supervisor import _directory,AUTHORITY
 from account_guarded_mutation import VerifiedGuardedMutation
 from account_epoch import EpochStore
 from authoritative_password import Refused,Unconfirmed
@@ -60,7 +61,13 @@ class PrivateControlEndpoint:
             return stream
         except BaseException:stream.close();raise
     @classmethod
-    def native(cls,*_args):raise Refused('native SMTP mutation endpoint unavailable')
+    def native(cls):
+        # Source-owned fixed endpoint only, with the existing qualification gate
+        # unchanged. Kernel peer checks still precede any protocol byte in connect.
+        if (not NATIVE_MUTATION_SMTP_CONTROL_QUALIFIED or os.geteuid()!=0
+                or not sys.platform.startswith('openbsd') or socket.gethostname()!=AUTHORITY):
+            raise Refused('native SMTP mutation endpoint unavailable')
+        return cls(CONTROL_SOCKET,0)
 
 class GuardedSmtpContainment:
     """Preserves normal mail readiness; pending hook holds sealed broker cutoff."""

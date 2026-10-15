@@ -87,8 +87,10 @@ Create/Rename/Move, complete-email attachment-preserving Move, reviewed Bin/Rest
 confirmed empty Delete, labels/reloaded badges and finite menus have scoped
 functional evidence and independent review. The repaired public Bin and Restore
 responses complete within the existing10s bound. Historical failures stay
-retained. Human usability/final-reference visual acceptance, broader S08 and
-epic/release completion remain separate and open. See the
+retained. The operator's defined human Folders usability and attachment-download
+checks PASS; independent review closes S08-02 functional acceptance. S04-02
+authoritative password change is active. S09 final-reference visual acceptance,
+broader S08 and epic/release completion remain separate and open. See the
 [execution ledger](docs/UX_EXECUTION_LEDGER.md) for the exact evidence and limits.
 
 OSMAP is actively developed and security-sensitive. The crate is currently

@@ -3959,7 +3959,7 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "QA_VERIFIED",
+        "status": "ACCEPTED",
         "executed": true,
         "evidence": [
           {
@@ -3991,6 +3991,11 @@
             "kind": "qa_execution",
             "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/pm-delivery-policy-20261015/original17-engineering-closeout-proposal-20261015.json",
             "scope": "Independent original17 engineering reconciliation PASS_COMPOSED_EXECUTED_SCOPE for R2-03-007, SHA256=483e664ccc45935688eb116261b58f74ff5e1b70243e1e4a998c7840f401ec3a. Existing executed positive/negative/refusal/recovery evidence joined without reruns or inventing uninterrupted30PASS. System-role/parent-open/count-transition compositional scope explicitly accepted. All4 outcomes/all6 engineering stages PASS; human/final-reference visuals NOT_RUN."
+          },
+          {
+            "kind": "human_uat",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/s08-02-engineering-closeout-20261015/HUMAN-USABILITY-RESULT-20261015.json",
+            "scope": "2026-10-15 operator normal login/Folders/subfolder navigation/Search/message viewing PASS and functionality looks good; subsequent prescribed controlled attachment download PASS. Overall defined minimal usability judgment joins original17 engineering audit483e/current13d64, independently reconciled in independent-human-acceptance-and-parent-closure-review.json. No claim human repeated each mutation or final S09 visual/accessibility acceptance."
           }
         ]
       }
@@ -14054,7 +14059,7 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "QA_VERIFIED",
+        "status": "ACCEPTED",
         "executed": true,
         "evidence": [
           {
@@ -14091,6 +14096,11 @@
             "kind": "qa_execution",
             "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/pm-delivery-policy-20261015/original17-engineering-closeout-proposal-20261015.json",
             "scope": "Independent original17 engineering reconciliation PASS_COMPOSED_EXECUTED_SCOPE for R2-16-009, SHA256=483e664ccc45935688eb116261b58f74ff5e1b70243e1e4a998c7840f401ec3a. Existing executed positive/negative/refusal/recovery evidence joined without reruns or inventing uninterrupted30PASS. System-role/parent-open/count-transition compositional scope explicitly accepted. All4 outcomes/all6 engineering stages PASS; human/final-reference visuals NOT_RUN."
+          },
+          {
+            "kind": "human_uat",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/s08-02-engineering-closeout-20261015/HUMAN-USABILITY-RESULT-20261015.json",
+            "scope": "2026-10-15 operator normal login/Folders/subfolder navigation/Search/message viewing PASS and functionality looks good; subsequent prescribed controlled attachment download PASS. Overall defined minimal usability judgment joins original17 engineering audit483e/current13d64, independently reconciled in independent-human-acceptance-and-parent-closure-review.json. No claim human repeated each mutation or final S09 visual/accessibility acceptance."
           }
         ]
       }
@@ -14137,7 +14147,7 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "QA_VERIFIED",
+        "status": "ACCEPTED",
         "executed": true,
         "evidence": [
           {
@@ -14184,6 +14194,11 @@
             "kind": "qa_execution",
             "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/pm-delivery-policy-20261015/original17-engineering-closeout-proposal-20261015.json",
             "scope": "Independent original17 engineering reconciliation PASS_COMPOSED_EXECUTED_SCOPE for R2-16-010, SHA256=483e664ccc45935688eb116261b58f74ff5e1b70243e1e4a998c7840f401ec3a. Existing executed positive/negative/refusal/recovery evidence joined without reruns or inventing uninterrupted30PASS. System-role/parent-open/count-transition compositional scope explicitly accepted. All4 outcomes/all6 engineering stages PASS; human/final-reference visuals NOT_RUN."
+          },
+          {
+            "kind": "human_uat",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/s08-02-engineering-closeout-20261015/HUMAN-USABILITY-RESULT-20261015.json",
+            "scope": "2026-10-15 operator normal login/Folders/subfolder navigation/Search/message viewing PASS and functionality looks good; subsequent prescribed controlled attachment download PASS. Overall defined minimal usability judgment joins original17 engineering audit483e/current13d64, independently reconciled in independent-human-acceptance-and-parent-closure-review.json. No claim human repeated each mutation or final S09 visual/accessibility acceptance."
           }
         ]
       }
@@ -14230,7 +14245,7 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "QA_VERIFIED",
+        "status": "ACCEPTED",
         "executed": true,
         "evidence": [
           {
@@ -14277,6 +14292,11 @@
             "kind": "qa_execution",
             "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/pm-delivery-policy-20261015/original17-engineering-closeout-proposal-20261015.json",
             "scope": "Independent original17 engineering reconciliation PASS_COMPOSED_EXECUTED_SCOPE for R2-16-011, SHA256=483e664ccc45935688eb116261b58f74ff5e1b70243e1e4a998c7840f401ec3a. Existing executed positive/negative/refusal/recovery evidence joined without reruns or inventing uninterrupted30PASS. System-role/parent-open/count-transition compositional scope explicitly accepted. All4 outcomes/all6 engineering stages PASS; human/final-reference visuals NOT_RUN."
+          },
+          {
+            "kind": "human_uat",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/s08-02-engineering-closeout-20261015/HUMAN-USABILITY-RESULT-20261015.json",
+            "scope": "2026-10-15 operator normal login/Folders/subfolder navigation/Search/message viewing PASS and functionality looks good; subsequent prescribed controlled attachment download PASS. Overall defined minimal usability judgment joins original17 engineering audit483e/current13d64, independently reconciled in independent-human-acceptance-and-parent-closure-review.json. No claim human repeated each mutation or final S09 visual/accessibility acceptance."
           }
         ]
       }
@@ -14323,7 +14343,7 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "QA_VERIFIED",
+        "status": "ACCEPTED",
         "executed": true,
         "evidence": [
           {
@@ -14355,6 +14375,11 @@
             "kind": "qa_execution",
             "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/pm-delivery-policy-20261015/original17-engineering-closeout-proposal-20261015.json",
             "scope": "Independent original17 engineering reconciliation PASS_COMPOSED_EXECUTED_SCOPE for R2-16-012, SHA256=483e664ccc45935688eb116261b58f74ff5e1b70243e1e4a998c7840f401ec3a. Existing executed positive/negative/refusal/recovery evidence joined without reruns or inventing uninterrupted30PASS. System-role/parent-open/count-transition compositional scope explicitly accepted. All4 outcomes/all6 engineering stages PASS; human/final-reference visuals NOT_RUN."
+          },
+          {
+            "kind": "human_uat",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/s08-02-engineering-closeout-20261015/HUMAN-USABILITY-RESULT-20261015.json",
+            "scope": "2026-10-15 operator normal login/Folders/subfolder navigation/Search/message viewing PASS and functionality looks good; subsequent prescribed controlled attachment download PASS. Overall defined minimal usability judgment joins original17 engineering audit483e/current13d64, independently reconciled in independent-human-acceptance-and-parent-closure-review.json. No claim human repeated each mutation or final S09 visual/accessibility acceptance."
           }
         ]
       }
@@ -14421,7 +14446,7 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "QA_VERIFIED",
+        "status": "ACCEPTED",
         "executed": true,
         "evidence": [
           {
@@ -14453,6 +14478,11 @@
             "kind": "qa_execution",
             "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/pm-delivery-policy-20261015/original17-engineering-closeout-proposal-20261015.json",
             "scope": "Independent original17 engineering reconciliation PASS_COMPOSED_EXECUTED_SCOPE for R2-16-013, SHA256=483e664ccc45935688eb116261b58f74ff5e1b70243e1e4a998c7840f401ec3a. Existing executed positive/negative/refusal/recovery evidence joined without reruns or inventing uninterrupted30PASS. System-role/parent-open/count-transition compositional scope explicitly accepted. All4 outcomes/all6 engineering stages PASS; human/final-reference visuals NOT_RUN."
+          },
+          {
+            "kind": "human_uat",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/s08-02-engineering-closeout-20261015/HUMAN-USABILITY-RESULT-20261015.json",
+            "scope": "2026-10-15 operator normal login/Folders/subfolder navigation/Search/message viewing PASS and functionality looks good; subsequent prescribed controlled attachment download PASS. Overall defined minimal usability judgment joins original17 engineering audit483e/current13d64, independently reconciled in independent-human-acceptance-and-parent-closure-review.json. No claim human repeated each mutation or final S09 visual/accessibility acceptance."
           }
         ]
       }
@@ -14519,7 +14549,7 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "QA_VERIFIED",
+        "status": "ACCEPTED",
         "executed": true,
         "evidence": [
           {
@@ -14551,6 +14581,11 @@
             "kind": "qa_execution",
             "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/pm-delivery-policy-20261015/original17-engineering-closeout-proposal-20261015.json",
             "scope": "Independent original17 engineering reconciliation PASS_COMPOSED_EXECUTED_SCOPE for R2-16-014, SHA256=483e664ccc45935688eb116261b58f74ff5e1b70243e1e4a998c7840f401ec3a. Existing executed positive/negative/refusal/recovery evidence joined without reruns or inventing uninterrupted30PASS. System-role/parent-open/count-transition compositional scope explicitly accepted. All4 outcomes/all6 engineering stages PASS; human/final-reference visuals NOT_RUN."
+          },
+          {
+            "kind": "human_uat",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/s08-02-engineering-closeout-20261015/HUMAN-USABILITY-RESULT-20261015.json",
+            "scope": "2026-10-15 operator normal login/Folders/subfolder navigation/Search/message viewing PASS and functionality looks good; subsequent prescribed controlled attachment download PASS. Overall defined minimal usability judgment joins original17 engineering audit483e/current13d64, independently reconciled in independent-human-acceptance-and-parent-closure-review.json. No claim human repeated each mutation or final S09 visual/accessibility acceptance."
           }
         ]
       }
@@ -14617,7 +14652,7 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "QA_VERIFIED",
+        "status": "ACCEPTED",
         "executed": true,
         "evidence": [
           {
@@ -14649,6 +14684,11 @@
             "kind": "qa_execution",
             "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/pm-delivery-policy-20261015/original17-engineering-closeout-proposal-20261015.json",
             "scope": "Independent original17 engineering reconciliation PASS_COMPOSED_EXECUTED_SCOPE for R2-16-015, SHA256=483e664ccc45935688eb116261b58f74ff5e1b70243e1e4a998c7840f401ec3a. Existing executed positive/negative/refusal/recovery evidence joined without reruns or inventing uninterrupted30PASS. System-role/parent-open/count-transition compositional scope explicitly accepted. All4 outcomes/all6 engineering stages PASS; human/final-reference visuals NOT_RUN."
+          },
+          {
+            "kind": "human_uat",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/s08-02-engineering-closeout-20261015/HUMAN-USABILITY-RESULT-20261015.json",
+            "scope": "2026-10-15 operator normal login/Folders/subfolder navigation/Search/message viewing PASS and functionality looks good; subsequent prescribed controlled attachment download PASS. Overall defined minimal usability judgment joins original17 engineering audit483e/current13d64, independently reconciled in independent-human-acceptance-and-parent-closure-review.json. No claim human repeated each mutation or final S09 visual/accessibility acceptance."
           }
         ]
       }
@@ -14715,7 +14755,7 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "QA_VERIFIED",
+        "status": "ACCEPTED",
         "executed": true,
         "evidence": [
           {
@@ -14747,6 +14787,11 @@
             "kind": "qa_execution",
             "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/pm-delivery-policy-20261015/original17-engineering-closeout-proposal-20261015.json",
             "scope": "Independent original17 engineering reconciliation PASS_COMPOSED_EXECUTED_SCOPE for R2-16-016, SHA256=483e664ccc45935688eb116261b58f74ff5e1b70243e1e4a998c7840f401ec3a. Existing executed positive/negative/refusal/recovery evidence joined without reruns or inventing uninterrupted30PASS. System-role/parent-open/count-transition compositional scope explicitly accepted. All4 outcomes/all6 engineering stages PASS; human/final-reference visuals NOT_RUN."
+          },
+          {
+            "kind": "human_uat",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/s08-02-engineering-closeout-20261015/HUMAN-USABILITY-RESULT-20261015.json",
+            "scope": "2026-10-15 operator normal login/Folders/subfolder navigation/Search/message viewing PASS and functionality looks good; subsequent prescribed controlled attachment download PASS. Overall defined minimal usability judgment joins original17 engineering audit483e/current13d64, independently reconciled in independent-human-acceptance-and-parent-closure-review.json. No claim human repeated each mutation or final S09 visual/accessibility acceptance."
           }
         ]
       }
@@ -14808,7 +14853,7 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "QA_VERIFIED",
+        "status": "ACCEPTED",
         "executed": true,
         "evidence": [
           {
@@ -14840,6 +14885,11 @@
             "kind": "qa_execution",
             "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/pm-delivery-policy-20261015/original17-engineering-closeout-proposal-20261015.json",
             "scope": "Independent original17 engineering reconciliation PASS_COMPOSED_EXECUTED_SCOPE for R2-16-017, SHA256=483e664ccc45935688eb116261b58f74ff5e1b70243e1e4a998c7840f401ec3a. Existing executed positive/negative/refusal/recovery evidence joined without reruns or inventing uninterrupted30PASS. System-role/parent-open/count-transition compositional scope explicitly accepted. All4 outcomes/all6 engineering stages PASS; human/final-reference visuals NOT_RUN."
+          },
+          {
+            "kind": "human_uat",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/s08-02-engineering-closeout-20261015/HUMAN-USABILITY-RESULT-20261015.json",
+            "scope": "2026-10-15 operator normal login/Folders/subfolder navigation/Search/message viewing PASS and functionality looks good; subsequent prescribed controlled attachment download PASS. Overall defined minimal usability judgment joins original17 engineering audit483e/current13d64, independently reconciled in independent-human-acceptance-and-parent-closure-review.json. No claim human repeated each mutation or final S09 visual/accessibility acceptance."
           }
         ]
       }
@@ -14906,7 +14956,7 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "QA_VERIFIED",
+        "status": "ACCEPTED",
         "executed": true,
         "evidence": [
           {
@@ -14943,6 +14993,11 @@
             "kind": "qa_execution",
             "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/pm-delivery-policy-20261015/original17-engineering-closeout-proposal-20261015.json",
             "scope": "Independent original17 engineering reconciliation PASS_COMPOSED_EXECUTED_SCOPE for R2-16-018, SHA256=483e664ccc45935688eb116261b58f74ff5e1b70243e1e4a998c7840f401ec3a. Existing executed positive/negative/refusal/recovery evidence joined without reruns or inventing uninterrupted30PASS. System-role/parent-open/count-transition compositional scope explicitly accepted. All4 outcomes/all6 engineering stages PASS; human/final-reference visuals NOT_RUN."
+          },
+          {
+            "kind": "human_uat",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/s08-02-engineering-closeout-20261015/HUMAN-USABILITY-RESULT-20261015.json",
+            "scope": "2026-10-15 operator normal login/Folders/subfolder navigation/Search/message viewing PASS and functionality looks good; subsequent prescribed controlled attachment download PASS. Overall defined minimal usability judgment joins original17 engineering audit483e/current13d64, independently reconciled in independent-human-acceptance-and-parent-closure-review.json. No claim human repeated each mutation or final S09 visual/accessibility acceptance."
           }
         ]
       }
@@ -15009,7 +15064,7 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "QA_VERIFIED",
+        "status": "ACCEPTED",
         "executed": true,
         "evidence": [
           {
@@ -15041,6 +15096,11 @@
             "kind": "qa_execution",
             "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/pm-delivery-policy-20261015/original17-engineering-closeout-proposal-20261015.json",
             "scope": "Independent original17 engineering reconciliation PASS_COMPOSED_EXECUTED_SCOPE for R2-16-019, SHA256=483e664ccc45935688eb116261b58f74ff5e1b70243e1e4a998c7840f401ec3a. Existing executed positive/negative/refusal/recovery evidence joined without reruns or inventing uninterrupted30PASS. System-role/parent-open/count-transition compositional scope explicitly accepted. All4 outcomes/all6 engineering stages PASS; human/final-reference visuals NOT_RUN."
+          },
+          {
+            "kind": "human_uat",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/s08-02-engineering-closeout-20261015/HUMAN-USABILITY-RESULT-20261015.json",
+            "scope": "2026-10-15 operator normal login/Folders/subfolder navigation/Search/message viewing PASS and functionality looks good; subsequent prescribed controlled attachment download PASS. Overall defined minimal usability judgment joins original17 engineering audit483e/current13d64, independently reconciled in independent-human-acceptance-and-parent-closure-review.json. No claim human repeated each mutation or final S09 visual/accessibility acceptance."
           }
         ]
       }
@@ -15087,7 +15147,7 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "QA_VERIFIED",
+        "status": "ACCEPTED",
         "executed": true,
         "evidence": [
           {
@@ -15129,6 +15189,11 @@
             "kind": "qa_execution",
             "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/pm-delivery-policy-20261015/original17-engineering-closeout-proposal-20261015.json",
             "scope": "Independent original17 engineering reconciliation PASS_COMPOSED_EXECUTED_SCOPE for R2-16-020, SHA256=483e664ccc45935688eb116261b58f74ff5e1b70243e1e4a998c7840f401ec3a. Existing executed positive/negative/refusal/recovery evidence joined without reruns or inventing uninterrupted30PASS. System-role/parent-open/count-transition compositional scope explicitly accepted. All4 outcomes/all6 engineering stages PASS; human/final-reference visuals NOT_RUN."
+          },
+          {
+            "kind": "human_uat",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/s08-02-engineering-closeout-20261015/HUMAN-USABILITY-RESULT-20261015.json",
+            "scope": "2026-10-15 operator normal login/Folders/subfolder navigation/Search/message viewing PASS and functionality looks good; subsequent prescribed controlled attachment download PASS. Overall defined minimal usability judgment joins original17 engineering audit483e/current13d64, independently reconciled in independent-human-acceptance-and-parent-closure-review.json. No claim human repeated each mutation or final S09 visual/accessibility acceptance."
           }
         ]
       }
@@ -15175,7 +15240,7 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "QA_VERIFIED",
+        "status": "ACCEPTED",
         "executed": true,
         "evidence": [
           {
@@ -15212,6 +15277,11 @@
             "kind": "qa_execution",
             "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/pm-delivery-policy-20261015/original17-engineering-closeout-proposal-20261015.json",
             "scope": "Independent original17 engineering reconciliation PASS_COMPOSED_EXECUTED_SCOPE for R2-16-021, SHA256=483e664ccc45935688eb116261b58f74ff5e1b70243e1e4a998c7840f401ec3a. Existing executed positive/negative/refusal/recovery evidence joined without reruns or inventing uninterrupted30PASS. System-role/parent-open/count-transition compositional scope explicitly accepted. All4 outcomes/all6 engineering stages PASS; human/final-reference visuals NOT_RUN."
+          },
+          {
+            "kind": "human_uat",
+            "path": "/home/foo/Downloads/osmap-ux-s08/revalidation-20261006/labels-folders/s08-02-engineering-closeout-20261015/HUMAN-USABILITY-RESULT-20261015.json",
+            "scope": "2026-10-15 operator normal login/Folders/subfolder navigation/Search/message viewing PASS and functionality looks good; subsequent prescribed controlled attachment download PASS. Overall defined minimal usability judgment joins original17 engineering audit483e/current13d64, independently reconciled in independent-human-acceptance-and-parent-closure-review.json. No claim human repeated each mutation or final S09 visual/accessibility acceptance."
           }
         ]
       }

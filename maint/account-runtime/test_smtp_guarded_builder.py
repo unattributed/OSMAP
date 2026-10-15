@@ -99,6 +99,56 @@ class Startup(unittest.TestCase):
     def setUp(self):
         self.case=fixtures.MutationContainment('runTest');self.case.setUp();self.addCleanup(self.case.doCleanups)
         self.boot=_Bootstrap(fixtures.fixtures.KEY,fixtures.fixtures.SESSION_KEY,self.case.f.authority.accounts,os.getuid())
+    def startup_root(self):
+        from account_mutation_supervisor import AUTHORITY,PURPOSE
+        temporary=tempfile.TemporaryDirectory(prefix='osmap-control-binding-',dir=str(Path.home()/'.cache'))
+        self.addCleanup(temporary.cleanup);root=Path(temporary.name);root.chmod(0o700)
+        configuration={'version':1,'authority':AUTHORITY,'purpose':PURPOSE,'accounts':sorted(self.boot.accounts),'trusted_relay_uid':self.boot.trusted_relay_uid}
+        for name,raw in (('config.json',json.dumps(configuration).encode()),('mutation.key',self.boot.mutation_key),('session-proof.key',self.boot.session_key),('smtp-control.key',bytes([23])*32)):
+            path=root/name;path.write_bytes(raw);path.chmod(0o600)
+        return root
+    def test_private_startup_loader_binds_exact_bootstrap_key_accounts_endpoint_and_custody(self):
+        root=self.startup_root()
+        with patch('subprocess.Popen',side_effect=AssertionError):
+            binding=GuardedSmtpBinding._read(self.boot,root,os.getuid(),self.case.endpoint,self.case.budget)
+            binding.recheck(self.case.budget)
+        self.assertIs(binding.bootstrap,self.boot);self.assertIs(binding.endpoint,self.case.endpoint)
+        self.assertEqual(binding.authority,ControlAuthority(bytes([23])*32,self.boot.accounts))
+        self.assertEqual(binding._custody[0],root)
+        self.assertEqual(self.case.sql.sql_updates,0)
+    def test_private_startup_missing_foreign_purpose_and_unsafe_key_refuse_without_SQL(self):
+        import copy
+        for mode in ('missing','mutation-purpose','session-purpose','short','symlink','hardlink','fifo','foreign-bootstrap','foreign-owner'):
+            with self.subTest(mode=mode):
+                root=self.startup_root();key=root/'smtp-control.key';endpoint=self.case.endpoint;boot=self.boot
+                if mode=='missing':key.unlink()
+                elif mode=='mutation-purpose':key.write_bytes(self.boot.mutation_key)
+                elif mode=='session-purpose':key.write_bytes(self.boot.session_key)
+                elif mode=='short':key.write_bytes(b'x'*16)
+                elif mode=='symlink':key.unlink();key.symlink_to('mutation.key')
+                elif mode=='hardlink':key.unlink();os.link(root/'mutation.key',key)
+                elif mode=='fifo':key.unlink();os.mkfifo(key,0o600)
+                elif mode=='foreign-bootstrap':boot=_Bootstrap(self.boot.mutation_key,self.boot.session_key,frozenset((self.case.alice,)),self.boot.trusted_relay_uid)
+                else:endpoint=copy.copy(endpoint);endpoint.owner=os.getuid()+1
+                with patch('subprocess.Popen',side_effect=AssertionError):
+                    with self.assertRaises(Refused):GuardedSmtpBinding._read(boot,root,os.getuid(),endpoint,self.case.budget)
+        self.assertEqual(self.case.sql.sql_updates,0)
+    def test_private_startup_replacement_same_key_bytes_and_read_race_refuse(self):
+        import smtp_guarded_builder as module
+        root=self.startup_root();key=root/'smtp-control.key'
+        binding=GuardedSmtpBinding._read(self.boot,root,os.getuid(),self.case.endpoint,self.case.budget)
+        replacement=root/'replacement';replacement.write_bytes(key.read_bytes());replacement.chmod(0o600);replacement.replace(key)
+        with patch('subprocess.Popen',side_effect=AssertionError):
+            with self.assertRaises(Refused):binding.recheck(self.case.budget)
+        original=module._private
+        def changed(fd,name,owner,limit):
+            raw=original(fd,name,owner,limit)
+            if name=='smtp-control.key':
+                replacement.write_bytes(raw);replacement.chmod(0o600);replacement.replace(key)
+            return raw
+        with patch.object(module,'_private',side_effect=changed),patch('subprocess.Popen',side_effect=AssertionError):
+            with self.assertRaises(Refused):GuardedSmtpBinding._read(self.boot,root,os.getuid(),self.case.endpoint,self.case.budget)
+        self.assertEqual(self.case.sql.sql_updates,0)
     def test_purpose_keys_accounts_callback_and_native_flag_never_mint_binding(self):
         for authority in (ControlAuthority(fixtures.fixtures.KEY,self.boot.accounts),ControlAuthority(fixtures.fixtures.SESSION_KEY,self.boot.accounts),ControlAuthority(bytes([23])*32,frozenset((self.case.alice,)))):
             with self.assertRaises(Refused):GuardedSmtpBinding(self.boot,authority,self.case.endpoint,clock_millis=lambda:1000000)

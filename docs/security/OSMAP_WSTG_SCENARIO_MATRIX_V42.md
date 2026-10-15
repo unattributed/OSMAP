@@ -542,3 +542,12 @@ no historical nonce/operation is replayed. Original17 engineering reconciliation
 483e664c composes this result with unchanged executed authority/refusal/recovery/
 menu evidence. No new blanket WSTG campaign, process-crash proof, provider mail,
 human/final-reference acceptance or whole-release/sprint claim follows.
+
+October15 source-only S04-02 startup composition1bb54d49/independent6c09 closes
+the missing exact guarded SMTP binding edge. Old-factory RED1 and15 local passes
+cover purpose-key separation, real private Linux file/socket custody, replacement
+refusals and original-budget recheck. Native gates remain closed: this does not
+qualify root/OpenBSD broker/topology/SQL/password workflow or enable a form.
+S08-02's later prescribed human usability/attachment PASS and independent closure
+review permit functional slice acceptance; S09 visual/accessibility and broader
+WSTG/release acceptance remain separate. No unchanged test campaign is repeated.

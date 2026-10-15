@@ -18,6 +18,30 @@ from account_native_material import MaterialExecutor
 from native_transport_test_support import _construct
 
 class NativeTests(MaterialFixture):
+ def test_native_factory_preserves_exact_guarded_binding_and_material(self):
+  import socket
+  from smtp_guarded_builder import GuardedSmtpBinding
+  from smtp_mutation_containment import PrivateControlEndpoint
+  from smtp_control_authorization import ControlAuthority
+  with tempfile.TemporaryDirectory(dir=str(Path.home()/'.cache'))as td:
+   root=Path(td);root.chmod(0o700);path=root/'control.sock'
+   with socket.socket(socket.AF_UNIX)as server:
+    server.bind(str(path));path.chmod(0o600)
+    binding=GuardedSmtpBinding(self.bootstrap,ControlAuthority(bytes([23])*32,self.bootstrap.accounts),PrivateControlEndpoint(path,os.getuid()),clock_millis=lambda:1000000)
+    material=self.load()
+    with patch('account_mutation_native.NATIVE_DEPENDENCIES_QUALIFIED',True),\
+     patch('account_mutation_native._Bootstrap.native',return_value=self.bootstrap),\
+     patch('account_mutation_native._fixed_material',return_value=material),\
+     patch('account_mutation_native._fixed_stores',return_value=(self.journal,self.store),create=True),\
+     patch.object(GuardedSmtpBinding,'native',return_value=binding)as load,\
+     patch('subprocess.Popen',side_effect=AssertionError):
+     try:dependencies=NativeDependencies.native()
+     except (OSError,Refused):dependencies=None
+    load.assert_called_once_with(self.bootstrap)
+    self.assertIs(dependencies._smtp_control,binding)
+    self.assertIs(dependencies._material,material)
+    self.assertIs(dependencies.bootstrap,self.bootstrap)
+    self.assertIs(dependencies.worker()._guarded_builder.__self__,dependencies)
  def setUp(self):
   super().setUp();root=self.root
   epoch=root/'epoch';journal=root/'intent';epoch.mkdir(mode=0o700);journal.mkdir(mode=0o700)

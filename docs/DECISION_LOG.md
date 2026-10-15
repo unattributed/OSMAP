@@ -9918,3 +9918,81 @@ Human and final-reference visual acceptance remain NOT RUN, S08/epic OPEN.
 Document the actual Runtime-wrapper regression lesson in existing AGENTS/framework
 instructions without adding a new testing framework or approval ceremony. After
 signed closeout, continue the next approved concrete epic gap independently.
+
+
+## 2026-10-15 — resume the authoritative password-change vertical workflow
+
+S08-02 engineering closeout c497b9c is signed, normally synchronized, clean and
+source-only fast-forwarded on Toronto. Human usability remains pending; it is
+not a development dependency. Preserve its complete UAT_READY work order as
+history and activate only S04-02 per approved refocus priority3 and independently
+reviewed original20 mapping63ae6b3c. All four outcomes/six stages start PENDING;
+old primitive tests cannot qualify the missing production factory/Runtime/form.
+
+First repair the actual guarded SMTP binding omitted by NativeDependencies.native
+and its required containment composition. Then wire the real account capability
+and password form, qualifying one controlled Alice authoritative change, old/new
+login and prior web/IMAP/SMTP containment with Bob/mail preservation. Root alone
+performs host/native/Git. Never mutate an operator password, forge a session,
+flip qualification flags as a substitute for proof, repeat an ambiguous change,
+or resume parked SDK/quota/bootstrap diagnostics. Queued Schedule remains queued;
+no additional human approval checkpoint or repeated generic QA is introduced.
+
+Retain the actual initial work-order validator refusal: descriptive
+original_requirement differed from the frozen catalogue label, and independent
+review missed that exact-field check. Field-only correction passes the existing
+validator for all20 obligations/403 controls/110 legacy cases/27 pages. Admit the
+existing test_smtp_guarded_builder.py only for the actual native loader seam;
+no weakened validator or new QA framework follows.
+
+## 2026-10-15 — operator-requested Proton Pass TOTP migration readiness
+
+Operator requests a new Duncan OSMAP TOTP factor after confirming direct transfer
+from Proton Authenticator is unavailable. Read-only current obsd1 identity,
+configured factor-store path and safe _osmap/0600/single-link active metadata
+match the existing planned-rotation tool. Its actual --dry-run exits0/PASS;
+qrencode is present. No enrollment, factor replacement, replay reset, session
+revocation or private code/seed capture occurs. Retained sanitized readiness is
+under osmap-totp-lifecycle/proton-pass-20261015/readiness.json.
+
+Use the existing private-terminal rotation path: verify new Proton Pass enrollment
+before old-factor revocation, preserve/archive the old factor, install once with
+no overwrite, stop on incomplete/ambiguous results. The non-atomic replacement
+gap and unchanged existing browser sessions remain explicit. Native enrollment
+requires the operator's own unrecorded terminal; no secret enters agent tools or
+chat. This bounded account-maintenance request does not replace active S04-02
+development, enable a browser TOTP form or qualify real-user recovery.
+
+Operator subsequently reports TOTP_ROTATION=PASS and confirms the requested new
+OSMAP login using Proton Pass worked. Record both actual operator outcomes in
+osmap-totp-lifecycle/proton-pass-20261015/OPERATOR-RESULT.json; no seed or code was
+captured, no agent-side factor mutation occurred and no further migration QA is
+needed. This closes this planned migration, not browser self-service TOTP or the
+epic's separate account/recovery requirements.
+
+## 2026-10-15 — accept S08-02; deliver the next password backend repair
+
+Operator Folders navigation/Search/message-viewing usability PASS and subsequent
+prescribed Attachment download PASS complete the defined minimal human gate.
+Independent parent-closure review joins these reports to original17 engineering
+audit483e/current13d64/signedc497/matching324b, allowing S08-02 ACCEPTED. Advance
+only14 R2 result rows with scoped human_uat evidence and the historical parent
+work order; preserve110 legacy rows/all403 criteria/frozen references. Record the
+three legacy obligations' acceptance in the ledger. S09 final-reference visual/
+accessibility, the other S08 slices, earlier account/crypto and epic remain open.
+
+The sole active S04-02 work order admits the reviewed five-path guarded startup
+composition repair1bb54d49/readinessaada/independent6c09. NativeDependencies now
+constructs/passes its exact GuardedSmtpBinding, fixed private purpose-key and
+endpoint custody are reread/rechecked under the original budget, and existing
+native gates stay closed. Old factory RED1 becomes15 local focused passes;
+actual native broker/topology/SQL/hash/primary/Runtime/form workflow is not yet
+qualified. smtp-control.key is a new fixed source contract, not a provisioned
+operator key. No native action, service activation, operator password change or
+provider mail accompanies source admission. Normal signed gates/sync follow.
+
+Next implement the actual paired Rust account capability, not an admission-only
+fallback. A configured-but-unavailable pair must refuse legacy auth/session
+admission. Admit src/http_gateway_account.rs for this product boundary and only
+additive test AppConfig initializers in bootstrap.rs/openbsd.rs/mailbox_helper.rs;
+no operational edits in those three files and no new QA framework.

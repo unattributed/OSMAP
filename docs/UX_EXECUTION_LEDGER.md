@@ -9020,14 +9020,14 @@ partial-recovery/compatibility qualification; current hierarchy/finite-menu evid
 matching signed pair; independent audit; verified cleanup or explicit safe retained
 state. Only then name exact human-only observations. No fake ETA or new status board.
 
-<!-- OSMAP_ACTIVE_WORK_ORDER -->
+<!-- Historical S08-02 work order: engineering UAT_READY at c497b9c, human ACCEPTED 2026-10-15 -->
 ```json
 {
   "version": 1,
   "slice": "S08-02",
   "original_requirement": "Labels/tags/finite menus plus page 16 mailbox subfolder create/rename/move/delete and hierarchy",
   "source_baseline": "b3075df9307504a3770cf9f9f8da2b523dd9d9ff",
-  "state": "UAT_READY",
+  "state": "ACCEPTED",
   "integration_owner": "/root",
   "roles": {
     "project_manager": [
@@ -9383,8 +9383,8 @@ state. Only then name exact human-only observations. No fake ETA or new status b
     }
   ],
   "human_acceptance": {
-    "status": "PENDING",
-    "reference": "S08 labels-folders/s08-02-engineering-closeout-20261015/UAT.md: normal sign-in, browse retained controlled hierarchy/selected facts, open saved email+small attachment, report usability. Agentic development/QA/audit PASS; no new mail or folder mutation required. NOT RUN."
+    "status": "PASS",
+    "reference": "2026-10-15 direct operator normal login/Folders/subfolder navigation/Search/message viewing PASS, functionality looks good, then prescribed controlled Attachment download PASS. HUMAN-USABILITY-RESULT-20261015.json and independent-human-acceptance-and-parent-closure-review.json join original17 engineering audit483e/current13d64/signedc497/deployed324b. Overall minimal usability accepted; no human repeat of every mutation or separate S09 final visual/accessibility claim."
   },
   "checkpoints": {
     "labels_ten_http_journey": {
@@ -9406,7 +9406,7 @@ state. Only then name exact human-only observations. No fake ETA or new status b
   "next_action": "Finish signed current closeout and minimal nonmutating usability handoff; human NOTRUN does not halt independent approved epic engineering. Original S08-01/S08-03/S08-04 and earlier unresolved requirements remain open; no unilateral parking or whole-sprint claim."
 }
 ```
-<!-- /OSMAP_ACTIVE_WORK_ORDER -->
+<!-- End historical S08-02 work order -->
 
 ## 2026-10-15 — reviewed explicit subtree repair and retained-state integration
 
@@ -9840,3 +9840,297 @@ or batching seam, addressing this concrete missed integration without a new
 framework. After normal signed closeout, continue the next approved concrete
 epic gap; pending human judgment does not pause engineering or erase earlier
 S04–S07 and other S08 obligations.
+
+
+## 2026-10-15 — synchronized S08-02 engineering closeout; resume S04-02 vertical delivery
+
+Signed closeout c497b9cfbcd2c86eafec35f7c53fb71a35caa25d passed normal
+commit/push gates (1723 Rust PASS, zero failures, 44 explicit native ignores,
+519 account Python PASS). Fresh origin equals HEAD, clean zero ahead/behind;
+all three local branch heads equal their matching origin references. The
+Toronto standard checkout is clean source-only fast-forwarded c4e318b to c497b9c;
+no service/configuration action or rebuild accompanies this documentation change.
+All481 installed build inputs remain exact. Retained proof:
+`labels-folders/s08-02-engineering-closeout-20261015/signed-sync-proof.json`
+and `standard-mail-checkout-sync.json` under the S08 evidence root.
+GitHub issue78 now records engineering delivery and remains OPEN for minimal
+human usability acceptance. Prior S08-02 UAT_READY work order above is historical;
+its pending human/final-visual acceptance and the broader S08/epic remain OPEN.
+
+Resume S04-02 under approved mail-delivery refocus priority3 and R3 end-to-end
+ownership; waiting human judgment does not halt independent engineering. The
+existing native factory omits its required guarded SMTP binding, whose native
+constructor also refuses. Current Runtime has no account client and no usable
+password form. Implement the real factory/containment, then actual Runtime/form
+and one controlled disposable Alice authoritative workflow with Bob continuity.
+No operator password change, provider mail, qualification flag shortcut, Schedule
+implementation or unchanged primitive-diagnostic campaign. Source/native/installed
+proof remain distinct. Exact original20 work-order review CLEAR63ae6b3c, PM work
+order3b208857 and source handoff93024380 are retained under the S04 password-change
+root. Root owns integration/host/Git/writing; named developer, QA and Scrum/security
+roles below own concrete bounded assignments.
+
+The first structural validation refused the proposal's descriptive catalogue
+label; independent review had missed this exact-field requirement. Correct only
+original_requirement to the frozen catalogue text: existing validator then
+PASS20 obligations/403 controls/110 legacy cases/27 pages. No assertion changed.
+Admit existing test_smtp_guarded_builder.py for the fixed native authority-loader
+discriminator alongside the same binding production repair; no broader QA scope.
+
+<!-- OSMAP_ACTIVE_WORK_ORDER -->
+```json
+{
+  "version": 1,
+  "slice": "S04-02",
+  "original_requirement": "Page 22 own-account password change, authoritative backend and step-up; independent accessible Show/Hide on current/new/confirmation",
+  "source_baseline": "c497b9cfbcd2c86eafec35f7c53fb71a35caa25d",
+  "state": "IN_PROGRESS",
+  "integration_owner": "/root",
+  "roles": {
+    "project_manager": [
+      "/root"
+    ],
+    "scrum_lead": [
+      "/root/scrum_security_review"
+    ],
+    "developers": [
+      "/root/bin_preparation_engineer",
+      "/root"
+    ],
+    "qa": [
+      "/root/subtree_delivery_qa",
+      "/root"
+    ],
+    "security_review": [
+      "/root/scrum_security_review"
+    ],
+    "technical_writer": [
+      "/root"
+    ]
+  },
+  "allowed_paths": [
+    "src/http_gateway.rs",
+    "src/http_gateway_account.rs",
+    "src/http_gateway_password.rs",
+    "src/http_gateway_auth.rs",
+    "src/account_admission_runtime.rs",
+    "src/account_mutation_client.rs",
+    "src/config.rs",
+    "src/bootstrap.rs",
+    "src/openbsd.rs",
+    "src/mailbox_helper.rs",
+    "src/settings_security_ui.rs",
+    "maint/account-runtime/account_mutation_native.py",
+    "maint/account-runtime/mail_session_containment.py",
+    "maint/account-runtime/smtp_guarded_builder.py",
+    "maint/account-runtime/smtp_mutation_containment.py",
+    "maint/account-runtime/account_admission_worker.py",
+    "src/account_admission_runtime_tests.rs",
+    "src/account_mutation_client_tests.rs",
+    "src/password_stored_runtime_tests.rs",
+    "src/password_real_worker_runtime_tests.rs",
+    "maint/account-runtime/test_account_mutation_native.py",
+    "maint/account-runtime/test_smtp_guarded_builder.py",
+    "maint/account-runtime/test_required_mail_containment.py",
+    "src/http/routes_password.rs",
+    "src/settings_password_ui.rs",
+    "src/http/password_tests.rs",
+    "AGENTS.md",
+    "docs/UX_EXECUTION_LEDGER.md",
+    "docs/DECISION_LOG.md",
+    "docs/CURRENT_PROJECT_STATUS.md",
+    "docs/KNOWN_LIMITATIONS.md",
+    "docs/security/OSMAP_WSTG_SCENARIO_MATRIX_V42.md",
+    "maint/ux/acceptance.json",
+    "maint/wstg-testing-pack/osmap-browser-attack-surface.json",
+    "maint/security/v10-rust-assumption-audit.json",
+    "maint/security/v10-fail-closed-remediation.json",
+    "README.md",
+    "docs/README.md",
+    "docs/OSMAP_AGENT_FRAMEWORK_ADOPTION.md"
+  ],
+  "outcomes": [
+    {
+      "id": "authoritative-native-password-workflow",
+      "requirement_ids": [
+        "R2-22-012",
+        "R2-22-013",
+        "R2-22-014"
+      ],
+      "owner": "/root/bin_preparation_engineer",
+      "frontend_backend_outcome": "Actual guarded native own-account coordinator performs current-password verification, restricted conditional SQL update, exact hash/epoch authority and required SMTP/IMAP/cache containment. Missing authority refuses before write; post-write uncertainty stays contained and never repeats the write.",
+      "dependencies": [],
+      "essential_qa": "One controlled Alice installed authoritative change/new-login/old-password refusal plus web/IMAP/SMTP containment and Bob/mail preservation. Discriminating prewrite stale/replay refusal and postwrite uncertainty/no-second-write; exact owned cleanup and no secret retention. Reuse unchanged pure variants; source/native/Runtime composition evidence stays separate.",
+      "stages": {
+        "implementation": "PENDING",
+        "source_tests": "PENDING",
+        "native_tests": "PENDING",
+        "deployed_qa": "PENDING",
+        "independent_review": "PENDING",
+        "recovery": "PENDING"
+      },
+      "evidence": [
+        {
+          "stage": "implementation",
+          "reference": "Existing source/native primitive preparation is retained under password-change root and vertical-implementation-handoff-20261015/HANDOFF.md SHA93024380. Actualfactory/SMTPbinding/Runtimeclient/form are not a working deployed workflow; no primitive PASS is promoted to this outcome."
+        },
+        {
+          "stage": "implementation",
+          "reference": "Reviewed five-path startup repair1bb54d49/readinessaadaee79/manifest8c42f112/independent6c09b377 integrated; oldfactoryRED1\u219215 localPASS. Exact binding construction/custody gap repaired, but real native broker/topology/SQL/hash/primary and full authoritative workflow remain unqualified. Broad stage stays PENDING."
+        }
+      ],
+      "next_action": "Complete actual paired Runtime/owned mutation and form integration with required native broker/topology/SQL/hash/primary authority, then one controlled Alice authoritative workflow and Bob/session/mail preservation. No primitive flag shortcut or repeated unchanged diagnostics."
+    },
+    {
+      "id": "fresh-stepup-and-session-containment",
+      "requirement_ids": [
+        "R2-22-008",
+        "R2-22-011"
+      ],
+      "owner": "/root",
+      "frontend_backend_outcome": "Actual Runtime constructs the qualified private account service and binds current-password/fresh replay-protected TOTP, exact account/session/source/action/epoch permit, durable limits and all login/session issuance to shared epoch/lock; old sessions stop authorizing after a confirmed change.",
+      "dependencies": [],
+      "essential_qa": "One controlled Alice installed authoritative change/new-login/old-password refusal plus web/IMAP/SMTP containment and Bob/mail preservation. Discriminating prewrite stale/replay refusal and postwrite uncertainty/no-second-write; exact owned cleanup and no secret retention. Reuse unchanged pure variants; source/native/Runtime composition evidence stays separate.",
+      "stages": {
+        "implementation": "PENDING",
+        "source_tests": "PENDING",
+        "native_tests": "PENDING",
+        "deployed_qa": "PENDING",
+        "independent_review": "PENDING",
+        "recovery": "PENDING"
+      },
+      "evidence": [
+        {
+          "stage": "implementation",
+          "reference": "Existing source/native primitive preparation is retained under password-change root and vertical-implementation-handoff-20261015/HANDOFF.md SHA93024380. Actualfactory/SMTPbinding/Runtimeclient/form are not a working deployed workflow; no primitive PASS is promoted to this outcome."
+        }
+      ],
+      "next_action": "Complete actual paired Runtime/owned mutation and form integration with required native broker/topology/SQL/hash/primary authority, then one controlled Alice authoritative workflow and Bob/session/mail preservation. No primitive flag shortcut or repeated unchanged diagnostics."
+    },
+    {
+      "id": "password-form-and-navigation",
+      "requirement_ids": [
+        "UX11-003",
+        "R2-10-009",
+        "R2-20-002",
+        "R2-22-001",
+        "R2-22-002",
+        "R2-22-003",
+        "R2-22-004",
+        "R2-22-005",
+        "R2-22-006",
+        "R2-22-007",
+        "R2-22-009",
+        "R2-22-010"
+      ],
+      "owner": "/root/bin_preparation_engineer",
+      "frontend_backend_outcome": "Page22 current/new/confirm password form and fresh reauthentication are real backend operations with independent accessible Show/Hide, safe Cancel/breadcrumbs, CSRF/session/account checks and truthful refusal/partial outcomes; disabled until composed qualification.",
+      "dependencies": [],
+      "essential_qa": "One controlled Alice installed authoritative change/new-login/old-password refusal plus web/IMAP/SMTP containment and Bob/mail preservation. Discriminating prewrite stale/replay refusal and postwrite uncertainty/no-second-write; exact owned cleanup and no secret retention. Reuse unchanged pure variants; source/native/Runtime composition evidence stays separate.",
+      "stages": {
+        "implementation": "PENDING",
+        "source_tests": "PENDING",
+        "native_tests": "PENDING",
+        "deployed_qa": "PENDING",
+        "independent_review": "PENDING",
+        "recovery": "PENDING"
+      },
+      "evidence": [
+        {
+          "stage": "implementation",
+          "reference": "Existing source/native primitive preparation is retained under password-change root and vertical-implementation-handoff-20261015/HANDOFF.md SHA93024380. Actualfactory/SMTPbinding/Runtimeclient/form are not a working deployed workflow; no primitive PASS is promoted to this outcome."
+        }
+      ],
+      "next_action": "Complete actual paired Runtime/owned mutation and form integration with required native broker/topology/SQL/hash/primary authority, then one controlled Alice authoritative workflow and Bob/session/mail preservation. No primitive flag shortcut or repeated unchanged diagnostics."
+    },
+    {
+      "id": "actual-password-status",
+      "requirement_ids": [
+        "UX11-002",
+        "R2-10-005",
+        "R2-20-001"
+      ],
+      "owner": "/root",
+      "frontend_backend_outcome": "Security/account summaries report only authoritative verified password state/change timestamp; generic mailbox modified is not a password epoch and absent history remains Unknown. Reload reflects the actual confirmed workflow.",
+      "dependencies": [],
+      "essential_qa": "One controlled Alice installed authoritative change/new-login/old-password refusal plus web/IMAP/SMTP containment and Bob/mail preservation. Discriminating prewrite stale/replay refusal and postwrite uncertainty/no-second-write; exact owned cleanup and no secret retention. Reuse unchanged pure variants; source/native/Runtime composition evidence stays separate.",
+      "stages": {
+        "implementation": "PENDING",
+        "source_tests": "PENDING",
+        "native_tests": "PENDING",
+        "deployed_qa": "PENDING",
+        "independent_review": "PENDING",
+        "recovery": "PENDING"
+      },
+      "evidence": [
+        {
+          "stage": "implementation",
+          "reference": "Existing source/native primitive preparation is retained under password-change root and vertical-implementation-handoff-20261015/HANDOFF.md SHA93024380. Actualfactory/SMTPbinding/Runtimeclient/form are not a working deployed workflow; no primitive PASS is promoted to this outcome."
+        }
+      ],
+      "next_action": "Complete actual paired Runtime/owned mutation and form integration with required native broker/topology/SQL/hash/primary authority, then one controlled Alice authoritative workflow and Bob/session/mail preservation. No primitive flag shortcut or repeated unchanged diagnostics."
+    }
+  ],
+  "human_acceptance": {
+    "status": "PENDING",
+    "reference": "Only minimal well-defined own-password usability after all agent-owned development/matching deployed QA/independent audit PASS. No operator password is changed by agent qualification; use controlled disposable Alice and preserve Bob/operator state. NOT RUN."
+  },
+  "next_action": "Normally sign/sync reviewed startup composition; implement paired Runtime capability with configured-unavailable refusal, then actual native authority/form and one controlled authoritative password change. S08-02 is accepted; waiting separate S09/provider human results does not halt this work."
+}
+```
+<!-- /OSMAP_ACTIVE_WORK_ORDER -->
+
+## 2026-10-15 — operator Folders usability results received
+
+Operator reports normal Duncan login, opening a subfolder, Search and viewing
+messages in a specific subfolder PASS; supplied screenshot is consistent with
+the selected-folder Search/reader workflow. Record these actual human results
+under S08-02 without promoting unobserved mutation/attachment/final-visual cases.
+Retained sanitized record: S08 labels-folders/s08-02-engineering-closeout-20261015/
+HUMAN-USABILITY-PARTIAL-20261015.json. No private message body or screenshot is
+copied into the repository. Only the existing minimal controlled attachment
+download remains requested: Payload/Renamed-Mail, synthetic-lifecycle.bin.
+No repeated Send/folder mutation or generic agent QA. S04-02 engineering continues
+independently; broader sprint/epic acceptance is not inferred from these passes.
+
+## 2026-10-15 — operator TOTP migration completed
+
+The operator reports TOTP_ROTATION=PASS and confirms a new OSMAP login using
+Proton Pass worked. Existing private-terminal planned rotation is complete in
+this reported scope. Retained sanitized OPERATOR-RESULT.json is under
+osmap-totp-lifecycle/proton-pass-20261015; no seed/code entered chat or logs,
+no agent factor mutation or extra migration test occurs. This does not enable
+browser self-service TOTP or qualify independent recovery/password requirements.
+
+## 2026-10-15 — S08-02 ACCEPTED; active S04-02 startup repair integrated
+
+Operator-reported normal login/Folders/subfolder navigation/Search/message
+viewing and prescribed controlled attachment download PASS complete the declared
+minimal human gate. Independent-human-acceptance-and-parent-closure-review.json
+joins those reports to the original17 engineering audit483e/current13d64 and
+matching signedc497/installed324b. S08-02 is ACCEPTED. Fourteen R2 result rows now
+record scoped human_uat evidence; all403 criteria and110 legacy rows remain
+unchanged. The three legacy obligations UX08-009/UX04-007/UX04-008 are accepted
+through this parent mapping, without altering immutable legacy records. This
+does not claim the operator repeated each mutation or accepted S09 visual/
+accessibility. Other S08 slices, S04/account/OpenPGP and epic/release remain OPEN.
+GitHub issue78 may close for its accepted functional request; no sprint closure.
+
+Active S04-02 integrates exactly reviewed five-path startup composition1bb54d49,
+readinessaadaee79/manifest8c42f112/independent6c09b377. NativeDependencies constructs
+and threads the same bootstrap/material/GuardedSmtpBinding; the source-owned
+smtp-control.key contract is distinct, fixed/private and not provisioned by this
+change. Before coordinator rewiring, custody/authority/endpoint are rechecked
+under the original authenticated budget. Original factory discriminator RED1
+becomes15 local passes/0fail/0skip; these are Linux custody/projected typed factory
+controls, not actual native broker/SQL/workflow proof. All native gates remain
+false, ordinary password form disabled, no host/service/password action occurs.
+Initial root patch formatting was rejected before mutation; only the patch-tool
+hunk format was corrected, and all five final paths equal the frozen manifest.
+
+Next developer implements the paired Rust account capability and explicit
+configured-unavailable refusal, then actual native broker/topology/SQL/hash/
+primary and form qualification must complete one controlled Alice workflow with
+Bob/session/mail preservation. No unchanged native campaign or flag shortcut.
+All broad S04-02 outcome stages remain PENDING; component proof is not parent
+closure. Normal integrated signed commit/push gates are the next source action.

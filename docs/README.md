@@ -12,8 +12,10 @@ October15 S08-02 engineering delivery: signed sourcec4e318bf and installed
 application324b1cb9 have independent folder/label/menu delivery review. The
 distinct current populated Bin/Restore and final hierarchy/badges/owned cleanup
 journey passes13 HTTP outcomes; original timeouts are preserved. A minimal
-nonmutating human usability check remains separately NOT RUN. S08 and the full
-epic are not closed by this engineering delivery.
+nonmutating human usability check and controlled attachment download now PASS.
+Independent review permits S08-02 functional ACCEPTED; S04-02 authoritative
+password change is active. S09 visual/accessibility, broader S08 and the full
+epic remain open.
 
 The 2026-09-29/30 UX engineering stream has completed intake and implemented
 the S01 appearance and shared-shell work locally. `UX_EXECUTION_LEDGER.md`
