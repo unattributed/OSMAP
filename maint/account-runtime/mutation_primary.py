@@ -21,14 +21,19 @@ PHASE_SECONDS=25
 RESERVE=.05
 
 class NativePrimaryVerifier:
-    def __init__(self, canonical_account, budget, material):
+    def __init__(self, canonical_account, budget, material, *, admission_seal=None):
         self._account=AuthoritativePasswordAdapter._account(canonical_account)
         if type(budget) is not OperationBudget:
             raise Refused('mutation primary dependency unavailable')
         from account_native_material import NativeMaterial
-        from account_command_kernel import CommandKernelSeal
+        from account_command_kernel import CommandKernelSeal, AdmissionWorkerSeal
         if type(material)is not NativeMaterial:
             raise Refused('mutation primary material unavailable')
+        if admission_seal is not None:
+            if type(admission_seal)is not AdmissionWorkerSeal:
+                raise Refused('admission primary seal unavailable')
+            admission_seal.check(self._account,material,budget)
+        self._admission_seal=admission_seal
         self._budget=budget;self._material=material
         self._seal=CommandKernelSeal._for_material('primary',material,budget,self._account)
         if type(self._seal)is not CommandKernelSeal or self._seal._budget is not budget:
@@ -77,6 +82,9 @@ class NativePrimaryVerifier:
             self._material.recheck(self._budget)
             if time.monotonic()>=deadline:raise Refused('mutation primary phase expired')
             child=self._seal.spawn(PROGRAM,ARGS+(self._account,),deadline,self._account)
+            if self._admission_seal is not None:
+                # Inside the owned-child try/finally and before any password IO.
+                self._admission_seal.apply(self._account,self._material,self._budget,child)
             with selectors.DefaultSelector() as selector:
                 for pipe in (child.stdin,child.stdout,child.stderr):os.set_blocking(pipe.fileno(),False)
                 selector.register(child.stdin,selectors.EVENT_WRITE,'input')

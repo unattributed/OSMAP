@@ -9986,6 +9986,7 @@ discriminator alongside the same binding production repair; no broader QA scope.
     "src/account_admission_tests.rs",
     "src/bin/osmap_account_admission_helper.rs",
     "maint/account-runtime/rc.d/osmap_account_admission",
+    "maint/account-runtime/rc.d/osmap_account_smtp_broker",
     "maint/account-runtime/account_native_material.py",
     "maint/account-runtime/test_native_material.py",
     "maint/account-runtime/test_account_admission_worker.py",
@@ -10122,7 +10123,7 @@ discriminator alongside the same binding production repair; no broader QA scope.
     "status": "PENDING",
     "reference": "Only minimal well-defined own-password usability after all agent-owned development/matching deployed QA/independent audit PASS. No operator password is changed by agent qualification; use controlled disposable Alice and preserve Bob/operator state. NOT RUN."
   },
-  "next_action": "Signed065 source synchronized and standard Toronto source-only clean matches. Sign/synchronize reviewed ancestor authority, Rust admission parent confinement, one-call broker constructor metadata and source-proven server minor compatibility through normal gates. Primary16 actual7 controls/authentication/private proofs/ownedcleanupPASS; reuse without rerun, retain primary15 cause/dispositionUNKNOWN. Parent native1 fails101 with retained scratch: use same compiled binary existingchild branch with bounded useful diagnostics and original custody/assertions. Broker10 still fails Bob AUTH454 before registration: expose original connection fixedstage/refusal and useful captured error, preserve all live ownership/deadline checks. Finish separate Python worker confinement, full trusted factory/ingress/epoch/session/mail containment and installed controlled password workflow. No shortcut or operator password mutation; S08-02 remains accepted."
+  "next_action": "Signedce3 source synchronized and standard Toronto source-only clean matches; installed324b unchanged. Integrate independently reviewed private native seal-token parent and typed-phase worker corrections grounded in actual empty-unveil ancestor ENOENT observation, reuse the now-passed original complete parent5 and finish finite composed worker native qualification. Reuse primary16 seven passed controls without rerun. Reviewed paired exact metadata scheduling preserves all seven observations and original0.5s absolute phase; actualbroker15 passes Alice/Bob AUTH and idle termination/Bob isolation but fails pending signed control capture/cancel with Unconfirmed. Preserve retained runtime/scratch and inspect only original control stage/context; no unique inner cause or full cleanup is established. Finish managed native broker entry and finite worker qualification, then actual full factory. Complete actual trusted factory/ingress/epoch/session/mail containment and installed controlled Alice password workflow before form/profile activation. No operator password mutation; S08-02 remains accepted."
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->
@@ -10893,3 +10894,133 @@ rootstage remains retained. Reassess at this second post-startup failure: expose
 the original connection's fixed stage/refusal and useful bounded scrubbed
 existing error text before further repair. No extra probe, budget extension,
 authority waiver or unchanged native retry is permitted.
+
+## 2026-10-15 — synchronized ce3 and fixed-target admission successor
+
+Signed source `ce3e920cfbbe2e105c28bce35746674ecc9e5293` passes normal commit2
+and push1 gates1743 Rust/zero failed/44 explicit native ignores and569 account
+Python tests. Fresh origin equality, clean0/0 and all three matching branches
+pass. Standard Toronto checkout cleanly source-only fast-forwards065→ce3;
+installed pair324b and all services remain unchanged. Proof
+`parent-ancestor-topology-integration-20261015/signed-sync-proof.json` SHA256
+`8d0aa2e294c56e24c65fb849f0e4d1b5712c26b35f064ad81a819d8364f5c8af`,
+independent scope `7d7b4a8f46e2137c13d7866fdefa539a82104273ec24c565b74240d39e151b96`.
+The earlier comment-token TLS refusal remains retained; no scanner was changed.
+
+Direct existing-child parent diagnostic2 reports the original compiled case's
+line181 engine.recheck returning Unavailable after endpoint.recheck succeeds.
+Readonly retrieval verifies the exact retained0400 diagnostic leases and hashes.
+The launched group is gone without forced stop, both harmless fixtures and
+custody are preserved; rootstage `/tmp/osmap-adp-26b943c87f0d5ea1` remains.
+Do not infer the exact engine subcall or errno from this boundary.
+
+Reviewed fixed-target four-path source overce3 retains startup alias/protected
+exact-target checks, a readonly CLOEXEC target descriptor and full identity/hash.
+Post-seal checking uses concurrent-safe positional reads with target path/FD and
+stable five-field ancestor checks before/after. Native dispatch uses only fixed
+python3.13; remove the unused alias grant rather than widening public-directory
+access. Local changed build fresh=false/four focused controls/CWE/Clippy pass.
+Source review `ec09022c61f6ac36d9ba04dd7684e93bb104ae74fa8c1d38e64e980170f04e17`.
+Matching native3 archive has1246 exactce3+four-overlaid source files; build
+admission review `e6038021cfd4822fe3421aea1f307f9a2711858a082fd9b93a690867787bcbcd`.
+Original full outer native test remains required, not replaced by diagnostic2.
+
+Broker12's original exception traceback identifies fixed predicateP013 in
+NativeSmtpPeerInspector._rows line124: parsed PID set differs from requested
+PIDs. This is a narrower measured boundary, not its cause. Result SHA256
+`4796bd2fa9af637443f51578a2cbbc5be45116404543f80106bb8f3779e405d2`.
+Its complete original connection reaches server1.2 and AUTH204-byte frame, then
+registry_begin refuses; no body/COOKIE values are exported. Both daemon groups,
+runtime and scratch are removed with standard metadata preserved. Inspect the
+original requested/returned metadata before any repair; never drop missing-PID
+checks or widen deadlines. Full password factory/workflow remains disabled.
+
+## 2026-10-15 — grounded sealed-path successors and broker publication context
+
+The fixed same-policy public observer completes on obsd1: all three ancestor
+pathname lstat calls return ENOENT2, while exact target lstat/fstat/CLOEXEC/pread
+and cwd checks pass. First invocation omitted documented -B/cwd and refused
+before policy; the corrected invocation uses unchanged reviewed source. Actual
+record SHA256 f35e8be5281ce8a7e72f39a2f65c693b2c41599e9f3917bcec4ed9aa783f79e7.
+Original parent3/direct4 failures and retained stages remain historical.
+
+Parent successor readiness87294e83 preserves full startup ancestry and exact
+endpoint custody, then requires the private token minted by actual locked
+unveil/pledge success before using retained-FD/target/fullhash postseal checks.
+The original captured deadline and all native assertions remain. Worker
+readiness99baf95a has source review
+`dcbb0051df7a197b39e938b0b1ac275145aa81e7364c4724b2cf556b21b9a856`: bound→sealing→sealed
+becomes sealed only after both native operations succeed. Partial failure stays
+terminal, exact own epoch protected readers/lock and postspawn-prepassword
+cleanup remain. No hidden ancestor reads, directory FD or recursive read grant
+is added. Kernel directory binding does not continuously attest owner/mode.
+Actual matching parent/worker native acceptance is still pending.
+
+Broker13 registered one real channel and verified backend OK before publication
+refusal. Broker14 records two registrations, two backend verifications and one
+publication (Bob succeeds, Alice is refused); it exports only its original
+bounded exception context: TimeoutError at NativeSmtpPeerInspector.inspect line225, the
+final child fstat before final custody recheck. Seven sequential metadata
+subprocesses within the original0.5s phase are a source fact; no individual
+command latency or unique timing cause was measured. Both daemon groups,
+runtime and scratch are gone, standard metadata preserved, cleanup reasons
+empty, zero mail/provider. Retained rootstage2505b60519cd937e grants no later
+stop authority. Preserve original checks/budget; do not retry unchanged.
+
+
+## 2026-10-15 — original complete admission parent native case passes
+
+Exact signedce3 plus reviewed final sealed-ancestry4 compiles on obsd1 with
+fresh=false:1246 exact input files,78.761s, source parity and owned build-group
+disposition pass. Archiveb0da3d96/custody3c42f296; binary
+`04b4cb723ad914b103dc9ff5577e7cccfc143ae189109fcc7979320628412ea9`.
+Actual root pins reviewec39fe53 admits the original complete outer native case,
+which passes exit0 in0.088s: parent_control_pass true, unchanged source/binary
+custody, no overflow/forced stop, owned group gone, scratch empty and rootstage
+removed. Actual stdout SHA256
+`4e1e0100d5c3825cd8ee04a3763c4d26c60a29427e35702da97551840a5388f9`
+under admission-parent-confinement-20261015/native-parent-attempt5.
+This is the actual parent policy/metadata/child-denial/owned-unlink component,
+not installed Python-worker, full factory or password workflow acceptance.
+Original failed native1/3 and direct2/4 evidence remains retained.
+
+
+## 2026-10-15 — paired metadata reaches actual pending-cancellation boundary
+
+The independently reviewed two-path scheduling change preserves all seven
+metadata observations, their process/TCP fences, singleton-PID commands, output
+caps and original absolute0.5s phase. At most two children run concurrently
+within an observation boundary; same-deadline disposition retains uncertain
+handles and latches process-wide refusal. Local serialRED/pairGREEN uses the
+same0.32s bound; source reviewfcf06af3 and whole42 review36ecd420 apply.
+
+Matching broker15 result
+`61637f0553044dc9c1da275bf44c940865416f075ff7f7c149a7b8ba7d1413f0`
+is overall FAIL. Actual two Alice/Bob AUTH publications, exact idle list/kick/
+closure and Bob NOOP pass. A third verified Alice reaches pending barrier/list:
+three registered/three backend verified/two published. The pending control
+returns Unconfirmed; original AUTH expiry is observed inside the deliberately
+held publication wrapper, not another measured inspector timeout. Whether the
+control client capture/cancel or server cutoff/grant failed remains UNKNOWN.
+Independent scope511fd670 preserves that limit. Both daemon groups are gone
+and standard metadata preserved, but broker cleanup is false and private
+runtime/scratch/rootstagebda05d8e38290b24 remain; no full cleanup is claimed.
+Next observation only wraps existing original control calls/context with bounded
+fixed diagnostics, without extra I/O/clocks, repeated probes or changed budgets.
+
+Source assessment finds AuthBroker.native/serve has no managed production
+entry. The exact rc path is admitted to the active S04-02 allowlist; minimal
+fixed native factory entry/rc/source controls are under independent review.
+All flags remain closed, with no service enablement or host activation.
+
+
+The managed broker source entry is independently CLEAR294bd12b: fixed
+python3.13/no arguments, root/native-host guard, core dumps disabled and own
+PID=PGID=SID established before native factory/listener work. One five-second
+startup budget is distinct from unchanged AUTH3s/metadata0.5s; TERM/INT use the
+existing stop event and handlers restore in finally. Existing broker class/
+factory/serve/connection behavior is unchanged. The new rc script is source
+only; actual managed lifecycle/full factory remain unqualified and flags closed.
+Worker composed native proposal's first freeze is superseded before execution
+by born-session-successor1 readinessb00a9d44; final independent admission and
+one matching native action are pending. No original primary16 rerun is needed.

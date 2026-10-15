@@ -46,6 +46,15 @@ The 2026-10-15 folder-facts repair demonstrated this integration gap; reuse
 unchanged backend evidence and test the changed composition, without a new QA
 framework or blanket repeat of passing workflows.
 
+For OpenBSD integration, check the actual command/syscall contract before
+modelling it in a local fake. `ps -p` takes one PID. Empty unveil permissions
+hide ancestor pathname metadata; they are not read or stat grants. Keep protected
+pre-seal checks and qualify the changed sealed path on OpenBSD. Preserve useful
+bounded synthetic failure diagnostics so hashes alone do not force repeated runs.
+When adapting a qualifier, check its executed admission and success consumers
+with one matching receipt and a changed count/cleanup refusal. Exact source
+pins alone do not establish compatible result schemas.
+
 For operator-authorized multi-agent work, apply
 `docs/AGENT_DEVELOPMENT_FRAMEWORK.md` and its OSMAP mapping in
 `docs/OSMAP_AGENT_FRAMEWORK_ADOPTION.md`. Assign project management, Scrum

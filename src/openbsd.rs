@@ -124,6 +124,20 @@ pub(crate) fn disable_core_dumps() -> io::Result<()> {
     Ok(())
 }
 
+/// Retained executable custody descriptors must close at every exec boundary.
+#[cfg(unix)]
+pub(crate) fn descriptor_is_cloexec(fd: i32) -> io::Result<bool> {
+    if fd < 0 {
+        return Err(io::ErrorKind::InvalidInput.into());
+    }
+    // SAFETY: F_GETFD only inspects this already-owned descriptor's flags.
+    let flags = unsafe { libc::fcntl(fd, libc::F_GETFD) };
+    if flags < 0 {
+        return Err(io::Error::last_os_error());
+    }
+    Ok(flags & libc::FD_CLOEXEC != 0)
+}
+
 /// Nonblocking pipe drains keep worker output under the same absolute deadline.
 #[cfg(unix)]
 pub(crate) fn set_descriptor_nonblocking(fd: i32) -> io::Result<()> {
@@ -436,21 +450,16 @@ pub(crate) fn account_admission_parent_plan(
     crate::openpgp_inventory_runtime::private_dir(parent, effective_uid(), true)
         .map_err(|_| "account admission namespace unavailable")?;
     let mut rules = BTreeMap::new();
-    for path in [
-        socket,
-        Path::new("/usr/local/bin/python3"),
-        Path::new("/usr/local/bin/python3.13"),
-    ] {
+    for path in [socket, Path::new("/usr/local/bin/python3.13")] {
         for ancestor in path.ancestors().skip(1) {
-            // Empty permissions expose metadata, never read/open/list or
-            // write/create/execute. Native qualification must prove these
-            // exact stat/realpath semantics and outside-access refusals.
+            // Empty ancestor permissions pin the unveiled directory inodes;
+            // they do not permit ancestor lstat (measured native ENOENT).
+            // Full protected ancestry is checked before this locked plan.
             add_rule(&mut rules, ancestor, "");
         }
     }
     add_rule(&mut rules, parent, "r");
     add_rule(&mut rules, socket, "rwc");
-    add_rule(&mut rules, Path::new("/usr/local/bin/python3"), "rx");
     add_rule(&mut rules, Path::new("/usr/local/bin/python3.13"), "rx");
     Ok(OpenbsdConfinementPlan {
         promises_before_lock: "stdio rpath wpath cpath unix proc exec unveil",
@@ -462,13 +471,22 @@ pub(crate) fn account_admission_parent_plan(
     })
 }
 
+// Only actual locked native application can mint this capability. No public
+// constructor/Clone/caller Boolean selects a postseal metadata phase.
+pub(crate) struct AccountAdmissionParentSeal {
+    _native: (),
+}
+
 /// Called after exact socket publication and before any accept or frame read.
 /// No disabled/log-only branch exists for this mandatory parent policy.
-pub(crate) fn apply_account_admission_parent_confinement(socket: &Path) -> Result<(), String> {
+pub(crate) fn apply_account_admission_parent_confinement(
+    socket: &Path,
+) -> Result<AccountAdmissionParentSeal, String> {
     let plan = account_admission_parent_plan(socket)?;
     #[cfg(target_os = "openbsd")]
     {
-        imp::apply_plan(&plan)
+        imp::apply_plan(&plan)?;
+        Ok(AccountAdmissionParentSeal { _native: () })
     }
     #[cfg(not(target_os = "openbsd"))]
     {

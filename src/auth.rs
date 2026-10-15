@@ -78,11 +78,18 @@ pub(crate) fn account_admission_inherited_root_command() -> std::io::Result<Comm
     if std::env::current_dir()? != std::path::Path::new("/") {
         return Err(std::io::ErrorKind::PermissionDenied.into());
     }
-    Ok(fixed_account_admission_command())
+    let mut command = Command::new("/usr/local/bin/python3.13");
+    configure_account_admission(&mut command);
+    Ok(command)
 }
-#[cfg(unix)]
+#[cfg(all(test, unix))]
 fn fixed_account_admission_command() -> Command {
     let mut command = Command::new("/usr/local/bin/python3");
+    configure_account_admission(&mut command);
+    command
+}
+#[cfg(unix)]
+fn configure_account_admission(command: &mut Command) {
     command
         .args([
             "-I",
@@ -91,7 +98,6 @@ fn fixed_account_admission_command() -> Command {
         .env_clear()
         .env("PATH", "/usr/local/bin:/usr/bin:/bin")
         .env("LC_ALL", "C");
-    command
 }
 
 #[cfg(all(test, unix))]

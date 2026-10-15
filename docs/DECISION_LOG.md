@@ -10310,3 +10310,69 @@ profile after measured EMFILE in primary14. Parent/private-primary/global
 limits and time budgets stay unchanged. Primary15's absent driver receipt does
 not establish fixture cleanup or acceptance; preserve the retained namespace
 and correct finite result/disposition handling from measured evidence.
+
+## 2026-10-15 — bind native admission dispatch to its checked target
+
+The actual direct parent diagnostic reaches endpoint metadata recheck, then
+fails engine recheck after sealing. The exact engine subcall remains unknown.
+Retain full startup alias/exact-path/ancestry validation, but dispatch only the
+fixed verified python3.13 target. Hold a readonly CLOEXEC descriptor; use
+positional hashing plus target path/descriptor identities and protected ancestor
+checks under the original deadline after sealing. The unused alias can then be
+removed from the unveil plan without bypassing authority over the dispatched
+executable. Do not grant recursive read access to public interpreter directories.
+Matching original full native qualification is required; a direct diagnostic
+does not replace it. The three worker/body/activation boundaries remain separate.
+
+## 2026-10-15 — measured sealed-path semantics control the correction
+
+The fixed public obsd1 observer returns ENOENT for all three empty-permission
+ancestor lstat calls, while exact target lstat/fstat/CLOEXEC/pread/getcwd pass.
+Its first invocation was refused before policy because root omitted documented
+bytecode/cwd options; the corrected invocation uses the unchanged reviewed code.
+Keep both records. Empty unveil entries are hidden directory anchors, not stat
+grants; earlier comments/reviews accepting that assumption remain historical.
+
+Use a private native token issued only after real policy success to select the
+parent's post-seal exact target path/FD/hash recheck. Full protected ancestry is
+checked immediately before sealing. Locked directory inode binding replaces
+repeated ancestor pathname checks; it is not continuous owner/mode attestation.
+Apply the same pre/post boundary to the worker's exact account record and lock,
+distinguishing completed sealing from a partial-attempt latch. Do not retain
+directory descriptors described as metadata-only or add recursive read grants.
+
+OpenBSD ps -p selects a single PID. Replace the unsupported comma selector with
+two exact selected-PID queries in each existing snapshot, retaining the original
+absolute0.5-second phase, operation budget and all birth/UID/TCP/after fences.
+The old fake masked that OS contract; its real-semantics discriminator must fail
+before the repair and pass afterwards. No broader process enumeration is needed.
+
+
+## 2026-10-15 — retain metadata observations within the original phase
+
+Broker14 reaches real Bob publication and Alice backend verification, then
+Alice publication's original exception context identifies TimeoutError at the
+final child fstat in inspect. Individual command latency remains unmeasured.
+OpenBSD's singular ps semantics require seven current selected-PID metadata
+commands across the existing before/after process and TCP boundaries. Preserve
+all seven observations and the original absolute0.5s cutoff. Review a bounded
+two-child schedule within each independent observation boundary; do not widen
+timeouts, enumerate all host processes, cache startup authority or remove final
+checks. Every launched child needs exact owned disposition under the same
+deadline. Actual changed native publication must pass before activation.
+
+
+## 2026-10-15 — retain pending-control failure and add the missing service entry
+
+Actual paired-metadata broker15 passes two AUTH publications and idle account
+termination with Bob isolation. Pending signed-control capture/cancel then
+returns Unconfirmed; its exact original inner cause is unknown. The held third
+AUTH deadline expiry does not identify that control cause. Preserve the
+retained runtime/scratch and failed cleanup outcome. Add only bounded original
+control stage/context diagnostics before another changed action; no wider
+deadline, dropped ownership check or guessed shutdown-errno exception.
+
+AuthBroker.native/serve has no production managed entry. Add a fixed entry and
+one rc script through the existing S04-02 allowlist, using native closed gates,
+owned startup/session/signal cleanup and no ordinary-auth fallback. Source
+entry tests do not authorize enabling the service or qualify full factory.

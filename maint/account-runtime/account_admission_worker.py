@@ -17,6 +17,7 @@ from authoritative_password import AuthoritativePasswordAdapter, Refused
 from operation_budget import OperationBudget, _OriginalReceipt
 from account_native_material import NativeMaterial
 from mutation_primary import NativePrimaryVerifier
+from account_command_kernel import AdmissionWorkerStartup
 
 SCHEMA = 'osmap-account-admission-worker-v1'
 ROOT = '/var/db/osmap-account/epoch'
@@ -36,13 +37,16 @@ def _original_budget(budget):
         deadline_millis=receipt.deadline_millis,expires_at=receipt.expires_at)
 
 
-def fixed_authenticate(account, password, budget):
+def fixed_authenticate(account, password, budget, *, startup=None, store=None):
     """Actual fixed material/private-primary factory; no ordinary auth fallback."""
     _original_budget(budget)
     verifier=None
     try:
+        if type(startup)is not AdmissionWorkerStartup:
+            raise Refused('admission worker startup unavailable')
         material=NativeMaterial.native(budget)
-        verifier=NativePrimaryVerifier(account,budget,material)
+        seal=startup.bind(account,store,budget,material)
+        verifier=NativePrimaryVerifier(account,budget,material,admission_seal=seal)
         result=verifier(account,password)
         _original_budget(budget)
         if type(result)is not bool:raise Refused('authentication unavailable')
@@ -56,7 +60,7 @@ def fixed_authenticate(account, password, budget):
             raise CleanupUnconfirmed('authentication cleanup unconfirmed')from None
 
 
-def execute(frame, store, authenticate=None, *, budget=None):
+def execute(frame, store, authenticate=None, *, budget=None, startup=None):
     """Tests supply dependencies; RPC can never supply a callback or root."""
     if not isinstance(frame, dict) or frame.get('schema') != SCHEMA:
         raise Refused('account request refused')
@@ -87,6 +91,10 @@ def execute(frame, store, authenticate=None, *, budget=None):
             raise Refused('account request refused')
     if authenticate is None:
         _original_budget(budget)
+        if type(startup)is not AdmissionWorkerStartup:
+            raise Refused('admission worker startup unavailable')
+        if operation=='admit':
+            startup.bind(account,store,budget).apply(account,None,budget)
     elif budget is not None:
         _original_budget(budget)
     # Exact shared durable account lock also used by PasswordCoordinator.change.
@@ -100,7 +108,7 @@ def execute(frame, store, authenticate=None, *, budget=None):
         if operation == 'admit' and value['epoch'] != epoch:
             raise Refused('account admission refused')
         if operation == 'authenticate':
-            accepted=(fixed_authenticate(account,password,budget)if authenticate is None else authenticate(account,password))
+            accepted=(fixed_authenticate(account,password,budget,startup=startup,store=store)if authenticate is None else authenticate(account,password))
             if budget is not None:_original_budget(budget)
             if not accepted:
                 return {'schema': SCHEMA, 'account': account, 'status': 'rejected', 'epoch': None}
@@ -113,6 +121,7 @@ def main():
     received_mono=time.monotonic();received_millis=int(time.time()*1000)
     # Duplicate fields and oversized requests are refused before any callback.
     try:
+        startup=AdmissionWorkerStartup.native()
         raw = sys.stdin.buffer.read(LIMIT + 1)
         if len(raw) > LIMIT:
             raise Refused('account request refused')
@@ -123,7 +132,7 @@ def main():
             received_millis=received_millis,sent_millis=sent,deadline_millis=deadline,
             wall_millis=lambda:int(time.time()*1000))
         budget.attach_owned_process_group()
-        result = execute(frame, EpochStore(ROOT),budget=budget)
+        result = execute(frame, EpochStore(ROOT),budget=budget,startup=startup)
     except CleanupUnconfirmed:
         result = {'schema': SCHEMA, 'status': 'cleanup_unconfirmed', 'account': None, 'epoch': None}
     except Exception:

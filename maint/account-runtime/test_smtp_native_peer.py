@@ -5,6 +5,8 @@ The connected TCP syntax matches the retained zero-protocol Toronto observation;
 child text/loader and actual composed inspector remain native NOT RUN.
 """
 import os
+import sys
+import subprocess
 from pathlib import Path
 import time
 import unittest
@@ -37,6 +39,10 @@ class NativePeerTests(unittest.TestCase):
             self.patch=patch.object(native.NativeSmtpPeerInspector,method,return_value=value);self.patch.start();self.addCleanup(self.patch.stop)
         self.execute_patch=patch.object(native._MetadataExecutor,'__call__',autospec=True,side_effect=self.execute)
         self.execute_patch.start();self.addCleanup(self.execute_patch.stop)
+        pair=patch.object(native._MetadataExecutor,'pair',autospec=True,
+            side_effect=lambda executor,program,arguments,deadline:tuple(
+                self.execute(executor,program,args,b'',min(.5,deadline-time.monotonic()),native.LIMIT)for args in arguments))
+        pair.start();self.addCleanup(pair.stop)
         self.inspector=native.NativeSmtpPeerInspector._read(self.namespace,self.topology,self.budget)
         self.fixture.registry._authority=OwnedSmtpPeerAuthority((os.getuid(),os.getgid()),(os.getuid(),os.getgid()),2525,self.inspector)
         self.ps_calls=0;self.calls=[]
@@ -52,14 +58,35 @@ class NativePeerTests(unittest.TestCase):
         self.calls.append((program,args))
         if program==native.PS:
             self.ps_calls+=1
-            if self.after_hook and self.ps_calls%2==0:self.after_hook()
-            data=self.master+(self.child if ','in args[1]else b'')
+            if self.after_hook and self.ps_calls==3:self.after_hook()
+            # Match OpenBSD ps.c: -p uses atol(optarg), singular KERN_PROC_PID.
+            selected=int(args[1].split(',',1)[0])
+            data=self.master if selected==777 else self.child if selected==123 else b''
         else:
             if int(args[-1])==123:
                 self.tcp_calls+=1
                 if self.tcp_hook and self.tcp_calls%2==0:self.tcp_hook()
             data=self.fstat(int(args[-1]))
         return 0,data,b''
+
+    def test_openbsd_singular_pid_selectors_preserve_original_snapshot_authority(self):
+        deadline=time.monotonic()+.5
+        identity=self.inspector.inspect(123,deadline,self.budget)
+        self.assertEqual(identity.projection(),(123,'127.0.0.1',2525,3130))
+        queries=[args for program,args in self.calls if program==native.PS]
+        self.assertEqual(queries,[('-p',str(pid),'-o',native.PS_FIELDS)for pid in (777,123,777,123)])
+        executor=native._MetadataExecutor(self.budget,(777,123))
+        self.assertFalse(executor._allows(native.PS,('-p','777,123','-o',native.PS_FIELDS)))
+        self.assertFalse(executor._allows(native.PS,('-p','124','-o',native.PS_FIELDS)))
+        self.assertFalse(executor._allows(native.PS,('-ax','-o',native.PS_FIELDS)))
+        # The existing row parser still rejects missing/foreign PID authority.
+        for raw,pids in ((b'',(123,)),(self.master,(123,))):
+            with self.subTest(refusal='missing_or_foreign'):
+                with self.assertRaises(Refused):native.NativeSmtpPeerInspector._rows(raw,pids)
+        # A changed birth between the two snapshots must still refuse.
+        self.ps_calls=0
+        self.after_hook=lambda:setattr(self,'child',self.child.replace(b'14:19:43',b'14:19:44'))
+        with self.assertRaises(Refused):self.inspector.inspect(123,time.monotonic()+.5,self.budget)
 
     def test_exact_native_identity_registered_and_published_on_same_original_budget(self):
         channel,front,_=self.fixture.channel()
@@ -173,6 +200,62 @@ class PerChannelOwnershipTests(unittest.TestCase):
         bridge=self.bridge();self.budget=self.fresh();self.master=self.master.replace(b'14:33:31',b'14:33:32')
         with self.assertRaises(Refused):bridge.prepare(self.budget)
         self.assertFalse(hasattr(self.budget,'_smtp_channel_ownership'))
+
+
+class MetadataPairTests(unittest.TestCase):
+    def test_original_deadline_pair_preserves_exact_rows_and_reaps_both_children(self):
+        # Same sub-.5s cap: two .18s public jobs cannot fit serially. This uses
+        # actual owned local children but projects the fixed native command.
+        budget=OperationBudget(int(time.time())+30)
+        rows={777:b'777 1 777 0 0 Thu Oct 1 14:33:31 2026 master\n',
+              123:b'123 777 777 507 507 Thu Oct 15 14:19:43 2026 smtpd\n'}
+        real=subprocess.Popen;children=[]
+        def launch(command,**options):
+            self.assertEqual(command,(native.PS,'-p',command[2],'-o',native.PS_FIELDS))
+            pid=int(command[2]);self.assertIn(pid,rows)
+            self.assertIs(options['shell'],False);self.assertTrue(options['close_fds'])
+            self.assertIs(options['start_new_session'],False)
+            child=real((sys.executable,'-I','-c',
+                'import sys,time;time.sleep(.18);sys.stdout.write(sys.argv[1])',rows[pid].decode('ascii')),**options)
+            children.append(child);return child
+        with patch.object(budget,'inherited_group',return_value=True),patch('subprocess.Popen',side_effect=launch):
+            executor=native._MetadataExecutor(budget,(777,123))
+            deadline=time.monotonic()+.32
+            result=native.NativeSmtpPeerInspector._process_rows(executor,(777,123),budget,deadline)
+            self.assertEqual(set(result),{777,123});self.assertLess(time.monotonic(),deadline)
+        self.assertEqual(len(children),2)
+        self.assertTrue(all(c.returncode==0 and c.stdout.closed and c.stderr.closed for c in children))
+
+    def test_second_spawn_failure_disposes_first_and_uncertain_cleanup_quarantines(self):
+        budget=OperationBudget(int(time.time())+30);real=subprocess.Popen;children=[]
+        def launch(command,**options):
+            if children:raise OSError('synthetic fixed second-spawn refusal')
+            child=real((sys.executable,'-I','-c','import time;time.sleep(2)'),**options)
+            children.append(child);return child
+        with patch.object(budget,'inherited_group',return_value=True),patch('subprocess.Popen',side_effect=launch):
+            executor=native._MetadataExecutor(budget,(777,123))
+            with self.assertRaises(OSError):executor.pair(native.PS,tuple(('-p',str(p),'-o',native.PS_FIELDS)for p in (777,123)),time.monotonic()+.5)
+        self.assertEqual(len(children),1);self.assertIsNotNone(children[0].returncode)
+        self.assertTrue(children[0].stdout.closed and children[0].stderr.closed)
+        # Project only unconfirmed wait, no live child is intentionally leaked.
+        import io
+        class Unconfirmed:
+            stdout=io.BytesIO();stderr=io.BytesIO()
+            def poll(self):return None
+            def kill(self):pass
+            def wait(self,timeout):raise subprocess.TimeoutExpired('fixed',timeout)
+        pending=Unconfirmed();calls=[pending]
+        def refused_second(*args,**kwargs):
+            if calls:return calls.pop()
+            raise OSError('synthetic second-spawn refusal')
+        with patch.object(native._MetadataExecutor,'_retained',[])as retained, \
+             patch.object(native._MetadataExecutor,'_quarantined',False), \
+             patch.object(budget,'inherited_group',return_value=True),patch('subprocess.Popen',side_effect=refused_second):
+            executor=native._MetadataExecutor(budget,(777,123))
+            with self.assertRaisesRegex(Refused,'cleanup unconfirmed'):
+                executor.pair(native.PS,tuple(('-p',str(p),'-o',native.PS_FIELDS)for p in (777,123)),time.monotonic()+.5)
+            self.assertEqual(retained,[pending]);self.assertTrue(native._MetadataExecutor._quarantined)
+            with self.assertRaises(Refused):native._MetadataExecutor(budget,(777,123))
 
 
 if __name__=='__main__':unittest.main(verbosity=2)

@@ -10,7 +10,8 @@ use sha2::{Digest, Sha256};
 use std::collections::BTreeSet;
 use std::fs::{self, File, OpenOptions};
 use std::io::Read;
-use std::os::unix::fs::{FileTypeExt, MetadataExt, OpenOptionsExt, PermissionsExt};
+use std::os::fd::AsRawFd;
+use std::os::unix::fs::{FileExt, FileTypeExt, MetadataExt, OpenOptionsExt, PermissionsExt};
 use std::os::unix::net::{UnixListener, UnixStream};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -120,9 +121,10 @@ impl Service {
             stop,
             &|request, deadline| self.native_worker(request, deadline),
             &|endpoint| {
-                endpoint.recheck()?;
-                crate::openbsd::apply_account_admission_parent_confinement(&endpoint.path)
-                    .map_err(unavailable)
+                self.engine
+                    .as_ref()
+                    .ok_or(Error::Unavailable)?
+                    .confine_parent(endpoint)
             },
         )
     }
@@ -415,6 +417,7 @@ impl Service {
 }
 
 type InstalledIdentity = (u64, u64, u32, u32, u32, u64, u64, i64, i64, i64, i64);
+type InstalledAncestors = Vec<(PathBuf, (u64, u64, u32, u32, u32))>;
 fn installed_identity(info: &fs::Metadata) -> InstalledIdentity {
     (
         info.dev(),
@@ -431,13 +434,36 @@ fn installed_identity(info: &fs::Metadata) -> InstalledIdentity {
     )
 }
 struct InstalledEngine {
-    alias: PathBuf,
-    owner: u32,
-    alias_identity: InstalledIdentity,
+    target: PathBuf,
+    descriptor: File,
+    ancestors: InstalledAncestors,
     target_identity: InstalledIdentity,
     target_sha256: [u8; 32],
+    sealed: std::sync::OnceLock<crate::openbsd::AccountAdmissionParentSeal>,
+    startup_deadline: Instant,
 }
 impl InstalledEngine {
+    fn ancestors(target: &Path, owner: u32) -> Result<InstalledAncestors, Error> {
+        let mut rows = Vec::new();
+        for path in target.ancestors().skip(1) {
+            // Match the existing guarded reader's OS-root trust boundary.
+            // Other ancestors retain stable identity/ownership/fullmode,
+            // without coupling authority to unrelated contents/timestamps.
+            if path == Path::new("/") {
+                break;
+            }
+            let m = fs::symlink_metadata(path).map_err(unavailable)?;
+            let sticky_root = m.uid() == 0 && m.mode() & 0o1000 != 0;
+            if !m.is_dir()
+                || (m.uid() != 0 && m.uid() != owner)
+                || (m.mode() & 0o022 != 0 && !sticky_root)
+            {
+                return Err(Error::Unavailable);
+            }
+            rows.push((path.into(), (m.dev(), m.ino(), m.uid(), m.gid(), m.mode())));
+        }
+        Ok(rows)
+    }
     fn observe(alias: &Path, owner: u32, deadline: Instant) -> Result<Self, Error> {
         if alias.file_name() != Some(std::ffi::OsStr::new("python3")) || Instant::now() >= deadline
         {
@@ -452,11 +478,14 @@ impl InstalledEngine {
             return Err(Error::Unavailable);
         }
         let target = alias.parent().ok_or(Error::Invalid)?.join(ENGINE_TARGET);
+        let ancestors = Self::ancestors(&target, owner)?;
         let target_before =
             installed_identity(&fs::symlink_metadata(&target).map_err(unavailable)?);
         let mut descriptor = file(&target, owner, true, 64 * 1024 * 1024).map_err(unavailable)?;
         if target_before.5 != 1
             || target_before.6 == 0
+            || !crate::openbsd::descriptor_is_cloexec(descriptor.as_raw_fd())
+                .map_err(unavailable)?
             || installed_identity(&descriptor.metadata().map_err(unavailable)?) != target_before
         {
             return Err(Error::Unavailable);
@@ -486,25 +515,93 @@ impl InstalledEngine {
             || installed_identity(&fs::symlink_metadata(alias).map_err(unavailable)?)
                 != alias_identity
             || fs::read_link(alias).map_err(unavailable)? != Path::new(ENGINE_TARGET)
+            || Self::ancestors(&target, owner)? != ancestors
             || Instant::now() >= deadline
         {
             return Err(Error::Unavailable);
         }
         Ok(Self {
-            alias: alias.into(),
-            owner,
-            alias_identity,
+            target,
+            descriptor,
+            ancestors,
             target_identity: target_before,
             target_sha256: digest.finalize().into(),
+            sealed: std::sync::OnceLock::new(),
+            startup_deadline: deadline,
         })
     }
+    fn confine_parent(&self, endpoint: &AdmissionEndpoint) -> Result<(), Error> {
+        // Same original installed-engine startup deadline, never a new cap.
+        let deadline = self.startup_deadline;
+        if self.sealed.get().is_some() {
+            return Err(Error::Unavailable);
+        }
+        // Full protected pathname ancestry is mandatory immediately before the
+        // real lock. Afterward unveil binds directory inodes; it does not keep
+        // checking ancestor ownership/mode. Trusted administration preserves it.
+        self.recheck(deadline)?;
+        endpoint.recheck()?;
+        let seal = crate::openbsd::apply_account_admission_parent_confinement(&endpoint.path)
+            .map_err(unavailable)?;
+        self.sealed.set(seal).map_err(unavailable)?;
+        self.recheck(deadline)
+    }
     fn recheck(&self, deadline: Instant) -> Result<(), Error> {
-        let current = Self::observe(&self.alias, self.owner, deadline)?;
-        if current.alias_identity != self.alias_identity
-            || current.target_identity != self.target_identity
-            || current.target_sha256 != self.target_sha256
+        // The startup alias is never dispatched after sealing. Its verified
+        // fixed target keeps the original FD and full identity/hash. Before
+        // actual sealing it also rechecks protected pathname ancestry. Only the
+        // native token selects postseal inode binding instead of hidden lstat.
+        // No readlink/canonicalize requires recursive bin/ancestor read grants.
+        if Instant::now() >= deadline {
+            return Err(Error::Expired);
+        }
+        let owner = self.target_identity.2;
+        if (self.sealed.get().is_none() && Self::ancestors(&self.target, owner)? != self.ancestors)
+            || !crate::openbsd::descriptor_is_cloexec(self.descriptor.as_raw_fd())
+                .map_err(unavailable)?
+            || installed_identity(&self.descriptor.metadata().map_err(unavailable)?)
+                != self.target_identity
+            || installed_identity(&fs::symlink_metadata(&self.target).map_err(unavailable)?)
+                != self.target_identity
         {
             return Err(Error::Unavailable);
+        }
+        let mut digest = Sha256::new();
+        let mut count = 0u64;
+        let mut bytes = [0; 4096];
+        loop {
+            if Instant::now() >= deadline {
+                return Err(Error::Expired);
+            }
+            // Positional reads do not share mutable seek state between the
+            // service's two bounded concurrent connection threads.
+            let read = self
+                .descriptor
+                .read_at(&mut bytes, count)
+                .map_err(unavailable)?;
+            if read == 0 {
+                break;
+            }
+            count += read as u64;
+            if count > 64 * 1024 * 1024 {
+                return Err(Error::Unavailable);
+            }
+            digest.update(&bytes[..read]);
+        }
+        let hash: [u8; 32] = digest.finalize().into();
+        if count != self.target_identity.6
+            || hash != self.target_sha256
+            || installed_identity(&self.descriptor.metadata().map_err(unavailable)?)
+                != self.target_identity
+            || installed_identity(&fs::symlink_metadata(&self.target).map_err(unavailable)?)
+                != self.target_identity
+            || (self.sealed.get().is_none()
+                && Self::ancestors(&self.target, owner)? != self.ancestors)
+        {
+            return Err(Error::Unavailable);
+        }
+        if Instant::now() >= deadline {
+            return Err(Error::Expired);
         }
         Ok(())
     }

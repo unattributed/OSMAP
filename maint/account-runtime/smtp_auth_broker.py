@@ -15,6 +15,11 @@ import threading
 import time
 import stat
 import sys
+import signal
+import resource
+
+if __name__=='__main__':
+    sys.path.insert(0,'/usr/local/libexec/osmap/account-runtime')
 
 from account_epoch import EpochStore
 from account_mutation_supervisor import _Bootstrap,AUTHORITY,_directory
@@ -324,3 +329,36 @@ class AuthBroker:
         value.control_listener=control.PrivateControlListener.native(value.supervisor)
         value._startup_budget=budget
         return value
+
+
+# Fixed pre-listen startup cap, matching the existing guarded binding startup.
+# It never becomes an AUTH budget; each accepted channel retains its original3s.
+SERVICE_STARTUP_SECONDS=5
+
+
+def main():
+    """Managed fixed-purpose entry; closed native factory remains authoritative."""
+    _require(len(sys.argv)==1 and os.getuid()==os.geteuid()==0
+             and sys.platform.startswith('openbsd')and socket.gethostname()==AUTHORITY)
+    resource.setrlimit(resource.RLIMIT_CORE,(0,0))
+    # rc backgrounds a child that may inherit its caller's group. Establish our
+    # own session before any listener/credential input; never signal that caller.
+    if os.getpid()!=os.getpgrp():os.setsid()
+    _require(os.getpid()==os.getpgrp()==os.getsid(0))
+    budget=OperationBudget(int(time.time())+SERVICE_STARTUP_SECONDS,
+                           maximum_seconds=SERVICE_STARTUP_SECONDS)
+    budget.attach_owned_process_group();budget.remaining()
+    stop=threading.Event();previous={}
+    try:
+        for sig in (signal.SIGTERM,signal.SIGINT):
+            previous[sig]=signal.signal(sig,lambda *_args:stop.set())
+        service=AuthBroker.native(budget)
+        budget.remaining()
+        return service.serve(stop)
+    finally:
+        for sig,handler in previous.items():signal.signal(sig,handler)
+
+
+if __name__=='__main__':
+    try:main()
+    except Exception:raise SystemExit(1)from None

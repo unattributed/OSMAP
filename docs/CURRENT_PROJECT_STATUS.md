@@ -16,99 +16,56 @@ statement as provenance rather than current release posture.
 
 ### Active password delivery, 2026-10-15
 
-Latest signed/synchronized source is `065054793c4a158f79f8355219284e1fe903eabd`:
-normal commit and push each pass 1741 Rust and 564 account Python tests, with
-fresh origin equality and clean authoritative standard source-only parity.
-Installed pair324b is unchanged.
-The current uncommitted repair adds parent confinement, stable ancestor custody
-and one-call SMTP topology construction. Actual broker9 now completes startup
-and topology admission, then fails the synthetic Bob AUTH with454/4.7.0 instead
-of235. Both daemon groups, broker runtime and scratch are removed; standard
-metadata is preserved. The underlying authentication refusal remains unknown.
-Primary14 separately measures synthetic Dovecot pipe() EMFILE errors. A checked
-daemon-only NOFILE512 profile is attempted by primary15, but its driver produces
-no valid receipt: exit1/stdout0/stderr763. Only driver-group disappearance and
-reap are established by that outer result; fixture cleanup and authentication
-must not be inferred. Root code stages remain retained. Parent native build
-custody is being repaired for exception-safe child disposition before execution.
-All complete password-workflow qualification and activation remain open.
-Superseding primary16 passes all seven original native controls, including real
-private-child correct-password acceptance, changed-password rejection and
-foreign-canonical rejection. Three actual saved/real/effective private identities,
-kernel/null proofs and owned cleanup pass; the rootstage is removed. Its daemon
-reports VERSION1.2 with checked512/512 capacity and unchanged parent128/1024.
-The complete factory remains disabled. The separate Rust admission-parent native
-case fails exit101 with retained scratch; its original inner cause remains
-unknown. A custodian-only useful diagnostic using the existing binary is next.
-Source-proven SMTP minor-version compatibility is integrated; matching broker10
-still fails Bob AUTH454/4.7.0 before internal registration. Both daemon groups,
-runtime and scratch are removed with standard metadata preserved. Its original
-per-connection failing call and broker9's unique cause remain unproven.
-Actual disposable restricted SQL native3 passes27 controls,14 strict confinement
-receipts and complete owned cleanup. Primary8 still fails after one private
-child proof at first-input EPIPE; earlier identity failure cause remains unknown.
-The actual shared broker fixture fails its old exact version expectation before
-daemon construction; authoritative3.11.7/empty multi-instance observation is
-retained for a narrowly changed qualifier. These are component outcomes.
+Predecessor checkpoint `ce3e920cfbbe2e105c28bce35746674ecc9e5293` is synchronized with
+GitHub and the clean authoritative standard source checkout. Normal commit and
+push gates each pass1743 Rust/zero failed/44 explicit native ignores and569
+account Python tests. This revision adds the reviewed sealed parent/worker,
+paired SMTP metadata schedule and fixed managed broker entry. Their combined
+normal source gate/signed synchronization remain pending; actual results will
+be retained under sealed-admission-broker-integration-20261015. Installed pair324b is unchanged; no password form, new
+service or qualification flag is activated.
 
-Subsequent primary9 now drains55 stderr bytes and reaches strict parsing, with
-library_load classification and no source-issued kill; the exact library and
-termination cause remain unknown. The corrected-version broker qualifier reaches
-owned-startup but still refuses. Both controlled failures preserve confirmed
-fixture cleanup and retained root code stages; neither is workflow acceptance.
+Actual disposable restricted SQL3 passes27 controls. Private-primary16 passes
+its original seven controls, including correct-password acceptance, changed-
+password rejection, foreign-canonical refusal and complete owned cleanup. These
+are component proofs; the complete guarded password workflow is still open.
 
-Primary10 identifies the fixed public libdovecot.so.5.0 dependency in original
-loader output. The exact errno/termination cause remains unknown. Its narrowly
-reviewed search-directory read/custody repair preserves private identities and
-all original native controls; matching native compatibility is pending. This
-same-slice repair joins the admission source before normal signing, without a
-second duplicate full gate cycle or a workflow completion claim.
+The persistent admission parent now passes its original complete native case.
+The matching final source compiles fresh on obsd1; actual sealed-policy checks,
+owned child disposition, socket unlink and empty scratch/rootstage cleanup pass.
+This qualifies the parent component only. Earlier failures remain retained.
+A fixed public observer proves empty ancestor unveil entries hide the three
+ancestor lstat calls with ENOENT, while exact target lstat/fstat/CLOEXEC/pread and
+getcwd work. Full protected ancestry checks belong before sealing. The reviewed
+source requires an actual-policy seal token before selecting the
+post-seal exact target path/descriptor/hash checks. Kernel directory binding
+replaces repeated ancestor pathname checks; it does not continuously attest
+ancestor owner or mode. No directory read grant is broadened.
 
-Changed primary11 refuses fixed search-directory custody during preexec
-preparation, before command dispatch or child confinement proof. Three prefix
-controls pass; fixture children, socket, scratch and temporary identity are
-removed, with the root code stage retained. The exact directory/ancestry
-comparison remains unknown. Broker5 also fails during routing-producer
-construction before the newly observed topology recheck is reached. Its
-observation is null; daemons, broker runtime and scratch are gone and standard
-metadata is preserved. Neither failure establishes native compatibility or
-diagnoses the older failures. Narrow public-metadata and original-call
-observations are required; no unchanged retry or broader permission is admitted.
+The Python worker correction has passed independent source review; matching
+composed native execution is still pending. Its typed phase becomes sealed only
+after actual locked unveil and final pledge succeed. Early pledge,
+original-budget binding, durable epoch serialization, typed post-spawn sealing
+before password I/O, and owned child cleanup remain required.
 
-The public metadata observation identifies the current search-custody mismatch:
-the search directory matches all nine fields, while only unrelated ancestor
-size and timestamps differ. The reviewed correction uses the existing five-field
-ancestor identity and permission policy, retaining full directory/member custody
-and fixed file hashes. Primary12 passes that guard and actual private-child
-confinement, then times out after writing its complete credential input without
-readable output. Primary13 separately receives no server greeting before its
-bounded wait; no private authentication is established. Owned cleanup passes and
-failed root code stages remain retained. A bounded scrub of existing synthetic
-daemon errors is the next diagnostic; neither result diagnoses older failures.
+The SMTP broker supports Dovecot's compatible1.2 greeting and OpenBSD's
+single-PID ps selector. Reviewed paired execution retains every current
+process/TCP observation and the original0.5s phase. Actual native15 passes
+Alice/Bob AUTH publication, idle termination and Bob isolation, then fails the
+pending signed-control seam with Unconfirmed. Capture versus cancel/server
+cutoff cause is unknown; original AUTH expiry occurs in the held fixture
+publication. Daemon groups are gone and standard metadata preserved, but broker
+cleanup is unconfirmed and private scratch/runtime remain. Preserve that
+failure and inspect original control calls without widening budgets. A missing
+managed broker entry now has independent source review, with activation still
+closed and actual managed lifecycle pending.
 
-Broker8 reaches the shared listener barrier after all 20 metadata observations
-and native topology checks pass, then fails the final ownership inventory under
-the original startup deadline. Its fixture cleanup and public-state preservation
-pass. Final and per-command ownership checks remain mandatory; adjacent repeated
-metadata construction is being assessed without extending deadlines.
-
-Reviewed source now adds actual confinement for the persistent Rust admission
-parent after socket publication and before credential processing. Exact endpoint
-and interpreter grants, empty-permission ancestors and checked root cwd avoid
-recursive public-directory read grants. The unused finite-connection entry stays
-unavailable. Native compatibility is pending. This is parent-only: the exec'd
-Python supervisor still requires its own confinement and full workflow proof.
-No qualification flag, installed service, password form or operator password
-is activated by these source repairs.
-
-Active source remediation supplies the missing persistent account-admission
-endpoint, shared original-deadline private-primary worker and bounded early
-stdin-close reconciliation. It preserves incomplete-input refusal, shared epoch
-locking, peer/MAC/replay/custody/cleanup controls and closed native activation.
-No new service, binary, password form or operator password is activated. Full
-S04-02 trusted factory/ingress/session/mail containment and installed controlled
-workflow remain unqualified; no Duncan action is required. Dated records below
-retain prior checkpoint scope rather than superseding these current outcomes.
+Next: finish the sealed parent/worker path, resolve the measured SMTP refusal,
+then qualify the actual factory, browser session/epoch and IMAP/SMTP/cache
+containment together in the installed controlled password workflow. No Duncan
+password action is required. Exact source/native/failed/retained-state evidence
+and next owners remain in UX_EXECUTION_LEDGER.md and DECISION_LOG.md. The dated
+records below preserve historical checkpoints; they do not supersede this state.
 
 ### Latest scoped folder and label delivery, 2026-10-15
 

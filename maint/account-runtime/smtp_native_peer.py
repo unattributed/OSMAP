@@ -7,6 +7,9 @@ choose programs, principals, the master pidfile or trusted process ancestry.
 """
 from dataclasses import dataclass
 import os
+import math
+import selectors
+import subprocess
 from pathlib import Path
 import pwd
 import re
@@ -51,14 +54,82 @@ class NativeSmtpIdentity:
 
 
 class _MetadataExecutor(ContainmentExecutor):
+    # Exact unreaped handles are retained. Any unconfirmed cleanup stops later
+    # native metadata admissions in this process; never retries an old PID.
+    _retained=[]
+    _quarantined=False
     def __init__(self,budget,pids):
         # The existing transport must inherit the supervised original group.
         # It may kill only its own Popen child; outer custody owns descendants.
-        _require(type(budget)is OperationBudget and budget.inherited_group())
+        _require(type(budget)is OperationBudget and budget.inherited_group()and not self._retained and not self._quarantined)
         self._budget=budget;self._output_limit=LIMIT
-        self._commands={(PS,('-p',','.join(str(pid)for pid in pids),'-o',PS_FIELDS))}
+        self._commands={(PS,('-p',str(pid),'-o',PS_FIELDS))for pid in pids}
         self._commands.update((FSTAT,('-n','-p',str(pid)))for pid in pids)
     def _allows(self,program,args):return (program,args)in self._commands
+
+    def pair(self,program,arguments,deadline):
+        # Two independent exact queries within ONE observation boundary. One
+        # selector thread shares the original clock/budget; no worker timers,
+        # shell, broad enumeration or cached metadata replaces either query.
+        _require(program in (PS,FSTAT)and type(arguments)is tuple and len(arguments)==2
+                 and arguments[0]!=arguments[1]and all(type(a)is tuple and self._allows(program,a)for a in arguments)
+                 and type(deadline)in (int,float)and math.isfinite(deadline)
+                 and 0<deadline-time.monotonic()<=0.5 and self._budget.inherited_group()
+                 and not self._retained and not self._quarantined)
+        reserve=.01;work=deadline-reserve
+        children=[];output=[bytearray(),bytearray()];error=[bytearray(),bytearray()]
+        codes=[];selector=None;uncertain=False
+        try:
+            for args in arguments:
+                self._budget.remaining();_require(time.monotonic()<work)
+                children.append(subprocess.Popen((program,)+args,stdin=subprocess.DEVNULL,
+                    stdout=subprocess.PIPE,stderr=subprocess.PIPE,shell=False,close_fds=True,
+                    start_new_session=False,env={'PATH':'/usr/bin:/usr/local/bin','LC_ALL':'C'}))
+            selector=selectors.DefaultSelector()
+            for index,child in enumerate(children):
+                for pipe,kind in ((child.stdout,'out'),(child.stderr,'err')):
+                    os.set_blocking(pipe.fileno(),False);selector.register(pipe,selectors.EVENT_READ,(index,kind))
+            while selector.get_map():
+                remaining=min(work-time.monotonic(),self._budget.remaining())
+                if remaining<=0:raise TimeoutError
+                for key,_ in selector.select(min(remaining,.01)):
+                    try:data=os.read(key.fd,4096)
+                    except BlockingIOError:continue
+                    if not data:selector.unregister(key.fileobj);key.fileobj.close();continue
+                    index,kind=key.data;dest=output[index]if kind=='out'else error[index]
+                    dest.extend(data)
+                    if len(dest)>LIMIT:raise Refused('SMTP native metadata output unavailable')
+            for child in children:
+                remaining=min(work-time.monotonic(),self._budget.remaining())
+                if remaining<=0:raise TimeoutError
+                codes.append(child.wait(timeout=remaining))
+            self._budget.remaining();_require(time.monotonic()<work)
+            return tuple((codes[i],bytes(output[i]),bytes(error[i]))for i in range(2))
+        finally:
+            if selector is not None:
+                try:selector.close()
+                except BaseException:uncertain=True
+            # Every returned child remains owned through disposition, including
+            # second-spawn/selector/read exceptions. Cleanup never renews .5s.
+            for child in children:
+                try:
+                    if child.poll()is None:
+                        child.kill()
+                        remaining=min(deadline-time.monotonic(),self._budget.remaining())
+                        if remaining<0:remaining=0
+                        child.wait(timeout=remaining)
+                except BaseException:
+                    # Retain only this actual handle; block new admissions.
+                    if child not in self._retained:self._retained.append(child)
+                    uncertain=True
+                finally:
+                    for pipe in (child.stdout,child.stderr):
+                        try:
+                            if not pipe.closed:pipe.close()
+                        except BaseException:uncertain=True
+            if uncertain:
+                type(self)._quarantined=True
+                raise Refused('SMTP native metadata cleanup unconfirmed')from None
 
 
 class NativeSmtpPeerInspector:
@@ -156,10 +227,27 @@ class NativeSmtpPeerInspector:
     def _query(executor,program,args,budget,deadline):
         seconds=min(deadline-time.monotonic(),budget.cap_seconds(0.5));_require(seconds>0)
         result=executor(program,args,b'',seconds,LIMIT)
+        return NativeSmtpPeerInspector._checked(result,budget,deadline)
+
+    @staticmethod
+    def _checked(result,budget,deadline):
         budget.remaining();_require(time.monotonic()<deadline)
         _require(type(result)is tuple and len(result)==3 and type(result[0])is int and result[0]==0
                  and type(result[1])is bytes and len(result[1])<=LIMIT and type(result[2])is bytes and not result[2])
         return result[1]
+
+    @classmethod
+    def _process_rows(cls,executor,pids,budget,deadline):
+        # OpenBSD ps -p selects ONE pid (atol), not a comma-separated list.
+        # Both snapshots use the same original absolute phase and budget.
+        _require(type(pids)is tuple and len(pids)==2 and pids[0]!=pids[1])
+        arguments=tuple(('-p',str(pid),'-o',PS_FIELDS)for pid in pids)
+        results=executor.pair(PS,arguments,deadline)
+        _require(type(results)is tuple and len(results)==2)
+        rows={}
+        for pid,result in zip(pids,results):
+            rows.update(cls._rows(cls._checked(result,budget,deadline),(pid,)))
+        return rows
 
     @classmethod
     def _read(cls,namespace,topology,budget):
@@ -206,13 +294,15 @@ class NativeSmtpPeerInspector:
                  and deadline-time.monotonic()<=0.5)
         self._current(budget,deadline)
         pids=(self._master[0],pid);executor=_MetadataExecutor(budget,pids)
-        args=('-p',','.join(map(str,pids)),'-o',PS_FIELDS)
-        rows=self._rows(self._query(executor,PS,args,budget,deadline),pids);child=rows[pid]
+        rows=self._process_rows(executor,pids,budget,deadline);child=rows[pid]
         _require(rows[self._master[0]]==self._master and child[1:5]==(self._master[0],self._master[0],*self._postfix)and child[-1]=='smtpd')
         programs=dict(self._files_custody)
-        self._fstat(self._query(executor,FSTAT,('-n','-p',str(self._master[0])),budget,deadline),self._master[0],'master',programs[str(MASTER)][0])
-        connection=self._fstat(self._query(executor,FSTAT,('-n','-p',str(pid)),budget,deadline),pid,'smtpd',programs[str(SMTPD)][0],self._namespace._backend_port)
-        _require(self._rows(self._query(executor,PS,args,budget,deadline),pids)==rows)
+        results=executor.pair(FSTAT,tuple(('-n','-p',str(value))for value in pids),deadline)
+        _require(type(results)is tuple and len(results)==2)
+        master_raw,child_raw=tuple(self._checked(result,budget,deadline)for result in results)
+        self._fstat(master_raw,self._master[0],'master',programs[str(MASTER)][0])
+        connection=self._fstat(child_raw,pid,'smtpd',programs[str(SMTPD)][0],self._namespace._backend_port)
+        _require(self._process_rows(executor,pids,budget,deadline)==rows)
         _require(self._fstat(self._query(executor,FSTAT,('-n','-p',str(pid)),budget,deadline),pid,'smtpd',programs[str(SMTPD)][0],self._namespace._backend_port)==connection)
         self._current(budget,deadline)
         return NativeSmtpIdentity(child,self._master,*connection)

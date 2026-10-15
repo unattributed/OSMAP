@@ -95,4 +95,43 @@ class PrimaryTests(unittest.TestCase):
     self.assertTrue(observed['broken']);self.assertEqual(observed['stderr_bytes'],len(b'public early-close diagnostic'))
     self.assertFalse(v._uncertain);self.assertEqual(v._retained,[])
 
+ def test_typed_admission_seal_after_spawn_before_password_and_failure_reaps(self):
+  import tempfile
+  from account_epoch import EpochStore
+  from test_account_admission_worker import projected_startup,AdmissionTests
+  import account_command_kernel as kernel
+  script=str(Path(__file__).with_name('mutation_primary_fixture.py'))
+  for fail in (False,True):
+   with self.subTest(native_seal_failure=fail),tempfile.TemporaryDirectory()as directory:
+    root=Path(directory);root.chmod(0o700);store=EpochStore(root,os.geteuid())
+    budget=AdmissionTests.original_budget();v=NativePrimaryVerifier(ACCOUNT,budget)
+    children=[];writes=[];spawn=v._seal.spawn;write=os.write;parent=os.getpid()
+    with projected_startup(root)as(startup,events,lib),patch.object(budget,'inherited_group',return_value=True):
+     v._admission_seal=startup.bind(ACCOUNT,store,budget,v._material)
+     lib.unveil.fail=fail
+     def born(*args):
+      child=spawn(*args);children.append(child);return child
+     def controlled_write(fd,data):
+      if os.getpid()==parent and bytes(data)==(PUBLIC+'\n').encode():
+       self.assertEqual(events[-1],('pledge',(kernel._ADMISSION_FINAL,kernel._ADMISSION_FINAL)))
+       self.assertEqual(len(children),1);writes.append(len(data))
+      return write(fd,data)
+     with patch.object(v,'_command',return_value=(sys.executable,'-I',script,'good')), \
+          patch.object(v._seal,'spawn',side_effect=born),patch('mutation_primary.os.write',side_effect=controlled_write), \
+          patch('account_command_kernel.os.getpgid',return_value=parent), \
+          patch.object(v._admission_seal,'_observe_directories',wraps=v._admission_seal._observe_directories)as ancestors:
+      if fail:
+       with self.assertRaises(Refused):v(ACCOUNT,PUBLIC)
+      else:self.assertIs(v(ACCOUNT,PUBLIC),True)
+     self.assertEqual(ancestors.call_count,1)  # Preseal only; hidden path stats cannot follow lock.
+     self.assertEqual(len(children),1);self.assertEqual(bool(writes),not fail)
+     self.assertIsNotNone(children[0].returncode)
+     self.assertTrue(all(p.closed for p in (children[0].stdin,children[0].stdout,children[0].stderr)))
+     self.assertFalse(v._uncertain);self.assertEqual(v._retained,[])
+     self.assertEqual(v._admission_seal._phase,'sealing'if fail else'sealed')
+     if fail:
+      with self.assertRaises(Refused):v._admission_seal.require_sealed(ACCOUNT,v._material,budget)
+     else:v._admission_seal.require_sealed(ACCOUNT,v._material,budget)
+     with self.assertRaises(Refused):v._admission_seal.check(ACCOUNT,v._material,budget)
+
 if __name__=='__main__':unittest.main()

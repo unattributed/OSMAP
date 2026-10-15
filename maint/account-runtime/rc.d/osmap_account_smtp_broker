@@ -1,0 +1,12 @@
+#!/bin/ksh
+# Disabled fixed-purpose broker. Native factory/routing/control/peer qualification
+# and explicit provisioning precede installation; this entry enables nothing.
+daemon="/usr/local/bin/python3.13"
+script="/usr/local/libexec/osmap/account-runtime/smtp_auth_broker.py"
+daemon_user="root"
+daemon_flags="-I -B ${script}"
+rc_bg=YES
+rc_reload=NO
+. /etc/rc.d/rc.subr
+pexp="/usr/local/bin/python3.13 -I -B ${script}"
+rc_cmd "$1"

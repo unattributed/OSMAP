@@ -73,7 +73,7 @@ fn parent_policy_is_narrow_and_failed_seal_prevents_accept_then_removes_owned_en
         .collect();
     assert_eq!(rows.get(socket.as_path()), Some(&"rwc"));
     assert_eq!(rows.get(root.as_path()), Some(&"r"));
-    assert_eq!(rows.get(Path::new("/usr/local/bin/python3")), Some(&"rx"));
+    assert_eq!(rows.get(Path::new("/usr/local/bin/python3")), None);
     assert_eq!(
         rows.get(Path::new("/usr/local/bin/python3.13")),
         Some(&"rx")
@@ -132,7 +132,8 @@ fn inherited_worker_cwd_refuses_changed_root_in_disposable_process() {
         std::env::set_current_dir("/").unwrap();
         let inherited = crate::auth::account_admission_inherited_root_command().unwrap();
         let ordinary = crate::auth::account_admission_command();
-        assert_eq!(inherited.get_program(), ordinary.get_program());
+        assert_eq!(inherited.get_program(), "/usr/local/bin/python3.13");
+        assert_eq!(ordinary.get_program(), "/usr/local/bin/python3");
         assert_eq!(
             inherited.get_args().collect::<Vec<_>>(),
             ordinary.get_args().collect::<Vec<_>>()
@@ -176,7 +177,9 @@ fn native_parent_confinement_preserves_metadata_spawn_and_owned_unlink() {
         let deadline = Instant::now() + Duration::from_secs(20);
         let engine = InstalledEngine::observe(Path::new(ENGINE), 0, deadline).unwrap();
         let mut endpoint = AdmissionEndpoint::bind(&root.join("admission.sock")).unwrap();
-        crate::openbsd::apply_account_admission_parent_confinement(&endpoint.path).unwrap();
+        assert!(engine.sealed.get().is_none());
+        engine.confine_parent(&endpoint).unwrap();
+        assert!(engine.sealed.get().is_some());
         endpoint.recheck().unwrap();
         engine.recheck(deadline).unwrap();
         // Only harmless fixture bytes are used for outside-access negatives.
@@ -262,6 +265,40 @@ fn fixed_python_alias_admits_only_exact_target_and_refuses_target_replacement() 
     fs::remove_file(parent_alias).unwrap();
     fs::remove_file(alias).unwrap();
     fs::remove_file(target).unwrap();
+    fs::remove_dir(root).unwrap();
+}
+
+#[test]
+fn bound_target_recheck_ignores_unused_alias_and_refuses_target_or_ancestor_drift() {
+    let root = listener_root();
+    let alias = root.join("python3");
+    let target = root.join("python3.13");
+    fs::write(&target, b"synthetic fixed target bytes\n").unwrap();
+    fs::set_permissions(&target, fs::Permissions::from_mode(0o700)).unwrap();
+    std::os::unix::fs::symlink("python3.13", &alias).unwrap();
+    let deadline = Instant::now() + Duration::from_secs(2);
+    let engine =
+        InstalledEngine::observe(&alias, crate::openbsd::effective_uid(), deadline).unwrap();
+    assert!(engine.sealed.get().is_none());
+    fs::remove_file(&alias).unwrap();
+    // No alias remains to readlink/canonicalize or accidentally dispatch.
+    assert!(InstalledEngine::observe(&alias, crate::openbsd::effective_uid(), deadline).is_err());
+    assert_eq!(engine.recheck(deadline), Ok(()));
+    std::thread::scope(|scope| {
+        let a = scope.spawn(|| engine.recheck(deadline));
+        let b = scope.spawn(|| engine.recheck(deadline));
+        assert_eq!(a.join().unwrap(), Ok(()));
+        assert_eq!(b.join().unwrap(), Ok(()));
+    });
+    fs::set_permissions(&root, fs::Permissions::from_mode(0o750)).unwrap();
+    assert_eq!(engine.recheck(deadline), Err(Error::Unavailable));
+    fs::set_permissions(&root, fs::Permissions::from_mode(0o700)).unwrap();
+    let replacement = root.join("replacement");
+    fs::write(&replacement, b"synthetic fixed target bytes\n").unwrap();
+    fs::set_permissions(&replacement, fs::Permissions::from_mode(0o700)).unwrap();
+    fs::rename(&replacement, &target).unwrap();
+    assert_eq!(engine.recheck(deadline), Err(Error::Unavailable));
+    fs::remove_file(&target).unwrap();
     fs::remove_dir(root).unwrap();
 }
 #[test]

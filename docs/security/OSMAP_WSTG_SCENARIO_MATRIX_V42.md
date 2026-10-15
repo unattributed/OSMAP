@@ -670,3 +670,47 @@ receipt-compaction-successor5/execution-custody/native-primary-attempt16;
 log SHA256681b079f9580f835137331ec30f302ea72ac48388e079eb108df290532d009d9.
 The separate admission-parent native case fails101 with retained scratch, and
 broker9 fails AUTH454 after ready topology. These are not full workflow passes.
+
+
+<!-- 2026-10-15 actual sealed-path and SMTP publication correction -->
+
+Actual same-policy public observer proves empty-permission ancestors deny
+pathname metadata with ENOENT, while exact target/retained-FD/hash prerequisites
+remain usable. Full protected ancestry checks now precede sealing; the parent
+requires a private token minted only after actual locked native policy success.
+The worker's typed state reaches sealed only after locked unveil and final
+pledge both succeed; partial failure stays terminal before password IO with
+owned cleanup. Kernel directory binding is not continuous owner/mode attestation.
+No directory-listing grant or metadata-only descriptor claim is introduced.
+Parent source reviewf5d84491 and worker reviewdcbb0051 are source scope only;
+matching original complete parent and finite composed worker native tests remain
+required. Runtime client/form/native activation remain disabled.
+
+Real singular-PID ps queries fix the unsupported comma-selector contract; the
+old fake's permissive semantics are retained as a discriminating failed control.
+Broker14 then measures Bob publication and Alice backend verification, followed
+by original TimeoutError at the final child fstat in the existing0.5s phase.
+Original-context scope518fdc1d records complete owned fixture cleanup and zero
+mail/provider. Preserve all metadata/TCP/birth/epoch fences and absolute budget;
+a changed execution schedule needs matching native proof. No credential-backed
+WSTG, release or complete password workflow acceptance is claimed.
+
+Actual matching final sealed-ancestry parent5 now passes the original complete
+outer native case on obsd1, with exact binary04b4/source custody, owned group
+gone, empty scratch and rootstage removed; no forced stop or stderr. Original
+case assertions cover real policy and denial/unlink boundaries. This supersedes
+only the parent's pending component status above; worker/factory/installed
+password/credential-backed WSTG remain unqualified and activation stays closed.
+
+Broker15 paired scheduling retains all seven current metadata observations and
+actually passes two native AUTH publications, exact idle termination and Bob
+isolation. Pending signed-control capture/cancel still FAILS Unconfirmed; its
+inner cause is unknown. Both daemon groups are gone and standard metadata
+preserved, while broker cleanup/private scratch/runtime remain unconfirmed.
+Independent scope511fd670 applies; no complete broker/factory acceptance,
+service enablement or credential-backed WSTG claim follows.
+
+The fixed managed native broker entry/rc has source audit294bd12b and two
+essential source controls. It establishes own PID=PGID=SID before native factory
+work, core0 and bounded startup, with restored signal handlers. Source flags
+remain closed; no managed service is installed/enabled or natively qualified.

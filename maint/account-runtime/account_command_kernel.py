@@ -254,3 +254,142 @@ class CommandKernelSeal:
         return subprocess.Popen((program,)+args,stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,stderr=subprocess.PIPE,shell=False,
             close_fds=True,start_new_session=False,env=environment,preexec_fn=guard)
+
+
+# Admission supervisor authority is separate from command-child profiles. Its
+# early pledge permits the unchanged primary preexec; the filesystem cannot lock
+# until that child has forked. No request supplies a path/promise/UID/callback.
+_ADMISSION_ROOT='/var/db/osmap-account/epoch'
+_ADMISSION_UID=0
+_ADMISSION_EARLY=b'stdio rpath wpath cpath flock unix proc exec prot_exec id getpw unveil'
+_ADMISSION_FINAL=b'stdio rpath wpath cpath flock proc'
+
+
+class AdmissionWorkerStartup:
+    def __init__(self):
+        raise Refused('admission worker startup unavailable')
+
+    @staticmethod
+    def _authority():
+        if (not sys.platform.startswith('openbsd') or os.getuid()!=0 or os.geteuid()!=0
+                or os.getcwd()!='/' or os.getpid()<=1 or os.getpid()!=os.getpgrp()):
+            raise Refused('admission worker authority unavailable')
+
+    @staticmethod
+    def _libc():
+        libc=ctypes.CDLL(None,use_errno=True)
+        for name in ('pledge','unveil'):
+            value=getattr(libc,name)
+            value.argtypes=(ctypes.c_char_p,ctypes.c_char_p);value.restype=ctypes.c_int
+        return libc
+
+    @classmethod
+    def native(cls):
+        # Runs before stdin read. No new clock/budget or filesystem grant.
+        cls._authority()
+        libc=cls._libc()
+        if libc.pledge(_ADMISSION_EARLY,None)!=0:
+            raise Refused('admission worker early pledge unavailable')
+        value=object.__new__(cls)
+        value._pid=os.getpid();value._lib=libc;value._bound=False
+        return value
+
+    def bind(self,account,store,budget,material=None):
+        from account_epoch import EpochStore
+        from account_native_material import NativeMaterial
+        from pathlib import Path
+        self._authority()
+        if (self._bound or self._pid!=os.getpid() or type(store)is not EpochStore
+                or store.root!=Path(_ADMISSION_ROOT) or store.uid!=_ADMISSION_UID
+                or (material is not None and type(material)is not NativeMaterial)):
+            raise Refused('admission worker binding unavailable')
+        self._bound=True
+        AdmissionWorkerSeal._original(budget)
+        value=object.__new__(AdmissionWorkerSeal)
+        value._account=Adapter._account(account);value._store=store
+        value._budget=budget;value._material=material;value._startup=self
+        value._receipt=budget._original_receipt;value._phase='bound'
+        value._directories=value._observe_directories()
+        value._paths=store._paths(value._account)
+        return value
+
+
+class AdmissionWorkerSeal:
+    def __init__(self):
+        raise Refused('admission worker seal unavailable')
+
+    @staticmethod
+    def _original(budget):
+        from operation_budget import _OriginalReceipt
+        receipt=getattr(budget,'_original_receipt',None)
+        if (type(budget)is not OperationBudget or type(receipt)is not _OriginalReceipt
+                or not budget.inherited_group()):
+            raise Refused('admission worker original budget unavailable')
+        budget.require_original(sent_millis=receipt.sent_millis,
+            deadline_millis=receipt.deadline_millis,expires_at=receipt.expires_at)
+
+    def _observe_directories(self):
+        import stat
+        from pathlib import Path
+        root=Path(_ADMISSION_ROOT);rows=[]
+        for path in reversed((root,)+tuple(root.parents)):
+            self._original(self._budget)
+            info=path.lstat()
+            if (not stat.S_ISDIR(info.st_mode) or info.st_uid!=_ADMISSION_UID
+                    or info.st_mode&0o022 or (path==root and info.st_mode&0o077)):
+                raise Refused('admission worker directory custody unavailable')
+            rows.append((str(path),(info.st_dev,info.st_ino,info.st_uid,info.st_gid,info.st_mode)))
+        return tuple(rows)
+
+    def _binding(self,account,material,budget):
+        # Exact object/budget/receipt authority, never a caller Boolean or hook.
+        from pathlib import Path
+        if (type(self._startup)is not AdmissionWorkerStartup
+                or self._startup._pid!=os.getpid() or os.getpgrp()!=os.getpid()
+                or account!=self._account or material is not self._material
+                or budget is not self._budget or budget._original_receipt is not self._receipt
+                or self._store.root!=Path(_ADMISSION_ROOT) or self._store.uid!=_ADMISSION_UID
+                or self._paths!=self._store._paths(account)):
+            raise Refused('admission worker seal binding unavailable')
+        self._original(budget)
+
+    def check(self,account,material,budget):
+        self._binding(account,material,budget)
+        if self._phase!='bound':raise Refused('admission worker seal already attempted')
+
+    def require_sealed(self,account,material,budget):
+        self._binding(account,material,budget)
+        if self._phase!='sealed':raise Refused('admission worker sealing incomplete')
+
+    def apply(self,account,material,budget,child=None):
+        self.check(account,material,budget)
+        # Authentication seals only after its actual owned primary child exists;
+        # admit seals without material/child, before taking the durable lock.
+        if self._material is None:
+            if child is not None:raise Refused('admission worker child unavailable')
+        elif (child is None or type(child.pid)is not int or child.pid<=1
+                or child.pid==os.getpid() or os.getpgid(child.pid)!=os.getpgrp()):
+            raise Refused('admission worker child unavailable')
+        if self._observe_directories()!=self._directories:
+            raise Refused('admission worker directory custody changed')
+        self._phase='sealing'  # Any partial native failure is terminal, never retried.
+        libc=self._startup._lib
+        for path,_identity in self._directories:
+            if libc.unveil(os.fsencode(path),b'')!=0:
+                raise Refused('admission worker ancestor veil unavailable')
+            self._original(budget)
+        lock,record=self._paths
+        for path,access in ((record,b'r'),(lock,b'rwc')):
+            if libc.unveil(os.fsencode(path),access)!=0:
+                raise Refused('admission worker epoch veil unavailable')
+            self._original(budget)
+        if libc.unveil(None,None)!=0:
+            raise Refused('admission worker filesystem closure unavailable')
+        if libc.pledge(_ADMISSION_FINAL,_ADMISSION_FINAL)!=0:
+            raise Refused('admission worker steady pledge unavailable')
+        # Locked unveil binds the prechecked directory inodes; hidden ancestor
+        # pathname stats are not permitted (actual parent observation ENOENT).
+        # This replaces repeated path metadata, not continuous owner/mode checks.
+        # Trusted administration preserves the preseal protected ancestry.
+        self._phase='sealed'
+        self.require_sealed(account,material,budget)

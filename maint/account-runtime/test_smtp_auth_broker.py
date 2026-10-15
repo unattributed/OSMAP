@@ -230,4 +230,57 @@ class TypedProfileTests(unittest.TestCase):
         self.assertIs(value.supervisor._registry,value.registry)
 
 
+
+class ManagedServiceEntryTests(unittest.TestCase):
+    def test_fixed_managed_entry_owns_startup_budget_stop_and_signal_restore(self):
+        from contextlib import ExitStack
+        from types import SimpleNamespace
+        identities={'group':1,'session':1};events=[];handlers={};previous=object();captured=[]
+        def own():identities.update(group=777,session=777);events.append('setsid')
+        def install(sig,handler):
+            events.append(('signal',sig));handlers[sig]=handler;return previous
+        class Service:
+            def serve(inner,stop):
+                events.append('serve');self.assertFalse(stop.is_set())
+                handlers[broker.signal.SIGTERM](broker.signal.SIGTERM,None)
+                self.assertTrue(stop.is_set());return 0
+        def factory(budget):
+            self.assertIs(type(budget),OperationBudget);self.assertTrue(budget.inherited_group())
+            self.assertLessEqual(budget.remaining(),broker.SERVICE_STARTUP_SECONDS)
+            captured.append(budget);events.append('factory');return Service()
+        with ExitStack()as stack:
+            for obj,name,value in ((broker.sys,'argv',['fixed-entry']), (broker.sys,'platform','openbsd7')):
+                stack.enter_context(patch.object(obj,name,value))
+            stack.enter_context(patch.object(broker.socket,'gethostname',return_value=AUTHORITY))
+            stack.enter_context(patch.object(broker.os,'getuid',return_value=0));stack.enter_context(patch.object(broker.os,'geteuid',return_value=0))
+            stack.enter_context(patch.object(broker.os,'getpid',return_value=777))
+            stack.enter_context(patch.object(broker.os,'getpgrp',side_effect=lambda:identities['group']))
+            stack.enter_context(patch.object(broker.os,'getsid',side_effect=lambda _pid:identities['session']))
+            stack.enter_context(patch.object(broker.os,'setsid',side_effect=own))
+            core=stack.enter_context(patch.object(broker.resource,'setrlimit'))
+            stack.enter_context(patch.object(broker.signal,'signal',side_effect=install))
+            native=stack.enter_context(patch.object(broker.AuthBroker,'native',side_effect=factory))
+            self.assertEqual(broker.main(),0);native.assert_called_once_with(captured[0])
+            core.assert_called_once_with(broker.resource.RLIMIT_CORE,(0,0))
+        self.assertLess(events.index('setsid'),events.index('factory'))
+        self.assertLess(events.index('factory'),events.index('serve'))
+        self.assertTrue(all(handlers[sig]is previous for sig in (broker.signal.SIGTERM,broker.signal.SIGINT)))
+
+    def test_closed_factory_and_extra_arguments_cannot_bind_or_read_operator_files(self):
+        from contextlib import ExitStack
+        with ExitStack()as stack:
+            stack.enter_context(patch.object(broker.sys,'argv',['fixed-entry']))
+            stack.enter_context(patch.object(broker.sys,'platform','openbsd7'))
+            stack.enter_context(patch.object(broker.socket,'gethostname',return_value=AUTHORITY))
+            for name in ('getuid','geteuid'):stack.enter_context(patch.object(broker.os,name,return_value=0))
+            for name in ('getpid','getpgrp','getsid'):stack.enter_context(patch.object(broker.os,name,return_value=777))
+            stack.enter_context(patch.object(broker.resource,'setrlimit'))
+            stack.enter_context(patch.object(broker.signal,'signal'))
+            stack.enter_context(patch.object(broker.PrivateSmtpBackend,'native',side_effect=AssertionError('closed endpoint accessed')))
+            stack.enter_context(patch.object(broker._Bootstrap,'native',side_effect=AssertionError('closed operator keys accessed')))
+            stack.enter_context(patch.object(broker.lifecycle,'NATIVE_AUTH_BROKER_QUALIFIED',False))
+            with self.assertRaises(Refused):broker.main()
+            with patch.object(broker.sys,'argv',['fixed-entry','caller-path']),patch.object(broker.AuthBroker,'native',side_effect=AssertionError('argument selected factory')):
+                with self.assertRaises(Refused):broker.main()
+
 if __name__=='__main__':unittest.main(verbosity=2)
