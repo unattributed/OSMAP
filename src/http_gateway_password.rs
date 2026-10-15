@@ -43,6 +43,36 @@ impl EpochPrimaryBackend for crate::account_admission_runtime::CredentialBackend
     }
 }
 impl RuntimeBrowserGateway {
+    pub(super) fn change_own_password_impl(
+        &self,
+        context: &AuthenticationContext,
+        session: &ValidatedSession,
+        token: &SessionToken,
+        request: Request<'_>,
+        deadline: std::time::Instant,
+    ) -> BrowserPasswordOutcome {
+        let prepared = self.prepare_password_change_before(context, session, request, deadline);
+        let decision = match prepared.authorization {
+            Err(error) => BrowserPasswordDecision::PrewriteRefused(error),
+            Ok(permit) => {
+                match self.with_password_change_completion(context, token, permit, deadline) {
+                    Ok(crate::session::BrowserRevocation::OldSessionsRevoked { .. }) => {
+                        BrowserPasswordDecision::Changed
+                    }
+                    Ok(crate::session::BrowserRevocation::KnownRefused) => {
+                        BrowserPasswordDecision::KnownRefused
+                    }
+                    Ok(crate::session::BrowserRevocation::Contained { .. }) | Err(_) => {
+                        BrowserPasswordDecision::Unconfirmed
+                    }
+                }
+            }
+        };
+        BrowserPasswordOutcome {
+            decision,
+            audit_events: prepared.audit_events,
+        }
+    }
     /// The trusted caller's eventual mutation RPC must run in this callback.
     /// Ordinary session validation/revocation may run only after it returns;
     /// reentering the held global session lock from the callback would deadlock.

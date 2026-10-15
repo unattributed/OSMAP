@@ -10094,7 +10094,7 @@ discriminator alongside the same binding production repair; no broader QA scope.
     "status": "PENDING",
     "reference": "Only minimal well-defined own-password usability after all agent-owned development/matching deployed QA/independent audit PASS. No operator password is changed by agent qualification; use controlled disposable Alice and preserve Bob/operator state. NOT RUN."
   },
-  "next_action": "Normally sign/sync the reviewed primary producer, execute its one reviewed controlled native qualification, and finish real password browser route/Runtime integration and actual native service/factory/containment authority for the installed controlled authoritative workflow. Runtime bd7a9e3 is signed/synchronized. Preserve matching source and independent QA scope; no flag activation shortcut or operator password mutation. S08-02 is accepted; separate S09/provider human results do not halt this work."
+  "next_action": "Normally sign/sync the reviewed browser password route/Runtime/form source, complete fresh exact retained-state cleanup and the narrow primary fixture repairs, then execute one new independently reviewed native action and finish actual SQL/material/broker/containment authority for the installed controlled authoritative workflow. Runtime bd7a9e3 and primary391d718 are signed/synchronized; transport1 and fixture2 FAILs remain retained, authentication unqualified. Preserve matching source and independent QA scope; no flag activation shortcut or operator password mutation. S08-02 is accepted; separate S09/provider human results do not halt this work."
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->
@@ -10271,3 +10271,71 @@ changed control passes1/0fail in0.001s, independent successor review3188f828 CLE
 All eight product/source pins remain unchanged. No test exemption, profile
 activation, assertion weakening or repeated18-case focused campaign; normal
 commit2 follows with this one admitted legacy-test update.
+
+## 2026-10-15 — signed primary source; actual browser password workflow wiring
+
+Primary `391d7182bf32e3f7ff8f3f85177f98dcf48b7024` normally commits/pushes with
+1727 Rust PASS/0fail/44 explicit native ignores and537 account Python PASS.
+Good Shopkeeper signature, fresh origin equality/clean0/0/all three branch heads
+and source-only clean Toronto FFbd7 to391 are established. Proofs live under
+primary-runtime-composition-20261015/canonical-integration. Retain failed gate1.
+
+One actual independently reviewed primary package executes once and FAILS in
+transport: SSH1/remoteRuntimeError5.017s, source parity PASS, no launcher PID/root
+exit/root stage record. Root dispatch, cleanup and exact failed guard/received
+bytes/EOF are NOT ESTABLISHED. Scope815c2330 preserves these limits. Identical
+native driver/guards remain unexecuted by established evidence; one changed
+bounded transport will add closed phase/byte/EOF diagnostics and deterministic
+compressed-size/hash plus original-size/hash checks, with original deadlines
+unchanged. No unchanged retry, guessed cleanup or native acceptance.
+
+Integrate browser14 source after independent whole-review0500dfe0 and corrected
+successor7e82bffc: original readinessed211aab/patch424c29dd preserved; successor
+readinessba016b9d/fullpatch307269ba/two-path delta3683f05f/manifesta7fac572.
+Actual BrowserGateway delegates to the same owned paired Runtime and existing
+fresh current-password/TOTP preparation/consumed continuous-session completion
+under one original60s deadline. POST requires validated session/account/source,
+CSRF and exact bounded fields; submitted secrets never enter rendered fields,
+new audit fields, URLs or storage. Preparation failures remain prewrite; any
+completion error/contained result is unconfirmed. Confirmed change or uncertainty
+clears the browser cookie and removes the submission form, without auto-retry.
+
+Four source-bound controls PASS from exact fresh=false/private-copy binary;
+one new Unicode discriminator PASS separately, with no repeated unchanged four.
+Independent review found HTMLmaxlength128 counted UTF-16 units and excluded
+valid128-emoji/512UTF8 values. New/confirmation limits256 cover the unchanged
+server128-scalar/512-byte policy;129-emoji is refused before dispatch and values
+are not echoed. Source/DOM projections are not installed browser observations.
+Existing static-script guard adds only exact local password script/hash and
+route CSP/connect-none; its three password negatives plus12 existing composer
+negatives pass, unknown-script/global CSP remain strict. Derived V10 files are
+refreshed by unchanged generators, checks PASS. Prior compile/private-helper and
+zero-test stale-binary qualification refusals remain retained, not product PASS.
+
+All complete S04-02 outcome stages remain PENDING: real authoritative material,
+SQL/hash/primary/control broker/SMTP+IMAP/cache/ingress and installed form must
+pass one controlled Alice workflow/Bob preservation. Native flags remain false;
+no deployment, operator password change, new human test or provider Send. The
+operator offered Duncan cycles; no action was requested before agent qualification.
+
+Actual changed primary transport2 passes exact compressed/original input checks
+and reaches the root/driver; fixture FAILs3/7 controls at exact_primary_argv.
+Independent failure scope111fa44b identifies the actual source chain: the global
+Popen interception catches daemon.running -> snapshot -> native_support.command
+ps before verifier construction. No primary authentication is qualified; zero
+successfully returned-command counters alone never establish zero child/AUTH.
+Actual selected zero-application-byte peer is kernel bindUID0, fsUID518/private
+GID1005. Driver reaped/group gone/no forced stop, daemon and selected socket gone;
+scratch/identity/root stage remain retained. Ordinary auth-client metadata is
+preserved. Read-only retained-state observation SSH0 validates the exact scratch
+lease, fixed inert UID/GID1005 and no matching processes; the only rejected member
+is root-owned single-link dovecot/run/dovecot.conf symlink to the fixed private
+config. No source bytes/config bodies/password material were read by that observer.
+
+Repair only the fixture interception scope and this exact no-follow symlink
+cleanup case; preserve other argv/symlink guards and original budgets. Because
+the old driver budget expired, a separate finite fresh root custodian must verify
+current leases/process absence/public records and use only native userdel/groupdel
+transactions preserving current unrelated rows. No old lease fabrication, snapshot
+restoration, historical PID signals or unchanged native retry. Actual cleanup and
+new primary authentication remain pending; keep both failures and prefix proofs.

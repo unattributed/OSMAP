@@ -54,7 +54,7 @@ if [ -n "$frontend_paths" ]; then
   exit 2
 fi
 
-js_paths="$(git ls-files --cached --others --exclude-standard | grep -E '\.(js|mjs|cjs|jsx|ts|tsx|wasm)$' | grep -Fvx -e 'src/http/compose_local.js' -e 'maint/ux/folder_rename_workflows.cjs' || true)"
+js_paths="$(git ls-files --cached --others --exclude-standard | grep -E '\.(js|mjs|cjs|jsx|ts|tsx|wasm)$' | grep -Fvx -e 'src/http/compose_local.js' -e 'src/http/password_local.js' -e 'maint/ux/folder_rename_workflows.cjs' || true)"
 if [ -n "$js_paths" ]; then
   echo "error: script artifacts outside the exact R2 composer allowance" >&2
   printf '%s\n' "$js_paths" >&2
@@ -126,12 +126,45 @@ for altered, policy in mutations:
         continue
     raise AssertionError("negative composer source control unexpectedly accepted")
 print(f"composer source/CSP negative controls passed: {len(mutations)}")
+
+# S04-02: exact local visibility-only script. No network, secret read or storage.
+password_script = Path("src/http/password_local.js").read_bytes()
+password_boundary = Path("src/http/routes_password.rs").read_text()
+def validate_password(script, boundary):
+    expected = "sha256-" + base64.b64encode(hashlib.sha256(script).digest()).decode()
+    assert re.search(r'const PASSWORD_SCRIPT_HASH: &str =\s*"([^"]+)";', boundary).group(1) == expected, "password script hash drift"
+    assert 'include_str!("password_local.js")' in boundary
+    assert 'script-src \'{}\'; script-src-attr \'none\'; connect-src \'none\'' in boundary, "password CSP drift"
+    assert boundary.count("connect-src") == 1, "extra password connection directive"
+    text = script.decode()
+    assert text.count('input.value = "";') == 1, "password wipe drift"
+    text = text.replace('input.value = "";', '')
+    for forbidden in [".value", "fetch", "XMLHttpRequest", "WebSocket", "sendBeacon", "localStorage", "sessionStorage", "indexedDB", "document.cookie", "innerHTML", "outerHTML", "insertAdjacentHTML", "document.write", "eval(", "Function(", "import", "Worker", "</script"]:
+        assert forbidden not in text, f"unexpected password script API: {forbidden}"
+    for forbidden in ["unsafe-eval", "strict-dynamic", "script-src 'self'", "script-src 'unsafe-inline'"]:
+        assert forbidden not in boundary, "broad password CSP"
+validate_password(password_script, password_boundary)
+for altered, policy in [
+    (password_script + b'\nfetch("/foreign");', password_boundary),
+    (password_script + b'\nconst secret = input.value;', password_boundary),
+    (password_script, password_boundary.replace("connect-src 'none'", "connect-src 'self'")),
+]:
+    digest = "sha256-" + base64.b64encode(hashlib.sha256(altered).digest()).decode()
+    policy = re.sub(r'(const PASSWORD_SCRIPT_HASH: &str =\s*")[^"]+(";)', lambda m: m[1] + digest + m[2], policy)
+    try:
+        validate_password(altered, policy)
+    except AssertionError:
+        continue
+    raise AssertionError("negative password source control unexpectedly accepted")
+print("password source/CSP negative controls passed: 3")
 allowed_callers = {"src/http/routes_compose.rs", "src/http/routes_draft.rs"}
 for path in Path("src").rglob("*.rs"):
     production = path.read_text().split("\n#[cfg(test)]", 1)[0]
     assert "folder_rename_workflows.cjs" not in production, f"browser test fixture referenced by runtime: {path}"
     if "compose_enhancement::response(" in production:
         assert str(path) in allowed_callers, f"scripted response escaped composer: {path}"
+    if 'include_str!("password_local.js")' in production or "PASSWORD_SCRIPT_HASH" in production:
+        assert str(path) == "src/http/routes_password.rs", f"password script escaped exact route: {path}"
 
 runtime_files = [Path("src/http_ui.rs"), Path("src/http_support.rs")]
 patterns = [

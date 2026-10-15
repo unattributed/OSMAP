@@ -74,3 +74,18 @@ DAC plus a separately measured kernel peer, then irreversible private IDs before
 locked confinement. Neither the listener nor identity is currently provisioned;
 PEER_BIND_UID remains None and the source profile registry remains empty. Local
 construction tests cannot authorize production authentication or activation.
+
+## Password browser entry (source-only)
+
+GET/POST `/settings/password` uses the same qualified paired capability as login,
+fresh step-up and stored-session completion. The browser derives availability
+from that capability and an epoch-bound authenticated session. It never accepts
+a caller-selected account, endpoint or writer. One original60s deadline spans
+validation/preparation/completion; a completion error is unconfirmed, clears the
+cookie and provides no repeat form. This does not establish server-side revocation
+on uncertainty. Missing native qualification keeps the form unavailable.
+
+The fixed visibility-only script has a page-specific exact hash CSP and no
+network/storage permission. Server128-scalar/512UTF8 policy is authoritative;
+HTML new/confirmation limits256 UTF-16 units so astral Unicode values fit.
+Password history remains Unknown until an authoritative event supplies it.

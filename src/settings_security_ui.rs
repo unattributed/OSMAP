@@ -59,6 +59,7 @@ pub(crate) fn render_security_page(
     decision: &BrowserSessionListDecision,
     keys: Option<&crate::key_management::State>,
     authentication: bool,
+    password_available: bool,
 ) -> TrustedHtml {
     let sessions = verified_security_sessions(account, decision);
     let count = sessions
@@ -77,12 +78,16 @@ pub(crate) fn render_security_page(
         };
         format!("<div class=\"security-control\"><div><strong>{title}</strong><p>{detail}</p></div>{control}</div>")
     };
-    let password = row(
-        "Password",
-        "Required at this sign-in; last change unknown",
-        "Change",
-        false,
-    );
+    let password = if password_available {
+        "<div class=\"security-control\"><div><strong>Password</strong><p>Required at this sign-in; last change unknown</p></div><a class=\"button-link secondary\" href=\"/settings/password\" aria-label=\"Change password\">Change</a></div>".to_string()
+    } else {
+        row(
+            "Password",
+            "Required at this sign-in; last change unknown",
+            "Change",
+            false,
+        )
+    };
     let totp = row(
         "TOTP two-factor",
         "Used at this sign-in; current enrollment unknown",
@@ -120,6 +125,14 @@ pub(crate) fn render_security_page(
             "<div class=\"security-two-cards security-overview-cards\"><section class=\"security-card\"><h2>Security Controls</h2>{keys}{totp}{password}{recovery}{active}</section><section class=\"security-card\"><h2>Recent Security Events</h2><p class=\"security-event-scope\">Sign-ins from retained sessions; other security event history unavailable.</p><ul class=\"security-events\">{events}</ul></section></div>",
             "<section class=\"security-card security-role\"><h3>Security page role</h3><p>These details describe this sign-in, retained sessions and reported public account keys. Manage keys opens account-bound key management; this overview does not establish private-key availability. Password and recovery changes remain unavailable here. <a href=\"/settings?section=privacy\">Review privacy and rendering protections</a>.</p></section>"), password=password, totp=totp, active=active, tiles=tiles, events=events, keys=key_control, recovery=row("Recovery contact", "Contact and verification status unknown", "Manage", false))
     };
+    let content = content.replace(
+        "Password and recovery changes remain unavailable here.",
+        if password_available {
+            "Change password opens your account-bound verification form. Recovery changes remain unavailable."
+        } else {
+            "Password and recovery changes remain unavailable here."
+        },
+    );
     let section = if authentication {
         "authentication"
     } else {
@@ -158,7 +171,7 @@ mod tests {
             sessions,
         };
         let valid = make(sessions.clone());
-        let html = render_security_page("alice", "synthetic", &valid, None, false)
+        let html = render_security_page("alice", "synthetic", &valid, None, false, false)
             .as_str()
             .to_owned();
         assert!(html.contains("256 active browser sessions"));
@@ -172,10 +185,16 @@ mod tests {
         duplicate[1].session_id = duplicate[0].session_id.clone();
         for invalid in [make(excess), make(duplicate)] {
             for authentication in [false, true] {
-                let html =
-                    render_security_page("alice", "synthetic", &invalid, None, authentication)
-                        .as_str()
-                        .to_owned();
+                let html = render_security_page(
+                    "alice",
+                    "synthetic",
+                    &invalid,
+                    None,
+                    authentication,
+                    false,
+                )
+                .as_str()
+                .to_owned();
                 assert!(html.contains("Active session count unknown"));
                 assert!(!html.contains("bounded-device"));
                 assert!(!html.contains("256 active browser sessions"));
@@ -209,7 +228,7 @@ mod tests {
             session_idle_timeout_seconds: 100,
             sessions: entries,
         };
-        let html = render_security_page("alice", "synthetic", &decision, None, false)
+        let html = render_security_page("alice", "synthetic", &decision, None, false, false)
             .as_str()
             .to_owned();
         assert!(html.contains("6 active browser sessions"));
@@ -226,7 +245,7 @@ mod tests {
                 public_reason: "private-error".into(),
             },
         ] {
-            let html = render_security_page("bob", "synthetic", &decision, None, false)
+            let html = render_security_page("bob", "synthetic", &decision, None, false, false)
                 .as_str()
                 .to_owned();
             assert!(html.contains("Active session count unknown"));

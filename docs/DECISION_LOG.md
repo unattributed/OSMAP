@@ -10068,3 +10068,39 @@ update only that test to retain actual empty-registry and malformed/incomplete/
 reordered/caller-extension refusal, canonical primary account requirement and
 prohibited caller-option TypeErrors. Source8 remains exact; changed control1PASS
 and independent3188f828 support normal commit2 without guard/profile changes.
+
+## 2026-10-15 — bounded browser password entry and native transport disposition
+
+Admit browser14 actual trait/Runtime/route/form wiring only after independent
+review0500dfe0 and successor7e82bffc. Correct the real Unicode mismatch in HTML
+limits while preserving server128 Unicode scalars/512UTF8 bytes. Reuse the four
+unchanged source controls and execute only the new boundary discriminator.
+The exact local visibility script gets hash-only page CSP/connect-none, no
+global script permission, networking or secret-value reads. Register both fixed
+GET/POST password routes in the existing WSTG attack-surface inventory.
+
+Preparation and completion cannot share a generic failure claim: only preparation
+refusal is known prewrite; completion errors are conservatively unconfirmed and
+clear the browser cookie without an automatic retry/submission form. Actual
+native availability remains derived from the paired capability and closed gates,
+not a UI Boolean. No source test or stub response establishes authoritative
+password-change success, deployed usability or last-change history.
+
+Preserve the first native-primary transport FAIL with exact5.017s/SSH1 and absent
+launcher/root records. Root dispatch/cleanup/cause remain unestablished. Choose
+one changed same-budget transport with closed counters and deterministic bounded
+compression, preserving original JSON/root/native bytes, rather than retrying
+unchanged or widening deadlines. No native profile or operator password action
+follows. Duncan's offered cycles are held for one minimal usability observation
+only after installed engineering QA and independent audit pass.
+
+Actual primary2 reaches its root fixture and exposes two fixture defects, not an
+authoritative password result: a global Popen hook intercepts the pre-verifier ps
+observer, and cleanup disallows Dovecot's one exact generated config symlink.
+Independent111fa44b plus bounded fresh metadata distinguish these causes from
+unknown transport1. Narrow the interception to the verifier call and admit only
+that fixed no-follow symlink with target/ownership/continuity checks. Preserve all
+other guards and budgets. Root/daemon/socket disposition is measured, but retained
+scratch/identity/stage require a NEW finite custodian with fresh exact authority,
+not revived expired fixture ownership or historical PID signals. Preserve current
+unrelated public records through native account transactions, never snapshot restore.

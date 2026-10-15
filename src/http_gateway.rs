@@ -1046,6 +1046,25 @@ impl BrowserGateway for RuntimeBrowserGateway {
         self.login_impl(context, username, password, totp_code)
     }
 
+    fn password_change_available(&self, session: &ValidatedSession) -> bool {
+        self.account_runtime.ready().is_some()
+            && session
+                .record
+                .account_epoch
+                .is_some_and(crate::account_admission::valid_epoch)
+    }
+
+    fn change_own_password(
+        &self,
+        context: &AuthenticationContext,
+        session: &ValidatedSession,
+        token: &SessionToken,
+        request: crate::password_change::Request<'_>,
+        deadline: std::time::Instant,
+    ) -> BrowserPasswordOutcome {
+        self.change_own_password_impl(context, session, token, request, deadline)
+    }
+
     fn validate_session(
         &self,
         context: &AuthenticationContext,

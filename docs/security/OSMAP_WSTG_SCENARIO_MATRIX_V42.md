@@ -568,3 +568,13 @@ and private identity, unknown-peer refusal and local synthetic auth/socket
 controls are covered. OpenBSD loader/UID-drop/kernel/selected-listener authority
 remain projected, profiles empty and native authentication NOT RUN. This source
 evidence is not authoritative password mutation, installed form or release proof.
+
+S04-02 browser source307269ba/successor7e82bffc registers GET/POST
+`/settings/password` with authenticated session/account/source, CSRF, strict
+five fields and one original deadline. Actual source controls cover pre-dispatch
+refusal, Runtime delegation, conservative post-dispatch uncertainty/cookie cleanup,
+no credential echo, exact script CSP and Unicode policy boundary. Four original
+controls plus one successor control pass; local DOM projection and three changed
+script-guard negatives remain source evidence only. Native/installed authoritative
+password change and full WSTG/release acceptance remain OPEN. Primary transport
+attempt1 FAIL is retained without claiming root dispatch or cleanup.

@@ -241,6 +241,9 @@ where
                 self.handle_folder_create(request, &context)
             }
             (HttpMethod::Get, "/settings") => self.handle_settings_page(request, &context),
+            (HttpMethod::Get | HttpMethod::Post, "/settings/password") => {
+                self.handle_password_change(request, &context)
+            }
             (HttpMethod::Get, "/settings/keys") => {
                 self.handle_key_management_page(request, &context)
             }

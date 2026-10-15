@@ -53,6 +53,34 @@ one controlled native qualification and the complete authoritative workflow
 remain required. Actual browser form/route wiring is proceeding under the same
 S04-02 work order, with no activation or new human request.
 
+Primary source `391d7182bf32e3f7ff8f3f85177f98dcf48b7024` is now normally
+signed/synchronized with fresh origin equality/clean0/0 and a clean source-only
+standard-mail fast-forward. Commit/push each1727 Rust PASS/zero failures/44 native
+ignores and537 account Python PASS. Its first native qualification failed in
+transport after5.017s with no recorded root launch; root dispatch/cleanup and the
+exact failed guard are not established. A changed bounded transport is being
+prepared; the failure is retained and no unchanged retry or wider deadline used.
+
+Reviewed browser source now connects `/settings/password` to the real paired
+Runtime preparation/completion. Strict fields, CSRF/session/account/source and
+one original60s deadline are retained; prewrite refusal and unconfirmed completion
+remain distinct, and changed/uncertain outcomes clear the session cookie without
+a repeat form. Fields never redisplay submitted secrets. Independent fixed local
+Show/Hide uses exact hash-only route CSP with no network/storage authority.
+Four source controls and one Unicode-boundary discriminator pass; review corrected
+HTML UTF-16 limits without weakening server128-scalar/512-byte policy. Native
+gates remain closed, installed workflow/browser interaction and actual password
+history remain unqualified; this is no S04-02 acceptance or operator action.
+
+Changed primary transport2 reaches the real fixture but fails before verifier
+construction: the fixture's global process interception rejects its own daemon
+observer. Three prefix controls pass, including actual selected kernel bindUID0
+versus filesystemUID518. Daemon/socket/driver group are gone; scratch, private
+identity and root stage are retained. A read-only bounded inventory confirms
+the cleanup refusal is the exact generated configuration symlink, with no matching
+processes. Narrow fixture repairs and a separate fresh cleanup custodian are
+in progress; no primary authentication or whole-workflow PASS is claimed.
+
 The installed folder/label application baseline is signed source
 `c4e318bf2602998885ea1b4aa9432ff0a572031b`, synchronized to
 `feat/ux-completion-20260929` after normal commit/push gates:1723 Rust passes,

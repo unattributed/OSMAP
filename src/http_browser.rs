@@ -17,6 +17,25 @@ pub enum BrowserSendRecoveryDecision {
 }
 
 pub trait BrowserGateway {
+    /// Derived from the paired qualified runtime; absence never enables a form.
+    fn password_change_available(&self, _session: &ValidatedSession) -> bool {
+        false
+    }
+    fn change_own_password(
+        &self,
+        _context: &AuthenticationContext,
+        _session: &ValidatedSession,
+        _token: &SessionToken,
+        _request: crate::password_change::Request<'_>,
+        _deadline: std::time::Instant,
+    ) -> BrowserPasswordOutcome {
+        BrowserPasswordOutcome {
+            decision: BrowserPasswordDecision::PrewriteRefused(
+                crate::password_change::Error::Unavailable,
+            ),
+            audit_events: Vec::new(),
+        }
+    }
     fn documents_quota_status(
         &self,
         _session: &ValidatedSession,
@@ -1009,6 +1028,19 @@ pub struct BrowserSendRequest<'a> {
     pub body_format: crate::compose_format::BodyFormat,
     pub attachments: &'a [UploadedAttachment],
     pub reply_thread: Option<&'a crate::reply_thread::ReplyThread>,
+}
+
+/// The result of a browser login attempt.
+pub struct BrowserPasswordOutcome {
+    pub decision: BrowserPasswordDecision,
+    pub audit_events: Vec<LogEvent>,
+}
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BrowserPasswordDecision {
+    PrewriteRefused(crate::password_change::Error),
+    KnownRefused,
+    Changed,
+    Unconfirmed,
 }
 
 /// The result of a browser login attempt.

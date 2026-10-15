@@ -60,6 +60,7 @@ mod routes_folder_delete;
 mod routes_folder_rename;
 mod routes_moves;
 mod routes_notifications;
+mod routes_password;
 #[path = "http/routes_people.rs"]
 mod routes_people;
 mod routes_reading_preferences;
@@ -837,13 +838,13 @@ pub use self::http_browser::{
     BrowserMessageFlagOutcome, BrowserMessageListDecision, BrowserMessageListOutcome,
     BrowserMessageMoveDecision, BrowserMessageMoveOutcome, BrowserMessageSearchDecision,
     BrowserMessageSearchOutcome, BrowserMessageViewDecision, BrowserMessageViewOutcome,
-    BrowserPublicInventoryOutcome, BrowserSendDecision, BrowserSendOutcome,
-    BrowserSendRecoveryDecision, BrowserSendRecoverySnapshot, BrowserSendRequest,
-    BrowserSessionDecision, BrowserSessionListDecision, BrowserSessionListOutcome,
-    BrowserSessionRevokeDecision, BrowserSessionRevokeOutcome, BrowserSessionRevokeScope,
-    BrowserSessionValidationOutcome, BrowserSettingsDecision, BrowserSettingsOutcome,
-    BrowserSettingsUpdateDecision, BrowserSettingsUpdateOutcome, BrowserVisibleSession,
-    BrowserVisibleSettings,
+    BrowserPasswordDecision, BrowserPasswordOutcome, BrowserPublicInventoryOutcome,
+    BrowserSendDecision, BrowserSendOutcome, BrowserSendRecoveryDecision,
+    BrowserSendRecoverySnapshot, BrowserSendRequest, BrowserSessionDecision,
+    BrowserSessionListDecision, BrowserSessionListOutcome, BrowserSessionRevokeDecision,
+    BrowserSessionRevokeOutcome, BrowserSessionRevokeScope, BrowserSessionValidationOutcome,
+    BrowserSettingsDecision, BrowserSettingsOutcome, BrowserSettingsUpdateDecision,
+    BrowserSettingsUpdateOutcome, BrowserVisibleSession, BrowserVisibleSettings,
 };
 pub use self::http_gateway::RuntimeBrowserGateway;
 pub use self::http_runtime::run_http_server;
@@ -893,6 +894,9 @@ mod tests {
     }
     mod security_settings_tests {
         include!("http/security_settings_tests.rs");
+    }
+    mod password_tests {
+        include!("http/password_tests.rs");
     }
     mod snooze_tests {
         include!("http/snooze_tests.rs");
@@ -1063,6 +1067,8 @@ mod tests {
 
     #[derive(Debug, Clone)]
     struct StubGateway {
+        password_result: Option<BrowserPasswordDecision>,
+        password_calls: Arc<Mutex<Vec<String>>>,
         created_folders: Arc<Mutex<BTreeMap<String, Vec<String>>>>,
         renamed_folders: Arc<Mutex<Vec<crate::folder_rename::RenameFolderRequest>>>,
         folder_recovery_outcome: Option<crate::folder_rename::RecoveryOutcome>,
@@ -1133,6 +1139,8 @@ mod tests {
     impl Default for StubGateway {
         fn default() -> Self {
             Self {
+                password_result: None,
+                password_calls: Default::default(),
                 created_folders: Arc::new(Mutex::new(BTreeMap::new())),
                 renamed_folders: Arc::new(Mutex::new(Vec::new())),
                 folder_recovery_outcome: None,
@@ -1261,6 +1269,37 @@ mod tests {
     }
 
     impl BrowserGateway for StubGateway {
+        fn password_change_available(&self, _session: &ValidatedSession) -> bool {
+            self.password_result.is_some()
+        }
+        fn change_own_password(
+            &self,
+            context: &AuthenticationContext,
+            session: &ValidatedSession,
+            token: &SessionToken,
+            _request: crate::password_change::Request<'_>,
+            deadline: std::time::Instant,
+        ) -> BrowserPasswordOutcome {
+            assert!(deadline > std::time::Instant::now());
+            assert!(deadline <= std::time::Instant::now() + std::time::Duration::from_secs(60));
+            assert_eq!(
+                token.as_str(),
+                "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            );
+            assert_eq!(context.remote_addr, "127.0.0.1");
+            self.password_calls
+                .lock()
+                .unwrap()
+                .push(session.record.canonical_username.clone());
+            BrowserPasswordOutcome {
+                decision: self
+                    .password_result
+                    .unwrap_or(BrowserPasswordDecision::PrewriteRefused(
+                        crate::password_change::Error::Unavailable,
+                    )),
+                audit_events: vec![],
+            }
+        }
         fn documents_quota_status(
             &self,
             session: &ValidatedSession,

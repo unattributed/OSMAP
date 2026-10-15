@@ -11,8 +11,11 @@ mod settings_identity_ui;
 pub(crate) use settings_identity_ui::{
     render_identity_page, render_identity_page_with_signature, IdentityPageModel,
 };
+#[path = "settings_password_ui.rs"]
+mod settings_password_ui;
 #[path = "settings_security_ui.rs"]
 mod settings_security_ui;
+pub(crate) use settings_password_ui::render_password_page;
 pub(crate) use settings_security_ui::render_security_page;
 #[path = "settings_privacy_ui.rs"]
 mod settings_privacy_ui;
