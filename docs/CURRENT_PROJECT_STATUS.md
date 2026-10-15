@@ -14,6 +14,24 @@ statement as provenance rather than current release posture.
 
 ## Current source posture
 
+### S08-02 private folder Move engineering, 2026-10-14
+
+Private leaf folders can be moved beneath another permitted private parent using
+the existing typed Rename/helper/completion mechanism. The request and helper
+grant bind both current parent identities; protected/system, cycle, stale and
+cross-account restrictions remain. One matching confined OpenBSD case passes
+populated Rename and Move with folder/message identity, exact content,
+Label/Snooze continuity, account isolation, uncertain-result recovery and current
+fixture cleanup. Installation and the operator's combined folder-lifecycle UAT
+remain pending. The earlier failed fixture's cleanup remains unconfirmed.
+
+Operator engineering request [#78](https://github.com/unattributed/OSMAP/issues/78)
+assigns the Documents-to-Folders navigation/page change, Inbox hierarchy, folder
+management and movement of complete emails including attachments to S08-02,
+before combined acceptance and affected S09 visual checks. These requested
+navigation changes are not yet installed. Existing bulk Labels are implemented;
+their current installed/human journey still needs qualification.
+
 ### Private key-agent recovery engineering, 2026-10-14
 
 The installed obsd1 account's expected binding, public encryption subkey and

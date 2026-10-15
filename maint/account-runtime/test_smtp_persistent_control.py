@@ -18,12 +18,21 @@ class PersistentTests(unittest.TestCase):
         while not predicate()and time.monotonic()<end:time.sleep(.005)
         self.assertTrue(predicate())
     def start(self):
+        ready=threading.Event();actual_listen=socket.socket.listen
+        def published(server,*args,**kwargs):
+            result=actual_listen(server,*args,**kwargs)
+            if server.getsockname()==str(self.path):ready.set()
+            return result
         def serve():
-            try:self.results.append(self.listener.serve(self.stop))
+            try:
+                with patch.object(socket.socket,'listen',published):
+                    self.results.append(self.listener.serve(self.stop))
             except Exception as error:self.results.append(error)
         self.thread=threading.Thread(target=serve);self.thread.start()
         self.addCleanup(self.stop.set);self.addCleanup(lambda:self.thread.join(2))
-        self.wait(lambda:self.path.exists()and(self.path.stat().st_mode&0o777)==0o600)
+        # bind/chmod publishes mode 600 before the kernel accepts connections.
+        # Observe the actual owned listen completion without an extra connection.
+        self.assertTrue(ready.wait(1),'owned listener publication incomplete')
         self.assertEqual(self.path.stat().st_mode&0o777,0o600)
         return self.path.stat().st_dev,self.path.stat().st_ino
     def connect(self,raw=None):
@@ -34,6 +43,29 @@ class PersistentTests(unittest.TestCase):
         self.thread.join(2);self.assertFalse(self.thread.is_alive())
     def bob_proof(self):
         return proof.derive_authorization(fixtures.guarded(fixtures.fixtures.BOB),fixtures.KEY,fixtures.SESSION_KEY,self.f.authority,1000000)
+    def test_start_waits_for_successful_listen_after_owned_mode_is_published(self):
+        actual_listen=socket.socket.listen;entered=threading.Event();release=threading.Event();done=threading.Event();failures=[]
+        def delayed_listen(server,*args,**kwargs):
+            if server.getsockname()==str(self.path):
+                entered.set()
+                if not release.wait(1):raise AssertionError('owned listen release incomplete')
+            return actual_listen(server,*args,**kwargs)
+        def starting():
+            try:self.start()
+            except BaseException as error:failures.append(error)
+            finally:done.set()
+        caller=threading.Thread(target=starting)
+        with patch.object(socket.socket,'listen',delayed_listen):
+            caller.start()
+            try:
+                self.assertTrue(entered.wait(1),'owned listener did not reach listen')
+                self.assertEqual(self.path.stat().st_mode&0o777,0o600)
+                self.assertFalse(done.wait(.02),'mode-only path was treated as listener readiness')
+            finally:
+                release.set();caller.join(2);self.stop.set()
+                if hasattr(self,'thread'):self.thread.join(2)
+            self.assertFalse(caller.is_alive());self.assertEqual(failures,[])
+        self.join();self.assertEqual(self.results,[0]);self.assertFalse(self.path.exists())
     def test_two_independent_signed_accounts_same_owned_inode_serial_real_channels(self):
         alice,af,au=self.f.fixture.channel();bob,bf,bu=self.f.fixture.channel(fixtures.fixtures.BOB,2)
         self.f.fixture.state();self.f.fixture.state(fixtures.fixtures.BOB)

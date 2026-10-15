@@ -872,6 +872,8 @@ fn canonical_grant_payload(request: &MailboxHelperRequest, grant: &MailboxHelper
             request.parent_guid().into(),
             request.leaf().into(),
             request.action_nonce().into(),
+            request.parent().into(),
+            request.source_parent_guid().into(),
         ]),
         MailboxHelperRequest::FolderCreate { request, .. } => fields.extend([
             request.account().into(),

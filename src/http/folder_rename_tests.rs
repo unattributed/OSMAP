@@ -57,6 +57,61 @@ impl Drop for Fixture {
     }
 }
 #[test]
+fn folder_move_review_confirm_and_current_parent_authority() {
+    let f = Fixture::new();
+    let settings = f.run("GET", "/settings?section=copies&folder=INBOX.Alpha", "", "FolderCreateValid", false);
+    assert_eq!(settings.response.status_code, 200);
+    assert!(body_text(&settings).contains("href=\"/settings/folders/move?source=INBOX.Alpha\">Move</a>"));
+    let csrf = &StubGateway::validated_session().record.csrf_token;
+    let source_guid = f.app.gateway.created_folder_guid("alice@example.com", "INBOX.Alpha").unwrap();
+    let target_guid = f.app.gateway.created_folder_guid("alice@example.com", "INBOX.Existing").unwrap();
+    let form = format!("csrf_token={csrf}&source=INBOX.Alpha&source_guid={source_guid}&source_parent_guid=1234567890abcdef1234567890abcdef&parent_guid={target_guid}&destination_parent=INBOX.Existing&action=review");
+    let apply = form.replace("action=review", "action=rename&confirm=rename");
+    let get = f.run("GET", "/settings/folders/move?source=INBOX.Alpha", "", "FolderCreateValid", false);
+    assert_eq!(get.response.status_code, 200);
+    assert!(body_text(&get).contains("Review move"));
+    assert!(body_text(&get).contains("value=\"INBOX.Existing\""));
+    let review = f.run("POST", "/settings/folders/move", &form, "FolderCreateValid", false);
+    assert_eq!(review.response.status_code, 200);
+    assert!(body_text(&review).contains("INBOX.Existing.Alpha"));
+    assert!(body_text(&review).contains("Confirm move folder"));
+    for (bad, agent, bob) in [
+        (apply.replace(csrf, "wrong"), "FolderCreateValid", false),
+        (apply.replace(&source_guid, &"c".repeat(32)), "FolderCreateValid", false),
+        (apply.replace("source_parent_guid=123", "source_parent_guid=bad123"), "FolderCreateValid", false),
+        (apply.replace(&format!("parent_guid={target_guid}"), &format!("parent_guid={}", "d".repeat(32))), "FolderCreateValid", false),
+        (apply.replace("destination_parent=INBOX.Existing", "destination_parent=INBOX.Sent"), "FolderCreateValid", false),
+        (apply.clone(), "FolderTreeWrongOwner", false),
+        (apply.clone(), "FolderCreateValid", true),
+        (apply.replace("&confirm=rename", ""), "FolderCreateValid", false),
+    ] {
+        assert!(f.run("POST", "/settings/folders/move", &bad, agent, bob).response.status_code >= 400);
+        assert!(f.app.gateway.renamed_folders.lock().unwrap().is_empty());
+    }
+    let result = f.run("POST", "/settings/folders/move", &apply, "FolderCreateValid", false);
+    assert_eq!(result.response.status_code, 303);
+    assert_eq!(f.app.gateway.created_folder_guid("alice@example.com", "INBOX.Existing.Alpha"), Some(source_guid));
+    assert!(f.app.gateway.created_folder_guid("alice@example.com", "INBOX.Alpha").is_none());
+    assert_eq!(f.app.gateway.renamed_folders.lock().unwrap().len(), 1);
+}
+
+#[test]
+fn folder_move_unknown_original_action_is_inspected_without_redispatch() {
+    let f = Fixture::new();
+    let csrf = &StubGateway::validated_session().record.csrf_token;
+    let source = f.app.gateway.created_folder_guid("alice@example.com", "INBOX.Alpha").unwrap();
+    let parent = f.app.gateway.created_folder_guid("alice@example.com", "INBOX.Existing").unwrap();
+    let apply = format!("csrf_token={csrf}&source=INBOX.Alpha&source_guid={source}&source_parent_guid=1234567890abcdef1234567890abcdef&parent_guid={parent}&destination_parent=INBOX.Existing&action=rename&confirm=rename");
+    let result = f.run("POST", "/settings/folders/move", &apply, "FolderCreateRenameUnknownCommitted", false);
+    assert_eq!(result.response.status_code, 503);
+    assert_eq!(f.app.gateway.renamed_folders.lock().unwrap().len(), 1);
+    assert_eq!(f.run("POST", "/settings/folders/move", &apply, "FolderCreateValid", false).response.status_code, 409);
+    let checked = f.run("POST", "/settings/folders/rename/check", &format!("csrf_token={csrf}&confirm=check"), "FolderCreateValid", false);
+    assert_eq!(checked.response.status_code, 303);
+    assert_eq!(f.app.gateway.renamed_folders.lock().unwrap().len(), 1);
+    assert!(f.app.gateway.pending_folder_rename(&StubGateway::validated_session()).unwrap().is_none());
+}
+#[test]
 fn folder_rename_route_review_confirmation_csrf_stale_unknown_and_continuity() {
     let f = Fixture::new();
     let form = f.form();

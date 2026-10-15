@@ -206,10 +206,13 @@ where
                 self.handle_folder_rename_check(request, &context)
             }
             (HttpMethod::Get, "/settings/folders/rename") => {
-                self.handle_folder_rename(request, &context)
+                self.handle_folder_rename(request, &context, false)
             }
             (HttpMethod::Post, "/settings/folders/rename") => {
-                self.handle_folder_rename(request, &context)
+                self.handle_folder_rename(request, &context, false)
+            }
+            (HttpMethod::Get | HttpMethod::Post, "/settings/folders/move") => {
+                self.handle_folder_rename(request, &context, true)
             }
             (HttpMethod::Get, "/settings/folders/create") => {
                 self.handle_folder_create(request, &context)

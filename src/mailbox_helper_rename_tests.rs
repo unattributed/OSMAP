@@ -136,6 +136,23 @@ fn folder_rename_signed_helper_peer_and_nonce() {
     fs::remove_dir_all(root).unwrap();
 }
 #[test]
+fn folder_move_grant_binds_destination_and_both_parent_identities() {
+    let value = crate::folder_rename::RenameFolderRequest::for_move("alice@fixture.test", "INBOX.Alpha", &"a".repeat(32), &"b".repeat(32), "INBOX.Target", &"d".repeat(32)).unwrap();
+    let mut request = MailboxHelperRequest::FolderRename { request: value.clone(), grant: MailboxHelperGrant::unsigned() };
+    issue_request_grant_with_nonce(&mut request, &test_helper_grant_key(), 100, value.action_nonce()).unwrap();
+    assert_eq!(parse_request(&encode_request(&request)).unwrap(), request);
+    verify_request_grant(&request, &test_helper_grant_key(), 101).unwrap();
+    for (name, replacement) in [("destination_parent", "INBOX.Other".to_owned()), ("source_parent_guid", "e".repeat(32)), ("parent_guid", "f".repeat(32))] {
+        let mut changed = request.clone();
+        if let MailboxHelperRequest::FolderRename { request, .. } = &mut changed {
+            let mut fields = serde_json::to_value(&*request).unwrap();
+            fields[name] = replacement.into();
+            *request = serde_json::from_value(fields).unwrap();
+        }
+        assert!(verify_request_grant(&changed, &test_helper_grant_key(), 101).is_err());
+    }
+}
+#[test]
 fn folder_rename_grant_exact_account_identity_action_and_closed_fields() {
     let value = crate::folder_rename::RenameFolderRequest::new(
         "alice@fixture.test",

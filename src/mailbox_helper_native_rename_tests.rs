@@ -12,7 +12,7 @@ const BOB: &str = "bob@osmap-rename.invalid";
 const CHILD: &str =
     "mailbox_helper::tests::native_rename_tests::isolated_openbsd_folder_rename_confined_worker";
 const WHOLE: Duration = Duration::from_secs(60);
-const MESSAGE: &[u8] = b"From: fixture@osmap-rename.invalid\r\nTo: alice@osmap-rename.invalid\r\nSubject: Owned rename fixture\r\nDate: Tue, 06 Oct 2026 00:00:00 +0000\r\nMessage-ID: <rename@osmap-rename.invalid>\r\nContent-Type: text/plain\r\n\r\nPopulated folder contents stay with its native identity.\r\n";
+const MESSAGE: &[u8] = b"From: fixture@osmap-rename.invalid\r\nTo: alice@osmap-rename.invalid\r\nSubject: Owned rename fixture\r\nDate: Tue, 06 Oct 2026 00:00:00 +0000\r\nMessage-ID: <rename@osmap-rename.invalid>\r\nMIME-Version: 1.0\r\nContent-Type: multipart/mixed; boundary=owned-move\r\n\r\n--owned-move\r\nContent-Type: text/plain\r\n\r\nPopulated folder contents stay with its native identity.\r\n--owned-move\r\nContent-Type: application/octet-stream\r\nContent-Disposition: attachment; filename=synthetic.bin\r\nContent-Transfer-Encoding: base64\r\n\r\nAAH/\r\n--owned-move--\r\n";
 
 fn numeric_id(flag: &str) -> u32 {
     assert!(matches!(flag, "-u" | "-g"));
@@ -80,7 +80,9 @@ impl CommandExecutor for ScopedExecutor {
         }
         if a.windows(2).any(|s| s == ["mailbox", "rename"]) {
             assert_eq!(a[pos + 1], ALICE);
-            assert_eq!(&a[pos + 2..], ["INBOX.Alpha", "INBOX.Beta"]);
+            assert!(matches!(&a[pos + 2..], [source, destination]
+                if (source == "INBOX.Alpha" && destination == "INBOX.Beta")
+                || (source == "INBOX.Beta" && destination == "INBOX.Target.Beta")));
             self.renames.fetch_add(1, Ordering::SeqCst);
         }
         let args = scoped_args(&self.config, a);
@@ -147,6 +149,7 @@ const CHILD_STAGES: &[&str] = &[
     "signed_rename",
     "rename_confirmation",
     "metadata_continuity",
+    "signed_move",
     "lost_refusal",
     "completion_query",
     "recovery_check",
@@ -610,7 +613,7 @@ fn isolated_openbsd_folder_rename_populated_and_recovery() {
             .unwrap();
     }
     for who in ["alice", "bob"] {
-        for folder in ["", ".INBOX.Alpha"] {
+        for folder in ["", ".INBOX.Alpha", ".INBOX.Target"] {
             for part in ["new", "cur", "tmp"] {
                 fs::create_dir_all(root.join(who).join("Maildir").join(folder).join(part)).unwrap();
             }
@@ -663,6 +666,7 @@ fn isolated_openbsd_folder_rename_populated_and_recovery() {
     for stage in [
         "populated_guid_bytes=PASS",
         "label_snooze=PASS",
+        "move_populated_guid_bytes_labels_snooze_bob=PASS",
         "lost_no_mutation=PASS",
         "authority_refusals=PASS",
         "confinement=PASS",
@@ -859,16 +863,54 @@ fn isolated_openbsd_folder_rename_confined_worker() {
     assert!(labels.load(BOB).unwrap().labels().is_empty());
     assert!(snooze.load(BOB, 1001).unwrap().markers().is_empty());
     println!("native_rename label_snooze=PASS");
+    // Reuse the same signed helper and populated private indexes for one real
+    // cross-parent Move; no copying, message rewrite or new native framework.
+    mark_child_stage("signed_move");
+    let target_parent = backend(false).mailbox_status(ALICE, "INBOX.Target").unwrap();
+    let move_request = RenameFolderRequest::for_move(ALICE, "INBOX.Beta", destination.guid(),
+        parent.guid(), "INBOX.Target", target_parent.guid()).unwrap();
+    let mut role = crate::folder_rename::settings_gate(&settings, ALICE).unwrap();
+    role.begin(&move_request).unwrap();
+    assert_eq!(super::rename_tests::rename_through_helper(&helper, backend(false), &move_request, lease.uid), Outcome::Renamed);
+    let moved_snapshot = backend(false).folder_metadata(ALICE).unwrap();
+    let moved = backend(false).mailbox_status(ALICE, "INBOX.Target.Beta").unwrap();
+    assert!(crate::folder_rename::confirmed_result(&move_request, &moved_snapshot, &moved, &target_parent));
+    assert_eq!(moved.guid(), source.guid());
+    assert_eq!(moved.messages(), 1);
+    let moved_rows = summaries(ALICE, "INBOX.Target.Beta");
+    assert!(move_summaries_preserved(
+        &new_rows,
+        &moved_rows,
+        "INBOX.Beta",
+        "INBOX.Target.Beta"
+    ));
+    assert_eq!(bodies(root, "alice", "INBOX.Target.Beta"), vec![MESSAGE.to_vec()]);
+    crate::folder_rename::reconcile_metadata(&settings, &move_request).unwrap();
+    role.confirm().unwrap();
+    drop(role);
+    let moved_identity = crate::labels::MessageIdentity::from_summary(ALICE, ALICE, "INBOX.Target.Beta", &moved_rows[0]).unwrap();
+    assert_eq!(labels.load(ALICE).unwrap().labels_for(&moved_identity).unwrap()[0].id(), id);
+    let moved_marker = snooze.load(ALICE, 1001).unwrap();
+    assert_eq!(moved_marker.markers()[0].identity().folder(), "INBOX.Target.Beta");
+    assert_eq!(moved_marker.markers()[0].identity().message_guid(), before[0].metadata.as_ref().unwrap().version.message_guid);
+    assert_eq!(moved_marker.markers()[0].identity().mailbox_guid(), source.guid());
+    assert_eq!(summaries(BOB, "INBOX.Alpha"), bob_before);
+    assert_eq!(bodies(root, "bob", "INBOX.Alpha"), vec![MESSAGE.to_vec()]);
+    assert!(labels.load(BOB).unwrap().labels().is_empty());
+    assert!(snooze.load(BOB, 1001).unwrap().markers().is_empty());
+    assert_eq!(count.load(Ordering::SeqCst), 2);
+    println!("native_rename move_populated_guid_bytes_labels_snooze_bob=PASS");
     // Missing private userdb is a settled no-dispatch refusal. Lose the genuine
     // signed response, then read the original action's durable witness using a
     // fresh signed grant and current normal native identity observations.
     mark_child_stage("lost_refusal");
-    let no_op = RenameFolderRequest::new(
+    let no_op = RenameFolderRequest::for_move(
         ALICE,
-        "INBOX.Beta",
-        destination.guid(),
+        "INBOX.Target.Beta",
+        moved.guid(),
+        target_parent.guid(),
+        "INBOX",
         parent.guid(),
-        "Gamma",
     )
     .unwrap();
     let mut role = crate::folder_rename::settings_gate(&settings, ALICE).unwrap();
@@ -901,11 +943,12 @@ fn isolated_openbsd_folder_rename_confined_worker() {
     assert_eq!(completion, Completion::NoMutation);
     mark_child_stage("recovery_check");
     let current = backend(false).folder_metadata(ALICE).unwrap();
-    let old = backend(false).mailbox_status(ALICE, "INBOX.Beta").unwrap();
+    let old = backend(false).mailbox_status(ALICE, "INBOX.Target.Beta").unwrap();
     let parent = backend(false).mailbox_status(ALICE, "INBOX").unwrap();
     assert!(crate::folder_rename::confirmed_unchanged(
         &no_op, &current, &old, &parent
     ));
+    no_op.validate_source_parent(&current, &backend(false).mailbox_status(ALICE, "INBOX.Target").unwrap()).unwrap();
     let mut role = crate::folder_rename::role_lease(&settings, ALICE).unwrap();
     assert_eq!(role.pending(), Some(&no_op));
     role.confirm().unwrap();
@@ -915,12 +958,12 @@ fn isolated_openbsd_folder_rename_confined_worker() {
         super::rename_tests::rename_through_helper(&helper, backend(false), &no_op, lease.uid),
         Outcome::Refused(crate::folder_create::Refusal::Unavailable)
     ));
-    assert_eq!(count.load(Ordering::SeqCst), 1);
+    assert_eq!(count.load(Ordering::SeqCst), 2);
     println!("native_rename lost_no_mutation=PASS");
     // Original nonce and caller peer remain mandatory; no mutation retry.
     mark_child_stage("authority_controls");
     let changed =
-        RenameFolderRequest::new(ALICE, "INBOX.Beta", old.guid(), parent.guid(), "Gamma").unwrap();
+        RenameFolderRequest::for_move(ALICE, "INBOX.Target.Beta", old.guid(), target_parent.guid(), "INBOX", parent.guid()).unwrap();
     assert_ne!(changed.action_nonce(), no_op.action_nonce());
     assert_eq!(
         super::rename_tests::with_rename_helper(&helper, backend(false), lease.uid, |client| {
@@ -938,14 +981,14 @@ fn isolated_openbsd_folder_rename_confined_worker() {
         Completion::Unconfirmed
     );
     let stale =
-        RenameFolderRequest::new(ALICE, "INBOX.Beta", &"c".repeat(32), parent.guid(), "Gamma")
+        RenameFolderRequest::for_move(ALICE, "INBOX.Target.Beta", &"c".repeat(32), target_parent.guid(), "INBOX", parent.guid())
             .unwrap();
     assert_eq!(
         super::rename_tests::rename_through_helper(&helper, backend(false), &stale, lease.uid),
         Outcome::Refused(crate::folder_create::Refusal::Stale)
     );
-    assert_eq!(count.load(Ordering::SeqCst), 1);
-    assert_eq!(bodies(root, "alice", "INBOX.Beta"), vec![MESSAGE.to_vec()]);
+    assert_eq!(count.load(Ordering::SeqCst), 2);
+    assert_eq!(bodies(root, "alice", "INBOX.Target.Beta"), vec![MESSAGE.to_vec()]);
     println!("native_rename authority_refusals=PASS");
     mark_child_stage("complete");
 }
@@ -1061,4 +1104,88 @@ fn native_rename_child_diagnostics_forward_actual_panic_without_private_payload(
         assert!(!text.contains("private-fixture-payload-never-exported"));
         assert!(!text.contains("/private/operator-path"));
     }
+}
+
+fn move_summaries_preserved(
+    before: &[MessageSummary],
+    after: &[MessageSummary],
+    source: &str,
+    destination: &str,
+) -> bool {
+    !before.is_empty()
+        && before.len() == after.len()
+        && before.iter().zip(after).all(|(old, new)| {
+            if old.mailbox_name != source || new.mailbox_name != destination {
+                return false;
+            }
+            let mut expected = old.clone();
+            expected.mailbox_name = destination.into();
+            *new == expected
+        })
+}
+
+#[test]
+fn native_move_summary_continuity_changes_only_exact_mailbox_name() {
+    let before = MessageSummary {
+        to: Some("alice@osmap-rename.invalid".into()),
+        metadata: Some(crate::message_metadata::MessageMetadata {
+            threading: None,
+            version: crate::message_metadata::MessageVersion::new(
+                "a".repeat(32),
+                "owned-message".into(),
+            )
+            .unwrap(),
+            attachment_count: Some(1),
+            attachments: Some(vec![crate::message_metadata::AttachmentSummary {
+                filename: Some("synthetic.bin".into()),
+                encoded_size_bytes: 8,
+            }]),
+            protection: crate::message_metadata::MessageProtection::Plain,
+            preview: Some("Owned text".into()),
+        }),
+        mailbox_name: "INBOX.Beta".into(),
+        uid: 7,
+        flags: vec!["\\Seen".into()],
+        date_received: "2026-10-14 13:00:00".into(),
+        size_virtual: 512,
+        subject: Some("Owned subject".into()),
+        from: Some("fixture@osmap-rename.invalid".into()),
+    };
+    let mut after = before.clone();
+    after.mailbox_name = "INBOX.Target.Beta".into();
+    assert_ne!(after, before); // The original native assertion rejects every real Move.
+    let preserved = |new: &MessageSummary| {
+        move_summaries_preserved(
+            std::slice::from_ref(&before),
+            std::slice::from_ref(new),
+            "INBOX.Beta",
+            "INBOX.Target.Beta",
+        )
+    };
+    assert!(preserved(&after));
+    assert!(!preserved(&before));
+    let mut changed = after.clone();
+    changed.metadata.as_mut().unwrap().version.message_guid.push('x');
+    assert!(!preserved(&changed));
+    let mut wrong_destination = after.clone();
+    wrong_destination.mailbox_name = "INBOX.Other.Beta".into();
+    assert!(!preserved(&wrong_destination));
+    assert!(!move_summaries_preserved(
+        &[],
+        &[],
+        "INBOX.Beta",
+        "INBOX.Target.Beta"
+    ));
+    assert!(!move_summaries_preserved(
+        std::slice::from_ref(&before),
+        &[],
+        "INBOX.Beta",
+        "INBOX.Target.Beta"
+    ));
+    assert!(!move_summaries_preserved(
+        std::slice::from_ref(&before),
+        std::slice::from_ref(&after),
+        "INBOX.Other",
+        "INBOX.Target.Beta"
+    ));
 }

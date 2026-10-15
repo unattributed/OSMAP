@@ -37,6 +37,15 @@ pub(crate) fn rename<E: CommandExecutor>(
     if let Err(e) = request.validate_before(&before, &source, &parent) {
         return Outcome::Refused(e);
     }
+    if request.is_move() {
+        let Ok(source_parent) = backend.mailbox_status(request.account(), request.source_parent())
+        else {
+            return Outcome::Refused(Refusal::Unavailable);
+        };
+        if let Err(e) = request.validate_source_parent(&before, &source_parent) {
+            return Outcome::Refused(e);
+        }
+    }
     if before
         .folder(request.account(), &request.destination())
         .is_ok()

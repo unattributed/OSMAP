@@ -1,6 +1,7 @@
 use super::*;
 use crate::auth::{CommandExecution, CommandExecutionError};
 use std::sync::Mutex;
+static BACKEND_CASES: Mutex<()> = Mutex::new(());
 struct Exec {
     mode: u8,
     writes: Mutex<usize>,
@@ -36,6 +37,16 @@ impl CommandExecutor for Exec {
                 "((\"\" \".\")) NIL NIL"
             };
             let mut rows = "* LIST (\\HasChildren) \".\" INBOX\r\n".to_owned();
+            if self.mode >= 20 {
+                rows.push_str(&format!(
+                    "* LIST ({}) \".\" INBOX.Target\r\n",
+                    if self.mode == 23 {
+                        "\\Sent"
+                    } else {
+                        "\\HasChildren"
+                    }
+                ));
+            }
             if *writes == 0 || self.mode == 8 {
                 let flags = if self.mode == 4 {
                     "\\Sent"
@@ -47,13 +58,20 @@ impl CommandExecutor for Exec {
             if self.mode == 3 {
                 rows.push_str("* LIST () \".\" INBOX.Alpha.Child\r\n");
             }
-            if *writes > 0 || self.mode == 5 {
+            if *writes > 0 || self.mode == 5 || self.mode == 24 {
                 let flags = if self.mode == 12 {
                     "\\UnknownRole"
                 } else {
                     "\\HasNoChildren"
                 };
-                rows.push_str(&format!("* LIST ({flags}) \".\" INBOX.Beta\r\n"));
+                rows.push_str(&format!(
+                    "* LIST ({flags}) \".\" {}\r\n",
+                    if self.mode >= 20 {
+                        "INBOX.Target.Alpha"
+                    } else {
+                        "INBOX.Beta"
+                    }
+                ));
             }
             format!("* PREAUTH ready\r\n* NAMESPACE {namespace}\r\nN1 OK done\r\n{rows}L1 OK done\r\n* BYE done\r\nZ1 OK done\r\n")
         } else if args.iter().any(|arg| arg == "rename") {
@@ -69,13 +87,17 @@ impl CommandExecutor for Exec {
                     "-u",
                     "alice@fixture.test",
                     "INBOX.Alpha",
-                    "INBOX.Beta"
+                    if self.mode >= 20 {
+                        "INBOX.Target.Alpha"
+                    } else {
+                        "INBOX.Beta"
+                    }
                 ]
             );
             assert!(input.is_empty());
             assert_eq!(limit, 4096);
             *writes += 1;
-            if self.mode == 6 {
+            if self.mode == 6 || self.mode == 25 {
                 return Err(CommandExecutionError {
                     reason: "injected timeout after dispatch".into(),
                 });
@@ -86,19 +108,25 @@ impl CommandExecutor for Exec {
             String::new()
         } else {
             let name = args.last().unwrap();
-            let guid = if name == "INBOX" {
-                if self.mode == 10 || (*writes > 0 && self.mode == 13) {
+            let guid = if name == "INBOX.Target" {
+                if self.mode == 22 {
+                    "c"
+                } else {
+                    "d"
+                }
+            } else if name == "INBOX" {
+                if self.mode == 10 || self.mode == 21 || (*writes > 0 && self.mode == 13) {
                     "c"
                 } else {
                     "b"
                 }
-            } else if self.mode == 1 || (*writes > 0 && self.mode == 7) {
+            } else if self.mode == 1 || (*writes > 0 && matches!(self.mode, 7 | 26)) {
                 "c"
             } else {
                 "a"
             }
             .repeat(32);
-            let count = if self.mode == 2 {
+            let count = if self.mode == 2 || self.mode >= 20 {
                 1
             } else if self.mode == 15 && *writes > 0 {
                 7
@@ -114,8 +142,94 @@ impl CommandExecutor for Exec {
         })
     }
 }
+
+#[test]
+fn folder_move_pins_both_parents_preserves_leaf_and_refuses_before_dispatch() {
+    let _case = BACKEND_CASES.lock().unwrap();
+    let request = RenameFolderRequest::for_move(
+        "alice@fixture.test",
+        "INBOX.Alpha",
+        &"a".repeat(32),
+        &"b".repeat(32),
+        "INBOX.Target",
+        &"d".repeat(32),
+    )
+    .unwrap();
+    assert_eq!(request.destination(), "INBOX.Target.Alpha");
+    assert_eq!(request.source_parent(), "INBOX");
+    assert_eq!(request.source_parent_guid(), "b".repeat(32));
+    let mut altered = serde_json::to_value(&request).unwrap();
+    altered["leaf"] = "Sent".into();
+    assert_eq!(
+        serde_json::from_value::<RenameFolderRequest>(altered)
+            .unwrap()
+            .validate(),
+        Err(Refusal::Invalid)
+    );
+    for (mode, expected, writes) in [
+        (20, Outcome::Renamed, 1),
+        (21, Outcome::Refused(Refusal::Stale), 0),
+        (22, Outcome::Refused(Refusal::Stale), 0),
+        (23, Outcome::Refused(Refusal::Invalid), 0),
+        (24, Outcome::Conflict, 0),
+        (25, Outcome::Unknown, 1),
+        (26, Outcome::Unknown, 1),
+    ] {
+        let executor = Exec {
+            mode,
+            writes: Mutex::new(0),
+        };
+        assert_eq!(
+            rename(
+                &executor,
+                Path::new("/fixed/doveadm"),
+                Some(Path::new("/private/userdb")),
+                &request
+            ),
+            expected,
+            "mode{mode}"
+        );
+        assert_eq!(*executor.writes.lock().unwrap(), writes, "mode{mode}");
+    }
+    for parent in [
+        "INBOX",
+        "INBOX.Alpha",
+        "INBOX.Alpha.Child",
+        "INBOX.Sent",
+        "INBOX.Trash.Child",
+        "Shared.Other",
+        "Public.Other",
+    ] {
+        assert!(
+            RenameFolderRequest::for_move(
+                "alice@fixture.test",
+                "INBOX.Alpha",
+                &"a".repeat(32),
+                &"b".repeat(32),
+                parent,
+                &"d".repeat(32)
+            )
+            .is_err(),
+            "{parent}"
+        );
+    }
+    let old = RenameFolderRequest::new(
+        "alice@fixture.test",
+        "INBOX.Alpha",
+        &"a".repeat(32),
+        &"b".repeat(32),
+        "Beta",
+    )
+    .unwrap();
+    let wire = serde_json::to_value(&old).unwrap();
+    assert!(wire.get("destination_parent").is_none() && wire.get("source_parent_guid").is_none());
+    let reloaded: RenameFolderRequest = serde_json::from_value(wire).unwrap();
+    assert_eq!(reloaded, old);
+    reloaded.validate().unwrap();
+}
 #[test]
 fn folder_rename_backend_confirmed_and_refusal_boundaries() {
+    let _case = BACKEND_CASES.lock().unwrap();
     let request = RenameFolderRequest::new(
         "alice@fixture.test",
         "INBOX.Alpha",

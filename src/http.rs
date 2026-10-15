@@ -2819,6 +2819,20 @@ mod tests {
             if !crate::folder_rename::confirmed_unchanged(&request, &snapshot, &source, &parent) {
                 return CheckOutcome::Unconfirmed;
             }
+            if request.is_move() {
+                let Some(source_parent) = self
+                    .mailbox_status(context, session, request.source_parent())
+                    .status
+                else {
+                    return CheckOutcome::Unconfirmed;
+                };
+                if request
+                    .validate_source_parent(&snapshot, &source_parent)
+                    .is_err()
+                {
+                    return CheckOutcome::Unconfirmed;
+                }
+            }
             if lease.confirm().is_err() {
                 return CheckOutcome::Unavailable;
             }
@@ -2845,6 +2859,17 @@ mod tests {
             };
             if let Err(e) = rename.validate_before(&snapshot, &source, &parent) {
                 return Outcome::Refused(e);
+            }
+            if rename.is_move() {
+                let Some(source_parent) = self
+                    .mailbox_status(context, session, rename.source_parent())
+                    .status
+                else {
+                    return Outcome::Refused(Refusal::Unavailable);
+                };
+                if let Err(e) = rename.validate_source_parent(&snapshot, &source_parent) {
+                    return Outcome::Refused(e);
+                }
             }
             let Some(store) = &self.settings_store else {
                 return Outcome::Refused(Refusal::Unavailable);

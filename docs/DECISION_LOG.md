@@ -1,5 +1,37 @@
 # Decision Log
 
+## 2026-10-14 — complete S08-02 folder workflows and record Folders navigation
+
+The operator requests sprint movement and explicitly directs replacing the
+sidebar Documents destination with Folders. Its associated page must browse
+Inbox subfolders and manage the user's folders. The operator confirms moving
+"files" means complete emails including attachments. GitHub engineering issue78
+records this scope, account/identity/content safeguards and order: existing
+Move/safe-Delete backend, functional navigation/management page, one installed
+composed journey and human S08-02 acceptance, then affected S09 checks.
+The original frozen R2 files and visual reference remain preserved; this
+outside-frozen change record captures the operator's new direction without
+silently rewriting prior requirements. A label-only placeholder is not delivery.
+Rollback of a future navigation change restores the previous links; it must not
+delete or relocate mail/documents. Any non-empty folder disposition remains
+explicit, preserving and reversible rather than an implicit expunge.
+
+The independently qualified leaf Move reuses the existing Rename grant,
+completion and recovery paths, binding source and destination parents. Current
+native evidence covers identity/content/private metadata and confinement;
+installation/human outcomes remain separate. Source assessment initially missed
+the existing selected-label route and atomic CAS workflow; its implementation is
+preserved without duplicate code or tests. Only installed/human qualification
+remains for that existing workflow.
+
+The initial normal push of agent repair7c23455 failed an existing persistent
+listener test with ECONNREFUSED. A controlled RED demonstrates that the test's
+mode600-path readiness can precede kernel listen. Its one-file repair waits for
+the actual exact-owned listen return, preserving the one-second budget and all
+production behavior; focused GREEN10 passes. The original push's exact scheduling
+was not instrumented and is not retrospectively diagnosed. Normal gates remain
+mandatory for the superseding signed commit/push.
+
 ## 2026-09-15 — Isolate default build caches between worktrees
 
 The operator supplied VSCodium Git logs showing local pre-push failures in

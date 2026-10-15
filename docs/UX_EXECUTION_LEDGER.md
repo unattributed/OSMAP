@@ -8356,3 +8356,34 @@ its cause was not established and must not be described as proof of password
 protection or a cold credential cache. No further unlock request is required.
 Proceed through normal signed commit/push gates; detached signing success alone
 does not establish a completed commit, synchronization or installation.
+
+Agent repair committed7c2345525e37a8986b4719429ae18bcf3454c5a5 with verified
+Shopkeeper signature and normal commit security-check PASS. Its normal push
+failed the existing persistent two-account listener test with ECONNREFUSED111;
+the signed commit remains local pending a superseding normal push. The retained
+push-attempt1.log is not discarded or bypassed. A one-file test-only readiness
+repair70906136 has controlled oldRED1/newfocusedGREEN10 and independent CLEAR:
+mode600 before listen is insufficient, so readiness observes successful actual
+owned listen within the original one-second bound. Production behavior and
+deadlines are unchanged; original failed scheduling remains unmeasured.
+
+Root admitted the thirteen exact Move source paths plus compact native test
+06005e35 and the independently reviewed readiness repair. No additional focused
+test campaign was run; the matching native Move and local readiness results
+remain the discriminating evidence, followed by required normal gates. Matching
+installation, combined hierarchy/lifecycle and operator acceptance remain OPEN.
+
+The operator's 2026-10-14 engineering direction is captured in GitHubissue78:
+Documents becomes Folders, its real page browses Inbox subfolders and manages
+created/current user folders, and moving files explicitly means complete emails
+with attachments. This maps to existing S08-02 folder/hierarchy ownership,
+before its composed installed/human acceptance and affected S09 checks. Frozen
+R2 files remain unchanged; the new direction is recorded outside them. No
+navigation/code deployment or standalone uploaded-file feature is claimed.
+
+The earlier assessment of absent bulk Labels was incomplete: actual selected
+GUID checkbox/review/apply routes and LabelChange::Selection already implement
+bounded authenticated account-private atomic CAS assignment/removal. Retained
+Edge/Firefox results are historical synthetic evidence, not current installed
+UAT. Assessment9598bc5d/SOURCEb8eb2e15 confirms unchanged source; zero duplicate
+implementation or tests. The existing work order was corrected accordingly.

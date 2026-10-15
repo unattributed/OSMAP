@@ -1,5 +1,15 @@
 # OSMAP WSTG v4.2 Scenario Matrix
 
+S08-02 private leaf Move source/native increment, 2026-10-14: exact helper grant
+binds current source/destination parent identities and existing account/current
+role/session/request authority. Matching native-attempt2 binaryd1b9c73b passes
+populated Move GUID/full-summary/exact-body/Label/Snooze continuity, Bob isolation,
+lost-result/no-redispatch reconciliation, protected/stale/authority refusals and
+actual confinement/current-fixture cleanup. Earlier failed-fixture cleanup
+remains unknown. This is bounded disposable native evidence, not installed
+operator UAT, recursive-folder or full WSTG/sprint qualification. New Folders
+navigation engineering request78 retains the same account-bound backend checks.
+
 This document summarizes `maint/wstg-testing-pack/wstg-scenario-matrix.v42.json`.
 
 The matrix is a due-diligence control, not a test result. A scenario is not complete until it has either executed evidence or a documented not-applicable proof.

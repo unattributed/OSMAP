@@ -1,4 +1,4 @@
-//! Explicitly reviewed same-parent folder rename, with fresh authority on confirmation.
+//! Explicitly reviewed private leaf rename or move, with fresh authority on confirmation.
 use super::*;
 use crate::logging::EventCategory;
 use crate::{
@@ -11,9 +11,11 @@ impl<G: BrowserGateway> BrowserApp<G> {
         context: &AuthenticationContext,
         session: &ValidatedSession,
         source: &str,
+        destination_parent: &str,
         audit: &mut Vec<LogEvent>,
     ) -> Option<(
         crate::folder_metadata::FolderSnapshot,
+        crate::mailbox_status::MailboxStatus,
         crate::mailbox_status::MailboxStatus,
         crate::mailbox_status::MailboxStatus,
     )> {
@@ -25,14 +27,24 @@ impl<G: BrowserGateway> BrowserApp<G> {
         let metadata = self.gateway.folder_metadata(context, session);
         let source_status = self.gateway.mailbox_status(context, session, source);
         let parent_status = self.gateway.mailbox_status(context, session, parent);
+        let destination_status = if destination_parent.is_empty() || destination_parent == parent {
+            parent_status.clone()
+        } else {
+            self.gateway
+                .mailbox_status(context, session, destination_parent)
+        };
         audit.extend(metadata.audit_events);
         audit.extend(source_status.audit_events);
         audit.extend(parent_status.audit_events);
+        if !destination_parent.is_empty() && destination_parent != parent {
+            audit.extend(destination_status.audit_events);
+        }
         audit.push(self.release_request_budget(guard, "folder_rename_preflight", context, session));
         if [
             &metadata.canonical_username,
             &source_status.canonical_username,
             &parent_status.canonical_username,
+            &destination_status.canonical_username,
         ]
         .iter()
         .any(|name| *name != &session.record.canonical_username)
@@ -43,12 +55,14 @@ impl<G: BrowserGateway> BrowserApp<G> {
             metadata.snapshot?,
             source_status.status?,
             parent_status.status?,
+            destination_status.status?,
         ))
     }
     pub(super) fn handle_folder_rename(
         &self,
         request: &HttpRequest,
         context: &AuthenticationContext,
+        moving: bool,
     ) -> HandledHttpResponse {
         let (session, mut audit) = match self.require_validated_session(request, context) {
             Ok(v) => v,
@@ -68,7 +82,7 @@ impl<G: BrowserGateway> BrowserApp<G> {
             {
                 None
             } else {
-                parse_urlencoded_form(&request.body, 8, 4096).ok()
+                parse_urlencoded_form(&request.body, 10, 4096).ok()
             }
         } else {
             Some(request.query_params.clone())
@@ -86,7 +100,14 @@ impl<G: BrowserGateway> BrowserApp<G> {
             }
         }
         let source = get("source");
-        let leaf = get("leaf");
+        let leaf = if moving {
+            source.rsplit_once('.').map_or("", |v| v.1)
+        } else {
+            get("leaf")
+        };
+        let destination_parent = get("destination_parent");
+        let mut source_parent_guid = get("source_parent_guid").to_owned();
+        let mut parents = Vec::new();
         let mut source_guid = get("source_guid").to_owned();
         let mut parent_guid = get("parent_guid").to_owned();
         let mut code = 200;
@@ -94,16 +115,17 @@ impl<G: BrowserGateway> BrowserApp<G> {
         let mut notice = None;
         let allowed = fields.keys().all(|key| {
             if post {
-                matches!(
-                    key.as_str(),
-                    "csrf_token"
-                        | "source"
-                        | "source_guid"
-                        | "parent_guid"
-                        | "leaf"
-                        | "action"
-                        | "confirm"
-                )
+                (moving && matches!(key.as_str(), "destination_parent" | "source_parent_guid"))
+                    || matches!(
+                        key.as_str(),
+                        "csrf_token"
+                            | "source"
+                            | "source_guid"
+                            | "parent_guid"
+                            | "leaf"
+                            | "action"
+                            | "confirm"
+                    )
             } else {
                 key == "source"
             }
@@ -113,20 +135,54 @@ impl<G: BrowserGateway> BrowserApp<G> {
             || leaf.len() > 255
             || source_guid.len() > 64
             || parent_guid.len() > 64
+            || source_parent_guid.len() > 64
+            || destination_parent.len() > 255
             || (post && !matches!(get("action"), "review" | "rename"))
         {
             code = 400;
             stage = "refused";
             notice = Some("Invalid rename request. Reload Copies & Folders.");
-        } else if let Some((snapshot, status, parent)) =
-            self.rename_preflight(context, &session, source, &mut audit)
+        } else if let Some((snapshot, status, source_parent, parent)) =
+            self.rename_preflight(context, &session, source, destination_parent, &mut audit)
         {
             if !post {
                 source_guid = status.guid().into();
                 parent_guid = parent.guid().into();
+                source_parent_guid = source_parent.guid().into();
+            }
+            if moving && post && get("action") == "review" {
+                parent_guid = parent.guid().into();
             }
             let names =
                 crate::folder_rename::protected_destinations(&self.gateway, context, &session);
+            if moving {
+                parents = snapshot
+                    .folders()
+                    .iter()
+                    .filter(|folder| {
+                        let name = folder.name();
+                        name != source.rsplit_once('.').map_or("", |v| v.0)
+                            && name != source
+                            && !name.starts_with(&format!("{source}."))
+                            && (name == "INBOX" || !crate::folder_rename::protected_name(name))
+                            && folder.delimiter() == Some('.')
+                            && folder.special_use().is_empty()
+                            && !folder.has_flag("\\Noselect")
+                            && !folder.has_flag("\\NonExistent")
+                            && !folder.has_flag("\\Noinferiors")
+                            && crate::folder_create::validate_private_namespace(&snapshot, name)
+                                .is_ok()
+                            && names.as_ref().is_ok_and(|names| {
+                                !crate::folder_rename::role_conflict(
+                                    names,
+                                    source,
+                                    &format!("{name}.{leaf}"),
+                                )
+                            })
+                    })
+                    .map(|folder| folder.name().to_owned())
+                    .collect();
+            }
             if names.is_err() {
                 code = 503;
                 stage = "refused";
@@ -146,15 +202,29 @@ impl<G: BrowserGateway> BrowserApp<G> {
                 stage = "refused";
                 notice = Some("Only private user folders without subfolders can be renamed. System folders and saved mail destinations are protected. Reload before trying again.");
             } else if post {
-                let rename = RenameFolderRequest::new(
-                    &session.record.canonical_username,
-                    source,
-                    &source_guid,
-                    &parent_guid,
-                    leaf,
-                )
+                let rename = if moving {
+                    RenameFolderRequest::for_move(
+                        &session.record.canonical_username,
+                        source,
+                        &source_guid,
+                        &source_parent_guid,
+                        destination_parent,
+                        &parent_guid,
+                    )
+                } else {
+                    RenameFolderRequest::new(
+                        &session.record.canonical_username,
+                        source,
+                        &source_guid,
+                        &parent_guid,
+                        leaf,
+                    )
+                }
                 .and_then(|r| {
                     r.validate_before(&snapshot, &status, &parent)?;
+                    if moving {
+                        r.validate_source_parent(&snapshot, &source_parent)?;
+                    }
                     if crate::folder_rename::role_conflict(
                         names.as_ref().map_err(|_| Refusal::Unavailable)?,
                         r.source(),
@@ -251,6 +321,13 @@ impl<G: BrowserGateway> BrowserApp<G> {
             stage = "refused";
             notice = Some("Current folder ownership and status could not be verified. Reload Copies & Folders.");
         }
+        let notice = notice.map(|text| {
+            if moving {
+                text.replace("Rename", "Move").replace("rename", "move")
+            } else {
+                text.to_owned()
+            }
+        });
         HandledHttpResponse {
             response: html_response(
                 code,
@@ -263,7 +340,11 @@ impl<G: BrowserGateway> BrowserApp<G> {
                 } else {
                     "Service Unavailable"
                 },
-                "Rename folder",
+                if moving {
+                    "Move folder"
+                } else {
+                    "Rename folder"
+                },
                 crate::http_ui::render_folder_rename(crate::http_ui::RenamePageModel {
                     account: &session.record.canonical_username,
                     csrf: &session.record.csrf_token,
@@ -272,7 +353,11 @@ impl<G: BrowserGateway> BrowserApp<G> {
                     parent_guid: &parent_guid,
                     leaf,
                     stage,
-                    notice,
+                    notice: notice.as_deref(),
+                    moving,
+                    destination_parent,
+                    source_parent_guid: &source_parent_guid,
+                    parents: &parents,
                 }),
             ),
             audit_events: audit,

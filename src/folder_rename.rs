@@ -1,4 +1,4 @@
-//! Confirmed same-parent rename of a private user folder.
+//! Confirmed rename or leaf move of a private user folder.
 use crate::{
     folder_create::Refusal, folder_metadata::FolderSnapshot, mailbox_status::MailboxStatus,
 };
@@ -21,6 +21,10 @@ pub struct RenameFolderRequest {
     parent_guid: String,
     leaf: String,
     action_nonce: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    destination_parent: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    source_parent_guid: Option<String>,
 }
 impl RenameFolderRequest {
     pub fn new(
@@ -49,7 +53,65 @@ impl RenameFolderRequest {
             parent_guid: parent_guid.into(),
             leaf: leaf.into(),
             action_nonce: crate::draft::generate_draft_id().map_err(|_| Refusal::Unavailable)?,
+            destination_parent: None,
+            source_parent_guid: None,
         })
+    }
+    pub fn for_move(
+        account: &str,
+        source: &str,
+        source_guid: &str,
+        source_parent_guid: &str,
+        destination_parent: &str,
+        destination_parent_guid: &str,
+    ) -> Result<Self, Refusal> {
+        let (source_parent, leaf) = source.rsplit_once('.').ok_or(Refusal::Invalid)?;
+        // Reuse the source/name checks without manufacturing a same-name rename.
+        crate::folder_create::CreateFolderRequest::new(
+            account,
+            source_parent,
+            source_parent_guid,
+            leaf,
+        )?;
+        let target = crate::folder_create::CreateFolderRequest::new(
+            account,
+            destination_parent,
+            destination_parent_guid,
+            leaf,
+        )?;
+        MailboxStatus::new(source, source_guid, 0, 0).map_err(|_| Refusal::Invalid)?;
+        if protected_name(source)
+            || protected_name(&target.child())
+            || destination_parent == source_parent
+            || destination_parent == source
+            || destination_parent.starts_with(&format!("{source}."))
+            || source_guid == source_parent_guid
+            || source_guid == destination_parent_guid
+            || source_parent_guid == destination_parent_guid
+        {
+            return Err(Refusal::Invalid);
+        }
+        Ok(Self {
+            account: account.into(),
+            source: source.into(),
+            source_guid: source_guid.into(),
+            parent_guid: destination_parent_guid.into(),
+            leaf: leaf.into(),
+            action_nonce: crate::draft::generate_draft_id().map_err(|_| Refusal::Unavailable)?,
+            destination_parent: Some(destination_parent.into()),
+            source_parent_guid: Some(source_parent_guid.into()),
+        })
+    }
+    pub fn is_move(&self) -> bool {
+        self.destination_parent.is_some()
+    }
+    pub fn source_parent(&self) -> &str {
+        self.source.rsplit_once('.').map_or("", |v| v.0)
+    }
+    pub fn source_parent_guid(&self) -> &str {
+        self.source_parent_guid
+            .as_deref()
+            .unwrap_or(&self.parent_guid)
     }
     pub fn account(&self) -> &str {
         &self.account
@@ -67,7 +129,9 @@ impl RenameFolderRequest {
         &self.leaf
     }
     pub fn parent(&self) -> &str {
-        self.source.rsplit_once('.').map_or("", |v| v.0)
+        self.destination_parent
+            .as_deref()
+            .unwrap_or_else(|| self.source_parent())
     }
     pub fn destination(&self) -> String {
         format!("{}.{}", self.parent(), self.leaf)
@@ -84,6 +148,23 @@ impl RenameFolderRequest {
         {
             return Err(Refusal::Invalid);
         }
+        if let Some(parent) = &self.destination_parent {
+            if self.source.rsplit_once('.').map(|v| v.1) != Some(self.leaf.as_str()) {
+                return Err(Refusal::Invalid);
+            }
+            return Self::for_move(
+                &self.account,
+                &self.source,
+                &self.source_guid,
+                self.source_parent_guid.as_deref().ok_or(Refusal::Invalid)?,
+                parent,
+                &self.parent_guid,
+            )
+            .map(|_| ());
+        }
+        if self.source_parent_guid.is_some() {
+            return Err(Refusal::Invalid);
+        }
         Self::new(
             &self.account,
             &self.source,
@@ -93,14 +174,31 @@ impl RenameFolderRequest {
         )
         .map(|_| ())
     }
-    pub fn validate_before(
+    pub fn validate_source_parent(
         &self,
         snapshot: &FolderSnapshot,
-        source: &MailboxStatus,
+        status: &MailboxStatus,
+    ) -> Result<(), Refusal> {
+        match crate::folder_create::validate_creation_parent(
+            self.account(),
+            self.source_parent(),
+            snapshot,
+            status,
+        ) {
+            Ok(()) | Err(Refusal::Capacity) => (),
+            Err(e) => return Err(e),
+        }
+        if status.guid() != self.source_parent_guid() {
+            return Err(Refusal::Stale);
+        }
+        Ok(())
+    }
+    fn validate_destination_parent(
+        &self,
+        snapshot: &FolderSnapshot,
         parent: &MailboxStatus,
     ) -> Result<(), Refusal> {
         self.validate()?;
-        validate_source(self.account(), self.source(), snapshot, source)?;
         let create = crate::folder_create::CreateFolderRequest::new(
             self.account(),
             self.parent(),
@@ -111,6 +209,42 @@ impl RenameFolderRequest {
             Ok(()) | Err(Refusal::Capacity) => (),
             Err(e) => return Err(e),
         }
+        if self.is_move()
+            && snapshot
+                .folders()
+                .iter()
+                .filter(|folder| {
+                    folder.name() == self.parent()
+                        || self.parent().starts_with(&format!("{}.", folder.name()))
+                })
+                .any(|folder| {
+                    !folder.special_use().is_empty()
+                        || folder.flags().iter().any(|flag| {
+                            ![
+                                "\\HasChildren",
+                                "\\HasNoChildren",
+                                "\\Subscribed",
+                                "\\Marked",
+                                "\\Unmarked",
+                            ]
+                            .iter()
+                            .any(|allowed| flag.eq_ignore_ascii_case(allowed))
+                        })
+                })
+        {
+            return Err(Refusal::Invalid);
+        }
+        Ok(())
+    }
+    pub fn validate_before(
+        &self,
+        snapshot: &FolderSnapshot,
+        source: &MailboxStatus,
+        parent: &MailboxStatus,
+    ) -> Result<(), Refusal> {
+        self.validate()?;
+        validate_source(self.account(), self.source(), snapshot, source)?;
+        self.validate_destination_parent(snapshot, parent)?;
         if source.guid() != self.source_guid() || parent.guid() != self.parent_guid() {
             return Err(Refusal::Stale);
         }
@@ -280,14 +414,9 @@ pub(crate) fn confirmed_result(
     destination: &MailboxStatus,
     parent: &MailboxStatus,
 ) -> bool {
-    let parent_authority = crate::folder_create::CreateFolderRequest::new(
-        request.account(),
-        request.parent(),
-        request.parent_guid(),
-        request.leaf(),
-    )
-    .and_then(|r| r.validate_parent(snapshot, parent));
-    matches!(parent_authority, Ok(()) | Err(Refusal::Capacity))
+    request
+        .validate_destination_parent(snapshot, parent)
+        .is_ok()
         && snapshot
             .folder(request.account(), request.source())
             .is_err()

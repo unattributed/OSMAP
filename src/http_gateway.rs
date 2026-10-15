@@ -1393,6 +1393,21 @@ impl BrowserGateway for RuntimeBrowserGateway {
         if !crate::folder_rename::confirmed_unchanged(&request, &snapshot, &source, &parent) {
             return CheckOutcome::Unconfirmed;
         }
+        if request.is_move() {
+            let Ok(source_parent) = crate::mailbox::MailboxBackend::mailbox_status(
+                &backend,
+                request.account(),
+                request.source_parent(),
+            ) else {
+                return CheckOutcome::Unconfirmed;
+            };
+            if request
+                .validate_source_parent(&snapshot, &source_parent)
+                .is_err()
+            {
+                return CheckOutcome::Unconfirmed;
+            }
+        }
         if lease.confirm().is_err() {
             return CheckOutcome::Unavailable;
         }
