@@ -10138,3 +10138,67 @@ the failed gate. Add only the exact public observed cache node with its checksum
 the two tests independently retain old-node provenance and current-node equality,
 all original graph/ancestry/permission assertions. Do not overwrite old evidence,
 skip these tests or loosen production admission to make the gate pass.
+
+## 2026-10-15 — measured SQL pipe ioctl and real broker composition
+
+Read-only retained current SQL trace now identifies fd0 TIOCGWINSZ as the actual
+MariaDB tty-promise denial, with no new SQL dispatch. Installed ABI headers and
+the [exact11.4.12 client source](https://github.com/MariaDB/server/blob/mariadb-11.4.12/client/mysql.cc)
+support a narrowly scoped SQL-only compatibility
+repair. Preserve pipe-only standard descriptors, close-fds, exact executable,
+private config/socket and locked unveil with no /dev/tty access. Non-SQL roles
+must reject tty; actual source/native negative evidence must precede activation.
+Preserve original guard mask63 and27 controls, adding separate compatibility
+proof instead of replacing them. The decoder must handle only the kernel's
+specific sysctl appended-MIB format, never arbitrary trailing trace bytes.
+
+The typed native peer inspector belongs to one AUTH operation budget. Do not
+reuse a startup-budget instance in a long-lived shared registry or renew expired
+authority with a foreign budget. Capture immutable startup custody, prepare one
+typed per-channel inspector under the exact original budget, and preserve it
+through publication. Published registered channels remain owned until exact EOF,
+stop or mutation cutoff; successful publication is not permission to discard
+the registry needed for subsequent credential containment. Native purpose-private
+backend identity and complete ingress remain separately required.
+
+## 2026-10-15 — SQL tty promise is bounded compatibility, not a single-ioctl sandbox
+
+Accept independently reviewed d76d2878 SQL-only tty compatibility source for
+the measured MariaDB stdin TIOCGWINSZ failure. The promise has a broader surface:
+terminal ioctls, revoke with rpath, and hidden libc /dev/tty open bypassing unveil,
+as documented by [OpenBSD pledge(2)](https://man.openbsd.org/pledge.2).
+Do not claim ordinary unveil ENOENT proves hidden-open denial. Keep the exact
+fresh-session/no-controlling-terminal custody, pipe-only standard descriptors,
+closed unrelated FDs and fixed graph; qualify actual session/driver equality.
+No terminal-device grant, new client, credential probe or hash/primary permission
+expansion follows. Original native controls and proof remain mandatory.
+
+Primary5 establishes first original stdin EPIPE32/zero bytes followed by source
+kill/reap, not the child's pre-kill terminal cause. Perform source reassessment
+of fixed Doveadm startup requirements; neither generic diagnostics nor guessing
+TTY/loader behavior qualifies the actual password workflow.
+
+Admit the reviewed shared SMTP broker and actual acceptor as disabled source,
+not activation. Native routing and topology qualification flags independently
+gate construction before private reads. The dedicated backend's kernel peer
+remains None until that exact listener is observed; ordinary auth0/0 is not its
+authority. One immutable startup custody record prepares exact per-AUTH original
+budgets, with fresh peer/process/TCP recheck and a shared persistent channel
+registry. Actual control listen/same-inode readiness is an internal barrier,
+not an external opt-in. Preserve unknown control-stop outcomes. A born fixture
+can qualify bounded native mechanics, but overriding its private master cannot
+qualify the actual fixed standard-master factory or complete ingress.
+
+## 2026-10-15 — primary startup needs fixed existing null opens
+
+Pinned Dovecot2.3.21.1 lib_init and default debug sink require write and
+O_CREAT|APPEND opens on existing /dev/null. Admit reviewed product2/null profile
+42926377/audit257c0c0c: only this fixed leafrwc and wpath/cpath, with no new paths,
+directory permissions, tty or argv. Private saved/real/effective IDs and empty
+groups must precede use, with unchanged root-owned /dev and exact character
+device custody. The c grant is a real leaf mutation capability at unveil level;
+root-directory DAC under the private identity is required to deny replacement.
+Never test by unlinking, renaming or creating the actual device. The qualifier
+opens only the existing lease, writes nothing, preserves original mask7 and
+adds distinct nullmask3/device514 proof. This source-required compatibility gap
+does not retrospectively diagnose primary5 or establish native authentication.

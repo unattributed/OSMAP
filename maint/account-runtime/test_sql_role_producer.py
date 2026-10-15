@@ -49,7 +49,7 @@ class SqlRoleTests(unittest.TestCase):
   keys=('device','inode','uid','gid','mode','links','bytes','mtime_ns','ctime_ns')
   for name,metadata,digest,ancestry in pins.FILES:
    node=nodes[name];self.assertEqual(metadata,tuple(node['metadata'][key] for key in keys));self.assertEqual(digest,node['sha256']);self.assertEqual(ancestry,tuple(tuple(v) for v in node['ancestry']))
-  rows=q.SqlInstalledGraph.rows(self.material);self.assertEqual(len(rows),17);self.assertEqual([r for r in rows if b'w'in r[1]],[(str(self.material._endpoint.path),b'w')]);self.assertFalse(any(b'c'in access for _,access in rows));self.assertEqual(rows[-1],('/dev/null',b'r'));self.assertEqual(q.PROMISES,b'stdio rpath unix prot_exec exec')
+  rows=q.SqlInstalledGraph.rows(self.material);self.assertEqual(len(rows),17);self.assertEqual([r for r in rows if b'w'in r[1]],[(str(self.material._endpoint.path),b'w')]);self.assertFalse(any(b'c'in access for _,access in rows));self.assertEqual(rows[-1],('/dev/null',b'r'));self.assertEqual(q.PROMISES,b'stdio rpath unix prot_exec exec tty')
   self.assertFalse(any(name in ('/usr/lib','/usr/local/lib','/etc/passwd','/etc/group','/etc/pwd.db','/etc/ssl/openssl.cnf') for name,_ in rows))
  def test_actual_full_public_file_read_tail_mutation_nonblocking_FD_refusal(self):
   helper=graph_fixture.GraphTests();helper.setUp();self.addCleanup(helper.doCleanups);helper.b=self.b;helper.end=self.end;p=helper.file(raw=b'A'*8192+b'last');row=helper.row(p)

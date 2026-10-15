@@ -589,3 +589,27 @@ Actual fresh retained cleanup PASS6ab7 is separate from primary3 authentication
 FAILc692 and SQL metadata FAIL696f9bab. Their original failures, uncertainty and
 retained root/namespaces remain recorded. No full workflow, installed browser,
 credential-backed WSTG or release acceptance is inferred.
+
+S04-02 SQL-only tty compatibility source readiness1454a317/auditd76d2878 has
+actual focused RED1/three passes. Fixed command, private material, original
+budgets, graph and no native activation are unchanged. tty's broader ioctl/revoke
+and hidden libc /dev/tty surface is explicitly acknowledged; ordinary unveil
+denial is not universal terminal denial. Native born-session/pipe custody,
+original27 controls/mask63 and separate compatibility/session proof remain
+required. Primary5 logcf864687 measures first-input EPIPE32/zero bytes after
+one confined child, with no pre-kill terminal diagnosis. No installed workflow,
+operator password change, credential-backed WSTG or release claim follows.
+
+SMTP peer/per-channel/broker/acceptor source CLEAR3226a617 and mandatory native
+gate successor CLEARcdcdd797 retain fixed identity/custody, original per-AUTH
+budget, register-before-forward, shared epoch publication and exact stop/EOF
+ownership. Their focused synthetic controls do not qualify installed backend
+peer/chroot access, native framing/timing/confinement, complete ingress or actual
+password containment. All activation flags stay false and dedicated peer None.
+
+Primary fixed-null source42926377/audit257c0c0c has focused RED1/three passes.
+Tagged startup requires O_WRONLY and O_CREAT|APPEND opens; only fixed existing
+nullrwc and wpath/cpath are added. Leaf mutation risk is bounded by irreversible
+private IDs/empty groups and root-directory DAC, not dismissed by the c grant.
+Native original7/mask7 and separate nullmask3/device514/strict40 proof remain
+required. No actual null mutation, primary5 retrodiagnosis or installed claim.

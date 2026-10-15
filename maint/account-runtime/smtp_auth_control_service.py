@@ -173,6 +173,9 @@ class GuardedControlSupervisor:
 
     @classmethod
     def native(cls,*_args):
+        # Only the fixed broker factory may compose the shared registry.
+        # Direct construction would otherwise create an independent registry
+        # and miss channels held by authentication publication.
         raise Refused('native SMTP control service composition unavailable')
 
     def _frame(self,stream,end):
@@ -248,7 +251,16 @@ class PrivateControlListener:
         self.path=path;self.owner=owner;self._supervisor=supervisor;self._serving=threading.Lock()
 
     @classmethod
-    def native(cls,*_args):raise Refused('native SMTP control listener unavailable')
+    def native(cls,supervisor=None):
+        import sys
+        from account_mutation_supervisor import AUTHORITY
+        if (not NATIVE_CONTROL_SERVICE_QUALIFIED or os.geteuid()!=0
+                or not sys.platform.startswith('openbsd')or socket.gethostname()!=AUTHORITY
+                or type(supervisor)is not GuardedControlSupervisor
+                or supervisor._journal.root!=REPLAY_ROOT or supervisor._journal.uid!=0
+                or supervisor._routing.root!=ROUTING_ROOT or supervisor._routing.owner!=0):
+            raise Refused('native SMTP control listener unavailable')
+        return cls(SOCKET,0,supervisor)
 
     def recheck(self):
         if not callable(getattr(self,'_current_recheck',None)):
@@ -258,20 +270,20 @@ class PrivateControlListener:
     def one(self):
         return self._run(None)
 
-    def serve(self,stop):
+    def serve(self,stop,*,_ready=None):
         # The local bootstrap owns this event. It stops future admission only;
         # an accepted operation retains its original authenticated budget.
-        if type(stop)is not threading.Event:
+        if type(stop)is not threading.Event or (_ready is not None and type(_ready)is not threading.Event):
             raise Refused('SMTP control service stop unavailable')
-        return self._run(stop)
+        return self._run(stop,_ready)
 
-    def _run(self,stop):
+    def _run(self,stop,ready=None):
         if not self._serving.acquire(blocking=False):
             raise Refused('SMTP control listener already serving')
-        try:return self._owned_run(stop)
+        try:return self._owned_run(stop,ready)
         finally:self._serving.release()
 
-    def _owned_run(self,stop):
+    def _owned_run(self,stop,ready=None):
         parent=_directory(self.path.parent,self.owner);server=socket.socket(socket.AF_UNIX,socket.SOCK_STREAM)
         inode=None
         def directory_identity(info):return info.st_dev,info.st_ino,info.st_uid,info.st_gid,info.st_mode
@@ -289,6 +301,9 @@ class PrivateControlListener:
             server.bind(str(self.path));info=self.path.lstat();inode=(info.st_dev,info.st_ino)
             os.chmod(self.path,0o600);recheck();server.listen(1)
             server.settimeout(1 if stop is None else .1)
+            # Broker-owned startup barrier is published only AFTER the actual
+            # owned listen succeeds and current socket custody is rechecked.
+            if ready is not None:recheck();ready.set()
             completed=0
             while True:
                 recheck()

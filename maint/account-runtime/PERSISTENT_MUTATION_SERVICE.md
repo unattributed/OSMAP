@@ -106,3 +106,34 @@ cache. Only that leaf's content, size and timestamps changed in the read-only
 comparison; all28 other public objects and ancestry matched. This refresh keeps
 the same paths, permissions and custody checks, and does not explain the cache's
 change origin or qualify the earlier failed SQL/primary command outcomes.
+
+MariaDB11.4.12 unconditionally probes stdin window size even in batch mode.
+The fixed SQL graph therefore admits tty; hash and primary do not inherit it.
+This promise also permits broader tty ioctls, revoke with rpath and hidden libc
+/dev/tty access that unveil cannot block. SQL retains pipe-only standard FDs,
+close-fds, exact private config/socket and a fresh inherited session without a
+controlling terminal; no terminal-device path is added. Native qualification
+must bind actual child session/PGID/PPID to its born driver and retain all
+original controls/proofs. The compatibility source does not enable a profile,
+service, form or complete password workflow.
+
+`smtp_auth_broker.py` supplies the disabled concrete dedicated-backend handler
+and front acceptor. `smtp_native_peer.py` derives fixed standard-master process,
+birth, executable and complete TCP ownership, then prepares a fresh inspector
+under each AUTH's original3s budget. The single shared control/epoch registry
+registers before credential forwarding and retains successful channels for
+later password cutoff. Front listen follows an internal actual-control-listen
+barrier; stop/EOF closes only owned channels/endpoints, retaining uncertainty.
+Dedicated backend `/var/dovecot/osmap-account-smtp/auth.sock` and front
+`/var/spool/postfix/osmap-account-smtp/auth.sock` are fixed source contracts,
+not assumed provisioned paths. Backend kernel peer is None; routing/topology/
+control/broker gates remain closed until matching native qualification.
+
+The separate primary graph now permits only the existing null leafrwc with
+wpath/cpath, required by Doveadm's mandatory initialization/default debug sink.
+Primary retains its fixed private identity drop, exact null/device-parent lease,
+root-/dev DAC and locked graph. No recursive directory, tty or new path is added.
+Unveil c intrinsically includes leaf mutation, so the private identity/DAC are
+mandatory; qualification never removes/renames/creates the actual device or
+writes it. Original primary proof/cases and a distinct existing-null proof remain
+required before native admission. This source increment does not enable services.

@@ -119,11 +119,22 @@ class OwnedSmtpPeerAuthority:
         if _kernel_peer(client) != self._postfix or _kernel_peer(upstream) != self._backend:
             raise Refused('SMTP authentication peer refused')
         deadline = time.monotonic() + budget.cap_seconds(0.5)
-        identity = self._inspect(pid, deadline)
+        from smtp_native_peer import NativeSmtpPeerInspector, NativeSmtpIdentity, NativeSmtpOwnership
+        inspector = self._inspect.prepared(budget) if type(self._inspect) is NativeSmtpOwnership else self._inspect
+        if type(inspector) is NativeSmtpPeerInspector:
+            identity = inspector.inspect(pid, deadline, budget)
+            if type(identity) is not NativeSmtpIdentity:
+                raise Refused('SMTP authentication native process refused')
+            projection = identity.projection()
+        else:
+            # Existing explicitly synthetic startup fixtures retain their tuple
+            # seam; the native producer supplies no caller-selected callback.
+            identity = self._inspect(pid, deadline)
+            projection = identity
         budget.remaining()
-        if (time.monotonic() >= deadline or type(identity) is not tuple or len(identity) != 4
-                or identity[:3] != (pid, '127.0.0.1', self._port)
-                or type(identity[3]) is not int or not 1024 <= identity[3] <= 65535):
+        if (time.monotonic() >= deadline or type(projection) is not tuple or len(projection) != 4
+                or projection[:3] != (pid, '127.0.0.1', self._port)
+                or type(projection[3]) is not int or not 1024 <= projection[3] <= 65535):
             raise Refused('SMTP authentication process refused')
         return identity
 

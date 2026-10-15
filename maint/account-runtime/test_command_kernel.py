@@ -25,6 +25,14 @@ class SealTests(unittest.TestCase):
    with self.assertRaises(Refused):self.make(rows)
   for promises in (b'stdio inet',b'stdio dns',b'stdio stdio',b'stdio  exec'):
    with self.assertRaises(Refused):self.make(promises=promises)
+ def test_tty_promise_is_exact_SQL_only_and_never_hash_or_primary(self):
+  from account_sql_graph import PROMISES as SQL_PROMISES
+  self.assertEqual(SQL_PROMISES,b'stdio rpath unix prot_exec exec tty')
+  with patch.object(self.b,'inherited_group',return_value=True):
+   seal=m.CommandKernelSeal._fixture(A.SQL_PROGRAM,A.SQL_ARGS,None,self.b,(('/fixed/public-program',b'rx'),),SQL_PROMISES)
+   self.assertEqual(seal._command_identity[3],'sql');self.assertEqual(seal._promises,SQL_PROMISES)
+   for program,args,account in ((A.HASH_PROGRAM,A.HASH_ARGS,None),(m.PRIMARY_PROGRAM,m.PRIMARY_ARGS+('alice@example.test',),'alice@example.test')):
+    with self.assertRaises(Refused):m.CommandKernelSeal._fixture(program,args,account,self.b,(('/fixed/public-program',b'rx'),),SQL_PROMISES)
  def test_exact_command_original_group_and_budget_required_before_closure(self):
   seal=self.make()
   with patch.object(self.b,'inherited_group',return_value=True):

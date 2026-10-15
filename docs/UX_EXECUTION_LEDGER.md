@@ -9931,6 +9931,7 @@ discriminator alongside the same binding production repair; no broader QA scope.
     "maint/account-runtime/account_primary_graph.py",
     "maint/account-runtime/account_hash_graph_pins.py",
     "maint/account-runtime/account_sql_graph_pins.py",
+    "maint/account-runtime/account_sql_graph.py",
     "maint/account-runtime/test_hash_graph.py",
     "maint/account-runtime/test_sql_role_producer.py",
     "maint/account-runtime/fixtures/loader-hints-observation-20261015.json",
@@ -9942,6 +9943,9 @@ discriminator alongside the same binding production repair; no broader QA scope.
     "maint/account-runtime/smtp_native_peer.py",
     "maint/account-runtime/test_smtp_native_peer.py",
     "maint/account-runtime/smtp_auth_lifecycle.py",
+    "maint/account-runtime/smtp_auth_broker.py",
+    "maint/account-runtime/test_smtp_auth_broker.py",
+    "maint/account-runtime/smtp_auth_control_service.py",
     "maint/account-runtime/smtp_mutation_containment.py",
     "maint/account-runtime/account_admission_worker.py",
     "maint/account-runtime/PERSISTENT_MUTATION_SERVICE.md",
@@ -10104,7 +10108,7 @@ discriminator alongside the same binding production repair; no broader QA scope.
     "status": "PENDING",
     "reference": "Only minimal well-defined own-password usability after all agent-owned development/matching deployed QA/independent audit PASS. No operator password is changed by agent qualification; use controlled disposable Alice and preserve Bob/operator state. NOT RUN."
   },
-  "next_action": "Browser a22fee6, Runtime bd7a9e3 and primary391d718 are signed/synchronized; standard Toronto checkout matches a22. Fresh retained-state cleanup PASS with independent scope6ab7. Primary3 fails accepted authentication with exact underlying cause UNKNOWN; its fixture cleanup PASS, only root code stage retained. Complete closed primary failure instrumentation and one changed reviewed qualification, current-source restricted SQL qualification, and actual source-owned shared control broker/material/containment authority before the installed controlled authoritative workflow. Preserve all earlier failures and original budgets; no flag activation shortcut or operator password mutation. S08-02 is accepted; separate S09/provider human results do not halt this work."
+  "next_action": "Shared startup/hints ef757944 is signed/synchronized and standard Toronto source-only clean matches. Complete reviewed SQL-only measured stdin-ioctl compatibility, source-required primary null-device startup profile, and real shared broker/per-channel native ownership/acceptor in one normal signed source integration. Then run matching reviewed current-source restricted SQL/primary and broker native qualifications before full installed controlled Alice authoritative password/session/mail-containment workflow. Preserve broader tty/null capability limits, original guards/budgets, prior failures and unrelated state; no native flag shortcut or operator password mutation. S08-02 remains accepted; separate human results do not halt engineering."
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->
@@ -10429,3 +10433,130 @@ two tests to bind its exact checksum/old node/current node while retaining all
 original transitive membership, ancestry, metadata, hash and permission checks.
 The two changed controls PASS/0fail in0.002s. No source-five change, scanner waiver
 or repeated focused campaign; independent review and normal commit2 follow.
+
+## 2026-10-15 — shared startup source synchronized; measured SQL incompatibility
+
+Normal commit2/push1 produce signed `ef757944dfb223241347fdd6b2d4490c23ce0ade`:
+1732 Rust PASS/0fail/44 explicit native ignores and539 account Python PASS,
+Good Shopkeeper verification, fresh origin equality/clean0/0/all three local
+branches equal. Standard Toronto checkout clean source-only FFa22 to ef757944.
+Proof87c0844b and standard record8b18ad5e live under smtp-control-startup-
+composition-20261015/canonical-integration1. Installed pair324b remains unchanged.
+
+Current source/native primary4 runs once and FAILs after one returned command.
+Actual mask7 proof establishes saved/real/effective UID/GID1005, empty groups and
+completed original drop/unveil/pledge/outside-read checks. No result parser entry;
+the pipe/selector/wait/terminal cause remains UNKNOWN. Fixture cleanup passes,
+root stage retained; no zero-AUTH or primary3 retrospective diagnosis. Independent
+f8564c35 and log583863af retain the bounded outcome. The next changed qualifier
+observes only existing exact-child pipe operations/terminal/source-kill metadata,
+with no extra drain/read/wait, output disclosure or altered guard/deadline.
+
+Current SQL34 source reaches one returned child/exit-6/no source kill and FAILs
+at the trace decoder's fixed_syscall_record_shape, after8/27 prefix controls.
+Twenty-two children reaped/driver group gone; namespaces/root stage retained.
+Original guard receipt is UNCONFIRMED because decoding precedes receipt handling.
+Read-only exact retained trace observatione9985195, without another dispatch,
+measures416 records/42304 bytes and final MariaDB EPERM syscall54/tty mask65536,
+immediately following fd0 ioctl request1074295912. Installed ttycom/sysctl/syscall
+headersfb58ccb5 identify TIOCGWINSZ, CTL_MAXNAME12 and SYS_sysctl202. Its sole
+old-decoder mismatch is syscall202 args48/record64; the kernel appends sysctl MIB
+words. These are current-case facts, not retrospective causes for older runs.
+The first read-only trace observer wrongly required0400 instead of the driver's
+actual publish0600 and refused before data; corrected source-only mode admission
+retains that failure and reads numeric trace only, with no raw export or mutation.
+
+The [exact MariaDB11.4.12 client source](https://github.com/MariaDB/server/blob/mariadb-11.4.12/client/mysql.cc)
+calls window_resize unconditionally even in batch mode. The current
+[OpenBSD kernel trace implementation](https://github.com/openbsd/src/blob/master/sys/kern/kern_ktrace.c)
+documents sysctl MIB suffix storage, consistent with the measured record; the
+installed ABI headers and retained numeric trace remain the assessed-host facts.
+Implement the measured SQL-only tty compatibility under unchanged stdio
+pipes/close-fds/locked graph, leaving /dev/tty inaccessible and refusing tty for
+hash/primary roles. Preserve original mask63/27 controls and add distinct actual
+pipe/ENOTTY/terminal-device denial proof, rather than introduce a different client
+or weaken custody. Native flags and password form remain closed until composed
+workflow qualification. Shared broker work continues in parallel: source-owned
+per-channel original-budget peer identity, one registry/control instance, and
+actual listener/EOF/stop ownership; fixture callbacks do not supply production
+authority. All broad S04-02 stages remain PENDING; no Duncan password action.
+
+## 2026-10-15 — SQL compatibility source admitted; primary first-input failure measured
+
+Integrate exactly four product/test paths from SQL readiness1454a317,
+patch3b8910e9/manifest97d92716, independently reviewed d76d2878. Fixed SQL
+PROMISES gains tty; command-derived role admission rejects it for hash/primary.
+Actual source RED1 becomes three focused passes; no argv, standard descriptor,
+configuration, device path, deadline or activation change. The original27 native
+controls and mask63 proof remain required. Independent review corrects the
+earlier blanket terminal-inaccessibility wording: tty also admits broader
+ioctl/revoke and hidden-libc /dev/tty operations that bypass unveil. Existing
+fresh-session/pipe-only/closed-FD custody prevents inherited controlling-terminal
+access; the changed qualifier adds actual child/session/driver equality and
+retains ordinary /dev/tty ENOENT only as ordinary-open proof. No private-input
+probe, readpassphrase, Pinentry or terminal provision is needed.
+
+Primary successor6 source78168/custody1b904 receives whole review CLEARa94aa250.
+One changed native attempt5 FAILs without an outer timeout: first original
+stdin write returns EPIPE32 with zero bytes; source kill1/wait1 ends at-9,
+without an original stderr read or result parse. One child12841 has original
+private-ID/mask7 proof. Fixture/identity/socket/group cleanup PASS, root stage
+71c24 remains retained. Source parity PASS; logcf864687. This measures the
+failing transport boundary, not the earlier child-exit cause, zero AUTH, or a
+retrospective cause for primary3/4. Reassess exact fixed Doveadm startup/source
+requirements before another changed qualification; do not retry unchanged.
+Native SQL/primary/broker and all broad S04-02 stages remain PENDING.
+
+The same integration admits concrete native-peer/per-channel ownership and
+shared broker/control acceptor source. Reviewed peer successor5850/per-channel
+cbce and composed acceptorbe3 receive source CLEAR3226a617; additive mandatory
+routing/topology gates675c receive CLEARcdcdd797. Source controls8+1 peer,
+3 bridge,3 framing,2 acceptor and1 independent-gates checks pass in their exact
+retained scopes. Registration precedes AUTH credential forwarding; parsed
+backend success publishes under the shared account epoch lock while channel
+duplicates remain registered for later cutoff. An internally owned actual
+listen/same-inode barrier precedes front admission; every channel has its own
+original3s budget. Stop/EOF acts only on exact owned descriptors/inodes and
+retains unconfirmed control-thread cleanup. No startup-budget renewal, cached
+authority, caller peer/ready Boolean or ordinary-auth binder inference is used.
+Dedicated backend /var/dovecot/osmap-account-smtp/auth.sock remains UNKNOWNpeer;
+all native flags stay false. Native timing/front/chroot/peer/confinement/full
+ingress and authoritative password/session containment remain unqualified.
+
+Read-only live listener contract observationa501e8a2 measures existing
+Postfix private directory owner507/group0/mode0700, so its root-custody front
+contract correctly refuses that parent. Front successor f97b2a9f/audit8bd2342c
+uses a separate root-owned purpose0710/derived-Postfix-group directory under
+root-owned spool/postfix, with fixed socket/auth.sock owned derived Postfix0600.
+One changed source discriminator passes. No directory/socket/config provision
+occurs. Selected submission/submissions service names are absent; their chroot
+state is UNKNOWN, not inferred from the relative client-path contract.
+
+Primary source reassessment finds a concrete missing startup profile independently
+of the old EPIPE cause: tagged Dovecot lib_init opens null O_WRONLY and its
+ordinary debug sink opens the same leaf O_CREAT|O_APPEND|O_WRONLY. Exact product2
+readiness42926377/patch123c41cd/manifested4d2a89 receives independent source
+CLEAR257c0c0c. Grant only existing identity-checked nullrwc plus wpath/cpath;
+no new path, directory grant, tty, argv or budget changes. Irreversible private
+IDs/empty groups and root-owned /dev DAC precede opens and prevent leaf mutation
+by the client. The unveil c capability itself still admits exact-leaf mutation;
+do not claim it is intrinsically creation-only or harmless without the DAC.
+Actual focused oldRED1/new3PASS preserves rows/drop/locked-graph/refusal order.
+The changed58-input native qualifier preserves original7 cases/mask7 and appends
+separate nullmask3/device514 proof: two existing-device opens, no writes and
+exact before/FD/after lease, strict40+EOF. Whole custody and signed current-source
+parity are required before execution. Earlier primary5 remains cause UNKNOWN.
+
+Combine reviewed SQL4, broker/peer6 and primary2 with current evidence docs in
+one source admission; mandatory normal hooks follow. No native profile, service,
+form or installed pair changes. SQL35 whole reviewb1c06863/changed root receipt
+discriminators6PASSf1603c7f stay bounded prerequisite evidence. All full S04-02
+outcomes remain PENDING until the actual installed authoritative workflow.
+
+The final broker-only typed-profile delta7531da91 forwards the already-existing
+exact-port DovecotProxyOkProfile through private composition. One focused control
+passes: default remains strict, Boolean/object/wrong port refuse, exact typed
+port metadata retains the same shared registry. Native factory supplies no
+profile, no flags/peer/limits change; independent incremental review follows.
+This supports the existing finite born-Dovecot fixture without tolerating
+arbitrary backend OK fields or inferring the deployed backend's profile.

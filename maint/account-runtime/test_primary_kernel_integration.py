@@ -39,16 +39,16 @@ class PrimaryKernelTests(unittest.TestCase):
    seal=self.seal()
    with patch.object(graph.PrimaryInstalledGraph,'native',side_effect=AssertionError),patch.object(k.subprocess,'Popen',side_effect=AssertionError):
     with self.assertRaises(Refused):seal.spawn(PROGRAM,ARGS+(self.account,),self.end,self.account)
- def test_primary_rows_do_not_inherit_recursive_hash_search_or_null_write(self):
+ def test_primary_rows_allow_only_fixed_null_startup_without_recursive_search(self):
   import account_primary_graph as graph
   import account_primary_identity as identity
   import account_hash_graph as common
   rows=graph.PrimaryInstalledGraph.rows();self.assertEqual(len(rows),len(common.FILES)+3)
   self.assertNotIn((common.SEARCH_DIRECTORY,b'r'),rows)
-  self.assertEqual([row for row in rows if row[0]=='/dev/null'],[('/dev/null',b'r')])
+  self.assertEqual([row for row in rows if row[0]=='/dev/null'],[('/dev/null',b'rwc')])
   self.assertEqual(rows[-1],(str(identity.SOCKET),b'rw'))
-  self.assertEqual(graph.PROMISES,b'stdio rpath unix prot_exec exec')
-  self.assertEqual([name for name,access in rows if b'w'in access or b'c'in access],[str(identity.SOCKET)])
+  self.assertEqual(graph.PROMISES,b'stdio rpath unix prot_exec exec wpath cpath')
+  self.assertEqual([name for name,access in rows if b'w'in access or b'c'in access],['/dev/null',str(identity.SOCKET)])
   with patch.object(self.b,'inherited_group',return_value=True),patch.object(common,'_modules',return_value='fixed-five') as modules,patch.object(common,'_read',return_value='fixed-leaf') as reader,patch.object(common,'_search_directory',side_effect=AssertionError):
    states=graph.PrimaryInstalledGraph._observe(self.b,self.end)
   self.assertEqual(states,(('fixed-leaf',)*len(common.FILES),'fixed-five'))

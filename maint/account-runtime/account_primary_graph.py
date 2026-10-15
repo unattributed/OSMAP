@@ -1,8 +1,10 @@
 """Fixed primary public-code custody; no profile activation or caller graph.
 
 Reuse the installed Doveadm leaf reader and exact ALL-five plugin membership.
-Do not inherit hash's recursive library search-directory or null write/create
-grant. Actual primary loader/authentication compatibility remains unqualified.
+Do not inherit hash's recursive library search-directory. Existing null rwc
+and wpath/cpath support tagged Doveadm lib_init/debug-sink startup only, after
+fixed private-ID drop and existing null/device-parent custody. Actual primary
+loader/authentication compatibility remains unqualified.
 The independent PrimaryChildIdentity binds the private socket and kernel peer.
 """
 import os,socket,sys
@@ -13,7 +15,7 @@ from account_primary_identity import SOCKET
 from authoritative_password import Refused
 from mutation_primary import PROGRAM,ARGS,AUTH_CLIENT_SOCKET
 
-PROMISES=b'stdio rpath unix prot_exec exec'
+PROMISES=b'stdio rpath unix prot_exec exec wpath cpath'
 
 def _command():
     if (PROGRAM!='/usr/local/bin/doveadm' or AUTH_CLIENT_SOCKET!=str(SOCKET)
@@ -53,4 +55,4 @@ class PrimaryInstalledGraph:
         _command()
         return tuple((name,b'rx' if name==PROGRAM else b'r')
             for name,*_ in common.FILES)+((common.MODULE_DIRECTORY,b'r'),
-                                        ('/dev/null',b'r'),(str(SOCKET),b'rw'))
+                                        ('/dev/null',b'rwc'),(str(SOCKET),b'rw'))

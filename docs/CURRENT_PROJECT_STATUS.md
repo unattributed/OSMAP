@@ -16,6 +16,41 @@ statement as provenance rather than current release posture.
 
 ### Latest scoped folder and label delivery, 2026-10-15
 
+Latest signed/synchronized source is `ef757944dfb223241347fdd6b2d4490c23ce0ade`:
+normal commit/push1732 Rust/539 account Python PASS, fresh origin equality and
+clean source-only standard Toronto parity. Installed pair324b is unchanged.
+Primary5 now measures first-input EPIPE after one confined private child; its
+source kills/reaps that child before result parsing. The earlier child failure
+cause remains unknown. Current retained
+SQL trace measures a MariaDB terminal-size ioctl on its stdin pipe denied by
+confinement. A SQL-only compatibility repair and real per-channel SMTP broker
+composition are in progress, with pipe-only input, no controlling terminal and all native
+activation flags closed. Earlier dated checkpoints below retain their scope;
+no complete password workflow, new human request or S04-02 acceptance is claimed.
+
+Reviewed SQL-only compatibility source adds `tty` for the measured MariaDB
+stdin window probe. This promise also permits broader terminal ioctls, revoke
+and hidden libc `/dev/tty` access; unveil alone cannot deny that hidden open.
+The exact child inherits a freshly born session without a controlling terminal,
+pipe-only standard descriptors and closed unrelated descriptors; no terminal
+device path is granted. Hash and primary permissions stay unchanged. Native
+session/compatibility proof and the full workflow remain pending. Source review
+d76d2878 and local RED1/three passes are bounded component evidence only.
+
+Concrete shared SMTP broker/acceptor and per-channel native ownership are now
+reviewed source increments: registration precedes AUTH, account-epoch publication
+retains channels for cutoff, and the actual control listener gates front startup.
+Every accepted AUTH keeps one original3s budget. Native flags are false and the
+dedicated backend peer remains unknown; real front/chroot/peer/confinement and
+complete ingress/containment still require qualification. No service is enabled.
+
+Separate primary startup repair42926377/source audit257c0c0c supplies the fixed
+existing null opens required by Doveadm: nullrwc with wpath/cpath after private
+identity drop and root-/dev DAC custody. No terminal, directory or new path is
+granted. Three focused controls pass; original seven native cases and confinement
+proof plus new existing-null lease proof remain pending. This source requirement
+does not diagnose the historical first-input failure. No password form activation.
+
 Latest password source `a22fee6f97ca9c63040397889a2da3a505c31f10` is signed and
 synchronized; both normal gates pass1732 Rust/537 account Python cases, fresh
 origin equality/clean0/0 and source-only standard Toronto parity are verified.

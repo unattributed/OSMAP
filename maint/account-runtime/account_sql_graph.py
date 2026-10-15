@@ -13,7 +13,9 @@ from account_native_material import NativeMaterial,_SqlEndpoint
 import account_native_material as material_source
 SQL_PROGRAM='/usr/local/bin/mariadb'
 FILE_CAP=64*1024*1024;TOTAL_CAP=128*1024*1024
-PROMISES=b'stdio rpath unix prot_exec exec'
+# MariaDB11.4.12 unconditionally probes stdin TIOCGWINSZ after batch options.
+# tty permits that pipe ioctl to return ENOTTY; no tty device path is unveiled.
+PROMISES=b'stdio rpath unix prot_exec exec tty'
 
 def _material(value):
     if (Adapter.SQL_PROGRAM!=SQL_PROGRAM or Adapter.SQL_ARGS!=(

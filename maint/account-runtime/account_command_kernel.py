@@ -139,6 +139,9 @@ class CommandKernelSeal:
             seen.add(row[0])
         words=promises.split(b' ')
         allowed={b'stdio',b'rpath',b'wpath',b'cpath',b'proc',b'exec',b'unix',b'prot_exec'}
+        # Only the fixed SQL command needs its measured stdin window probe.
+        # Never transfer tty authority to hash or primary command children.
+        if role=='sql':allowed.add(b'tty')
         if len(set(words))!=len(words) or any(w not in allowed for w in words):
             raise Refused('native kernel promises unavailable')
         budget.remaining()
