@@ -590,32 +590,56 @@ fn fresh_result<B: MailboxBackend>(
     request: &RenameFolderRequest,
     changed: bool,
 ) -> bool {
-    let (Ok(snapshot), Ok(parent), Ok(source_parent)) = (
-        backend.folder_metadata(request.account()),
-        backend.mailbox_status(request.account(), request.parent()),
-        backend.mailbox_status(request.account(), request.source_parent()),
+    let root = if changed {
+        request.destination()
+    } else {
+        request.source().into()
+    };
+    let mut names = vec![
+        request.parent().to_owned(),
+        request.source_parent().to_owned(),
+        root.clone(),
+    ];
+    names.extend(
+        request
+            .descendants()
+            .iter()
+            .map(|child| format!("{root}{}", child.suffix())),
+    );
+    names.sort();
+    names.dedup();
+    let Ok(facts) = backend.folder_facts(request.account(), &names) else {
+        return false;
+    };
+    if facts.validate_for(request.account(), &names).is_err() {
+        return false;
+    }
+    let snapshot = facts.snapshot();
+    let (Ok(parent), Ok(source_parent), Ok(source)) = (
+        facts.status(request.parent()),
+        facts.status(request.source_parent()),
+        facts.status(&root),
     ) else {
         return false;
     };
-    if validate_source_parent(request, &snapshot, &source_parent).is_err() {
-        return false;
-    }
-    if crate::folder_subtree::check(backend, request, &snapshot, changed).is_err() {
+    if validate_source_parent(request, snapshot, source_parent).is_err()
+        || crate::folder_subtree::check_from(request, snapshot, changed, |name| {
+            facts
+                .status(name)
+                .cloned()
+                .map_err(|_| Refusal::Unavailable)
+        })
+        .is_err()
+    {
         return false;
     }
     if changed {
-        backend
-            .mailbox_status(request.account(), &request.destination())
-            .is_ok_and(|dest| confirmed_result(request, &snapshot, &dest, &parent))
+        confirmed_result(request, snapshot, source, parent)
     } else {
-        backend
-            .mailbox_status(request.account(), request.source())
-            .is_ok_and(|source| {
-                validate_before(request, &snapshot, &source, &parent).is_ok()
-                    && snapshot
-                        .folder(request.account(), &request.destination())
-                        .is_err()
-            })
+        validate_before(request, snapshot, source, parent).is_ok()
+            && snapshot
+                .folder(request.account(), &request.destination())
+                .is_err()
     }
 }
 fn settle<B: MailboxBackend>(
@@ -701,14 +725,29 @@ pub(crate) fn prepare_bin<B: MailboxBackend>(
     let _role = crate::folder_rename::settings_gate(directory, account)?;
     let (bin, names) = current_roles(directory, account)?;
     let parent = source.rsplit_once('.').ok_or(Refusal::Invalid)?.0;
-    let status = backend
-        .mailbox_status(account, source)
+    let discovery = backend
+        .folder_metadata(account)
         .map_err(|_| Refusal::Unavailable)?;
-    let parent = backend
-        .mailbox_status(account, parent)
+    let children = crate::folder_subtree::names(&discovery, account, source, false)?;
+    let mut fact_names = vec![
+        source.to_owned(),
+        parent.to_owned(),
+        bin.mailbox_name.clone(),
+    ];
+    fact_names.extend(children);
+    fact_names.sort();
+    fact_names.dedup();
+    let facts = backend
+        .folder_facts(account, &fact_names)
         .map_err(|_| Refusal::Unavailable)?;
-    let bin_status = backend
-        .mailbox_status(account, &bin.mailbox_name)
+    facts
+        .validate_for(account, &fact_names)
+        .map_err(|_| Refusal::Unavailable)?;
+    let snapshot = facts.snapshot();
+    let status = facts.status(source).map_err(|_| Refusal::Unavailable)?;
+    let parent = facts.status(parent).map_err(|_| Refusal::Unavailable)?;
+    let bin_status = facts
+        .status(&bin.mailbox_name)
         .map_err(|_| Refusal::Unavailable)?;
     let request = Receipt::bin_request(
         account,
@@ -717,10 +756,18 @@ pub(crate) fn prepare_bin<B: MailboxBackend>(
         parent.guid(),
         &bin,
         bin_status.guid(),
-    )?
-    .bind_subtree(backend)?;
+    )?;
+    let descendants = crate::folder_subtree::capture_from(snapshot, &request, |name| {
+        facts
+            .status(name)
+            .cloned()
+            .map_err(|_| Refusal::Unavailable)
+    })?;
+    let request = request.with_descendants(descendants)?;
     if crate::folder_rename::role_conflict(&names, source, &request.destination())
-        || !fresh_result(backend, &request, false)
+        || validate_source_parent(&request, snapshot, parent).is_err()
+        || validate_before(&request, snapshot, status, bin_status).is_err()
+        || snapshot.folder(account, &request.destination()).is_ok()
     {
         return Err(Refusal::Invalid);
     }

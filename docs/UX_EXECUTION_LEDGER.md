@@ -9114,7 +9114,11 @@ state. Only then name exact human-only observations. No fake ETA or new status b
     "src/labels.rs",
     "src/labels_ui.rs",
     "src/label_selection_ui.rs",
-    "src/http/reader_toolbar.rs"
+    "src/http/reader_toolbar.rs",
+    "src/mailbox_status.rs",
+    "src/mailbox_helper_dispatch.rs",
+    "src/mailbox_helper_client.rs",
+    "src/mailbox_helper_metadata_tests.rs"
   ],
   "outcomes": [
     {
@@ -9135,8 +9139,8 @@ state. Only then name exact human-only observations. No fake ETA or new status b
       "stages": {
         "implementation": "PASS",
         "source_tests": "PASS",
-        "native_tests": "PASS",
-        "deployed_qa": "PENDING",
+        "native_tests": "PENDING",
+        "deployed_qa": "FAIL",
         "independent_review": "PENDING",
         "recovery": "PASS"
       },
@@ -9158,7 +9162,7 @@ state. Only then name exact human-only observations. No fake ETA or new status b
           "reference": "Matching native3 known injected partial split + typed settlement, actual signed child repair/lost reply/consumed nonce replay and cleanupPASS. Safe retained before-witness native controlPASS separately. No actual crash/quiescence claim; prior failed fixtures explicitly retained cleanupUNCONFIRMED."
         }
       ],
-      "next_action": "Integrate reviewed badge projection, preserve exact qualified backend/fixture source parity, normal signed sync and final matching native app build/helper-first installation; execute once the independently reviewed changed installed subtree/label seam. No repeated unchanged native case or old completed mutation journeys."
+      "next_action": "a391/945f is signed/synced and installed helper-first. Actual changed journey completed requests1-17, then readonly Bin entry GET18 timed out before any Bin POST. Repair measured read amplification in preparation without changing fresh execute/helper authority or deadlines, then qualify only13 remaining requests under fresh pinned continuation; never repeat completed mutations."
     },
     {
       "id": "hierarchy-and-selected-facts",
@@ -9279,7 +9283,7 @@ state. Only then name exact human-only observations. No fake ETA or new status b
       "evidence": "S08 labels-folders/folders-disposition-integration-20261015/installed-lifecycle-qualification/remaining-restore-delete-continuation-attempt2; actual53.964s, root witnessf5a6, actual-record proof4b83"
     }
   },
-  "next_action": "Integrate reviewed badge projection, preserve exact qualified backend/fixture source parity, normal signed sync and final matching native app build/helper-first installation; execute once the independently reviewed changed installed subtree/label seam. No repeated unchanged native case or old completed mutation journeys."
+  "next_action": "Repair same-slice remote-read amplification with bounded typed read-only facts, preserving separate fresh pre/post phases and required completion witness. Review exact ten existing source paths, qualify matching native read latency, sign/sync/install, then only13 remaining requests pinned to failedc042/current tree and labels. No completed mutation replay, deadline waiver or operator debugging."
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->
@@ -9403,3 +9407,74 @@ qualified unchanged native3 recovery component; installed QA is not inferred.
 Normal commit admission initially refused a PASS-stage declaration without its
 stage evidence; add the existing actual badge implementation/source references,
 preserve the refusal and run the unchanged normal gate. No validator waiver.
+
+## 2026-10-15 — matching installation and failed Bin entry, no mutation retry
+
+Signed a391839fd0f0ba1d1d932410d7265f2d975115b9 is synchronized after normal
+commit/push1714 library/0failed/44 explicit native ignores/519 account Python.
+Fresh origin and all three local branch references match; Toronto standard
+checkout fast-forwards cleanly, source only. Matching native app945f8a64 is
+installed helper-first on Toronto then obsd1. Existing activation9153071f
+preserves configuration, key agents, retention, unrelated services and completion
+integrity; new-web durable no-downlevel barrier is active. Independent delivered
+installation scope PASS. No functional acceptance follows from activation.
+
+Actual reviewed successor6 source6db80638/native ac89a6d4 executes once with the
+same240s whole/lease,270s outer and10s HTTP read limits. RootSSH0/driver2,
+92.367s/no outer timeout: FAIL_OR_UNCONFIRMED on request18, read-only Bin entry.
+The exact session is revoked and its own record removed. Immutable journal
+c042e49694210da5b046cf4c86f546a7e8b08849738d6e99ce65b1c344f2e7e4
+proves seventeen completed replies: no-pending409, Contacts200, two descendant
+Creates, owned label Create/Attach, populated Rename/Move and exact tree,
+message/attachment/label relocation continuity. No Bin POST was dispatched.
+Retain the moved controlled subtree and assigned label; no final own-label
+cleanup or remaining Bin/Restore/reload-badge success is claimed.
+
+Bounded read-only server evidence records the current Bin GET's attempted200
+write after10258ms with Broken pipe; its10s client had closed. Source inspection
+finds twelve serial signed helper reads for two descendants (two metadata plus
+ten status reads); in-memory fixtures hide cumulative transport cost. This is
+a concrete read-amplification repair, not a measured breakdown of each RPC or
+a diagnosis of the historical15208ms Bin POST failure. Implement one request-local
+preparation capture, preserve fresh execute/helper checks and all validation,
+then qualify only the thirteen remaining requests with exact failed-journal,
+current-tree/label/message/role/receipt preflight. No completed mutation retry,
+deadline waiver, provider Send, new QA framework or operator debugging.
+
+Apply's source graph still contains fourteen serial helper exchanges for this
+two-descendant tree: six fresh pre reads, native dispatch, required completion
+witness, then six independent fresh post reads. The reviewed preparation-only
+fix d1513fd9 reduces twelve reads to six, but does not qualify Apply latency.
+Root and independent security review select one bounded typed read-only facts
+request per fresh phase rather than parallel SSH workers or deadline expansion.
+The same existing account/grant/peer/frame/namespace/status/cap checks apply;
+missing/extra/duplicate/foreign facts refuse. Never reuse proposal or pre-state
+after dispatch; native helper validation and completion witness stay separate.
+Exactly four additional existing backend paths enter the current work-order
+allowlist for this ten-path repair. No frozen scope or product requirement changes.
+
+One actual authoritative readonly CLI shape check returns the two requested
+controlled folders in0.180s with exact mailbox/guid/messages/vsize fields and
+no stderr. It confirms installed multi-name STATUS argv/JSON, not new confined
+helper functionality or end-to-end elapsed performance. Final typed facts code,
+native latency and remaining thirteen-request outcome are still pending.
+
+The reviewed typed-facts successor459125a0 is now integrated across twelve
+existing source paths, exact candidate byte parity verified. Fourteen focused
+disposition and two signed-wire/native-argv tests PASS; Clippy and format PASS.
+Account, ordered literal names/count, HMAC grant, configured peer, response nonce,
+exact no-missing/extra/duplicate status membership and current snapshot ownership
+remain mandatory. At most eleven names/4096 decoded name bytes,524288 metadata
+bytes,8192 native status bytes and720896 reply bytes remain explicitly bounded
+inside existing global transport limits. Native metadata plus exact multi-name
+STATUS share the original10s command deadline; transport bounds stay unchanged.
+GET discovers names, then binds all identities from new current facts. Execute
+uses independent fresh pre and post facts with native Rename and its required
+durable completion witness separate. No proposal or pre-state cache crosses a
+mutation. Actual source graph is two GET RPCs and four successful Apply RPCs;
+this is not elapsed assurance. Reservation, role, receipt, native mutation and
+settlement bodies are unchanged. A new signed read-only facts call/marker in the
+existing native fixture must pass under original45/60s budgets. Package
+3e7e3248/811ccdbf passes independent481-input/source/driver review; actual native,
+matching installed read-only latency and remaining thirteen requests are pending.
+Unchanged V10 generators refresh only derived offsets/hashes; no scanner waiver.

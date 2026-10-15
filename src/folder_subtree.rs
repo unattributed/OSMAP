@@ -27,6 +27,9 @@ pub struct Descendant {
 }
 
 impl Descendant {
+    pub(crate) fn suffix(&self) -> &str {
+        &self.suffix
+    }
     pub(crate) fn validate(&self, request: &RenameFolderRequest) -> Result<(), Refusal> {
         if !self.suffix.starts_with('.')
             || self.suffix.len() < 2
@@ -122,6 +125,7 @@ pub(crate) fn names(
     Ok(names)
 }
 
+#[cfg(test)]
 pub(crate) fn capture<B: MailboxBackend>(
     backend: &B,
     request: &RenameFolderRequest,
@@ -166,6 +170,19 @@ pub(crate) fn check<B: MailboxBackend>(
     snapshot: &FolderSnapshot,
     changed: bool,
 ) -> Result<(), Refusal> {
+    check_from(request, snapshot, changed, |name| {
+        backend
+            .mailbox_status(request.account(), name)
+            .map_err(|_| Refusal::Unavailable)
+    })
+}
+
+pub(crate) fn check_from(
+    request: &RenameFolderRequest,
+    snapshot: &FolderSnapshot,
+    changed: bool,
+    mut read: impl FnMut(&str) -> Result<MailboxStatus, Refusal>,
+) -> Result<(), Refusal> {
     validate_bindings(request)?;
     let root = if changed {
         request.destination()
@@ -189,9 +206,7 @@ pub(crate) fn check<B: MailboxBackend>(
         });
     }
     for (name, child) in expected.iter().zip(request.descendants()) {
-        let status = backend
-            .mailbox_status(request.account(), name)
-            .map_err(|_| Refusal::Unavailable)?;
+        let status = read(name)?;
         status.validate(name).map_err(|_| Refusal::Unavailable)?;
         if status.guid() != child.guid {
             return Err(Refusal::Stale);

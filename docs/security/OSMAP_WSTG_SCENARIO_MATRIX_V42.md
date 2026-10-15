@@ -474,5 +474,23 @@ Missing settlement retains nonsuccess, mail/indexes and the original reference
 for engineering-owned reconciliation; neither snapshots nor a lock prove
 child quiescence. The existing native fixture labels its partial-placement and
 settlement setup as injected; this does not qualify an actual process crash.
-Source integration and matching native/installed qualification are pending.
+Superseding a391/945f source and helper-first pair installation pass their
+recorded gates. Injected native partial placement repairs signed owned children
+without replaying the root. Actual installed Create/Rename/Move and label
+relocation pass; the later read-only Bin entry exceeds the10s client bound,
+before any Bin POST. Preserve its failed interval and retained current state.
+Repair read amplification without reusing pre-dispatch facts after a mutation,
+weakening fresh helper authority or extending the failed deadline. Remaining
+Bin/Restore/reloaded-badge qualification is pending.
+
+The same-slice typed `folder_facts` helper operation is read-only and binds its
+account plus ordered literal names/count in the existing HMAC grant. Configured
+peer, nonce and bounded EOF remain required; exact missing/extra/duplicate/foreign
+snapshot/status replies refuse. Eleven names/4096 decoded bytes and bounded
+metadata/status/reply projections remain inside global transport caps. Native
+metadata plus multi-name STATUS share the original command deadline. Independent
+fresh pre/post observations do not reuse proposal or pre-dispatch facts; native
+mutation checks and completion witness remain separate. Source negative tests
+and independent review pass. New-operation native, installed latency and final
+functional continuation are pending; this is not a full WSTG or release claim.
 No broad WSTG, release, human or whole-slice completion claim follows.

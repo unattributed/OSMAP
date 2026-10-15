@@ -33,7 +33,7 @@ impl MailboxHelperMailboxListBackend {
         self.helper_uid = uid;
         self
     }
-    fn folder_facts(
+    fn folder_request(
         &self,
         mut request: MailboxHelperRequest,
         max_response: usize,
@@ -74,7 +74,8 @@ impl MailboxHelperMailboxListBackend {
                     std::str::from_utf8(&bytes).map_err(|_| "invalid folder facts")?,
                 )?;
                 if let MailboxHelperResponse::FolderRenameCompletionOk { nonce, .. }
-                | MailboxHelperResponse::FolderDeleteCompletionOk { nonce, .. } = &response
+                | MailboxHelperResponse::FolderDeleteCompletionOk { nonce, .. }
+                | MailboxHelperResponse::FolderFactsOk { nonce, .. } = &response
                 {
                     if nonce != &super::mailbox_helper_protocol::request_grant(&request).nonce {
                         return Err("completion response nonce refused".into());
@@ -101,7 +102,7 @@ impl MailboxBackend for MailboxHelperMailboxListBackend {
             request: value.clone(),
             grant: MailboxHelperGrant::unsigned(),
         };
-        match self.folder_facts(request, 4096) {
+        match self.folder_request(request, 4096) {
             Ok(MailboxHelperResponse::FolderDeleteCompletionOk {
                 request,
                 completion,
@@ -187,7 +188,7 @@ impl MailboxBackend for MailboxHelperMailboxListBackend {
             request: value.clone(),
             grant: MailboxHelperGrant::unsigned(),
         };
-        match self.folder_facts(request, 4096) {
+        match self.folder_request(request, 4096) {
             Ok(MailboxHelperResponse::FolderRenameCompletionOk {
                 request,
                 completion,
@@ -325,12 +326,37 @@ impl MailboxBackend for MailboxHelperMailboxListBackend {
         execute().unwrap_or(crate::folder_create::Outcome::Unknown)
     }
 
+    fn folder_facts(
+        &self,
+        account: &str,
+        names: &[String],
+    ) -> Result<crate::mailbox_status::FolderFacts, MailboxBackendError> {
+        crate::mailbox_status::validate_fact_names(account, names)?;
+        if self.helper_uid.is_none() {
+            return Err(crate::mailbox_status::unavailable());
+        }
+        match self.folder_request(
+            MailboxHelperRequest::FolderFacts {
+                canonical_username: account.into(),
+                mailbox_names: names.to_vec(),
+                grant: MailboxHelperGrant::unsigned(),
+            },
+            704 * 1024,
+        )? {
+            MailboxHelperResponse::FolderFactsOk { facts, .. }
+                if facts.validate_for(account, names).is_ok() =>
+            {
+                Ok(*facts)
+            }
+            _ => Err(crate::mailbox_status::unavailable()),
+        }
+    }
     fn folder_metadata(
         &self,
         account: &str,
     ) -> Result<crate::folder_metadata::FolderSnapshot, MailboxBackendError> {
         crate::mailbox_status::validate_account(account)?;
-        match self.folder_facts(
+        match self.folder_request(
             MailboxHelperRequest::FolderMetadata {
                 canonical_username: account.into(),
                 grant: MailboxHelperGrant::unsigned(),
@@ -352,7 +378,7 @@ impl MailboxBackend for MailboxHelperMailboxListBackend {
     ) -> Result<crate::mailbox_status::MailboxStatus, MailboxBackendError> {
         crate::mailbox_status::validate_account(account)?;
         crate::mailbox_status::validate_name(folder)?;
-        match self.folder_facts(
+        match self.folder_request(
             MailboxHelperRequest::MailboxStatus {
                 canonical_username: account.into(),
                 mailbox_name: folder.into(),
@@ -425,6 +451,7 @@ impl MailboxBackend for MailboxHelperMailboxListBackend {
                 | MailboxHelperResponse::FolderDeleteOk { .. }
                 | MailboxHelperResponse::FolderRenameCompletionOk { .. }
                 | MailboxHelperResponse::FolderRenameOk { .. }
+                | MailboxHelperResponse::FolderFactsOk { .. }
                 | MailboxHelperResponse::FolderMetadataOk { .. }
                 | MailboxHelperResponse::MailboxStatusOk { .. }
                 | MailboxHelperResponse::MessageFlagOk { .. }
@@ -602,6 +629,7 @@ impl MessageListBackend for MailboxHelperMessageListBackend {
                 | MailboxHelperResponse::FolderDeleteOk { .. }
                 | MailboxHelperResponse::FolderRenameCompletionOk { .. }
                 | MailboxHelperResponse::FolderRenameOk { .. }
+                | MailboxHelperResponse::FolderFactsOk { .. }
                 | MailboxHelperResponse::FolderMetadataOk { .. }
                 | MailboxHelperResponse::MailboxStatusOk { .. }
                 | MailboxHelperResponse::MessageFlagOk { .. }
@@ -789,6 +817,7 @@ impl MessageSearchBackend for MailboxHelperMessageSearchBackend {
                 | MailboxHelperResponse::FolderDeleteOk { .. }
                 | MailboxHelperResponse::FolderRenameCompletionOk { .. }
                 | MailboxHelperResponse::FolderRenameOk { .. }
+                | MailboxHelperResponse::FolderFactsOk { .. }
                 | MailboxHelperResponse::FolderMetadataOk { .. }
                 | MailboxHelperResponse::MailboxStatusOk { .. }
                 | MailboxHelperResponse::MessageFlagOk { .. }
@@ -1096,6 +1125,7 @@ impl MessageViewBackend for MailboxHelperMessageViewBackend {
                 | MailboxHelperResponse::FolderDeleteOk { .. }
                 | MailboxHelperResponse::FolderRenameCompletionOk { .. }
                 | MailboxHelperResponse::FolderRenameOk { .. }
+                | MailboxHelperResponse::FolderFactsOk { .. }
                 | MailboxHelperResponse::FolderMetadataOk { .. }
                 | MailboxHelperResponse::MailboxStatusOk { .. }
                 | MailboxHelperResponse::MessageFlagOk { .. }
@@ -1252,6 +1282,7 @@ impl MailboxHelperAttachmentDownloadBackend {
                 | MailboxHelperResponse::FolderDeleteOk { .. }
                 | MailboxHelperResponse::FolderRenameCompletionOk { .. }
                 | MailboxHelperResponse::FolderRenameOk { .. }
+                | MailboxHelperResponse::FolderFactsOk { .. }
                 | MailboxHelperResponse::FolderMetadataOk { .. }
                 | MailboxHelperResponse::MailboxStatusOk { .. }
                 | MailboxHelperResponse::MessageFlagOk { .. }
@@ -1613,6 +1644,7 @@ impl MessageAppendBackend for MailboxHelperMessageAppendBackend {
                 | MailboxHelperResponse::FolderDeleteOk { .. }
                 | MailboxHelperResponse::FolderRenameCompletionOk { .. }
                 | MailboxHelperResponse::FolderRenameOk { .. }
+                | MailboxHelperResponse::FolderFactsOk { .. }
                 | MailboxHelperResponse::FolderMetadataOk { .. }
                 | MailboxHelperResponse::MailboxStatusOk { .. }
                 | MailboxHelperResponse::MessageFlagOk { .. }

@@ -9785,3 +9785,29 @@ Reuse matching unchanged native backend and existing Preview/Contacts/menu
 proof within exact source/semantic boundaries rather than launching another
 baseline or repeating passing actions. Full original acceptance stays open
 until the changed deployed seam and independent audit pass.
+
+## 2026-10-15 — repair read amplification before the remaining folder journey
+
+Matching signed a391/945f deployment and the completed seventeen-request prefix
+remain valid within their recorded scope. Preserve the failed read-only Bin
+entry at request18 (client10s/server attempted200 after10258ms), untouched
+once-only journal c042e496 and exact lease cleanup. No Bin POST was dispatched.
+The controlled moved subtree and label stay retained; final cleanup is pending.
+Reduce duplicate serial reads only in read-only Bin proposal preparation using
+one request-local authoritative capture and the existing validators. Fresh
+locked execute/helper/receipt authority and every deadline remain unchanged.
+After code review and matching installation, admit only the thirteen remaining
+requests against fresh exact current facts; do not repeat completed actions or
+ask the operator to debug unfinished engineering. Historical timeout causes
+remain unestablished by this new aggregate timing observation.
+
+The preparation-only reduction is insufficient for Apply's fourteen serial
+reads. Use the independently reviewed typed read-only folder-facts operation
+instead of parallel SSH workers. It binds exact current account/names and
+snapshot/status membership through existing grants, peer, nonce, framing and
+caps. Each pre/post phase obtains a separate fresh observation; native mutation
+validation and durable completion remain independent. New native STATUS batching
+uses the measured installed argv and original shared deadline, not a larger
+timeout. Require the changed native marker and fresh installed read-only latency
+before admitting the remaining thirteen-request continuation. All old failed
+intervals and completed mutations remain untouched.

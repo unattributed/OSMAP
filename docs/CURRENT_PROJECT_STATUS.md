@@ -16,13 +16,15 @@ statement as provenance rather than current release posture.
 
 ### Latest scoped folder and label delivery, 2026-10-15
 
-Signed source `b3075df9307504a3770cf9f9f8da2b523dd9d9ff` is synchronized
-to the UX branch after normal commit/push gates (1696 library passes, zero
+Signed source `a391839fd0f0ba1d1d932410d7265f2d975115b9` is synchronized
+to the UX branch after normal commit/push gates (1714 library passes, zero
 failures, 44 explicit native ignores and 519 account Python passes). Matching
-application ad167622 is installed helper-first on authoritative Toronto and then
+application945f8a64 is installed helper-first on authoritative Toronto and then
 obsd1 web; configuration, key agents, retention and unrelated services remain
-preserved. Native qualification passes the bounded subtree, identity/content,
-account isolation, authority and confinement controls against 476+3 inputs.
+preserved. The matching final application passes481-input parity; the unchanged
+native recovery component passes bounded subtree, identity/content, account
+isolation, authority and confinement controls. Assigned label badges are now
+implemented in current list and reader views; source tests and review pass.
 
 Actual installed finite journeys now pass: eight Restore/Delete requests with
 complete-message/attachment preservation and exact authoritative Delete witness;
@@ -38,8 +40,15 @@ The earlier Bin HTTP timeout remains historical: its complete303 was unobserved.
 Read-only exact-operation reconciliation established Binned state, followed by a
 separately admitted successful Restore/Delete continuation. Those later results
 do not retrospectively pass the failed HTTP interval. Reader Seen effects were
-not separately assessed. Partial-tree recovery safety and usable UNKNOWN
-handling are still under implementation; full S08-02 and sprint/epic acceptance
+not separately assessed. Partial-tree repair and usable UNKNOWN handling have
+bounded native proof; actual crash/quiescence is not inferred. The new installed
+journey passes its first17 requests, including two descendant Creates, owned
+label assignment and populated subtree Rename/Move with continuity. Request18
+times out opening read-only Bin entry before any Bin POST: client10s/server
+attempted200 after10258ms. Its test lease is removed, but the subtree/label stay
+retained. Engineering is repairing repeated remote reads and will continue only
+the remaining13 requests; final Bin/Restore/reload-badge cleanup is pending.
+Full S08-02 and sprint/epic acceptance
 remain OPEN. Earlier account/OpenPGP requirements remain independently open.
 The operator requires current S08 work to continue with strict program management;
 no unilateral agent parking is authorized.

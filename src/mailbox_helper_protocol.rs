@@ -58,6 +58,11 @@ pub(super) enum MailboxHelperRequest {
         request: crate::folder_create::CreateFolderRequest,
         grant: MailboxHelperGrant,
     },
+    FolderFacts {
+        canonical_username: String,
+        mailbox_names: Vec<String>,
+        grant: MailboxHelperGrant,
+    },
     FolderMetadata {
         canonical_username: String,
         grant: MailboxHelperGrant,
@@ -183,6 +188,10 @@ pub(crate) enum MailboxHelperResponse {
         request: crate::folder_create::CreateFolderRequest,
         outcome: crate::folder_create::Outcome,
     },
+    FolderFactsOk {
+        facts: Box<crate::mailbox_status::FolderFacts>,
+        nonce: String,
+    },
     FolderMetadataOk {
         snapshot: crate::folder_metadata::FolderSnapshot,
     },
@@ -246,6 +255,7 @@ pub(super) fn encode_request(request: &MailboxHelperRequest) -> String {
         MailboxHelperRequest::FolderRenameCompletion {request,grant} => format!("operation=folder_rename_completion\ncanonical_username_b64={}\nrename_request_b64={}\n{}",encode_base64(request.account().as_bytes()),encode_base64(serde_json::to_string(request).unwrap_or_default().as_bytes()),encode_grant_fields(grant)),
         MailboxHelperRequest::FolderRename {request,grant} => format!("operation=folder_rename\ncanonical_username_b64={}\nrename_request_b64={}\n{}",encode_base64(request.account().as_bytes()),encode_base64(serde_json::to_string(request).unwrap_or_default().as_bytes()),encode_grant_fields(grant)),
         MailboxHelperRequest::FolderCreate {request,grant} => format!("operation=folder_create\ncanonical_username_b64={}\ncreate_request_b64={}\n{}",encode_base64(request.account().as_bytes()),encode_base64(serde_json::to_string(request).unwrap_or_default().as_bytes()),encode_grant_fields(grant)),
+        MailboxHelperRequest::FolderFacts {canonical_username,mailbox_names,grant} => format!("operation=folder_facts\ncanonical_username_b64={}\nmailbox_names_b64={}\n{}",encode_base64(canonical_username.as_bytes()),encode_base64(serde_json::to_string(mailbox_names).unwrap_or_default().as_bytes()),encode_grant_fields(grant)),
         MailboxHelperRequest::FolderMetadata {canonical_username,grant} => format!("operation=folder_metadata\ncanonical_username_b64={}\n{}",encode_base64(canonical_username.as_bytes()),encode_grant_fields(grant)),
         MailboxHelperRequest::MailboxStatus {canonical_username,mailbox_name,grant} => format!("operation=mailbox_status\ncanonical_username_b64={}\nmailbox_name_b64={}\n{}",encode_base64(canonical_username.as_bytes()),encode_base64(mailbox_name.as_bytes()),encode_grant_fields(grant)),
         MailboxHelperRequest::MessageFlag { canonical_username, request, grant } => format!(
@@ -457,6 +467,21 @@ pub(super) fn parse_request(input: &str) -> Result<MailboxHelperRequest, String>
                 return Err("create account mismatch".into());
             }
             Ok(MailboxHelperRequest::FolderCreate { request, grant })
+        }
+        "folder_facts" => {
+            let names: Vec<String> = serde_json::from_slice(&decode_base64_bytes(
+                require_field(&fields, "mailbox_names_b64")?,
+                4096,
+                "names",
+            )?)
+            .map_err(|_| "invalid folder facts names")?;
+            crate::mailbox_status::validate_fact_names(&canonical_username, &names)
+                .map_err(|e| e.reason)?;
+            Ok(MailboxHelperRequest::FolderFacts {
+                canonical_username,
+                mailbox_names: names,
+                grant,
+            })
         }
         "folder_metadata" => {
             crate::mailbox_status::validate_account(&canonical_username).map_err(|e| e.reason)?;
@@ -686,7 +711,9 @@ pub(super) fn ordinary_request_allowed(request: &MailboxHelperRequest) -> bool {
         | MessageView { mailbox_name, .. }
         | AttachmentDownload { mailbox_name, .. }
         | MessageAppend { mailbox_name, .. } => allowed(mailbox_name),
-        MessageSearchBatch { mailbox_names, .. } => mailbox_names.iter().all(|name| allowed(name)),
+        MessageSearchBatch { mailbox_names, .. } | FolderFacts { mailbox_names, .. } => {
+            mailbox_names.iter().all(|name| allowed(name))
+        }
         MessageMove {
             source_mailbox_name,
             destination_mailbox_name,
@@ -806,6 +833,7 @@ pub(super) fn request_grant(request: &MailboxHelperRequest) -> &MailboxHelperGra
         | MailboxHelperRequest::FolderRenameCompletion { grant, .. }
         | MailboxHelperRequest::FolderRename { grant, .. }
         | MailboxHelperRequest::FolderCreate { grant, .. }
+        | MailboxHelperRequest::FolderFacts { grant, .. }
         | MailboxHelperRequest::FolderMetadata { grant, .. }
         | MailboxHelperRequest::MailboxStatus { grant, .. }
         | MailboxHelperRequest::MailboxList { grant, .. }
@@ -829,6 +857,7 @@ fn set_request_grant(request: &mut MailboxHelperRequest, new_grant: MailboxHelpe
         | MailboxHelperRequest::FolderRenameCompletion { grant, .. }
         | MailboxHelperRequest::FolderRename { grant, .. }
         | MailboxHelperRequest::FolderCreate { grant, .. }
+        | MailboxHelperRequest::FolderFacts { grant, .. }
         | MailboxHelperRequest::FolderMetadata { grant, .. }
         | MailboxHelperRequest::MailboxStatus { grant, .. }
         | MailboxHelperRequest::MailboxList { grant, .. }
@@ -852,6 +881,7 @@ pub(super) fn helper_operation_label(request: &MailboxHelperRequest) -> &'static
         MailboxHelperRequest::FolderRenameCompletion { .. } => "folder_rename_completion",
         MailboxHelperRequest::FolderRename { .. } => "folder_rename",
         MailboxHelperRequest::FolderCreate { .. } => "folder_create",
+        MailboxHelperRequest::FolderFacts { .. } => "folder_facts",
         MailboxHelperRequest::FolderMetadata { .. } => "folder_metadata",
         MailboxHelperRequest::MailboxStatus { .. } => "mailbox_status",
         MailboxHelperRequest::MailboxList { .. } => "mailbox_list",
@@ -889,6 +919,15 @@ fn sign_request_grant(
         if validated.query != *query {
             return Err("helper batch query is not canonical".into());
         }
+    }
+    if let MailboxHelperRequest::FolderFacts {
+        canonical_username,
+        mailbox_names,
+        ..
+    } = request
+    {
+        crate::mailbox_status::validate_fact_names(canonical_username, mailbox_names)
+            .map_err(|e| e.reason)?;
     }
     type HmacSha256 = Hmac<Sha256>;
     let mut mac = HmacSha256::new_from_slice(key)
@@ -983,6 +1022,15 @@ fn canonical_grant_payload(request: &MailboxHelperRequest, grant: &MailboxHelper
                     "0".into()
                 },
             ]);
+        }
+        MailboxHelperRequest::FolderFacts {
+            canonical_username,
+            mailbox_names,
+            ..
+        } => {
+            fields.push(canonical_username.clone());
+            fields.push(mailbox_names.len().to_string());
+            fields.extend(mailbox_names.iter().cloned());
         }
         MailboxHelperRequest::FolderMetadata {
             canonical_username, ..
@@ -1157,6 +1205,7 @@ fn encode_response_checked(response: &MailboxHelperResponse) -> Result<String, S
         MailboxHelperResponse::FolderRenameCompletionOk {request,completion,nonce} => format!("status=ok\noperation=folder_rename_completion\nrename_request_b64={}\nrename_completion_b64={}\nnonce={}\n", encode_base64(serde_json::to_string(request).unwrap_or_default().as_bytes()), encode_base64(serde_json::to_string(completion).unwrap_or_default().as_bytes()), nonce),
         MailboxHelperResponse::FolderRenameOk {request,outcome,nonce} => format!("status=ok\noperation=folder_rename\nrename_request_b64={}\nrename_outcome_b64={}\nnonce={}\n", encode_base64(serde_json::to_string(request).unwrap_or_default().as_bytes()), encode_base64(serde_json::to_string(outcome).unwrap_or_default().as_bytes()), nonce),
         MailboxHelperResponse::FolderCreateOk {request,outcome}=>format!("status=ok\noperation=folder_create\ncreate_request_b64={}\ncreate_outcome_b64={}\n",encode_base64(serde_json::to_string(request).unwrap_or_default().as_bytes()),encode_base64(serde_json::to_string(outcome).unwrap_or_default().as_bytes())),
+        MailboxHelperResponse::FolderFactsOk {facts,nonce} => format!("status=ok\noperation=folder_facts\ncanonical_username_b64={}\ntranscript_b64={}\nstatuses_b64={}\nnonce={}\n",encode_base64(facts.snapshot().account().as_bytes()),encode_base64(facts.snapshot().transcript()),encode_base64(serde_json::to_string(facts.statuses()).map_err(|_| "invalid facts response")?.as_bytes()),nonce),
         MailboxHelperResponse::FolderMetadataOk {snapshot} => format!("status=ok\noperation=folder_metadata\ncanonical_username_b64={}\ntranscript_b64={}\n",encode_base64(snapshot.account().as_bytes()),encode_base64(snapshot.transcript())),
         MailboxHelperResponse::MailboxStatusOk {status} => format!("status=ok\noperation=mailbox_status\nmailbox_name_b64={}\nstatus_guid={}\nstatus_messages={}\nstatus_vsize={}\n",encode_base64(status.mailbox().as_bytes()),status.guid(),status.messages(),status.virtual_bytes()),
         MailboxHelperResponse::MessageFlagOk { request, result } => format!(
@@ -1512,6 +1561,46 @@ pub(super) fn parse_response(
             .validate_outcome(&outcome)
             .map_err(|_| "invalid create response")?;
         return Ok(MailboxHelperResponse::FolderCreateOk { request, outcome });
+    }
+    if input.lines().any(|line| line == "operation=folder_facts") {
+        if input.len() > 704 * 1024 {
+            return Err("folder facts response too large".into());
+        }
+        let f = parse_kv_lines(input)?;
+        if f.len() != 6 || require_field(&f, "status")? != "ok" {
+            return Err("invalid folder facts response".into());
+        }
+        let account =
+            decode_base64_text(require_field(&f, "canonical_username_b64")?, 320, "account")?;
+        let transcript = decode_base64_bytes(
+            require_field(&f, "transcript_b64")?,
+            512 * 1024,
+            "transcript",
+        )?;
+        let snapshot = crate::folder_metadata::FolderSnapshot::parse(&account, &transcript)
+            .map_err(|_| "invalid folder facts metadata")?;
+        let statuses: Vec<crate::mailbox_status::MailboxStatus> = serde_json::from_slice(
+            &decode_base64_bytes(require_field(&f, "statuses_b64")?, 8192, "statuses")?,
+        )
+        .map_err(|_| "invalid facts statuses")?;
+        let names = statuses
+            .iter()
+            .map(|row| row.mailbox().to_owned())
+            .collect::<Vec<_>>();
+        let facts = crate::mailbox_status::FolderFacts::new(&account, &names, snapshot, statuses)
+            .map_err(|e| e.reason)?;
+        let nonce = require_field(&f, "nonce")?.to_owned();
+        if nonce.len() != 32
+            || !nonce
+                .bytes()
+                .all(|byte| byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase())
+        {
+            return Err("invalid facts nonce".into());
+        }
+        return Ok(MailboxHelperResponse::FolderFactsOk {
+            facts: Box::new(facts),
+            nonce,
+        });
     }
     if input
         .lines()
@@ -2021,6 +2110,15 @@ fn reject_unknown_request_fields(
             "operation",
             "canonical_username_b64",
             "create_request_b64",
+            "grant_issued_at",
+            "grant_expires_at",
+            "grant_nonce",
+            "grant_signature",
+        ],
+        "folder_facts" => &[
+            "operation",
+            "canonical_username_b64",
+            "mailbox_names_b64",
             "grant_issued_at",
             "grant_expires_at",
             "grant_nonce",

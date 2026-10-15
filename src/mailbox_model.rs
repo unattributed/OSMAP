@@ -1093,6 +1093,20 @@ pub trait MailboxBackend {
         Err(crate::folder_metadata_backend::unavailable())
     }
 
+    fn folder_facts(
+        &self,
+        account: &str,
+        names: &[String],
+    ) -> Result<crate::mailbox_status::FolderFacts, MailboxBackendError> {
+        crate::mailbox_status::validate_fact_names(account, names)?;
+        let snapshot = self.folder_metadata(account)?;
+        let statuses = names
+            .iter()
+            .map(|name| self.mailbox_status(account, name))
+            .collect::<Result<Vec<_>, _>>()?;
+        crate::mailbox_status::FolderFacts::new(account, names, snapshot, statuses)
+    }
+
     fn mailbox_status(
         &self,
         _canonical_username: &str,

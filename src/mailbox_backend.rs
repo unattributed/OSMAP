@@ -135,6 +135,53 @@ where
             account,
         )
     }
+    fn folder_facts(
+        &self,
+        account: &str,
+        names: &[String],
+    ) -> Result<crate::mailbox_status::FolderFacts, MailboxBackendError> {
+        crate::mailbox_status::validate_fact_names(account, names)?;
+        let deadline =
+            std::time::Instant::now() + Duration::from_secs(DEFAULT_EXTERNAL_COMMAND_TIMEOUT_SECS);
+        let snapshot = crate::folder_metadata_backend::read_before(
+            &self.command_executor,
+            &self.doveadm_path,
+            self.userdb_socket_path.as_deref(),
+            account,
+            deadline,
+        )?;
+        let mut args = vec!["-o".into(), "stats_writer_socket_path=".into()];
+        append_doveadm_auth_socket_override(&mut args, self.userdb_socket_path.as_ref());
+        args.extend([
+            "-f".into(),
+            "json".into(),
+            "mailbox".into(),
+            "status".into(),
+            "-u".into(),
+            account.into(),
+            "guid messages vsize".into(),
+        ]);
+        args.extend(names.iter().cloned());
+        let result = self
+            .command_executor
+            .run_with_stdin_bytes_timeout_and_output_limit(
+                self.doveadm_path.to_string_lossy().as_ref(),
+                &args,
+                b"",
+                deadline
+                    .checked_duration_since(std::time::Instant::now())
+                    .filter(|left| !left.is_zero())
+                    .ok_or_else(crate::mailbox_status::unavailable)?,
+                8192,
+            )
+            .map_err(|_| crate::mailbox_status::unavailable())?;
+        if std::time::Instant::now() >= deadline {
+            return Err(crate::mailbox_status::unavailable());
+        }
+        let statuses = crate::mailbox_status::parse_native_facts(names, &result)?;
+        crate::mailbox_status::FolderFacts::new(account, names, snapshot, statuses)
+    }
+
     fn mailbox_status(
         &self,
         canonical_username: &str,

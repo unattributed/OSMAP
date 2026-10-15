@@ -252,6 +252,7 @@ impl RenameFolderRequest {
         self.validate()?;
         Ok(self)
     }
+    #[cfg(test)]
     pub(crate) fn bind_subtree<B: crate::mailbox::MailboxBackend>(
         &self,
         backend: &B,

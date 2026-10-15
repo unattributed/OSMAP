@@ -105,6 +105,40 @@ where
                 outcome: backends.mailbox_backend.create_folder(request),
             }
         }
+        MailboxHelperRequest::FolderFacts {
+            canonical_username,
+            mailbox_names,
+            grant,
+        } => match backends
+            .mailbox_backend
+            .folder_facts(canonical_username, mailbox_names)
+        {
+            Ok(facts) => match facts
+                .snapshot()
+                .without_reserved_documents()
+                .map_err(|_| crate::mailbox_status::unavailable())
+                .and_then(|snapshot| {
+                    crate::mailbox_status::FolderFacts::new(
+                        canonical_username,
+                        mailbox_names,
+                        snapshot,
+                        facts.statuses().to_vec(),
+                    )
+                }) {
+                Ok(facts) => MailboxHelperResponse::FolderFactsOk {
+                    facts: Box::new(facts),
+                    nonce: grant.nonce.clone(),
+                },
+                Err(_) => MailboxHelperResponse::Error {
+                    backend: "folder-facts".into(),
+                    reason: "exact folder facts unavailable".into(),
+                },
+            },
+            _ => MailboxHelperResponse::Error {
+                backend: "folder-facts".into(),
+                reason: "exact folder facts unavailable".into(),
+            },
+        },
         MailboxHelperRequest::FolderMetadata {
             canonical_username, ..
         } => match backends
@@ -662,6 +696,7 @@ fn helper_operation_label(request: &MailboxHelperRequest) -> &'static str {
         MailboxHelperRequest::FolderRenameCompletion { .. } => "folder_rename_completion",
         MailboxHelperRequest::FolderRename { .. } => "folder_rename",
         MailboxHelperRequest::FolderCreate { .. } => "folder_create",
+        MailboxHelperRequest::FolderFacts { .. } => "folder_facts",
         MailboxHelperRequest::FolderMetadata { .. } => "folder_metadata",
         MailboxHelperRequest::MailboxStatus { .. } => "mailbox_status",
         MailboxHelperRequest::MailboxList { .. } => "mailbox_list",

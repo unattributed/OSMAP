@@ -791,6 +791,7 @@ fn isolated_openbsd_folder_rename_populated_and_recovery() {
         child.stderr.len()
     );
     for stage in [
+        "readonly_account_bound_batch_facts=PASS",
         "populated_guid_bytes=PASS",
         "label_snooze=PASS",
         "move_populated_guid_bytes_labels_snooze_bob=PASS",
@@ -897,6 +898,19 @@ fn isolated_openbsd_folder_rename_confined_worker() {
     let source = backend(false).mailbox_status(ALICE, "INBOX.Alpha").unwrap();
     let parent = backend(false).mailbox_status(ALICE, "INBOX").unwrap();
     assert_eq!(source.messages(), 1);
+    mark_child_stage("readonly_batch_facts");
+    let fact_names = vec!["INBOX.Alpha".to_owned(), "INBOX".to_owned()];
+    let facts = super::rename_tests::with_rename_helper(
+        &helper, backend(false), lease.uid,
+        |client| client.folder_facts(ALICE, &fact_names),
+    ).unwrap();
+    facts.validate_for(ALICE, &fact_names).unwrap();
+    assert_eq!(facts.statuses().len(), 2);
+    assert_eq!(facts.status("INBOX.Alpha").unwrap(), &source);
+    assert_eq!(facts.status("INBOX").unwrap(), &parent);
+    assert!(facts.validate_for(BOB, &fact_names).is_err());
+    assert_eq!(count.load(Ordering::SeqCst), 0);
+    println!("native_rename readonly_account_bound_batch_facts=PASS");
     let before = summaries(ALICE, "INBOX.Alpha");
     assert_eq!(before.len(), 1);
     let bob_before = summaries(BOB, "INBOX.Alpha");

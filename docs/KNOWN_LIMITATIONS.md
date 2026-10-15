@@ -5,9 +5,15 @@
 The original Bin client HTTP timeout remains retained; its operation was safely
 reconciled read-only, then a separate Restore/Delete journey passed. Installed
 Create, complete-email Move and Labels journeys also pass their finite scopes.
-Do not repeat ambiguous actions. Partial native subtree repair and usable safe
-UNKNOWN handling still require their final source/native/installed proof before
-full S08-02 acceptance. Reader Seen effects and human acceptance remain separate.
+Do not repeat ambiguous actions. Signed a391/945f adds reviewed assigned badges
+and native-qualified partial repair/usable safe UNKNOWN handling. Its matching
+installed extension completes17 requests through populated subtree Rename/Move,
+then times out at read-only Bin entry18 before any Bin POST. Preserve that
+failure, assigned label and controlled subtree; final Bin/Restore/reload-badge
+cleanup and full S08-02 acceptance remain pending. Read amplification is being
+repaired without weakening fresh mutation authority or extending deadlines.
+Injected native partial placement is not actual crash/quiescence evidence.
+Reader Seen effects and human acceptance remain separate.
 See UX_EXECUTION_LEDGER.md for current outcomes.
 
 ## Full-functional UX epic execution boundary

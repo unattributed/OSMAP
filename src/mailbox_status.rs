@@ -235,3 +235,235 @@ mod tests {
         );
     }
 }
+
+/// One account-bound, request-local metadata and exact STATUS observation.
+/// This is not an atomic mail-server snapshot or a reusable mutation permit.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct FolderFacts {
+    snapshot: crate::folder_metadata::FolderSnapshot,
+    statuses: Vec<MailboxStatus>,
+}
+pub(crate) const MAX_FACT_FOLDERS: usize = 11;
+pub(crate) fn validate_fact_names(
+    account: &str,
+    names: &[String],
+) -> Result<(), MailboxBackendError> {
+    validate_account(account)?;
+    if names.is_empty() || names.len() > MAX_FACT_FOLDERS {
+        return Err(unavailable());
+    }
+    let mut seen = std::collections::BTreeSet::new();
+    for name in names {
+        validate_name(name)?;
+        if crate::documents_doveadm::reserved_documents_mailbox(name) || !seen.insert(name) {
+            return Err(unavailable());
+        }
+    }
+    Ok(())
+}
+impl FolderFacts {
+    pub fn new(
+        account: &str,
+        names: &[String],
+        snapshot: crate::folder_metadata::FolderSnapshot,
+        statuses: Vec<MailboxStatus>,
+    ) -> Result<Self, MailboxBackendError> {
+        validate_fact_names(account, names)?;
+        snapshot.validate_for(account).map_err(|_| unavailable())?;
+        if statuses.len() != names.len() {
+            return Err(unavailable());
+        }
+        let mut rows = std::collections::BTreeMap::new();
+        let mut guids = std::collections::BTreeSet::new();
+        for status in statuses {
+            status.validate(status.mailbox())?;
+            if !names.iter().any(|name| name == status.mailbox())
+                || !guids.insert(status.guid().to_owned())
+                || rows.insert(status.mailbox().to_owned(), status).is_some()
+            {
+                return Err(unavailable());
+            }
+        }
+        let mut statuses = Vec::with_capacity(names.len());
+        for name in names {
+            snapshot.folder(account, name).map_err(|_| unavailable())?;
+            statuses.push(rows.remove(name).ok_or_else(unavailable)?);
+        }
+        Ok(Self { snapshot, statuses })
+    }
+    pub fn validate_for(&self, account: &str, names: &[String]) -> Result<(), MailboxBackendError> {
+        Self::new(account, names, self.snapshot.clone(), self.statuses.clone()).map(|_| ())
+    }
+    pub fn snapshot(&self) -> &crate::folder_metadata::FolderSnapshot {
+        &self.snapshot
+    }
+    pub fn statuses(&self) -> &[MailboxStatus] {
+        &self.statuses
+    }
+    pub fn status(&self, name: &str) -> Result<&MailboxStatus, MailboxBackendError> {
+        self.statuses
+            .iter()
+            .find(|row| row.mailbox() == name)
+            .ok_or_else(unavailable)
+    }
+}
+
+pub(crate) fn parse_native_facts(
+    expected: &[String],
+    result: &CommandExecution,
+) -> Result<Vec<MailboxStatus>, MailboxBackendError> {
+    if result.status_code != 0 || result.stdout.len() > 8192 || expected.len() > MAX_FACT_FOLDERS {
+        return Err(unavailable());
+    }
+    let rows: Vec<NativeStatus> =
+        serde_json::from_str(&result.stdout).map_err(|_| unavailable())?;
+    if rows.len() != expected.len() {
+        return Err(unavailable());
+    }
+    let mut statuses = Vec::with_capacity(rows.len());
+    let mut seen = std::collections::BTreeSet::new();
+    for row in rows {
+        if !expected.contains(&row.mailbox) || !seen.insert(row.mailbox.clone()) {
+            return Err(unavailable());
+        }
+        statuses.push(MailboxStatus::new(
+            &row.mailbox,
+            &row.guid,
+            number(&row.messages)?,
+            number(&row.vsize)?,
+        )?);
+    }
+    Ok(statuses)
+}
+
+#[cfg(test)]
+mod facts_tests {
+    use super::*;
+    use crate::{
+        auth::{CommandExecutionError, CommandExecutor},
+        mailbox::{DoveadmMailboxListBackend, MailboxBackend},
+    };
+    use std::{sync::Mutex, time::Duration};
+    const TRANSCRIPT: &str = "* PREAUTH ready\r\n* NAMESPACE ((\"\" \".\")) NIL NIL\r\nN1 OK done\r\n* LIST (\\HasChildren) \".\" INBOX\r\n* LIST (\\HasNoChildren) \".\" INBOX.Child\r\nL1 OK done\r\n* BYE done\r\nZ1 OK done\r\n";
+    fn rows() -> String {
+        format!(
+            r#"[{{"mailbox":"INBOX.Child","guid":"{}","messages":"0","vsize":"0"}},{{"mailbox":"INBOX","guid":"{}","messages":"1","vsize":"668"}}]"#,
+            "b".repeat(32),
+            "a".repeat(32)
+        )
+    }
+    #[derive(Clone)]
+    struct Executor(std::sync::Arc<Mutex<Vec<Duration>>>);
+    impl CommandExecutor for Executor {
+        fn run_with_stdin_bytes(
+            &self,
+            _: &str,
+            _: &[String],
+            _: &[u8],
+        ) -> Result<CommandExecution, CommandExecutionError> {
+            panic!("unbounded command forbidden")
+        }
+        fn run_with_stdin_bytes_timeout_and_output_limit(
+            &self,
+            path: &str,
+            args: &[String],
+            input: &[u8],
+            timeout: Duration,
+            cap: usize,
+        ) -> Result<CommandExecution, CommandExecutionError> {
+            assert_eq!(path, "/fixed/doveadm");
+            let mut calls = self.0.lock().unwrap();
+            assert!(!timeout.is_zero() && timeout <= Duration::from_secs(10));
+            if calls.is_empty() {
+                assert_eq!(
+                    args,
+                    [
+                        "exec",
+                        "imap",
+                        "-o",
+                        "stats_writer_socket_path=",
+                        "-o",
+                        "auth_socket_path=/private/userdb",
+                        "-u",
+                        "alice@fixture.test"
+                    ]
+                );
+                assert_eq!(input, crate::folder_metadata_backend::TRANSCRIPT);
+                assert_eq!(cap, 512 * 1024);
+            } else {
+                assert_eq!(
+                    args,
+                    [
+                        "-o",
+                        "stats_writer_socket_path=",
+                        "-o",
+                        "auth_socket_path=/private/userdb",
+                        "-f",
+                        "json",
+                        "mailbox",
+                        "status",
+                        "-u",
+                        "alice@fixture.test",
+                        "guid messages vsize",
+                        "INBOX",
+                        "INBOX.Child"
+                    ]
+                );
+                assert!(input.is_empty());
+                assert_eq!(cap, 8192);
+                assert!(timeout <= calls[0]);
+            }
+            calls.push(timeout);
+            Ok(CommandExecution {
+                status_code: 0,
+                stdout: if calls.len() == 1 {
+                    TRANSCRIPT.into()
+                } else {
+                    rows()
+                },
+                stderr: String::new(),
+            })
+        }
+    }
+    #[test]
+    fn folder_facts_native_exact_batch_argv_shared_budget_and_missing_duplicate_refusal() {
+        let names = vec!["INBOX".into(), "INBOX.Child".into()];
+        let executor = Executor(std::sync::Arc::new(Mutex::new(Vec::new())));
+        let backend = DoveadmMailboxListBackend::new(
+            MailboxListingPolicy::default(),
+            executor.clone(),
+            "/fixed/doveadm",
+        )
+        .with_userdb_socket_path(Some("/private/userdb".into()));
+        let facts = backend.folder_facts("alice@fixture.test", &names).unwrap();
+        assert_eq!(executor.0.lock().unwrap().len(), 2);
+        assert_eq!(facts.statuses()[0].mailbox(), "INBOX");
+        assert_eq!(facts.status("INBOX.Child").unwrap().guid(), "b".repeat(32));
+        let good = CommandExecution {
+            status_code: 0,
+            stdout: rows(),
+            stderr: String::new(),
+        };
+        assert!(parse_native_facts(&names, &good).is_ok());
+        for bad in [
+            "[]".into(),
+            rows().replace("INBOX.Child", "INBOX"),
+            rows().replace("INBOX.Child", "Foreign"),
+            rows().replace("\"0\"", "\"-1\""),
+            rows().replace(&"a".repeat(32), &"0".repeat(32)),
+        ] {
+            assert!(parse_native_facts(
+                &names,
+                &CommandExecution {
+                    stdout: bad,
+                    ..good.clone()
+                }
+            )
+            .is_err());
+        }
+        assert!(
+            parse_native("INBOX", &good).is_err(),
+            "legacy singleton parser does not silently accept a batch"
+        );
+    }
+}
