@@ -16,14 +16,17 @@ statement as provenance rather than current release posture.
 
 ### Latest scoped folder and label delivery, 2026-10-15
 
-Signed source `a391839fd0f0ba1d1d932410d7265f2d975115b9` is synchronized
-to the UX branch after normal commit/push gates (1714 library passes, zero
-failures, 44 explicit native ignores and 519 account Python passes). Matching
-application945f8a64 is installed helper-first on authoritative Toronto and then
-obsd1 web; configuration, key agents, retention and unrelated services remain
-preserved. The matching final application passes481-input parity; the unchanged
-native recovery component passes bounded subtree, identity/content, account
-isolation, authority and confinement controls. Assigned label badges are now
+Signed source `39d2d1b645bc20e8eed07bad580707c2c36cb008` is synchronized
+to the UX branch after normal commit/push gates (1720 library passes, zero
+failures, 44 explicit native ignores and 519 account Python passes). Product
+sourcea902/applicationf47200d4 is installed helper-first on authoritative Toronto
+and then obsd1 web; configuration, key agents, retention and unrelated services remain
+preserved. The application passes signed a902481-input parity. Its successor changes only
+one excluded cfg(test) stage registration:480 runtime inputs remain identical,
+not false complete481-input equality to corrected test source. Actual corrected
+native qualification passes all12 markers in13.287s, including batched current
+account-bound facts, subtree/content/index isolation, authority and confinement.
+The first test-stage failure remains retained with old cleanup unconfirmed. Assigned label badges are now
 implemented in current list and reader views; source tests and review pass.
 
 Actual installed finite journeys now pass: eight Restore/Delete requests with
@@ -46,8 +49,16 @@ journey passes its first17 requests, including two descendant Creates, owned
 label assignment and populated subtree Rename/Move with continuity. Request18
 times out opening read-only Bin entry before any Bin POST: client10s/server
 attempted200 after10258ms. Its test lease is removed, but the subtree/label stay
-retained. Engineering is repairing repeated remote reads and will continue only
-the remaining13 requests; final Bin/Restore/reload-badge cleanup is pending.
+retained. The typed repair replaces repeated remote reads with separately fresh pre/post
+facts; no authority or deadline is weakened. One actual installed five-name
+read-only phase passes in3812ms within the original5s helper bound, with its
+journal/environment preserved. The one remaining13 qualification passes entry/review200, then fails at Apply3
+reply: client10s/server attempted303 at12223ms. Its seven-row journal and exact
+lease cleanup are retained; no Bin retry is authorized. Read-only reconciliation proves the current unique Binned receipt/nativeRenamed
+witness, clear role, original three GUIDs and assigned label revision10; it does
+not retrospectively observe the client reply. The further two-path native batching
+repair passes all12 native markers in11.427s. Matching new application/signed
+deployment and a distinct remaining Restore/reload-badge cleanup are pending.
 Full S08-02 and sprint/epic acceptance
 remain OPEN. Earlier account/OpenPGP requirements remain independently open.
 The operator requires current S08 work to continue with strict program management;

@@ -1003,9 +1003,18 @@ fn folder_disposition_native_adapter_uses_one_exact_rename_and_keeps_container()
                 String::new()
             } else {
                 assert!(input.is_empty());
-                let name = args.last().unwrap();
-                let status = self.backend.mailbox_status(ALICE, name).unwrap();
-                serde_json::json!([{"mailbox":name,"guid":status.guid(),"messages":status.messages().to_string(),"vsize":status.virtual_bytes().to_string()}]).to_string()
+                let fields = args
+                    .iter()
+                    .position(|arg| arg == "guid messages vsize")
+                    .unwrap();
+                let rows = args[fields + 1..]
+                    .iter()
+                    .map(|name| {
+                        let status = self.backend.mailbox_status(ALICE, name).unwrap();
+                        serde_json::json!({"mailbox":name,"guid":status.guid(),"messages":status.messages().to_string(),"vsize":status.virtual_bytes().to_string()})
+                    })
+                    .collect::<Vec<_>>();
+                serde_json::to_string(&rows).unwrap()
             };
             Ok(CommandExecution {
                 status_code: 0,

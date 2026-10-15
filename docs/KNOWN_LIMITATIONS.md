@@ -12,6 +12,15 @@ then times out at read-only Bin entry18 before any Bin POST. Preserve that
 failure, assigned label and controlled subtree; final Bin/Restore/reload-badge
 cleanup and full S08-02 acceptance remain pending. Read amplification is being
 repaired without weakening fresh mutation authority or extending deadlines.
+The signed typed-facts repaira902/f472 is now installed helper-first; current
+signed source39d2 adds only its excluded native test-stage correction. One
+installed five-name read passes3812ms within5s. The finite continuation now
+passes entry/review200, but Apply3 reply exceeds10s/server attempts303 at12223ms.
+No Bin retry is authorized. Read-only reconciliation proves the unique current
+Binned receipt/nativeRenamed witness, original three GUIDs and label revision10.
+Further batching has passed native qualification; matching signed deployment
+and distinct Restore/final checks remain pending. Neither earlier client failure is
+retroactively passed by later state evidence.
 Injected native partial placement is not actual crash/quiescence evidence.
 Reader Seen effects and human acceptance remain separate.
 See UX_EXECUTION_LEDGER.md for current outcomes.

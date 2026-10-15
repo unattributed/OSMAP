@@ -491,6 +491,22 @@ metadata/status/reply projections remain inside global transport caps. Native
 metadata plus multi-name STATUS share the original command deadline. Independent
 fresh pre/post observations do not reuse proposal or pre-dispatch facts; native
 mutation checks and completion witness remain separate. Source negative tests
-and independent review pass. New-operation native, installed latency and final
-functional continuation are pending; this is not a full WSTG or release claim.
+and independent review pass. Corrected actual nativecase passes all12 markers
+under original budgets; installed exact five-name signed facts passes3812ms<5s.
+Matching a902/f472 helper-first installation preserves the recorded boundaries.
+The remaining workflow passes entry/review, then Apply3 client reply is unobserved
+(server attempted303 at12223ms); immutable journal640123f1 and exact lease
+cleanup remain retained. No Bin retry or full workflow/release claim follows.
+Read-only authoritative receipt/native-completion reconstruction must preserve
+the unretained HTTP-payload nonce limitation. Further native Rename pre/post
+read batching is a concrete source repair, with elapsed success still unproved.
 No broad WSTG, release, human or whole-slice completion claim follows.
+
+
+The subsequent two-path native Rename repair reuses typed facts independently
+within each native pre/post phase, reducing measured local command count12→5
+for the same successful controlled subtree case. Shared original10s command
+deadline,5s helper transport, exact parent/descendant/source-absence validation
+and mutation argv/settlement remain unchanged. Source negatives and independent
+review pass. This does not prove full HTTP Apply elapsed success; the current
+unobserved Bin result cannot be automatically replayed.

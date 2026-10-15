@@ -9038,7 +9038,8 @@ state. Only then name exact human-only observations. No fake ETA or new status b
     ],
     "developers": [
       "/root/folder_subtree_backend",
-      "/root"
+      "/root",
+      "/root/bin_preparation_engineer"
     ],
     "qa": [
       "/root/subtree_delivery_qa",
@@ -9132,7 +9133,7 @@ state. Only then name exact human-only observations. No fake ETA or new status b
         "R2-16-020",
         "R2-16-021"
       ],
-      "owner": "/root/folder_subtree_backend",
+      "owner": "/root/bin_preparation_engineer",
       "frontend_backend_outcome": "Authenticated Folders/Settings controls create, rename, move, safely bin/restore and explicitly delete authoritative bounded user subtrees; confirmations bind original GUIDs, contents and descendants. Explicit partial recovery settles only proven-owned placements; no root redispatch or guessed timeout/crash settlement.",
       "dependencies": [],
       "essential_qa": "Reuse native complete-message/body/attachment and identity evidence. Changed partial/merged target recovery, replay/single-use nonce, protected/cyclic/stale/foreign/missing/extra folder, concurrent authority and receipt/history compatibility countercases; qualify typed quiescence only when actually proven. Safe UNKNOWN retention is not successful recovery.",
@@ -9162,7 +9163,7 @@ state. Only then name exact human-only observations. No fake ETA or new status b
           "reference": "Matching native3 known injected partial split + typed settlement, actual signed child repair/lost reply/consumed nonce replay and cleanupPASS. Safe retained before-witness native controlPASS separately. No actual crash/quiescence claim; prior failed fixtures explicitly retained cleanupUNCONFIRMED."
         }
       ],
-      "next_action": "a391/945f is signed/synced and installed helper-first. Actual changed journey completed requests1-17, then readonly Bin entry GET18 timed out before any Bin POST. Repair measured read amplification in preparation without changing fresh execute/helper authority or deadlines, then qualify only13 remaining requests under fresh pinned continuation; never repeat completed mutations."
+      "next_action": "Preserve actual Apply3 uncertain reply and immutable640123/c042 journals; never retry Bin. Reconstruct unique authoritative receipt request and query exact native witness/current tree/labels read-only. Integrate minimal fresh native pre/post FolderFacts batching in Rename, qualify matching native/sign/sync/helper-first deployment, then admit only a separately reviewed distinct continuation. No human debugging or deadline extension."
     },
     {
       "id": "hierarchy-and-selected-facts",
@@ -9283,7 +9284,7 @@ state. Only then name exact human-only observations. No fake ETA or new status b
       "evidence": "S08 labels-folders/folders-disposition-integration-20261015/installed-lifecycle-qualification/remaining-restore-delete-continuation-attempt2; actual53.964s, root witnessf5a6, actual-record proof4b83"
     }
   },
-  "next_action": "Repair same-slice remote-read amplification with bounded typed read-only facts, preserving separate fresh pre/post phases and required completion witness. Review exact ten existing source paths, qualify matching native read latency, sign/sync/install, then only13 remaining requests pinned to failedc042/current tree and labels. No completed mutation replay, deadline waiver or operator debugging."
+  "next_action": "Preserve actual Apply3 uncertain reply and immutable640123/c042 journals; never retry Bin. Reconstruct unique authoritative receipt request and query exact native witness/current tree/labels read-only. Integrate minimal fresh native pre/post FolderFacts batching in Rename, qualify matching native/sign/sync/helper-first deployment, then admit only a separately reviewed distinct continuation. No human debugging or deadline extension."
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->
@@ -9499,3 +9500,92 @@ claim the old481-input manifest equals the corrected test source. Matching
 helper-first installation, actual installed read-only facts latency and remaining
 thirteen requests are still pending. Current installed pair remains945f/a391;
 original GET18 failure and seventeen completed requests stay retained.
+
+
+### 2026-10-15 — installed continuation preserves Apply ambiguity
+
+Signed39d2d1b is normally synchronized with clean fresh-origin equality; Toronto
+standard source-only checkout is clean at39d2. Matching producta902/f472 was
+installed helper-first on Toronto then obsd1 web, preserving configuration, key
+agents, retention, completion integrity and unrelated services. Independent
+deployment review6e13ab76 passes this scope. One installed exact next-Bin
+five-name signed read-only facts phase passes3812ms within5s, whole3.843s,
+with originaljournal/env/pins unchanged and owned process reaped (raw5223f5af).
+It is not an end-to-end Apply timing guarantee.
+
+The one admitted remaining13 journey FAILS at Apply3: entryGET1 and reviewPOST2
+complete200 (server5661/5658ms), then explicit ApplyPOST3 reply is unobserved
+under the original10s read bound. Server later attempts303 at12223ms. Root
+SSH0/driver2/35.835s/no outer timeout; exact test lease revocation/removalPASS
+asr-05dc13a618bf8f9ca68b43871bcf79f7. Immutable newjournal640123f1 contains
+seven rows/two complete replies/one uncertain Apply, while oldc042 remains
+unchanged. Do not retry Bin or claim original13/full slice acceptance. Preserve
+current receipts/tree/labels; reconcile exact current durable operation read-only
+before any subsequent distinct action. The failed journal has no retained Apply
+request nonce, so a reconstructed unique durable receipt cannot retroactively
+prove that payload nonce or observed HTTP completion.
+
+Source inspection identifies further native Rename amplification: for two
+descendants, six pre reads, Rename and five post reads are twelve Dovecot
+processes inside the single mutation RPC. This is source-derived, not measured
+per-command attribution of12223ms. Reuse existing typed native facts separately
+for fresh pre/post phases; preserve every identity, descendant, authority,
+completion and deadline check. No new protocol framework or operator debugging.
+
+
+The minimal native-phase successor ecfdd81b is integrated in exactly
+folder_rename_backend.rs and its existing tests. The actual same successful
+two-descendant Move is RED under old product (twelve native commands versus
+expected five), then GREEN with the new implementation; all five focused backend
+cases, format and Clippy pass. Pre and post each obtain separate current facts
+via existing native metadata+multi-name STATUS, then reuse all original parent/
+child/source-absence validators. Mutation argv/result/settlement block is byte
+identical; GATE and original outer10s Deadline are unchanged. Public Apply still
+uses four signed RPCs and its original limits. Matching native case/application/
+installation and complete Apply latency remain unqualified at this source stage.
+Observer compilation's first macro-expression error is retained; a two-parenthesis
+syntax-only successor compiles against actual current production library in
+0.901s. That is not a durable-operation observation or successful HTTP result.
+
+
+Actual read-only observerv2 source5a28/binaryb7cf completes in5.895s: unique
+receiptcd43b8ad is Binned with authoritative native completionRenamed, clear
+role/no recovery, original root/Child/Grand GUIDs at the receipt destination and
+one direct root message. Label revision10 assigns the owned label at that same
+destination. Records, all six journals, environment and approved pins stay
+unchanged; no HTTP/session/body fetch or mail mutation occurs. This reconstructs
+the exact current durable request from its validated receipt, not an independently
+retained HTTP payload nonce or observed303; original failure stays preserved.
+Native-phase candidate's actual fresh build2fdf/481-input parity passes61.729s,
+then the single existing lifecycle case passes11.427s/all12 markers/owned cleanup
+and standard metadata preservation. No operator mail/services are mutated.
+Complete installed Apply elapsed success remains open; next candidate application
+and signed normal synchronization/deployment precede one distinct remaining
+Restore/final-label/hierarchy continuation. No Bin action is repeated.
+
+
+The first normal native-phase commit gate fails1705/16/44: its first causal
+Disposition native-adapter mock still emits only the last requested STATUS row,
+so current exact-batch validation correctly refuses it. Fifteen further failures
+are shared TEST_GATE poison cascades, not sixteen independently established
+product defects. Preserve this gate failure; no commit or activation occurred.
+The independently reviewed one-file fixture successor905330db emits each explicit
+requested row using unchanged identities/counts/assertions/lock behavior. Actual
+oldRED1/newGREEN1 and fourteen affected disposition testsPASS. Production code
+is unchanged. App9570/2fdf native evidence is reusable with480 unchanged manifest
+inputs and one excluded unit-fixture difference; old481 complete equality to
+final source is false. Normal commit/push gates remain mandatory, no waiver.
+
+
+Normal gate2 then passes the corrected adapter but reveals the same singleton
+STATUS mock in subtree recovery:1710 passes/11 failures/44 native ignores, first
+expectedUnknown versus RefusedUnavailable followed by ten poison cascades.
+Preserve both gate failures and all lock behavior. The independently reviewed
+fixture-only successor d4aadaab emits every existing requested row, omitting
+missing identities for unchanged strict refusal. Actual oldRED1/newGREEN1 and
+combined Rename/disposition/recovery30 PASS/0fail/0ignore; direct-call mock
+inventory finds no other affected singleton. Both fixes are excluded unit
+modules and unused by the actual native case: app9570/native2fdf reuse is479
+unchanged manifest inputs plus two reviewed exclusions, not481full equality.
+Normal gate3 is still mandatory. The distinct Restore10 qualifier87fcd/9deb
+compiles against actual9570 production library in1.705s; it has not executed.

@@ -5,6 +5,7 @@ use std::sync::Mutex;
 struct Exec {
     mode: u8,
     writes: Mutex<usize>,
+    calls: Mutex<Vec<Vec<String>>>,
 }
 impl CommandExecutor for Exec {
     fn run_with_stdin_bytes(
@@ -23,6 +24,7 @@ impl CommandExecutor for Exec {
         timeout: Duration,
         limit: usize,
     ) -> Result<CommandExecution, CommandExecutionError> {
+        self.calls.lock().unwrap().push(args.to_vec());
         assert_eq!(program, "/fixed/doveadm");
         assert!(timeout <= Duration::from_secs(10));
         let mut writes = self.writes.lock().unwrap();
@@ -39,7 +41,7 @@ impl CommandExecutor for Exec {
                 "((\"\" \".\")) NIL NIL"
             };
             let mut rows = "* LIST (\\HasChildren) \".\" INBOX\r\n".to_owned();
-            if (20..30).contains(&self.mode) {
+            if (20..30).contains(&self.mode) || self.mode == 38 {
                 rows.push_str(&format!(
                     "* LIST ({}) \".\" INBOX.Target\r\n",
                     if self.mode == 23 {
@@ -65,13 +67,22 @@ impl CommandExecutor for Exec {
             if self.mode >= 30 {
                 let root = if *writes == 0 || self.mode == 32 {
                     "INBOX.Alpha"
+                } else if self.mode == 38 {
+                    "INBOX.Target.Alpha"
                 } else {
                     "INBOX.Beta"
                 };
+                if self.mode == 38 {
+                    rows.push_str(&format!(
+                        "* LIST (\\HasNoChildren) \".\" {root}.Child.Grand\r\n"
+                    ));
+                }
                 rows.push_str(&format!(
                     "* LIST ({}) \".\" {root}.Child\r\n",
                     if self.mode == 36 {
                         "\\Sent"
+                    } else if self.mode == 38 {
+                        "\\HasChildren"
                     } else {
                         "\\HasNoChildren"
                     }
@@ -91,7 +102,7 @@ impl CommandExecutor for Exec {
                 };
                 rows.push_str(&format!(
                     "* LIST ({flags}) \".\" {}\r\n",
-                    if (20..30).contains(&self.mode) {
+                    if (20..30).contains(&self.mode) || self.mode == 38 {
                         "INBOX.Target.Alpha"
                     } else {
                         "INBOX.Beta"
@@ -112,7 +123,7 @@ impl CommandExecutor for Exec {
                     "-u",
                     "alice@fixture.test",
                     "INBOX.Alpha",
-                    if (20..30).contains(&self.mode) {
+                    if (20..30).contains(&self.mode) || self.mode == 38 {
                         "INBOX.Target.Alpha"
                     } else {
                         "INBOX.Beta"
@@ -132,8 +143,12 @@ impl CommandExecutor for Exec {
             }
             String::new()
         } else {
-            let name = args.last().unwrap();
-            let guid = if name.ends_with(".Child") {
+            let pos = args
+                .iter()
+                .position(|arg| arg == "guid messages vsize")
+                .unwrap();
+            let rows = args[pos+1..].iter().map(|name| {
+            let guid = if name.ends_with(".Grand") { "f" } else if name.ends_with(".Child") {
                 if self.mode == 31 || self.mode == 33 && *writes > 0 {
                     "f"
                 } else {
@@ -164,7 +179,10 @@ impl CommandExecutor for Exec {
             } else {
                 0
             };
-            format!("[{{\"mailbox\":\"{name}\",\"guid\":\"{guid}\",\"messages\":\"{count}\",\"vsize\":\"0\"}}]")
+
+                serde_json::json!({"mailbox": name, "guid":guid,"messages":count.to_string(),"vsize":"0"})
+            }).collect::<Vec<_>>();
+            serde_json::to_string(&rows).unwrap()
         };
         Ok(CommandExecution {
             status_code: code,
@@ -201,6 +219,7 @@ fn folder_subtree_backend_exact_children_preflight_and_partial_result_boundaries
         let executor = Exec {
             mode,
             writes: Mutex::new(0),
+            calls: Mutex::new(Vec::new()),
         };
         assert_eq!(
             rename(
@@ -217,6 +236,7 @@ fn folder_subtree_backend_exact_children_preflight_and_partial_result_boundaries
     let executor = Exec {
         mode: 30,
         writes: Mutex::new(0),
+        calls: Mutex::new(Vec::new()),
     };
     assert_eq!(
         rename(
@@ -265,6 +285,7 @@ fn folder_move_pins_both_parents_preserves_leaf_and_refuses_before_dispatch() {
         let executor = Exec {
             mode,
             writes: Mutex::new(0),
+            calls: Mutex::new(Vec::new()),
         };
         assert_eq!(
             rename(
@@ -346,6 +367,7 @@ fn folder_rename_backend_confirmed_and_refusal_boundaries() {
         let executor = Exec {
             mode,
             writes: Mutex::new(0),
+            calls: Mutex::new(Vec::new()),
         };
         assert_eq!(
             rename(
@@ -362,6 +384,7 @@ fn folder_rename_backend_confirmed_and_refusal_boundaries() {
     let executor = Exec {
         mode: 0,
         writes: Mutex::new(0),
+        calls: Mutex::new(Vec::new()),
     };
     let snapshot = crate::folder_metadata::FolderSnapshot::parse("bob@fixture.test", b"* PREAUTH ready\r\n* NAMESPACE ((\"\" \".\")) NIL NIL\r\nN1 OK done\r\n* LIST () \".\" INBOX\r\n* LIST () \".\" INBOX.Alpha\r\nL1 OK done\r\n* BYE done\r\nZ1 OK done\r\n").unwrap();
     let source =
@@ -439,4 +462,75 @@ fn folder_rename_names_roles_and_settings_admission() {
         "INBOX.Alpha",
         "INBOX.Beta"
     ));
+}
+
+#[test]
+fn folder_rename_native_two_descendants_share_each_fresh_phase_batch() {
+    let _case = BACKEND_CASES.lock().unwrap();
+    let request = RenameFolderRequest::for_move(
+        "alice@fixture.test",
+        "INBOX.Alpha",
+        &"a".repeat(32),
+        &"b".repeat(32),
+        "INBOX.Target",
+        &"d".repeat(32),
+    )
+    .unwrap();
+    let mut fields = serde_json::to_value(request).unwrap();
+    fields["descendants"] = serde_json::json!([{"suffix":".Child","guid":"e".repeat(32)},{"suffix":".Child.Grand","guid":"f".repeat(32)}]);
+    let request: RenameFolderRequest = serde_json::from_value(fields).unwrap();
+    let executor = Exec {
+        mode: 38,
+        writes: Mutex::new(0),
+        calls: Mutex::new(Vec::new()),
+    };
+    assert_eq!(
+        rename(
+            &executor,
+            Path::new("/fixed/doveadm"),
+            Some(Path::new("/private/userdb")),
+            &request
+        ),
+        Outcome::Renamed
+    );
+    assert_eq!(*executor.writes.lock().unwrap(), 1);
+    let calls = executor.calls.lock().unwrap();
+    assert_eq!(
+        calls.len(),
+        5,
+        "metadata+batch STATUS before, one rename, independent metadata+batch STATUS after"
+    );
+    assert_eq!(
+        calls
+            .iter()
+            .filter(|args| args.first().is_some_and(|arg| arg == "exec"))
+            .count(),
+        2
+    );
+    let batches = calls
+        .iter()
+        .filter_map(|args| {
+            args.iter()
+                .position(|arg| arg == "guid messages vsize")
+                .map(|pos| &args[pos + 1..])
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(
+        batches,
+        vec![
+            &[
+                "INBOX".to_owned(),
+                "INBOX.Alpha".to_owned(),
+                "INBOX.Alpha.Child".to_owned(),
+                "INBOX.Alpha.Child.Grand".to_owned(),
+                "INBOX.Target".to_owned()
+            ][..],
+            &[
+                "INBOX.Target".to_owned(),
+                "INBOX.Target.Alpha".to_owned(),
+                "INBOX.Target.Alpha.Child".to_owned(),
+                "INBOX.Target.Alpha.Child.Grand".to_owned()
+            ][..]
+        ]
+    );
 }

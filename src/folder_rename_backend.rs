@@ -40,36 +40,53 @@ pub(crate) fn rename_attempt<E: CommandExecutor>(
     };
     let backend = DoveadmMailboxListBackend::new(MailboxListingPolicy::default(), &limited, path)
         .with_userdb_socket_path(socket.map(Path::to_path_buf));
-    let (Ok(before), Ok(source), Ok(parent)) = (
-        backend.folder_metadata(request.account()),
-        backend.mailbox_status(request.account(), request.source()),
-        backend.mailbox_status(request.account(), request.parent()),
+    let before_names = phase_names(request, false);
+    let Ok(before) = backend.folder_facts(request.account(), &before_names) else {
+        return NativeAttempt::undispatched(Outcome::Refused(Refusal::Unavailable));
+    };
+    if before
+        .validate_for(request.account(), &before_names)
+        .is_err()
+    {
+        return NativeAttempt::undispatched(Outcome::Refused(Refusal::Unavailable));
+    }
+    let (Ok(source), Ok(parent)) = (
+        before.status(request.source()),
+        before.status(request.parent()),
     ) else {
         return NativeAttempt::undispatched(Outcome::Refused(Refusal::Unavailable));
     };
-    if let Err(e) = request.validate_before(&before, &source, &parent) {
+    if let Err(e) = request.validate_before(before.snapshot(), source, parent) {
         return NativeAttempt::undispatched(Outcome::Refused(e));
     }
     if request.is_move() {
-        let Ok(source_parent) = backend.mailbox_status(request.account(), request.source_parent())
-        else {
+        let Ok(source_parent) = before.status(request.source_parent()) else {
             return NativeAttempt::undispatched(Outcome::Refused(Refusal::Unavailable));
         };
-        if let Err(e) = request.validate_source_parent(&before, &source_parent) {
+        if let Err(e) = request.validate_source_parent(before.snapshot(), source_parent) {
             return NativeAttempt::undispatched(Outcome::Refused(e));
         }
     }
     if before
+        .snapshot()
         .folder(request.account(), &request.destination())
         .is_ok()
         || before
+            .snapshot()
             .folders()
             .iter()
             .any(|f| f.name().starts_with(&format!("{}.", request.destination())))
     {
         return NativeAttempt::undispatched(Outcome::Conflict);
     }
-    if let Err(reason) = crate::folder_subtree::check(&backend, request, &before, false) {
+    if let Err(reason) =
+        crate::folder_subtree::check_from(request, before.snapshot(), false, |name| {
+            before
+                .status(name)
+                .cloned()
+                .map_err(|_| Refusal::Unavailable)
+        })
+    {
         return NativeAttempt::undispatched(Outcome::Refused(reason));
     }
     let mut args = vec!["-o".into(), "stats_writer_socket_path=".into()];
@@ -104,20 +121,59 @@ pub(crate) fn rename_attempt<E: CommandExecutor>(
     if result.status_code != 0 {
         return NativeAttempt::returned(Outcome::Unknown);
     }
-    let (Ok(after), Ok(destination), Ok(parent)) = (
-        backend.folder_metadata(request.account()),
-        backend.mailbox_status(request.account(), &request.destination()),
-        backend.mailbox_status(request.account(), request.parent()),
+    // Capture a new phase after native return. Nothing from before dispatch
+    // supplies after-state authority; the same outer Deadline still applies.
+    let after_names = phase_names(request, true);
+    let Ok(after) = backend.folder_facts(request.account(), &after_names) else {
+        return NativeAttempt::returned(Outcome::Unknown);
+    };
+    if after.validate_for(request.account(), &after_names).is_err() {
+        return NativeAttempt::returned(Outcome::Unknown);
+    }
+    let (Ok(destination), Ok(parent)) = (
+        after.status(&request.destination()),
+        after.status(request.parent()),
     ) else {
         return NativeAttempt::returned(Outcome::Unknown);
     };
-    if !crate::folder_rename::confirmed_result(request, &after, &destination, &parent) {
+    if !crate::folder_rename::confirmed_result(request, after.snapshot(), destination, parent) {
         return NativeAttempt::returned(Outcome::Unknown);
     }
-    if crate::folder_subtree::check(&backend, request, &after, true).is_err() {
+    if crate::folder_subtree::check_from(request, after.snapshot(), true, |name| {
+        after
+            .status(name)
+            .cloned()
+            .map_err(|_| Refusal::Unavailable)
+    })
+    .is_err()
+    {
         return NativeAttempt::returned(Outcome::Unknown);
     }
     NativeAttempt::returned(Outcome::Renamed)
+}
+
+// Only the identities already required by this native phase are requested.
+// The typed backend observes one current metadata transcript and one bounded
+// exact-name STATUS batch under the original shared ten-second operation cap.
+fn phase_names(request: &RenameFolderRequest, changed: bool) -> Vec<String> {
+    let root = if changed {
+        request.destination()
+    } else {
+        request.source().to_owned()
+    };
+    let mut names = vec![root.clone(), request.parent().to_owned()];
+    if !changed && request.is_move() {
+        names.push(request.source_parent().to_owned());
+    }
+    names.extend(
+        request
+            .descendants()
+            .iter()
+            .map(|child| format!("{root}{}", child.suffix())),
+    );
+    names.sort();
+    names.dedup();
+    names
 }
 
 #[cfg(test)]

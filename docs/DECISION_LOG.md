@@ -9824,3 +9824,41 @@ only with explicit480 unchanged runtime inputs/one excluded cfg(test) delta;
 never label the old complete manifest equal. No second product build is needed.
 Normal signing/synchronization and matching helper-first deployment remain
 required before the installed read-only latency check and finite continuation.
+
+
+## 2026-10-15 — keep the uncertain Bin operation, reduce native read amplification
+
+Installed entry/review now pass, but explicit Apply3's reply exceeds the unchanged
+10s limit; later server303 is not an observed completion. Reconcile its current
+unique durable receipt/native witness/tree read-only, preserving the missing
+HTTP-payload nonce limitation; never resend Bin. The next minimal source repair
+batches existing native Rename pre/post metadata/status reads using the already
+qualified typed facts operation, without caching across mutation or dropping
+parent/descendant/source-absence/completion authority. Source12→5 nativeprocesses
+is not elapsed proof. No UAT or stage promotion until matching real outcomes.
+
+
+Read-only reconciliation now proves a unique Binned receipt, exact nativeRenamed
+witness, clear role and original three-GUID placement with owned label revision10.
+Preserve the unobserved clientreply and absent independent payload-nonce record.
+Qualify the two-path repair using the existing native case: actual all12 markers
+pass within original bounds; no new mutation campaign or deadline increase.
+After matching signed deployment, permit only a distinct receipt-bound Restore
+and unfinished final checks. Record future expected-request digest before any
+Apply boundary; never store CSRF, cookies or reusable credentials in its journal.
+
+
+Correct only the old single-row unit mock after the normal gate exposes its
+strict batch refusal. Preserve every assertion and poison behavior and retain
+the failed gate. Reuse the already qualified app/native case only with explicit
+480 unchanged manifest inputs/one excluded unit fixture, independently reviewed;
+no unchanged native campaign or product rebuild is justified by this test-only
+correction. A subsequent normal gate must pass before publication.
+
+
+The next normal gate exposes a second old singleton recovery mock, then ten
+poison cascades. Inspect the affected native-call mock graph together and repair
+that fixture only; do not suppress locks or change product validators. Combined
+thirty affected tests pass. Independently reviewed479-input/two excluded unit
+fixture provenance permits existing app/native reuse; retain both failed gates
+and require the next complete normal gate, without another unchanged native run.

@@ -154,11 +154,19 @@ impl CommandExecutor for Exec {
             });
         } else {
             assert!(input.is_empty());
-            let name = args.last().unwrap();
-            match self.status(name) {
-                Ok(s) => serde_json::json!([{"mailbox":name,"guid":s.guid(),"messages":"1","vsize":s.virtual_bytes().to_string()}]).to_string(),
-                Err(_) => "[]".into(),
-            }
+            let fields = args
+                .iter()
+                .position(|arg| arg == "guid messages vsize")
+                .unwrap();
+            let rows = args[fields + 1..]
+                .iter()
+                .filter_map(|name| {
+                    self.status(name).ok().map(|s| {
+                        serde_json::json!({"mailbox":name,"guid":s.guid(),"messages":"1","vsize":s.virtual_bytes().to_string()})
+                    })
+                })
+                .collect::<Vec<_>>();
+            serde_json::to_string(&rows).unwrap()
         };
         Ok(CommandExecution {
             status_code: 0,
