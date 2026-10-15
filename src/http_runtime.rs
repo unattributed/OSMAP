@@ -200,6 +200,22 @@ where
             (HttpMethod::Get, "/drafts") => self.handle_draft_list(request, &context),
             (HttpMethod::Get, "/draft") => self.handle_draft_resume(request, &context),
             (HttpMethod::Get, "/sessions") => self.handle_sessions_page(request, &context),
+            (HttpMethod::Get, "/folders/deleted") => self.handle_deleted_folders(request, &context),
+            (HttpMethod::Get | HttpMethod::Post, "/settings/folders/bin") => {
+                self.handle_folder_disposition(request, &context, false)
+            }
+            (HttpMethod::Get | HttpMethod::Post, "/settings/folders/restore") => {
+                self.handle_folder_disposition(request, &context, true)
+            }
+            (HttpMethod::Get | HttpMethod::Post, "/settings/folders/disposition/check") => {
+                self.handle_folder_disposition_check(request, &context)
+            }
+            (HttpMethod::Get | HttpMethod::Post, "/settings/folders/delete") => {
+                self.handle_folder_delete(request, &context)
+            }
+            (HttpMethod::Get | HttpMethod::Post, "/settings/folders/delete/check") => {
+                self.handle_folder_delete_check(request, &context)
+            }
             (HttpMethod::Get, "/settings/folders/rename/check") => {
                 self.handle_folder_rename_check(request, &context)
             }

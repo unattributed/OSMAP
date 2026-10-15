@@ -38,6 +38,14 @@ pub(super) enum MailboxHelperRequest {
         request: crate::mailbox::MessageDeleteRequest,
         grant: MailboxHelperGrant,
     },
+    FolderDeleteCompletion {
+        request: crate::folder_delete::DeleteFolderRequest,
+        grant: MailboxHelperGrant,
+    },
+    FolderDelete {
+        request: crate::folder_delete::DeleteFolderRequest,
+        grant: MailboxHelperGrant,
+    },
     FolderRenameCompletion {
         request: crate::folder_rename::RenameFolderRequest,
         grant: MailboxHelperGrant,
@@ -151,6 +159,16 @@ pub(crate) enum MailboxHelperResponse {
         result: Result<crate::mailbox::MessageDeleteResult, crate::mailbox::MessageDeleteError>,
         nonce: String,
     },
+    FolderDeleteCompletionOk {
+        request: Box<crate::folder_delete::DeleteFolderRequest>,
+        completion: crate::folder_delete::Completion,
+        nonce: String,
+    },
+    FolderDeleteOk {
+        request: Box<crate::folder_delete::DeleteFolderRequest>,
+        outcome: crate::folder_delete::Outcome,
+        nonce: String,
+    },
     FolderRenameCompletionOk {
         request: Box<crate::folder_rename::RenameFolderRequest>,
         completion: crate::folder_rename::Completion,
@@ -223,6 +241,8 @@ pub(super) fn encode_request(request: &MailboxHelperRequest) -> String {
             format!("operation=retention_status\ncanonical_username_b64={}\nmailbox_name_b64={}\n{}", encode_base64(canonical_username.as_bytes()), encode_base64(mailbox_name.as_bytes()), encode_grant_fields(grant)),
         MailboxHelperRequest::MessageDelete { request, grant } =>
             format!("operation=message_delete\n{}{}", encode_delete_fields(request), encode_grant_fields(grant)),
+        MailboxHelperRequest::FolderDeleteCompletion {request,grant} => format!("operation=folder_delete_completion\ncanonical_username_b64={}\ndelete_request_b64={}\n{}",encode_base64(request.account().as_bytes()),encode_base64(serde_json::to_string(request).unwrap_or_default().as_bytes()),encode_grant_fields(grant)),
+        MailboxHelperRequest::FolderDelete {request,grant} => format!("operation=folder_delete\ncanonical_username_b64={}\ndelete_request_b64={}\n{}",encode_base64(request.account().as_bytes()),encode_base64(serde_json::to_string(request).unwrap_or_default().as_bytes()),encode_grant_fields(grant)),
         MailboxHelperRequest::FolderRenameCompletion {request,grant} => format!("operation=folder_rename_completion\ncanonical_username_b64={}\nrename_request_b64={}\n{}",encode_base64(request.account().as_bytes()),encode_base64(serde_json::to_string(request).unwrap_or_default().as_bytes()),encode_grant_fields(grant)),
         MailboxHelperRequest::FolderRename {request,grant} => format!("operation=folder_rename\ncanonical_username_b64={}\nrename_request_b64={}\n{}",encode_base64(request.account().as_bytes()),encode_base64(serde_json::to_string(request).unwrap_or_default().as_bytes()),encode_grant_fields(grant)),
         MailboxHelperRequest::FolderCreate {request,grant} => format!("operation=folder_create\ncanonical_username_b64={}\ncreate_request_b64={}\n{}",encode_base64(request.account().as_bytes()),encode_base64(serde_json::to_string(request).unwrap_or_default().as_bytes()),encode_grant_fields(grant)),
@@ -381,6 +401,27 @@ pub(super) fn parse_request(input: &str) -> Result<MailboxHelperRequest, String>
                 request: parse_delete_fields(&fields)?,
                 grant,
             })
+        }
+        "folder_delete" | "folder_delete_completion" => {
+            if input.len() > 4096 {
+                return Err("delete request too large".into());
+            }
+            let bytes = decode_base64_bytes(
+                require_field(&fields, "delete_request_b64")?,
+                2048,
+                "delete_request",
+            )?;
+            let request: crate::folder_delete::DeleteFolderRequest =
+                serde_json::from_slice(&bytes).map_err(|_| "invalid delete request")?;
+            request.validate().map_err(|_| "invalid delete request")?;
+            if request.account() != canonical_username {
+                return Err("delete account mismatch".into());
+            }
+            if operation == "folder_delete_completion" {
+                Ok(MailboxHelperRequest::FolderDeleteCompletion { request, grant })
+            } else {
+                Ok(MailboxHelperRequest::FolderDelete { request, grant })
+            }
         }
         "folder_rename" | "folder_rename_completion" => {
             if input.len() > 4096 {
@@ -653,6 +694,9 @@ pub(super) fn ordinary_request_allowed(request: &MailboxHelperRequest) -> bool {
         } => allowed(source_mailbox_name) && allowed(destination_mailbox_name),
         MessageFlag { request, .. } => allowed(&request.mailbox_name),
         MessageDelete { request, .. } => allowed(&request.mailbox_name),
+        FolderDeleteCompletion { request, .. } | FolderDelete { request, .. } => {
+            allowed(request.source()) && allowed(request.parent())
+        }
         FolderRenameCompletion { request, .. } | FolderRename { request, .. } => {
             allowed(request.source()) && allowed(&request.destination())
         }
@@ -710,6 +754,11 @@ pub(super) fn verify_request_grant(
     now_secs: u64,
 ) -> Result<(), String> {
     let grant = request_grant(request);
+    if let MailboxHelperRequest::FolderDelete { request, .. } = request {
+        if request.action_nonce() != grant.nonce {
+            return Err("delete original nonce mismatch".into());
+        }
+    }
     if let MailboxHelperRequest::FolderRename { request, .. } = request {
         if request.action_nonce() != grant.nonce {
             return Err("rename original nonce mismatch".into());
@@ -752,7 +801,9 @@ pub(super) fn request_grant(request: &MailboxHelperRequest) -> &MailboxHelperGra
         MailboxHelperRequest::RetentionStatus { grant, .. }
         | MailboxHelperRequest::MessageDelete { grant, .. }
         | MailboxHelperRequest::MessageFlag { grant, .. } => grant,
-        MailboxHelperRequest::FolderRenameCompletion { grant, .. }
+        MailboxHelperRequest::FolderDeleteCompletion { grant, .. }
+        | MailboxHelperRequest::FolderDelete { grant, .. }
+        | MailboxHelperRequest::FolderRenameCompletion { grant, .. }
         | MailboxHelperRequest::FolderRename { grant, .. }
         | MailboxHelperRequest::FolderCreate { grant, .. }
         | MailboxHelperRequest::FolderMetadata { grant, .. }
@@ -773,7 +824,9 @@ fn set_request_grant(request: &mut MailboxHelperRequest, new_grant: MailboxHelpe
         MailboxHelperRequest::RetentionStatus { grant, .. }
         | MailboxHelperRequest::MessageDelete { grant, .. }
         | MailboxHelperRequest::MessageFlag { grant, .. } => *grant = new_grant,
-        MailboxHelperRequest::FolderRenameCompletion { grant, .. }
+        MailboxHelperRequest::FolderDeleteCompletion { grant, .. }
+        | MailboxHelperRequest::FolderDelete { grant, .. }
+        | MailboxHelperRequest::FolderRenameCompletion { grant, .. }
         | MailboxHelperRequest::FolderRename { grant, .. }
         | MailboxHelperRequest::FolderCreate { grant, .. }
         | MailboxHelperRequest::FolderMetadata { grant, .. }
@@ -794,6 +847,8 @@ pub(super) fn helper_operation_label(request: &MailboxHelperRequest) -> &'static
         MailboxHelperRequest::RetentionStatus { .. } => "retention_status",
         MailboxHelperRequest::MessageDelete { .. } => "message_delete",
         MailboxHelperRequest::MessageFlag { .. } => "message_flag",
+        MailboxHelperRequest::FolderDeleteCompletion { .. } => "folder_delete_completion",
+        MailboxHelperRequest::FolderDelete { .. } => "folder_delete",
         MailboxHelperRequest::FolderRenameCompletion { .. } => "folder_rename_completion",
         MailboxHelperRequest::FolderRename { .. } => "folder_rename",
         MailboxHelperRequest::FolderCreate { .. } => "folder_create",
@@ -864,17 +919,33 @@ fn canonical_grant_payload(request: &MailboxHelperRequest, grant: &MailboxHelper
             request.version.message_guid.clone(),
             request.policy_revision.to_string(),
         ]),
-        MailboxHelperRequest::FolderRenameCompletion { request, .. }
-        | MailboxHelperRequest::FolderRename { request, .. } => fields.extend([
+        MailboxHelperRequest::FolderDeleteCompletion { request, .. }
+        | MailboxHelperRequest::FolderDelete { request, .. } => fields.extend([
             request.account().into(),
             request.source().into(),
             request.source_guid().into(),
             request.parent_guid().into(),
-            request.leaf().into(),
             request.action_nonce().into(),
-            request.parent().into(),
-            request.source_parent_guid().into(),
         ]),
+        MailboxHelperRequest::FolderRenameCompletion { request, .. }
+        | MailboxHelperRequest::FolderRename { request, .. } => {
+            fields.extend([
+                request.account().into(),
+                request.source().into(),
+                request.source_guid().into(),
+                request.parent_guid().into(),
+                request.leaf().into(),
+                request.action_nonce().into(),
+                request.parent().into(),
+                request.source_parent_guid().into(),
+            ]);
+            // Legacy Rename/Move payloads remain byte-identical. A disposition
+            // adds its exact typed purpose, Bin revision/identity and receipt.
+            if let Some(purpose) = request.disposition() {
+                fields.push("folder_disposition_v1".into());
+                fields.push(serde_json::to_string(purpose).unwrap_or_default());
+            }
+        }
         MailboxHelperRequest::FolderCreate { request, .. } => fields.extend([
             request.account().into(),
             request.parent().into(),
@@ -1068,6 +1139,8 @@ fn encode_response_checked(response: &MailboxHelperResponse) -> Result<String, S
         }
         MailboxHelperResponse::MessageDelete { request, result, nonce } =>
             format!("operation=message_delete\n{}delete_result={}\nrequest_nonce={}\n", encode_delete_fields(request), delete_result_value(*result), nonce),
+        MailboxHelperResponse::FolderDeleteCompletionOk {request,completion,nonce} => format!("status=ok\noperation=folder_delete_completion\ndelete_request_b64={}\ndelete_completion_b64={}\nnonce={}\n", encode_base64(serde_json::to_string(request).unwrap_or_default().as_bytes()), encode_base64(serde_json::to_string(completion).unwrap_or_default().as_bytes()), nonce),
+        MailboxHelperResponse::FolderDeleteOk {request,outcome,nonce} => format!("status=ok\noperation=folder_delete\ndelete_request_b64={}\ndelete_outcome_b64={}\nnonce={}\n", encode_base64(serde_json::to_string(request).unwrap_or_default().as_bytes()), encode_base64(serde_json::to_string(outcome).unwrap_or_default().as_bytes()), nonce),
         MailboxHelperResponse::FolderRenameCompletionOk {request,completion,nonce} => format!("status=ok\noperation=folder_rename_completion\nrename_request_b64={}\nrename_completion_b64={}\nnonce={}\n", encode_base64(serde_json::to_string(request).unwrap_or_default().as_bytes()), encode_base64(serde_json::to_string(completion).unwrap_or_default().as_bytes()), nonce),
         MailboxHelperResponse::FolderRenameOk {request,outcome,nonce} => format!("status=ok\noperation=folder_rename\nrename_request_b64={}\nrename_outcome_b64={}\nnonce={}\n", encode_base64(serde_json::to_string(request).unwrap_or_default().as_bytes()), encode_base64(serde_json::to_string(outcome).unwrap_or_default().as_bytes()), nonce),
         MailboxHelperResponse::FolderCreateOk {request,outcome}=>format!("status=ok\noperation=folder_create\ncreate_request_b64={}\ncreate_outcome_b64={}\n",encode_base64(serde_json::to_string(request).unwrap_or_default().as_bytes()),encode_base64(serde_json::to_string(outcome).unwrap_or_default().as_bytes())),
@@ -1285,6 +1358,65 @@ pub(super) fn parse_response(
         .any(|line| line == "operation=message_search_batch")
     {
         return parse_search_batch_response(search_policy, input);
+    }
+    if input
+        .lines()
+        .any(|line| line == "operation=folder_delete_completion")
+    {
+        if input.len() > 4096 {
+            return Err("delete response too large".into());
+        }
+        let f = parse_kv_lines(input)?;
+        if f.len() != 5 || require_field(&f, "status")? != "ok" {
+            return Err("invalid delete response".into());
+        }
+        let request: crate::folder_delete::DeleteFolderRequest = serde_json::from_slice(
+            &decode_base64_bytes(require_field(&f, "delete_request_b64")?, 2048, "request")?,
+        )
+        .map_err(|_| "invalid delete request")?;
+        let completion: crate::folder_delete::Completion = serde_json::from_slice(
+            &decode_base64_bytes(require_field(&f, "delete_completion_b64")?, 256, "outcome")?,
+        )
+        .map_err(|_| "invalid delete outcome")?;
+        request.validate().map_err(|_| "invalid delete response")?;
+        let nonce = require_field(&f, "nonce")?.to_owned();
+        if nonce.len() != 32 || !nonce.bytes().all(|b| b.is_ascii_hexdigit()) {
+            return Err("invalid delete nonce".into());
+        }
+        return Ok(MailboxHelperResponse::FolderDeleteCompletionOk {
+            request: Box::new(request),
+            completion,
+            nonce,
+        });
+    }
+    if input.lines().any(|line| line == "operation=folder_delete") {
+        if input.len() > 4096 {
+            return Err("delete response too large".into());
+        }
+        let f = parse_kv_lines(input)?;
+        if f.len() != 5 || require_field(&f, "status")? != "ok" {
+            return Err("invalid delete response".into());
+        }
+        let request: crate::folder_delete::DeleteFolderRequest = serde_json::from_slice(
+            &decode_base64_bytes(require_field(&f, "delete_request_b64")?, 2048, "request")?,
+        )
+        .map_err(|_| "invalid delete request")?;
+        let outcome: crate::folder_delete::Outcome = serde_json::from_slice(&decode_base64_bytes(
+            require_field(&f, "delete_outcome_b64")?,
+            256,
+            "outcome",
+        )?)
+        .map_err(|_| "invalid delete outcome")?;
+        request.validate().map_err(|_| "invalid delete response")?;
+        let nonce = require_field(&f, "nonce")?.to_owned();
+        if nonce.len() != 32 || !nonce.bytes().all(|b| b.is_ascii_hexdigit()) {
+            return Err("invalid delete nonce".into());
+        }
+        return Ok(MailboxHelperResponse::FolderDeleteOk {
+            request: Box::new(request),
+            outcome,
+            nonce,
+        });
     }
     if input
         .lines()
@@ -1849,6 +1981,15 @@ fn reject_unknown_request_fields(
             "flag_message_guid_b64",
             "flag_name",
             "flag_enabled",
+            "grant_issued_at",
+            "grant_expires_at",
+            "grant_nonce",
+            "grant_signature",
+        ],
+        "folder_delete" | "folder_delete_completion" => &[
+            "operation",
+            "canonical_username_b64",
+            "delete_request_b64",
             "grant_issued_at",
             "grant_expires_at",
             "grant_nonce",

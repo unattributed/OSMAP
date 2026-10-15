@@ -36,6 +36,12 @@ fn numeric_id(flag: &str) -> u32 {
 struct ScopedExecutor {
     config: PathBuf,
     renames: Arc<AtomicUsize>,
+    deletes: Arc<AtomicUsize>,
+    delete_results:Arc<Mutex<Vec<i32>>>,
+    inject_append: Arc<AtomicBool>,
+    arrival_before: Arc<Mutex<Option<Vec<MessageSummary>>>>,
+    arrival_bytes: Arc<Mutex<Option<Vec<Vec<u8>>>>>,
+    bin_arrival: Arc<AtomicBool>,
 }
 impl CommandExecutor for ScopedExecutor {
     fn run_with_stdin_bytes(
@@ -63,6 +69,7 @@ impl CommandExecutor for ScopedExecutor {
         timeout: Duration,
         limit: usize,
     ) -> Result<CommandExecution, CommandExecutionError> {
+        let began=std::time::Instant::now();
         assert_eq!(p, "/usr/local/bin/doveadm");
         assert!(!timeout.is_zero() && timeout <= Duration::from_secs(10));
         assert!(limit <= 512 * 1024);
@@ -82,23 +89,90 @@ impl CommandExecutor for ScopedExecutor {
             assert_eq!(a[pos + 1], ALICE);
             assert!(matches!(&a[pos + 2..], [source, destination]
                 if (source == "INBOX.Alpha" && destination == "INBOX.Beta")
-                || (source == "INBOX.Beta" && destination == "INBOX.Target.Beta")));
+                || (source == "INBOX.Beta" && destination == "INBOX.Target.Beta")
+                || (source == "INBOX.Target.Beta" && owned_disposition_name(destination))
+                || (owned_disposition_name(source) && destination == "INBOX.Target.Beta")));
+            if a[pos + 2] == "INBOX.Target.Beta"
+                && owned_disposition_name(&a[pos + 3])
+                && self.bin_arrival.swap(false, Ordering::SeqCst)
+            {
+                let append = scoped_args(
+                    &self.config,
+                    &[
+                        "-o".into(),
+                        "stats_writer_socket_path=".into(),
+                        "-o".into(),
+                        format!(
+                            "auth_socket_path={}",
+                            self.config.parent().unwrap().join("userdb").display()
+                        ),
+                        "save".into(),
+                        "-u".into(),
+                        ALICE.into(),
+                        "-m".into(),
+                        "INBOX.Target.Beta".into(),
+                    ],
+                );
+                let remaining = timeout
+                    .checked_sub(began.elapsed())
+                    .filter(|v| !v.is_zero())
+                    .ok_or_else(|| CommandExecutionError {
+                        reason: "owned Bin arrival budget timed out".into(),
+                    })?;
+                let saved = SystemCommandExecutor.run_with_stdin_bytes_timeout_and_output_limit(
+                    p, &append, MESSAGE, remaining, 4096,
+                )?;
+                assert_eq!(saved.status_code, 0);
+                assert!(saved.stderr.is_empty());
+                *self.arrival_bytes.lock().unwrap() = Some(bodies(
+                    self.config.parent().unwrap(),
+                    "alice",
+                    "INBOX.Target.Beta",
+                ));
+            }
             self.renames.fetch_add(1, Ordering::SeqCst);
+        }
+        if a.windows(2).any(|v|v==["mailbox","delete"]) {
+            assert_eq!(a[pos+1],ALICE);
+            assert_eq!(&a[..=pos],&["-o","stats_writer_socket_path=","-o",&format!("auth_socket_path={}",self.config.parent().unwrap().join("userdb").display()),"mailbox","delete","-e","-u"]);
+            assert!(matches!(&a[pos+2..],[source] if source=="INBOX.Empty" || source=="INBOX.Arriving"));
+            if a[pos+2]=="INBOX.Arriving" && self.inject_append.swap(false,Ordering::SeqCst) {
+                // The backend has already completed its final advisory empty
+                // read. Intercept only exact native Delete dispatch, append via
+                // Dovecot, then let the unchanged -e command enforce emptiness.
+                let append=scoped_args(&self.config,&["-o".into(),"stats_writer_socket_path=".into(),"-o".into(),format!("auth_socket_path={}",self.config.parent().unwrap().join("userdb").display()),"save".into(),"-u".into(),ALICE.into(),"-m".into(),"INBOX.Arriving".into()]);
+                let remaining=timeout.checked_sub(began.elapsed()).filter(|v|!v.is_zero()).ok_or_else(||CommandExecutionError{reason:"owned append budget timed out".into()})?;
+                let saved=SystemCommandExecutor.run_with_stdin_bytes_timeout_and_output_limit(p,&append,MESSAGE,remaining,4096)?;
+                assert_eq!(saved.status_code,0);assert!(saved.stderr.is_empty());
+                // Dovecot owns storage representation. Preserve the actual
+                // whole stored message across -e, not the pre-save input bytes.
+                let stored=bodies(self.config.parent().unwrap(),"alice","INBOX.Arriving");
+                assert_eq!(stored.len(),1);assert_known_arrival_payload(&stored[0]);
+                *self.arrival_bytes.lock().unwrap()=Some(stored);
+
+                let bounded=crate::folder_create_backend::Deadline{inner:self,until:began+timeout};
+                let rows=DoveadmMessageListBackend::new(MessageListPolicy::default(),&bounded,p).with_userdb_socket_path(Some(self.config.parent().unwrap().join("userdb"))).list_messages(ALICE,&MessageListRequest::new(MessageListPolicy::default(),"INBOX.Arriving").unwrap()).unwrap();
+                assert_eq!(rows.len(),1);*self.arrival_before.lock().unwrap()=Some(rows);
+                println!("native_rename delete_append_after_advisory_before_dispatch=PASS");
+            }
+            self.deletes.fetch_add(1,Ordering::SeqCst);
         }
         let args = scoped_args(&self.config, a);
         // Existing disposable native-create pattern: canonical -u is preserved.
-        let began = std::time::Instant::now();
         let phase = if a.first().is_some_and(|s| s == "exec") {
             "metadata"
         } else if a.iter().any(|s| s == "rename") {
             "rename"
+        } else if a.iter().any(|s| s == "delete") {
+            "delete"
         } else if a.iter().any(|s| s == "status") {
             "status"
         } else {
             "summary"
         };
         let result = SystemCommandExecutor
-            .run_with_stdin_bytes_timeout_and_output_limit(p, &args, input, timeout, limit);
+            .run_with_stdin_bytes_timeout_and_output_limit(p, &args, input, timeout.checked_sub(began.elapsed()).filter(|v|!v.is_zero()).ok_or_else(||CommandExecutionError{reason:"native command budget timed out".into()})?, limit);
+        if a.windows(2).any(|v|v==["mailbox","delete"]) {if let Ok(result)=&result {self.delete_results.lock().unwrap().push(result.status_code);}}
         let (code, out_bytes, err_bytes) = result
             .as_ref()
             .map(|r| (Some(r.status_code), r.stdout.len(), r.stderr.len()))
@@ -117,6 +191,16 @@ impl CommandExecutor for ScopedExecutor {
         println!("native_rename_command phase={phase} code={code:?} stdout_bytes={out_bytes} stderr_bytes={err_bytes} refusal={refusal} elapsed_ms={}", began.elapsed().as_millis());
         result
     }
+}
+
+fn owned_disposition_name(name: &str) -> bool {
+    name.strip_prefix("Trash.OSMAP-Deleted-")
+        .is_some_and(|nonce| {
+            nonce.len() == 32
+                && nonce
+                    .bytes()
+                    .all(|v| v.is_ascii_digit() || (b'a'..=b'f').contains(&v))
+        })
 }
 
 fn scoped_args(config: &Path, args: &[String]) -> Vec<String> {
@@ -150,10 +234,13 @@ const CHILD_STAGES: &[&str] = &[
     "rename_confirmation",
     "metadata_continuity",
     "signed_move",
+    "empty_delete",
+    "arrival_delete",
     "lost_refusal",
     "completion_query",
     "recovery_check",
     "authority_controls",
+    "bin_restore",
     "complete",
 ];
 static CHILD_STAGE: AtomicUsize = AtomicUsize::new(0);
@@ -546,6 +633,12 @@ fn native_rename_executor_refuses_foreign_authority_before_dispatch() {
     let e = ScopedExecutor {
         config: PathBuf::from("/dev/null"),
         renames: Arc::new(AtomicUsize::new(0)),
+        deletes:Arc::new(AtomicUsize::new(0)),
+        delete_results:Arc::new(Mutex::new(Vec::new())),
+        inject_append:Arc::new(AtomicBool::new(true)),
+        arrival_before:Arc::new(Mutex::new(None)),
+        arrival_bytes:Arc::new(Mutex::new(None)),
+        bin_arrival:Arc::new(AtomicBool::new(false)),
     };
     for (p, args) in [
         ("/usr/bin/true", vec!["-u", ALICE]),
@@ -613,7 +706,7 @@ fn isolated_openbsd_folder_rename_populated_and_recovery() {
             .unwrap();
     }
     for who in ["alice", "bob"] {
-        for folder in ["", ".INBOX.Alpha", ".INBOX.Target"] {
+        for folder in ["", ".INBOX.Alpha", ".INBOX.Target", ".INBOX.Empty", ".INBOX.Arriving", ".Trash"] {
             for part in ["new", "cur", "tmp"] {
                 fs::create_dir_all(root.join(who).join("Maildir").join(folder).join(part)).unwrap();
             }
@@ -667,6 +760,8 @@ fn isolated_openbsd_folder_rename_populated_and_recovery() {
         "populated_guid_bytes=PASS",
         "label_snooze=PASS",
         "move_populated_guid_bytes_labels_snooze_bob=PASS",
+        "delete_empty_and_mutation_time_arrival_refusal=PASS",
+        "bin_restore_complete_arrival_labels_snooze_bob=PASS",
         "lost_no_mutation=PASS",
         "authority_refusals=PASS",
         "confinement=PASS",
@@ -730,6 +825,12 @@ fn isolated_openbsd_folder_rename_confined_worker() {
     let executor = ScopedExecutor {
         config: root.join("dovecot.conf"),
         renames: count.clone(),
+        deletes:Arc::new(AtomicUsize::new(0)),
+        delete_results:Arc::new(Mutex::new(Vec::new())),
+        inject_append:Arc::new(AtomicBool::new(true)),
+        arrival_before:Arc::new(Mutex::new(None)),
+        arrival_bytes:Arc::new(Mutex::new(None)),
+        bin_arrival:Arc::new(AtomicBool::new(false)),
     };
     let backend = |missing| {
         DoveadmMailboxListBackend::new(
@@ -900,6 +1001,31 @@ fn isolated_openbsd_folder_rename_confined_worker() {
     assert!(snooze.load(BOB, 1001).unwrap().markers().is_empty());
     assert_eq!(count.load(Ordering::SeqCst), 2);
     println!("native_rename move_populated_guid_bytes_labels_snooze_bob=PASS");
+    // Exactly one empty deletion, then one arrival after the last advisory
+    // check. Both operations use the same real signed/helper/native mechanism.
+    mark_child_stage("empty_delete");
+    let empty=backend(false).mailbox_status(ALICE,"INBOX.Empty").unwrap();
+    let bob_empty=backend(false).mailbox_status(BOB,"INBOX.Empty").unwrap();
+    let deletion=crate::folder_delete::DeleteFolderRequest::new(ALICE,"INBOX.Empty",empty.guid(),parent.guid()).unwrap();
+    let delete_call=|r:&crate::folder_delete::DeleteFolderRequest|super::rename_tests::with_rename_helper(&helper,backend(false),lease.uid,|c|c.delete_folder(r));
+    assert_eq!(delete_call(&deletion),crate::folder_delete::Outcome::Deleted);
+    assert!(backend(false).folder_metadata(ALICE).unwrap().folder(ALICE,"INBOX.Empty").is_err());
+    assert_eq!(backend(false).mailbox_status(BOB,"INBOX.Empty").unwrap(),bob_empty);
+    mark_child_stage("arrival_delete");
+    let arriving=backend(false).mailbox_status(ALICE,"INBOX.Arriving").unwrap();assert_eq!(arriving.messages(),0);
+    let delete_arrival=crate::folder_delete::DeleteFolderRequest::new(ALICE,"INBOX.Arriving",arriving.guid(),parent.guid()).unwrap();
+    assert_eq!(delete_call(&delete_arrival),crate::folder_delete::Outcome::Unknown);
+    assert!(!executor.inject_append.load(Ordering::SeqCst));
+    assert_eq!(summaries(ALICE,"INBOX.Arriving"),executor.arrival_before.lock().unwrap().clone().unwrap());
+    assert_eq!(bodies(root,"alice","INBOX.Arriving"),executor.arrival_bytes.lock().unwrap().clone().unwrap());
+    let preserved_arrival=backend(false).mailbox_status(ALICE,"INBOX.Arriving").unwrap();assert_eq!(preserved_arrival.guid(),arriving.guid());assert_eq!(preserved_arrival.messages(),1);
+    assert_eq!(backend(false).mailbox_status(ALICE,"INBOX").unwrap().guid(),parent.guid());
+    assert_eq!(summaries(ALICE,"INBOX.Target.Beta"),moved_rows);
+    assert_eq!(bodies(root,"alice","INBOX.Target.Beta"),vec![MESSAGE.to_vec()]);
+    assert_eq!(summaries(BOB,"INBOX.Alpha"),bob_before);assert_eq!(bodies(root,"bob","INBOX.Alpha"),vec![MESSAGE.to_vec()]);
+    assert_eq!(executor.deletes.load(Ordering::SeqCst),2);
+    let delete_codes=executor.delete_results.lock().unwrap();assert_eq!(delete_codes.len(),2);assert_eq!(delete_codes[0],0);assert_ne!(delete_codes[1],0);drop(delete_codes);
+    println!("native_rename delete_empty_and_mutation_time_arrival_refusal=PASS");
     // Missing private userdb is a settled no-dispatch refusal. Lose the genuine
     // signed response, then read the original action's durable witness using a
     // fresh signed grant and current normal native identity observations.
@@ -990,6 +1116,208 @@ fn isolated_openbsd_folder_rename_confined_worker() {
     assert_eq!(count.load(Ordering::SeqCst), 2);
     assert_eq!(bodies(root, "alice", "INBOX.Target.Beta"), vec![MESSAGE.to_vec()]);
     println!("native_rename authority_refusals=PASS");
+    mark_child_stage("bin_restore");
+    struct ServiceBackend {
+        helper: PathBuf,
+        executor: ScopedExecutor,
+        peer: u32,
+        lose_bin_reply: std::cell::Cell<bool>,
+    }
+    impl ServiceBackend {
+        fn native(&self) -> DoveadmMailboxListBackend<ScopedExecutor> {
+            DoveadmMailboxListBackend::new(
+                MailboxListingPolicy::default(),
+                self.executor.clone(),
+                "/usr/local/bin/doveadm",
+            )
+            .with_userdb_socket_path(Some(self.executor.config.parent().unwrap().join("userdb")))
+        }
+    }
+    impl MailboxBackend for ServiceBackend {
+        fn list_mailboxes(&self, account: &str) -> Result<Vec<MailboxEntry>, MailboxBackendError> {
+            self.native().list_mailboxes(account)
+        }
+        fn folder_metadata(
+            &self,
+            account: &str,
+        ) -> Result<crate::folder_metadata::FolderSnapshot, MailboxBackendError> {
+            self.native().folder_metadata(account)
+        }
+        fn mailbox_status(
+            &self,
+            account: &str,
+            name: &str,
+        ) -> Result<crate::mailbox_status::MailboxStatus, MailboxBackendError> {
+            self.native().mailbox_status(account, name)
+        }
+        fn rename_folder(&self, request: &RenameFolderRequest) -> Outcome {
+            if self.lose_bin_reply.replace(false) {
+                super::rename_tests::with_rename_helper(
+                    &self.helper,
+                    self.native(),
+                    self.peer,
+                    |_| {
+                        let mut action = MailboxHelperRequest::FolderRename {
+                            request: request.clone(),
+                            grant: MailboxHelperGrant::unsigned(),
+                        };
+                        let bytes = super::super::mailbox_helper_client::encode_authorized_request(
+                            &self.helper.join("fixture-grant.key"),
+                            &mut action,
+                        )
+                        .unwrap();
+                        let mut stream =
+                            UnixStream::connect(self.helper.join("status.sock")).unwrap();
+                        assert_eq!(
+                            crate::openbsd::unix_stream_peer_uid(&stream).unwrap(),
+                            self.peer
+                        );
+                        stream
+                            .set_write_timeout(Some(Duration::from_secs(5)))
+                            .unwrap();
+                        stream.write_all(&bytes).unwrap();
+                        stream.shutdown(Shutdown::Both).unwrap();
+                    },
+                );
+                return Outcome::Unknown;
+            }
+            super::rename_tests::rename_through_helper(
+                &self.helper,
+                self.native(),
+                request,
+                self.peer,
+            )
+        }
+        fn folder_rename_completion(&self, request: &RenameFolderRequest) -> Completion {
+            super::rename_tests::with_rename_helper(
+                &self.helper,
+                self.native(),
+                self.peer,
+                |client| client.folder_rename_completion(request),
+            )
+        }
+    }
+    let service = ServiceBackend {
+        helper: helper.clone(),
+        executor: executor.clone(),
+        peer: lease.uid,
+        lose_bin_reply: std::cell::Cell::new(true),
+    };
+    let bin =
+        crate::folder_disposition::prepare_bin(&settings, &service, ALICE, "INBOX.Target.Beta")
+            .unwrap();
+    let mut stale_bin = serde_json::to_value(&bin).unwrap();
+    stale_bin["disposition"]["Bin"]["bin_revision"] = 1.into();
+    let stale_bin: RenameFolderRequest = serde_json::from_value(stale_bin).unwrap();
+    assert_eq!(
+        crate::folder_disposition::execute(&settings, &service, &stale_bin, 1001),
+        Outcome::Refused(crate::folder_create::Refusal::Stale)
+    );
+    assert_eq!(count.load(Ordering::SeqCst), 2);
+    executor.bin_arrival.store(true, Ordering::SeqCst);
+    assert_eq!(
+        crate::folder_disposition::execute(&settings, &service, &bin, 1001),
+        Outcome::Unknown
+    );
+    assert!(crate::folder_rename::settings_gate(&settings, ALICE).is_err());
+    assert_eq!(count.load(Ordering::SeqCst), 3);
+    assert_eq!(
+        crate::folder_disposition::execute(&settings, &service, &bin, 1001),
+        Outcome::Refused(crate::folder_create::Refusal::Unavailable)
+    );
+    assert_eq!(
+        crate::folder_disposition::check(&settings, &service, ALICE),
+        crate::folder_rename::CheckOutcome::Renamed {
+            destination: bin.destination()
+        }
+    );
+    assert_eq!(count.load(Ordering::SeqCst), 3);
+    assert!(!executor.bin_arrival.load(Ordering::SeqCst));
+    let bin_wire = executor.arrival_bytes.lock().unwrap().clone().unwrap();
+    assert_eq!(bin_wire.len(), 2);
+    for message in &bin_wire {
+        assert_known_arrival_payload(message)
+    }
+    let receipt = crate::folder_disposition::list(&settings, ALICE)
+        .unwrap()
+        .remove(0);
+    assert_eq!(receipt.state, crate::folder_disposition::State::Binned);
+    let binned = service
+        .mailbox_status(ALICE, &receipt.stored_name())
+        .unwrap();
+    assert_eq!(binned.guid(), source.guid());
+    assert_eq!(binned.messages(), 2);
+    assert_eq!(bodies(root, "alice", &receipt.stored_name()), bin_wire);
+    let bin_rows = summaries(ALICE, &receipt.stored_name());
+    let original_uid = before[0].uid;
+    let binned_original = bin_rows.iter().find(|row| row.uid == original_uid).unwrap();
+    assert_eq!(binned_original.metadata, moved_rows[0].metadata);
+    let labelled = crate::labels::MessageIdentity::from_summary(
+        ALICE,
+        ALICE,
+        &receipt.stored_name(),
+        binned_original,
+    )
+    .unwrap();
+    assert_eq!(
+        labels.load(ALICE).unwrap().labels_for(&labelled).unwrap()[0].id(),
+        id
+    );
+    let marker = snooze.load(ALICE, 1001).unwrap();
+    assert_eq!(
+        marker.markers()[0].identity().folder(),
+        receipt.stored_name()
+    );
+    assert_eq!(marker.markers()[0].until(), 4600);
+    crate::bin_folder::BinPreferencesStore::new(&settings)
+        .save(ALICE, 0, "INBOX.Arriving")
+        .unwrap();
+    let receipt = crate::folder_disposition::list(&settings, ALICE)
+        .unwrap()
+        .remove(0);
+    assert_eq!(receipt.bin, "Trash");
+    let restore = receipt.restore_request(ALICE).unwrap();
+    assert_eq!(
+        crate::folder_disposition::execute(&settings, &service, &restore, 1001),
+        Outcome::Renamed
+    );
+    assert!(crate::folder_disposition::list(&settings, ALICE)
+        .unwrap()
+        .is_empty());
+    assert_eq!(bodies(root, "alice", "INBOX.Target.Beta"), bin_wire);
+    assert_eq!(
+        service
+            .mailbox_status(ALICE, "INBOX.Target.Beta")
+            .unwrap()
+            .guid(),
+        source.guid()
+    );
+    let restored = summaries(ALICE, "INBOX.Target.Beta");
+    let restored_original = restored.iter().find(|row| row.uid == original_uid).unwrap();
+    assert_eq!(restored_original.metadata, moved_rows[0].metadata);
+    let labelled = crate::labels::MessageIdentity::from_summary(
+        ALICE,
+        ALICE,
+        "INBOX.Target.Beta",
+        restored_original,
+    )
+    .unwrap();
+    assert_eq!(
+        labels.load(ALICE).unwrap().labels_for(&labelled).unwrap()[0].id(),
+        id
+    );
+    assert_eq!(
+        snooze.load(ALICE, 1001).unwrap().markers()[0]
+            .identity()
+            .folder(),
+        "INBOX.Target.Beta"
+    );
+    assert_eq!(summaries(BOB, "INBOX.Alpha"), bob_before);
+    assert_eq!(bodies(root, "bob", "INBOX.Alpha"), vec![MESSAGE.to_vec()]);
+    assert!(labels.load(BOB).unwrap().labels().is_empty());
+    assert!(snooze.load(BOB, 1001).unwrap().markers().is_empty());
+    assert_eq!(count.load(Ordering::SeqCst), 4);
+    println!("native_rename bin_restore_complete_arrival_labels_snooze_bob=PASS");
     mark_child_stage("complete");
 }
 
@@ -1188,4 +1516,21 @@ fn native_move_summary_continuity_changes_only_exact_mailbox_name() {
         "INBOX.Other",
         "INBOX.Target.Beta"
     ));
+}
+
+fn assert_known_arrival_payload(bytes: &[u8]) {
+    let raw=std::str::from_utf8(bytes).unwrap();
+    let (headers,body)=raw.split_once("\r\n\r\n").or_else(||raw.split_once("\n\n")).unwrap();
+    let message=MessageView{metadata:None,mailbox_name:"INBOX.Arriving".into(),uid:1,flags:Vec::new(),date_received:String::new(),size_virtual:bytes.len() as u64,header_block:headers.into(),body_text:body.into()};
+    let analysis=crate::mime::MimeAnalyzer::new(crate::mime::MimeAnalysisPolicy::default()).analyze_message(&message).unwrap();
+    assert_eq!(analysis.selected_plain_text_body.as_deref().map(|text|text.trim_end_matches(['\r','\n'])),Some("Populated folder contents stay with its native identity."));
+    assert_eq!(analysis.attachments.len(),1);
+    assert_eq!(analysis.attachments[0].filename.as_deref(),Some("synthetic.bin"));
+    let attachment=crate::attachment::AttachmentDownloadService::new(crate::attachment::AttachmentDownloadPolicy::default()).download_from_message(&message,"1.2").unwrap();
+    assert_eq!(attachment.body,[0,1,255]);
+}
+
+#[test]
+fn native_delete_arrival_payload_uses_existing_mime_and_attachment_decoder() {
+    assert_known_arrival_payload(MESSAGE);
 }

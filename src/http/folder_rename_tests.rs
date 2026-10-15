@@ -83,7 +83,7 @@ fn folders_page_uses_owned_hierarchy_and_existing_review_routes() {
         false,
     );
     assert_eq!(private.response.status_code, 200);
-    for route in ["rename", "move"] {
+    for route in ["rename", "move", "delete", "bin"] {
         assert!(body_text(&private).contains(&format!(
             "href=\"/settings/folders/{route}?source=INBOX.Alpha\""
         )));
@@ -97,6 +97,11 @@ fn folders_page_uses_owned_hierarchy_and_existing_review_routes() {
         assert_eq!(review.response.status_code, 200);
         assert!(body_text(&review).contains("Review"));
     }
+    assert!(body_text(&private).contains("href=\"/folders/deleted\""));
+    assert!(!body_text(&private).contains("Folder deletion and restore are not available here yet"));
+    let deleted = f.run("GET", "/folders/deleted", "", "FolderCreateValid", false);
+    assert_eq!(deleted.response.status_code, 200);
+    assert!(body_text(&deleted).contains("Deleted folders"));
     let create = f.run(
         "GET",
         "/settings/folders/create?parent=INBOX",
@@ -161,6 +166,11 @@ fn folders_page_refuses_foreign_and_malformed_selection_without_dispatch() {
 
 #[test]
 fn folders_theme_return_is_bounded_to_the_selected_folder() {
+    assert_eq!(
+        super::super::header_theme::safe_return("/folders/deleted").as_deref(),
+        Some("/folders/deleted")
+    );
+    assert!(super::super::header_theme::safe_return("/folders/deleted?folder=INBOX").is_none());
     assert_eq!(
         super::super::header_theme::safe_return("/folders?folder=INBOX.Alpha").as_deref(),
         Some("/folders?folder=INBOX.Alpha")

@@ -130,9 +130,18 @@ class ServiceTests(unittest.TestCase):
             except Exception as e:result.append(e)
         thread=threading.Thread(target=serve);thread.start();self.addCleanup(lambda:thread.join(2))
         end=time.monotonic()+1
-        while not path.exists()and time.monotonic()<end:time.sleep(.005)
+        stream=None
+        while time.monotonic()<end:
+            if path.exists()and path.stat().st_mode&0o777==0o600:
+                candidate=socket.socket(socket.AF_UNIX)
+                try:candidate.connect(str(path))
+                except (ConnectionRefusedError,FileNotFoundError):candidate.close()
+                else:stream=candidate;break
+            time.sleep(.005)
+        self.assertIsNotNone(stream,'private listener did not publish ready within original wait')
+        self.addCleanup(stream.close)
         self.assertEqual(path.stat().st_mode&0o777,0o600)
-        stream=socket.socket(socket.AF_UNIX);stream.connect(str(path));stream.sendall(len(self.raw).to_bytes(4,'big')+self.raw)
+        stream.sendall(len(self.raw).to_bytes(4,'big')+self.raw)
         client=self.client(stream);client.capture(fixtures.ALICE);self.assertEqual(client.cancel(),0);thread.join(2)
         self.assertEqual(result,[0]);self.assertFalse(path.exists())
     def test_pending_intent_changed_after_admission_denies_before_source_cutoff(self):

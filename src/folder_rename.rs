@@ -25,6 +25,8 @@ pub struct RenameFolderRequest {
     destination_parent: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     source_parent_guid: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    disposition: Option<crate::folder_disposition::Purpose>,
 }
 impl RenameFolderRequest {
     pub fn new(
@@ -55,6 +57,7 @@ impl RenameFolderRequest {
             action_nonce: crate::draft::generate_draft_id().map_err(|_| Refusal::Unavailable)?,
             destination_parent: None,
             source_parent_guid: None,
+            disposition: None,
         })
     }
     pub fn for_move(
@@ -100,7 +103,37 @@ impl RenameFolderRequest {
             action_nonce: crate::draft::generate_draft_id().map_err(|_| Refusal::Unavailable)?,
             destination_parent: Some(destination_parent.into()),
             source_parent_guid: Some(source_parent_guid.into()),
+            disposition: None,
         })
+    }
+    #[allow(clippy::too_many_arguments)]
+    pub(crate) fn for_disposition(
+        account: &str,
+        source: &str,
+        source_guid: &str,
+        source_parent_guid: &str,
+        parent: &str,
+        parent_guid: &str,
+        leaf: &str,
+        action_nonce: &str,
+        purpose: crate::folder_disposition::Purpose,
+    ) -> Result<Self, Refusal> {
+        let result = Self {
+            account: account.into(),
+            source: source.into(),
+            source_guid: source_guid.into(),
+            parent_guid: parent_guid.into(),
+            leaf: leaf.into(),
+            action_nonce: action_nonce.into(),
+            destination_parent: Some(parent.into()),
+            source_parent_guid: Some(source_parent_guid.into()),
+            disposition: Some(purpose),
+        };
+        crate::folder_disposition::validate_request(&result)?;
+        Ok(result)
+    }
+    pub fn disposition(&self) -> Option<&crate::folder_disposition::Purpose> {
+        self.disposition.as_ref()
     }
     pub fn is_move(&self) -> bool {
         self.destination_parent.is_some()
@@ -140,6 +173,9 @@ impl RenameFolderRequest {
         &self.action_nonce
     }
     pub fn validate(&self) -> Result<(), Refusal> {
+        if self.disposition.is_some() {
+            return crate::folder_disposition::validate_request(self);
+        }
         if self.action_nonce.len() != 32
             || !self
                 .action_nonce
@@ -179,6 +215,9 @@ impl RenameFolderRequest {
         snapshot: &FolderSnapshot,
         status: &MailboxStatus,
     ) -> Result<(), Refusal> {
+        if self.disposition.is_some() {
+            return crate::folder_disposition::validate_source_parent(self, snapshot, status);
+        }
         match crate::folder_create::validate_creation_parent(
             self.account(),
             self.source_parent(),
@@ -198,6 +237,9 @@ impl RenameFolderRequest {
         snapshot: &FolderSnapshot,
         parent: &MailboxStatus,
     ) -> Result<(), Refusal> {
+        if self.disposition.is_some() {
+            return crate::folder_disposition::validate_destination_parent(self, snapshot, parent);
+        }
         self.validate()?;
         let create = crate::folder_create::CreateFolderRequest::new(
             self.account(),
@@ -242,6 +284,9 @@ impl RenameFolderRequest {
         source: &MailboxStatus,
         parent: &MailboxStatus,
     ) -> Result<(), Refusal> {
+        if self.disposition.is_some() {
+            return crate::folder_disposition::validate_before(self, snapshot, source, parent);
+        }
         self.validate()?;
         validate_source(self.account(), self.source(), snapshot, source)?;
         self.validate_destination_parent(snapshot, parent)?;
@@ -326,31 +371,88 @@ struct RoleRecord {
     version: u8,
     account: String,
     pending: Option<RenameFolderRequest>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pending_delete: Option<crate::folder_delete::DeleteFolderRequest>,
 }
 pub(crate) struct RoleLease {
     file: crate::private_account_file::LockedAccountFile,
     account: String,
     pending: Option<RenameFolderRequest>,
+    pending_delete: Option<crate::folder_delete::DeleteFolderRequest>,
 }
 impl RoleLease {
+    pub(crate) fn account(&self) -> &str {
+        &self.account
+    }
+    pub(crate) fn can_begin(&self, request: &RenameFolderRequest) -> Result<(), Refusal> {
+        request.validate()?;
+        if request.account() != self.account
+            || self.pending.is_some()
+            || self.pending_delete.is_some()
+        {
+            return Err(Refusal::Invalid);
+        }
+        let bytes = serde_json::to_vec(&RoleRecord {
+            version: 1,
+            account: self.account.clone(),
+            pending: Some(request.clone()),
+            pending_delete: None,
+        })
+        .map_err(|_| Refusal::Unavailable)?;
+        if bytes.len() > 4096 {
+            return Err(Refusal::Capacity);
+        }
+        Ok(())
+    }
     pub(crate) fn pending(&self) -> Option<&RenameFolderRequest> {
         self.pending.as_ref()
     }
     pub(crate) fn begin(&mut self, request: &RenameFolderRequest) -> Result<(), Refusal> {
-        request.validate()?;
-        if request.account() != self.account || self.pending.is_some() {
-            return Err(Refusal::Invalid);
-        }
+        self.can_begin(request)?;
         self.publish(Some(request.clone()))
     }
+    pub(crate) fn pending_delete(&self) -> Option<&crate::folder_delete::DeleteFolderRequest> {
+        self.pending_delete.as_ref()
+    }
+    pub(crate) fn begin_delete(
+        &mut self,
+        request: &crate::folder_delete::DeleteFolderRequest,
+    ) -> Result<(), Refusal> {
+        request.validate()?;
+        if request.account() != self.account
+            || self.pending.is_some()
+            || self.pending_delete.is_some()
+        {
+            return Err(Refusal::Invalid);
+        }
+        self.publish_state(None, Some(request.clone()))
+    }
     pub(crate) fn confirm(&mut self) -> Result<(), Refusal> {
-        self.publish(None)
+        self.publish_state(None, None)
+    }
+    fn publish_state(
+        &mut self,
+        pending: Option<RenameFolderRequest>,
+        pending_delete: Option<crate::folder_delete::DeleteFolderRequest>,
+    ) -> Result<(), Refusal> {
+        let bytes = serde_json::to_vec(&RoleRecord {
+            version: 1,
+            account: self.account.clone(),
+            pending: pending.clone(),
+            pending_delete: pending_delete.clone(),
+        })
+        .map_err(|_| Refusal::Unavailable)?;
+        self.file.write(&bytes).map_err(|_| Refusal::Unavailable)?;
+        self.pending = pending;
+        self.pending_delete = pending_delete;
+        Ok(())
     }
     fn publish(&mut self, pending: Option<RenameFolderRequest>) -> Result<(), Refusal> {
         let bytes = serde_json::to_vec(&RoleRecord {
             version: 1,
             account: self.account.clone(),
             pending: pending.clone(),
+            pending_delete: self.pending_delete.clone(),
         })
         .map_err(|_| Refusal::Unavailable)?;
         self.file.write(&bytes).map_err(|_| Refusal::Unavailable)?;
@@ -367,8 +469,8 @@ pub(crate) fn role_lease(directory: &std::path::Path, account: &str) -> Result<R
     )
     .lock(account)
     .map_err(|_| Refusal::Unavailable)?;
-    let pending = match file.read().map_err(|_| Refusal::Unavailable)? {
-        None => None,
+    let (pending, pending_delete) = match file.read().map_err(|_| Refusal::Unavailable)? {
+        None => (None, None),
         Some(bytes) => {
             let record: RoleRecord =
                 serde_json::from_slice(&bytes).map_err(|_| Refusal::Unavailable)?;
@@ -381,13 +483,22 @@ pub(crate) fn role_lease(directory: &std::path::Path, account: &str) -> Result<R
             {
                 return Err(Refusal::Unavailable);
             }
-            record.pending
+            if record.pending.is_some() && record.pending_delete.is_some()
+                || record
+                    .pending_delete
+                    .as_ref()
+                    .is_some_and(|r| r.account() != account || r.validate().is_err())
+            {
+                return Err(Refusal::Unavailable);
+            }
+            (record.pending, record.pending_delete)
         }
     };
     Ok(RoleLease {
         file,
         account: account.into(),
         pending,
+        pending_delete,
     })
 }
 pub(crate) fn settings_gate(
@@ -395,7 +506,7 @@ pub(crate) fn settings_gate(
     account: &str,
 ) -> Result<RoleLease, Refusal> {
     let lease = role_lease(directory, account)?;
-    if lease.pending.is_some() {
+    if lease.pending.is_some() || lease.pending_delete.is_some() {
         return Err(Refusal::Unavailable);
     }
     Ok(lease)
@@ -414,6 +525,9 @@ pub(crate) fn confirmed_result(
     destination: &MailboxStatus,
     parent: &MailboxStatus,
 ) -> bool {
+    if request.disposition().is_some() {
+        return crate::folder_disposition::confirmed_result(request, snapshot, destination, parent);
+    }
     request
         .validate_destination_parent(snapshot, parent)
         .is_ok()

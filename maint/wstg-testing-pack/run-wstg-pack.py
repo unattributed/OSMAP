@@ -2135,13 +2135,24 @@ class Runner:
         }
         runtime_path = REPO_ROOT / "src" / "http_runtime.rs"
         runtime_text = runtime_path.read_text(encoding="utf-8", errors="replace")
-        runtime_keys = {
-            (method.upper(), path)
-            for method, path in re.findall(
-                r'\(HttpMethod::(Get|Post),\s*"([^"]+)"\)',
-                runtime_text,
+        runtime_keys = set()
+        for methods, path in re.findall(
+            r'\((HttpMethod::[^,\n]+),\s*"([^"]+)"\)', runtime_text
+        ):
+            if not re.fullmatch(
+                r'HttpMethod::(?:Get|Post)(?:\s*\|\s*HttpMethod::(?:Get|Post))*',
+                methods,
+            ):
+                findings["unsupported_runtime_method_pattern"] = methods
+                self.write_text_evidence(
+                    "browser_attack_surface_inventory.txt",
+                    "result=failed\nunsupported_runtime_method_pattern=true\n",
+                )
+                return False, findings
+            runtime_keys.update(
+                (method.upper(), path)
+                for method in re.findall(r'HttpMethod::(Get|Post)', methods)
             )
-        }
         missing_from_inventory = sorted(runtime_keys - inventory_keys)
         stale_inventory = sorted(inventory_keys - runtime_keys)
         if missing_from_inventory:

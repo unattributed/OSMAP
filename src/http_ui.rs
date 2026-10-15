@@ -3414,3 +3414,10 @@ mod mail_state_tests;
 #[cfg(test)]
 #[path = "http_ui_sent_role_tests.rs"]
 mod sent_role_tests;
+
+#[path = "folder_delete_ui.rs"]
+mod folder_delete_ui;
+#[path = "folder_disposition_ui.rs"]
+mod folder_disposition_ui;
+pub(crate) use folder_delete_ui::{render_folder_delete, DeletePageModel};
+pub(crate) use folder_disposition_ui::{render_deleted_folders, render_folder_disposition};

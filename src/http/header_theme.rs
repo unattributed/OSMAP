@@ -18,7 +18,8 @@ pub(super) fn safe_return(value: &str) -> Option<String> {
     let allowed: &[&str] = match path {
         "/settings" => &["section", "q", "folder"],
         "/folders" => &["folder"],
-        "/settings/keys" | "/sessions" | "/mailboxes" | "/contacts" | "/snoozed" => &[],
+        "/settings/keys" | "/sessions" | "/mailboxes" | "/contacts" | "/snoozed"
+        | "/folders/deleted" => &[],
         "/drafts" => {
             crate::draft_list::DraftListView::parse(&fields).ok()?;
             fields.remove("select");

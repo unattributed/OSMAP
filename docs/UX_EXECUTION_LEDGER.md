@@ -8703,3 +8703,171 @@ compiler artifacts are fresh=false; no operator service, mail or private crypto
 action occurred. Evidence: folders-page-20261014/native-attempt1/result.json.
 Normal signed source admission/sync and matching installed Folders journey
 remain required; this native route proof does not stand in for the gateway.
+
+Folders source9858d04e27ce07f7514ffb96784a52905ff6f1fa is signed/synchronized:
+normal commit/push PASS1672library/0failed/44explicit native ignores, verified
+signature/fresh origin equality0/0clean. One reviewed existing activator installs
+f6b49462 on obsd1 web only, preserving actual authoritative9685ba07 helper,
+configuration, completion state, agents and unrelated services. No installed
+Folders workflow or human acceptance is inferred from installation.
+
+The finite installed Move qualifier7a87fd73 is compiled from reviewed source
+5db33528 using actual Cargo-selected native osmap897fa665/serde_jsonc5f5c57f
+rlibs. Initial metadata checkpoint PASS43folders. Prepare first refused at its
+initial read before any Create/Append: root wrapper cleared supplementary
+groups. Actual zero-wire contrast proves sameUID1001/grant readable but socket
+EACCES13 with groups[], versus connect success with existing[1001,1002,1003].
+The corrected wrapper preserves that exact current set and cwd=/; no group or
+permission database mutation. Its subsequent first metadata request times out
+5.084s before mutation; cause UNKNOWN, no automatic unchanged retry.
+
+Bounded TCP/banner and empty-stdin forced SSH succeed; neither establishes
+mailbox readiness or diagnoses the timeout. Installed relay source differs
+from canonical only by the parked Documents response classifier; ordinary
+peer/SSH/pump code is unchanged, so no speculative relay deployment occurs.
+One subsequent actual read-only metadata readiness request PASS43folders/3.504s
+with unchanged5s policy. A single finite prepare resumption follows that real
+prerequisite on the untouched namespace8c1ad52d65810c70. Original checkpoint
+and failed observations remain retained. Scope: actual installed configured
+helper plus authoritative controlled email/attachment; no provider Send,
+Labels/Snooze/foreign-wire/browser or whole-S08 claim from this qualifier.
+
+Actual installed Move resumption passes: prepare22.278s (three exact Create,
+one synthetic multipart Append, stale NoMutation and distinct-nonce refusal),
+authoritative Before4.125s, typed configured-peer Move9.149s and authoritative
+After2.193s. The folder/current-parent GUIDs, UID/opaque message GUID, complete
+stored MIME and independently decoded text/attachment bytes remain exact.
+Controlled namespace8c1ad52d65810c70, leaf GUIDc90d802d8249d06a192e0100ef960a1e.
+No provider Send or ambiguous operation repeat occurred.
+
+Cleanup performs its one conjoined public-message expunge. Current leaf GUID/
+zero messages/zero bytes checks pass, then the combined retained-names/unrelated
+operation-row postcondition refuses4.485s. No expunge or cleanup retry is allowed.
+Current safe retained-state disposition was subsequently reconciled read-only; neither
+the failed preservation interval nor its cause is overwritten by the Move pass.
+Evidence: installed-qualification/qualified3-{2-prepare,3-verify-before,4-move,
+5-verify-after,6-cleanup}.json. Required cleanup and installed Folders GET
+acceptance were open at that checkpoint; the following bounded results supersede
+their pending status without overwriting the failed interval.
+
+Read-only cleanup observer2eb3c8cd now exits0/stderr0: exactly three owned empty
+folders, preserved leaf/parent bindings and eleven unrelated operation-field
+difference counts all zero. Independent source and actual-observation review
+CLEAR. Current safe retained state is established; historical cleanupFAIL and
+causeUNKNOWN remain. No body read, mutation, repeated expunge or automatic retry.
+Evidence: installed-qualification/cleanup-readonly-attempt1/actual-observation.json.
+
+Installed Folders read-path auxiliary51dcd938 passes four actual loopback HTTP
+GETs: hierarchy, controlled parent, controlled leaf and emitted Open folder.
+The controlled leaf remains empty with its original GUID. The explicitly bounded
+120-second qualification SessionService lease is revoked and its exact new
+record removed under the existing store lock; existing0750 directory unchanged.
+Independent actual-delivery review CLEAR. No operator cookie, retained HTML,
+private body, mailbox mutation, provider Send or authentication qualification.
+Evidence: folders-page-20261014/installed-get-qualification/
+session-root-precondition-attempt2/actual-result.json. Browser interaction proof
+remains the separately recorded synthetic run; new disposition forms and the
+whole S08-02 parent remain open until composed delivery is qualified.
+
+The next isolated source over signed9858d04 composes empty leaf Delete and
+populated leaf Bin/Restore with current Folders navigation: merged30paths,
+readiness538da860/patch4aa6cdba/full1223-input manifest62b27546. Actual focused
+folder group PASS95/0failed/5explicit native ignores; final all-target Clippy
+and formatting PASS. A retained first Clippy refusal was one redundant unit
+expression, removed without behavior/assertion/limit changes. No full QA rerun.
+
+Independent review of the initial disposition freeze found an actual durable
+predispatch receipt gap. Corrected four-path incrementf3daa027 has focused
+RED1→GREEN1 and independent sourceCLEAR: explicit Reserved is durable before
+role intent, Pending durable before helper dispatch, terminal publication before
+role clear. Recovery never reissues mailbox mutation; potentially dispatched
+Pending stays unconfirmed even if its role is absent. Worst later-state capacity
+includes RestoreReserved. The final merged source/package review and matching
+native execution remain required; no source admission or activation yet.
+
+Next finite installed journey reuses the existing bounded test-session and
+controlled empty hierarchy. It proposes one new synthetic multipart Append,
+actual new UID capture, HTTP Bin/Deleted/Restore and separate empty Delete with
+authoritative complete-MIME/attachment continuity; no expunge/provider Send.
+This remains a proposal, not passing evidence or an operator task. The previous
+cleanup refusal stays historical. Retained qualification state changes must be
+recorded explicitly, not compared to a stale pre-Delete topology.
+
+Exact merged native attempt1 now PASS: compile58.481s, actual fresh=false test
+artifact492b9d0b, all473 compiler+3qualification input parity before/after.
+One existing finite confined Rename fixture passes5.159s, one test/0failed/
+0ignored and all nine required markers: populated Rename/Move, empty Delete,
+mutation-time arrival refusal, populated Bin/Restore arrival/full MIME/decoded
+attachment/Label/Snooze/Bob continuity, lost reply/current original witness with
+no redispatch, authority refusals, confinement and owned cleanup with standard
+three-path metadata unchanged. Independent native-delivery scope PASS. No
+operator services/mail, SMTP/provider Send or private crypto were mutated.
+Evidence: folders-disposition-integration-20261015/native-attempt1/
+disposition-attempt1.stdout and independent-native-delivery-scope.json.
+Matching application build, signed source synchronization, guarded activation
+and actual installed lifecycle still remain before delivery/human readiness.
+
+Normal commit attempt1 is refused after1688libraryPASS/0failed/44native ignores:
+unchanged V11 scanner identifies three new production unwrap assumptions. No
+commit or push occurred. Replace only those purpose extractions with explicit
+Invalid refusal in the existing core/HTTP paths; focused final disposition
+group PASS10/0failed/0ignored, formatting PASS, unchanged scanner now reports
+high-relevance-after0. Delta706b5dd6/two source paths is independently reviewed
+before matching successor native/application qualification. Retain actual
+attempt1 native/app passes as evidence for their former source only; do not
+install those images after this source correction. Hooks/scanners/assertions,
+protocol/deadlines and uncertainty semantics are unchanged.
+
+Purpose-refusal successor independent source/package CLEAR. Matching native2
+buildPASS60.399s/fresh=false, test0f5f5a0f; existing finite casePASS5.098s with
+all nine markers and473+3 parity. Owned cleanup and standard three-path metadata
+checks pass. No operator service/mail or provider mutation. Application2 builds
+the same changed source; former251c0992 image will not be deployed.
+
+Feature-aware activation successor9153071f is independently CLEAR after actual
+RED1→GREEN1/five finite projected-host fault/success cases. A durable private
+new-web-start barrier prohibits downlevel image rollback after admission; failure
+stops admission and retains new state/images for recovery. Root also preserves
+the matching Toronto helper once that web barrier is reached. Pre-start exact
+completion equality remains; after admission validate current integrity so a
+legitimate concurrent operation does not falsely fail deployment. Never reset
+records. Host activation of this successor remains NOT RUN.
+
+Matching application2 is6eda8873, built27.409s with final473+3 input parity.
+Normal commit attempt2 again stops without creating a commit:1688libraryPASS/
+44native ignores and V11PASS, then V13 finds ten declared real routes stale.
+The old extractor recognized only single-method Rust tuples; it omitted valid
+Get|Post tuple alternatives. Repair only that existing extractor to expand both
+known methods, reject unsupported grammar and retain missing/stale comparisons.
+This exposes an older omission: actual Move GET/POST were also absent from the
+inventory. Add their exact fields alongside eleven new disposition rows.
+
+Focused WSTG attempt1 retains that discovered omission and a test-only temporary
+inventory-path assumption. Corrected focused attempt2 PASS15, including missing
+alternative-method and unknown-method-grammar negatives. No Rust compiler input,
+native policy, assertion, gate threshold or production route changes; no third
+native rebuild is necessary for this Python evidence-extraction repair. Exact
+source/test deltafa51eacb awaits independent review and normal commit admission.
+
+That extractor delta is independently CLEAR. Normal commit attempt3 retains a
+second V13 refusal: runner15PASS, but the separate inline pack validator still
+used the duplicated old single-method regex. Apply the same strict known-method
+expansion there while retaining exact inventory equality and explicit unsupported
+grammar refusal. Independent addendum CLEAR; complete focused V13 now PASS,
+including existing live synthetic runner and required credential-skip refusal
+checks. V14 current UI gate PASS. No product Rust input changed after native2,
+no native rebuild or security gate waiver. All failed normal attempts remain
+retained and created no commit.
+
+Normal commit attempt4 stops in an existing account-runtime test:519Python
+cases/one failure. Its listener readiness assertion saw0775 immediately after
+bind, before the existing chmod0600/recheck/listen sequence. The checked parent
+is private0700; no unsafe admission or production SMTP defect is established.
+Repair only the test readiness wait: within its original one-second deadline,
+require0600 and one successful zero-byte connection, then use that SAME connection
+for the original control request. Close only failed connection attempts; preserve
+all original mode, current-kernel, result and owned-cleanup assertions. Focused
+actual selected test PASS0.137s; a wrong-classname invocation is separately
+retained. No production source/native input or workflow enablement changes.
+Delta c0f6141e awaits exact independent review and normal admission. This narrow
+mandatory-gate repair does not resume parked account/password diagnostics.

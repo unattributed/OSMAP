@@ -153,6 +153,76 @@ fn folder_move_grant_binds_destination_and_both_parent_identities() {
     }
 }
 #[test]
+fn folder_disposition_grant_binds_exact_purpose_bin_revision_receipt_and_restore() {
+    let value = crate::folder_disposition::Receipt::bin_request(
+        "alice@fixture.test",
+        "INBOX.Alpha",
+        &"a".repeat(32),
+        &"b".repeat(32),
+        &crate::bin_folder::BinPreference::default(),
+        &"d".repeat(32),
+    )
+    .unwrap();
+    let mut action = MailboxHelperRequest::FolderRename {
+        request: value.clone(),
+        grant: MailboxHelperGrant::unsigned(),
+    };
+    issue_request_grant_with_nonce(
+        &mut action,
+        &test_helper_grant_key(),
+        100,
+        value.action_nonce(),
+    )
+    .unwrap();
+    let wire = encode_request(&action);
+    assert!(wire.len() <= 4096);
+    assert_eq!(parse_request(&wire).unwrap(), action);
+    verify_request_grant(&action, &test_helper_grant_key(), 101).unwrap();
+    for (field, changed) in [
+        ("bin_revision", serde_json::json!(1)),
+        ("bin_guid", serde_json::json!("e".repeat(32))),
+        ("receipt_id", serde_json::json!("f".repeat(32))),
+        ("original_action", serde_json::json!("9".repeat(32))),
+    ] {
+        let mut changed_action = action.clone();
+        if let MailboxHelperRequest::FolderRename { request, .. } = &mut changed_action {
+            let mut fields = serde_json::to_value(&*request).unwrap();
+            fields["disposition"]["Bin"][field] = changed;
+            *request = serde_json::from_value(fields).unwrap();
+        }
+        assert!(verify_request_grant(&changed_action, &test_helper_grant_key(), 101).is_err());
+    }
+    let receipt = crate::folder_disposition::Receipt {
+        id: value.action_nonce().into(),
+        source: value.source().into(),
+        parent_guid: value.source_parent_guid().into(),
+        folder_guid: value.source_guid().into(),
+        bin: "Trash".into(),
+        bin_guid: "d".repeat(32),
+        bin_revision: 0,
+        original_action: value.action_nonce().into(),
+        restore_action: None,
+        state: crate::folder_disposition::State::Binned,
+    };
+    let restore = receipt.restore_request("alice@fixture.test").unwrap();
+    let mut restore_action = MailboxHelperRequest::FolderRename {
+        request: restore.clone(),
+        grant: MailboxHelperGrant::unsigned(),
+    };
+    issue_request_grant_with_nonce(
+        &mut restore_action,
+        &test_helper_grant_key(),
+        100,
+        restore.action_nonce(),
+    )
+    .unwrap();
+    assert_eq!(
+        parse_request(&encode_request(&restore_action)).unwrap(),
+        restore_action
+    );
+    verify_request_grant(&restore_action, &test_helper_grant_key(), 101).unwrap();
+}
+#[test]
 fn folder_rename_grant_exact_account_identity_action_and_closed_fields() {
     let value = crate::folder_rename::RenameFolderRequest::new(
         "alice@fixture.test",
@@ -400,5 +470,25 @@ fn folder_rename_settled_refusal_original_nonce_replay_and_uncertainty() {
         Outcome::Refused(crate::folder_create::Refusal::Unavailable)
     );
     assert_eq!(calls.load(std::sync::atomic::Ordering::SeqCst), 1);
+    fs::remove_dir_all(root).unwrap();
+}
+
+struct DeleteBackend(Arc<std::sync::atomic::AtomicUsize>);
+impl MailboxBackend for DeleteBackend {
+    fn list_mailboxes(&self,_:&str)->Result<Vec<MailboxEntry>,MailboxBackendError>{Ok(vec![])}
+    fn delete_folder(&self,r:&crate::folder_delete::DeleteFolderRequest)->crate::folder_delete::Outcome{assert_eq!(r.account(),"alice@fixture.test");self.0.fetch_add(1,std::sync::atomic::Ordering::SeqCst);crate::folder_delete::Outcome::Deleted}
+}
+#[test]
+fn folder_delete_signed_original_witness_peer_and_request_binding(){
+    use crate::folder_delete::{DeleteFolderRequest,Outcome,Completion};
+    let root=temp_socket_path("folder-delete").with_extension("root");fs::create_dir(&root).unwrap();fs::set_permissions(&root,fs::Permissions::from_mode(0o700)).unwrap();let key=root.join("fixture-grant.key");fs::write(&key,test_helper_grant_key()).unwrap();fs::set_permissions(&key,fs::Permissions::from_mode(0o600)).unwrap();
+    let r=DeleteFolderRequest::new("alice@fixture.test","INBOX.Alpha",&"a".repeat(32),&"b".repeat(32)).unwrap();let mut action=MailboxHelperRequest::FolderDelete{request:r.clone(),grant:MailboxHelperGrant::unsigned()};issue_request_grant_with_nonce(&mut action,&test_helper_grant_key(),100,r.action_nonce()).unwrap();assert_eq!(parse_request(&encode_request(&action)).unwrap(),action);verify_request_grant(&action,&test_helper_grant_key(),101).unwrap();
+    let mut changed=action.clone();if let MailboxHelperRequest::FolderDelete{request,..}=&mut changed{let mut fields=serde_json::to_value(&*request).unwrap();fields["source_guid"]="c".repeat(32).into();*request=serde_json::from_value(fields).unwrap();}assert!(verify_request_grant(&changed,&test_helper_grant_key(),101).is_err());
+    let calls=Arc::new(std::sync::atomic::AtomicUsize::new(0));
+    for _ in 0..2{assert_eq!(with_rename_helper(&root,DeleteBackend(calls.clone()),test_runtime_uid(),|c|c.delete_folder(&r)),Outcome::Deleted);}
+    assert_eq!(calls.load(std::sync::atomic::Ordering::SeqCst),1);
+    assert_eq!(with_rename_helper(&root,DeleteBackend(calls.clone()),test_runtime_uid(),|c|c.folder_delete_completion(&r)),Completion::Deleted);
+    assert_eq!(with_rename_helper(&root,DeleteBackend(calls.clone()),test_runtime_uid().wrapping_add(1),|c|c.delete_folder(&r)),Outcome::Unknown);assert_eq!(calls.load(std::sync::atomic::Ordering::SeqCst),1);
+    let other=DeleteFolderRequest::new(r.account(),r.source(),r.source_guid(),r.parent_guid()).unwrap();assert_eq!(with_rename_helper(&root,DeleteBackend(calls.clone()),test_runtime_uid(),|c|c.folder_delete_completion(&other)),Completion::Unconfirmed);
     fs::remove_dir_all(root).unwrap();
 }

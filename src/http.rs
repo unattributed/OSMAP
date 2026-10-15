@@ -37,6 +37,8 @@ mod routes_draft;
 mod routes_draft_location;
 mod routes_draft_selection;
 mod routes_flags;
+#[path = "http/routes_folder_disposition.rs"]
+mod routes_folder_disposition;
 mod routes_identity_preferences;
 #[path = "http/routes_keys.rs"]
 mod routes_keys;
@@ -53,6 +55,7 @@ mod routes_all_search;
 mod routes_bulk_delete;
 mod routes_delete;
 mod routes_folder_create;
+mod routes_folder_delete;
 mod routes_folder_rename;
 mod routes_moves;
 mod routes_notifications;
@@ -856,6 +859,9 @@ mod tests {
     mod folder_create_fixture {
         include!("http/folder_create_fixture.rs");
     }
+    mod folder_delete_tests {
+        include!("http/folder_delete_tests.rs");
+    }
     mod folder_rename_tests {
         include!("http/folder_rename_tests.rs");
     }
@@ -1055,6 +1061,7 @@ mod tests {
     struct StubGateway {
         created_folders: Arc<Mutex<BTreeMap<String, Vec<String>>>>,
         renamed_folders: Arc<Mutex<Vec<crate::folder_rename::RenameFolderRequest>>>,
+        deleted_folders: Arc<Mutex<Vec<crate::folder_delete::DeleteFolderRequest>>>,
         send_journal: crate::send_journal::SendJournal,
         recovery_root: PathBuf,
         recovery_now: Option<u64>,
@@ -1120,6 +1127,7 @@ mod tests {
             Self {
                 created_folders: Arc::new(Mutex::new(BTreeMap::new())),
                 renamed_folders: Arc::new(Mutex::new(Vec::new())),
+                deleted_folders: Arc::new(Mutex::new(Vec::new())),
                 labels_store: None,
                 signature_store: None,
                 autosave_store: None,
@@ -2725,6 +2733,212 @@ mod tests {
             }
         }
 
+        fn pending_folder_delete(
+            &self,
+            s: &ValidatedSession,
+        ) -> Result<Option<crate::folder_delete::DeleteFolderRequest>, crate::folder_create::Refusal>
+        {
+            let store = self
+                .settings_store
+                .as_ref()
+                .ok_or(crate::folder_create::Refusal::Unavailable)?;
+            crate::folder_rename::role_lease(
+                store
+                    .settings_path_for_username(&s.record.canonical_username)
+                    .parent()
+                    .unwrap(),
+                &s.record.canonical_username,
+            )
+            .map(|l| l.pending_delete().cloned())
+        }
+        fn delete_folder(
+            &self,
+            c: &AuthenticationContext,
+            s: &ValidatedSession,
+            r: &crate::folder_delete::DeleteFolderRequest,
+        ) -> crate::folder_delete::Outcome {
+            use crate::folder_create::Refusal;
+            use crate::folder_delete::Outcome;
+            if r.account() != s.record.canonical_username {
+                return Outcome::Refused(Refusal::Invalid);
+            }
+            let (Some(snapshot), Some(source), Some(parent)) = (
+                self.folder_metadata(c, s).snapshot,
+                self.mailbox_status(c, s, r.source()).status,
+                self.mailbox_status(c, s, r.parent()).status,
+            ) else {
+                return Outcome::Refused(Refusal::Unavailable);
+            };
+            if let Err(e) = r.validate_before(&snapshot, &source, &parent) {
+                return Outcome::Refused(e);
+            }
+            let Some(store) = &self.settings_store else {
+                return Outcome::Refused(Refusal::Unavailable);
+            };
+            let directory = store
+                .settings_path_for_username(r.account())
+                .parent()
+                .unwrap()
+                .to_path_buf();
+            let Ok(mut lease) = crate::folder_rename::settings_gate(&directory, r.account()) else {
+                return Outcome::Refused(Refusal::Unavailable);
+            };
+            if lease.begin_delete(r).is_err() {
+                return Outcome::Refused(Refusal::Unavailable);
+            }
+            struct Removing {
+                folders: Arc<Mutex<BTreeMap<String, Vec<String>>>>,
+                calls: Arc<Mutex<Vec<crate::folder_delete::DeleteFolderRequest>>>,
+                unknown: bool,
+            }
+            impl crate::mailbox::MailboxBackend for Removing {
+                fn list_mailboxes(
+                    &self,
+                    _: &str,
+                ) -> Result<Vec<MailboxEntry>, crate::mailbox::MailboxBackendError>
+                {
+                    Ok(vec![])
+                }
+                fn delete_folder(&self, r: &crate::folder_delete::DeleteFolderRequest) -> Outcome {
+                    self.calls.lock().unwrap().push(r.clone());
+                    if self.unknown {
+                        return Outcome::Unknown;
+                    }
+                    self.folders
+                        .lock()
+                        .unwrap()
+                        .get_mut(r.account())
+                        .unwrap()
+                        .retain(|name| name != r.source());
+                    Outcome::Deleted
+                }
+            }
+            let outcome =
+                crate::mailbox_helper::mailbox_helper_rename::delete_witness::execute_delete(
+                    &directory.join("fixture-delete-helper"),
+                    &Removing {
+                        folders: self.created_folders.clone(),
+                        calls: self.deleted_folders.clone(),
+                        unknown: c.user_agent == "FolderCreateDeleteUnknown",
+                    },
+                    r,
+                );
+            if c.user_agent == "FolderCreateDeleteUnknownCommitted" {
+                return Outcome::Unknown;
+            }
+            if outcome != Outcome::Unknown {
+                lease.confirm().unwrap();
+            }
+            outcome
+        }
+        fn check_folder_delete(
+            &self,
+            c: &AuthenticationContext,
+            s: &ValidatedSession,
+        ) -> crate::folder_delete::CheckOutcome {
+            use crate::folder_delete::{CheckOutcome, Completion};
+            let Some(store) = &self.settings_store else {
+                return CheckOutcome::Unavailable;
+            };
+            let directory = store
+                .settings_path_for_username(&s.record.canonical_username)
+                .parent()
+                .unwrap()
+                .to_path_buf();
+            let Ok(mut lease) =
+                crate::folder_rename::role_lease(&directory, &s.record.canonical_username)
+            else {
+                return CheckOutcome::Unavailable;
+            };
+            let Some(r) = lease.pending_delete().cloned() else {
+                return CheckOutcome::NoPending;
+            };
+            let witness =
+                crate::mailbox_helper::mailbox_helper_rename::delete_witness::completion_delete(
+                    &directory.join("fixture-delete-helper"),
+                    &r,
+                );
+            let (Some(snapshot), Some(parent)) = (
+                self.folder_metadata(c, s).snapshot,
+                self.mailbox_status(c, s, r.parent()).status,
+            ) else {
+                return CheckOutcome::Unconfirmed;
+            };
+            let result = if witness == Completion::Deleted && r.confirmed_absent(&snapshot, &parent)
+            {
+                CheckOutcome::Deleted
+            } else if witness == Completion::NoMutation
+                && self
+                    .mailbox_status(c, s, r.source())
+                    .status
+                    .is_some_and(|source| r.confirmed_unchanged(&snapshot, &source, &parent))
+            {
+                CheckOutcome::Unchanged
+            } else {
+                return CheckOutcome::Unconfirmed;
+            };
+            if lease.confirm().is_err() {
+                CheckOutcome::Unavailable
+            } else {
+                result
+            }
+        }
+        fn folder_disposition_receipts(
+            &self,
+            session: &ValidatedSession,
+        ) -> Result<Vec<crate::folder_disposition::Receipt>, crate::folder_create::Refusal>
+        {
+            let store = self
+                .settings_store
+                .as_ref()
+                .ok_or(crate::folder_create::Refusal::Unavailable)?;
+            crate::folder_disposition::list(
+                store
+                    .settings_path_for_username(&session.record.canonical_username)
+                    .parent()
+                    .unwrap(),
+                &session.record.canonical_username,
+            )
+        }
+        fn prepare_folder_bin(
+            &self,
+            context: &AuthenticationContext,
+            session: &ValidatedSession,
+            source: &str,
+        ) -> Result<crate::folder_rename::RenameFolderRequest, crate::folder_create::Refusal>
+        {
+            let guid = self
+                .created_folder_guid(&session.record.canonical_username, source)
+                .ok_or(crate::folder_create::Refusal::Invalid)?;
+            let metadata = self.folder_metadata(context, session);
+            if metadata.canonical_username != session.record.canonical_username {
+                return Err(crate::folder_create::Refusal::Invalid);
+            }
+            let status = self
+                .mailbox_status(context, session, source)
+                .status
+                .ok_or(crate::folder_create::Refusal::Unavailable)?;
+            crate::folder_rename::validate_source(
+                &session.record.canonical_username,
+                source,
+                metadata
+                    .snapshot
+                    .as_ref()
+                    .ok_or(crate::folder_create::Refusal::Unavailable)?,
+                &status,
+            )?;
+            let bin = self
+                .load_bin_preference(session)
+                .map_err(|_| crate::folder_create::Refusal::Unavailable)?;
+            crate::folder_disposition::Receipt::bin_request(
+                &session.record.canonical_username,
+                source,
+                &guid,
+                "1234567890abcdef1234567890abcdef",
+                &bin,
+                &"d".repeat(32),
+            )
+        }
         fn pending_folder_rename(
             &self,
             session: &ValidatedSession,
@@ -2741,7 +2955,13 @@ mod tests {
                     .unwrap(),
                 &session.record.canonical_username,
             )
-            .map(|lease| lease.pending().cloned())
+            .and_then(|lease| {
+                if lease.pending_delete().is_some() {
+                    Err(crate::folder_create::Refusal::Unavailable)
+                } else {
+                    Ok(lease.pending().cloned())
+                }
+            })
         }
         fn check_folder_rename(
             &self,
@@ -3111,7 +3331,12 @@ mod tests {
                             .unwrap_or("1234567890abcdef1234567890abcdef")
                     )
                     .unwrap(),
-                    if created_guid.is_some() { 0 } else { 42 },
+                    if created_guid.is_some() && context.user_agent != "FolderCreateDeletePopulated"
+                    {
+                        0
+                    } else {
+                        42
+                    },
                     if created_guid.is_some() { 0 } else { 8192 }
                 ),
                 stderr: String::new(),

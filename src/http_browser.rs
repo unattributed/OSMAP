@@ -686,6 +686,57 @@ pub trait BrowserGateway {
         archive_mailbox_name: Option<&str>,
     ) -> BrowserSettingsUpdateOutcome;
 
+    fn pending_folder_delete(
+        &self,
+        _: &ValidatedSession,
+    ) -> Result<Option<crate::folder_delete::DeleteFolderRequest>, crate::folder_create::Refusal>
+    {
+        Err(crate::folder_create::Refusal::Unavailable)
+    }
+    fn check_folder_delete(
+        &self,
+        _: &AuthenticationContext,
+        _: &ValidatedSession,
+    ) -> crate::folder_delete::CheckOutcome {
+        crate::folder_delete::CheckOutcome::Unavailable
+    }
+    fn delete_folder(
+        &self,
+        _: &AuthenticationContext,
+        _: &ValidatedSession,
+        _: &crate::folder_delete::DeleteFolderRequest,
+    ) -> crate::folder_delete::Outcome {
+        crate::folder_delete::Outcome::Refused(crate::folder_create::Refusal::Unavailable)
+    }
+    fn folder_disposition_receipts(
+        &self,
+        _: &ValidatedSession,
+    ) -> Result<Vec<crate::folder_disposition::Receipt>, crate::folder_create::Refusal> {
+        Err(crate::folder_create::Refusal::Unavailable)
+    }
+    fn prepare_folder_bin(
+        &self,
+        _: &AuthenticationContext,
+        _: &ValidatedSession,
+        _: &str,
+    ) -> Result<crate::folder_rename::RenameFolderRequest, crate::folder_create::Refusal> {
+        Err(crate::folder_create::Refusal::Unavailable)
+    }
+    fn apply_folder_disposition(
+        &self,
+        _: &AuthenticationContext,
+        _: &ValidatedSession,
+        _: &crate::folder_rename::RenameFolderRequest,
+    ) -> crate::folder_rename::Outcome {
+        crate::folder_rename::Outcome::Refused(crate::folder_create::Refusal::Unavailable)
+    }
+    fn check_folder_disposition(
+        &self,
+        _: &AuthenticationContext,
+        _: &ValidatedSession,
+    ) -> crate::folder_rename::CheckOutcome {
+        crate::folder_rename::CheckOutcome::Unavailable
+    }
     fn pending_folder_rename(
         &self,
         _: &ValidatedSession,

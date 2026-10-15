@@ -71,6 +71,20 @@ where
                 nonce: grant.nonce.clone(),
             }
         }
+        MailboxHelperRequest::FolderDeleteCompletion { request, grant } => {
+            MailboxHelperResponse::FolderDeleteCompletionOk {
+                request: Box::new(request.clone()),
+                completion: crate::folder_delete::Completion::Unconfirmed,
+                nonce: grant.nonce.clone(),
+            }
+        }
+        MailboxHelperRequest::FolderDelete { request, grant } => {
+            MailboxHelperResponse::FolderDeleteOk {
+                request: Box::new(request.clone()),
+                outcome: backends.mailbox_backend.delete_folder(request),
+                nonce: grant.nonce.clone(),
+            }
+        }
         MailboxHelperRequest::FolderRenameCompletion { request, grant } => {
             MailboxHelperResponse::FolderRenameCompletionOk {
                 request: Box::new(request.clone()),
@@ -643,6 +657,8 @@ fn helper_operation_label(request: &MailboxHelperRequest) -> &'static str {
         MailboxHelperRequest::RetentionStatus { .. } => "retention_status",
         MailboxHelperRequest::MessageDelete { .. } => "message_delete",
         MailboxHelperRequest::MessageFlag { .. } => "message_flag",
+        MailboxHelperRequest::FolderDeleteCompletion { .. } => "folder_delete_completion",
+        MailboxHelperRequest::FolderDelete { .. } => "folder_delete",
         MailboxHelperRequest::FolderRenameCompletion { .. } => "folder_rename_completion",
         MailboxHelperRequest::FolderRename { .. } => "folder_rename",
         MailboxHelperRequest::FolderCreate { .. } => "folder_create",

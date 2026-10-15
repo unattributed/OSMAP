@@ -1322,13 +1322,189 @@ impl BrowserGateway for RuntimeBrowserGateway {
         )
     }
 
+    fn pending_folder_delete(
+        &self,
+        session: &ValidatedSession,
+    ) -> Result<Option<crate::folder_delete::DeleteFolderRequest>, crate::folder_create::Refusal>
+    {
+        crate::folder_rename::role_lease(&self.settings_dir, &session.record.canonical_username)
+            .map(|l| l.pending_delete().cloned())
+    }
+    fn delete_folder(
+        &self,
+        context: &AuthenticationContext,
+        session: &ValidatedSession,
+        request: &crate::folder_delete::DeleteFolderRequest,
+    ) -> crate::folder_delete::Outcome {
+        use crate::{folder_create::Refusal, folder_delete::Outcome};
+        if self.mailbox_helper_socket_path.is_some()
+            && (self.mailbox_helper_peer_uid.is_none()
+                || self.mailbox_helper_grant_key_path.is_none())
+        {
+            return Outcome::Refused(Refusal::Unavailable);
+        }
+        let Ok(mut lease) = crate::folder_rename::settings_gate(
+            &self.settings_dir,
+            &session.record.canonical_username,
+        ) else {
+            return Outcome::Refused(Refusal::Unavailable);
+        };
+        if request.account() != session.record.canonical_username || request.validate().is_err() {
+            return Outcome::Refused(Refusal::Invalid);
+        }
+        if let Err(reason) = crate::folder_disposition::guard_ordinary(
+            &self.settings_dir,
+            &lease,
+            request.source(),
+            request.source(),
+        ) {
+            return Outcome::Refused(reason);
+        }
+        let Ok(names) = crate::folder_rename::protected_destinations(self, context, session) else {
+            return Outcome::Refused(Refusal::Unavailable);
+        };
+        if crate::folder_rename::role_conflict(&names, request.source(), request.source()) {
+            return Outcome::Refused(Refusal::Invalid);
+        }
+        if lease.begin_delete(request).is_err() {
+            return Outcome::Refused(Refusal::Unavailable);
+        }
+        let outcome = crate::mailbox::MailboxBackend::delete_folder(
+            &self.build_mailbox_list_backend(),
+            request,
+        );
+        if outcome != Outcome::Unknown && lease.confirm().is_err() {
+            return Outcome::Unknown;
+        }
+        outcome
+    }
+    fn check_folder_delete(
+        &self,
+        _: &AuthenticationContext,
+        session: &ValidatedSession,
+    ) -> crate::folder_delete::CheckOutcome {
+        use crate::{
+            folder_delete::{CheckOutcome, Completion},
+            mailbox::MailboxBackend,
+        };
+        if self.mailbox_helper_socket_path.is_some()
+            && (self.mailbox_helper_peer_uid.is_none()
+                || self.mailbox_helper_grant_key_path.is_none())
+        {
+            return CheckOutcome::Unavailable;
+        }
+        let Ok(mut lease) = crate::folder_rename::role_lease(
+            &self.settings_dir,
+            &session.record.canonical_username,
+        ) else {
+            return CheckOutcome::Unavailable;
+        };
+        let Some(request) = lease.pending_delete().cloned() else {
+            return CheckOutcome::NoPending;
+        };
+        let backend = self.build_mailbox_list_backend();
+        let (Ok(snapshot), Ok(parent)) = (
+            backend.folder_metadata(request.account()),
+            backend.mailbox_status(request.account(), request.parent()),
+        ) else {
+            return CheckOutcome::Unconfirmed;
+        };
+        let witness = backend.folder_delete_completion(&request);
+        let result =
+            if witness == Completion::Deleted && request.confirmed_absent(&snapshot, &parent) {
+                CheckOutcome::Deleted
+            } else if witness == Completion::NoMutation
+                && backend
+                    .mailbox_status(request.account(), request.source())
+                    .is_ok_and(|source| request.confirmed_unchanged(&snapshot, &source, &parent))
+            {
+                CheckOutcome::Unchanged
+            } else {
+                return CheckOutcome::Unconfirmed;
+            };
+        if lease.confirm().is_err() {
+            CheckOutcome::Unavailable
+        } else {
+            result
+        }
+    }
+    fn folder_disposition_receipts(
+        &self,
+        session: &ValidatedSession,
+    ) -> Result<Vec<crate::folder_disposition::Receipt>, crate::folder_create::Refusal> {
+        crate::folder_disposition::list(&self.settings_dir, &session.record.canonical_username)
+    }
+    fn prepare_folder_bin(
+        &self,
+        _: &AuthenticationContext,
+        session: &ValidatedSession,
+        source: &str,
+    ) -> Result<crate::folder_rename::RenameFolderRequest, crate::folder_create::Refusal> {
+        if self.mailbox_helper_socket_path.is_none()
+            || self.mailbox_helper_peer_uid.is_none()
+            || self.mailbox_helper_grant_key_path.is_none()
+        {
+            return Err(crate::folder_create::Refusal::Unavailable);
+        }
+        crate::folder_disposition::prepare_bin(
+            &self.settings_dir,
+            &self.build_mailbox_list_backend(),
+            &session.record.canonical_username,
+            source,
+        )
+    }
+    fn apply_folder_disposition(
+        &self,
+        _: &AuthenticationContext,
+        session: &ValidatedSession,
+        request: &crate::folder_rename::RenameFolderRequest,
+    ) -> crate::folder_rename::Outcome {
+        if request.account() != session.record.canonical_username
+            || self.mailbox_helper_socket_path.is_none()
+            || self.mailbox_helper_peer_uid.is_none()
+            || self.mailbox_helper_grant_key_path.is_none()
+        {
+            return crate::folder_rename::Outcome::Refused(
+                crate::folder_create::Refusal::Unavailable,
+            );
+        }
+        crate::folder_disposition::execute(
+            &self.settings_dir,
+            &self.build_mailbox_list_backend(),
+            request,
+            self.snooze_clock(),
+        )
+    }
+    fn check_folder_disposition(
+        &self,
+        _: &AuthenticationContext,
+        session: &ValidatedSession,
+    ) -> crate::folder_rename::CheckOutcome {
+        if self.mailbox_helper_socket_path.is_none()
+            || self.mailbox_helper_peer_uid.is_none()
+            || self.mailbox_helper_grant_key_path.is_none()
+        {
+            return crate::folder_rename::CheckOutcome::Unavailable;
+        }
+        crate::folder_disposition::check(
+            &self.settings_dir,
+            &self.build_mailbox_list_backend(),
+            &session.record.canonical_username,
+        )
+    }
     fn pending_folder_rename(
         &self,
         session: &ValidatedSession,
     ) -> Result<Option<crate::folder_rename::RenameFolderRequest>, crate::folder_create::Refusal>
     {
         crate::folder_rename::role_lease(&self.settings_dir, &session.record.canonical_username)
-            .map(|lease| lease.pending().cloned())
+            .and_then(|lease| {
+                if lease.pending_delete().is_some() {
+                    Err(crate::folder_create::Refusal::Unavailable)
+                } else {
+                    Ok(lease.pending().cloned())
+                }
+            })
     }
     fn check_folder_rename(
         &self,
@@ -1351,6 +1527,9 @@ impl BrowserGateway for RuntimeBrowserGateway {
         let Some(request) = lease.pending().cloned() else {
             return CheckOutcome::NoPending;
         };
+        if request.disposition().is_some() {
+            return CheckOutcome::Unconfirmed;
+        }
         let backend = self.build_mailbox_list_backend();
         let (Ok(snapshot), Ok(parent)) = (
             crate::mailbox::MailboxBackend::folder_metadata(&backend, request.account()),
@@ -1432,8 +1611,17 @@ impl BrowserGateway for RuntimeBrowserGateway {
         ) else {
             return Outcome::Refused(Refusal::Unavailable);
         };
-        if request.account() != session.record.canonical_username {
+        if request.account() != session.record.canonical_username || request.disposition().is_some()
+        {
             return Outcome::Refused(Refusal::Invalid);
+        }
+        if let Err(reason) = crate::folder_disposition::guard_ordinary(
+            &self.settings_dir,
+            &lease,
+            request.source(),
+            &request.destination(),
+        ) {
+            return Outcome::Refused(reason);
         }
         let Ok(names) = crate::folder_rename::protected_destinations(self, context, session) else {
             return Outcome::Refused(Refusal::Unavailable);
@@ -1473,14 +1661,30 @@ impl BrowserGateway for RuntimeBrowserGateway {
         session: &ValidatedSession,
         request: &crate::folder_create::CreateFolderRequest,
     ) -> BrowserFolderCreateOutcome {
-        let outcome = if request.account() != session.record.canonical_username {
-            crate::folder_create::Outcome::Refused(crate::folder_create::Refusal::Invalid)
-        } else {
+        let outcome = (|| {
+            use crate::folder_create::{Outcome, Refusal};
+            if request.account() != session.record.canonical_username || request.validate().is_err()
+            {
+                return Outcome::Refused(Refusal::Invalid);
+            }
+            let Ok(lease) =
+                crate::folder_rename::settings_gate(&self.settings_dir, request.account())
+            else {
+                return Outcome::Refused(Refusal::Unavailable);
+            };
+            if let Err(reason) = crate::folder_disposition::guard_ordinary(
+                &self.settings_dir,
+                &lease,
+                &request.child(),
+                &request.child(),
+            ) {
+                return Outcome::Refused(reason);
+            }
             crate::mailbox::MailboxBackend::create_folder(
                 &self.build_mailbox_list_backend(),
                 request,
             )
-        };
+        })();
         let event = LogEvent::new(
             LogLevel::Info,
             crate::logging::EventCategory::Mailbox,

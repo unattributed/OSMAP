@@ -6,7 +6,7 @@ use crate::{
     folder_rename::{Outcome, RenameFolderRequest},
 };
 impl<G: BrowserGateway> BrowserApp<G> {
-    fn rename_preflight(
+    pub(super) fn rename_preflight(
         &self,
         context: &AuthenticationContext,
         session: &ValidatedSession,
@@ -376,6 +376,14 @@ impl<G: BrowserGateway> BrowserApp<G> {
             Err(response) => return response,
         };
         let mut pending = self.gateway.pending_folder_rename(&session);
+        if pending
+            .as_ref()
+            .ok()
+            .and_then(Option::as_ref)
+            .is_some_and(|r| r.disposition().is_some())
+        {
+            return self.handle_folder_disposition_check(request, context);
+        }
         let mut code = if pending.is_ok() { 200 } else { 503 };
         let mut notice = if pending.as_ref().is_ok_and(|p| p.is_none()) {
             "No rename result is pending. Inspect Copies & Folders for current names."

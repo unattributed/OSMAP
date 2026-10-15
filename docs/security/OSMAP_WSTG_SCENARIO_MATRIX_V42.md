@@ -1,5 +1,22 @@
 # OSMAP WSTG v4.2 Scenario Matrix
 
+S08-02 leaf disposition source increment, 2026-10-15: the attack surface adds
+the actual Deleted folders, empty Delete, Bin, Restore and original-result
+check routes with exact bounded fields. POST retains current session, CSRF,
+account role, identity and typed signed helper authority. Purpose-versioned
+grants preserve legacy None bytes. Private bounded receipt reservations,
+terminal-before-role-clear ordering and explicit no-redispatch recovery cover
+the independently found predispatch gap. Focused local controls PASS; matching
+native, installed lifecycle and independent delivery review remain required.
+No whole WSTG, release, parent slice or human acceptance is inferred.
+
+The route extractor now expands explicit Get|Post tuple alternatives, rejects
+unsupported method grammar and retains exact missing/stale set checks. Actual
+gate refusal exposed this blind spot and the previously omitted Move GET/POST
+rows; the inventory now includes their exact accepted fields. Fifteen focused
+runner controls pass, including removed-method and unsupported-grammar refusal.
+This is corrected static evidence extraction, not live target WSTG acceptance.
+
 S08-02 Folders navigation increment: authenticated GET `/folders` accepts only
 the bounded account-owned folder selection and reuses existing metadata/status
 and reviewed Create/Rename/Move routes. Alice/Bob, malformed selection and

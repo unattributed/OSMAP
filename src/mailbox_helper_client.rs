@@ -73,7 +73,9 @@ impl MailboxHelperMailboxListBackend {
                     MessageViewPolicy::default(),
                     std::str::from_utf8(&bytes).map_err(|_| "invalid folder facts")?,
                 )?;
-                if let MailboxHelperResponse::FolderRenameCompletionOk { nonce, .. } = &response {
+                if let MailboxHelperResponse::FolderRenameCompletionOk { nonce, .. }
+                | MailboxHelperResponse::FolderDeleteCompletionOk { nonce, .. } = &response
+                {
                     if nonce != &super::mailbox_helper_protocol::request_grant(&request).nonce {
                         return Err("completion response nonce refused".into());
                     }
@@ -87,6 +89,92 @@ impl MailboxHelperMailboxListBackend {
 }
 
 impl MailboxBackend for MailboxHelperMailboxListBackend {
+    fn folder_delete_completion(
+        &self,
+        value: &crate::folder_delete::DeleteFolderRequest,
+    ) -> crate::folder_delete::Completion {
+        use crate::folder_delete::Completion;
+        if value.validate().is_err() || self.helper_uid.is_none() {
+            return Completion::Unconfirmed;
+        }
+        let request = MailboxHelperRequest::FolderDeleteCompletion {
+            request: value.clone(),
+            grant: MailboxHelperGrant::unsigned(),
+        };
+        match self.folder_facts(request, 4096) {
+            Ok(MailboxHelperResponse::FolderDeleteCompletionOk {
+                request,
+                completion,
+                ..
+            }) if value.accepts_response(&request) => completion,
+            _ => Completion::Unconfirmed,
+        }
+    }
+    fn delete_folder(
+        &self,
+        value: &crate::folder_delete::DeleteFolderRequest,
+    ) -> crate::folder_delete::Outcome {
+        let execute = || -> Result<crate::folder_delete::Outcome, String> {
+            value.validate().map_err(|_| "invalid delete".to_owned())?;
+            let peer = self.helper_uid.ok_or("helper peer unavailable")?;
+            #[cfg(unix)]
+            let deadline = Instant::now()
+                + Duration::from_secs(
+                    self.policy
+                        .read_timeout_secs
+                        .max(1)
+                        .min(self.policy.write_timeout_secs.max(1)),
+                );
+            let mut request = MailboxHelperRequest::FolderDelete {
+                request: value.clone(),
+                grant: MailboxHelperGrant::unsigned(),
+            };
+            let wire = encode_authorized_request(&self.grant_key_path, &mut request)?;
+            #[cfg(not(unix))]
+            {
+                let _ = (peer, wire);
+                Err("Unix helper unavailable".into())
+            }
+            #[cfg(unix)]
+            {
+                let policy = MailboxHelperPolicy {
+                    max_request_bytes: self.policy.max_request_bytes.min(4096),
+                    max_response_bytes: self.policy.max_response_bytes.min(4096),
+                    ..self.policy
+                };
+                let bytes = helper_exchange_before_with_peer(
+                    &self.socket_path,
+                    &wire,
+                    policy,
+                    deadline,
+                    Some(peer),
+                )?;
+                let response = parse_response(
+                    MailboxListingPolicy::default(),
+                    MessageListPolicy::default(),
+                    MessageSearchPolicy::default(),
+                    MessageViewPolicy::default(),
+                    std::str::from_utf8(&bytes).map_err(|_| "invalid response")?,
+                )?;
+                match response {
+                    MailboxHelperResponse::FolderDeleteOk {
+                        request: returned,
+                        outcome,
+                        nonce,
+                    } if value.accepts_response(&returned)
+                        && nonce
+                            == super::mailbox_helper_protocol::request_grant(&request).nonce =>
+                    {
+                        helper_deadline_remaining(deadline)?;
+                        Ok(outcome)
+                    }
+                    _ => Err("delete response binding refused".into()),
+                }
+            }
+        };
+        execute().unwrap_or(crate::folder_delete::Outcome::Unknown)
+    }
+
     fn folder_rename_completion(
         &self,
         value: &crate::folder_rename::RenameFolderRequest,
@@ -333,6 +421,8 @@ impl MailboxBackend for MailboxHelperMailboxListBackend {
                 MailboxHelperResponse::RetentionStatus { .. }
                 | MailboxHelperResponse::MessageDelete { .. }
                 | MailboxHelperResponse::FolderCreateOk { .. }
+                | MailboxHelperResponse::FolderDeleteCompletionOk { .. }
+                | MailboxHelperResponse::FolderDeleteOk { .. }
                 | MailboxHelperResponse::FolderRenameCompletionOk { .. }
                 | MailboxHelperResponse::FolderRenameOk { .. }
                 | MailboxHelperResponse::FolderMetadataOk { .. }
@@ -508,6 +598,8 @@ impl MessageListBackend for MailboxHelperMessageListBackend {
                 MailboxHelperResponse::RetentionStatus { .. }
                 | MailboxHelperResponse::MessageDelete { .. }
                 | MailboxHelperResponse::FolderCreateOk { .. }
+                | MailboxHelperResponse::FolderDeleteCompletionOk { .. }
+                | MailboxHelperResponse::FolderDeleteOk { .. }
                 | MailboxHelperResponse::FolderRenameCompletionOk { .. }
                 | MailboxHelperResponse::FolderRenameOk { .. }
                 | MailboxHelperResponse::FolderMetadataOk { .. }
@@ -693,6 +785,8 @@ impl MessageSearchBackend for MailboxHelperMessageSearchBackend {
                 MailboxHelperResponse::RetentionStatus { .. }
                 | MailboxHelperResponse::MessageDelete { .. }
                 | MailboxHelperResponse::FolderCreateOk { .. }
+                | MailboxHelperResponse::FolderDeleteCompletionOk { .. }
+                | MailboxHelperResponse::FolderDeleteOk { .. }
                 | MailboxHelperResponse::FolderRenameCompletionOk { .. }
                 | MailboxHelperResponse::FolderRenameOk { .. }
                 | MailboxHelperResponse::FolderMetadataOk { .. }
@@ -998,6 +1092,8 @@ impl MessageViewBackend for MailboxHelperMessageViewBackend {
                 MailboxHelperResponse::RetentionStatus { .. }
                 | MailboxHelperResponse::MessageDelete { .. }
                 | MailboxHelperResponse::FolderCreateOk { .. }
+                | MailboxHelperResponse::FolderDeleteCompletionOk { .. }
+                | MailboxHelperResponse::FolderDeleteOk { .. }
                 | MailboxHelperResponse::FolderRenameCompletionOk { .. }
                 | MailboxHelperResponse::FolderRenameOk { .. }
                 | MailboxHelperResponse::FolderMetadataOk { .. }
@@ -1152,6 +1248,8 @@ impl MailboxHelperAttachmentDownloadBackend {
                 MailboxHelperResponse::RetentionStatus { .. }
                 | MailboxHelperResponse::MessageDelete { .. }
                 | MailboxHelperResponse::FolderCreateOk { .. }
+                | MailboxHelperResponse::FolderDeleteCompletionOk { .. }
+                | MailboxHelperResponse::FolderDeleteOk { .. }
                 | MailboxHelperResponse::FolderRenameCompletionOk { .. }
                 | MailboxHelperResponse::FolderRenameOk { .. }
                 | MailboxHelperResponse::FolderMetadataOk { .. }
@@ -1511,6 +1609,8 @@ impl MessageAppendBackend for MailboxHelperMessageAppendBackend {
                 MailboxHelperResponse::RetentionStatus { .. }
                 | MailboxHelperResponse::MessageDelete { .. }
                 | MailboxHelperResponse::FolderCreateOk { .. }
+                | MailboxHelperResponse::FolderDeleteCompletionOk { .. }
+                | MailboxHelperResponse::FolderDeleteOk { .. }
                 | MailboxHelperResponse::FolderRenameCompletionOk { .. }
                 | MailboxHelperResponse::FolderRenameOk { .. }
                 | MailboxHelperResponse::FolderMetadataOk { .. }
@@ -1668,8 +1768,16 @@ pub(super) fn encode_authorized_request(
     request: &mut MailboxHelperRequest,
 ) -> Result<Vec<u8>, String> {
     let key = load_helper_grant_key(grant_key_path)?;
-    if let MailboxHelperRequest::FolderRename { request: value, .. } = request {
-        let nonce = value.action_nonce().to_owned();
+    let action_nonce = match request {
+        MailboxHelperRequest::FolderRename { request, .. } => {
+            Some(request.action_nonce().to_owned())
+        }
+        MailboxHelperRequest::FolderDelete { request, .. } => {
+            Some(request.action_nonce().to_owned())
+        }
+        _ => None,
+    };
+    if let Some(nonce) = action_nonce {
         super::mailbox_helper_protocol::issue_request_grant_with_nonce(
             request,
             &key,

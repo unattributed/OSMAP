@@ -94,6 +94,7 @@ mod labels_ui;
 
 pub mod folder_create;
 mod folder_create_backend;
+pub mod folder_disposition;
 pub mod folder_metadata;
 mod folder_metadata_backend;
 pub mod folder_rename;
@@ -129,3 +130,6 @@ pub mod sender_authority;
 
 #[cfg(all(test, unix))]
 mod native_stored_issuer_fixture;
+
+pub mod folder_delete;
+mod folder_delete_backend;

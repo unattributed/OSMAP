@@ -1044,6 +1044,18 @@ pub trait MailboxBackend {
     ) -> crate::folder_rename::Completion {
         crate::folder_rename::Completion::Unconfirmed
     }
+    fn delete_folder(
+        &self,
+        _: &crate::folder_delete::DeleteFolderRequest,
+    ) -> crate::folder_delete::Outcome {
+        crate::folder_delete::Outcome::Refused(crate::folder_create::Refusal::Unavailable)
+    }
+    fn folder_delete_completion(
+        &self,
+        _: &crate::folder_delete::DeleteFolderRequest,
+    ) -> crate::folder_delete::Completion {
+        crate::folder_delete::Completion::Unconfirmed
+    }
     fn rename_folder(
         &self,
         _: &crate::folder_rename::RenameFolderRequest,

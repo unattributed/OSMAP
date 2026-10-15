@@ -70,26 +70,61 @@ populated Rename and Move with folder/message identity, exact content,
 Label/Snooze continuity, account isolation, uncertain-result recovery and current
 fixture cleanup. The matching application9685ba07 is now installed helper-first
 on Toronto and then web on obsd1, with configuration, completion state, key
-agents and unrelated services preserved. Installed composed Move QA and the
-operator's combined folder-lifecycle UAT remain pending. The earlier failed
-fixture's cleanup remains unconfirmed.
+agents and unrelated services preserved. One installed configured-peer Move
+now passes finite preparation, stale refusal, current-parent/folder identity
+and authoritative complete MIME/attachment/UID/message-GUID preservation.
+Cleanup's one conjoined expunge and initial empty-folder checks pass, then its
+retained-names/unrelated-metadata postcondition refuses. Read-only retained-state
+reconciliation remains open; no expunge repeat or overall cleanup PASS is claimed.
+Combined folder-lifecycle UAT remains pending. Earlier failed fixtures remain
+retained with their original unconfirmed cleanup.
 
 Operator engineering request [#78](https://github.com/unattributed/OSMAP/issues/78)
 assigns the Documents-to-Folders navigation/page change, Inbox hierarchy, folder
 management and movement of complete emails including attachments to S08-02,
 before combined acceptance and affected S09 visual checks. These requested
-navigation changes are not yet installed. The real authenticated Folders page
-is implemented and passes focused local account/selection controls and one
+navigation changes are installed on obsd1 as signed source9858d04/native app
+f6b49462; the authoritative helper remains the qualified9685ba07 image because
+this increment changes frontend navigation only. The authenticated Folders page
+passes focused local account/selection controls and one
 synthetic browser journey: keyboard Create/review/confirm, persisted hierarchy,
 existing Rename/Move forms, mailbox opening, Bob isolation, and wide/narrow
 light/dark layout. No external or Send requests or runtime scripts occurred;
 the disposable fixture exited and its scratch was removed. Native compilation
 and both named route controls PASS against exact464+3 inputs, producing app
-f6b49462. Installed frontend/backend qualification remains pending. A failed earlier
+f6b49462. Four actual installed GETs now pass hierarchy, parent/leaf selection
+and emitted Open-folder navigation against the controlled empty leaf. The
+120-second qualification lease was revoked and its exact new record removed;
+operator cookies and private bodies were not used. Independent delivery review
+is clear. This qualifies the installed read path, not login/TOTP or new mutation
+forms. A failed earlier
 selector assumed `%20` where the existing encoder emits `+`; the corrected
 harness passes without changing product code. Delete/Bin/Restore remain separate
 dependencies. Existing bulk Labels are implemented; their current installed/human
 journey still needs qualification.
+
+Installed Move qualification first refused before mutation because its root
+harness cleared the existing account's supplementary groups. A zero-wire
+contrast establishes socket EACCES with no groups and success with the exact
+existing group set; no host permissions changed. The corrected harness then
+encountered a five-second metadata timeout before any Create/Append. That cause
+remains unknown. A later single metadata readiness request passes in3.504s
+under unchanged bounds; no historical timeout fix is inferred. The controlled
+Move journey then passes its operation/content checks. Its later cleanup
+postcondition refused after the single expunge; that failure and unknown cause
+remain historical. A separate read-only observation establishes the current
+safe state: exactly three owned empty folders, unchanged leaf/parent GUIDs and
+all eleven unrelated operation-field difference counts zero. Independent
+review is clear; this is not a retrospective cleanup pass. No ambiguous
+mutation was repeated and no operator troubleshooting handoff occurred.
+
+The merged empty Delete/populated Bin/Restore implementation now passes the
+matching finite OpenBSD fixture, including arrival/complete MIME/attachments,
+Label/Snooze/Bob isolation, lost-result recovery and cleanup. All473+3 inputs
+match and independent source/native review is clear. Predispatch reservation
+recovery was repaired after an actual independent finding. Source admission,
+matching guarded installation and composed HTTP lifecycle remain required;
+this is not yet a completed S08-02 slice or an operator UAT invitation.
 
 ### Private key-agent recovery engineering, 2026-10-14
 

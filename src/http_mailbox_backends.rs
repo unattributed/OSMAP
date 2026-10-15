@@ -306,6 +306,28 @@ pub(super) enum MailboxListRuntimeBackend {
 }
 
 impl crate::mailbox::MailboxBackend for MailboxListRuntimeBackend {
+    fn folder_delete_completion(
+        &self,
+        r: &crate::folder_delete::DeleteFolderRequest,
+    ) -> crate::folder_delete::Completion {
+        match self {
+            Self::Helper(b) => b.folder_delete_completion(r),
+            _ => crate::folder_delete::Completion::Unconfirmed,
+        }
+    }
+    fn delete_folder(
+        &self,
+        r: &crate::folder_delete::DeleteFolderRequest,
+    ) -> crate::folder_delete::Outcome {
+        match self {
+            Self::Direct(b) => b.delete_folder(r),
+            Self::Helper(b) => b.delete_folder(r),
+            Self::Unavailable(_) => {
+                crate::folder_delete::Outcome::Refused(crate::folder_create::Refusal::Unavailable)
+            }
+        }
+    }
+
     fn folder_rename_completion(
         &self,
         r: &crate::folder_rename::RenameFolderRequest,

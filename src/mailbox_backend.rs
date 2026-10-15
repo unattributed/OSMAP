@@ -69,6 +69,17 @@ impl<E> MailboxBackend for DoveadmMailboxListBackend<E>
 where
     E: CommandExecutor,
 {
+    fn delete_folder(
+        &self,
+        request: &crate::folder_delete::DeleteFolderRequest,
+    ) -> crate::folder_delete::Outcome {
+        crate::folder_delete_backend::delete(
+            &self.command_executor,
+            &self.doveadm_path,
+            self.userdb_socket_path.as_deref(),
+            request,
+        )
+    }
     fn rename_folder(
         &self,
         request: &crate::folder_rename::RenameFolderRequest,

@@ -277,6 +277,45 @@ class RunnerBehaviorTests(unittest.TestCase):
         valid, findings = runner.write_attack_surface_inventory_evidence()
         self.assertTrue(valid, findings)
 
+    def test_browser_attack_surface_requires_each_alternative_method(self) -> None:
+        inventory = json.loads(WSTG.ATTACK_SURFACE_PATH.read_text(encoding="utf-8"))
+        inventory["routes"] = [
+            row for row in inventory["routes"]
+            if (row["method"], row["path"]) != ("POST", "/settings/folders/bin")
+        ]
+        original_read = Path.read_text
+        def read(path, *args, **kwargs):
+            return (json.dumps(inventory) if path == WSTG.ATTACK_SURFACE_PATH
+                    else original_read(path, *args, **kwargs))
+        runner = WSTG.Runner(
+            config("https://example.test", "example.test", self.root),
+            self.mapping, self.root / "missing-alternative",
+        )
+        with mock.patch.object(Path, "read_text", autospec=True, side_effect=read):
+            valid, findings = runner.write_attack_surface_inventory_evidence()
+        self.assertFalse(valid)
+        self.assertIn(
+            ("POST", "/settings/folders/bin"), findings["missing_from_inventory"]
+        )
+
+    def test_browser_attack_surface_refuses_unknown_method_alternative(self) -> None:
+        runtime_path = REPO_ROOT / "src" / "http_runtime.rs"
+        original_read = Path.read_text
+        runtime = original_read(runtime_path, encoding="utf-8").replace(
+            'HttpMethod::Get | HttpMethod::Post, "/settings/folders/bin"',
+            'HttpMethod::Get | HttpMethod::Delete, "/settings/folders/bin"',
+        )
+        def read(path, *args, **kwargs):
+            return runtime if path == runtime_path else original_read(path, *args, **kwargs)
+        runner = WSTG.Runner(
+            config("https://example.test", "example.test", self.root),
+            self.mapping, self.root / "unknown-alternative",
+        )
+        with mock.patch.object(Path, "read_text", autospec=True, side_effect=read):
+            valid, findings = runner.write_attack_surface_inventory_evidence()
+        self.assertFalse(valid)
+        self.assertIn("unsupported_runtime_method_pattern", findings)
+
     def test_webmail_static_evidence_scans_draft_persistence(self) -> None:
         runner = WSTG.Runner(
             config("https://example.test", "example.test", self.root),

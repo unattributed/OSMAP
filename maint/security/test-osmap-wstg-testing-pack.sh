@@ -132,10 +132,11 @@ attack_surface = json.loads((pack / "osmap-browser-attack-surface.json").read_te
 attack_routes = attack_surface.get("routes", [])
 attack_keys = {(row["method"], row["path"]) for row in attack_routes}
 runtime_text = (pack.parents[1] / "src" / "http_runtime.rs").read_text()
-runtime_keys = {
-    (method.upper(), path)
-    for method, path in re.findall(r'\(HttpMethod::(Get|Post),\s*"([^"]+)"\)', runtime_text)
-}
+runtime_keys = set()
+for methods, path in re.findall(r'\((HttpMethod::[^,\n]+),\s*"([^"]+)"\)', runtime_text):
+    if not re.fullmatch(r'HttpMethod::(?:Get|Post)(?:\s*\|\s*HttpMethod::(?:Get|Post))*', methods):
+        raise SystemExit("unsupported runtime HTTP method pattern")
+    runtime_keys.update((method.upper(), path) for method in re.findall(r'HttpMethod::(Get|Post)', methods))
 if attack_keys != runtime_keys:
     raise SystemExit(
         f"browser attack-surface route drift missing={sorted(runtime_keys - attack_keys)} "

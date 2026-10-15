@@ -9659,3 +9659,49 @@ alone cannot establish the composed workflow. Correct the measured space-encodin
 test selector without changing product URL semantics or weakening assertions.
 The operator receives one minimal combined acceptance only after all submitted
 agent-owned implementation, matching installed QA and independent audit pass.
+
+## 2026-10-14 — preserve actual runtime authority in installed qualification
+
+Qualification must use the service principal's exact existing supplementary
+groups rather than inventing an empty-group execution profile that cannot
+traverse the configured socket. Correct only the measured wrapper prerequisite;
+do not change host permissions. Keep the later unexplained metadata timeout
+separate from that demonstrated DAC defect. After one bounded valid metadata
+readiness result, a pre-mutation prepare may resume once on its untouched
+namespace. Do not infer cold-start causation from SSH transport success, widen
+deadlines, loop retries or deploy unrelated relay differences. Record actual
+installed frontend/helper versions separately and retain every refusal.
+
+## 2026-10-15 — distinguish safe current disposition from historical cleanup
+
+After the one conjoined expunge and a refused combined cleanup postcondition,
+use only a fixed read-only observer. Exact current owned names, empty original
+GUID and unchanged unrelated operation fields establish safe retained state;
+they do not diagnose or retrospectively pass the failed interval. Do not repeat
+the expunge or Move. Qualify the installed Folders read path with an explicitly
+bounded test-only session, revoke and remove only its new record, and preserve
+the existing session-directory identity and mode. Keep login/TOTP, private body
+reading and unexecuted mutation forms outside that proof. Admit the populated
+Bin/Restore source only after repairing independently identified predispatch
+receipt recovery; passing rendering or unrelated Move evidence cannot waive it.
+
+## 2026-10-15 — protect disposition state across downlevel rollback
+
+New purpose-bound folder actions and private receipts cannot safely be handed
+to an older web release that ignores them. Before the first new-web start
+attempt, durably publish an irreversible barrier in the existing private
+activation backup. After that barrier, a failed activation must stop/drain
+admission, retain matching new images and live state, and report recovery
+required; it must not restore old images or overwrite live receipts from a
+snapshot. Before that first start, ordinary rollback remains available because
+the older web cannot issue the new purpose. Prefer this narrow conservative
+barrier to a new all-account state scanner. The implementation and focused
+fault control require independent review before deployment.
+
+Normal admission found three production purpose unwraps in otherwise validated
+paths. Replace them with explicit refusal, retain the failed gate and requalify
+the changed native/application source; do not reclassify or suppress the scanner.
+The feature-aware activator also requires integrity validation after new web
+admission: legitimate completion publication must not cause a false failure by
+comparing to a pre-start snapshot. Keep equality before admission, validate live
+bounded record integrity afterward, and never reset concurrent state.
