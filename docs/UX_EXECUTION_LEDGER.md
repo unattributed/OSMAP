@@ -9090,6 +9090,7 @@ state. Only then name exact human-only observations. No fake ETA or new status b
     "src/http_browser.rs",
     "src/http.rs",
     "src/http_gateway.rs",
+    "src/http_mailbox_backends.rs",
     "src/http_runtime.rs",
     "src/lib.rs",
     "src/mailbox_backend.rs",
@@ -9163,7 +9164,7 @@ state. Only then name exact human-only observations. No fake ETA or new status b
           "reference": "Matching native3 known injected partial split + typed settlement, actual signed child repair/lost reply/consumed nonce replay and cleanupPASS. Safe retained before-witness native controlPASS separately. No actual crash/quiescence claim; prior failed fixtures explicitly retained cleanupUNCONFIRMED."
         }
       ],
-      "next_action": "Preserve actual Apply3 uncertain reply and immutable640123/c042 journals; never retry Bin. Reconstruct unique authoritative receipt request and query exact native witness/current tree/labels read-only. Integrate minimal fresh native pre/post FolderFacts batching in Rename, qualify matching native/sign/sync/helper-first deployment, then admit only a separately reviewed distinct continuation. No human debugging or deadline extension."
+      "next_action": "Preserve original Bin and distinct Restore Apply reply failures; never retry either. Read exact retained Restore request/native completion/current facts without mutation. Repair missing folder_facts forwarding in actual MailboxListRuntimeBackend with a real-wrapper signed wire regression, matching native/app/normal signed sync/helper-first install and only changed unfinished functional evidence. No new protocol or deadline extension."
     },
     {
       "id": "hierarchy-and-selected-facts",
@@ -9180,15 +9181,28 @@ state. Only then name exact human-only observations. No fake ETA or new status b
       "dependencies": [],
       "essential_qa": "Reuse existing hierarchy/browser proof; qualify only changed lifecycle/recovery controls at desktop/mobile, keyboard, empty/error/long names. Real authoritative reads and preserved complete-email attachments; no cosmetic placeholder or fictitious counts.",
       "stages": {
-        "implementation": "PENDING",
-        "source_tests": "PENDING",
-        "native_tests": "PENDING",
+        "implementation": "PASS",
+        "source_tests": "PASS",
+        "native_tests": "PASS",
         "deployed_qa": "PENDING",
         "independent_review": "PENDING",
         "recovery": "PENDING"
       },
-      "evidence": [],
-      "next_action": "Preserve actual CreateMove PASS and exact terminal identity/lease cleanup; retain affected real hierarchy/navigation outcomes without repeating Create or Move."
+      "evidence": [
+        {
+          "stage": "implementation",
+          "reference": "Independent hierarchy-finite-stage-reconciliation-20261015.json a87d878e: current owned hierarchy/selection/open and selected name/parent/direct counts/owner implemented; selected renderer and folder tree component parity retained."
+        },
+        {
+          "stage": "source_tests",
+          "reference": "d8 normal1721/0/44 plus exact owned hierarchy/foreign-malformed selection/current owner/count/refusal controls in a87d878e. No installed final selected-panel result inferred."
+        },
+        {
+          "stage": "native_tests",
+          "reference": "a87d878e joins actual two named native Folders route controls/83ed with current2fdf twelve-marker metadata/status/GUID/authority case and independently audited component reuse. Native component composition only; actual web wrapper batch integration is a separate discovered gap."
+        }
+      ],
+      "next_action": "Preserve actual CreateMove/hierarchy components. Final current selected panel/list/reader seam remains pending because Restore10 stopped at Apply3. Do not repeat Create or Move."
     },
     {
       "id": "labels",
@@ -9252,15 +9266,24 @@ state. Only then name exact human-only observations. No fake ETA or new status b
       "dependencies": [],
       "essential_qa": "Reconcile existing finite action inventory and executed cases once; run only missing/changed assigned menu actions and unauthorized/cross-account/stale context refusals. Do not create new actions from ellipses.",
       "stages": {
-        "implementation": "PENDING",
-        "source_tests": "PENDING",
+        "implementation": "PASS",
+        "source_tests": "PASS",
         "native_tests": "PENDING",
         "deployed_qa": "PENDING",
         "independent_review": "PENDING",
         "recovery": "PENDING"
       },
-      "evidence": [],
-      "next_action": "Map these original two menu obligations to current real source/evidence, then implement or execute any concrete missing assigned action before closure."
+      "evidence": [
+        {
+          "stage": "implementation",
+          "reference": "Independent a87d878e and FINITE-MENU-EVIDENCE.md map original UX08-009/UX04-008 actions, disclosures and bounded Back context to existing implemented routes; no demonstrated missing assigned action."
+        },
+        {
+          "stage": "source_tests",
+          "reference": "a87d878e joins exact Preview/Contacts positive and session/origin/CSRF/CAS/stale/persistence/refusal controls plus source-pinned historical native evidence. One current Contacts200 does not promote aggregate native/deployed/recovery stages."
+        }
+      ],
+      "next_action": "Reconcile original action-specific current and unchanged component records; retain historical source/native/keyboard/Back limits. No generic all-menu campaign or whole-slice inference."
     }
   ],
   "human_acceptance": {
@@ -9284,7 +9307,7 @@ state. Only then name exact human-only observations. No fake ETA or new status b
       "evidence": "S08 labels-folders/folders-disposition-integration-20261015/installed-lifecycle-qualification/remaining-restore-delete-continuation-attempt2; actual53.964s, root witnessf5a6, actual-record proof4b83"
     }
   },
-  "next_action": "Preserve actual Apply3 uncertain reply and immutable640123/c042 journals; never retry Bin. Reconstruct unique authoritative receipt request and query exact native witness/current tree/labels read-only. Integrate minimal fresh native pre/post FolderFacts batching in Rename, qualify matching native/sign/sync/helper-first deployment, then admit only a separately reviewed distinct continuation. No human debugging or deadline extension."
+  "next_action": "Preserve original Bin and distinct Restore Apply reply failures; never retry either. Read exact retained Restore request/native completion/current facts without mutation. Repair missing folder_facts forwarding in actual MailboxListRuntimeBackend with a real-wrapper signed wire regression, matching native/app/normal signed sync/helper-first install and only changed unfinished functional evidence. No new protocol or deadline extension."
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->
@@ -9589,3 +9612,82 @@ modules and unused by the actual native case: app9570/native2fdf reuse is479
 unchanged manifest inputs plus two reviewed exclusions, not481full equality.
 Normal gate3 is still mandatory. The distinct Restore10 qualifier87fcd/9deb
 compiles against actual9570 production library in1.705s; it has not executed.
+
+## 2026-10-15 — signed native-phase delivery and retained Restore response failure
+
+Normal commit3 and push1 pass1721 Rust/0failed/44 explicit native ignores and519
+account Python checks. Signed Good Shopkeeper sourced8cdc822725c60bedb26dbbebf787362e11d1c39
+equals freshly fetched origin; canonical checkout is clean at that checkpoint.
+The authoritative mail standard checkout is clean source-only fast-forwarded to
+d8. Application9570ff6d is installed helper-first on authoritative mail and then
+obsd1 web; independent pair reviewaaf61d3b confirms preserved environment,
+configuration, key agents, retention, unrelated services and completion records.
+Compiled native/application provenance is479 unchanged inputs plus two reviewed
+excluded unit-fixture differences, never full481 equality to final signed source.
+
+Final Restore10 custody review1bb9ee06 is CLEAR. Exact proof publication and
+preparation pass; prepared pinscbb250e9 match before the one distinct execution.
+Actual Restore10 fails or remains unconfirmed after26.906s: SSH0/child2, no outer
+timeout, born process reaped and exact qualification lease revoked/removedPASS
+asr-0e1efd8caef6e05726aed815158be6dc. Journal a50f4d30 records GET1 and ReviewPOST2
+complete200, then exact Restore request nonce9fc387d8e5e97e9f2ea545da87085528 and
+its typed request hash before ApplyPOST3. The client receives no complete reply
+within its unchanged10s read limit. Server attempts303 after12463ms and reports
+Broken pipe. GET4ms and Review3ms do not qualify the Apply response.
+
+No Bin or Restore is retried. All six earlier journals remain unchanged. Current
+Restore durable completion, placement and metadata must be reconciled read-only
+using the retained exact request before any further distinct action. The failure
+does not establish a unique phase-level latency cause, final restored placement,
+label cleanup or original17/slice acceptance. Developer assesses the actual
+serial witness/fresh-facts path; only a demonstrated repair with essential native
+and installed evidence may advance delivery. Evidence is under S08 labels-folders/
+installed-subtree-lifecycle-20261015/remaining13-after-bin-read-repair/
+remaining10-after-bin-witness-proposal1/root-custody-proposal3-activated-final/.
+
+Root then finds the missed actual Runtime seam: `http_mailbox_backends.rs` builds
+MailboxListRuntimeBackend for prepare/execute but its MailboxBackend implementation
+does not forward folder_facts. The trait default calls folder_metadata and every
+individual mailbox_status, defeating the configured helper's batch operation.
+Native direct-helper/backend fixtures bypass this enum and did not qualify the
+web path. Independent review confirms the omission and acknowledges the prior
+review miss. Stop the proposed new combined-observation protocol unexecuted;
+the minimal repair is one existing wrapper path plus a signed socket-wire
+regression proving one exact FolderFacts call and preserved Unavailable errors.
+The failing old-source regression actually observes folder_metadata instead.
+This establishes serial request amplification, not a measured unique attribution
+of every millisecond. Existing deadlines and native checks remain unchanged.
+
+Minimal one-path forwarding patchf94a3691/sourcee8fa987d is independently CLEAR.
+The actual old Runtime signed socket emits folder_metadata instead of the
+required folder_facts (RED); the corrected complete runtime-backend module
+passes11 cases, format and Clippy. Direct/Helper delegate their existing bounded
+implementation; Unavailable returns its exact existing error. Source graph for
+two descendants is14 to4 signed exchanges, not installed elapsed success.
+
+Exact retained-Restore observer22317abe/binarye45b9f23 completes6.192s with
+independent delivered-scope PASS. Native completion for recorded request164195/
+nonce9fc387 is Renamed; receipt is absent, role clear/no recovery, all three
+original GUIDs are at the original destination, root has one message and children
+zero. The owned label assignment is relocated at actual revision11. All seven
+journals, private records, pins and environment remain unchanged. Current body/
+attachment are not fetched; prior preflight/native continuity retains its own
+scope. Direct helper completion3520ms, metadata998ms and fresh facts1029ms are
+separate current read measurements, not the old Runtime Apply phases. The HTTP
+reply remains failed; this proves no retry is necessary to settle current state.
+After matching wrapper repair, only a distinct new reviewed Bin/Restore intent
+with fresh nonces and pre-dispatch typed request hashes may qualify the repaired
+public response and remaining hierarchy/badge/owned-label cleanup.
+
+The corrected Runtime package7b650664 contains481 exact current inputs. Its
+fresh OpenBSD library build passes61.354s (fresh=false), then actual two Runtime
+wire/unavailable regressions pass0.037s with parity and no operator mail/service
+actions. New application324b1cb9 builds27.245s with complete current481-input
+parity. Against old2fdf native evidence,478 inputs are unchanged, two are excluded
+unit-fixture differences and one is the newly qualified Runtime wrapper. The
+unchanged native backend/lifecycle component evidence is reused without another
+mutation campaign. Normal signed source synchronization, matching helper-first
+installation and the new distinct installed response remain pending at this
+source checkpoint. Existing V10 scanners only refresh derived entries/offsets in
+http_mailbox_backends.rs; refined high relevance remains zero, classifications
+and validators unchanged. No human acceptance or full-slice closure follows.

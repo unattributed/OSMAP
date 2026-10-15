@@ -28029,39 +28029,23 @@
       "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
       "fail_closed_relevance": "high",
       "file": "src/http_mailbox_backends.rs",
-      "kind": "expect_call",
-      "line": 543
+      "kind": "unwrap_call",
+      "line": 550
     },
     {
       "classification": "production_adjacent_assumption",
       "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
       "fail_closed_relevance": "high",
       "file": "src/http_mailbox_backends.rs",
-      "kind": "expect_call",
-      "line": 546
+      "kind": "unwrap_call",
+      "line": 552
     },
     {
       "classification": "production_adjacent_assumption",
       "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
       "fail_closed_relevance": "high",
       "file": "src/http_mailbox_backends.rs",
-      "kind": "expect_call",
-      "line": 548
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/http_mailbox_backends.rs",
-      "kind": "expect_call",
-      "line": 551
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/http_mailbox_backends.rs",
-      "kind": "expect_call",
+      "kind": "unwrap_call",
       "line": 553
     },
     {
@@ -28069,15 +28053,23 @@
       "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
       "fail_closed_relevance": "high",
       "file": "src/http_mailbox_backends.rs",
-      "kind": "expect_call",
-      "line": 554
+      "kind": "unwrap_call",
+      "line": 556
     },
     {
       "classification": "production_adjacent_assumption",
       "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
       "fail_closed_relevance": "high",
       "file": "src/http_mailbox_backends.rs",
-      "kind": "expect_call",
+      "kind": "unwrap_call",
+      "line": 557
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/http_mailbox_backends.rs",
+      "kind": "unwrap_call",
       "line": 558
     },
     {
@@ -28085,23 +28077,23 @@
       "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
       "fail_closed_relevance": "high",
       "file": "src/http_mailbox_backends.rs",
-      "kind": "expect_call",
-      "line": 561
+      "kind": "unwrap_call",
+      "line": 559
+    },
+    {
+      "classification": "panic_path_assumption",
+      "disposition": "requires_path_review_before_broader_release_claims",
+      "fail_closed_relevance": "high",
+      "file": "src/http_mailbox_backends.rs",
+      "kind": "panic_macro",
+      "line": 571
     },
     {
       "classification": "production_adjacent_assumption",
       "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
       "fail_closed_relevance": "high",
       "file": "src/http_mailbox_backends.rs",
-      "kind": "expect_call",
-      "line": 566
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/http_mailbox_backends.rs",
-      "kind": "expect_call",
+      "kind": "unwrap_call",
       "line": 576
     },
     {
@@ -28109,39 +28101,87 @@
       "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
       "fail_closed_relevance": "high",
       "file": "src/http_mailbox_backends.rs",
-      "kind": "expect_call",
-      "line": 578
+      "kind": "unwrap_call",
+      "line": 579
     },
     {
       "classification": "production_adjacent_assumption",
       "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
       "fail_closed_relevance": "high",
       "file": "src/http_mailbox_backends.rs",
-      "kind": "expect_call",
-      "line": 588
+      "kind": "unwrap_call",
+      "line": 581
     },
     {
       "classification": "production_adjacent_assumption",
       "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
       "fail_closed_relevance": "high",
       "file": "src/http_mailbox_backends.rs",
-      "kind": "expect_call",
-      "line": 610
+      "kind": "unwrap_call",
+      "line": 586
     },
     {
       "classification": "production_adjacent_assumption",
       "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
       "fail_closed_relevance": "high",
       "file": "src/http_mailbox_backends.rs",
-      "kind": "expect_call",
-      "line": 613
+      "kind": "unwrap_call",
+      "line": 592
     },
     {
       "classification": "production_adjacent_assumption",
       "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
       "fail_closed_relevance": "high",
       "file": "src/http_mailbox_backends.rs",
-      "kind": "expect_call",
+      "kind": "unwrap_call",
+      "line": 593
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/http_mailbox_backends.rs",
+      "kind": "unwrap_call",
+      "line": 604
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/http_mailbox_backends.rs",
+      "kind": "unwrap_call",
+      "line": 605
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/http_mailbox_backends.rs",
+      "kind": "unwrap_call",
+      "line": 606
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/http_mailbox_backends.rs",
+      "kind": "unwrap_call",
+      "line": 607
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/http_mailbox_backends.rs",
+      "kind": "unwrap_call",
+      "line": 614
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/http_mailbox_backends.rs",
+      "kind": "unwrap_call",
       "line": 615
     },
     {
@@ -28149,8 +28189,16 @@
       "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
       "fail_closed_relevance": "high",
       "file": "src/http_mailbox_backends.rs",
-      "kind": "expect_call",
-      "line": 618
+      "kind": "unwrap_call",
+      "line": 616
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/http_mailbox_backends.rs",
+      "kind": "unwrap_call",
+      "line": 617
     },
     {
       "classification": "production_adjacent_assumption",
@@ -28158,7 +28206,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http_mailbox_backends.rs",
       "kind": "expect_call",
-      "line": 620
+      "line": 646
     },
     {
       "classification": "production_adjacent_assumption",
@@ -28166,7 +28214,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http_mailbox_backends.rs",
       "kind": "expect_call",
-      "line": 621
+      "line": 649
     },
     {
       "classification": "production_adjacent_assumption",
@@ -28174,7 +28222,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http_mailbox_backends.rs",
       "kind": "expect_call",
-      "line": 624
+      "line": 651
     },
     {
       "classification": "production_adjacent_assumption",
@@ -28182,7 +28230,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http_mailbox_backends.rs",
       "kind": "expect_call",
-      "line": 630
+      "line": 654
     },
     {
       "classification": "production_adjacent_assumption",
@@ -28190,7 +28238,23 @@
       "fail_closed_relevance": "high",
       "file": "src/http_mailbox_backends.rs",
       "kind": "expect_call",
-      "line": 632
+      "line": 656
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/http_mailbox_backends.rs",
+      "kind": "expect_call",
+      "line": 657
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/http_mailbox_backends.rs",
+      "kind": "expect_call",
+      "line": 661
     },
     {
       "classification": "production_adjacent_assumption",
@@ -28206,30 +28270,30 @@
       "fail_closed_relevance": "high",
       "file": "src/http_mailbox_backends.rs",
       "kind": "expect_call",
-      "line": 671
+      "line": 669
     },
     {
       "classification": "production_adjacent_assumption",
       "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
       "fail_closed_relevance": "high",
       "file": "src/http_mailbox_backends.rs",
-      "kind": "unwrap_call",
-      "line": 687
+      "kind": "expect_call",
+      "line": 679
     },
     {
       "classification": "production_adjacent_assumption",
       "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
       "fail_closed_relevance": "high",
       "file": "src/http_mailbox_backends.rs",
-      "kind": "unwrap_call",
-      "line": 690
+      "kind": "expect_call",
+      "line": 681
     },
     {
       "classification": "production_adjacent_assumption",
       "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
       "fail_closed_relevance": "high",
       "file": "src/http_mailbox_backends.rs",
-      "kind": "unwrap_call",
+      "kind": "expect_call",
       "line": 691
     },
     {
@@ -28237,8 +28301,88 @@
       "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
       "fail_closed_relevance": "high",
       "file": "src/http_mailbox_backends.rs",
-      "kind": "unwrap_call",
-      "line": 694
+      "kind": "expect_call",
+      "line": 713
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/http_mailbox_backends.rs",
+      "kind": "expect_call",
+      "line": 716
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/http_mailbox_backends.rs",
+      "kind": "expect_call",
+      "line": 718
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/http_mailbox_backends.rs",
+      "kind": "expect_call",
+      "line": 721
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/http_mailbox_backends.rs",
+      "kind": "expect_call",
+      "line": 723
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/http_mailbox_backends.rs",
+      "kind": "expect_call",
+      "line": 724
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/http_mailbox_backends.rs",
+      "kind": "expect_call",
+      "line": 727
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/http_mailbox_backends.rs",
+      "kind": "expect_call",
+      "line": 733
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/http_mailbox_backends.rs",
+      "kind": "expect_call",
+      "line": 735
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/http_mailbox_backends.rs",
+      "kind": "expect_call",
+      "line": 767
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/http_mailbox_backends.rs",
+      "kind": "expect_call",
+      "line": 774
     },
     {
       "classification": "production_adjacent_assumption",
@@ -28246,7 +28390,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http_mailbox_backends.rs",
       "kind": "unwrap_call",
-      "line": 695
+      "line": 790
     },
     {
       "classification": "production_adjacent_assumption",
@@ -28254,7 +28398,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http_mailbox_backends.rs",
       "kind": "unwrap_call",
-      "line": 696
+      "line": 793
     },
     {
       "classification": "production_adjacent_assumption",
@@ -28262,7 +28406,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http_mailbox_backends.rs",
       "kind": "unwrap_call",
-      "line": 697
+      "line": 794
     },
     {
       "classification": "production_adjacent_assumption",
@@ -28270,95 +28414,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http_mailbox_backends.rs",
       "kind": "unwrap_call",
-      "line": 738
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/http_mailbox_backends.rs",
-      "kind": "unwrap_call",
-      "line": 741
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/http_mailbox_backends.rs",
-      "kind": "unwrap_call",
-      "line": 742
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/http_mailbox_backends.rs",
-      "kind": "unwrap_call",
-      "line": 745
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/http_mailbox_backends.rs",
-      "kind": "unwrap_call",
-      "line": 746
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/http_mailbox_backends.rs",
-      "kind": "unwrap_call",
-      "line": 747
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/http_mailbox_backends.rs",
-      "kind": "unwrap_call",
-      "line": 751
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/http_mailbox_backends.rs",
-      "kind": "unwrap_call",
-      "line": 754
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/http_mailbox_backends.rs",
-      "kind": "unwrap_call",
-      "line": 756
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/http_mailbox_backends.rs",
-      "kind": "unwrap_call",
-      "line": 773
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/http_mailbox_backends.rs",
-      "kind": "unwrap_call",
-      "line": 787
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/http_mailbox_backends.rs",
-      "kind": "unwrap_call",
-      "line": 796
+      "line": 797
     },
     {
       "classification": "production_adjacent_assumption",
@@ -28374,7 +28430,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http_mailbox_backends.rs",
       "kind": "unwrap_call",
-      "line": 814
+      "line": 799
     },
     {
       "classification": "production_adjacent_assumption",
@@ -28382,7 +28438,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http_mailbox_backends.rs",
       "kind": "unwrap_call",
-      "line": 817
+      "line": 800
     },
     {
       "classification": "production_adjacent_assumption",
@@ -28390,7 +28446,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http_mailbox_backends.rs",
       "kind": "unwrap_call",
-      "line": 818
+      "line": 841
     },
     {
       "classification": "production_adjacent_assumption",
@@ -28398,7 +28454,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http_mailbox_backends.rs",
       "kind": "unwrap_call",
-      "line": 821
+      "line": 844
     },
     {
       "classification": "production_adjacent_assumption",
@@ -28406,7 +28462,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http_mailbox_backends.rs",
       "kind": "unwrap_call",
-      "line": 822
+      "line": 845
     },
     {
       "classification": "production_adjacent_assumption",
@@ -28414,7 +28470,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http_mailbox_backends.rs",
       "kind": "unwrap_call",
-      "line": 823
+      "line": 848
     },
     {
       "classification": "production_adjacent_assumption",
@@ -28422,7 +28478,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http_mailbox_backends.rs",
       "kind": "unwrap_call",
-      "line": 824
+      "line": 849
     },
     {
       "classification": "production_adjacent_assumption",
@@ -28430,7 +28486,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http_mailbox_backends.rs",
       "kind": "unwrap_call",
-      "line": 867
+      "line": 850
     },
     {
       "classification": "production_adjacent_assumption",
@@ -28438,7 +28494,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http_mailbox_backends.rs",
       "kind": "unwrap_call",
-      "line": 870
+      "line": 854
     },
     {
       "classification": "production_adjacent_assumption",
@@ -28446,7 +28502,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http_mailbox_backends.rs",
       "kind": "unwrap_call",
-      "line": 871
+      "line": 857
     },
     {
       "classification": "production_adjacent_assumption",
@@ -28454,15 +28510,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http_mailbox_backends.rs",
       "kind": "unwrap_call",
-      "line": 874
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/http_mailbox_backends.rs",
-      "kind": "unwrap_call",
-      "line": 875
+      "line": 859
     },
     {
       "classification": "production_adjacent_assumption",
@@ -28478,7 +28526,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http_mailbox_backends.rs",
       "kind": "unwrap_call",
-      "line": 880
+      "line": 890
     },
     {
       "classification": "production_adjacent_assumption",
@@ -28486,7 +28534,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http_mailbox_backends.rs",
       "kind": "unwrap_call",
-      "line": 883
+      "line": 899
     },
     {
       "classification": "production_adjacent_assumption",
@@ -28494,7 +28542,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http_mailbox_backends.rs",
       "kind": "unwrap_call",
-      "line": 885
+      "line": 901
     },
     {
       "classification": "production_adjacent_assumption",
@@ -28502,7 +28550,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http_mailbox_backends.rs",
       "kind": "unwrap_call",
-      "line": 903
+      "line": 917
     },
     {
       "classification": "production_adjacent_assumption",
@@ -28510,7 +28558,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http_mailbox_backends.rs",
       "kind": "unwrap_call",
-      "line": 958
+      "line": 920
     },
     {
       "classification": "production_adjacent_assumption",
@@ -28518,7 +28566,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http_mailbox_backends.rs",
       "kind": "unwrap_call",
-      "line": 960
+      "line": 921
     },
     {
       "classification": "production_adjacent_assumption",
@@ -28526,7 +28574,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http_mailbox_backends.rs",
       "kind": "unwrap_call",
-      "line": 962
+      "line": 924
     },
     {
       "classification": "production_adjacent_assumption",
@@ -28534,7 +28582,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http_mailbox_backends.rs",
       "kind": "unwrap_call",
-      "line": 969
+      "line": 925
     },
     {
       "classification": "production_adjacent_assumption",
@@ -28542,7 +28590,23 @@
       "fail_closed_relevance": "high",
       "file": "src/http_mailbox_backends.rs",
       "kind": "unwrap_call",
-      "line": 971
+      "line": 926
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/http_mailbox_backends.rs",
+      "kind": "unwrap_call",
+      "line": 927
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/http_mailbox_backends.rs",
+      "kind": "unwrap_call",
+      "line": 970
     },
     {
       "classification": "production_adjacent_assumption",
@@ -28558,7 +28622,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http_mailbox_backends.rs",
       "kind": "unwrap_call",
-      "line": 987
+      "line": 974
     },
     {
       "classification": "production_adjacent_assumption",
@@ -28566,7 +28630,119 @@
       "fail_closed_relevance": "high",
       "file": "src/http_mailbox_backends.rs",
       "kind": "unwrap_call",
-      "line": 991
+      "line": 977
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/http_mailbox_backends.rs",
+      "kind": "unwrap_call",
+      "line": 978
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/http_mailbox_backends.rs",
+      "kind": "unwrap_call",
+      "line": 979
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/http_mailbox_backends.rs",
+      "kind": "unwrap_call",
+      "line": 983
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/http_mailbox_backends.rs",
+      "kind": "unwrap_call",
+      "line": 986
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/http_mailbox_backends.rs",
+      "kind": "unwrap_call",
+      "line": 988
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/http_mailbox_backends.rs",
+      "kind": "unwrap_call",
+      "line": 1006
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/http_mailbox_backends.rs",
+      "kind": "unwrap_call",
+      "line": 1061
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/http_mailbox_backends.rs",
+      "kind": "unwrap_call",
+      "line": 1063
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/http_mailbox_backends.rs",
+      "kind": "unwrap_call",
+      "line": 1065
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/http_mailbox_backends.rs",
+      "kind": "unwrap_call",
+      "line": 1072
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/http_mailbox_backends.rs",
+      "kind": "unwrap_call",
+      "line": 1074
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/http_mailbox_backends.rs",
+      "kind": "unwrap_call",
+      "line": 1076
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/http_mailbox_backends.rs",
+      "kind": "unwrap_call",
+      "line": 1090
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/http_mailbox_backends.rs",
+      "kind": "unwrap_call",
+      "line": 1094
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -69401,7 +69577,7 @@
       "line": 521
     }
   ],
-  "generated_at_utc": "2026-10-15T09:49:12Z",
+  "generated_at_utc": "2026-10-15T10:27:36Z",
   "non_claims": [
     "This audit does not claim that all Rust assumptions are safe.",
     "This audit does not claim that production request paths are panic-free.",
@@ -69440,28 +69616,28 @@
   "summary": {
     "by_classification": {
       "control_flow_invariant": 7,
-      "panic_path_assumption": 79,
-      "production_adjacent_assumption": 2181,
+      "panic_path_assumption": 80,
+      "production_adjacent_assumption": 2202,
       "startup_or_global_invariant": 9,
       "test_or_fixture_assumption": 6399
     },
     "by_fail_closed_relevance": {
-      "high": 2260,
+      "high": 2282,
       "low": 6399,
       "medium": 16
     },
     "by_kind": {
       "expect_call": 1063,
-      "panic_macro": 271,
+      "panic_macro": 272,
       "unreachable_macro": 24,
-      "unwrap_call": 7317
+      "unwrap_call": 7338
     },
     "classification_complete": true,
-    "inventory_sha256": "457d390984389d3dc005342512f5bbf9cce32c77c9a44455af876d58047b8c8a",
+    "inventory_sha256": "dfff5d5cdb714bb429fd3ad4bcb01fc49f8c6f122cba48a9f889ab4bca3df210",
     "live_host_state_changed": false,
     "product_behavior_changed": false,
     "production_state_changed": false,
     "slice0_carried_forward_rust_assumption_count": 712,
-    "total_count": 8675
+    "total_count": 8697
   }
 }

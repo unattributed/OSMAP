@@ -9862,3 +9862,33 @@ that fixture only; do not suppress locks or change product validators. Combined
 thirty affected tests pass. Independently reviewed479-input/two excluded unit
 fixture provenance permits existing app/native reuse; retain both failed gates
 and require the next complete normal gate, without another unchanged native run.
+
+## 2026-10-15 — preserve the distinct Restore failure and diagnose response phases
+
+Signed d8 and helper-first installed9570 pass normal gates and independent pair
+review. The distinct Restore10 nevertheless fails at its recorded Apply3 response:
+client10s/server attempted30312463ms, after entry/review200. Its exact request
+nonce is retained and its qualification lease removed. Never repeat Restore or
+infer final placement from a later303 log. Read the exact durable witness/current
+facts without mutation first. Measure available read-only phase costs and reduce
+the demonstrated serial helper exchanges while preserving completion-before-fresh-
+facts ordering, exact request/grant/peer/nonce, locks, caps and existing deadlines.
+Source command-count reductions alone do not establish installed elapsed success.
+No user debugging, slice promotion or additional generic QA is justified.
+
+Actual Runtime source inspection supersedes the proposed combined-observation
+protocol: its enum wrapper omits folder_facts forwarding and inherits serial
+metadata/status reads. Direct client/native passes missed this integration seam;
+independent review acknowledges that limit. Stop the larger isolated protocol
+candidate unexecuted. Fix only the existing enum forwarding and test the real
+signed socket wire at that boundary. Reuse unchanged native backend evidence,
+qualify the changed wrapper natively, then matching application and installed
+workflow. No unchanged native mutation campaign or deadline expansion is needed.
+
+The exact retained Restore now has an independently observed Renamed completion,
+restored three-GUID placement, absent receipt/clear role and relocated label at
+revision11. Retain both unobserved HTTP responses. Current direct-helper timings
+are observations of separate calls, not old Apply attribution. A new explicit
+controlled round trip after the wrapper repair is a distinct intent with fresh
+nonce/receipt; never replay either recorded operation. Record both future typed
+Apply requests before dispatch and stop on any new ambiguity.

@@ -16,14 +16,14 @@ statement as provenance rather than current release posture.
 
 ### Latest scoped folder and label delivery, 2026-10-15
 
-Signed source `39d2d1b645bc20e8eed07bad580707c2c36cb008` is synchronized
-to the UX branch after normal commit/push gates (1720 library passes, zero
+Signed source `d8cdc822725c60bedb26dbbebf787362e11d1c39` is synchronized
+to the UX branch after normal commit/push gates (1721 library passes, zero
 failures, 44 explicit native ignores and 519 account Python passes). Product
-sourcea902/applicationf47200d4 is installed helper-first on authoritative Toronto
+application9570ff6d is installed helper-first on authoritative Toronto
 and then obsd1 web; configuration, key agents, retention and unrelated services remain
-preserved. The application passes signed a902481-input parity. Its successor changes only
-one excluded cfg(test) stage registration:480 runtime inputs remain identical,
-not false complete481-input equality to corrected test source. Actual corrected
+preserved. The native-phase application has479 unchanged manifest inputs and two
+independently reviewed excluded unit-fixture differences from final signed d8;
+complete481-input equality is not claimed. Actual corrected
 native qualification passes all12 markers in13.287s, including batched current
 account-bound facts, subtree/content/index isolation, authority and confinement.
 The first test-stage failure remains retained with old cleanup unconfirmed. Assigned label badges are now
@@ -57,8 +57,20 @@ reply: client10s/server attempted303 at12223ms. Its seven-row journal and exact
 lease cleanup are retained; no Bin retry is authorized. Read-only reconciliation proves the current unique Binned receipt/nativeRenamed
 witness, clear role, original three GUIDs and assigned label revision10; it does
 not retrospectively observe the client reply. The further two-path native batching
-repair passes all12 native markers in11.427s. Matching new application/signed
-deployment and a distinct remaining Restore/reload-badge cleanup are pending.
+repair passes all12 native markers in11.427s. Matching signed application9570
+is installed with independent pair review. One distinct Restore continuation
+again passes entry/review200 but fails at Apply3's10s client read limit; server
+attempts303 after12463ms/Broken pipe. The exact typed request and nonce were
+recorded before dispatch; its session is revoked/removed and process reaped.
+Do not repeat Restore. Exact read-only reconciliation confirms recorded native
+completion, all three restored GUIDs, absent receipt/clear role and owned label
+revision11. The concrete remaining integration defect is missing folder_facts
+forwarding in the actual web Runtime enum; its trait fallback expands the batch
+into serial remote reads. The one-path repair has an actual old-wire RED/new
+runtime11-pass regression and independent source review. Its fresh native build
+passes both Runtime regressions and matching application324b1cb9 builds with all
+481 inputs exact. Normal signed admission, matching installation, current response
+and remaining hierarchy/badge/label cleanup are pending.
 Full S08-02 and sprint/epic acceptance
 remain OPEN. Earlier account/OpenPGP requirements remain independently open.
 The operator requires current S08 work to continue with strict program management;

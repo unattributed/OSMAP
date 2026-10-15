@@ -373,6 +373,18 @@ impl crate::mailbox::MailboxBackend for MailboxListRuntimeBackend {
         }
     }
 
+    fn folder_facts(
+        &self,
+        account: &str,
+        names: &[String],
+    ) -> Result<crate::mailbox_status::FolderFacts, crate::mailbox::MailboxBackendError> {
+        match self {
+            Self::Direct(v) => v.folder_facts(account, names),
+            Self::Helper(v) => v.folder_facts(account, names),
+            Self::Unavailable(e) => Err(e.clone()),
+        }
+    }
+
     fn mailbox_status(
         &self,
         account: &str,
@@ -525,6 +537,97 @@ mod tests {
         MailboxBackend, MessageAppendBackend, MessageListBackend, MessageMoveBackend,
         MessageSearchBackend, MessageViewBackend,
     };
+
+    #[cfg(unix)]
+    #[test]
+    fn runtime_folder_facts_preserves_one_signed_batch_exchange() {
+        use std::io::{Read, Write};
+        use std::os::unix::fs::PermissionsExt;
+        use std::os::unix::net::UnixListener;
+        use std::time::Duration;
+        let root = std::env::temp_dir().join(format!(
+            "osmap-runtime-folder-facts-{}",
+            crate::draft::generate_draft_id().unwrap()
+        ));
+        std::fs::create_dir(&root).unwrap();
+        std::fs::set_permissions(&root, std::fs::Permissions::from_mode(0o700)).unwrap();
+        let socket = root.join("helper.sock");
+        let key = root.join("grant.key");
+        std::fs::write(&key, vec![b'k'; 64]).unwrap();
+        std::fs::set_permissions(&key, std::fs::Permissions::from_mode(0o600)).unwrap();
+        let listener = UnixListener::bind(&socket).unwrap();
+        listener.set_nonblocking(true).unwrap();
+        let server = std::thread::spawn(move || {
+            let deadline = std::time::Instant::now() + Duration::from_secs(3);
+            let (mut stream, _) = loop {
+                match listener.accept() {
+                    Ok(v) => break v,
+                    Err(e)
+                        if e.kind() == std::io::ErrorKind::WouldBlock
+                            && std::time::Instant::now() < deadline =>
+                    {
+                        std::thread::sleep(Duration::from_millis(5))
+                    }
+                    Err(e) => panic!("bounded fixture accept failed: {e}"),
+                }
+            };
+            stream
+                .set_read_timeout(Some(Duration::from_secs(2)))
+                .unwrap();
+            stream
+                .set_write_timeout(Some(Duration::from_secs(2)))
+                .unwrap();
+            let mut wire = String::new();
+            (&mut stream).take(4097).read_to_string(&mut wire).unwrap();
+            assert!(wire.len() <= 4096);
+            let nonce = wire
+                .lines()
+                .find_map(|l| l.strip_prefix("grant_nonce="))
+                .unwrap();
+            let response = if wire.starts_with("operation=folder_facts\n") {
+                format!("status=ok\noperation=folder_facts\ncanonical_username_b64=YWxpY2VAZml4dHVyZS50ZXN0\ntranscript_b64=KiBQUkVBVVRIIGZpeHR1cmUNCiogTkFNRVNQQUNFICgoIiIgIi4iKSkgTklMIE5JTA0KTjEgT0sgZG9uZQ0KKiBMSVNUIChcSGFzQ2hpbGRyZW4pICIuIiBJTkJPWA0KKiBMSVNUIChcSGFzTm9DaGlsZHJlbikgIi4iIElOQk9YLkFscGhhDQpMMSBPSyBkb25lDQoqIEJZRSBkb25lDQpaMSBPSyBkb25lDQo=\nstatuses_b64=W3sibWFpbGJveCI6IklOQk9YIiwiZ3VpZCI6ImFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhIiwibWVzc2FnZXMiOjAsInZpcnR1YWxfYnl0ZXMiOjB9LHsibWFpbGJveCI6IklOQk9YLkFscGhhIiwiZ3VpZCI6ImJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiIiwibWVzc2FnZXMiOjEsInZpcnR1YWxfYnl0ZXMiOjQyfV0=\nnonce={nonce}\n")
+            } else {
+                "status=error\nbackend_b64=Zml4dHVyZQ==\nreason_b64=cmVmdXNlZA==\n".into()
+            };
+            stream.write_all(response.as_bytes()).unwrap();
+            stream.shutdown(std::net::Shutdown::Both).unwrap();
+            wire
+        });
+        let mut gateway = RuntimeBrowserGateway::for_test(&root);
+        gateway.mailbox_helper_socket_path = Some(socket.clone());
+        gateway.mailbox_helper_grant_key_path = Some(key.clone());
+        gateway.mailbox_helper_peer_uid = Some(crate::openbsd::effective_uid());
+        let names = vec!["INBOX".into(), "INBOX.Alpha".into()];
+        let result = gateway
+            .build_mailbox_list_backend()
+            .folder_facts("alice@fixture.test", &names);
+        let wire = server.join().unwrap();
+        std::fs::remove_file(socket).unwrap();
+        std::fs::remove_file(key).unwrap();
+        std::fs::remove_dir(root).unwrap();
+        assert!(
+            wire.starts_with("operation=folder_facts\n"),
+            "runtime wrapper decomposed the signed batch: {wire}"
+        );
+        assert!(wire.contains("mailbox_names_b64=WyJJTkJPWCIsIklOQk9YLkFscGhhIl0=\n"));
+        assert!(wire.contains("grant_signature="));
+        let facts = result.unwrap();
+        facts.validate_for("alice@fixture.test", &names).unwrap();
+        assert_eq!(facts.status("INBOX.Alpha").unwrap().guid(), "b".repeat(32));
+        assert_eq!(facts.status("INBOX.Alpha").unwrap().messages(), 1);
+    }
+
+    #[test]
+    fn runtime_folder_facts_preserves_exact_unavailable_error() {
+        let expected = missing_helper_grant_error();
+        let backend = MailboxListRuntimeBackend::Unavailable(expected.clone());
+        assert_eq!(
+            backend
+                .folder_facts("alice@fixture.test", &["INBOX".into()])
+                .unwrap_err(),
+            expected
+        );
+    }
 
     #[cfg(unix)]
     #[test]

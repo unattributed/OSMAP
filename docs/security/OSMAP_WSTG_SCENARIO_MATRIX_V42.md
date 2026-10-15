@@ -510,3 +510,24 @@ deadline,5s helper transport, exact parent/descendant/source-absence validation
 and mutation argv/settlement remain unchanged. Source negatives and independent
 review pass. This does not prove full HTTP Apply elapsed success; the current
 unobserved Bin result cannot be automatically replayed.
+
+The distinct Restore10 also loses its Apply response at10s; server attempts303
+after12463ms. Its exact pre-dispatch typed request/nonce has independently
+observed native completion and restored placement, but the HTTP failure is not
+retrospectively passed. All seven journals and private state remain preserved.
+The actual HTTP Runtime wrapper omitted folder_facts forwarding and inherited
+serial metadata/status requests; the minimal one-path fix delegates unchanged
+Direct/Helper implementations and preserves Unavailable errors. A real-wrapper
+signed socket counterfactual fails on old metadata dispatch, then the complete
+runtime module passes11 cases with existing peer/caps/refusal checks. No new
+protocol, deadline, HMAC authority, completion semantics or live mail permission
+is introduced. Fresh native wrapper tests and matching installed response remain
+required; unchanged backend native evidence is reused only in its exact component
+scope. Original provider/human/release and complete-slice acceptance stay open.
+
+Actual fresh native wrapper buildb4d3fe93 passes61.354s/all481 input parity;
+both exact Runtime signed-batch/unavailable controls pass0.037s. Matching
+application324b1cb9 builds27.245s with complete current481 parity. No operator
+mail/services are touched by these regressions. Unchanged native backend proof
+is component evidence, not a repeated whole-workflow run. Normal signed delivery
+and installed current response are still required before acceptance.
