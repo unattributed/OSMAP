@@ -16,21 +16,35 @@ statement as provenance rather than current release posture.
 
 ### Active password delivery, 2026-10-15
 
-Signed checkpoint `0b270fa2d6c1c3ff68e7c317275c7c5982a3f499` is synchronized
+Signed checkpoint `1893c44b069509128c18e30d735547fc50512d25` is synchronized
 with GitHub and the clean authoritative standard source checkout. Normal
 commit/push gates pass1753 Rust/zero failed/48 explicit native ignores and581
 account Python tests; Good Shopkeeper signature, fresh0/0 and each of three
-local branches matches its own upstream. Proof004f055a is
-serve-sealed-account-clients-20261015/http-pilot-canonical-integration1/signed-sync-proof.json.
-Installed pair324b is unchanged; no password form, service or native flag is
-activated. This is source synchronization, not workflow completion.
+local branches matches its own upstream. Proof6f8dce4f is under
+serve-sealed-account-clients-20261015/http-epoch-canonical-integration2.
+Installed pair324b is unchanged; the password form and native factories remain
+unactivated. Source synchronization does not establish workflow completion.
 
-That exact1248-file source compiled freshly on obsd1 in79.642s with unchanged
-before/after parity, fresh=false artifact and owned build group gone. Binary
-2bca2963 contains the prior three-field HTTP report; it was not uploaded or
-executed as the HTTP scenario. The subsequent complete consumer comparison
-requires a direct stale/current backend check and changed report, so a matching
-new build is needed. No compile result is promoted to a password outcome.
+The matching1248-file source compiled freshly on obsd1 in79.864s with unchanged
+before/after parity, fresh=false and owned build group gone. Binaryd205aeee,
+53912440bytes, includes the actual same-client stale/current epoch assertions.
+Its authoritative-host upload was independently observed before execution.
+The predecessor2bca build cannot qualify that changed report and is retained.
+
+The first dispatched HTTP qualification fails in real_connected_sessions before
+the guardian or any HTTP connection. Result676ff7f0 and independent scopeb20a5618
+are retained under http-driver-successor7/native-http-attempt1. Six inherited
+controls pass; exact failed mail operation and exception subtype remain UNKNOWN.
+All24 SQL-fixture children, admission helper and root driver are reaped; the
+Dovecot and Postfix instances are gone. Broker disposition remains unconfirmed,
+so purpose identities and private namespaces were retained for fresh assessment.
+Fresh separately reviewed principal cleanup removes only the two fixture
+principals with current all-credential absence and unrelated-current-record
+preservation; four admins/four witness queries, driver group and fresh guardian
+stage are reaped/gone. All eight old trees remain; original restoration is UNKNOWN.
+No password transaction, HTTP result, installed UAT or full S04-02 passes.
+A local mode0664 refusal preceded dispatch; exact59 copies were corrected to0600
+without changing their bytes or the guard, independently reviewed47bca25e.
 
 The actual admission/stored-issuer fixture compiled fresh on obsd1 in79.538s
 and remains bound to its own exact earlier source/binary5c20. Later import,

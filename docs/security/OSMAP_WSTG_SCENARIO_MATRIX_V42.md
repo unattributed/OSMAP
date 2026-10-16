@@ -864,3 +864,21 @@ host execution pending a matching signed build/final package review. The prior
 consumer comparison; the corrected order freezes and audits the whole source
 contract before the next build, reusing passed evidence without unchanged
 native retries, framework expansion or operator troubleshooting.
+
+
+### 2026-10-15 password HTTP qualification scope
+
+Matching signed1893 source/native binaryd205 compiles with full1248 before-after
+parity. Actual first dispatched private HTTP composition676ff7f0 fails before
+HTTP/guardian/receipt/password mutation; reviewb20a5618 preserves the six component
+controls and retained cleanup uncertainty. No installed password or new WSTG
+workflow PASS follows. Local0664 custody refusal and exact0600 correction are
+retained separately. Directory nlink investigation must preserve exact socket
+identity, single-link, owner/mode, pathname and kernel-peer checks.
+
+
+Maintained two-path broker repair readiness56d0356e/patcha4dbaa3b and independent
+review796b1535 pass the directory5/socket6 boundary. Actual RED/GREEN3 (zero skips)
+retains the first test precondition/type failures. No Rust/compiler source changes,
+operator mutation, native-cause inference or activation accompanies this repair.
+Fresh principal-cleanup scope4b2eebb3 confirms the exact retained-resource limits.

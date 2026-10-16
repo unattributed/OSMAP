@@ -57,7 +57,7 @@ class PrivateSmtpBackend:
                  and all(type(v)is int and 0<=v<2**32-1 for v in peer))
         self.path=path;self.owner=owner;self.peer=peer
         fd=_directory(path.parent,owner)
-        try:self._parent=self._identity(os.fstat(fd))
+        try:self._parent=self._directory_identity(os.fstat(fd))
         finally:os.close(fd)
         self._socket=self._current()
 
@@ -65,10 +65,16 @@ class PrivateSmtpBackend:
     def _identity(info):
         return info.st_dev,info.st_ino,info.st_uid,info.st_gid,info.st_mode,info.st_nlink
 
+    @staticmethod
+    def _directory_identity(info):
+        # A new protected child changes directory linkcount, not its custody.
+        # Exact socket identity and its single-link guard remain independent.
+        return info.st_dev,info.st_ino,info.st_uid,info.st_gid,info.st_mode
+
     def _current(self):
         _require(self.path.resolve()==self.path)
         fd=_directory(self.path.parent,self.owner)
-        try:_require(self._identity(os.fstat(fd))==self._parent)
+        try:_require(self._directory_identity(os.fstat(fd))==self._parent)
         finally:os.close(fd)
         info=self.path.lstat()
         _require(stat.S_ISSOCK(info.st_mode)and info.st_uid==self.owner and info.st_nlink==1
@@ -212,7 +218,7 @@ class AuthBroker:
             info=parent.lstat()
             _require(stat.S_ISDIR(info.st_mode)and info.st_uid in (0,owner)and not info.st_mode&0o022
                      and (parent!=path.parent or info.st_uid==owner))
-            captured.append((str(parent),PrivateSmtpBackend._identity(info)))
+            captured.append((str(parent),PrivateSmtpBackend._directory_identity(info)))
         return tuple(captured)
 
     @staticmethod

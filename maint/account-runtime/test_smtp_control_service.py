@@ -176,8 +176,16 @@ class ServiceTests(unittest.TestCase):
             except Exception as e:results.append(e)
         thread=threading.Thread(target=serve);thread.start();self.addCleanup(lambda:thread.join(2))
         end=time.monotonic()+1
-        while not path.exists()and time.monotonic()<end:time.sleep(.005)
-        stream=socket.socket(socket.AF_UNIX);stream.connect(str(path))
+        stream=None
+        while time.monotonic()<end:
+            if path.exists()and path.stat().st_mode&0o777==0o600:
+                candidate=socket.socket(socket.AF_UNIX)
+                try:candidate.connect(str(path))
+                except (ConnectionRefusedError,FileNotFoundError):candidate.close()
+                else:stream=candidate;break
+            time.sleep(.005)
+        self.assertIsNotNone(stream,'private listener did not publish ready within original wait')
+        self.addCleanup(stream.close)
         stream.sendall(len(self.raw).to_bytes(4,'big')+self.raw);client=self.client(stream);client.capture(fixtures.ALICE)
         path.unlink();path.write_bytes(b'public replacement');path.chmod(0o600)
         with self.assertRaises(Unconfirmed):client.cancel()

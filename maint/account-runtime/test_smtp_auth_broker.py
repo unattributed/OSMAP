@@ -14,6 +14,7 @@ from unittest.mock import patch
 
 from account_mutation_supervisor import _Bootstrap,AUTHORITY,PURPOSE
 from authoritative_password import Refused
+from account_mutation_worker import Unavailable
 from operation_budget import OperationBudget
 from smtp_control_startup import ControlStartup
 import smtp_auth_broker as broker
@@ -214,6 +215,58 @@ class FrontContractTests(unittest.TestCase):
             captured=broker.AuthBroker._front_parent(purpose,0)
             self.assertEqual(captured[0][1][2:5],(0,507,0o40710))
             with self.assertRaises(Refused):broker.AuthBroker._front_parent(private,0)
+
+
+class DirectoryCustodyTests(unittest.TestCase):
+    def setUp(self):
+        import tempfile
+        # Btrfs may report constant directory nlink1; a protected user tmpfs
+        # exercises real POSIX linkcount changes without a writable ancestor.
+        runtime=Path('/run/user')/str(os.getuid())
+        arena=runtime if runtime.is_dir() else Path.home()/'.cache'
+        self.tmp=tempfile.TemporaryDirectory(prefix='osmap-broker-custody-',dir=str(arena))
+        self.addCleanup(self.tmp.cleanup);self.root=Path(self.tmp.name)
+        self.front=self.root/'front';self.front.mkdir(mode=0o700)
+        self.parent=self.root/'backend';self.parent.mkdir(mode=0o700)
+        self.path=self.parent/'auth.sock'
+        self.listener=socket.socket(socket.AF_UNIX);self.addCleanup(self.listener.close)
+        self.listener.bind(str(self.path));self.path.chmod(0o600)
+        self.backend=broker.PrivateSmtpBackend(self.path,os.getuid(),(os.getuid(),os.getgid()))
+
+    def test_actual_sibling_directories_preserve_front_ancestry_and_backend_parent(self):
+        front=broker.AuthBroker._front_parent(self.front/'auth.sock',os.getuid())
+        socket_before=self.backend._current()
+        ancestor_before=self.root.stat();parent_before=self.parent.stat()
+        (self.root/'unrelated-sibling').mkdir(mode=0o700)
+        (self.parent/'private-child').mkdir(mode=0o700)
+        pairs=((ancestor_before,self.root.stat()),(parent_before,self.parent.stat()))
+        if any(after.st_nlink==before.st_nlink for before,after in pairs):
+            self.skipTest('filesystem has constant directory linkcounts; regression not exercised')
+        for before,after in pairs:
+            self.assertEqual((before.st_dev,before.st_ino,before.st_uid,before.st_gid,before.st_mode),
+                (after.st_dev,after.st_ino,after.st_uid,after.st_gid,after.st_mode))
+            self.assertEqual(after.st_nlink,before.st_nlink+1)
+        self.assertEqual(broker.AuthBroker._front_parent(self.front/'auth.sock',os.getuid()),front)
+        self.assertEqual(self.backend._current(),socket_before)
+        self.assertEqual(len(socket_before),6);self.assertEqual(socket_before[-1],1)
+
+    def test_parent_replacement_modes_and_socket_singlelink_remain_strict(self):
+        original=broker.AuthBroker._front_parent(self.front/'auth.sock',os.getuid())
+        self.front.chmod(0o770)
+        with self.assertRaises(Refused):broker.AuthBroker._front_parent(self.front/'auth.sock',os.getuid())
+        self.front.chmod(0o700);self.front.rename(self.root/'old-front');self.front.mkdir(mode=0o700)
+        self.assertNotEqual(broker.AuthBroker._front_parent(self.front/'auth.sock',os.getuid()),original)
+        self.parent.chmod(0o750)
+        with self.assertRaises(Unavailable):self.backend._current()
+        self.parent.chmod(0o700)
+        os.link(self.path,self.parent/'socket-hardlink')
+        self.assertEqual(self.path.lstat().st_nlink,2)
+        with self.assertRaises(Refused):self.backend._current()
+        (self.parent/'socket-hardlink').unlink()
+        self.parent.rename(self.root/'old-backend');self.parent.mkdir(mode=0o700)
+        replacement=socket.socket(socket.AF_UNIX);self.addCleanup(replacement.close)
+        replacement.bind(str(self.path));self.path.chmod(0o600)
+        with self.assertRaises(Refused):self.backend._current()
 
 
 class TypedProfileTests(unittest.TestCase):

@@ -9947,6 +9947,7 @@ discriminator alongside the same binding production repair; no broader QA scope.
     "maint/account-runtime/smtp_auth_broker.py",
     "maint/account-runtime/test_smtp_auth_broker.py",
     "maint/account-runtime/smtp_auth_control_service.py",
+    "maint/account-runtime/test_smtp_control_service.py",
     "maint/account-runtime/smtp_mutation_containment.py",
     "maint/account-runtime/account_admission_worker.py",
     "maint/account-runtime/PERSISTENT_MUTATION_SERVICE.md",
@@ -10126,7 +10127,7 @@ discriminator alongside the same binding production repair; no broader QA scope.
     "status": "PENDING",
     "reference": "Only minimal well-defined own-password usability after all agent-owned development/matching deployed QA/independent audit PASS. No operator password is changed by agent qualification; use controlled disposable Alice and preserve Bob/operator state. NOT RUN."
   },
-  "next_action": "Signed0b270 source synchronized/each of three local branches matches its own upstream and standard Toronto clean source-only matches; installed324b unchanged. Complete frozen58-source/59transport HTTP contract reviewffa6db9c closes foreign-session syscall, direct stale/current backend, bridge-quiescence and inherited-control findings; cold UID/SID tuple mismatch is corrected through actual producer projection. Integrate the one-path same-sealed-client epoch/report addon with normal signed gates/sync, build exact matching source once, then bind actual binary/upload and obtain final whole-package review before one finite controlled HTTP/SQL/mail/session workflow. Old0b270 binary2bca is compile-only/prior-report scope and is not used for the changed case. Preserve all old17 backend obligations, original budgets/failures/projections and retained safe stage trees; no unchanged native retry, fabricated flags, premature UAT or operator password mutation. S08-02 remains accepted."
+  "next_action": "Signed1893 source synchronized with clean standard Toronto source-only checkout; installed324b unchanged. Matching d205 Rust binary compiled with exact1248 source parity and is uploaded. First actual HTTP1 failed before HTTP/guardian in connected sessions, exact exception UNKNOWN; six inherited controls and measured cleanup are retained. Fresh principal cleanup removes only controlled hash/primary identities, preserves unrelated current records and all old trees. Integrate reviewed maintained broker directory5/socket6 repair through normal signed gates/sync; preserve matching Rust compiler inputs and bind the separately changed Python source/closed diagnostics. Obtain exact new whole-package review before one changed controlled HTTP/SQL/mail/session action, with all old17 backend obligations and original budgets intact. Do not repeat old cases, rebuild unchanged Rust, widen guards, infer flags/UAT or mutate operator credentials. S08-02 remains accepted."
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->
@@ -11537,3 +11538,84 @@ Active slice remains S04-02, source-only until actual composed/installed evidenc
 Root owns integration/Git/native and essential QA; developer owns source,
 preparation engineer owns immutable wrapper, independent Scrum owns review.
 No operator password, TOTP seed, provider Send or unrelated service is changed.
+
+
+## 2026-10-15 — first genuine HTTP attempt and concrete broker ancestry investigation
+
+Signed1893c44, normal commit267.486s/push242.616s and clean source-only standard
+Toronto FF5.0s pass1753 Rust/zero failed/48 explicit native ignores and581 account
+Python; fresh own-upstream equality for all three branches. Proof6f8dce4f is under
+http-epoch-canonical-integration2. Actual matching native compilation79.864s,
+fresh=false/full1248 before-after parity/owned group gone yields d205aeee,
+53912440bytes. A fresh exact authoritative upload is independently observed.
+
+The final package review31eb4307 omitted the local runner's no-group-write
+predicate. The runner correctly refuses all59 copied0664 inputs before result
+creation or SSH. Exact metadata-only0600 correction892e2edc preserves inode and
+bytes; independent47bca25e renews admission without relaxing the guard.
+
+Actual native-http-attempt1 result676ff7f0 is FAIL in real_connected_sessions,
+classOther, before guardian/HTTP/bridge/receipt/password mutation. Six inherited
+controls and two preparation rows pass. Exact mail operation/auth attempt count
+and original exception subtype remain UNKNOWN. All24 SQL-fixture children,
+admission helper and root driver are reaped; driver group, Postfix and Dovecot
+are gone. Broker disposition remains unconfirmed and purpose identities/runtime/
+scratch/account namespace/root stages remain retained. Scopeb20a5618 preserves
+source-before parity only and grants no historical signal or cleanup authority.
+
+A bounded real-filesystem regression confirms that the maintained broker's
+six-field directory identity changes when a sibling directory increments nlink.
+Use five-field directory custody (device/inode/UID/GID/mode) for frontend ancestry
+and the direct backend parent; retain six-field socket identity and nlink1,
+owner/mode/path/kernel-peer checks. Three changed-boundary controls pass, including
+replacement/mode/hardlink refusal. The local Btrfs precondition failure and strict
+Unavailable-vs-Refused test mismatch are retained as test corrections, not product
+causes. This source defect does not establish native HTTP1's unique exception.
+Reuse existing closed SMTP/broker diagnostics; no framework or H reorder.
+Root owns one native/service queue; no unchanged retry or human setup request.
+Active scope stays S04-02; installed324b and activation flags remain unchanged.
+
+
+Fresh retained HTTP1 observation06b7fe9c passes SSH0/4.855s,4283 public metadata
+bytes and zero stderr. It rechecks all58 source leaves and finds no original
+session selector or purpose effective-UID rows at that snapshot. Both exact
+public fixture principals and eight namespaces remain. Scopef5827319 does not
+establish all-credential absence, active socket listeners or cleanup authority.
+A new principal-only custodian must recheck current full credential/process
+absence and exact public rows; retained stage trees are not removal targets.
+
+
+Fresh principal-only cleanup930773b1 passes SSH0/5.769s: exact _osmaphash and
+_osmapprimary removals, fresh all-credential-ID absence, four fixed admin children
+and four birth-witness queries reaped without uncertainty. The unused
+OwnedChildren count is correctly zero. Unrelated CURRENT public records and
+all eight old namespace identities are preserved. Driver group and new guardian
+stage are gone; no daemon stop, retained PID signal or old-tree deletion occurs.
+Original pre-run restoration remains UNKNOWN. This clears the retained principal
+hold, not the failed HTTP workflow or namespace removal.
+
+
+Maintained two-path broker repair readiness56d0356e/patcha4dbaa3b and independent
+review796b1535 pass the directory5/socket6 boundary. Actual RED/GREEN3 (zero skips)
+retains the first test precondition/type failures. No Rust/compiler source changes,
+operator mutation, native-cause inference or activation accompanies this repair.
+Fresh principal-cleanup scope4b2eebb3 confirms the exact retained-resource limits.
+
+
+The first normal broker commit gate exits1/76.440s: account suite583 cases has
+one existing test error, ConnectionRefused before a bound socket starts listening.
+No commit/signature occurs. The affected foreign-replacement test now reuses its
+neighbor's actual-connect readiness within the SAME original1s wait, closes
+refused candidates and preserves every replacement/quarantine assertion. One
+80ms delayed-listen discriminator executes that exact test: oldRED1/1.196s,
+newGREEN1/0.224s. No production listener, deadline or framework changes. Retain
+commit-attempt1 and listener-readiness-repair1; superseding normal gate is pending.
+
+
+Normal commit attempt2 refuses before tests (exit1/0.057s): the reviewed listener
+test was omitted from the active work-order path allowlist. Add only that existing
+service test beside its already admitted production module. Requirements, scanner,
+validator, limits and native flags are unchanged. The two distinct gate failures
+trigger reassessment: the first requires the measured readiness correction, the
+second requires accurate scope registration; neither permits a waiver or unchanged
+retry. Preserve both logs. The next ordinary gate uses the reviewed seven files.

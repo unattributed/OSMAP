@@ -10626,3 +10626,27 @@ host execution pending a matching signed build/final package review. The prior
 consumer comparison; the corrected order freezes and audits the whole source
 contract before the next build, reusing passed evidence without unchanged
 native retries, framework expansion or operator troubleshooting.
+
+
+### 2026-10-15 — retain failed HTTP scope and repair the demonstrated source boundary
+
+Actual HTTP1 result676ff7f0 fails before guardian/HTTP/password transaction;
+independent scopeb20a5618 preserves six inherited controls,24 reaped SQL-fixture
+children and driver/Postfix/Dovecot absence, with broker/private-state disposition
+unconfirmed. Do not infer the original exception, repeat unchanged, signal a
+historical PID or engage the operator for engineering diagnosis. A separately
+reviewed current read-only observation precedes any new administrative action.
+
+The prior whole review missed0664 local payload metadata. Mandatory runtime
+custody refused before SSH; exact0600 correction and independent47bca25e repair
+the copied inputs, preserving bytes and the no-group-write guard. A real filesystem RED/GREEN confirms the broker's directory-link-count defect.
+Repair directory custody to device/inode/UID/GID/mode instead of reordering the
+fixture to hide it; socket six-field identity and single-link checks stay intact. No cache/session/peer/path
+check or budget may be weakened; the exact native failure cause remains UNKNOWN.
+
+
+Maintained two-path broker repair readiness56d0356e/patcha4dbaa3b and independent
+review796b1535 pass the directory5/socket6 boundary. Actual RED/GREEN3 (zero skips)
+retains the first test precondition/type failures. No Rust/compiler source changes,
+operator mutation, native-cause inference or activation accompanies this repair.
+Fresh principal-cleanup scope4b2eebb3 confirms the exact retained-resource limits.
