@@ -26,16 +26,46 @@ The existing validator is extended to reject missing/mismatched specifications,
 missing outcome/test coverage, unsupported test results and premature closure.
 Its structural PASS cannot establish a working application or evidence truth.
 
-The pre-admission signed synchronized source is
-`765446e49210ffe9bddc7ca19e576828e7e8285d`; the introducing signed commit and
-retained synchronization proof establish the next source identity. Installed
-pair324b, production native flags/account client and password-form activation
-remain unchanged. The complete native password test is FAIL: HTTP9 reaches
-signal11/97-byte stderr in the actual proxy child; HTTP10 refuses earlier
-during Bob login, with unique causes UNKNOWN. Installed paired QA, authoritative
-new-change timestamp, complete containment/recovery and S04-02 closure remain
-unqualified. Source23 fixes a demonstrated fixture scheduling gap and is
-source-reviewed only; it does not diagnose those actual failures.
+The pre-admission verified signed synchronized baseline is
+`f9ab641789ed152ce39f401694d998c66ee0e9b8`: verified own-write history now
+persists through incomplete effects and reaches authenticated Runtime/settings
+responses. Confirmed success requires matching persisted timestamp readback.
+Authorized SMTP-control replies wait within their original budget, with a
+nonrenewing one-second partial-frame limit. Normal commit/push each passed
+1762 Rust library cases and593 account cases;48 native ignores remain explicit.
+The first normal gate failure and exact three expectation repairs are retained.
+Fresh origin equality, all three local branch heads and source-only Toronto
+checkout synchronization passed. This is source delivery, not installed QA.
+
+Historical HTTP14–17 failures and retained stages remain evidence; later
+passing components do not diagnose their unobserved causes. The latest
+controlled HTTP18 test authenticates a backend Changed result at epoch1 with
+verified time20261016123345 after the IMAP acknowledgement grammar repair.
+The browser still returns503 and the complete positive journey remains FAIL.
+Its compiled test admission adapters discard the authoritative timestamp; the
+maintained production service already retains it. Correct the two test adapters
+and perform one matching native rebuild, without weakening mandatory history.
+Recorded actors, SQL children, broker, mail services, private runtime/scratch and
+purpose identities are disposed; root/SQL/source stages are retained and whole
+root namespace disposition remains pending. Actual frontend epoch readiness,
+browser cleanup and complete history/reload acceptance are not established.
+
+This source batch adds strict optional account-scoped rollout across primary
+authentication, aliases, sessions and password/status paths, preserving unrelated
+legacy login. It also accepts the two exact source-supported own-account Dovecot
+kick acknowledgement orders while retaining required zero-connection checking.
+Native SMTP broker startup now invokes its existing routing producer before the
+certificate consumer and supplies the typed admitted-port success profile.
+Source tests and independent reviews cover these changes; their introducing
+signed commit identifies the admitted source, separately from deployed state.
+
+The operator requests a working deployment on obsd1 for their manual password
+change and backend observation over SSH. No new binary/service/configuration,
+enabled password control or operator-account mutation has been performed.
+Production ingress/provisioning remains incomplete: unrelated SMTP scope and
+ordinary IMAP/POP final authentication publication need actual integration,
+not qualification booleans. The installed pair324b and disabled form remain.
+No complete S04-02, S04 sprint or epic acceptance is claimed.
 
 Next work fulfils the defined contract: essential matching native qualification,
 repair of actual backend/Runtime/status gaps, reversible matching installation,

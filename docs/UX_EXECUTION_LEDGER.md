@@ -9899,7 +9899,8 @@ discriminator alongside the same binding production repair; no broader QA scope.
       "/root/account_serve_engineer",
       "/root",
       "/root/recovery_engineer",
-      "/root/password_status_engineer"
+      "/root/password_status_engineer",
+      "/root/finish_engineer"
     ],
     "qa": [
       "/root"
@@ -9907,7 +9908,8 @@ discriminator alongside the same binding production repair; no broader QA scope.
     "security_review": [
       "/root/scrum_security_review",
       "/root/delivery_reviewer",
-      "/root/password_status_reviewer"
+      "/root/password_status_reviewer",
+      "/root/current_delivery_reviewer"
     ],
     "technical_writer": [
       "/root"
@@ -10032,7 +10034,8 @@ discriminator alongside the same binding production repair; no broader QA scope.
     "maint/account-runtime/test_smtp_mutation_containment.py",
     "src/account_mutation.rs",
     "src/password_session_action_tests.rs",
-    "src/session_password_cleanup.rs"
+    "src/session_password_cleanup.rs",
+    "src/session.rs"
   ],
   "outcomes": [
     {
@@ -10049,7 +10052,7 @@ discriminator alongside the same binding production repair; no broader QA scope.
       "stages": {
         "implementation": "PENDING",
         "source_tests": "PENDING",
-        "native_tests": "PENDING",
+        "native_tests": "FAIL",
         "deployed_qa": "PENDING",
         "independent_review": "PENDING",
         "recovery": "PENDING"
@@ -10061,11 +10064,15 @@ discriminator alongside the same binding production repair; no broader QA scope.
         },
         {
           "stage": "implementation",
-          "reference": "Reviewed five-path startup repair1bb54d49/readinessaadaee79/manifest8c42f112/independent6c09b377 integrated; oldfactoryRED1\u219215 localPASS. Exact binding construction/custody gap repaired, but real native broker/topology/SQL/hash/primary and full authoritative workflow remain unqualified. Broad stage stays PENDING."
+          "reference": "Reviewed five-path startup repair1bb54d49/readinessaadaee79/manifest8c42f112/independent6c09b377 integrated; oldfactoryRED1→15 localPASS. Exact binding construction/custody gap repaired, but real native broker/topology/SQL/hash/primary and full authoritative workflow remain unqualified. Broad stage stays PENDING."
         },
         {
           "stage": "source_tests",
           "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/client-authorized-response-wait-successor27/READINESS.json5280/patchdfbd/reviewe8c2; actualoldERROR1.166/new4PASS3.413, fixedclientfirstbyteoriginalremaining+singleabsolute1spartial; ordinaryserver/send/authority/framing/expiry/uncertainty unchanged. Sourceonly, notunique14cause."
+        },
+        {
+          "stage": "native_tests",
+          "reference": "Actual HTTP15 c7dd4844/independent5d6f9a29: verified write/incomplete time handling executed, but full success and reloaded settings not achieved. Positive required journey remains FAIL; no installed/human acceptance."
         }
       ],
       "next_action": "Complete actual paired Runtime/owned mutation and form integration with required native broker/topology/SQL/hash/primary authority, then one controlled Alice authoritative workflow and Bob/session/mail preservation. No primitive flag shortcut or repeated unchanged diagnostics."
@@ -10146,7 +10153,7 @@ discriminator alongside the same binding production repair; no broader QA scope.
       "stages": {
         "implementation": "PENDING",
         "source_tests": "PASS",
-        "native_tests": "PENDING",
+        "native_tests": "FAIL",
         "deployed_qa": "PENDING",
         "independent_review": "PENDING",
         "recovery": "PENDING"
@@ -10159,6 +10166,10 @@ discriminator alongside the same binding production repair; no broader QA scope.
         {
           "stage": "source_tests",
           "reference": "Source-only candidate22fcacec49/successor2patch30751793 integrated; audit4a876425/addendum7433bea3, actualsixnewRustPASS18.557s/twochangedexpiryPASS and9Pythonreceipt reused by exactparity. KnownUPDATEreceipt/timepair/equalnew-epoch persistedreadback underoriginaldeadline. Native/deployedT07 remainsNOT_RUN; no status/sliceacceptance."
+        },
+        {
+          "stage": "native_tests",
+          "reference": "Actual HTTP15 c7dd4844/independent5d6f9a29: verified write/incomplete time handling executed, but full success and reloaded settings not achieved. Positive required journey remains FAIL; no installed/human acceptance."
         }
       ],
       "next_action": "Complete actual paired Runtime/owned mutation and form integration with required native broker/topology/SQL/hash/primary authority, then one controlled Alice authoritative workflow and Bob/session/mail preservation. No primitive flag shortcut or repeated unchanged diagnostics."
@@ -10168,19 +10179,19 @@ discriminator alongside the same binding production repair; no broader QA scope.
     "status": "PENDING",
     "reference": "Only minimal well-defined own-password usability after all agent-owned development/matching deployed QA/independent audit PASS. No operator password is changed by agent qualification; use controlled disposable Alice and preserve Bob/operator state. NOT RUN."
   },
-  "next_action": "Finish reviewed34-pathsource after retainednormalcommit1failure/threeexactpost-writeassertionrepairs through normalhooks/signedcommit/freshGitHubequality/source-onlymailcheckout. Preserve native14UNKNOWNwrite/cause/purpose-runtime; next read-onlyreconciliation needs newboundedwindow beforehost. No service/form/operator/provider change.",
+  "next_action": "Batch reviewed real scoped-rollout, IMAP acknowledgement grammar and native broker startup fixes with the test-only authoritative-history adapter correction; normal signed admission/sync. Then one matching current native build (Rust actually changed) and full positive workflow, reusing unchanged passed controls. Complete actual production ingress/provisioning and matching installation before enabled live password control; no operator account audit/mutation. Source checkpoints do not close S04-02.",
   "accountability": {
     "functional_exit": "Working own-account Settings password change through authoritative Toronto credentials, shared epoch, browser/IMAP/SMTP/cache containment, old-password refusal/new-login success and Bob/mail preservation, followed by matching isolated installation and independent audit. Fixture changes are prerequisites, not product delivery.",
     "owner": "/root",
     "elapsed_scope": "wall_clock",
-    "history_reference": "Retained HTTP1\u20134 evidence below and existing ledger. Outer native/SSH elapsed sums122.497s only; earlier full-action source/review/model time is UNKNOWN. No token or monetary compute cost is asserted.; Completed bounded investigation /home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/account-relay-deployment-successor18/canonical-integration1/investigation-window-closeout.json SHA256 5d1fa485650d262068f10bdd5328262332008c666176a127c1d31657761ce6d4 records actual UTC-wall 2886.045s and explicit mandatory-hook overrun; no failed history removed.; Completed source20 investigation /home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/proxy-config-isolation-successor20/canonical-integration1/investigation-window-closeout.json SHA256bb4e5e887444aca514bddb558e8974fea623f6c3684ecdc9ce3d8c2eb43e550c retains actual elapsed/overrun and explicit finite source admission disposition.; /home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/proxy-child-signal-observation-successor22/investigation-window-closeout.json SHA256c3122712c7321f00b1f4ad91507c99299529d8c4812976da8101c8832ce1e104 retains source/native8/9/10 window actual elapsed/overrun, finiteonecase disposition and failed outcomes.; /home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/slice-contract-validator-successor24/investigation-window-closeout.json SHA256a1243ba238c66dc546a8ae33f0d5c4b94a55afdb72abdabe46ebb04307bfb93b retains actual mixed-task window and directoperator SOP reprioritization; task split UNKNOWN.; /home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/slice-contract-validator-successor24/canonical-integration1/investigation-window-closeout2.json SHA2568aa3f093052393ed7a73c6ec537b77b459c5030322529f81db2d3ddd6e7a86d2 actual complete SOP window; failed attempts retained.; Closed source25/26window /home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/proxy-command-endpoint-successor25/canonical-integration1/investigation-window-closeout.json SHA2560c2a06f7ad35c02b548ca225f406ea5dcbd7d3772dfa3613be0a9aee9af15478 actual4006.757/original1800/overrun2206.757s. No renewed native allowance.; Closedcurrentcompiler/publicationwindow /home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/captured-control-lifetime-successor26/current-native-investigation1-closeout.json SHA256a41aff3ec5cbdcff62996cf8f23ee161aef0965d3866ace0e2a2f6e421d8592e actualUTCwall2340.825s/original1800/explicitoverrun/late-dispatchdeviation retained.",
+    "history_reference": "Retained HTTP1–4 evidence below and existing ledger. Outer native/SSH elapsed sums122.497s only; earlier full-action source/review/model time is UNKNOWN. No token or monetary compute cost is asserted.; Completed bounded investigation /home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/account-relay-deployment-successor18/canonical-integration1/investigation-window-closeout.json SHA256 5d1fa485650d262068f10bdd5328262332008c666176a127c1d31657761ce6d4 records actual UTC-wall 2886.045s and explicit mandatory-hook overrun; no failed history removed.; Completed source20 investigation /home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/proxy-config-isolation-successor20/canonical-integration1/investigation-window-closeout.json SHA256bb4e5e887444aca514bddb558e8974fea623f6c3684ecdc9ce3d8c2eb43e550c retains actual elapsed/overrun and explicit finite source admission disposition.; /home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/proxy-child-signal-observation-successor22/investigation-window-closeout.json SHA256c3122712c7321f00b1f4ad91507c99299529d8c4812976da8101c8832ce1e104 retains source/native8/9/10 window actual elapsed/overrun, finiteonecase disposition and failed outcomes.; /home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/slice-contract-validator-successor24/investigation-window-closeout.json SHA256a1243ba238c66dc546a8ae33f0d5c4b94a55afdb72abdabe46ebb04307bfb93b retains actual mixed-task window and directoperator SOP reprioritization; task split UNKNOWN.; /home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/slice-contract-validator-successor24/canonical-integration1/investigation-window-closeout2.json SHA2568aa3f093052393ed7a73c6ec537b77b459c5030322529f81db2d3ddd6e7a86d2 actual complete SOP window; failed attempts retained.; Closed source25/26window /home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/proxy-command-endpoint-successor25/canonical-integration1/investigation-window-closeout.json SHA2560c2a06f7ad35c02b548ca225f406ea5dcbd7d3772dfa3613be0a9aee9af15478 actual4006.757/original1800/overrun2206.757s. No renewed native allowance.; Closedcurrentcompiler/publicationwindow /home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/captured-control-lifetime-successor26/current-native-investigation1-closeout.json SHA256a41aff3ec5cbdcff62996cf8f23ee161aef0965d3866ace0e2a2f6e421d8592e actualUTCwall2340.825s/original1800/explicitoverrun/late-dispatchdeviation retained.; Sourcewindow2closeoutc9db9719 plus explicitwindow3 under password-status-implementation2/canonical-integration1; sourceadmissionf9ab/aea6 and normalgate1FAIL retained.; /home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/password-status-implementation2/canonical-integration1/investigation-window3-closeout.json SHAc98e409f331b6b15deb856e3c3f1555bc52e588bfd3dce1605f1234137a68c6e; /home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/password-status-implementation2/canonical-integration1/investigation-window4-closeout.json SHAe00b4b8e740b7668b1b9d44abf24454da755ceb2a505ae21fb3c6bb9b0b65495; /home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/password-status-implementation2/canonical-integration1/investigation-window5-closeout.json SHA84a63ecf6e0e268cc0e348062eebba558685b79f4ae6ae23d4f2a974066e9dfb records actual window5 wall/overrun, HTTP16FAIL, operator directions and worker continuity fault; failure history unchanged.",
     "investigation": {
       "owner": "/root",
-      "started_at": "2026-10-16T09:12:12Z",
-      "timebox_seconds": 1800,
+      "started_at": "2026-10-16T11:58:24Z",
+      "timebox_seconds": 3600,
       "elapsed_status": "MEASURED",
-      "elapsed_seconds": 1944.586,
-      "overrun_reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/password-status-implementation2/canonical-integration1/current-investigation-finishing-disposition.json SHA25649f227376d0b7bde104ed28fef3938c43373a63747de19ee274cc2832c1af90f"
+      "elapsed_seconds": 2733.707,
+      "overrun_reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/password-status-implementation2/canonical-integration1/investigation-window5-closeout.json SHA84a63ecf6e0e268cc0e348062eebba558685b79f4ae6ae23d4f2a974066e9dfb; explicit successor investigation has larger realistic source/admission budget, original native action deadlines unchanged. Existing failure IDs retained."
     },
     "attempts": [
       {
@@ -10427,7 +10438,7 @@ discriminator alongside the same binding production repair; no broader QA scope.
         "result": "FAIL",
         "elapsed_status": "MEASURED",
         "elapsed_seconds": 42.692,
-        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/http-first-frame-successor17/native-http-attempt7/result.json SHA256 707b080c0966b9c1f214c4a4fb3d880a68761015a1dcdcde41f564e4747de125; independentactualscope29dd67b658af15cde40d3fe69545b7839578aae71d1ae74c9b282663bb814799. Fullpreflight/admission/dispatch42.692s/runner42.548s. Publicsend204981/EOF/DECODED; authenticatedknown_refused440 forwarded afteractualCOMPLETE33/exit0/reap/groupgone, fivecompletedHTTPresponses. Pre-pendingguarded_ready\u2192mail_ready\u2192smtp_proxy_query597 wraps _list exception; deepest_run/parser/resultguard UNKNOWN. 24SQLfixturehandles/groups/daemons/broker/runtime/scratch +fresh4admins4queries/publicrestoration confirmed. Root/SQLbackend-client/worker/H stages retained; noChanged/full10/postconditions/sourceafterparity/allprivatecleanup claim."
+        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/http-first-frame-successor17/native-http-attempt7/result.json SHA256 707b080c0966b9c1f214c4a4fb3d880a68761015a1dcdcde41f564e4747de125; independentactualscope29dd67b658af15cde40d3fe69545b7839578aae71d1ae74c9b282663bb814799. Fullpreflight/admission/dispatch42.692s/runner42.548s. Publicsend204981/EOF/DECODED; authenticatedknown_refused440 forwarded afteractualCOMPLETE33/exit0/reap/groupgone, fivecompletedHTTPresponses. Pre-pendingguarded_ready→mail_ready→smtp_proxy_query597 wraps _list exception; deepest_run/parser/resultguard UNKNOWN. 24SQLfixturehandles/groups/daemons/broker/runtime/scratch +fresh4admins4queries/publicrestoration confirmed. Root/SQLbackend-client/worker/H stages retained; noChanged/full10/postconditions/sourceafterparity/allprivatecleanup claim."
       },
       {
         "id": "source20-sync1",
@@ -10527,7 +10538,7 @@ discriminator alongside the same binding production repair; no broader QA scope.
         "result": "FAIL",
         "elapsed_status": "MEASURED",
         "elapsed_seconds": 33.204,
-        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/proxy-child-signal-observation-successor22/native-http-attempt10/result.json SHA25659b514636b1364c4b56983d553679f216bad6ad7bcda0f65998b953e5acde4fa; fullroot33.204/runner33.087/remote27.531. STAGED206762/EOF/custodytrue then localDECODED206762/EOF. EarlierBoblogin/session_cookie refusesrequest2;2completedresponses/3prefixrows, no guardedworker/proxyclassification. Admissionrole0/guardian\u22129 reaped/groupsgone;drivergroup/24SQLhandles/private daemons/runtime/scratch/fresh4admins4queries/purposepublicrestoration confirmed. Root23b6442834b38036/SQLbackend-client/worker/Htrees +foocarrier8939a01c14c66662 retained. Unique10causeUNKNOWN;9signal11notreached/unresolved."
+        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/proxy-child-signal-observation-successor22/native-http-attempt10/result.json SHA25659b514636b1364c4b56983d553679f216bad6ad7bcda0f65998b953e5acde4fa; fullroot33.204/runner33.087/remote27.531. STAGED206762/EOF/custodytrue then localDECODED206762/EOF. EarlierBoblogin/session_cookie refusesrequest2;2completedresponses/3prefixrows, no guardedworker/proxyclassification. Admissionrole0/guardian−9 reaped/groupsgone;drivergroup/24SQLhandles/private daemons/runtime/scratch/fresh4admins4queries/purposepublicrestoration confirmed. Root23b6442834b38036/SQLbackend-client/worker/Htrees +foocarrier8939a01c14c66662 retained. Unique10causeUNKNOWN;9signal11notreached/unresolved."
       },
       {
         "id": "slice-contract-sop-sync1",
@@ -10836,7 +10847,7 @@ discriminator alongside the same binding production repair; no broader QA scope.
         "scope": "FIXTURE",
         "adoption": "CURRENT",
         "source_revision": "357301e20d3b466b822fd364fa8a25f19874f7dd",
-        "change_reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/captured-control-lifetime-successor26/native-payload-preparation1/execution-custody-pin-registry1/READINESS.json SHA2566ab9e177aee5efc5903c6ed663f81e74bd0086e1f995ce98009906fa45641fa2; onlystale3 remoteWIRE_PINS corrected/current59 plusderivedembeddedhashes/exclusiveresult14. ALLsixstandalone+embeddedregistries/inner58/sourcebytehashes reconciled. Actual remote\u2192rootreceive oldRED/newGREEN59/changedhashrefusals db6c1603/0.097s, currentc021/publicationbe194 unchanged. No old13carrier/requestoverwrite/rootcleanupinference, sameoriginalcasebudgets/fullconsumers; currentT07candidateexcluded.",
+        "change_reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/captured-control-lifetime-successor26/native-payload-preparation1/execution-custody-pin-registry1/READINESS.json SHA2566ab9e177aee5efc5903c6ed663f81e74bd0086e1f995ce98009906fa45641fa2; onlystale3 remoteWIRE_PINS corrected/current59 plusderivedembeddedhashes/exclusiveresult14. ALLsixstandalone+embeddedregistries/inner58/sourcebytehashes reconciled. Actual remote→rootreceive oldRED/newGREEN59/changedhashrefusals db6c1603/0.097s, currentc021/publicationbe194 unchanged. No old13carrier/requestoverwrite/rootcleanupinference, sameoriginalcasebudgets/fullconsumers; currentT07candidateexcluded.",
         "success_chain_review": {
           "reviewer": "/root/delivery_reviewer",
           "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/captured-control-lifetime-successor26/native-payload-preparation1/execution-custody-pin-registry1/independent-whole-review.json SHA25604107cf4790a1729f7403719e2d3c2370fbe6cfb6fcf52d9ef0da3afcdc01ff7; exactroot686c/remote d55d330b/runner6fc611ce, allSIXexecutableregistries and actualadmissiondiscriminator, completeoriginalproducer/ownedcleanup/consumer unchanged. Rootindependently checkedallfiles/embeddedcode/currentmaps; priorfalseclear19fbb retracted,13FAILcc8e preserved.",
@@ -10861,26 +10872,252 @@ discriminator alongside the same binding production repair; no broader QA scope.
         "elapsed_status": "MEASURED",
         "elapsed_seconds": 93.731,
         "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/captured-control-lifetime-successor26/native-payload-preparation1/native-http-attempt14/result.json SHA25683f8da25bb99e2d84ec580fdba0e752fe3bacc31d70f49cc1c30f4af754451fc; fullroot93.731/runner93.653/remote88.098/rootguardian85.429 separatephase timings. NestedregistryadmissionPASS/rootspawnTRUE; realchallengeACK/workerCOMPLETE33/436terminal/reap then cache_observation577 refusal; HTTP5status503/185875B/EOF/1cookie/sixprefixrows. Initiatingcause/SQLwrite/cachecontentsUNKNOWN; positivecachepredicate notsatisfied. Threeactors+drivergroupsgone/24SQLhandlesreaped/DovecotPostfixgone; brokeruncertain/purposes/runtime/scratch/stagesretained42efbc9ba47e1474, HTTPruntime de4a44bec2bb4261. No newproductactivation/operator/provider action; actualscope39dfcb0c."
+      },
+      {
+        "id": "password-status-and-response-source-sync1",
+        "boundary": "actual-password-status",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "source_revision": "357301e20d3b466b822fd364fa8a25f19874f7dd",
+        "change_reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/password-status-implementation2/canonical-integration1/source-freeze34.json required exactfinalfreeze; T07real22paths+successor2 audit4a876/7433, sixnewRust/twochangedexistingPASS/ninePythonexactreuse. Source27twoadditionalclientreplypaths5280/dfbd/e8c2 actualoldRED/new4PASS, sameoriginalbudget/absolute1spartial. TwoexistingPythonfilescorrectthreepost-writeexpectations after retainednormalcommit1failure, focusedreviewrequired. Existingdocs/AGENTS/derivedV10 only; honestnativefailures/retainedstate, no installed/sliceclaim.",
+        "success_chain_review": {
+          "reviewer": "/root/delivery_reviewer",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/password-status-implementation2/canonical-integration1/independent-final-source-review34.json required against exact34freeze before normalgates/sign/authorizedsync. Reuse T07audit7433/source27e8c2; independentlyverify threeexacttestrepairs/finaldocs/metadata/actual14scope39df and all34bytes. Sourceclearance is notnativeproof.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "elapsed_status": "UNKNOWN",
+        "elapsed_seconds": null,
+        "reference": "Signedf9ab641 normalcommit2PASS253.564s/push1PASS259.336s plusfreshfetch/source-onlyTorontoFF4.947s; fullsourceeffort notapportioned across concurrentnative/sourcework. signed-sync-proof.json SHAaea6e580/standard-mail-checkout-sync.json SHA25d71d80 under password-status-implementation2/canonical-integration1. FirstnormalcommitFAIL102.694/threeexactassertionrepairs retained. All34bytes8093/reviewfc756/signature/freshorigin0/0clean/all3branch equality; no installedcapability/slicePASS."
+      },
+      {
+        "id": "http14-current-readonly-reconciliation1",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "f9ab641789ed152ce39f401694d998c66ee0e9b8",
+        "change_reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/client-authorized-response-wait-successor27/readonly-retained-http14-observation2/READINESS.json SHAfe4c2308/source2f01d510; onecombined5s/8192B snapshot of exactretained14source58/journal/epoch/cachecounts+alreadyclosedcoordinator/proxymetadata/currentnamespace/principalrows. Supersedes UNEXECUTED counts-only67a1, noSQL/auth/locks/signals/cleanup/native15 authority.",
+        "success_chain_review": {
+          "reviewer": "/root/delivery_reviewer",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/client-authorized-response-wait-successor27/readonly-retained-http14-observation2/independent-source-review.json required exact2f01/fe4c before rootONEread; producerclosedfixedobjects/heldFD/deadline/snapshotonly/no cleanupauthority/consumerFAIL versus observationPASS; old417d notreusedbyimplication. Actual14scope39df historyretained.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 4.432,
+        "reference": "client-authorized-response-wait-successor27/readonly-retained-http14-observation2/actual-result.json SHAe49bccd0deb61912ebaa5a872ff0523b7455fad68765993d164619c1d8dddc59, independent-actual-scope-review.json SHA37dc52f174d63ed37b6fa2a0af7cf4d4e2d22b2666fe3835d4547401a51762cb. OBSERVATIONONLY: frozen357source58/exact14sourcecoordinator175/179 preconditionalUPDATE; epochcontained0/journalcompletecontained/cache[]/closedproxy0headeronly58Bstderr0. UnderlyingcallbackcauseUNKNOWN/noSQLreadback; allcredentialpurposeabsence currentsnapshot/exactlockedrows, no cleanupauthority or fullworkflowPASS."
+      },
+      {
+        "id": "http14-fresh-purpose-disposition1",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "f9ab641789ed152ce39f401694d998c66ee0e9b8",
+        "change_reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/client-authorized-response-wait-successor27/fresh-purpose-principal-cleanup-http14-1/readiness.json49d0539f/execution-custody/readiness.jsoncdf8866f; exactactuale49snapshot/currentlocked1005primary1006hash, existingexecuted12functions/guardianconstantsbindingonly. Freshallcredentialabsence/publicrowchecks immediately beforeeachfourfixeduser/groupdelete; original60/65/70; allretained14eighttreesuntouched. No expiredlease renewal/oldPIDsignals/SQL/auth/provider.",
+        "success_chain_review": {
+          "reviewer": "/root/delivery_reviewer",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/client-authorized-response-wait-successor27/fresh-purpose-principal-cleanup-http14-1/independent-whole-source-review.json SHA5090a907ccd9a2b5f77391f2f9305a43c43a645751d70ee79a05845cb8b59587; exact8d246/9fa057 embeddedsourceAST+actuale49eightnamespace/publicrowparity; currentpercommandadmincustody/ownednewguardian/strict4admin4queryconsumer/nooldtreecleanup. Observationnotauthority; thisseparatereviewadmitspurpose-onlyadmin.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 5.277,
+        "reference": "client-authorized-response-wait-successor27/fresh-purpose-principal-cleanup-http14-1/actual-result.json SHAb95f05f96cbb8d4b29e2cf476c28fcfe484b87a2a407359e17198348c44e8371; fourfixedadmins+fourqueries0/reaped, drivergroupgone/newguardianstagegone, controlledprimary+hashremoved andunrelatedpublicpreserved. All8oldtreesretained/originalpre-runrestorationUNKNOWN. No oldPIDsignals/SQL/auth/mail/operatorconfiguration action."
+      },
+      {
+        "id": "t07-matching-candidate-native-build1",
+        "boundary": "actual-password-status",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "f9ab641789ed152ce39f401694d998c66ee0e9b8",
+        "change_reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/password-status-implementation2/native-t07-qualifier1/matching-native-build1/READINESS.json SHA0a5e2645/archivefd19/custody27c01; exact1256signedf9abGitfiles EXCEPT reviewedONE qualifierRustcount37e13. Candidate QA beforefinalsourceadmission tobatchactualresults/documents andavoidextra checkpoints; no unsignedcommit/allGit-signedcandidateclaim. Existingunprivilegedfreshofflinebuild/no-run/original300s/logcaps/ownedcleanup only; no productionactivation.",
+        "success_chain_review": {
+          "reviewer": "/root/delivery_reviewer",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/password-status-implementation2/native-t07-qualifier1/matching-native-build1/independent-build-source-review.json SHA697926561a7a8a5304d702bed5dfd868aa06e20d9390667264cadad09a18c410; all1256archivepins/corrected57694functionparity/onlymetadatarebind, originalownedchild/no-reaped-PIDstop/freshfalse/sourcebeforeafter/strictartifactconsumer. UnderlyingT07qualifiersourceaudit9818; no nativecase15admission.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "FAIL",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 1.513,
+        "reference": "native-t07-qualifier1/matching-native-build1/root-build-action-result.json SHAfa6cbb9d68bedfc6a26899d8fd59412a5a6c18a47ca59c11b6fcb43cc358a211/independent17f231d3; archive regular-file custodyguard refused beforeextraction/compiler/noartifact. Localarchive+custody0664 carriedby SCP-p; exactoffendingnativemetadataunexported. Rootpackagingomission notproductdefect; oldf3de stage retained."
+      },
+      {
+        "id": "t07-matching-candidate-native-build2",
+        "boundary": "actual-password-status",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "f9ab641789ed152ce39f401694d998c66ee0e9b8",
+        "change_reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/password-status-implementation2/native-t07-qualifier1/matching-native-build2/READINESS.json846985c5: newexclusive6f97stage, all3exact600/1000/singlelink/size/hashpreflight BEFORE SCP-p, samearchivefd19/custody27c01/candidateRust37e13. Driverb2f87 onlystageconstantdelta; original300/logcaps/no-run/ownedcleanup/freshfalse unchanged. Failedoldf3de stage nottouched.",
+        "success_chain_review": {
+          "reviewer": "/root/delivery_reviewer",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/password-status-implementation2/native-t07-qualifier1/matching-native-build2/independent-successor-source-review.json SHAbec826431e51dd31c8110573565d0c0a516a033b1ede8cce528936d80b1e1488; actual3localmode/owner/link/hash andwhole-onlystageconstantdelta independentlyverified; existingarchive/source6979+qualifier9818 reused. Actualfailure17f retained, no compiler/productdiagnosis.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 85.822,
+        "reference": "native-t07-qualifier1/matching-native-build2/root-build-action-result.json SHAb688b2d6333b54ff6f44c1e97c8a7f1a0888dc370e4ca91682987586c572c299. Actual build83.399s/exit0/fresh=false/source1256 before-after parity/owned group gone/no forced stop. Candidate artifact152e332a/54295984B matches actual local download245ac834. Expected466 source-input closure matches archive (20893527); no native tests or installed acceptance. Build1 pre-compiler refusal remains retained."
+      },
+      {
+        "id": "t07-candidate-compressed-publication1",
+        "boundary": "actual-password-status",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "f9ab641789ed152ce39f401694d998c66ee0e9b8",
+        "change_reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/password-status-implementation2/native-t07-qualifier1/matching-native-build2/compressed-publication1/READINESS.json SHA2d535a3a; actual candidate binary152e/54295984, gzipf222/13740022, fresh exclusive a914 namespace. Existing single-member gzip publication, original120s transfer/5s extraction/2048B/128MiB bounds; all held-FD/hash/identity/mode/source checks unchanged. Actual allocation lease required before extraction; old namespaces untouched.",
+        "success_chain_review": {
+          "reviewer": "/root/delivery_reviewer",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/password-status-implementation2/native-t07-qualifier1/matching-native-build2/compressed-publication1/independent-publication-source-review.json SHA6a0dec08ccc156fb1dc82d8d0cb403998413a5d782fbc0b8c0d214418234f989 clears exact de5e/2d535 source and fixed allocation/upload recipe; independently bind actual new namespace lease before extraction. Existing successful publication functions reused; no decoder or workflow rerun.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 221.072,
+        "reference": "Full allocation-through-final-extraction interval221.072s including review. Transfer55.259s/5fbe048e and immutable extraction4.318s/9d912d9f are distinct phases. Exact candidate152e/54295984/0400 at fresha914 lease and sourcegzipf222/0400; no source/protocol execution, old namespaces untouched."
+      },
+      {
+        "id": "http15",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "f9ab641789ed152ce39f401694d998c66ee0e9b8",
+        "change_reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/password-status-implementation2/native-t07-qualifier1/execution-custody-current-binary1/READINESS.json d4953f3d; reviewed T07/source27 source59, actual matching candidate152e and immutable publication9d912d9f. Signedf9ab plus one reviewed Rust test override37e13; no all-Git-signed-candidate claim. Actual eighteen HTTP requests retain all original workflow/cache/SQL/session/Bob/cleanup assertions plus both history views and reload. Original bounds unchanged; exclusive native-http-attempt15.",
+        "success_chain_review": {
+          "reviewer": "/root/delivery_reviewer",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/password-status-implementation2/native-t07-qualifier1/execution-custody-current-binary1/independent-whole-source-review.json SHA3d9295b540780999221bf8f36073ada170da1a8dfd70a14edaed99edc84f02ce and independent-publication-admission-addendum.json SHAf58e697e5c4b81e19f32a0b5376897710ed40e4b786e142c2fc6a109484c283f. All six nested registries/actual admission chain/source/candidate binary/public custody/full positive consumers and cleanup verified.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "FAIL",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 55.131,
+        "reference": "native-t07-qualifier1/native-http-attempt15/result.json SHAc7dd48449bc78052120d8ffa3d57eea3227aa1ebdedf1999802e7a3bf04b8280; independent5d6f9a29. Actual authenticated changed_incomplete/time20261016104900, truthful503/cookie clear/no-repeat, seven responses/rows. Full positive journey FAIL; reloaded history/newlogin/Bob postconditions unproved. Broker, three actors/24SQL children/mail/runtime/scratch/purposes disposed; root/worker/SQL/public stages retained. Post-ACK branch discarded existing closed failure metadata before cleanup, so initiating postwrite cause remains UNKNOWN."
+      },
+      {
+        "id": "http16",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "f9ab641789ed152ce39f401694d998c66ee0e9b8",
+        "change_reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/password-status-implementation2/native-t07-qualifier1/execution-custody-postwrite-record1/READINESS.json SHA9c5d779278691235ab4399745efb170593e807faee8874a227c80ba5de8f6535; exactly one closed record preservation producer8a319 with other57 exact15, reuse actual152e build/9d91 publication. Fresh synthetic namespace only, original deadlines/full positive consumers unchanged. This diagnoses postwrite failure; not deployment or owner-account mutation.",
+        "success_chain_review": {
+          "reviewer": "/root/delivery_reviewer",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/password-status-implementation2/native-t07-qualifier1/execution-custody-postwrite-record1/independent-whole-source-review.json SHA1b6eb5d37a50761d2e9d769c3f693b48696640897f5a8a7ea561c32929db2d50 and postwrite-record-preservation1/independent-source-results-review.json SHAc6219859f7b6863e33b8f20a9e3e789a8640716beb4a229ef35aa7499e8c5ff2",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "reassessment": {
+          "reviewers": [
+            "/root",
+            "/root/delivery_reviewer"
+          ],
+          "failed_attempt_ids": [
+            "http14",
+            "http15"
+          ],
+          "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/password-status-implementation2/native-t07-qualifier1/postwrite-record-preservation1/independent-source-results-review.json SHAc6219859f7b6863e33b8f20a9e3e789a8640716beb4a229ef35aa7499e8c5ff2; whole source1b6eb5d3 clears changed cause-localization action.",
+          "next_action": "One changed existing full route preserves existing closed coordinator/proxy record before cleanup. Reuse current compiled artifact; no provider or operator credential mutation, no previous changed credential retry, no new QA campaign."
+        },
+        "result": "FAIL",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 56.341,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/password-status-implementation2/native-t07-qualifier1/native-http-attempt16/result.json SHA746dbca199fd220cfcc2aa0e4a6dd6089fd55f7b136f5dd5d771e50d2fa76a19; full root56.341s/exit1/no outertimeout/no forcedstop. Verified synthetic write20261016111632, authenticated changed_incomplete/HTTP503; positive cache flush count1, closed coordinator context account_change227. Complete required workflow remains FAIL. Actual finite actor/mail/runtime/scratch/purpose cleanup; source/SQL stages retained. No production/operator credential mutation or new deployment."
+      },
+      {
+        "id": "http17",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "f9ab641789ed152ce39f401694d998c66ee0e9b8",
+        "change_reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/password-status-implementation2/native-t07-qualifier1/execution-custody-finish-localization2/READINESS.json SHAe9adb23ca853e5bafdda6e1b9f44a0920f01198e6ec7b4146506694b92b28765; only frozen worker8eaa7f59/closed producere7db8a88+derived manifest differ from actual16; fixed finish sites/compact existing command metadata max1000 under original1024B; inherited observer defect repaired before freeze. Same152e/9d91/original budgets/success consumers, exclusive17.",
+        "success_chain_review": {
+          "reviewer": "/root/current_delivery_reviewer",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/password-status-implementation2/native-t07-qualifier1/execution-custody-finish-localization2/independent-whole-source-review.json SHAb359acb34a074e6a6f09a730161faf706148c96d07345ba7393f55421a1336ac; exact source/all59/six registries/nested receive/rootremote functions/deadlines/full consumers and cleanup independently reviewed; original16 failure remains retained.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "FAIL",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 53.468,
+        "reference": "native-t07-qualifier1/native-http-attempt17/result.json SHA4c934ffa1dc3f5085bb4286df654f691a08321b6cfe69f11838c98341f8682ec. Verifiedwrite20261016120900/cacheflush1/changed primary; composed SMTP cancellation and valid SMTPkick acknowledgement precede IMAPkick exit0/stdout72/stderr0 with unrecognized grammar. mail_finish187 acknowledgement guard refuses before who. Full workflowFAIL; deepertrace truncatedtrue, prior15/16 not diagnosed. Enumerated actors/SQL/mail/runtime/scratch/purpose cleanup; wholecustody root namespace disposition pending and source/SQL/public stages retained. No operator account/production mutation."
+      },
+      {
+        "id": "http18",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "f9ab641789ed152ce39f401694d998c66ee0e9b8",
+        "change_reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/password-status-implementation2/native-t07-qualifier1/execution-custody-imap-kick-grammar1/READINESS.json SHA02eb9c00f2f1403a775f74f2169ec4c544613ff4f01e2b46db74a7daed81515a; only source-supported maintained grammar0b3df96b+derived manifest differ from executed17. Two exact own-account acknowledgement orders/mandatory whozero, same152e/9d91/full consumers/original budgets. Artifact explicitly excludes current scoped-rollout Rust delta; no full canonical parity claim.",
+        "success_chain_review": {
+          "reviewer": "/root/current_delivery_reviewer",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/password-status-implementation2/native-t07-qualifier1/execution-custody-imap-kick-grammar1/independent-combined-source-carrier-reassessment.json SHAaf76e3e605a414703c62af33a7eb8ad50a63279c3870cbe9075913c498ea5a43 clears two-path maintained source/current carrier/full producer cleanup consumer chain and combined16/17.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "reassessment": {
+          "reviewers": [
+            "/root",
+            "/root/current_delivery_reviewer"
+          ],
+          "failed_attempt_ids": [
+            "http16",
+            "http17"
+          ],
+          "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/password-status-implementation2/native-t07-qualifier1/execution-custody-imap-kick-grammar1/independent-combined-source-carrier-reassessment.json SHAaf76e3e605a414703c62af33a7eb8ad50a63279c3870cbe9075913c498ea5a43",
+          "next_action": "One genuinely changed fresh controlled route qualifies exact parser compatibility repair. Preserve actual16/17 full FAIL/raw17bytesUNKNOWN; no previous changedcredential or expirednamespace retry. Same original binary/budgets/positive cleanup, no provider or operator account mutation."
+        },
+        "result": "FAIL",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 61.886,
+        "reference": "native-t07-qualifier1/native-http-attempt18/result.json SHAa05f00fd2d5b7bbe1c6c9a66a428f12f02b814a0a191f290e1195ddbeebe64b3, independent279c9581450147aa972d5adcc5b48bdb4c6a68ee36eb27907f7b95ef6429f7f6. Authenticated backend Changed(epoch1,time20261016123345), browser503/time retained/fullworkflowFAIL. Backend required finish advanced with exact grammar repair; actual frontend epoch-ready/cleanup/readback cause not exported. Deterministic test-only compatibility adapters drop changed_at, so fixture cannot meet required readback; maintained production preserves it. No expiry inference; enumerated finite cleanup passes, root namespace disposition pending/stages retained/sourceafterUNKNOWN."
       }
-    ],
-    "next_attempt": {
-      "id": "password-status-and-response-source-sync1",
-      "boundary": "actual-password-status",
-      "owner": "/root",
-      "scope": "PRODUCT_DELIVERY",
-      "adoption": "CURRENT",
-      "source_revision": "357301e20d3b466b822fd364fa8a25f19874f7dd",
-      "change_reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/password-status-implementation2/canonical-integration1/source-freeze34.json required exactfinalfreeze; T07real22paths+successor2 audit4a876/7433, sixnewRust/twochangedexistingPASS/ninePythonexactreuse. Source27twoadditionalclientreplypaths5280/dfbd/e8c2 actualoldRED/new4PASS, sameoriginalbudget/absolute1spartial. TwoexistingPythonfilescorrectthreepost-writeexpectations after retainednormalcommit1failure, focusedreviewrequired. Existingdocs/AGENTS/derivedV10 only; honestnativefailures/retainedstate, no installed/sliceclaim.",
-      "success_chain_review": {
-        "reviewer": "/root/delivery_reviewer",
-        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/password-status-implementation2/canonical-integration1/independent-final-source-review34.json required against exact34freeze before normalgates/sign/authorizedsync. Reuse T07audit7433/source27e8c2; independentlyverify threeexacttestrepairs/finaldocs/metadata/actual14scope39df and all34bytes. Sourceclearance is notnativeproof.",
-        "covers": [
-          "producer",
-          "cleanup",
-          "consumer"
-        ]
-      }
-    }
+    ]
   },
   "slice_contract": {
     "version": 1,
@@ -10890,12 +11127,12 @@ discriminator alongside the same binding production repair; no broader QA scope.
       "sha256": "cab8d109da3ed445e1c226a393789b2537eb80530dc3024d579cf49147b2ba21"
     },
     "design": {
-      "journey": "Security or Authentication & Recovery \u2192 GET/POST /settings/password \u2192 own-account current password+fresh TOTP \u2192 confirmed authoritative change and current-session revocation, or explicit refusal/contained incomplete result. Navigation/Cancel submit no mutation.",
+      "journey": "Security or Authentication & Recovery → GET/POST /settings/password → own-account current password+fresh TOTP → confirmed authoritative change and current-session revocation, or explicit refusal/contained incomplete result. Navigation/Cancel submit no mutation.",
       "frontend": "Three independently accessible Show/Hide password fields, confirmation equality, supported paste, same-origin CSRF/session checks, truthful pending/confirmed/refused/incomplete states, no password logging/clipboard access/persistence.",
       "backend": "Actual BrowserGateway::change_own_password Runtime delegation through trusted admission/mutation clients and PreparedPasswordCoordinator to authoritative Dovecot SQL; qualify actual startup/paired authority, no web DB credentials or arbitrary commands.",
       "interfaces": "Request/session/account/source/action/epoch-bound single-use step-up; typed original-deadline helper request and confirmed/refused/contained/uncertain result. Exact peer/purpose/source/grant and actual Runtime delegation required; receipt alone is not overall success.",
       "persistence": "One conditional authoritative salted credential update, durable shared epoch/lock/replay/rate state, all Alice browser-session revocation and tested IMAP/SMTP/cache containment. Verified authoritative write time separate from generic mailbox modified, including actual performed-write time with explicit incomplete containment status; unknown timing remains Unknown; Bob/mail preserved. A newly confirmed change requires verified authoritative changed-at; absent new timestamp leaves status/slice open, unlike absent historical/prior history which may stay Unknown.",
-      "security": "D04: current password+fresh TOTP; step-up expires when age reaches300s, never valid beyond300s; independent durable5/account10/source failures/15min and15mincooldown;15\u2013128Unicode/512UTF8bytes/no controls/no truncation/unchanged rejection; scoped recheck at permit consumption, no stored or exposed secrets.",
+      "security": "D04: current password+fresh TOTP; step-up expires when age reaches300s, never valid beyond300s; independent durable5/account10/source failures/15min and15mincooldown;15–128Unicode/512UTF8bytes/no controls/no truncation/unchanged rejection; scoped recheck at permit consumption, no stored or exposed secrets.",
       "failure_recovery": "Prewrite missing/stale authority refuses without update. Postwrite incomplete effects keep account contained and truthful incomplete status; no automatic ambiguous retry/credential rollback. Exact owned cleanup or reviewed safe retained-state disposition, Bob/operator/services preserved."
     },
     "tests": [
@@ -10958,7 +11195,9 @@ discriminator alongside the same binding production repair; no broader QA scope.
           "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/totp-counter-scheduling-successor23/native-http-attempt11/result.json SHA2566aa35e8876370738fef007693818d932871fb482b3c0a7dbc6a1ffd60db86a02; failed composed native scope, no credential-change/installed PASS",
           "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/proxy-command-endpoint-successor25/native-payload/native-http-attempt12/result.json SHA2568aaadcb55936016295a62cdc974435c1ef332dd3cb82774fcd51e83d4957757e; endpointprotocol correction progressed but overallFAIL/writeUNCONFIRMED/ownedrecoverypending, no installedPASS",
           "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/captured-control-lifetime-successor26/native-payload-preparation1/native-http-attempt13/result.json cc8e3024; FAIL before rootspawn at stale3nestedremote sourcepins; no passwordworkflowexecuted. Prior12FAIL notdiagnosed. Packagingreviewclearance retracted19fbbdfd; real localadmission discriminator required beforechangedcase.",
-          "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/captured-control-lifetime-successor26/native-payload-preparation1/native-http-attempt14/result.json 83f8da25/independentscope39dfcb0c; FAILrootspawn+workercompletion but positivecachepredicate503, initiatingcause/writeUNKNOWN, purposes/runtime/scratchretained; source26doesnotqualifyfullworkflow. Originalsourcecompiled357, currentT07candidate excluded."
+          "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/captured-control-lifetime-successor26/native-payload-preparation1/native-http-attempt14/result.json 83f8da25/independentscope39dfcb0c; FAILrootspawn+workercompletion but positivecachepredicate503, initiatingcause/writeUNKNOWN, purposes/runtime/scratchretained; source26doesnotqualifyfullworkflow. Originalsourcecompiled357, currentT07candidate excluded.",
+          "Latest controlled current HTTP15 c7dd4844/independent5d6f9a29: authenticated verified write+incomplete timestamp/503 observed, required complete positive workflow/both reloaded settings views not achieved. Prior evidence retained; negative partial proof does not close positive scenario.",
+          "Actual18 a05f00fd/independent279c9581: authenticated backend Changed(epoch1/verifiedtime) after grammar repair, browser503 and whole positive workflow FAIL. Exact compiled cfg(test) epoch-only adapters deterministically discard required changed_at; two-call status adapter fix needs matching rebuild. No installed/human qualification."
         ]
       },
       {
@@ -11031,8 +11270,11 @@ discriminator alongside the same binding production repair; no broader QA scope.
         "preserved": "No credential/session changes from read-only status/navigation; correct other-account isolation.",
         "owner": "/root",
         "reviewer": "/root/scrum_security_review",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "FAIL",
+        "evidence": [
+          "Latest controlled current HTTP15 c7dd4844/independent5d6f9a29: authenticated verified write+incomplete timestamp/503 observed, required complete positive workflow/both reloaded settings views not achieved. Prior evidence retained; negative partial proof does not close positive scenario.",
+          "Actual18 a05f00fd/independent279c9581: authenticated backend Changed(epoch1/verifiedtime) after grammar repair, browser503 and whole positive workflow FAIL. Exact compiled cfg(test) epoch-only adapters deterministically discard required changed_at; two-call status adapter fix needs matching rebuild. No installed/human qualification."
+        ]
       },
       {
         "id": "S04-02-T08",
@@ -13011,3 +13253,10 @@ Source27 reproduces a separate client protocol flaw: authorized work delayed bey
 ### Normal source admission attempt1 — retained gate failure
 
 `password-status-implementation2/canonical-integration1/commit-attempt1-result.json` records exit1/102.694s, unchanged357 HEAD and normal hooks. Rust library1762PASS/0failed/48 explicit native ignores; accountPython593 executed/three failed old post-write terminal assertions. Its stderr SHA3a5a19b8c20b2d927c7fefbbc2ce7673b12c63b90a68c48be80f1c4527e4445f is retained. Two existing test files need exact `changed_incomplete`+verified-time expectations while preserving their containment/no-repeat/deadline checks. Final source scope34 supersedes32; freeze/review34 before superseding normal gates. This is not a native14 fix or slice completion.
+
+
+## 2026-10-16 — signed history source and one retained14 reconciliation
+
+Signedf9ab641/source34 passed normalcommit2/push1 (253.564/259.336s), signature/freshGitHub0/0/all3branch equality and clean source-onlyTorontoFF4.947s; proofsaea6e580/25d71d80. Firstnormalgatefailure102.694s remains retained. Window2closed2897.116/original1800/overrun1097.116 plus finite900finishingoverrun52.53 (c9db9719); explicitwindow3starts10:00:29.116/1800 and includes measuredmandatorygatecost, without resetting fixture/productdeadlines.
+
+Onecombinedread-onlyretained14 snapshot PASS4.432s (e49bccd0/independent37dc52f1) validates exactfrozen357 source58 and existing untruncatedcoordinator trace: pendingconfirmation failed ataccount_change175/179 beforeconditionalUPDATE. Underlyingcallbackguardcause remainsUNKNOWN; noSQLreadback/globalrowunchangedclaim. Epochcontained0/journalcompletecontained/cachecounts[] andvalidproxyquery0/header-only58B/stderr0 are separate observedfacts. Freshpurposecredentialabsence/exactlockedrows do not grant cleanupauthority. Preserve allretained14namespaces/source and originalFAIL; independentlyreview freshpurpose-onlyadminaction beforeexecution. No operator/provider/service/binary/form mutation or sliceclosure.

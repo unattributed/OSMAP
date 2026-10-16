@@ -256,6 +256,20 @@ configuration alone still refuses instead of enabling the password workflow.
 Qualification must cover real paired SSH/peer/group/key/bootstrap routing,
 original deadlines, full authenticated password outcome and owned rollback.
 
+The optional `OSMAP_ACCOUNT_ROLLOUT_ACCOUNT` selects one exact canonical account
+for a bounded rollout. It is accepted only with all seven paired-service fields;
+an empty, malformed, wildcard or multiple-account selector refuses startup.
+The selected account requires the paired primary and epoch authority, including
+session issuance/validation, password preparation/dispatch and status readback.
+Configured failure never falls back to legacy authentication for that account.
+A legacy alias resolving to the selected canonical identity also refuses before
+factor/session issuance. Existing selected sessions without an epoch binding
+refuse after activation; the owner must sign in through the qualified path.
+Unrelated accounts retain their existing legacy login and session behaviour.
+With no selector, the original global account-runtime semantics are unchanged.
+This routing support does not provision or qualify a backend, open native gates,
+or authorize treating a configured-unavailable service as a working rollout.
+
 Mutation relay stop now follows its source-owned SIGTERM/SIGINT handler, stops
 future admission and interrupts blocked receive/forward waits. Cancellation does
 not cancel the remaining original resource deadline needed to kill/reap an

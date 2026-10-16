@@ -213,6 +213,59 @@ class ContainmentTests(unittest.TestCase):
             self.dependency.finish(ACCOUNT)
         self.assertEqual(len(self.executor.calls), 4)
 
+    def test_piped_formatted_kick_order_requires_exact_account_and_zero_who(self):
+        # Tagged Dovecot 2.3.21.1 kick_print_kicked prints its header through
+        # stdio and flushes formatted own-user bytes through a separate fd1
+        # ostream first. Full-buffered stdout therefore emits this ordering.
+        acknowledgement = (ACCOUNT.encode() + b' '
+            + b'kicked connections from the following users:\n\n')
+        self.dependency.ready(ACCOUNT)
+        self.dependency.invalidate_changed_auth(ACCOUNT)
+        self.executor.results = [(0, acknowledgement, b'')]
+        self.assertIs(self.dependency.finish(ACCOUNT), True)
+        self.assertEqual([call[1][0] for call in self.executor.calls],
+                         ['-f', 'auth', 'kick', '-f'])
+
+    def test_piped_kick_malformed_foreign_or_unreconciled_stays_contained(self):
+        header = b'kicked connections from the following users:\n'
+        own = ACCOUNT.encode() + b' '
+        valid = own + header + b'\n'
+        # Every malformed acknowledgement refuses before who. Neither byte
+        # count, exit0, user-prefix matching nor whitespace normalization is
+        # authorization for an account's termination acknowledgement.
+        invalid = [b'bob@example.test ' + header + b'\n',
+            own + b'bob@example.test ' + header + b'\n',
+            own + own + header + b'\n',
+            own + header, valid + b'\n', valid + b'extra',
+            valid.replace(b'\n', b'\r\n'), valid.replace(b'alice', b'ALICE'),
+            valid.replace(b'following users', b'following user'),
+            own + b'warning: other connections would also be kicked\n\n',
+            own + b'\x00' + header + b'\n']
+        for result in [(0, data, b'') for data in invalid] + [
+                (68, valid, b''), (0, valid, b'warning')]:
+            with self.subTest(result=result):
+                executor = PublicExecutor()
+                dependency = MailSessionContainment(ACCOUNT, executor, self.budget,
+                                                    SmtpTerminationScope.NOT_APPLICABLE)
+                dependency.ready(ACCOUNT)
+                dependency.invalidate_changed_auth(ACCOUNT)
+                executor.results = [result]
+                with self.assertRaises(Unconfirmed):dependency.finish(ACCOUNT)
+                self.assertEqual(len(executor.calls), 3)
+                with self.assertRaises(Refused):dependency.finish(ACCOUNT)
+        # A valid kick acknowledgement still requires the original who
+        # reconciliation, with the same account filter and original budget.
+        executor = PublicExecutor()
+        dependency = MailSessionContainment(ACCOUNT, executor, self.budget,
+                                            SmtpTerminationScope.NOT_APPLICABLE)
+        dependency.ready(ACCOUNT)
+        dependency.invalidate_changed_auth(ACCOUNT)
+        executor.results = [(0, valid, b''),
+            (0, dependency.WHO_HEADER + ACCOUNT.encode()
+             + b'\t1\timap\t(123)\t(192.0.2.1)\n', b'')]
+        with self.assertRaises(Unconfirmed):dependency.finish(ACCOUNT)
+        self.assertEqual(len(executor.calls), 4)
+
     def test_foreign_kick_force_warning_or_ambiguous_receipt_never_reconcile(self):
         for result in [(0, b'kicked connections from the following users:\nbob@example.test \n', b''),
                        (0, b'warning: other connections would also be kicked', b''),

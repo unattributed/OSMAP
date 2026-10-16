@@ -181,8 +181,15 @@ class MailSessionContainment:
                 self._topology.recheck(self._budget)
             code, data = self._run('kick', post_write=True)
             no_users = code == 68 and data == b'no users kicked\n'
-            kicked = (code == 0 and data == b'kicked connections from the following users:\n'
-                      + self._account.encode('ascii') + b' \n')
+            header = b'kicked connections from the following users:\n'
+            own_user = self._account.encode('ascii') + b' '
+            # Dovecot 2.3.21.1 kick_print_kicked mixes printf(header/newline)
+            # with the formatted fd1 ostream. Under piped/full-buffered stdio
+            # its explicitly flushed own-user output precedes the header.
+            # Accept only these two exact own-account orderings, never a
+            # warning, foreign/additional user, arbitrary text or exit alone.
+            kicked = code == 0 and data in (header + own_user + b'\n',
+                                           own_user + header + b'\n')
             if not (no_users or kicked) or self._who(post_write=True) != 0:
                 raise ValueError
             self._budget.remaining()

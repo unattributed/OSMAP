@@ -1005,3 +1005,17 @@ The repaired nested carrier admits all current inputs. Native14 still fails the 
 Client first-response waiting uses the unchanged original budget; one absolute one-second partial-frame interval prevents fragment renewal. Ordinary server/send/framing/current authority/expiry/uncertainty remain. OldRED/new4PASS/independente8c2 are source evidence only, not a native14 diagnosis or installed/release qualification.
 
 Normal commit attempt1 retained three account-test failures expecting the prior post-write `contained` terminal. Verified own-write time now accompanies explicit `changed_incomplete`; correct exact expectations while keeping account contained, consumed intent, no repeated SQL and original deadlines. Rust1762PASS/48 native ignores does not override the failed account gate. No commit, deployment or security-readiness claim precedes successful superseding normal gates.
+
+Superseding signedf9ab641 source admission passed both normal gates:1762Rust/593account, source34 freeze8093/reviewfc756, signature/freshorigin equality and clean source-only Toronto checkout. Actual one-read retained14 reconciliatione49b/independent37dc localizes this invocation's refusal to pending confirmation before its conditional UPDATE. Underlying callback cause, matching successful full workflow, installed password capability and release readiness remain open; no production mutation or cleanup authority follows.
+
+Actual HTTP15/c7dd4844 with independent5d6f9a29 reaches a verified synthetic write and authenticated incomplete timestamp, truthful503 and cookie clearance. The full positive workflow remains FAIL; reload/new-login/Bob acceptance and installed readiness are unproved. Normal actor/SQL/mail/runtime/purpose disposition passed, source stages retained. Post-ACK closed diagnostic metadata was discarded before cleanup; preserve it through the existing strict projection before any changed diagnostic action. No new operator test, provider send, automatic ambiguous retry or release claim follows.
+
+
+2026-10-16 S04-02 source follow-up: strict account-scoped authentication/session
+rollout, exact source-supported IMAP kick grammar and native broker
+producer/profile composition have matching focused source evidence and
+independent review. Actual18 authenticates backend Changed(epoch1/verifiedtime)
+but browser503/full workflow FAIL; its epoch-only test adapters discard history.
+A status-preserving fixture correction and matching native build remain required.
+Production SMTP scope/IMAP final-publication/installation and owner testing are
+open. No source/test/health result establishes release or parent-slice acceptance.

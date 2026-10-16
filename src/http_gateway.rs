@@ -32,6 +32,7 @@ mod http_mailbox_backends;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RuntimeBrowserGateway {
     pub(crate) account_runtime: AccountRuntimeCapability,
+    pub(crate) account_rollout: Option<String>,
     pub(crate) public_inventory_client: Option<crate::openpgp_inventory_runtime::Client>,
     pub(crate) crypto_client: Option<crate::openpgp_crypto_runtime::Client>,
     pub(crate) public_admin_client: Option<crate::openpgp_public_admin_runtime::Client>,
@@ -127,6 +128,10 @@ impl RuntimeBrowserGateway {
     ) -> Self {
         Self {
             account_runtime,
+            account_rollout: config
+                .account_runtime
+                .as_ref()
+                .and_then(|value| value.rollout_account.clone()),
             public_admin_client: config.openpgp_public_admin.as_ref().and_then(|c| {
                 crate::openpgp_public_admin_runtime::Client::from_operator_files(
                     &c.socket,
@@ -319,6 +324,7 @@ impl RuntimeBrowserGateway {
     pub(crate) fn for_test(temp_root: &std::path::Path) -> Self {
         Self {
             account_runtime: AccountRuntimeCapability::Disabled,
+            account_rollout: None,
             public_inventory_client: None,
             crypto_client: None,
             public_admin_client: None,
@@ -1054,7 +1060,8 @@ impl BrowserGateway for RuntimeBrowserGateway {
     }
 
     fn password_change_available(&self, session: &ValidatedSession) -> bool {
-        self.account_runtime.ready().is_some()
+        self.ready_account_runtime(&session.record.canonical_username)
+            .is_some()
             && session
                 .record
                 .account_epoch
@@ -1062,7 +1069,7 @@ impl BrowserGateway for RuntimeBrowserGateway {
     }
 
     fn password_changed_at(&self, session: &ValidatedSession) -> Option<String> {
-        let ready = self.account_runtime.ready()?;
+        let ready = self.ready_account_runtime(&session.record.canonical_username)?;
         let epoch = session.record.account_epoch?;
         ready
             .admission()

@@ -10890,3 +10890,70 @@ Do not discard the independently verified T07 code because a separate frozen357 
 Source27 confirms a client first-response timeout during authorized work. Wait for the first byte under the existing original budget, then one absolute one-second partial-frame interval; no caller knob, renewed deadline or changed authority/framing/uncertainty. OldRED/new4PASS and independente8c2 qualify only this source correction. Combine its two paths with T07 source admission; native14 cause/write and installed exits remain open.
 
 The first normal commit gate refused three existing Python post-write assertions; preserve its complete result/logs under `password-status-implementation2/canonical-integration1/commit-attempt1-result.json`. Verified writes with incomplete effects must assert the new explicit `changed_incomplete` terminal and exact timestamp while retaining all containment, uncertainty, deadline and single-write assertions. No production rollback to an ambiguous terminal and no assertion removal or hook waiver. Independently review the two-file test correction and final34 source freeze before a changed signed attempt.
+
+## 2026-10-16 — source admission and bounded native14 localization
+
+Signedf9ab641 admits reviewed34 paths through normal commit253.564s/push259.336s, signature verification, fresh origin equality and clean source-only Toronto fast-forward4.947s. First gate failure remains retained; no production capability, binary or service is activated. Source proofaea6e580 and standard-checkout proof25d71d80 are separate from functional acceptance.
+
+Combine necessary retained-state safety and existing closed failure metadata in one reviewed read-only snapshot, instead of repeating the full failed qualifier. Actuale49bccd0/independent37dc52f1 binds frozen357 source58 and account_change175/179: this coordinator invocation failed pending confirmation before adapter.replace. This refines that invocation's write-path uncertainty using matching trace/source, without claiming SQL readback, unchanged global row state or a unique callback cause. Empty cache counts/contained state alone would not prove it. No signals, socket connections, locks or administrative actions occurred; fresh purpose-only cleanup still requires separate reviewed current authority.
+
+## 2026-10-16 — current full workflow fails after verified write
+
+HTTP15 resultc7dd4844/independent5d6f9a29 proves a verified synthetic credential write, authenticated `changed_incomplete` time and truthful503/cookie clear/no-repeat handling. The complete positive journey remains FAIL; no new-login, reloaded-history, Bob postcondition, installed or parent acceptance follows. Normal actor/SQL/mail/runtime/purpose cleanup passed; source stages remain retained.
+
+The post-ACK qualifier read existing closed coordinator/cache/proxy metadata but discarded it before runtime removal. Root and reviewer missed that evidence-preservation gap. Reuse the existing strict closed projection in both branches before cleanup, without changing outcomes, cache-positive requirements or budgets. The postwrite cause remains UNKNOWN until matching evidence identifies it; do not guess a product fix or probe operator SQL.
+
+The operator correctly identified excessive verification overhead. Review a complete changed functional action once, reuse matching successful evidence and unchanged mechanics, and repeat a check only for a changed input, demonstrated failure or concrete unresolved risk. Mandatory hooks remain. Candidate native QA may precede its final signed source admission, with exact reviewed baseline/override provenance; this avoids extra source checkpoints and does not permit unsigned commits or premature readiness.
+
+
+### 2026-10-16 — owner-requested live password test and measured HTTP16
+
+The operator explicitly requests OSMAP implementation/update on obsd1 and will
+perform the password change themselves while observing the backend over SSH.
+This is deployment authority, not an agent request to inspect email contents or
+change their credential. Earlier wording that the feature was merely disabled
+was misleading: production backend composition/provisioning is unfinished.
+Do not expose an enabled form that cannot perform its advertised operation.
+
+One reviewed changed HTTP16 route reused the existing binary/publication and
+original bounds (root56.341s, result746dbca1, independent e4beb630). It retained
+the previously discarded closed metadata: cache invalidation and changed-primary
+verification pass, then composed finish raises; the unique inner failure remains
+unknown. No speculative fix, retrospective HTTP15 diagnosis or production
+qualification follows. Preserve retained source/SQL stages and confirmed scoped
+cleanup. Root assigns the minimum finish-path localization and strict scoped
+rollout implementation in parallel under the single S04-02 integration objective.
+The selector must fail closed for targeted accounts while preserving unrelated
+legacy authentication; globally enabling configured-unavailable clients would
+disrupt existing login. No flag-only activation or account-specific hardcoding.
+
+
+### 2026-10-16 — source-supported grammar, scoped rollout and fixture history
+
+The reviewed scoped rollout preserves unrelated legacy login and fails closed
+for the configured exact account, including aliases, epoch sessions and all
+password/status paths. The maintained IMAP parser accepts only two exact
+own-account acknowledgement orderings supported by Dovecot2.3.21.1 source;
+exit/stderr/bounds and mandatory subsequent zero-who stay unchanged. Native
+broker startup uses its existing routing producer before certificate consumption
+and the typed admitted-port success profile, under the same original budget.
+These are source repairs, not a working production activation.
+
+Actual17 locates an IMAP acknowledgement guard refusal (exit0/stdout72/stderr0),
+without retained raw bytes. Actual18 advances to authenticated backend Changed
+(epoch1/time20261016123345), while browser503 still fails the full journey.
+Neither observation retrospectively diagnoses older failures. Exact compiled
+test-only epoch compatibility methods discard changed_at; production Service
+already preserves it. Repair the two fixture selectors and perform one matching
+native build because Rust changed; do not weaken required authoritative history,
+misreport a test adapter defect as a production Runtime defect, or reuse152e as
+current source parity. Actual epoch-ready/browser cleanup outcomes remain
+unobserved. All partial and failed evidence and retained stages stay recorded.
+
+The operator's request to enable and audit OSMAP is accepted as implementation
+and deployment authority, without agent changes to their email account. An
+operable production backend must accompany the control. Unrelated SMTP routing
+and ordinary IMAP/POP final authentication publication remain genuine open
+integration boundaries; an enabled cosmetic form or global unavailable login
+configuration would not fulfil the request. Completed reviewed code is admitted
+and synchronized normally while work continues toward the functional exit.

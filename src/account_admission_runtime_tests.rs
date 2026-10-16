@@ -1131,13 +1131,16 @@ fn full_factory_admission_fixture(trusted_web_uid: u32, descriptor_variable: &st
             .as_ref()
             .ok_or(Error::Unavailable)?
             .recheck(deadline)?;
-        // Same strict fixed_worker_command, changing only the reviewed private
+        // Same strict status worker command, changing only the reviewed private
         // wrapper pathname. No credentials/options/UIDs from a request enter argv.
         let command = crate::auth::full_factory_admission_fixture_command(&boot.stage)
             .map_err(unavailable)?;
-        Service::fixed_worker_command(request, deadline, command)
+        // Preserve the authoritative timestamp through the production status
+        // path. Epoch-only test adapters intentionally discard that history
+        // and cannot qualify the Runtime's required changed-at readback.
+        Service::fixed_worker_status_command(request, deadline, command)
     };
-    let result = service.serve_with_policy(signals.stop_flag(), &execute, &|endpoint| {
+    let result = service.serve_with_status_policy(signals.stop_flag(), &execute, &|endpoint| {
         service
             .engine
             .as_ref()

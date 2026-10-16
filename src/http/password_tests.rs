@@ -336,7 +336,8 @@ mod genuine_http_pilot {
 
     const WEB_UID: u32 = 1001;
     const WEB_GID: u32 = 1003;
-    const CONNECTIONS: usize = 10;
+    // Original ten workflow requests plus eight exact T07 history views.
+    const CONNECTIONS: usize = 18;
     const HOST: &str = "password-pilot.osmap.invalid";
     // Public RFC6238 fixture seed. The real file-backed verifier and replay
     // store consume it; the parent computes distinct accepted counter inputs.
@@ -450,6 +451,7 @@ mod genuine_http_pilot {
             }
         }
         config.account_runtime = Some(crate::config::AccountRuntimeConfig {
+            rollout_account: None,
             admission_socket: runtime.join("admission/admission.sock"),
             admission_key_file: root.join("keys/admission.key"),
             admission_helper_uid: 0,

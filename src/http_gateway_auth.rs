@@ -47,15 +47,71 @@ impl RuntimeBrowserGateway {
             self.session_lifetime_seconds,
             self.session_idle_timeout_seconds,
         );
-        match &self.account_runtime {
+        let authority: std::sync::Arc<dyn crate::account_admission::EpochAuthority> = match &self
+            .account_runtime
+        {
             AccountRuntimeCapability::Ready(ready) => {
-                service.with_epoch_authority(std::sync::Arc::new(ready.admission().clone()))
+                std::sync::Arc::new(ready.admission().clone())
             }
-            AccountRuntimeCapability::ConfiguredUnavailable => service.with_epoch_authority(
-                std::sync::Arc::new(super::http_gateway_account::UnavailableAccountAuthority),
-            ),
-            AccountRuntimeCapability::Disabled => service,
+            AccountRuntimeCapability::Disabled if self.account_rollout.is_none() => return service,
+            _ => std::sync::Arc::new(super::http_gateway_account::UnavailableAccountAuthority),
+        };
+        match &self.account_rollout {
+            Some(account) => service.with_account_epoch_authority(account.clone(), authority),
+            None => service.with_epoch_authority(authority),
         }
+    }
+
+    fn authenticate_account_primary(
+        &self,
+        context: &AuthenticationContext,
+        username: &str,
+        password: &str,
+        captured: std::sync::Arc<std::sync::Mutex<Option<crate::account_admission::Admission>>>,
+    ) -> crate::auth::AuthenticationOutcome {
+        let selected = self.uses_account_runtime(username);
+        let unavailable = || {
+            AuthenticationService::new(
+                self.authentication_policy,
+                super::http_gateway_account::UnavailableAccountAuthority,
+            )
+            .authenticate(context, username, password)
+        };
+        let outcome = if selected {
+            match &self.account_runtime {
+                AccountRuntimeCapability::Ready(ready) => AuthenticationService::new(
+                    self.authentication_policy,
+                    crate::account_admission_runtime::CredentialBackend {
+                        client: ready.admission().clone(),
+                        captured,
+                    },
+                )
+                .authenticate(context, username, password),
+                AccountRuntimeCapability::ConfiguredUnavailable => unavailable(),
+                AccountRuntimeCapability::Disabled if self.account_rollout.is_some() => {
+                    unavailable()
+                }
+                AccountRuntimeCapability::Disabled => self
+                    .build_auth_service()
+                    .authenticate(context, username, password),
+            }
+        } else {
+            self.build_auth_service()
+                .authenticate(context, username, password)
+        };
+        if let AuthenticationDecision::MfaRequired {
+            canonical_username, ..
+        } = &outcome.decision
+        {
+            // A legacy alias cannot admit the selected canonical identity, and
+            // selected authority cannot issue a session for an unrelated identity.
+            if self.account_rollout.is_some()
+                && selected != self.uses_account_runtime(canonical_username)
+            {
+                return unavailable();
+            }
+        }
+        outcome
     }
 
     /// Builds the current file-backed login-throttle service.
@@ -131,24 +187,12 @@ impl RuntimeBrowserGateway {
         }
 
         let captured_admission = std::sync::Arc::new(std::sync::Mutex::new(None));
-        let auth_outcome = match &self.account_runtime {
-            AccountRuntimeCapability::Ready(ready) => AuthenticationService::new(
-                self.authentication_policy,
-                crate::account_admission_runtime::CredentialBackend {
-                    client: ready.admission().clone(),
-                    captured: captured_admission.clone(),
-                },
-            )
-            .authenticate(context, username, password),
-            AccountRuntimeCapability::ConfiguredUnavailable => AuthenticationService::new(
-                self.authentication_policy,
-                super::http_gateway_account::UnavailableAccountAuthority,
-            )
-            .authenticate(context, username, password),
-            AccountRuntimeCapability::Disabled => self
-                .build_auth_service()
-                .authenticate(context, username, password),
-        };
+        let auth_outcome = self.authenticate_account_primary(
+            context,
+            username,
+            password,
+            captured_admission.clone(),
+        );
         audit_events.push(auth_outcome.audit_event.clone());
 
         match auth_outcome.decision {
@@ -667,7 +711,48 @@ mod tests {
     #[test]
     fn configured_account_failure_never_uses_accepted_legacy_doveadm() {
         use std::os::unix::fs::PermissionsExt;
-        for configured in [false, true] {
+        for (configured, scope, submitted, canonical, expected_called, expected_accepted) in [
+            (
+                false,
+                None,
+                "alice@example.test",
+                "alice@example.test",
+                true,
+                true,
+            ),
+            (
+                true,
+                None,
+                "alice@example.test",
+                "alice@example.test",
+                false,
+                false,
+            ),
+            (
+                true,
+                Some("alice@example.test"),
+                "alice@example.test",
+                "alice@example.test",
+                false,
+                false,
+            ),
+            (
+                true,
+                Some("alice@example.test"),
+                "bob@example.test",
+                "bob@example.test",
+                true,
+                true,
+            ),
+            (
+                true,
+                Some("alice@example.test"),
+                "alice-alias",
+                "alice@example.test",
+                true,
+                false,
+            ),
+        ] {
             let root = std::env::temp_dir().join(format!(
                 "osmap-account-fallback-{}",
                 crate::draft::generate_draft_id().unwrap()
@@ -685,7 +770,7 @@ mod tests {
             std::fs::write(
                 &executable,
                 format!(
-                    "#!{interpreter}\nimport sys\nfrom pathlib import Path\nsys.stdin.read()\nPath({marker_literal}).write_bytes(b'called\\n')\nprint('passdb: alice@example.test auth succeeded')\nprint('extra fields:')\nprint('  user=alice@example.test')\n"
+                    "#!{interpreter}\nimport sys\nfrom pathlib import Path\nsys.stdin.read()\nPath({marker_literal}).write_bytes(b'called\\n')\nprint('passdb: {submitted} auth succeeded')\nprint('extra fields:')\nprint('  user={canonical}')\n"
                 ),
             )
             .unwrap();
@@ -705,6 +790,9 @@ mod tests {
                 env.insert("OSMAP_ACCOUNT_ADMISSION_HELPER_UID".into(), "1003".into());
                 env.insert("OSMAP_ACCOUNT_MUTATION_HELPER_UID".into(), "1004".into());
             }
+            if let Some(account) = scope {
+                env.insert("OSMAP_ACCOUNT_ROLLOUT_ACCOUNT".into(), account.into());
+            }
             let config = AppConfig::from_env_map(&env).unwrap();
             let mut gateway = RuntimeBrowserGateway::from_config(&config);
             gateway.doveadm_path = executable;
@@ -713,12 +801,8 @@ mod tests {
                 remote_addr: "127.0.0.1".into(),
                 user_agent: "public fixture".into(),
             };
-            let outcome = gateway.login(
-                &context,
-                "alice@example.test",
-                "public synthetic credential",
-                "123456",
-            );
+            let outcome =
+                gateway.login(&context, submitted, "public synthetic credential", "123456");
             let called = marker.exists();
             let accepted = outcome
                 .audit_events
@@ -726,11 +810,11 @@ mod tests {
                 .any(|event| event.action == "login_mfa_required");
             std::fs::remove_dir_all(&root).unwrap();
             assert_eq!(
-                called, !configured,
+                called, expected_called,
                 "configured failure invoked legacy primary"
             );
             assert_eq!(
-                accepted, !configured,
+                accepted, expected_accepted,
                 "the Disabled control must accept actual legacy primary"
             );
         }

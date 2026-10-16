@@ -58,12 +58,22 @@ compare every emitted, received and embedded pin registry to the same frozen
 input map and execute the actual local admission chain before host dispatch.
 The October16 stale remote registry failure is the concrete regression; AST
 parity or an outer manifest alone cannot establish nested admission parity.
+For native uploads that preserve permissions, preflight every transferred leaf's
+owner, single link, exact private mode, size and hash before transfer. Create
+retained native artifacts with a private umask. The October16 candidate build
+refused inherited group-writable archive permissions before compilation; do not
+relax remote custody guards or misreport that refusal as a compiler defect.
 
 For operator-authorized multi-agent work, apply
 `docs/AGENT_DEVELOPMENT_FRAMEWORK.md` and its OSMAP mapping in
 `docs/OSMAP_AGENT_FRAMEWORK_ADOPTION.md`. Assign project management, Scrum
 coordination, development, independent QA, security review and technical writing
 responsibilities explicitly; activate agents only for actionable assignments.
+For an existing idle or completed worker, use `followup_task` to dispatch work;
+`send_message` alone does not start a turn. Confirm the worker reports running
+before recording an assignment as active or waiting for its result. If the
+worker is absent from the current team, reconcile retained files and dispatch
+the remaining concrete task rather than assuming historical work is continuing.
 Use the existing execution ledger, decision log and UAT record rather than
 creating a parallel status system. Required user journeys need frontend,
 backend, persistence and actual integration evidence before readiness claims.

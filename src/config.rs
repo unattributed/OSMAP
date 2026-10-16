@@ -252,6 +252,8 @@ pub struct OpenPgpInventoryConfig {
 /// Complete private account-service configuration; absence retains legacy mode.
 #[derive(Clone, PartialEq, Eq)]
 pub struct AccountRuntimeConfig {
+    /// Exact canonical identity for a bounded rollout; None preserves global mode.
+    pub rollout_account: Option<String>,
     pub admission_socket: PathBuf,
     pub admission_key_file: PathBuf,
     pub admission_helper_uid: u32,
@@ -280,7 +282,19 @@ fn parse_account_runtime(
     let error = || {
         BootstrapError::InvalidConfig { field: "OSMAP_ACCOUNT_ADMISSION_SOCKET", reason: "complete distinct admission/mutation endpoints, purpose keys, session proof and explicit decimal peer UIDs are required together".into() }
     };
-    if FIELDS.iter().all(|field| !env.contains_key(*field)) {
+    let rollout_account = env
+        .get("OSMAP_ACCOUNT_ROLLOUT_ACCOUNT")
+        .map(|account| {
+            crate::account_admission::valid_account(account).map_err(|_| {
+                BootstrapError::InvalidConfig {
+                    field: "OSMAP_ACCOUNT_ROLLOUT_ACCOUNT",
+                    reason: "one exact canonical account is required".into(),
+                }
+            })?;
+            Ok::<_, BootstrapError>(account.clone())
+        })
+        .transpose()?;
+    if FIELDS.iter().all(|field| !env.contains_key(*field)) && rollout_account.is_none() {
         return Ok(None);
     }
     if FIELDS.iter().any(|field| !env.contains_key(*field)) {
@@ -296,6 +310,7 @@ fn parse_account_runtime(
         Ok(value)
     };
     let value = AccountRuntimeConfig {
+        rollout_account,
         admission_socket: path(FIELDS[0])?,
         admission_key_file: path(FIELDS[1])?,
         admission_helper_uid: uid(FIELDS[2])?,
@@ -1211,6 +1226,10 @@ mod tests {
         let config = AppConfig::from_env_map(&values).unwrap();
         assert!(config.account_runtime.is_some());
         assert_eq!(
+            config.account_runtime.as_ref().unwrap().rollout_account,
+            None
+        );
+        assert_eq!(
             format!("{:?}", config.account_runtime.unwrap()),
             "AccountRuntimeConfig(<private configuration>)"
         );
@@ -1233,6 +1252,34 @@ mod tests {
             let mut changed = values.clone();
             changed.insert(field.into(), value.into());
             assert!(AppConfig::from_env_map(&changed).is_err(), "{field}");
+        }
+        let selector = "OSMAP_ACCOUNT_ROLLOUT_ACCOUNT";
+        let mut scoped = values.clone();
+        scoped.insert(selector.into(), "alice@example.test".into());
+        assert_eq!(
+            AppConfig::from_env_map(&scoped)
+                .unwrap()
+                .account_runtime
+                .unwrap()
+                .rollout_account
+                .as_deref(),
+            Some("alice@example.test")
+        );
+        assert!(AppConfig::from_env_map(&BTreeMap::from([(
+            selector.into(),
+            "alice@example.test".into(),
+        )]))
+        .is_err());
+        for bad in [
+            "",
+            " alice@example.test",
+            "alice@example.test ",
+            "*",
+            "alice",
+            "alice@example.test,bob@example.test",
+        ] {
+            scoped.insert(selector.into(), bad.into());
+            assert!(AppConfig::from_env_map(&scoped).is_err(), "{bad}");
         }
     }
     #[test]

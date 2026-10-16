@@ -415,6 +415,7 @@ impl Drop for SessionFileLock {
 /// Issues, validates, and revokes browser sessions.
 pub struct SessionService<S, T, R> {
     epoch_authority: Option<std::sync::Arc<dyn crate::account_admission::EpochAuthority>>,
+    epoch_account: Option<String>,
     session_store: S,
     time_provider: T,
     random_source: R,
@@ -429,6 +430,19 @@ impl<S, T, R> SessionService<S, T, R> {
         authority: std::sync::Arc<dyn crate::account_admission::EpochAuthority>,
     ) -> Self {
         self.epoch_authority = Some(authority);
+        self.epoch_account = None;
+        self
+    }
+
+    /// Enforce authority only for the configured canonical identity. Other
+    /// accounts retain the Disabled contract, including refusal of bound epochs.
+    pub(crate) fn with_account_epoch_authority(
+        mut self,
+        account: String,
+        authority: std::sync::Arc<dyn crate::account_admission::EpochAuthority>,
+    ) -> Self {
+        self.epoch_authority = Some(authority);
+        self.epoch_account = Some(account);
         self
     }
 
@@ -438,7 +452,12 @@ impl<S, T, R> SessionService<S, T, R> {
                 reason: "account epoch binding invalid".into(),
             });
         }
-        match (&self.epoch_authority, epoch) {
+        let authority = self.epoch_authority.as_ref().filter(|_| {
+            self.epoch_account
+                .as_deref()
+                .is_none_or(|selected| selected == account)
+        });
+        match (authority, epoch) {
             (None, None) => Ok(()),
             (Some(authority), Some(epoch)) => {
                 authority
@@ -462,6 +481,7 @@ impl<S, T, R> SessionService<S, T, R> {
     ) -> Self {
         Self {
             epoch_authority: None,
+            epoch_account: None,
             session_store,
             time_provider,
             random_source,

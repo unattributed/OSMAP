@@ -80,7 +80,7 @@ impl RuntimeBrowserGateway {
         use crate::session::BrowserRevocation;
         match completion {
             Ok((BrowserRevocation::OldSessionsRevoked { .. }, known_at)) => {
-                let ready = self.account_runtime.ready();
+                let ready = self.ready_account_runtime(&session.record.canonical_username);
                 let readback = session
                     .record
                     .account_epoch
@@ -464,10 +464,18 @@ impl RuntimeBrowserGateway {
             SystemRandomSource,
             self.session_lifetime_seconds,
             self.session_idle_timeout_seconds,
-        )
-        .with_epoch_authority(authority.clone());
+        );
+        let service = match &self.account_rollout {
+            Some(account) => {
+                service.with_account_epoch_authority(account.clone(), authority.clone())
+            }
+            None => service.with_epoch_authority(authority.clone()),
+        };
         service
             .with_guarded_session_lease(context, token, |current, lease| {
+                if !self.uses_account_runtime(&current.record.canonical_username) {
+                    return Err(password_change::Error::Unavailable);
+                }
                 let action =
                     prepared.into_dispatch(context, &current, authority.as_ref(), clock)?;
                 service
@@ -520,7 +528,7 @@ impl RuntimeBrowserGateway {
         request: Request<'a>,
         deadline: Option<std::time::Instant>,
     ) -> Outcome<'a> {
-        let Some(ready) = self.account_runtime.ready() else {
+        let Some(ready) = self.ready_account_runtime(&session.record.canonical_username) else {
             return Outcome {
                 authorization: Err(password_change::Error::Unavailable),
                 audit_events: vec![],

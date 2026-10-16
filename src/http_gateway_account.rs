@@ -138,6 +138,18 @@ impl crate::auth::PrimaryCredentialBackend for UnavailableAccountAuthority {
     }
 }
 impl RuntimeBrowserGateway {
+    pub(super) fn uses_account_runtime(&self, account: &str) -> bool {
+        self.account_rollout
+            .as_deref()
+            .is_none_or(|selected| selected == account)
+    }
+
+    pub(super) fn ready_account_runtime(&self, account: &str) -> Option<&ReadyAccountRuntime> {
+        self.uses_account_runtime(account)
+            .then(|| self.account_runtime.ready())
+            .flatten()
+    }
+
     pub(crate) fn prepare_account_runtime(config: &AppConfig) -> AccountRuntimeCapability {
         AccountRuntimeCapability::from_config(config.account_runtime.as_ref())
     }
@@ -296,6 +308,176 @@ mod tests {
     }
 
     #[test]
+    fn account_rollout_preserves_unrelated_sessions_and_refuses_selected_pre_epoch() {
+        let f = Fixture::new();
+        let context = AuthenticationContext {
+            request_id: "scoped-session".into(),
+            remote_addr: "127.0.0.1".into(),
+            user_agent: "public fixture".into(),
+        };
+        let legacy = RuntimeBrowserGateway::for_test(&f.root);
+        let alice = legacy
+            .build_session_service()
+            .issue(&context, "alice@example.test", RequiredSecondFactor::Totp)
+            .unwrap();
+        let bob = legacy
+            .build_session_service()
+            .issue(&context, "bob@example.test", RequiredSecondFactor::Totp)
+            .unwrap();
+        let alice_path =
+            FileSessionStore::new(f.root.join("sessions")).session_path(&alice.record.session_id);
+        let before = std::fs::read(&alice_path).unwrap();
+        for capability in [
+            AccountRuntimeCapability::ConfiguredUnavailable,
+            AccountRuntimeCapability::Disabled,
+            f.pair(29, 17, 19),
+        ] {
+            let ready = capability.ready().is_some();
+            let mut gateway = legacy.clone();
+            gateway.account_runtime = capability;
+            gateway.account_rollout = Some("alice@example.test".into());
+            assert!(matches!(
+                gateway
+                    .validate_session(&context, alice.token.as_str())
+                    .decision,
+                BrowserSessionDecision::Invalid
+            ));
+            assert_eq!(std::fs::read(&alice_path).unwrap(), before);
+            assert!(matches!(
+                gateway
+                    .validate_session(&context, bob.token.as_str())
+                    .decision,
+                BrowserSessionDecision::Valid { .. }
+            ));
+            // An epoch-bearing record cannot silently downgrade to legacy.
+            assert!(gateway
+                .build_session_service()
+                .issue_with_epoch(
+                    &context,
+                    "bob@example.test",
+                    RequiredSecondFactor::Totp,
+                    Some(7)
+                )
+                .is_err());
+            let mut alice_record = alice.record.clone();
+            alice_record.account_epoch = Some(7);
+            let selected = ValidatedSession {
+                record: alice_record,
+                audit_event: alice.audit_event.clone(),
+            };
+            assert_eq!(
+                BrowserGateway::password_change_available(&gateway, &selected),
+                ready
+            );
+            let mut bob_record = bob.record.clone();
+            bob_record.account_epoch = Some(7);
+            let unrelated = ValidatedSession {
+                record: bob_record,
+                audit_event: bob.audit_event.clone(),
+            };
+            assert!(!BrowserGateway::password_change_available(
+                &gateway, &unrelated
+            ));
+            assert_eq!(
+                BrowserGateway::password_changed_at(&gateway, &unrelated),
+                None
+            );
+            let request = crate::password_change::Request::new(
+                "public old passphrase",
+                "public new passphrase",
+                "public new passphrase",
+                "123456",
+            )
+            .unwrap();
+            assert!(matches!(
+                gateway
+                    .prepare_password_change(&context, &unrelated, request)
+                    .authorization,
+                Err(crate::password_change::Error::Unavailable)
+            ));
+            if ready {
+                use crate::openpgp_inventory_runtime::{now, read_frame, write_frame};
+                use std::time::{Duration, Instant};
+                let listener = f.listeners[0].try_clone().unwrap();
+                let server = std::thread::spawn(move || {
+                    // Actual selected issuance, validation and history each
+                    // require their own MAC-bound admission exchange.
+                    for _ in 0..3 {
+                        let deadline = Instant::now() + Duration::from_secs(3);
+                        let mut stream = loop {
+                            match listener.accept() {
+                                Ok((stream, _)) => break stream,
+                                Err(error)
+                                    if error.kind() == std::io::ErrorKind::WouldBlock
+                                        && Instant::now() < deadline =>
+                                {
+                                    std::thread::sleep(Duration::from_millis(1))
+                                }
+                                Err(error) => panic!("bounded scoped admission failed: {error}"),
+                            }
+                        };
+                        let raw =
+                            read_frame(&mut stream, crate::account_admission::MAX_FRAME, deadline)
+                                .unwrap();
+                        let request = crate::account_admission::Verifier::default()
+                            .request(&raw, &[29; 32], now().unwrap())
+                            .unwrap();
+                        assert_eq!(request.account(), "alice@example.test");
+                        assert!(matches!(
+                            request.operation(),
+                            crate::account_admission::Operation::Admit { epoch: 7 }
+                        ));
+                        let reply = request
+                            .response_with_status(
+                                Some(7),
+                                Some("20261004170001".into()),
+                                &[29; 32],
+                                now().unwrap(),
+                            )
+                            .unwrap();
+                        write_frame(&mut stream, &reply, deadline).unwrap();
+                    }
+                });
+                let issued = gateway
+                    .build_session_service()
+                    .issue_with_epoch(
+                        &context,
+                        "alice@example.test",
+                        RequiredSecondFactor::Totp,
+                        Some(7),
+                    )
+                    .unwrap();
+                let validated = gateway.validate_session(&context, issued.token.as_str());
+                let BrowserSessionDecision::Valid { validated_session } = validated.decision else {
+                    panic!("selected bound session refused");
+                };
+                assert_eq!(
+                    BrowserGateway::password_changed_at(&gateway, &validated_session),
+                    Some("20261004170001".into())
+                );
+                server.join().unwrap();
+            } else {
+                assert!(gateway
+                    .build_session_service()
+                    .issue_with_epoch(
+                        &context,
+                        "alice@example.test",
+                        RequiredSecondFactor::Totp,
+                        Some(7),
+                    )
+                    .is_err());
+            }
+        }
+        assert_eq!(std::fs::read(&alice_path).unwrap(), before);
+        for listener in &f.listeners {
+            assert_eq!(
+                listener.accept().unwrap_err().kind(),
+                std::io::ErrorKind::WouldBlock
+            );
+        }
+    }
+
+    #[test]
     fn password_status_runtime_delegates_authenticated_time_and_preserves_storage() {
         use crate::openpgp_inventory_runtime::{now, read_frame, write_frame};
         use std::time::{Duration, Instant};
@@ -422,6 +604,7 @@ mod tests {
         ]))
         .unwrap();
         config.account_runtime = Some(crate::config::AccountRuntimeConfig {
+            rollout_account: None,
             admission_socket: fixture.root.join("admission.sock"),
             admission_key_file: fixture.root.join("admission.key"),
             admission_helper_uid: crate::openbsd::effective_uid(),

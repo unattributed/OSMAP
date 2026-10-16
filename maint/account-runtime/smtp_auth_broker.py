@@ -320,18 +320,23 @@ class AuthBroker:
                  and routing_bootstrap.NATIVE_ROUTING_BOOTSTRAP_QUALIFIED
                  and containment.NATIVE_SMTP_TOPOLOGY_QUALIFIED
                  and BACKEND_BIND_PEER is not None and type(budget)is OperationBudget)
+        budget.remaining()
         backend=PrivateSmtpBackend.native(budget)
         bootstrap=_Bootstrap.native();startup=ControlStartup.native(bootstrap,budget)
         store=EpochStore(EPOCH_ROOT,0);journal=control.ControlGrantStore(control.REPLAY_ROOT,0)
         for account in startup.authority.accounts:
             store._read(store._paths(account)[1]);journal._record(journal._paths(account)[1])
+        # Publish/verify the existing fixed routing certificate before its
+        # consumer, spending this same original startup budget throughout.
+        FixedSmtpRouting.native(budget)
         routing=control.ControlTopologyAdmission(FixedSmtpRouting.ROOT,0)
         namespace,topology=routing.admit(budget)
         # The producer is imported locally to avoid circular startup imports.
         from smtp_native_peer import NativeSmtpPeerInspector
         inspector=NativeSmtpPeerInspector.native(namespace,topology,budget)
         ownership=NativeSmtpOwnership._read(inspector,routing)
-        value=cls._compose(startup,store,journal,routing,ownership,backend)
+        value=cls._compose(startup,store,journal,routing,ownership,backend,
+            ok_profile=lifecycle.DovecotProxyOkProfile(namespace._backend_port))
         value.control_listener=control.PrivateControlListener.native(value.supervisor)
         value._startup_budget=budget
         return value

@@ -10,6 +10,7 @@ import socket
 import threading
 import time
 import unittest
+from contextlib import ExitStack
 from unittest.mock import patch
 
 from account_mutation_supervisor import _Bootstrap,AUTHORITY,PURPOSE
@@ -281,6 +282,93 @@ class TypedProfileTests(unittest.TestCase):
         value=broker.AuthBroker._compose(*args,ok_profile=broker.lifecycle.DovecotProxyOkProfile(2525))
         self.assertEqual(value.registry._authority._ok_fields,(b'proxy',b'host=127.0.0.1',b'port=2525',b'ssl=yes'))
         self.assertIs(value.supervisor._registry,value.registry)
+
+
+class NativeBootstrapCompositionTests(unittest.TestCase):
+    setUp=BrokerTests.setUp
+    budget=BrokerTests.budget
+
+    def test_native_bootstrap_produces_certificate_before_admission_and_uses_bound_proxy_profile(self):
+        # Existing local typed fixtures supply real protected stores, metadata
+        # parsing and certificate publication. Fixed native principal/path and
+        # public process custody remain explicit source-test projections.
+        budget=self.budget();events=[]
+        certificate=self.peer.namespace._root/'smtp-topology.json'
+        certificate.unlink();self.assertFalse(certificate.exists())
+        original_store=broker.EpochStore.__init__
+        original_routing=broker.control.ControlTopologyAdmission.__init__
+        original_admit=broker.control.ControlTopologyAdmission.admit
+        def store(value,path,owner=0):
+            self.assertEqual(owner,0)
+            roots={str(broker.EPOCH_ROOT):self.fixture.store.root,
+                   str(broker.control.REPLAY_ROOT):self.case.journal.root}
+            self.assertIn(str(path),roots)
+            original_store(value,roots[str(path)],os.getuid())
+        def routing(value,root,owner,executor=None):
+            self.assertEqual((root,owner),(broker.FixedSmtpRouting.ROOT,0))
+            original_routing(value,self.case.f.planroot,os.getuid(),self.case.f.execute)
+        def produce(current):
+            self.assertIs(current,budget);current.remaining();events.append('produce')
+            return broker.FixedSmtpRouting.produce(
+                self.case.f.planroot,os.getuid(),current,executor=self.case.f.execute)
+        def admit(value,current):
+            self.assertIs(current,budget)
+            self.assertTrue(certificate.exists(),'native consumer ran before routing publication')
+            events.append('admit');return original_admit(value,current)
+        def inspect(namespace,topology,current):
+            self.assertIs(current,budget)
+            return native.NativeSmtpPeerInspector._read(namespace,topology,current)
+        def listen(supervisor):
+            return broker.control.PrivateControlListener(
+                self.case.f.root/'control.sock',os.getuid(),supervisor)
+        with ExitStack() as stack:
+            for module,name,value in [
+                (broker.lifecycle,'NATIVE_AUTH_BROKER_QUALIFIED',True),
+                (broker.control,'NATIVE_CONTROL_SERVICE_QUALIFIED',True),
+                (broker.routing_bootstrap,'NATIVE_ROUTING_BOOTSTRAP_QUALIFIED',True),
+                (broker.containment,'NATIVE_SMTP_TOPOLOGY_QUALIFIED',True),
+                (broker,'BACKEND_BIND_PEER',(os.getuid(),os.getgid())),
+            ]:stack.enter_context(patch.object(module,name,value))
+            stack.enter_context(patch.object(broker.PrivateSmtpBackend,'native',return_value=self.backend))
+            stack.enter_context(patch.object(broker._Bootstrap,'native',return_value=self.startup.bootstrap))
+            stack.enter_context(patch.object(broker.ControlStartup,'native',return_value=self.startup))
+            stack.enter_context(patch.object(broker.EpochStore,'__init__',store))
+            stack.enter_context(patch.object(broker.FixedSmtpRouting,'native',side_effect=produce))
+            stack.enter_context(patch.object(broker.control.ControlTopologyAdmission,'__init__',routing))
+            stack.enter_context(patch.object(broker.control.ControlTopologyAdmission,'admit',admit))
+            stack.enter_context(patch.object(native.NativeSmtpPeerInspector,'native',side_effect=inspect))
+            stack.enter_context(patch.object(broker.control.PrivateControlListener,'native',side_effect=listen))
+            service=broker.AuthBroker.native(budget)
+        self.assertEqual(events,['produce','admit'])
+        self.assertIs(type(service),broker.AuthBroker)
+        self.assertIs(service._startup_budget,budget)
+        self.assertIs(service.supervisor._registry,service.registry)
+        self.assertIs(service.control_listener._supervisor,service.supervisor)
+        self.assertEqual(service.registry._authority._ok_fields,
+            (b'proxy',b'host=127.0.0.1',b'port=2525',b'ssl=yes'))
+        # The actual closed production-used parser accepts only this exact
+        # admitted proxy profile and account/request; no Boolean supplies it.
+        service.registry._authority.check_ok(
+            [b'OK',b'1',b'user='+control_fixtures.fixtures.ALICE.encode(),
+             b'proxy',b'host=127.0.0.1',b'port=2525',b'ssl=yes'],
+            b'1',control_fixtures.fixtures.ALICE)
+
+    def test_invalid_or_expired_original_startup_budget_refuses_before_private_factory(self):
+        clock=[1000.0]
+        budget=OperationBudget(1005,maximum_seconds=5,monotonic=lambda:clock[0],wall=lambda:clock[0])
+        clock[0]=1005.0
+        for current in (object(),budget):
+            with ExitStack() as stack:
+                for module,name,value in [
+                    (broker.lifecycle,'NATIVE_AUTH_BROKER_QUALIFIED',True),
+                    (broker.control,'NATIVE_CONTROL_SERVICE_QUALIFIED',True),
+                    (broker.routing_bootstrap,'NATIVE_ROUTING_BOOTSTRAP_QUALIFIED',True),
+                    (broker.containment,'NATIVE_SMTP_TOPOLOGY_QUALIFIED',True),
+                    (broker,'BACKEND_BIND_PEER',(os.getuid(),os.getgid())),
+                ]:stack.enter_context(patch.object(module,name,value))
+                stack.enter_context(patch.object(broker.PrivateSmtpBackend,'native',side_effect=AssertionError))
+                stack.enter_context(patch.object(broker.FixedSmtpRouting,'native',side_effect=AssertionError))
+                with self.assertRaises(Refused):broker.AuthBroker.native(current)
 
 
 
