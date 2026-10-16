@@ -21,6 +21,11 @@ def _bound(budget,deadline):
 def _identity(a):
     return (a.st_dev,a.st_ino,a.st_uid,a.st_gid,a.st_mode,a.st_nlink,a.st_size,a.st_mtime_ns,a.st_ctime_ns)
 
+def _null_identity(a):
+    # A shared character device's write activity can update mtime and ctime.
+    # Pin its inode, device, ownership and DAC instead of usage timestamps.
+    return (a.st_dev,a.st_ino,a.st_uid,a.st_gid,a.st_mode,a.st_nlink,a.st_size)
+
 def _parents(path,budget,deadline):
     rows=[]
     for p in path.parents:
@@ -96,7 +101,7 @@ def _null(budget,deadline):
             or stat.S_IMODE(a.st_mode)!=0o666 or a.st_rdev!=NULL_RDEV):
         raise Refused('hash existing null custody unavailable')
     # No open, chmod/chflags/chown/unlink/rename/mknod of the device occurs.
-    return (_identity(a),a.st_rdev,parents)
+    return (_null_identity(a),a.st_rdev,parents)
 
 class HashChildIdentity:
     def __init__(self,*_args,**_kwargs):raise Refused('hash identity construction unavailable')

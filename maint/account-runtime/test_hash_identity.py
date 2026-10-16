@@ -109,6 +109,16 @@ class IdentityTests(unittest.TestCase):
     stack,p,g,null,_=self.fixture(tmp);setattr(null,field,value)
     with stack,patch.object(h.os,'open',side_effect=AssertionError):
      with self.assertRaises(Refused):h._null(self.b,self.end)
+ def test_null_usage_timestamps_change_but_device_replacement_refuses(self):
+  with tempfile.TemporaryDirectory(prefix='osmap-hash-identity-') as tmp:
+   stack,p,g,null,_=self.fixture(tmp)
+   with stack:
+    identity=h.HashChildIdentity.native(self.b,self.end)
+    # OpenBSD write(2) may update both timestamps on a character device.
+    null.st_mtime_ns+=1;null.st_ctime_ns+=1
+    identity.recheck(self.b,self.end)
+    null.st_ino+=1
+    with self.assertRaises(Refused):identity.recheck(self.b,self.end)
  def test_ancestry_root_protected_and_world_traversable_required_before_open(self):
   for mode,uid in ((0o777,0),(0o700,0),(0o755,1001)):
    with tempfile.TemporaryDirectory(prefix='osmap-hash-identity-') as tmp:

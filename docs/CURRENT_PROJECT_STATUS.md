@@ -27,12 +27,57 @@ missing outcome/test coverage, unsupported test results and premature closure.
 Its structural PASS cannot establish a working application or evidence truth.
 
 The current verified signed synchronized baseline is
-`ee80ca8975e57ee335f5eb2364b30b9c47c589d7`. Normal commit/push passed1764
-Rust library cases and614 account Python cases, with48 explicit native ignores.
+`d1f50a9b3699a97f24dcb69c8095e36ce1c70449`. Normal commit/push passed1764
+Rust library cases and618 account Python cases, with48 explicit native ignores.
 Good Shopkeeper signature, fresh origin equality and source-only Toronto checkout
 synchronization pass. The original missing-TMPDIR gate failure is retained.
 
-The latest controlled workflow is HTTP20. It confirms the synthetic account's
+The latest controlled ordinary HTTP/password fixture, HTTP24, **PASS**
+(root full action81.471s; result
+`bbd9e9e47177248040ec9a1f7e95cfe4c424a80a926ee0a3b1d892a0fa07cb3d`;
+independent actual review `ae5f1e23d7235e788fed28311ef3ffac610ffd5ab8d405433ba523384bb912f4`).
+All18 HTTP responses and17 semantic rows complete: one synthetic Alice change,
+old credential/session refusal, new epoch1 admission, authoritative history in
+both views after reload, Alice SMTP/IMAP closure and Bob SQL17/session/mail
+preservation. Actual cache flush1, Bob23 keepalive NOOPs/error-free confirmed
+join,32 SQL/query-observer handles reaped and source-before/after parity pass.
+All fresh fixture services, purpose principals, root namespaces/stages and
+public carrier were removed. The root custodian records an owned-group stop;
+no claim of absence of signalling is made. Original operation bounds remain.
+
+HTTP23 remains historical FAIL: keepalive and final Bob250 completed, then the
+final SQL read reused the expired **setup** budget. The separate fixed read-only
+observer in24 checks current custody under the already captured final-phase and
+whole-driver deadline; it does not renew setup, mutation or identity authority.
+HTTP22 remains FAIL with its measured fixture timeout reply; HTTP21's unique
+cause remains UNKNOWN. Passing24 does not retrospectively repair these records.
+
+This PASS is the controlled private fixture only, using signed ee80 Rust and
+35 production Python inputs with reviewed fixture changes. It excludes the
+current d1f50 private-primary overlay. The third-AUTH race is SEPARATE_OPEN;
+SMTP cache was disabled and production shared-cache topology remains unqualified.
+Trusted production factory/startup and installed-pair scenarios T03–T08 remain
+open; T03/T07 are not promoted to PASS. No new product code defect was demonstrated
+by the bounded source assessment, so no further ordinary retry or flag flip is
+justified. The installed pair and disabled live password control are unchanged;
+owner testing is **NOT READY**. The stopped IMAP draft is not an alternative
+execution candidate and must not be retried or bypassed.
+
+Historical HTTP21 remains FAIL. All18 HTTP responses and
+15 journey rows complete. The guardian report is now present and confirms stale
+Alice epoch0 refusal, Alice epoch1 admission and Bob epoch0 admission; guardian
+exit0 and owned group absence are recorded. The test then fails with
+SMTPReplyFailure during authoritative postconditions at the Bob NOOP reply.
+The actual failed response code is not exported; an earlier recorded250 is
+not that response and cannot diagnose it. Result SHA256
+`64942c818f8fb4c47e213be35445a53224aaf8caf2f1c52e631313adc794d48b`,
+root elapsed76.881s. Born roles/driver/24 SQL children are reaped; disposable
+daemons/runtime/scratch and purpose principals are cleaned. Root namespaces,
+stages and public carrier remain retained, and source-after parity is UNKNOWN.
+Bob SMTP preservation and the complete workflow are not passed. No retry or
+production activation follows; bounded source investigation remains active.
+
+Historical HTTP20 confirms the synthetic account's
 authoritative password change, cookie clearance and old-session revocation,
 old-password rejection, new-password epoch1 login, authoritative history in both
 settings views/reloads, and Bob isolation. All18 HTTP responses and14 journey
@@ -52,8 +97,8 @@ repair preserves a typed stale-epoch denial through worker/helper transport;
 the strict final-report consumer stays intact. Its Rust discriminator passes;
 the matching OpenBSD no-run build passes with binary SHA256
 `af83af5c154a29c5f35e02e04336cd7c4fd78f8dcb4d7d918dc2383a6abe2b97`.
-That build is not a workflow execution or deployment. The four-path maintained
-private-primary configuration increment is a separate source overlay: it keeps
+That build pins signed predecessor ee80 and is not deployment. The four-path maintained
+private-primary configuration increment is signed in d1f50a9: it keeps
 public policy intact and disables policy/cache only in the fixed private
 auth-only process under the same Dovecot master. Native composition is unproved.
 The unfinished IMAP race draft is stopped after an automated cybersecurity-risk
@@ -1082,3 +1127,12 @@ Normal gate2 passes1764 Rust/614 account cases and the corrected CWE check, then
 One changed IMAP compile2 passes: root14.454s/native2.980s, all three commands exit0, owned children reaped/groups gone, no forced stop or cleanup error, before/after custody parity. Measured public ABI exactly matches Dovecot2.3.21.1/2.3.ABIv21 and OpenBSD kernel credential layout. Module SHA256 `f2c21950b018a29820bc9d7704232746666963643ee490aa20ecd60e4129564c` is8312B. The module is NOT LOADED and its native publication gate remains FALSE. This is compilation/ABI proof only; runtime callback, handoff race and installed qualification remain open. Original30s/3cleanup/data512 bounds stay unchanged; only compiler-reader admission accommodates the measured114814024B compiler. Actual20 and compile1 failures remain retained without retrospectively assigning their unique causes.
 
 Investigation window8 closed before its3600s limit with partial engineering progress; finite window9 started14:33:22UTC for source synchronization and matching native build/compile. Native operation deadlines and prior failure records are unchanged. Derived V10 reflects9126 entries/9041 source-test classifications under unchanged scanners, not a new security claim. No service, operator credential, provider message or live password form was changed.
+### 2026-10-16 — bounded source handoff, no deployed password control
+
+The existing-driver BobSMTP keepalive source is frozen at `smtp-bob-keepalive1` (driverb376d62a, readiness2b9c649c). Five focused local socketpair/lifecycle controls PASS; independent source-only review0fba5782 is CLEAR. It preserves8s/all original bounds and strict finalBob250/Aliceclosure/all17rows, with confirmed sole-reader handoff and cleanup refusal for an unjoined thread. Native23 is NOT RUN and its carrier is NOT ASSEMBLED. Window12 closed partial/handoff at1199.313/1200s without overrun or late action. Failures21/22 remain; another native action requires exact combined reassessment and a fresh bounded work order, not lease renewal. Completed product source d1f50a9 is signed/synchronized; these routine outcome records remain for the next real source admission. Installed pair324b and disabled password control are unchanged. Owner testing is NOT READY; stopped IMAP qualification and remaining installed workflow requirements are unresolved.
+
+### 2026-10-16 — current password integration and device-identity repair
+
+Superseding continuation: signed source d1f50a9 remains synchronized. Controlled HTTP24 passed18 responses/17 semantic rows, persisted password history/reload, old-password/session refusal, new-password admission, Alice mail containment and Bob isolation; independent actual-scope audit ae5f1e23 limits this to the disposable private fixture. This is reused evidence, not a repeated test or installed qualification.
+
+The distinct stock private-auth component17 failed before authentication dispatch: root12.076s/native2.989s, three controls, zero guarded or ordinary authentication commands. Its child rejected changed `/dev/null` mtime/ctime, with stable device/inode/DAC/rdev/ancestry. The writer is UNKNOWN. All born children/daemon/groups and fixture namespace/scratch/socket are gone, purpose identity removed and public records restored; root stage remains retained. Local snapshot after-parity passed and root before-parity passed; root after-parity was not reached. New focused regressions reproduce both hash/primary failures; the narrow device-only identity correction passes29 changed-boundary cases. Regular-file metadata/content custody remains unchanged. Native service separation, SQL composition, installed password capability and S04-02 remain OPEN; the operator cannot yet live-test the password form.

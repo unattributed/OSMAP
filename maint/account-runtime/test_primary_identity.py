@@ -84,6 +84,13 @@ class PrimaryIdentityTests(unittest.TestCase):
   with patch.object(q.socket,'socket',side_effect=AssertionError):
    with self.assertRaises(Refused):value.recheck(self.b,self.end)
   self.drain(server,2)
+ def test_null_usage_timestamps_change_but_device_replacement_refuses(self):
+  p,g,null,endpoint,server,extra,project=self.fixture();value=q.PrimaryChildIdentity.native(self.b,self.end)
+  null.st_mtime_ns+=1;null.st_ctime_ns+=1
+  value.recheck(self.b,self.end)
+  null.st_ino+=1
+  with self.assertRaises(Refused):value.recheck(self.b,self.end)
+  self.drain(server,3)
  def test_closed_saved_identity_drop_order_and_every_id_group_refusal(self):
   p,g,null,endpoint,server,extra,project=self.fixture();value=q.PrimaryChildIdentity.native(self.b,self.end);state={'uid':0,'gid':0,'groups':[0]};calls=[]
   def groups(v):calls.append(('groups',v));state['groups']=list(v)
