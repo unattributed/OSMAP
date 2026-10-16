@@ -285,3 +285,33 @@ not native SSH, remote worker termination or complete password delivery.
 ## 2026-10-16 — Captured SMTP control lifetime
 
 The administrative proxy selector uses the private `run/login/ipc-client` listener. Keep ordinary `ipc-proxy` login registration separate. Once CAPTURED is acknowledged, the exact captured connection remains held across the credential transaction until CANCEL or the same original OperationBudget expires. Only that captured-CANCEL receive uses the remaining original budget; handshake and ordinary command caps stay one second. Framing, current authority/peer/epoch checks, uncertainty and no-retry semantics remain unchanged. A component pass does not activate the ordinary Runtime account client or establish deployed password containment.
+
+## Private primary with the IMAP publication policy (unqualified)
+
+The fixed auth-only primary request supplies service=imap but no Dovecot mail
+session ID. It also runs while admission/password mutation holds the same durable
+account lock that the publication policy must acquire. Giving that request a
+session ID alone cannot solve the lock conflict. Do not exempt a request using
+its service, IP, TLS flag or another caller field.
+
+The maintained dovecot-private-primary.conf template gives only the fixed private
+listener to a distinct stock auth service under the same existing master. Its
+literal server executable disables policy callbacks and caching for that private
+process. Ordinary auth's policy, cache and shared passdb/userdb/worker definitions
+remain unchanged. Internal auth-only checks do not publish a mail session or
+receive a publication ticket. The add_private_primary_auth function binds exactly
+that hash-pinned template to an existing root-owned configuration without
+rewriting its bytes; it refuses includes or existing private listener/service
+bindings. It is an administration/fixture renderer, not an application endpoint
+or arbitrary configuration validator.
+
+Before installation, the reviewed root delta must remove any previous private
+listener from ordinary auth, pin the resulting configuration and effective
+server argv/listener ownership, and freshly bind the private socket to the actual
+master-owned auth process. Existing fixed primary socket/kernel-peer/private-ID
+contracts and false native qualification gates remain unchanged. Template
+custody and a successful compile do not prove the running service's identity.
+The existing private Composition fixture must qualify actual primary verification
+under its held lock, current-to-new mutation/changed-primary verification, public
+IMAP policy/publication race and unrelated-account preservation together under
+the original deadlines. No installed integration is claimed here.

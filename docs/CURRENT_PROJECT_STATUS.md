@@ -27,8 +27,8 @@ missing outcome/test coverage, unsupported test results and premature closure.
 Its structural PASS cannot establish a working application or evidence truth.
 
 The current verified signed synchronized baseline is
-`13572c503826b0992a3ea68b6d204f5daa12ce17`. Normal commit/push passed1763
-Rust library cases and597 account Python cases, with48 explicit native ignores.
+`ee80ca8975e57ee335f5eb2364b30b9c47c589d7`. Normal commit/push passed1764
+Rust library cases and614 account Python cases, with48 explicit native ignores.
 Good Shopkeeper signature, fresh origin equality and source-only Toronto checkout
 synchronization pass. The original missing-TMPDIR gate failure is retained.
 
@@ -45,12 +45,20 @@ scopes; root namespaces/stages remain retained, source-after parity UNKNOWN.
 Historical HTTP14–19 failures remain; later progress does not establish their
 unobserved unique causes.
 
-Uncommitted reviewed engineering adds scoped SMTP PLAIN/LOGIN, strict calendar
+That signed source adds scoped SMTP PLAIN/LOGIN, strict calendar
 parsing without late imports after sealing, and the IMAP final-publication
 fence with retained-child ownership. Native flags remain closed. The integrated narrow
 repair preserves a typed stale-epoch denial through worker/helper transport;
-the strict final-report consumer stays intact. Its new Rust discriminator and
-matching native binary remain required. Then qualify the actual
+the strict final-report consumer stays intact. Its Rust discriminator passes;
+the matching OpenBSD no-run build passes with binary SHA256
+`af83af5c154a29c5f35e02e04336cd7c4fd78f8dcb4d7d918dc2383a6abe2b97`.
+That build is not a workflow execution or deployment. The four-path maintained
+private-primary configuration increment is a separate source overlay: it keeps
+public policy intact and disables policy/cache only in the fixed private
+auth-only process under the same Dovecot master. Native composition is unproved.
+The unfinished IMAP race draft is stopped after an automated cybersecurity-risk
+restriction; it is not admitted, executed or substituted for qualification.
+The existing ordinary HTTP regression remains separate from that draft. Then qualify the actual
 IMAP hook and four SMTP AUTH frontends, provision the existing fixed contracts,
 connect the cross-host pair and run installed Alice/Bob functional QA.
 
