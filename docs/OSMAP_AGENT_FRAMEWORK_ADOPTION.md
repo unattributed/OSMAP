@@ -1,5 +1,65 @@
 # OSMAP adoption of the functional agent framework
 
+## Slice delivery SOP — entire OSMAP-UX epic, 2026-10-16
+
+The operator requires this SOP for **every slice in the epic**, not just the
+current password work. Apply it before starting or resuming a slice; define the
+current in-flight slice first. Preserve the frozen epic/catalogue and original
+obligations. Do not rewrite all 48 slices or commission a parallel PM/QA system.
+Future slices receive their concrete specification when selected, before their
+implementation begins. This is an execution requirement, not a new owner
+approval ceremony or permission to stop independent authorized work.
+
+1. **Define the slice before work.** Its existing active ledger work order must
+   contain a `slice_contract`, pinned readable specification, named accountable
+   owners and exact original outcome/requirement mapping. Specify the user
+   journey, frontend behaviour, backend responsibilities, interfaces/trust
+   boundaries, persistence, security and failure/recovery design. Record known
+   gaps and actual starting state; do not retrospectively label older work as
+   compliant or make a placeholder a completed function.
+2. **Plan verification and expected results before implementation.** Every
+   functional outcome needs concrete positive and negative scenarios with
+   prerequisites, action, expected result, preserved state, evidence layer,
+   owner and independent QA/security reviewer. Positive and negative coverage
+   for agent-delivered capabilities must be nonhuman; human-only identity
+   attestations remain separately scoped and cannot substitute for engineering
+   QA. Include necessary recovery and the minimum
+   human-only judgment. Planned tests are NOT RUN, never PASS. Name source,
+   native and matching installed QA separately. Reuse inspected exact evidence;
+   a component pass cannot replace the user-facing integration test.
+3. **Implement to that contract.** Dispatch bounded file-owned engineering
+   tasks linked to the named outcomes and expected results. Keep one integration
+   objective and one host/native queue. Correct demonstrated code/integration
+   gaps; necessary diagnostics are finite prerequisites, not delivery. Record
+   implementation decisions, reasons, affected tests and actual outcomes in the
+   existing decision log and ledger. Resolve routine choices autonomously;
+   changes to product/security requirements follow the existing amendment rule.
+4. **Verify and remediate.** Execute essential changed-boundary tests and the
+   planned integrated scenarios, retaining source/configuration/host provenance
+   and actual failures. Perform independent functional/security audit. Fix
+   findings and verify the correction; preserve unchanged passing evidence.
+   Existing two-failure reassessment and honest elapsed-time rules continue.
+   Do not replace a failed scenario with an easier test or expand a QA framework
+   merely to accumulate passes.
+5. **Deliver and close against evidence.** Sign and normally synchronize real
+   completed source; qualify the matching installed frontend/backend path and
+   recovery. Engineering closure requires all required non-human scenarios and
+   existing outcome stages PASS with matching retained evidence and no unresolved
+   required audit finding. Build totals, reports, health and a source checkpoint
+   cannot close a slice. Only then request the one prepared minimal human check,
+   reuse applicable prior owner observations, record acceptance separately and
+   update affected GitHub issues. A sprint closes only after its full accepted
+   slice scope; the epic retains its own release/closure requirements.
+
+The existing `maint/ux/validate_acceptance.py` developer gate enforces the
+contract's presence, slice/specification binding, design/test completeness,
+positive/negative coverage and contradictory closure declarations. This is a
+structural gate: it cannot prove evidence truth, runtime success, independence
+of actual review or omitted historical work. Independent QA/audit must verify
+those facts. All 110 legacy cases and 403 approved controls remain unchanged.
+S04-02 starts with `docs/UX_SLICE_S04_02.md`; its native and installed failures
+remain OPEN. Documenting this SOP does not complete that engineering slice.
+
 ## Mandatory project delivery policy — 2026-10-15
 
 This is the controlling project-manager policy under the operator's strict

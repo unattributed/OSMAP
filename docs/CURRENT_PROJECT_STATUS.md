@@ -14,6 +14,35 @@ statement as provenance rather than current release posture.
 
 ## Current source posture
 
+### Current slice contract and epic-wide SOP, 2026-10-16
+
+The active slice is **S04-02 authoritative own-password change**, still OPEN.
+The operator requires a design specification, planned tests and observable
+expected results before every slice starts, beginning with this in-flight
+slice. `UX_SLICE_S04_02.md` and the active ledger's `slice_contract` define
+20 original obligations, four outcomes and nine required scenarios. The same
+SOP governs the whole epic; frozen product plans/references stay unchanged.
+The existing validator is extended to reject missing/mismatched specifications,
+missing outcome/test coverage, unsupported test results and premature closure.
+Its structural PASS cannot establish a working application or evidence truth.
+
+The pre-admission signed synchronized source is
+`765446e49210ffe9bddc7ca19e576828e7e8285d`; the introducing signed commit and
+retained synchronization proof establish the next source identity. Installed
+pair324b, production native flags/account client and password-form activation
+remain unchanged. The complete native password test is FAIL: HTTP9 reaches
+signal11/97-byte stderr in the actual proxy child; HTTP10 refuses earlier
+during Bob login, with unique causes UNKNOWN. Installed paired QA, authoritative
+new-change timestamp, complete containment/recovery and S04-02 closure remain
+unqualified. Source23 fixes a demonstrated fixture scheduling gap and is
+source-reviewed only; it does not diagnose those actual failures.
+
+Next work fulfils the defined contract: essential matching native qualification,
+repair of actual backend/Runtime/status gaps, reversible matching installation,
+functional QA and independent audit. Only then request minimum owner usability.
+S08-02 stays accepted; no full S04/sprint/epic acceptance is claimed. Older source
+identities and observations below are chronological provenance.
+
 ### Active delivery and accountability, 2026-10-15
 
 The pre-admission verified signed checkpoint is

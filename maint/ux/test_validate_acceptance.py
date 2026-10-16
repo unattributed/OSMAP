@@ -2,12 +2,14 @@
 """Counterexamples for R2 traceability, not tests of the mail application."""
 
 import copy
+import hashlib
+import tempfile
 import json
 from pathlib import Path
 import unittest
 from datetime import datetime, timedelta, timezone
 
-from validate_acceptance import active_work_order, validate, validate_work_order
+from validate_acceptance import active_work_order, validate, validate_work_order, validate_slice_contract
 
 
 REPO = Path(__file__).resolve().parents[2]
@@ -300,6 +302,117 @@ class AccountabilityTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "expired investigation"):
             self.check(order)
         window["overrun_reference"] = "synthetic explicit bounded-investigation reassessment/disposition"
+        self.check(order)
+
+
+class SliceContractTests(unittest.TestCase):
+    """Synthetic slice declarations exercise structure, not product acceptance."""
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory(prefix="osmap-slice-contract-")
+        self.addCleanup(temporary.cleanup)
+        self.repo = Path(temporary.name)
+        (self.repo / "docs").mkdir()
+        self.specification = self.repo / "docs/slice.md"
+        self.specification.write_text("Public synthetic specification for validator counterexamples.\n")
+        self.outcomes = {"password-change", "preserve-bob"}
+        design = {key: "Declared concrete " + key + " behavior for the synthetic password workflow."
+                  for key in ("journey", "frontend", "backend", "interfaces", "persistence", "security", "failure_recovery")}
+        tests = []
+        for kind, level in (("positive", "native"), ("negative", "deployed"), ("usability", "human")):
+            tests.append(dict(id=kind, outcome_ids=sorted(self.outcomes), kind=kind, level=level,
+                prerequisites="Create only the two isolated synthetic accounts before this declared action.",
+                action="Submit one own-account request through the declared password route.",
+                expected="Alice changes once while Bob retains his existing epoch and session.",
+                preserved="Bob credential row and unrelated mail remain byte-identical.",
+                owner="developer", reviewer="reviewer", status="NOT_RUN", evidence=[]))
+        self.order = dict(slice="S04-02", state="IN_PROGRESS", roles={"developers": ["developer"],
+            "security_review": ["reviewer"], "technical_writer": ["writer"]}, human_acceptance=dict(status="PENDING"),
+            slice_contract=dict(version=1, slice="S04-02", specification=dict(path="docs/slice.md",
+                sha256=hashlib.sha256(self.specification.read_bytes()).hexdigest()), design=design, tests=tests,
+                engineering_exit="All required actual agent-owned password and preservation checks pass.",
+                human_exit="Operator independently accepts the completed own-account password journey."))
+
+    def check(self, order):
+        return validate_slice_contract(order, self.outcomes, self.repo)
+
+    def test_planned_contract_and_explicit_failure_do_not_claim_execution(self):
+        self.check(self.order)
+        for status in ("FAIL", "PARTIAL"):
+            order = copy.deepcopy(self.order)
+            order["slice_contract"]["tests"][0].update(status=status, evidence=["synthetic retained failed result"])
+            self.check(order)
+
+    def test_missing_unmapped_or_generic_plan_declarations_refuse(self):
+        edits = [
+            (lambda o: o.pop("slice_contract"), "slice contract"),
+            (lambda o: o["slice_contract"].pop("specification"), "exact fields"),
+            (lambda o: o["slice_contract"].update(slice="S05-01"), "match active slice"),
+            (lambda o: o["slice_contract"]["design"].pop("backend"), "concrete slice design"),
+            (lambda o: o["slice_contract"]["design"].update(security="TBD"), "concrete slice design"),
+            (lambda o: o["slice_contract"].update(tests=[]), "planned slice tests"),
+            (lambda o: o["slice_contract"]["tests"][0].update(outcome_ids=["unmapped"]), "unmapped outcome"),
+            (lambda o: o["slice_contract"]["tests"][1].update(outcome_ids=["password-change"]), "every outcome"),
+            (lambda o: o["slice_contract"]["tests"][1].update(id="positive"), "unique slice test"),
+            (lambda o: o["slice_contract"]["tests"][0].pop("expected"), "exact planned slice test"),
+            (lambda o: o["slice_contract"]["tests"][0].update(expected=""), "concrete slice test"),
+            (lambda o: o["slice_contract"]["tests"][0].update(expected="Control works."), "concrete slice test"),
+            (lambda o: o["slice_contract"]["tests"][0].update(expected="pass"), "concrete slice test"),
+            (lambda o: o["slice_contract"]["tests"][0].update(expected="works"), "concrete slice test"),
+            (lambda o: o["slice_contract"]["specification"].update(sha256="0" * 64), "SHA256 mismatch"),
+        ]
+        for edit, message in edits:
+            order = copy.deepcopy(self.order); edit(order)
+            with self.subTest(message=message), self.assertRaisesRegex(ValueError, message):
+                self.check(order)
+
+    def test_specification_cannot_escape_docs_or_disappear(self):
+        outside = self.repo / "outside.md"; outside.write_text("public outside-docs fixture")
+        (self.repo / "docs/escape.md").symlink_to(outside)
+        for path in ("../outside.md", ".", str(self.specification), "outside.md", "docs/missing.md", "docs/escape.md"):
+            order = copy.deepcopy(self.order); order["slice_contract"]["specification"]["path"] = path
+            with self.subTest(path=path), self.assertRaisesRegex(ValueError, "slice specification"):
+                self.check(order)
+
+    def test_execution_evidence_and_independent_named_review_are_required(self):
+        edits = [
+            (dict(status="NOT_RUN", evidence=["synthetic claimed execution"]), "NOT_RUN"),
+            (dict(status="PASS", evidence=[]), "retained evidence"),
+            (dict(status="FAIL", evidence=[]), "retained evidence"),
+            (dict(status="PARTIAL", evidence=[]), "retained evidence"),
+            (dict(status="PASS", evidence=[""]), "evidence references"),
+            (dict(reviewer="developer"), "independent reviewer"),
+            (dict(reviewer="writer"), "independent reviewer"),
+            (dict(owner="unassigned"), "named slice test owner"),
+        ]
+        for changes, message in edits:
+            order = copy.deepcopy(self.order); order["slice_contract"]["tests"][0].update(changes)
+            with self.subTest(changes=changes), self.assertRaisesRegex(ValueError, message):
+                self.check(order)
+
+    def test_engineering_and_human_closure_cannot_skip_required_tests(self):
+        human_only = copy.deepcopy(self.order)
+        human_only["state"] = "ENGINEERING_COMPLETE"
+        human_only["slice_contract"]["tests"][0]["level"] = "human"
+        human_only["slice_contract"]["tests"][1].update(status="PASS", evidence=["synthetic negative result"])
+        with self.assertRaisesRegex(ValueError, "nonhuman slice test coverage"):
+            self.check(human_only)
+        for state in ("ENGINEERING_COMPLETE", "UAT_READY", "ACCEPTED"):
+            order = copy.deepcopy(self.order); order["state"] = state
+            with self.subTest(state=state), self.assertRaisesRegex(ValueError, "nonhuman slice tests"):
+                self.check(order)
+        order = copy.deepcopy(self.order)
+        for test in order["slice_contract"]["tests"]:
+            if test["level"] != "human":
+                test.update(status="PASS", evidence=["synthetic engineering result only"])
+        for state in ("ENGINEERING_COMPLETE", "UAT_READY"):
+            order["state"] = state; self.check(order)
+        order["state"] = "ACCEPTED"
+        with self.assertRaisesRegex(ValueError, "human slice tests"):
+            self.check(order)
+        order["slice_contract"]["tests"][-1].update(status="PASS", evidence=["synthetic human result"])
+        with self.assertRaisesRegex(ValueError, "human acceptance flag"):
+            self.check(order)
+        order["human_acceptance"] = dict(status="PASS", reference="synthetic operator acceptance only")
         self.check(order)
 
 

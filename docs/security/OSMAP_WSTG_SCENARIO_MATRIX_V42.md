@@ -960,3 +960,24 @@ result-scalar observation are explicit projections, not installed defaults or
 parser success. One actual-composition oldRED/newGREEN control uses bounded
 Python executables with no Dovecot/auth/SQL/provider operation. Native full
 workflow, source admission and independent review stay separately required.
+
+
+### 2026-10-16 — per-slice design/test contract, not new execution evidence
+
+Operator requires the entireepic to use per-slice design, planned verification,
+expected/preserved outcomes and evidence-based closure before implementation.
+Current S04-02 spec/ledger preserve all20mapped obligations. Source/native/
+matchinginstalled/human layers stay separate. The existing validator rejects
+missing/contradictory design/test/closure declarations; this structural gate
+does not prove actual QA/security success. Required tests cover own-account
+CSRF/session/TOTP/replay/300s/rate/policy boundaries, authoritative one-write
+state, allbrowser+IMAP/SMTP/cache containment, Bobisolation, partialwrite
+reconciliation, accurate changed-at and secret exclusion. Age300 expires;
+newly confirmed updates require verified authoritative timestamps.
+
+HTTP9signal11 and earlierHTTP10loginfailure remainOPEN with independent
+actual9scopef83112a2/combined9+10review3644742f. Source23 fixture freshness
+repair is separately reviewed, not a diagnosis or functional PASS. No new
+operatorcredentials/providerSend/hostactivation occurs in this SOP admission.
+Existing exact source tests are reused; fullnative/installed QA and audit are
+not substituted by the contract, normal builds or past component evidence.

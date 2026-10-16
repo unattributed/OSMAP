@@ -10795,3 +10795,53 @@ all reaped, zeroSQL/pending callbacks; native Dovecot and full workflow remain
 unqualified. Source20 and whole custody require independent review before
 root admission. Retain HTTP7 failure, incomplete private-tree disposition and
 explicit investigation overrun; no standalone paper checkpoint or human setup.
+
+
+HTTP8 resultf421fb2f and combined actual review9211a564 record a new pre-root
+intake failure: receiver65536/READ/noEOF at5s, while localSSH stdin accepted
+206238B/closecomplete. Static os.read/select source does not demonstrate a
+buffered-reader defect, and counters do not prove WAN cause. No source20
+configuration or private workflow ran. Preserve both failed outcomes7+8.
+The smallest proposed change separates exact public-carrier preparation from
+native intake within the same original SSH240/remote210 ends: reserve5+182,
+allow at most23s bounded preparation, seal the exact owned file, then original
+5s local read/decode and currentremaining>=182 before root. Distinct closed
+network/local observations, heldFD/path/hash custody and success-only exact
+cleanup are required. Proposal is viable in principle; frozen code/control/
+whole review and current pre-action must precede one changed host workflow.
+No renewed native budget, secondSSH, standalone throughput probe, historical
+cause claim, operator credential change or human troubleshooting is assigned.
+
+
+### 2026-10-16 — define each slice before implementation; fulfil its contract
+
+The operator explicitly assigns this SOP to the entire OSMAP-UX epic and asks
+to define the in-flight slice first, without rewriting the epic. Earlier
+requirement traces and shared QA paragraphs did not supply a sufficiently
+concrete per-slice design/test/done contract. Root keeps the accepted anchors,
+catalogue and403/110 obligations unchanged, adds one readable S04-02 spec and
+its existing-ledger slice_contract, and extends the existing validator rather
+than building another board/test framework. Future slices require their own
+spec before starting; the same gate binds slice, spec bytes, design fields,
+positive/negative outcome coverage, planned assertions, evidence and closure.
+The guard checks declared consistency, not runtime evidence truth.
+
+S04-02 retains20 obligations/four outcomes/nine required scenarios spanning
+form interactions, prewrite refusals, actual native change, step-up/race/rate
+limits, postwrite recovery, installed paired Runtime, authoritative status,
+isolation/secret exclusion and minimum owner usability. Current fullnative
+positive remainsFAIL; historical component controls stay scoped and reusable.
+Independent design review corrects expiry to age<300 valid/age>=300 refused
+and requires authoritative changed-at for each newly confirmed update; Unknown
+is appropriate only for absent prior history or unknown performed timing, not
+a replacement for missing required new-change metadata. A known performed
+write time survives incomplete containment with explicit incomplete status.
+These clarify existing D04, not new security/product requirements.
+
+Engineering must now fulfil these criteria with actual code, exact installed
+frontend/backend QA, independent functional/security audit and recovery. Do not
+close S04-02 from this source/SOP admission or ask the operator to diagnose its
+failures. Source23 fixture timing repair is independently source-reviewed and
+retained, but no next native action is admitted until this contract is reviewed
+and its ordinary signed-source admission is complete. Then resume the same
+working-password objective; no lateral scope or blanket403-case rerun.

@@ -154,7 +154,90 @@ def validate_accountability(order, outcome_ids, pre_action=False):
         attempt(next_attempt, planned=True)
 
 
-def validate_work_order(order, matrix, catalogue, changed_paths, pre_action=False):
+def validate_slice_contract(order, outcome_ids, repo):
+    """Validate declared design/test structure, not evidence truth or execution."""
+    contract = order.get("slice_contract")
+    fields = {"version", "slice", "specification", "design", "tests", "engineering_exit", "human_exit"}
+    require(isinstance(contract, dict) and set(contract) == fields
+            and type(contract.get("version")) is int and contract["version"] == 1,
+            "slice contract version1 and exact fields required")
+    require(contract["slice"] == order["slice"], "slice contract must match active slice")
+
+    def concrete(value):
+        return text(value) and not re.fullmatch(
+            r"(?:tbd|todo|pending|none|n/?a|not (?:yet )?specified|(?:control )?(?:works?|pass(?:es)?|success|available|implemented))[.!]?",
+            value.strip(), re.IGNORECASE)
+
+    specification = contract["specification"]
+    require(isinstance(specification, dict) and set(specification) == {"path", "sha256"}
+            and text(specification["path"]) and isinstance(specification["sha256"], str)
+            and re.fullmatch(r"[0-9a-f]{64}", specification["sha256"]),
+            "slice specification path and exact SHA256 required")
+    relative = Path(specification["path"])
+    require(not relative.is_absolute() and relative.parts and relative.parts[0] == "docs" and ".." not in relative.parts,
+            "slice specification must be a relative docs path without escape")
+    root = repo.resolve()
+    try:
+        target = (root / relative).resolve(strict=True)
+    except (OSError, RuntimeError):
+        raise ValueError("slice specification missing or outside repository docs") from None
+    require(target.is_relative_to(root / "docs") and target.is_file(),
+            "slice specification missing or outside repository docs")
+    require(hashlib.sha256(target.read_bytes()).hexdigest() == specification["sha256"],
+            "slice specification SHA256 mismatch")
+    design = contract["design"]
+    require(isinstance(design, dict) and set(design) == {"journey", "frontend", "backend", "interfaces",
+            "persistence", "security", "failure_recovery"} and all(concrete(value) for value in design.values()),
+            "concrete slice design fields required")
+    require(all(concrete(contract[key]) for key in ("engineering_exit", "human_exit")),
+            "concrete engineering and human exits required")
+    tests = contract["tests"]
+    require(isinstance(tests, list) and tests, "planned slice tests required")
+    owners = {owner for values in order["roles"].values() for owner in values}
+    independent = set(order["roles"].get("qa", []) + order["roles"].get("security_review", []))
+    identifiers, positive, negative = set(), set(), set()
+    nonhuman, human = [], []
+    test_fields = {"id", "outcome_ids", "kind", "level", "prerequisites", "action", "expected",
+                   "preserved", "owner", "reviewer", "status", "evidence"}
+    for test in tests:
+        require(isinstance(test, dict) and set(test) == test_fields, "exact planned slice test fields required")
+        require(text(test["id"]) and test["id"] not in identifiers, "unique slice test ID required")
+        identifiers.add(test["id"])
+        mapped = test["outcome_ids"]
+        require(isinstance(mapped, list) and mapped and all(text(value) for value in mapped)
+                and len(mapped) == len(set(mapped)) and set(mapped) <= outcome_ids,
+                "slice test has missing, duplicate or unmapped outcome IDs")
+        require(test["kind"] in {"positive", "negative", "recovery", "usability"}
+                and test["level"] in {"source", "native", "deployed", "human"}, "slice test kind/level required")
+        require(all(concrete(test[key]) for key in ("prerequisites", "action", "expected", "preserved")),
+                "concrete slice test prerequisites/action/expected/preserved required")
+        require(test["owner"] in owners and test["reviewer"] in independent and test["owner"] != test["reviewer"],
+                "named slice test owner and independent reviewer required")
+        status, evidence = test["status"], test["evidence"]
+        require(status in {"NOT_RUN", "PASS", "FAIL", "PARTIAL"} and isinstance(evidence, list)
+                and all(text(reference) for reference in evidence), "slice test status/evidence references required")
+        require((status == "NOT_RUN" and not evidence) or (status != "NOT_RUN" and evidence),
+                "NOT_RUN cannot carry execution evidence; PASS/FAIL/PARTIAL require retained evidence")
+        if test["level"] != "human":
+            if test["kind"] == "positive":
+                positive.update(mapped)
+            if test["kind"] == "negative":
+                negative.update(mapped)
+        (human if test["level"] == "human" else nonhuman).append(test)
+    require(positive == negative == outcome_ids, "positive and negative nonhuman slice test coverage required for every outcome")
+    require(nonhuman and human, "planned engineering and human slice tests required")
+    state = order["state"]
+    if state in {"ENGINEERING_COMPLETE", "UAT_READY", "ACCEPTED"}:
+        require(all(test["status"] == "PASS" for test in nonhuman),
+                "required nonhuman slice tests must PASS before engineering closure or UAT readiness")
+    if state == "ACCEPTED":
+        require(all(test["status"] == "PASS" for test in human), "required human slice tests must PASS before acceptance")
+        acceptance = order.get("human_acceptance", {})
+        require(acceptance.get("status") == "PASS" and text(acceptance.get("reference")),
+                "existing human acceptance flag and evidence required")
+
+
+def validate_work_order(order, matrix, catalogue, changed_paths, pre_action=False, repo=None):
     require(isinstance(order, dict) and order.get("version") == 1, "invalid active work order")
     slices = dict(re.findall(r"^\| (S\d{2}-\d{2}) \| ([^|]+) \|", catalogue, re.MULTILINE))
     parent = order.get("slice")
@@ -216,6 +299,7 @@ def validate_work_order(order, matrix, catalogue, changed_paths, pre_action=Fals
     require(human.get("status") in {"PENDING", "PASS", "FAIL"}, "human acceptance must remain separate")
     if state == "ACCEPTED":
         require(human["status"] == "PASS" and text(human.get("reference")), "human acceptance evidence required for accepted slice")
+    validate_slice_contract(order, set(ids), repo if repo is not None else Path(__file__).resolve().parents[2])
     return {"active_slice": parent, "required_obligations": len(expected), "state": state,
             "claim": "declaration/scope consistency only; no evidence truth or functional acceptance inferred"}
 
@@ -296,7 +380,7 @@ def main():
         matrix = json.loads((repo / "maint/ux/acceptance.json").read_text())
         catalogue = (repo / "docs/UX_FULL_FUNCTIONAL_SLICES.md").read_text()
         order = active_work_order((repo / "docs/UX_EXECUTION_LEDGER.md").read_text())
-        result = validate_work_order(order, matrix, catalogue, work_order_changed_paths(repo, order.get("source_baseline")), pre_action=args.pre_action)
+        result = validate_work_order(order, matrix, catalogue, work_order_changed_paths(repo, order.get("source_baseline")), pre_action=args.pre_action, repo=repo)
         if not args.work_order_only:
             result = {**result, **validate(matrix, json.loads((repo / "maint/ux/approved_pages.json").read_text()), catalogue, repo)}
     except (ValueError, KeyError, TypeError, OSError, subprocess.CalledProcessError) as error:

@@ -77,6 +77,18 @@ records, whole producer/cleanup/consumer review and changed retry/reassessment
 records are required. Package renaming cannot reset the functional boundary.
 Preserve historical facts and continue independent authorized work.
 
+The operator's 2026-10-16 slice delivery SOP applies to every OSMAP-UX slice.
+Before implementation or continuation, define and verify the active ledger's
+`slice_contract`: pinned readable design specification, exact original outcome
+mapping, planned positive/negative tests, prerequisites, expected and preserved
+results, owners and independent reviewers. Use the existing validator/gates;
+planned work is not execution. Fulfil the contract through actual code,
+matching integration/installed QA, independent audit and recovery, then minimal
+separate human acceptance. Keep decisions and results current; preserve the
+frozen epic and all obligations. See `docs/OSMAP_AGENT_FRAMEWORK_ADOPTION.md`.
+This codification is epic-wide; future slices are specified before they start,
+not retroactively declared complete. Routine technical decisions remain delegated.
+
 ## Working Rules
 
 - Keep changes small, reviewed, and aligned with the existing Rust, shell, and
