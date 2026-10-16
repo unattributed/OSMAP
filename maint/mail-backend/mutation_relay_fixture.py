@@ -38,4 +38,5 @@ else:
  if mode=='badmac':out=out.replace(b'"changed"',b'"altered"')
  send(out)
  if mode=='trailing':sys.stdout.buffer.write(b'X');sys.stdout.buffer.flush()
+ if mode=='lateexit':os.close(1);time.sleep(.08);os._exit(0)
 if mode=='badexit':raise SystemExit(7)

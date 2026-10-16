@@ -10650,3 +10650,51 @@ review796b1535 pass the directory5/socket6 boundary. Actual RED/GREEN3 (zero ski
 retains the first test precondition/type failures. No Rust/compiler source changes,
 operator mutation, native-cause inference or activation accompanies this repair.
 Fresh principal-cleanup scope4b2eebb3 confirms the exact retained-resource limits.
+
+
+### 2026-10-15 — account for delivery time and review the complete success path
+
+The operator requires accountable engineering time and functional outcomes.
+Serial SQL-alias, response-envelope and hidden-timeout fixture defects consumed
+repeated review/packaging/native work. Root owns the incomplete integration
+review; these are not completed product workflows. The four retained HTTP
+attempts total122.497 seconds of outer native/SSH execution only. Earlier
+full-cycle source/review/model time is UNKNOWN; no compute-cost estimate is
+invented. One queued reviewer assignment did not activate a completed worker;
+root subsequently used followup_task and confirmed running status. Its delay
+was not measured and is not hidden or converted into product progress.
+
+Extend the existing acceptance validator and active ledger, preserving all
+original acceptance/security checks. Require a functional exit, owner,
+UTC-started bounded investigation, measured wall-clock or explicit uncertainty,
+independent whole producer/cleanup/consumer review, a changed-action reference
+for retries and combined reassessment after two unreviewed failures at a stable
+outcome ID. Completed reassessment acknowledges covered IDs without deleting
+history or imposing another lifetime ceremony. Run the same validator with
+--work-order-only --pre-action before expensive/native work. References validate
+structure, not evidence truth or useful software. No new framework, board,
+routine human checkpoint or blanket QA repeat is authorized by this correction.
+
+Complete the direct controlled password workflow and the concrete cross-host
+transport gap in the same S04-02 objective. Preserve original signed deadlines,
+strict capture/reply consumers and Bob/mail/session isolation. The admission
+lane has separate fixed SSH purpose/key/socket and reaches Toronto's shared
+authoritative epoch service. Fix the premature success SIGKILL in both relays:
+clean success waits/reaps under the original deadline; failure cleanup signals
+only an unreaped owned leader, never a historical/reaped numerical group.
+Native enable flags remain false and installed configuration remains unchanged.
+
+Actual changed HTTP5 e76d7f8a fails after five completed responses. Fresh existing
+validator pre-action passes with real Git scope and independent review11e8563f;
+this does not certify a runtime result. Bridge challenge_verify fails at the
+first worker frame; no authenticated terminal subtype or changed outcome is
+established. COMPLETE33/exit0 remains distinct from success. All actor/driver
+groups,24 SQL-fixture handles and daemons/broker are disposed, while purpose
+identities/runtime/scratch remain retained. Audit6abc3e3f preserves that split.
+The possible early-terminal protocol mismatch and setup/lifecycle cleanup
+budget mismatch require source-backed correction and fresh retained-state
+assessment; do not repeat the whole scenario unchanged or renew an old lease.
+The currently reviewed source admission proceeds independently, with no native
+flags or installed application changes. Complete its one bounded normal signed
+commit/push even if the investigation window elapses during mandatory hooks;
+retain actual timings and require a fresh accountable next action afterward.

@@ -1,0 +1,6 @@
+#!/bin/ksh
+# Root-owned restricted authorized-key command; never an interactive shell.
+# This Toronto helper uses mutation's /var/db/osmap-account/epoch store.
+# Install only after native principal, listener, peer and route qualification.
+[ "${SSH_ORIGINAL_COMMAND-}" = "osmap-account-admission" ] || exit 1
+exec /usr/bin/nc -N -U /var/run/osmap-account-admission/admission.sock

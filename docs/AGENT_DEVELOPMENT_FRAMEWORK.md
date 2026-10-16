@@ -91,6 +91,22 @@ journey results; **on reported failure**, the parent reopens the affected result
 and assigns root-cause work. Missing evidence changes the claim or blocks that
 case; it cannot be replaced by another agent's agreement.
 
+
+Accountability uses the existing work order and gate: name one functional exit
+and owner, a UTC-started bounded investigation and actual full-action elapsed
+wall-clock or explicit UNKNOWN/UNMEASURED. Do not invent token/compute cost or
+sum host intervals into an unmeasured delivery duration. Before an expensive or
+native action, independently review the whole successful producer → cleanup →
+consumer path. Every failed/unconfirmed retry names its concrete change. After
+two unreviewed failures at the same functional boundary, record a combined
+independent reassessment and next action before proceeding; successor/package
+renaming and fixture/product labels do not reset it. Completed reassessment may
+start a new bounded investigation window while all prior IDs/facts stay retained.
+Fixture repair is distinct from product delivery. Pre-adoption history remains
+historical, not retrospectively compliant. Validate declarations honestly: a
+structural gate cannot prove evidence truth, complete history or useful software.
+Do not add a separate board, runner, routine approval or repeat QA campaign.
+
 ## Close the workflow, not just its components
 
 Use these execution rules within the existing scope, ledger and review gates;

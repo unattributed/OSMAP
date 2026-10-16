@@ -9999,7 +9999,18 @@ discriminator alongside the same binding production repair; no broader QA scope.
     "maint/account-runtime/account_hash_graph.py",
     "maint/account-runtime/test_hash_search_directory.py",
     "maint/account-runtime/smtp_topology.py",
-    "maint/account-runtime/test_smtp_topology_producer.py"
+    "maint/account-runtime/test_smtp_topology_producer.py",
+    "maint/mail-backend/admission_relay.py",
+    "maint/mail-backend/test_admission_relay.py",
+    "maint/mail-backend/admission_relay_fixture.py",
+    "maint/mail-backend/rc.d/osmap_admission_relay",
+    "maint/account-runtime/osmap_account_admission_connector",
+    "maint/ux/validate_acceptance.py",
+    "maint/ux/test_validate_acceptance.py",
+    "docs/AGENT_DEVELOPMENT_FRAMEWORK.md",
+    "maint/mail-backend/mutation_relay.py",
+    "maint/mail-backend/test_mutation_relay.py",
+    "maint/mail-backend/mutation_relay_fixture.py"
   ],
   "outcomes": [
     {
@@ -10127,7 +10138,121 @@ discriminator alongside the same binding production repair; no broader QA scope.
     "status": "PENDING",
     "reference": "Only minimal well-defined own-password usability after all agent-owned development/matching deployed QA/independent audit PASS. No operator password is changed by agent qualification; use controlled disposable Alice and preserve Bob/operator state. NOT RUN."
   },
-  "next_action": "Signed1893 source synchronized with clean standard Toronto source-only checkout; installed324b unchanged. Matching d205 Rust binary compiled with exact1248 source parity and is uploaded. First actual HTTP1 failed before HTTP/guardian in connected sessions, exact exception UNKNOWN; six inherited controls and measured cleanup are retained. Fresh principal cleanup removes only controlled hash/primary identities, preserves unrelated current records and all old trees. Integrate reviewed maintained broker directory5/socket6 repair through normal signed gates/sync; preserve matching Rust compiler inputs and bind the separately changed Python source/closed diagnostics. Obtain exact new whole-package review before one changed controlled HTTP/SQL/mail/session action, with all old17 backend obligations and original budgets intact. Do not repeat old cases, rebuild unchanged Rust, widen guards, infer flags/UAT or mutate operator credentials. S08-02 remains accepted."
+  "next_action": "HTTP5 actual e76d7f8a FAIL is retained after successful structural pre-action and whole review; no unchanged retry. Engineer traces first worker frame/coordinator refusal before challenge, bin assesses exact retained-purpose cleanup using fresh identity patterns, reviewer audits actual scope. Root integrates/synchronizes reviewed disabled admission+mutation relay repairs and existing-gate accountability code through normal signed gates, preserving source/native/installed limits. Then complete the changed controlled and isolated cross-host password workflow. Installed324b and all production native flags remain unchanged; no human troubleshooting/credential/provider request.",
+  "accountability": {
+    "functional_exit": "Working own-account Settings password change through authoritative Toronto credentials, shared epoch, browser/IMAP/SMTP/cache containment, old-password refusal/new-login success and Bob/mail preservation, followed by matching isolated installation and independent audit. Fixture changes are prerequisites, not product delivery.",
+    "owner": "/root",
+    "elapsed_scope": "wall_clock",
+    "history_reference": "Retained HTTP1\u20134 evidence below and existing ledger. Outer native/SSH elapsed sums122.497s only; earlier full-action source/review/model time is UNKNOWN. No token or monetary compute cost is asserted.",
+    "investigation": {
+      "owner": "/root",
+      "started_at": "2026-10-16T02:55:00Z",
+      "timebox_seconds": 1800,
+      "elapsed_status": "MEASURED",
+      "elapsed_seconds": 2079.642,
+      "overrun_reference": "docs/DECISION_LOG.md 2026-10-15 accountable delivery: finish one already-reviewed bounded normal signed source commit/push through mandatory hooks, retain actual duration; no new native retry/permission ceremony. Full earlier-cycle compute cost UNKNOWN."
+    },
+    "attempts": [
+      {
+        "id": "http1",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "PRE_ADOPTION",
+        "result": "FAIL",
+        "elapsed_status": "UNKNOWN",
+        "elapsed_seconds": null,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/http-driver-successor7/native-http-attempt1/result.json SHA256 676ff7f0b85f592c9a930419c1f66a0bd588e6a2a37e6f539aa3954f6041b7e4"
+      },
+      {
+        "id": "http2",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "PRE_ADOPTION",
+        "result": "FAIL",
+        "elapsed_status": "UNKNOWN",
+        "elapsed_seconds": null,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/http-causal-diagnostics-successor10/native-http-attempt2/result.json SHA256 68877ddcd9dfeb10a722772eceee3c7882fdbf6ac8385de6e63693c2857f53ea"
+      },
+      {
+        "id": "http3",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "PRE_ADOPTION",
+        "result": "FAIL",
+        "elapsed_status": "UNKNOWN",
+        "elapsed_seconds": null,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/http-sql-alias-successor13/native-http-attempt3/result.json SHA256 25660f3eff3c6c5af6a9f3b2abf6b57c1a039a6c8b23e4716c2a2de21fad9f1a"
+      },
+      {
+        "id": "http4",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "PRE_ADOPTION",
+        "result": "FAIL",
+        "elapsed_status": "UNKNOWN",
+        "elapsed_seconds": null,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/http-response-envelope-successor14/native-http-attempt4/result.json SHA256 f07c0da1b263129ab6b09ec2341ba2b082ccf65f889b65beafba2d2c925aa992"
+      },
+      {
+        "id": "http5",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "be270f02fdbcd5b40b47a22296d530bdc13fcea4",
+        "change_reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/http-original-deadline-successor15/READINESS.json SHA256 f6ae42ab2bb372d5adfe05f84985da59b7a1208006956f8a7e144be4ec80ed34; patch84446b9a843cefe1016b29eb785077a6cd8e35146035c6c2e4b4517233f98bb9. HTTP-private original-deadline waits and successful-capture cleanup fixed together; same Rust binary, no Rust rebuild.",
+        "success_chain_review": {
+          "reviewer": "/root/scrum_security_review",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/http-original-deadline-successor15/independent-combined-source-review.json SHA256 02cc71c6d8fcb191774125be519e325290096016713f5944ddeb620006209173; execution-custody/independent-whole-review.json SHA256 99b2efa7a5ffbab61953ba29355341592336150e0fd32496df7ffcd6389fae30",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "reassessment": {
+          "reviewers": [
+            "/root",
+            "/root/scrum_security_review"
+          ],
+          "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/http-response-envelope-successor14/independent-remaining-journey-contract-audit.json SHA256 5116e410c11dedab2d1b389dec0aec8afd706a8780092d20841e7637266aff76; actual HTTP4 scope1446801d; HTTP15 combined source02cc71c6 and whole99b2efa7. All four historical failed attempts retained; no unique historical cause/SQL outcome inferred.",
+          "failed_attempt_ids": [
+            "http1",
+            "http2",
+            "http3",
+            "http4"
+          ],
+          "next_action": "Run the one independently reviewed changed HTTP15/attempt5 through existing custodian after current validator pre-action PASS; preserve original120/90/60 and180/150/210/240 budgets, actual outcome/cleanup and no retry. No operator credential/provider action."
+        },
+        "result": "FAIL",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 94.156,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/http-original-deadline-successor15/native-http-attempt5/result.json SHA256 e76d7f8a5e638db7137957a4e47fc798a6252e625e0323100cf51bd3007e7d7d; full preflight+dispatch wall94.156s, outer SSH/native94.037s. Fifthresponsecomplete185875/EOF, bridgechallenge_verify failure; signed outcome/SQL UNKNOWN. Actors/groups/SQL24/daemons/broker cleanup confirmed; purpose identities/runtime/scratch retained."
+      }
+    ],
+    "next_attempt": {
+      "id": "product-source-sync1",
+      "boundary": "authoritative-native-password-workflow",
+      "owner": "/root",
+      "scope": "PRODUCT_DELIVERY",
+      "adoption": "CURRENT",
+      "source_revision": "be270f02fdbcd5b40b47a22296d530bdc13fcea4",
+      "change_reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/accountability-admission-canonical-integration1/source-freeze17.json; reviewed thirteen code/guidance paths plus four existing evidence docs. SOURCE-ONLY admission of disabled cross-host lane, both relay success-reap repair and operator-requested existing-gate accountability. No deployed workflow/slice closure.",
+      "success_chain_review": {
+        "reviewer": "/root/scrum_security_review",
+        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/accountability-admission-canonical-integration1/independent-final-review.json; component source reviews8d0b363b/11e8563f and actual retained changed controls; normal mandatory commit/push checks remain required before synchronization.",
+        "covers": [
+          "producer",
+          "cleanup",
+          "consumer"
+        ]
+      }
+    }
+  }
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->
@@ -11619,3 +11744,37 @@ validator, limits and native flags are unchanged. The two distinct gate failures
 trigger reassessment: the first requires the measured readiness correction, the
 second requires accurate scope registration; neither permits a waiver or unchanged
 retry. Preserve both logs. The next ordinary gate uses the reviewed seven files.
+
+
+## 2026-10-15 — accountable source admission; actual HTTP5 remains failed
+
+Root integrates thirteen independently reviewed code/guidance paths and four
+existing evidence records in the same S04-02 work order. Admission successor2
+f7b9eb22/source review8d0b363b adds the missing disabled purpose-exclusive
+admission lane and fixes clean-success reap in both relays; real fd-EOF old2RED
+and new8+2GREEN remain scoped local controls. Accountability16 9cacfee9/review
+11e8563f extends the existing validator/guidance with six discriminating controls,
+not another framework. Two guidance dates are corrected to October15 Toronto.
+All original acceptance/security controls remain intact; no native flags,
+installation, provider operation, password or full-slice acceptance follows.
+
+Signed be270 normal gates1753Rust/0failed/48explicit native ignores and583account
+Python, Good Shopkeeper/fresh equality/three branches, and clean standard-mail
+source-only FF remain the prior synchronized checkpoint (proof96219432).
+The current source batch's normal signed commit/push is pending until its exact
+combined review and required gates pass; keep actual timings and failures.
+
+Actual HTTP5 e76d7f8a/audit6abc3e3f fails after five completed responses (fifth
+185875B/EOF). First worker frame challenge_verify fails; COMPLETE33/exit0 does
+not identify its authenticated outcome. SQL/credential/session/mail postconditions
+remain UNKNOWN/unexecuted. Actors/driver groups,24 SQL-fixture handles and
+private daemons/broker are disposed, while purpose identities/runtime/scratch
+are retained. No original cleanup guard is diagnosed from the retention cascade.
+Root's real --pre-action passes before this one changed action; full preflight
+and dispatch wall94.156s, outer SSH/native94.037s. Four earlier full-cycle durations
+remain UNKNOWN; their outer host sum122.497s is not a delivery/compute-cost total.
+
+Engineer owns first-frame/coordinator source remediation; bin owns fresh
+retained-state/lifecycle assessment; independent reviewer owns actual scope and
+exact source review. Root owns code integration, signing/sync and host queue.
+No unchanged retry, operator diagnosis, extra broad QA or checkpoint halt.

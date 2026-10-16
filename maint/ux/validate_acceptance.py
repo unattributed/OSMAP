@@ -2,6 +2,8 @@
 """Validate R2 case traceability; this does not certify workflow execution."""
 
 import argparse
+from datetime import datetime, timezone
+import math
 import hashlib
 import json
 from pathlib import Path
@@ -51,7 +53,108 @@ def work_order_changed_paths(repo, baseline):
     return {path.decode("utf-8") for path in (changed + untracked).split(b"\0") if path}
 
 
-def validate_work_order(order, matrix, catalogue, changed_paths):
+def validate_accountability(order, outcome_ids, pre_action=False):
+    """Declared accountability only; references do not prove their evidence."""
+    record = order.get("accountability")
+    require(isinstance(record, dict), "functional delivery accountability required")
+    owners = {owner for values in order["roles"].values() for owner in values}
+    independent = set(order["roles"]["qa"] + order["roles"]["security_review"])
+    require(text(record.get("functional_exit")) and record.get("owner") in owners,
+            "one functional exit and named accountable owner required")
+    require(record.get("elapsed_scope") == "wall_clock" and text(record.get("history_reference")),
+            "wall-clock scope and retained attempt history required; no compute-cost inference")
+
+    def elapsed(item):
+        status, seconds = item.get("elapsed_status"), item.get("elapsed_seconds")
+        require("elapsed_seconds" in item and status in {"MEASURED", "UNKNOWN", "UNMEASURED"}, "explicit elapsed measurement status required")
+        require((status == "MEASURED" and type(seconds) in (int, float)
+                 and math.isfinite(seconds) and seconds >= 0)
+                or (status != "MEASURED" and seconds is None), "elapsed wall-clock measurement contradicts status")
+
+    investigation = record.get("investigation")
+    require(isinstance(investigation, dict) and investigation.get("owner") in owners,
+            "named bounded investigation required")
+    seconds = investigation.get("timebox_seconds")
+    require(type(seconds) is int and 1 <= seconds <= 14400, "bounded investigation timebox required")
+    started = investigation.get("started_at")
+    require(isinstance(started, str) and re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", started),
+            "investigation started_at UTC required")
+    began = datetime.strptime(started, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+    elapsed(investigation)
+    observed = (datetime.now(timezone.utc) - began).total_seconds() if pre_action else None
+    require(observed is None or observed >= 0, "investigation start cannot be in the future")
+    if (investigation["elapsed_status"] == "MEASURED" and investigation["elapsed_seconds"] > seconds
+            or observed is not None and observed > seconds):
+        require(text(investigation.get("overrun_reference")), "expired investigation needs recorded reassessment/disposition")
+
+    attempts = record.get("attempts")
+    require(isinstance(attempts, list), "chronological retained attempts required")
+    failures, identifiers, last = {}, set(), {}
+
+    def attempt(item, planned=False):
+        require(isinstance(item, dict) and text(item.get("id")) and item["id"] not in identifiers,
+                "unique attempt ID required")
+        boundary, owner = item.get("boundary"), item.get("owner")
+        require(text(boundary) and boundary in outcome_ids and owner in owners, "stable functional outcome boundary and owner required")
+        require(item.get("scope") in {"FIXTURE", "PRODUCT_DELIVERY"}, "fixture versus product delivery scope required")
+        adoption = item.get("adoption")
+        require(adoption in {"PRE_ADOPTION", "CURRENT"} and (not planned or adoption == "CURRENT"),
+                "explicit attempt adoption scope required")
+        if not planned:
+            require(item.get("result") in {"PASS", "FAIL", "UNKNOWN"} and text(item.get("reference")),
+                    "settled attempt result and retained reference required")
+            elapsed(item)
+        prior = failures.get(boundary, [])
+        if adoption == "CURRENT":
+            require(isinstance(item.get("source_revision"), str)
+                    and re.fullmatch(r"[0-9a-f]{40}|[0-9a-f]{64}", item["source_revision"]),
+                    "exact current source revision required")
+            review = item.get("success_chain_review", {})
+            require(isinstance(review, dict) and review.get("reviewer") in independent
+                    and review.get("reviewer") != owner and text(review.get("reference"))
+                    and isinstance(review.get("covers"), list) and len(review["covers"]) == 3
+                    and set(review["covers"]) == {"producer", "cleanup", "consumer"},
+                    "independent successful producer/cleanup/consumer review required")
+            require(text(item.get("change_reference")), "failed boundary retry needs concrete changed-action reference")
+            previous = last.get(boundary)
+            if previous is not None and previous["result"] in {"FAIL", "UNKNOWN"}:
+                require(item.get("source_revision") != previous.get("source_revision")
+                        or item["change_reference"] != previous.get("change_reference"), "unchanged failed-boundary retry refused")
+            reassessment = item.get("reassessment")
+            if len(prior) >= 2 or reassessment is not None:
+                reassessment = reassessment if reassessment is not None else {}
+                reviewers = reassessment.get("reviewers", []) if isinstance(reassessment, dict) else []
+                require(isinstance(reviewers, list) and all(text(name) for name in reviewers)
+                        and len(set(reviewers)) >= 2 and all(name in owners for name in reviewers) and owner in reviewers
+                        and any(name != owner and name in independent for name in reviewers)
+                        and text(reassessment.get("reference")) and text(reassessment.get("next_action"))
+                        and isinstance(reassessment.get("failed_attempt_ids"), list)
+                        and len(reassessment["failed_attempt_ids"]) == len(prior)
+                        and set(reassessment["failed_attempt_ids"]) == set(prior),
+                        "two failed attempts require combined independent reassessment of same functional boundary")
+                # A completed combined review acknowledges this window's IDs;
+                # history remains intact and new failures start the next window.
+                failures[boundary] = []
+        identifiers.add(item["id"])
+        if not planned:
+            last[boundary] = item
+            if item["result"] in {"FAIL", "UNKNOWN"}:
+                failures.setdefault(boundary, []).append(item["id"])
+
+    current_seen = False
+    for item in attempts:
+        require(isinstance(item, dict), "chronological retained attempt objects required")
+        require(not current_seen or item.get("adoption") != "PRE_ADOPTION",
+                "pre-adoption history must precede current attempts")
+        current_seen |= item.get("adoption") == "CURRENT"
+        attempt(item)
+    next_attempt = record.get("next_attempt")
+    require(not pre_action or isinstance(next_attempt, dict), "pre-action requires exact next attempt record")
+    if next_attempt is not None:
+        attempt(next_attempt, planned=True)
+
+
+def validate_work_order(order, matrix, catalogue, changed_paths, pre_action=False):
     require(isinstance(order, dict) and order.get("version") == 1, "invalid active work order")
     slices = dict(re.findall(r"^\| (S\d{2}-\d{2}) \| ([^|]+) \|", catalogue, re.MULTILINE))
     parent = order.get("slice")
@@ -106,6 +209,7 @@ def validate_work_order(order, matrix, catalogue, changed_paths):
                     for stage, status in stages.items()), "PASS stage lacks scoped evidence")
         all_pass &= all(status == "PASS" for status in stages.values()) and all(item["status"] == "PASS" for item in dependencies)
     require(covered == expected, "all original mapped obligations must remain in active scope")
+    validate_accountability(order, set(ids), pre_action)
     if state in {"ENGINEERING_COMPLETE", "UAT_READY", "ACCEPTED"}:
         require(all_pass, "unfinished or failed required scope cannot close or become UAT ready")
     human = order.get("human_acceptance", {})
@@ -185,13 +289,14 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo", type=Path, default=Path(__file__).resolve().parents[2])
     parser.add_argument("--work-order-only", action="store_true")
+    parser.add_argument("--pre-action", action="store_true", help="validate the recorded next expensive/native attempt before dispatch")
     args = parser.parse_args()
     repo = args.repo.resolve()
     try:
         matrix = json.loads((repo / "maint/ux/acceptance.json").read_text())
         catalogue = (repo / "docs/UX_FULL_FUNCTIONAL_SLICES.md").read_text()
         order = active_work_order((repo / "docs/UX_EXECUTION_LEDGER.md").read_text())
-        result = validate_work_order(order, matrix, catalogue, work_order_changed_paths(repo, order.get("source_baseline")))
+        result = validate_work_order(order, matrix, catalogue, work_order_changed_paths(repo, order.get("source_baseline")), pre_action=args.pre_action)
         if not args.work_order_only:
             result = {**result, **validate(matrix, json.loads((repo / "maint/ux/approved_pages.json").read_text()), catalogue, repo)}
     except (ValueError, KeyError, TypeError, OSError, subprocess.CalledProcessError) as error:

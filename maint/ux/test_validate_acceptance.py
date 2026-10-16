@@ -5,6 +5,7 @@ import copy
 import json
 from pathlib import Path
 import unittest
+from datetime import datetime, timedelta, timezone
 
 from validate_acceptance import active_work_order, validate, validate_work_order
 
@@ -180,6 +181,126 @@ class WorkOrderTests(unittest.TestCase):
                 self.check(order)
         order["operator_pause"] = {"actor": "operator", "reference": "synthetic explicit pause"}
         self.assertEqual(self.check(order)["state"], "PAUSED")
+
+
+class AccountabilityTests(unittest.TestCase):
+    """Synthetic declarations exercise structure, never historical compliance."""
+    @classmethod
+    def setUpClass(cls):
+        cls.base = active_work_order((REPO / "docs/UX_EXECUTION_LEDGER.md").read_text())
+        cls.matrix = json.loads((REPO / "maint/ux/acceptance.json").read_text())
+        cls.catalogue = (REPO / "docs/UX_FULL_FUNCTIONAL_SLICES.md").read_text()
+
+    def order(self):
+        order = copy.deepcopy(self.base)
+        owner = order["integration_owner"]
+        reviewer = next(name for name in order["roles"]["security_review"] if name != owner)
+        boundary = order["outcomes"][0]["id"]
+        historical = [dict(id=name, boundary=boundary, owner=owner, scope="FIXTURE",
+            adoption="PRE_ADOPTION", result="FAIL", elapsed_status="UNKNOWN",
+            elapsed_seconds=None, reference="synthetic retained pre-adoption fact") for name in ("old1", "old2")]
+        planned = dict(id="next", boundary=boundary, owner=owner, scope="FIXTURE", adoption="CURRENT",
+            source_revision="a" * 40, change_reference="synthetic frozen changed fixture",
+            success_chain_review=dict(reviewer=reviewer, reference="synthetic independent whole-path review",
+                covers=["producer", "cleanup", "consumer"]),
+            reassessment=dict(reviewers=[owner, reviewer], reference="synthetic combined failure review",
+                failed_attempt_ids=["old1", "old2"], next_action="execute the reviewed changed action"))
+        order["accountability"] = dict(functional_exit="synthetic complete password user journey", owner=owner,
+            elapsed_scope="wall_clock", history_reference="synthetic retained chronological history",
+            investigation=dict(owner=owner, started_at=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                timebox_seconds=1800, elapsed_status="UNMEASURED", elapsed_seconds=None),
+            attempts=historical, next_attempt=planned)
+        return order
+
+    def check(self, order, pre_action=True):
+        return validate_work_order(order, self.matrix, self.catalogue, (), pre_action=pre_action)
+
+    def test_valid_history_and_current_pre_action_preserve_unknown_elapsed(self):
+        order = self.order()
+        self.assertIn("no evidence truth", self.check(order)["claim"])
+        action = order["accountability"]["next_attempt"]
+        action.update(result="PASS", elapsed_status="MEASURED", elapsed_seconds=12.5, reference="synthetic measured wall-clock action")
+        order["accountability"]["attempts"].append(action)
+        order["accountability"]["next_attempt"] = None
+        self.check(order, pre_action=False)
+        with self.assertRaisesRegex(ValueError, "exact next attempt"):
+            self.check(order)
+        following = copy.deepcopy(action)
+        following.update(id="product-after-reviewed-fixture", scope="PRODUCT_DELIVERY")
+        for key in ("result", "elapsed_status", "elapsed_seconds", "reference", "reassessment"):
+            following.pop(key)
+        order["accountability"]["next_attempt"] = following
+        self.check(order)
+        # New failures accumulate in a new window without erasing history.
+        action["result"] = "FAIL"
+        following["change_reference"] = "synthetic newly changed action"
+        self.check(order)
+        following.update(result="FAIL", elapsed_status="UNKNOWN", elapsed_seconds=None,
+            reference="synthetic second new-window failure")
+        order["accountability"]["attempts"].append(following)
+        third = copy.deepcopy(following)
+        third.update(id="third-new-window-action", change_reference="synthetic third changed action")
+        for key in ("result", "elapsed_status", "elapsed_seconds", "reference"):
+            third.pop(key)
+        order["accountability"]["next_attempt"] = third
+        with self.assertRaisesRegex(ValueError, "two failed attempts"):
+            self.check(order)
+
+    def test_missing_accountability_or_success_chain_review_refuses(self):
+        order = self.order();del order["accountability"]
+        with self.assertRaisesRegex(ValueError, "accountability"):
+            self.check(order)
+        for edit in (lambda a: a.pop("success_chain_review"),
+                lambda a: a["success_chain_review"].update(covers=["producer", "consumer"]),
+                lambda a: a["success_chain_review"].update(reviewer=a["owner"])):
+            order = self.order();edit(order["accountability"]["next_attempt"])
+            with self.assertRaisesRegex(ValueError, "producer/cleanup/consumer"):
+                self.check(order)
+
+    def test_missing_change_and_unchanged_failed_retry_refuse(self):
+        order = self.order();del order["accountability"]["next_attempt"]["change_reference"]
+        with self.assertRaisesRegex(ValueError, "changed-action"):
+            self.check(order)
+        order = self.order();record = order["accountability"]
+        previous = copy.deepcopy(record["next_attempt"])
+        previous.update(id="failed-current", result="FAIL", reference="synthetic current failure",
+            elapsed_status="UNMEASURED", elapsed_seconds=None)
+        record["attempts"].append(previous)
+        record["next_attempt"].pop("reassessment")
+        with self.assertRaisesRegex(ValueError, "unchanged failed-boundary"):
+            self.check(order)
+
+    def test_two_failures_require_combined_independent_reassessment(self):
+        for edit in (lambda a: a.pop("reassessment"),
+                lambda a: a["reassessment"].update(failed_attempt_ids=["old2"]),
+                lambda a: a["reassessment"].update(reviewers=[a["owner"]])):
+            order = self.order();edit(order["accountability"]["next_attempt"])
+            with self.assertRaisesRegex(ValueError, "two failed attempts"):
+                self.check(order)
+
+    def test_successor_rename_does_not_reset_stable_boundary(self):
+        order = self.order();action = order["accountability"]["next_attempt"]
+        action.update(id="different-package-successor99", change_reference="renamed package with changed source")
+        del action["reassessment"]
+        with self.assertRaisesRegex(ValueError, "two failed attempts"):
+            self.check(order)
+        action["boundary"] = "different-package-successor99"
+        with self.assertRaisesRegex(ValueError, "stable functional outcome"):
+            self.check(order)
+
+    def test_timebox_and_explicit_wall_clock_measurement_refuse_contradictions(self):
+        for edit, message in ((lambda a: a.update(elapsed_scope="compute_cost"), "wall-clock scope"),
+                (lambda a: a["investigation"].update(timebox_seconds=0), "bounded investigation timebox"),
+                (lambda a: a["investigation"].update(started_at="yesterday"), "started_at UTC"),
+                (lambda a: a["attempts"][0].update(elapsed_seconds=122.497), "contradicts status")):
+            order = self.order();edit(order["accountability"])
+            with self.assertRaisesRegex(ValueError, message):self.check(order)
+        order = self.order();window = order["accountability"]["investigation"]
+        window["started_at"] = (datetime.now(timezone.utc)-timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M:%SZ")
+        with self.assertRaisesRegex(ValueError, "expired investigation"):
+            self.check(order)
+        window["overrun_reference"] = "synthetic explicit bounded-investigation reassessment/disposition"
+        self.check(order)
 
 
 if __name__ == "__main__":

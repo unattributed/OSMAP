@@ -57,6 +57,30 @@ new QA framework, routine approval ceremony or automatic product completion is
 introduced. Historical records below remain historical where this policy and R3
 supersede their execution defaults.
 
+
+The operator's 2026-10-15 accountability direction requires the existing active
+work order to name one functional exit and accountable owner, a UTC-started
+bounded investigation timebox, and chronological attempt records. Record actual
+full-action elapsed wall-clock when measured; UNKNOWN/UNMEASURED remains explicit.
+Never infer token/compute cost or substitute a sum of host intervals. Preserve
+pre-adoption failures as historical facts, not retrospectively compliant reviews.
+Before an expensive/native attempt, run the existing acceptance validator with
+`--work-order-only --pre-action`. The next record binds exact source and changed
+action references plus independent review of the whole successful producer →
+cleanup → consumer path. A failed/unconfirmed boundary needs a concrete changed
+action before retry; after two such attempts at the same existing outcome ID,
+record combined independent reassessment covering that window’s unreviewed failed IDs and the
+next action. Successor/package names and fixture/product labels do not reset the
+count. Completed combined reassessment acknowledges its covered IDs and may
+start a new bounded investigation window; all history stays retained. It does
+not require another full reassessment after every subsequent attempt forever.
+Fixture repair/PASS is distinct from product delivery; retain all existing
+functional closure checks. A timebox overrun needs an explicit disposition in the
+same ledger. This validator checks declared structure and consistency, not evidence
+truth, complete history, usable software, runtime state or actual compute cost.
+No new board, runner, routine human approval or repeat passing suite is required;
+continue independent authorized password work while accountable preparation runs.
+
 ## Current authority — 2026-10-14
 
 The approved `UX_PLAN_AMENDMENT_R3.md` supersedes historical sequential/human-wait

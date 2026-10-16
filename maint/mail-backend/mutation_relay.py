@@ -219,9 +219,32 @@ class _Relay:
         stream.settimeout(deadline.io());stream.sendall(len(raw).to_bytes(4,'big')+raw)
         deadline.remaining()
     @staticmethod
+    def _success(child,deadline):
+        # EOF does not mean the SSH process has exited. Permit its clean exit
+        # inside the SAME original I/O budget, reserving failure cleanup time.
+        while True:
+            seconds=min(.01,deadline.io())
+            try:code=child.wait(timeout=seconds);break
+            except subprocess.TimeoutExpired:continue
+        # wait may have reaped the direct child. Only read-only group probing
+        # is safe now; no later failure grants a signal to this numeric group.
+        deadline.remaining()
+        try:os.killpg(child.pid,0)
+        except ProcessLookupError:
+            deadline.remaining();return code
+        raise Unavailable('mutation SSH descendant disposition unconfirmed')
+    @staticmethod
     def _cleanup(child,deadline):
-        # No poll/wait precedes this signal; a nondefault SIGCHLD handler refuses
-        # before spawn. Never signal the numerical group after direct reap.
+        # A success wait may already have reaped before a later check failed.
+        # Never signal that numerical group after reap, even for descendants.
+        if child.returncode is not None:
+            deadline.remaining()
+            try:os.killpg(child.pid,0)
+            except ProcessLookupError:
+                deadline.remaining();return child.returncode
+            raise Unavailable('mutation SSH descendant disposition unconfirmed')
+        # Failure/cancellation retains the exact unreaped leader: stop-before-
+        # reap remains valid and consumes only the original cleanup reserve.
         try:os.killpg(child.pid,signal.SIGKILL)
         except ProcessLookupError:pass
         code=child.wait(timeout=deadline.remaining())
@@ -269,12 +292,7 @@ class _Relay:
                         except BlockingIOError:continue
                         if part:raise Unavailable('mutation remote trailing data')
                         break
-            try:code=self._cleanup(child,deadline)
-            except Exception:
-                self._contained=True;self._retained.append(child)
-                for p in (child.stdin,child.stdout):
-                    if not p.closed:p.close()
-                child=None;raise
+            code=self._success(child,deadline)
             child.stdout.close();child=None
             if code!=0:raise Unavailable('mutation SSH exit unconfirmed')
             self._send(stream,reply,deadline)

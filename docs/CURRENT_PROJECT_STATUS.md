@@ -14,7 +14,44 @@ statement as provenance rather than current release posture.
 
 ## Current source posture
 
-### Active password delivery, 2026-10-15
+### Active delivery and accountability, 2026-10-15
+
+S04-02 authoritative own-password change is the active integration objective.
+S08-02 Folders is accepted, including the operator's navigation, search,
+message-view and attachment-download results. No full S04 or epic acceptance
+follows. The last synchronized signed source is be270f02; installed pair324b
+and the ordinary application's disabled password/native configuration remain
+unchanged.
+
+The fifth controlled native HTTP attempt reaches real Bob/Alice login,
+epoch-0 sessions and the enabled CSRF-protected password form. Five responses
+complete, but the bridge rejects its first worker frame during challenge
+verification. The worker exits0 with exact COMPLETE33; its authenticated outcome,
+credential update and session/mail postconditions remain unconfirmed. Actor and
+driver groups, SQL-fixture handles and private daemons/broker are disposed, but
+two purpose identities and private runtime/scratch remain retained. Fresh
+current-state assessment is required; original cleanup cause remains UNKNOWN.
+Earlier failures are historical facts, not retrospectively repaired outcomes.
+
+Current source work adds the missing purpose-exclusive admission transport
+from obsd1 to the authoritative Toronto helper and corrects the successful-SSH
+reap race in both admission and mutation transports. These paths remain disabled
+until their actual cross-host, confinement and installation requirements pass.
+The controlled HTTP successor corrects original-deadline waits and preserves
+successful capture receipts through cleanup; its native result is separate
+from source review or local controls.
+
+The operator's accountability correction is implemented in the existing work
+order and validator: one functional exit/owner, bounded UTC-started investigation,
+honest wall-clock records, whole producer/cleanup/consumer review, concrete
+changed retries and combined reassessment after two unreviewed failures at the
+same functional outcome. Historical failures stay visible. Fixture repairs are
+not product deliveries; structural validation does not certify evidence truth.
+No additional board, routine approval or repeated QA campaign is introduced.
+
+### Earlier source checkpoints (historical)
+
+### Historical password checkpoint, 2026-10-15
 
 Signed checkpoint `1893c44b069509128c18e30d735547fc50512d25` is synchronized
 with GitHub and the clean authoritative standard source checkout. Normal

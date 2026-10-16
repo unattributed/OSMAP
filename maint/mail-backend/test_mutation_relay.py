@@ -19,6 +19,7 @@ class RelayTests(unittest.TestCase):
   p['signature']=hmac.new(gf.SESSION_KEY,gf.payload(p),hashlib.sha256).hexdigest()
   return gf.encoded(value)
  def exchange(self,mode='good',*,raw=None,uid=None,ack_mode='good',cleanup_failure=False):
+  if cleanup_failure:mode='trailing' # Enter original failure cleanup path.
   server,client=socket.socketpair();r=relay._Relay(os.getuid() if uid is None else uid);errors=[]
   program=str(Path(__file__).with_name('mutation_relay_fixture.py'))
   def work():
@@ -119,5 +120,17 @@ class RelayTests(unittest.TestCase):
   self.assertLessEqual(d.remaining(),.2)
   with patch('mutation_relay._millis',return_value=now-1):
    with self.assertRaises(relay.Unavailable):d.remaining()
+
+ def test_eof_before_delayed_clean_exit_reaps_without_success_kill(self):
+  instance,_,reply,_,errors=self.exchange('lateexit')
+  self.assertIsNotNone(reply);self.assertEqual(errors,[]);self.assertFalse(instance._contained)
+
+ def test_already_reaped_surviving_group_never_gets_a_signal(self):
+  from types import SimpleNamespace
+  child=SimpleNamespace(pid=12345,returncode=0)
+  budget=SimpleNamespace(remaining=lambda:1,resource_remaining=lambda:1)
+  with patch.object(relay.os,'killpg')as probe:
+   with self.assertRaises(relay.Unavailable):relay._Relay._cleanup(child,budget)
+   probe.assert_called_once_with(child.pid,0)
 
 if __name__=='__main__':unittest.main()

@@ -882,3 +882,34 @@ review796b1535 pass the directory5/socket6 boundary. Actual RED/GREEN3 (zero ski
 retains the first test precondition/type failures. No Rust/compiler source changes,
 operator mutation, native-cause inference or activation accompanies this repair.
 Fresh principal-cleanup scope4b2eebb3 confirms the exact retained-resource limits.
+
+
+### 2026-10-15 — password transport and accountable execution boundaries
+
+The new disabled admission SSH lane is purpose-exclusive and carries opaque
+4096-byte authenticated request/reply frames to the authoritative epoch helper.
+The original30-second relay bound, distinct key/forced command, kernel peer,
+EOF/exit/reap/group absence and no-retry conditions remain mandatory. The
+mutation lane retains its original60-second/continuity contract. Local changed
+controls discriminate actual EOF-before-delayed-exit behavior; source review
+and local transport PASS do not establish native SSH, confinement, provisioning
+or installed authentication/password success.
+
+HTTP4 resultf07c0da1 qualifies the real login/session/enabled-form prefix only.
+Its expected COMPLETE33/exit0 does not establish successful credential mutation,
+forwarded reply or postconditions; actual active-resource cleanup is separate.
+HTTP15 source/full-package reviews02cc71c6/99b2efa7 cover original-deadline waits
+and successful receipt preservation through cleanup; no historical cause is
+retrospectively inferred. Existing strict native consumers stay unchanged.
+
+Existing work-order validation now requires independent successful
+producer/cleanup/consumer review and bounded, honest attempt accounting before
+expensive/native dispatch. It preserves all403 original controls and110 legacy
+cases and does not certify reference truth, runtime state or release acceptance.
+
+HTTP5 resulte76d7f8a/audit6abc3e3f supersedes the zero-byte timeout as current:
+five responses complete and first-frame challenge verification fails. No ACK,
+accepted signed terminal, credential change, cache flush or final session/mail
+postcondition is established. Actors/groups/24 SQL-fixture handles/daemons/broker
+are disposed; purpose identities/private runtime/scratch remain retained with
+unknown initiating cleanup guard. No native, installed or UAT PASS follows.

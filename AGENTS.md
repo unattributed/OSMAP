@@ -68,6 +68,15 @@ An unresolved failure of a required journey blocks that journey's readiness.
 This framework does not change the frozen UX plan or authorize application,
 policy, deployment or external side effects beyond the operator's instructions.
 
+
+The operator's 2026-10-15 accountability policy in the existing framework
+adoption document is mandatory. Before an expensive/native action, run the
+existing validator with `--work-order-only --pre-action`: one functional exit
+and owner, UTC-started bounded investigation, honest full-action wall-clock
+records, whole producer/cleanup/consumer review and changed retry/reassessment
+records are required. Package renaming cannot reset the functional boundary.
+Preserve historical facts and continue independent authorized work.
+
 ## Working Rules
 
 - Keep changes small, reviewed, and aligned with the existing Rust, shell, and
