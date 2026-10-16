@@ -39,7 +39,87 @@ fn password_request(body: &str) -> HttpRequest {
     request
 }
 fn password_app(decision: BrowserPasswordDecision) -> BrowserApp<StubGateway> {
-    BrowserApp::new(HttpPolicy::default(), StubGateway { password_result: Some(decision), ..StubGateway::default() })
+    BrowserApp::new(
+        HttpPolicy::default(),
+        StubGateway {
+            password_result: Some(decision),
+            password_changed_at: (decision == BrowserPasswordDecision::Changed)
+                .then(|| "20261004170001".into()),
+            ..StubGateway::default()
+        },
+    )
+}
+
+#[test]
+fn password_status_http_routes_keep_time_without_fabricating_completed_effects() {
+    for (decision, stamp, code, complete) in [
+        (
+            BrowserPasswordDecision::Changed,
+            Some("20261004170001"),
+            200,
+            true,
+        ),
+        (
+            BrowserPasswordDecision::Unconfirmed,
+            Some("20261004170001"),
+            503,
+            false,
+        ),
+        (BrowserPasswordDecision::Changed, None, 503, false),
+        (
+            BrowserPasswordDecision::Changed,
+            Some("20260230010203"),
+            503,
+            false,
+        ),
+    ] {
+        let app = BrowserApp::new(
+            HttpPolicy::default(),
+            StubGateway {
+                password_result: Some(decision),
+                password_changed_at: stamp.map(str::to_owned),
+                ..StubGateway::default()
+            },
+        );
+        let result = app.handle_request(&password_request(&password_form()), "127.0.0.1");
+        assert_eq!(result.response.status_code, code);
+        let html = body_text(&result);
+        assert_eq!(html.contains("Your password was changed"), complete);
+        assert_eq!(
+            html.contains("2026-10-04 17:00:01 UTC"),
+            stamp == Some("20261004170001")
+        );
+        assert_eq!(
+            html.contains("Required containment remains incomplete"),
+            stamp == Some("20261004170001") && !complete
+        );
+        assert!(result
+            .response
+            .headers
+            .iter()
+            .any(|(k, v)| k == "Set-Cookie" && v.contains("Max-Age=0")));
+        assert_no_password_echo(&result);
+        for section in ["security", "authentication"] {
+            let settings = app.handle_request(
+                &request(
+                    "GET",
+                    &format!("/settings?section={section}"),
+                    &authenticated_same_origin_headers(),
+                    "",
+                ),
+                "127.0.0.1",
+            );
+            let settings_html = body_text(&settings);
+            assert_eq!(
+                settings_html.contains("2026-10-04 17:00:01 UTC"),
+                stamp == Some("20261004170001")
+            );
+            assert_eq!(
+                settings_html.contains("Last change unknown"),
+                stamp != Some("20261004170001")
+            );
+        }
+    }
 }
 fn assert_no_password_echo(response: &HandledHttpResponse) {
     let output = format!("{} {:?}", body_text(response), response.audit_events);

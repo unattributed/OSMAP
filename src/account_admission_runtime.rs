@@ -61,6 +61,7 @@ const WORKER_MODULES: [&str; 33] = [
 const ENGINE: &str = "/usr/local/bin/python3";
 const ENGINE_TARGET: &str = "python3.13";
 const EPOCH_ROOT: &str = "/var/db/osmap-account/epoch";
+type AdmissionStatus = (u64, Option<String>);
 fn unavailable<T>(_: T) -> Error {
     Error::Unavailable
 }
@@ -117,7 +118,7 @@ impl Service {
         }
         // Process-global setup precedes both confinement and connection threads.
         std::env::set_current_dir("/").map_err(unavailable)?;
-        self.serve_with_policy(
+        self.serve_with_status_policy(
             stop,
             &|request, deadline| self.native_worker(request, deadline),
             &|endpoint| {
@@ -137,6 +138,7 @@ impl Service {
         self.serve_with_policy(stop, execute, &|_| Ok(()))
     }
 
+    #[cfg(test)]
     fn serve_with_policy<F, P>(
         &self,
         stop: &AtomicBool,
@@ -145,6 +147,23 @@ impl Service {
     ) -> Result<(), Error>
     where
         F: Fn(&Request, Instant) -> Result<Option<u64>, Error> + Sync,
+        P: Fn(&AdmissionEndpoint) -> Result<(), Error>,
+    {
+        self.serve_with_status_policy(
+            stop,
+            &|r, d| execute(r, d).map(|v| v.map(|epoch| (epoch, None))),
+            confine,
+        )
+    }
+
+    fn serve_with_status_policy<F, P>(
+        &self,
+        stop: &AtomicBool,
+        execute: &F,
+        confine: &P,
+    ) -> Result<(), Error>
+    where
+        F: Fn(&Request, Instant) -> Result<Option<AdmissionStatus>, Error> + Sync,
         P: Fn(&AdmissionEndpoint) -> Result<(), Error>,
     {
         let mut endpoint = AdmissionEndpoint::bind(&self.config.socket)?;
@@ -190,7 +209,7 @@ impl Service {
                             // Existing exact kernel-peer admission precedes
                             // reading any frame; MAC/replay/account checks and
                             // quarantine remain on the persistent Service.
-                            let _ = self.connection_with(&mut stream, execute);
+                            let _ = self.connection_with_status(&mut stream, execute);
                         }));
                     }
                     Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
@@ -262,11 +281,22 @@ impl Service {
             engine: Some(engine),
         })
     }
+    #[cfg(test)]
     fn process(
         &self,
         bytes: &[u8],
         at: u64,
         execute: impl FnOnce(&Request) -> Result<Option<u64>, Error>,
+    ) -> Result<Vec<u8>, Error> {
+        self.process_with_status(bytes, at, |request| {
+            execute(request).map(|v| v.map(|epoch| (epoch, None)))
+        })
+    }
+    fn process_with_status(
+        &self,
+        bytes: &[u8],
+        at: u64,
+        execute: impl FnOnce(&Request) -> Result<Option<AdmissionStatus>, Error>,
     ) -> Result<Vec<u8>, Error> {
         if self
             .cleanup_unconfirmed
@@ -291,7 +321,11 @@ impl Service {
             }
             value => value?,
         };
-        request.response(result, &self.key, now().map_err(unavailable)?)
+        let (epoch, stamp) = match result {
+            Some((epoch, stamp)) => (Some(epoch), stamp),
+            None => (None, None),
+        };
+        request.response_with_status(epoch, stamp, &self.key, now().map_err(unavailable)?)
     }
     fn enter(&self, account: &str) -> Result<Permit<'_>, Error> {
         let mut active = self.active.lock().map_err(unavailable)?;
@@ -307,11 +341,20 @@ impl Service {
     fn fixed_worker(request: &Request, deadline: Instant) -> Result<Option<u64>, Error> {
         Self::fixed_worker_command(request, deadline, crate::auth::account_admission_command())
     }
+    #[cfg(test)]
     fn fixed_worker_command(
         request: &Request,
         deadline: Instant,
         command: std::process::Command,
     ) -> Result<Option<u64>, Error> {
+        Self::fixed_worker_status_command(request, deadline, command)
+            .map(|v| v.map(|(epoch, _)| epoch))
+    }
+    fn fixed_worker_status_command(
+        request: &Request,
+        deadline: Instant,
+        command: std::process::Command,
+    ) -> Result<Option<AdmissionStatus>, Error> {
         // Interpreter, script and module roots are fixed and operator-owned.
         // Credential JSON is exclusively stdin under the existing private,
         // nonblocking process-group transport and quarantine-on-cleanup policy.
@@ -350,32 +393,43 @@ impl Service {
             account: Option<String>,
             status: String,
             epoch: Option<u64>,
+            #[serde(default)]
+            changed_at: Option<String>,
         }
         let r: WorkerResponse = serde_json::from_slice(&bytes).map_err(|_| Error::Unavailable)?;
         if r.schema == "osmap-account-admission-worker-v1"
             && r.status == "cleanup_unconfirmed"
             && r.account.is_none()
             && r.epoch.is_none()
+            && r.changed_at.is_none()
         {
             return Err(Error::CleanupUnconfirmed);
         }
         if r.schema != "osmap-account-admission-worker-v1"
             || r.account.as_deref() != Some(request.account())
+            || r.changed_at
+                .as_deref()
+                .is_some_and(|v| !crate::account_mutation::changed_at_valid(v))
+            || (r.status != "active" && r.changed_at.is_some())
         {
             return Err(Error::Unavailable);
         }
         match (&request.operation(), r.status.as_str(), r.epoch) {
             (Operation::Authenticate { .. }, "rejected", None) => Ok(None),
             (Operation::Authenticate { .. }, "active", Some(epoch)) if valid_epoch(epoch) => {
-                Ok(Some(epoch))
+                Ok(Some((epoch, r.changed_at)))
             }
             (Operation::Admit { epoch: expected }, "active", Some(epoch)) if epoch == *expected => {
-                Ok(Some(epoch))
+                Ok(Some((epoch, r.changed_at)))
             }
             _ => Err(Error::Refused),
         }
     }
-    fn native_worker(&self, request: &Request, deadline: Instant) -> Result<Option<u64>, Error> {
+    fn native_worker(
+        &self,
+        request: &Request,
+        deadline: Instant,
+    ) -> Result<Option<AdmissionStatus>, Error> {
         // The fixed command inherits startup's `/`; a pre-exec chdir would
         // require a broad root read grant. No connection changes process cwd.
         if std::env::current_dir().map_err(unavailable)? != Path::new("/") {
@@ -385,7 +439,7 @@ impl Service {
             .as_ref()
             .ok_or(Error::Unavailable)?
             .recheck(deadline)?;
-        Self::fixed_worker_command(
+        Self::fixed_worker_status_command(
             request,
             deadline,
             crate::auth::account_admission_inherited_root_command().map_err(unavailable)?,
@@ -397,10 +451,20 @@ impl Service {
     pub fn connection(&self, _stream: UnixStream) -> Result<(), Error> {
         Err(Error::Unavailable)
     }
+    #[cfg(test)]
     fn connection_with(
         &self,
         stream: &mut UnixStream,
         execute: impl FnOnce(&Request, Instant) -> Result<Option<u64>, Error>,
+    ) -> Result<(), Error> {
+        self.connection_with_status(stream, |r, d| {
+            execute(r, d).map(|v| v.map(|epoch| (epoch, None)))
+        })
+    }
+    fn connection_with_status(
+        &self,
+        stream: &mut UnixStream,
+        execute: impl FnOnce(&Request, Instant) -> Result<Option<AdmissionStatus>, Error>,
     ) -> Result<(), Error> {
         let deadline = Instant::now() + Duration::from_secs(30);
         if crate::openbsd::unix_stream_peer_uid(stream).map_err(unavailable)?
@@ -409,7 +473,7 @@ impl Service {
             return Err(Error::Authentication);
         }
         let bytes = read_frame(stream, MAX_FRAME, deadline).map_err(unavailable)?;
-        let response = self.process(&bytes, now().map_err(unavailable)?, |r| {
+        let response = self.process_with_status(&bytes, now().map_err(unavailable)?, |r| {
             execute(r, deadline)
         })?;
         write_frame(stream, &response, deadline).map_err(unavailable)
@@ -986,8 +1050,18 @@ impl Client {
         account: &str,
         operation: Operation,
         original_deadline: Instant,
-        mut clock: impl FnMut() -> Result<u64, Error>,
+        clock: impl FnMut() -> Result<u64, Error>,
     ) -> Result<Option<Admission>, Error> {
+        self.execute_status_before_with_clock(account, operation, original_deadline, clock)
+            .map(|v| v.0)
+    }
+    fn execute_status_before_with_clock(
+        &self,
+        account: &str,
+        operation: Operation,
+        original_deadline: Instant,
+        mut clock: impl FnMut() -> Result<u64, Error>,
+    ) -> Result<(Option<Admission>, Option<String>), Error> {
         // Preserve the caller's one workflow budget and this adapter's existing
         // maximum; neither connection nor verification starts a new deadline.
         let deadline = original_deadline.min(Instant::now() + Duration::from_secs(30));
@@ -1023,14 +1097,34 @@ impl Client {
         let at = check()?;
         // A held verifier must not turn a bounded operation into a blocking
         // lock wait. The authenticated result is withheld until the final check.
-        let result = self.0.verifier.try_lock().map_err(unavailable)?.response(
-            &request,
-            &bytes,
-            &self.0.key,
-            at,
-        )?;
+        let result = self
+            .0
+            .verifier
+            .try_lock()
+            .map_err(unavailable)?
+            .response_with_status(&request, &bytes, &self.0.key, at)?;
         check()?;
         Ok(result)
+    }
+    /// Read only the active own-account record for this exact session epoch.
+    /// Pending/contained/stale authority is refused by the unchanged worker.
+    pub fn password_changed_at_before(
+        &self,
+        account: &str,
+        epoch: u64,
+        deadline: Instant,
+    ) -> Result<Option<String>, Error> {
+        let (admission, stamp) = self.execute_status_before_with_clock(
+            account,
+            Operation::Admit { epoch },
+            deadline,
+            || now().map_err(unavailable),
+        )?;
+        let admitted = admission.ok_or(Error::Refused)?;
+        if admitted.account != account || admitted.epoch != epoch {
+            return Err(Error::Refused);
+        }
+        Ok(stamp)
     }
     /// Revalidate the exact epoch within the original workflow deadline.
     /// This does not renew preparation freshness or prove native confinement.

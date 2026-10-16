@@ -160,7 +160,10 @@ fn captured_preparation_deadline_bounds_post_receipt_epoch_and_browser_cleanup()
     assert_eq!(authority.changed_calls.load(Ordering::SeqCst), 1);
     assert_eq!(
         result,
-        crate::session::BrowserRevocation::Contained { count: 0 }
+        crate::session::BrowserRevocation::ChangedIncomplete {
+            count: 0,
+            changed_at: "19700101000140".into()
+        }
     );
     assert_eq!(quarantined.load(Ordering::SeqCst), 1);
     assert_eq!(std::fs::read(path).unwrap(), before);
@@ -652,7 +655,10 @@ fn composed_changed_receipt_without_current_new_epoch_is_contained() {
         .unwrap();
     assert_eq!(
         result,
-        crate::session::BrowserRevocation::Contained { count: 1 }
+        crate::session::BrowserRevocation::ChangedIncomplete {
+            count: 1,
+            changed_at: "19700101000140".into()
+        }
     );
     assert_eq!(count.load(Ordering::SeqCst), 1);
 }
@@ -683,7 +689,10 @@ fn composed_late_dispatch_cannot_renew_budget_or_mutate_browser_record() {
         .unwrap();
     assert_eq!(
         result,
-        crate::session::BrowserRevocation::Contained { count: 0 }
+        crate::session::BrowserRevocation::ChangedIncomplete {
+            count: 0,
+            changed_at: "19700101000140".into()
+        }
     );
     assert_eq!(count.load(Ordering::SeqCst), 1);
     assert_eq!(std::fs::read(path).unwrap(), before);
@@ -727,6 +736,257 @@ fn composed_late_or_wall_expired_known_refusal_is_uncertain_without_browser_muta
         );
         assert_eq!(calls.load(Ordering::SeqCst), 1);
         assert_eq!(std::fs::read(path).unwrap(), before);
+    }
+}
+
+#[test]
+fn password_status_expired_matching_receipt_retains_time_without_admission_or_cleanup() {
+    for incomplete in [false, true] {
+        for variant in 0..3 {
+            let f = Fixture::new();
+            let plain_service =
+                SessionService::new(f.store(), &f.clock, SystemRandomSource, 3600, 1800);
+            let bob = plain_service
+                .issue(&f.context, "bob@example.test", RequiredSecondFactor::Totp)
+                .unwrap();
+            let alice_path = f.store().session_path(&f.session.record.session_id);
+            let bob_path = f.store().session_path(&bob.record.session_id);
+            let alice_before = std::fs::read(&alice_path).unwrap();
+            let bob_before = std::fs::read(&bob_path).unwrap();
+            let deadline = std::time::Instant::now()
+                + std::time::Duration::from_millis(if variant == 0 { 20 } else { 5000 });
+            let authority = Arc::new(DelayedChangedEpoch {
+                epoch: f.epoch.clone(),
+                original: deadline,
+                changed_calls: AtomicUsize::new(0),
+            });
+            let quarantines = AtomicUsize::new(0);
+            let dispatches = AtomicUsize::new(0);
+            let result = f
+                .gateway
+                .password_completion_status_for_test(
+                    &f.context,
+                    &f.token,
+                    f.prepared(),
+                    (authority.clone(), &f.clock),
+                    deadline,
+                    |action| {
+                        dispatches.fetch_add(1, Ordering::SeqCst);
+                        let receipt = completion_receipt(
+                            action,
+                            if incomplete {
+                                crate::account_mutation::Outcome::ChangedIncomplete {
+                                    changed_at: "19700101000140".into(),
+                                }
+                            } else {
+                                f.epoch.value.store(4, Ordering::SeqCst);
+                                changed_outcome()
+                            },
+                        );
+                        match variant {
+                            0 => std::thread::sleep(std::time::Duration::from_millis(40)),
+                            1 => f.clock.0.store(receipt.expires(), Ordering::SeqCst),
+                            _ => f.clock.0.store(99, Ordering::SeqCst),
+                        }
+                        Ok(receipt)
+                    },
+                    |account| {
+                        assert_eq!(account, "alice@example.test");
+                        quarantines.fetch_add(1, Ordering::SeqCst);
+                    },
+                )
+                .unwrap();
+            assert_eq!(
+                result,
+                (
+                    crate::session::BrowserRevocation::ChangedIncomplete {
+                        count: 0,
+                        changed_at: "19700101000140".into(),
+                    },
+                    Some("19700101000140".into())
+                )
+            );
+            assert_eq!(dispatches.load(Ordering::SeqCst), 1);
+            assert_eq!(quarantines.load(Ordering::SeqCst), 1);
+            assert_eq!(authority.changed_calls.load(Ordering::SeqCst), 0);
+            assert_eq!(std::fs::read(alice_path).unwrap(), alice_before);
+            assert_eq!(std::fs::read(bob_path).unwrap(), bob_before);
+        }
+    }
+}
+
+#[test]
+fn password_status_failed_readback_after_real_cleanup_keeps_verified_time_and_quarantine() {
+    use crate::http::BrowserPasswordDecision;
+    use crate::openpgp_inventory_runtime::{now, read_frame, write_frame};
+    use std::os::unix::{fs::PermissionsExt, net::UnixListener};
+    use std::time::{Duration, Instant};
+    // Positive matching readback distinguishes success from missing, malformed
+    // and mismatching responses through the actual paired Unix client.
+    for variant in 0..4 {
+        let f = Fixture::new();
+        let plain_service =
+            SessionService::new(f.store(), &f.clock, SystemRandomSource, 3600, 1800);
+        let bob = plain_service
+            .issue(&f.context, "bob@example.test", RequiredSecondFactor::Totp)
+            .unwrap();
+        let bob_path = f.store().session_path(&bob.record.session_id);
+        let bob_before = std::fs::read(&bob_path).unwrap();
+        let admission_socket = f.scratch.0.join("status-admission.sock");
+        let mutation_socket = f.scratch.0.join("status-mutation.sock");
+        let admission_key = f.scratch.0.join("status-admission.key");
+        let mutation_key = f.scratch.0.join("status-mutation.key");
+        let proof_key = f.scratch.0.join("status-proof.key");
+        for (path, key) in [
+            (&admission_key, 29_u8),
+            (&mutation_key, 17),
+            (&proof_key, 19),
+        ] {
+            std::fs::write(path, [key; 32]).unwrap();
+            std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o600)).unwrap();
+        }
+        let admission_listener = UnixListener::bind(&admission_socket).unwrap();
+        let mutation_listener = UnixListener::bind(&mutation_socket).unwrap();
+        for (path, listener) in [
+            (&admission_socket, &admission_listener),
+            (&mutation_socket, &mutation_listener),
+        ] {
+            std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o660)).unwrap();
+            listener.set_nonblocking(true).unwrap();
+        }
+        let uid = crate::openbsd::effective_uid();
+        let admission = crate::account_admission_runtime::Client::paired_fixture_files(
+            &admission_socket,
+            &admission_key,
+            uid,
+        )
+        .unwrap();
+        let mutation = crate::account_mutation_client::Client::stored_fixture_files(
+            &mutation_socket,
+            &mutation_key,
+            &proof_key,
+            uid,
+        )
+        .unwrap();
+        let gateway = f
+            .gateway
+            .clone()
+            .with_account_fixture_clients(admission, mutation.clone());
+        let deadline = Instant::now() + Duration::from_secs(3);
+        let dispatches = AtomicUsize::new(0);
+        let completion = f
+            .gateway
+            .password_completion_status_for_test(
+                &f.context,
+                &f.token,
+                f.prepared(),
+                (f.epoch.clone(), &f.clock),
+                deadline,
+                |action| {
+                    dispatches.fetch_add(1, Ordering::SeqCst);
+                    f.epoch.value.store(4, Ordering::SeqCst);
+                    Ok(completion_receipt(action, changed_outcome()))
+                },
+                |_| panic!("matching receipt and real cleanup are complete before status readback"),
+            )
+            .unwrap();
+        assert_eq!(
+            completion,
+            (
+                crate::session::BrowserRevocation::OldSessionsRevoked { count: 1 },
+                Some("19700101000140".into())
+            )
+        );
+        assert_eq!(
+            f.store()
+                .load(&f.session.record.session_id)
+                .unwrap()
+                .unwrap()
+                .revoked_at,
+            Some(100)
+        );
+        assert!(plain_service.validate(&f.context, &f.token).is_err());
+        let server = std::thread::spawn(move || {
+            let mut stream = loop {
+                match admission_listener.accept() {
+                    Ok((stream, _)) => break stream,
+                    Err(error)
+                        if error.kind() == std::io::ErrorKind::WouldBlock
+                            && Instant::now() < deadline =>
+                    {
+                        std::thread::sleep(Duration::from_millis(1))
+                    }
+                    Err(error) => panic!("bounded readback accept failed: {error}"),
+                }
+            };
+            let raw =
+                read_frame(&mut stream, crate::account_admission::MAX_FRAME, deadline).unwrap();
+            let request = crate::account_admission::Verifier::default()
+                .request(&raw, &[29; 32], now().unwrap())
+                .unwrap();
+            assert_eq!(request.account(), "alice@example.test");
+            assert!(matches!(
+                request.operation(),
+                crate::account_admission::Operation::Admit { epoch: 4 }
+            ));
+            let reply = if variant == 2 {
+                b"{malformed".to_vec()
+            } else {
+                request
+                    .response_with_status(
+                        Some(4),
+                        match variant {
+                            0 => Some("19700101000140".into()),
+                            3 => Some("19700101000141".into()),
+                            _ => None,
+                        },
+                        &[29; 32],
+                        now().unwrap(),
+                    )
+                    .unwrap()
+            };
+            write_frame(&mut stream, &reply, deadline).unwrap();
+            admission_listener
+        });
+        let (decision, time) =
+            gateway.finish_password_change_completion(&f.session, Ok(completion), deadline);
+        assert_eq!(
+            decision,
+            if variant == 0 {
+                BrowserPasswordDecision::Changed
+            } else {
+                BrowserPasswordDecision::Unconfirmed
+            }
+        );
+        assert_eq!(time.as_deref(), Some("19700101000140"));
+        let admission_listener = server.join().unwrap();
+        assert!(Instant::now() < deadline);
+        assert_eq!(dispatches.load(Ordering::SeqCst), 1);
+        assert_eq!(std::fs::read(&bob_path).unwrap(), bob_before);
+        assert!(plain_service.validate(&f.context, &bob.token).is_ok());
+        if variant != 0 {
+            let at = now().unwrap();
+            let retry = crate::account_mutation::tests::issue_timed(
+                "public-old",
+                "public-new-passphrase",
+                4,
+                at,
+                at,
+            )
+            .unwrap();
+            assert!(matches!(
+                mutation.execute(retry, deadline),
+                Err(crate::account_mutation_client::Error::Uncertain)
+            ));
+        }
+        assert_eq!(
+            mutation_listener.accept().unwrap_err().kind(),
+            std::io::ErrorKind::WouldBlock
+        );
+        assert_eq!(
+            admission_listener.accept().unwrap_err().kind(),
+            std::io::ErrorKind::WouldBlock
+        );
     }
 }
 #[test]
@@ -828,6 +1088,51 @@ fn composed_contained_reply_revokes_old_browser_session_and_stays_contained() {
         Some(100)
     );
 }
+
+#[test]
+fn password_status_incomplete_terminal_retains_time_and_revokes_without_active_epoch() {
+    let f = Fixture::new();
+    let quarantines = AtomicUsize::new(0);
+    let result = f
+        .gateway
+        .password_completion_for_test(
+            &f.context,
+            &f.token,
+            f.prepared(),
+            (f.epoch.clone(), &f.clock),
+            std::time::Instant::now() + std::time::Duration::from_secs(5),
+            |action| {
+                Ok(completion_receipt(
+                    action,
+                    crate::account_mutation::Outcome::ChangedIncomplete {
+                        changed_at: "19700101000140".into(),
+                    },
+                ))
+            },
+            |account| {
+                assert_eq!(account, "alice@example.test");
+                quarantines.fetch_add(1, Ordering::SeqCst);
+            },
+        )
+        .unwrap();
+    assert_eq!(
+        result,
+        crate::session::BrowserRevocation::ChangedIncomplete {
+            count: 1,
+            changed_at: "19700101000140".into(),
+        }
+    );
+    assert_eq!(quarantines.load(Ordering::SeqCst), 1);
+    assert_eq!(f.epoch.value.load(Ordering::SeqCst), 3);
+    assert_eq!(
+        f.store()
+            .load(&f.session.record.session_id)
+            .unwrap()
+            .unwrap()
+            .revoked_at,
+        Some(100)
+    );
+}
 #[test]
 fn composed_post_dispatch_corrupt_record_refuses_partial_cleanup_and_quarantines() {
     let f = Fixture::new();
@@ -862,7 +1167,10 @@ fn composed_post_dispatch_corrupt_record_refuses_partial_cleanup_and_quarantines
         .unwrap();
     assert_eq!(
         result,
-        crate::session::BrowserRevocation::Contained { count: 0 }
+        crate::session::BrowserRevocation::ChangedIncomplete {
+            count: 0,
+            changed_at: "19700101000140".into()
+        }
     );
     assert_eq!(calls.load(Ordering::SeqCst), 1);
     assert_eq!(std::fs::read(path).unwrap(), before);

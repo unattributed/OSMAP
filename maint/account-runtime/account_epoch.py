@@ -14,7 +14,7 @@ import pathlib
 import stat
 import tempfile
 import time
-from authoritative_password import AuthoritativePasswordAdapter, Refused, Unconfirmed
+from authoritative_password import AuthoritativePasswordAdapter, Refused, Unconfirmed, Receipt
 
 
 # u64::MAX is reserved/refused by the durable store and Rust session protocol.
@@ -164,7 +164,10 @@ class PasswordCoordinator:
                     raise Refused('prepared action expired before credential write')
             except Exception:
                 raise Refused('fresh verification or authoritative backend unavailable') from None
-            pending=dict(value,state='pending',intent=intent_reference,
+            # An unresolved new write must never relabel an older timestamp as
+            # its performed-write time. A known no-write refusal restores the
+            # previous active history while still consuming this fresh intent.
+            pending=dict(value,state='pending',intent=intent_reference,changed_at=None,
                          used_intents=used+[[intent_reference,now+300]])
             self.store._write(path,pending)
             # Only a fixed authenticated helper dependency supplies this
@@ -182,11 +185,39 @@ class PasswordCoordinator:
             except Refused:
                 # Verified pre-write/hash refusal or exact zero-row CAS preserves
                 # the credential epoch. The fresh intent is still consumed once.
-                self.store._write(path,dict(pending,state='active',intent=None))
+                self.store._write(path,dict(value,state='active',intent=None,
+                                           used_intents=pending['used_intents']))
                 raise
+            except Unconfirmed as failure:
+                # The bounded adapter may return a verified write receipt and
+                # then detect deadline expiry. Retain that exact time while
+                # preserving containment and the original failed deadline.
+                stamp=None
+                if failure.changed_at is not None:
+                    try:stamp=AuthoritativePasswordAdapter._stamp(failure.changed_at)
+                    except (Refused,TypeError):pass
+                contained=dict(pending,state='contained')
+                if stamp is not None:contained['changed_at']=stamp
+                self.store._write(path,contained)
+                raise Unconfirmed('account contained; inspect before retrying',
+                                  changed_at=stamp) from None
             except BaseException:
                 self.store._write(path,dict(pending,state='contained'))
                 raise Unconfirmed('account contained; inspect before retrying') from None
+            # The exact one-row conditional UPDATE and readback supplied this
+            # timestamp. Generic mailbox.modified reads never populate history.
+            # Persist it BEFORE any post-write authentication/containment work,
+            # so failure and restart preserve the performed write separately
+            # from incomplete effects. Missing/invalid timing cannot succeed.
+            try:
+                if type(receipt) is not Receipt or receipt.credential_written is not True:
+                    raise ValueError
+                stamp=AuthoritativePasswordAdapter._stamp(receipt.changed_at)
+                pending=dict(pending,changed_at=stamp)
+                self.store._write(path,pending)
+            except BaseException:
+                self.store._write(path,dict(pending,state='contained'))
+                raise Unconfirmed('changed credential timing requires contained reconciliation') from None
             try:
                 # Invalidate only this account's old authentication cache BEFORE
                 # testing the changed credential. Invalidation is not termination;
@@ -200,5 +231,6 @@ class PasswordCoordinator:
                 self.store._write(path,final)
             except BaseException:
                 self.store._write(path,dict(pending,state='contained'))
-                raise Unconfirmed('changed credential requires contained reconciliation') from None
+                raise Unconfirmed('changed credential requires contained reconciliation',
+                                  changed_at=stamp) from None
             return final['epoch'],final['changed_at']

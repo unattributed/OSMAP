@@ -978,3 +978,22 @@ Source T01 and T02 required checks are now PASS at their declared source layers.
 ## 2026-10-16 — bounded HTTP12 state reconciliation and principal disposition
 
 Reviewed read-only observation passed in4.163 seconds: current journal complete/contained, epoch0contained, empty flush counts. This does not prove the SQL password was unchanged. Fresh independently reviewed purpose-only administration then passed in5.863 seconds: four fixed admin children and four birth queries reaped; _osmaphash/_osmapprimary removed after repeated current all-credential absence and exact row/custody admission; unrelated current public records preserved. Its guardian stage and group are gone. Eight older source/SQL/runtime/scratch trees remain retained; original pre-run restoration is UNKNOWN. No old PID signal, snapshot restoration, credential retry or provider action occurred. Original HTTP12 failure remains FAIL. Completed component source and essential T01/T02 checks proceed through ordinary signed synchronization; no full S04-02 or release claim.
+
+
+## 2026-10-16 — current S04-02 source and native admission outcome
+
+Signed/synchronized source remains357301e. The working source now contains the reviewed password-status implementation and both audit corrections: authoritative own-write timing survives incomplete effects, authenticated account/epoch admission exposes valid active history, both settings views use actual Runtime delegation, and Changed requires matching persisted-time readback under the original deadline. Six new Rust cases and two changed expiry regressions passed; nine matching Python checks were reused. This candidate is not yet signed, installed or accepted.
+
+The matching357 native library compiled fresh in79.530 seconds, with1255 input hashes preserved and its owned group gone. Compressed publication produced the exact immutable53940168-byte c021 artifact after a retained raw-upload timeout. Native13 then failed before root spawn at a stale nested source-pin registry. No password operation or new private fixture was dispatched. Root and independent review are correcting the packaging gap with a real local admission discriminator before another changed case. T03 remains FAIL; T04–T08 installed/native exits and S04-02 closure remain open. Installed324b pair and disabled password capability are unchanged.
+
+
+## 2026-10-16 — superseding native14 result
+
+The registry repair passed admission and native14 executed against frozen357. It remains FAIL: request5 returned503 at the required cache observation after worker completion. Its initiating cause and SQL write are unknown. Three actor/driver groups,24 SQL command handles and Dovecot/Postfix have confirmed disposition; broker uncertainty retains purpose identities, runtime/scratch and stages. Result83f8da25 and independent39dfcb0c supersede the earlier native13-only status. Source-only T07 code/tests/audit remain valid in their own scope. Finish their normal signed admission; no installed password capability or slice closure is claimed.
+
+
+## 2026-10-16 — source27 response correction and final source scope
+
+Final source scope32 includes reviewed password-history persistence/admission/Runtime/settings and the client response-wait correction. Six new Rust and two changed expiry cases passed, nine matching Python checks reused, four response controls passed. Normal signed admission is next. Native14 remains FAIL with unknown cause/write and retained purpose/runtime/stages; installed324b/disabled password capability unchanged. No S04-02 closure or human test is requested.
+
+Normal commit attempt1 failed: 1762 Rust library cases passed with48 explicit native ignores; the593-case account suite retained three old post-write `contained` expectations while the reviewed protocol now returns `changed_incomplete` with verified write time. No commit was created. Repair only those expectations after confirming that account containment, consumed intent, no repeated SQL and original deadlines remain asserted; require focused results and independent review before superseding normal gates. Source scope becomes34 paths, including the two affected existing test files. Native14 and installed limits remain unchanged.

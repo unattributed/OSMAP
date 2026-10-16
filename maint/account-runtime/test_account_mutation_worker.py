@@ -112,10 +112,12 @@ class WorkerTests(unittest.TestCase):
 
     def test_malformed_postsuccess_receipt_is_never_known_refused(self):
         self.backend.result = Receipt('invalid-public-stamp')
-        with self.assertRaises(Unavailable):
-            self.worker().execute(frame())
+        self.check_reply(self.worker().execute(frame()), 'contained')
         self.assertEqual(self.backend.writes, 1)
-        self.assertEqual(self.record()['entries'][0]['state'], 'pending')
+        self.assertEqual(self.record()['entries'][0]['state'], 'complete')
+        with self.store.locked(ACCOUNT) as path:
+            value=self.store._read(path)
+        self.assertEqual((value['state'],value['changed_at']),('contained',None))
         with self.assertRaises(Unavailable):
             self.worker().execute(frame())
         self.assertEqual(self.backend.writes, 1)
@@ -231,7 +233,7 @@ class WorkerTests(unittest.TestCase):
         with self.assertRaises(Unavailable):
             self.worker(builder=build).execute(frame())
         self.assertEqual(self.backend.writes, 1)
-        self.assertEqual(self.record()['entries'][0]['outcome']['status'], 'contained')
+        self.assertEqual(self.record()['entries'][0]['outcome']['status'], 'changed_incomplete')
         with self.assertRaises(Refused):
             self.store.admission(ACCOUNT)
         self.now = 1299
@@ -277,7 +279,7 @@ class WorkerTests(unittest.TestCase):
         with self.assertRaises(Unavailable):
             self.worker().execute(frame())
         self.assertEqual(self.backend.writes, 1)
-        self.assertEqual(self.record()['entries'][0]['outcome']['status'], 'contained')
+        self.assertEqual(self.record()['entries'][0]['outcome']['status'], 'changed_incomplete')
         with self.assertRaises(Refused):
             self.store.admission(ACCOUNT)
         self.assertNotIn('flush', self.calls)

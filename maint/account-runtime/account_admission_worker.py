@@ -112,7 +112,13 @@ def execute(frame, store, authenticate=None, *, budget=None, startup=None):
             if budget is not None:_original_budget(budget)
             if not accepted:
                 return {'schema': SCHEMA, 'account': account, 'status': 'rejected', 'epoch': None}
-        return {'schema': SCHEMA, 'account': account, 'status': 'active', 'epoch': value['epoch']}
+        result={'schema': SCHEMA, 'account': account, 'status': 'active', 'epoch': value['epoch']}
+        # Same active account/epoch lock as authentication and mutation. Never
+        # expose contained/pending records or derive password history from SQL
+        # mailbox metadata. Genuinely absent historical data remains absent.
+        if value['changed_at'] is not None:
+            result['changed_at']=value['changed_at']
+        return result
 
 
 def main():

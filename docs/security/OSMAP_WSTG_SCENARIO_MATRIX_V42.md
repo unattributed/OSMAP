@@ -986,3 +986,22 @@ not substituted by the contract, normal builds or past component evidence.
 ## 2026-10-16 — S04-02 source boundaries and actual retained uncertainty
 
 The fixed command-versus-registration endpoint is corrected in maintained source and the private native template. Actual HTTP12 progressed to challenge/ACK and worker completion, then returned503 at cache observation; SQL write remains unproved. A reviewed read-only observation reports a complete/contained journal, epoch0contained and empty flush counts, without SQL read or mutation. Preserve this native FAIL and retained namespaces. The captured-CANCEL reader is separately corrected to use its unchanged original operation deadline, with local oldRED/new3PASS and independent source review; changed native qualification remains unrun. T01 actual owned-browser interaction coverage and T02 typed/route/real-revoked-store source controls pass with exact scopes; no installed T06–T08, recovery, provider delivery, whole-slice or release acceptance follows. V10 uses unchanged generators with12 new test assumptions and existing derived metadata reconciled; V14 adds only the exact test-only CJS classification, preserving production CSP and unknown-script refusal.
+
+
+## 2026-10-16 — S04-02 password history and actual admission failure
+
+The exact source candidate preserves verified own-UPDATE timing across incomplete containment and authentic terminal-receipt expiry, while pending/contained admission remains refused. Optional history is MAC-bound to account/epoch/request; actual Runtime and both settings views consume it. Newly confirmed success requires equal authoritative persisted readback under the same deadline. Missing, malformed or mismatched readback keeps known timing and Unconfirmed/quarantine; unbound receipts cannot supply timing. Six new source Rust cases and two changed expiry cases passed, with nine exact Python checks reused and independent source review7433bea3. No native or installed T07/release claim follows.
+
+Actual native13 refused in unprivileged receive_public before root spawn because three nested remote source pins were stale. Preserve resultcc8e3024 and the retained carrier, correct the earlier all-pins-match assertion, and execute the real source-admission discriminator before another changed qualification. No root SQL/auth/mail or provider action was dispatched. The original T03 workflow remains open. V10 uses unchanged generators with current derived source counts/hashes; no scanner, CSP, parser, deadline or hook waiver is authorized.
+
+
+## 2026-10-16 — actual native14 retained failure
+
+The repaired nested carrier admits all current inputs. Native14 still fails the composed password workflow: challenge/ACK/worker completion/reap precede HTTP503 at the positive-cache predicate. Terminal classification, SQL write and initiating cause remain unproved. Actor/driver groups,24 command handles and Dovecot/Postfix are disposed, but broker uncertainty retains private purpose/runtime/scratch/stage state. Keep83f8da25/39dfcb0c FAIL; no old-failure diagnosis, source-T07 promotion, installed readiness or release claim follows.
+
+
+## 2026-10-16 — source27 response correction and final source scope
+
+Client first-response waiting uses the unchanged original budget; one absolute one-second partial-frame interval prevents fragment renewal. Ordinary server/send/framing/current authority/expiry/uncertainty remain. OldRED/new4PASS/independente8c2 are source evidence only, not a native14 diagnosis or installed/release qualification.
+
+Normal commit attempt1 retained three account-test failures expecting the prior post-write `contained` terminal. Verified own-write time now accompanies explicit `changed_incomplete`; correct exact expectations while keeping account contained, consumed intent, no repeated SQL and original deadlines. Rust1762PASS/48 native ignores does not override the failed account gate. No commit, deployment or security-readiness claim precedes successful superseding normal gates.

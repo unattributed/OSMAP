@@ -242,6 +242,9 @@ where
                         key_state.as_ref().map(|keys| &keys.state),
                         section == "authentication",
                         self.gateway.password_change_available(&validated_session),
+                        self.gateway
+                            .password_changed_at(&validated_session)
+                            .as_deref(),
                     ),
                 ),
                 audit_events,

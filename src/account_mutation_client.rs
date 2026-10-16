@@ -428,6 +428,7 @@ impl Client {
                 && matches!(
                     receipt.outcome(),
                     crate::account_mutation::Outcome::Changed { .. }
+                        | crate::account_mutation::Outcome::ChangedIncomplete { .. }
                 )
             {
                 return Err(Error::Uncertain);

@@ -18,7 +18,7 @@ import sys
 import time
 
 from account_epoch import EpochStore
-from authoritative_password import AuthoritativePasswordAdapter, Refused, Unconfirmed
+from authoritative_password import AuthoritativePasswordAdapter, Refused, Unconfirmed, Receipt
 from account_mutation_codec import (LIMIT, Invalid, VerifiedRequest, encoded, key_valid,
                                     lower_hex, response, uint, valid_outcome, verify_request)
 from operation_budget import OperationBudget
@@ -234,7 +234,12 @@ class _BudgetedAdapter:
             self._budget.remaining()
         except Exception:
             # A returned receipt can already follow a committed SQL write.
-            raise Unconfirmed('mutation writer deadline unconfirmed') from None
+            stamp=None
+            if type(result) is Receipt and result.credential_written is True:
+                try:stamp=AuthoritativePasswordAdapter._stamp(result.changed_at)
+                except (Refused,TypeError):pass
+            raise Unconfirmed('mutation writer deadline unconfirmed',
+                              changed_at=stamp) from None
         return result
 
 
@@ -429,8 +434,9 @@ class MutationWorker:
                 raise Unavailable('mutation coordinator unavailable') from None
             try:
                 epoch, stamp = coordinator.change(request.action)
-            except Unconfirmed:
-                outcome = {'status': 'contained'}
+            except Unconfirmed as failure:
+                outcome = ({'status': 'changed_incomplete', 'changed_at': failure.changed_at}
+                           if failure.changed_at is not None else {'status': 'contained'})
             except Refused:
                 # The reviewed coordinator defines Refused only before write or
                 # confirmed zero-row conditional update; other exceptions below

@@ -10865,3 +10865,28 @@ Integrate the two demonstrated backend contract corrections: administrative comm
 ## 2026-10-16 — bounded HTTP12 state reconciliation and principal disposition
 
 Reviewed read-only observation passed in4.163 seconds: current journal complete/contained, epoch0contained, empty flush counts. This does not prove the SQL password was unchanged. Fresh independently reviewed purpose-only administration then passed in5.863 seconds: four fixed admin children and four birth queries reaped; _osmaphash/_osmapprimary removed after repeated current all-credential absence and exact row/custody admission; unrelated current public records preserved. Its guardian stage and group are gone. Eight older source/SQL/runtime/scratch trees remain retained; original pre-run restoration is UNKNOWN. No old PID signal, snapshot restoration, credential retry or provider action occurred. Original HTTP12 failure remains FAIL. Completed component source and essential T01/T02 checks proceed through ordinary signed synchronization; no full S04-02 or release claim.
+
+
+## 2026-10-16 — S04-02 verified password timing and failed native admission
+
+Persist only the timestamp produced and verified by the exact conditional credential UPDATE. Clear an older timestamp for an ambiguous new write; preserve prior history for a known no-write refusal. Store known new timing before post-write effects, retain it during incomplete containment, and keep pending/contained authentication refused. Active own-account history travels through the existing account/epoch-bound authenticated admission reply and actual Runtime/settings delegation. New Changed success requires equal persisted-time readback at the new epoch within the original deadline. Missing or mismatching readback retains known receipt timing but remains Unconfirmed with quarantine. An expired matching receipt retains timing without further admission or cleanup; an unbound receipt supplies none.
+
+The original22-path candidate had two timestamp-loss boundaries found by independent audit. The two-path successor repairs them; six new Rust and two changed existing expiry cases passed, and nine exact Python checks are reused. Source-only review is clear; installed T07 and S04-02 remain open. No production capability flags or operator credential changed.
+
+Native13 failed before root dispatch at the received source-hash guard. Runner pins were current, but the emitted remote WIRE_PINS retained three predecessor hashes. This is a measured packaging defect and a missed root/reviewer verification, not evidence of a password/backend defect. The earlier claim that all59 nested pins matched is corrected. Root owns admission of this package. Repair every executed and embedded registry against the same source59 map, then execute the actual local admission chain with a matching payload and changed-hash refusal before another host case. Preserve failed13 and its unprivileged carrier; do not rerun its unchanged package or infer cleanup.
+
+The raw54MB artifact upload timed out at120 seconds. The changed13.665MB compressed publication passed under the same ceiling and produced the identical immutable c021 artifact. Old partial data remains retained. Investigation closeout records the actual overrun and14.460-second late transport dispatch; its finishing disposition was recorded after dispatch and is not backdated. These prerequisite/source results do not close the functional workflow.
+
+
+## 2026-10-16 — preserve native14 failure and continue concrete source delivery
+
+All nested source registries now match, and the actual local admission discriminator passes. Controlled native14 then reaches worker completion but fails the required cache observation with HTTP503. Retain result83f8da25/independent scope39dfcb0c: actual write and initiating cause remain unknown; the candidate is not qualified. Confirmed actor/daemon/command disposition does not erase broker uncertainty or authorize removal of retained purpose identities and namespaces. Fresh bounded current-state/principal reconciliation precedes any next native case.
+
+Do not discard the independently verified T07 code because a separate frozen357 qualification failed. Complete its normal source admission with exact source/native separation. A remaining client one-second reply wait may be corrected only after a meaningful original-budget reproducer and independent review; no passing local test is a diagnosis of native14 or a workflow/deployment claim.
+
+
+## 2026-10-16 — source27 response correction and final source scope
+
+Source27 confirms a client first-response timeout during authorized work. Wait for the first byte under the existing original budget, then one absolute one-second partial-frame interval; no caller knob, renewed deadline or changed authority/framing/uncertainty. OldRED/new4PASS and independente8c2 qualify only this source correction. Combine its two paths with T07 source admission; native14 cause/write and installed exits remain open.
+
+The first normal commit gate refused three existing Python post-write assertions; preserve its complete result/logs under `password-status-implementation2/canonical-integration1/commit-attempt1-result.json`. Verified writes with incomplete effects must assert the new explicit `changed_incomplete` terminal and exact timestamp while retaining all containment, uncertainty, deadline and single-write assertions. No production rollback to an ambiguous terminal and no assertion removal or hook waiver. Independently review the two-file test correction and final34 source freeze before a changed signed attempt.

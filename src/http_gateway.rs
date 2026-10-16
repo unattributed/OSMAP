@@ -1061,6 +1061,20 @@ impl BrowserGateway for RuntimeBrowserGateway {
                 .is_some_and(crate::account_admission::valid_epoch)
     }
 
+    fn password_changed_at(&self, session: &ValidatedSession) -> Option<String> {
+        let ready = self.account_runtime.ready()?;
+        let epoch = session.record.account_epoch?;
+        ready
+            .admission()
+            .password_changed_at_before(
+                &session.record.canonical_username,
+                epoch,
+                std::time::Instant::now() + std::time::Duration::from_secs(5),
+            )
+            .ok()
+            .flatten()
+    }
+
     fn change_own_password(
         &self,
         context: &AuthenticationContext,

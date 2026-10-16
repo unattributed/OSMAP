@@ -9,6 +9,7 @@ An acknowledgment proves SASL closure only, never Postfix TCP absence.
 """
 import re
 import socket
+import time
 
 from authoritative_password import AuthoritativePasswordAdapter, Refused, Unconfirmed
 from mail_session_containment import OperatorOwnedProxyNamespace, OperatorOwnedSmtpTopology
@@ -51,6 +52,32 @@ def _captured_cancel_line(stream, budget):
         if not block or len(value) + len(block) > LIMIT:
             raise Refused('SMTP control frame unavailable')
         value.extend(block)
+    budget.remaining()
+    if value.count(b'\n') != 1 or b'\r' in value or b'\0' in value:
+        raise Refused('SMTP control frame refused')
+    return bytes(value)
+
+
+def _authorized_response_line(stream, budget):
+    # The exact source server may perform authorized capture/cancellation work
+    # before its first response byte. That wait consumes the SAME original
+    # operation budget. Once any byte arrives, complete this bounded frame
+    # within one second; partial traffic cannot renew that progress allowance.
+    stream.settimeout(budget.remaining())
+    value = bytearray(stream.recv(LIMIT + 1))
+    if not value or len(value) > LIMIT:
+        raise Refused('SMTP control frame unavailable')
+    if not value.endswith(b'\n'):
+        partial_end = time.monotonic() + budget.cap_seconds(1)
+        while not value.endswith(b'\n'):
+            left = min(budget.remaining(), partial_end - time.monotonic())
+            if left <= 0:
+                raise Refused('SMTP control frame unavailable')
+            stream.settimeout(left)
+            block = stream.recv(LIMIT + 1 - len(value))
+            if not block or len(value) + len(block) > LIMIT:
+                raise Refused('SMTP control frame unavailable')
+            value.extend(block)
     budget.remaining()
     if value.count(b'\n') != 1 or b'\r' in value or b'\0' in value:
         raise Refused('SMTP control frame refused')
@@ -214,7 +241,7 @@ class LifecycleControlClient:
             AuthoritativePasswordAdapter._account(account)
             self._recheck()
             _send(self._stream, CAPTURE + account.encode('ascii') + b'\n', self._budget)
-            if _line(self._stream, self._budget) != CAPTURED:
+            if _authorized_response_line(self._stream, self._budget) != CAPTURED:
                 raise Refused('SMTP control capture acknowledgment unavailable')
             self._recheck()
             self._state = 'captured'
@@ -229,7 +256,7 @@ class LifecycleControlClient:
         try:
             self._recheck()
             _send(self._stream, CANCEL, self._budget)
-            value = _line(self._stream, self._budget)
+            value = _authorized_response_line(self._stream, self._budget)
             if not value.startswith(CLOSED):
                 raise ValueError
             raw = value[len(CLOSED):-1]

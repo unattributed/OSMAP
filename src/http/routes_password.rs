@@ -154,9 +154,17 @@ impl<G: BrowserGateway> BrowserApp<G> {
             Err(response) => return response,
         };
         audit_events.push(acquired);
-        let outcome = self
+        let mut outcome = self
             .gateway
             .change_own_password(context, &session, &token, action, deadline);
+        if outcome.decision == BrowserPasswordDecision::Changed
+            && !outcome
+                .changed_at
+                .as_deref()
+                .is_some_and(crate::account_mutation::changed_at_valid)
+        {
+            outcome.decision = BrowserPasswordDecision::Unconfirmed;
+        }
         audit_events.extend(outcome.audit_events);
         audit_events.push(self.release_auth_budget(guard, context));
         audit_events.push(
@@ -186,8 +194,20 @@ impl<G: BrowserGateway> BrowserApp<G> {
             },
         };
         // Completed/uncertain results do not expose a second submission form.
+        let timing = outcome.changed_at.as_deref()
+            .filter(|v| crate::account_mutation::changed_at_valid(v))
+            .map(|v| {
+                let state = if outcome.decision == BrowserPasswordDecision::Changed {
+                    "Password change and required containment were confirmed."
+                } else {
+                    "Required containment remains incomplete; this is not a completed password change."
+                };
+                format!("<p>The credential write was verified at {}-{}-{} {}:{}:{} UTC. {state}</p>",
+                    &v[0..4], &v[4..6], &v[6..8], &v[8..10], &v[10..12], &v[12..14])
+            })
+            .unwrap_or_default();
         let response = if clear {
-            html_response(status, reason, "Password Change", TrustedHtml::from_template(format!("<main id=\"main-content\" class=\"page-shell\"><section class=\"panel\"><h1>Password change</h1><p role=\"status\">{message}</p><a href=\"/login\">Sign in</a></section></main>")))
+            html_response(status, reason, "Password Change", TrustedHtml::from_template(format!("<main id=\"main-content\" class=\"page-shell\"><section class=\"panel\"><h1>Password change</h1><p role=\"status\">{message}</p>{timing}<a href=\"/login\">Sign in</a></section></main>")))
                 .with_header("Set-Cookie", clear_session_cookie(self.policy.session_cookie_name, self.policy.secure_session_cookie))
         } else {
             reply(status, reason, message)

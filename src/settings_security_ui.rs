@@ -60,7 +60,24 @@ pub(crate) fn render_security_page(
     keys: Option<&crate::key_management::State>,
     authentication: bool,
     password_available: bool,
+    password_changed_at: Option<&str>,
 ) -> TrustedHtml {
+    let changed_at = password_changed_at.filter(|v| crate::account_mutation::changed_at_valid(v));
+    let password_history = changed_at.map_or_else(
+        || "Last change unknown".to_owned(),
+        |v| {
+            format!(
+                "Last changed {}-{}-{} {}:{}:{} UTC",
+                &v[0..4],
+                &v[4..6],
+                &v[6..8],
+                &v[8..10],
+                &v[10..12],
+                &v[12..14]
+            )
+        },
+    );
+    let password_detail = format!("Required at this sign-in; {password_history}");
     let sessions = verified_security_sessions(account, decision);
     let count = sessions
         .map(|items| {
@@ -79,14 +96,9 @@ pub(crate) fn render_security_page(
         format!("<div class=\"security-control\"><div><strong>{title}</strong><p>{detail}</p></div>{control}</div>")
     };
     let password = if password_available {
-        "<div class=\"security-control\"><div><strong>Password</strong><p>Required at this sign-in; last change unknown</p></div><a class=\"button-link secondary\" href=\"/settings/password\" aria-label=\"Change password\">Change</a></div>".to_string()
+        format!("<div class=\"security-control\"><div><strong>Password</strong><p>{password_detail}</p></div><a class=\"button-link secondary\" href=\"/settings/password\" aria-label=\"Change password\">Change</a></div>")
     } else {
-        row(
-            "Password",
-            "Required at this sign-in; last change unknown",
-            "Change",
-            false,
-        )
+        row("Password", &password_detail, "Change", false)
     };
     let totp = row(
         "TOTP two-factor",
@@ -120,7 +132,7 @@ pub(crate) fn render_security_page(
         } else {
             events.push_str("<li>Retained sign-ins are unavailable.</li>");
         }
-        let tiles = [("OpenPGP", key_status, key_detail.as_str()), ("TOTP", "Used at sign-in", "Current enrollment unknown"), ("Password", "Used at sign-in", "Last change unknown"), ("Recovery Contact", "Unknown", "Contact and verification unavailable")].into_iter().map(|(title, state, note)| format!("<section class=\"security-tile\"><span class=\"security-tile-symbol\" aria-hidden=\"true\">{}</span><div><h3>{title}</h3><strong>{state}</strong><p>{note}</p></div></section>", shell_icon("shield"))).collect::<String>();
+        let tiles = [("OpenPGP", key_status, key_detail.as_str()), ("TOTP", "Used at sign-in", "Current enrollment unknown"), ("Password", "Used at sign-in", password_history.as_str()), ("Recovery Contact", "Unknown", "Contact and verification unavailable")].into_iter().map(|(title, state, note)| format!("<section class=\"security-tile\"><span class=\"security-tile-symbol\" aria-hidden=\"true\">{}</span><div><h3>{title}</h3><strong>{state}</strong><p>{note}</p></div></section>", shell_icon("shield"))).collect::<String>();
         format!(concat!("<section class=\"security-card security-heading\"><h2>Security</h2><p>Status and management for account protection. Privacy preferences remain under <a href=\"/settings?section=privacy\">Privacy &amp; Security</a>.</p></section><div class=\"security-tiles\">{tiles}</div>",
             "<div class=\"security-two-cards security-overview-cards\"><section class=\"security-card\"><h2>Security Controls</h2>{keys}{totp}{password}{recovery}{active}</section><section class=\"security-card\"><h2>Recent Security Events</h2><p class=\"security-event-scope\">Sign-ins from retained sessions; other security event history unavailable.</p><ul class=\"security-events\">{events}</ul></section></div>",
             "<section class=\"security-card security-role\"><h3>Security page role</h3><p>These details describe this sign-in, retained sessions and reported public account keys. Manage keys opens account-bound key management; this overview does not establish private-key availability. Password and recovery changes remain unavailable here. <a href=\"/settings?section=privacy\">Review privacy and rendering protections</a>.</p></section>"), password=password, totp=totp, active=active, tiles=tiles, events=events, keys=key_control, recovery=row("Recovery contact", "Contact and verification status unknown", "Manage", false))
@@ -171,7 +183,7 @@ mod tests {
             sessions,
         };
         let valid = make(sessions.clone());
-        let html = render_security_page("alice", "synthetic", &valid, None, false, false)
+        let html = render_security_page("alice", "synthetic", &valid, None, false, false, None)
             .as_str()
             .to_owned();
         assert!(html.contains("256 active browser sessions"));
@@ -192,6 +204,7 @@ mod tests {
                     None,
                     authentication,
                     false,
+                    None,
                 )
                 .as_str()
                 .to_owned();
@@ -228,7 +241,7 @@ mod tests {
             session_idle_timeout_seconds: 100,
             sessions: entries,
         };
-        let html = render_security_page("alice", "synthetic", &decision, None, false, false)
+        let html = render_security_page("alice", "synthetic", &decision, None, false, false, None)
             .as_str()
             .to_owned();
         assert!(html.contains("6 active browser sessions"));
@@ -245,9 +258,10 @@ mod tests {
                 public_reason: "private-error".into(),
             },
         ] {
-            let html = render_security_page("bob", "synthetic", &decision, None, false, false)
-                .as_str()
-                .to_owned();
+            let html =
+                render_security_page("bob", "synthetic", &decision, None, false, false, None)
+                    .as_str()
+                    .to_owned();
             assert!(html.contains("Active session count unknown"));
             assert!(!html.contains("device&lt;"));
             assert!(!html.contains("private-error"));

@@ -88,16 +88,26 @@ class MutationContainment(unittest.TestCase):
         old,_,_=self.local.channel(self.alice)
         with patch.object(service,'_send',side_effect=BrokenPipeError('synthetic final ACK loss')):
             raw=self.run_worker()
-        self.assertEqual(json.loads(raw)['outcome']['status'],'contained');self.assertEqual(self.epoch()['state'],'contained')
+        self.assertEqual(json.loads(raw)['outcome'],
+                         {'status':'changed_incomplete','changed_at':'20261004170100'})
+        self.assertEqual((self.epoch()['state'],self.epoch()['epoch'],self.epoch()['changed_at']),
+                         ('contained',0,'20261004170100'))
+        with self.assertRaises(Refused):self.local.store.admission(self.alice)
         self.assertEqual(self.sql.sql_updates,1);self.assertTrue(old.closed);self.assertTrue(self.local.registry._control_uncertain);self.assertEqual(self.dependencies[0]._client._stream.fileno(),-1)
         self.assertEqual(len(self.local.registry._cutoffs),0);self.assertEqual(self.proxy_results[0][1],b'1 connections kicked\n')
-        with self.assertRaises(Exception):self.run_worker()
+        with self.assertRaises(Unavailable):self.run_worker()
         self.assertEqual(self.sql.sql_updates,1)
     def test_independent_proxy_TCP_residual_after_broker_success_stays_contained(self):
         old,_,_=self.local.channel(self.alice);self.proxy_results[-1]=(0,self.proxy_rows+self.own+self.other,b'')
-        raw=self.run_worker();self.assertEqual(json.loads(raw)['outcome']['status'],'contained')
+        raw=self.run_worker();self.assertEqual(json.loads(raw)['outcome'],
+                         {'status':'changed_incomplete','changed_at':'20261004170100'})
+        self.assertEqual((self.epoch()['state'],self.epoch()['epoch'],self.epoch()['changed_at']),
+                         ('contained',0,'20261004170100'))
+        with self.assertRaises(Refused):self.local.store.admission(self.alice)
         self.assertTrue(old.closed);self.assertEqual(self.sql.sql_updates,1);self.assertEqual(self.epoch()['state'],'contained')
         self.assertEqual(sum(x=='proxy-kick'for x in self.calls),1);self.assertNotIn('imap-kick',self.calls)
+        with self.assertRaises(Unavailable):self.run_worker()
+        self.assertEqual(self.sql.sql_updates,1)
     def test_expired_original_budget_before_capture_never_SQL_or_new_connection(self):
         def issuer(action):self.issuer(action);self.clock.now=1001;return True
         with self.assertRaises(Unavailable):self.run_worker(issuer)

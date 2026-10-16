@@ -53,7 +53,11 @@ pre-seal checks and qualify the changed sealed path on OpenBSD. Preserve useful
 bounded synthetic failure diagnostics so hashes alone do not force repeated runs.
 When adapting a qualifier, check its executed admission and success consumers
 with one matching receipt and a changed count/cleanup refusal. Exact source
-pins alone do not establish compatible result schemas.
+pins alone do not establish compatible result schemas. For nested source carriers,
+compare every emitted, received and embedded pin registry to the same frozen
+input map and execute the actual local admission chain before host dispatch.
+The October16 stale remote registry failure is the concrete regression; AST
+parity or an outer manifest alone cannot establish nested admission parity.
 
 For operator-authorized multi-agent work, apply
 `docs/AGENT_DEVELOPMENT_FRAMEWORK.md` and its OSMAP mapping in

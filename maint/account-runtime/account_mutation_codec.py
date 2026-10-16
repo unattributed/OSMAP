@@ -110,6 +110,12 @@ def valid_outcome(outcome, epoch):
     status = outcome.get('status')
     if status in ('known_refused', 'contained') and set(outcome) == {'status'}:
         return {'status': status}
+    if status == 'changed_incomplete' and set(outcome) == {'status', 'changed_at'}:
+        try:
+            stamp = AuthoritativePasswordAdapter._stamp(outcome['changed_at'])
+        except (Refused, TypeError):
+            raise Invalid('mutation outcome unavailable') from None
+        return {'status': 'changed_incomplete', 'changed_at': stamp}
     if status == 'changed' and set(outcome) == {'status', 'epoch', 'changed_at'}:
         value = outcome['epoch']
         if not uint(value) or value != epoch + 1 or value > MAX_EPOCH:

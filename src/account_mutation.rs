@@ -59,7 +59,14 @@ impl std::fmt::Debug for Request {
 #[serde(tag = "status", rename_all = "snake_case", deny_unknown_fields)]
 pub enum Outcome {
     KnownRefused,
-    Changed { epoch: u64, changed_at: String },
+    Changed {
+        epoch: u64,
+        changed_at: String,
+    },
+    /// Verified write timing; required containment remains incomplete.
+    ChangedIncomplete {
+        changed_at: String,
+    },
     Contained,
 }
 
@@ -122,6 +129,7 @@ impl TerminalReceipt {
 enum StrictOutcome {
     KnownRefused {},
     Changed { epoch: u64, changed_at: String },
+    ChangedIncomplete { changed_at: String },
     Contained {},
 }
 impl<'de> Deserialize<'de> for Outcome {
@@ -129,6 +137,9 @@ impl<'de> Deserialize<'de> for Outcome {
         Ok(match StrictOutcome::deserialize(deserializer)? {
             StrictOutcome::KnownRefused {} => Self::KnownRefused,
             StrictOutcome::Changed { epoch, changed_at } => Self::Changed { epoch, changed_at },
+            StrictOutcome::ChangedIncomplete { changed_at } => {
+                Self::ChangedIncomplete { changed_at }
+            }
             StrictOutcome::Contained {} => Self::Contained,
         })
     }
@@ -186,7 +197,7 @@ fn frame<T: Serialize>(value: &T) -> Result<Vec<u8>, Error> {
     }
     Ok(bytes)
 }
-fn changed_at_valid(value: &str) -> bool {
+pub(crate) fn changed_at_valid(value: &str) -> bool {
     if value.len() != 14 || !value.bytes().all(|b| b.is_ascii_digit()) {
         return false;
     }
@@ -344,6 +355,9 @@ impl Request {
     }
     fn outcome_valid(&self, outcome: &Outcome) -> Result<(), Error> {
         match outcome {
+            Outcome::ChangedIncomplete { changed_at } if !changed_at_valid(changed_at) => {
+                Err(Error::Invalid)
+            }
             Outcome::Changed { epoch, changed_at }
                 if self.0.epoch.checked_add(1) != Some(*epoch)
                     || *epoch > MAX_EPOCH

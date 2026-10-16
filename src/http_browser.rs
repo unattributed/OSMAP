@@ -21,6 +21,11 @@ pub trait BrowserGateway {
     fn password_change_available(&self, _session: &ValidatedSession) -> bool {
         false
     }
+    /// Authoritative own-write time for this authenticated active session epoch.
+    /// Missing historical data or unavailable authority remains Unknown.
+    fn password_changed_at(&self, _session: &ValidatedSession) -> Option<String> {
+        None
+    }
     fn change_own_password(
         &self,
         _context: &AuthenticationContext,
@@ -30,6 +35,7 @@ pub trait BrowserGateway {
         _deadline: std::time::Instant,
     ) -> BrowserPasswordOutcome {
         BrowserPasswordOutcome {
+            changed_at: None,
             decision: BrowserPasswordDecision::PrewriteRefused(
                 crate::password_change::Error::Unavailable,
             ),
@@ -1033,6 +1039,8 @@ pub struct BrowserSendRequest<'a> {
 /// The result of a browser login attempt.
 pub struct BrowserPasswordOutcome {
     pub decision: BrowserPasswordDecision,
+    /// Known performed-write time; an incomplete decision remains incomplete.
+    pub changed_at: Option<String>,
     pub audit_events: Vec<LogEvent>,
 }
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

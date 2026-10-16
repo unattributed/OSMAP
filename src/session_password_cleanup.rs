@@ -18,6 +18,10 @@ pub enum BrowserRevocation {
     Contained {
         count: usize,
     },
+    ChangedIncomplete {
+        count: usize,
+        changed_at: String,
+    },
 }
 
 fn current(receipt: &TerminalReceipt, clock: &impl TimeProvider, deadline: Instant) -> bool {
@@ -115,7 +119,12 @@ impl<T: TimeProvider, R: RandomSource> SessionService<FileSessionStore, T, R> {
             }
             Ok(())
         })();
-        if result.is_err() || matches!(receipt.outcome(), Outcome::Contained) {
+        if let Outcome::ChangedIncomplete { changed_at } = receipt.outcome() {
+            BrowserRevocation::ChangedIncomplete {
+                count,
+                changed_at: changed_at.clone(),
+            }
+        } else if result.is_err() || matches!(receipt.outcome(), Outcome::Contained) {
             BrowserRevocation::Contained { count }
         } else {
             BrowserRevocation::OldSessionsRevoked { count }

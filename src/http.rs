@@ -1068,6 +1068,7 @@ mod tests {
     #[derive(Debug, Clone)]
     struct StubGateway {
         password_result: Option<BrowserPasswordDecision>,
+        password_changed_at: Option<String>,
         password_calls: Arc<Mutex<Vec<String>>>,
         created_folders: Arc<Mutex<BTreeMap<String, Vec<String>>>>,
         renamed_folders: Arc<Mutex<Vec<crate::folder_rename::RenameFolderRequest>>>,
@@ -1140,6 +1141,7 @@ mod tests {
         fn default() -> Self {
             Self {
                 password_result: None,
+                password_changed_at: None,
                 password_calls: Default::default(),
                 created_folders: Arc::new(Mutex::new(BTreeMap::new())),
                 renamed_folders: Arc::new(Mutex::new(Vec::new())),
@@ -1269,6 +1271,9 @@ mod tests {
     }
 
     impl BrowserGateway for StubGateway {
+        fn password_changed_at(&self, _session: &ValidatedSession) -> Option<String> {
+            self.password_changed_at.clone()
+        }
         fn password_change_available(&self, _session: &ValidatedSession) -> bool {
             self.password_result.is_some()
         }
@@ -1292,6 +1297,7 @@ mod tests {
                 .unwrap()
                 .push(session.record.canonical_username.clone());
             BrowserPasswordOutcome {
+                changed_at: self.password_changed_at.clone(),
                 decision: self
                     .password_result
                     .unwrap_or(BrowserPasswordDecision::PrewriteRefused(

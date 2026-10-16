@@ -115,6 +115,80 @@ class ControlTests(unittest.TestCase):
         bob_front.settimeout(.2)
         self.assertEqual(bob_front.recv(4096), b'OK\t2\tuser=' + BOB.encode() + b'\n')
 
+    def test_authorized_capture_and_cancel_response_wait_share_original_budget(self):
+        received_mono = time.monotonic()
+        received_millis = int(time.time() * 1000)
+        deadline_millis = received_millis + 3000
+        expires = (deadline_millis + 999) // 1000
+        self.budget = OperationBudget.from_original_deadline(expires,
+            received_mono=received_mono, received_millis=received_millis,
+            sent_millis=received_millis, deadline_millis=deadline_millis,
+            wall_millis=lambda: int(time.time() * 1000))
+        self.fixture.budget = self.budget
+        self.namespace, self.topology = self.fixture.produce()
+        original_deadline = self.budget._deadline
+        alice, front, back = self.channel()
+        bob, bob_front, _ = self.channel(BOB, 2)
+        self.state()
+        capture = control.LifecycleControlOperation._capture
+        cancel = self.registry.cancel_cutoff_locked
+        delays = []
+        def authorized_capture(operation, account):
+            result = capture(operation, account)
+            # Real source authority/account checks and cutoff allocation have
+            # already run. Model legitimate work before its first response.
+            started = time.monotonic()
+            threading.Event().wait(1.15)
+            delays.append(time.monotonic() - started)
+            return result
+        def authorized_cancel(cutoff, budget):
+            result = cancel(cutoff, budget)
+            started = time.monotonic()
+            threading.Event().wait(1.15)
+            delays.append(time.monotonic() - started)
+            return result
+        with patch.object(control.LifecycleControlOperation, '_capture', authorized_capture), \
+             patch.object(self.registry, 'cancel_cutoff_locked', authorized_cancel):
+            operation, stream, thread = self.pair()
+            client = control.LifecycleControlClient(stream, self.namespace, self.budget)
+            client.capture(ALICE)
+            self.assertEqual(client.cancel(), 1)
+            thread.join(timeout=.5)
+        self.assertFalse(thread.is_alive())
+        self.assertEqual(self.results, [1])
+        self.assertEqual(operation._state, 'complete')
+        self.assertEqual(len(delays), 2)
+        self.assertTrue(all(delay > 1 for delay in delays))
+        self.assertGreater(self.budget.remaining(), 0)
+        self.assertEqual(self.budget._deadline, original_deadline)
+        self.budget.require_original(sent_millis=received_millis,
+            deadline_millis=deadline_millis, expires_at=expires)
+        self.assertFalse(getattr(self.registry, '_control_uncertain', False))
+        for peer in (front, back):
+            peer.settimeout(.2)
+            self.assertEqual(peer.recv(1), b'')
+        self.assertFalse(bob.closed)
+        self.assertTrue(self.registry.publish(bob,
+            self.registry.verified(bob, b'OK\t2\tuser=' + BOB.encode() + b'\n')))
+        bob_front.settimeout(.2)
+        self.assertEqual(bob_front.recv(4096), b'OK\t2\tuser=' + BOB.encode() + b'\n')
+
+    def test_authorized_response_partial_frame_has_finite_progress_deadline(self):
+        server, client = socket.socketpair()
+        self.addCleanup(server.close)
+        self.addCleanup(client.close)
+        budget = OperationBudget(int(time.time()) + 6, maximum_seconds=3)
+        server.sendall(b'OSMAP-')
+        with self.assertRaises((TimeoutError, Refused)):
+            control._authorized_response_line(client, budget)
+        self.assertGreater(budget.remaining(), 0)
+        # Completing a frame after original expiry cannot be accepted either.
+        expired = OperationBudget(int(time.time()) + 6, maximum_seconds=.05)
+        server.sendall(control.CAPTURED)
+        threading.Event().wait(.06)
+        with self.assertRaises(Refused):
+            control._authorized_response_line(client, expired)
+
     def test_connection_held_old_cutoff_never_cancels_new_generation(self):
         old,front,_=self.channel();self.state()
         _,stream,thread=self.pair();client=control.LifecycleControlClient(stream,self.namespace,self.budget)

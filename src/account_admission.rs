@@ -118,6 +118,8 @@ struct Response {
     nonce: String,
     status: String,
     epoch: Option<u64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    changed_at: Option<String>,
     signature: String,
 }
 fn hex(bytes: &[u8]) -> String {
@@ -247,13 +249,30 @@ impl Request {
         v["expires_at"] = self.expires.into();
         serde_json::to_vec(&v).map_err(|_| Error::Invalid)
     }
+    #[cfg(test)]
     pub(crate) fn response(
         &self,
         admission: Option<u64>,
         key: &[u8],
         now: u64,
     ) -> Result<Vec<u8>, Error> {
+        self.response_with_status(admission, None, key, now)
+    }
+    pub(crate) fn response_with_status(
+        &self,
+        admission: Option<u64>,
+        changed_at: Option<String>,
+        key: &[u8],
+        now: u64,
+    ) -> Result<Vec<u8>, Error> {
         if admission.is_some_and(|epoch| !valid_epoch(epoch)) {
+            return Err(Error::Invalid);
+        }
+        if changed_at
+            .as_deref()
+            .is_some_and(|v| !crate::account_mutation::changed_at_valid(v))
+            || (admission.is_none() && changed_at.is_some())
+        {
             return Err(Error::Invalid);
         }
         self.valid(key, now)?;
@@ -268,6 +287,7 @@ impl Request {
             }
             .into(),
             epoch: admission,
+            changed_at,
             signature: String::new(),
         };
         r.signature = hex(&mac(key, &r.payload()?)?.finalize().into_bytes());
@@ -276,6 +296,20 @@ impl Request {
 }
 impl Response {
     fn payload(&self) -> Result<Vec<u8>, Error> {
+        if let Some(stamp) = &self.changed_at {
+            // Optional authenticated extension: epoch-only historical replies
+            // keep their exact payload; a timestamp is always MAC-bound.
+            return serde_json::to_vec(&(
+                SCHEMA,
+                "response",
+                &self.account,
+                &self.nonce,
+                &self.status,
+                self.epoch,
+                stamp,
+            ))
+            .map_err(|_| Error::Invalid);
+        }
         serde_json::to_vec(&(
             SCHEMA,
             "response",
@@ -318,6 +352,7 @@ impl Verifier {
         self.consume(&r, false, now)?;
         Ok(r)
     }
+    #[cfg(test)]
     pub(crate) fn response(
         &mut self,
         request: &Request,
@@ -325,6 +360,16 @@ impl Verifier {
         key: &[u8],
         now: u64,
     ) -> Result<Option<Admission>, Error> {
+        self.response_with_status(request, bytes, key, now)
+            .map(|v| v.0)
+    }
+    pub(crate) fn response_with_status(
+        &mut self,
+        request: &Request,
+        bytes: &[u8],
+        key: &[u8],
+        now: u64,
+    ) -> Result<(Option<Admission>, Option<String>), Error> {
         if bytes.len() > MAX_FRAME {
             return Err(Error::Invalid);
         }
@@ -334,6 +379,13 @@ impl Verifier {
             return Err(Error::Authentication);
         }
         verify(key, &r.payload()?, &r.signature)?;
+        if r.changed_at
+            .as_deref()
+            .is_some_and(|v| !crate::account_mutation::changed_at_valid(v))
+            || (r.status != "active" && r.changed_at.is_some())
+        {
+            return Err(Error::Invalid);
+        }
         let value = match (&request.operation, r.status.as_str(), r.epoch) {
             (Operation::Authenticate { .. }, "rejected", None) => None,
             (Operation::Authenticate { .. }, "active", Some(epoch)) if valid_epoch(epoch) => {
@@ -351,9 +403,53 @@ impl Verifier {
             _ => return Err(Error::Refused),
         };
         self.consume(request, true, now)?;
-        Ok(value)
+        Ok((value, r.changed_at))
     }
 }
 #[cfg(test)]
 #[path = "account_admission_tests.rs"]
 mod tests;
+
+#[test]
+fn password_status_extension_binds_time_account_epoch_and_nonce() {
+    let key = [29; 32];
+    let request = Request::issue(
+        "alice@example.test",
+        Operation::Admit { epoch: 7 },
+        100,
+        &key,
+    )
+    .unwrap();
+    let bytes = request
+        .response_with_status(Some(7), Some("20261004170001".into()), &key, 100)
+        .unwrap();
+    let (admission, stamp) = Verifier::default()
+        .response_with_status(&request, &bytes, &key, 100)
+        .unwrap();
+    assert_eq!(admission.unwrap().epoch, 7);
+    assert_eq!(stamp.as_deref(), Some("20261004170001"));
+    for (field, replacement) in [
+        ("changed_at", serde_json::json!("20261004170002")),
+        ("account", serde_json::json!("bob@example.test")),
+        ("epoch", serde_json::json!(8)),
+        ("nonce", serde_json::json!("f".repeat(32))),
+    ] {
+        let mut forged: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        forged[field] = replacement;
+        assert!(Verifier::default()
+            .response_with_status(&request, &serde_json::to_vec(&forged).unwrap(), &key, 100)
+            .is_err());
+    }
+    assert!(request
+        .response_with_status(Some(7), Some("20260230010203".into()), &key, 100)
+        .is_err());
+    assert!(request
+        .response_with_status(None, Some("20261004170001".into()), &key, 100)
+        .is_err());
+    let historical = request.response(Some(7), &key, 100).unwrap();
+    assert!(Verifier::default()
+        .response_with_status(&request, &historical, &key, 100)
+        .unwrap()
+        .1
+        .is_none());
+}

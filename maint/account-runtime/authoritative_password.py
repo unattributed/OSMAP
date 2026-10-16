@@ -16,6 +16,10 @@ class Refused(Exception):
 
 class Unconfirmed(Exception):
     """Dispatch began; inspect/contain the account, never retry automatically."""
+    def __init__(self, message, *, changed_at=None):
+        super().__init__(message)
+        # Only the coordinator supplies a verified, durably retained write time.
+        self.changed_at = changed_at
 
 
 @dataclass(frozen=True, repr=False)

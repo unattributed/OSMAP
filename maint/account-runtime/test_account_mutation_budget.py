@@ -48,8 +48,15 @@ class BudgetTests(unittest.TestCase):
         self.h.backend.replace=replace
         with self.assertRaises(Unavailable):self.h.worker().execute_budget(raw,clock_millis=lambda:1000000)
         self.assertEqual(self.h.backend.writes,1)
-        self.assertEqual(self.h.record()['entries'][0]['outcome'],{'status':'contained'})
+        self.assertEqual(self.h.record()['entries'][0]['outcome'],
+                         {'status':'changed_incomplete','changed_at':'20261004170000'})
+        with self.h.store.locked(ACCOUNT) as path:
+            value=self.h.store._read(path)
+        self.assertEqual((value['state'],value['epoch'],value['changed_at']),
+                         ('contained',0,'20261004170000'))
         with self.assertRaises(Refused):self.h.store.admission(ACCOUNT)
+        with self.assertRaises(Unavailable):self.h.worker().execute_budget(raw,clock_millis=lambda:1000000)
+        self.assertEqual(self.h.backend.writes,1)
 
 class GroupTests(unittest.TestCase):
     def test_nested_containment_no_late_sentinel_after_outer_kill(self):

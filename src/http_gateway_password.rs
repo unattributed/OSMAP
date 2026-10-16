@@ -1,6 +1,8 @@
 use super::*;
 use crate::password_change::{self, Attempt, EpochPrimaryBackend, Outcome, Request, Services};
 
+pub(crate) type PasswordCompletion = (crate::session::BrowserRevocation, Option<String>);
+
 impl EpochPrimaryBackend for crate::account_admission_runtime::CredentialBackend {
     fn captured_admission(
         &self,
@@ -52,25 +54,71 @@ impl RuntimeBrowserGateway {
         deadline: std::time::Instant,
     ) -> BrowserPasswordOutcome {
         let prepared = self.prepare_password_change_before(context, session, request, deadline);
-        let decision = match prepared.authorization {
-            Err(error) => BrowserPasswordDecision::PrewriteRefused(error),
+        let (decision, changed_at) = match prepared.authorization {
+            Err(error) => (BrowserPasswordDecision::PrewriteRefused(error), None),
             Ok(permit) => {
-                match self.with_password_change_completion(context, token, permit, deadline) {
-                    Ok(crate::session::BrowserRevocation::OldSessionsRevoked { .. }) => {
-                        BrowserPasswordDecision::Changed
-                    }
-                    Ok(crate::session::BrowserRevocation::KnownRefused) => {
-                        BrowserPasswordDecision::KnownRefused
-                    }
-                    Ok(crate::session::BrowserRevocation::Contained { .. }) | Err(_) => {
-                        BrowserPasswordDecision::Unconfirmed
-                    }
-                }
+                let completion =
+                    self.with_password_change_completion_status(context, token, permit, deadline);
+                self.finish_password_change_completion(session, completion, deadline)
             }
         };
         BrowserPasswordOutcome {
             decision,
+            changed_at,
             audit_events: prepared.audit_events,
+        }
+    }
+    /// Classify the actual cleanup result without discarding verified write
+    /// timing. Success still requires matching persisted timing at the new
+    /// epoch, read through the paired authority under the original deadline.
+    pub(crate) fn finish_password_change_completion(
+        &self,
+        session: &ValidatedSession,
+        completion: Result<PasswordCompletion, password_change::Error>,
+        deadline: std::time::Instant,
+    ) -> (BrowserPasswordDecision, Option<String>) {
+        use crate::session::BrowserRevocation;
+        match completion {
+            Ok((BrowserRevocation::OldSessionsRevoked { .. }, known_at)) => {
+                let ready = self.account_runtime.ready();
+                let readback = session
+                    .record
+                    .account_epoch
+                    .and_then(|epoch| epoch.checked_add(1))
+                    .and_then(|epoch| {
+                        ready.and_then(|paired| {
+                            paired
+                                .admission()
+                                .password_changed_at_before(
+                                    &session.record.canonical_username,
+                                    epoch,
+                                    deadline,
+                                )
+                                .ok()
+                                .flatten()
+                        })
+                    });
+                if known_at.is_some() && readback == known_at {
+                    (BrowserPasswordDecision::Changed, known_at)
+                } else {
+                    if let Some(paired) = ready {
+                        paired
+                            .mutation()
+                            .quarantine_account(&session.record.canonical_username);
+                    }
+                    (BrowserPasswordDecision::Unconfirmed, known_at)
+                }
+            }
+            Ok((BrowserRevocation::KnownRefused, _)) => {
+                (BrowserPasswordDecision::KnownRefused, None)
+            }
+            Ok((BrowserRevocation::ChangedIncomplete { changed_at, .. }, _)) => {
+                (BrowserPasswordDecision::Unconfirmed, Some(changed_at))
+            }
+            Ok((BrowserRevocation::Contained { .. }, known_at)) => {
+                (BrowserPasswordDecision::Unconfirmed, known_at)
+            }
+            Err(_) => (BrowserPasswordDecision::Unconfirmed, None),
         }
     }
     /// The trusted caller's eventual mutation RPC must run in this callback.
@@ -107,6 +155,16 @@ impl RuntimeBrowserGateway {
         prepared: password_change::Prepared<'a>,
         original_deadline: std::time::Instant,
     ) -> Result<crate::session::BrowserRevocation, password_change::Error> {
+        self.with_password_change_completion_status(context, token, prepared, original_deadline)
+            .map(|value| value.0)
+    }
+    fn with_password_change_completion_status<'a>(
+        &self,
+        context: &AuthenticationContext,
+        token: &SessionToken,
+        prepared: password_change::Prepared<'a>,
+        original_deadline: std::time::Instant,
+    ) -> Result<PasswordCompletion, password_change::Error> {
         let original_deadline = prepared.bound_workflow_deadline(original_deadline);
         let Some(ready) = self.account_runtime.ready() else {
             return Err(password_change::Error::Unavailable);
@@ -137,7 +195,7 @@ impl RuntimeBrowserGateway {
         ),
         mutation: &crate::account_mutation_client::Client,
         original_deadline: std::time::Instant,
-    ) -> Result<crate::session::BrowserRevocation, password_change::Error> {
+    ) -> Result<PasswordCompletion, password_change::Error> {
         let original_deadline = prepared.bound_workflow_deadline(original_deadline);
         self.password_completion_guarded(
             context,
@@ -175,6 +233,7 @@ impl RuntimeBrowserGateway {
             mutation,
             original_deadline,
         )
+        .map(|value| value.0)
     }
     #[allow(clippy::too_many_arguments)]
     fn password_completion_guarded<'a>(
@@ -195,7 +254,7 @@ impl RuntimeBrowserGateway {
             password_change::Error,
         >,
         mut quarantine: impl FnMut(&str),
-    ) -> Result<crate::session::BrowserRevocation, password_change::Error> {
+    ) -> Result<PasswordCompletion, password_change::Error> {
         use crate::account_mutation::Outcome as MutationOutcome;
         use crate::session::BrowserRevocation;
         use std::time::{Duration, Instant};
@@ -235,8 +294,13 @@ impl RuntimeBrowserGateway {
         let binding = binding.ok_or(password_change::Error::Unavailable)?;
         if !binding.matches(&receipt) {
             quarantine(&binding.account);
-            return Ok(BrowserRevocation::Contained { count: 0 });
+            return Ok((BrowserRevocation::Contained { count: 0 }, None));
         }
+        let performed_at = match receipt.outcome() {
+            MutationOutcome::Changed { changed_at, .. }
+            | MutationOutcome::ChangedIncomplete { changed_at } => Some(changed_at.clone()),
+            _ => None,
+        };
         // Even an authentic refusal cannot become a known terminal result once
         // the original operation budget or action validity has elapsed. Sample
         // the wall clock before the final Instant check so a slow clock cannot
@@ -248,10 +312,19 @@ impl RuntimeBrowserGateway {
             || Instant::now() >= deadline
         {
             quarantine(&binding.account);
-            return Ok(BrowserRevocation::Contained { count: 0 });
+            return Ok((
+                match performed_at.clone() {
+                    Some(changed_at) => BrowserRevocation::ChangedIncomplete {
+                        count: 0,
+                        changed_at,
+                    },
+                    None => BrowserRevocation::Contained { count: 0 },
+                },
+                performed_at,
+            ));
         }
         if matches!(receipt.outcome(), MutationOutcome::KnownRefused) {
-            return Ok(BrowserRevocation::KnownRefused);
+            return Ok((BrowserRevocation::KnownRefused, None));
         }
         let epoch_ready = match receipt.outcome() {
             MutationOutcome::Changed { epoch, .. } => {
@@ -270,17 +343,33 @@ impl RuntimeBrowserGateway {
         );
         let result = service.revoke_password_change_sessions(receipt, deadline);
         match result {
-            BrowserRevocation::OldSessionsRevoked { count } if epoch_ready => {
-                Ok(BrowserRevocation::OldSessionsRevoked { count })
-            }
+            BrowserRevocation::OldSessionsRevoked { count } if epoch_ready => Ok((
+                BrowserRevocation::OldSessionsRevoked { count },
+                performed_at,
+            )),
             BrowserRevocation::OldSessionsRevoked { count }
             | BrowserRevocation::Contained { count } => {
                 quarantine(&binding.account);
-                Ok(BrowserRevocation::Contained { count })
+                Ok((
+                    match performed_at.clone() {
+                        Some(changed_at) => {
+                            BrowserRevocation::ChangedIncomplete { count, changed_at }
+                        }
+                        None => BrowserRevocation::Contained { count },
+                    },
+                    performed_at,
+                ))
+            }
+            BrowserRevocation::ChangedIncomplete { count, changed_at } => {
+                quarantine(&binding.account);
+                Ok((
+                    BrowserRevocation::ChangedIncomplete { count, changed_at },
+                    performed_at,
+                ))
             }
             BrowserRevocation::KnownRefused => {
                 quarantine(&binding.account);
-                Ok(BrowserRevocation::Contained { count: 0 })
+                Ok((BrowserRevocation::Contained { count: 0 }, None))
             }
         }
     }
@@ -304,6 +393,31 @@ impl RuntimeBrowserGateway {
         >,
         quarantine: impl FnMut(&str),
     ) -> Result<crate::session::BrowserRevocation, password_change::Error> {
+        self.password_completion_status_for_test(
+            context, token, prepared, services, deadline, dispatch, quarantine,
+        )
+        .map(|value| value.0)
+    }
+    #[cfg(test)]
+    #[allow(clippy::too_many_arguments)]
+    pub(crate) fn password_completion_status_for_test<'a>(
+        &self,
+        context: &AuthenticationContext,
+        token: &SessionToken,
+        prepared: password_change::Prepared<'a>,
+        services: (
+            std::sync::Arc<dyn crate::account_admission::EpochAuthority>,
+            &dyn crate::totp::TimeProvider,
+        ),
+        deadline: std::time::Instant,
+        dispatch: impl FnOnce(
+            password_change::Dispatch<'a>,
+        ) -> Result<
+            crate::account_mutation::TerminalReceipt,
+            password_change::Error,
+        >,
+        quarantine: impl FnMut(&str),
+    ) -> Result<PasswordCompletion, password_change::Error> {
         self.password_completion_guarded(
             context,
             token,

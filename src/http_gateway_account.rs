@@ -295,6 +295,95 @@ mod tests {
         }
     }
 
+    #[test]
+    fn password_status_runtime_delegates_authenticated_time_and_preserves_storage() {
+        use crate::openpgp_inventory_runtime::{now, read_frame, write_frame};
+        use std::time::{Duration, Instant};
+        for expected in [Some("20261004170001".to_owned()), None] {
+            let f = Fixture::new();
+            let mut gateway = RuntimeBrowserGateway::for_test(&f.root);
+            gateway.account_runtime = f.pair(29, 17, 19);
+            let context = AuthenticationContext {
+                request_id: "public-status".into(),
+                remote_addr: "127.0.0.1".into(),
+                user_agent: "public fixture".into(),
+            };
+            let issued = RuntimeBrowserGateway::for_test(&f.root)
+                .build_session_service()
+                .issue(&context, "alice@example.test", RequiredSecondFactor::Totp)
+                .unwrap();
+            let path = FileSessionStore::new(f.root.join("sessions"))
+                .session_path(&issued.record.session_id);
+            let before = std::fs::read(&path).unwrap();
+            let mut record = issued.record;
+            record.account_epoch = Some(7);
+            let session = ValidatedSession {
+                record,
+                audit_event: issued.audit_event,
+            };
+            let listener = f.listeners[0].try_clone().unwrap();
+            let reply_stamp = expected.clone();
+            let server = std::thread::spawn(move || {
+                let deadline = Instant::now() + Duration::from_secs(3);
+                let mut stream = loop {
+                    match listener.accept() {
+                        Ok((stream, _)) => break stream,
+                        Err(error)
+                            if error.kind() == std::io::ErrorKind::WouldBlock
+                                && Instant::now() < deadline =>
+                        {
+                            std::thread::sleep(Duration::from_millis(1))
+                        }
+                        Err(error) => panic!("bounded status accept failed: {error}"),
+                    }
+                };
+                let raw =
+                    read_frame(&mut stream, crate::account_admission::MAX_FRAME, deadline).unwrap();
+                let request = crate::account_admission::Verifier::default()
+                    .request(&raw, &[29; 32], now().unwrap())
+                    .unwrap();
+                assert_eq!(request.account(), "alice@example.test");
+                assert!(matches!(
+                    request.operation(),
+                    crate::account_admission::Operation::Admit { epoch: 7 }
+                ));
+                let reply = request
+                    .response_with_status(Some(7), reply_stamp, &[29; 32], now().unwrap())
+                    .unwrap();
+                write_frame(&mut stream, &reply, deadline).unwrap();
+            });
+            let actual = BrowserGateway::password_changed_at(&gateway, &session);
+            assert_eq!(actual, expected);
+            server.join().unwrap();
+            assert_eq!(std::fs::read(path).unwrap(), before);
+            assert_eq!(
+                f.listeners[1].accept().unwrap_err().kind(),
+                std::io::ErrorKind::WouldBlock
+            );
+            for authentication in [false, true] {
+                let html = crate::http_ui::render_security_page(
+                    "alice@example.test",
+                    "public-csrf",
+                    &BrowserSessionListDecision::Denied {
+                        public_reason: "public".into(),
+                    },
+                    None,
+                    authentication,
+                    true,
+                    actual.as_deref(),
+                );
+                assert_eq!(
+                    html.as_str().contains("2026-10-04 17:00:01 UTC"),
+                    actual.is_some()
+                );
+                assert_eq!(
+                    html.as_str().contains("Last change unknown"),
+                    actual.is_none()
+                );
+            }
+        }
+    }
+
     // Run as one disposable libtest process, never in a shared test runner.
     // Actual pledge/unveil is irreversible. The root is printed before seal
     // and intentionally retained for the external owner's bounded cleanup.
