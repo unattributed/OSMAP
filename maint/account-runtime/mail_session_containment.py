@@ -651,7 +651,7 @@ class ContainmentExecutor:
         child = subprocess.Popen((program,) + args, stdin=subprocess.DEVNULL,
                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                  shell=False, close_fds=True, start_new_session=not inherited,
-                                 env={'PATH': '/usr/bin:/usr/local/bin', 'LC_ALL': 'C'})
+                                 env=self._environment())
         deadline = time.monotonic() + duration
         output = bytearray()
         diagnostic = bytearray()
@@ -700,6 +700,9 @@ class ContainmentExecutor:
                 if not pipe.closed:
                     pipe.close()
 
+    def _environment(self):
+        return {'PATH': '/usr/bin:/usr/local/bin', 'LC_ALL': 'C'}
+
     def _allows(self, program, args):
         return program == self._program and args in self._commands
 
@@ -715,6 +718,11 @@ class ProxyControlExecutor(ContainmentExecutor):
         self._output_limit = SmtpProxyControl.OUTPUT_LIMIT
         self._namespace = namespace
         self._budget = budget
+
+    def _environment(self):
+        # Dovecot KEEP_CONFIG_OPEN runs before -c option parsing. Bind that
+        # initial lookup to the same validated private configuration as argv.
+        return dict(super()._environment(), CONFIG_FILE=str(self._namespace._config))
 
     def __call__(self, program, args, stdin, seconds, limit):
         self._namespace.recheck(self._budget)

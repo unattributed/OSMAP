@@ -16,6 +16,32 @@ statement as provenance rather than current release posture.
 
 ### Active delivery and accountability, 2026-10-15
 
+The pre-admission verified signed checkpoint is
+`432666f484a04c3c2a2075caf95a1a3d52d08d44`, normally synchronized with GitHub
+and the clean authoritative mail source checkout. The introducing signed commit
+and retained synchronization proof establish the subsequent source identity. Installed pair324b and the disabled production password/native
+configuration remain unchanged. The earlier source identities below are
+chronological provenance. Actual obsd1 relay-stop component qualification
+passes one native signal/peer case (3f623c50); its synthetic SSH child does not
+qualify the paired route or complete password workflow.
+
+The changed complete controlled workflow HTTP7 fails (707b080c): transfer
+completes, an authenticated known_refused terminal forwards after owned-worker
+completion/reap, and all five HTTP responses finish. The actual pre-pending
+SMTP proxy query refuses; its underlying result/parser/process cause remains
+UNKNOWN. Purpose identities and owned daemons/groups are disposed, while root,
+SQL backend/client, worker and HTTP source trees remain retained. No successful
+credential change, full postcondition set or installed workflow follows.
+
+Source-supported private Dovecot configuration isolation is the next maintained
+repair: bind the already-validated proxy configuration before pre-option
+initialization, retaining existing command/configuration, strict stderr,
+freshness, caps and deadlines. One local actual-composition oldRED/newGREEN
+control distinguishes the repair; fixture-only private IMAP binding and bounded
+original-result observations are separate from installed defaults. Independent
+review, normal signed admission and a matching changed full native workflow
+remain required. S04-02 stays OPEN; no human diagnosis or acceptance is requested.
+
 S04-02 authoritative own-password change is the active integration objective.
 S08-02 Folders is accepted, including the operator's navigation, search,
 message-view and attachment-download results. No full S04 or epic acceptance

@@ -10769,3 +10769,29 @@ Finish this one reviewed normal signed source admission and mandatory sync
 hooks if the current investigation timebox expires during them; record actual
 elapsed intervals and overrun, then require a fresh accountable next action.
 Do not convert the overrun or source checkpoint into product closure.
+
+
+### 2026-10-16 — isolate the actual private Dovecot control configuration
+
+HTTP7 authenticated refusal narrows the current pre-pending failure to SMTP
+proxy query; its unique internal cause remains UNKNOWN. Retained official
+Dovecot2.3.21.1 source establishes that KEEP_CONFIG_OPEN operates before -c
+parsing. The current exact private proxy executor therefore needs CONFIG_FILE
+bound to the same already-validated immutable namespace configuration. Retain
+-c, strict empty stderr, namespace checks, resource budgets, bounded pipes and
+row grammar. Do not use -O, a hash environment, global inherited settings or
+permission/activation shortcuts. This corrects a demonstrated isolation gap,
+not a retrospective diagnosis of any failed native attempt.
+
+The actual private_containment/GuardedSmtpBinding retains the same direct real
+ProxyControlExecutor; no NativeSMTPExecutionClient exists on this path. Only
+the private fixture's three privately prefixed IMAP commands receive their
+existing source-derived CONFIG_FILE. Installed base commands and topology/
+metadata environments remain unchanged. Closed original-result predicates
+may be retained from the original once-only query; no raw output, exception
+message, arguments, paths or locals. One exact actual-composition discriminator
+is oldRED0.094565s/newGREEN0.128761s with three bounded Python child executions,
+all reaped, zeroSQL/pending callbacks; native Dovecot and full workflow remain
+unqualified. Source20 and whole custody require independent review before
+root admission. Retain HTTP7 failure, incomplete private-tree disposition and
+explicit investigation overrun; no standalone paper checkpoint or human setup.

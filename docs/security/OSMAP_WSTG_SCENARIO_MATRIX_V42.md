@@ -939,3 +939,24 @@ handlers are preserved. One discriminating local oldRED/newGREEN validates this
 source boundary; native rcctl/paired-SSH qualification remains NOT RUN. Fixed
 peer/purpose/key/socket/MAC/epoch rules and default-disabled activation are
 unchanged. No release, installed password workflow or human UAT PASS follows.
+
+
+### 2026-10-16 — private configuration isolation and current refusal scope
+
+Actual obsd1 relay-stop result3f623c50 passes one positive native peer/SIGTERM
+case, reaps its owned synthetic SSH child and removes exact listener/stage.
+This is component scope only. HTTP7 result707b080c forwards an authenticated
+known_refused terminal after actual COMPLETE33/reap/groupabsence; all five HTTP
+responses finish but the pre-pending SMTP query refuses. Deep internal cause
+remains UNKNOWN. Public purpose records restore and owned runtime daemons go;
+root/SQLbackend/client/worker/HTTP trees remain retained. No successful change,
+complete postconditions, installed password acceptance or release follows.
+
+The maintained proxy environment binds CONFIG_FILE to its existing validated
+namespace config to isolate Dovecot pre-option initialization. Existing -c,
+strict stderr, exact command/account/endpoint, freshness, resource bounds and
+default-disabled gates remain. The fixture-private IMAP binding and original
+result-scalar observation are explicit projections, not installed defaults or
+parser success. One actual-composition oldRED/newGREEN control uses bounded
+Python executables with no Dovecot/auth/SQL/provider operation. Native full
+workflow, source admission and independent review stay separately required.
