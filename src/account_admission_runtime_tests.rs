@@ -798,6 +798,50 @@ fn actual_private_socket_authentication_and_epoch_binding_without_native_credent
 }
 
 #[test]
+fn typed_worker_stale_denial_is_signed_and_refused_while_current_epoch_still_admits() {
+    let uid = crate::openbsd::effective_uid();
+    let root = listener_root();
+    let socket = root.join("account.sock");
+    let key = root.join("grant.key");
+    fs::write(&key, [29; 32]).unwrap();
+    fs::set_permissions(&key, fs::Permissions::from_mode(0o600)).unwrap();
+    let listener = UnixListener::bind(&socket).unwrap();
+    fs::set_permissions(&socket, fs::Permissions::from_mode(0o660)).unwrap();
+    let worker = std::thread::spawn(move || {
+        let s = service(uid);
+        for _ in 0..2 {
+            let (mut stream, _) = listener.accept().unwrap();
+            s.connection_with_status(&mut stream, |request, deadline| {
+                // Exact worker protocol on real bounded stdin/stdout. The
+                // paired Python main test proves production denial generation.
+                let command = crate::auth::admission_stale_denial_fixture_command();
+                Service::fixed_worker_status_command(request, deadline, command)
+            })
+            .unwrap();
+        }
+    });
+    let client = Client::qualified_files(&socket, &key, uid).unwrap();
+    assert_eq!(
+        client.admit_before(
+            "alice@example.test",
+            0,
+            Instant::now() + Duration::from_secs(5)
+        ),
+        Err(Error::Refused)
+    );
+    assert_eq!(
+        client.password_changed_at_before(
+            "alice@example.test",
+            1,
+            Instant::now() + Duration::from_secs(5)
+        ),
+        Ok(Some("20261016140432".into()))
+    );
+    worker.join().unwrap();
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
 fn actual_runtime_login_mfa_session_and_changed_epoch_refusal_no_primary_fallback() {
     use crate::http::{
         BrowserGateway, BrowserLoginDecision, BrowserSessionDecision, RuntimeBrowserGateway,

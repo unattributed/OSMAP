@@ -7,6 +7,7 @@ filesystem owner. A native front acceptor/complete ingress qualification remains
 required. Only actual backend OK can publish under the shared epoch registry.
 """
 import os
+import base64
 import re
 from pathlib import Path
 import socket
@@ -193,10 +194,18 @@ class AuthBroker:
                 if fields[0]==b'DONE':break
             else:raise Refused('SMTP broker handshake unavailable')
             auth=self._line(client,budget)
-            channel=self.registry.begin(client,upstream,cpid,auth,budget)
-            self.backend.recheck(budget)
-            self._send(upstream,auth,budget);del auth
-            line=self._line(upstream,budget);fields=lifecycle.SmtpAuthLifecycle._fields(line)
+            fields=lifecycle.SmtpAuthLifecycle._fields(auth)
+            _require(len(fields)>=3)
+            if fields[2]==b'LOGIN':
+                channel,line=self._login(client,upstream,cpid,auth,budget)
+                del auth
+            else:
+                # Preserve the existing one-frame PLAIN capture/dispatch path.
+                channel=self.registry.begin(client,upstream,cpid,auth,budget)
+                self.backend.recheck(budget)
+                self._send(upstream,auth,budget);del auth
+                line=self._line(upstream,budget)
+            fields=lifecycle.SmtpAuthLifecycle._fields(line)
             if fields[:2]==[b'FAIL',channel.request]:
                 self._send(client,line,budget);raise Refused('SMTP backend authentication refused')
             receipt=self.registry.verified(channel,line)
@@ -209,6 +218,39 @@ class AuthBroker:
             # originals on EVERY exit without shutting down a published channel.
             client.close()
             if upstream is not None:upstream.close()
+
+    def _login(self,client,upstream,cpid,auth,budget):
+        channel=None;returned=False
+        def challenge(prompt,request):
+            line=self._line(upstream,budget)
+            fields=lifecycle.SmtpAuthLifecycle._fields(line)
+            if fields[:2]==[b'FAIL',request]:
+                self._send(client,line,budget)
+                raise Refused('SMTP LOGIN backend authentication refused')
+            _require(fields==[b'CONT',request,base64.b64encode(prompt)])
+            self._send(client,line,budget)
+        try:
+            _pid,request,initial=self.registry.login_initial(cpid,auth)
+            if initial:
+                channel=self.registry.begin_login(client,upstream,cpid,auth,None,budget)
+            self.backend.recheck(budget)
+            self._send(upstream,auth,budget)
+            if not initial:
+                challenge(b'Username:',request)
+                username=self._line(client,budget)
+                # Register before forwarding username or receiving password.
+                channel=self.registry.begin_login(client,upstream,cpid,auth,username,budget)
+                self.backend.recheck(budget)
+                self._send(upstream,username,budget);del username
+            challenge(b'Password:',request)
+            password=self._line(client,budget)
+            self.backend.recheck(budget)
+            self.registry.forward_login_password(channel,password);del password
+            line=self._line(upstream,budget)
+            returned=True
+            return channel,line
+        finally:
+            if not returned and channel is not None:self.registry.close(channel)
 
     @staticmethod
     def _front_parent(path,owner):

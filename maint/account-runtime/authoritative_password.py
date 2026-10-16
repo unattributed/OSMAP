@@ -79,10 +79,14 @@ class AuthoritativePasswordAdapter:
 
     @staticmethod
     def _stamp(value):
-        if not re.fullmatch(r'\d{14}', value):
+        if not re.fullmatch(r'[0-9]{14}', value):
             raise Refused('authoritative timestamp unavailable')
         try:
-            datetime.strptime(value, '%Y%m%d%H%M%S')
+            # Admission validates durable history after closing filesystem
+            # access. strptime lazily imports _strptime on its first call;
+            # direct construction keeps strict calendar validation local.
+            datetime(int(value[:4]), int(value[4:6]), int(value[6:8]),
+                     int(value[8:10]), int(value[10:12]), int(value[12:14]))
         except ValueError:
             raise Refused('authoritative timestamp unavailable') from None
         return value

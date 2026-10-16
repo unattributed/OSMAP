@@ -1,0 +1,13 @@
+#!/bin/ksh
+# Fixed managed service; closed native gates require qualification/provisioning.
+# TERM/INT removes admission. The owner stays alive while metadata child reap
+# is unconfirmed; no rc reload/retry bypasses that terminal ownership custody.
+daemon="/usr/local/bin/python3.13"
+script="/usr/local/libexec/osmap/account-runtime/dovecot_imap_service.py"
+daemon_user="root"
+daemon_flags="-I -B ${script}"
+rc_bg=YES
+rc_reload=NO
+. /etc/rc.d/rc.subr
+pexp="/usr/local/bin/python3.13 -I -B ${script}"
+rc_cmd "$1"

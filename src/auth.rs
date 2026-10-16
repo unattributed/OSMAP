@@ -174,6 +174,29 @@ pub(crate) fn full_factory_admission_fixture_command(
     Ok(command)
 }
 
+/// Fixed synthetic stale-denial protocol fixture, compiled only for unit tests.
+/// Callers cannot select an executable, script, argument, or filesystem path.
+#[cfg(test)]
+pub(crate) fn admission_stale_denial_fixture_command() -> Command {
+    let python = if cfg!(target_os = "openbsd") {
+        "/usr/local/bin/python3"
+    } else {
+        "/usr/bin/python3"
+    };
+    let mut command = Command::new(python);
+    command
+        .args([
+            "-I",
+            "-B",
+            "-c",
+            "import json,sys;f=json.load(sys.stdin);assert f['operation']=='admit';r=dict(schema='osmap-account-admission-worker-v1',account=f['account'],status='rejected' if f['epoch']==0 else 'active',epoch=None if f['epoch']==0 else 1);r.update(changed_at='20261016140432') if f['epoch']==1 else None;print(json.dumps(r))",
+        ])
+        .env_clear()
+        .env("LC_ALL", "C")
+        .current_dir("/");
+    command
+}
+
 /// Construct the fixed synthetic stored-session fixture process. No browser
 /// field, account value, or caller-selected program enters its command line.
 #[cfg(all(test, unix))]

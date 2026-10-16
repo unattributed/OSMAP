@@ -415,7 +415,9 @@ impl Service {
             return Err(Error::Unavailable);
         }
         match (&request.operation(), r.status.as_str(), r.epoch) {
-            (Operation::Authenticate { .. }, "rejected", None) => Ok(None),
+            (Operation::Authenticate { .. } | Operation::Admit { .. }, "rejected", None) => {
+                Ok(None)
+            }
             (Operation::Authenticate { .. }, "active", Some(epoch)) if valid_epoch(epoch) => {
                 Ok(Some((epoch, r.changed_at)))
             }

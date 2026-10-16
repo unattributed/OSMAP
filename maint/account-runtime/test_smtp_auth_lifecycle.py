@@ -8,6 +8,7 @@ import tempfile
 import threading
 import time
 import unittest
+from unittest.mock import patch
 
 from account_epoch import EpochStore
 from authoritative_password import Refused, Unconfirmed
@@ -70,6 +71,27 @@ class LifecycleTests(unittest.TestCase):
         self.assertEqual(front.recv(4096), b'OK\t1\tuser=' + ALICE.encode() + b'\n')
         with self.assertRaises(Refused):
             self.registry.publish(channel, receipt)
+
+    def test_unrelated_backend_identity_cannot_enter_selected_scope_or_renew_publication(self):
+        self.registry=self.module.SmtpAuthLifecycle(self.store,frozenset((ALICE,)),self.authority)
+        alias='ordinary-alias@fixture.invalid'
+        # No selected or unrelated epoch lock/read is used by this branch.
+        with patch.object(self.registry,'_locked',side_effect=AssertionError),patch.object(
+                self.registry,'_record',side_effect=AssertionError):
+            channel,front,back=self.channel(alias)
+            with self.assertRaises(Refused):self.ok(channel,ALICE)
+            self.eof(front);self.eof(back)
+            channel,front,back=self.channel(alias)
+            receipt=self.ok(channel,BOB)
+            self.assertEqual(channel.account,BOB);self.assertIsNone(channel.epoch)
+            self.assertTrue(self.registry.publish(channel,receipt))
+            front.settimeout(.2);self.assertEqual(front.recv(4096),b'OK\t1\tuser='+BOB.encode()+b'\n')
+            with self.assertRaises(Refused):self.registry.publish(channel,receipt)
+            self.eof(front);self.eof(back)
+            channel,front,back=self.channel(alias)
+            receipt=self.ok(channel,BOB);channel.budget._deadline=time.monotonic()-1
+            with self.assertRaises(Refused):self.registry.publish(channel,receipt)
+            self.eof(front);self.eof(back)
 
     def test_stale_verified_success_cannot_publish_after_epoch_change(self):
         channel, front, back = self.channel()

@@ -78,6 +78,65 @@ class PasswordTests(unittest.TestCase):
         self.assertEqual(len(self.executor.calls),2)
 
 class HardeningTests(unittest.TestCase):
+    def test_fresh_admission_history_needs_no_late_calendar_import(self):
+        import os, subprocess, sys
+        # A fresh interpreter is essential: another test's strptime call would
+        # cache the hidden dependency and conceal the sealed admission defect.
+        script = r'''
+import sys, tempfile
+from pathlib import Path
+from account_admission_worker import execute, SCHEMA
+from account_epoch import EpochStore
+from authoritative_password import AuthoritativePasswordAdapter as Adapter, Refused
+assert '_strptime' not in sys.modules
+attempts=[]
+class ClosedCalendarImport:
+    def find_spec(self, fullname, path=None, target=None):
+        if fullname == '_strptime':
+            attempts.append(fullname)
+            raise ModuleNotFoundError('calendar module hidden after admission seal')
+def no_authenticate(*args):
+    raise AssertionError('admit must never dispatch credentials')
+with tempfile.TemporaryDirectory() as scratch:
+    root=Path(scratch);root.chmod(0o700)
+    store=EpochStore(root, __import__('os').getuid())
+    account='alice@osmap-proxy.invalid';bob='bob@osmap-proxy.invalid'
+    store.provision(account);store.provision(bob)
+    sys.meta_path.insert(0, ClosedCalendarImport())
+    frame=dict(schema=SCHEMA,operation='admit',account=account,epoch=0)
+    assert execute(frame,store,no_authenticate)['epoch']==0
+    with store.locked(account) as path:
+        value=store._read(path)
+        value.update(epoch=1,changed_at='20261016133737')
+        store._write(path,value)
+    frame['epoch']=1
+    expected=dict(schema=SCHEMA,account=account,status='active',epoch=1,changed_at='20261016133737')
+    assert execute(frame,store,no_authenticate)==expected
+    frame['epoch']=0
+    try:execute(frame,store,no_authenticate)
+    except Refused:pass
+    else:raise AssertionError('old epoch accepted')
+    assert execute(dict(frame,account=bob),store,no_authenticate)==dict(schema=SCHEMA,account=bob,status='active',epoch=0)
+    for state in ('pending','contained'):
+        with store.locked(account) as path:
+            store._write(path,dict(value,state=state,intent='a'*64))
+        try:execute(dict(frame,epoch=1),store,no_authenticate)
+        except Refused:pass
+        else:raise AssertionError('nonactive history authenticated')
+    for stamp in ('20240229010203','20000229000000'):
+        assert Adapter._stamp(stamp)==stamp
+    for stamp in ('20230229010203','19000229000000','20261301000000','20260101240000','00000101000000','20260101000060','２０２６１０１６１３３７３７'):
+        try:Adapter._stamp(stamp)
+        except Refused:pass
+        else:raise AssertionError('invalid calendar accepted')
+    assert attempts==[]
+print('fresh_epoch0_and_epoch1_history_calendar_closed=PASS')
+'''
+        result = subprocess.run([sys.executable, '-B', '-c', script],
+            capture_output=True, text=True, timeout=5,
+            env=dict(os.environ, PYTHONPATH=os.pathsep.join(sys.path)))
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout, 'fresh_epoch0_and_epoch1_history_calendar_closed=PASS\n')
     def test_invalid_unicode_is_typed_refusal(self):
         with self.assertRaises(Refused):Adapter.validate_new('old',chr(0xD800)*15,chr(0xD800)*15)
     def test_forged_snapshot_hash_is_refused_before_hash_or_sql(self):

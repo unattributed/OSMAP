@@ -10957,3 +10957,74 @@ and ordinary IMAP/POP final authentication publication remain genuine open
 integration boundaries; an enabled cosmetic form or global unavailable login
 configuration would not fulfil the request. Completed reviewed code is admitted
 and synchronized normally while work continues toward the functional exit.
+
+### 2026-10-16 — preserve active mechanisms and close the actual publication gap
+
+Signed13572c503826b0992a3ea68b6d204f5daa12ce17 is normally synchronized,
+Good Shopkeeper verified, fresh origin0/0/clean; normal commit/push pass1763
+Rust/0failed/48native ignores and597 account Python cases. Initial commit gate
+failed after Make warned that root's configured TMPDIR was absent and fell back
+to /tmp. Retain all30 private-fixture failures; unchanged source passed with a
+fresh verified short0700 directory, without a test/permission/deadline waiver.
+Standard Toronto checkout is source-only clean fast-forwarded to13572.
+
+One required matching native build passes (root81.097s/native79.787s, freshfalse,
+1256 source files unchanged, owned group gone). Artifacte6961b/54353984 bytes
+matches signed source; expected466 compiler input closure is separately pinned.
+One byte-preserving publication passes (transfer63.034s, extraction4.944s outer;
+original native5s retained). These are compilation/publication, not workflow
+acceptance or installation. HTTP18 remains fullFAIL.
+
+The next reviewed four-path source closes scoped SMTP PLAIN/LOGIN behaviour,
+including both LOGIN forms, actual %Lu/original_user binding, selected lock/epoch
+before password forwarding, final publication, and unrelated authentication
+without epoch provisioning. Eight essential local tests pass; independent
+reviewd19be6b6 clears exact source only. Actual native/installed coverage of
+both mechanisms and all four AUTH address/port pairs remains required.
+
+Read-only expected-host observations show private account configuration/stores/
+services/listeners and purpose principals absent. Actual Dovecot2.3.21.1 uses
+plain+login; IMAP client_limit1/service_count1/hibernate0 permits investigation
+of an own-process final hook, but is not plugin ABI/native qualification.
+A complete trusted final-publication fence and provisioning are real remaining
+backend work. Installed pair324b/form unchanged; no owner account inspection
+or credential mutation, parent-slice acceptance or production activation.
+
+
+### 2026-10-16 controlled HTTP20: password journey passes, final process report fails
+
+The reviewed strict calendar parser removes a demonstrated late import after filesystem sealing. In the changed native run, the disposable account completes the authoritative password update, clears its current cookie, revokes its old session, rejects its old password and signs in with its new password at epoch1. Both password-history views and reloads agree with the authoritative write time; Bob remains at epoch0 with unchanged history. All18 HTTP responses complete and14 journey rows pass. The final web-guardian report is absent, so the full workflow remains FAIL. This does not diagnose the unique causes of older failures.
+
+Root elapsed73.518s; result SHA256 `6b612ab672be427cc3ae9af25c8d531dfe80cee7fdc9e3b6c2fcb3470b8c5fe1`. The three born roles are reaped with groups gone; fixture Dovecot/Postfix/runtime/scratch cleanup is recorded. Root namespace disposition remains pending. No installed service, live form, provider message or operator credential changes occurred. Matching binary `e6961b05` and publication `b6fac212` were reused without rebuilding. S04-02 remains OPEN.
+
+
+### 2026-10-16 — IMAP final publication and owner lifetime source
+
+Integrated the independently reviewed seven-path IMAP fence revision2 (review987b0bac). Before/after policy creates a one-use verified ticket; the fixed plugin final gate requires current kernel/process/socket custody and exact anvil registration while holding the shared durable epoch lock, before tagged success. Unrelated users are excluded by the managed-account marker. This closes the planned delayed-handoff boundary in source, not installed evidence.
+
+The demonstrated retained-child defect is repaired: stopped/quarantined admission retains its exact Popen owner and TERM/INT handlers until nonblocking reap/pipe disposition. Permanently unconfirmed custody keeps the owner quarantined; no new request deadline, late signal or retry is added. Ten maintained portable tests pass and two old-source ownership tests fail. Native compile, callback/configuration, actual handoff race and service qualification remain OPEN; all native flags remain false. No operator account or service was changed.
+
+
+### 2026-10-16 — preserve authenticated stale-epoch denial
+
+The known-active stale-epoch case now emits an explicit account-bound rejected response without epoch or timestamp. Malformed, pending, contained, unavailable and cleanup-uncertain paths retain their existing refusal/quarantine. The Rust worker parser accepts that denial so the existing Service signs the original request-bound response; the unchanged verifier returns Refused after account/nonce/MAC validation. No stale session is admitted.
+
+Independent review b742a966 clears the exact two production/two existing-test paths. Actual Python worker-main old-RED/new-GREEN passes; the new real Unix Client/Service+bounded worker-response Rust discriminator awaits the mandatory normal gate. Strict native HTTP consumers remain unchanged, actual20 fullFAIL is retained, and a new matching native binary is required. The current unique native final-report cause is not retrospectively inferred.
+
+Existing unchanged V10 generators refreshed derived inventories only:9126 assumptions/9039 source-test entries, high relevance2388→0 under the existing classifier. Scanners and claim scope are unchanged. This source increment does not enable a production form or establish installed mail-session containment.
+
+
+### 2026-10-16 — normal gate failure and native compiler admission
+
+The normal signed commit attempt ran1764 Rust cases (0fail/48native ignores), including the new stale-denial Service/Client discriminator, and614 account Python cases. It then refused the new test-only process call because the existing CWE scanner lacked this external cfg(test) module's exact registration. No commit was created. The narrow reviewed two-file correction adds that exact parent/cfg marker to the existing test registry; missing-marker, production-parent and unknown-production process calls still refuse. Author focused old-RED/new-GREEN passes; scanner rules and production permissions are unchanged. Gate1 elapsed114.061s and its failure log remain retained.
+
+The separate IMAP compile-only attempt failed before dispatch (native0.014s/commands[], root12.108s); no compiler, ABI program, plugin or service ran. Necessary read-only public metadata then measured the root-owned compiler at114814024B, exceeding the runner's64MiB read cap. This establishes an incompatible compiler-reader guard, while the original coarse admission result does not identify its unique earliest predicate. A reviewed changed compiler-only bound/new exclusive carrier is required; original30s/native runtime limits and all production flags stay unchanged. Source-only stage remains retained.
+
+
+### 2026-10-16 — whole command-boundary repair and native IMAP compilation
+
+Normal gate2 passes1764 Rust/614 account cases and the corrected CWE check, then fails the independent legacy rule requiring all process constructors in `auth.rs` (91.744s). Both failed gate logs remain; no commit was created. Combined source/gate review5789a615 inspected both consumers. The final repair follows the existing fixed cfg(test) command-builder boundary in auth.rs, with absolute platform Python, literal arguments/script, cleared environment and no caller-selected command. The regression's assertions are unchanged. The earlier CWE registration candidate is superseded and both guard files are restored to signed13572; no guard waiver or expanded exception is outgoing. Gate3 remains required.
+
+One changed IMAP compile2 passes: root14.454s/native2.980s, all three commands exit0, owned children reaped/groups gone, no forced stop or cleanup error, before/after custody parity. Measured public ABI exactly matches Dovecot2.3.21.1/2.3.ABIv21 and OpenBSD kernel credential layout. Module SHA256 `f2c21950b018a29820bc9d7704232746666963643ee490aa20ecd60e4129564c` is8312B. The module is NOT LOADED and its native publication gate remains FALSE. This is compilation/ABI proof only; runtime callback, handoff race and installed qualification remain open. Original30s/3cleanup/data512 bounds stay unchanged; only compiler-reader admission accommodates the measured114814024B compiler. Actual20 and compile1 failures remain retained without retrospectively assigning their unique causes.
+
+Investigation window8 closed before its3600s limit with partial engineering progress; finite window9 started14:33:22UTC for source synchronization and matching native build/compile. Native operation deadlines and prior failure records are unchanged. Derived V10 reflects9126 entries/9041 source-test classifications under unchanged scanners, not a new security claim. No service, operator credential, provider message or live password form was changed.

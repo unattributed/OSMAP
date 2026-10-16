@@ -28,6 +28,13 @@ class CleanupUnconfirmed(Refused):
     """No later worker admission until the helper's cleanup is reconciled."""
 
 
+class StaleEpoch(Refused):
+    """Known active-account epoch mismatch, safe to authenticate as denial."""
+    def __init__(self, account):
+        super().__init__('account admission refused')
+        self.account = account
+
+
 def _original_budget(budget):
     receipt=getattr(budget,'_original_receipt',None)
     if (type(budget)is not OperationBudget or type(receipt)is not _OriginalReceipt
@@ -106,7 +113,7 @@ def execute(frame, store, authenticate=None, *, budget=None, startup=None):
         if value['state'] != 'active':
             raise Refused('account admission refused')
         if operation == 'admit' and value['epoch'] != epoch:
-            raise Refused('account admission refused')
+            raise StaleEpoch(account)
         if operation == 'authenticate':
             accepted=(fixed_authenticate(account,password,budget,startup=startup,store=store)if authenticate is None else authenticate(account,password))
             if budget is not None:_original_budget(budget)
@@ -139,6 +146,10 @@ def main():
             wall_millis=lambda:int(time.time()*1000))
         budget.attach_owned_process_group()
         result = execute(frame, EpochStore(ROOT),budget=budget,startup=startup)
+    except StaleEpoch as failure:
+        # Only a validated request against a successfully read active record
+        # reaches this typed denial. Unavailable/nonactive records stay opaque.
+        result = {'schema': SCHEMA, 'status': 'rejected', 'account': failure.account, 'epoch': None}
     except CleanupUnconfirmed:
         result = {'schema': SCHEMA, 'status': 'cleanup_unconfirmed', 'account': None, 'epoch': None}
     except Exception:

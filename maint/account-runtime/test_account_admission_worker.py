@@ -69,6 +69,38 @@ class AdmissionTests(unittest.TestCase):
         self.assertEqual(rejected['status'], 'rejected')
         self.assertIsNone(rejected['epoch'])
 
+    def test_main_signable_stale_denial_preserves_nonactive_unavailability(self):
+        cases=[('active',2,'rejected',ACCOUNT,None),
+               ('active',3,'active',ACCOUNT,3),
+               ('pending',3,'unavailable',None,None),
+               ('contained',3,'unavailable',None,None),
+               ('active',True,'unavailable',None,None)]
+        for state,epoch,status,account,returned_epoch in cases:
+            with self.subTest(state=state,epoch=epoch):
+                with self.store.locked(ACCOUNT) as path:
+                    value=self.store._read(path)
+                    self.store._write(path,dict(value,state=state,epoch=3,
+                        intent=None if state=='active' else 'a'*64,changed_at='20261016140432'))
+                    before=path.read_bytes()
+                millis=int(time.time()*1000)
+                frame=dict(self.frame('admit',epoch=epoch),sent_millis=millis,
+                    deadline_millis=millis+30000,expires_at=(millis+35000+999)//1000)
+                output=io.StringIO()
+                with projected_startup(self.root) as(startup,_,_), \
+                     patch.object(worker.AdmissionWorkerStartup,'native',return_value=startup), \
+                     patch.object(worker,'EpochStore',wraps=EpochStore) as constructor, \
+                     patch.object(OperationBudget,'inherited_group',return_value=True), \
+                     patch.object(worker.sys,'stdin',SimpleNamespace(buffer=io.BytesIO(json.dumps(frame).encode()))), \
+                     patch.object(worker.sys,'stdout',output):
+                    constructor.side_effect=lambda root:self.store
+                    main()
+                result=json.loads(output.getvalue())
+                expected=dict(schema=SCHEMA,status=status,account=account,epoch=returned_epoch)
+                if status=='active':expected['changed_at']='20261016140432'
+                self.assertEqual(result,expected)
+                self.assertEqual(path.read_bytes(),before)
+        self.assertEqual(self.calls,0)
+
     def test_pending_contained_or_stale_refuse_before_auth(self):
         for state in ['pending', 'contained']:
             with self.store.locked(ACCOUNT) as path:

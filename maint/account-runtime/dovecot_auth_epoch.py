@@ -1,11 +1,12 @@
-"""Disabled Dovecot 2.3 before/after authentication epoch policy primitive.
+"""Disabled Dovecot same-session epoch tickets and IMAP publication primitive.
 
-This is not a listener, credential verifier, or session-establishment authority.
-A future trusted policy endpoint must use both Dovecot checks, reject-on-failure,
-log-only off, and the fixed passdb phase extra field. No report authorizes.
-Connection-key retries/replays, cache/master paths and the interval after the
-final policy callback remain native qualification dependencies. Missing after
-captures (including restart) refuse; no durable account state is written.
+Before/after policy callbacks alone do not publish a session. A managed IMAP
+plugin must veto before tagged success unless the fixed helper consumes the
+verified ticket and observes this exact single-client process registered while
+holding the durable writer lock. Transport fail-open preserves unrelated users
+only with that mandatory managed-account final gate; missing tickets refuse.
+No report authorizes, no native qualification flag changes, no durable account
+state is written. POP/SMTP paths retain their separate ingress dependencies.
 """
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -29,6 +30,7 @@ class _Capture:
     epoch: int
     expires: float
     used: bool = False
+    verified: bool = False
 
 
 class EpochPolicyFence:
@@ -122,7 +124,7 @@ class EpochPolicyFence:
             fcntl.flock(descriptor, fcntl.LOCK_UN)
             os.close(descriptor)
 
-    def allow(self, body):
+    def allow(self, body, *, original_deadline=None):
         """Return only Dovecot status JSON. Any refusal/unavailability rejects.
 
         No request value can create or reset an epoch record, set account
@@ -153,6 +155,10 @@ class EpochPolicyFence:
                 # Consume before durable I/O, even when that lookup refuses.
                 self._captures[key] = _Capture(capture.epoch, capture.expires, True)
             deadline = min(began + self.CALLBACK_SECONDS, capture.expires)
+            if original_deadline is not None:
+                if (type(original_deadline)not in (int,float)or not math.isfinite(original_deadline)
+                        or not 0<original_deadline-began<=self.CALLBACK_SECONDS):return self.DENY
+                deadline=min(deadline,original_deadline)
             with self._account_lock(key[0]) as path:
                 value = self._store._read(path)
                 if (value['state'] != 'active'
@@ -168,6 +174,10 @@ class EpochPolicyFence:
                 return self.DENY
             if phase == 'before':
                 self._captures[key] = _Capture(value['epoch'], capture.expires)
+            else:
+                # Only this completed allow owns a final-publication ticket.
+                # A used capture from a refused/late after is not sufficient.
+                self._captures[key] = _Capture(capture.epoch, capture.expires, True, True)
             return self.ALLOW
         except Exception:
             # Never return status=0 on schema, permission, clock or store error.
@@ -175,3 +185,46 @@ class EpochPolicyFence:
             return self.DENY
         finally:
             self._lock.release()
+
+    def publish_imap(self, body, observed_registration, *, original_deadline=None):
+        """Consume one verified session under the same durable epoch lock.
+
+        Origin/actual single-client-process custody belongs to the fixed native
+        endpoint. This primitive cannot qualify either. The observer must prove
+        the current own PID's actual anvil row, not merely a queued CONNECT.
+        It runs while the account lock excludes the password writer. The writer
+        retains its existing lock through kick and zero-connections readback.
+        """
+        if not self._lock.acquire(blocking=False):return False
+        try:
+            began=self._now()
+            if type(body)is not bytes or not 1<=len(body)<=self.MAX_BODY:return False
+            value=json.loads(body.decode('ascii'),object_pairs_hook=EpochStore._unique)
+            if (type(value)is not dict or set(value)!=
+                    {'login','protocol','session_id','tls','pid'}
+                    or type(value['pid'])is not int or not 1<value['pid']<2**31
+                    or not callable(observed_registration)):
+                return False
+            key,phase=self._request(json.dumps({k:v for k,v in value.items()if k!='pid'}
+                |{'phase':'after'},separators=(',',':')).encode('ascii'))
+            if key[1]!='imap':return False
+            capture=self._captures.get(key)
+            if capture is None or not capture.used or not capture.verified:return False
+            # Consume before any durable lookup or observer dispatch. Failure,
+            # timeout or replay cannot restart this connection's ticket.
+            self._captures[key]=_Capture(capture.epoch,capture.expires,True,False)
+            deadline=min(began+self.CALLBACK_SECONDS,capture.expires)
+            if original_deadline is not None:
+                if (type(original_deadline)not in (int,float)or not math.isfinite(original_deadline)
+                        or not 0<original_deadline-began<=self.CALLBACK_SECONDS):return False
+                deadline=min(deadline,original_deadline)
+            if began>=deadline:return False
+            with self._account_lock(key[0])as path:
+                account=self._store._read(path)
+                if account['state']!='active' or account['epoch']!=capture.epoch:return False
+                if self._now()>=deadline:return False
+                if observed_registration(key[0],value['pid'],deadline)is not True:return False
+                if self._now()>=deadline or self._root_identity()!=self._root:return False
+            return self._now()<deadline
+        except Exception:return False
+        finally:self._lock.release()

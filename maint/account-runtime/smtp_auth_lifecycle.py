@@ -13,7 +13,7 @@ independently prove exact owned CPID/TCP identity within the passed deadline.
 Source fixtures do not qualify that authority or complete ingress coverage.
 """
 import base64
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 import ctypes
 from dataclasses import dataclass
 import fcntl
@@ -104,13 +104,31 @@ class OwnedSmtpPeerAuthority:
             raise Refused('SMTP authentication OK profile refused')
 
     def check_ok(self, fields, request, account):
+        if self.canonical_ok(fields,request)!=account:
+            raise Refused('SMTP authentication backend success refused')
+
+    def canonical_ok(self, fields, request, original=None):
+        users=[value for value in fields[2:] if value.startswith(b'user=')]
+        if len(users)!=1:
+            raise Refused('SMTP authentication backend success refused')
+        try:
+            account=AuthoritativePasswordAdapter._account(users[0][5:].decode('ascii'))
+        except Exception:
+            raise Refused('SMTP authentication backend success refused')from None
         expected = (b'user=' + account.encode('ascii'),) + self._ok_fields
+        originals=[value for value in fields[2:] if value.startswith(b'original_user=')]
+        if originals:
+            if (original is None or account==original or len(originals)!=1
+                    or originals[0]!=b'original_user='+original.encode('ascii')):
+                raise Refused('SMTP authentication original identity refused')
+            expected+=(originals[0],)
         # Dovecot serializes fields in insertion order. Only their closed set
         # matters; cardinality plus equality also rejects every duplicate.
         if (len(fields) != 2 + len(expected) or fields[:2] != [b'OK', request]
                 or len(set(fields[2:])) != len(expected)
                 or set(fields[2:]) != set(expected)):
             raise Refused('SMTP authentication backend success refused')
+        return account
 
     def check(self, client, upstream, pid, budget):
         if type(budget) is not OperationBudget or type(pid) is not int or not 1 < pid <= 2**31 - 1:
@@ -149,9 +167,12 @@ class _Channel:
     identity: tuple
     account: str
     request: bytes
-    epoch: int
+    epoch: int | None
     budget: OperationBudget
     capture_expires: float
+    auth_account: str
+    mechanism: bytes = b'PLAIN'
+    password_forwarded: bool = False
     verified: bool = False
     published: bool = False
     closed: bool = False
@@ -240,15 +261,19 @@ class SmtpAuthLifecycle:
             raise Refused('SMTP authentication frame refused')
         return line[:-1].split(b'\t')
 
-    def _begin_fields(self, cpid, auth):
+    def _auth_fields(self, cpid, auth, mechanism):
         peer = self._fields(cpid)
         fields = self._fields(auth)
         if (len(peer) != 2 or peer[0] != b'CPID' or not re.fullmatch(rb'[1-9][0-9]{0,9}', peer[1])
-                or not 1 < int(peer[1]) <= 2**31 - 1 or len(fields) < 5
+                or not 1 < int(peer[1]) <= 2**31 - 1 or len(fields) < 4
                 or fields[0] != b'AUTH' or not re.fullmatch(rb'[1-9][0-9]{0,9}', fields[1])
-                or int(fields[1]) > 2**32 - 1 or fields[2] != b'PLAIN'
+                or int(fields[1]) > 2**32 - 1 or fields[2] != mechanism
                 or [p for p in fields[3:] if p.startswith(b'service=')] != [b'service=smtp']):
             raise Refused('SMTP authentication identity refused')
+        return int(peer[1]),fields
+
+    def _begin_fields(self, cpid, auth):
+        pid,fields=self._auth_fields(cpid,auth,b'PLAIN')
         responses = [p[5:] for p in fields[3:] if p.startswith(b'resp=')]
         if len(responses) != 1:
             raise Refused('SMTP authentication identity refused')
@@ -257,9 +282,8 @@ class SmtpAuthLifecycle:
             if len(value) != 3 or value[0] not in (b'', value[1]) or not value[2]:
                 raise ValueError
             account = value[1].decode('ascii')
-            if account not in self._accounts:
-                raise ValueError
-            return int(peer[1]), fields[1], account
+            AuthoritativePasswordAdapter._account(account)
+            return pid, fields[1], account
         except Exception:
             raise Refused('SMTP authentication identity refused') from None
         finally:
@@ -268,13 +292,51 @@ class SmtpAuthLifecycle:
 
     def begin(self, client, upstream, cpid, auth, budget):
         pid, request, account = self._begin_fields(cpid, auth)
+        return self._register(client,upstream,pid,request,account,budget)
+
+    def login_initial(self,cpid,auth):
+        pid,fields=self._auth_fields(cpid,auth,b'LOGIN')
+        responses=[value[5:] for value in fields[3:] if value.startswith(b'resp=')]
+        if len(responses)>1 or (responses and not fields[-1].startswith(b'resp=')):
+            raise Refused('SMTP LOGIN initial response refused')
+        try:
+            initial=base64.b64decode(responses[0],validate=True) if responses else b''
+            if initial:
+                AuthoritativePasswordAdapter._account(initial.decode('ascii'))
+            return pid,fields[1],initial
+        except Exception:
+            raise Refused('SMTP LOGIN initial response refused')from None
+
+    def begin_login(self,client,upstream,cpid,auth,username,budget):
+        pid,request,initial=self.login_initial(cpid,auth)
+        try:
+            if initial:
+                if username is not None:raise ValueError
+                account=initial.decode('ascii')
+            else:
+                fields=self._fields(username)
+                if len(fields)!=3 or fields[:2]!=[b'CONT',request]:raise ValueError
+                account=base64.b64decode(fields[2],validate=True).decode('ascii')
+            AuthoritativePasswordAdapter._account(account)
+        except Exception:
+            raise Refused('SMTP LOGIN username refused')from None
+        channel=self._register(client,upstream,pid,request,account,budget)
+        channel.mechanism=b'LOGIN'
+        return channel
+
+    def _register(self,client,upstream,pid,request,original,budget):
+        # Source-owned installed profile is auth_username_format=%Lu. Keep the
+        # submitted spelling solely to bind Dovecot's original_user metadata.
+        account=AuthoritativePasswordAdapter._account(original).lower()
         socket_ids = (_socket_identity(client), _socket_identity(upstream))
         if socket_ids[0] == socket_ids[1]:
             raise Refused('SMTP authentication socket pair refused')
         identity = self._authority.check(client, upstream, pid, budget)
-        with self._locked(account), self._guard(budget):
-            value = self._record(account)
-            if value['state'] != 'active' or len(self._channels) >= self.MAX_CHANNELS:
+        managed=account in self._accounts
+        with self._locked(account) if managed else nullcontext(), self._guard(budget):
+            value = self._record(account) if managed else None
+            if ((managed and value['state'] != 'active')
+                    or len(self._channels) >= self.MAX_CHANNELS):
                 raise Refused('SMTP authentication admission refused')
             if any(set(socket_ids).intersection(c.socket_ids) for c in self._channels):
                 # Cross-account multiplexing cannot supply exact cancellation.
@@ -286,14 +348,42 @@ class SmtpAuthLifecycle:
                 owned_client.close()
                 raise
             channel = _Channel(self, owned_client, owned_upstream, socket_ids, pid,
-                               identity, account, request, value['epoch'], budget,
-                               time.monotonic() + budget.cap_seconds(30))
+                               identity, account, request, value['epoch'] if managed else None, budget,
+                               time.monotonic() + budget.cap_seconds(30),original)
             self._channels.add(channel)
             return channel
+
+    def forward_login_password(self,channel,raw):
+        try:
+            fields=self._fields(raw)
+            if (len(fields)!=3 or fields[:2]!=[b'CONT',channel.request]
+                    or channel.mechanism!=b'LOGIN' or channel.password_forwarded):
+                raise Refused('SMTP LOGIN password continuation refused')
+            password=base64.b64decode(fields[2],validate=True)
+            if not password or b'\0'in password:
+                raise Refused('SMTP LOGIN password continuation refused')
+            del password
+            managed=channel.account in self._accounts
+            with self._locked(channel.account) if managed else nullcontext(),self._guard(channel.budget):
+                self._owned(channel)
+                if managed:
+                    value=self._record(channel.account)
+                    if value['state']!='active' or value['epoch']!=channel.epoch:
+                        raise Refused('SMTP LOGIN credential epoch changed')
+                # Consume before IO; a partial/late send is never repeated.
+                channel.password_forwarded=True
+                channel.upstream.settimeout(channel.budget.cap_seconds(1))
+                channel.upstream.sendall(raw)
+                self._owned(channel)
+        except Exception:
+            self.close(channel)
+            raise Refused('SMTP LOGIN password dispatch refused')from None
 
     def _owned(self, channel):
         if type(channel) is not _Channel or channel.registry is not self or channel not in self._channels or channel.closed:
             raise Refused('SMTP authentication channel refused')
+        if (channel.account in self._accounts)!=(channel.epoch is not None):
+            raise Refused('SMTP authentication scope changed')
         if (_socket_identity(channel.client), _socket_identity(channel.upstream)) != channel.socket_ids:
             raise Refused('SMTP authentication descriptor changed')
         channel.budget.remaining()
@@ -305,9 +395,18 @@ class SmtpAuthLifecycle:
             with self._guard(channel.budget):
                 self._owned(channel)
                 fields = self._fields(line)
-                if channel.verified or channel.published:
+                if (channel.verified or channel.published
+                        or (channel.mechanism==b'LOGIN' and not channel.password_forwarded)):
                     raise Refused('SMTP authentication backend success refused')
-                self._authority.check_ok(fields, channel.request, channel.account)
+                canonical=self._authority.canonical_ok(fields,channel.request,channel.auth_account)
+                if channel.epoch is None:
+                    # Backend identity may resolve an ordinary alias, but can
+                    # never promote that unfenced request into selected scope.
+                    if canonical in self._accounts:
+                        raise Refused('SMTP authentication selected alias refused')
+                    channel.account=canonical
+                elif canonical!=channel.account:
+                    raise Refused('SMTP authentication backend success refused')
                 channel.verified = True
                 receipt = _Verified(channel, line)
                 channel._receipt = receipt
@@ -318,20 +417,23 @@ class SmtpAuthLifecycle:
 
     def publish(self, channel, receipt):
         try:
-            with self._locked(channel.account), self._guard(channel.budget):
+            managed=channel.account in self._accounts
+            with self._locked(channel.account) if managed else nullcontext(), self._guard(channel.budget):
                 self._owned(channel)
                 if (type(receipt) is not _Verified or receipt is not getattr(channel, '_receipt', None)
                         or receipt.channel is not channel or receipt.used or channel.published):
                     raise Refused('SMTP authentication success authority refused')
                 receipt.used = True
-                value = self._record(channel.account)
-                if value['state'] != 'active' or value['epoch'] != channel.epoch:
-                    raise Refused('SMTP authentication epoch changed')
+                if managed:
+                    value = self._record(channel.account)
+                    if value['state'] != 'active' or value['epoch'] != channel.epoch:
+                        raise Refused('SMTP authentication epoch changed')
                 if self._authority.check(channel.client, channel.upstream, channel.pid,
                                          channel.budget) != channel.identity:
                     raise Refused('SMTP authentication process changed')
-                # Registration precedes bytes. A subsequent mutation acquiring
-                # this flock can find and shut down this exact generation.
+                # Registration precedes bytes. Selected publication holds its
+                # account flock; unrelated backend authentication has no epoch.
+                # Exact ownership and one-use proof are required in both paths.
                 channel.client.settimeout(min(channel.budget.cap_seconds(0.5),
                                               channel.capture_expires - time.monotonic()))
                 channel.client.sendall(receipt.line)
@@ -367,7 +469,8 @@ class SmtpAuthLifecycle:
                 raise Refused('SMTP authentication cancellation state changed')
             count = 0
             for channel in tuple(self._channels):
-                if channel.account == cutoff.account and channel.epoch <= cutoff.epoch:
+                if (channel.account == cutoff.account and channel.epoch is not None
+                        and channel.epoch <= cutoff.epoch):
                     budget.remaining()
                     if self.close(channel) is not True:
                         raise Unconfirmed('SMTP authentication channel closure unconfirmed')

@@ -1019,3 +1019,42 @@ but browser503/full workflow FAIL; its epoch-only test adapters discard history.
 A status-preserving fixture correction and matching native build remain required.
 Production SMTP scope/IMAP final-publication/installation and owner testing are
 open. No source/test/health result establishes release or parent-slice acceptance.
+
+
+### 2026-10-16 S04-02 scoped SMTP and sealed calendar source increment
+
+Scoped SMTP AUTH now supports PLAIN and LOGIN with exact original-user and active-epoch checks before password forwarding and final publication. Six lifecycle and two broker controls pass against the reviewed four-path source candidate; original LOGIN RED is retained. Native LOGIN and the four installed SMTP frontend addresses remain unqualified. No deployment or full authentication claim follows.
+
+The authoritative timestamp parser uses strict14 ASCII digits and direct calendar construction, avoiding a demonstrated lazy import after sealing. Retained old-RED/new-GREEN covers exact history, invalid dates, pending/stale state and Bob isolation. Actual changed HTTP20 passes18 responses/14 journey rows and history, but fails final guardian-report collection. Whole S04-02 remains FAIL/OPEN; no operator credential was changed.
+
+
+### 2026-10-16 — IMAP final publication and owner lifetime source
+
+Integrated the independently reviewed seven-path IMAP fence revision2 (review987b0bac). Before/after policy creates a one-use verified ticket; the fixed plugin final gate requires current kernel/process/socket custody and exact anvil registration while holding the shared durable epoch lock, before tagged success. Unrelated users are excluded by the managed-account marker. This closes the planned delayed-handoff boundary in source, not installed evidence.
+
+The demonstrated retained-child defect is repaired: stopped/quarantined admission retains its exact Popen owner and TERM/INT handlers until nonblocking reap/pipe disposition. Permanently unconfirmed custody keeps the owner quarantined; no new request deadline, late signal or retry is added. Ten maintained portable tests pass and two old-source ownership tests fail. Native compile, callback/configuration, actual handoff race and service qualification remain OPEN; all native flags remain false. No operator account or service was changed.
+
+
+### 2026-10-16 — preserve authenticated stale-epoch denial
+
+The known-active stale-epoch case now emits an explicit account-bound rejected response without epoch or timestamp. Malformed, pending, contained, unavailable and cleanup-uncertain paths retain their existing refusal/quarantine. The Rust worker parser accepts that denial so the existing Service signs the original request-bound response; the unchanged verifier returns Refused after account/nonce/MAC validation. No stale session is admitted.
+
+Independent review b742a966 clears the exact two production/two existing-test paths. Actual Python worker-main old-RED/new-GREEN passes; the new real Unix Client/Service+bounded worker-response Rust discriminator awaits the mandatory normal gate. Strict native HTTP consumers remain unchanged, actual20 fullFAIL is retained, and a new matching native binary is required. The current unique native final-report cause is not retrospectively inferred.
+
+Existing unchanged V10 generators refreshed derived inventories only:9126 assumptions/9039 source-test entries, high relevance2388→0 under the existing classifier. Scanners and claim scope are unchanged. This source increment does not enable a production form or establish installed mail-session containment.
+
+
+### 2026-10-16 — normal gate failure and native compiler admission
+
+The normal signed commit attempt ran1764 Rust cases (0fail/48native ignores), including the new stale-denial Service/Client discriminator, and614 account Python cases. It then refused the new test-only process call because the existing CWE scanner lacked this external cfg(test) module's exact registration. No commit was created. The narrow reviewed two-file correction adds that exact parent/cfg marker to the existing test registry; missing-marker, production-parent and unknown-production process calls still refuse. Author focused old-RED/new-GREEN passes; scanner rules and production permissions are unchanged. Gate1 elapsed114.061s and its failure log remain retained.
+
+The separate IMAP compile-only attempt failed before dispatch (native0.014s/commands[], root12.108s); no compiler, ABI program, plugin or service ran. Necessary read-only public metadata then measured the root-owned compiler at114814024B, exceeding the runner's64MiB read cap. This establishes an incompatible compiler-reader guard, while the original coarse admission result does not identify its unique earliest predicate. A reviewed changed compiler-only bound/new exclusive carrier is required; original30s/native runtime limits and all production flags stay unchanged. Source-only stage remains retained.
+
+
+### 2026-10-16 — whole command-boundary repair and native IMAP compilation
+
+Normal gate2 passes1764 Rust/614 account cases and the corrected CWE check, then fails the independent legacy rule requiring all process constructors in `auth.rs` (91.744s). Both failed gate logs remain; no commit was created. Combined source/gate review5789a615 inspected both consumers. The final repair follows the existing fixed cfg(test) command-builder boundary in auth.rs, with absolute platform Python, literal arguments/script, cleared environment and no caller-selected command. The regression's assertions are unchanged. The earlier CWE registration candidate is superseded and both guard files are restored to signed13572; no guard waiver or expanded exception is outgoing. Gate3 remains required.
+
+One changed IMAP compile2 passes: root14.454s/native2.980s, all three commands exit0, owned children reaped/groups gone, no forced stop or cleanup error, before/after custody parity. Measured public ABI exactly matches Dovecot2.3.21.1/2.3.ABIv21 and OpenBSD kernel credential layout. Module SHA256 `f2c21950b018a29820bc9d7704232746666963643ee490aa20ecd60e4129564c` is8312B. The module is NOT LOADED and its native publication gate remains FALSE. This is compilation/ABI proof only; runtime callback, handoff race and installed qualification remain open. Original30s/3cleanup/data512 bounds stay unchanged; only compiler-reader admission accommodates the measured114814024B compiler. Actual20 and compile1 failures remain retained without retrospectively assigning their unique causes.
+
+Investigation window8 closed before its3600s limit with partial engineering progress; finite window9 started14:33:22UTC for source synchronization and matching native build/compile. Native operation deadlines and prior failure records are unchanged. Derived V10 reflects9126 entries/9041 source-test classifications under unchanged scanners, not a new security claim. No service, operator credential, provider message or live password form was changed.

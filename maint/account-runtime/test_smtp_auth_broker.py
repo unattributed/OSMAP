@@ -73,15 +73,15 @@ class BrokerTests(unittest.TestCase):
                     if not raw:return
                     self.assertEqual(len(self.service.registry._channels),1,'credentials forwarded before shared registration')
                     self.auth_frames.append(raw)
-                    stream.sendall(b'OK\t1\tuser='+control_fixtures.fixtures.ALICE.encode()+b'\n')
+                    stream.sendall(b'OK\t1\tuser='+getattr(self,'backend_account',control_fixtures.fixtures.ALICE).encode()+b'\n')
                     self.assertEqual(stream.recv(1),b'')
             except Exception as error:self.backend_errors.append(type(error).__name__)
             finally:self.closed.set()
         thread=threading.Thread(target=run);thread.start();self.addCleanup(lambda:thread.join(2));return thread
 
-    def accepted(self):
+    def accepted(self,account=control_fixtures.fixtures.ALICE):
         server,front=socket.socketpair();self.addCleanup(server.close);self.addCleanup(front.close)
-        auth=base64.b64encode(b'\0'+control_fixtures.fixtures.ALICE.encode()+b'\0public synthetic phrase')
+        auth=base64.b64encode(b'\0'+account.encode()+b'\0public synthetic phrase')
         front.sendall(b'VERSION\t1\t0\nCPID\t123\nAUTH\t1\tPLAIN\tservice=smtp\tresp='+auth+b'\n')
         return server,front
 
@@ -138,6 +138,185 @@ class BrokerTests(unittest.TestCase):
         with self.assertRaises(Refused):self.service.connection(server,self.budget())
         self.assertTrue(self.closed.wait(1));thread.join(1)
         self.assertEqual(self.auth_frames,[]);self.assertEqual(self.backend_errors,[])
+
+
+class AccountScopedBrokerTests(unittest.TestCase):
+    setUp=BrokerTests.setUp
+    budget=BrokerTests.budget
+    line=staticmethod(BrokerTests.line)
+    backend_start=BrokerTests.backend_start
+    accepted=BrokerTests.accepted
+
+    def selected_scope(self):
+        alice=control_fixtures.fixtures.ALICE;bob=control_fixtures.fixtures.BOB
+        root=self.startup._custody[0]
+        bootstrap=_Bootstrap(self.startup.bootstrap.mutation_key,
+            self.startup.bootstrap.session_key,frozenset((alice,)),os.getuid())
+        config=json.loads((root/'config.json').read_bytes());config['accounts']=[alice]
+        (root/'config.json').write_bytes(json.dumps(config).encode())
+        self.startup=ControlStartup._read(bootstrap,root,os.getuid(),self.peer.budget)
+        self.service=broker.AuthBroker._compose(self.startup,self.fixture.store,
+            self.case.journal,self.case.routing,self.ownership,self.backend)
+        # Bob is an existing ordinary backend identity, with no managed epoch.
+        # Only these disposable fixture records are removed, never a host record.
+        for path in self.fixture.store._paths(bob):
+            if path.exists():path.unlink()
+        self.fixture.registry=self.service.registry
+        return alice,bob
+
+    def test_selected_pending_refuses_while_unrelated_backend_auth_without_epoch_survives_cutoff(self):
+        alice,bob=self.selected_scope()
+        for state in ('pending','contained'):
+            self.fixture.state(state=state)
+            thread=self.backend_start();server,_=self.accepted()
+            with self.assertRaises(Refused):self.service.connection(server,self.budget())
+            thread.join(1);self.assertFalse(thread.is_alive())
+            self.assertEqual(self.auth_frames,[])
+        self.backend_account=bob;self.closed.clear()
+        before={p.name:p.read_bytes() for p in self.fixture.store.root.glob('*') if p.is_file()}
+        thread=self.backend_start();server,front=self.accepted(bob)
+        channel=self.service.connection(server,self.budget())
+        self.addCleanup(self.service.registry.close,channel)
+        self.assertTrue(channel.published);self.assertEqual(channel.account,bob)
+        self.assertIsNone(channel.epoch)
+        front.settimeout(.2);received=front.recv(4096)
+        self.assertTrue(received.endswith(b'OK\t1\tuser='+bob.encode()+b'\n'))
+        with self.fixture.store.locked(alice):
+            self.assertEqual(self.service.registry.cancel_pending_locked(alice,self.budget()),0)
+        self.assertFalse(channel.closed);self.assertFalse(self.closed.is_set())
+        self.assertEqual(before,{p.name:p.read_bytes() for p in self.fixture.store.root.glob('*') if p.is_file()})
+        self.assertFalse(any(p.exists() for p in self.fixture.store._paths(bob)))
+        self.assertEqual(len(self.auth_frames),1)
+        self.service.registry.close(channel);thread.join(1)
+        self.assertFalse(thread.is_alive());self.assertEqual(self.backend_errors,[])
+
+
+class LoginBrokerTests(unittest.TestCase):
+    budget=BrokerTests.budget
+    line=staticmethod(BrokerTests.line)
+    selected_scope=AccountScopedBrokerTests.selected_scope
+
+    def setUp(self):
+        BrokerTests.setUp(self)
+        self.alice,self.bob=self.selected_scope()
+
+    def attempt(self,account,initial=False,mode=None):
+        budget=self.budget();passwords=[];errors=[];reply=[];published=False
+        server,front=socket.socketpair()
+        self.addCleanup(server.close);self.addCleanup(front.close)
+        front.settimeout(1);self.listener.settimeout(1)
+        initial_data=b'\tresp='+base64.b64encode(account.encode()) if initial else b''
+        auth=b'AUTH\t1\tLOGIN\tservice=smtp'+initial_data+b'\n'
+        username_prompt=b'CONT\t1\tVXNlcm5hbWU6\n'
+        password_prompt=b'CONT\t1\tUGFzc3dvcmQ6\n'
+        def backend():
+            try:
+                stream,_=self.listener.accept()
+                with stream:
+                    stream.settimeout(1)
+                    self.assertEqual(self.line(stream),b'VERSION\t1\t0\n')
+                    self.assertEqual(self.line(stream),b'CPID\t123\n')
+                    stream.sendall(b'VERSION\t1\t2\nMECH\tPLAIN\tplaintext\nMECH\tLOGIN\tplaintext\nSPID\t1234\nCUID\t1\nCOOKIE\tpublic-synthetic-cookie\nDONE\n')
+                    raw=self.line(stream)
+                    if not raw:return
+                    self.assertEqual(raw,auth)
+                    if not initial:
+                        stream.sendall(username_prompt)
+                        username=self.line(stream)
+                        if not username:return
+                        self.assertEqual(username,b'CONT\t1\t'+base64.b64encode(account.encode())+b'\n')
+                    self.assertEqual(len(self.service.registry._channels),1)
+                    stream.sendall(password_prompt)
+                    password=self.line(stream)
+                    if not password:return
+                    self.assertEqual(password,b'CONT\t1\t'+base64.b64encode(b'public synthetic phrase')+b'\n')
+                    passwords.append(True)
+                    if mode=='late_epoch':self.fixture.state(epoch=1,state='active')
+                    canonical=self.alice if mode=='selected_alias' else account.lower()
+                    final=b'OK\t1\tuser='+canonical.encode()
+                    if canonical!=account:
+                        original='wrong@fixture.invalid' if mode=='wrong_original' else account
+                        final+=b'\toriginal_user='+original.encode()
+                    final+=b'\n'
+                    if mode=='extra_challenge':final=password_prompt
+                    stream.sendall(final)
+                    self.assertEqual(stream.recv(1),b'')
+            except Exception as error:errors.append('backend:'+type(error).__name__)
+        def client():
+            try:
+                front.sendall(b'VERSION\t1\t0\nCPID\t123\n'+auth)
+                for _ in range(16):
+                    line=self.line(front)
+                    if not line:return
+                    if line==b'DONE\n':break
+                else:raise AssertionError('fixture handshake bound')
+                if not initial:
+                    line=self.line(front)
+                    if not line:return
+                    self.assertEqual(line,username_prompt)
+                    request=b'2' if mode=='wrong_username_id' else b'1'
+                    data=b'%' if mode=='bad_username' else base64.b64encode(account.encode())
+                    front.sendall(b'CONT\t'+request+b'\t'+data+b'\n')
+                line=self.line(front)
+                if not line:return
+                self.assertEqual(line,password_prompt)
+                if mode=='pending_before_password':self.fixture.state()
+                if mode=='expired':budget._deadline=time.monotonic()-1
+                request=b'2' if mode=='wrong_password_id' else b'1'
+                data=b'%' if mode=='bad_password' else base64.b64encode(b'public synthetic phrase')
+                front.sendall(b'CONT\t'+request+b'\t'+data+b'\n')
+                reply.append(self.line(front))
+            except (BrokenPipeError,ConnectionResetError):
+                pass  # Expected closure of a refused fixture attempt.
+            except Exception as error:errors.append('client:'+type(error).__name__)
+        upstream_thread=threading.Thread(target=backend);client_thread=threading.Thread(target=client)
+        upstream_thread.start();client_thread.start()
+        channel=None
+        try:
+            try:channel=self.service.connection(server,budget)
+            except Refused:pass
+            if channel is not None:
+                published=channel.published
+                self.service.registry.close(channel)
+        finally:
+            client_thread.join(2);front.close();upstream_thread.join(2)
+            self.assertFalse(client_thread.is_alive());self.assertFalse(upstream_thread.is_alive())
+            self.assertEqual(errors,[])
+        self.assertEqual(self.service.registry._channels,set())
+        return published,len(passwords),reply
+
+    def test_login_both_forms_keep_selected_epoch_and_unrelated_case_metadata(self):
+        before={p.name:p.read_bytes() for p in self.fixture.store.root.glob('*') if p.is_file()}
+        for account in (self.alice,self.bob.upper()):
+            for initial in (False,True):
+                with self.subTest(account=account,initial=initial):
+                    published,passwords,reply=self.attempt(account,initial)
+                    self.assertTrue(published);self.assertEqual(passwords,1)
+                    self.assertTrue(reply and reply[0].startswith(b'OK\t1\tuser='+account.lower().encode()))
+        self.assertEqual(before,{p.name:p.read_bytes() for p in self.fixture.store.root.glob('*') if p.is_file()})
+        self.assertFalse(any(p.exists() for p in self.fixture.store._paths(self.bob)))
+
+    def test_login_selected_pending_contained_and_mid_exchange_epoch_refuse(self):
+        for state in ('pending','contained'):
+            for initial in (False,True):
+                self.fixture.state(state=state)
+                published,passwords,_=self.attempt(self.alice.upper(),initial)
+                self.assertFalse(published);self.assertEqual(passwords,0)
+        self.fixture.state(state='active')
+        published,passwords,_=self.attempt(self.alice,mode='pending_before_password')
+        self.assertFalse(published);self.assertEqual(passwords,0)
+        self.fixture.state(state='active')
+        published,passwords,_=self.attempt(self.alice,mode='late_epoch')
+        self.assertFalse(published);self.assertEqual(passwords,1)
+
+    def test_login_wrong_continuations_selected_alias_and_original_budget_refuse(self):
+        for mode in ('wrong_username_id','bad_username','wrong_password_id','bad_password',
+                     'selected_alias','wrong_original','expired','extra_challenge'):
+            account='ordinary-alias@fixture.invalid' if mode=='selected_alias' else self.bob.upper()
+            with self.subTest(mode=mode):
+                published,passwords,_=self.attempt(account,mode=mode)
+                self.assertFalse(published)
+                self.assertEqual(passwords,1 if mode in ('selected_alias','wrong_original','extra_challenge') else 0)
 
 
 class AcceptorTests(unittest.TestCase):

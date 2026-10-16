@@ -51,6 +51,11 @@ modelling it in a local fake. `ps -p` takes one PID. Empty unveil permissions
 hide ancestor pathname metadata; they are not read or stat grants. Keep protected
 pre-seal checks and qualify the changed sealed path on OpenBSD. Preserve useful
 bounded synthetic failure diagnostics so hashes alone do not force repeated runs.
+Construct subprocess fixtures through fixed cfg(test) command builders in
+`src/auth.rs`, matching the existing command-creation boundary. Keep literal
+programs/arguments and caller-independent fixture scripts; inspect both the
+CWE guard and legacy security-check consumer before a full gate. Do not weaken
+production command guards or introduce caller-selected commands to pass tests.
 When adapting a qualifier, check its executed admission and success consumers
 with one matching receipt and a changed count/cleanup refusal. Exact source
 pins alone do not establish compatible result schemas. For nested source carriers,
