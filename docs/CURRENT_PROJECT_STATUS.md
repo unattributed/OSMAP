@@ -19,21 +19,49 @@ statement as provenance rather than current release posture.
 S04-02 authoritative own-password change is the active integration objective.
 S08-02 Folders is accepted, including the operator's navigation, search,
 message-view and attachment-download results. No full S04 or epic acceptance
-follows. The last synchronized signed source is be270f02; installed pair324b
-and the ordinary application's disabled password/native configuration remain
-unchanged.
+follows. The pre-admission signed checkpoint is
+`fc4330196b316bfbb4731783290d308b4e14ee1f`, synchronized with GitHub and the
+clean authoritative mail source checkout. The signed commit introducing this
+source delta and its retained synchronization proof establish the subsequent
+source identity; this document does not attempt to self-pin that commit.
+Normal hooks pass 1753 Rust tests with zero failures and 48 explicit native
+ignores. Installed pair324b and the ordinary application's disabled
+password/native configuration remain unchanged. The current
+relay repair and ledger reconciliation follow that signed checkpoint; exact
+Git status and retained admission proof distinguish working edits from delivery.
 
 The fifth controlled native HTTP attempt reaches real Bob/Alice login,
 epoch-0 sessions and the enabled CSRF-protected password form. Five responses
 complete, but the bridge rejects its first worker frame during challenge
-verification. The worker exits0 with exact COMPLETE33; its authenticated outcome,
-credential update and session/mail postconditions remain unconfirmed. Actor and
+verification. The worker exits0 with exact COMPLETE33. A later bounded read-only
+observation validates the retained current journal as complete/known_refused,
+epoch active0 and empty cache-flush counts. These unlocked current records do
+not authenticate the original frame, establish the unique refusal cause or
+prove cross-record atomicity; the successful password workflow remains unproved. Actor and
 driver groups, SQL-fixture handles and private daemons/broker are disposed, but
-two purpose identities and private runtime/scratch remain retained. Fresh
-current-state assessment is required; original cleanup cause remains UNKNOWN.
+private runtime/scratch remain retained. A separately reviewed fresh
+administrative action removes the two exact fixture purpose identities, reaps
+all four administrative children and four birth queries, and preserves unrelated
+current public records (result f930481a, independent scope9139d40c). All eight old
+trees remain retained and original pre-run restoration stays UNKNOWN. This
+does not diagnose the original cleanup refusal.
 Earlier failures are historical facts, not retrospectively repaired outcomes.
 
-Current source work adds the missing purpose-exclusive admission transport
+The next changed HTTP17 qualification (attempt6) fails before root dispatch at
+the original five-second public-input receive bound. Root spawn/handle are false;
+no HTTP, SQL, authentication or coordinator scenario ran. Its exact intake
+subphase and cause remain UNKNOWN. Combined reassessment28816498 acknowledges
+HTTP5 and HTTP6; no unchanged retry or deadline widening follows.
+
+The next maintained source delta fixes mutation-relay shutdown: default TERM/INT
+previously bypassed owned SSH/listener disposition. Stop-aware I/O and listener
+handling preserve the original cleanup resource deadline, quarantine and exact
+ownership. One changed local discriminator is old RED then GREEN; real paired
+OpenBSD/service installation and the full password workflow remain unqualified.
+Existing deployment documentation maps the paired fixed-purpose services without
+adding another installer or enabling the production password form.
+
+Signed source adds the missing purpose-exclusive admission transport
 from obsd1 to the authoritative Toronto helper and corrects the successful-SSH
 reap race in both admission and mutation transports. These paths remain disabled
 until their actual cross-host, confinement and installation requirements pass.

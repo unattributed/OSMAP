@@ -10698,3 +10698,74 @@ The currently reviewed source admission proceeds independently, with no native
 flags or installed application changes. Complete its one bounded normal signed
 commit/push even if the investigation window elapses during mandatory hooks;
 retain actual timings and require a fresh accountable next action afterward.
+
+
+### 2026-10-15 — enforce accountability and reconcile retained failure before retry
+
+Accountability policy and executable existing-gate checks are signed and
+synchronized in fc4330196b316bfbb4731783290d308b4e14ee1f alongside the disabled
+admission transport and relay successful-reap repair. Both normal gates pass;
+source-only authoritative checkout synchronization is confirmed. No production
+flag, form, binary or service is activated. Hook intervals are measured; total
+source/review/model cost is UNKNOWN rather than inferred from those intervals.
+
+The separately reviewed fixed read-only HTTP5 observation passes (a0a2923e).
+Current journal complete/known_refused, active epoch0 and cachecounts[] corroborate
+a failed change workflow, not its unique original cause or authenticated frame.
+Current purpose-process absence is only a snapshot. Preserve failed receipts and
+retained trees; any administrative cleanup needs fresh exact authority and
+current-state checks, never renewal of expired setup leases or historical PID
+signals. Review the combined early-terminal and future-cleanup correction, and
+trace rendered pre-pending authorities before spending another whole native
+run. These records accompany the next real source admission; no standalone
+documentation checkpoint or human diagnosis request.
+
+
+The recurring OSMAP readiness job still replayed obsolete Crypto restoration
+and Folders-open priorities after their completed delivery. Root updated its
+existing heartbeat prompt to read current canonical work orders and actual
+continuation evidence, with S04-02 active and accepted S08-02 preserved. Name,
+active state, recurrence and target thread are unchanged; completion/blocker-only
+notification policy remains. The job does not manufacture acceptance or replace
+the current ledger. Retained automation-continuation-reconciliation.json records
+the actual prompt hash and preserved fields under the existing S04 root.
+
+
+Fresh principal-only cleanup f930481a and independent actual scope9139d40c
+resolve the two retained HTTP5 public fixture identities. Four fixed admins and
+four birth queries reap; the new custodian group/stage is gone and unrelated
+current public records are preserved. All eight old trees remain retained and
+original pre-run restoration remains UNKNOWN. No old authority is renewed.
+CombinedHTTP17 source review e82dcdee plus rendered-input assessment67893b68
+find no additional demonstrated source mismatch; static compatibility cannot
+prove the dynamic readiness/primary/SQL guard. One changed terminal-capable
+complete workflow, admitted only after whole custody review and existing
+pre-action, is the next meaningful integration action. No standalone unchanged
+diagnostic or operator troubleshooting is assigned.
+
+
+### 2026-10-16 — fix actual relay shutdown while transport outcome remains unknown
+
+HTTP6 fails before root dispatch at the original five-second public-intake
+limit, not inside the password coordinator. Preserve receipt8612eb23 and
+combined independent reassessment28816498 covering both HTTP5 and HTTP6 at the
+same functional outcome. No received-byte/EOF/decode-completion witness exists;
+do not label the cause WAN or change a deadline. Minimal closed progress fields
+may be prepared around existing calls for a future justified complete workflow;
+no standalone diagnostic campaign or unchanged retry is assigned.
+
+A separate source-confirmed product defect is actionable: mutation relay has no
+TERM/INT handler, so default termination skips owned SSH/listener cleanup. Reuse
+the admission relay's stop-event pattern, interrupt bounded I/O and preserve the
+original resource deadline for disposition. Retain exact unreaped-leader signals,
+post-reap absence-only probes, containment on uncertainty, no automatic replay
+and exact listener inode removal. The three-path candidate also documents
+existing paired forced commands, keys, UIDs, authoritative epoch and isolated
+pilot environment; it neither provisions nor enables anything. One changed
+oldRED/finalGREEN control is sufficient before mandatory normal hooks. Native
+service/SSH and installed workflow qualification remain separate.
+
+Finish this one reviewed normal signed source admission and mandatory sync
+hooks if the current investigation timebox expires during them; record actual
+elapsed intervals and overrun, then require a fresh accountable next action.
+Do not convert the overrun or source checkpoint into product closure.

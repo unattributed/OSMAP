@@ -177,3 +177,92 @@ connection entry remains unavailable so it cannot bypass server-owned sealing.
 This is a parent boundary only. The exec'd Python worker requires separate
 confinement; native flags and the password workflow remain disabled pending
 actual composed qualification. Source construction does not provision anything.
+
+## Paired obsd1 → Toronto service wiring (disabled, 2026-10-16)
+
+The maintained admission and mutation relays are separate from the existing
+ordinary auth/mailbox relays. Install their reviewed source only after matching
+qualification: `maint/mail-backend/{admission_relay.py,mutation_relay.py}` maps to
+`/usr/local/libexec/osmap/mail-backend/`, and their existing `rc.d` entries map to
+`/etc/rc.d/osmap_admission_relay` and `/etc/rc.d/osmap_mutation_relay`. Both run as
+obsd1 `_osmapbridge`; each authenticates the local `_osmap` peer UID1001 and uses
+its own SSH identity (`keys/admission` versus `keys/mutation`). Keep the pinned
+root-owned Toronto `known_hosts`, exact216.128.179.75 target and existing bridge
+root0710/run2750/searchable `osmaprt` layout. These values require fresh public
+principal, group, path and host-key observations; this document does not assert
+that a service or key exists. No account-purpose SSH multiplex master is used.
+
+Toronto's root-controlled restricted authorized-key records must bind the two
+**different public keys** to the two root-owned fixed connector scripts, for
+example the following non-secret record shapes. Resolve the active root-owned
+AuthorizedKeysFile from the existing SSH configuration; do not put an editable
+key grant in the web principal's writable state. These placeholders are not
+installable keys:
+
+```text
+restrict,command="/usr/local/libexec/osmap/account-runtime/osmap_account_admission_connector" ssh-ed25519 <admission-public-key>
+restrict,command="/usr/local/libexec/osmap/account-runtime/osmap_account_mutation_connector" ssh-ed25519 <mutation-public-key>
+```
+
+The scripts require the literal `SSH_ORIGINAL_COMMAND` purposes
+`osmap-account-admission` and `osmap-account-mutation`, respectively. They exec
+only `/usr/bin/nc -N -U` to `/var/run/osmap-account-admission/admission.sock` or
+`/var/run/osmap-account-mutation/mutation.sock`. Endpoint/key/purpose substitution,
+interactive commands, PTY, agent/X11 and TCP/StreamLocal forwarding are not
+part of either grant. The Toronto connector is the existing `_osmap` principal;
+the helper checks its actual kernel UID. Do not substitute the obsd1 relay UID
+for that remote connector identity.
+
+Admission's existing `Service` reader accepts a protected root-owned parent
+with group-search permission, and publishes socket0660 with that parent's GID.
+A root-owned0710 dedicated admission-group namespace can therefore supply
+connector traversal without any permission-reader change. The group name
+`_osmapadmission` is a proposed provisioning role, not a currently observed or
+source-enforced principal. Keep all unrelated users out of this dedicated group.
+The fixed admission JSON's fields remain `version`, `socket`,
+`trusted_web_uid` (the **Toronto connector UID**), and `accounts`; its exact
+socket must match the forced connector above. The rc entry reads root-private
+`/etc/osmap/account-admission.json` and `/etc/osmap/account-admission.key`.
+The mutation namespace and private `connector-grant.json` retain the existing
+source-enforced `_osmapmutation` grant and trusted-relay UID rules. Both actual
+workers use the same authoritative `/var/db/osmap-account/epoch`; no frontend
+copy, separate authoritative epoch or automatic provision/reset is permitted.
+
+Only an isolated, explicitly qualified pilot web environment should receive the
+complete seven-field group below. Keep the existing Duncan/main web process in
+legacy mode while this qualification is incomplete. The example key directory
+belongs to the isolated pilot, with exactly its three purpose copies readable
+only by the actual obsd1 web UID (regular, single-link0600 files under protected
+ancestors). Corresponding raw bytes must match the authoritative root-private
+admission, mutation and session-proof keys; relays receive none of those keys.
+The helper UID fields are the freshly observed **local obsd1 `_osmapbridge`
+UID**, because that process owns the local socket and is the client's Unix peer;
+they are not the Toronto root-helper UID. Replace the numeric placeholders only
+from that observation before using this as an environment file:
+
+```text
+OSMAP_ACCOUNT_ADMISSION_SOCKET=/var/lib/osmap-bridge/run/admission.sock
+OSMAP_ACCOUNT_ADMISSION_KEY_FILE=/var/lib/osmap-password-pilot/secrets/admission.key
+OSMAP_ACCOUNT_ADMISSION_HELPER_UID=<observed-local-bridge-uid>
+OSMAP_ACCOUNT_MUTATION_SOCKET=/var/lib/osmap-bridge/run/mutation.sock
+OSMAP_ACCOUNT_MUTATION_KEY_FILE=/var/lib/osmap-password-pilot/secrets/mutation.key
+OSMAP_ACCOUNT_MUTATION_SESSION_PROOF_KEY_FILE=/var/lib/osmap-password-pilot/secrets/session-proof.key
+OSMAP_ACCOUNT_MUTATION_HELPER_UID=<observed-local-bridge-uid>
+```
+
+The existing serve launcher exports every sourced variable; it does not need a
+new environment pass-through path. Native gates remain false, so source or
+configuration alone still refuses instead of enabling the password workflow.
+Qualification must cover real paired SSH/peer/group/key/bootstrap routing,
+original deadlines, full authenticated password outcome and owned rollback.
+
+Mutation relay stop now follows its source-owned SIGTERM/SIGINT handler, stops
+future admission and interrupts blocked receive/forward waits. Cancellation does
+not cancel the remaining original resource deadline needed to kill/reap an
+exact still-owned SSH group. Reaped numerical groups receive only an absence
+probe. Cleanup uncertainty still latches unavailable with no terminal reply or
+retry. Graceful stop removes only the exact owned listener inode and restores
+its captured handlers. Forced termination can still leave uncertain state;
+this change grants no historical-PID cleanup or automatic socket replacement.
+One finite local oldRED/newGREEN control qualifies this changed source boundary,
+not native SSH, remote worker termination or complete password delivery.

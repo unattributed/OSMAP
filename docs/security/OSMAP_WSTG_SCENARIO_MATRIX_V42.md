@@ -913,3 +913,29 @@ accepted signed terminal, credential change, cache flush or final session/mail
 postcondition is established. Actors/groups/24 SQL-fixture handles/daemons/broker
 are disposed; purpose identities/private runtime/scratch remain retained with
 unknown initiating cleanup guard. No native, installed or UAT PASS follows.
+
+
+### 2026-10-16 — retained outcome, transport refusal and relay shutdown
+
+Current read-only retained HTTP5 observation a0a2923e validates a completed
+known_refused journal, active epoch0 and empty cache counts. This does not
+authenticate the historical frame or prove a unique cause/atomic no-write. Fresh
+principal-only cleanup f930481a and independent scope9139d40c remove only the two
+fixture purpose names with four administrative children/four birth queries
+reaped and unrelated current public rows preserved. All eight old trees remain.
+
+Changed HTTP17/attempt6 result8612eb23 fails receive_public at the original5s
+limit before root spawn or handle. No HTTP/authentication/SQL/coordinator result
+is produced. Closed received-byte/EOF/decode subphase was not exported; its
+cause stays UNKNOWN. Required combined reassessment28816498 covers HTTP5+6
+without resetting history or granting an unchanged retry.
+
+Maintained mutation relay shutdown now distinguishes cancellation from resource
+disposition: TERM/INT sets stop, interrupts accept/frame/ACK-EOF/partial forwarding
+and prevents future dispatch. Owned SSH cleanup still consumes the original
+signed/resource deadline, signals only an unreaped owned leader, and retains
+quarantine on uncertainty. Exact owned listener removal and previous signal
+handlers are preserved. One discriminating local oldRED/newGREEN validates this
+source boundary; native rcctl/paired-SSH qualification remains NOT RUN. Fixed
+peer/purpose/key/socket/MAC/epoch rules and default-disabled activation are
+unchanged. No release, installed password workflow or human UAT PASS follows.

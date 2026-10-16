@@ -133,4 +133,69 @@ class RelayTests(unittest.TestCase):
    with self.assertRaises(relay.Unavailable):relay._Relay._cleanup(child,budget)
    probe.assert_called_once_with(child.pid,0)
 
+
+ def test_rc_stop_closes_owned_listener_and_cancels_io_with_original_cleanup_budget(self):
+  import tempfile
+  with tempfile.TemporaryDirectory(prefix='osmap-mutation-stop-')as name:
+   path=Path(name)/'mutation.sock';actual=socket.socket(socket.AF_UNIX);handlers={};events=[]
+   instance=relay._Relay(os.getuid())
+   def install(number,handler):
+    previous=handlers.get(number,signal.SIG_DFL);handlers[number]=handler;events.append((number,handler));return previous
+   class Listener:
+    def bind(self,chosen):actual.bind(chosen)
+    def listen(self,count):actual.listen(count)
+    def settimeout(self,seconds):actual.settimeout(seconds)
+    def accept(inner):
+     self.assertIn(signal.SIGTERM,handlers,'rc stop has no source-owned graceful handler')
+     self.assertIn(signal.SIGINT,handlers)
+     handlers[signal.SIGTERM](signal.SIGTERM,None)
+     raise socket.timeout()
+    def close(self):actual.close()
+   # Intercept signals/native constructor only; execute actual service body on
+   # one owned local listener, without activating native flags/material/SSH.
+   with patch.object(relay._Relay,'native',return_value=instance),patch.object(relay,'LISTEN',path), \
+     patch.object(relay.socket,'socket',return_value=Listener()),patch.object(relay.signal,'signal',side_effect=install):
+    relay.serve_native()
+   self.assertFalse(path.exists());self.assertTrue(instance._stop.is_set())
+   self.assertEqual(handlers,{signal.SIGTERM:signal.SIG_DFL,signal.SIGINT:signal.SIG_DFL})
+   self.assertEqual(len(events),4)
+  instance._stop.clear();start=time.monotonic();wall=relay._millis()
+  deadline=relay._Deadline(self.raw(2000),start,wall,start+2,instance._stop)
+  a,b=socket.socketpair();child=None
+  try:
+   # Stop arrives while receive is waiting, not before the call.
+   timer=threading.Timer(.02,instance._stop.set);timer.start()
+   try:
+    with self.assertRaises(relay.Unavailable):relay._Relay._socket_exact(a,1,deadline.io)
+   finally:timer.join(timeout=1)
+   self.assertGreater(deadline.resource_remaining(),.1)
+   # Backpressure holds forward IO; stop must interrupt without restarting a
+   # frame or turning cancellation into deadline renewal.
+   instance._stop.clear();a.setsockopt(socket.SOL_SOCKET,socket.SO_SNDBUF,1024);a.setblocking(False)
+   while True:
+    try:a.send(b'x'*4096)
+    except BlockingIOError:break
+   timer=threading.Timer(.02,instance._stop.set);timer.start()
+   try:
+    with self.assertRaises(relay.Unavailable):relay._Relay._send(a,b'public',deadline)
+   finally:timer.join(timeout=1)
+   self.assertGreater(deadline.resource_remaining(),.1)
+   # Direct test-owned synthetic process: only local disposition, no native
+   # authentication. Cancellation cannot suppress original-budget kill/reap.
+   child=subprocess.Popen((sys.executable,'-I','-c','import time;time.sleep(5)'),
+    stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,start_new_session=True)
+   relay._Relay._cleanup(child,deadline);self.assertIsNotNone(child.returncode)
+   self.assertFalse(instance._contained)
+   with patch.object(relay.subprocess,'Popen',side_effect=AssertionError)as spawn:
+    with self.assertRaises(relay.Unavailable):instance.connection(a)
+    spawn.assert_not_called()
+   with patch.object(relay.time,'monotonic',return_value=start+2):
+    with self.assertRaises(relay.Unavailable):deadline.resource_remaining()
+  finally:
+   a.close();b.close()
+   if child is not None and child.returncode is None:
+    try:os.killpg(child.pid,signal.SIGKILL)
+    except ProcessLookupError:pass
+    child.wait(timeout=1)
+
 if __name__=='__main__':unittest.main()

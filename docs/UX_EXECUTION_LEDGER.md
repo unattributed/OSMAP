@@ -10138,7 +10138,7 @@ discriminator alongside the same binding production repair; no broader QA scope.
     "status": "PENDING",
     "reference": "Only minimal well-defined own-password usability after all agent-owned development/matching deployed QA/independent audit PASS. No operator password is changed by agent qualification; use controlled disposable Alice and preserve Bob/operator state. NOT RUN."
   },
-  "next_action": "HTTP5 actual e76d7f8a FAIL is retained after successful structural pre-action and whole review; no unchanged retry. Engineer traces first worker frame/coordinator refusal before challenge, bin assesses exact retained-purpose cleanup using fresh identity patterns, reviewer audits actual scope. Root integrates/synchronizes reviewed disabled admission+mutation relay repairs and existing-gate accountability code through normal signed gates, preserving source/native/installed limits. Then complete the changed controlled and isolated cross-host password workflow. Installed324b and all production native flags remain unchanged; no human troubleshooting/credential/provider request.",
+  "next_action": "Normal signed source18 admission/sync in progress for real mutation relay graceful stop and existing paired wiring, with combined5+6 reassessment recorded. Then prepare essential paired native/service and full password qualification using actual current evidence; original transport5 and all security limits remain, no unchanged retries/decorative enablement/human diagnosis.",
   "accountability": {
     "functional_exit": "Working own-account Settings password change through authoritative Toronto credentials, shared epoch, browser/IMAP/SMTP/cache containment, old-password refusal/new-login success and Bob/mail preservation, followed by matching isolated installation and independent audit. Fixture changes are prerequisites, not product delivery.",
     "owner": "/root",
@@ -10146,11 +10146,11 @@ discriminator alongside the same binding production repair; no broader QA scope.
     "history_reference": "Retained HTTP1\u20134 evidence below and existing ledger. Outer native/SSH elapsed sums122.497s only; earlier full-action source/review/model time is UNKNOWN. No token or monetary compute cost is asserted.",
     "investigation": {
       "owner": "/root",
-      "started_at": "2026-10-16T02:55:00Z",
+      "started_at": "2026-10-16T03:50:49Z",
       "timebox_seconds": 1800,
       "elapsed_status": "MEASURED",
-      "elapsed_seconds": 2079.642,
-      "overrun_reference": "docs/DECISION_LOG.md 2026-10-15 accountable delivery: finish one already-reviewed bounded normal signed source commit/push through mandatory hooks, retain actual duration; no new native retry/permission ceremony. Full earlier-cycle compute cost UNKNOWN."
+      "elapsed_seconds": 1426.494,
+      "overrun_reference": "docs/DECISION_LOG.md 2026-10-16 relay shutdown: finish one independently reviewed normal signed source admission through mandatory commit/push hooks, preserve actual overrun and interval measurements; no additional native retry or product closure. Fresh accountable next action after actual sync."
     },
     "attempts": [
       {
@@ -10232,24 +10232,124 @@ discriminator alongside the same binding production repair; no broader QA scope.
         "elapsed_status": "MEASURED",
         "elapsed_seconds": 94.156,
         "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/http-original-deadline-successor15/native-http-attempt5/result.json SHA256 e76d7f8a5e638db7137957a4e47fc798a6252e625e0323100cf51bd3007e7d7d; full preflight+dispatch wall94.156s, outer SSH/native94.037s. Fifthresponsecomplete185875/EOF, bridgechallenge_verify failure; signed outcome/SQL UNKNOWN. Actors/groups/SQL24/daemons/broker cleanup confirmed; purpose identities/runtime/scratch retained."
+      },
+      {
+        "id": "product-source-sync1",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "source_revision": "be270f02fdbcd5b40b47a22296d530bdc13fcea4",
+        "change_reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/accountability-admission-canonical-integration1/source-freeze17.json; reviewed thirteen code/guidance paths plus four existing evidence docs. SOURCE-ONLY admission of disabled cross-host lane, both relay success-reap repair and operator-requested existing-gate accountability. No deployed workflow/slice closure.",
+        "success_chain_review": {
+          "reviewer": "/root/scrum_security_review",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/accountability-admission-canonical-integration1/independent-final-review.json; component source reviews8d0b363b/11e8563f and actual retained changed controls; normal mandatory commit/push checks remain required before synchronization.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "elapsed_status": "UNKNOWN",
+        "elapsed_seconds": null,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/accountability-admission-canonical-integration1/signed-sync-proof.json SHA256 e0ddc6f00c6f67fd858d63e3b5c3526f1b50f38667847f34b18b67d0f208915e; actual signed fc4330196b316bfbb4731783290d308b4e14ee1f normal commit240.067s/push249.524s, fresh origin equality clean0/0, source-only standard-mail FF4.641s PASS. Full source/admission action elapsed not continuously measured; not sum of selected substeps, no product workflow closure."
+      },
+      {
+        "id": "http5-fixed-readonly-observation1",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "fc4330196b316bfbb4731783290d308b4e14ee1f",
+        "change_reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/http-original-deadline-successor15/readonly-retained-http5-observation2/readiness.json SHA256 3b9b43433eb3c6710080021182dd8537b997748128e33f402b5d6c51b04e2c50; one fixed5s read-only current retained state observation, exactsource61171b6f; no protocol/stop/admin/cleanup/credential action. Supplies no historical firstframe authentication or cleanup authority.",
+        "success_chain_review": {
+          "reviewer": "/root/scrum_security_review",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/http-original-deadline-successor15/readonly-retained-http5-observation2/independent-readonly-review.json SHA256 5f9a90fe209ba73d5db704cbcc81771b42e8704f7f7ee1378324905a034bf5a7; producer pinnedsource/public/closed journal projections, cleanup only own born ps within original bound, closed8192-byte consumer.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "elapsed_status": "UNKNOWN",
+        "elapsed_seconds": null,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/http-original-deadline-successor15/readonly-retained-http5-observation2/actual-observation.json SHA256 a0a2923e1d1cb7598d2953fdb905492d95159161ed095d7ff5ac1d806d065b61; bounded SSH observation4.096s PASS0/5287B/no stderr. Full accounting/preflight/reconciliation elapsed was not continuously measured and remains UNKNOWN, not equated to SSH runtime. Current Alice complete known_refused/active epoch0/cachecounts[], purpose allcredential snapshot absence true. No original-frame authenticity/cause/atomic noSQL/cleanup authority inferred."
+      },
+      {
+        "id": "http5-fresh-principal-cleanup1",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "fc4330196b316bfbb4731783290d308b4e14ee1f",
+        "change_reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/http-original-deadline-successor15/fresh-purpose-principal-cleanup1/readiness.json SHA256 5796addb9f08313068ea3cba4e1d633ccff938cdb4832823fa46151e63e4e22f; one fresh current principal-only administration action, source88807ed8/rootc7a683f6; original50/60/65/70/90 bounds. Recheck exact current fixture identities and allcredentials before four fixed deletes. Old trees retained; no expiredlease renewal/historicalsignals.",
+        "success_chain_review": {
+          "reviewer": "/root/scrum_security_review",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/http-original-deadline-successor15/fresh-purpose-principal-cleanup1/execution-custody/independent-whole-review.json SHA256 3aad2f8809aa7dbd4d4a1cc77709a749cf5414e336505332ea83cac06f962bf2; allsource/guardian function AST parity provenHTTP1; fresh producer/currentauthority, owned cleanup4+4 and strict closed consumer.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 5.605,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/http-original-deadline-successor15/fresh-purpose-principal-cleanup1/actual-cleanup1/result.json SHA256 f930481af21b463eb33f2c9fe6a784425a074a15740b5d685537ed0aab19cef2; full root preflight/ledger admission+dispatch5.605s, SSH5.557s. Strict principal-only guardian PASS, current two purpose identities removed, four fixed admins/four birthqueries reaped, unrelated currentpublicrecords preserved, newgroup/stagegone. Old eight trees retained/originalprerunUNKNOWN; no daemonstop/historicalsignals."
+      },
+      {
+        "id": "http6",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "fc4330196b316bfbb4731783290d308b4e14ee1f",
+        "change_reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/http-first-frame-successor17/READINESS.json SHA256 57e641cd991aa1e366eb87451343e90848344293e4cbf997237694caf7a2ac17; HTTP17 three-file combined early-terminal/failure-site/future-cleanup correction overHTTP15 with55payloads unchanged. Actual retained HTTP5 principalcleanupf930/scope9139 complete, old8trees retained; rendered assessment67893 finds no additional demonstrated mismatch. One changed terminal-capable full workflow, not standalone unchanged diagnostics. Original120/90/60 and180/150/210/240 bounds.",
+        "success_chain_review": {
+          "reviewer": "/root/scrum_security_review",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/http-first-frame-successor17/execution-custody/independent-whole-review.json SHA256 492333e5f108e8c8fcc676577a1ca85ff1a6e1933a064e9d882458e305dfcb27; sourcee82dcdee/root752fd365/remote1ca147ae/runner2c0712be/exact59 and complete strict success+cleanup consumers. Same d205 Rust/1893 provenance/be270Python+explicitfixture delta; disabledcrosshostlane not qualified by this action.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "FAIL",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 11.598,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/http-first-frame-successor17/native-http-attempt6/result.json SHA256 8612eb23311c3d9fe84237636c8a361188be58f7f929bd16452b1ffc794acb7d; full preflight/ledger admission/dispatch11.598s; runner11.459s/remote5.04s. Actual receive_public/remote_original_deadline before root spawn/handle, root disposition NOT_ATTEMPTED; no SQL/auth/mail/root scenario. Received-byte count and unique timeout cause unexported/UNKNOWN; not diagnosed as WAN or worker failure. No unchanged retry or widened deadline."
       }
     ],
     "next_attempt": {
-      "id": "product-source-sync1",
+      "id": "source18-sync1",
       "boundary": "authoritative-native-password-workflow",
       "owner": "/root",
       "scope": "PRODUCT_DELIVERY",
       "adoption": "CURRENT",
-      "source_revision": "be270f02fdbcd5b40b47a22296d530bdc13fcea4",
-      "change_reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/accountability-admission-canonical-integration1/source-freeze17.json; reviewed thirteen code/guidance paths plus four existing evidence docs. SOURCE-ONLY admission of disabled cross-host lane, both relay success-reap repair and operator-requested existing-gate accountability. No deployed workflow/slice closure.",
+      "source_revision": "fc4330196b316bfbb4731783290d308b4e14ee1f",
+      "change_reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/account-relay-deployment-successor18/canonical-integration1/source-freeze7.json; exact three maintained product/test/wiring paths7f896c0d/caace415 plus four existing current outcome records. Source-only graceful-stop repair and mandatory normal signed synchronization; installed324b/nativeflags/form unchanged.",
       "success_chain_review": {
         "reviewer": "/root/scrum_security_review",
-        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/accountability-admission-canonical-integration1/independent-final-review.json; component source reviews8d0b363b/11e8563f and actual retained changed controls; normal mandatory commit/push checks remain required before synchronization.",
+        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/account-relay-deployment-successor18/canonical-integration1/independent-final-review.json; source reviewcaace415 and exact seven-path final freeze; normal mandatory commit/push checks remain required.",
         "covers": [
           "producer",
           "cleanup",
           "consumer"
         ]
+      },
+      "reassessment": {
+        "reviewers": [
+          "/root",
+          "/root/scrum_security_review"
+        ],
+        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/http-first-frame-successor17/native-http-attempt6/independent-actual-http6-combined-reassessment.json SHA256 28816498fc92bc1bb4dbd4261e291a35fc481442d4fecd8cc5a5deff23f5221b; joint source18 reviewcaace415. HTTP5 dynamicrefusal and HTTP6 originalpublicintake timeout both retained, no package/scope reset; source sync is not product acceptance.",
+        "failed_attempt_ids": [
+          "http5",
+          "http6"
+        ],
+        "next_action": "Admit the reviewed real mutation relay graceful-stop repair via normal signed source hooks, preserve all failed workflow history/limits, keep production disabled. No unchanged native retry; minimal transport observations remain isolated preparation until a concrete reviewed next full-workflow action."
       }
     }
   }
@@ -11778,3 +11878,94 @@ Engineer owns first-frame/coordinator source remediation; bin owns fresh
 retained-state/lifecycle assessment; independent reviewer owns actual scope and
 exact source review. Root owns code integration, signing/sync and host queue.
 No unchanged retry, operator diagnosis, extra broad QA or checkpoint halt.
+
+## 2026-10-15 — accountability admission delivered; retained HTTP5 outcome observed
+
+Signed fc4330196b316bfbb4731783290d308b4e14ee1f passes normal commit240.067s
+and push249.524s gates: 1753 Rust PASS/0failed/48 explicit native ignores,
+Good Shopkeeper, fresh origin equality clean0/0 and all three local branches
+match their own upstreams at that checkpoint. Standard authoritative mail
+checkout clean source-only fast-forward be270→fc43301 PASS4.641s. Disabled
+admission transport, relay successful-reap repair and existing-gate accountable
+execution policy are source-delivered; no binary/service/config/form activation
+or S04-02 closure. Full delivery/model compute cost remains UNKNOWN.
+
+One independently reviewed fixed5s read-only retained HTTP5 observation passes
+SSH0/4.096s/5287B/no stderr, result a0a2923e. Current unchanged source validators
+observe one Alice journal entry complete/known_refused, active epoch0 and empty
+cache counts; fresh all-credential purpose-process snapshot shows absence.
+These unlocked current records do not authenticate the original first frame,
+prove a unique historical guard, establish cross-record atomicity or grant
+cleanup authority. All original HTTP5 failures/retained resources remain recorded.
+Full preflight/reconciliation elapsed was not continuously measured;4.096s is
+only the bounded SSH observation, not total action or compute cost.
+
+CombinedHTTP17 frozen57e641cd is under independent producer/cleanup/consumer
+review. Before retry, source engineer checks complete rendered pre-pending
+authorities; fresh-purpose administration is prepared separately from expired
+fixture leases and never selects historical PIDs. Existing Rust image reused,
+no new QA framework/build or operator troubleshooting. Attach these actual
+outcomes to the next real source admission, not a standalone paper checkpoint.
+
+## 2026-10-15 — fresh HTTP5 principal cleanup and combined workflow assessment
+
+One independently reviewed fresh current-principal action passes f930481a,
+full preflight/admission/dispatch5.605s (SSH5.557s). Four fixed administrative
+children and four birth queries are reaped; both exact fixture purpose names
+are removed and unrelated current public records preserved. New driver group
+and guardian stage are gone. All eight old trees remain retained; original
+pre-run public restoration stays UNKNOWN. No old lease renewal, historical PID
+signal, private daemon stop or tree deletion is performed. Independent actual
+scope follows using the existing receipt; no repeat check is needed.
+
+Combined HTTP17 source57e641cd is independently clear e82dcdee, including exact
+early terminal authentication/worker disposal and separate observation that
+cannot satisfy successful-change consumers. Finite end-to-end rendered input
+inspection finds no additional demonstrated source mismatch across current
+primary/material/epoch/topology/SQL handoffs. This is not a diagnosis of the
+original refusal. Rebind existing custody and whole review before one genuinely
+changed full workflow, retaining the optional closed trusted-site failure
+projection and all original deadlines/postconditions. No standalone diagnostic
+run or operator troubleshooting is assigned. S04-02 remains OPEN.
+
+## 2026-10-15 — HTTP6 transport refusal before native dispatch
+
+The one reviewed changed HTTP17/attempt6 fails at remote receive_public after
+its original five-second intake bound; root spawn/handle are false and root
+disposition is NOT_ATTEMPTED. Result8612eb23, full preflight/admission/dispatch
+11.598s, runner11.459s, remote5.04s, SSH1/no stderr. No root/native factory,
+SQL, hash, primary auth, HTTP or mail scenario ran. Exact received-byte count and
+unique initiating cause were not exported. Do not diagnose WAN/worker/SQL from
+this receipt or repeat the package unchanged. Earlier HTTP5 remains failed;
+combined reassessment must acknowledge both unreviewed failures at the same
+functional outcome. All old retained trees remain as previously recorded.
+
+Continue concrete local product work: mutation relay lacks stop-aware accept/
+connection handling, so default SIGTERM bypasses finally and can leave owned
+SSH/listener state behind. Developer implements the existing admission relay
+graceful-stop pattern with original resource-cleanup deadline and one changed
+signal/cleanup discriminator. Independent review and normal signed source
+admission follow; no production activation is claimed. Existing paired service
+configuration documentation is mapped without adding another installer or
+framework.
+
+## 2026-10-16 — reviewed mutation relay graceful-stop source admission
+
+Three existing paths from source18 readiness7f896c0d/patch2721f307 are integrated
+byte-exact after independent source reviewcaace415. Maintained shutdown fixes
+TERM/INT skipping owned SSH/listener cleanup; default flags and original signed
+resource bounds remain. One selected oldRED0.001s→finalGREEN0.045s is retained,
+with intermediate/control-location errors explicit. Developer implementation
+batch04:01:33→04:09:29UTC is476s wall-clock; earlier discovery remains UNMEASURED.
+No total token or monetary compute estimate is inferred. Existing paired-service
+documentation maps actual contracts and conditional pilot provisioning, not a
+new installer or activated workflow.
+
+Root admits exactly these three paths and four existing actual-outcome records
+after final independent review and current pre-action. Combined reassessment
+28816498 acknowledges HTTP5+HTTP6 without deleting either failed outcome; this
+source-only action is not a native retry or slice closure. Normal signed commit
+and push hooks, signature verification and fresh origin equality are required.
+Complete that bounded mandatory sequence if the investigation timebox expires
+during hooks, retaining actual overrun rather than resetting history. Native
+relay/rc/remote containment and installed password workflow remain NOT QUALIFIED.

@@ -57,7 +57,7 @@ def _millis():
     return math.ceil(value*1000)
 
 class _Deadline:
-    def __init__(self,raw,received_mono,received_millis,initial_deadline):
+    def __init__(self,raw,received_mono,received_millis,initial_deadline,stop=None):
         # Parsing is deliberately NOT a signature verification or an authority
         # constructor. The original opaque bytes are the only outbound request.
         try:
@@ -76,15 +76,20 @@ class _Deadline:
             self.mono_deadline=min(initial_deadline,
                 received_mono+(self.wall_deadline-received_millis)/1000)
             self.last_wall=received_millis;self.last_mono=received_mono
+            self.stop=threading.Event()if stop is None else stop
             self.remaining()
         except Exception:raise Unavailable('mutation deadline unavailable') from None
-    def remaining(self):
+    def resource_remaining(self):
+        # Cancellation stops IO/admission, never original-deadline disposition.
         mono=time.monotonic();wall=_millis()
         if mono<self.last_mono or wall<self.last_wall:raise Unavailable('mutation clock changed')
         self.last_wall=wall;self.last_mono=mono
         remaining=min(self.mono_deadline-mono,(self.wall_deadline-wall)/1000)
         if remaining<=0:raise Unavailable('mutation deadline expired')
         return remaining
+    def remaining(self):
+        if self.stop.is_set():raise Unavailable('mutation cancelled')
+        return self.resource_remaining()
     def io(self):
         remaining=self.remaining()-RESERVE
         if remaining<=0:raise Unavailable('mutation IO deadline expired')
@@ -163,7 +168,7 @@ class _Relay:
     def __init__(self,trusted_uid):
         if type(trusted_uid) is not int or not 0<trusted_uid<=2**32-1:raise Unavailable('mutation peer unavailable')
         self._trusted_uid=trusted_uid;self._contained=False
-        self._busy=threading.Lock();self._retained=[]
+        self._busy=threading.Lock();self._retained=[];self._stop=threading.Event()
     @classmethod
     def native(cls):
         if not NATIVE_RELAY_QUALIFIED:raise Unavailable('native mutation relay unavailable')
@@ -174,12 +179,27 @@ class _Relay:
     def _command():return ssh_argv()
     @staticmethod
     def _socket_exact(stream,size,seconds):
-        data=bytearray()
-        while len(data)<size:
-            stream.settimeout(seconds());part=stream.recv(size-len(data))
-            if not part:raise Unavailable('mutation framing unavailable')
-            data.extend(part)
-        return bytes(data)
+        data=bytearray();stream.setblocking(False)
+        with selectors.DefaultSelector()as selector:
+            selector.register(stream,selectors.EVENT_READ)
+            while len(data)<size:
+                if not selector.select(min(seconds(),.01)):continue
+                try:part=stream.recv(size-len(data))
+                except BlockingIOError:continue
+                if not part:raise Unavailable('mutation framing unavailable')
+                data.extend(part)
+        seconds();return bytes(data)
+    @staticmethod
+    def _socket_eof(stream,seconds):
+        stream.setblocking(False)
+        with selectors.DefaultSelector()as selector:
+            selector.register(stream,selectors.EVENT_READ)
+            while True:
+                if not selector.select(min(seconds(),.01)):continue
+                try:part=stream.recv(1)
+                except BlockingIOError:continue
+                if part:raise Unavailable('mutation ACK trailing data')
+                seconds();return
     @classmethod
     def _socket_frame(cls,stream,limit,seconds):
         n=int.from_bytes(cls._socket_exact(stream,4,seconds),'big')
@@ -216,7 +236,16 @@ class _Relay:
         deadline.remaining()
     @staticmethod
     def _send(stream,raw,deadline):
-        stream.settimeout(deadline.io());stream.sendall(len(raw).to_bytes(4,'big')+raw)
+        # Continue only unsent bytes on this same connection; no replay/retry.
+        data=len(raw).to_bytes(4,'big')+raw;stream.setblocking(False)
+        with selectors.DefaultSelector()as selector:
+            selector.register(stream,selectors.EVENT_WRITE)
+            while data:
+                if not selector.select(min(deadline.io(),.01)):continue
+                try:count=stream.send(data)
+                except BlockingIOError:continue
+                if not count:raise Unavailable('mutation local output unavailable')
+                data=data[count:]
         deadline.remaining()
     @staticmethod
     def _success(child,deadline):
@@ -238,33 +267,33 @@ class _Relay:
         # A success wait may already have reaped before a later check failed.
         # Never signal that numerical group after reap, even for descendants.
         if child.returncode is not None:
-            deadline.remaining()
+            deadline.resource_remaining()
             try:os.killpg(child.pid,0)
             except ProcessLookupError:
-                deadline.remaining();return child.returncode
+                deadline.resource_remaining();return child.returncode
             raise Unavailable('mutation SSH descendant disposition unconfirmed')
         # Failure/cancellation retains the exact unreaped leader: stop-before-
         # reap remains valid and consumes only the original cleanup reserve.
         try:os.killpg(child.pid,signal.SIGKILL)
         except ProcessLookupError:pass
-        code=child.wait(timeout=deadline.remaining())
+        code=child.wait(timeout=deadline.resource_remaining())
         try:os.killpg(child.pid,0)
         except ProcessLookupError:
-            deadline.remaining();return code
+            deadline.resource_remaining();return code
         raise Unavailable('mutation SSH cleanup unconfirmed')
     def connection(self,stream):
         if not self._busy.acquire(blocking=False):raise Unavailable('mutation relay busy')
         child=None;deadline=None
         try:
-            if self._contained or _peer(stream)!=self._trusted_uid:raise ValueError
+            if self._contained or self._stop.is_set()or _peer(stream)!=self._trusted_uid:raise ValueError
             initial=time.monotonic()+60
             def initial_remaining():
                 left=initial-time.monotonic()-RESERVE
-                if left<=0:raise Unavailable('mutation initial framing expired')
+                if self._stop.is_set()or left<=0:raise Unavailable('mutation initial framing expired')
                 return left
             raw=self._socket_frame(stream,LIMIT,initial_remaining)
             received_mono,received_millis=time.monotonic(),_millis()
-            deadline=_Deadline(raw,received_mono,received_millis,initial)
+            deadline=_Deadline(raw,received_mono,received_millis,initial,self._stop)
             deadline.io()
             if signal.getsignal(signal.SIGCHLD)!=signal.SIG_DFL:raise ValueError
             child=subprocess.Popen(self._command(),stdin=subprocess.PIPE,stdout=subprocess.PIPE,
@@ -277,8 +306,7 @@ class _Relay:
             if type(meta) is dict and meta.get('schema')=='osmap-account-mutation-continuity-v1':
                 self._send(stream,first,deadline)
                 ack=self._socket_frame(stream,ACK_LIMIT,deadline.io)
-                stream.settimeout(deadline.io())
-                if stream.recv(1)!=b'':raise Unavailable('mutation ACK trailing data')
+                self._socket_eof(stream,deadline.io)
                 self._pipe_write(child.stdin,ack,deadline)
                 child.stdin.close() # EOF is framing; helper authenticates ACK.
                 reply=self._pipe_frame(child.stdout,RESPONSE_LIMIT,deadline)
@@ -310,22 +338,28 @@ class _Relay:
 
 def serve_native():
     relay=_Relay.native() # false before principal/material/listener access
-    listener=socket.socket(socket.AF_UNIX,socket.SOCK_STREAM);inode=None
+    listener=socket.socket(socket.AF_UNIX,socket.SOCK_STREAM);inode=None;previous={}
     try:
+        for number in(signal.SIGTERM,signal.SIGINT):
+            previous[number]=signal.signal(number,lambda *_args:relay._stop.set())
         listener.bind(str(LISTEN));m=LISTEN.lstat();inode=(m.st_dev,m.st_ino)
-        os.chmod(LISTEN,0o660);listener.listen(1)
-        while not relay._contained:
-            stream,_=listener.accept()
+        os.chmod(LISTEN,0o660);listener.listen(1);listener.settimeout(.1)
+        while not relay._contained and not relay._stop.is_set():
+            try:stream,_=listener.accept()
+            except socket.timeout:continue
             with stream:
                 try:relay.connection(stream)
                 except Unavailable:pass
     finally:
         listener.close()
-        if inode is not None:
-            try:
-                m=LISTEN.lstat()
-                if stat.S_ISSOCK(m.st_mode) and (m.st_dev,m.st_ino)==inode:LISTEN.unlink()
-            except FileNotFoundError:pass
+        try:
+            if inode is not None:
+                try:
+                    m=LISTEN.lstat()
+                    if stat.S_ISSOCK(m.st_mode) and (m.st_dev,m.st_ino)==inode:LISTEN.unlink()
+                except FileNotFoundError:pass
+        finally:
+            for number,handler in previous.items():signal.signal(number,handler)
 
 if __name__=='__main__':
     try:serve_native()
