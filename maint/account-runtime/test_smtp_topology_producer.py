@@ -30,8 +30,8 @@ class ProducerTests(unittest.TestCase):
         self.config = self.namespace/'dovecot.conf'
         self.config.write_bytes(b'# public synthetic namespace only\n'); self.config.chmod(0o600)
         self.sock = socket.socket(socket.AF_UNIX); self.addCleanup(self.sock.close)
-        self.sock.bind(str(self.namespace/'run/login/ipc-proxy'))
-        (self.namespace/'run/login/ipc-proxy').chmod(0o600)
+        self.sock.bind(str(self.namespace/'run/login/ipc-client'))
+        (self.namespace/'run/login/ipc-client').chmod(0o600)
         self.clock = Clock(); self.budget = OperationBudget(1300, monotonic=self.clock, wall=self.clock)
         self.master = b'127.0.0.1:2525 inet n - n - - smtpd\nsmtpd pass - - n - - smtpd\n'
         self.services = b'127.0.0.1:2525/inet/smtpd_sasl_auth_enable = yes\n'

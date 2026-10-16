@@ -9896,13 +9896,15 @@ discriminator alongside the same binding production repair; no broader QA scope.
     "developers": [
       "/root/bin_preparation_engineer",
       "/root/account_serve_engineer",
-      "/root"
+      "/root",
+      "/root/recovery_engineer"
     ],
     "qa": [
       "/root"
     ],
     "security_review": [
-      "/root/scrum_security_review"
+      "/root/scrum_security_review",
+      "/root/delivery_reviewer"
     ],
     "technical_writer": [
       "/root"
@@ -10011,7 +10013,12 @@ discriminator alongside the same binding production repair; no broader QA scope.
     "maint/mail-backend/mutation_relay.py",
     "maint/mail-backend/test_mutation_relay.py",
     "maint/mail-backend/mutation_relay_fixture.py",
-    "docs/UX_SLICE_S04_02.md"
+    "docs/UX_SLICE_S04_02.md",
+    "maint/ux/password_controls_workflows.cjs",
+    "src/http/ux_browser_server.rs",
+    "maint/account-runtime/test_mail_session_containment.py",
+    "maint/account-runtime/test_proxy_config_preopen.py",
+    "maint/security/v10-claims-boundary.json"
   ],
   "outcomes": [
     {
@@ -10139,18 +10146,19 @@ discriminator alongside the same binding production repair; no broader QA scope.
     "status": "PENDING",
     "reference": "Only minimal well-defined own-password usability after all agent-owned development/matching deployed QA/independent audit PASS. No operator password is changed by agent qualification; use controlled disposable Alice and preserve Bob/operator state. NOT RUN."
   },
-  "next_action": "Finish operator-required epic-wideSOP/currentS04contract source admission with exact tenpathreview and unchanged normalgates; missingpublicdocindex repaired, T01/T02 existing sourceevidencePARTIAL reconciled. Then fulfil currentcontract real backend/Runtime/native/installedQA; no sliceclosure/fromSOP.",
+  "next_action": "Complete exact reviewed19path signedsource admission and normal GitHub synchronization. Then qualify captured-control repair in matching native fullworkflow under a fresh bounded window; preserve actual12contained state/treehistory, no replay of its request, no installed password activation until required integration/deployed checks pass.",
   "accountability": {
     "functional_exit": "Working own-account Settings password change through authoritative Toronto credentials, shared epoch, browser/IMAP/SMTP/cache containment, old-password refusal/new-login success and Bob/mail preservation, followed by matching isolated installation and independent audit. Fixture changes are prerequisites, not product delivery.",
     "owner": "/root",
     "elapsed_scope": "wall_clock",
-    "history_reference": "Retained HTTP1\u20134 evidence below and existing ledger. Outer native/SSH elapsed sums122.497s only; earlier full-action source/review/model time is UNKNOWN. No token or monetary compute cost is asserted.; Completed bounded investigation /home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/account-relay-deployment-successor18/canonical-integration1/investigation-window-closeout.json SHA256 5d1fa485650d262068f10bdd5328262332008c666176a127c1d31657761ce6d4 records actual UTC-wall 2886.045s and explicit mandatory-hook overrun; no failed history removed.; Completed source20 investigation /home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/proxy-config-isolation-successor20/canonical-integration1/investigation-window-closeout.json SHA256bb4e5e887444aca514bddb558e8974fea623f6c3684ecdc9ce3d8c2eb43e550c retains actual elapsed/overrun and explicit finite source admission disposition.; /home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/proxy-child-signal-observation-successor22/investigation-window-closeout.json SHA256c3122712c7321f00b1f4ad91507c99299529d8c4812976da8101c8832ce1e104 retains source/native8/9/10 window actual elapsed/overrun, finiteonecase disposition and failed outcomes.; /home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/slice-contract-validator-successor24/investigation-window-closeout.json SHA256a1243ba238c66dc546a8ae33f0d5c4b94a55afdb72abdabe46ebb04307bfb93b retains actual mixed-task window and directoperator SOP reprioritization; task split UNKNOWN.",
+    "history_reference": "Retained HTTP1\u20134 evidence below and existing ledger. Outer native/SSH elapsed sums122.497s only; earlier full-action source/review/model time is UNKNOWN. No token or monetary compute cost is asserted.; Completed bounded investigation /home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/account-relay-deployment-successor18/canonical-integration1/investigation-window-closeout.json SHA256 5d1fa485650d262068f10bdd5328262332008c666176a127c1d31657761ce6d4 records actual UTC-wall 2886.045s and explicit mandatory-hook overrun; no failed history removed.; Completed source20 investigation /home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/proxy-config-isolation-successor20/canonical-integration1/investigation-window-closeout.json SHA256bb4e5e887444aca514bddb558e8974fea623f6c3684ecdc9ce3d8c2eb43e550c retains actual elapsed/overrun and explicit finite source admission disposition.; /home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/proxy-child-signal-observation-successor22/investigation-window-closeout.json SHA256c3122712c7321f00b1f4ad91507c99299529d8c4812976da8101c8832ce1e104 retains source/native8/9/10 window actual elapsed/overrun, finiteonecase disposition and failed outcomes.; /home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/slice-contract-validator-successor24/investigation-window-closeout.json SHA256a1243ba238c66dc546a8ae33f0d5c4b94a55afdb72abdabe46ebb04307bfb93b retains actual mixed-task window and directoperator SOP reprioritization; task split UNKNOWN.; /home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/slice-contract-validator-successor24/canonical-integration1/investigation-window-closeout2.json SHA2568aa3f093052393ed7a73c6ec537b77b459c5030322529f81db2d3ddd6e7a86d2 actual complete SOP window; failed attempts retained.",
     "investigation": {
       "owner": "/root",
-      "started_at": "2026-10-16T06:49:54Z",
+      "started_at": "2026-10-16T07:19:56Z",
       "timebox_seconds": 1800,
       "elapsed_status": "MEASURED",
-      "elapsed_seconds": 0.0
+      "elapsed_seconds": 2162.76,
+      "overrun_reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/proxy-command-endpoint-successor25/canonical-integration1/current-investigation-finishing-disposition.json SHA256e15055b0fa7047318972bd438de399d835930c9ecc121b46355447857d891837"
     },
     "attempts": [
       {
@@ -10532,19 +10540,141 @@ discriminator alongside the same binding production repair; no broader QA scope.
         "elapsed_status": "MEASURED",
         "elapsed_seconds": 49.79,
         "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/slice-contract-validator-successor24/canonical-integration1/commit-attempt1.json +log; normalhook refuses missing docs/README.md index UX_SLICE_S04_02.md after1753Rust/0failed/48nativeignores. Rootpreflight+commit49.790s/hook49.693; no commitcreated/HEAD765 unchanged. Exactcausalmissingindex; fixindexwithoutwaivingguard, retainfailedfreeze070bf2d8/review5bc42066."
+      },
+      {
+        "id": "slice-contract-sop-sync2",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "source_revision": "765446e49210ffe9bddc7ca19e576828e7e8285d",
+        "change_reference": "OperatorSOP source24 reviewedcode remainsf149/tests d78. Superseding tenpath finalfreeze adds missing docs/README.md publicspec index and truthful T01/T02 scoped-source PARTIAL reconciliation, currentledger failure/nextsourceadmission. Normal documentation guard/localcheck then ordinary fullmandatoryhooks; no waiver or appactivation.",
+        "success_chain_review": {
+          "reviewer": "/root/scrum_security_review",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/slice-contract-validator-successor24/canonical-integration1/independent-final-review2.json required exactsupersedingtenpathreview beforeaction; code3804/designprior/addendum and scopedreuse remainreviewed, no oldfinalreviewimplicitlypromoted.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 515.335,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/slice-contract-validator-successor24/canonical-integration1/signed-sync-proof.json SHA256b665443b877d498ee426a3fa7f473ec568c540c0a77280365bb7c8df690c3409; explicit sum of two measured actions only, not whole source-development time. Normal signed11e8090/source-only SOP, 1753Rust/0failed/48nativeignores; no app/slice activation."
+      },
+      {
+        "id": "http11",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "11e8090dcf959592b8a4833667ccfc17fa06bf87",
+        "change_reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/totp-counter-scheduling-successor23/execution-custody/readiness.json SHA256af920ce4a40873686b83abd4c9ddbad20bd8f84e3cc277c27c1b9bc82d796214; source23 current-counter scheduling driver5253/manifest only versus actual10, other57 unchanged. T03 finite full workflow, no unchanged retry or claim of9/10 cause repair. d205 Rust reused via proof85db34a2 and independentf12a52e7; no build/upload.",
+        "success_chain_review": {
+          "reviewer": "/root/scrum_security_review",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/totp-counter-scheduling-successor23/execution-custody/independent-whole-review.json SHA256822e17c8b3777e6be18a7e12706b8ccb82f53606c018e53204351356b58386df; source775c and combined9/10review3644742f remain, acknowledged previously; fixed full producers/cleanup/consumers and original protocol budgets.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "FAIL",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 39.948,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/totp-counter-scheduling-successor23/native-http-attempt11/result.json SHA2566aa35e8876370738fef007693818d932871fb482b3c0a7dbc6a1ffd60db86a02; fullroot39.948/runner39.827/remote34.934. Actual Bob/Alice/form prefix then HTTP5=409/197987B/EOF, six outcome rows; original proxy exit-11/stderr97/stdout0, only fixed token errorTRUE. Authenticated known_refused440 after COMPLETE33/exit0/reap; unique signal cause UNKNOWN. All three actor groups/driver/24SQLfixturehandles/private daemons/runtime/scratch/broker/fresh4admins4queries/purposepublicrestoration confirmed; root7b56377c1b22dfcc/SQL/client/worker/H trees and foo carrier9e702a66b974de5f retained. No full workflow, installed activation, operator mutation or provider email."
+      },
+      {
+        "id": "http12",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "11e8090dcf959592b8a4833667ccfc17fa06bf87",
+        "change_reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/proxy-command-endpoint-successor25/READINESS.json SHA2564aedd5cbab4e32b9d28aae8740e45f4d13a04c8b05b19f452691a5f09ed90c05; reviewed maintained patchd70136fb applied as yet-uncommitted candidate, module305e3249 exactpayload. Correct ipc-client administrative role and actuallistener; fourchanged/55same transport. d205compiler1893 unchanged/proof85db/reviewf12a; no Rustedit/build/upload. CurrentSOPsigned11e8090. Qualification precedes normal signed completed-source admission; no signed-source claim for candidatePython.",
+        "success_chain_review": {
+          "reviewer": "/root/scrum_security_review",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/proxy-command-endpoint-successor25/native-payload/independent-whole-review.json SHA256481db60456847b4df6d541fcee5ea2bef90577b318402c589198dd9b45d9a1c3; sourceec114904 and original full16rows/17obligations/6fields/budgets/cleanup preserved.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "reassessment": {
+          "reviewers": [
+            "/root",
+            "/root/scrum_security_review"
+          ],
+          "failed_attempt_ids": [
+            "slice-contract-sop-sync1",
+            "http11"
+          ],
+          "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/totp-counter-scheduling-successor23/independent-actual-http11-combined-reassessment.json SHA2560503fe123156c10ac4c13d67d0f942a5110b1b172e234bd1dea004650cf84a39; protocoladdendumf1bf2377 verifies actual11 exact97B command/registration mismatch. Rootacknowledges both unreviewedfailures; prior missingindex repaired signed11e8090, downstreamSIGSEGV remainsunlocated and9/10notretrodiagnosed. Initial rootpreflight wrongnativepayloadpath refused FileNotFound beforeledger/host; corrected observed execution-custody path, no productdefect or nativeaction.",
+          "next_action": "One reviewed changed native12 T03 with actual administrative endpoint corrected; exact original full success/cleanup consumers and budgets, no automatic retry."
+        },
+        "result": "FAIL",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 91.986,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/proxy-command-endpoint-successor25/native-payload/native-http-attempt12/result.json SHA2568aaadcb55936016295a62cdc974435c1ef332dd3cb82774fcd51e83d4957757e; fullroot91.986/runner91.856/remote86.647. Correct administrative endpoint progressed challenge/ACK/realworkercompletion; later cache_observation Refused, HTTP5=503/185875B/EOF/onecookie, sixrows. Broker control Unconfirmed/BrokenPipe/currentlistenercustody unavailable; unique initiating guard UNKNOWN. SQL credential/write/epoch outcome UNCONFIRMED, no retry. Threeactor groups+driver/24SQLhandles/Dovecot/Postfix gone; broker cleanupFALSE/private runtime+scratch retained, purposehash+primary leases stilladmitted. Rootfc1d7fce6eb3459b/SQL/client/worker/H and foo publiccarrier retained. Read-only currentjournal/epoch/freshprincipal observation and safeownedrecovery next; no historicalPIDsignal/oldbudgetrenewal."
+      },
+      {
+        "id": "http12-readonly-current1",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "11e8090dcf959592b8a4833667ccfc17fa06bf87",
+        "change_reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/proxy-command-endpoint-successor25/readonly-retained-http12-observation2/readiness.json SHA256f6f13971c8fc6bd29675e872c0685cedaca9e9cb610a3f1a82b4b9840a4915bb/sourcee59f1159; exact currentHTTP12 rootlease/source58/journal/epoch/currentprincipals/countsonly. Correct known currentcache optionalkeys/1024-filecap while retaining original5s/8192-output. No credential retry/socket/SQL/locks/signals/deletes/administration/expiredlease reconstruction. Oldobserver1HELD/unexecuted.",
+        "success_chain_review": {
+          "reviewer": "/root/delivery_reviewer",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/proxy-command-endpoint-successor25/readonly-retained-http12-observation2/independent-source-review.json SHA256b93c0893fd8f276fb9d6d0d2617d59c76964a493d050c5915e1ec41053824fcd; exact closed producer/zero-sideeffectcleanup/consumer counts scope, not authorityforfuturecleanup.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 4.163,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/proxy-command-endpoint-successor25/readonly-retained-http12-observation2/actual-result.json SHA25678190bd71221448e042cca9800a2a411be5c4975abb792004cea64058160c4d9; currentjournal complete/contained, epoch0contained/cachecounts[], currentpurposeallcredentialabsence snapshotTRUE. NoSQLread/write, snapshotnotcleanupauthority, write remainsUNPROVED. Independentactual7cdf0609."
+      },
+      {
+        "id": "http12-fresh-principals1",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "11e8090dcf959592b8a4833667ccfc17fa06bf87",
+        "change_reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/proxy-command-endpoint-successor25/fresh-purpose-principal-cleanup-http12-1/readiness.json SHA256d596e48f75b63c76fc62cef64897a5e8c0c8d2d8610ff56a4e0a6ed4f8538399; exact freshHTTP12 ownedpurpose rows/source58/current8namespace metadata, onlyfourfixeduserdel/groupdel afterfreshpercommand allcredentialabsence/defaults/admin/currentrecord admission. Not oldlease renewal or automatic credential retry; no -m/-r/snapshotrestore/tree deletion/historicalsignal. Guardian457f original60inner/65keeper/70root/90SSH unchanged.",
+        "success_chain_review": {
+          "reviewer": "/root/delivery_reviewer",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/proxy-command-endpoint-successor25/fresh-purpose-principal-cleanup-http12-1/independent-whole-source-review.json SHA2561757af03f5cb756a3b87009dbf40837cace107efa99746965d25099a81a32256; source9e13/root457f exactexecutedpredecessorfunctions, observedconstants refreshed, strictproducer/currentownedadministration/disposition/consumer.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 5.863,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/proxy-command-endpoint-successor25/fresh-purpose-principal-cleanup-http12-1/actual-result.json SHA256e53863b3c757267b5b8cb017221db4e17d21dd4481f17fce0be7a07c6c9757ec; fourfixedadmin/fourbirthqueries allreaped, freshallcredentialabsence, exactpurposehash+primary removed and unrelatedcurrentpublicrecords preserved. Guardian/currentowneddriver group/reap/stagegone. Oldeighttrees retained; originalprerunrestorationUNKNOWN, no SQL/auth/credential retry or historicalsignal. Scopeprincipalsonly, not originalwholecleanuprecoveryPASS."
       }
     ],
     "next_attempt": {
-      "id": "slice-contract-sop-sync2",
+      "id": "ipc-control-source-sync1",
       "boundary": "authoritative-native-password-workflow",
       "owner": "/root",
       "scope": "PRODUCT_DELIVERY",
       "adoption": "CURRENT",
-      "source_revision": "765446e49210ffe9bddc7ca19e576828e7e8285d",
-      "change_reference": "OperatorSOP source24 reviewedcode remainsf149/tests d78. Superseding tenpath finalfreeze adds missing docs/README.md publicspec index and truthful T01/T02 scoped-source PARTIAL reconciliation, currentledger failure/nextsourceadmission. Normal documentation guard/localcheck then ordinary fullmandatoryhooks; no waiver or appactivation.",
+      "source_revision": "11e8090dcf959592b8a4833667ccfc17fa06bf87",
+      "change_reference": "Reviewed realmaintained ipc-client endpointsource25/ec114 plus same-original-budget captured-CANCEL lifetime source26/ace86; essential T01browser1e44 and T02sourcefcb0 checks, existing derivedV10/V14 metadata, honestactual12FAIL/readonlycontained/principal-onlyrecovery. Exactcanonical source-freeze19.json under /home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/proxy-command-endpoint-successor25/canonical-integration1 required; no wholeworkflow/native13/installedactivation or parentclosure.",
       "success_chain_review": {
-        "reviewer": "/root/scrum_security_review",
-        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/slice-contract-validator-successor24/canonical-integration1/independent-final-review2.json required exactsupersedingtenpathreview beforeaction; code3804/designprior/addendum and scopedreuse remainreviewed, no oldfinalreviewimplicitlypromoted.",
+        "reviewer": "/root/delivery_reviewer",
+        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/proxy-command-endpoint-successor25/canonical-integration1/independent-final-source-review.json required exactnineteenpathfreeze before normalgates/signverify/authorizedsync; reuse verifiedcomponent/source/resultsreview, newactualrecords and derivedmetadata mustmatch.",
         "covers": [
           "producer",
           "cleanup",
@@ -10583,9 +10713,10 @@ discriminator alongside the same binding production repair; no broader QA scope.
         "preserved": "Other fields, account credentials/sessions and unrelated settings remain unchanged.",
         "owner": "/root",
         "reviewer": "/root/scrum_security_review",
-        "status": "PARTIAL",
+        "status": "PASS",
         "evidence": [
-          "Retained signed765 commit gate log SHA2560655fb5b3054daee06b701b4a1af2be6ee798289c3e0aa3c8d04094298aba66d line782 password_page_uses_exact_script_csp_and_independent_empty_fields PASS; matching current/1893 source pins. Rendering/labels/Cancelhref/strictCSP only. DOMtoggle/keyboard/paste/populatedCancel/network-clipboard-storage execution not established. Read-only QA by bin_preparation_engineer; independent finalsource review required before reuse admission."
+          "Retained signed765 commit gate log SHA2560655fb5b3054daee06b701b4a1af2be6ee798289c3e0aa3c8d04094298aba66d line782 password_page_uses_exact_script_csp_and_independent_empty_fields PASS; matching current/1893 source pins. Rendering/labels/Cancelhref/strictCSP only. DOMtoggle/keyboard/paste/populatedCancel/network-clipboard-storage execution not established. Read-only QA by bin_preparation_engineer; independent finalsource review required before reuse admission.",
+          "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/password-form-t01-coverage-20261016/READINESS.json SHA2565cdcadd1; actual report43e947bb plus independent1e44b82b, integrated exactthreepaths. Real owned Edge155 source controls/keyboard/trustedpaste/populatedCancel/Breadcrumb; no submission/clipboardAPI/storage/network, states/cookies and ownedcleanup preserved. Synthetic gateway only; T06/real backend remainNOT_RUN."
         ]
       },
       {
@@ -10602,9 +10733,10 @@ discriminator alongside the same binding production repair; no broader QA scope.
         "preserved": "Other accounts/mail and prior authoritative state; no password persistence.",
         "owner": "/root",
         "reviewer": "/root/scrum_security_review",
-        "status": "PARTIAL",
+        "status": "PASS",
         "evidence": [
-          "Retained signed765 log SHA2560655fb5b3054daee06b701b4a1af2be6ee798289c3e0aa3c8d04094298aba66d lines799/794/1459/788 named route refusal/result/policy/Unicode cases PASS with matching current/1893 source. StubGateway/typedRequest scope: no actualbackend/sessionfile preservation. Stalestored-passwordsession/fullmalformedform/exact15positive/no-fabricatedtimestamp/populatedCancel remain unverified in this log. Read-only QA by bin_preparation_engineer; no rerun."
+          "Retained signed765 log SHA2560655fb5b3054daee06b701b4a1af2be6ee798289c3e0aa3c8d04094298aba66d lines799/794/1459/788 named route refusal/result/policy/Unicode cases PASS with matching current/1893 source. StubGateway/typedRequest scope: no actualbackend/sessionfile preservation. Stalestored-passwordsession/fullmalformedform/exact15positive/no-fabricatedtimestamp/populatedCancel remain unverified in this log. Read-only QA by bin_preparation_engineer; no rerun.",
+          "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/password-form-t02-coverage-20261016/READINESS.json SHA25681551e2d86195aec2607c4039d3efb641e7ce8c5531c459753e9b632c18daa1b; exact appliedsource609cf556/reviewfcb0b3f9. Three essential sourcecases actual2initialPASS+changedmalformed1PASS, retained testassumptionERROR, exactunchanged2 reuse; source existingrender/mockedroute/policy evidence retained. ActualrevokedFileSessionStore/Bob preservation, no authoritativeepoch/installedstatus promotion."
         ]
       },
       {
@@ -10623,7 +10755,9 @@ discriminator alongside the same binding production repair; no broader QA scope.
         "reviewer": "/root/scrum_security_review",
         "status": "FAIL",
         "evidence": [
-          "Actual nativeHTTP9 result c25212f7de4c86b9df3f453b8eb5d7fc9811ef04f9d72ab8b9cf7fc5a4d808f5 and actualHTTP10 result59b514636b1364c4b56983d553679f216bad6ad7bcda0f65998b953e5acde4fa under existing password-change root; exact private fixture scopes with signed source765+explicit overlays, composed positive journey fails, no installed/full-slice PASS. Independent actual9scope f83112a2 and combined9+10 review3644742f retain initiating causesUNKNOWN."
+          "Actual nativeHTTP9 result c25212f7de4c86b9df3f453b8eb5d7fc9811ef04f9d72ab8b9cf7fc5a4d808f5 and actualHTTP10 result59b514636b1364c4b56983d553679f216bad6ad7bcda0f65998b953e5acde4fa under existing password-change root; exact private fixture scopes with signed source765+explicit overlays, composed positive journey fails, no installed/full-slice PASS. Independent actual9scope f83112a2 and combined9+10 review3644742f retain initiating causesUNKNOWN.",
+          "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/totp-counter-scheduling-successor23/native-http-attempt11/result.json SHA2566aa35e8876370738fef007693818d932871fb482b3c0a7dbc6a1ffd60db86a02; failed composed native scope, no credential-change/installed PASS",
+          "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/proxy-command-endpoint-successor25/native-payload/native-http-attempt12/result.json SHA2568aaadcb55936016295a62cdc974435c1ef332dd3cb82774fcd51e83d4957757e; endpointprotocol correction progressed but overallFAIL/writeUNCONFIRMED/ownedrecoverypending, no installedPASS"
         ]
       },
       {
@@ -12625,3 +12759,15 @@ Read-only matching sourceQA also reconcilesT01/T02 asPARTIAL, with named
 existing rendering/mockroute/policy passes and explicitunexecutedinteraction/
 fullroute gaps. No productbug or fulltestPASS is inferred, no testsrepeated.
 Supersedingexacttenpathfreeze/review precedes unchangednormal signedadmission.
+
+
+## 2026-10-16 — epic-wide slice SOP delivered; composed password failure retained
+
+Signed source `11e8090dcf959592b8a4833667ccfc17fa06bf87` delivers the operator-required SOP and executable contract guard. Normal commit/push passed (241.502/273.751 seconds), signature verified, fresh GitHub equality and all three branch references matched. Toronto standard checkout fast-forwarded cleanly in 14.015 seconds; application/configuration activation did not occur. The first documentation-index refusal is retained. Every future slice receives a concrete design and verification contract before work. S04-02 T01/T02 remain PARTIAL, T03 FAIL and other scenarios NOT_RUN.
+
+Native HTTP11 executed the planned T03 path with separately pinned fixture23 and reused compiler artifact. Login and form preparation completed, then password POST returned409 after the proxy child again terminated with signal11 and97 stderr bytes. The bounded classifier identifies only the word error; it does not establish the initiating cause. Exact failure, actor/daemon cleanup and retained namespaces are recorded in the active attempt. No ambiguous write is retried and no operator account is changed. Compare actual successful versus failing proxy composition before the next changed action; independent combined reassessment is required. Focused real synthetic-browser T01 coverage proceeds separately. This is not S04-02 completion.
+
+
+## 2026-10-16 — bounded HTTP12 state reconciliation and principal disposition
+
+Reviewed read-only observation passed in4.163 seconds: current journal complete/contained, epoch0contained, empty flush counts. This does not prove the SQL password was unchanged. Fresh independently reviewed purpose-only administration then passed in5.863 seconds: four fixed admin children and four birth queries reaped; _osmaphash/_osmapprimary removed after repeated current all-credential absence and exact row/custody admission; unrelated current public records preserved. Its guardian stage and group are gone. Eight older source/SQL/runtime/scratch trees remain retained; original pre-run restoration is UNKNOWN. No old PID signal, snapshot restoration, credential retry or provider action occurred. Original HTTP12 failure remains FAIL. Completed component source and essential T01/T02 checks proceed through ordinary signed synchronization; no full S04-02 or release claim.

@@ -136,6 +136,108 @@ fn password_runtime_trait_delegates_to_unqualified_owned_capability_without_stat
     std::fs::remove_dir_all(root).unwrap();
 }
 
+// Additional T02 source assertions only. StubGateway never proves an actual
+// credential update; the revoked-session case uses the production file store.
+fn assert_password_source_t02_refusal(response: &HandledHttpResponse) {
+    assert_no_password_echo(response);
+    let text = format!("{} {:?}", body_text(response), response.audit_events);
+    for invented in ["Your password was changed", "password_changed_at", "credential_changed_at", "changed_at="] {
+        assert!(!text.contains(invented), "refusal fabricated a changed-at/result claim");
+    }
+}
+
+#[test]
+fn password_source_t02_exact_minimum_is_admitted_without_claiming_change() {
+    let minimum = "a".repeat(15);
+    assert!(crate::password_change::Request::new("Current-public-password", &minimum, &minimum, "123456").is_ok());
+    let app = password_app(BrowserPasswordDecision::KnownRefused);
+    let body = password_form().replace("New-public-password", &minimum);
+    let response = app.handle_request(&password_request(&body), "127.0.0.1");
+    assert_eq!(response.response.status_code, 409);
+    assert_eq!(*app.gateway.password_calls.lock().unwrap(), vec!["alice@example.com"]);
+    assert!(body_text(&response).contains("No password change was made"));
+    assert_password_source_t02_refusal(&response);
+    let too_short = password_form().replace("New-public-password", &"a".repeat(14));
+    let refused = app.handle_request(&password_request(&too_short), "127.0.0.1");
+    assert_eq!(refused.response.status_code, 400);
+    assert_eq!(app.gateway.password_calls.lock().unwrap().len(), 1);
+    assert_password_source_t02_refusal(&refused);
+}
+
+#[test]
+fn password_source_t02_missing_malformed_and_unbound_fields_do_not_dispatch() {
+    let app = password_app(BrowserPasswordDecision::Changed);
+    let valid = password_form();
+    let malformed = [
+        valid.replace("current_password=Current-public-password&", ""),
+        valid.replace("confirmation=New-public-password&", ""),
+        valid.replace("csrf_token=", "csrf_token=%GG"),
+        valid.replace("current_password=Current-public-password", "current_password=%ff"),
+        valid.replace("current_password=Current-public-password", "account=bob%40example.com"),
+        format!("{valid}&%63urrent_password=duplicate"),
+        valid.replace("New-public-password", "Current-public-password"),
+    ];
+    for body in malformed {
+        let response = app.handle_request(&password_request(&body), "127.0.0.1");
+        assert_eq!(response.response.status_code, 400);
+        assert_password_source_t02_refusal(&response);
+    }
+    // The production outer parser rejects this body before a password route
+    // request can exist; do not weaken its cap just to exercise inner parsing.
+    let oversized = format!("{valid}&padding={}", "x".repeat(8192));
+    let raw = format!("POST /settings/password HTTP/1.1\r\nHost: localhost\r\nContent-Length: {}\r\n\r\n{oversized}", oversized.len());
+    let error = parse_http_request_bytes(raw.as_bytes(), &HttpPolicy::default()).unwrap_err();
+    assert_eq!(error.reason, "http body exceeded maximum length");
+    let mut wrong_type = password_request(&valid);
+    wrong_type.headers.insert("content-type".into(), "application/json".into());
+    let response = app.handle_request(&wrong_type, "127.0.0.1");
+    assert_eq!(response.response.status_code, 400);
+    assert_password_source_t02_refusal(&response);
+    let mut query = password_request(&valid);
+    query.query_params.insert("account".into(), "bob@example.com".into());
+    let response = app.handle_request(&query, "127.0.0.1");
+    assert_eq!(response.response.status_code, 400);
+    assert_password_source_t02_refusal(&response);
+    assert!(app.gateway.password_calls.lock().unwrap().is_empty());
+}
+
+#[test]
+fn password_source_t02_revoked_real_file_session_refuses_without_record_rewrite() {
+    use crate::session::{FileSessionStore, SessionService, SystemRandomSource};
+    let root = temp_dir("password-source-t02-revoked");
+    let session_root = root.join("sessions");
+    let service = SessionService::new(FileSessionStore::new(&session_root), crate::totp::SystemTimeProvider, SystemRandomSource, 3600, 1800);
+    let context = AuthenticationContext {request_id:"public-t02".into(), remote_addr:"127.0.0.1".into(), user_agent:"Firefox/Test".into()};
+    let alice = service.issue(&context, "alice@example.com", RequiredSecondFactor::Totp).unwrap();
+    let bob = service.issue(&context, "bob@example.com", RequiredSecondFactor::Totp).unwrap();
+    let app = BrowserApp::new(HttpPolicy::default(), StubGateway {
+        password_result:Some(BrowserPasswordDecision::Changed),
+        fixture_sessions:Some(fixture_sessions::FixtureSessions::new(session_root.clone())),
+        ..StubGateway::default()
+    });
+    let cookie = format!("osmap_session={}", alice.token.as_str());
+    let mut get = request("GET", "/settings/password", &authenticated_same_origin_headers(), "");
+    get.headers.insert("cookie".into(), cookie.clone());
+    assert_eq!(app.handle_request(&get, "127.0.0.1").response.status_code, 200);
+    assert!(service.revoke_by_token(&context, &alice.token).unwrap().newly_revoked);
+    let store = FileSessionStore::new(&session_root);
+    let alice_path = store.session_path(&alice.record.session_id);
+    let bob_path = store.session_path(&bob.record.session_id);
+    let before_alice = fs::read(&alice_path).unwrap();
+    let before_bob = fs::read(&bob_path).unwrap();
+    let body = password_form().replace("fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210", &url_encode(&alice.record.csrf_token));
+    let mut post = password_request(&body);
+    post.headers.insert("cookie".into(), cookie);
+    let response = app.handle_request(&post, "127.0.0.1");
+    assert_eq!(response.response.status_code, 303);
+    assert_password_source_t02_refusal(&response);
+    assert!(app.gateway.password_calls.lock().unwrap().is_empty());
+    assert!(fs::read(&alice_path).unwrap() == before_alice, "refused Alice record changed");
+    assert!(fs::read(&bob_path).unwrap() == before_bob, "unrelated Bob record changed");
+    assert!(service.validate(&context, &bob.token).is_ok());
+    fs::remove_dir_all(root).unwrap();
+}
+
 /// Genuine wire-entry fixture. Root owns the actual paired account services,
 /// SQL/mail fixture, dropped process, bootstrap socketpair and HTTP consumer.
 /// This module does not provision roles or fabricate authentication/sessions.

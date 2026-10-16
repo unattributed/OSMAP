@@ -38,6 +38,25 @@ def _line(stream, budget):
     return bytes(value)
 
 
+def _captured_cancel_line(stream, budget):
+    # CAPTURED retains this exact cutoff through the password transaction.
+    # CANCEL may arrive after SQL/verification/cache work; only the already
+    # authenticated original deadline bounds that hold. Never mint a new
+    # budget or let a wire/caller timeout extend it. Ordinary frames retain
+    # their separate one-second receive cap in _line.
+    value = bytearray()
+    while not value.endswith(b'\n'):
+        stream.settimeout(budget.remaining())
+        block = stream.recv(LIMIT + 1 - len(value))
+        if not block or len(value) + len(block) > LIMIT:
+            raise Refused('SMTP control frame unavailable')
+        value.extend(block)
+    budget.remaining()
+    if value.count(b'\n') != 1 or b'\r' in value or b'\0' in value:
+        raise Refused('SMTP control frame refused')
+    return bytes(value)
+
+
 def _send(stream, value, budget):
     stream.settimeout(budget.cap_seconds(1))
     stream.sendall(value)
@@ -148,7 +167,7 @@ class LifecycleControlOperation:
             cutoff = self._capture(account)
             self._authority(stream, identity)
             _send(stream, CAPTURED, self._budget)
-            if _line(stream, self._budget) != CANCEL:
+            if _captured_cancel_line(stream, self._budget) != CANCEL:
                 raise Refused('SMTP control cancellation refused')
             self._authority(stream, identity)
             count = self._registry.cancel_cutoff_locked(cutoff, self._budget)

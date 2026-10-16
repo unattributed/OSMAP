@@ -3,6 +3,7 @@ import base64
 import os
 import socket
 import threading
+import time
 import unittest
 from unittest.mock import patch
 
@@ -72,6 +73,47 @@ class ControlTests(unittest.TestCase):
         receipt=self.registry.verified(bob,b'OK\t2\tuser='+BOB.encode()+b'\n')
         self.assertTrue(self.registry.publish(bob,receipt));bf.settimeout(.2)
         self.assertEqual(bf.recv(4096),b'OK\t2\tuser='+BOB.encode()+b'\n')
+
+    def test_captured_cutoff_survives_transaction_gap_within_same_original_budget(self):
+        received_mono = time.monotonic()
+        received_millis = int(time.time() * 1000)
+        deadline_millis = received_millis + 3000
+        self.budget = OperationBudget.from_original_deadline(
+            (deadline_millis + 999) // 1000, received_mono=received_mono,
+            received_millis=received_millis, sent_millis=received_millis,
+            deadline_millis=deadline_millis, wall_millis=lambda: int(time.time() * 1000))
+        self.fixture.budget = self.budget
+        self.namespace, self.topology = self.fixture.produce()
+        original_deadline = self.budget._deadline
+        alice, front, back = self.channel()
+        bob, bob_front, _ = self.channel(BOB, 2)
+        self.state()
+        operation, stream, thread = self.pair()
+        client = control.LifecycleControlClient(stream, self.namespace, self.budget)
+        client.capture(ALICE)
+        captured_at = time.monotonic()
+        threading.Event().wait(1.15)
+        self.assertGreater(time.monotonic() - captured_at, 1)
+        self.assertGreater(self.budget.remaining(), 0)
+        self.assertTrue(thread.is_alive(), 'captured control expired before original deadline')
+        self.assertEqual(client.cancel(), 1)
+        thread.join(timeout=1)
+        self.assertFalse(thread.is_alive())
+        self.assertEqual(self.results, [1])
+        self.assertEqual(operation._state, 'complete')
+        self.assertEqual(self.budget._deadline, original_deadline)
+        self.budget.require_original(sent_millis=received_millis,
+            deadline_millis=deadline_millis, expires_at=(deadline_millis + 999) // 1000)
+        self.assertFalse(getattr(self.registry, '_control_uncertain', False))
+        self.assertEqual(len(self.registry._cutoffs), 0)
+        for peer in (front, back):
+            peer.settimeout(.2)
+            self.assertEqual(peer.recv(1), b'')
+        self.assertFalse(bob.closed)
+        receipt = self.registry.verified(bob, b'OK\t2\tuser=' + BOB.encode() + b'\n')
+        self.assertTrue(self.registry.publish(bob, receipt))
+        bob_front.settimeout(.2)
+        self.assertEqual(bob_front.recv(4096), b'OK\t2\tuser=' + BOB.encode() + b'\n')
 
     def test_connection_held_old_cutoff_never_cancels_new_generation(self):
         old,front,_=self.channel();self.state()

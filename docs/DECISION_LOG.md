@@ -10845,3 +10845,23 @@ failures. Source23 fixture timing repair is independently source-reviewed and
 retained, but no next native action is admitted until this contract is reviewed
 and its ordinary signed-source admission is complete. Then resume the same
 working-password objective; no lateral scope or blanket403-case rerun.
+
+
+## 2026-10-16 — apply slice contract and retain native HTTP11 refusal
+
+The epic-wide slice delivery SOP is signed and synchronized as11e8090. Current S04-02 has named outcomes, design and nine finite planned scenarios; source/installed/human evidence stays separate. A single changed native T03 attempt11 progressed through actual Bob/Alice login and form preparation but again measured proxy signal11/stderr97 before mutation. The error-token result is insufficient to name a cause. Preserve the failure and safe retained-state disposition, compare the known-working proxy composition with this factory path, and reassess the two current failures before another expensive action. Continue essential actual browser T01 checks; no broader QA framework or product/security requirement change.
+
+
+## 2026-10-16 — Actual command-endpoint repair and subsequent uncertainty
+
+The exact actual11 diagnostic hash matches the public Dovecot command-versus-registration protocol mismatch. The maintained fixed endpoint and private administrative listener are corrected to ipc-client; the normal registration listener stays ipc-proxy. Native12 progressed to challenge/ACK and real-worker completion, then failed at cache observation with HTTP503 and broker/control uncertainty. Do not repeat the credential mutation or infer success. Retain all failure evidence and private namespaces; first inspect the current journal/epoch and fresh owned-principal facts read-only, then reconcile safe owned recovery. Source T01 actual-browser checks pass; real installed password acceptance remains open.
+
+
+## 2026-10-16 — Complete essential source checks; preserve actual integration failure
+
+Integrate the two demonstrated backend contract corrections: administrative command listener role and captured cancellation lifetime. The latter retains the same original OperationBudget and all ordinary1-second/framing/authority/uncertainty controls; it is source/local-qualified, not a unique diagnosis of HTTP12. Source T01/T02 required interaction/refusal cases now pass after independent review; retained fixture-assumption failures remain. Refresh only existing V10 derived counts/offsets/hashes, including stale advisory claims that previously lagged the actual9031 register; current9043 adds12 test assumptions. No scanner or acceptance rule is waived. Normal signed source synchronization preserves this real work while native/deployed S04-02 remains open.
+
+
+## 2026-10-16 — bounded HTTP12 state reconciliation and principal disposition
+
+Reviewed read-only observation passed in4.163 seconds: current journal complete/contained, epoch0contained, empty flush counts. This does not prove the SQL password was unchanged. Fresh independently reviewed purpose-only administration then passed in5.863 seconds: four fixed admin children and four birth queries reaped; _osmaphash/_osmapprimary removed after repeated current all-credential absence and exact row/custody admission; unrelated current public records preserved. Its guardian stage and group are gone. Eight older source/SQL/runtime/scratch trees remain retained; original pre-run restoration is UNKNOWN. No old PID signal, snapshot restoration, credential retry or provider action occurred. Original HTTP12 failure remains FAIL. Completed component source and essential T01/T02 checks proceed through ordinary signed synchronization; no full S04-02 or release claim.

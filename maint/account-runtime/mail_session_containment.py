@@ -265,7 +265,9 @@ class OperatorOwnedProxyNamespace:
         self._backend_address = backend_address
         self._backend_port = backend_port
         self._config = root / 'dovecot.conf'
-        self._ipc = root / 'run' / 'login' / 'ipc-proxy'
+        # Dovecot dispatches *-client listeners to the administrative command
+        # handler; ipc-proxy is reserved for login-process registration.
+        self._ipc = root / 'run' / 'login' / 'ipc-client'
         self._captured = self._snapshot()
         self._fingerprint = hashlib.sha256(repr(self._captured).encode('ascii')).hexdigest()
 

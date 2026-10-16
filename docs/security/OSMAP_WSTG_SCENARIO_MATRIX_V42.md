@@ -981,3 +981,8 @@ repair is separately reviewed, not a diagnosis or functional PASS. No new
 operatorcredentials/providerSend/hostactivation occurs in this SOP admission.
 Existing exact source tests are reused; fullnative/installed QA and audit are
 not substituted by the contract, normal builds or past component evidence.
+
+
+## 2026-10-16 — S04-02 source boundaries and actual retained uncertainty
+
+The fixed command-versus-registration endpoint is corrected in maintained source and the private native template. Actual HTTP12 progressed to challenge/ACK and worker completion, then returned503 at cache observation; SQL write remains unproved. A reviewed read-only observation reports a complete/contained journal, epoch0contained and empty flush counts, without SQL read or mutation. Preserve this native FAIL and retained namespaces. The captured-CANCEL reader is separately corrected to use its unchanged original operation deadline, with local oldRED/new3PASS and independent source review; changed native qualification remains unrun. T01 actual owned-browser interaction coverage and T02 typed/route/real-revoked-store source controls pass with exact scopes; no installed T06–T08, recovery, provider delivery, whole-slice or release acceptance follows. V10 uses unchanged generators with12 new test assumptions and existing derived metadata reconciled; V14 adds only the exact test-only CJS classification, preserving production CSP and unknown-script refusal.

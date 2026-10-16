@@ -958,3 +958,23 @@ sequence is complete source/authority/consumer/cold-custody review, signed
 integration, one matching build, actual artifact binding and whole-package
 review, then one finite controlled action. No unchanged case or broad extra QA
 is repeated. Full installed password/S04-02/UAT remain OPEN.
+
+
+## Current continuation — 2026-10-16 after signed slice SOP
+
+Source11e8090 is signed and synchronized; the mandatory slice SOP now covers the entire UX epic. S04-02 own-password change remains active and incomplete. Actual native HTTP11 completed login/form preparation, then returned409 with the original proxy child exiting on signal11; the cause is still unknown. T01/T02 are partially source-qualified, T03 failed, and required installed scenarios remain unrun. Investigate the concrete proxy composition difference and complete focused real synthetic-browser field/navigation tests. Installed pair324b and password capability activation remain unchanged; no human task is requested.
+
+
+## 2026-10-16 — Latest actual result — native HTTP12
+
+The reviewed ipc-client endpoint repair is applied but not yet committed. Actual12 progressed beyond the prior protocol refusal to challenge/ACK and worker completion, then returned503 at cache observation. Credential write and epoch outcome remain unconfirmed. Actor groups, SQL fixture handles and Dovecot/Postfix are gone, but broker cleanup, private runtime/scratch and temporary principal disposition remain unresolved. Read-only current-state observation and safe owned recovery take priority; no mutation retry or human troubleshooting is requested. T01 actual headless source QA passes; T02 focused source cases await final independent review. S04-02 and installed password activation remain open.
+
+
+## 2026-10-16 — Current source delivery scope
+
+Source T01 and T02 required checks are now PASS at their declared source layers. Two maintained backend fixes are independently reviewed: use the administrative ipc-client endpoint and hold captured cancellation within its original deadline. HTTP12 still failed and no installed password capability is enabled. The read-only retained state is journal complete/contained, epoch0contained, cachecounts[]; SQL write is unproved and must not be retried automatically. Fresh purpose-only cleanup is separately bounded and reviewed; retained diagnostic trees are preserved. Normal signed source admission is next; full S04-02 and matching installed QA remain open.
+
+
+## 2026-10-16 — bounded HTTP12 state reconciliation and principal disposition
+
+Reviewed read-only observation passed in4.163 seconds: current journal complete/contained, epoch0contained, empty flush counts. This does not prove the SQL password was unchanged. Fresh independently reviewed purpose-only administration then passed in5.863 seconds: four fixed admin children and four birth queries reaped; _osmaphash/_osmapprimary removed after repeated current all-credential absence and exact row/custody admission; unrelated current public records preserved. Its guardian stage and group are gone. Eight older source/SQL/runtime/scratch trees remain retained; original pre-run restoration is UNKNOWN. No old PID signal, snapshot restoration, credential retry or provider action occurred. Original HTTP12 failure remains FAIL. Completed component source and essential T01/T02 checks proceed through ordinary signed synchronization; no full S04-02 or release claim.

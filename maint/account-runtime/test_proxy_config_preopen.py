@@ -30,8 +30,8 @@ def child(source, mode, name, reader):
     config.write_bytes(b'public synthetic fixture\n')
     os.chmod(config, 0o600)
     with socket.socket(socket.AF_UNIX) as ipc:
-        ipc.bind(str(root / 'run/login/ipc-proxy'))
-        os.chmod(root / 'run/login/ipc-proxy', 0o600)
+        ipc.bind(str(root / 'run/login/ipc-client'))
+        os.chmod(root / 'run/login/ipc-client', 0o600)
         namespace = module.OperatorOwnedProxyNamespace(root, os.getuid(), '127.0.0.1', 49123)
         if reader == 'certificate':
             config = root / 'smtp-topology.json'

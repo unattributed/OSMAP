@@ -41,7 +41,9 @@ fn ux_synthetic_browser_server() {
         write_timeout_secs: 1,
         ..HttpPolicy::default()
     };
+    let password_controls = std::env::var("OSMAP_UX_FIXTURE_PASSWORD_CONTROLS").ok().as_deref() == Some("1");
     let gateway = StubGateway {
+        password_result: password_controls.then_some(BrowserPasswordDecision::KnownRefused),
         sent_location_store: (std::env::var("OSMAP_UX_FIXTURE_FOLDER_RENAME").ok().as_deref() == Some("1")).then(|| crate::sent_location::Store::new(root.join("settings"))),
         after_archive_store: Some(crate::after_archive::Store::new(root.join("settings"))),
         mark_read_store: Some(crate::mark_read::Store::new(root.join("settings"))),
@@ -94,6 +96,7 @@ fn ux_synthetic_browser_server() {
     fs::write(root.join("ready.json"), serde_json::to_vec(&serde_json::json!({
         "origin": format!("http://{address}"), "synthetic": true, "deadline_seconds": duration_seconds,
         "back_focus_fixture": back_focus_enabled(),
+        "password_controls_fixture": password_controls,
     })).expect("fixture metadata")).expect("write ready marker");
     let deadline = Instant::now() + Duration::from_secs(duration_seconds);
     let mut connections = 0;

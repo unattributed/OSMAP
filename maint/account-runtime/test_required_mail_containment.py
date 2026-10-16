@@ -40,7 +40,7 @@ class RequiredTests(unittest.TestCase):
         self.config = self.root/'dovecot.conf'
         self.config.write_bytes(b'# synthetic qualified topology fixture only\n'); self.config.chmod(0o600)
         self.socket = socket.socket(socket.AF_UNIX); self.addCleanup(self.socket.close)
-        self.socket.bind(str(self.root/'run/login/ipc-proxy')); (self.root/'run/login/ipc-proxy').chmod(0o600)
+        self.socket.bind(str(self.root/'run/login/ipc-client')); (self.root/'run/login/ipc-client').chmod(0o600)
         self.namespace = OperatorOwnedProxyNamespace(self.root, os.getuid(), '127.0.0.1', 2525)
         self.clock = Clock(); self.budget = OperationBudget(1300, monotonic=self.clock, wall=self.clock)
         self.metadata = {('-M',): b'public fixed master profile\n', ('-P',): b'public fixed overrides\n',

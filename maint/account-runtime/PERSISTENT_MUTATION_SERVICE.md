@@ -266,3 +266,8 @@ its captured handlers. Forced termination can still leave uncertain state;
 this change grants no historical-PID cleanup or automatic socket replacement.
 One finite local oldRED/newGREEN control qualifies this changed source boundary,
 not native SSH, remote worker termination or complete password delivery.
+
+
+## 2026-10-16 — Captured SMTP control lifetime
+
+The administrative proxy selector uses the private `run/login/ipc-client` listener. Keep ordinary `ipc-proxy` login registration separate. Once CAPTURED is acknowledged, the exact captured connection remains held across the credential transaction until CANCEL or the same original OperationBudget expires. Only that captured-CANCEL receive uses the remaining original budget; handshake and ordinary command caps stay one second. Framing, current authority/peer/epoch checks, uncertainty and no-retry semantics remain unchanged. A component pass does not activate the ordinary Runtime account client or establish deployed password containment.

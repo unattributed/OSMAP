@@ -393,8 +393,8 @@ class SmtpProxyControlTests(unittest.TestCase):
         self.config.chmod(0o600)
         self.socket = socket.socket(socket.AF_UNIX)
         self.addCleanup(self.socket.close)
-        self.socket.bind(str(self.root / 'run/login/ipc-proxy'))
-        (self.root / 'run/login/ipc-proxy').chmod(0o600)
+        self.socket.bind(str(self.root / 'run/login/ipc-client'))
+        (self.root / 'run/login/ipc-client').chmod(0o600)
         self.namespace = OperatorOwnedProxyNamespace(self.root, os.getuid(), '127.0.0.1', 2525)
         self.clock = FixtureClock()
         self.budget = OperationBudget(1300, monotonic=self.clock, wall=self.clock)
@@ -409,6 +409,24 @@ class SmtpProxyControlTests(unittest.TestCase):
 
     def control(self):
         return SmtpProxyControl(ACCOUNT, self.namespace, self.execute, self.budget)
+
+    def test_command_endpoint_is_client_role_and_server_only_refuses(self):
+        # Both sockets exist: administrative selectors must choose only the
+        # client endpoint, never the login-process registration endpoint.
+        server = socket.socket(socket.AF_UNIX)
+        self.addCleanup(server.close)
+        server_path = self.root / 'run/login/ipc-proxy'
+        server.bind(str(server_path))
+        server_path.chmod(0o600)
+        for args in SmtpProxyControl.commands(ACCOUNT, self.namespace).values():
+            self.assertEqual(args[5], str(self.root / 'run/login/ipc-client'))
+            self.assertNotEqual(args[5], str(server_path))
+        self.socket.close()
+        (self.root / 'run/login/ipc-client').unlink()
+        with self.assertRaises(Refused):
+            OperatorOwnedProxyNamespace(self.root, os.getuid(), '127.0.0.1', 2525)
+        with self.assertRaises(Refused):
+            self.namespace.recheck(self.budget)
 
     def test_own_query_one_kick_empty_reconciliation_typed_no_retry(self):
         self.results = [(0, self.HEADER + self.OWN + self.FOREIGN, b''),
@@ -425,7 +443,7 @@ class SmtpProxyControlTests(unittest.TestCase):
         commands = SmtpProxyControl.commands(ACCOUNT, self.namespace)
         self.assertEqual([call[1] for call in self.calls], [commands['list'], commands['kick'], commands['list']])
         self.assertEqual(commands['kick'], ('-c', str(self.config), 'proxy', 'kick', '-a',
-            str(self.root / 'run/login/ipc-proxy'), ACCOUNT))
+            str(self.root / 'run/login/ipc-client'), ACCOUNT))
         for call in self.calls:
             self.assertEqual((call[0], call[2], call[3], call[4]), ('/usr/local/bin/doveadm', b'', 10, 4096))
         with self.assertRaises(Refused): control.terminate(ACCOUNT)
