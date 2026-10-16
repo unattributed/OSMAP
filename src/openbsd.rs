@@ -765,6 +765,14 @@ pub(crate) fn unix_stream_peer_uid(stream: &UnixStream) -> Result<u32, String> {
 pub(crate) fn fixture_unix_stream_identity(
     stream: &UnixStream,
 ) -> Result<(libc::dev_t, libc::ino_t, libc::mode_t), String> {
+    fixture_unix_stream_identity_for_peer(stream, None)
+}
+
+#[cfg(all(test, unix))]
+fn fixture_unix_stream_identity_for_peer(
+    stream: &UnixStream,
+    expected_peer: Option<u32>,
+) -> Result<(libc::dev_t, libc::ino_t, libc::mode_t), String> {
     let mut info = std::mem::MaybeUninit::<libc::stat>::uninit();
     if unsafe { libc::fstat(stream.as_raw_fd(), info.as_mut_ptr()) } != 0 {
         return Err("fixture descriptor metadata unavailable".into());
@@ -792,11 +800,60 @@ pub(crate) fn fixture_unix_stream_identity(
             .peer_addr()
             .map_err(|_| "fixture peer address unavailable")?
             .is_unnamed()
-        || unix_stream_peer_uid(stream)? != effective_uid()
+        || unix_stream_peer_uid(stream)? != expected_peer.unwrap_or_else(effective_uid)
     {
         return Err("fixture unnamed stream identity refused".into());
     }
     Ok((info.st_dev, info.st_ino, info.st_mode))
+}
+
+/// Fixed HTTP qualification role only: irreversibly dropped web identity and
+/// a root-created unnamed stream whose connected peer is still root. These
+/// are descriptor/credential witnesses; root also owns the exact born process
+/// and socketpair. No caller-selected UID or privilege drop occurs here.
+#[cfg(all(test, unix))]
+pub(crate) fn fixture_http_pilot_root_control_identity(
+    stream: &UnixStream,
+) -> Result<(libc::dev_t, libc::ino_t, libc::mode_t), String> {
+    let (mut real_uid, mut effective_uid, mut saved_uid) = (0, 0, 0);
+    let (mut real_gid, mut effective_gid, mut saved_gid) = (0, 0, 0);
+    // SAFETY: native credential queries write only to these local scalars.
+    if unsafe { libc::getresuid(&mut real_uid, &mut effective_uid, &mut saved_uid) } != 0
+        || unsafe { libc::getresgid(&mut real_gid, &mut effective_gid, &mut saved_gid) } != 0
+        || (real_uid, effective_uid, saved_uid) != (1001, 1001, 1001)
+        || (real_gid, effective_gid, saved_gid) != (1003, 1003, 1003)
+        || unsafe { libc::getgroups(0, std::ptr::null_mut()) } != 0
+    {
+        return Err("fixed HTTP web identity refused".into());
+    }
+    let mut info = std::mem::MaybeUninit::<libc::stat>::uninit();
+    // SAFETY: fstat inspects the already-owned descriptor without changing it.
+    if unsafe { libc::fstat(stream.as_raw_fd(), info.as_mut_ptr()) } != 0 {
+        return Err("HTTP root control metadata unavailable".into());
+    }
+    let info = unsafe { info.assume_init() };
+    if info.st_uid != 0 {
+        return Err("HTTP control was not created by root".into());
+    }
+    fixture_unix_stream_identity_for_peer(stream, Some(0))
+}
+
+/// Transfer the one fixed HTTP control descriptor and close its authority at
+/// every later exec boundary. It was inheritable only for this launch.
+#[cfg(all(test, unix))]
+pub(crate) fn fixture_owned_http_pilot_control(raw: i32) -> Result<UnixStream, String> {
+    let stream = fixture_owned_unix_stream(raw)?;
+    fixture_http_pilot_root_control_identity(&stream)?;
+    // SAFETY: only this already-owned descriptor's exec-inheritance flag changes.
+    let flags = unsafe { libc::fcntl(stream.as_raw_fd(), libc::F_GETFD) };
+    if flags < 0
+        || unsafe { libc::fcntl(stream.as_raw_fd(), libc::F_SETFD, flags | libc::FD_CLOEXEC) } < 0
+        || !descriptor_is_cloexec(stream.as_raw_fd())
+            .map_err(|_| "HTTP control flags unavailable")?
+    {
+        return Err("HTTP control exec inheritance refused".into());
+    }
+    Ok(stream)
 }
 
 /// Take exactly one valid inherited fixture descriptor. The caller must not
@@ -1564,6 +1621,16 @@ mod tests {
             None
         )
         .is_err());
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn http_pilot_root_control_refuses_self_peer_and_keeps_legacy_same_uid_check() {
+        let (left, _right) = std::os::unix::net::UnixStream::pair().unwrap();
+        assert!(fixture_unix_stream_identity(&left).is_ok());
+        // A locally created pair cannot establish both irreversibly dropped
+        // web credentials and root-born socket ownership/root peer authority.
+        assert!(fixture_http_pilot_root_control_identity(&left).is_err());
     }
 
     #[test]

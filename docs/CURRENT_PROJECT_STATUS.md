@@ -16,12 +16,12 @@ statement as provenance rather than current release posture.
 
 ### Active password delivery, 2026-10-15
 
-Signed checkpoint `ffb861322ba6df88df70e354373c5f4748d96863` is synchronized
+Signed checkpoint `2cd9ba5a45d7f68088f9598a49aa77c465b50144` is synchronized
 with GitHub and the clean authoritative standard source checkout. Normal
-commit/push gates pass1745 Rust/zero failed/46 explicit native ignores and581
+commit/push gates pass1751 Rust/zero failed/46 explicit native ignores and581
 account Python tests; Good Shopkeeper signature, fresh0/0 and all three branch
-heads match. Proof8c9dc985 is
-factory-serve-source-integration-20261015/signed-sync-proof.json.
+heads each match their respective upstream. Proof39b1c01f is
+serve-sealed-account-clients-20261015/canonical-integration1/signed-sync-proof.json.
 Installed pair324b is unchanged; no password form, service or native flag is
 activated. This is source synchronization, not workflow completion.
 
@@ -65,18 +65,40 @@ A bounded RED proves that legitimate sibling creation changes only directory
 link count and is incorrectly refused. The minimum correction compares parent
 device/inode/UID/GID/mode while retaining socket/key hardlink checks. Nine
 focused corrected cases, including the affected real Runtime/worker journeys,
-pass. Correction review2da81169 passes; final combined admission and superseding
-normal gate/sync are pending.
+pass. Correction review2da81169 and combined admissionc2587306 pass. The
+superseding normal commit/push gates pass1751 Rust/581 Python; signed2cd9ba5
+is synchronized with all three branches and the clean standard mail checkout.
 The ignored OpenBSD fixture body remains uncompiled/NOT RUN; matching native
 and HTTP qualification remain pending. Native4 issuer101 is a separate unknown.
 Full S04-02 and installed password UAT remain OPEN.
 
-One bounded retained4 read-only observation passes, with no mutation. It measures
-final Dovecot configuration matching the source transformation and the stale
-original plan mismatch. Current private master/shell and exact controlled public
-principal rows remain present; snapshot purpose-UID process rows are empty.
-This supplies no cleanup authority. Fresh reviewed administrative custody must
-recheck the current instance and preserve unrelated current records.
+Retained4 read-only observation and fresh separately reviewed cleanup now
+resolve the active private Postfix instance and two fixture identities. The
+installed start-fg branch and current master arguments prove exact -s, correcting
+only the prior cleanup's -w grammar. Actual cleanupfb192a4f passes with current
+unrelated records/defaults/standard metadata preserved. Its16 metadata/tool/stop
+children and four separate principal-admin handles are reaped; guardian group
+and its fresh stage are gone. Older stage trees remain retained and original
+pre-run restoration remains UNKNOWN. Independent scope2b7e4ce9 lifts only the
+active-resource hold on the unchanged reviewed successor6 factory package.
+
+The next actual factory action fails at its public transport, before a root
+result/launcher handle is established. SSH1/14.643s, remote RuntimeError2.005s
+and empty stderr do not prove the exact failed guard or inner execution.
+A changed transport source continues empty selector waits within the SAME
+original5s receive deadline and reports only fixed failure/launch-state fields.
+The focused oldRED/newPASS/absolute-expiry control passes; independent whole
+reviewa7f1c47c admits one changed attempt. No historical issuer cause is inferred.
+
+The new three-path test-only HTTP pilot constructs the real Runtime gateway,
+BrowserApp, FileTOTP/replay and random sessions, concrete paired preflight and
+actual Enforce Serve seal; it handles ten real loopback wire requests. Its
+source compiles warning-free and two new refusal controls pass. Reviewc6376276
+is source-only; the exact nonroot producer, born-root guardian and closed
+HTTP/backend/cleanup consumer are being completed. Real role1001/_osmap and
+GID1003/_osmap are freshly observed on Toronto. No transaction PASS follows
+from an HTTP count or source build. A new matching native binary is required;
+older5c20 does not qualify these entries. Full S04-02/installed UAT remain OPEN.
 
 Actual disposable restricted SQL3 passes27 controls. Private-primary16 passes
 its original seven controls, including correct-password acceptance, changed-
@@ -754,3 +776,18 @@ version closeout document in the same change stream.
 
 V15 Slice 04 closes every policy in the fixed 37-case HTTP differential corpus. The signed implementation commit is `158f61d3735712faac019cae97f7ef3e26787973`, the assessed policy/harness commit is `6e28ae4ed8b83584ba5df1e522e17b358e5e8ebd`, and the deployed OpenBSD binary SHA-256 is `d7426c8b51bed05f535da7195246a04365c3c5f39967a0170e64f350761cc85e`. Offline and live campaigns both report 37 cases, zero required-policy failures, zero measured cases, and zero cardinality violations. Historical Slice 03 conclusions and evidence remain accepted. See [V15_HTTP_DIFFERENTIAL_ASSURANCE.md](V15_HTTP_DIFFERENTIAL_ASSURANCE.md).
 <!-- v15-slice-03e-status:end -->
+
+The admitted changed native6 transport now reaches actual root/driver execution.
+The stored issuer reports Configuration at its fixed warm source site and
+exits101; overall factory FAIL remains. Eight controls include original-service
+preservation and complete owned cleanup, with24 SQL-fixture children reaped,
+both purpose identities removed/public rows restored, Dovecot/Postfix/runtime/
+scratch gone and cleanup reasons empty. Root/SQL/worker stage trees remain
+retained on overall failure; no password transaction or full workflow passed.
+The old root producer places its mutation socket under runtime0711, while the
+unchanged shared socket-parent guard rejects other-execute. This is a concrete
+source contract mismatch, not a uniquely measured historical exception term.
+The genuine HTTP producer uses a separate root0750/GID1003 endpoint namespace
+and preserves SMTP507 traversal. Its stronger integrated HTTP/SQL/mail consumer
+is the next work, avoiding another rebuild solely for the superseded root-only
+issuer projection. Original native4 cause remains UNKNOWN.

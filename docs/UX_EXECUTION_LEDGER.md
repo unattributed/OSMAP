@@ -10126,7 +10126,7 @@ discriminator alongside the same binding production repair; no broader QA scope.
     "status": "PENDING",
     "reference": "Only minimal well-defined own-password usability after all agent-owned development/matching deployed QA/independent audit PASS. No operator password is changed by agent qualification; use controlled disposable Alice and preserve Bob/operator state. NOT RUN."
   },
-  "next_action": "Signedffb source synchronized and standard Toronto clean source-only matches; installed324b unchanged. Reviewed Serve14 source batch has normal gates/sign/sync pending. First establish freshly reviewed current administrative disposition of retained actual4 private Postfix and controlled identities; never signal historical PIDs or reconstruct expired leases. Then qualify exact signed matching Serve seal/typed clients, actual current guarded factory and genuine nonroot HTTP/stored-session/password workflow with required SQL/hash/primary/SMTP/IMAP/cache authority, controlled Alice transaction and Bob/mail preservation. Preserve original budgets, failed outcomes and projections; no unchanged reruns, fabricated activation flags or operator password mutation. S08-02 remains accepted."
+  "next_action": "Signed2cd source synchronized/each of three local branches matches its own upstream and standard Toronto clean source-only matches; installed324b unchanged. Reviewed three-path actual HTTP pilot plus current documentation/derived V10 source batch awaits final admission and normal signed gates/sync. Retained4 active-resource cleanup is actually PASS/audited; native6 returns issuer Configuration/101 but complete active-resource cleanup, with old root/SQL/worker trees retained and original4 cause UNKNOWN. Supersede the incompatible root-only0711 socket-parent projection with required genuine nonroot HTTP producer/guardian/closed consumer; build exact signed matching source once, then qualify actual Enforce Serve/paired clients, guarded SQL/hash/primary/SMTP/IMAP/cache authority, controlled Alice transaction and Bob/session/mail preservation. Map all old17 backend outcomes; preserve original budgets/failures/projections. No unchanged old-issuer retry, fabricated flags, premature UAT or operator password mutation. S08-02 remains accepted."
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->
@@ -11431,3 +11431,63 @@ freeze80ce95c4/independent correction review2da81169 pass; canonical combined
 refreeze/admission and superseding normal gate are pending.
 This does not explain the separate native4 issuer101. No unchanged full suite
 is repeated before the actual source correction.
+
+## 2026-10-15 — genuine HTTP password producer source and retained-resource disposition
+
+Signed2cd9ba5 closes the previous Serve source admission: normal commit/push
+1751 Rust/zero failed/46 explicit native ignores and581 account Python pass;
+Good Shopkeeper/fresh0/0/all three local branch equality and clean standard-mail
+source-only fast-forward pass. Proof39b1c01f under
+serve-sealed-account-clients-20261015/canonical-integration1 is retained. The
+first normal gate failure remains historical; native4 issuer101 remains UNKNOWN.
+
+Admit exactly three reviewed test-only HTTP pilot paths, readiness765182a0/
+patch3f3a0a44/reviewc6376276. Actual BrowserApp<RuntimeBrowserGateway> and
+handle_client_stream consume real HTTP/login/TOTP/replay/session/password
+routing, prepared typed clients and actual Enforce Serve. The existing root
+admission entry remains UID0; its separate HTTP entry fixes caller UID1001.
+The new unnamed-control helper verifies all real/effective/saved UID1001 and
+GID1003, empty supplemental groups, root kernel peer and CLOEXEC; the original
+same-UID helper remains unchanged. Root owns actual born descriptor custody.
+Linux compile22.56s/two new controls pass; no unchanged aggregate rerun.
+Native NOT RUN; flags remain false and installed pair324b unchanged.
+
+Retained4 fresh cleanup sourcea83bfd18 corrects only measured master -w to -s;
+actual readonly installed-script branch43f97ecd/currentargv4cea4c21 supports it.
+Actual cleanupfb192a4f passes SSH0/5.971s: private instance stopped, hash then
+primary removed, unrelated CURRENT public/default/standard guards pass,
+16 metadata/tool/stop children plus four separately owned principal-admin
+handles reaped. Fresh guardian group/stage gone; older trees retained/original
+pre-run restoration UNKNOWN. Audit2b7e4ce9 lifts only active-resource HOLD.
+
+Subsequent factory5 transport result05fa9a5f FAILS SSH1/14.643s, remote2.005s
+RuntimeError, no launcher/rootrecord and disposition UNCONFIRMED. No inner
+execution/cleanup is inferred. Remote source wrongly refused an empty2s
+selector before original5s expiry. Minimal successor7 keeps the SAME absolute5
+and adds closed code/phase/spawn-attempted/handle-established fields; oldRED2s,
+newPASS2.2s and original-expiryREFUSED5s discriminate it. Reviewa7f1c47c admits
+one changed attempt with unchanged root/55sources/5c20binary/17consumer/budgets.
+Actual old failure term remains UNKNOWN, not retroactively diagnosed.
+
+Current integration objective remains S04-02. Complete the actual nonroot HTTP
+producer/guardian/closed response-SQL-epoch-mail-session consumer, integrate the
+matching test source and build once natively. Dedicated developer owns the
+producer/driver; preparation engineer owns fixed guardian; independent Scrum
+review owns admission; root owns integration/host/native/Git and essential QA.
+One native queue; no operator credential action/provider Send/desktop change.
+No full workflow, installed password, slice/sprint/epic acceptance is claimed.
+
+The admitted changed native6 transport now reaches actual root/driver execution.
+The stored issuer reports Configuration at its fixed warm source site and
+exits101; overall factory FAIL remains. Eight controls include original-service
+preservation and complete owned cleanup, with24 SQL-fixture children reaped,
+both purpose identities removed/public rows restored, Dovecot/Postfix/runtime/
+scratch gone and cleanup reasons empty. Root/SQL/worker stage trees remain
+retained on overall failure; no password transaction or full workflow passed.
+The old root producer places its mutation socket under runtime0711, while the
+unchanged shared socket-parent guard rejects other-execute. This is a concrete
+source contract mismatch, not a uniquely measured historical exception term.
+The genuine HTTP producer uses a separate root0750/GID1003 endpoint namespace
+and preserves SMTP507 traversal. Its stronger integrated HTTP/SQL/mail consumer
+is the next work, avoiding another rebuild solely for the superseded root-only
+issuer projection. Original native4 cause remains UNKNOWN.

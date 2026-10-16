@@ -10573,3 +10573,37 @@ integration effect. Use bounded discriminators before fixtures with blocking
 accepts; retain interrupted aggregate evidence honestly and stop only freshly
 proved owned processes. This selects relevant existing QA rather than adding
 a framework or repeating passing workflows.
+
+## 2026-10-15 — prove password delivery through actual HTTP and preserve current cleanup authority
+
+The source-only password transport is insufficient for S04-02 acceptance. Add
+only existing test entry points that exercise actual Runtime/HTTP/TOTP/session
+and guarded password routing with real Enforce Serve. A fixed nonroot root-peer
+bootstrap is separate from the unchanged legacy same-UID helper. Ten handled
+requests never establish authentication, persistence or mutation success; a
+closed consumer must independently reconcile real responses/CSRF, authoritative
+SQL/epoch, mail containment, Alice revocation/old-new auth and Bob continuity.
+Source-only reviewc6376276 does not activate native flags or the password form.
+
+Fresh cleanup uses current independently correlated private instance and
+controlled principals; no expired lease is reconstructed or historical PID
+signalled. Measured installed start-fg uses master -s. Actualfb192a4f removes
+active resources while preserving unrelated current bytes; original pre-run
+restoration is UNKNOWN and old trees stay retained. Native5 transport failure
+is kept independently; empty-selector repair consumes the same original5s,
+exports fixed refusal/launch-state only and does not infer prior root dispatch.
+
+The admitted changed native6 transport now reaches actual root/driver execution.
+The stored issuer reports Configuration at its fixed warm source site and
+exits101; overall factory FAIL remains. Eight controls include original-service
+preservation and complete owned cleanup, with24 SQL-fixture children reaped,
+both purpose identities removed/public rows restored, Dovecot/Postfix/runtime/
+scratch gone and cleanup reasons empty. Root/SQL/worker stage trees remain
+retained on overall failure; no password transaction or full workflow passed.
+The old root producer places its mutation socket under runtime0711, while the
+unchanged shared socket-parent guard rejects other-execute. This is a concrete
+source contract mismatch, not a uniquely measured historical exception term.
+The genuine HTTP producer uses a separate root0750/GID1003 endpoint namespace
+and preserves SMTP507 traversal. Its stronger integrated HTTP/SQL/mail consumer
+is the next work, avoiding another rebuild solely for the superseded root-only
+issuer projection. Original native4 cause remains UNKNOWN.

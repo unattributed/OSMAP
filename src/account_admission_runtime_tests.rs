@@ -1034,6 +1034,20 @@ mod original_deadline;
 #[test]
 #[ignore = "root-reviewed single full-factory composition only"]
 fn native_full_factory_admission_entrypoint() {
+    full_factory_admission_fixture(0, "OSMAP_TEST_FULL_FACTORY_ADMISSION_FD");
+}
+
+/// Separate fixed web role; the original root issuer fixture remains UID0.
+/// Root must freshly verify the proposed _osmap1001/GID1003 public identity.
+#[cfg(unix)]
+#[test]
+#[ignore = "root-reviewed genuine nonroot HTTP pilot admission only"]
+fn native_http_pilot_admission_entrypoint() {
+    full_factory_admission_fixture(1001, "OSMAP_TEST_HTTP_ADMISSION_FD");
+}
+
+#[cfg(unix)]
+fn full_factory_admission_fixture(trusted_web_uid: u32, descriptor_variable: &str) {
     assert_eq!(std::env::consts::OS, "openbsd");
     #[derive(serde::Deserialize)]
     #[serde(deny_unknown_fields)]
@@ -1048,7 +1062,7 @@ fn native_full_factory_admission_entrypoint() {
     }
     crate::openbsd::disable_core_dumps().unwrap();
     std::env::set_current_dir("/").unwrap();
-    let fd = std::env::var("OSMAP_TEST_FULL_FACTORY_ADMISSION_FD")
+    let fd = std::env::var(descriptor_variable)
         .ok()
         .and_then(|v| v.parse::<i32>().ok())
         .filter(|v| (3..=1024).contains(v))
@@ -1097,7 +1111,7 @@ fn native_full_factory_admission_entrypoint() {
         config: Config {
             version: 1,
             socket: boot.root.join("admission/admission.sock"),
-            trusted_web_uid: 0,
+            trusted_web_uid,
             accounts: vec![
                 "alice@osmap-proxy.invalid".into(),
                 "bob@osmap-proxy.invalid".into(),

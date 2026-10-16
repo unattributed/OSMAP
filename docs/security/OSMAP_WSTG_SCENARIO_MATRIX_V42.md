@@ -812,3 +812,36 @@ nlink changes during legitimate sibling creation. Bounded RED and nine focused
 GREEN controls support a parent dev/inode/UID/GID/mode comparison, keeping exact
 socket/key hardlink guards. Normal signed admission/native/full password WSTG
 qualification remain pending; native4 issuer101 is not diagnosed by this finding.
+
+### 2026-10-15 — actual HTTP password qualification entry (source only)
+
+Three existing test-only paths introduce real BrowserApp/Runtime wire handling,
+FileTOTP/replay/session issuance, paired account preflight and actual Enforce
+Serve. Fixed nonroot1001/GID1003 bootstrap checks all saved/real/effective IDs,
+empty groups, root anonymous-stream peer and CLOEXEC; legacy same-UID handling
+is unchanged. Reviewc6376276, warning-free Linux compile and two new refusal
+controls qualify source only. Exact native producer/custodian/HTTP-SQL-mail
+consumer remains required; counts/HTML/build do not qualify password change.
+
+Fresh cleanupfb192a4f/audit2b7e4ce9 removes the separately identified private
+Postfix and two controlled principals, preserving unrelated current records and
+standard metadata. Old trees/original-restoration UNKNOWN remain explicit.
+Factory5 public transport FAIL05fa9a5f has no rootresult; successor7 preserves
+original5s while correcting premature empty-select refusal and reporting only
+closed phase/code/launch states. No root execution or historical issuer cause
+is inferred. No installed password, human UAT or full S04 claim follows.
+
+The admitted changed native6 transport now reaches actual root/driver execution.
+The stored issuer reports Configuration at its fixed warm source site and
+exits101; overall factory FAIL remains. Eight controls include original-service
+preservation and complete owned cleanup, with24 SQL-fixture children reaped,
+both purpose identities removed/public rows restored, Dovecot/Postfix/runtime/
+scratch gone and cleanup reasons empty. Root/SQL/worker stage trees remain
+retained on overall failure; no password transaction or full workflow passed.
+The old root producer places its mutation socket under runtime0711, while the
+unchanged shared socket-parent guard rejects other-execute. This is a concrete
+source contract mismatch, not a uniquely measured historical exception term.
+The genuine HTTP producer uses a separate root0750/GID1003 endpoint namespace
+and preserves SMTP507 traversal. Its stronger integrated HTTP/SQL/mail consumer
+is the next work, avoiding another rebuild solely for the superseded root-only
+issuer projection. Original native4 cause remains UNKNOWN.
