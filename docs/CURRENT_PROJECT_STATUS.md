@@ -16,14 +16,21 @@ statement as provenance rather than current release posture.
 
 ### Active password delivery, 2026-10-15
 
-Signed checkpoint `2cd9ba5a45d7f68088f9598a49aa77c465b50144` is synchronized
+Signed checkpoint `0b270fa2d6c1c3ff68e7c317275c7c5982a3f499` is synchronized
 with GitHub and the clean authoritative standard source checkout. Normal
-commit/push gates pass1751 Rust/zero failed/46 explicit native ignores and581
-account Python tests; Good Shopkeeper signature, fresh0/0 and all three branch
-heads each match their respective upstream. Proof39b1c01f is
-serve-sealed-account-clients-20261015/canonical-integration1/signed-sync-proof.json.
+commit/push gates pass1753 Rust/zero failed/48 explicit native ignores and581
+account Python tests; Good Shopkeeper signature, fresh0/0 and each of three
+local branches matches its own upstream. Proof004f055a is
+serve-sealed-account-clients-20261015/http-pilot-canonical-integration1/signed-sync-proof.json.
 Installed pair324b is unchanged; no password form, service or native flag is
 activated. This is source synchronization, not workflow completion.
+
+That exact1248-file source compiled freshly on obsd1 in79.642s with unchanged
+before/after parity, fresh=false artifact and owned build group gone. Binary
+2bca2963 contains the prior three-field HTTP report; it was not uploaded or
+executed as the HTTP scenario. The subsequent complete consumer comparison
+requires a direct stale/current backend check and changed report, so a matching
+new build is needed. No compile result is promoted to a password outcome.
 
 The actual admission/stored-issuer fixture compiled fresh on obsd1 in79.538s
 and remains bound to its own exact earlier source/binary5c20. Later import,
@@ -68,8 +75,8 @@ focused corrected cases, including the affected real Runtime/worker journeys,
 pass. Correction review2da81169 and combined admissionc2587306 pass. The
 superseding normal commit/push gates pass1751 Rust/581 Python; signed2cd9ba5
 is synchronized with all three branches and the clean standard mail checkout.
-The ignored OpenBSD fixture body remains uncompiled/NOT RUN; matching native
-and HTTP qualification remain pending. Native4 issuer101 is a separate unknown.
+The0b270 native build compiles the ignored OpenBSD bodies, but executes none.
+The changed HTTP report still requires a new matching build and actual case. Native4 issuer101 is a separate unknown.
 Full S04-02 and installed password UAT remain OPEN.
 
 Retained4 read-only observation and fresh separately reviewed cleanup now
@@ -90,7 +97,7 @@ original5s receive deadline and reports only fixed failure/launch-state fields.
 The focused oldRED/newPASS/absolute-expiry control passes; independent whole
 reviewa7f1c47c admits one changed attempt. No historical issuer cause is inferred.
 
-The new three-path test-only HTTP pilot constructs the real Runtime gateway,
+The three-path test-only HTTP pilot constructs the real Runtime gateway,
 BrowserApp, FileTOTP/replay and random sessions, concrete paired preflight and
 actual Enforce Serve seal; it handles ten real loopback wire requests. Its
 source compiles warning-free and two new refusal controls pass. Reviewc6376276
@@ -791,3 +798,29 @@ The genuine HTTP producer uses a separate root0750/GID1003 endpoint namespace
 and preserves SMTP507 traversal. Its stronger integrated HTTP/SQL/mail consumer
 is the next work, avoiding another rebuild solely for the superseded root-only
 issuer projection. Original native4 cause remains UNKNOWN.
+
+### Complete HTTP source contract, native outcome still pending
+
+Frozen combined reviewffa6db9c closes the new producer/consumer contract before
+another qualification build. The same actual client Arc finalized by Enforce
+Serve now checks Alice epoch0 Refused, Alice epoch1 admission and Bob epoch0
+preservation after10 HTTP requests within the original90s deadline. The strict
+six-field report follows those actual assertions; no extra actor/request,
+fabricated session or renewed budget is introduced. The one-path addon compiles
+warning-free in22.41s; a private-import compiler failure is retained and repaired
+using the existing public error path. Native results remain NOT RUN.
+
+The frozen driver uses the existing bounded OpenBSD ps session observer, owns
+and quiesces its non-daemon mutation bridge before cleanup, and exports exact
+inherited controls and all original17 backend obligations. The cold root
+consumer requires those alongside16 HTTP outcomes and3 bridge observations.
+A producer-derived tuple-order discriminator corrects a cold consumer mismatch;
+all original55 source payloads remain unchanged. The bounded UTF8 carrier keeps
+the original1MiB cap. Binary/upload placeholders still block host execution.
+
+Root built the earlier entry before completing this consumer comparison. Its
+prior build remains valid only for that source/compilation scope. The corrected
+sequence is complete source/authority/consumer/cold-custody review, signed
+integration, one matching build, actual artifact binding and whole-package
+review, then one finite controlled action. No unchanged case or broad extra QA
+is repeated. Full installed password/S04-02/UAT remain OPEN.

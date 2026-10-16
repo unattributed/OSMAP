@@ -845,3 +845,22 @@ The genuine HTTP producer uses a separate root0750/GID1003 endpoint namespace
 and preserves SMTP507 traversal. Its stronger integrated HTTP/SQL/mail consumer
 is the next work, avoiding another rebuild solely for the superseded root-only
 issuer projection. Original native4 cause remains UNKNOWN.
+
+### 2026-10-15 — complete producer/consumer mapping precedes the password build
+
+Combined reviewffa6db9c closes the new HTTP source contract: existing bounded
+OpenBSD ps session observation, exact fixed1001 caller/drop/born custody,
+non-daemon bridge quiescence before any dependency cleanup, exact inherited
+controls and all17 backend obligations. The one-path epoch addon retains the
+same sealed admission Arc and proves Alice stale0 Refused/current1 admitted/
+Bob0 preserved within original90 after10 HTTP requests; all consumers require
+its six-field report. Review88545660 and warning-free22.41s compile are source
+proof only; native/installed password and S04 acceptance remain pending.
+
+The cold root's tuple order is corrected through actual producer projection;
+UTF8 transport preserves original1MiB and deadlines. Binary/upload UNSET blocks
+host execution pending a matching signed build/final package review. The prior
+0b270/2bca compile is honestly prior-report scope. Root had built before complete
+consumer comparison; the corrected order freezes and audits the whole source
+contract before the next build, reusing passed evidence without unchanged
+native retries, framework expansion or operator troubleshooting.

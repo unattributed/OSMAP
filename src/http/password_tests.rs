@@ -348,6 +348,8 @@ mod genuine_http_pilot {
             0,
         )
         .expect("HTTP fixture admission custody refused");
+        // Same Arc custody is finalized by the actual paired Serve seal below.
+        let epoch_probe = admission.clone();
         let mutation = crate::account_mutation_client::Client::stored_fixture_files(
             &account.mutation_socket,
             &account.mutation_key_file,
@@ -424,9 +426,25 @@ mod genuine_http_pilot {
                 Err(_) => panic!("HTTP fixture accept refused"),
             }
         }
+        // Local cookie revocation must not substitute for a direct stale-epoch
+        // negative against the same actual sealed account service. These use
+        // the existing sequence deadline and add no HTTP request or actor.
+        assert!(matches!(
+            epoch_probe.admit_before("alice@osmap-proxy.invalid", 0, deadline),
+            Err(crate::account_admission::Error::Refused)
+        ));
+        epoch_probe
+            .admit_before("alice@osmap-proxy.invalid", 1, deadline)
+            .expect("HTTP fixture current Alice epoch refused");
+        epoch_probe
+            .admit_before("bob@osmap-proxy.invalid", 0, deadline)
+            .expect("HTTP fixture preserved Bob epoch refused");
+        // The authenticated client verifier binds every active epoch to the
+        // exact requested epoch before admit_before can return Ok(()).
         let report = serde_json::to_vec(
             &serde_json::json!({"schema":"osmap-http-password-runtime-v1",
-            "handled_connections":handled,"elapsed_millis":began.elapsed().as_millis()}),
+            "handled_connections":handled,"elapsed_millis":began.elapsed().as_millis(),
+            "alice_epoch0_refused":true,"alice_epoch1_admitted":1,"bob_epoch0_admitted":0}),
         )
         .unwrap();
         control

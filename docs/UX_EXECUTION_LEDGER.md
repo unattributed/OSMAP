@@ -10126,7 +10126,7 @@ discriminator alongside the same binding production repair; no broader QA scope.
     "status": "PENDING",
     "reference": "Only minimal well-defined own-password usability after all agent-owned development/matching deployed QA/independent audit PASS. No operator password is changed by agent qualification; use controlled disposable Alice and preserve Bob/operator state. NOT RUN."
   },
-  "next_action": "Signed2cd source synchronized/each of three local branches matches its own upstream and standard Toronto clean source-only matches; installed324b unchanged. Reviewed three-path actual HTTP pilot plus current documentation/derived V10 source batch awaits final admission and normal signed gates/sync. Retained4 active-resource cleanup is actually PASS/audited; native6 returns issuer Configuration/101 but complete active-resource cleanup, with old root/SQL/worker trees retained and original4 cause UNKNOWN. Supersede the incompatible root-only0711 socket-parent projection with required genuine nonroot HTTP producer/guardian/closed consumer; build exact signed matching source once, then qualify actual Enforce Serve/paired clients, guarded SQL/hash/primary/SMTP/IMAP/cache authority, controlled Alice transaction and Bob/session/mail preservation. Map all old17 backend outcomes; preserve original budgets/failures/projections. No unchanged old-issuer retry, fabricated flags, premature UAT or operator password mutation. S08-02 remains accepted."
+  "next_action": "Signed0b270 source synchronized/each of three local branches matches its own upstream and standard Toronto clean source-only matches; installed324b unchanged. Complete frozen58-source/59transport HTTP contract reviewffa6db9c closes foreign-session syscall, direct stale/current backend, bridge-quiescence and inherited-control findings; cold UID/SID tuple mismatch is corrected through actual producer projection. Integrate the one-path same-sealed-client epoch/report addon with normal signed gates/sync, build exact matching source once, then bind actual binary/upload and obtain final whole-package review before one finite controlled HTTP/SQL/mail/session workflow. Old0b270 binary2bca is compile-only/prior-report scope and is not used for the changed case. Preserve all old17 backend obligations, original budgets/failures/projections and retained safe stage trees; no unchanged native retry, fabricated flags, premature UAT or operator password mutation. S08-02 remains accepted."
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->
@@ -11491,3 +11491,49 @@ The genuine HTTP producer uses a separate root0750/GID1003 endpoint namespace
 and preserves SMTP507 traversal. Its stronger integrated HTTP/SQL/mail consumer
 is the next work, avoiding another rebuild solely for the superseded root-only
 issuer projection. Original native4 cause remains UNKNOWN.
+
+## 2026-10-15 — full HTTP source contract closes before the matching qualification build
+
+Signed0b270 and normal commit271.207s/push242.462s pass1753 Rust/zero failed/
+48 explicit native ignores and581 account Python. Good Shopkeeper, fresh0/0,
+each three local branches matching its own upstream and clean standard Toronto
+source-only FF4.853s pass. Proof004f055a and exact1248 native compile79.642s/
+binary2bca are retained under http-pilot-canonical-integration1. No installed
+activation or HTTP case follows from that compilation.
+
+Independent comparison05d33514 found four concrete draft misses: foreign-session
+getsid calls incompatible with OpenBSD; old-cookie local revocation did not
+prove direct stale-epoch backend refusal; a live mutation bridge could race
+cleanup; and inherited controls were omitted from the result. Developers repair
+them in the three existing HTTP source modules, preserving all original55
+payloads. The cold root's UID/session tuple mismatch is separately caught and
+fixed using the frozen producer's actual projection, not a mirrored fixture.
+
+The one-path Rust addon readinessaa54ca6e/patch064c29ef/review88545660 keeps a
+clone of the same actual paired client Arc finalized by Enforce Serve. After10
+HTTP requests within original90, Alice0 must return exact Refused while Alice1
+and Bob0 are admitted. The strict six-field report follows these assertions.
+Compile22.41s/no warnings/full1248 before-after parity passes; earlier private
+Error-import E0603 remains retained, repaired through existing public Error.
+No full suite/Clippy/native test is repeated outside the normal gates.
+
+Combined source reviewffa6db9c verifies58 sources/59 transport, all four repairs,
+exact8 inherited controls/16 HTTP outcomes/3 bridge observations/all17 backend
+mapping, original guarded receipt/challengeACK/COMPLETE/reap/original reply,
+separate fixed Hnamespace/caller/keys and retained uncertainty on live bridge.
+Cold tuple correction is independently discriminated oldRED/newPASS. UTF8 root
+input809877B preserves the original1MiB cap and all deadlines. Actual binary,
+upload and final executable bindings remain UNSET and refuse before host work.
+
+Root's earlier source/build admission preceded the complete consumer comparison;
+that79.642s build cannot qualify the stronger changed report. Apply the existing
+contract before the next build: freeze and review the complete producer,
+authority chain, response consumer and inherited obligations, then integrate/
+sign/build matching source once. Bind measured artifacts and review the final
+package before its controlled action. This ordering correction adds no new
+framework or product requirement and preserves all actual previous outcomes.
+
+Active slice remains S04-02, source-only until actual composed/installed evidence.
+Root owns integration/Git/native and essential QA; developer owns source,
+preparation engineer owns immutable wrapper, independent Scrum owns review.
+No operator password, TOTP seed, provider Send or unrelated service is changed.
