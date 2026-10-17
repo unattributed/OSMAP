@@ -14206,19 +14206,41 @@ Retain working Settings/sessions; finish demonstrated gaps against one checklist
         "elapsed_status": "MEASURED",
         "elapsed_seconds": 252.982,
         "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/commit-attempt3-result.json; normal complete gate1770libraryPASS/0fail/48explicitnativeignores; signed8e47119 verifiedGoodShopkeeper,33paths/clean/ahead1/notpushed/notinstalled. Receipt signed-local-delivery-proof.json."
+      },
+      {
+        "id": "S04-01-r4-proposal-admission",
+        "boundary": "settings-and-sessions",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "source_revision": "78d096526bcd952c52b8dc03b30cb78d0e957476b2ec0b1f6ea1834c03d3adf3",
+        "change_reference": "Documentation-only proposed R4 partition46core+11retainedfollowup controls, nine packages, no new acceptance or frozen/register mutation. Separate signed planning proposal; not product functional delivery. Normal mandatory hooks only.",
+        "success_chain_review": {
+          "reviewer": "/root/s04_01_review",
+          "reference": "PENDING independent exact revised-proposal review after explicit scope correction; previouslosslessness review does not certify new closure semantics.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 255.199,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/r4-proposal-commit-attempt1-result.json; normal signed planning commit675844f verifiedGoodShopkeeper. GatePASS does not establish scope adequacy: subsequent independent scope reassessment requires actual narrowing, not just core-unit decomposition. Unaccepted draft superseded by current revision."
       }
     ],
     "next_attempt": {
-      "id": "S04-01-r4-proposal-admission",
+      "id": "S04-01-r4-corrected-proposal-admission",
       "boundary": "settings-and-sessions",
       "owner": "/root",
       "scope": "PRODUCT_DELIVERY",
       "adoption": "CURRENT",
-      "source_revision": "78d096526bcd952c52b8dc03b30cb78d0e957476b2ec0b1f6ea1834c03d3adf3",
-      "change_reference": "Documentation-only proposed R4 partition46core+11retainedfollowup controls, nine packages, no new acceptance or frozen/register mutation. Separate signed planning proposal; not product functional delivery. Normal mandatory hooks only.",
+      "source_revision": "55bb148960599b9dc33fc777b9299d11f201312bab7434521e78d1ee7af29ac8",
+      "change_reference": "Correct unaccepted initial R4: actual46control revised S04-01 closure;11required epic/root followups outside that gate but still blocking global403/legacy/48parents release. Preserve originalowner history and unchanged results/criteria. Documentation-only; existing validator updates specified for later approved activation, not applied now. Normal mandatoryhooks only.",
       "success_chain_review": {
         "reviewer": "/root/s04_01_review",
-        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/independent-r4-proposal-review.json SHA256c2c0eb98d635b0f56b3938758b84231b54bb4057ddf05faf021196f6aaa62ede CLEAR exactproposal46core+11followup disjoint/exhaustive; producer requirements and unchanged security/tests, no runtime cleanup needed, clear consumer completion/approval limits.",
+        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/independent-r4-proposal-final-review.json SHA2562c0111d06fe73ec8b373c5c9b69fce0695f9f23f649bfee9dcbda3d53dc583aa FINAL CLEAR for exact55bb proposal and current supportdocs. Actual46control revisedS04-01 gate,11required epic followups and9SprintS04packages retained, originalcriterion/result/frozen preservation, approval and futureexistingvalidator gates reviewed. No runtime cleanup needed.",
         "covers": [
           "producer",
           "cleanup",
@@ -14327,18 +14349,21 @@ Retain working Settings/sessions; finish demonstrated gaps against one checklist
     "engineering_exit": "All57 original checklist obligations and matching installed/source/native applicability, independent audit and cleanup PASS; pending dependencies prohibit parent closure.",
     "human_exit": "Only after agent-owned matching installed audit passes, one concise remaining usability judgment separately recorded; reuse prior exact observations."
   },
-  "blocker": "Operator requested concrete R4 proposal; accepted57control boundary remains binding until explicit amendment approval. Eleven dependency/gap controls remain unmet; no whole parent closure.",
+  "blocker": "Concrete revised R4 proposal requires explicit approval; original57 remains binding until acceptedactivation and scoped validator checks. Initial unaccepted draft675844f only decomposedwork; correctedproposal actuallynarrows closure without dropping11globalrequirements.",
   "independent_next_action": "Complete independent review, integrity check and signed local preservation of proposed R4 only. No runtime/native/browser/other-slice work. Then operator review of concrete proposal and synchronization checkpoint.",
   "proposed_amendment": {
     "path": "docs/UX_PLAN_AMENDMENT_R4_PROPOSED.md",
-    "sha256": "78d096526bcd952c52b8dc03b30cb78d0e957476b2ec0b1f6ea1834c03d3adf3",
+    "sha256": "55bb148960599b9dc33fc777b9299d11f201312bab7434521e78d1ee7af29ac8",
     "status": "PROPOSED_NOT_ACTIVE",
     "operator_preparation_direction": "2026-10-17 explicit option selection: Prepare a narrow scope amendment; preserve remaining epic requirements",
     "core_control_count": 46,
     "retained_control_count": 11,
     "retained_followup_count": 9,
     "original_parent_control_count": 57,
-    "original_parent_closure": "All57 original obligations; core completion never implies parent completion."
+    "original_parent_closure": "R2 original57-control scope retained as history; after approvedactivation only46 govern R4 narrowedS04-01. Elevenrequired epic followups still gate epic/release; no originalfullscope completion claim.",
+    "effective_followup_owner": "epic integration/root after approved R4 activation",
+    "activation": "Explicit approval, separate signed acceptedplan/manifest anchor, then existing validator lossless-partition checks before changed work order.",
+    "sprint_closure": "Sprint S04 additionally requires all nine required F packages; F6 S08-01 backend dependency remains explicit."
   }
 }
 ```
@@ -14403,3 +14428,21 @@ completed_investigations; failure history is not reset. A separate1800s planning
 preparation/admission window is recorded for this newly requested objective.
 Original functional scope remains blocked pending approval of concrete R4;
 independent documentation/review/preservation is the only active work.
+
+### 2026-10-17 — correct preliminary proposal before operator handoff
+
+Normal proposal-commit gate passes255.199s, signed675844f verified; not pushed or
+accepted. Independent intent reassessment finds the draft internally lossless
+but only decomposes the57-control parent, which does not fulfill actual scope
+narrowing. Preserve that preliminary draft/history and correct it: revised
+S04-01 has46 controls;11 REQUIRED OPEN epic/root follow-ups sit outside its
+closure gate while remaining inside the global403-obligation epic/release gate.
+Original48 parent identifiers/110legacy cases, owning-history, test criteria and
+current result states remain. Exact correctedproposal SHA256df472b8536dbdb1eb321b3b2d38f964d3b61a1816309109348dd47aed9bb4bb3
+requires fresh review; no previous CLEAR is reused for changed semantics. No
+runtime, frozen manifest, validator or acceptance-register change occurs now.
+
+Final corrected R4 SHA25655bb148960599b9dc33fc777b9299d11f201312bab7434521e78d1ee7af29ac8
+additionally states that all9 follow-ups block SprintS04 closure as well as
+epic/release; the cross-sprint S08-01 dependency remains explicit. It supersedes
+prior unaccepted proposal hashes; no requirement, criterion or result is removed.

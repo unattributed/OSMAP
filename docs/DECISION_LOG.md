@@ -11213,3 +11213,25 @@ Source8e47119 is signed and verified; normal commit attempt3 PASS252.982s,
 pushed or installed. The current planning proposal is a separate signed local
 review artifact; only mandatory hooks and narrow document/partition checks are
 needed, with no native/browser repeats.
+
+### 2026-10-17 — correct proposed R4 to provide actual narrowed slice closure
+
+Independent scope reassessment identifies that preliminary signed draft675844f
+only decomposes work under the unchanged57-control parent, already permitted by
+R3. Its internal losslessness/security CLEAR does not establish that the draft
+satisfies the operator-requested narrowing. Supersede that unaccepted proposal:
+S04-01 (R4 narrowed scope) has46 unchanged applicable controls; the other11
+remain REQUIRED OPEN epic/root-owned follow-ups outside its revised closure
+gate, with original ownership preserved as historical provenance. All11 still
+block epic/release completion. Approval alone upgrades no result. No new parent
+slices, unrelated password work, deleted requirements or reduced security tests.
+
+Activation after explicit approval requires the existing validator to recognize
+only the approved lossless partition and reject missing/duplicated/unapproved
+scope or false partial-to-PASS changes. No new QA framework. The corrected exact
+proposal requires fresh independent review; earlier hashes cannot certify it.
+Original frozen plan/manifest, acceptance results and runtime remain unchanged.
+
+Final proposed R4 also keeps all9 follow-ups mandatory for SprintS04 closure.
+The S08-01 cross-sprint dependency remains visible. Narrowed S04-01 closure
+cannot imply SprintS04 or epic acceptance while required follow-ups remain open.

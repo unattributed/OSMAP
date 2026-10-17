@@ -57,15 +57,18 @@ before this proposal, one commit ahead of the last origin tracking reference.
 No push or installation occurred; operator review remains required.
 
 The operator selected preparation of [the R4 proposal](UX_PLAN_AMENDMENT_R4_PROPOSED.md):
-46 original controls in S04-01/core, with11 controls retained in9 OPEN follow-up
-packages under the original S04-01 parent. Core and follow-ups have separate
-functional exits; the parent cannot close while its follow-ups remain open.
-All403 approved obligations,110 legacy cases,48 parents, original test criteria,
-owner mappings and current result states remain unchanged. The proposal is
-not accepted or active and does not qualify any control, invite UAT, deploy
-code or restart stopped dependencies. The full original work order is blocked
-on review/approval of the concrete amendment; documentation preparation/review
-continues without application/runtime actions.
+a revised46-control S04-01 acceptance boundary, with11 required OPEN controls in
+9 epic/root-owned follow-ups outside that narrowed slice gate. Their original
+S04-01 ownership remains historical provenance; all11 continue to block epic
+and release acceptance. All nine follow-ups also remain mandatory for Sprint
+S04 closure; the S08-01 quota dependency is not orphaned. The exact completion label must identify accepted R4
+narrowed scope; no claim of original R2 full57 or epic completion follows.
+Original403 obligations,110 legacy cases,48 parent identifiers, test criteria
+and current result states remain. Initial signed draft675844f merely decomposed
+work without narrowing closure and is superseded by this corrected proposal.
+No proposal is accepted or active; it does not qualify controls, invite UAT,
+deploy code or restart stopped dependencies. A later approved signed activation
+must update the existing lossless-scope validator before changing the work order.
 
 ### Operator stop and source preservation, 2026-10-17
 
