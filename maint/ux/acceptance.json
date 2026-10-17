@@ -9870,6 +9870,11 @@
             "kind": "qa_execution",
             "path": "/home/foo/Downloads/osmap-ux-s04/run-20260930/security-integrated-edge/report.json",
             "scope": "Historical source-generated two-account security/settings browser result PASS with real session stores and account isolation; Settings/Security navigation is implemented. This report does not independently establish every positive/negative criterion, current installed parity or human acceptance. Retained artifact sha256=474564591896e3ad6984cbe10d3d2f3f6ad74392296fa7393dec3d797308a339."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/installed-settings-check/attempt1/RESULT.json",
+            "scope": "Actual installed2bdd appe9a0e8f3 post-auth Runtime Settings/session HTTP:19requests/4freshsyntheticinvalid-domain leases; ownednavigation/search smoke,timezone+AppearanceSaveReload,GETReset no settingswrite,Bobdefaults,selected/othersrevocation/current+Bobpreserved,exactownedcleanup. Full2.185s/libnotrebuilt. Does not alone establish complete control/46scope/login/mail-time/mailconsumer/unsavedcomputedpreview/human acceptance. Independent actualscope reviewc7169811. ReceiptSHA256=5a05b4014c7f0bdedea52715033ed16d1c562766656cb1f387450c00888d87ba"
           }
         ]
       }
@@ -9928,6 +9933,11 @@
             "kind": "qa_execution",
             "path": "/home/foo/Downloads/osmap-ux-s04/run-20260930/security-integrated-edge/report.json",
             "scope": "Historical source-generated two-account security/settings browser result PASS with real session stores and account isolation; Settings/Security navigation is implemented. This report does not independently establish every positive/negative criterion, current installed parity or human acceptance. Retained artifact sha256=474564591896e3ad6984cbe10d3d2f3f6ad74392296fa7393dec3d797308a339."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/installed-settings-check/attempt1/RESULT.json",
+            "scope": "Actual installed2bdd appe9a0e8f3 post-auth Runtime Settings/session HTTP:19requests/4freshsyntheticinvalid-domain leases; ownednavigation/search smoke,timezone+AppearanceSaveReload,GETReset no settingswrite,Bobdefaults,selected/othersrevocation/current+Bobpreserved,exactownedcleanup. Full2.185s/libnotrebuilt. Does not alone establish complete control/46scope/login/mail-time/mailconsumer/unsavedcomputedpreview/human acceptance. Independent actualscope reviewc7169811. ReceiptSHA256=5a05b4014c7f0bdedea52715033ed16d1c562766656cb1f387450c00888d87ba"
           }
         ]
       }
@@ -10282,6 +10292,11 @@
             "kind": "qa_execution",
             "path": "/home/foo/Downloads/osmap-ux-s04/run-20260930/security-integrated-edge/report.json",
             "scope": "Historical source-generated two-account security/settings browser result PASS with real session stores and account isolation; Settings/Security navigation is implemented. This report does not independently establish every positive/negative criterion, current installed parity or human acceptance. Retained artifact sha256=474564591896e3ad6984cbe10d3d2f3f6ad74392296fa7393dec3d797308a339."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/installed-settings-check/attempt1/RESULT.json",
+            "scope": "Actual installed2bdd appe9a0e8f3 post-auth Runtime Settings/session HTTP:19requests/4freshsyntheticinvalid-domain leases; ownednavigation/search smoke,timezone+AppearanceSaveReload,GETReset no settingswrite,Bobdefaults,selected/othersrevocation/current+Bobpreserved,exactownedcleanup. Full2.185s/libnotrebuilt. Does not alone establish complete control/46scope/login/mail-time/mailconsumer/unsavedcomputedpreview/human acceptance. Independent actualscope reviewc7169811. ReceiptSHA256=5a05b4014c7f0bdedea52715033ed16d1c562766656cb1f387450c00888d87ba"
           }
         ]
       }
@@ -10340,6 +10355,11 @@
             "kind": "qa_execution",
             "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/notifications-preferences/independent-delivery-review.json",
             "scope": "Independent reconciliation PASS for historical actual Digest engineering source6390a40: real Serve34 original SessionIssued/SessionRevoked rows/read badge/kinds/Bob isolation, private CAS/reload and matching recorded installation. In-app events only; no scheduled/provider/email digest. Does not prove every current Security recent-event criterion or current installed parity; human UAT NOT RUN. Retained artifact sha256=29c85c7f885e8c8a4dd709785deaacb0b1e5e7a03c5ee54a046d5ad70d47abf1."
+          },
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/unavailable-controls/final-security-consumer-review.json",
+            "scope": "Changed Security consumer emits existingownedSessionRecord issued_at/revoked_at, newestfiveescapedrows. Existing2renderer controls PASS: realfieldprojection/latestrevocation/ownership/bounds/escaping/privatefields. This is source/local proof; finalmatchinginstalledSecurityGET pending. Independent sourceCLEAR SHA256=c375200fea4cb641fbefe50a594e9b0eed0875ed7e334f20016dfb2177c7c2a8"
           }
         ]
       }
@@ -10517,6 +10537,11 @@
             "kind": "qa_execution",
             "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/changed-browser-attempt3-result.json",
             "scope": "Actual existing bounded Edge fixture exit0/2.070s, SHA25651976f025e5087012e9833fc6b313d13c2f7b46cdb90dcacbb257aa9ab856779. Keyboard timezone save/reload/synthetic-mail conversion, five unsaved fields Reset viaGET restores saved values/noPOST/no store-byte changes; Bob/unrelatedReading preserved. Realstores/syntheticauthmail; browser/server/tempdependency cleaned. Installed qualification open."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/installed-settings-check/attempt1/RESULT.json",
+            "scope": "Actual installed2bdd appe9a0e8f3 post-auth Runtime Settings/session HTTP:19requests/4freshsyntheticinvalid-domain leases; ownednavigation/search smoke,timezone+AppearanceSaveReload,GETReset no settingswrite,Bobdefaults,selected/othersrevocation/current+Bobpreserved,exactownedcleanup. Full2.185s/libnotrebuilt. Does not alone establish complete control/46scope/login/mail-time/mailconsumer/unsavedcomputedpreview/human acceptance. Independent actualscope reviewc7169811. ReceiptSHA256=5a05b4014c7f0bdedea52715033ed16d1c562766656cb1f387450c00888d87ba"
           }
         ]
       }
@@ -10650,6 +10675,11 @@
             "kind": "qa_execution",
             "path": "/home/foo/Downloads/osmap-ux-s04/run-20260930/appearance-edge/workflows.json",
             "scope": "Historical Chromium synthetic-authentication workflow PASS with real preference store: actual message spacing/fonts/avatars/snippets/reader layout, fresh context account persistence, Bob defaults and invalid/duplicate/no-CSRF refusal. This is historical matching-source browser evidence, not current installed verification, every control negative or human acceptance. Retained artifact sha256=6f79855c886eeccfab9f71ab34c6c36189c2406a48af09a8efc27e0df8287ced."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/installed-settings-check/attempt1/RESULT.json",
+            "scope": "Actual installed2bdd appe9a0e8f3 post-auth Runtime Settings/session HTTP:19requests/4freshsyntheticinvalid-domain leases; ownednavigation/search smoke,timezone+AppearanceSaveReload,GETReset no settingswrite,Bobdefaults,selected/othersrevocation/current+Bobpreserved,exactownedcleanup. Full2.185s/libnotrebuilt. Does not alone establish complete control/46scope/login/mail-time/mailconsumer/unsavedcomputedpreview/human acceptance. Independent actualscope reviewc7169811. ReceiptSHA256=5a05b4014c7f0bdedea52715033ed16d1c562766656cb1f387450c00888d87ba"
           }
         ]
       }
@@ -10698,6 +10728,11 @@
             "kind": "qa_execution",
             "path": "/home/foo/Downloads/osmap-ux-s04/run-20260930/appearance-edge/workflows.json",
             "scope": "Historical Chromium synthetic-authentication workflow PASS with real preference store: actual message spacing/fonts/avatars/snippets/reader layout, fresh context account persistence, Bob defaults and invalid/duplicate/no-CSRF refusal. This is historical matching-source browser evidence, not current installed verification, every control negative or human acceptance. Retained artifact sha256=6f79855c886eeccfab9f71ab34c6c36189c2406a48af09a8efc27e0df8287ced."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/installed-settings-check/attempt1/RESULT.json",
+            "scope": "Actual installed2bdd appe9a0e8f3 post-auth Runtime Settings/session HTTP:19requests/4freshsyntheticinvalid-domain leases; ownednavigation/search smoke,timezone+AppearanceSaveReload,GETReset no settingswrite,Bobdefaults,selected/othersrevocation/current+Bobpreserved,exactownedcleanup. Full2.185s/libnotrebuilt. Does not alone establish complete control/46scope/login/mail-time/mailconsumer/unsavedcomputedpreview/human acceptance. Independent actualscope reviewc7169811. ReceiptSHA256=5a05b4014c7f0bdedea52715033ed16d1c562766656cb1f387450c00888d87ba"
           }
         ]
       }
@@ -10746,6 +10781,11 @@
             "kind": "qa_execution",
             "path": "/home/foo/Downloads/osmap-ux-s04/run-20260930/appearance-edge/workflows.json",
             "scope": "Historical Chromium synthetic-authentication workflow PASS with real preference store: actual message spacing/fonts/avatars/snippets/reader layout, fresh context account persistence, Bob defaults and invalid/duplicate/no-CSRF refusal. This is historical matching-source browser evidence, not current installed verification, every control negative or human acceptance. Retained artifact sha256=6f79855c886eeccfab9f71ab34c6c36189c2406a48af09a8efc27e0df8287ced."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/installed-settings-check/attempt1/RESULT.json",
+            "scope": "Actual installed2bdd appe9a0e8f3 post-auth Runtime Settings/session HTTP:19requests/4freshsyntheticinvalid-domain leases; ownednavigation/search smoke,timezone+AppearanceSaveReload,GETReset no settingswrite,Bobdefaults,selected/othersrevocation/current+Bobpreserved,exactownedcleanup. Full2.185s/libnotrebuilt. Does not alone establish complete control/46scope/login/mail-time/mailconsumer/unsavedcomputedpreview/human acceptance. Independent actualscope reviewc7169811. ReceiptSHA256=5a05b4014c7f0bdedea52715033ed16d1c562766656cb1f387450c00888d87ba"
           }
         ]
       }
@@ -11943,6 +11983,11 @@
             "kind": "qa_execution",
             "path": "/home/foo/Downloads/osmap-ux-s04/run-20260930/appearance-edge/workflows.json",
             "scope": "Historical Chromium synthetic-authentication workflow PASS with real preference store: actual message spacing/fonts/avatars/snippets/reader layout, fresh context account persistence, Bob defaults and invalid/duplicate/no-CSRF refusal. This is historical matching-source browser evidence, not current installed verification, every control negative or human acceptance. Retained artifact sha256=6f79855c886eeccfab9f71ab34c6c36189c2406a48af09a8efc27e0df8287ced."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/installed-settings-check/attempt1/RESULT.json",
+            "scope": "Actual installed2bdd appe9a0e8f3 post-auth Runtime Settings/session HTTP:19requests/4freshsyntheticinvalid-domain leases; ownednavigation/search smoke,timezone+AppearanceSaveReload,GETReset no settingswrite,Bobdefaults,selected/othersrevocation/current+Bobpreserved,exactownedcleanup. Full2.185s/libnotrebuilt. Does not alone establish complete control/46scope/login/mail-time/mailconsumer/unsavedcomputedpreview/human acceptance. Independent actualscope reviewc7169811. ReceiptSHA256=5a05b4014c7f0bdedea52715033ed16d1c562766656cb1f387450c00888d87ba"
           }
         ]
       }
@@ -11986,6 +12031,16 @@
             "kind": "qa_execution",
             "path": "/home/foo/Downloads/osmap-ux-s04/run-20260930/appearance-edge/workflows.json",
             "scope": "Historical Chromium synthetic-authentication workflow PASS with real preference store: actual message spacing/fonts/avatars/snippets/reader layout, fresh context account persistence, Bob defaults and invalid/duplicate/no-CSRF refusal. This is historical matching-source browser evidence, not current installed verification, every control negative or human acceptance. Retained artifact sha256=6f79855c886eeccfab9f71ab34c6c36189c2406a48af09a8efc27e0df8287ced."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/installed-settings-check/attempt1/RESULT.json",
+            "scope": "Actual installed2bdd appe9a0e8f3 post-auth Runtime Settings/session HTTP:19requests/4freshsyntheticinvalid-domain leases; ownednavigation/search smoke,timezone+AppearanceSaveReload,GETReset no settingswrite,Bobdefaults,selected/othersrevocation/current+Bobpreserved,exactownedcleanup. Full2.185s/libnotrebuilt. Does not alone establish complete control/46scope/login/mail-time/mailconsumer/unsavedcomputedpreview/human acceptance. Independent actualscope reviewc7169811. ReceiptSHA256=5a05b4014c7f0bdedea52715033ed16d1c562766656cb1f387450c00888d87ba"
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/font-zoom-native/attempt2/evidence/workflows.json",
+            "scope": "Actual Edge155 native200percent font observation PASS7.44s fullaction: DPR2/outer1600/inner796/visualViewport.scale1/CSSzoom1, nativekeyboardlargefontSaveReload, nooverflow, zeroscript/external. PriorwrongprefFAIL4.77s and pre-action-refusal/rootexecution-control deviation retained, neverretroactivelygated. Independent correctedreview8b97bfcc; no repeatedpassingcase. Not currentinstalled/human/fullcontrolacceptance. ReceiptSHA256=e9ad7a90bf2429260f05abf8fab1af438e16d26aae59d6092cc7205a42c154bc"
           }
         ]
       }
@@ -12029,6 +12084,11 @@
             "kind": "qa_execution",
             "path": "/home/foo/Downloads/osmap-ux-s04/run-20260930/appearance-edge/workflows.json",
             "scope": "Historical Chromium synthetic-authentication workflow PASS with real preference store: actual message spacing/fonts/avatars/snippets/reader layout, fresh context account persistence, Bob defaults and invalid/duplicate/no-CSRF refusal. This is historical matching-source browser evidence, not current installed verification, every control negative or human acceptance. Retained artifact sha256=6f79855c886eeccfab9f71ab34c6c36189c2406a48af09a8efc27e0df8287ced."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/installed-settings-check/attempt1/RESULT.json",
+            "scope": "Actual installed2bdd appe9a0e8f3 post-auth Runtime Settings/session HTTP:19requests/4freshsyntheticinvalid-domain leases; ownednavigation/search smoke,timezone+AppearanceSaveReload,GETReset no settingswrite,Bobdefaults,selected/othersrevocation/current+Bobpreserved,exactownedcleanup. Full2.185s/libnotrebuilt. Does not alone establish complete control/46scope/login/mail-time/mailconsumer/unsavedcomputedpreview/human acceptance. Independent actualscope reviewc7169811. ReceiptSHA256=5a05b4014c7f0bdedea52715033ed16d1c562766656cb1f387450c00888d87ba"
           }
         ]
       }
@@ -12072,6 +12132,11 @@
             "kind": "qa_execution",
             "path": "/home/foo/Downloads/osmap-ux-s04/run-20260930/appearance-edge/workflows.json",
             "scope": "Historical Chromium synthetic-authentication workflow PASS with real preference store: actual message spacing/fonts/avatars/snippets/reader layout, fresh context account persistence, Bob defaults and invalid/duplicate/no-CSRF refusal. This is historical matching-source browser evidence, not current installed verification, every control negative or human acceptance. Retained artifact sha256=6f79855c886eeccfab9f71ab34c6c36189c2406a48af09a8efc27e0df8287ced."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/installed-settings-check/attempt1/RESULT.json",
+            "scope": "Actual installed2bdd appe9a0e8f3 post-auth Runtime Settings/session HTTP:19requests/4freshsyntheticinvalid-domain leases; ownednavigation/search smoke,timezone+AppearanceSaveReload,GETReset no settingswrite,Bobdefaults,selected/othersrevocation/current+Bobpreserved,exactownedcleanup. Full2.185s/libnotrebuilt. Does not alone establish complete control/46scope/login/mail-time/mailconsumer/unsavedcomputedpreview/human acceptance. Independent actualscope reviewc7169811. ReceiptSHA256=5a05b4014c7f0bdedea52715033ed16d1c562766656cb1f387450c00888d87ba"
           }
         ]
       }
@@ -12115,6 +12180,11 @@
             "kind": "qa_execution",
             "path": "/home/foo/Downloads/osmap-ux-s04/run-20260930/appearance-edge/workflows.json",
             "scope": "Historical Chromium synthetic-authentication workflow PASS with real preference store: actual message spacing/fonts/avatars/snippets/reader layout, fresh context account persistence, Bob defaults and invalid/duplicate/no-CSRF refusal. This is historical matching-source browser evidence, not current installed verification, every control negative or human acceptance. Retained artifact sha256=6f79855c886eeccfab9f71ab34c6c36189c2406a48af09a8efc27e0df8287ced."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/installed-settings-check/attempt1/RESULT.json",
+            "scope": "Actual installed2bdd appe9a0e8f3 post-auth Runtime Settings/session HTTP:19requests/4freshsyntheticinvalid-domain leases; ownednavigation/search smoke,timezone+AppearanceSaveReload,GETReset no settingswrite,Bobdefaults,selected/othersrevocation/current+Bobpreserved,exactownedcleanup. Full2.185s/libnotrebuilt. Does not alone establish complete control/46scope/login/mail-time/mailconsumer/unsavedcomputedpreview/human acceptance. Independent actualscope reviewc7169811. ReceiptSHA256=5a05b4014c7f0bdedea52715033ed16d1c562766656cb1f387450c00888d87ba"
           }
         ]
       }
@@ -12201,6 +12271,11 @@
             "kind": "qa_execution",
             "path": "/home/foo/Downloads/osmap-ux-s04/run-20260930/appearance-edge/workflows.json",
             "scope": "Historical Chromium synthetic-authentication workflow PASS with real preference store: actual message spacing/fonts/avatars/snippets/reader layout, fresh context account persistence, Bob defaults and invalid/duplicate/no-CSRF refusal. This is historical matching-source browser evidence, not current installed verification, every control negative or human acceptance. Retained artifact sha256=6f79855c886eeccfab9f71ab34c6c36189c2406a48af09a8efc27e0df8287ced."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/installed-settings-check/attempt1/RESULT.json",
+            "scope": "Actual installed2bdd appe9a0e8f3 post-auth Runtime Settings/session HTTP:19requests/4freshsyntheticinvalid-domain leases; ownednavigation/search smoke,timezone+AppearanceSaveReload,GETReset no settingswrite,Bobdefaults,selected/othersrevocation/current+Bobpreserved,exactownedcleanup. Full2.185s/libnotrebuilt. Does not alone establish complete control/46scope/login/mail-time/mailconsumer/unsavedcomputedpreview/human acceptance. Independent actualscope reviewc7169811. ReceiptSHA256=5a05b4014c7f0bdedea52715033ed16d1c562766656cb1f387450c00888d87ba"
           }
         ]
       }
@@ -18962,6 +19037,11 @@
             "kind": "qa_execution",
             "path": "/home/foo/Downloads/osmap-ux-s04/run-20260930/sessions-edge/workflows.json",
             "scope": "Historical synthetic authentication with actual SessionService/store: browser target/other/all revocation invalidates the affected contexts, preserves intended current/unselected scope and foreign Bob account; JavaScript disabled and zero external requests. Browser-token scope is distinct from independent mail credentials/connections; not current installed or full negative-matrix/human acceptance. Retained artifact sha256=6edd1c91c20578b3159796d91ad61ddcaa35ba92841fc20c927f37bb39deed68."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/installed-settings-check/attempt1/RESULT.json",
+            "scope": "Actual installed2bdd appe9a0e8f3 post-auth Runtime Settings/session HTTP:19requests/4freshsyntheticinvalid-domain leases; ownednavigation/search smoke,timezone+AppearanceSaveReload,GETReset no settingswrite,Bobdefaults,selected/othersrevocation/current+Bobpreserved,exactownedcleanup. Full2.185s/libnotrebuilt. Does not alone establish complete control/46scope/login/mail-time/mailconsumer/unsavedcomputedpreview/human acceptance. Independent actualscope reviewc7169811. ReceiptSHA256=5a05b4014c7f0bdedea52715033ed16d1c562766656cb1f387450c00888d87ba"
           }
         ]
       }
@@ -19106,6 +19186,11 @@
             "kind": "qa_execution",
             "path": "/home/foo/Downloads/osmap-ux-s04/run-20260930/sessions-edge/workflows.json",
             "scope": "Historical real-session-store browser result explicitly confirms truthful Unknown location; no guessed location invented. Known-location authoritative positive and complete long/escaped/expired metadata matrix remain unreconciled; no current installed/human claim. Retained artifact sha256=6edd1c91c20578b3159796d91ad61ddcaa35ba92841fc20c927f37bb39deed68."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/installed-settings-check/attempt1/RESULT.json",
+            "scope": "Actual installed2bdd appe9a0e8f3 post-auth Runtime Settings/session HTTP:19requests/4freshsyntheticinvalid-domain leases; ownednavigation/search smoke,timezone+AppearanceSaveReload,GETReset no settingswrite,Bobdefaults,selected/othersrevocation/current+Bobpreserved,exactownedcleanup. Full2.185s/libnotrebuilt. Does not alone establish complete control/46scope/login/mail-time/mailconsumer/unsavedcomputedpreview/human acceptance. Independent actualscope reviewc7169811. ReceiptSHA256=5a05b4014c7f0bdedea52715033ed16d1c562766656cb1f387450c00888d87ba"
           }
         ]
       }
@@ -19202,6 +19287,11 @@
             "kind": "qa_execution",
             "path": "/home/foo/Downloads/osmap-ux-s04/run-20260930/sessions-edge/workflows.json",
             "scope": "Historical real-session-store browser execution distinguishes current/other contexts and denies revoked contexts while preserving intended current/unselected sessions. Full exact expired-row presentation matrix remains unreconciled; no current installed/human claim. Retained artifact sha256=6edd1c91c20578b3159796d91ad61ddcaa35ba92841fc20c927f37bb39deed68."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/installed-settings-check/attempt1/RESULT.json",
+            "scope": "Actual installed2bdd appe9a0e8f3 post-auth Runtime Settings/session HTTP:19requests/4freshsyntheticinvalid-domain leases; ownednavigation/search smoke,timezone+AppearanceSaveReload,GETReset no settingswrite,Bobdefaults,selected/othersrevocation/current+Bobpreserved,exactownedcleanup. Full2.185s/libnotrebuilt. Does not alone establish complete control/46scope/login/mail-time/mailconsumer/unsavedcomputedpreview/human acceptance. Independent actualscope reviewc7169811. ReceiptSHA256=5a05b4014c7f0bdedea52715033ed16d1c562766656cb1f387450c00888d87ba"
           }
         ]
       }
@@ -19250,6 +19340,11 @@
             "kind": "qa_execution",
             "path": "/home/foo/Downloads/osmap-ux-s04/run-20260930/sessions-edge/workflows.json",
             "scope": "Historical synthetic authentication with actual SessionService/store: browser target/other/all revocation invalidates the affected contexts, preserves intended current/unselected scope and foreign Bob account; JavaScript disabled and zero external requests. Browser-token scope is distinct from independent mail credentials/connections; not current installed or full negative-matrix/human acceptance. Retained artifact sha256=6edd1c91c20578b3159796d91ad61ddcaa35ba92841fc20c927f37bb39deed68."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/installed-settings-check/attempt1/RESULT.json",
+            "scope": "Actual installed2bdd appe9a0e8f3 post-auth Runtime Settings/session HTTP:19requests/4freshsyntheticinvalid-domain leases; ownednavigation/search smoke,timezone+AppearanceSaveReload,GETReset no settingswrite,Bobdefaults,selected/othersrevocation/current+Bobpreserved,exactownedcleanup. Full2.185s/libnotrebuilt. Does not alone establish complete control/46scope/login/mail-time/mailconsumer/unsavedcomputedpreview/human acceptance. Independent actualscope reviewc7169811. ReceiptSHA256=5a05b4014c7f0bdedea52715033ed16d1c562766656cb1f387450c00888d87ba"
           }
         ]
       }

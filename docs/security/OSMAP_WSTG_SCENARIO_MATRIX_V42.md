@@ -1124,3 +1124,53 @@ commit/push authorization supplies no new installed, release or UAT evidence.
 ### 2026-10-17 — S04-01 R4 and changed Appearance preview
 
 Approved R4 preserves403 approved/110 legacy/48 parent obligations and partitions effective46 core plus11 required Sprint S04/epic follow-ups; acceptance declaration guard is not evidence truth. Six-choice unsaved Appearance preview now uses native CSS only. Existing Edge155 focused browser PASS checks keyboard/computed sample, unchanged durable values before Save, explicit saved consumers and Bob isolation, zero script/external requests; private environment removed. Source review ec1f13e9 and R4 policy reviewb56f2a68 CLEAR. Matching installed verification and separate human judgment remain open; other slices stay stopped.
+
+
+### 2026-10-17 — unavailable action clarity and actual Settings installation
+
+Signed2bdd actual user installation PASS35.582s with455input parity and onlyServe
+restart; environment/helper/completion/retention preservation true. Receipt under
+settings-sessions/operator-bundle-2bddb4b/execution-1b4cba53bbb9b438. Unavailable
+Password/TOTP/Recovery copy correction changes no backend admission;3existing
+focused routes PASS preserve disabled zero-dispatch and enabled password/CSP and
+session navigation. No password completion/release/owner acceptance follows.
+Controlled installed post-auth Settings/session verification and final-copy
+installation remain separate pending requirements.
+
+Current correction: final presentation patch is Password-only after operator clarification; TOTP/Recovery changes in the uncommitted candidate were withdrawn. Matching3source checks PASS5.34s. Actual installed post-auth Settings/session check PASS19requests/4freshsynthetic leases2.185s with exactownedcleanup/preservation; no full46/login/mail qualification. Finalcopy deployment requires one authenticated GET only, not another mutation journey.
+
+
+### 2026-10-17 — final core audit remedies remain bounded
+
+Independent core audit5f28f76c found two exact obligations: R2-10-012 Security
+revocation events and R2-12-006 actual native200percent font outcome. Existing
+retained evidence otherwise composes; do not rerun46controls. Security now uses
+existing verified account-owned issued_at/revoked_at timestamps, newest five
+escaped rows, with no new backend/store. Two existing renderer controls PASS;
+compiler8.22s, full-action time UNKNOWN. Combined source reviewc375200f CLEAR.
+TOTP/Recovery unchanged, password backend stopped. The first native zoom case
+FAIL4.77s before authentication because the test profile supplied a scalar where
+Chromium requires a partition-keyed dictionary; exact failure retained. The
+changed source corrects that fixture preference without loosening witnesses.
+Matching final installation and human usability remain pending.
+
+Actual native200percent Edge font observation PASS7.44s (DPR2,1600/796,
+visual/CSSscale1,nooverflow,keyboardSaveReload). PriorwrongprefFAIL4.77s and
+root pre-action-refusal/execution-control deviation retained under
+font-zoom-native/correction2/corrected-window-and-execution-control-review.json
+SHA2568b97bfcc. No retroactive gated claim or rerun. Next nativecompile used
+checked validatorPASS; standaloneSecurityobserver compilePASS1.902s, helper
+b00be0cd, no library rebuild or execution. Final app/consumer install pending.
+
+
+### 2026-10-17 — mandatory sanitizer security patch
+
+Final normal admission2 passed1770Rust/Clippy/format then FAIL44.33s on newly
+refreshed RUSTSEC-2026-0373 ammonia4.1.7. Exact compatible4.1.8 lockfilepatch
+changes version/checksum only;8direct82total/features/transitives unchanged.
+Independent upstream source reviewc8fe8acf CLEAR: one case-insensitive CSS URL
+guard, no new unsafe/API/dependency. Existing OSMAPstyle refusal limits exposure
+but does not waivepatch. Existing sanitization-related16controls PASS (compiler
+25.32s/fullactionUNKNOWN); normal mandatoryhook remainsrequired. Updated existing
+dependencyadmission hashes, no new framework or advisoryignore. Previous4.1.7
+native evidence stays historical; exactnewapp nativebuild/install is pending.

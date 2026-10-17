@@ -583,7 +583,8 @@ fn ux_synthetic_route_baselines() {
             );
         }
         if name == "settings-authentication" {
-            assert!(html.contains("disabled>Change</button>"));
+            assert!(html.contains("disabled>Unavailable</button>"));
+            assert!(html.contains("Password changes are currently unavailable."));
             assert!(html.contains("disabled>Manage contact</button>"));
             assert!(html.contains("Recovery-contact management is unavailable."));
         }

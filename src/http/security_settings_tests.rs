@@ -32,6 +32,9 @@ fn security_settings_native_routes_are_readonly_and_linked() {
         assert!(body.contains(&format!("<h2>{title}</h2>")));
         assert!(body.contains("2 active browser sessions"));
         assert!(body.contains("href=\"/sessions\" aria-label=\"Manage sessions\""));
+        assert!(body.contains("Password changes are currently unavailable."));
+        assert!(body.contains("disabled>Unavailable</button>"));
+        assert!(!body.contains("aria-label=\"Change password\""));
         assert!(!body.contains("action=\"/settings/"));
         assert!(
             body.contains("Current enrollment unknown")

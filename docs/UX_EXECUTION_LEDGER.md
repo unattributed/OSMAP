@@ -13904,7 +13904,7 @@ Retain working Settings/sessions; finish demonstrated gaps against one checklist
   "version": 1,
   "slice": "S04-01",
   "original_requirement": "Distinct approved Settings 10\u201320, section search/navigation, profile/preferences and accurate status; sessions page 24",
-  "source_baseline": "d8ddf8dd79a0a3ae7456971fef08f4ba477b7c47",
+  "source_baseline": "2bddb4bfba33cc6b44da990f5b60076a35e19590",
   "state": "IN_PROGRESS",
   "integration_owner": "/root",
   "roles": {
@@ -13972,7 +13972,12 @@ Retain working Settings/sessions; finish demonstrated gaps against one checklist
     "maint/ux/test_validate_acceptance.py",
     "src/settings_ui.rs",
     "src/http/settings.css",
-    "maint/ux/appearance_workflows.py"
+    "maint/ux/appearance_workflows.py",
+    "src/settings_security_ui.rs",
+    "src/http/security_settings_tests.rs",
+    "src/http/ux_fixtures.rs",
+    "Cargo.lock",
+    "maint/security/v15-dependency-admission.json"
   ],
   "outcomes": [
     {
@@ -14057,15 +14062,27 @@ Retain working Settings/sessions; finish demonstrated gaps against one checklist
         {
           "stage": "source_tests",
           "reference": "appearance-preview/browser-attempt1/evidence/workflows.json PASS155.0.4283.60; six unsaved selections, explicitSave/persistence/Bob;0script/external. Full17.234s including temporary environment removed. Source reviewec1f13e9 CLEAR. InstalledNOTRUN."
+        },
+        {
+          "stage": "native_tests",
+          "reference": "Operator executed signedbundle2bdd on obsd1: execution-1b4cba53bbb9b438/RESULT.json INSTALLATION_PASS35.582s;455sourceparity/freshapp e9a0e8f3, onlyServe restart, environment/helper/completion preservation. Installed functional workflow remainsNOTRUN."
+        },
+        {
+          "stage": "source_tests",
+          "reference": "unavailable-controls/changed-route-tests-result.json3PASS5.686s: read-onlySettings/unavailablecopy, unavailablepassword/no dispatch, availablepassword/CSP/independentfields preserved."
+        },
+        {
+          "stage": "deployed_qa",
+          "reference": "installed-settings-check/attempt1/RESULT.json PASS19HTTP/4freshsyntheticleases2.185s; source2bdd/currente9 only; actualSettingsSaveReload/Reset/Sessions/cleanup. Scoped auditc7169811. Notall46/livecredentiallogin/mail/timeconsumer or human proof."
         }
       ],
-      "next_action": "Reviewed Appearance repair and focused browser PASS. Complete normal signed source admission and operator source-review checkpoint; matching final app build/install and scoped installed Settings/session QA remain pending. No push without approval."
+      "next_action": "Explain only unavailable Password action; preserve TOTP and Recovery controls unchanged per operator scope clarification. Continue agreed S04-01 installed Settings/session closeout; no S04-02 resumption or credential/factor change."
     }
   ],
   "human_acceptance": {
     "status": "PENDING"
   },
-  "next_action": "Reviewed Appearance repair and focused browser PASS. Complete normal signed source admission and operator source-review checkpoint; matching final app build/install and scoped installed Settings/session QA remain pending. No push without approval.",
+  "next_action": "Normal signed admission of exact final Settings repairs through mandatory hooks; stop for operator source review before synchronization. Prepare next matching operator bundle with one final installed Security GET, no repetition of19request check.",
   "accountability": {
     "functional_exit": "S04-01 complete (R4 narrowed scope):46 exact controls with applicable source, installed functional QA, independent audit, recovery and minimal separate human acceptance. Eleven required follow-ups remain Sprint S04/epic blockers.",
     "owner": "/root",
@@ -14073,7 +14090,7 @@ Retain working Settings/sessions; finish demonstrated gaps against one checklist
     "history_reference": "Single checklist E1-E11 and historical S04-01 ledger retained; prior total cost/time UNKNOWN. Paused S04-02 work order retained separately.",
     "investigation": {
       "owner": "/root",
-      "started_at": "2026-10-17T14:14:54Z",
+      "started_at": "2026-10-17T14:51:00Z",
       "timebox_seconds": 3600,
       "elapsed_status": "UNMEASURED",
       "elapsed_seconds": null
@@ -14244,6 +14261,194 @@ Retain working Settings/sessions; finish demonstrated gaps against one checklist
         "elapsed_status": "MEASURED",
         "elapsed_seconds": 252.794,
         "reference": "Signed corrected proposal d8ddf8dd79a0; normal mandatory gate PASS; r4-corrected-proposal-commit-attempt1-result.json and actual signed-local receipt retained."
+      },
+      {
+        "id": "S04-01-r4-activation-and-preview-admission",
+        "boundary": "settings-and-sessions",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "source_revision": "55bb148960599b9dc33fc777b9299d11f201312bab7434521e78d1ee7af29ac8",
+        "change_reference": "Approved R4 existing-policy lossless partition plus demonstrated six-choice unsaved Appearance preview repair. One combined normal source admission; prior failures retained.",
+        "success_chain_review": {
+          "reviewer": "/root/s04_01_review",
+          "reference": "Appearance source-review.json ec1f13e9 CLEAR; r4-activation/independent-activation-review.json b56f2a68 CLEAR for exact normative/policy candidate and inspected11PASS receipt. No deployment implied. Final integrated review in r4-activation/final-integrated-source-review.json before normal admission.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 266.196,
+        "reference": "r4-activation/commit-attempt1-result.json; Good Shopkeeper2bddb4b;1770Rust/0fail/48nativeignores;45policyPASS. Actual user installation execution-1b4cba53bbb9b438/RESULT.json PASS35.582s; app e9a0e8f3 installed, environments/helpers preserved; fullsliceQA not established."
+      },
+      {
+        "id": "S04-01-installed-postauth-settings-check1",
+        "boundary": "settings-and-sessions",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "source_revision": "4bc8cf2970e74b3920c175d6083236fc7e7214e6b8fcf83f158d478d1946684e",
+        "change_reference": "One exact existing-seam postauth qualifier compile120s+10reap from current2bdd library; one installede9 HTTP Settings/session check max180s/30requests/4freshsyntheticleases. No Rust library rebuild, operator account, mail/Send, factor/password or service mutation.",
+        "success_chain_review": {
+          "reviewer": "/root/s04_01_review",
+          "reference": "installed-settings-check/independent-source-review.json SHA256a6c7b9bf8ff5f09abb03056bd9cf5d958baba8d8dcaa6693ed16d615348f53b3 CLEAR exact qualifier, wrappers, freshcustody/dependency pins. Consumer requires successfulcompiled64hexhash, rootimmutablecopy and actualownedcleanup; process-groupabsence notclaimed.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 2.185,
+        "reference": "installed-settings-check/attempt1/RESULT.json:19HTTP/4freshsynthetic leases, actualRuntimeSettings+sessions,cleanup_errors[]/ownedrecordsremoved/unrelatedsettingspreserved/livee9preserved,0stderr/noforcedstop. Compile.817s/no libraryrebuild. Fullsourceactualscope auditc7169811; nofull46/login/mail claims. Root/userstage retained, process-groupabsence NOT_ESTABLISHED."
+      },
+      {
+        "id": "S04-01-final-password-copy-checker-compile",
+        "boundary": "settings-and-sessions",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "2b30717a4686f38bb20c636e2b126baefa4c356a1d94c8e0f5db64eb520d283a",
+        "change_reference": "Compile only tiny one-GET mode of existing Settings qualifier from exact2bddrlib/dependencies (no library rebuild). Does not execute againstcurrentoldcopy.120scompiler+10reap, owner0700 stage; futureoperatorbundle postinstall only.",
+        "success_chain_review": {
+          "reviewer": "/root/s04_01_review",
+          "reference": "installed-settings-check/password-copy-source-review.json SHA2568db0a6162877b172b6df51fa1f9339fa015a92ec0b17ce74fb26d25ed930c1f0 CLEAR singlelease/oneGET/noPOST/TOTPchecks plus unchanged compiler custody89548bd3 withfreshstage/newsourcehash substitutions; successfulcompiledhelperhash mustpinconsumer. Futurelivewrapper review required.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 1.959,
+        "reference": "installed-settings-check/password-copy-build/RESULT.json compile only .874s; helper fa0f239b2c42627c1787fdecd5a45781173b853349124e9d9b09cdfb73752f02. Superseded before execution by exact Security consumer remedy; no state mutation."
+      },
+      {
+        "id": "S04-01-native200-font-one-case",
+        "boundary": "settings-and-sessions",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "e337429db194a817fdce0b41e33f92b2c2e25577c19e0df91e2de5c411632f46",
+        "change_reference": "Existing appearance harness --zoom-only; one actual native200percent large-font Save/reload/overflow/keyboard observation. Private browser profile and synthetic store; no host actions. Outer180s; no default suite.",
+        "success_chain_review": {
+          "reviewer": "/root/s04_01_review",
+          "reference": "font-zoom-native/source-review.json SHA25662495bf0be0f2289ee54ee385aa555a9f6284c458f9eddd6d6855fe376254433 CLEAR exact e337 source/native witnesses/producer/cleanup/consumer",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "FAIL",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 4.77,
+        "reference": "font-zoom-native/attempt1/RESULT.json; native DPR guard refused before authentication/form. Test-only Chromium preference wrong scalar shape; no product failure or actual200percent claim. Browser/server/private environment cleaned."
+      },
+      {
+        "id": "S04-01-native200-font-correct-partition-pref",
+        "boundary": "settings-and-sessions",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "e471cbbdbf90081957a7acf894a9e8454d1d339ba2f0c61a89809ce6c2f86f22",
+        "change_reference": "font-zoom-native/correction2/readiness.json; Chromium documented per-partition dictionary x replaces wrong scalar only. Actual witness retained before unchanged assertions; one large-font Save/reload, outer180s. Retain attempt1FAIL; no product repair inferred.",
+        "success_chain_review": {
+          "reviewer": "/root/s04_01_review",
+          "reference": "font-zoom-native/correction2/source-review.json SHA2568212a3d95edcd919271441d35bc49b98c7bf0c6102a1d664835badd1145e3954 CLEAR exact primary-source cause/fixedpref/cleanup/onecase",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "reassessment": {
+          "reviewers": [
+            "/root",
+            "/root/s04_01_review"
+          ],
+          "reference": "font-zoom-native/correction2/corrected-window-and-execution-control-review.json SHA2568b97bfcc387c454c5279770f13f93cec786790a12f891d955c6ea5af8803cb37; root concurs exact outstanding docs-governance attempt2 and wrong-font-pref attempt1; earlier wrong-ID preaction refusal/execution-control deviation retained, no retroactive gated claim.",
+          "next_action": "One changed native200percent font case with unchanged witness thresholds and owned cleanup.",
+          "failed_attempt_ids": [
+            "S04-01-signed-source-admission-attempt2",
+            "S04-01-native200-font-one-case"
+          ]
+        },
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 7.44,
+        "reference": "font-zoom-native/attempt2/RESULT.json and evidence/workflows.json actual native zoom DPR2/outer1600/inner796/visual1/CSS1; one large-font Save/reload/keyboard/nooverflow. TEMPenvremoved. Pre-action validator REFUSED wrong priorfailure IDs; root shell lacked set-e and proceeded. This empirical PASS is not represented as preactiongated; no repeat, preserve deviation and independent review."
+      },
+      {
+        "id": "S04-01-security-closeout-helper-compile",
+        "boundary": "settings-and-sessions",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "c4ba11176c6cfc20fcf7a631539f3db99a5103ee66c7e7b07446f1b0e26e8833",
+        "change_reference": "Compile only existing-seam oneSecurityGET/twofreshleases observer, exact2bdd rlib/fourdeps unchanged. No helper execution before new source installation; oldcopyhelper remains historical.120scompile+10reap.",
+        "success_chain_review": {
+          "reviewer": "/root/s04_01_review",
+          "reference": "installed-settings-check/security-closeout-source-review.json SHA256f4728b9ea8a0616a0eec4059d7b24ca174d16a1a537675820f65e6c086b88bfd and security-closeout-build/source-review.json SHA2560a0db35253f10c7006d637ee72accc58e6f079226fc02b02268914e27197e174 CLEAR exacthelper/compile/cleanup/consumer.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 1.902,
+        "reference": "installed-settings-check/security-closeout-build/RESULT.json; compiler.758s/directleaderreaped/fourdependencyparity/no libraryrebuild, linkedhelperb00be0cd14729fca2da6c40bba60f2c0b397be53d3936d4bee2b9c514b05890f. Exact pre-action validatorPASS enforced using checkedsubprocess. Compile only, no helperexecution."
+      },
+      {
+        "id": "S04-01-unavailable-controls-source-admission",
+        "boundary": "settings-and-sessions",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "source_revision": "2bddb4bfba33cc6b44da990f5b60076a35e19590",
+        "change_reference": "Password-only unavailable label/explanation; existing owned-session revocation event projection; existing browser harness one witnessed native200percent case. Existing focused source tests and actualinstalled19 proof reused; no TOTP/Recovery/passwordbackend expansion.",
+        "success_chain_review": {
+          "reviewer": "/root/s04_01_review",
+          "reference": "unavailable-controls/final-security-consumer-review.jsonc375 plus final-gate-fixture-review.json SHA256bba0e66a9cd0d5e94dd6c8459a5ee2ee11863339f55a482d9907b9eb93c0c764 CLEAR exacttestonlylabel/explanation; focused fixturePASS, no productcodechange aftersourceCLEAR. Full mandatorygate required.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "FAIL",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 35.459,
+        "reference": "unavailable-controls/commit-attempt1-result.json/log;1770total1769PASS1FAIL48explicitignores. Existing UX fixture expects disabledChange but intendednewcopyUnavailable. No commitcreated/unsigned/hookbypass."
+      },
+      {
+        "id": "S04-01-final-settings-source-admission2",
+        "boundary": "settings-and-sessions",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "source_revision": "2bddb4bfba33cc6b44da990f5b60076a35e19590",
+        "change_reference": "Existing ux_synthetic_route_baselines test-only disabledChange\u2192Unavailable plus requiredexplanation, focusedPASS1.46stest/6.83compile, fullactionUNKNOWN. All productsource unchanged from reviewc375; V10derivedscannerrefreshed only. Retain normalgate1failure; mandatoryretry nohookwaiver.",
+        "success_chain_review": {
+          "reviewer": "/root/s04_01_review",
+          "reference": "unavailable-controls/final-security-consumer-review.jsonc375 plus final-gate-fixture-review.json SHA256bba0e66a9cd0d5e94dd6c8459a5ee2ee11863339f55a482d9907b9eb93c0c764 CLEAR exacttestonlylabel/explanation; focused fixturePASS, no productcodechange aftersourceCLEAR. Full mandatorygate required.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "FAIL",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 44.33,
+        "reference": "unavailable-controls/commit-attempt2-result.json/log;1770RustPASS0failed48ignores/ClippyformatPASS thenactualRustSec RUSTSEC-2026-0373 ammonia4.1.7 refused. No commitcreated. Exactcompatible4.1.8 patch required; no ignore/bypass."
       }
     ],
     "completed_investigations": [
@@ -14264,23 +14469,44 @@ Retain working Settings/sessions; finish demonstrated gaps against one checklist
         "elapsed_seconds": 874.422,
         "ended_at": "2026-10-17T13:50:32.422009+00:00",
         "disposition": "Planning proposal delivered at actual signed-local receipt; disposition recorded later. Subsequent human review/wait is separate from development. No prior failure or cost reset."
+      },
+      {
+        "owner": "/root",
+        "started_at": "2026-10-17T14:14:54Z",
+        "timebox_seconds": 3600,
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 515.597,
+        "ended_at": "2026-10-17T14:23:29.596776+00:00",
+        "disposition": "Approved R4 source admission completed at actual receipt. Later package execution35.582s is separately measured; intervening operator interaction/wait not silently counted as compute."
       }
     ],
     "next_attempt": {
-      "id": "S04-01-r4-activation-and-preview-admission",
+      "id": "S04-01-final-settings-source-admission3",
       "boundary": "settings-and-sessions",
       "owner": "/root",
       "scope": "PRODUCT_DELIVERY",
       "adoption": "CURRENT",
-      "source_revision": "55bb148960599b9dc33fc777b9299d11f201312bab7434521e78d1ee7af29ac8",
-      "change_reference": "Approved R4 existing-policy lossless partition plus demonstrated six-choice unsaved Appearance preview repair. One combined normal source admission; prior failures retained.",
+      "source_revision": "36fd2624ad14153fe92bd2c5a28ef656d9c66cf6d909b06ebb87542fe00785d2",
+      "change_reference": "Only mandatory ammonia4.1.7\u21924.1.8 compatiblelockpatch, existingV15lockhashbindings/source-review record; no features/transitive changes. Existing16sanitizationrelatedPASS, normalhookonechangedretry; retainpreviousgatefailures.",
       "success_chain_review": {
         "reviewer": "/root/s04_01_review",
-        "reference": "Appearance source-review.json ec1f13e9 CLEAR; r4-activation/independent-activation-review.json b56f2a68 CLEAR for exact normative/policy candidate and inspected11PASS receipt. No deployment implied. Final integrated review in r4-activation/final-integrated-source-review.json before normal admission.",
+        "reference": "unavailable-controls/combined-final-admission-reassessment.json11f35439 CLEAR exactfailedboundaries + sanitizer-security-patch/independent-dependency-source-review.json SHA256c8fe8acfb21e8746b9852529b238786e8f3ba2a09a9f643d9879fc7bbd725cc5 CLEAR upstreamdelta; native4.1.8 notassumed.",
         "covers": [
           "producer",
           "cleanup",
           "consumer"
+        ]
+      },
+      "reassessment": {
+        "reviewers": [
+          "/root",
+          "/root/s04_01_review"
+        ],
+        "reference": "unavailable-controls/combined-final-admission-reassessment.json SHA25611f354394fee8b712c38fbb0fc93fe8d76d76f403e80b436dc458279f42ac59c; rootconcursstalefixtureandnewRustSecblocker distinct demonstrated causes, retainedwithoutreset.",
+        "next_action": "One normal signed sourceadmission with compatible4.1.8 and unchanged gates; no ignore/bypass.",
+        "failed_attempt_ids": [
+          "S04-01-unavailable-controls-source-admission",
+          "S04-01-final-settings-source-admission2"
         ]
       }
     }
@@ -14290,11 +14516,11 @@ Retain working Settings/sessions; finish demonstrated gaps against one checklist
     "slice": "S04-01",
     "specification": {
       "path": "docs/UX_SLICE_S04_01.md",
-      "sha256": "d9f5aa4c2757cd190ec20a6e58cf3626b0e35ed13d5ac455b9bdf7a17ef1225f"
+      "sha256": "7289ff5fd4fcbd705037460a17e76e2a2466c86ad7abd2cc9866fe62f2002e15"
     },
     "design": {
       "journey": "Settings navigation/search -> actual owned preferences/sessions -> native save/revoke -> reload and owning workflow.",
-      "frontend": "Reuse existing distinct pages/forms. Fixed UTC offsets explicitly have no DST; Reset reloads saved General state without defaults reset. Unsaved Appearance choices drive only native CSS sample; explicit Save remains sole persistence action.",
+      "frontend": "Reuse existing distinct pages/forms. Fixed UTC offsets explicitly have no DST; Reset reloads saved General state without defaults reset. Unsaved Appearance choices drive only native CSS sample; explicit Save remains sole persistence action. Unavailable Password action has an explicit label/explanation; TOTP/Recovery controls and working session/key navigation are unchanged. Security event list projects existing retained issued_at/revoked_at, at most five escaped newest-first rows; no new backend.",
       "backend": "Reuse existing Runtime gateway, PrivateAccountFile and SessionService; narrow timezone sidecar, no password/SQL/quota/helper rewrite.",
       "interfaces": "Finite typed offset plus expected revision in authenticated CSRF POST; direct typed mail context before escaping, no HTML replacements or globalTZ.",
       "persistence": "Private bounded account CAS record; UTC only on absence, corruption unavailable; preserve unrelated records and stale/uncertain-save semantics.",
@@ -14362,8 +14588,8 @@ Retain working Settings/sessions; finish demonstrated gaps against one checklist
         "kind": "usability",
         "level": "human",
         "prerequisites": "Exact current source and per-control prerequisites in docs/UX_SLICE_S04_01.md; two controlled accounts; human requires all agent-owned passes.",
-        "action": "Only after every required agent checklist outcome and installed independent audit PASS, request one combined remaining owner usability observation.",
-        "expected": "Owner judgment recorded separately without engineering diagnosis, repeated providerSend or credential mutation.",
+        "action": "After matching installed QA/audit PASS, owner checks General saved timezone/Reset, Appearance preview/Save/reload, understandable current-session controls and explicit unavailable Password action. Request S04_01_UAT=PASS or exact failed visible step once.",
+        "expected": "Owner approves visible usability only. Agent remains accountable for hidden isolation, persistence, recovery and security proof; no password feature acceptance inferred.",
         "preserved": "Original mail/keys/credentials, unrelated preferences/services, account isolation and scope distinction among source/native/installed/human.",
         "owner": "/root",
         "reviewer": "/root/s04_01_review",
@@ -14478,3 +14704,46 @@ prior unaccepted proposal hashes; no requirement, criterion or result is removed
 ## 2026-10-17 — approved R4 activation and demonstrated preview gap
 
 Operator “proceed” approves exact55bb R4 after explicit approval request. Effective S04-01 now46controls; eleven required controls in nine root-owned follow-ups still gate Sprint S04/epic. Original403/110/48 and result bytes are unchanged. Introducing signed admission remains pending; no functional acceptance follows. Independent source review found unsaved Appearance preview still used saved values. Repair only that demonstrated core gap, reuse existing tests and batch with delivered timezone/Reset before one matching installation. No other slice resumes and no push is authorized.
+
+
+## 2026-10-17 — installed Settings success and operator-visible unavailable control gap
+
+Operator executed signed2bdd bundle: actual installationPASS35.582s, current web app e9a0e8f358ad24aec88dc03abe91b19e09e496c532ffa5dc7f46b1b64e2d3599. OnlyServe restarted; keys, configuration, helper images and retention preserved. Receipt under operator-bundle-2bddb4b/execution-1b4cba53bbb9b438. Subsequent operator screenshot shows Password Change without unavailable explanation. Operator authorizes correction and remaining S04-01 installed functional checks/audit; password mutation remains stopped. Clearly label unavailable actions and preserve real enabled-session/key navigation. No hidden engineering approval is requested from owner.
+
+
+### 2026-10-17 — operator scope clarification before source admission
+
+TOTP lifecycle is separate. Withdraw uncommitted TOTP/Recovery label changes; final product patch is Password unavailable copy/label only. Current authorization remains S04-01 closeout; actual password mutation S04-02 is not resumed by a scope question. The earlier3PASS receipt belongs to the broader uncommitted presentation candidate and is retained, not credited as the final narrowed patch until matching focused checks run. No TOTP/backend deployment occurred.
+
+
+### 2026-10-17 — actual bounded installed Settings/session outcome PASS
+
+One fresh post-auth qualifier on installed2bdd appe9 passed19ordinaryHTTP requests in2.185s fullaction, fourrandomsynthetic invalid-domain sessions. RuntimeSettings timezone/Appearance persistence, GETReset, navigation smoke and selected/others revocation/current/Bob preservation pass; exactowned sessions/preferences removed, unrelatedpreferences andinstalledapp unchanged. No library rebuild, credentials/mail/provider/backendconfiguration/service actions. Source/actualscope reviewc7169811 CLEAR. This is compositional evidence for the mapped controls, not all46/human/login/mail proof. Existing result statuses remain partial pending exactclosure reconciliation and final Password-copy installation.
+
+
+### 2026-10-17 — final core audit remedies remain bounded
+
+Independent core audit5f28f76c found two exact obligations: R2-10-012 Security
+revocation events and R2-12-006 actual native200percent font outcome. Existing
+retained evidence otherwise composes; do not rerun46controls. Security now uses
+existing verified account-owned issued_at/revoked_at timestamps, newest five
+escaped rows, with no new backend/store. Two existing renderer controls PASS;
+compiler8.22s, full-action time UNKNOWN. Combined source reviewc375200f CLEAR.
+TOTP/Recovery unchanged, password backend stopped. The first native zoom case
+FAIL4.77s before authentication because the test profile supplied a scalar where
+Chromium requires a partition-keyed dictionary; exact failure retained. The
+changed source corrects that fixture preference without loosening witnesses.
+Matching final installation and human usability remain pending.
+
+
+### 2026-10-17 — mandatory sanitizer security patch
+
+Final normal admission2 passed1770Rust/Clippy/format then FAIL44.33s on newly
+refreshed RUSTSEC-2026-0373 ammonia4.1.7. Exact compatible4.1.8 lockfilepatch
+changes version/checksum only;8direct82total/features/transitives unchanged.
+Independent upstream source reviewc8fe8acf CLEAR: one case-insensitive CSS URL
+guard, no new unsafe/API/dependency. Existing OSMAPstyle refusal limits exposure
+but does not waivepatch. Existing sanitization-related16controls PASS (compiler
+25.32s/fullactionUNKNOWN); normal mandatoryhook remainsrequired. Updated existing
+dependencyadmission hashes, no new framework or advisoryignore. Previous4.1.7
+native evidence stays historical; exactnewapp nativebuild/install is pending.

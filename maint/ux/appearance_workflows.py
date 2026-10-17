@@ -2,6 +2,7 @@
 """Native display-preference qualification against private synthetic storage."""
 import argparse
 import json
+import math
 from pathlib import Path
 import sys
 import shutil
@@ -26,7 +27,10 @@ def main():
     parser.add_argument("--engine", choices=["chromium", "firefox"], default="chromium")
     parser.add_argument("--browser", default="/usr/bin/microsoft-edge-stable")
     parser.add_argument("--preview-only", action="store_true", help="Only changed unsaved preview and save/consumer boundary")
+    parser.add_argument("--zoom-only", action="store_true", help="One large-font case at witnessed native Chromium200percent page zoom")
     args = parser.parse_args()
+    if args.zoom_only and (args.engine != "chromium" or args.preview_only):
+        parser.error("--zoom-only requires Chromium and cannot combine with --preview-only")
     sys.path.insert(0, str(args.repo / "maint/ux"))
     from browser_workflows import start_server, stop_server
     args.output.mkdir(parents=True, exist_ok=True, mode=0o700)
@@ -42,6 +46,83 @@ def main():
     with tempfile.TemporaryDirectory(prefix="osmap-display-") as temporary, \
             (args.output / "synthetic-server.log").open("w") as log, sync_playwright() as pw:
         process, origin = start_server(Path(temporary), args.repo, log)
+        if args.zoom_only:
+            ctx, profile = None, None
+            try:
+                profile = tempfile.TemporaryDirectory(prefix="osmap-zoom-profile-")
+                preferences = Path(profile.name) / "Default" / "Preferences"
+                preferences.parent.mkdir(mode=0o700)
+                preferences.write_text(json.dumps({"partition": {"default_zoom_level": {"x": math.log(2) / math.log(1.2)}}}))
+                preferences.chmod(0o600)
+                ctx = pw.chromium.launch_persistent_context(profile.name, executable_path=args.browser,
+                    headless=True, args=["--window-size=1600,1100"], no_viewport=True,
+                    java_script_enabled=False, color_scheme="light")
+                report["browser_version"] = ctx.browser.version if ctx.browser else "unavailable"
+                def route_zoom(route):
+                    if route.request.resource_type == "script": scripts.append(True)
+                    if route.request.url.startswith(origin + "/"): route.continue_()
+                    else: external.append(True); route.abort()
+                ctx.route("**/*", route_zoom)
+                page = ctx.pages[0] if ctx.pages else ctx.new_page()
+                def witness(label):
+                    value = page.evaluate("""() => ({dpr:devicePixelRatio,outer:outerWidth,inner:innerWidth,
+                        visualScale:visualViewport.scale,cssZoom:Number(getComputedStyle(document.documentElement).zoom),
+                        overflow:document.documentElement.scrollWidth > innerWidth})""")
+                    report[label] = value  # Retain actual measurements even when a witness refuses.
+                    assert 1.95 <= value["dpr"] <= 2.05, "native zoom DPR witness absent"
+                    assert 1.95 <= value["outer"] / value["inner"] <= 2.05, "native page zoom width witness absent"
+                    assert value["visualScale"] == 1 and value["cssZoom"] == 1, "pinch/CSS zoom is not native page zoom"
+                    return value
+                response = page.goto(origin + "/login", wait_until="networkidle")
+                assert response.status == 200
+                report["native_zoom_before"] = witness("native_zoom_before")
+                page.get_by_label("Username or Email").fill("alice@example.com")
+                page.get_by_label("Password", exact=True).fill("correct horse battery staple")
+                page.get_by_label("TOTP Code").fill("123456")
+                with page.expect_navigation(wait_until="networkidle"):
+                    page.get_by_role("button", name="Sign In", exact=True).click()
+                response = page.goto(origin + SETTINGS, wait_until="networkidle")
+                assert response.status == 200 and response.headers["cache-control"] == "no-store"
+                form = page.locator('form[action="/settings/display"]')
+                form.locator('[name="font_size"]').focus()
+                page.keyboard.press("End")
+                expect(form.locator('[name="font_size"]')).to_have_value("large")
+                button = form.locator('button[type="submit"]')
+                for _ in range(60):
+                    page.keyboard.press("Tab")
+                    if button.evaluate("e => e === document.activeElement"): break
+                else: raise AssertionError("large-font Save not keyboard reachable at native200percent")
+                with page.expect_navigation(wait_until="networkidle"): page.keyboard.press("Enter")
+                page.reload(wait_until="networkidle")
+                expect(page.locator("html")).to_have_attribute("data-font-size", "large")
+                expect(page.locator('[name="font_size"]')).to_have_value("large")
+                report["native_zoom_after"] = witness("native_zoom_after")
+                assert not report["native_zoom_after"]["overflow"], "large-font settings overflow at native200percent"
+                saved_button = page.locator('form[action="/settings/display"] button[type="submit"]')
+                for _ in range(60):
+                    page.keyboard.press("Tab")
+                    if saved_button.evaluate("e => e === document.activeElement"): break
+                else: raise AssertionError("saved large-font Save not keyboard reachable at native200percent")
+                assert page.locator("script").count() == 0 and not external and not scripts
+                checks.append("nativeChromium200percent witnessed DPR/outer-to-inner ratio with visual/CSS scale1; native keyboard large-font Save/reload persists with no horizontal overflow")
+                report["result"] = "PASS"
+                ctx.close(); ctx = None
+            except Exception as error:
+                report["result"] = "FAIL"
+                report["failure_type"] = type(error).__name__
+                raise
+            finally:
+                try:
+                    if ctx is not None: ctx.close()
+                finally:
+                    try:
+                        if profile is not None: profile.cleanup()
+                    finally:
+                        report.update(external_requests=len(external), script_requests=len(scripts),
+                            scope="one native page-zoom large-font Settings case; synthetic authentication and real private preference store")
+                        (args.output / "workflows.json").write_text(json.dumps(report, indent=2) + "\n")
+                        stop_server(process, Path(temporary))
+            return
         browser = getattr(pw, args.engine).launch(executable_path=args.browser, headless=True)
         report["browser_version"] = browser.version
 

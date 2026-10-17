@@ -98,7 +98,12 @@ pub(crate) fn render_security_page(
     let password = if password_available {
         format!("<div class=\"security-control\"><div><strong>Password</strong><p>{password_detail}</p></div><a class=\"button-link secondary\" href=\"/settings/password\" aria-label=\"Change password\">Change</a></div>")
     } else {
-        row("Password", &password_detail, "Change", false)
+        row(
+            "Password",
+            &format!("{password_detail}. Password changes are currently unavailable."),
+            "Unavailable",
+            false,
+        )
     };
     let totp = row(
         "TOTP two-factor",
@@ -115,16 +120,22 @@ pub(crate) fn render_security_page(
         let key_control = format!("<div class=\"security-control\"><div><strong>OpenPGP keys</strong><p>{key_detail}</p></div><a class=\"button-link secondary\" href=\"/settings/keys\" aria-label=\"Manage OpenPGP keys\">Manage</a></div>");
         let mut events = String::new();
         if let Some(sessions) = sessions {
-            let mut ordered: Vec<_> = sessions.iter().collect();
-            ordered.sort_by_key(|s| std::cmp::Reverse(s.issued_at));
-            for session in ordered.into_iter().take(5) {
-                let date = crate::logging::format_unix_timestamp_utc(session.issued_at);
+            let mut ordered = Vec::new();
+            for session in sessions {
+                ordered.push((session.issued_at, "Sign-in", session));
+                if let Some(revoked_at) = session.revoked_at {
+                    ordered.push((revoked_at, "Session revoked", session));
+                }
+            }
+            ordered.sort_by_key(|(at, event, _)| (std::cmp::Reverse(*at), *event));
+            for (at, event, session) in ordered.into_iter().take(5) {
+                let date = crate::logging::format_unix_timestamp_utc(at);
                 let device = if session.device_label.trim().is_empty() {
                     "Unknown device"
                 } else {
                     &session.device_label
                 };
-                events.push_str(&format!("<li><div><strong>Sign-in</strong><p>{}</p></div><time datetime=\"{}\">{} UTC</time></li>", escape_html(device), escape_html(&date), escape_html(&date.replace('T', " ").replace('Z', ""))));
+                events.push_str(&format!("<li><div><strong>{event}</strong><p>{}</p></div><time datetime=\"{}\">{} UTC</time></li>", escape_html(device), escape_html(&date), escape_html(&date.replace('T', " ").replace('Z', ""))));
             }
             if sessions.is_empty() {
                 events.push_str("<li>No retained sign-ins are available.</li>");
@@ -134,7 +145,7 @@ pub(crate) fn render_security_page(
         }
         let tiles = [("OpenPGP", key_status, key_detail.as_str()), ("TOTP", "Used at sign-in", "Current enrollment unknown"), ("Password", "Used at sign-in", password_history.as_str()), ("Recovery Contact", "Unknown", "Contact and verification unavailable")].into_iter().map(|(title, state, note)| format!("<section class=\"security-tile\"><span class=\"security-tile-symbol\" aria-hidden=\"true\">{}</span><div><h3>{title}</h3><strong>{state}</strong><p>{note}</p></div></section>", shell_icon("shield"))).collect::<String>();
         format!(concat!("<section class=\"security-card security-heading\"><h2>Security</h2><p>Status and management for account protection. Privacy preferences remain under <a href=\"/settings?section=privacy\">Privacy &amp; Security</a>.</p></section><div class=\"security-tiles\">{tiles}</div>",
-            "<div class=\"security-two-cards security-overview-cards\"><section class=\"security-card\"><h2>Security Controls</h2>{keys}{totp}{password}{recovery}{active}</section><section class=\"security-card\"><h2>Recent Security Events</h2><p class=\"security-event-scope\">Sign-ins from retained sessions; other security event history unavailable.</p><ul class=\"security-events\">{events}</ul></section></div>",
+            "<div class=\"security-two-cards security-overview-cards\"><section class=\"security-card\"><h2>Security Controls</h2>{keys}{totp}{password}{recovery}{active}</section><section class=\"security-card\"><h2>Recent Security Events</h2><p class=\"security-event-scope\">Sign-ins and revocations from retained browser sessions; other security event history unavailable.</p><ul class=\"security-events\">{events}</ul></section></div>",
             "<section class=\"security-card security-role\"><h3>Security page role</h3><p>These details describe this sign-in, retained sessions and reported public account keys. Manage keys opens account-bound key management; this overview does not establish private-key availability. Password and recovery changes remain unavailable here. <a href=\"/settings?section=privacy\">Review privacy and rendering protections</a>.</p></section>"), password=password, totp=totp, active=active, tiles=tiles, events=events, keys=key_control, recovery=row("Recovery contact", "Contact and verification status unknown", "Manage", false))
     };
     let content = content.replace(
@@ -228,7 +239,7 @@ mod tests {
                 issued_at: index,
                 expires_at: 100,
                 last_seen_at: index,
-                revoked_at: if index == 0 { Some(1) } else { None },
+                revoked_at: if index == 0 { Some(9) } else { None },
                 device_label: "<script>device</script>".into(),
                 remote_addr: "private-address".into(),
                 user_agent: "private-agent".into(),
@@ -251,6 +262,8 @@ mod tests {
         );
         assert!(!html.contains("private-address"));
         assert!(!html.contains("private-agent"));
+        assert!(html.contains("<strong>Session revoked</strong>"));
+        assert!(html.find("00:00:09").unwrap() < html.find("00:00:06").unwrap());
         assert!(html.find("00:00:06").unwrap() < html.find("00:00:05").unwrap());
         for decision in [
             decision,

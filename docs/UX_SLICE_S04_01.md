@@ -454,3 +454,114 @@ S04-01 remains open; no extra browser/native assurance campaign is required.
 Independent source review ec1f13e9 CLEAR. Existing focused Edge155.0.4283.60 harness PASS: six native keyboard selections update computed sample only; saved appearance bytes and fresh Alice remain unchanged until explicit Save. System preview follows device; Save/reload changes actual mailbox consumers; Bob retains defaults. Zero script/external requests. Browser/environment full action17.234s; temporary Python environment removed. This closes the demonstrated source/browser preview gap, not current installed or whole-slice acceptance. Exact report: `/home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/appearance-preview/browser-attempt1/evidence/workflows.json`.
 
 Core reconciliation maps all43 approved plus3 legacy controls to bounded retained proof, and finds no additional demonstrated implementation gap in inspected paths. `r4-activation/core-reconciliation.json` SHA256409f7f21b7f5c0f52b8455473cbacb4889a2c9c67d19ef7e785c7ea764806f9d defines one combined installed journey; this is not installed or no-defect acceptance.
+
+
+## Observable owner acceptance and unavailable-state correction — 2026-10-17
+
+The owner does not approve invisible engineering checks. Agent-owned installed
+functional QA, isolation/persistence/recovery and independent audit must PASS
+before owner engagement. Then present only these visible checks, with original
+values restored after any temporary selection:
+
+1. General shows the saved timezone; edit a field without saving, then Reset
+   restores the saved value.
+2. Appearance changes the sample immediately; explicit Save/reload retains the
+   selection and affects the named mailbox presentation.
+3. Sessions identifies the current session and exposes understandable management
+   controls. Agent QA already proves actual revocation/isolation; owner need not
+   recreate the backend/session test matrix.
+4. The unfinished Password action visibly says Unavailable with an explanation. TOTP and Recovery controls remain unchanged and outside this correction. Working session/key links remain enabled. This is truthful status,
+   never acceptance of the deferred password/TOTP/recovery implementation.
+
+Ask once for S04_01_UAT=PASS or the exact visible failed step after agent-owned
+passes. Installation/engineering/human outcomes remain distinct. The operator
+screenshot proves the disabled Password control was unexplained; the small
+renderer correction changes labels/copy only. Existing three route controls PASS
+in5.686s (unavailable route/no dispatch, enabled password/CSP, Settings/session
+navigation). Matching installation of this final copy is not yet established.
+
+Actual operator installation of signed2bdd delivered appe9a0e8f358ad24aec88dc03abe91b19e09e496c532ffa5dc7f46b1b64e2d3599:
+455inputs match, fresh native build28.505s, total35.582s, onlyServe restarted and
+configuration/helper/completion/retention preservation PASS. This establishes
+installation only. Receipt under operator-bundle-2bddb4b/execution-1b4cba53bbb9b438.
+
+Operator scope clarification before admission: final correction is Password only; the broader uncommitted TOTP/Recovery presentation candidate is withdrawn. Its earlier test receipt remains historical. No TOTP lifecycle or password mutation is executed.
+
+
+## E14 — actual installed post-auth Settings/session check, 2026-10-17
+
+One existing-seam qualifier PASS19HTTP/4freshsynthetic leases in2.185s fullaction,
+against actual installed2bdd appe9a0e8f3. It proves Runtime timezone/Appearance
+Save/reload, General Reset GET without settings writes, scoped navigation, selected
+and all-other browser revocation, current/Bob preservation and exactowned cleanup.
+Library was not rebuilt; standalone qualifier compiled.817s. Root/user stages are
+retained; direct leaderreap is proved, process-groupabsence is NOT_ESTABLISHED.
+Zero stderr/forcedstop, no operator credentials/mail/Send/backendconfiguration.
+Exact receipt: `installed-settings-check/attempt1/RESULT.json` under stable root;
+independent actualscope/password-only source reviewc7169811 CLEAR. Login, actual
+mail-time/mail consumers and computedunsavedpreview remain separate matched
+source/browser/native evidence, not falsely credited to E14.
+Final narrowed Password-copy existing3route controls PASS5.34s; TOTP/Recovery
+controls match signed2bdd baseline unchanged. Finalcopy matchinginstalledGET is
+pending. Owner usability remains NOTRUN until engineering/auditready.
+
+
+## E15 planned — exact final audit remedies
+
+Independent core-closure audit5f28f76c identifies two remaining core obligations,
+not new scope: R2-10-012 must show recorded revocations on the Security page;
+R2-12-006 requires an actual native browser200% font observation. Reuse verified
+account-owned session issued_at/revoked_at values, sort events newest first and
+retain at most five escaped device/time rows. No new store, permissions or TOTP
+management. Existing owner/bounds/escaping renderer tests must pass. One large
+font Save/reload at witnessed native200% must retain state, avoid horizontal
+overflow and remain keyboard reachable. Native zoom must be distinguished from
+CSS/pinch/device-only scaling. Default browser suite is not rerun. Final changed
+installed Security consumer checks explicit unavailable Password plus actual
+retained sign-in/revocation, using only fresh synthetic owned sessions. Earlier
+19-request installed proof is reused. Human usability follows agent audit PASS;
+no all43 verification or slice completion is claimed before these outcomes.
+
+
+## E15 actual source/browser outcome — 2026-10-17
+
+Security two existing renderer controls PASS; source reviewc375200f CLEAR. Native
+Edge155 actual200percent large-font case PASS7.44s: DPR2, outer1600/inner796,
+visualViewport.scale1 and CSSzoom1 before/after; savedlargefont persists, no
+horizontaloverflow, Save keyboardreachable, zero scripts/externalrequests.
+First attemptFAIL4.77s wrongtestprofile scalar remains retained. Changed pref
+uses Chromium per-partition dictionary x. Root execution-control deviation is
+retained: wrong priorfailure IDs caused pre-action refusal, but the root shell
+continued the synthetic action because it lacked set-e. Empirical browserPASS
+is not retroactively called pre-actiongated. Corrected independent chronology
+review is required before the next action; no repeat of passing browserwork.
+Final changed installed Security consumer remains NOTRUN until matching app.
+
+
+Final one-GET observer is independently reviewed and compiles on obsd1 without
+rebuilding the library: c4ba1117 source, b00be0cd binary, compile.758s/full1.902s.
+It is NOT EXECUTED against old installed app. Next matching web-only operator
+bundle will issue two fresh synthetic leases, revoke one through SessionService,
+read Security once and verify both actual event types plus disabled Password
+explanation, then remove exactowned records/settings. No operator credentials,
+factors or password mutation; no repetition of installed19HTTP proof.
+
+
+Normal final source admission attempt1 FAIL35.459s:1769PASS/1FAIL/48explicit
+nativeignores. Existing route fixture asserts old disabledChange label. Update
+only that expected label to disabledUnavailable and require its explanation;
+retain no-factor/recovery behavior and allother assertions. Run this existing
+fixture once before normalhook retry. No new applicationchange or relaxedguard.
+
+
+## Mandatory dependency-gate blocker — 2026-10-17
+
+Normal final admission attempt2 FAIL44.33s after1770libraryPASS/0failed/48ignores
+and Clippy/formatPASS. Newly refreshed official RustSec database flags existing
+ammonia4.1.7 RUSTSEC-2026-0373 (Oct16 case-insensitive CSS URL filtering). Apply
+only compatible4.1.8 lockfile patch within unchanged ~4.1.7 requirement, preserving
+features/transitives. Update existing dependency-admission lockfile bindings and
+record exact upstream review. Existing sanitizer checks and normal mandatory
+gate must pass. No advisoryignore, gatewaiver, broaddependencyupdate or product
+scope expansion. Native operatorbuild must fetch exactlocked publiccrate under
+finite normal Cargo download step before its unchanged offlinebuild.

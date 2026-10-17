@@ -11244,3 +11244,60 @@ Operator “proceed” contextually approves exact55bb148960599b9dc33fc777b9299d
 Independent reconciliation demonstrates a missing unsaved Appearance preview (R2-12-010). Reuse existing native controls/CSS and browser harness; no JavaScript, CSP/store authority or new framework. Batch this repair with existing timezone/Reset for one matching installation and essential integrated QA. Other slices remain stopped. Human acceptance follows agent-owned passes and independent audit only.
 
 Actual changed preview browser PASS17.234s including disposable Python environment, removed; six native choices, unchanged pre-Save durable values/fresh Alice, Save/reload owning consumers, Bob and System theme. Zero scripts/external requests. Exact report `appearance-preview/browser-attempt1/evidence/workflows.json` under stable S04 settings evidence root. Integrated45 existing acceptance-policy tests PASS0.661s; expected S04/EPIC open-control refusals retained. Installed outcomes are not inferred from these results.
+
+
+## 2026-10-17 — observable S04-01 acceptance and honest unavailable actions
+
+Operator reports dead Password Change control and rejects invisible owner approval
+conditions; then authorizes correction and remaining installed checks. Keep
+S04-02 stopped. Change only unavailable labels/explanations in the existing
+Security/Authentication renderer; preserve backend capability, enabled password,
+Sessions and Manage keys behavior, CSRF/CSP and zero unavailable dispatch.
+Three focused existing route controls PASS5.686s. Installed2bdd appe9a0e8f3 and
+operator delivery35.582s are reconciled; final UI copy is not yet installed.
+Agent owns hidden engineering checks and independent audit. Owner receives one
+short General/Appearance/Sessions/availability usability check only after passes;
+no request to diagnose unfinished engineering or approve password delivery.
+Reuse existing installed-session issue/HTTP/cleanup seams with fresh synthetic
+nonoperator accounts for bounded post-auth Settings/session proof. No operator
+credentials, provider Send, mailbox provisioning or password backend activation.
+
+Operator clarification: leave TOTP separate. Narrow the uncommitted renderer correction to Password availability only; restore original TOTP/Recovery labels and behavior. No scope expansion or S04-02 resume. Retain earlier broader candidate test receipt; final matching focused result is recorded separately.
+
+Actual E14 PASS19HTTP/fourcontrolledleases2.185s, cleanup/preservationPASS; actualscopec7169811 CLEAR. Reuse this installed mutation evidence and do not repeat it for a copy-only UI change. After the final matching app installation, only one controlled authenticated GET is needed to verify Password unavailable copy/link state. Other source/native/browser evidence stays separately attributed. Final Password-only source3PASS5.34s; TOTP/Recovery unchanged.
+
+
+### 2026-10-17 — final core audit remedies remain bounded
+
+Independent core audit5f28f76c found two exact obligations: R2-10-012 Security
+revocation events and R2-12-006 actual native200percent font outcome. Existing
+retained evidence otherwise composes; do not rerun46controls. Security now uses
+existing verified account-owned issued_at/revoked_at timestamps, newest five
+escaped rows, with no new backend/store. Two existing renderer controls PASS;
+compiler8.22s, full-action time UNKNOWN. Combined source reviewc375200f CLEAR.
+TOTP/Recovery unchanged, password backend stopped. The first native zoom case
+FAIL4.77s before authentication because the test profile supplied a scalar where
+Chromium requires a partition-keyed dictionary; exact failure retained. The
+changed source corrects that fixture preference without loosening witnesses.
+Matching final installation and human usability remain pending.
+
+Actual native200percent Edge font observation PASS7.44s (DPR2,1600/796,
+visual/CSSscale1,nooverflow,keyboardSaveReload). PriorwrongprefFAIL4.77s and
+root pre-action-refusal/execution-control deviation retained under
+font-zoom-native/correction2/corrected-window-and-execution-control-review.json
+SHA2568b97bfcc. No retroactive gated claim or rerun. Next nativecompile used
+checked validatorPASS; standaloneSecurityobserver compilePASS1.902s, helper
+b00be0cd, no library rebuild or execution. Final app/consumer install pending.
+
+
+### 2026-10-17 — mandatory sanitizer security patch
+
+Final normal admission2 passed1770Rust/Clippy/format then FAIL44.33s on newly
+refreshed RUSTSEC-2026-0373 ammonia4.1.7. Exact compatible4.1.8 lockfilepatch
+changes version/checksum only;8direct82total/features/transitives unchanged.
+Independent upstream source reviewc8fe8acf CLEAR: one case-insensitive CSS URL
+guard, no new unsafe/API/dependency. Existing OSMAPstyle refusal limits exposure
+but does not waivepatch. Existing sanitization-related16controls PASS (compiler
+25.32s/fullactionUNKNOWN); normal mandatoryhook remainsrequired. Updated existing
+dependencyadmission hashes, no new framework or advisoryignore. Previous4.1.7
+native evidence stays historical; exactnewapp nativebuild/install is pending.

@@ -14,6 +14,29 @@ statement as provenance rather than current release posture.
 
 ## Current source posture
 
+### Final bounded closeout work — 2026-10-17
+
+Current independent audit identifies two exact remaining core checks: retained
+revocations in Recent Security Events and actual native200percent font usability.
+The event projection and focused renderer tests pass; one actual native200percent font case passes7.44s with
+DPR2, outer1600/inner796 and visual/CSSscale1. Firstwrongpref failure and root
+pre-action control deviation remain retained; corrected chronology review follows. Final Password explanation is source-tested. Installed
+app remains e9a0e8f3 from signed2bdd; no new installation or slice completion is
+claimed. TOTP management and actual password change remain separate stopped work.
+
+### Current installed Settings and observable closeout — 2026-10-17
+
+Operator installation of signed2bdd PASS35.582s; actual obsd1 binary
+e9a0e8f358ad24aec88dc03abe91b19e09e496c532ffa5dc7f46b1b64e2d3599,
+455sourceparity/freshbuild, onlyServe restart and preservation checks pass.
+One bounded installed post-auth Settings/session check now passes19HTTP/four fresh synthetic leases in2.185s: Runtime preferenceSaveReload/Reset, sessionrevocation/isolation and exactownedcleanup. No library rebuild. This is scoped installed proof; complete46-control reconciliation and finalPassword-copy installation remain pending.
+Operator identified unexplained disabled Password Change; a small explicit
+Password Unavailable label/explanation is being corrected. Initial broader presentation candidate passed3focused tests5.686s; operator clarification withdrew TOTP/Recovery changes before admission. Final Password-only3focused checks PASS5.34s and independent source/actualscope reviewc7169811 CLEAR; matching finalcopy deployment remains pending. Password/backend remains stopped.
+Owner acceptance is limited to observable General/Appearance/Sessions/availability
+usability after agent-owned installed QA and audit pass. The earlier pending
+installation statements below describe historical checkpoints.
+
+
 ### Approved R4 activation — 2026-10-17
 
 The operator approved exact55bb R4 with “proceed” after the explicit approval request. The effective S04-01 boundary is46 controls;11 required controls in9 root-owned packages remain Sprint S04/epic obligations. All403 approved controls,110 legacy cases and48 parent IDs remain unchanged. Accepted supplement, manifest and existing-validator activation are in progress, with signed introducing anchor pending. Result states remain43 partial/11 blocked; no slice completion or UAT readiness is claimed.
