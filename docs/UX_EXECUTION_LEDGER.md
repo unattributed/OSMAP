@@ -13905,7 +13905,7 @@ Retain working Settings/sessions; finish demonstrated gaps against one checklist
   "slice": "S04-01",
   "original_requirement": "Distinct approved Settings 10\u201320, section search/navigation, profile/preferences and accurate status; sessions page 24",
   "source_baseline": "0c5dac8fec6466c0834af2a229a57325c5ea38f7",
-  "state": "IN_PROGRESS",
+  "state": "BLOCKED",
   "integration_owner": "/root",
   "roles": {
     "project_manager": [
@@ -13963,7 +13963,8 @@ Retain working Settings/sessions; finish demonstrated gaps against one checklist
     "maint/security/v10-rust-assumption-audit.json",
     "maint/security/v10-fail-closed-remediation.json",
     "maint/security/v10-claims-boundary.json",
-    "maint/wstg-testing-pack/osmap-browser-attack-surface.json"
+    "maint/wstg-testing-pack/osmap-browser-attack-surface.json",
+    "docs/UX_PLAN_AMENDMENT_R4_PROPOSED.md"
   ],
   "outcomes": [
     {
@@ -14070,7 +14071,7 @@ Retain working Settings/sessions; finish demonstrated gaps against one checklist
   "human_acceptance": {
     "status": "PENDING"
   },
-  "next_action": "Finish one signed source delivery through mandatory hooks after defined source/native/browser passes. Scope question pending: preserve original fullS04-01 dependency scope or prepare explicit narrow amendment; no other slice resumes by implication.",
+  "next_action": "Review docs/UX_PLAN_AMENDMENT_R4_PROPOSED.md for explicit acceptance. Keep original57 scope/results/owners until separate signed activation against accepted anchor; do not restart stopped dependencies.",
   "accountability": {
     "functional_exit": "Close S04-01 against all57 outcome/action/expected-result/actual-evidence rows, with working installed Settings and sessions; no primitive/checkpoint substitution.",
     "owner": "/root",
@@ -14078,8 +14079,8 @@ Retain working Settings/sessions; finish demonstrated gaps against one checklist
     "history_reference": "Single checklist E1-E11 and historical S04-01 ledger retained; prior total cost/time UNKNOWN. Paused S04-02 work order retained separately.",
     "investigation": {
       "owner": "/root",
-      "started_at": "2026-10-17T12:39:04Z",
-      "timebox_seconds": 3600,
+      "started_at": "2026-10-17T13:35:58Z",
+      "timebox_seconds": 1800,
       "elapsed_status": "UNMEASURED",
       "elapsed_seconds": null
     },
@@ -14183,26 +14184,59 @@ Retain working Settings/sessions; finish demonstrated gaps against one checklist
         "elapsed_status": "MEASURED",
         "elapsed_seconds": 73.439,
         "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/commit-attempt2-result.json; library1770PASS/ClippyPASS, product/security matricesPASS; docs governance refused missing inline-code filename in docs/README index. LogSHA256af271bb250047e9578a54b27239de19e367614bea587ec8e0cebb0e10c20649e. No commit."
+      },
+      {
+        "id": "S04-01-signed-source-admission-attempt3",
+        "boundary": "settings-and-sessions",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "source_revision": "b044ae01a8ffc13f63f8885927fbaffa23fdcf80a18a434482649838a2ba97de",
+        "change_reference": "Documentation index adds required inline-code UX_SLICE_S04_01.md filename alongside existing link. Source and behavior unchanged from reviewed arity correction. Targeted existing documentation guardPASS; normal mandatoryhooks only.",
+        "success_chain_review": {
+          "reviewer": "/root/s04_01_review",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/independent-arity-correction-review.json SHA256b044ae01a8ffc13f63f8885927fbaffa23fdcf80a18a434482649838a2ba97de CLEAR behavior-equivalent mechanical3path correction; prior producer/cleanup/consumer review retained. No repeated native/browser action needed.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 252.982,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/commit-attempt3-result.json; normal complete gate1770libraryPASS/0fail/48explicitnativeignores; signed8e47119 verifiedGoodShopkeeper,33paths/clean/ahead1/notpushed/notinstalled. Receipt signed-local-delivery-proof.json."
       }
     ],
     "next_attempt": {
-      "id": "S04-01-signed-source-admission-attempt3",
+      "id": "S04-01-r4-proposal-admission",
       "boundary": "settings-and-sessions",
       "owner": "/root",
       "scope": "PRODUCT_DELIVERY",
       "adoption": "CURRENT",
-      "source_revision": "b044ae01a8ffc13f63f8885927fbaffa23fdcf80a18a434482649838a2ba97de",
-      "change_reference": "Documentation index adds required inline-code UX_SLICE_S04_01.md filename alongside existing link. Source and behavior unchanged from reviewed arity correction. Targeted existing documentation guardPASS; normal mandatoryhooks only.",
+      "source_revision": "78d096526bcd952c52b8dc03b30cb78d0e957476b2ec0b1f6ea1834c03d3adf3",
+      "change_reference": "Documentation-only proposed R4 partition46core+11retainedfollowup controls, nine packages, no new acceptance or frozen/register mutation. Separate signed planning proposal; not product functional delivery. Normal mandatory hooks only.",
       "success_chain_review": {
         "reviewer": "/root/s04_01_review",
-        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/independent-arity-correction-review.json SHA256b044ae01a8ffc13f63f8885927fbaffa23fdcf80a18a434482649838a2ba97de CLEAR behavior-equivalent mechanical3path correction; prior producer/cleanup/consumer review retained. No repeated native/browser action needed.",
+        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/independent-r4-proposal-review.json SHA256c2c0eb98d635b0f56b3938758b84231b54bb4057ddf05faf021196f6aaa62ede CLEAR exactproposal46core+11followup disjoint/exhaustive; producer requirements and unchanged security/tests, no runtime cleanup needed, clear consumer completion/approval limits.",
         "covers": [
           "producer",
           "cleanup",
           "consumer"
         ]
       }
-    }
+    },
+    "completed_investigations": [
+      {
+        "owner": "/root",
+        "started_at": "2026-10-17T12:39:04Z",
+        "timebox_seconds": 3600,
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 3414.589,
+        "ended_at": "2026-10-17T13:35:58.589335+00:00",
+        "disposition": "Signed source admission complete; operator subsequently requests separate narrow amendment preparation. Full phase wall-clock includes gate/review/wait/planning preparation; no compute-time equivalence. Actual gate receipts and full failure history preserved."
+      }
+    ]
   },
   "slice_contract": {
     "version": 1,
@@ -14292,6 +14326,19 @@ Retain working Settings/sessions; finish demonstrated gaps against one checklist
     ],
     "engineering_exit": "All57 original checklist obligations and matching installed/source/native applicability, independent audit and cleanup PASS; pending dependencies prohibit parent closure.",
     "human_exit": "Only after agent-owned matching installed audit passes, one concise remaining usability judgment separately recorded; reuse prior exact observations."
+  },
+  "blocker": "Operator requested concrete R4 proposal; accepted57control boundary remains binding until explicit amendment approval. Eleven dependency/gap controls remain unmet; no whole parent closure.",
+  "independent_next_action": "Complete independent review, integrity check and signed local preservation of proposed R4 only. No runtime/native/browser/other-slice work. Then operator review of concrete proposal and synchronization checkpoint.",
+  "proposed_amendment": {
+    "path": "docs/UX_PLAN_AMENDMENT_R4_PROPOSED.md",
+    "sha256": "78d096526bcd952c52b8dc03b30cb78d0e957476b2ec0b1f6ea1834c03d3adf3",
+    "status": "PROPOSED_NOT_ACTIVE",
+    "operator_preparation_direction": "2026-10-17 explicit option selection: Prepare a narrow scope amendment; preserve remaining epic requirements",
+    "core_control_count": 46,
+    "retained_control_count": 11,
+    "retained_followup_count": 9,
+    "original_parent_control_count": 57,
+    "original_parent_closure": "All57 original obligations; core completion never implies parent completion."
   }
 }
 ```
@@ -14339,3 +14386,20 @@ passed, then the existing documentation-index guard required the new checklist
 filename in inline code. Add that literal beside its existing link; source and
 behavior are unchanged. Targeted existing documentation guard passes; retain
 commit-attempt2.log SHA256af271bb250047e9578a54b27239de19e367614bea587ec8e0cebb0e10c20649e. No bypass or commit.
+
+### 2026-10-17 — operator requests concrete narrow scope proposal
+
+Normal signed source8e47119 passes all mandatory checks, signature verified;
+source delivery is local only, not installation or parent acceptance. Operator
+selected narrow amendment preparation. Proposed R4 SHA25678d096526bcd952c52b8dc03b30cb78d0e957476b2ec0b1f6ea1834c03d3adf3
+partitions46 core controls and11 controls in9 explicit OPEN follow-ups; original
+403/110/48,57-control parent, expectations, ownership and result states stay
+unchanged. Parent closure still requires the follow-ups; only named core-unit
+closure may be reported independently after its actual exit passes. No frozen
+plan/manifest/acceptance mutation or restart of dependencies occurs in proposal.
+
+The source-admission investigation is closed with honest full-phase elapsed in
+completed_investigations; failure history is not reset. A separate1800s planning
+preparation/admission window is recorded for this newly requested objective.
+Original functional scope remains blocked pending approval of concrete R4;
+independent documentation/review/preservation is the only active work.

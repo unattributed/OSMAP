@@ -11194,3 +11194,22 @@ Commit attempt2 retained73.439s and refuses a missing documentation-index
 inline-code filename after code/Clippy/matrix passes. Add the exact checklist
 filename beside its link; existing documentation guard nowPASS. No source,
 validator or application behavior changed and no native/browser repetition.
+
+### 2026-10-17 — prepare bounded S04-01 amendment without dropping requirements
+
+Operator reply: “Prepare a narrow scope amendment; preserve remaining epic
+requirements.” This authorizes a concrete proposal, not acceptance/activation.
+`UX_PLAN_AMENDMENT_R4_PROPOSED.md` separates46 original controls into a core
+unit and retains11controls in9 OPEN follow-ups under the same parent. Original
+parent closure still requires all57; only the explicitly labelled core delivery
+may close independently after its unchanged applicable criteria pass. Do not
+move language/delete preferences into unrelated password work or hide positive
+requirements behind Unknown/disabled states. Preserve403/110/48 and all result,
+owner and frozen reference bytes. Stop affected engineering pending concrete
+approval; no other slice, host, credential or service action is authorized here.
+
+Source8e47119 is signed and verified; normal commit attempt3 PASS252.982s,
+1770library/0fail/48explicitnative exclusions, previous failures retained. Not
+pushed or installed. The current planning proposal is a separate signed local
+review artifact; only mandatory hooks and narrow document/partition checks are
+needed, with no native/browser repeats.

@@ -48,6 +48,25 @@ The operator's direction to deliver code when defined tests pass does not turn
 those missing requirements into a completed parent slice. Source admission
 still requires normal hooks/signing; no extra validation campaign is planned.
 
+### Proposed bounded Settings/session delivery, 2026-10-17
+
+Signed source `8e47119be63a79695cd95b34b8ca8e66f56b9e1c` delivers timezone
+and saved-value Reset. Its normal mandatory gate passes1770 library cases with
+0failures/48explicit native exclusions; signature verified, clean local tree
+before this proposal, one commit ahead of the last origin tracking reference.
+No push or installation occurred; operator review remains required.
+
+The operator selected preparation of [the R4 proposal](UX_PLAN_AMENDMENT_R4_PROPOSED.md):
+46 original controls in S04-01/core, with11 controls retained in9 OPEN follow-up
+packages under the original S04-01 parent. Core and follow-ups have separate
+functional exits; the parent cannot close while its follow-ups remain open.
+All403 approved obligations,110 legacy cases,48 parents, original test criteria,
+owner mappings and current result states remain unchanged. The proposal is
+not accepted or active and does not qualify any control, invite UAT, deploy
+code or restart stopped dependencies. The full original work order is blocked
+on review/approval of the concrete amendment; documentation preparation/review
+continues without application/runtime actions.
+
 ### Operator stop and source preservation, 2026-10-17
 
 **Development is stopped by explicit operator instruction.** The subsequent

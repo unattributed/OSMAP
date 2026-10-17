@@ -5,6 +5,8 @@
 S04-01 Settings/sessions only has resumed against its
 [single outcome/action/expected-result/actual-evidence checklist](UX_SLICE_S04_01.md)
 (`UX_SLICE_S04_01.md`).
+The operator-requested [`UX_PLAN_AMENDMENT_R4_PROPOSED.md`](UX_PLAN_AMENDMENT_R4_PROPOSED.md)
+splits core delivery from retained follow-ups for review only; it is not active.
 The first two repairs pass focused source/browser/OpenBSD checks; no installed
 or whole-slice acceptance is claimed. Other slices remain stopped. The current
 ledger carries the exact work order and preserved dependencies.
