@@ -25,6 +25,9 @@ product source is557b668; unfinished confinement/topology/observation drafts
 remain outside the repository and are not delivered product code. Historical
 work orders below are provenance, not instructions to resume.
 
+The [stopped-work handoff](UX_STOPPED_HANDOFF_20261017.md) records the current
+branch, retained results, local-only drafts and preservation scope.
+
 ### Current slice contract and epic-wide SOP, 2026-10-16
 
 The active slice is **S04-02 authoritative own-password change**, still OPEN.

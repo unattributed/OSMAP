@@ -1,5 +1,32 @@
 # Known Limitations
 
+## Current operator stop — 2026-10-17
+
+Development, live/native qualification and deployment are stopped by explicit
+operator direction. Only documentation preservation, signed repository commits
+and synchronization of `feat/ux-completion-20260929` are currently authorized.
+S04-02 password change and S04 remain incomplete; the installed password-change
+control remains disabled. Historical work orders do not authorize resumption.
+See [the stopped-work handoff](UX_STOPPED_HANDOFF_20261017.md) and
+[Current Project Status](CURRENT_PROJECT_STATUS.md) for current results and limits.
+
+## Current account and protected-mail limits
+
+S04-02 password change has no installed obsd1-to-Toronto workflow PASS. The
+latest changed integration HTTP25 failed at the initial controlled Bob login
+with401; no mutation was reached and the underlying cause is unknown. A
+separate stock private-auth component passed8 controls. These results do not
+permit enabling the live form. Settings acceptance, recovery contacts and
+governed recovery remain incomplete.
+
+The October14 operator evidence establishes encrypted Proton receipt/readable
+body and reported Bcc privacy for the first message, plus readable Thunderbird
+receipt for a second message. It does not establish the entire protected-mail
+round trip, a verified signature, complete key lifecycle or OSMAP encrypted Sent
+body readability. Earlier October1 observations below are historical and do
+not supersede those later bounded results. No new operational health or release
+qualification was performed for this documentation update.
+
 ## Current UX folder lifecycle boundary
 
 S08-02 is engineering-delivered with matching signedc4e/application324b and
@@ -23,7 +50,7 @@ separately assessed. No provider mail, private-key or operator-policy action
 was part of the current folder qualification. See UX_EXECUTION_LEDGER.md for
 exact per-control evidence and the minimal nonmutating human handoff.
 
-## Full-functional UX epic execution boundary
+## Historical deployment observations and UX execution boundary
 
 The October 1 obsd1 development deployment has native-qualified public
 inventory and administration helpers. PAGE21 exposes authenticated public-key

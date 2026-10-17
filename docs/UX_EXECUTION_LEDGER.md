@@ -10054,7 +10054,15 @@ discriminator alongside the same binding production repair; no broader QA scope.
     "maint/account-runtime/dovecot_primary_auth_config.py",
     "maint/account-runtime/test_dovecot_primary_auth_config.py",
     "maint/account-runtime/account_hash_identity.py",
-    "maint/account-runtime/test_hash_identity.py"
+    "maint/account-runtime/test_hash_identity.py",
+    "docs/UX_FUNCTIONAL_BASELINE.md",
+    "docs/UX_MAIL_DELIVERY_REFOCUS_20261006.md",
+    "docs/BUILD_AND_RELEASE_PROCESS.md",
+    "docs/ARCHITECTURE.md",
+    "docs/SECURITY_MODEL.md",
+    "docs/CURRENT_SYSTEM_ARCHITECTURE.md",
+    "docs/FAQ_OPERATORS.md",
+    "docs/UX_STOPPED_HANDOFF_20261017.md"
   ],
   "outcomes": [
     {
@@ -10198,7 +10206,7 @@ discriminator alongside the same binding production repair; no broader QA scope.
     "status": "PENDING",
     "reference": "Only minimal well-defined own-password usability after all agent-owned development/matching deployed QA/independent audit PASS. No operator password is changed by agent qualification; use controlled disposable Alice and preserve Bob/operator state. NOT RUN."
   },
-  "next_action": "Only commit and synchronize retained repository changes under the operator's explicit request. Do not resume implementation, native/live tests, deployment or host synchronization without new operator authorization.",
+  "next_action": "Only finish the operator-requested current-documentation reconciliation, signed commits and GitHub synchronization of the UX branch. Development and all live/native work remain stopped; see docs/UX_STOPPED_HANDOFF_20261017.md.",
   "accountability": {
     "functional_exit": "Working own-account Settings password change through authoritative Toronto credentials, shared epoch, browser/IMAP/SMTP/cache containment, old-password refusal/new-login success and Bob/mail preservation, followed by matching isolated installation and independent audit. Fixture changes are prerequisites, not product delivery.",
     "owner": "/root",
@@ -13874,3 +13882,13 @@ and large-custody proposals are retained provenance, not delivered architecture.
 No token or monetary cost is inferred from recorded wall-clock measurements.
 The recurring automation's paused state could not be confirmed; its invocation
 cannot override the explicit stop.
+
+
+### 2026-10-17 — current documentation reconciliation only
+
+The operator additionally requested all documentation updated. Reconcile current
+README/index, operator/architecture/security/limitations, baseline/refocus and
+agent guidance with the explicit stop and exact accepted/open outcomes; add
+UX_STOPPED_HANDOFF_20261017.md with source/evidence/draft boundaries. Preserve
+frozen plans/specification and versioned historical evidence. This scope adds
+only the named current documentation paths, not implementation or native QA.

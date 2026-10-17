@@ -1,11 +1,16 @@
 # OSMAP
 
+**2026-10-17: development is stopped by operator instruction.** Only signed
+source/documentation preservation and GitHub synchronization are authorized.
+S04-02 password change remains incomplete and disabled on obsd1. See the
+[stopped-work handoff](docs/UX_STOPPED_HANDOFF_20261017.md).
+
 **OpenBSD Secure Mail Access Platform** is a small, security-focused webmail
 application for hardened OpenBSD mail hosts.
 
 OSMAP gives users browser access to an existing mail system without replacing
 nginx, Dovecot, Postfix, Rspamd, PF, TLS, or native mail clients. It is written
-in Rust, renders its interface on the server, uses no runtime JavaScript, and
+in Rust, renders its interface on the server, uses narrowly scoped local scripts where implemented, and
 keeps privileged mailbox access behind a local helper boundary.
 
 The project deliberately favors a narrow attack surface, least privilege,
@@ -89,11 +94,11 @@ functional evidence and independent review. The repaired public Bin and Restore
 responses complete within the existing10s bound. Historical failures stay
 retained. The operator's defined human Folders usability and attachment-download
 checks PASS; independent review closes S08-02 functional acceptance. S04-02
-authoritative password change is active. S09 final-reference visual acceptance,
+authoritative password change remains incomplete; development is stopped. S09 final-reference visual acceptance,
 broader S08 and epic/release completion remain separate and open. See the
 [execution ledger](docs/UX_EXECUTION_LEDGER.md) for the exact evidence and limits.
 
-OSMAP is actively developed and security-sensitive. The crate is currently
+OSMAP is security-sensitive; development is currently stopped. The crate is currently
 version `0.1.0`. The repository contains production-validated and deployed
 slices, but those results are bounded to the documented OpenBSD host,
 configuration, test corpus, and selected user cohort. Treat OSMAP as
@@ -115,9 +120,11 @@ Important limits:
 - the current release evidence is still bounded;
 - complete Roundcube replacement, general hostile-email safety, universal
   production readiness, and full ASVS verification are not claimed;
-- OpenPGP policy, diagnostics, helper scaffolding, and UI states exist, but
-  runtime decrypt, verify, sign, encrypt, PGP/MIME, and key-management
-  operations are not implemented; and
+- runtime decrypt, verify, sign, encrypt, PGP/MIME, and key-management
+  operations retain their individual implementation and acceptance limits.
+  Bounded native implementation and October14 encrypted-provider receipt/
+  decryption evidence exist; complete protected round-trip, signatures, key
+  lifecycle and readable encrypted Sent acceptance remain open; and
 - calendars, groupware, plugins, SaaS hosting, multi-tenancy, and attachment
   preview are outside the current scope.
 

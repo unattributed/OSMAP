@@ -1,8 +1,18 @@
 # Documentation
 
+## Current operator stop — 2026-10-17
+
+Development, live/native qualification and deployment are stopped by explicit
+operator direction. Only documentation preservation, signed repository commits
+and synchronization of `feat/ux-completion-20260929` are currently authorized.
+S04-02 password change and S04 remain incomplete; the installed password-change
+control remains disabled. Historical work orders do not authorize resumption.
+See [the stopped-work handoff](UX_STOPPED_HANDOFF_20261017.md) and
+[Current Project Status](CURRENT_PROJECT_STATUS.md) for current results and limits.
+
 This directory holds the public-safe documentation set for OSMAP.
 
-Current operational checkpoint, 2026-10-14: the ordinary-mail repair is signed,
+Historical operational checkpoint, 2026-10-14: the ordinary-mail repair is signed,
 synchronized and installed; controlled original/reply/forward delivery has
 authoritative Inbox/Sent MIME evidence. `CURRENT_PROJECT_STATUS.md` and the
 latest `UX_EXECUTION_LEDGER.md` distinguish that bounded result from pending
@@ -14,7 +24,7 @@ distinct current populated Bin/Restore and final hierarchy/badges/owned cleanup
 journey passes13 HTTP outcomes; original timeouts are preserved. A minimal
 nonmutating human usability check and controlled attachment download now PASS.
 Independent review permits S08-02 functional ACCEPTED; S04-02 authoritative
-password change is active. S09 visual/accessibility, broader S08 and the full
+password change remains incomplete and is now stopped. S09 visual/accessibility, broader S08 and the full
 epic remain open.
 
 The 2026-09-29/30 UX engineering stream has completed intake and implemented
@@ -77,6 +87,8 @@ The documents in this folder are written for two audiences:
   integration facts for maintenance, validation, and future scoped work
 
 Current public documentation map:
+
+- `UX_STOPPED_HANDOFF_20261017.md` — operator stop, latest outcomes, retained drafts and synchronization scope
 
 - `README.md`
 - `CURRENT_PROJECT_STATUS.md`

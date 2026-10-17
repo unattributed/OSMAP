@@ -1,5 +1,16 @@
 # OSMAP Agent Notes
 
+## Current explicit operator stop — 2026-10-17
+
+Development and all delegated engineering/review workers are stopped. The
+operator subsequently authorized only updating documentation, committing all
+repository changes with verified Shopkeeper signatures and synchronizing the
+current UX branch to GitHub. Do not interpret that preservation request, a
+heartbeat, a historical continuation or an old work order as permission to
+restart implementation, native/live tests, deployment or host synchronization.
+Normal mandatory commit/push hooks remain required. Further development needs
+new explicit operator authorization. See `docs/UX_STOPPED_HANDOFF_20261017.md`.
+
 This repository is the OpenBSD Secure Mail Access Platform. Treat it as a
 security-sensitive mail application with a live validation target at
 `mail.blackbagsecurity.com`.

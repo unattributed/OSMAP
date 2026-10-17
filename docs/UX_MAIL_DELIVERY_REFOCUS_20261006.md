@@ -1,12 +1,22 @@
 # Approved mail-delivery recovery priority
 
+## Current operator stop — 2026-10-17
+
+Development, live/native qualification and deployment are stopped by explicit
+operator direction. Only documentation preservation, signed repository commits
+and synchronization of `feat/ux-completion-20260929` are currently authorized.
+S04-02 password change and S04 remain incomplete; the installed password-change
+control remains disabled. Historical work orders do not authorize resumption.
+See [the stopped-work handoff](UX_STOPPED_HANDOFF_20261017.md) and
+[Current Project Status](CURRENT_PROJECT_STATUS.md) for current results and limits.
+
 On 2026-10-06 the operator accepted the independent delivery-drift audit and
 instructed: "I accept and approve, retool readjust and refocus development".
 This explicit approval changes the active execution priority. It preserves the
 signed R2 requirements and all unaccepted results; it does not remove password,
 recovery, ancillary features or final acceptance from the epic.
 
-## Active work order
+## Historical approved execution order — currently stopped
 
 1. Revisit S03-04 ordinary Send through the installed obsd1 application and the
    authoritative mail.blackbagsecurity.com mailbox. Use fresh exact-self,

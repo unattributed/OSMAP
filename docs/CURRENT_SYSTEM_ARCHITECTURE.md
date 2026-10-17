@@ -1,5 +1,15 @@
 # Current System Architecture
 
+## Current operator stop — 2026-10-17
+
+Development, live/native qualification and deployment are stopped by explicit
+operator direction. Only documentation preservation, signed repository commits
+and synchronization of `feat/ux-completion-20260929` are currently authorized.
+S04-02 password change and S04 remain incomplete; the installed password-change
+control remains disabled. Historical work orders do not authorize resumption.
+See [the stopped-work handoff](UX_STOPPED_HANDOFF_20261017.md) and
+[Current Project Status](CURRENT_PROJECT_STATUS.md) for current results and limits.
+
 ## Scope
 
 This document is the public-safe Phase 1 snapshot of the existing platform that
