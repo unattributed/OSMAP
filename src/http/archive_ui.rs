@@ -2,6 +2,7 @@
 use super::*;
 
 pub(super) struct RowState {
+    pub timezone: crate::timezone::FixedOffset,
     pub selected: bool,
     pub on_open: bool,
     pub is_bin: bool,
@@ -23,14 +24,15 @@ pub(super) fn row(
         crate::archive_event::Date::Unavailable => "Unavailable".into(),
     };
     let RowState {
+        timezone,
         selected,
         on_open,
         is_bin,
     } = state;
     let date = if message.date_received.is_empty() {
-        "Unavailable"
+        "Unavailable".into()
     } else {
-        &message.date_received
+        timezone.display_received(&message.date_received)
     };
     let subject = message_open_control(
         csrf,
@@ -46,7 +48,7 @@ pub(super) fn row(
     } else {
         String::new()
     };
-    format!("<tr data-selected=\"{selected}\"><td>{selection}</td><td data-label=\"From\" class=\"archive-sender\">{}</td><td data-label=\"Subject\">{subject}{labels}</td><td data-label=\"Folder\">{}</td><td data-label=\"Archived\">{}</td><td data-label=\"Size\">{} B</td><td><details class=\"archive-row-more\"><summary aria-label=\"Actions for message #{}\">⋮</summary><div><p>Received: <span data-label=\"Received\">{}</span></p>{}{delete}</div></details></td></tr>", escape_html(message.from.as_deref().unwrap_or("Sender unavailable")), escape_html(&message.mailbox_name), escape_html(&archived), message.size_virtual, message.uid, escape_html(date), render_message_state_controls(csrf, &message.mailbox_name, message.uid, &message.flags, message.metadata.as_ref(), return_to))
+    format!("<tr data-selected=\"{selected}\"><td>{selection}</td><td data-label=\"From\" class=\"archive-sender\">{}</td><td data-label=\"Subject\">{subject}{labels}</td><td data-label=\"Folder\">{}</td><td data-label=\"Archived\">{}</td><td data-label=\"Size\">{} B</td><td><details class=\"archive-row-more\"><summary aria-label=\"Actions for message #{}\">⋮</summary><div><p>Received: <span data-label=\"Received\">{}</span></p>{}{delete}</div></details></td></tr>", escape_html(message.from.as_deref().unwrap_or("Sender unavailable")), escape_html(&message.mailbox_name), escape_html(&archived), message.size_virtual, message.uid, escape_html(&date), render_message_state_controls(csrf, &message.mailbox_name, message.uid, &message.flags, message.metadata.as_ref(), return_to))
 }
 
 pub(super) struct Page<'a> {
@@ -145,6 +147,7 @@ mod tests {
             "csrf",
             "/mailbox?name=INBOX",
             RowState {
+                timezone: crate::timezone::FixedOffset::default(),
                 selected: false,
                 on_open: false,
                 is_bin: false,
@@ -173,6 +176,7 @@ mod tests {
             "csrf",
             "/mailbox",
             RowState {
+                timezone: crate::timezone::FixedOffset::default(),
                 selected: false,
                 on_open: false,
                 is_bin: false,
@@ -188,6 +192,7 @@ mod tests {
             "csrf",
             "/mailbox",
             RowState {
+                timezone: crate::timezone::FixedOffset::default(),
                 selected: false,
                 on_open: false,
                 is_bin: false,
@@ -203,6 +208,7 @@ mod tests {
             "csrf",
             "/mailbox",
             RowState {
+                timezone: crate::timezone::FixedOffset::default(),
                 selected: false,
                 on_open: false,
                 is_bin: false,

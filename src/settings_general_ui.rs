@@ -17,7 +17,7 @@ pub(crate) fn render_general_page(
         identity,
         reading,
         signature,
-        None,
+        (None, None),
     )
 }
 
@@ -28,21 +28,29 @@ pub(crate) fn render_general_page_with_mark_read(
     identity: Option<crate::identity_preferences::IdentityPreferencesRecord>,
     reading: Option<crate::reading_preferences::ReadingPreferences>,
     signature: Option<&crate::signature::SignatureRecord>,
-    mark_read: Option<&crate::mark_read::Preference>,
+    saved_mail_preferences: (
+        Option<&crate::mark_read::Preference>,
+        Option<&crate::timezone::Preference>,
+    ),
 ) -> TrustedHtml {
+    let (mark_read, timezone) = saved_mail_preferences;
     let profile_input = |id: &str, label: &str, value: Option<&str>| {
         match value {
         Some(value) => format!("<div class=\"general-field\"><label for=\"{id}\">{label}</label><input id=\"{id}\" value=\"{}\" readonly></div>", escape_html(value)),
         None => unavailable_input(id, label, "Unknown"),
     }
     };
+    let timezone_control = timezone.map(|saved| {
+        let options = crate::timezone::FixedOffset::choices().map(|offset| format!("<option value=\"{}\"{}>{}</option>", offset.as_str(), if offset == saved.offset { " selected" } else { "" }, offset.label())).collect::<String>();
+        format!("<form id=\"general-timezone-form\" method=\"post\" action=\"/settings/timezone\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"expected_revision\" value=\"{}\"><div class=\"general-field\"><label for=\"general-timezone\">Timezone</label><select id=\"general-timezone\" name=\"timezone\" aria-describedby=\"general-timezone-help\">{options}</select></div><p id=\"general-timezone-help\" class=\"general-help\">Fixed UTC offset for mail dates. Daylight-saving changes are not automatic. Date filters and audit times remain UTC.</p><button type=\"submit\">Save timezone</button></form>", escape_html(model.csrf_token), saved.revision)
+    }).unwrap_or_else(|| format!("{}<p>Saved timezone unavailable. Reload General settings.</p>", unavailable_select("general-timezone", "Timezone", "Unavailable")));
     let profile = format!(concat!(
         "<section class=\"general-card\" aria-labelledby=\"general-profile-title\"><h2 id=\"general-profile-title\">Account Profile</h2>",
         "{}<div class=\"general-field\"><label for=\"general-email\">Email address</label><input id=\"general-email\" value=\"{}\" readonly></div>{}{}{}",
-        "<p class=\"general-help\">{}<a href=\"/settings?section=identity\">Edit in Identity</a>. UTC and English are fixed.</p></section>"
+        "<p class=\"general-help\">{}<a href=\"/settings?section=identity\">Edit in Identity</a>. English is fixed.</p></section>"
     ), profile_input("general-display-name", "Display name", identity.as_ref().map(|record| record.preferences.display_name())), escape_html(model.canonical_username),
         profile_input("general-reply-to", "Reply-to address", identity.as_ref().map(|record| record.preferences.reply_to().unwrap_or(model.canonical_username))),
-        unavailable_select("general-timezone", "Timezone", "UTC"), unavailable_select("general-language", "Language", "English"), if identity.is_none() { "Saved profile unavailable. " } else { "" });
+        timezone_control, unavailable_select("general-language", "Language", "English"), if identity.is_none() { "Saved profile unavailable. " } else { "" });
 
     let appearance = format!(concat!(
         "<section class=\"general-card\" aria-labelledby=\"general-appearance-title\"><h2 id=\"general-appearance-title\">Appearance</h2>",
@@ -156,7 +164,7 @@ pub(crate) fn render_general_page_with_mark_read(
     }
     TrustedHtml::from_template(format!(concat!(
         "{}<main id=\"main-content\" class=\"page-shell settings-page settings-general-page\" tabindex=\"-1\"><div class=\"page-intro\"><h1>Settings</h1><p>Manage account, mailbox, appearance, composition, privacy and security preferences.</p></div>{}",
-        "<div class=\"settings-layout settings-general-layout\">{}<div class=\"settings-general-grid\">{}{}{}{}{}{}{}<div class=\"general-overview-actions\"><a class=\"button-link\" href=\"/sessions\">Manage active sessions</a><span>Section reset is unavailable.</span><button type=\"button\" disabled>Reset this section</button></div></div></div></main>"
+        "<div class=\"settings-layout settings-general-layout\">{}<div class=\"settings-general-grid\">{}{}{}{}{}{}{}<div class=\"general-overview-actions\"><a class=\"button-link\" href=\"/sessions\">Manage active sessions</a><span>Reset discards unsaved edits and reloads this section’s saved values. It does not restore defaults.</span><a class=\"button-link\" href=\"/settings?section=general\">Reset this section</a></div></div></div></main>"
     ), app_header(model.canonical_username, model.csrf_token, "settings-general"), notices, settings_navigation("general"), profile, appearance, mailbox, composition, privacy, security, storage))
 }
 
@@ -204,7 +212,7 @@ mod tests {
             None,
             None,
             None,
-            Some(&saved),
+            (Some(&saved), None),
         );
         let html = html.as_str();
         assert!(html.contains("<option value=\"on_open\" selected>On Open</option>"));

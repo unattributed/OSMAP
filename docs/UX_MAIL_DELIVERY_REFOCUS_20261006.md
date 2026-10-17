@@ -1,6 +1,12 @@
 # Approved mail-delivery recovery priority
 
-## Current operator stop — 2026-10-17
+## Current bounded authorization — 2026-10-17
+
+The operator resumed S04-01 Settings/sessions only, under the single checklist
+`UX_SLICE_S04_01.md` and current ledger. Other slices, including mail-delivery
+expansion and S04-02, remain stopped. This does not waive original dependencies.
+
+## Historical operator stop — 2026-10-17
 
 Development, live/native qualification and deployment are stopped by explicit
 operator direction. Only documentation preservation, signed repository commits

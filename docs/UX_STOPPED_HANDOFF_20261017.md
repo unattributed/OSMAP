@@ -1,5 +1,9 @@
 # OSMAP stopped-work handoff — 2026-10-17
 
+Subsequent bounded authority: the operator resumed S04-01 Settings/sessions
+only. See `UX_SLICE_S04_01.md` and the active ledger. This stopped-work handoff
+continues to govern S04-02 and other slices; none resumes by implication.
+
 ## Authority and source
 
 The operator explicitly stopped development. The later requests authorize all

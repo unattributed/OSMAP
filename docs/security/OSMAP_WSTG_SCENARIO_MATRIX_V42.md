@@ -1,5 +1,17 @@
 # OSMAP WSTG v4.2 Scenario Matrix
 
+S04-01 bounded Settings repair, 2026-10-17: POST `/settings/timezone` uses the
+validated session's account, same-origin/CSRF, exact bounded fields and private
+revision CAS. Six changed source cases pass canonical offset/date boundaries,
+real Runtime generated-form save/reload and Bob isolation, stale/invalid/foreign/
+corrupt refusal, and typed mail render consumers. The latter use synthetic mail;
+Runtime persistence is a distinct proof. One existing loopback browser check
+passes keyboard save/reload, exact synthetic mail conversion and General Reset
+of five unsaved controls through GET without POST/store-byte changes. Zero
+external requests/Send; browser/server and private test environment cleaned.
+Installed/native qualification and parent S04-01 remain open. No password,
+recovery, quota, crypto or mail-operation authority changes.
+
 S08-02 leaf disposition source increment, 2026-10-15: the attack surface adds
 the actual Deleted folders, empty Delete, Bin, Restore and original-result
 check routes with exact bounded fields. POST retains current session, CSRF,

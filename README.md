@@ -1,8 +1,11 @@
 # OSMAP
 
-**2026-10-17: development is stopped by operator instruction.** Only signed
-source/documentation preservation and GitHub synchronization are authorized.
-S04-02 password change remains incomplete and disabled on obsd1. See the
+**2026-10-17: S04-01 Settings and sessions only has resumed.** Its
+[single checklist](docs/UX_SLICE_S04_01.md) retains working code and exact
+requirements/evidence. Fixed UTC-offset display and saved-value General Reset
+pass focused source/browser and OpenBSD checks; installation and parent-slice
+acceptance remain open. Other slices remain stopped, including incomplete
+S04-02 password change, whose control remains disabled on obsd1. See the
 [stopped-work handoff](docs/UX_STOPPED_HANDOFF_20261017.md).
 
 **OpenBSD Secure Mail Access Platform** is a small, security-focused webmail

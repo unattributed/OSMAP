@@ -124,6 +124,7 @@ pub(crate) enum SelectedMessagePane {
 }
 
 pub(crate) struct MailReaderContext {
+    pub timezone: crate::timezone::FixedOffset,
     pub pane: SelectedMessagePane,
     pub neighbours: crate::reader_neighbours::ReaderNeighbours,
     pub archive_mailbox_name: Option<String>,
@@ -137,6 +138,7 @@ pub(crate) struct MailReaderContext {
 impl Default for MailReaderContext {
     fn default() -> Self {
         Self {
+            timezone: crate::timezone::FixedOffset::default(),
             pane: SelectedMessagePane::default(),
             neighbours: crate::reader_neighbours::ReaderNeighbours::default(),
             archive_mailbox_name: None,
@@ -200,6 +202,7 @@ impl SentFolderRole {
 
 #[derive(Clone, Copy)]
 struct ReaderFolders<'a> {
+    timezone: crate::timezone::FixedOffset,
     account: &'a str,
     labels: Option<&'a crate::labels::LabelRecord>,
     archive: Option<&'a str>,
@@ -1226,7 +1229,7 @@ fn render_coordinated_reader_with_back(
                 Some(page) if page != view.page => format!("<p class=\"reader-locate\"><a href=\"{}\">Locate selected message on page {page}</a></p>", escape_html(&list_navigation_href(base, view, page))),
                 _ => String::new(),
             };
-            format!("<div class=\"reader-column\">{locate}{}</div>", render_reader_fragment(csrf, rendered, ReaderFolders { account, labels: reader.labels.as_ref(), archive: reader.archive_mailbox_name.as_deref(), bin: reader.bin_mailbox_name.as_deref(), mailboxes: &reader.mailboxes }, back, &list_navigation_href(base, view, view.page), Some(&reader.neighbours)))
+            format!("<div class=\"reader-column\">{locate}{}</div>", render_reader_fragment(csrf, rendered, ReaderFolders { timezone: reader.timezone, account, labels: reader.labels.as_ref(), archive: reader.archive_mailbox_name.as_deref(), bin: reader.bin_mailbox_name.as_deref(), mailboxes: &reader.mailboxes }, back, &list_navigation_href(base, view, view.page), Some(&reader.neighbours)))
         }
     }
 }
@@ -1703,6 +1706,7 @@ fn render_message_label_badges(
 }
 
 struct MessageCard<'a> {
+    timezone: crate::timezone::FixedOffset,
     focus_target: Option<&'a str>,
     open_on_select: bool,
     recipient: bool,
@@ -1778,7 +1782,7 @@ fn render_message_card(
         escape_html(party),
         escape_html(&visible_party),
         escape_html(message.received),
-        escape_html(message.received),
+        escape_html(&message.timezone.display_received(message.received)),
         escape_html(message.metadata.and_then(|metadata| metadata.preview.as_deref()).filter(|preview| crate::message_metadata::valid_message_preview(preview)).unwrap_or("No preview available")),
         escape_html(message.mailbox),
         render_attachment_count(message.metadata),
@@ -2048,6 +2052,7 @@ pub(crate) fn render_message_list_page(
                 csrf_token,
                 &return_to,
                 archive_ui::RowState {
+                    timezone: sort_links.reader.timezone,
                     selected: sort_links.view.is_selected(mailbox_name, message.uid),
                     on_open: sort_links.view.open_on_select,
                     is_bin: sort_links.reader.bin_mailbox_name.as_deref() == Some(mailbox_name),
@@ -2059,6 +2064,7 @@ pub(crate) fn render_message_list_page(
         let actions = archive_action;
         rows.push_str(&render_message_card(
             MessageCard {
+                timezone: sort_links.reader.timezone,
                 focus_target: focus_targets.get(index).and_then(Option::as_deref),
                 open_on_select: sort_links.view.open_on_select,
                 mailbox: mailbox_name,
@@ -2335,7 +2341,7 @@ pub(crate) fn render_message_search_page(
             rows.push_str(&format!(
                 "<li class=\"message-row search-result-row\" data-selected=\"{}\"{focus_attributes}><span class=\"search-result-type\">{}</span><div class=\"search-result-title\">{subject_control}<span class=\"message-sender\" dir=\"auto\"><span class=\"sr-only\">From</span> {}{preview}</span>{labels}</div><span class=\"search-result-location message-mailbox\" dir=\"auto\">{}</span><time class=\"search-result-date\">{}</time><details class=\"search-result-more\"><summary aria-label=\"More for message #{} in {}\">More</summary><div>{}</div></details></li>",
                 view.is_selected(&result.mailbox_name, result.uid), shell_icon("inbox"),
-                escape_html(result.from.as_deref().unwrap_or("Sender unavailable")), escape_html(&result.mailbox_name), escape_html(&result.date_received),
+                escape_html(result.from.as_deref().unwrap_or("Sender unavailable")), escape_html(&result.mailbox_name), escape_html(&context.reader.timezone.display_received(&result.date_received)),
                 result.uid, escape_html(&result.mailbox_name),
                 more_controls,
                 focus_attributes = back_focus::attributes(focus_targets.get(index).and_then(Option::as_deref)),
@@ -2486,7 +2492,7 @@ pub(crate) fn render_message_view_page_with_context(
     TrustedHtml::from_template(format!(
         "{}<main id=\"main-content\" class=\"page-shell standalone-reader\" tabindex=\"-1\"><div class=\"page-intro\"><h1>Message Reader</h1><p>Protected reading with message details, isolated attachments and source view.</p></div>{}</main>",
         header,
-        render_reader_fragment(csrf_token, rendered, ReaderFolders { account: canonical_username, labels: context.labels.as_ref(), archive: archive_mailbox_name, bin: bin_mailbox_name, mailboxes: user_visible_mailboxes }, &back, &current, Some(neighbours))))
+        render_reader_fragment(csrf_token, rendered, ReaderFolders { timezone: context.timezone, account: canonical_username, labels: context.labels.as_ref(), archive: archive_mailbox_name, bin: bin_mailbox_name, mailboxes: user_visible_mailboxes }, &back, &current, Some(neighbours))))
 }
 
 fn render_reader_fragment(
@@ -2694,7 +2700,7 @@ fn render_reader_fragment(
             "</article>"
         ),
         escape_html(rendered.subject.as_deref().unwrap_or("(No subject)")),
-        escape_html(&rendered.mailbox_name), escape_html(&rendered.date_received),
+        escape_html(&rendered.mailbox_name), escape_html(&folders.timezone.display_received(&rendered.date_received)),
         escape_html(&sender_initials(rendered.from.as_deref())),
         escape_html(rendered.from.as_deref().unwrap_or("Sender unavailable")),
         escape_html(rendered.to.as_deref().unwrap_or("Not present")),
@@ -2704,7 +2710,7 @@ fn render_reader_fragment(
         html_state_badge, rendering_notice, inline_image_notice,
         escape_html(rendered.subject.as_deref().unwrap_or("(No subject)")), escape_html(rendered.from.as_deref().unwrap_or("Sender unavailable")),
         escape_html(rendered.to.as_deref().unwrap_or("Not present")), escape_html(rendered.cc.as_deref().unwrap_or("Not present")),
-        escape_html(&rendered.mailbox_name), rendered.uid, escape_html(&rendered.date_received),
+        escape_html(&rendered.mailbox_name), rendered.uid, escape_html(&folders.timezone.display_received(&rendered.date_received)),
         escape_html(&rendered.mime_top_level_content_type), escape_html(rendered.body_source.as_str()),
         escape_html(rendered.rendering_mode.as_str()), if rendered.contains_html_body { "yes" } else { "no" }, remote_content_state,
         toolbar = toolbar,

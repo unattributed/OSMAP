@@ -52,7 +52,7 @@ impl<G: BrowserGateway> BrowserApp<G> {
                         &filters,
                         &Category::NotSearched,
                         &Category::NotSearched,
-                        false,
+                        (false, crate::timezone::FixedOffset::default()),
                         None,
                     ),
                 ),
@@ -135,7 +135,21 @@ impl<G: BrowserGateway> BrowserApp<G> {
                 "Service Unavailable"
             },
             "Search All",
-            all_page(&session, query, &filters, &messages, &people, on_open, None),
+            all_page(
+                &session,
+                query,
+                &filters,
+                &messages,
+                &people,
+                (
+                    on_open,
+                    self.gateway
+                        .load_timezone(&session)
+                        .map(|saved| saved.offset)
+                        .unwrap_or_default(),
+                ),
+                None,
+            ),
         );
         audit_events.push(self.release_request_budget(guard, "message_search", context, &session));
         HandledHttpResponse {
@@ -156,9 +170,10 @@ fn all_page(
     filters: &crate::mail_navigation::SearchFilterContext,
     messages: &Category<Vec<MessageSearchResult>>,
     people: &Category<crate::contacts::ContactBook>,
-    on_open: bool,
+    reader_preferences: (bool, crate::timezone::FixedOffset),
     error: Option<&str>,
 ) -> TrustedHtml {
+    let (on_open, timezone) = reader_preferences;
     let requested_page = filters.view.requested_page;
     let q = query.to_lowercase();
     let mut contacts = match people {
@@ -215,7 +230,7 @@ fn all_page(
                     control,
                     message.from.as_deref().unwrap_or("Sender unavailable"),
                     message.mailbox_name.as_str(),
-                    message.date_received.as_str(),
+                    timezone.display_received(&message.date_received),
                     message
                         .metadata
                         .as_ref()
@@ -252,12 +267,12 @@ fn all_page(
                     ),
                     contact.address.as_str(),
                     "Saved contacts",
-                    "Unavailable",
+                    "Unavailable".to_string(),
                     String::new(),
                 )
             }
         };
-        markup.push_str(&format!("<li class=\"search-result-row\"><span>{kind}</span><div class=\"search-result-title\">{control}<span class=\"message-sender\" dir=\"auto\">{}{preview}</span></div><span class=\"search-result-location\" dir=\"auto\">{}</span><span class=\"search-result-date\">{}</span><span></span></li>", escape_html(detail), escape_html(location), escape_html(time)));
+        markup.push_str(&format!("<li class=\"search-result-row\"><span>{kind}</span><div class=\"search-result-title\">{control}<span class=\"message-sender\" dir=\"auto\">{}{preview}</span></div><span class=\"search-result-location\" dir=\"auto\">{}</span><span class=\"search-result-date\">{}</span><span></span></li>", escape_html(detail), escape_html(location), escape_html(&time)));
     }
     let label = |name: &str, available: bool, searched: bool, number: usize| {
         if available {

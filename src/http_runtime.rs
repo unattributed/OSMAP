@@ -262,6 +262,9 @@ where
             (HttpMethod::Post, "/message/move") => self.handle_message_move(request, &context),
             (HttpMethod::Post, "/message/flag") => self.handle_message_flag(request, &context),
             (HttpMethod::Post, "/message/open") => self.handle_message_open(request, &context),
+            (HttpMethod::Post, "/settings/timezone") => {
+                self.handle_timezone_update(request, &context)
+            }
             (HttpMethod::Post, "/settings/mark-read") => {
                 self.handle_mark_read_settings(request, &context)
             }

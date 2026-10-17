@@ -9877,7 +9877,7 @@ PASS20 obligations/403 controls/110 legacy cases/27 pages. No assertion changed.
 Admit existing test_smtp_guarded_builder.py for the fixed native authority-loader
 discriminator alongside the same binding production repair; no broader QA scope.
 
-<!-- OSMAP_ACTIVE_WORK_ORDER -->
+<!-- OSMAP_HISTORICAL_PAUSED_S04_02_WORK_ORDER_20261017 -->
 ```json
 {
   "version": 1,
@@ -11799,7 +11799,7 @@ discriminator alongside the same binding production repair; no broader QA scope.
   }
 }
 ```
-<!-- /OSMAP_ACTIVE_WORK_ORDER -->
+<!-- /OSMAP_HISTORICAL_PAUSED_S04_02_WORK_ORDER_20261017 -->
 
 ## 2026-10-15 — operator Folders usability results received
 
@@ -13892,3 +13892,450 @@ agent guidance with the explicit stop and exact accepted/open outcomes; add
 UX_STOPPED_HANDOFF_20261017.md with source/evidence/draft boundaries. Preserve
 frozen plans/specification and versioned historical evidence. This scope adds
 only the named current documentation paths, not implementation or native QA.
+
+
+## 2026-10-17 — operator resumes S04-01 only
+
+Retain working Settings/sessions; finish demonstrated gaps against one checklist. Other slices remain stopped. R2/R3 signatures,33 plan hashes and nested reference hashes PASS; clean source0c5dac8. Original57 controls and dependencies preserved. One evidence owner, one timezone developer; root integration/Git/host. No new QA framework or unchanged broad reruns.
+
+<!-- OSMAP_ACTIVE_WORK_ORDER -->
+```json
+{
+  "version": 1,
+  "slice": "S04-01",
+  "original_requirement": "Distinct approved Settings 10\u201320, section search/navigation, profile/preferences and accurate status; sessions page 24",
+  "source_baseline": "0c5dac8fec6466c0834af2a229a57325c5ea38f7",
+  "state": "IN_PROGRESS",
+  "integration_owner": "/root",
+  "roles": {
+    "project_manager": [
+      "/root"
+    ],
+    "scrum_lead": [
+      "/root/s04_01_evidence"
+    ],
+    "developers": [
+      "/root",
+      "/root/s04_01_timezone"
+    ],
+    "qa": [
+      "/root",
+      "/root/s04_01_review"
+    ],
+    "security_review": [
+      "/root/s04_01_review"
+    ],
+    "technical_writer": [
+      "/root"
+    ]
+  },
+  "allowed_paths": [
+    "AGENTS.md",
+    "docs/CURRENT_PROJECT_STATUS.md",
+    "docs/UX_EXECUTION_LEDGER.md",
+    "docs/DECISION_LOG.md",
+    "docs/OSMAP_AGENT_FRAMEWORK_ADOPTION.md",
+    "docs/UX_SLICE_S04_01.md",
+    "docs/UX_STOPPED_HANDOFF_20261017.md",
+    "docs/UX_MAIL_DELIVERY_REFOCUS_20261006.md",
+    "docs/security/OSMAP_WSTG_SCENARIO_MATRIX_V42.md",
+    "maint/ux/acceptance.json",
+    "src/timezone.rs",
+    "src/lib.rs",
+    "src/http_browser.rs",
+    "src/http_gateway.rs",
+    "src/http/routes_timezone.rs",
+    "src/http_runtime.rs",
+    "src/http/routes_settings.rs",
+    "src/settings_general_ui.rs",
+    "src/http_ui.rs",
+    "src/http/routes_mail.rs",
+    "src/http/routes_all_search.rs",
+    "src/http.rs",
+    "src/http/timezone_tests.rs",
+    "src/logging.rs",
+    "src/http/general_preferences_tests.rs",
+    "maint/ux/general_preferences_workflows.py",
+    "src/http/ux_browser_server.rs",
+    "src/http/archive_ui.rs",
+    "README.md",
+    "docs/README.md",
+    "maint/security/v10-rust-assumption-audit.json",
+    "maint/security/v10-fail-closed-remediation.json",
+    "maint/security/v10-claims-boundary.json",
+    "maint/wstg-testing-pack/osmap-browser-attack-surface.json"
+  ],
+  "outcomes": [
+    {
+      "id": "settings-and-sessions",
+      "requirement_ids": [
+        "UX09-001",
+        "UX09-002",
+        "UX11-001",
+        "R2-01-014",
+        "R2-01-026",
+        "R2-01-027",
+        "R2-01-028",
+        "R2-01-029",
+        "R2-01-030",
+        "R2-10-001",
+        "R2-10-002",
+        "R2-10-011",
+        "R2-10-012",
+        "R2-11-004",
+        "R2-11-005",
+        "R2-11-007",
+        "R2-11-008",
+        "R2-11-009",
+        "R2-11-010",
+        "R2-11-011",
+        "R2-11-012",
+        "R2-11-013",
+        "R2-11-019",
+        "R2-11-020",
+        "R2-11-021",
+        "R2-11-022",
+        "R2-11-024",
+        "R2-11-025",
+        "R2-11-026",
+        "R2-11-030",
+        "R2-11-031",
+        "R2-12-005",
+        "R2-12-006",
+        "R2-12-007",
+        "R2-12-008",
+        "R2-12-009",
+        "R2-12-010",
+        "R2-12-011",
+        "R2-14-001",
+        "R2-14-011",
+        "R2-14-012",
+        "R2-15-002",
+        "R2-15-003",
+        "R2-16-005",
+        "R2-16-006",
+        "R2-16-007",
+        "R2-16-008",
+        "R2-20-005",
+        "R2-20-006",
+        "R2-24-001",
+        "R2-24-002",
+        "R2-24-003",
+        "R2-24-004",
+        "R2-24-005",
+        "R2-24-006",
+        "R2-24-007",
+        "R2-24-008"
+      ],
+      "owner": "/root",
+      "frontend_backend_outcome": "Working account-owned Settings/navigation/search/persisted preferences and actual session metadata/revocation against the single57-control checklist.",
+      "dependencies": [
+        {
+          "owner": "stopped S04-02/03/04 and S08-01 owners",
+          "condition": "Required password/recovery/shared-quota positives remain unqualified; no scope waiver.",
+          "status": "PENDING",
+          "next_action": "Keep dependent slices stopped; continue independent S04-01 gaps and report exact closure dependency."
+        }
+      ],
+      "essential_qa": "Reuse inspected matching checklist E1-E11; only changed timezone/reset behavior and relevant security boundaries plus mandatory repository hooks and installed independent audit.",
+      "stages": {
+        "implementation": "PENDING",
+        "source_tests": "PENDING",
+        "native_tests": "PENDING",
+        "deployed_qa": "PENDING",
+        "independent_review": "PENDING",
+        "recovery": "PENDING"
+      },
+      "evidence": [
+        {
+          "stage": "source_tests",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/timezone-candidate-readiness.json6changedsourcePASS plus focused browser2.070PASS; scopedtimezone/reset only; otherrequiredsource evidence retained in singlechecklist."
+        },
+        {
+          "stage": "native_tests",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/native-execution-result.jsonFAILbeforetests underdefaultbuild environment; nativepass/installednotclaimed."
+        },
+        {
+          "stage": "native_tests",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/native-attempt2/native-execution-result.json;6nativePASS/0failed/0skip,455sourcebeforeafterparity, freshappce34bc30. Native94.231s;twoCargoleadersreaped/private stagesretained; no groupabsence/installed/service/backendclaim. Independent actualscope /home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/independent-source-delivery-review.json SHA256f6439fed1a57b5d9d35ce1a3e99f8887931e70244950d2d78506ba2abbd22f5d."
+        },
+        {
+          "stage": "independent_review",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/independent-source-delivery-review.json CLEAR timezone/Reset sourceadmission only, not whole57outcomes."
+        }
+      ],
+      "next_action": "Repair proven Timezone/Reset gaps, reconcile working implementation, preserve explicit unmet obligations."
+    }
+  ],
+  "human_acceptance": {
+    "status": "PENDING"
+  },
+  "next_action": "Finish one signed source delivery through mandatory hooks after defined source/native/browser passes. Scope question pending: preserve original fullS04-01 dependency scope or prepare explicit narrow amendment; no other slice resumes by implication.",
+  "accountability": {
+    "functional_exit": "Close S04-01 against all57 outcome/action/expected-result/actual-evidence rows, with working installed Settings and sessions; no primitive/checkpoint substitution.",
+    "owner": "/root",
+    "elapsed_scope": "wall_clock",
+    "history_reference": "Single checklist E1-E11 and historical S04-01 ledger retained; prior total cost/time UNKNOWN. Paused S04-02 work order retained separately.",
+    "investigation": {
+      "owner": "/root",
+      "started_at": "2026-10-17T12:39:04Z",
+      "timebox_seconds": 3600,
+      "elapsed_status": "UNMEASURED",
+      "elapsed_seconds": null
+    },
+    "attempts": [
+      {
+        "id": "S04-01-native-timezone-first",
+        "boundary": "settings-and-sessions",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "8fcac8e756d72c56c73070edbd43973838b290fe29d0534878e5949485a678f0",
+        "change_reference": "First native execution of reviewed timezone/Reset source.455pins, native-build-readiness.json and exact native-build.py/native-execute.py under settings-sessions evidence root. Source6PASS and focused browserPASS; no unchanged broad native mail suite.",
+        "success_chain_review": {
+          "reviewer": "/root/s04_01_review",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/native-source-review.md; independently verified455pins/456regular0600members and exact drivers; budget wording corrected without code/limit change. User-owned offline build only, explicit retainedstage/leaderreap, no installed claim.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "FAIL",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 66.522,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/native-execution-result.json; compiler allocation SIGABRT before selectedtests;455beforeafterparity, Cargo leaderreaped, private stage retained; noappbuild/service/backend actions. ObservedDATAsoft1.5GiB/hard128GiB; uniqueallocationrootcause unconfirmed."
+      },
+      {
+        "id": "S04-01-native-timezone-known-build-profile",
+        "boundary": "settings-and-sessions",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "8fcac8e756d72c56c73070edbd43973838b290fe29d0534878e5949485a678f0",
+        "change_reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/native-attempt2/native-build-readiness.json; exact same source/archive, existing qualified native releaseopt0/debug0cache and process-only bounded4GiB/core0; original120sperphase unchanged; no runtime/services changes.",
+        "success_chain_review": {
+          "reviewer": "/root/s04_01_review",
+          "reference": "Independent exactattempt2driver review CLEAR with explicit unlimited-hard handling prescribed; profile/limits match successfulS08builder; codebound corrected, source/archive/deadlines unchanged. Evidence /home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/native-attempt2/native-build-readiness.json",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 97.199,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/native-attempt2/native-execution-result.json;6nativePASS/0failed/0skip,455sourcebeforeafterparity, freshappce34bc30. Native94.231s;twoCargoleadersreaped/private stagesretained; no groupabsence/installed/service/backendclaim. Independent actualscope /home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/independent-source-delivery-review.json SHA256f6439fed1a57b5d9d35ce1a3e99f8887931e70244950d2d78506ba2abbd22f5d."
+      },
+      {
+        "id": "S04-01-signed-source-admission-attempt1",
+        "boundary": "settings-and-sessions",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "source_revision": "8fcac8e756d72c56c73070edbd43973838b290fe29d0534878e5949485a678f0",
+        "change_reference": "One normal signed source admission for implemented timezone/Reset plus reconciled existing evidence; source/native/browser pass and exact independent review. Mandatory hooks only; no additional assurance campaign.",
+        "success_chain_review": {
+          "reviewer": "/root/s04_01_review",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/independent-arity-correction-review.json SHA256b044ae01a8ffc13f63f8885927fbaffa23fdcf80a18a434482649838a2ba97de CLEAR behavior-equivalent mechanical3path correction; prior producer/cleanup/consumer review retained. No repeated native/browser action needed.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "FAIL",
+        "elapsed_status": "UNMEASURED",
+        "elapsed_seconds": null,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/commit-attempt1-result.json; 1770libraryPASS/0fail/48nativeignores then2Clippy arityrefusals/no commit; no waiver. LogSHA256a63a42f05d57c52ed278be97b114a9fd23e136ddf82a395deaaea3bc4a757df7"
+      },
+      {
+        "id": "S04-01-signed-source-admission-attempt2",
+        "boundary": "settings-and-sessions",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "source_revision": "b044ae01a8ffc13f63f8885927fbaffa23fdcf80a18a434482649838a2ba97de",
+        "change_reference": "Mechanical tuple grouping in3paths corrects exact Clippy arity refusal; same values/calls/guards, no behavior change. Normal mandatory commit hooks only. Prior native binary retains prior pins; no repeat native/browser campaign.",
+        "success_chain_review": {
+          "reviewer": "/root/s04_01_review",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/independent-arity-correction-review.json SHA256b044ae01a8ffc13f63f8885927fbaffa23fdcf80a18a434482649838a2ba97de CLEAR behavior-equivalent mechanical3path correction; prior producer/cleanup/consumer review retained. No repeated native/browser action needed.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "reassessment": {
+          "reviewers": [
+            "/root",
+            "/root/s04_01_review"
+          ],
+          "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/independent-combined-failure-reassessment.json SHA25691ac90c00eee0acd08b2dff180c0d98be13c9d2919c252bce5fd7c58d5b3107d; root concurs after inspecting actual logs/source and independent rationale",
+          "next_action": "One changed normal signed commit with exact mechanical Clippy correction. Reuse prior bounded native/browser behavior results and preserve original pins/failures; no extra campaign.",
+          "failed_attempt_ids": [
+            "S04-01-native-timezone-first",
+            "S04-01-signed-source-admission-attempt1"
+          ]
+        },
+        "result": "FAIL",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 73.439,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/commit-attempt2-result.json; library1770PASS/ClippyPASS, product/security matricesPASS; docs governance refused missing inline-code filename in docs/README index. LogSHA256af271bb250047e9578a54b27239de19e367614bea587ec8e0cebb0e10c20649e. No commit."
+      }
+    ],
+    "next_attempt": {
+      "id": "S04-01-signed-source-admission-attempt3",
+      "boundary": "settings-and-sessions",
+      "owner": "/root",
+      "scope": "PRODUCT_DELIVERY",
+      "adoption": "CURRENT",
+      "source_revision": "b044ae01a8ffc13f63f8885927fbaffa23fdcf80a18a434482649838a2ba97de",
+      "change_reference": "Documentation index adds required inline-code UX_SLICE_S04_01.md filename alongside existing link. Source and behavior unchanged from reviewed arity correction. Targeted existing documentation guardPASS; normal mandatoryhooks only.",
+      "success_chain_review": {
+        "reviewer": "/root/s04_01_review",
+        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/independent-arity-correction-review.json SHA256b044ae01a8ffc13f63f8885927fbaffa23fdcf80a18a434482649838a2ba97de CLEAR behavior-equivalent mechanical3path correction; prior producer/cleanup/consumer review retained. No repeated native/browser action needed.",
+        "covers": [
+          "producer",
+          "cleanup",
+          "consumer"
+        ]
+      }
+    }
+  },
+  "slice_contract": {
+    "version": 1,
+    "slice": "S04-01",
+    "specification": {
+      "path": "docs/UX_SLICE_S04_01.md",
+      "sha256": "da2d79181ce68e0cdbb04b8e2542c535327e55fa3824b12bd69acec35b2d7a9f"
+    },
+    "design": {
+      "journey": "Settings navigation/search -> actual owned preferences/sessions -> native save/revoke -> reload and owning workflow.",
+      "frontend": "Reuse existing distinct pages/forms. Fixed UTC offsets explicitly have no DST; Reset reloads saved General state without defaults reset.",
+      "backend": "Reuse existing Runtime gateway, PrivateAccountFile and SessionService; narrow timezone sidecar, no password/SQL/quota/helper rewrite.",
+      "interfaces": "Finite typed offset plus expected revision in authenticated CSRF POST; direct typed mail context before escaping, no HTML replacements or globalTZ.",
+      "persistence": "Private bounded account CAS record; UTC only on absence, corruption unavailable; preserve unrelated records and stale/uncertain-save semantics.",
+      "security": "Keep session/origin/CSRF/account isolation and bounds; preserve original mail bytes/canonical times, crypto and chronology.",
+      "failure_recovery": "Refuse invalid/stale/foreign/corrupt writes without reset; reload uncertain saves, never autoretry. Preserve installation and stopped dependent slices."
+    },
+    "tests": [
+      {
+        "id": "S04-01-positive",
+        "outcome_ids": [
+          "settings-and-sessions"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Exact current source and per-control prerequisites in docs/UX_SLICE_S04_01.md; two controlled accounts; human requires all agent-owned passes.",
+        "action": "Execute per-control positive actions in the checklist. First save/reload offset and read fixed-time mail; Reset unsaved General fields.",
+        "expected": "Persisted owned settings affect actual workflows; exact converted times and saved reset values; no message/canonical time changes.",
+        "preserved": "Original mail/keys/credentials, unrelated preferences/services, account isolation and scope distinction among source/native/installed/human.",
+        "owner": "/root",
+        "reviewer": "/root/s04_01_review",
+        "status": "PARTIAL",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/timezone-selected-attempt4.log6PASS source; /home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/changed-browser-attempt3-result.jsonfocused browserPASS/2.070s; remaining originaloutcomes unmet."
+        ]
+      },
+      {
+        "id": "S04-01-negative",
+        "outcome_ids": [
+          "settings-and-sessions"
+        ],
+        "kind": "negative",
+        "level": "source",
+        "prerequisites": "Exact current source and per-control prerequisites in docs/UX_SLICE_S04_01.md; two controlled accounts; human requires all agent-owned passes.",
+        "action": "Exercise invalid/duplicate/stale/CSRF/foreign/corrupt preference boundaries and timezone date rollovers; reuse unchanged passing controls.",
+        "expected": "Typed refusals preserve prior/unrelated settings and Bob; no global timezone, unsanitized content or automatic retry.",
+        "preserved": "Original mail/keys/credentials, unrelated preferences/services, account isolation and scope distinction among source/native/installed/human.",
+        "owner": "/root",
+        "reviewer": "/root/s04_01_review",
+        "status": "PARTIAL",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/timezone-selected-attempt4.log6PASS source; /home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/changed-browser-attempt3-result.jsonfocused browserPASS/2.070s; remaining originaloutcomes unmet."
+        ]
+      },
+      {
+        "id": "S04-01-recovery",
+        "outcome_ids": [
+          "settings-and-sessions"
+        ],
+        "kind": "recovery",
+        "level": "deployed",
+        "prerequisites": "Exact current source and per-control prerequisites in docs/UX_SLICE_S04_01.md; two controlled accounts; human requires all agent-owned passes.",
+        "action": "After source/audit PASS, use matching controlled obsd1 settings/mail path then restore controlled preferences.",
+        "expected": "Actual installed saved values/conversion/reset and account isolation agree; unrelated services/mail preserved and cleanup confirmed.",
+        "preserved": "Original mail/keys/credentials, unrelated preferences/services, account isolation and scope distinction among source/native/installed/human.",
+        "owner": "/root",
+        "reviewer": "/root/s04_01_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      },
+      {
+        "id": "S04-01-usability",
+        "outcome_ids": [
+          "settings-and-sessions"
+        ],
+        "kind": "usability",
+        "level": "human",
+        "prerequisites": "Exact current source and per-control prerequisites in docs/UX_SLICE_S04_01.md; two controlled accounts; human requires all agent-owned passes.",
+        "action": "Only after every required agent checklist outcome and installed independent audit PASS, request one combined remaining owner usability observation.",
+        "expected": "Owner judgment recorded separately without engineering diagnosis, repeated providerSend or credential mutation.",
+        "preserved": "Original mail/keys/credentials, unrelated preferences/services, account isolation and scope distinction among source/native/installed/human.",
+        "owner": "/root",
+        "reviewer": "/root/s04_01_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      }
+    ],
+    "engineering_exit": "All57 original checklist obligations and matching installed/source/native applicability, independent audit and cleanup PASS; pending dependencies prohibit parent closure.",
+    "human_exit": "Only after agent-owned matching installed audit passes, one concise remaining usability judgment separately recorded; reuse prior exact observations."
+  }
+}
+```
+<!-- /OSMAP_ACTIVE_WORK_ORDER -->
+
+
+### 2026-10-17 — demonstrated Settings code gaps pass; parent remains open
+
+The private fixed UTC-offset preference and GET saved-value Reset are implemented.
+Six focused local cases and six matching OpenBSD cases pass; one existing Edge
+keyboard/store-isolation journey passes in2.070s, no external/Send/script activity,
+with browser/server/private temporary environment cleanup. Native full action
+97.199s,455 inputs match before/after, fresh appce34bc30 is built but not installed.
+Independent source-delivery audit CLEAR; no additional changed-boundary QA is
+recommended. Only normal mandatory source-admission hooks remain. Source/runtime
+limits, credential/mail helpers, private keys and other stopped slices are unchanged.
+
+Retain initial selected-test assumptions, missing dependency import failures and
+first native compiler allocation failure. The changed native action reuses the
+existing qualified build profile and process-only bounded DATA/core settings; no
+production limit changed or unique failure cause claimed. Exact failed local
+settings scratch is removed; private native build stages remain retained.
+
+Reconciliation preserves all57 obligations and110 frozen legacy cases. Among54
+approved rows,43 are partially verified and11 blocked; no partial is accepted.
+Independent audit rejected eight stronger-than-written gap interpretations,
+including an invented requirement to disable permanent-delete confirmation.
+Remaining genuine groups are shared storage, service/backup/update metadata,
+language, saved delete behavior and authentic password/TOTP/recovery entry points.
+The operator is asked to resolve original dependency scope versus an explicit
+narrow amendment before another broad implementation; no requirement is silently
+waived and no parent completion/installation/human UAT is claimed.
+
+### 2026-10-17 — mandatory commit refusal and exact correction
+
+Normal signed commit attempt1 passed1770 library tests/0fail/48native ignores,
+then Clippy refused two8-argument functions. Full-action wall-clock UNKNOWN;
+no commit or hook waiver. Exact3path tuple grouping is independently CLEAR
+(b044ae01a8ffc13f63f8885927fbaffa23fdcf80a18a434482649838a2ba97de); values, call counts and security behavior remain equivalent.
+Retain prior native/browser evidence with its original source pins; binaryce34bc30
+is not rebuilt or installed. Proceed only through normal mandatory commit hooks.
+
+Normal commit attempt2 failed after73.439s: tests, Clippy and security matrices
+passed, then the existing documentation-index guard required the new checklist
+filename in inline code. Add that literal beside its existing link; source and
+behavior are unchanged. Targeted existing documentation guard passes; retain
+commit-attempt2.log SHA256af271bb250047e9578a54b27239de19e367614bea587ec8e0cebb0e10c20649e. No bypass or commit.

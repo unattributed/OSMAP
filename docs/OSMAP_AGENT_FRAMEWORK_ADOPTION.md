@@ -1,6 +1,13 @@
 # OSMAP adoption of the functional agent framework
 
-## Current operator stop — 2026-10-17
+## Current bounded authorization — 2026-10-17
+
+Resume S04-01 only under the current ledger and `UX_SLICE_S04_01.md`: preserve
+working code/evidence, repair demonstrated gaps and use minimum changed-boundary
+checks plus mandatory hooks. No other slice resumes. Keep original cross-slice
+closure dependencies explicit; no new QA framework or blanket passing-suite rerun.
+
+## Historical operator stop — 2026-10-17
 
 Development, live/native qualification and deployment are stopped by explicit
 operator direction. Only documentation preservation, signed repository commits

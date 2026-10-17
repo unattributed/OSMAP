@@ -1,6 +1,15 @@
 # Documentation
 
-## Current operator stop — 2026-10-17
+## Current bounded authorization — 2026-10-17
+
+S04-01 Settings/sessions only has resumed against its
+[single outcome/action/expected-result/actual-evidence checklist](UX_SLICE_S04_01.md)
+(`UX_SLICE_S04_01.md`).
+The first two repairs pass focused source/browser/OpenBSD checks; no installed
+or whole-slice acceptance is claimed. Other slices remain stopped. The current
+ledger carries the exact work order and preserved dependencies.
+
+## Historical operator stop — 2026-10-17
 
 Development, live/native qualification and deployment are stopped by explicit
 operator direction. Only documentation preservation, signed repository commits

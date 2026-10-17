@@ -1,6 +1,16 @@
 # OSMAP Agent Notes
 
-## Current explicit operator stop — 2026-10-17
+## Current bounded authorization — 2026-10-17
+
+The operator has resumed **S04-01 Settings and sessions only**: retain working
+implementation, finish demonstrated gaps and close against the single
+outcome/action/expected-result/actual-evidence checklist in
+`docs/UX_SLICE_S04_01.md` and the current ledger work order. Use changed-behavior
+and relevant security checks plus mandatory hooks. All other slices remain
+stopped, including S04-02. Original dependencies are retained, not waived or
+silently restarted. The stop below remains historical authority for those slices.
+
+## Historical operator stop — 2026-10-17
 
 Development and all delegated engineering/review workers are stopped. The
 operator subsequently authorized only updating documentation, committing all

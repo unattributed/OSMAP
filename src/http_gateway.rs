@@ -630,6 +630,24 @@ impl BrowserGateway for RuntimeBrowserGateway {
     ) -> Result<crate::mark_read::Preference, crate::mark_read::Error> {
         crate::mark_read::Store::new(&self.settings_dir).load(&session.record.canonical_username)
     }
+    fn load_timezone(
+        &self,
+        session: &ValidatedSession,
+    ) -> Result<crate::timezone::Preference, crate::timezone::Error> {
+        crate::timezone::Store::new(&self.settings_dir).load(&session.record.canonical_username)
+    }
+    fn save_timezone(
+        &self,
+        session: &ValidatedSession,
+        revision: u64,
+        offset: crate::timezone::FixedOffset,
+    ) -> Result<crate::timezone::Preference, crate::timezone::Error> {
+        crate::timezone::Store::new(&self.settings_dir).save(
+            &session.record.canonical_username,
+            revision,
+            offset,
+        )
+    }
     fn load_draft_location_preference(
         &self,
         session: &ValidatedSession,

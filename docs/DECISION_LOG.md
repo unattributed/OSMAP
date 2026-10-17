@@ -11160,3 +11160,37 @@ when a required OpenPGP topic-label phrase was removed while correcting the
 stale blanket unimplemented claim. Restore the exact topic label with truthful
 bounded outcome wording; the guard and claim limits remain unchanged. Retain
 the failed log and require the normal hook to pass before signing/pushing.
+
+## 2026-10-17 — bounded S04-01 correction, no implementation replacement
+
+The operator resumes only Settings and sessions. Preserve existing stores,
+forms, session authority and inspected matching evidence. One checklist retains
+all57 original mapped controls; a partial result, unknown-state negative or
+disabled control cannot satisfy a required positive. Password/recovery/quota
+dependencies remain explicit and do not restart their stopped owning slices.
+
+First demonstrated repairs: replace disabled Timezone with an account-private
+CAS preference for explicit fixed UTC offsets, applied through typed mail view
+context before escaping. No DST/IANA promise, process-global timezone, HTML
+replacement, message-byte/canonical-date modification or new dependency. Replace
+General's disabled Reset with an authenticated GET reload of the saved section,
+discarding unsaved edits without resetting defaults or writing any preference.
+Keep corrupt/unavailable state truthful. Test these changed behaviors and their
+account/CSRF/stale boundaries, then existing mandatory hooks; no broad unchanged
+browser/native replay. Root integrates; timezone developer and independent
+evidence/reviewer roles are assigned in the same active ledger.
+
+### 2026-10-17 — reuse bounded evidence after mechanical Clippy correction
+
+Normal commit attempt1 passes1770 library tests/0fail/48native ignores but fails
+two8-argument signatures. Correct only argument grouping in3paths, without lint
+waiver or behavioral change. Independent arity review CLEAR (b044ae01a8ffc13f63f8885927fbaffa23fdcf80a18a434482649838a2ba97de).
+Reuse prior exact source/native/browser behavior evidence with explicit source-pin
+limits and normal hooks; do not repeat native/browser for this mechanical delta.
+Prior native binary is not rebuilt/installed; S04-01 remains open and other slices
+remain stopped. Full commit-attempt1 elapsed UNKNOWN, failure log retained.
+
+Commit attempt2 retained73.439s and refuses a missing documentation-index
+inline-code filename after code/Clippy/matrix passes. Add the exact checklist
+filename beside its link; existing documentation guard nowPASS. No source,
+validator or application behavior changed and no native/browser repetition.

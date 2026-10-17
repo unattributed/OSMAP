@@ -2180,9 +2180,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/repository-sync-stop-20261017/documentation-commit-attempt2.log",
+            "scope": "Baseline mandatory gate actually passes security_summary_owner_failure_count_and_literal_events and security_summary_excess_and_duplicate_records_are_unknown: owned retained count/literal events, foreign or invalid data Unknown. Existing source uses factual sign-in/password-history/public binding states; this is bounded source test evidence, not a current installed complete status-feed or parent acceptance. Retained artifact sha256=f785a73b6fd0d8af1b67c1333cec684364b9b56a0f7ae0fc8d7b6deb7b74cd8a."
+          }
+        ]
       }
     },
     {
@@ -2659,9 +2665,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
+        "status": "BLOCKED",
         "executed": false,
-        "evidence": []
+        "evidence": [
+          {
+            "kind": "dependency",
+            "path": "docs/UX_SLICE_S04_01.md",
+            "scope": "Current General/Copies say quota unavailable; shared mail/document authority and concurrent reservations remain outstanding. S04-01 original requirement remains open. This records a demonstrated gap or missing exact evidence, not implementation absence inferred from an empty register. Timezone and Reset await new actual root-owned results; other stopped slices are not restarted."
+          }
+        ]
       }
     },
     {
@@ -2696,9 +2708,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
+        "status": "BLOCKED",
         "executed": false,
-        "evidence": []
+        "evidence": [
+          {
+            "kind": "dependency",
+            "path": "docs/UX_SLICE_S04_01.md",
+            "scope": "Current General/Copies say quota unavailable; shared mail/document authority and concurrent reservations remain outstanding. S04-01 original requirement remains open. This records a demonstrated gap or missing exact evidence, not implementation absence inferred from an empty register. Timezone and Reset await new actual root-owned results; other stopped slices are not restarted."
+          }
+        ]
       }
     },
     {
@@ -2733,9 +2751,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
+        "status": "BLOCKED",
         "executed": false,
-        "evidence": []
+        "evidence": [
+          {
+            "kind": "gap",
+            "path": "docs/UX_SLICE_S04_01.md",
+            "scope": "Current Welcome/General expose Unknown; no measured service/detail, backup record or version-feed positive evidenced. S04-01 original requirement remains open. This records a demonstrated gap or missing exact evidence, not implementation absence inferred from an empty register. Timezone and Reset await new actual root-owned results; other stopped slices are not restarted."
+          }
+        ]
       }
     },
     {
@@ -2770,9 +2794,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
+        "status": "BLOCKED",
         "executed": false,
-        "evidence": []
+        "evidence": [
+          {
+            "kind": "gap",
+            "path": "docs/UX_SLICE_S04_01.md",
+            "scope": "Current Welcome/General expose Unknown; no measured service/detail, backup record or version-feed positive evidenced. S04-01 original requirement remains open. This records a demonstrated gap or missing exact evidence, not implementation absence inferred from an empty register. Timezone and Reset await new actual root-owned results; other stopped slices are not restarted."
+          }
+        ]
       }
     },
     {
@@ -2807,9 +2837,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
+        "status": "BLOCKED",
         "executed": false,
-        "evidence": []
+        "evidence": [
+          {
+            "kind": "gap",
+            "path": "docs/UX_SLICE_S04_01.md",
+            "scope": "Current Welcome/General expose Unknown; no measured service/detail, backup record or version-feed positive evidenced. S04-01 original requirement remains open. This records a demonstrated gap or missing exact evidence, not implementation absence inferred from an empty register. Timezone and Reset await new actual root-owned results; other stopped slices are not restarted."
+          }
+        ]
       }
     },
     {
@@ -9827,9 +9863,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/run-20260930/security-integrated-edge/report.json",
+            "scope": "Historical source-generated two-account security/settings browser result PASS with real session stores and account isolation; Settings/Security navigation is implemented. This report does not independently establish every positive/negative criterion, current installed parity or human acceptance. Retained artifact sha256=474564591896e3ad6984cbe10d3d2f3f6ad74392296fa7393dec3d797308a339."
+          }
+        ]
       }
     },
     {
@@ -9879,9 +9921,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/run-20260930/security-integrated-edge/report.json",
+            "scope": "Historical source-generated two-account security/settings browser result PASS with real session stores and account isolation; Settings/Security navigation is implemented. This report does not independently establish every positive/negative criterion, current installed parity or human acceptance. Retained artifact sha256=474564591896e3ad6984cbe10d3d2f3f6ad74392296fa7393dec3d797308a339."
+          }
+        ]
       }
     },
     {
@@ -10227,9 +10275,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/run-20260930/security-integrated-edge/report.json",
+            "scope": "Historical source-generated two-account security/settings browser result PASS with real session stores and account isolation; Settings/Security navigation is implemented. This report does not independently establish every positive/negative criterion, current installed parity or human acceptance. Retained artifact sha256=474564591896e3ad6984cbe10d3d2f3f6ad74392296fa7393dec3d797308a339."
+          }
+        ]
       }
     },
     {
@@ -10279,9 +10333,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/notifications-preferences/independent-delivery-review.json",
+            "scope": "Independent reconciliation PASS for historical actual Digest engineering source6390a40: real Serve34 original SessionIssued/SessionRevoked rows/read badge/kinds/Bob isolation, private CAS/reload and matching recorded installation. In-app events only; no scheduled/provider/email digest. Does not prove every current Security recent-event criterion or current installed parity; human UAT NOT RUN. Retained artifact sha256=29c85c7f885e8c8a4dd709785deaacb0b1e5e7a03c5ee54a046d5ad70d47abf1."
+          }
+        ]
       }
     },
     {
@@ -10445,9 +10505,20 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/timezone-selected-attempt4.log",
+            "scope": "Actual6 changed tests PASS/0failure/0skip, SHA2566d0306acf7ec3db2bdd797736428f46abe9d419b79876a44c99908993d6517ee. Real Runtime form/store/reload/Bob isolated from separate StubGateway mail-consumer proof; not installed/native/browserlogin acceptance."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/changed-browser-attempt3-result.json",
+            "scope": "Actual existing bounded Edge fixture exit0/2.070s, SHA25651976f025e5087012e9833fc6b313d13c2f7b46cdb90dcacbb257aa9ab856779. Keyboard timezone save/reload/synthetic-mail conversion, five unsaved fields Reset viaGET restores saved values/noPOST/no store-byte changes; Bob/unrelatedReading preserved. Realstores/syntheticauthmail; browser/server/tempdependency cleaned. Installed qualification open."
+          }
+        ]
       }
     },
     {
@@ -10482,9 +10553,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
+        "status": "BLOCKED",
         "executed": false,
-        "evidence": []
+        "evidence": [
+          {
+            "kind": "gap",
+            "path": "docs/UX_SLICE_S04_01.md",
+            "scope": "src/settings_general_ui.rs fixes English and disables language; no saved supported-language workflow. S04-01 original requirement remains open. This records a demonstrated gap or missing exact evidence, not implementation absence inferred from an empty register. Timezone and Reset await new actual root-owned results; other stopped slices are not restarted."
+          }
+        ]
       }
     },
     {
@@ -10566,9 +10643,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/run-20260930/appearance-edge/workflows.json",
+            "scope": "Historical Chromium synthetic-authentication workflow PASS with real preference store: actual message spacing/fonts/avatars/snippets/reader layout, fresh context account persistence, Bob defaults and invalid/duplicate/no-CSRF refusal. This is historical matching-source browser evidence, not current installed verification, every control negative or human acceptance. Retained artifact sha256=6f79855c886eeccfab9f71ab34c6c36189c2406a48af09a8efc27e0df8287ced."
+          }
+        ]
       }
     },
     {
@@ -10608,9 +10691,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/run-20260930/appearance-edge/workflows.json",
+            "scope": "Historical Chromium synthetic-authentication workflow PASS with real preference store: actual message spacing/fonts/avatars/snippets/reader layout, fresh context account persistence, Bob defaults and invalid/duplicate/no-CSRF refusal. This is historical matching-source browser evidence, not current installed verification, every control negative or human acceptance. Retained artifact sha256=6f79855c886eeccfab9f71ab34c6c36189c2406a48af09a8efc27e0df8287ced."
+          }
+        ]
       }
     },
     {
@@ -10650,9 +10739,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/run-20260930/appearance-edge/workflows.json",
+            "scope": "Historical Chromium synthetic-authentication workflow PASS with real preference store: actual message spacing/fonts/avatars/snippets/reader layout, fresh context account persistence, Bob defaults and invalid/duplicate/no-CSRF refusal. This is historical matching-source browser evidence, not current installed verification, every control negative or human acceptance. Retained artifact sha256=6f79855c886eeccfab9f71ab34c6c36189c2406a48af09a8efc27e0df8287ced."
+          }
+        ]
       }
     },
     {
@@ -10702,9 +10797,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/run-20260930/reading-edge/workflows.json",
+            "scope": "Historical synthetic mail browser workflow PASS with real stores: Drafts then Inbox login uses stored account values despite forged cookie; restart restores state and Bob remains independent. No new execution/current installed qualification or complete negative matrix acceptance. Retained artifact sha256=d71af750d2a54e3364eb176e783c4365209f68f643a173df1c7cd48c19c0bf77."
+          }
+        ]
       }
     },
     {
@@ -10744,9 +10845,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/run-20260930/general-final-edge/workflows.json",
+            "scope": "Historical generated General Archive save/reload and actual real-store persistence preserve unrelated appearance/HTML preferences; missing mailbox is refused and Bob stays isolated. Exact real backend Archive move destination proof is still unreconciled; this is persistence coverage only, not full control/current installed/human PASS. Retained artifact sha256=70089c8046fdb948196ca1d36ec2579eba0209c65538d7a041f11ed7d06e36d5."
+          }
+        ]
       }
     },
     {
@@ -10781,9 +10888,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
+        "status": "BLOCKED",
         "executed": false,
-        "evidence": []
+        "evidence": [
+          {
+            "kind": "gap",
+            "path": "docs/UX_SLICE_S04_01.md",
+            "scope": "General disables Delete behaviour; Copies labels explicit message controls, with no saved Delete-action selector. E9 commands do not prove a preference. S04-01 original requirement remains open. This records a demonstrated gap or missing exact evidence, not implementation absence inferred from an empty register. Timezone and Reset await new actual root-owned results; other stopped slices are not restarted."
+          }
+        ]
       }
     },
     {
@@ -10818,9 +10931,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s02/revalidation-20261003/mark-read/browser-attempt1/report.json",
+            "scope": "Historical actual router/stores/opening/flag-gateway synthetic loopback browser PASS: General Manual mirrors Reading, OnOpen persists, exact opening POST changes Seen, stale CAS409 preserves state, GET/reload/Back stay read-only. Six recorded opening POSTs; no live operator mutation or current installed/human proof. Retained artifact sha256=dea323b7ef4c9d5fb1c38f868e1c4dfbf7376510af93d17cb66c723960cae979."
+          }
+        ]
       }
     },
     {
@@ -11105,9 +11224,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/run-20260930/privacy-final-edge/report.json",
+            "scope": "Historical synthetic browser PASS: real renderer switches plain/protected parts, remote image stripped, persisted choice/account isolation and zero external/script/send requests. This covers actual sanitization/remote-content boundary in the recorded fixture, not every hostile input or current installed parity. Retained artifact sha256=23b04c0617803eeab3f21e34915cd31534ea6c41a6ca547fbe7aa450fc1777e9."
+          }
+        ]
       }
     },
     {
@@ -11142,9 +11267,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/run-20260930/privacy-final-edge/report.json",
+            "scope": "Historical synthetic browser PASS: real renderer switches plain/protected parts, remote image stripped, persisted choice/account isolation and zero external/script/send requests. This covers actual sanitization/remote-content boundary in the recorded fixture, not every hostile input or current installed parity. Retained artifact sha256=23b04c0617803eeab3f21e34915cd31534ea6c41a6ca547fbe7aa450fc1777e9."
+          }
+        ]
       }
     },
     {
@@ -11179,9 +11310,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/repository-sync-stop-20261017/documentation-commit-attempt2.log",
+            "scope": "Baseline mandatory gate actually passes composer_hash_allowance_never_reaches_reader_auth_or_other_pages and source_is_authenticated_escaped_bounded_and_preserves_reader_context: default response CSP remains strict, Compose gets only its exact pinned hash, source response matches browser_csp. No blanket script allowance; not current installed wire/browser qualification or complete control acceptance. Retained artifact sha256=f785a73b6fd0d8af1b67c1333cec684364b9b56a0f7ae0fc8d7b6deb7b74cd8a."
+          }
+        ]
       }
     },
     {
@@ -11216,9 +11353,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/repository-sync-stop-20261017/documentation-commit-attempt2.log",
+            "scope": "Baseline mandatory gate actually passes source_is_authenticated_escaped_bounded_and_preserves_reader_context: unauthenticated source redirects without dispatch, source script text escaped/inert, no image/script element, Cache-Control no-store and exact browser CSP; wrong account/session/identity/oversize checks are in the executed source test. StubGateway synthetic content, not current installed/operator message proof. Retained artifact sha256=f785a73b6fd0d8af1b67c1333cec684364b9b56a0f7ae0fc8d7b6deb7b74cd8a."
+          }
+        ]
       }
     },
     {
@@ -11290,9 +11433,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
+        "status": "BLOCKED",
         "executed": false,
-        "evidence": []
+        "evidence": [
+          {
+            "kind": "dependency",
+            "path": "docs/UX_SLICE_S04_01.md",
+            "scope": "Actual own-password form/workflow is unqualified and S04-02 remains stopped; a navigation card is not its required positive. S04-01 original requirement remains open. This records a demonstrated gap or missing exact evidence, not implementation absence inferred from an empty register. Timezone and Reset await new actual root-owned results; other stopped slices are not restarted."
+          }
+        ]
       }
     },
     {
@@ -11327,9 +11476,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
+        "status": "BLOCKED",
         "executed": false,
-        "evidence": []
+        "evidence": [
+          {
+            "kind": "gap",
+            "path": "docs/UX_SLICE_S04_01.md",
+            "scope": "Operator TOTP_ROTATION=PASS is retained; exact current account-state/manage-route evidence must be linked, not generalized to recovery. S04-01 original requirement remains open. This records a demonstrated gap or missing exact evidence, not implementation absence inferred from an empty register. Timezone and Reset await new actual root-owned results; other stopped slices are not restarted."
+          }
+        ]
       }
     },
     {
@@ -11364,9 +11519,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
+        "status": "BLOCKED",
         "executed": false,
-        "evidence": []
+        "evidence": [
+          {
+            "kind": "dependency",
+            "path": "docs/UX_SLICE_S04_01.md",
+            "scope": "Recovery-contact proof lifecycle remains outstanding/stopped S04-03/04; Unknown/unavailable is negative-only. S04-01 original requirement remains open. This records a demonstrated gap or missing exact evidence, not implementation absence inferred from an empty register. Timezone and Reset await new actual root-owned results; other stopped slices are not restarted."
+          }
+        ]
       }
     },
     {
@@ -11517,9 +11678,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/run-20260930/general-final-edge/workflows.json",
+            "scope": "Historical real-account-store General appearance/archive/composition saves survive fresh login/server restart and preserve unrelated values; invalid/missing/duplicate/no-CSRF writes preserve durable bytes and Bob remains independent. This covers working saves only; fixed timezone/language/Delete and blocked dependency positives prevent full Save changes acceptance. Retained artifact sha256=70089c8046fdb948196ca1d36ec2579eba0209c65538d7a041f11ed7d06e36d5."
+          }
+        ]
       }
     },
     {
@@ -11554,9 +11721,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/changed-browser-attempt3-result.json",
+            "scope": "Actual existing bounded Edge fixture exit0/2.070s, SHA25651976f025e5087012e9833fc6b313d13c2f7b46cdb90dcacbb257aa9ab856779. Keyboard timezone save/reload/synthetic-mail conversion, five unsaved fields Reset viaGET restores saved values/noPOST/no store-byte changes; Bob/unrelatedReading preserved. Realstores/syntheticauthmail; browser/server/tempdependency cleaned. Installed qualification open."
+          }
+        ]
       }
     },
     {
@@ -11763,9 +11936,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/run-20260930/appearance-edge/workflows.json",
+            "scope": "Historical Chromium synthetic-authentication workflow PASS with real preference store: actual message spacing/fonts/avatars/snippets/reader layout, fresh context account persistence, Bob defaults and invalid/duplicate/no-CSRF refusal. This is historical matching-source browser evidence, not current installed verification, every control negative or human acceptance. Retained artifact sha256=6f79855c886eeccfab9f71ab34c6c36189c2406a48af09a8efc27e0df8287ced."
+          }
+        ]
       }
     },
     {
@@ -11800,9 +11979,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/run-20260930/appearance-edge/workflows.json",
+            "scope": "Historical Chromium synthetic-authentication workflow PASS with real preference store: actual message spacing/fonts/avatars/snippets/reader layout, fresh context account persistence, Bob defaults and invalid/duplicate/no-CSRF refusal. This is historical matching-source browser evidence, not current installed verification, every control negative or human acceptance. Retained artifact sha256=6f79855c886eeccfab9f71ab34c6c36189c2406a48af09a8efc27e0df8287ced."
+          }
+        ]
       }
     },
     {
@@ -11837,9 +12022,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/run-20260930/appearance-edge/workflows.json",
+            "scope": "Historical Chromium synthetic-authentication workflow PASS with real preference store: actual message spacing/fonts/avatars/snippets/reader layout, fresh context account persistence, Bob defaults and invalid/duplicate/no-CSRF refusal. This is historical matching-source browser evidence, not current installed verification, every control negative or human acceptance. Retained artifact sha256=6f79855c886eeccfab9f71ab34c6c36189c2406a48af09a8efc27e0df8287ced."
+          }
+        ]
       }
     },
     {
@@ -11874,9 +12065,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/run-20260930/appearance-edge/workflows.json",
+            "scope": "Historical Chromium synthetic-authentication workflow PASS with real preference store: actual message spacing/fonts/avatars/snippets/reader layout, fresh context account persistence, Bob defaults and invalid/duplicate/no-CSRF refusal. This is historical matching-source browser evidence, not current installed verification, every control negative or human acceptance. Retained artifact sha256=6f79855c886eeccfab9f71ab34c6c36189c2406a48af09a8efc27e0df8287ced."
+          }
+        ]
       }
     },
     {
@@ -11911,9 +12108,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/run-20260930/appearance-edge/workflows.json",
+            "scope": "Historical Chromium synthetic-authentication workflow PASS with real preference store: actual message spacing/fonts/avatars/snippets/reader layout, fresh context account persistence, Bob defaults and invalid/duplicate/no-CSRF refusal. This is historical matching-source browser evidence, not current installed verification, every control negative or human acceptance. Retained artifact sha256=6f79855c886eeccfab9f71ab34c6c36189c2406a48af09a8efc27e0df8287ced."
+          }
+        ]
       }
     },
     {
@@ -11948,9 +12151,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/run-20260930/appearance-edge/workflows.json",
+            "scope": "Historical actual selected preferences affect real message presentation in a real account preference store. Exact unsaved-versus-saved preview distinction is unreconciled; this partial evidence does not close that criterion or establish current installed parity. Retained artifact sha256=6f79855c886eeccfab9f71ab34c6c36189c2406a48af09a8efc27e0df8287ced."
+          }
+        ]
       }
     },
     {
@@ -11985,9 +12194,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/run-20260930/appearance-edge/workflows.json",
+            "scope": "Historical Chromium synthetic-authentication workflow PASS with real preference store: actual message spacing/fonts/avatars/snippets/reader layout, fresh context account persistence, Bob defaults and invalid/duplicate/no-CSRF refusal. This is historical matching-source browser evidence, not current installed verification, every control negative or human acceptance. Retained artifact sha256=6f79855c886eeccfab9f71ab34c6c36189c2406a48af09a8efc27e0df8287ced."
+          }
+        ]
       }
     },
     {
@@ -12646,9 +12861,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/run-20260930/reading-edge/workflows.json",
+            "scope": "Historical synthetic mail browser workflow PASS with real stores: Drafts then Inbox login uses stored account values despite forged cookie; restart restores state and Bob remains independent. No new execution/current installed qualification or complete negative matrix acceptance. Retained artifact sha256=d71af750d2a54e3364eb176e783c4365209f68f643a173df1c7cd48c19c0bf77."
+          }
+        ]
       }
     },
     {
@@ -13071,9 +13292,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s03/revalidation-20261003/sent-location/native/native-sent-location-attempt2-result.json",
+            "scope": "Historical matching-source native Sent-location case PASS: generated captured destination/current role/unavailable/Off; exact four-case run eight loopback SMTP acceptances, five authenticated append attempts and four disposable Dovecot saves, 331-input parity. This result explicitly was not installation; no provider/login/private crypto/human or atomic external IMAP race guarantee. Retained artifact sha256=0fcc14fa2550491273cb7b8779a0e4b78c11e3cdd0cfd2694971022191a41565."
+          }
+        ]
       }
     },
     {
@@ -13113,9 +13340,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s03/revalidation-20261003/draft-location/native/native-draft-location-attempt4-result.json",
+            "scope": "Historical matching-source native private Draft-location case PASS: generated choice/save/resume, original existing-ID placement, missing/unsafe-root refusal, combined recovery quota/discard; Draft case zero transport, 337-input parity. Private OSMAP files, not IMAP mirror. Result explicitly not installed/current-source/human acceptance. Retained artifact sha256=c08a4ca690316b03ec2f15035bdbec0cbb6f348d35f7c8de70161ddda6b17d57."
+          }
+        ]
       }
     },
     {
@@ -13217,9 +13450,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/run-20260930/composition-edge/workflows.json",
+            "scope": "Historical synthetic browser/real-store PASS: native saved reply placement survives restart, new replies/reply-all preserve quoted literal text, legacy format-only save preserves placement, existing drafts unchanged and Bob isolated. No provider submission, current installed proof or whole-control acceptance. Retained artifact sha256=37361967c69b4174ed82ef1d79b37b2ab0dfe372004a54e6e4ede17b311d19e5."
+          }
+        ]
       }
     },
     {
@@ -13274,9 +13513,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/run-20260930/signature-integrated-edge/report.json",
+            "scope": "Historical signature browser report PASS, zero sends/external/scripts; associated ledger entry records private versioned None/Default footer insertion once into new blank/reply/reply-all/forward composers, saved-draft preservation and owner/stale/restart/corruption controls. Ordinary text footer is distinct from OpenPGP signing. Not current installed or full human acceptance. Retained artifact sha256=d609d385df62efe05c976ef41dca444ae8551af5e81a529d4b8ee862c63e7946."
+          }
+        ]
       }
     },
     {
@@ -13886,9 +14131,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/run-20260930/general-final-edge/workflows.json",
+            "scope": "Historical generated General Archive save/reload and actual real-store persistence preserve unrelated appearance/HTML preferences; missing mailbox is refused and Bob stays isolated. Exact real backend Archive move destination proof is still unreconciled; this is persistence coverage only, not full control/current installed/human PASS. Retained artifact sha256=70089c8046fdb948196ca1d36ec2579eba0209c65538d7a041f11ed7d06e36d5."
+          }
+        ]
       }
     },
     {
@@ -13923,9 +14174,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s02/revalidation-20261003/bin-folder/native-result.json",
+            "scope": "Historical matching-source OpenBSD native Bin tests PASS with 289 inputs, 19 Bin cases, 25 list cases and two native integrations; ledger binds saved Bin/Restore and account-isolation outcomes. No operator mail mutation/Send; current installed parity and full human acceptance are not inferred. Retained artifact sha256=88ec6060f6aaedcc9bbf6c54b8de538cdfe21525bd60084ddcb2964d2b9c0759."
+          }
+        ]
       }
     },
     {
@@ -13960,9 +14217,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
+        "status": "BLOCKED",
         "executed": false,
-        "evidence": []
+        "evidence": [
+          {
+            "kind": "gap",
+            "path": "docs/UX_SLICE_S04_01.md",
+            "scope": "General disables Delete behaviour; Copies labels explicit message controls, with no saved Delete-action selector. E9 commands do not prove a preference. S04-01 original requirement remains open. This records a demonstrated gap or missing exact evidence, not implementation absence inferred from an empty register. Timezone and Reset await new actual root-owned results; other stopped slices are not restarted."
+          }
+        ]
       }
     },
     {
@@ -13997,9 +14260,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s02/revalidation-20261003/permanent-delete/native-retention-http-attempt1-result.json",
+            "scope": "Historical matching-source native permanent-delete HTTP run PASS: 13 single HTTP,10 bulk HTTP,one single and one bulk real disposable BrowserApp/Runtime/helper/Dovecot case; inspect/Cancel/confirm and fresh retention revision/authorization checks. User-configurable bypass is not required by this positive: Cancel preserves; explicit confirmation permits only authorized intended tuples. Issued sessions, same-UID fixture, no operator policy or current installed claim. Retained artifact sha256=b14f56b2e4ad57070cf6bdcab11b3b645dc7c77948a0f95412e33314606f970f."
+          }
+        ]
       }
     },
     {
@@ -16782,9 +17051,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/repository-sync-stop-20261017/documentation-commit-attempt2.log",
+            "scope": "Baseline mandatory gate actually passes security_summary_owner_failure_count_and_literal_events: seven records with one revoked render exactly6 active browser sessions; foreign/denied data becomes unknown, excess/duplicate records unknown in separate passing test. Retained owned scope is measured; complete expiry/list/current installed qualification not inferred. Retained artifact sha256=f785a73b6fd0d8af1b67c1333cec684364b9b56a0f7ae0fc8d7b6deb7b74cd8a."
+          }
+        ]
       }
     },
     {
@@ -16834,9 +17109,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/run-20260930/security-integrated-edge/report.json",
+            "scope": "Historical source-generated two-account security/settings browser result PASS with real session stores and account isolation; Settings/Security navigation is implemented. This report does not independently establish every positive/negative criterion, current installed parity or human acceptance. Retained artifact sha256=474564591896e3ad6984cbe10d3d2f3f6ad74392296fa7393dec3d797308a339."
+          }
+        ]
       }
     },
     {
@@ -18674,9 +18955,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/run-20260930/sessions-edge/workflows.json",
+            "scope": "Historical synthetic authentication with actual SessionService/store: browser target/other/all revocation invalidates the affected contexts, preserves intended current/unselected scope and foreign Bob account; JavaScript disabled and zero external requests. Browser-token scope is distinct from independent mail credentials/connections; not current installed or full negative-matrix/human acceptance. Retained artifact sha256=6edd1c91c20578b3159796d91ad61ddcaa35ba92841fc20c927f37bb39deed68."
+          }
+        ]
       }
     },
     {
@@ -18716,9 +19003,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/repository-sync-stop-20261017/documentation-commit-attempt2.log",
+            "scope": "Baseline mandatory gate actually passes sessions_page_renders_for_valid_session and security_summary_owner_failure_count_and_literal_events. Controlled session displays retained device/browser/remote fields; markup-like device metadata is escaped and private unrelated metadata omitted from overview. Existing Sessions source renders supplied device or Unknown. Complete missing/long/expired metadata matrix and current installed proof remain unreconciled. Retained artifact sha256=f785a73b6fd0d8af1b67c1333cec684364b9b56a0f7ae0fc8d7b6deb7b74cd8a."
+          }
+        ]
       }
     },
     {
@@ -18758,9 +19051,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/repository-sync-stop-20261017/documentation-commit-attempt2.log",
+            "scope": "Baseline mandatory gate actually passes sessions_page_renders_for_valid_session, including expected Firefox display from controlled recorded metadata. Existing reported_browser parser emits bounded known product/major or Unknown, escaped on output. This is partial actual source execution; exhaustive malformed/missing metadata and current installed/human proof not claimed. Retained artifact sha256=f785a73b6fd0d8af1b67c1333cec684364b9b56a0f7ae0fc8d7b6deb7b74cd8a."
+          }
+        ]
       }
     },
     {
@@ -18800,9 +19099,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/run-20260930/sessions-edge/workflows.json",
+            "scope": "Historical real-session-store browser result explicitly confirms truthful Unknown location; no guessed location invented. Known-location authoritative positive and complete long/escaped/expired metadata matrix remain unreconciled; no current installed/human claim. Retained artifact sha256=6edd1c91c20578b3159796d91ad61ddcaa35ba92841fc20c927f37bb39deed68."
+          }
+        ]
       }
     },
     {
@@ -18842,9 +19147,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/repository-sync-stop-20261017/documentation-commit-attempt2.log",
+            "scope": "Baseline mandatory gate actually passes validate_session_updates_last_seen and simultaneous_session_validations_do_not_corrupt_last_seen: fixed-clock authenticated validation persists last_seen_at200. Existing Sessions renderer displays retained last_seen_at as UTC. This proves update/store producer, not a newly executed installed browser render/complete control. Retained artifact sha256=f785a73b6fd0d8af1b67c1333cec684364b9b56a0f7ae0fc8d7b6deb7b74cd8a."
+          }
+        ]
       }
     },
     {
@@ -18884,9 +19195,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/run-20260930/sessions-edge/workflows.json",
+            "scope": "Historical real-session-store browser execution distinguishes current/other contexts and denies revoked contexts while preserving intended current/unselected sessions. Full exact expired-row presentation matrix remains unreconciled; no current installed/human claim. Retained artifact sha256=6edd1c91c20578b3159796d91ad61ddcaa35ba92841fc20c927f37bb39deed68."
+          }
+        ]
       }
     },
     {
@@ -18926,9 +19243,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/run-20260930/sessions-edge/workflows.json",
+            "scope": "Historical synthetic authentication with actual SessionService/store: browser target/other/all revocation invalidates the affected contexts, preserves intended current/unselected scope and foreign Bob account; JavaScript disabled and zero external requests. Browser-token scope is distinct from independent mail credentials/connections; not current installed or full negative-matrix/human acceptance. Retained artifact sha256=6edd1c91c20578b3159796d91ad61ddcaa35ba92841fc20c927f37bb39deed68."
+          }
+        ]
       }
     },
     {
@@ -18968,9 +19291,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/run-20260930/sessions-edge/workflows.json",
+            "scope": "Historical synthetic authentication with actual SessionService/store: browser target/other/all revocation invalidates the affected contexts, preserves intended current/unselected scope and foreign Bob account; JavaScript disabled and zero external requests. Browser-token scope is distinct from independent mail credentials/connections; not current installed or full negative-matrix/human acceptance. Retained artifact sha256=6edd1c91c20578b3159796d91ad61ddcaa35ba92841fc20c927f37bb39deed68."
+          }
+        ]
       }
     },
     {

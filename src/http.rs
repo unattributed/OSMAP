@@ -51,6 +51,7 @@ mod routes_message_open;
 mod routes_sender_identity;
 mod routes_sent_copy;
 mod routes_sent_location;
+mod routes_timezone;
 pub(crate) use folder_tree::FolderTree;
 mod routes_all_search;
 mod routes_bulk_delete;
@@ -1032,6 +1033,9 @@ mod tests {
     mod mark_read_tests {
         include!("http/mark_read_tests.rs");
     }
+    mod timezone_tests {
+        include!("http/timezone_tests.rs");
+    }
     mod draft_location_tests {
         include!("http/draft_location_tests.rs");
     }
@@ -1102,6 +1106,7 @@ mod tests {
         >,
         delete_list_decision: Arc<Mutex<Option<BrowserMessageListDecision>>>,
         mark_read_store: Option<crate::mark_read::Store>,
+        timezone_store: Option<crate::timezone::Store>,
         draft_location_store: Option<crate::draft_location::Store>,
         sent_copy_store: Option<crate::sent_copy::Store>,
         sent_location_store: Option<crate::sent_location::Store>,
@@ -1168,6 +1173,7 @@ mod tests {
                 delete_results: Arc::new(Mutex::new(std::collections::VecDeque::new())),
                 delete_list_decision: Arc::new(Mutex::new(None)),
                 mark_read_store: None,
+                timezone_store: None,
                 draft_location_store: None,
                 sent_copy_store: None,
                 sent_location_store: None,
@@ -1478,6 +1484,26 @@ mod tests {
                 .as_ref()
                 .ok_or(crate::after_archive::Error::Unavailable)?
                 .save(&s.record.canonical_username, revision, choice)
+        }
+        fn load_timezone(
+            &self,
+            session: &ValidatedSession,
+        ) -> Result<crate::timezone::Preference, crate::timezone::Error> {
+            self.timezone_store.as_ref().map_or_else(
+                || Ok(crate::timezone::Preference::default()),
+                |store| store.load(&session.record.canonical_username),
+            )
+        }
+        fn save_timezone(
+            &self,
+            session: &ValidatedSession,
+            revision: u64,
+            offset: crate::timezone::FixedOffset,
+        ) -> Result<crate::timezone::Preference, crate::timezone::Error> {
+            self.timezone_store
+                .as_ref()
+                .ok_or(crate::timezone::Error::Unavailable)?
+                .save(&session.record.canonical_username, revision, offset)
         }
         fn load_mark_read_policy(
             &self,

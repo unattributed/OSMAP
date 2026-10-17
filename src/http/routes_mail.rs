@@ -789,6 +789,11 @@ where
                     view.recover_opened_messages(messages);
                 }
                 let mut reader = MailReaderContext {
+                    timezone: self
+                        .gateway
+                        .load_timezone(&validated_session)
+                        .map(|saved| saved.offset)
+                        .unwrap_or_default(),
                     labels,
                     pane: self.selected_message_pane(
                         context,
@@ -1086,6 +1091,11 @@ where
                     &mut audit_events,
                 );
                 let mut reader = MailReaderContext {
+                    timezone: self
+                        .gateway
+                        .load_timezone(&validated_session)
+                        .map(|saved| saved.offset)
+                        .unwrap_or_default(),
                     pane,
                     labels: self.owned_label_record(&validated_session),
                     bin_mailbox_name: self
@@ -1362,6 +1372,11 @@ where
                 };
 
                 let reader_context = MailReaderContext {
+                    timezone: self
+                        .gateway
+                        .load_timezone(&validated_session)
+                        .map(|saved| saved.offset)
+                        .unwrap_or_default(),
                     labels: self.owned_label_record(&validated_session),
                     sent_role: self.confirmed_sent_folder_role(
                         context,

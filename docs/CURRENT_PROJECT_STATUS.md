@@ -14,6 +14,40 @@ statement as provenance rather than current release posture.
 
 ## Current source posture
 
+### Current bounded resumption — S04-01 only, 2026-10-17
+
+The operator has authorized retaining working Settings/sessions and finishing
+only demonstrated gaps against [one checklist](UX_SLICE_S04_01.md). It preserves
+all57 mapped obligations and distinguishes reusable evidence, partial proof,
+actual gaps and stopped dependencies. Timezone and General Reset are the first
+bounded repairs. This is not parent-slice closure; S04-02 and other slices remain
+stopped. No password form activation or password-test resumption is authorized.
+The current machine-readable work order is in the execution ledger; historical
+stopped-work records below remain unchanged provenance.
+
+The first two code gaps now pass their defined changed tests: private CAS fixed
+UTC offsets affect typed mailbox/search/reader/Archive Received display, and
+General Reset reloads saved values without writes. Six local and six OpenBSD
+tests pass; one bounded Edge keyboard/store-isolation check passes. V10 and V14
+pass and independent source-delivery audit is CLEAR. The prior-source OpenBSD app
+`ce34bc302c60bca94fce7dc52717c2aa549fc63df94d98a1aad6fca60c8a5362`
+is built, **not installed**. Subsequent three-file argument grouping is independently
+reviewed as behavior-equivalent; that binary is not claimed rebuilt. Normal
+commit attempt1 passed1770 library tests then failed two Clippy arity rules;
+mechanical correction retains that failure and requires normal hooks.
+Prior compiler allocation failure is retained;
+the successful changed build uses the existing qualified build profile without
+changing production limits. Native stages remain retained; no group-absence
+claim is made from leader reap.
+
+The54 approved S04-01 result rows now reconcile43 partial executed scopes and11
+blocked requirements; the3 legacy rows remain unchanged. These are evidence
+states, not43 fully accepted controls. Original unfinished storage/status,
+language, delete-choice and authentic workflow-entry obligations remain explicit.
+The operator's direction to deliver code when defined tests pass does not turn
+those missing requirements into a completed parent slice. Source admission
+still requires normal hooks/signing; no extra validation campaign is planned.
+
 ### Operator stop and source preservation, 2026-10-17
 
 **Development is stopped by explicit operator instruction.** The subsequent

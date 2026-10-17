@@ -199,6 +199,20 @@ pub trait BrowserGateway {
     ) -> Result<crate::mark_read::Preference, crate::mark_read::Error> {
         Err(crate::mark_read::Error::Unavailable)
     }
+    fn load_timezone(
+        &self,
+        _session: &ValidatedSession,
+    ) -> Result<crate::timezone::Preference, crate::timezone::Error> {
+        Err(crate::timezone::Error::Unavailable)
+    }
+    fn save_timezone(
+        &self,
+        _session: &ValidatedSession,
+        _revision: u64,
+        _offset: crate::timezone::FixedOffset,
+    ) -> Result<crate::timezone::Preference, crate::timezone::Error> {
+        Err(crate::timezone::Error::Unavailable)
+    }
     fn load_draft_location_preference(
         &self,
         session: &ValidatedSession,

@@ -198,6 +198,22 @@ pub(crate) fn format_unix_timestamp_utc(timestamp: u64) -> String {
     format!("{year:04}-{month:02}-{day:02}T{hour:02}:{minute:02}:{second:02}Z")
 }
 
+/// Display-only signed timestamp conversion; UTC log serialization is unchanged.
+pub(crate) fn format_unix_timestamp_offset(timestamp: i64, offset_minutes: i16) -> Option<String> {
+    let local = i128::from(timestamp) + i128::from(offset_minutes) * 60;
+    let (year, month, day) = civil_from_unix_days(local.div_euclid(86_400));
+    if !(1..=9999).contains(&year) {
+        return None;
+    }
+    let seconds = local.rem_euclid(86_400);
+    Some(format!(
+        "{year:04}-{month:02}-{day:02} {:02}:{:02}:{:02}",
+        seconds / 3600,
+        seconds % 3600 / 60,
+        seconds % 60
+    ))
+}
+
 fn civil_from_unix_days(days_since_unix_epoch: i128) -> (i128, u32, u32) {
     let z = days_since_unix_epoch + 719_468;
     let era = if z >= 0 { z } else { z - 146_096 } / 146_097;

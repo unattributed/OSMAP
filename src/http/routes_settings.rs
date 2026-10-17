@@ -348,7 +348,7 @@ where
                                 .ok(),
                             self.gateway.load_reading_preferences(context, &validated_session).ok(),
                             self.gateway.load_signature(&validated_session).ok().as_ref(),
-                            mark_read.as_ref(),
+                            (mark_read.as_ref(), self.gateway.load_timezone(&validated_session).ok().as_ref()),
                         )
                     } else {
                         let preferences = match self.gateway.load_reading_preferences(context, &validated_session) {
