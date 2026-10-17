@@ -13904,8 +13904,8 @@ Retain working Settings/sessions; finish demonstrated gaps against one checklist
   "version": 1,
   "slice": "S04-01",
   "original_requirement": "Distinct approved Settings 10\u201320, section search/navigation, profile/preferences and accurate status; sessions page 24",
-  "source_baseline": "2bddb4bfba33cc6b44da990f5b60076a35e19590",
-  "state": "IN_PROGRESS",
+  "source_baseline": "0eacfd9f5e49177c9ffa3b16e8454409fb5cf632",
+  "state": "ACCEPTED",
   "integration_owner": "/root",
   "roles": {
     "project_manager": [
@@ -14035,12 +14035,12 @@ Retain working Settings/sessions; finish demonstrated gaps against one checklist
       "dependencies": [],
       "essential_qa": "Reuse inspected matching checklist evidence; repair demonstrated unsaved Appearance preview, then one combined matching app build/install and scoped Settings/session integration journey. Mandatory hooks only; no unchanged whole-suite campaign.",
       "stages": {
-        "implementation": "PENDING",
-        "source_tests": "PENDING",
-        "native_tests": "PENDING",
-        "deployed_qa": "PENDING",
-        "independent_review": "PENDING",
-        "recovery": "PENDING"
+        "implementation": "PASS",
+        "source_tests": "PASS",
+        "native_tests": "PASS",
+        "deployed_qa": "PASS",
+        "independent_review": "PASS",
+        "recovery": "PASS"
       },
       "evidence": [
         {
@@ -14074,15 +14074,40 @@ Retain working Settings/sessions; finish demonstrated gaps against one checklist
         {
           "stage": "deployed_qa",
           "reference": "installed-settings-check/attempt1/RESULT.json PASS19HTTP/4freshsyntheticleases2.185s; source2bdd/currente9 only; actualSettingsSaveReload/Reset/Sessions/cleanup. Scoped auditc7169811. Notall46/livecredentiallogin/mail/timeconsumer or human proof."
+        },
+        {
+          "stage": "implementation",
+          "reference": "Signed0eacfd9 Settings repairs; existingworking46R4core retained. Actualsource0eac/app65391473/455pins, independentcloseout15509ccb."
+        },
+        {
+          "stage": "source_tests",
+          "reference": "Normalmandatory0eacgate1770PASS/0failed/48ignores and prior matching percontrolE1-E15; changedPassword/sourceevents/font proof retained."
+        },
+        {
+          "stage": "native_tests",
+          "reference": "Actualobsd1 execution-787d1a8b222befc2/RESULT.json39.306s sourceparity455/freshbuild/app65391473, no inferred foreignhelper replacement. Six earlier matching timezone/native controls retained."
+        },
+        {
+          "stage": "deployed_qa",
+          "reference": "Installed19Settings/session requests2.185s reused plus final0eacSecurityoneGET/twoleases PASS; actualnative200percentfontPASS7.44s. Exact scopes in E14-E16/audit15509ccb."
+        },
+        {
+          "stage": "independent_review",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/operator-bundle-settings-closeout-20261017/execution-787d1a8b222befc2/INDEPENDENT-CLOSEOUT-REVIEW.json SHA25615509ccb80935aa62b007743d8a3eb6c32e3c5ff01cb3c825f215d8010279bf0 GO for exactR4core; no Sprint/epic acceptance."
+        },
+        {
+          "stage": "recovery",
+          "reference": "Actual receipt confirms exact synthetic lease/settings cleanup, private settings and config/helper/unrelatedservice preservation; GeneralReset/reload recovery proven by installed19 and operatorusabilityPASS. Rootstagesretained/groupabsenceNOT_ESTABLISHED."
         }
       ],
-      "next_action": "Explain only unavailable Password action; preserve TOTP and Recovery controls unchanged per operator scope clarification. Continue agreed S04-01 installed Settings/session closeout; no S04-02 resumption or credential/factor change."
+      "next_action": "S04-01 complete (R4 narrowed scope). Finalize signed closeout documentation, then stop for operator source review; other slices remain stopped and no push is authorized."
     }
   ],
   "human_acceptance": {
-    "status": "PENDING"
+    "status": "PASS",
+    "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/S04_01_UAT_RESULT_20261017.json SHA256039f94a14b9b50b93d5980c4f0cd4eb571e861b559451509afcdcd57e466e2e0; exact operator S04_01_UAT=PASS after submittedthreeusabilitychecks, no per-controlhumanrerun."
   },
-  "next_action": "Normal signed admission of exact final Settings repairs through mandatory hooks; stop for operator source review before synchronization. Prepare next matching operator bundle with one final installed Security GET, no repetition of19request check.",
+  "next_action": "S04-01 complete (R4 narrowed scope). Finalize signed closeout documentation, then stop for operator source review; other slices remain stopped and no push is authorized.",
   "accountability": {
     "functional_exit": "S04-01 complete (R4 narrowed scope):46 exact controls with applicable source, installed functional QA, independent audit, recovery and minimal separate human acceptance. Eleven required follow-ups remain Sprint S04/epic blockers.",
     "owner": "/root",
@@ -14090,8 +14115,8 @@ Retain working Settings/sessions; finish demonstrated gaps against one checklist
     "history_reference": "Single checklist E1-E11 and historical S04-01 ledger retained; prior total cost/time UNKNOWN. Paused S04-02 work order retained separately.",
     "investigation": {
       "owner": "/root",
-      "started_at": "2026-10-17T14:51:00Z",
-      "timebox_seconds": 3600,
+      "started_at": "2026-10-17T18:40:01Z",
+      "timebox_seconds": 900,
       "elapsed_status": "UNMEASURED",
       "elapsed_seconds": null
     },
@@ -14449,6 +14474,40 @@ Retain working Settings/sessions; finish demonstrated gaps against one checklist
         "elapsed_status": "MEASURED",
         "elapsed_seconds": 44.33,
         "reference": "unavailable-controls/commit-attempt2-result.json/log;1770RustPASS0failed48ignores/ClippyformatPASS thenactualRustSec RUSTSEC-2026-0373 ammonia4.1.7 refused. No commitcreated. Exactcompatible4.1.8 patch required; no ignore/bypass."
+      },
+      {
+        "id": "S04-01-final-settings-source-admission3",
+        "boundary": "settings-and-sessions",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "source_revision": "36fd2624ad14153fe92bd2c5a28ef656d9c66cf6d909b06ebb87542fe00785d2",
+        "change_reference": "Only mandatory ammonia4.1.7\u21924.1.8 compatiblelockpatch, existingV15lockhashbindings/source-review record; no features/transitive changes. Existing16sanitizationrelatedPASS, normalhookonechangedretry; retainpreviousgatefailures.",
+        "success_chain_review": {
+          "reviewer": "/root/s04_01_review",
+          "reference": "unavailable-controls/combined-final-admission-reassessment.json11f35439 CLEAR exactfailedboundaries + sanitizer-security-patch/independent-dependency-source-review.json SHA256c8fe8acfb21e8746b9852529b238786e8f3ba2a09a9f643d9879fc7bbd725cc5 CLEAR upstreamdelta; native4.1.8 notassumed.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "reassessment": {
+          "reviewers": [
+            "/root",
+            "/root/s04_01_review"
+          ],
+          "reference": "unavailable-controls/combined-final-admission-reassessment.json SHA25611f354394fee8b712c38fbb0fc93fe8d76d76f403e80b436dc458279f42ac59c; rootconcursstalefixtureandnewRustSecblocker distinct demonstrated causes, retainedwithoutreset.",
+          "next_action": "One normal signed sourceadmission with compatible4.1.8 and unchanged gates; no ignore/bypass.",
+          "failed_attempt_ids": [
+            "S04-01-unavailable-controls-source-admission",
+            "S04-01-final-settings-source-admission2"
+          ]
+        },
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 290.028,
+        "reference": "unavailable-controls/commit-attempt3-result.json/log; normalsigned0eacfd9 verifiedShopkeeper,1770Rust0failed48explicitignores/fullsecuritycheckPASS, clean5aheadlastfetchedorigin, no push."
       }
     ],
     "completed_investigations": [
@@ -14481,42 +14540,41 @@ Retain working Settings/sessions; finish demonstrated gaps against one checklist
       }
     ],
     "next_attempt": {
-      "id": "S04-01-final-settings-source-admission3",
+      "id": "S04-01-accepted-r4-closeout-documentation",
       "boundary": "settings-and-sessions",
       "owner": "/root",
       "scope": "PRODUCT_DELIVERY",
       "adoption": "CURRENT",
-      "source_revision": "36fd2624ad14153fe92bd2c5a28ef656d9c66cf6d909b06ebb87542fe00785d2",
-      "change_reference": "Only mandatory ammonia4.1.7\u21924.1.8 compatiblelockpatch, existingV15lockhashbindings/source-review record; no features/transitive changes. Existing16sanitizationrelatedPASS, normalhookonechangedretry; retainpreviousgatefailures.",
+      "source_revision": "0eacfd9f5e49177c9ffa3b16e8454409fb5cf632",
+      "change_reference": "Evidence/documentation-only finalacceptance: actualinstalledreceipt39.306s +independentGO15509ccb+exactoperatorS04_01_UAT=PASS. Preserveallcriteria403/legacy110/48parents/11followups and allfailures; no product/runtime/source test changes. One mandatorynormal signedadmission only.",
       "success_chain_review": {
         "reviewer": "/root/s04_01_review",
-        "reference": "unavailable-controls/combined-final-admission-reassessment.json11f35439 CLEAR exactfailedboundaries + sanitizer-security-patch/independent-dependency-source-review.json SHA256c8fe8acfb21e8746b9852529b238786e8f3ba2a09a9f643d9879fc7bbd725cc5 CLEAR upstreamdelta; native4.1.8 notassumed.",
+        "reference": "accepted-closeout-20261017/independent-closeout-source-review.json SHA256562d76c7cf4d53552e126c584722366cacaa67a8131f804c0ac6a1cd51ed32a6 CLEAR exact10paths/43onlyresultchanges/originalcriteria403/110/48/11followups unchanged + independent-v15-freshness-addendum.json SHA256fb783edbc50ea59cb2b353e0c5aa34bc1daccafb896dd7e47905e8cc7ee50759 CLEAR onlynativebuild/installmetadata; actualinstalledGO15509ccb and exactownerS04_01_UAT=PASS. No source/native rerun.",
         "covers": [
           "producer",
           "cleanup",
           "consumer"
         ]
-      },
-      "reassessment": {
-        "reviewers": [
-          "/root",
-          "/root/s04_01_review"
-        ],
-        "reference": "unavailable-controls/combined-final-admission-reassessment.json SHA25611f354394fee8b712c38fbb0fc93fe8d76d76f403e80b436dc458279f42ac59c; rootconcursstalefixtureandnewRustSecblocker distinct demonstrated causes, retainedwithoutreset.",
-        "next_action": "One normal signed sourceadmission with compatible4.1.8 and unchanged gates; no ignore/bypass.",
-        "failed_attempt_ids": [
-          "S04-01-unavailable-controls-source-admission",
-          "S04-01-final-settings-source-admission2"
-        ]
       }
-    }
+    },
+    "prior_investigations": [
+      {
+        "owner": "/root",
+        "started_at": "2026-10-17T14:51:00Z",
+        "timebox_seconds": 3600,
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 2963.97,
+        "ended_at": "2026-10-17T15:40:23.970000Z",
+        "disposition": "Source delivery window closed; investigation-source-delivery-closeout.json retained. Subsequent operator installation39.306s separately measured, not added to earlier window."
+      }
+    ]
   },
   "slice_contract": {
     "version": 1,
     "slice": "S04-01",
     "specification": {
       "path": "docs/UX_SLICE_S04_01.md",
-      "sha256": "7289ff5fd4fcbd705037460a17e76e2a2466c86ad7abd2cc9866fe62f2002e15"
+      "sha256": "b6d381720eaec78ae536367de2dc4723c71bbec53ab81af01a6d6c9a26323ca4"
     },
     "design": {
       "journey": "Settings navigation/search -> actual owned preferences/sessions -> native save/revoke -> reload and owning workflow.",
@@ -14541,9 +14599,10 @@ Retain working Settings/sessions; finish demonstrated gaps against one checklist
         "preserved": "Original mail/keys/credentials, unrelated preferences/services, account isolation and scope distinction among source/native/installed/human.",
         "owner": "/root",
         "reviewer": "/root/s04_01_review",
-        "status": "PARTIAL",
+        "status": "PASS",
         "evidence": [
-          "/home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/timezone-selected-attempt4.log6PASS source; /home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/changed-browser-attempt3-result.jsonfocused browserPASS/2.070s; remaining originaloutcomes unmet."
+          "/home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/timezone-selected-attempt4.log6PASS source; /home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/changed-browser-attempt3-result.jsonfocused browserPASS/2.070s; remaining originaloutcomes unmet.",
+          "/home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/operator-bundle-settings-closeout-20261017/execution-787d1a8b222befc2/INDEPENDENT-CLOSEOUT-REVIEW.json finalmatchingR4compositionalGO, exactpositive/negative/recoveryE1-E16 scopedproof, no newrerun"
         ]
       },
       {
@@ -14559,9 +14618,10 @@ Retain working Settings/sessions; finish demonstrated gaps against one checklist
         "preserved": "Original mail/keys/credentials, unrelated preferences/services, account isolation and scope distinction among source/native/installed/human.",
         "owner": "/root",
         "reviewer": "/root/s04_01_review",
-        "status": "PARTIAL",
+        "status": "PASS",
         "evidence": [
-          "/home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/timezone-selected-attempt4.log6PASS source; /home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/changed-browser-attempt3-result.jsonfocused browserPASS/2.070s; remaining originaloutcomes unmet."
+          "/home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/timezone-selected-attempt4.log6PASS source; /home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/changed-browser-attempt3-result.jsonfocused browserPASS/2.070s; remaining originaloutcomes unmet.",
+          "/home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/operator-bundle-settings-closeout-20261017/execution-787d1a8b222befc2/INDEPENDENT-CLOSEOUT-REVIEW.json finalmatchingR4compositionalGO, exactpositive/negative/recoveryE1-E16 scopedproof, no newrerun"
         ]
       },
       {
@@ -14577,8 +14637,10 @@ Retain working Settings/sessions; finish demonstrated gaps against one checklist
         "preserved": "Original mail/keys/credentials, unrelated preferences/services, account isolation and scope distinction among source/native/installed/human.",
         "owner": "/root",
         "reviewer": "/root/s04_01_review",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/operator-bundle-settings-closeout-20261017/execution-787d1a8b222befc2/INDEPENDENT-CLOSEOUT-REVIEW.json finalmatchingR4compositionalGO, exactpositive/negative/recoveryE1-E16 scopedproof, no newrerun"
+        ]
       },
       {
         "id": "S04-01-usability",
@@ -14593,19 +14655,21 @@ Retain working Settings/sessions; finish demonstrated gaps against one checklist
         "preserved": "Original mail/keys/credentials, unrelated preferences/services, account isolation and scope distinction among source/native/installed/human.",
         "owner": "/root",
         "reviewer": "/root/s04_01_review",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "PASS",
+        "evidence": [
+          "/home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/S04_01_UAT_RESULT_20261017.json exactscopeownerusabilityPASS"
+        ]
       }
     ],
     "engineering_exit": "All46 approved R4 core checklist obligations and applicable source/native/installed functional QA, independent audit and cleanup PASS; eleven required follow-up controls remain Sprint S04/epic obligations.",
     "human_exit": "Only after agent-owned matching installed audit passes, one concise remaining usability judgment separately recorded; reuse prior exact observations."
   },
   "blocker": null,
-  "independent_next_action": "Independently review approved R4 policy candidate and exact Appearance repair; root performs one integration/host queue. No other slice resumes.",
+  "independent_next_action": "Independent exact closeout record review; reuse actualinstalled/audit/human receipts, no source/native/browser rerun beyond mandatoryhooks.",
   "proposed_amendment": {
     "path": "docs/UX_PLAN_AMENDMENT_R4_PROPOSED.md",
     "sha256": "55bb148960599b9dc33fc777b9299d11f201312bab7434521e78d1ee7af29ac8",
-    "status": "APPROVED_ACTIVATION_IN_PROGRESS",
+    "status": "ACTIVE_ACCEPTED_R4_CORE_CLOSED",
     "operator_preparation_direction": "2026-10-17 explicit option selection: Prepare a narrow scope amendment; preserve remaining epic requirements",
     "core_control_count": 46,
     "retained_control_count": 11,
@@ -14615,7 +14679,8 @@ Retain working Settings/sessions; finish demonstrated gaps against one checklist
     "effective_followup_owner": "epic integration/root after approved R4 activation",
     "activation": "Explicit approval, separate signed acceptedplan/manifest anchor, then existing validator lossless-partition checks before changed work order.",
     "sprint_closure": "Sprint S04 additionally requires all nine required F packages; F6 S08-01 backend dependency remains explicit.",
-    "operator_approval": "Operator proceed after explicit request to approve R4 and continue S04-01; exact55bb proposal preserved."
+    "operator_approval": "Operator proceed after explicit request to approve R4 and continue S04-01; exact55bb proposal preserved.",
+    "introducing_signed_anchor": "2bddb4bfba33cc6b44da990f5b60076a35e19590"
   },
   "scope_revision": "R4"
 }
@@ -14747,3 +14812,33 @@ but does not waivepatch. Existing sanitization-related16controls PASS (compiler
 25.32s/fullactionUNKNOWN); normal mandatoryhook remainsrequired. Updated existing
 dependencyadmission hashes, no new framework or advisoryignore. Previous4.1.7
 native evidence stays historical; exactnewapp nativebuild/install is pending.
+
+
+## S04-01 complete (R4 narrowed scope) — 2026-10-17
+
+Operator explicitly reported `S04_01_UAT=PASS` after agent-owned engineering,
+matching installed QA and independent audit PASS. Effective46 controls close
+(43 approved result rows accepted;3 immutable legacy rows retain archival JSON
+bytes, with their effective closure recorded here and in the active work order).
+All403 obligations,110 legacy records and48 parent IDs remain preserved.
+Eleven required controls in nine follow-ups remain open and block Sprint S04/epic.
+S04-02 password change, TOTP management and recovery are not accepted by this result.
+
+Delivered source `0eacfd9f5e49177c9ffa3b16e8454409fb5cf632` is Shopkeeper signed;
+mandatory gate1770libraryPASS/0failed/48explicitnativeignores plus existing
+securitychecks PASS. Actual obsd1 app
+`65391473cb062137b52ff2d5cad0614fb50be256cde613580d363f7127b47f20`
+was built from455matchinginputs and installed in39.306s with onlyServe restarted,
+configuration/helper/key-agent/retention/unrelated-service preservation. One
+actual SecurityGET proves two retained sign-ins and one revocation plus explicit
+PasswordUnavailable, with exactowned cleanup. Earlier installed19HTTPSettings/
+session proof and native200percent font result are reused; no extra QA campaign.
+
+Independent actual closeout review15509ccb is GO. Human acceptance is the three
+submitted GeneralReset/timezone, Appearancepreview/save/reload and Sessions/
+availability usability checks, never a fabricated human46case/security rerun.
+Exact operator report is retained in S04_01_UAT_RESULT_20261017.json under the
+stable Settings/session evidence root. Prior failed gates, wrong zoom-pref and
+root pre-action execution-control deviation remain retained; no retroactive PASS.
+No new service, password, factor, provider email or synchronization is authorized
+by this closeout. The sections below preserve historical intermediate states.

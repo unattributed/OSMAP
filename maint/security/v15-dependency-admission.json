@@ -32,8 +32,8 @@
       },
       "name": "ammonia",
       "openbsd_compatibility": {
-        "rationale": "Prior4.1.7 native evidence remains historical; new4.1.8 matching native application build is pending in bounded operator delivery. No inherited native test/installation claim.",
-        "status": "matching_native_build_pending"
+        "rationale": "Actual0eacfd9 obsd1 source455pins/freshapplication build29.295s and installation39.306s PASS; installedapp65391473cb062137b52ff2d5cad0614fb50be256cde613580d363f7127b47f20. Lockedammonia4.1.8 fetched normally, sourceparity preserved. This establishes nativebuild/installation only; prior4.1.7 nine native sanitizer tests remain historical, not reattributed to4.1.8. Local1770library and normalsecuritygate pass. Receipt execution-787d1a8b222befc2/RESULT.json under S04settingscloseout bundle.",
+        "status": "matching_native_build_and_installation_passed"
       },
       "optional": false,
       "purpose": "Sanitise untrusted HTML email content to OSMAP's narrow browser-safe subset.",

@@ -1,5 +1,35 @@
 # Documentation
 
+## S04-01 complete (R4 narrowed scope) — 2026-10-17
+
+Operator explicitly reported `S04_01_UAT=PASS` after agent-owned engineering,
+matching installed QA and independent audit PASS. Effective46 controls close
+(43 approved result rows accepted;3 immutable legacy rows retain archival JSON
+bytes, with their effective closure recorded here and in the active work order).
+All403 obligations,110 legacy records and48 parent IDs remain preserved.
+Eleven required controls in nine follow-ups remain open and block Sprint S04/epic.
+S04-02 password change, TOTP management and recovery are not accepted by this result.
+
+Delivered source `0eacfd9f5e49177c9ffa3b16e8454409fb5cf632` is Shopkeeper signed;
+mandatory gate1770libraryPASS/0failed/48explicitnativeignores plus existing
+securitychecks PASS. Actual obsd1 app
+`65391473cb062137b52ff2d5cad0614fb50be256cde613580d363f7127b47f20`
+was built from455matchinginputs and installed in39.306s with onlyServe restarted,
+configuration/helper/key-agent/retention/unrelated-service preservation. One
+actual SecurityGET proves two retained sign-ins and one revocation plus explicit
+PasswordUnavailable, with exactowned cleanup. Earlier installed19HTTPSettings/
+session proof and native200percent font result are reused; no extra QA campaign.
+
+Independent actual closeout review15509ccb is GO. Human acceptance is the three
+submitted GeneralReset/timezone, Appearancepreview/save/reload and Sessions/
+availability usability checks, never a fabricated human46case/security rerun.
+Exact operator report is retained in S04_01_UAT_RESULT_20261017.json under the
+stable Settings/session evidence root. Prior failed gates, wrong zoom-pref and
+root pre-action execution-control deviation remain retained; no retroactive PASS.
+No new service, password, factor, provider email or synchronization is authorized
+by this closeout. The sections below preserve historical intermediate states.
+
+
 ## Current bounded authorization — 2026-10-17
 
 S04-01 Settings/sessions only has resumed against its

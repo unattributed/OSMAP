@@ -1,19 +1,14 @@
 # OSMAP Agent Notes
 
-## Current bounded authorization — 2026-10-17
+## Current bounded closeout — 2026-10-17
 
-The operator has resumed **S04-01 Settings and sessions only** and approved R4
-by replying “proceed” after the explicit R4 approval request. Follow
-`docs/UX_PLAN_AMENDMENT_R4.md`: retain working implementation, finish demonstrated
-gaps in the approved 46-control boundary and close against the single
-outcome/action/expected-result/actual-evidence checklist in
-`docs/UX_SLICE_S04_01.md` and the current ledger work order. Use changed-behavior
-and relevant security checks plus mandatory hooks. All other slices remain
-stopped, including S04-02. Eleven requirements remain in nine mandatory Sprint
-S04/epic follow-ups; they are not waived or silently restarted. The stop below
-remains historical authority for those slices. Verify the signed R4 introducing
-anchor after planning admission; no source/native/installed result is inferred
-from scope approval.
+**S04-01 complete (R4 narrowed scope).** Operator `S04_01_UAT=PASS` follows
+matching installed QA and independent audit GO. Finalize the signed closeout
+records only. All other slices remain stopped, including S04-02; eleven required
+controls in nine Sprint S04/epic follow-ups remain open. This acceptance does not
+restart password change, TOTP management, recovery or other engineering. Preserve
+R2/R3/R4 references and scope. Normal signature verification and operator source
+review before any push/synchronization remain mandatory.
 
 ## Historical operator stop — 2026-10-17
 

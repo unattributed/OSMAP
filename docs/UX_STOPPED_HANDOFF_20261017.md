@@ -1,5 +1,15 @@
 # OSMAP stopped-work handoff — 2026-10-17
 
+## Superseding bounded closeout — 2026-10-17
+
+S04-01 complete (R4 narrowed scope): matching installed source0eacfd9/app65391473,
+independent actual closeout15509ccb and operator `S04_01_UAT=PASS`. This closes
+only the approved46-control core. Eleven required follow-up controls remain open;
+Sprint S04/epic and all other stopped slices remain incomplete/stopped, including
+S04-02 password change. Finalize signed closeout documentation; no automatic
+restart or push. Historical stopped checkpoints below remain provenance.
+
+
 Subsequent bounded authority: the operator resumed S04-01 Settings/sessions
 only. See `UX_SLICE_S04_01.md` and the active ledger. This stopped-work handoff
 continues to govern S04-02 and other slices; none resumes by implication.

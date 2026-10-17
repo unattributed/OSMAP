@@ -1,11 +1,6 @@
 # OSMAP
 
-**2026-10-17: S04-01 Settings and sessions only has resumed under approved [R4](docs/UX_PLAN_AMENDMENT_R4.md).** Its effective scope is46 controls; eleven required follow-up controls in nine packages remain Sprint S04/epic obligations. No control result is upgraded by scope approval. Its
-[single checklist](docs/UX_SLICE_S04_01.md) retains working code and exact
-requirements/evidence. Fixed UTC-offset display and saved-value General Reset
-pass focused source/browser and OpenBSD checks and are installed on obsd1. A bounded installed Settings/session check also passes; the final Password-unavailable explanation and full parent-slice acceptance remain open. Other slices remain stopped, including incomplete
-S04-02 password change, whose control remains disabled on obsd1. See the
-[stopped-work handoff](docs/UX_STOPPED_HANDOFF_20261017.md).
+**2026-10-17: S04-01 complete (R4 narrowed scope).** Settings/sessions engineering, matching installed QA, independent audit and operator `S04_01_UAT=PASS` are recorded in the [slice checklist](docs/UX_SLICE_S04_01.md). Eleven required follow-up controls remain open; Sprint S04 and the epic are incomplete. Password change, TOTP management and recovery are separate work. All other stopped slices remain stopped. See [current status](docs/CURRENT_PROJECT_STATUS.md).
 
 **OpenBSD Secure Mail Access Platform** is a small, security-focused webmail
 application for hardened OpenBSD mail hosts.
