@@ -20,6 +20,94 @@ WORK_ORDER_START = "<!-- OSMAP_ACTIVE_WORK_ORDER -->"
 WORK_ORDER_END = "<!-- /OSMAP_ACTIVE_WORK_ORDER -->"
 DELIVERY_STAGES = {"implementation", "source_tests", "native_tests", "deployed_qa", "independent_review", "recovery"}
 DELIVERY_ROLES = {"project_manager", "scrum_lead", "developers", "qa", "security_review", "technical_writer"}
+R4_PROPOSAL_SHA256 = "55bb148960599b9dc33fc777b9299d11f201312bab7434521e78d1ee7af29ac8"
+R4_PROFILE = "maint/ux/s04_01_r4_scope.json"
+R4_SUPPLEMENT = "docs/UX_PLAN_AMENDMENT_R4.md"
+R4_PROPOSAL = "docs/UX_PLAN_AMENDMENT_R4_PROPOSED.md"
+R4_FOLLOWUPS = {
+    "OSMAP-UX/F1": {"R2-11-005"},
+    "OSMAP-UX/F2": {"R2-11-012", "R2-16-007"},
+    "OSMAP-UX/F3": {"R2-01-028"},
+    "OSMAP-UX/F4": {"R2-01-029"},
+    "OSMAP-UX/F5": {"R2-01-030"},
+    "OSMAP-UX/F6": {"R2-01-026", "R2-01-027"},
+    "OSMAP-UX/F7": {"R2-11-024"},
+    "OSMAP-UX/F8": {"R2-11-025"},
+    "OSMAP-UX/F9": {"R2-11-026"},
+}
+R4_DEPENDENCIES = {"OSMAP-UX/F1": [], "OSMAP-UX/F2": ["S02-03"], "OSMAP-UX/F3": [],
+    "OSMAP-UX/F4": [], "OSMAP-UX/F5": [], "OSMAP-UX/F6": ["S08-01"],
+    "OSMAP-UX/F7": ["S04-02"], "OSMAP-UX/F8": [], "OSMAP-UX/F9": ["S04-03", "S04-04"]}
+
+
+def r4_scope(matrix, repo):
+    """Pinned supplement/profile consistency only; signatures are checked externally."""
+    root = repo.resolve()
+    require(len(matrix["cases"]) == 110 and semantic_hash(matrix["cases"]) == LEGACY_SHA256,
+            "R4 must preserve all110 immutable legacy cases")
+    require(len(matrix["approved_control_cases"]) == 403 and len({row["id"] for row in matrix["approved_control_cases"]}) == 403,
+            "R4 must preserve all403 approved obligations")
+    entries = {}
+    for line in (root / "docs/UX_PLAN_SHA256SUMS").read_text().splitlines():
+        match = re.fullmatch(r"([0-9a-f]{64}) [ *](.+)", line)
+        require(match is not None, "invalid R4 plan manifest line")
+        digest, relative = match.groups()
+        require(relative not in entries, "duplicate R4 plan manifest path")
+        entries[relative] = digest
+    inputs = {}
+    for relative in (R4_PROFILE, R4_SUPPLEMENT, R4_PROPOSAL):
+        target = (root / relative).resolve(strict=True)
+        require(target.is_relative_to(root) and target.is_file(), "R4 input outside repository")
+        inputs[relative] = target.read_bytes()
+        require(entries.get(relative) == hashlib.sha256(inputs[relative]).hexdigest(), "R4 input missing or changed in plan manifest")
+    require(hashlib.sha256(inputs[R4_PROPOSAL]).hexdigest() == R4_PROPOSAL_SHA256, "R4 approved proposal SHA256 mismatch")
+    profile = json.loads(inputs[R4_PROFILE])
+    fields = {"schema_version", "revision", "slice", "approved_proposal_sha256", "accepted_supplement", "historical_proposal", "original_plan_anchor", "prior_execution_anchor", "core_control_ids", "required_followups", "completion_label"}
+    require(isinstance(profile, dict) and set(profile) == fields and type(profile.get("schema_version")) is int and profile["schema_version"] == 1,
+            "R4 scope profile exact fields/version required")
+    require(profile["revision"] == "R4" and profile["slice"] == "S04-01"
+            and profile["approved_proposal_sha256"] == R4_PROPOSAL_SHA256
+            and profile["accepted_supplement"] == R4_SUPPLEMENT and profile["historical_proposal"] == R4_PROPOSAL
+            and profile["original_plan_anchor"] == "6b3ce8fff27ca3dabf87039d54098bd9967a2e42"
+            and profile["prior_execution_anchor"] == "f2a117c17dbd93b634f9914c5608473dc682d8e0"
+            and profile["completion_label"] == "S04-01 complete (R4 narrowed scope)", "unapproved R4 scope identity")
+    proposal_core = set(re.findall(r"^\| `((?:UX\d{2}-\d{3}|R2-\d{2}-\d{3}))` \|", inputs[R4_PROPOSAL].decode(), re.MULTILINE))
+    core = profile["core_control_ids"]
+    require(isinstance(core, list) and len(core) == len(set(core)) == 46 and set(core) == proposal_core,
+            "R4 core must preserve the exact 46 approved proposal IDs")
+    followups = profile["required_followups"]
+    require(isinstance(followups, list) and len(followups) == 9, "nine required R4 followups required")
+    found, retained = set(), set()
+    for item in followups:
+        require(isinstance(item, dict) and set(item) == {"id", "owner", "sprint", "required", "control_ids", "dependency_slices"}, "R4 followup exact fields required")
+        identifier, controls = item["id"], item["control_ids"]
+        require(identifier in R4_FOLLOWUPS and identifier not in found and item["owner"] == "epic-integration/root"
+                and item["sprint"] == "S04" and item["required"] is True, "R4 followup identity/required owner changed")
+        require(isinstance(controls, list) and len(controls) == len(set(controls))
+                and set(controls) == R4_FOLLOWUPS[identifier] and not retained.intersection(controls), "R4 followup controls omitted/duplicated/changed")
+        require(item["dependency_slices"] == R4_DEPENDENCIES[identifier], "R4 dependency slices changed")
+        found.add(identifier); retained.update(controls)
+    original = {row["id"] for key in ("cases", "approved_control_cases") for row in matrix[key] if "S04-01" in row["owning_slices"]}
+    require(found == set(R4_FOLLOWUPS) and len(retained) == 11 and not set(core).intersection(retained)
+            and len(original) == 57 and set(core) | retained == original, "R4 scope must retain disjoint 46+11 original 57 obligations")
+    return set(core), retained
+
+
+def validate_closure(matrix, scope, repo=None):
+    """Row-level closure refusal only; this is not sprint, release or evidence QA."""
+    require(scope in {"S04", "EPIC"}, "unknown closure scope")
+    root = repo if repo is not None else Path(__file__).resolve().parents[2]
+    report = validate(matrix, json.loads((root / "maint/ux/approved_pages.json").read_text()),
+                      (root / "docs/UX_FULL_FUNCTIONAL_SLICES.md").read_text(), root)
+    rows = matrix["approved_control_cases"]
+    require(len(rows) == 403 and len({row["id"] for row in rows}) == 403, "closure requires all403 original approved rows")
+    required_followups = set().union(*R4_FOLLOWUPS.values())
+    by_id = {row["id"]: row for row in rows}
+    require(required_followups <= set(by_id), "closure omits required R4 followup controls")
+    required = rows if scope == "EPIC" else [row for row in rows if any(owner.startswith("S04-") for owner in row["owning_slices"]) or row["id"] in required_followups]
+    unfinished = [row["id"] for row in required if row["result"]["status"] != "ACCEPTED"]
+    require(not unfinished, scope + " closure requires ACCEPTED original controls including all11 required followups: " + ", ".join(unfinished))
+    return {**report, "closure_scope": scope, "accepted_row_count": len(required), "closure_claim": "row consistency only; no sprint/release QA or evidence truth inferred"}
 
 
 def semantic_hash(value):
@@ -245,6 +333,10 @@ def validate_work_order(order, matrix, catalogue, changed_paths, pre_action=Fals
             "active scope must preserve an original slice requirement")
     expected = {row["id"] for key in ("cases", "approved_control_cases") for row in matrix[key]
                 if parent in row["owning_slices"]}
+    revision = order.get("scope_revision")
+    if revision is not None:
+        require(revision == "R4" and parent == "S04-01", "unapproved work-order scope revision")
+        expected, _ = r4_scope(matrix, repo if repo is not None else Path(__file__).resolve().parents[2])
     roles = order.get("roles")
     require(isinstance(roles, dict) and set(roles) == DELIVERY_ROLES, "six named role owners required")
     require(all(isinstance(owners, list) and owners and all(text(owner) for owner in owners)
@@ -259,6 +351,8 @@ def validate_work_order(order, matrix, catalogue, changed_paths, pre_action=Fals
     state = order.get("state")
     require(state in {"IN_PROGRESS", "BLOCKED", "PAUSED", "ENGINEERING_COMPLETE", "UAT_READY", "ACCEPTED"},
             "invalid work-order state; checkpoints cannot park or close work")
+    if parent == "S11-04" and state in {"ENGINEERING_COMPLETE", "UAT_READY", "ACCEPTED"}:
+        validate_closure(matrix, "EPIC", repo)
     if state == "PAUSED":
         directive = order.get("operator_pause", {})
         require(directive.get("actor") == "operator" and text(directive.get("reference")), "only explicit operator direction may pause work")
@@ -276,6 +370,8 @@ def validate_work_order(order, matrix, catalogue, changed_paths, pre_action=Fals
         require(all(text(outcome.get(key)) for key in ("frontend_backend_outcome", "essential_qa", "next_action")), "concrete outcome, QA and next action required")
         obligations = outcome.get("requirement_ids")
         require(isinstance(obligations, list) and obligations and set(obligations) <= expected, "outcome contains unmapped scope")
+        if revision == "R4":
+            require(len(obligations) == len(set(obligations)) and not covered.intersection(obligations), "duplicate R4 work-order obligation")
         covered.update(obligations)
         dependencies = outcome.get("dependencies")
         require(isinstance(dependencies, list), "technical dependencies required (empty allowed)")
@@ -295,6 +391,12 @@ def validate_work_order(order, matrix, catalogue, changed_paths, pre_action=Fals
     validate_accountability(order, set(ids), pre_action)
     if state in {"ENGINEERING_COMPLETE", "UAT_READY", "ACCEPTED"}:
         require(all_pass, "unfinished or failed required scope cannot close or become UAT ready")
+        if revision == "R4":
+            root = repo if repo is not None else Path(__file__).resolve().parents[2]
+            validate(matrix, json.loads((root / "maint/ux/approved_pages.json").read_text()), catalogue, root)
+            permitted = {"ACCEPTED"} if state == "ACCEPTED" else {"QA_VERIFIED", "UAT_READY", "ACCEPTED"}
+            require(all(row["result"]["status"] in permitted for row in matrix["approved_control_cases"] if row["id"] in expected),
+                    "R4 core approved-control results must meet the actual closure stage; PARTIAL/BLOCKED cannot close")
     human = order.get("human_acceptance", {})
     require(human.get("status") in {"PENDING", "PASS", "FAIL"}, "human acceptance must remain separate")
     if state == "ACCEPTED":
@@ -374,6 +476,7 @@ def main():
     parser.add_argument("--repo", type=Path, default=Path(__file__).resolve().parents[2])
     parser.add_argument("--work-order-only", action="store_true")
     parser.add_argument("--pre-action", action="store_true", help="validate the recorded next expensive/native attempt before dispatch")
+    parser.add_argument("--closure-scope", choices=("S04", "EPIC"), help="require accepted original rows, including required R4 followups; not a sprint/release QA certificate")
     args = parser.parse_args()
     repo = args.repo.resolve()
     try:
@@ -381,7 +484,9 @@ def main():
         catalogue = (repo / "docs/UX_FULL_FUNCTIONAL_SLICES.md").read_text()
         order = active_work_order((repo / "docs/UX_EXECUTION_LEDGER.md").read_text())
         result = validate_work_order(order, matrix, catalogue, work_order_changed_paths(repo, order.get("source_baseline")), pre_action=args.pre_action, repo=repo)
-        if not args.work_order_only:
+        if args.closure_scope:
+            result = {**result, **validate_closure(matrix, args.closure_scope, repo)}
+        elif not args.work_order_only:
             result = {**result, **validate(matrix, json.loads((repo / "maint/ux/approved_pages.json").read_text()), catalogue, repo)}
     except (ValueError, KeyError, TypeError, OSError, subprocess.CalledProcessError) as error:
         print("acceptance traceability refused: " + str(error), file=sys.stderr)

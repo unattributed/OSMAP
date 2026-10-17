@@ -13904,8 +13904,8 @@ Retain working Settings/sessions; finish demonstrated gaps against one checklist
   "version": 1,
   "slice": "S04-01",
   "original_requirement": "Distinct approved Settings 10\u201320, section search/navigation, profile/preferences and accurate status; sessions page 24",
-  "source_baseline": "0c5dac8fec6466c0834af2a229a57325c5ea38f7",
-  "state": "BLOCKED",
+  "source_baseline": "d8ddf8dd79a0a3ae7456971fef08f4ba477b7c47",
+  "state": "IN_PROGRESS",
   "integration_owner": "/root",
   "roles": {
     "project_manager": [
@@ -13964,7 +13964,15 @@ Retain working Settings/sessions; finish demonstrated gaps against one checklist
     "maint/security/v10-fail-closed-remediation.json",
     "maint/security/v10-claims-boundary.json",
     "maint/wstg-testing-pack/osmap-browser-attack-surface.json",
-    "docs/UX_PLAN_AMENDMENT_R4_PROPOSED.md"
+    "docs/UX_PLAN_AMENDMENT_R4_PROPOSED.md",
+    "docs/UX_PLAN_AMENDMENT_R4.md",
+    "docs/UX_PLAN_SHA256SUMS",
+    "maint/ux/s04_01_r4_scope.json",
+    "maint/ux/validate_acceptance.py",
+    "maint/ux/test_validate_acceptance.py",
+    "src/settings_ui.rs",
+    "src/http/settings.css",
+    "maint/ux/appearance_workflows.py"
   ],
   "outcomes": [
     {
@@ -13974,31 +13982,21 @@ Retain working Settings/sessions; finish demonstrated gaps against one checklist
         "UX09-002",
         "UX11-001",
         "R2-01-014",
-        "R2-01-026",
-        "R2-01-027",
-        "R2-01-028",
-        "R2-01-029",
-        "R2-01-030",
         "R2-10-001",
         "R2-10-002",
         "R2-10-011",
         "R2-10-012",
         "R2-11-004",
-        "R2-11-005",
         "R2-11-007",
         "R2-11-008",
         "R2-11-009",
         "R2-11-010",
         "R2-11-011",
-        "R2-11-012",
         "R2-11-013",
         "R2-11-019",
         "R2-11-020",
         "R2-11-021",
         "R2-11-022",
-        "R2-11-024",
-        "R2-11-025",
-        "R2-11-026",
         "R2-11-030",
         "R2-11-031",
         "R2-12-005",
@@ -14015,7 +14013,6 @@ Retain working Settings/sessions; finish demonstrated gaps against one checklist
         "R2-15-003",
         "R2-16-005",
         "R2-16-006",
-        "R2-16-007",
         "R2-16-008",
         "R2-20-005",
         "R2-20-006",
@@ -14029,16 +14026,9 @@ Retain working Settings/sessions; finish demonstrated gaps against one checklist
         "R2-24-008"
       ],
       "owner": "/root",
-      "frontend_backend_outcome": "Working account-owned Settings/navigation/search/persisted preferences and actual session metadata/revocation against the single57-control checklist.",
-      "dependencies": [
-        {
-          "owner": "stopped S04-02/03/04 and S08-01 owners",
-          "condition": "Required password/recovery/shared-quota positives remain unqualified; no scope waiver.",
-          "status": "PENDING",
-          "next_action": "Keep dependent slices stopped; continue independent S04-01 gaps and report exact closure dependency."
-        }
-      ],
-      "essential_qa": "Reuse inspected matching checklist E1-E11; only changed timezone/reset behavior and relevant security boundaries plus mandatory repository hooks and installed independent audit.",
+      "frontend_backend_outcome": "Working owned Settings/navigation/search, persisted preferences and session metadata/revocation against the approved46-control R4 boundary; eleven required follow-up controls remain Sprint S04/epic obligations.",
+      "dependencies": [],
+      "essential_qa": "Reuse inspected matching checklist evidence; repair demonstrated unsaved Appearance preview, then one combined matching app build/install and scoped Settings/session integration journey. Mandatory hooks only; no unchanged whole-suite campaign.",
       "stages": {
         "implementation": "PENDING",
         "source_tests": "PENDING",
@@ -14063,24 +14053,28 @@ Retain working Settings/sessions; finish demonstrated gaps against one checklist
         {
           "stage": "independent_review",
           "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/independent-source-delivery-review.json CLEAR timezone/Reset sourceadmission only, not whole57outcomes."
+        },
+        {
+          "stage": "source_tests",
+          "reference": "appearance-preview/browser-attempt1/evidence/workflows.json PASS155.0.4283.60; six unsaved selections, explicitSave/persistence/Bob;0script/external. Full17.234s including temporary environment removed. Source reviewec1f13e9 CLEAR. InstalledNOTRUN."
         }
       ],
-      "next_action": "Repair proven Timezone/Reset gaps, reconcile working implementation, preserve explicit unmet obligations."
+      "next_action": "Reviewed Appearance repair and focused browser PASS. Complete normal signed source admission and operator source-review checkpoint; matching final app build/install and scoped installed Settings/session QA remain pending. No push without approval."
     }
   ],
   "human_acceptance": {
     "status": "PENDING"
   },
-  "next_action": "Review docs/UX_PLAN_AMENDMENT_R4_PROPOSED.md for explicit acceptance. Keep original57 scope/results/owners until separate signed activation against accepted anchor; do not restart stopped dependencies.",
+  "next_action": "Reviewed Appearance repair and focused browser PASS. Complete normal signed source admission and operator source-review checkpoint; matching final app build/install and scoped installed Settings/session QA remain pending. No push without approval.",
   "accountability": {
-    "functional_exit": "Close S04-01 against all57 outcome/action/expected-result/actual-evidence rows, with working installed Settings and sessions; no primitive/checkpoint substitution.",
+    "functional_exit": "S04-01 complete (R4 narrowed scope):46 exact controls with applicable source, installed functional QA, independent audit, recovery and minimal separate human acceptance. Eleven required follow-ups remain Sprint S04/epic blockers.",
     "owner": "/root",
     "elapsed_scope": "wall_clock",
     "history_reference": "Single checklist E1-E11 and historical S04-01 ledger retained; prior total cost/time UNKNOWN. Paused S04-02 work order retained separately.",
     "investigation": {
       "owner": "/root",
-      "started_at": "2026-10-17T13:35:58Z",
-      "timebox_seconds": 1800,
+      "started_at": "2026-10-17T14:14:54Z",
+      "timebox_seconds": 3600,
       "elapsed_status": "UNMEASURED",
       "elapsed_seconds": null
     },
@@ -14228,26 +14222,30 @@ Retain working Settings/sessions; finish demonstrated gaps against one checklist
         "elapsed_status": "MEASURED",
         "elapsed_seconds": 255.199,
         "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/r4-proposal-commit-attempt1-result.json; normal signed planning commit675844f verifiedGoodShopkeeper. GatePASS does not establish scope adequacy: subsequent independent scope reassessment requires actual narrowing, not just core-unit decomposition. Unaccepted draft superseded by current revision."
+      },
+      {
+        "id": "S04-01-r4-corrected-proposal-admission",
+        "boundary": "settings-and-sessions",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "source_revision": "55bb148960599b9dc33fc777b9299d11f201312bab7434521e78d1ee7af29ac8",
+        "change_reference": "Correct unaccepted initial R4: actual46control revised S04-01 closure;11required epic/root followups outside that gate but still blocking global403/legacy/48parents release. Preserve originalowner history and unchanged results/criteria. Documentation-only; existing validator updates specified for later approved activation, not applied now. Normal mandatoryhooks only.",
+        "success_chain_review": {
+          "reviewer": "/root/s04_01_review",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/independent-r4-proposal-final-review.json SHA2562c0111d06fe73ec8b373c5c9b69fce0695f9f23f649bfee9dcbda3d53dc583aa FINAL CLEAR for exact55bb proposal and current supportdocs. Actual46control revisedS04-01 gate,11required epic followups and9SprintS04packages retained, originalcriterion/result/frozen preservation, approval and futureexistingvalidator gates reviewed. No runtime cleanup needed.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 252.794,
+        "reference": "Signed corrected proposal d8ddf8dd79a0; normal mandatory gate PASS; r4-corrected-proposal-commit-attempt1-result.json and actual signed-local receipt retained."
       }
     ],
-    "next_attempt": {
-      "id": "S04-01-r4-corrected-proposal-admission",
-      "boundary": "settings-and-sessions",
-      "owner": "/root",
-      "scope": "PRODUCT_DELIVERY",
-      "adoption": "CURRENT",
-      "source_revision": "55bb148960599b9dc33fc777b9299d11f201312bab7434521e78d1ee7af29ac8",
-      "change_reference": "Correct unaccepted initial R4: actual46control revised S04-01 closure;11required epic/root followups outside that gate but still blocking global403/legacy/48parents release. Preserve originalowner history and unchanged results/criteria. Documentation-only; existing validator updates specified for later approved activation, not applied now. Normal mandatoryhooks only.",
-      "success_chain_review": {
-        "reviewer": "/root/s04_01_review",
-        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/independent-r4-proposal-final-review.json SHA2562c0111d06fe73ec8b373c5c9b69fce0695f9f23f649bfee9dcbda3d53dc583aa FINAL CLEAR for exact55bb proposal and current supportdocs. Actual46control revisedS04-01 gate,11required epic followups and9SprintS04packages retained, originalcriterion/result/frozen preservation, approval and futureexistingvalidator gates reviewed. No runtime cleanup needed.",
-        "covers": [
-          "producer",
-          "cleanup",
-          "consumer"
-        ]
-      }
-    },
     "completed_investigations": [
       {
         "owner": "/root",
@@ -14257,19 +14255,46 @@ Retain working Settings/sessions; finish demonstrated gaps against one checklist
         "elapsed_seconds": 3414.589,
         "ended_at": "2026-10-17T13:35:58.589335+00:00",
         "disposition": "Signed source admission complete; operator subsequently requests separate narrow amendment preparation. Full phase wall-clock includes gate/review/wait/planning preparation; no compute-time equivalence. Actual gate receipts and full failure history preserved."
+      },
+      {
+        "owner": "/root",
+        "started_at": "2026-10-17T13:35:58Z",
+        "timebox_seconds": 1800,
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 874.422,
+        "ended_at": "2026-10-17T13:50:32.422009+00:00",
+        "disposition": "Planning proposal delivered at actual signed-local receipt; disposition recorded later. Subsequent human review/wait is separate from development. No prior failure or cost reset."
       }
-    ]
+    ],
+    "next_attempt": {
+      "id": "S04-01-r4-activation-and-preview-admission",
+      "boundary": "settings-and-sessions",
+      "owner": "/root",
+      "scope": "PRODUCT_DELIVERY",
+      "adoption": "CURRENT",
+      "source_revision": "55bb148960599b9dc33fc777b9299d11f201312bab7434521e78d1ee7af29ac8",
+      "change_reference": "Approved R4 existing-policy lossless partition plus demonstrated six-choice unsaved Appearance preview repair. One combined normal source admission; prior failures retained.",
+      "success_chain_review": {
+        "reviewer": "/root/s04_01_review",
+        "reference": "Appearance source-review.json ec1f13e9 CLEAR; r4-activation/independent-activation-review.json b56f2a68 CLEAR for exact normative/policy candidate and inspected11PASS receipt. No deployment implied. Final integrated review in r4-activation/final-integrated-source-review.json before normal admission.",
+        "covers": [
+          "producer",
+          "cleanup",
+          "consumer"
+        ]
+      }
+    }
   },
   "slice_contract": {
     "version": 1,
     "slice": "S04-01",
     "specification": {
       "path": "docs/UX_SLICE_S04_01.md",
-      "sha256": "da2d79181ce68e0cdbb04b8e2542c535327e55fa3824b12bd69acec35b2d7a9f"
+      "sha256": "d9f5aa4c2757cd190ec20a6e58cf3626b0e35ed13d5ac455b9bdf7a17ef1225f"
     },
     "design": {
       "journey": "Settings navigation/search -> actual owned preferences/sessions -> native save/revoke -> reload and owning workflow.",
-      "frontend": "Reuse existing distinct pages/forms. Fixed UTC offsets explicitly have no DST; Reset reloads saved General state without defaults reset.",
+      "frontend": "Reuse existing distinct pages/forms. Fixed UTC offsets explicitly have no DST; Reset reloads saved General state without defaults reset. Unsaved Appearance choices drive only native CSS sample; explicit Save remains sole persistence action.",
       "backend": "Reuse existing Runtime gateway, PrivateAccountFile and SessionService; narrow timezone sidecar, no password/SQL/quota/helper rewrite.",
       "interfaces": "Finite typed offset plus expected revision in authenticated CSRF POST; direct typed mail context before escaping, no HTML replacements or globalTZ.",
       "persistence": "Private bounded account CAS record; UTC only on absence, corruption unavailable; preserve unrelated records and stale/uncertain-save semantics.",
@@ -14285,8 +14310,8 @@ Retain working Settings/sessions; finish demonstrated gaps against one checklist
         "kind": "positive",
         "level": "source",
         "prerequisites": "Exact current source and per-control prerequisites in docs/UX_SLICE_S04_01.md; two controlled accounts; human requires all agent-owned passes.",
-        "action": "Execute per-control positive actions in the checklist. First save/reload offset and read fixed-time mail; Reset unsaved General fields.",
-        "expected": "Persisted owned settings affect actual workflows; exact converted times and saved reset values; no message/canonical time changes.",
+        "action": "Execute per-control positive actions in the checklist. First save/reload offset and read fixed-time mail; Reset unsaved General fields. Change six Appearance selections using keyboard; sample updates without durable writes, then explicit Save/reload actual consumers.",
+        "expected": "Persisted owned settings affect actual workflows; exact converted times and saved reset values; no message/canonical time changes. Unsaved sample changes and saved summary remain distinct; Bob and saved bytes unchanged before Save.",
         "preserved": "Original mail/keys/credentials, unrelated preferences/services, account isolation and scope distinction among source/native/installed/human.",
         "owner": "/root",
         "reviewer": "/root/s04_01_review",
@@ -14346,15 +14371,15 @@ Retain working Settings/sessions; finish demonstrated gaps against one checklist
         "evidence": []
       }
     ],
-    "engineering_exit": "All57 original checklist obligations and matching installed/source/native applicability, independent audit and cleanup PASS; pending dependencies prohibit parent closure.",
+    "engineering_exit": "All46 approved R4 core checklist obligations and applicable source/native/installed functional QA, independent audit and cleanup PASS; eleven required follow-up controls remain Sprint S04/epic obligations.",
     "human_exit": "Only after agent-owned matching installed audit passes, one concise remaining usability judgment separately recorded; reuse prior exact observations."
   },
-  "blocker": "Concrete revised R4 proposal requires explicit approval; original57 remains binding until acceptedactivation and scoped validator checks. Initial unaccepted draft675844f only decomposedwork; correctedproposal actuallynarrows closure without dropping11globalrequirements.",
-  "independent_next_action": "Complete independent review, integrity check and signed local preservation of proposed R4 only. No runtime/native/browser/other-slice work. Then operator review of concrete proposal and synchronization checkpoint.",
+  "blocker": null,
+  "independent_next_action": "Independently review approved R4 policy candidate and exact Appearance repair; root performs one integration/host queue. No other slice resumes.",
   "proposed_amendment": {
     "path": "docs/UX_PLAN_AMENDMENT_R4_PROPOSED.md",
     "sha256": "55bb148960599b9dc33fc777b9299d11f201312bab7434521e78d1ee7af29ac8",
-    "status": "PROPOSED_NOT_ACTIVE",
+    "status": "APPROVED_ACTIVATION_IN_PROGRESS",
     "operator_preparation_direction": "2026-10-17 explicit option selection: Prepare a narrow scope amendment; preserve remaining epic requirements",
     "core_control_count": 46,
     "retained_control_count": 11,
@@ -14363,8 +14388,10 @@ Retain working Settings/sessions; finish demonstrated gaps against one checklist
     "original_parent_closure": "R2 original57-control scope retained as history; after approvedactivation only46 govern R4 narrowedS04-01. Elevenrequired epic followups still gate epic/release; no originalfullscope completion claim.",
     "effective_followup_owner": "epic integration/root after approved R4 activation",
     "activation": "Explicit approval, separate signed acceptedplan/manifest anchor, then existing validator lossless-partition checks before changed work order.",
-    "sprint_closure": "Sprint S04 additionally requires all nine required F packages; F6 S08-01 backend dependency remains explicit."
-  }
+    "sprint_closure": "Sprint S04 additionally requires all nine required F packages; F6 S08-01 backend dependency remains explicit.",
+    "operator_approval": "Operator proceed after explicit request to approve R4 and continue S04-01; exact55bb proposal preserved."
+  },
+  "scope_revision": "R4"
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->
@@ -14446,3 +14473,8 @@ Final corrected R4 SHA25655bb148960599b9dc33fc777b9299d11f201312bab7434521e78d1e
 additionally states that all9 follow-ups block SprintS04 closure as well as
 epic/release; the cross-sprint S08-01 dependency remains explicit. It supersedes
 prior unaccepted proposal hashes; no requirement, criterion or result is removed.
+
+
+## 2026-10-17 — approved R4 activation and demonstrated preview gap
+
+Operator “proceed” approves exact55bb R4 after explicit approval request. Effective S04-01 now46controls; eleven required controls in nine root-owned follow-ups still gate Sprint S04/epic. Original403/110/48 and result bytes are unchanged. Introducing signed admission remains pending; no functional acceptance follows. Independent source review found unsaved Appearance preview still used saved values. Repair only that demonstrated core gap, reuse existing tests and batch with delivered timezone/Reset before one matching installation. No other slice resumes and no push is authorized.

@@ -1,6 +1,12 @@
 # S04-01 — Settings and sessions: single delivery checklist
 
-Status: **IN PROGRESS; no parent-slice closure claimed.** Source baseline:
+Status: **IN PROGRESS; no parent-slice closure claimed.** Accepted R4 narrows the
+effective boundary to 46 controls in `maint/ux/s04_01_r4_scope.json`; the original
+57-control checklist below remains provenance and a lossless requirements map.
+Eleven controls remain required in nine Sprint S04/epic follow-ups outside the
+revised slice gate. See `docs/UX_PLAN_AMENDMENT_R4.md` for operator approval,
+unchanged positive/security criteria and separate source/installed/human exits.
+Scope acceptance is not functional acceptance. Source baseline:
 `0c5dac8fec6466c0834af2a229a57325c5ea38f7`, branch
 `feat/ux-completion-20260929`. Accepted R2 anchor:
 `6b3ce8fff27ca3dabf87039d54098bd9967a2e42`; signed R3 introducing anchor:
@@ -26,8 +32,7 @@ responses. No general account-admin replacement or speculative storage redesign.
 A disabled control or honest Unknown can satisfy an unavailable-state negative;
 it cannot satisfy a required positive workflow. Controls requiring unfinished
 password, recovery or shared-quota capabilities remain explicit dependencies.
-They are not silently removed from this slice and do not authorize restarting
-those stopped slices. Engineering completion, matching installed verification,
+Their exact eleven IDs are retained outside the narrowed slice gate by approved R4 and still block Sprint S04/epic; this does not authorize restarting those stopped slices. Engineering completion, matching installed verification,
 independent audit and reserved human judgment are recorded separately.
 
 ## Reusable evidence, with its original limits
@@ -263,7 +268,7 @@ These are reconciliation states, not new acceptance enums or whole-control PASS.
 - **R2-12-010 — Actual selected-state preview [PARTIAL]**
   Action: Change unsaved appearance options
   Expected: Preview reflects the actual selected settings and distinguishes saved from unsaved values.
-  Actual evidence: E2 selected settings/rendered preview exists; exact unsaved-versus-saved preview criterion needs source/evidence reconciliation.
+  Actual evidence: E13 independently reviewed native-CSS repair and existing focused Edge155 browser PASS: six unsaved choices change computed sample without durable writes; explicit Save/reload affects owning consumers, fresh Alice/Bob isolated and System follows device. Full action17.234s; matching installed outcome still pending.
 - **R2-12-011 — Save changes [REUSE]**
   Action: Save all permitted appearance fields then reload as A and B
   Expected: A's persisted options survive; B retains its independent settings.
@@ -442,3 +447,10 @@ change. Independent `independent-arity-correction-review.json` CLEAR SHA-256
 The native binaryce34bc30 remains pinned to its original source; the three
 mechanical correction paths were not rebuilt natively or installed. Parent
 S04-01 remains open; no extra browser/native assurance campaign is required.
+
+
+## E13 — changed unsaved Appearance preview, 2026-10-17
+
+Independent source review ec1f13e9 CLEAR. Existing focused Edge155.0.4283.60 harness PASS: six native keyboard selections update computed sample only; saved appearance bytes and fresh Alice remain unchanged until explicit Save. System preview follows device; Save/reload changes actual mailbox consumers; Bob retains defaults. Zero script/external requests. Browser/environment full action17.234s; temporary Python environment removed. This closes the demonstrated source/browser preview gap, not current installed or whole-slice acceptance. Exact report: `/home/foo/Downloads/osmap-ux-s04/revalidation-20261017/settings-sessions/appearance-preview/browser-attempt1/evidence/workflows.json`.
+
+Core reconciliation maps all43 approved plus3 legacy controls to bounded retained proof, and finds no additional demonstrated implementation gap in inspected paths. `r4-activation/core-reconciliation.json` SHA256409f7f21b7f5c0f52b8455473cbacb4889a2c9c67d19ef7e785c7ea764806f9d defines one combined installed journey; this is not installed or no-defect acceptance.

@@ -25,6 +25,7 @@ def main():
     parser.add_argument("--repo", type=Path, default=Path("/home/foo/Workspace/OSMAP"))
     parser.add_argument("--engine", choices=["chromium", "firefox"], default="chromium")
     parser.add_argument("--browser", default="/usr/bin/microsoft-edge-stable")
+    parser.add_argument("--preview-only", action="store_true", help="Only changed unsaved preview and save/consumer boundary")
     args = parser.parse_args()
     sys.path.insert(0, str(args.repo / "maint/ux"))
     from browser_workflows import start_server, stop_server
@@ -112,6 +113,76 @@ def main():
                 list:rect('.coordinated-list'),reader:rect('#reading-pane')};
             }""")
 
+        def preview_metrics(page):
+            return page.locator(".settings-preview").evaluate("""e => {
+              const q = s => e.querySelector(s), css = s => getComputedStyle(q(s));
+              const rect = s => { const r=q(s).getBoundingClientRect(); return {x:r.x,y:r.y,bottom:r.bottom}; };
+              return {background:getComputedStyle(e).backgroundColor,font:parseFloat(getComputedStyle(e).fontSize),
+                height:q('.settings-preview-message').getBoundingClientRect().height,
+                avatar:css('.settings-preview-avatar').display,snippet:css('.settings-preview-snippet').display,
+                message:rect('.settings-preview-message'),reader:rect('.settings-preview-reader')};
+            }""")
+
+        def preview_boundary(page, baseline):
+            visit(page, SETTINGS)
+            original = preview_metrics(page)
+            appearance_bytes = lambda: {str(p.relative_to(temporary)): p.read_bytes()
+                for p in Path(temporary).rglob("*.appearance")}
+            before = appearance_bytes()
+            # Native keyboard input: no script mutates controls or submits values.
+            page.locator('input[name="appearance"][value="light"]').focus()
+            page.keyboard.press("ArrowRight")
+            expect(page.locator('input[name="appearance"][value="dark"]')).to_be_checked()
+            assert preview_metrics(page)["background"] != original["background"]
+            page.locator('#settings-density').focus()
+            page.keyboard.press("End")
+            expect(page.locator('#settings-density')).to_have_value("compact")
+            assert preview_metrics(page)["height"] < original["height"]
+            page.locator('#settings-font-size').focus()
+            page.keyboard.press("End")
+            expect(page.locator('#settings-font-size')).to_have_value("large")
+            assert preview_metrics(page)["font"] > original["font"]
+            page.locator('#settings-reader-layout').focus()
+            page.keyboard.press("End")
+            expect(page.locator('#settings-reader-layout')).to_have_value("stacked")
+            for field in ['#settings-show-avatars', '#settings-message-preview']:
+                page.locator(field).focus()
+                page.keyboard.press("Space")
+                expect(page.locator(field)).not_to_be_checked()
+            selected = preview_metrics(page)
+            assert selected["reader"]["y"] >= selected["message"]["bottom"]
+            assert selected["avatar"] == "none" and selected["snippet"] == "none"
+            expect(page.locator('.settings-preview-saved')).to_contain_text("Saved: system, comfortable, medium")
+            expect(page.locator('html')).to_have_attribute('data-appearance', 'system')
+            assert appearance_bytes() == before, "unsaved preview wrote durable preferences"
+            # A separate context reads the same account's still-saved defaults.
+            unchanged = new_page("alice")
+            state(unchanged, DEFAULTS)
+            unchanged.context.close()
+            assert appearance_bytes() == before
+            checks.append("six native keyboard selections update computed sample only; durable appearance bytes and fresh account defaults stay unchanged before Save")
+            # System follows device only inside preview before save.
+            page.locator('input[name="appearance"][value="dark"]').focus()
+            page.keyboard.press("ArrowRight")
+            page.emulate_media(color_scheme="light")
+            light = preview_metrics(page)["background"]
+            page.emulate_media(color_scheme="dark")
+            assert preview_metrics(page)["background"] != light
+            page.keyboard.press("ArrowLeft")
+            expect(page.locator('input[name="appearance"][value="dark"]')).to_be_checked()
+            save(page, CHANGED, keyboard=True)
+            page.reload(wait_until="networkidle")
+            state(page, CHANGED)
+            expect(page.locator('.settings-preview-saved')).to_contain_text("Saved: dark, compact, large")
+            changed = metrics(page)
+            assert changed["padding"] < baseline["padding"] and changed["font"] > baseline["font"]
+            assert changed["avatar"] == "none" and changed["snippet"] == "none"
+            assert changed["reader"]["y"] >= changed["list"]["bottom"] - 2
+            bob = new_page("bob")
+            state(bob, DEFAULTS)
+            bob.context.close()
+            checks.append("explicit Save/reload persists six choices and actual mailbox consumers; Bob retains defaults; System preview follows device without scripts")
+
         def post(page, path, values, expected):
             response = page.context.request.post(origin + path, data=urlencode(values),
                 headers={"Content-Type":"application/x-www-form-urlencoded", "Origin":origin}, max_redirects=0)
@@ -123,6 +194,11 @@ def main():
             baseline = metrics(alice)
             assert baseline["avatar"] != "none" and baseline["snippet"] != "none"
             assert baseline["reader"]["x"] > baseline["list"]["x"]
+            if args.preview_only:
+                preview_boundary(alice, baseline)
+                assert not external and not scripts
+                report["result"] = "PASS"
+                return
             # Populate Drafts through its normal native form for real avatar checks.
             visit(alice, "/compose")
             alice.locator('[name="body"]').fill("Public display preference fixture")

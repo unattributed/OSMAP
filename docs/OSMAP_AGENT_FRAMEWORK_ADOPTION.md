@@ -4,8 +4,7 @@
 
 Resume S04-01 only under the current ledger and `UX_SLICE_S04_01.md`: preserve
 working code/evidence, repair demonstrated gaps and use minimum changed-boundary
-checks plus mandatory hooks. No other slice resumes. Keep original cross-slice
-closure dependencies explicit; no new QA framework or blanket passing-suite rerun.
+checks plus mandatory hooks. Approved R4 narrows this slice to46 controls;11 required follow-up controls remain Sprint S04/epic obligations through the fixed scope profile. No other slice resumes. No new QA framework or blanket passing-suite rerun. Normal signed source review precedes any push or synchronization.
 
 ## Historical operator stop — 2026-10-17
 

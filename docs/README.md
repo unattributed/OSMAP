@@ -7,7 +7,9 @@ S04-01 Settings/sessions only has resumed against its
 (`UX_SLICE_S04_01.md`).
 The operator-requested [`UX_PLAN_AMENDMENT_R4_PROPOSED.md`](UX_PLAN_AMENDMENT_R4_PROPOSED.md)
 proposes an actual narrowed S04-01 gate plus required epic follow-ups for review
-only; it is not active.
+only; its historical bytes remain preserved. The operator has now approved that
+exact proposal; [`UX_PLAN_AMENDMENT_R4.md`](UX_PLAN_AMENDMENT_R4.md) records the
+accepted scope and activation conditions. Scope approval passes no control.
 The first two repairs pass focused source/browser/OpenBSD checks; no installed
 or whole-slice acceptance is claimed. Other slices remain stopped. The current
 ledger carries the exact work order and preserved dependencies.

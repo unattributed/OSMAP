@@ -42,13 +42,34 @@
 .settings-preview-message > div { min-width: 0; overflow-wrap: anywhere; }
 .settings-preview-avatar { display: inline-grid; place-items: center; width: 2rem; height: 2rem; flex: 0 0 2rem; border: 1px solid var(--line); border-radius: .5rem; color: var(--link); }
 .settings-preview-snippet { display: block; margin-top: .2rem; color: var(--muted); font-size: .85em; }
-.settings-preview-reader { margin-top: .75rem; min-height: 10.75rem; padding: 1rem 1.25rem; border: 1px solid var(--line); border-radius: .7rem; }
+/* Live native selections affect only this sample, never saved page attributes. */
+.settings-preview-help, .settings-preview-saved { font-size: .8rem; line-height: 1.5; color: var(--muted); }
+.settings-preview-layout { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: .65rem; align-items: start; }
+.settings-preview-reader { min-width: 0; min-height: 8rem; padding: .65rem; border: 1px solid var(--line); border-radius: .7rem; overflow-wrap: anywhere; }
 .settings-preview-reader p { margin: .4rem 0; line-height: 1.7; }
 .settings-preview-layout-note { color: var(--muted); font-size: .85em; }
-.settings-preview[data-preview-density=compact] .settings-preview-message { min-height: 2.65rem; padding-top: .35rem; padding-bottom: .35rem; }
-.settings-preview[data-preview-font=small] { font-size: .8rem; }
-.settings-preview[data-preview-font=large] { font-size: 1rem; }
-.settings-preview[data-preview-avatars=false] .settings-preview-avatar, .settings-preview[data-preview-snippet=false] .settings-preview-snippet { display: none; }
+.settings-preview-stacked { display: none; }
+.settings-preview { font-size: .875rem; }
+.settings-display-form:has(#settings-density option[value=compact]:checked) .settings-preview-message { min-height: 2.65rem; padding-top: .35rem; padding-bottom: .35rem; }
+.settings-display-form:has(#settings-font-size option[value=small]:checked) .settings-preview { font-size: .8rem; }
+.settings-display-form:has(#settings-font-size option[value=large]:checked) .settings-preview { font-size: 1rem; }
+.settings-display-form:has(#settings-show-avatars:not(:checked)) .settings-preview-avatar,
+.settings-display-form:has(#settings-message-preview:not(:checked)) .settings-preview-snippet { display: none; }
+.settings-display-form:has(#settings-reader-layout option[value=stacked]:checked) .settings-preview-layout { grid-template-columns: minmax(0,1fr); }
+.settings-display-form:has(#settings-reader-layout option[value=stacked]:checked) .settings-preview-split { display: none; }
+.settings-display-form:has(#settings-reader-layout option[value=stacked]:checked) .settings-preview-stacked { display: inline; }
+.settings-display-form:has(input[name=appearance][value=light]:checked) .settings-preview,
+.settings-display-form:has(input[name=appearance][value=system]:checked) .settings-preview {
+  color-scheme: light; --panel: #fff; --ink: #142650; --muted: #506c9d; --line: #d5e2fa; --link: #164db4;
+}
+.settings-display-form:has(input[name=appearance][value=dark]:checked) .settings-preview {
+  color-scheme: dark; --panel: #152136; --ink: #ebf2fd; --muted: #aebed4; --line: #3c506d; --link: #9bc4ff;
+}
+@media (prefers-color-scheme: dark) {
+  .settings-display-form:has(input[name=appearance][value=system]:checked) .settings-preview {
+    color-scheme: dark; --panel: #152136; --ink: #ebf2fd; --muted: #aebed4; --line: #3c506d; --link: #9bc4ff;
+  }
+}
 .settings-save-row { display: flex; justify-content: flex-end; margin-top: .9rem; }
 .settings-save-row button { width: auto; min-height: 2.2rem; padding: .45rem .8rem; font-size: .875rem; }
 @media (max-width: 75rem) {

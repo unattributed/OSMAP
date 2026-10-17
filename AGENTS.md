@@ -2,13 +2,18 @@
 
 ## Current bounded authorization — 2026-10-17
 
-The operator has resumed **S04-01 Settings and sessions only**: retain working
-implementation, finish demonstrated gaps and close against the single
+The operator has resumed **S04-01 Settings and sessions only** and approved R4
+by replying “proceed” after the explicit R4 approval request. Follow
+`docs/UX_PLAN_AMENDMENT_R4.md`: retain working implementation, finish demonstrated
+gaps in the approved 46-control boundary and close against the single
 outcome/action/expected-result/actual-evidence checklist in
 `docs/UX_SLICE_S04_01.md` and the current ledger work order. Use changed-behavior
 and relevant security checks plus mandatory hooks. All other slices remain
-stopped, including S04-02. Original dependencies are retained, not waived or
-silently restarted. The stop below remains historical authority for those slices.
+stopped, including S04-02. Eleven requirements remain in nine mandatory Sprint
+S04/epic follow-ups; they are not waived or silently restarted. The stop below
+remains historical authority for those slices. Verify the signed R4 introducing
+anchor after planning admission; no source/native/installed result is inferred
+from scope approval.
 
 ## Historical operator stop — 2026-10-17
 
@@ -141,10 +146,10 @@ not retroactively declared complete. Routine technical decisions remain delegate
 - Preserve unrelated local or remote worktree changes unless the operator
   explicitly asks to remove them.
 - For completed development changes, finish with a signed Git commit, verify
-  the signature, and immediately synchronize the current branch to GitHub after
-  required checks pass. The operator explicitly authorized this workflow on
-  2026-10-01. A Git push is source synchronization, not host deployment or
-  operator acceptance.
+  the signature, and stop for operator review before any push or synchronization.
+  The latest operator-supplied AGENTS instructions supersede the older
+  2026-10-01 automatic-sync default. Local source delivery, synchronization,
+  deployment and operator acceptance remain distinct.
 
 ## Git and signing workflow
 
@@ -166,12 +171,11 @@ For example:
 
 Do not create unsigned commits.
 
-Synchronize each verified signed commit to the current GitHub branch promptly
-after its checks pass. The operator's 2026-10-01 instruction is standing
-authorization for these ordinary pushes. Do not automatically pull, force push,
-rewrite published history, amend existing commits, or resolve branch divergence.
-If the remote diverges or a push gate fails, investigate and fix the issue;
-never bypass checks or force the update.
+Do not automatically push, pull, synchronize, force push, rewrite published
+history, amend existing commits or resolve branch divergence. Only an explicit
+instruction such as “push” or “sync” authorizes a remote write after signed
+review. R4 scope approval is not push approval. If a separately authorized push
+gate fails, fix the issue without bypassing checks or forcing the update.
 
 Do not create or switch branches unless the task requires it or the operator
 explicitly approves it.
@@ -190,9 +194,9 @@ superseded the manual clipboard/Proton Pass checkpoint on 2026-09-14.
 - Use the agent's existing credential cache. Noninteractive signing may use
   `gpg --batch --pinentry-mode error`; if the agent cannot sign, report the
   concrete failure rather than creating an unsigned commit or bypassing checks.
-- This removes the manual signing checkpoint. Verify the signature before the
-  authorized push; operator review and UX acceptance still follow the synced
-  commit rather than blocking ordinary source synchronization.
+- This removes only the manual signing checkpoint. Signature verification and
+  operator review before synchronization remain required; UX acceptance is a
+  separate outcome.
 
 After each commit, verify:
 
@@ -200,10 +204,9 @@ After each commit, verify:
     git status --short --branch
     git show --show-signature --stat --oneline HEAD
 
-Then push the current branch to GitHub and report the commit SHA, signature
-result, changed files, working-tree state, and ahead/behind state. The operator
-can inspect the synchronized commit in GitHub or VSCodium; human acceptance
-remains a separate decision.
+Then report the commit SHA, signature result, changed files, working-tree state
+and ahead/behind state for operator inspection. Do not push or synchronize until
+explicitly authorized. Human acceptance remains separate from source review.
 
 After each push, refresh `origin` and prove local/remote SHA equality
 before reporting synchronization as successful:

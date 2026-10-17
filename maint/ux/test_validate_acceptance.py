@@ -9,7 +9,8 @@ from pathlib import Path
 import unittest
 from datetime import datetime, timedelta, timezone
 
-from validate_acceptance import active_work_order, validate, validate_work_order, validate_slice_contract
+from validate_acceptance import (active_work_order, validate, validate_work_order, validate_slice_contract,
+    r4_scope, validate_closure, R4_PROFILE, R4_SUPPLEMENT, R4_PROPOSAL, R4_FOLLOWUPS)
 
 
 REPO = Path(__file__).resolve().parents[2]
@@ -415,6 +416,154 @@ class SliceContractTests(unittest.TestCase):
             self.check(order)
         order["human_acceptance"] = dict(status="PASS", reference="synthetic operator acceptance only")
         self.check(order)
+
+
+class R4ScopeTests(unittest.TestCase):
+    """Synthetic scope/closure declarations; no application acceptance is created."""
+    @classmethod
+    def setUpClass(cls):
+        cls.matrix = json.loads((REPO / "maint/ux/acceptance.json").read_text())
+        cls.catalogue = (REPO / "docs/UX_FULL_FUNCTIONAL_SLICES.md").read_text()
+        cls.base = active_work_order((REPO / "docs/UX_EXECUTION_LEDGER.md").read_text())
+        cls.core, cls.followups = r4_scope(cls.matrix, REPO)
+        cls.original = cls.core | cls.followups
+
+    def order(self, narrowed=True, state="IN_PROGRESS"):
+        order = copy.deepcopy(self.base)
+        order["state"] = state
+        order.pop("operator_pause", None)
+        if narrowed:
+            order["scope_revision"] = "R4"
+        else:
+            order.pop("scope_revision", None)
+        # One current functional outcome is retained; only its declared map changes.
+        self.assertEqual(len(order["outcomes"]), 1)
+        order["outcomes"][0]["requirement_ids"] = sorted(self.core if narrowed else self.original)
+        return order
+
+    def check(self, order, matrix=None):
+        return validate_work_order(order, matrix if matrix is not None else self.matrix, self.catalogue, (), repo=REPO)
+
+    def fixture(self):
+        scratch = tempfile.TemporaryDirectory(prefix="osmap-r4-scope-")
+        self.addCleanup(scratch.cleanup)
+        repo = Path(scratch.name)
+        for relative in (R4_PROFILE, R4_SUPPLEMENT, R4_PROPOSAL, "docs/UX_PLAN_SHA256SUMS"):
+            path = repo / relative
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes((REPO / relative).read_bytes())
+        return repo
+
+    def rewrite_profile(self, repo, mutate):
+        path = repo / R4_PROFILE
+        profile = json.loads(path.read_text()); mutate(profile)
+        path.write_text(json.dumps(profile, sort_keys=True) + "\n")
+        manifest = repo / "docs/UX_PLAN_SHA256SUMS"
+        lines = manifest.read_text().splitlines()
+        manifest.write_text("\n".join(hashlib.sha256(path.read_bytes()).hexdigest() + "  " + R4_PROFILE
+            if line.endswith("  " + R4_PROFILE) else line for line in lines) + "\n")
+
+    def complete_declarations(self, order):
+        for outcome in order["outcomes"]:
+            outcome["stages"] = {stage: "PASS" for stage in outcome["stages"]}
+            outcome["evidence"] = [{"stage": stage, "reference": "synthetic declaration only, not product evidence"} for stage in outcome["stages"]]
+            for dependency in outcome["dependencies"]: dependency["status"] = "PASS"
+        for test in order["slice_contract"]["tests"]:
+            test["status"] = "PASS"
+            test["evidence"] = ["synthetic declaration only, not executed application QA"]
+        order["human_acceptance"] = {"status": "PASS", "reference": "synthetic human-evidence shape only"}
+
+    def accepted_matrix(self):
+        matrix = copy.deepcopy(self.matrix)
+        for row in matrix["approved_control_cases"]:
+            row["result"] = {"status": "ACCEPTED", "executed": True,
+                "evidence": [{"kind": "human_uat", "path": "synthetic-counterexample", "scope": "shape test only; no actual human result or application acceptance"}]}
+        return matrix
+
+    def test_default_original57_and_explicit_approved46_keep_followups_open(self):
+        self.assertEqual(self.check(self.order(False))["required_obligations"], 57)
+        self.assertEqual(self.check(self.order())["required_obligations"], 46)
+        rows = {row["id"]: row for row in self.matrix["approved_control_cases"]}
+        self.assertEqual(len(self.followups), 11)
+        self.assertTrue(all(rows[identifier]["result"]["status"] == "BLOCKED" for identifier in self.followups))
+        # No result, original expectation or owner history is modified by the overlay.
+        before = copy.deepcopy(self.matrix)
+        r4_scope(self.matrix, REPO)
+        self.assertEqual(self.matrix, before)
+
+    def test_unapproved_unknown_and_unmanifested_scope_refused(self):
+        order = self.order(); order["scope_revision"] = "R5"
+        with self.assertRaisesRegex(ValueError, "unapproved.*scope revision"): self.check(order)
+        order.pop("scope_revision")
+        with self.assertRaisesRegex(ValueError, "all original mapped"): self.check(order)
+        repo = self.fixture()
+        manifest = repo / "docs/UX_PLAN_SHA256SUMS"
+        manifest.write_text("\n".join(line for line in manifest.read_text().splitlines() if not line.endswith(R4_SUPPLEMENT)) + "\n")
+        with self.assertRaisesRegex(ValueError, "missing or changed"): r4_scope(self.matrix, repo)
+
+    def test_omitted_duplicate_and_reassigned_scope_cannot_be_repinned(self):
+        edits = [lambda p: p["core_control_ids"].pop(),
+                 lambda p: p["core_control_ids"].append(p["core_control_ids"][0]),
+                 lambda p: p["required_followups"].pop(),
+                 lambda p: p["required_followups"].append(copy.deepcopy(p["required_followups"][0])),
+                 lambda p: p["required_followups"][0].update(required=False),
+                 lambda p: p["required_followups"][0].update(owner="unassigned"),
+                 lambda p: p["required_followups"][5].update(dependency_slices=[]),
+                 lambda p: p["required_followups"][0]["control_ids"].append(p["required_followups"][0]["control_ids"][0]),
+                 lambda p: p["core_control_ids"].__setitem__(0, "R2-11-005")]
+        for edit in edits:
+            with self.subTest(edit=edit):
+                repo = self.fixture(); self.rewrite_profile(repo, edit)
+                with self.assertRaises(ValueError): r4_scope(self.matrix, repo)
+        order = self.order(); order["outcomes"][0]["requirement_ids"].append(order["outcomes"][0]["requirement_ids"][0])
+        with self.assertRaisesRegex(ValueError, "duplicate R4"): self.check(order)
+        order = self.order(); order["outcomes"][0]["requirement_ids"].pop()
+        with self.assertRaisesRegex(ValueError, "all original mapped"): self.check(order)
+
+    def test_changed_approved_proposal_or_supplement_refused(self):
+        for relative in (R4_PROPOSAL, R4_SUPPLEMENT):
+            repo = self.fixture()
+            with (repo / relative).open("ab") as file: file.write(b"changed\n")
+            with self.assertRaisesRegex(ValueError, "missing or changed"): r4_scope(self.matrix, repo)
+        repo = self.fixture()
+        path = repo / R4_PROPOSAL; path.write_bytes(path.read_bytes() + b"changed\n")
+        manifest = repo / "docs/UX_PLAN_SHA256SUMS"
+        manifest.write_text("\n".join(hashlib.sha256(path.read_bytes()).hexdigest() + "  " + R4_PROPOSAL if line.endswith("  " + R4_PROPOSAL) else line for line in manifest.read_text().splitlines()) + "\n")
+        with self.assertRaisesRegex(ValueError, "approved proposal SHA256"): r4_scope(self.matrix, repo)
+
+    def test_partial_core_cannot_close_even_when_stage_flags_claim_pass(self):
+        for state in ("ENGINEERING_COMPLETE", "UAT_READY", "ACCEPTED"):
+            order = self.order(state=state); self.complete_declarations(order)
+            with self.subTest(state=state), self.assertRaisesRegex(ValueError, "actual closure stage"): self.check(order)
+        matrix = self.accepted_matrix()
+        approved_core = [row for row in matrix["approved_control_cases"] if row["id"] in self.core]
+        self.assertEqual(len(approved_core), 43)
+        for row in approved_core: row["result"]["status"] = "QA_VERIFIED"
+        order = self.order(state="ENGINEERING_COMPLETE"); self.complete_declarations(order)
+        self.assertEqual(self.check(order, matrix)["required_obligations"], 46)
+        order["state"] = "ACCEPTED"
+        with self.assertRaisesRegex(ValueError, "actual closure stage"): self.check(order, matrix)
+
+    def test_s04_epic_and_s11_closure_cannot_drop_required11(self):
+        for scope in ("S04", "EPIC"):
+            with self.subTest(scope=scope), self.assertRaisesRegex(ValueError, "closure requires ACCEPTED"): validate_closure(self.matrix, scope, REPO)
+        matrix = self.accepted_matrix()
+        for scope in ("S04", "EPIC"):
+            self.assertIn("no sprint/release QA", validate_closure(matrix, scope, REPO)["closure_claim"])
+        identifier = next(iter(self.followups))
+        row = next(row for row in matrix["approved_control_cases"] if row["id"] == identifier)
+        row["result"] = copy.deepcopy(next(row for row in self.matrix["approved_control_cases"] if row["id"] == identifier)["result"])
+        for scope in ("S04", "EPIC"):
+            with self.assertRaisesRegex(ValueError, identifier): validate_closure(matrix, scope, REPO)
+        order = self.order(False, "ENGINEERING_COMPLETE"); self.complete_declarations(order)
+        order["slice"] = "S11-04"
+        import re
+        order["original_requirement"] = dict(re.findall(r"^\| (S\d{2}-\d{2}) \| ([^|]+) \|", self.catalogue, re.MULTILINE))["S11-04"].strip()
+        order["outcomes"][0]["requirement_ids"] = [row["id"] for key in ("cases", "approved_control_cases") for row in matrix[key] if "S11-04" in row["owning_slices"]]
+        with self.assertRaisesRegex(ValueError, "EPIC closure requires ACCEPTED"): self.check(order, matrix)
+        # ACCEPTED without actual execution/human-evidence shape also refuses.
+        matrix = self.accepted_matrix(); matrix["approved_control_cases"][0]["result"]["evidence"] = []
+        with self.assertRaisesRegex(ValueError, "unsupported progress"): validate_closure(matrix, "EPIC", REPO)
 
 
 if __name__ == "__main__":

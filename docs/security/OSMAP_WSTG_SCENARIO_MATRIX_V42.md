@@ -1119,3 +1119,8 @@ password change. HTTP25FAILe1f7c0a3/audit45d25 at initial Boblogin401, before
 mutation; unique causeUNKNOWN, retained root namespaces and after-parityUNKNOWN
 remain explicit. Development/native QA are stopped. Subsequent repository-only
 commit/push authorization supplies no new installed, release or UAT evidence.
+
+
+### 2026-10-17 — S04-01 R4 and changed Appearance preview
+
+Approved R4 preserves403 approved/110 legacy/48 parent obligations and partitions effective46 core plus11 required Sprint S04/epic follow-ups; acceptance declaration guard is not evidence truth. Six-choice unsaved Appearance preview now uses native CSS only. Existing Edge155 focused browser PASS checks keyboard/computed sample, unchanged durable values before Save, explicit saved consumers and Bob isolation, zero script/external requests; private environment removed. Source review ec1f13e9 and R4 policy reviewb56f2a68 CLEAR. Matching installed verification and separate human judgment remain open; other slices stay stopped.

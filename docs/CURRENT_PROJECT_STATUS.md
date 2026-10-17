@@ -14,6 +14,14 @@ statement as provenance rather than current release posture.
 
 ## Current source posture
 
+### Approved R4 activation — 2026-10-17
+
+The operator approved exact55bb R4 with “proceed” after the explicit approval request. The effective S04-01 boundary is46 controls;11 required controls in9 root-owned packages remain Sprint S04/epic obligations. All403 approved controls,110 legacy cases and48 parent IDs remain unchanged. Accepted supplement, manifest and existing-validator activation are in progress, with signed introducing anchor pending. Result states remain43 partial/11 blocked; no slice completion or UAT readiness is claimed.
+
+The demonstrated unsaved Appearance preview gap is now repaired: six native choices update the sample without durable writes. The independently reviewed three-path repair passes the existing focused Edge155 browser case, including explicit Save/reload, actual consumers and Bob isolation, with zero script/external requests. Combine it with delivered timezone/Reset before one matching build/install and scoped installed verification; those installed outcomes remain pending. S04-02 and all other stopped slices remain stopped. No synchronization is authorized; review signed source first.
+
+The bounded-resumption/proposal sections below describe earlier checkpoints; their proposed/not-active statements are superseded by this approval. They remain historical evidence.
+
 ### Current bounded resumption — S04-01 only, 2026-10-17
 
 The operator has authorized retaining working Settings/sessions and finishing

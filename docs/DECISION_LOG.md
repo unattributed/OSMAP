@@ -11235,3 +11235,12 @@ Original frozen plan/manifest, acceptance results and runtime remain unchanged.
 Final proposed R4 also keeps all9 follow-ups mandatory for SprintS04 closure.
 The S08-01 cross-sprint dependency remains visible. Narrowed S04-01 closure
 cannot imply SprintS04 or epic acceptance while required follow-ups remain open.
+
+
+## 2026-10-17 — accept R4 and finish demonstrated S04-01 gaps
+
+Operator “proceed” contextually approves exact55bb148960599b9dc33fc777b9299d11f201312bab7434521e78d1ee7af29ac8 proposal after explicit approval request. Adopt46 core controls, preserve11 required Sprint S04/epic controls in9 root-owned follow-ups and immutable403/110/48 inventory. Add accepted supplement/profile to manifest and enforce partition using existing validator; neither declarations nor scope approval prove functional PASS. Sign introducing source normally; latest operator review-before-push applies.
+
+Independent reconciliation demonstrates a missing unsaved Appearance preview (R2-12-010). Reuse existing native controls/CSS and browser harness; no JavaScript, CSP/store authority or new framework. Batch this repair with existing timezone/Reset for one matching installation and essential integrated QA. Other slices remain stopped. Human acceptance follows agent-owned passes and independent audit only.
+
+Actual changed preview browser PASS17.234s including disposable Python environment, removed; six native choices, unchanged pre-Save durable values/fresh Alice, Save/reload owning consumers, Bob and System theme. Zero scripts/external requests. Exact report `appearance-preview/browser-attempt1/evidence/workflows.json` under stable S04 settings evidence root. Integrated45 existing acceptance-policy tests PASS0.661s; expected S04/EPIC open-control refusals retained. Installed outcomes are not inferred from these results.
