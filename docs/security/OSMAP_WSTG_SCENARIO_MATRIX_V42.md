@@ -1096,3 +1096,14 @@ Ordinary HTTP24 resultbbd9e9e4/independent actualae5f1e23 PASS18HTTP/17rows, syn
 ### 2026-10-16 S04-02 native primary custody outcome
 
 Stock component17 FAIL before credential dispatch: changed shared-null mtime/ctime triggered identity refusal; exact writer UNKNOWN, rdev/inode/DAC/parents unchanged in captured comparison. Result ca197616; no SQL/operator/provider action, all fixture processes and namespace removed, root evidence stage retained. Device-specific stable identity repair has focused RED2/GREEN29; regular-file metadata/content and all fixed device/DAC/rdev/ancestry checks remain. Matching native service/SQL/installed workflow validation and independent acceptance remain required. No release or full-slice claim.
+
+Actual stock18 result0d901d39: three real primary outcomes and private-ID/kernel/null proofs PASS; full component FAIL before ordinary0, unique refusal guard UNKNOWN. Owned root-only ordinary ancestry correction is scoped separately from unchanged private-client checks. All processes/fixture namespace removed; root stage retained. No SQL/installed/release acceptance follows from these six controls.
+
+
+### 2026-10-17 — retained outcomes and operator stop
+
+Stock20 componentPASS8, resultce773d7d/audit3ae59767, does not qualify installed
+password change. HTTP25FAILe1f7c0a3/audit45d25 at initial Boblogin401, before
+mutation; unique causeUNKNOWN, retained root namespaces and after-parityUNKNOWN
+remain explicit. Development/native QA are stopped. Subsequent repository-only
+commit/push authorization supplies no new installed, release or UAT evidence.

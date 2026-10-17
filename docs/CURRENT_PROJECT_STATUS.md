@@ -14,6 +14,17 @@ statement as provenance rather than current release posture.
 
 ## Current source posture
 
+### Operator stop and source preservation, 2026-10-17
+
+**Development is stopped by explicit operator instruction.** The subsequent
+request authorizes only committing and synchronizing retained repository
+changes to the current UX branch. It does not authorize implementation, live
+testing, deployment or restarting workers. S04-02/S04 remain OPEN and the
+installed obsd1 password-change form remains disabled. The latest integrated
+product source is557b668; unfinished confinement/topology/observation drafts
+remain outside the repository and are not delivered product code. Historical
+work orders below are provenance, not instructions to resume.
+
 ### Current slice contract and epic-wide SOP, 2026-10-16
 
 The active slice is **S04-02 authoritative own-password change**, still OPEN.
@@ -27,10 +38,39 @@ missing outcome/test coverage, unsupported test results and premature closure.
 Its structural PASS cannot establish a working application or evidence truth.
 
 The current verified signed synchronized baseline is
-`d1f50a9b3699a97f24dcb69c8095e36ce1c70449`. Normal commit/push passed1764
-Rust library cases and618 account Python cases, with48 explicit native ignores.
+`557b668a990df775af6665185380ccece6722673`. Normal commit/push passed1764
+Rust library cases and620 account Python cases, with48 explicit native ignores.
 Good Shopkeeper signature, fresh origin equality and source-only Toronto checkout
 synchronization pass. The original missing-TMPDIR gate failure is retained.
+
+On17October the separate stock private-auth component20 passed8 controls,
+including3 guarded native primary commands and their private-ID/kernel proofs,
+correct/wrong passwords under the held epoch lock, foreign canonical refusal,
+and an ordinary-auth refusal against the unavailable public policy endpoint.
+Distinct auth processes belong to the same born master; epoch rows remain
+unchanged. Full root21.633s/native16.069s. All fresh children/groups/daemon,
+namespace/scratch/socket/rootstage and temporary principal are removed;
+standard socket and before/after source parity pass. Result
+`ce773d7dac63a89101d5f848e0d67845a93d015a7607b1f178e5aa48fe97a8f6`.
+This is component evidence only; its actual scope passed independent audit
+3ae59767. SQL25 was subsequently executed and failed as recorded below. Prior19 remains FAIL at
+ordinary directory custody, with the particular path/attribute UNKNOWN.
+The changed expectation follows Dovecot2.3.21.1's source-defined post-start
+run-directory0755 contract; it does not retroactively identify19's failed field.
+
+The changed private-SQL service integration HTTP25 then **FAILED** at Bob's
+initial login: request2 returned401 with no session cookie, before mutation.
+Two responses/three prefix rows complete; root full43.364s. Result
+`e1f7c0a323a28698ee2d8d82ae52e6bbfdf46198c6daf0ef7665a244c1783076`,
+independent actual review
+`45d25ea283cf77612b615ba3056808c4b64bec28fce4b21192a680731d7814b2`.
+The unique underlying cause is UNKNOWN. Two born root roles and24 SQL children
+are reaped, with disposable services/runtime/scratch and purpose identities
+cleared. Guardian termination-9 and owned-group stop are retained; root
+namespaces/stages/public carrier remain retained, after-source parity UNKNOWN.
+No retry, password mutation, production activation or human diagnosis follows.
+Closed fixture admission observations and transaction-parent confinement
+changes remained isolated drafts when the operator stopped development.
 
 The latest controlled ordinary HTTP/password fixture, HTTP24, **PASS**
 (root full action81.471s; result
@@ -1136,3 +1176,11 @@ The existing-driver BobSMTP keepalive source is frozen at `smtp-bob-keepalive1` 
 Superseding continuation: signed source d1f50a9 remains synchronized. Controlled HTTP24 passed18 responses/17 semantic rows, persisted password history/reload, old-password/session refusal, new-password admission, Alice mail containment and Bob isolation; independent actual-scope audit ae5f1e23 limits this to the disposable private fixture. This is reused evidence, not a repeated test or installed qualification.
 
 The distinct stock private-auth component17 failed before authentication dispatch: root12.076s/native2.989s, three controls, zero guarded or ordinary authentication commands. Its child rejected changed `/dev/null` mtime/ctime, with stable device/inode/DAC/rdev/ancestry. The writer is UNKNOWN. All born children/daemon/groups and fixture namespace/scratch/socket are gone, purpose identity removed and public records restored; root stage remains retained. Local snapshot after-parity passed and root before-parity passed; root after-parity was not reached. New focused regressions reproduce both hash/primary failures; the narrow device-only identity correction passes29 changed-boundary cases. Regular-file metadata/content custody remains unchanged. Native service separation, SQL composition, installed password capability and S04-02 remain OPEN; the operator cannot yet live-test the password form.
+
+### 2026-10-16 — signed device repair; actual private-primary commands now pass
+
+Source557b668 is signed with a verified Good Shopkeeper signature and synchronized to the UX branch with fresh origin equality. Both normal hooks pass1764 Rust cases/0fail/48 explicit native ignores and620 account Python cases; full commit255.214s/push259.558s wall-clock is retained. Toronto standard checkout source-only fast-forwarded d1f50 to557b668 clean in4.106s; no installed service/binary/form activation.
+
+The changed stock18 component executes all three guarded native primary commands successfully in their expected scopes: correct password accepted under the account lock, wrong password rejected, foreign canonical identity refused. All three private-ID/kernel/null-device proofs pass. Full component remains FAIL at a later unreported ProductRefused before the separate ordinary-auth command; unique reached guard remains UNKNOWN. Six controls, root17.441s/native10.344s. All born children/daemon/groups/scratch/socket/fixture namespace are gone, purpose identity removed/public records restored, standard socket preserved; root evidence stage6aa22a3c retained. Local after-parity passed; root after-parity was not reached.
+
+Independent source inspection finds the ordinary root-only audit incorrectly uses the private-client ancestor checker against an owned fixture beneath writable `/tmp`. Repair that ordinary-only custody through the born scratch lease and fixed protected directories, preserving the private checker and original bounds. Do not retry unchanged or call this SQL/full-factory/installed qualification. S04-02 and live password testing remain OPEN.

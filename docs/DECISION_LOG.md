@@ -11076,3 +11076,67 @@ The owner states this slice is already over compute budget. Remaining work is re
 Actual stock-primary17 refused before auth because shared `/dev/null` mtime/ctime changed; its exact writer remains UNKNOWN. OpenBSD stat(2) documents writes updating both fields (https://man.openbsd.org/stat.2). Pin the character device's dev/inode/uid/gid/type/mode/link count/size, fixed rdev514 and trusted parents; do not treat usage timestamps as immutable identity. Keep full regular-file metadata and content checks. Focused old-source RED2/new-source29 PASS precede independent review and a changed component attempt. Do not mutate the device, relax peer/UID/confinement or infer SQL/full-factory readiness.
 
 Primary retained agent-error provenance corrects the earlier task attribution: the automated cybersecurity-risk failure occurred in finish_engineer's turn at13:54:55UTC; exact triggering content/denied operation is UNKNOWN. It does not establish that password_status_engineer's unfinished IMAP draft triggered the restriction. The root-directed draft stop remains; no retry, equivalent workaround or blanket permission is inferred.
+
+### 2026-10-16 — distinguish private-client custody from owned root audit
+
+Actual stock18 confirms three real primary outcomes/proofs after the device fix, but full separation remains FAIL before ordinary dispatch. The source-owned ordinary audit endpoint lies beneath its exclusive fixture `/tmp` namespace; applying the private-client global world-search/non-writable-ancestor policy there is incompatible by construction. Its corrective authority is the born scratch inode/owner/mode and fixed root-owned directory/socket/peer leases, rechecked before and after use. Keep all private-client checks and root-only process/endpoint provenance; never chmod the shared path or admit arbitrary paths. Unique actual18 reached guard remains UNKNOWN until measured closed diagnostics. No SQL action proceeds before component qualification.
+
+### 2026-10-17 — mutation Python parent confinement implementation decision
+
+Current source557b668 has concrete paired clients/coordinator/native command constructors but no final confinement of the mutation Python parent. This is a real implementation gap, separate from false qualification flags. OpenBSD copies a locked unveil boundary to forked children; applying the final parent lock and then running the existing child seals cannot work. Agent source design is retained as NEXT-MUTATION-CONFINEMENT-DELTA.md SHAe2f7195f.
+
+Root selects a fixed, finite, per-operation command-executor lane established before the parent's irreversible seal, reusing existing owned-process/channel/role command machinery. It is not a new network or persistent service. Bind its anonymous channel and born PID/group to the authenticated account, exact original operation receipt and finite command roles; build commands/SQL from existing source-owned operations, never accept arbitrary argv, SQL, paths, identity, promises or a caller Boolean. Preserve child role-specific confinement, single conditional credential write, durable uncertainty and owned cleanup. Independent review must confirm the complete producer/cleanup/consumer graph before integration.
+
+The sealed parent must retain only exact own-account epoch/intent records and finite pre-reserved atomic-publication scratch/descriptors, plus required protected control descriptors. Do not grant shared account-state directories write/create authority or migrate the record schema to make this pass. This is an implementation choice within the existing S04-02 outcome and original budgets, not plan rewriting, native flag activation or a slice-completion claim. Prepare source/correctness controls while the separate stock-primary service qualification continues; no operator credential or stopped IMAP draft action is authorized by this decision.
+
+
+## 2026-10-17 — stock private-auth component20 qualified, parent workflow open
+
+Keep actual19 FAIL (ordinary_owned_ancestry/ordinary_owned_directory_custody;
+specific field UNKNOWN) and its retained rootstage. Source20 changes only the
+post-start run-directory expectation0700 to0755, matching exact upstream
+Dovecot2.3.21.1 master_settings_do_fixes. Affected control oldRED/newGREEN;
+source0b947 and whole988595 independent reviews. Actual20 PASS8,
+full21.633s/native16.069s, resultce773d7d, complete fresh owned cleanup and
+source parity. SQL25 requires actual scope audit plus current preaction;
+no production flags, password form or operator credentials changed.
+
+
+## 2026-10-17 — preserve query utility boundary under exact D04
+
+Independent normative clarification daf42513 rejects an invented universal
+requirement for both pledge and unveil on every metadata utility. Actual D04
+requires independently confined typed helper, no web database credentials,
+arbitrary SQL or general administrator channel. Keep all existing SQL/hash/
+primary child seals. The transaction parent must be sealed. Fixed metadata
+queries may use the existing root utility boundary with immutable program/
+loader/config custody, literal argv, no caller-selected paths/environment/input,
+original budget/output limits and exact owned cleanup. OpenBSD unpledged exec
+clears unveil; do not claim its inheritance. PF's source-fixed read-only device
+query and residual root filesystem/syscall authority must be explicit. This
+clarification does not admit credential mutation or account mail/proxy kick
+under a metadata exception. Those remain separately account-bound reviewed
+controls. No new native flag, service or live form is enabled by this decision.
+
+
+## 2026-10-17 — explicit stop supersedes implementation proposals
+
+The operator stopped all development and subsequently authorized only source
+preservation through signed commits and GitHub synchronization. All three
+workers were interrupted; do not restart them, native qualification, deployment
+or host checkout synchronization. Earlier executor-lane/topology proposals
+remain unadmitted alternatives, not accepted product architecture or permission
+to continue. The existing active work order is PAUSED with the direct operator
+reference. S04-02/S04 remain OPEN and live password change remains disabled.
+Commit the retained repository evidence without importing unfinished external
+drafts, private evidence or credentials. Normal signing
+and repository hooks apply; no release or functional completion is claimed.
+
+
+Repository-sync commit attempt1 was refused by the existing unauthorized-pause
+unit test, which inherited the real operator_pause field from the current
+ledger. Remove that field only from its synthetic unauthorized-pause fixture
+before checking rejection; retain the explicit authorized-pause positive. The
+one changed test passes. No validator, hook, acceptance criterion or application
+behavior is relaxed. This correction is solely to permit normal preservation
+through the mandatory hook while development remains stopped.

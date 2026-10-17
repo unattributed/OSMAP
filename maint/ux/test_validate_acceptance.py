@@ -178,6 +178,7 @@ class WorkOrderTests(unittest.TestCase):
     def test_agent_cannot_park_or_pause_active_work(self):
         for state in ("PARKED", "PAUSED"):
             order = copy.deepcopy(self.order)
+            order.pop("operator_pause", None)
             order["state"] = state
             with self.subTest(state=state), self.assertRaises(ValueError):
                 self.check(order)
