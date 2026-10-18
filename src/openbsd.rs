@@ -568,12 +568,81 @@ pub(crate) fn install_password_child_profile(
 pub(crate) struct PasswordParentSeal {
     pid: u32,
 }
+/// Separate exec domain; never accepted as the normal password-parent seal.
+pub(crate) struct PasswordFstatSeal {
+    pid: u32,
+}
+impl PasswordFstatSeal {
+    pub(crate) fn is_current_process(&self) -> bool {
+        password_native_authority() && self.pid == std::process::id()
+    }
+}
+pub(crate) fn password_monotonic_ns() -> io::Result<u64> {
+    let mut value = libc::timespec {
+        tv_sec: 0,
+        tv_nsec: 0,
+    };
+    if unsafe { libc::clock_gettime(libc::CLOCK_MONOTONIC, &mut value) } != 0 {
+        return Err(io::Error::last_os_error());
+    }
+    let seconds = u64::try_from(value.tv_sec).map_err(|_| io::ErrorKind::InvalidData)?;
+    let nanos = u64::try_from(value.tv_nsec).map_err(|_| io::ErrorKind::InvalidData)?;
+    if nanos >= 1_000_000_000 {
+        return Err(io::ErrorKind::InvalidData.into());
+    }
+    seconds
+        .checked_mul(1_000_000_000)
+        .and_then(|n| n.checked_add(nanos))
+        .ok_or_else(|| io::ErrorKind::InvalidData.into())
+}
+pub(crate) fn password_close_fstat_inherited_descriptors() -> io::Result<()> {
+    #[cfg(target_os = "openbsd")]
+    {
+        if !password_native_authority() {
+            return Err(io::ErrorKind::PermissionDenied.into());
+        }
+        // This fixed mode has no parent lock/key/listener descriptors. Its
+        // private duplex channel is fd0, stdout/stderr are already /dev/null.
+        if unsafe { libc::closefrom(3) } != 0 {
+            return Err(io::Error::last_os_error());
+        }
+        Ok(())
+    }
+    #[cfg(not(target_os = "openbsd"))]
+    {
+        Err(io::ErrorKind::Unsupported.into())
+    }
+}
+pub(crate) fn seal_password_fstat_worker(
+    plan: &crate::account_password_native::FstatWorkerPlan,
+) -> io::Result<PasswordFstatSeal> {
+    #[cfg(target_os = "openbsd")]
+    {
+        if !password_native_authority() || password_parent_is_sealed() {
+            return Err(io::ErrorKind::PermissionDenied.into());
+        }
+        std::env::set_current_dir("/")?;
+        imp::password_fstat_seal(plan)?;
+        Ok(PasswordFstatSeal {
+            pid: std::process::id(),
+        })
+    }
+    #[cfg(not(target_os = "openbsd"))]
+    {
+        let _ = (plan.rules(), plan.promises());
+        Err(io::ErrorKind::Unsupported.into())
+    }
+}
 #[cfg(target_os = "openbsd")]
 static PASSWORD_PARENT_SEALED: std::sync::atomic::AtomicBool =
     std::sync::atomic::AtomicBool::new(false);
 #[cfg(target_os = "openbsd")]
 pub(crate) fn password_parent_is_sealed() -> bool {
     PASSWORD_PARENT_SEALED.load(std::sync::atomic::Ordering::Acquire)
+}
+#[cfg(not(target_os = "openbsd"))]
+pub(crate) fn password_parent_is_sealed() -> bool {
+    false
 }
 #[cfg(all(unix, any(test, target_os = "openbsd")))]
 pub(crate) fn password_process_birth(seconds: u64) -> io::Result<String> {
@@ -1769,6 +1838,21 @@ mod imp {
         }
         if unsafe { unveil(std::ptr::null(), std::ptr::null()) } != 0
             || unsafe { pledge(plan.promises().as_ptr(), plan.promises().as_ptr()) } != 0
+        {
+            return Err(io::Error::last_os_error());
+        }
+        Ok(())
+    }
+    pub(super) fn password_fstat_seal(
+        plan: &crate::account_password_native::FstatWorkerPlan,
+    ) -> io::Result<()> {
+        for (path, access) in plan.rules() {
+            if unsafe { unveil(path.as_ptr(), access.as_ptr()) } != 0 {
+                return Err(io::Error::last_os_error());
+            }
+        }
+        if unsafe { unveil(std::ptr::null(), std::ptr::null()) } != 0
+            || unsafe { pledge(plan.promises().as_ptr(), std::ptr::null()) } != 0
         {
             return Err(io::Error::last_os_error());
         }

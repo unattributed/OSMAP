@@ -2,11 +2,30 @@
 
 ## S04-02 current source and operational limits — 2026-10-18
 
-The exact five-path diagnostic40ba71a1 is integrated after independentbd760636
-source/consumer review. It preserves the exact closed phase/category at the first
-failed metadata operation without raw values, guard changes or a cause claim.
-Matching author controls/format/CWE checks are reused. Normal signed admission
-and one existing helper-only changed diagnostic case remain pending.
+The exact ten-path fixed FSTAT child source3925019e is integrated after independent
+source/consumer reviewde4e6af9. Normal source hook1 failed129.577s solely on a lexical doc-comment TLS match;
+comment-only correction369178 is prepared for unchanged-scanner and signed-hook
+retry. Actual Rust1847/0/48 and Clippy pass are retained;
+source, compilation, actual admission and installed full password workflow remain
+separate. No operator password, provider mail or new live account action occurred.
+
+Last signed synchronized HEAD before this admission is
+d393ffedd916fa9046a94b47548a0adc5aeb4b3b, with normal hooks and fresh equality
+already proved. Its exact changed case7 failed19.593 seconds at master FSTAT
+nonzero exit before AUTH; actual same-master service/owned fixture disposition
+is independently confirmedfad2. Numeric status/errno and exact installed kernel
+source equality are unmeasured. No active fixture or recovery observer remains.
+
+The new fixed root metadata child starts before threads/parent seal, permits only
+closed All/Pid observations under the original500ms deadline, checks its owned
+lifetime before continued admission and stops cold on failure without respawn.
+Parent and ordinary password role seals remain unchanged. Three changed author
+controls/Clippy/fmt/CWE and44 closed-consumer controls pass; nativeNOTRUN.
+
+Real persistent submission lifecycle and root activation sourceae188 remains
+isolated under independent review, with five changed pure controls passed; no
+activation, full workflow or UAT acceptance follows. The password form stays
+disabled until matching installed full nine-scenario workflow and audit pass.
 
 The subsequent minimal read-only passdb projection passed3.922 seconds (947816e9):
 sole sql driver and canonical /etc/dovecot/dovecot-sql.conf.ext path, with original

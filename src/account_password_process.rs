@@ -13,6 +13,7 @@ use std::sync::{
 use std::time::{Duration, Instant};
 
 static UNCERTAIN: AtomicBool = AtomicBool::new(false);
+static METADATA_STOPPED: AtomicBool = AtomicBool::new(false);
 static OWNED_UNREAPED: Mutex<Vec<Child>> = Mutex::new(Vec::new());
 const LIMIT: usize = 4096;
 const INPUT_LIMIT: usize = 16384;
@@ -109,23 +110,51 @@ impl<'a> FixedExecutor<'a> {
 /// including epoch-only requests which would otherwise spawn no utility.
 pub(crate) fn execution_quarantined() -> bool {
     UNCERTAIN.load(Ordering::SeqCst)
+        || METADATA_STOPPED.load(Ordering::SeqCst)
         || OWNED_UNREAPED
             .lock()
             .map_or(true, |children| !children.is_empty())
 }
+pub(crate) fn metadata_stopped() {
+    METADATA_STOPPED.store(true, Ordering::SeqCst);
+}
+pub(crate) fn retain_uncertain_metadata_child(child: Child) {
+    UNCERTAIN.store(true, Ordering::SeqCst);
+    OWNED_UNREAPED
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .push(child);
+}
 
 pub(crate) struct MetadataExecutor {
     control: Option<std::sync::Arc<crate::account_password_peer::ControlPeer>>,
+    fstat: Option<std::sync::Arc<crate::account_password_fstat::Observer>>,
 }
 impl MetadataExecutor {
     pub(crate) fn readonly() -> Self {
-        Self { control: None }
+        Self {
+            control: None,
+            fstat: None,
+        }
+    }
+    pub(crate) fn with_fstat(
+        fstat: std::sync::Arc<crate::account_password_fstat::Observer>,
+    ) -> Self {
+        Self {
+            control: None,
+            fstat: Some(fstat),
+        }
+    }
+    pub(crate) fn recheck_fstat(&self, end: Instant) -> Result<(), CommandExecutionError> {
+        self.fstat.as_ref().ok_or_else(unavailable)?.recheck(end)
     }
     pub(crate) fn with_control(
+        &self,
         control: std::sync::Arc<crate::account_password_peer::ControlPeer>,
     ) -> Self {
         Self {
             control: Some(control),
+            fstat: self.fstat.clone(),
         }
     }
 }
@@ -150,7 +179,10 @@ pub(crate) fn fixed_metadata_args(program: &str, args: &[String]) -> bool {
                         crate::account_password_peer::PS_FIELDS | "args="
                     ))
         }
-        "/usr/bin/fstat" => args.len() == 3 && args[0] == "-n" && args[1] == "-p" && pid(&args[2]),
+        "/usr/bin/fstat" => {
+            equal(&["-n"])
+                || (args.len() == 3 && args[0] == "-n" && args[1] == "-p" && pid(&args[2]))
+        }
         "/usr/local/sbin/postconf" => {
             equal(&["-M"]) || equal(&["-P"]) || equal(&["-h", "smtpd_sasl_auth_enable"])
         }
@@ -211,6 +243,15 @@ impl CommandExecutor for MetadataExecutor {
             return Err(unavailable());
         }
         let deadline = Instant::now() + timeout;
+        if program == crate::account_password_peer::FSTAT
+            && crate::openbsd::password_parent_is_sealed()
+        {
+            return self
+                .fstat
+                .as_ref()
+                .ok_or_else(|| metadata_failure("metadata_fstat_protocol", true))?
+                .observe(args, deadline, cap);
+        }
         #[cfg(target_os = "openbsd")]
         if program == crate::account_password_peer::PS
             && crate::openbsd::password_parent_is_sealed()
@@ -312,6 +353,11 @@ const META_FIXED: &[&str] = &[
     "metadata_query_exit",
     "metadata_query_stderr",
     "metadata_query_output",
+    "metadata_fstat_signal",
+    "metadata_fstat_protocol",
+    "metadata_fstat_loader",
+    "metadata_fstat_kernfile",
+    "metadata_fstat_worker_exit",
 ];
 
 /// Fixed diagnostics contain no dynamic command, output, account or path data.
@@ -350,6 +396,36 @@ pub(crate) fn metadata_errno_tag(operation: &str, error: &std::io::Error) -> &'s
 /// Preserve both exact fixed observation and fixed closed failure category.
 pub(crate) fn metadata_phase_failure(phase: &str, detail: &str) -> Option<&'static str> {
     match (phase, detail) {
+        ("primary_startup_master_fstat", "metadata_fstat_worker_exit") => {
+            Some("primary_startup_master_fstat_worker_exit")
+        }
+        ("primary_startup_own_fstat", "metadata_fstat_worker_exit") => {
+            Some("primary_startup_own_fstat_worker_exit")
+        }
+        ("primary_startup_master_fstat", "metadata_fstat_signal") => {
+            Some("primary_startup_master_fstat_worker_signal")
+        }
+        ("primary_startup_master_fstat", "metadata_fstat_protocol") => {
+            Some("primary_startup_master_fstat_worker_protocol")
+        }
+        ("primary_startup_master_fstat", "metadata_fstat_loader") => {
+            Some("primary_startup_master_fstat_worker_loader")
+        }
+        ("primary_startup_master_fstat", "metadata_fstat_kernfile") => {
+            Some("primary_startup_master_fstat_worker_kernfile")
+        }
+        ("primary_startup_own_fstat", "metadata_fstat_signal") => {
+            Some("primary_startup_own_fstat_worker_signal")
+        }
+        ("primary_startup_own_fstat", "metadata_fstat_protocol") => {
+            Some("primary_startup_own_fstat_worker_protocol")
+        }
+        ("primary_startup_own_fstat", "metadata_fstat_loader") => {
+            Some("primary_startup_own_fstat_worker_loader")
+        }
+        ("primary_startup_own_fstat", "metadata_fstat_kernfile") => {
+            Some("primary_startup_own_fstat_worker_kernfile")
+        }
         ("primary_startup_master_row", "metadata_ps_row_denied") => {
             Some("primary_startup_master_row_denied")
         }
@@ -753,11 +829,35 @@ fn run_with_cap(
     run_with_cap_labeled(command, input, deadline, cap, false)
 }
 fn run_with_cap_labeled(
+    command: Command,
+    input: &[u8],
+    deadline: Instant,
+    cap: usize,
+    labeled: bool,
+) -> Result<CommandExecution, CommandExecutionError> {
+    run_with_group(command, input, deadline, cap, labeled, None)
+}
+pub(crate) fn run_fstat_in_worker(
+    seal: &crate::openbsd::PasswordFstatSeal,
+    args: &[String],
+    deadline: Instant,
+    cap: usize,
+) -> Result<CommandExecution, CommandExecutionError> {
+    if !seal.is_current_process() || !fixed_metadata_args(crate::account_password_peer::FSTAT, args)
+    {
+        return Err(metadata_failure("metadata_fstat_protocol", true));
+    }
+    let command = crate::auth::password_metadata_command(crate::account_password_peer::FSTAT, args)
+        .map_err(|e| metadata_failure(metadata_errno_tag("builder", &e), true))?;
+    run_with_group(command, b"", deadline, cap, true, Some(seal))
+}
+fn run_with_group(
     mut command: Command,
     input: &[u8],
     deadline: Instant,
     cap: usize,
     labeled: bool,
+    fstat_seal: Option<&crate::openbsd::PasswordFstatSeal>,
 ) -> Result<CommandExecution, CommandExecutionError> {
     if !matches!(cap, 4096 | 16384 | 65536)
         || execution_quarantined()
@@ -769,8 +869,10 @@ fn run_with_cap_labeled(
     command
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .process_group(0);
+        .stderr(Stdio::piped());
+    if fstat_seal.is_none() {
+        command.process_group(0);
+    }
     #[cfg(test)]
     native_trace::stage(5);
     let mut child = command.spawn().map_err(|_error| {
@@ -860,14 +962,22 @@ fn run_with_cap_labeled(
     // and prove absence. Descendants holding pipes cannot prolong a reader join.
     #[cfg(test)]
     native_trace::stage(7);
-    let signal = crate::openbsd::kill_process_group(pid);
+    // The fixed no-fork fstat retains its purpose worker's PGID. Its direct
+    // unreaped Child is cleaned here; the parent owns the whole worker group.
+    // All ordinary password roles preserve their existing separate groups.
+    let signal = if fstat_seal.is_some() {
+        child.kill()
+    } else {
+        crate::openbsd::kill_process_group(pid)
+    };
     let signal_ok = signal.is_ok()
         || signal
             .err()
             .is_some_and(|e| e.raw_os_error() == Some(libc::ESRCH));
     while signal_ok && Instant::now() < deadline {
         if let Ok(Some(status)) = child.try_wait() {
-            let gone = crate::openbsd::process_group_exists(pid).is_ok_and(|exists| !exists);
+            let gone = fstat_seal.is_some()
+                || crate::openbsd::process_group_exists(pid).is_ok_and(|exists| !exists);
             if gone && Instant::now() < deadline {
                 #[cfg(test)]
                 {

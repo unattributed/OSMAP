@@ -1,6 +1,36 @@
 //! Literal transcription of existing reviewed public graph pins.
 //! Source: maint/account-runtime/account_{hash,sql}_graph_pins.py; no host discovery.
 use super::{FilePin, ParentPin};
+// Fixed fstat-only worker program; actual combined facts e32b0b3d.
+pub(super) const FSTAT_PROGRAM: FilePin = FilePin {
+    path: "/usr/bin/fstat",
+    identity: [
+        1024,
+        77835,
+        0,
+        7,
+        33133,
+        2,
+        22504,
+        1778093110094310390,
+        1788488611612756748,
+    ],
+    sha256: "35b468540045362663e573c3e80817688d844750756f633d87ecb2081a0da5b3",
+    parents: &[
+        ParentPin {
+            path: "/usr/bin",
+            identity: [1024, 77768, 0, 0, 16877],
+        },
+        ParentPin {
+            path: "/usr",
+            identity: [1024, 51840, 0, 0, 16877],
+        },
+        ParentPin {
+            path: "/",
+            identity: [1024, 2, 0, 0, 16877],
+        },
+    ],
+};
 // Actual fixed-facts receipt e32b0b3d, 2026-10-18. All other fstat loader leaves
 // are already present in the existing SQL/hash parent union.
 pub(super) const METADATA_FILES: &[FilePin] = &[FilePin {

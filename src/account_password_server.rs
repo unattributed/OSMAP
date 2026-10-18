@@ -16,7 +16,6 @@ use crate::account_password_process::MetadataExecutor;
 use crate::account_password_process::{FixedExecutor, PrimaryExecutor};
 use crate::account_password_runtime::Runtime;
 use crate::account_password_state::Store;
-use crate::auth::CommandExecutor;
 use crate::openpgp_inventory_runtime::{file, private_dir, secret};
 use serde::Deserialize;
 use std::collections::BTreeSet;
@@ -211,25 +210,42 @@ pub fn run_operator_service(stop: &AtomicBool) -> Result<(), Error> {
     let startup = Startup::native(metadata.as_ref(), files.master_pid, startup_deadline)
         .map_err(unavailable)?;
     let startup = Arc::new(startup);
-    let store = Arc::new(Store::open(Path::new(EPOCH), 0).map_err(unavailable)?);
-    let fence = Arc::new(
-        Fence::new(store.clone(), files.accounts.clone(), MonotonicClock).map_err(unavailable)?,
+    let observer = Arc::new(
+        crate::account_password_fstat::Observer::start(
+            startup.as_ref(),
+            metadata.as_ref(),
+            startup_deadline,
+        )
+        .map_err(unavailable)?,
     );
-    let registry = Arc::new(Registry::new());
-    if Instant::now() >= startup_deadline {
-        return Err(Error::Expired);
-    }
-    serve(
-        stop,
-        &files,
-        &admission,
-        store,
-        fence,
-        registry,
-        startup,
-        metadata,
-        startup_deadline,
-    )
+    let metadata = Arc::new(MetadataExecutor::with_fstat(observer.clone()));
+    let outcome = (|| {
+        let store = Arc::new(Store::open(Path::new(EPOCH), 0).map_err(unavailable)?);
+        let fence = Arc::new(
+            Fence::new(store.clone(), files.accounts.clone(), MonotonicClock)
+                .map_err(unavailable)?,
+        );
+        let registry = Arc::new(Registry::new());
+        if Instant::now() >= startup_deadline {
+            return Err(Error::Expired);
+        }
+        serve(
+            stop,
+            &files,
+            &admission,
+            store,
+            fence,
+            registry,
+            startup,
+            metadata,
+            startup_deadline,
+        )
+    })();
+    // Native child custody is part of service exit, including failed setup.
+    let cleanup = observer
+        .shutdown(Instant::now() + Duration::from_millis(500))
+        .map_err(unavailable);
+    outcome.and(cleanup)
 }
 
 #[allow(clippy::too_many_arguments)] // Explicit independent authority/lifetime inputs.
@@ -297,6 +313,9 @@ fn serve(
                 return Err(Error::CleanupUnconfirmed);
             }
             let custody_deadline = Instant::now() + Duration::from_millis(500);
+            metadata
+                .recheck_fstat(custody_deadline)
+                .map_err(unavailable)?;
             parent_plan.recheck(custody_deadline).map_err(unavailable)?;
             files.recheck(custody_deadline)?;
             admission_socket.recheck()?;
@@ -608,7 +627,7 @@ fn operation(
 }
 
 fn fixed_submission_namespace(
-    _metadata: Arc<dyn CommandExecutor + Send + Sync>,
+    _metadata: Arc<MetadataExecutor>,
     startup: Arc<Startup>,
     files: &OperatorFiles,
     refresh: &crate::account_password_topology::RegistrationRefresh,
@@ -619,7 +638,7 @@ fn fixed_submission_namespace(
         crate::account_password_peer::ControlPeer::observe(primary, deadline)
             .map_err(unavailable)?,
     );
-    let metadata = Arc::new(MetadataExecutor::with_control(control.clone()));
+    let metadata = Arc::new(_metadata.with_control(control.clone()));
     let profile = NativeProfile::from_control(control.clone(), deadline).map_err(unavailable)?;
     let control_gid = profile.selected_control_gid().map_err(unavailable)?;
     refresh

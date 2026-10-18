@@ -374,6 +374,98 @@ pub(crate) fn verify_metadata_graph(deadline: Instant) -> Result<(), Unavailable
     }
     before(deadline)
 }
+fn fstat_worker_pins() -> Result<Vec<&'static FilePin>, Unavailable> {
+    let mut files = vec![&pins::FSTAT_PROGRAM];
+    files.extend(pins::METADATA_FILES.iter());
+    for path in [
+        "/usr/lib/libc.so.103.0",
+        "/usr/libexec/ld.so",
+        "/var/run/ld.so.hints",
+    ] {
+        files.push(
+            pins::SQL_FILES
+                .iter()
+                .chain(pins::HASH_FILES.iter())
+                .find(|pin| pin.path == path)
+                .ok_or(Unavailable)?,
+        );
+    }
+    Ok(files)
+}
+pub(crate) fn verify_fstat_worker_graph(deadline: Instant) -> Result<(), Unavailable> {
+    for pin in fstat_worker_pins()? {
+        pinned_parents(pin.path, pin.parents, deadline)?;
+        let (identity, digest, _) = public_file(pin.path, false, FILE_CAP, deadline)?;
+        let text: String = digest.iter().map(|byte| format!("{byte:02x}")).collect();
+        if identity != pin.identity || text != pin.sha256 {
+            return Err(Unavailable);
+        }
+    }
+    before(deadline)
+}
+/// One fixed metadata process, not a password Role or a caller execution plan.
+pub(crate) struct FstatWorkerPlan {
+    rules: Vec<(CString, CString)>,
+    promises: CString,
+    custody: std::sync::Arc<crate::account_password_custody::Custody>,
+}
+impl FstatWorkerPlan {
+    pub(crate) fn capture(deadline: Instant) -> Result<Self, Unavailable> {
+        if !crate::openbsd::password_native_authority() {
+            return Err(Unavailable);
+        }
+        verify_fstat_worker_graph(deadline)?;
+        let files = fstat_worker_pins()?;
+        let paths = files.iter().map(|pin| pin.path).collect::<Vec<_>>();
+        let custody = crate::account_password_custody::Custody::capture(&paths, deadline)
+            .map_err(unavailable)?;
+        let mut rules = std::collections::BTreeMap::new();
+        for pin in files {
+            for parent in pin.parents {
+                rules.entry(parent.path).or_insert("");
+            }
+            rules.insert(
+                pin.path,
+                if pin.path == "/usr/bin/fstat" {
+                    "rx"
+                } else {
+                    "r"
+                },
+            );
+        }
+        Ok(Self {
+            rules: rules
+                .into_iter()
+                .map(|(p, a)| {
+                    Ok((
+                        CString::new(p).map_err(unavailable)?,
+                        CString::new(a).map_err(unavailable)?,
+                    ))
+                })
+                .collect::<Result<_, Unavailable>>()?,
+            // No execpromises are set: fixed fstat exec resets the view, runs
+            // its KERN_FILE observation, then installs its own native pledge.
+            promises: CString::new("stdio rpath proc exec prot_exec").map_err(unavailable)?,
+            custody,
+        })
+    }
+    pub(crate) fn rules(&self) -> &[(CString, CString)] {
+        &self.rules
+    }
+    pub(crate) fn promises(&self) -> &std::ffi::CStr {
+        &self.promises
+    }
+    pub(crate) fn activate(
+        &self,
+        seal: &crate::openbsd::PasswordFstatSeal,
+    ) -> Result<(), Unavailable> {
+        self.custody.activate_fstat(seal).map_err(unavailable)
+    }
+    pub(crate) fn recheck(&self, deadline: Instant) -> Result<(), Unavailable> {
+        self.custody.recheck(deadline).map_err(unavailable)?;
+        verify_fstat_worker_graph(deadline)
+    }
+}
 fn prepared(role: Role, _ids: (u32, u32), deadline: Instant) -> Result<PreparedChild, Unavailable> {
     let files = if role == Role::Sql {
         pins::SQL_FILES
@@ -484,7 +576,13 @@ fn protected_file(
     before(deadline)?;
     let ancestry = parents(path, None, deadline)?;
     let m = fs::symlink_metadata(path).map_err(unavailable)?;
-    let link_cap = if path.contains(".so") { 64 } else { 1 };
+    let link_cap = if path.contains(".so") {
+        64
+    } else if path == "/usr/bin/fstat" {
+        2
+    } else {
+        1
+    };
     if !m.is_file()
         || m.uid() != 0
         || m.nlink() == 0

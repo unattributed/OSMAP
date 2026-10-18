@@ -115,6 +115,15 @@ impl Custody {
         }
         Ok(())
     }
+    pub(crate) fn activate_fstat(
+        &self,
+        seal: &crate::openbsd::PasswordFstatSeal,
+    ) -> Result<(), Unavailable> {
+        if !seal.is_current_process() || self.sealed.swap(true, Ordering::AcqRel) {
+            return Err(Unavailable);
+        }
+        Ok(())
+    }
 }
 /// Preserve the existing ordered identity shape. After the real seal, only
 /// previously captured directory vnodes can answer; unseen paths fail closed.

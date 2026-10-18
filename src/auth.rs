@@ -107,6 +107,28 @@ pub(crate) fn password_metadata_command(program: &str, args: &[String]) -> io::R
         .env("LC_ALL", "C");
     Ok(command)
 }
+#[cfg(unix)]
+pub(crate) fn password_fstat_worker_command() -> io::Result<Command> {
+    if std::env::current_dir()? != std::path::Path::new("/") {
+        return Err(io::ErrorKind::PermissionDenied.into());
+    }
+    let mut command = Command::new("/usr/local/libexec/osmap/account-passwd");
+    command
+        .arg(crate::account_password_fstat::WORKER_ARGUMENT)
+        .env_clear()
+        .env("PATH", SAFE_COMMAND_PATH)
+        .env("LC_ALL", "C");
+    Ok(command)
+}
+#[cfg(all(unix, test))]
+pub(crate) fn password_fstat_echo_fixture() -> Command {
+    let mut command = Command::new("/bin/cat");
+    command
+        .env_clear()
+        .env("PATH", SAFE_COMMAND_PATH)
+        .env("LC_ALL", "C");
+    command
+}
 
 /// Run the fixed command-shape test with the service's pre-seal root cwd.
 /// This avoids changing the parallel test process cwd or adding a post-seal

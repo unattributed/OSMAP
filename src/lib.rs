@@ -163,6 +163,8 @@ pub(crate) mod account_password_topology;
 pub(crate) mod account_password_imap;
 
 #[cfg(unix)]
+pub mod account_password_fstat;
+#[cfg(unix)]
 pub mod account_password_server;
 
 #[cfg(unix)]

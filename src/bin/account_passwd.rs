@@ -6,6 +6,13 @@ fn main() -> std::process::ExitCode {
             .and_then(|signals| {
                 osmap::account_password_server::run_operator_service(signals.stop_flag())
             })
+    } else if std::env::args_os().len() == 2
+        && std::env::args_os().nth(1).as_deref()
+            == Some(std::ffi::OsStr::new(
+                osmap::account_password_fstat::WORKER_ARGUMENT,
+            ))
+    {
+        osmap::account_password_fstat::run_worker()
     } else {
         Err(osmap::account_admission::Error::Invalid)
     };

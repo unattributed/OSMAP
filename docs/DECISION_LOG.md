@@ -11857,3 +11857,47 @@ Reuse the author’s two controls and changed combined-query control plus matchi
 format/CWE checks. Native cause remains unknown; source admission is not a fix or
 workflow pass. The existing strict LF consumer accepts only the reviewed static
 stages; no permission, protocol, recovery or qualification scope is expanded.
+
+
+## 2026-10-18 — localize the sealed master FSTAT refusal
+
+The changed closed diagnostic case7 failed19.593 seconds and reports exactly
+primary_startup_master_fstat_query_exit/Unavailable after startup ready. This
+identifies nonzero exit of the fixed master FSTAT query before authentication;
+it does not establish a credential failure, a signal/errno or the initiating
+confinement/library/utility cause. Preserve failed outcome and outer UNCERTAIN.
+The child reports40 groups and outer absent, normal helper0, original25/full17
+rows/Active0 preserved and exact synthetic fixture disposal. Independent existing
+service witnesses must establish scoped disposition without an extra observer
+if already sufficient. No unchanged replay/build or collector follows; source
+review now targets the measured FSTAT boundary before another exact changed action.
+
+
+## 2026-10-18 — fixed pre-seal FSTAT execution child, S04-02
+
+- Adopt only reviewed3925019e/de4e6af9 ten-path source. Case7 proves the fixed
+  master query exited nonzero before AUTH; aligned release source demonstrates
+  inherited pledge/KERN_FILE incompatibility, without proving installed errno or
+  exact installed kernel/source equality. Do not weaken parent promises/views.
+- A pre-thread fixed root child privately accepts closed All/Pid FSTAT operations,
+  pins existing measured public loader/program closure, closes inherited locks,
+  retains original500ms absolute bounds and owns the same unreaped group. Worker
+  exit/protocol/deadline failure closes admission and never respawns automatically.
+- Exact selfexec is the fixed installed helper, which the existing native fixture
+  copies from current SHA-pinned staged bytes before parent launch. No unsupported
+  current_exe selection, stale binary or extra client rebuild is introduced.
+- Independent whole source/cleanup/consumer review acknowledges both retained
+  case6/7 failures and safe actual dispositions. Normal source gate/sync/build
+  and changed native admission still require their exact actual evidence.
+- Continue real lifecycle source independently; its root producer/pairing remains
+  isolated review-open. No password/TOTP/provider mutation, full slice closure or
+  UAT invitation is inferred from this source intake.
+
+
+### S04-02 worker source admission lexical correction
+
+Normal hook1 FAIL129.577/no commit is preserved. Rust1847/0/48 and Clippy
+passed. Existing TLS scanner matched anonymous in a peer-authority doc comment.
+Use exact comment-only wording369178 (private), keep scanner/allowlist unchanged,
+run that same scanner then mandatory signed hook. No semantic fix, focused Rust
+rerun, native build or password action follows from this correction.
