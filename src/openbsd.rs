@@ -619,8 +619,9 @@ pub(crate) fn password_process_observation(
     {
         return Err(refused());
     }
-    let request = request(args)?;
-    before(deadline)?;
+    let fail = |tag| io::Error::other(tag);
+    let request = request(args).map_err(|_| fail("metadata_ps_request"))?;
+    before(deadline).map_err(|_| fail("metadata_query_deadline"))?;
     if let Request::Arguments(pid) = request {
         let mut raw = vec![0u8; BYTES];
         let mut length = raw.len();
@@ -640,11 +641,22 @@ pub(crate) fn password_process_observation(
                 0,
             )
         } != 0
-            || length > raw.len()
         {
-            return Err(refused());
+            let error = io::Error::last_os_error();
+            return Err(fail(crate::account_password_process::metadata_errno_tag(
+                "ps_argv", &error,
+            )));
         }
-        return arguments(&raw[..length], raw.as_ptr() as usize, cap, deadline);
+        if length > raw.len() {
+            return Err(fail("metadata_ps_argv_frame"));
+        }
+        return arguments(&raw[..length], raw.as_ptr() as usize, cap, deadline).map_err(|error| {
+            fail(if error.kind() == io::ErrorKind::TimedOut {
+                "metadata_query_deadline"
+            } else {
+                "metadata_ps_argv_frame"
+            })
+        });
     }
     let (selection, pid, count) = match request {
         Request::All => (libc::KERN_PROC_ALL, 0, ROWS),
@@ -674,10 +686,13 @@ pub(crate) fn password_process_observation(
         )
     } != 0
     {
-        return Err(refused());
+        let error = io::Error::last_os_error();
+        return Err(fail(crate::account_password_process::metadata_errno_tag(
+            "ps_row", &error,
+        )));
     }
-    before(deadline)?;
-    rows.truncate(row_count(length, capacity, width)?);
+    before(deadline).map_err(|_| fail("metadata_query_deadline"))?;
+    rows.truncate(row_count(length, capacity, width).map_err(|_| fail("metadata_ps_row_count"))?);
     rows.sort_by_key(|row| row.p_pid);
     let mut result = String::new();
     for row in rows {
@@ -685,24 +700,39 @@ pub(crate) fn password_process_observation(
             return Err(refused());
         }
         let command = row.p_comm.map(|byte| byte as u8);
-        result.push_str(&render_row(
-            ProcessRow {
-                pid: row.p_pid,
-                parent: row.p_ppid,
-                group: row.p__pgid,
-                uid: row.p_uid,
-                gid: row.p_gid,
-                started: row.p_ustart_sec,
-                valid: row.p_uvalid != 0,
-                command: &command,
-            },
-            deadline,
-        )?);
+        result.push_str(
+            &render_row(
+                ProcessRow {
+                    pid: row.p_pid,
+                    parent: row.p_ppid,
+                    group: row.p__pgid,
+                    uid: row.p_uid,
+                    gid: row.p_gid,
+                    started: row.p_ustart_sec,
+                    valid: row.p_uvalid != 0,
+                    command: &command,
+                },
+                deadline,
+            )
+            .map_err(|error| {
+                fail(if error.kind() == io::ErrorKind::TimedOut {
+                    "metadata_query_deadline"
+                } else {
+                    "metadata_ps_row_render"
+                })
+            })?,
+        );
         if result.len() > cap {
-            return Err(refused());
+            return Err(fail("metadata_query_output"));
         }
     }
-    bounded(result, cap, deadline)
+    bounded(result, cap, deadline).map_err(|error| {
+        fail(if error.kind() == io::ErrorKind::TimedOut {
+            "metadata_query_deadline"
+        } else {
+            "metadata_query_output"
+        })
+    })
 }
 
 impl PasswordParentSeal {

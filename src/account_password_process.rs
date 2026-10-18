@@ -219,7 +219,12 @@ impl CommandExecutor for MetadataExecutor {
             // table. Keep the pre-seal external captures; after the real seal,
             // observe only these same fixed process fields through the kernel.
             let stdout = crate::openbsd::password_process_observation(args, deadline, cap)
-                .map_err(|_| unavailable())?;
+                .map_err(|error| {
+                    metadata_failure(
+                        metadata_failure_tag(&error.to_string()).unwrap_or("metadata_ps_unknown"),
+                        true,
+                    )
+                })?;
             return Ok(CommandExecution {
                 status_code: 0,
                 stdout,
@@ -243,13 +248,393 @@ impl CommandExecutor for MetadataExecutor {
                 .map_err(|_| unavailable())?;
             run_with_cap(command, b"", deadline, cap)
         } else {
-            let command =
-                crate::auth::password_metadata_command(program, args).map_err(|_| unavailable())?;
-            run_with_cap(command, b"", deadline, cap)
+            let command = crate::auth::password_metadata_command(program, args)
+                .map_err(|error| metadata_failure(metadata_errno_tag("builder", &error), true))?;
+            run_with_cap_labeled(command, b"", deadline, cap, true)
         }
     }
 }
 
+const META_PS_ROW: [&str; 6] = [
+    "metadata_ps_row_denied",
+    "metadata_ps_row_invalid",
+    "metadata_ps_row_absent",
+    "metadata_ps_row_busy",
+    "metadata_ps_row_capacity",
+    "metadata_ps_row_unknown",
+];
+const META_PS_ARGV: [&str; 6] = [
+    "metadata_ps_argv_denied",
+    "metadata_ps_argv_invalid",
+    "metadata_ps_argv_absent",
+    "metadata_ps_argv_busy",
+    "metadata_ps_argv_capacity",
+    "metadata_ps_argv_unknown",
+];
+const META_BUILDER: [&str; 6] = [
+    "metadata_builder_denied",
+    "metadata_builder_invalid",
+    "metadata_builder_absent",
+    "metadata_builder_busy",
+    "metadata_builder_capacity",
+    "metadata_builder_unknown",
+];
+const META_SPAWN: [&str; 6] = [
+    "metadata_spawn_denied",
+    "metadata_spawn_invalid",
+    "metadata_spawn_absent",
+    "metadata_spawn_busy",
+    "metadata_spawn_capacity",
+    "metadata_spawn_unknown",
+];
+const META_CHILD_IO: [&str; 6] = [
+    "metadata_child_io_denied",
+    "metadata_child_io_invalid",
+    "metadata_child_io_absent",
+    "metadata_child_io_busy",
+    "metadata_child_io_capacity",
+    "metadata_child_io_unknown",
+];
+const META_FIXED: &[&str] = &[
+    "metadata_ps_request",
+    "metadata_ps_row_count",
+    "metadata_ps_row_render",
+    "metadata_ps_argv_frame",
+    "metadata_ps_unknown",
+    "metadata_child_preflight",
+    "metadata_child_deadline",
+    "metadata_child_pipe",
+    "metadata_child_output",
+    "metadata_child_read",
+    "metadata_child_cleanup",
+    "metadata_child_encoding",
+    "metadata_query_deadline",
+    "metadata_query_exit",
+    "metadata_query_stderr",
+    "metadata_query_output",
+];
+
+/// Fixed diagnostics contain no dynamic command, output, account or path data.
+pub(crate) fn metadata_failure_tag(reason: &str) -> Option<&'static str> {
+    [
+        META_PS_ROW.as_slice(),
+        META_PS_ARGV.as_slice(),
+        META_BUILDER.as_slice(),
+        META_SPAWN.as_slice(),
+        META_CHILD_IO.as_slice(),
+        META_FIXED,
+    ]
+    .into_iter()
+    .flatten()
+    .copied()
+    .find(|tag| *tag == reason)
+}
+pub(crate) fn metadata_errno_tag(operation: &str, error: &std::io::Error) -> &'static str {
+    let class = match error.raw_os_error() {
+        Some(libc::EACCES | libc::EPERM) => 0,
+        Some(libc::EINVAL | libc::ENOTDIR | libc::EOPNOTSUPP) => 1,
+        Some(libc::ENOENT | libc::ESRCH) => 2,
+        Some(libc::EBUSY | libc::EAGAIN) => 3,
+        Some(libc::ENOMEM | libc::E2BIG | libc::ENOBUFS) => 4,
+        _ => 5,
+    };
+    match operation {
+        "ps_row" => META_PS_ROW[class],
+        "ps_argv" => META_PS_ARGV[class],
+        "builder" => META_BUILDER[class],
+        "spawn" => META_SPAWN[class],
+        "child_io" => META_CHILD_IO[class],
+        _ => "metadata_ps_unknown",
+    }
+}
+/// Preserve both exact fixed observation and fixed closed failure category.
+pub(crate) fn metadata_phase_failure(phase: &str, detail: &str) -> Option<&'static str> {
+    match (phase, detail) {
+        ("primary_startup_master_row", "metadata_ps_row_denied") => {
+            Some("primary_startup_master_row_denied")
+        }
+        ("primary_startup_master_row", "metadata_ps_row_invalid") => {
+            Some("primary_startup_master_row_invalid")
+        }
+        ("primary_startup_master_row", "metadata_ps_row_absent") => {
+            Some("primary_startup_master_row_absent")
+        }
+        ("primary_startup_master_row", "metadata_ps_row_busy") => {
+            Some("primary_startup_master_row_busy")
+        }
+        ("primary_startup_master_row", "metadata_ps_row_capacity") => {
+            Some("primary_startup_master_row_capacity")
+        }
+        ("primary_startup_master_row", "metadata_ps_row_unknown") => {
+            Some("primary_startup_master_row_unknown")
+        }
+        ("primary_startup_master_row", "metadata_ps_row_count") => {
+            Some("primary_startup_master_row_count")
+        }
+        ("primary_startup_master_row", "metadata_ps_row_render") => {
+            Some("primary_startup_master_row_render")
+        }
+        ("primary_startup_master_row", "metadata_ps_request") => {
+            Some("primary_startup_master_row_ps_request")
+        }
+        ("primary_startup_master_row", "metadata_ps_unknown") => {
+            Some("primary_startup_master_row_ps_unknown")
+        }
+        ("primary_startup_master_row", "metadata_query_deadline") => {
+            Some("primary_startup_master_row_query_deadline")
+        }
+        ("primary_startup_master_row", "metadata_query_exit") => {
+            Some("primary_startup_master_row_query_exit")
+        }
+        ("primary_startup_master_row", "metadata_query_stderr") => {
+            Some("primary_startup_master_row_query_stderr")
+        }
+        ("primary_startup_master_row", "metadata_query_output") => {
+            Some("primary_startup_master_row_query_output")
+        }
+        ("primary_startup_own_row", "metadata_ps_row_denied") => {
+            Some("primary_startup_own_row_denied")
+        }
+        ("primary_startup_own_row", "metadata_ps_row_invalid") => {
+            Some("primary_startup_own_row_invalid")
+        }
+        ("primary_startup_own_row", "metadata_ps_row_absent") => {
+            Some("primary_startup_own_row_absent")
+        }
+        ("primary_startup_own_row", "metadata_ps_row_busy") => Some("primary_startup_own_row_busy"),
+        ("primary_startup_own_row", "metadata_ps_row_capacity") => {
+            Some("primary_startup_own_row_capacity")
+        }
+        ("primary_startup_own_row", "metadata_ps_row_unknown") => {
+            Some("primary_startup_own_row_unknown")
+        }
+        ("primary_startup_own_row", "metadata_ps_row_count") => {
+            Some("primary_startup_own_row_count")
+        }
+        ("primary_startup_own_row", "metadata_ps_row_render") => {
+            Some("primary_startup_own_row_render")
+        }
+        ("primary_startup_own_row", "metadata_ps_request") => {
+            Some("primary_startup_own_row_ps_request")
+        }
+        ("primary_startup_own_row", "metadata_ps_unknown") => {
+            Some("primary_startup_own_row_ps_unknown")
+        }
+        ("primary_startup_own_row", "metadata_query_deadline") => {
+            Some("primary_startup_own_row_query_deadline")
+        }
+        ("primary_startup_own_row", "metadata_query_exit") => {
+            Some("primary_startup_own_row_query_exit")
+        }
+        ("primary_startup_own_row", "metadata_query_stderr") => {
+            Some("primary_startup_own_row_query_stderr")
+        }
+        ("primary_startup_own_row", "metadata_query_output") => {
+            Some("primary_startup_own_row_query_output")
+        }
+        ("primary_main_argv", "metadata_ps_argv_denied") => Some("primary_main_argv_denied"),
+        ("primary_main_argv", "metadata_ps_argv_invalid") => Some("primary_main_argv_invalid"),
+        ("primary_main_argv", "metadata_ps_argv_absent") => Some("primary_main_argv_absent"),
+        ("primary_main_argv", "metadata_ps_argv_busy") => Some("primary_main_argv_busy"),
+        ("primary_main_argv", "metadata_ps_argv_capacity") => Some("primary_main_argv_capacity"),
+        ("primary_main_argv", "metadata_ps_argv_unknown") => Some("primary_main_argv_unknown"),
+        ("primary_main_argv", "metadata_ps_argv_frame") => Some("primary_main_argv_frame"),
+        ("primary_main_argv", "metadata_ps_request") => Some("primary_main_argv_ps_request"),
+        ("primary_main_argv", "metadata_ps_unknown") => Some("primary_main_argv_ps_unknown"),
+        ("primary_main_argv", "metadata_query_deadline") => {
+            Some("primary_main_argv_query_deadline")
+        }
+        ("primary_main_argv", "metadata_query_exit") => Some("primary_main_argv_query_exit"),
+        ("primary_main_argv", "metadata_query_stderr") => Some("primary_main_argv_query_stderr"),
+        ("primary_main_argv", "metadata_query_output") => Some("primary_main_argv_query_output"),
+        ("primary_startup_master_fstat", "metadata_builder_denied") => {
+            Some("primary_startup_master_fstat_builder_denied")
+        }
+        ("primary_startup_master_fstat", "metadata_builder_invalid") => {
+            Some("primary_startup_master_fstat_builder_invalid")
+        }
+        ("primary_startup_master_fstat", "metadata_builder_absent") => {
+            Some("primary_startup_master_fstat_builder_absent")
+        }
+        ("primary_startup_master_fstat", "metadata_builder_busy") => {
+            Some("primary_startup_master_fstat_builder_busy")
+        }
+        ("primary_startup_master_fstat", "metadata_builder_capacity") => {
+            Some("primary_startup_master_fstat_builder_capacity")
+        }
+        ("primary_startup_master_fstat", "metadata_builder_unknown") => {
+            Some("primary_startup_master_fstat_builder_unknown")
+        }
+        ("primary_startup_master_fstat", "metadata_spawn_denied") => {
+            Some("primary_startup_master_fstat_spawn_denied")
+        }
+        ("primary_startup_master_fstat", "metadata_spawn_invalid") => {
+            Some("primary_startup_master_fstat_spawn_invalid")
+        }
+        ("primary_startup_master_fstat", "metadata_spawn_absent") => {
+            Some("primary_startup_master_fstat_spawn_absent")
+        }
+        ("primary_startup_master_fstat", "metadata_spawn_busy") => {
+            Some("primary_startup_master_fstat_spawn_busy")
+        }
+        ("primary_startup_master_fstat", "metadata_spawn_capacity") => {
+            Some("primary_startup_master_fstat_spawn_capacity")
+        }
+        ("primary_startup_master_fstat", "metadata_spawn_unknown") => {
+            Some("primary_startup_master_fstat_spawn_unknown")
+        }
+        ("primary_startup_master_fstat", "metadata_child_io_denied") => {
+            Some("primary_startup_master_fstat_child_io_denied")
+        }
+        ("primary_startup_master_fstat", "metadata_child_io_invalid") => {
+            Some("primary_startup_master_fstat_child_io_invalid")
+        }
+        ("primary_startup_master_fstat", "metadata_child_io_absent") => {
+            Some("primary_startup_master_fstat_child_io_absent")
+        }
+        ("primary_startup_master_fstat", "metadata_child_io_busy") => {
+            Some("primary_startup_master_fstat_child_io_busy")
+        }
+        ("primary_startup_master_fstat", "metadata_child_io_capacity") => {
+            Some("primary_startup_master_fstat_child_io_capacity")
+        }
+        ("primary_startup_master_fstat", "metadata_child_io_unknown") => {
+            Some("primary_startup_master_fstat_child_io_unknown")
+        }
+        ("primary_startup_master_fstat", "metadata_child_preflight") => {
+            Some("primary_startup_master_fstat_child_preflight")
+        }
+        ("primary_startup_master_fstat", "metadata_child_deadline") => {
+            Some("primary_startup_master_fstat_child_deadline")
+        }
+        ("primary_startup_master_fstat", "metadata_child_pipe") => {
+            Some("primary_startup_master_fstat_child_pipe")
+        }
+        ("primary_startup_master_fstat", "metadata_child_output") => {
+            Some("primary_startup_master_fstat_child_output")
+        }
+        ("primary_startup_master_fstat", "metadata_child_read") => {
+            Some("primary_startup_master_fstat_child_read")
+        }
+        ("primary_startup_master_fstat", "metadata_child_cleanup") => {
+            Some("primary_startup_master_fstat_child_cleanup")
+        }
+        ("primary_startup_master_fstat", "metadata_child_encoding") => {
+            Some("primary_startup_master_fstat_child_encoding")
+        }
+        ("primary_startup_master_fstat", "metadata_query_deadline") => {
+            Some("primary_startup_master_fstat_query_deadline")
+        }
+        ("primary_startup_master_fstat", "metadata_query_exit") => {
+            Some("primary_startup_master_fstat_query_exit")
+        }
+        ("primary_startup_master_fstat", "metadata_query_stderr") => {
+            Some("primary_startup_master_fstat_query_stderr")
+        }
+        ("primary_startup_master_fstat", "metadata_query_output") => {
+            Some("primary_startup_master_fstat_query_output")
+        }
+        ("primary_startup_own_fstat", "metadata_builder_denied") => {
+            Some("primary_startup_own_fstat_builder_denied")
+        }
+        ("primary_startup_own_fstat", "metadata_builder_invalid") => {
+            Some("primary_startup_own_fstat_builder_invalid")
+        }
+        ("primary_startup_own_fstat", "metadata_builder_absent") => {
+            Some("primary_startup_own_fstat_builder_absent")
+        }
+        ("primary_startup_own_fstat", "metadata_builder_busy") => {
+            Some("primary_startup_own_fstat_builder_busy")
+        }
+        ("primary_startup_own_fstat", "metadata_builder_capacity") => {
+            Some("primary_startup_own_fstat_builder_capacity")
+        }
+        ("primary_startup_own_fstat", "metadata_builder_unknown") => {
+            Some("primary_startup_own_fstat_builder_unknown")
+        }
+        ("primary_startup_own_fstat", "metadata_spawn_denied") => {
+            Some("primary_startup_own_fstat_spawn_denied")
+        }
+        ("primary_startup_own_fstat", "metadata_spawn_invalid") => {
+            Some("primary_startup_own_fstat_spawn_invalid")
+        }
+        ("primary_startup_own_fstat", "metadata_spawn_absent") => {
+            Some("primary_startup_own_fstat_spawn_absent")
+        }
+        ("primary_startup_own_fstat", "metadata_spawn_busy") => {
+            Some("primary_startup_own_fstat_spawn_busy")
+        }
+        ("primary_startup_own_fstat", "metadata_spawn_capacity") => {
+            Some("primary_startup_own_fstat_spawn_capacity")
+        }
+        ("primary_startup_own_fstat", "metadata_spawn_unknown") => {
+            Some("primary_startup_own_fstat_spawn_unknown")
+        }
+        ("primary_startup_own_fstat", "metadata_child_io_denied") => {
+            Some("primary_startup_own_fstat_child_io_denied")
+        }
+        ("primary_startup_own_fstat", "metadata_child_io_invalid") => {
+            Some("primary_startup_own_fstat_child_io_invalid")
+        }
+        ("primary_startup_own_fstat", "metadata_child_io_absent") => {
+            Some("primary_startup_own_fstat_child_io_absent")
+        }
+        ("primary_startup_own_fstat", "metadata_child_io_busy") => {
+            Some("primary_startup_own_fstat_child_io_busy")
+        }
+        ("primary_startup_own_fstat", "metadata_child_io_capacity") => {
+            Some("primary_startup_own_fstat_child_io_capacity")
+        }
+        ("primary_startup_own_fstat", "metadata_child_io_unknown") => {
+            Some("primary_startup_own_fstat_child_io_unknown")
+        }
+        ("primary_startup_own_fstat", "metadata_child_preflight") => {
+            Some("primary_startup_own_fstat_child_preflight")
+        }
+        ("primary_startup_own_fstat", "metadata_child_deadline") => {
+            Some("primary_startup_own_fstat_child_deadline")
+        }
+        ("primary_startup_own_fstat", "metadata_child_pipe") => {
+            Some("primary_startup_own_fstat_child_pipe")
+        }
+        ("primary_startup_own_fstat", "metadata_child_output") => {
+            Some("primary_startup_own_fstat_child_output")
+        }
+        ("primary_startup_own_fstat", "metadata_child_read") => {
+            Some("primary_startup_own_fstat_child_read")
+        }
+        ("primary_startup_own_fstat", "metadata_child_cleanup") => {
+            Some("primary_startup_own_fstat_child_cleanup")
+        }
+        ("primary_startup_own_fstat", "metadata_child_encoding") => {
+            Some("primary_startup_own_fstat_child_encoding")
+        }
+        ("primary_startup_own_fstat", "metadata_query_deadline") => {
+            Some("primary_startup_own_fstat_query_deadline")
+        }
+        ("primary_startup_own_fstat", "metadata_query_exit") => {
+            Some("primary_startup_own_fstat_query_exit")
+        }
+        ("primary_startup_own_fstat", "metadata_query_stderr") => {
+            Some("primary_startup_own_fstat_query_stderr")
+        }
+        ("primary_startup_own_fstat", "metadata_query_output") => {
+            Some("primary_startup_own_fstat_query_output")
+        }
+        _ => None,
+    }
+}
+fn metadata_failure(tag: &'static str, labeled: bool) -> CommandExecutionError {
+    if labeled {
+        CommandExecutionError {
+            reason: metadata_failure_tag(tag)
+                .unwrap_or("metadata_ps_unknown")
+                .into(),
+        }
+    } else {
+        unavailable()
+    }
+}
 fn unavailable() -> CommandExecutionError {
     CommandExecutionError {
         reason: "password utility unavailable".into(),
@@ -330,10 +715,11 @@ impl CommandExecutor for FixedExecutor<'_> {
     }
 }
 
-fn drain(
+fn drain_labeled(
     pipe: &mut impl Read,
     bytes: &mut Vec<u8>,
     cap: usize,
+    labeled: bool,
 ) -> Result<bool, CommandExecutionError> {
     let mut buffer = [0u8; LIMIT];
     // Bound each drain as well as total output, so a hot producer cannot hide
@@ -344,7 +730,8 @@ fn drain(
             Ok(n) if bytes.len() + n <= cap => bytes.extend_from_slice(&buffer[..n]),
             Err(e) if e.kind() == ErrorKind::WouldBlock => return Ok(false),
             Err(e) if e.kind() == ErrorKind::Interrupted => continue,
-            _ => return Err(unavailable()),
+            Ok(_) => return Err(metadata_failure("metadata_child_output", labeled)),
+            Err(_) => return Err(metadata_failure("metadata_child_read", labeled)),
         }
     }
     Ok(false)
@@ -358,16 +745,25 @@ fn run(
     run_with_cap(command, input, deadline, LIMIT)
 }
 fn run_with_cap(
+    command: Command,
+    input: &[u8],
+    deadline: Instant,
+    cap: usize,
+) -> Result<CommandExecution, CommandExecutionError> {
+    run_with_cap_labeled(command, input, deadline, cap, false)
+}
+fn run_with_cap_labeled(
     mut command: Command,
     input: &[u8],
     deadline: Instant,
     cap: usize,
+    labeled: bool,
 ) -> Result<CommandExecution, CommandExecutionError> {
     if !matches!(cap, 4096 | 16384 | 65536)
         || execution_quarantined()
         || deadline.saturating_duration_since(Instant::now()) <= RESERVE
     {
-        return Err(unavailable());
+        return Err(metadata_failure("metadata_child_preflight", labeled));
     }
     let io_deadline = deadline - RESERVE;
     command
@@ -380,7 +776,7 @@ fn run_with_cap(
     let mut child = command.spawn().map_err(|_error| {
         #[cfg(test)]
         native_trace::errno(&_error);
-        unavailable()
+        metadata_failure(metadata_errno_tag("spawn", &_error), labeled)
     })?;
     #[cfg(test)]
     native_trace::stage(6);
@@ -388,15 +784,31 @@ fn run_with_cap(
     // group. No historical/reusable PID is used as cleanup authority.
     let pid = child.id();
     let result = (|| {
-        let mut input_pipe = Some(child.stdin.take().ok_or_else(unavailable)?);
-        let mut output = child.stdout.take().ok_or_else(unavailable)?;
-        let mut error = child.stderr.take().ok_or_else(unavailable)?;
+        let mut input_pipe = Some(
+            child
+                .stdin
+                .take()
+                .ok_or_else(|| metadata_failure("metadata_child_pipe", labeled))?,
+        );
+        let mut output = child
+            .stdout
+            .take()
+            .ok_or_else(|| metadata_failure("metadata_child_pipe", labeled))?;
+        let mut error = child
+            .stderr
+            .take()
+            .ok_or_else(|| metadata_failure("metadata_child_pipe", labeled))?;
         for fd in [
-            input_pipe.as_ref().ok_or_else(unavailable)?.as_raw_fd(),
+            input_pipe
+                .as_ref()
+                .ok_or_else(|| metadata_failure("metadata_child_pipe", labeled))?
+                .as_raw_fd(),
             output.as_raw_fd(),
             error.as_raw_fd(),
         ] {
-            crate::openbsd::set_descriptor_nonblocking(fd).map_err(|_| unavailable())?;
+            crate::openbsd::set_descriptor_nonblocking(fd).map_err(|error| {
+                metadata_failure(metadata_errno_tag("child_io", &error), labeled)
+            })?;
         }
         if input.is_empty() {
             input_pipe.take();
@@ -406,31 +818,32 @@ fn run_with_cap(
         let (mut out_eof, mut err_eof) = (false, false);
         loop {
             if Instant::now() >= io_deadline {
-                return Err(unavailable());
+                return Err(metadata_failure("metadata_child_deadline", labeled));
             }
             if let Some(pipe) = input_pipe.as_mut() {
                 match pipe.write(&input[written..]) {
-                    Ok(0) => return Err(unavailable()),
+                    Ok(0) => return Err(metadata_failure("metadata_child_pipe", labeled)),
                     Ok(n) => written += n,
                     Err(e)
                         if matches!(e.kind(), ErrorKind::WouldBlock | ErrorKind::Interrupted) => {}
-                    _ => return Err(unavailable()),
+                    _ => return Err(metadata_failure("metadata_child_pipe", labeled)),
                 }
                 if written == input.len() {
                     input_pipe.take();
                 }
             }
             if !out_eof {
-                out_eof = drain(&mut output, &mut stdout, cap)?;
+                out_eof = drain_labeled(&mut output, &mut stdout, cap, labeled)?;
             }
             if !err_eof {
-                err_eof = drain(&mut error, &mut stderr, cap)?;
+                err_eof = drain_labeled(&mut error, &mut stderr, cap, labeled)?;
             }
             if out_eof
                 && err_eof
                 && written == input.len()
-                && crate::openbsd::owned_child_exited_without_reap(pid)
-                    .map_err(|_| unavailable())?
+                && crate::openbsd::owned_child_exited_without_reap(pid).map_err(|error| {
+                    metadata_failure(metadata_errno_tag("child_io", &error), labeled)
+                })?
             {
                 return Ok((stdout, stderr));
             }
@@ -440,7 +853,7 @@ fn run_with_cap(
                 (!err_eof).then(|| error.as_raw_fd()),
                 io_deadline,
             )
-            .map_err(|_| unavailable())?;
+            .map_err(|error| metadata_failure(metadata_errno_tag("child_io", &error), labeled))?;
         }
     })();
     // Kill while this unreaped Popen leader still leases the PGID; then reap
@@ -468,8 +881,10 @@ fn run_with_cap(
                 }
                 return Ok(CommandExecution {
                     status_code: status.code().unwrap_or(-1),
-                    stdout: String::from_utf8(stdout).map_err(|_| unavailable())?,
-                    stderr: String::from_utf8(stderr).map_err(|_| unavailable())?,
+                    stdout: String::from_utf8(stdout)
+                        .map_err(|_| metadata_failure("metadata_child_encoding", labeled))?,
+                    stderr: String::from_utf8(stderr)
+                        .map_err(|_| metadata_failure("metadata_child_encoding", labeled))?,
                 });
             }
             break;
@@ -484,7 +899,7 @@ fn run_with_cap(
     if let Ok(mut children) = OWNED_UNREAPED.lock() {
         children.push(child);
     }
-    Err(unavailable())
+    Err(metadata_failure("metadata_child_cleanup", labeled))
 }
 
 #[cfg(test)]

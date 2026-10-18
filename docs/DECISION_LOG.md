@@ -11812,3 +11812,48 @@ requirement is parked or removed. Persistent submission-process/IPC topology
 registration and refresh against the actual submission master remain required
 active work after the metadata correction. Measured public NC facts remain
 reusable facts, with no installed TLS or product completion claim.
+
+
+Artifact-only stage6 failed6.292 seconds before stage creation or child execution.
+Its closed reason is old_claim_provenance: the receiver still expected a case4
+marker-content attempt while the exact retained162f stage belongs to case5.
+Keep outer UNKNOWN and the actual no-stage/no-child flags distinct. Owner intake,
+author binding and independent receiver review missed that buried provenance
+literal; preserve cost and failure. Correct only the exact old-claim attempt
+binding, retain its strict comparison and unique fresh action, and acknowledge
+the prior source-placement plus current stage failures before checked dispatch.
+No helper rebuild, credential replay or extra host observer is warranted.
+
+
+## 2026-10-18 — repeated first-request failure and real lifecycle source facts
+
+Changed case6 failed18.636 seconds with the same ready-then-main-selection
+Unavailable stage as case5, before AUTH. Native bridge compilation and source
+repair do not prove the internal predicate or resolution; combined failed actions
+total37.741 seconds. Independentfa338 accepts existing exact owned disposition
+with40 children/outer gone, normal helper0, same-master final service/original
+configuration/full17 rows/Active0 preserved and exact fixture removal. Keep outer
+UNCERTAIN/nested UNKNOWN unchanged. No extra observer or unchanged retry follows.
+
+After that safe disposition, one fixed read-only passdb projection947816e9 passed
+3.922 seconds and returned only sql driver and canonical referenced args path
+/etc/dovecot/dovecot-sql.conf.ext. The referenced SQL/DSN body was not read; actual
+loaded bytes remain unestablished. Real persistent submission-registration and
+refresh source uses these facts while joint source review identifies the smallest
+discriminator for the repeated Primary refusal. No new native build/case or
+generic inventory is authorized merely by a source-backed hypothesis.
+
+
+## 2026-10-18 — preserve exact phase and category at the failed recheck
+
+Combined cases5/6 repeat the first-request main-selection Unavailable boundary
+without identifying its internal failed operation. Keep both actual failures and
+safe dispositions. Approved diagnostic design81bccc39 and exact source/consumer
+reviewbd760636 select a minimal static phase/category discriminator:99 finite
+known pairs, one bounded first-failure latch, no raw output, values or credentials.
+Five product paths change, all unsafe native code stays in the existing FFI
+boundary, and predicates/order/deadlines/runner ownership remain unchanged.
+Reuse the author’s two controls and changed combined-query control plus matching
+format/CWE checks. Native cause remains unknown; source admission is not a fix or
+workflow pass. The existing strict LF consumer accepts only the reviewed static
+stages; no permission, protocol, recovery or qualification scope is expanded.

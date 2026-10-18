@@ -463,6 +463,14 @@ impl Startup {
         executor: &(impl CommandExecutor + ?Sized),
         deadline: Instant,
     ) -> Result<(), Error> {
+        self.recheck_with_stage(executor, deadline, &mut "primary_startup_recheck")
+    }
+    fn recheck_with_stage(
+        &self,
+        executor: &(impl CommandExecutor + ?Sized),
+        deadline: Instant,
+        stage: &mut &'static str,
+    ) -> Result<(), Error> {
         if !crate::openbsd::password_native_authority()
             || std::process::id() != self.own.pid
             || Instant::now() >= deadline
@@ -470,20 +478,37 @@ impl Startup {
             return Err(Error::Refused);
         }
         for pin in &self.pins {
+            *stage = match pin.path {
+                PS => "primary_startup_pin_ps",
+                FSTAT => "primary_startup_pin_fstat",
+                IMAP => "primary_startup_pin_imap",
+                MASTER => "primary_startup_pin_master",
+                _ => "primary_startup_pin_helper",
+            };
             if file_pin(pin.path)? != *pin {
                 return Err(Error::Refused);
             }
         }
         for (process, path) in [(&self.master, MASTER), (&self.own, HELPER)] {
+            *stage = if path == MASTER {
+                "primary_startup_master_row"
+            } else {
+                "primary_startup_own_row"
+            };
             if row(
-                &query(executor, PS, &ps_args(process.pid), deadline)?,
+                &query_with_stage(executor, PS, &ps_args(process.pid), deadline, stage)?,
                 process.pid,
             )? != *process
             {
                 return Err(Error::Refused);
             }
+            *stage = if path == MASTER {
+                "primary_startup_master_fstat"
+            } else {
+                "primary_startup_own_fstat"
+            };
             descriptors(
-                &query(executor, FSTAT, &fstat_args(process.pid), deadline)?,
+                &query_with_stage(executor, FSTAT, &fstat_args(process.pid), deadline, stage)?,
                 process,
                 self.pins
                     .iter()
@@ -845,6 +870,21 @@ fn query<E: CommandExecutor + ?Sized>(
     args: &[String],
     deadline: Instant,
 ) -> Result<String, Error> {
+    query_with_stage(
+        executor,
+        program,
+        args,
+        deadline,
+        &mut "primary_metadata_query",
+    )
+}
+fn query_with_stage<E: CommandExecutor + ?Sized>(
+    executor: &E,
+    program: &str,
+    args: &[String],
+    deadline: Instant,
+    stage: &mut &'static str,
+) -> Result<String, Error> {
     let left = deadline
         .checked_duration_since(Instant::now())
         .filter(|v| !v.is_zero())
@@ -858,15 +898,34 @@ fn query<E: CommandExecutor + ?Sized>(
     };
     let result = executor
         .run_with_stdin_bytes_timeout_and_output_limit(program, args, b"", left, limit)
-        .map_err(|_| Error::Unavailable)?;
-    if Instant::now() >= query_deadline
-        || result.status_code != 0
-        || !result.stderr.is_empty()
-        || result.stdout.is_empty()
+        .map_err(|error| {
+            if let Some(tag) =
+                crate::account_password_process::metadata_phase_failure(stage, &error.reason)
+            {
+                *stage = tag;
+            }
+            Error::Unavailable
+        })?;
+    let failure = if Instant::now() >= query_deadline {
+        Some("metadata_query_deadline")
+    } else if result.status_code != 0 {
+        Some("metadata_query_exit")
+    } else if !result.stderr.is_empty() {
+        Some("metadata_query_stderr")
+    } else if result.stdout.is_empty()
         || result.stdout.len() > limit
         || !result.stdout.is_ascii()
         || result.stdout.contains('\0')
     {
+        Some("metadata_query_output")
+    } else {
+        None
+    };
+    if let Some(tag) = failure {
+        if let Some(combined) = crate::account_password_process::metadata_phase_failure(stage, tag)
+        {
+            *stage = combined;
+        }
         return Err(Error::Unavailable);
     }
     Ok(result.stdout)
@@ -1295,7 +1354,7 @@ impl PrimaryPeer {
         files.push(primary_file(PRIMARY_AUTH, deadline)?);
         let auth = file_pin(PRIMARY_AUTH)?;
         *stage = "primary_main_selection";
-        let selection = main_configuration_selection(executor.as_ref(), startup, deadline)?;
+        let selection = main_configuration_selection(executor.as_ref(), startup, deadline, stage)?;
         let mut result = Self {
             executor,
             startup: startup.clone(),
@@ -1348,7 +1407,7 @@ impl PrimaryPeer {
         stage: &mut &'static str,
     ) -> Result<(), Error> {
         *stage = "primary_recheck_main_selection";
-        if main_configuration_selection(self.executor.as_ref(), &self.startup, deadline)?
+        if main_configuration_selection(self.executor.as_ref(), &self.startup, deadline, stage)?
             != self.selection
         {
             return Err(Error::Refused);
@@ -1368,7 +1427,7 @@ impl PrimaryPeer {
             observed != self.snapshot
         } || {
             *stage = "primary_recheck_main_selection";
-            main_configuration_selection(self.executor.as_ref(), &self.startup, deadline)?
+            main_configuration_selection(self.executor.as_ref(), &self.startup, deadline, stage)?
                 != self.selection
         } {
             return Err(Error::Refused);
@@ -1399,9 +1458,11 @@ fn main_configuration_selection(
     executor: &(dyn CommandExecutor + Send + Sync),
     startup: &Startup,
     deadline: Instant,
+    stage: &mut &'static str,
 ) -> Result<MainConfigurationSelection, Error> {
-    startup.recheck(executor, deadline)?;
-    let argv = query(
+    startup.recheck_with_stage(executor, deadline, stage)?;
+    *stage = "primary_main_argv";
+    let argv = query_with_stage(
         executor,
         PS,
         &[
@@ -1411,8 +1472,10 @@ fn main_configuration_selection(
             "args=".into(),
         ],
         deadline,
+        stage,
     )?;
     main_master_argv(&argv)?;
+    *stage = "primary_main_link_ancestors";
     crate::account_password_custody::ancestors(MAIN_CONFIG_LINK, None, deadline)
         .map_err(|_| Error::Unavailable)?;
     let pin = |m: &fs::Metadata| {
@@ -1430,16 +1493,23 @@ fn main_configuration_selection(
             m.ctime_nsec() as u64,
         ]
     };
+    *stage = "primary_main_link_metadata";
     let before = fs::symlink_metadata(MAIN_CONFIG_LINK).map_err(|_| Error::Unavailable)?;
     if !before.file_type().is_symlink()
         || before.uid() != 0
         || before.gid() != 0
         || before.nlink() != 1
         || before.len() > 256
-        || fs::read_link(MAIN_CONFIG_LINK).map_err(|_| Error::Unavailable)?
-            != Path::new(MAIN_CONFIG)
-        || pin(&fs::symlink_metadata(MAIN_CONFIG_LINK).map_err(|_| Error::Unavailable)?)
-            != pin(&before)
+        || {
+            *stage = "primary_main_link_target";
+            fs::read_link(MAIN_CONFIG_LINK).map_err(|_| Error::Unavailable)?
+                != Path::new(MAIN_CONFIG)
+        }
+        || {
+            *stage = "primary_main_link_final_metadata";
+            pin(&fs::symlink_metadata(MAIN_CONFIG_LINK).map_err(|_| Error::Unavailable)?)
+                != pin(&before)
+        }
         || Instant::now() >= deadline
     {
         return Err(Error::Refused);

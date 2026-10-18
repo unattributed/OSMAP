@@ -2,6 +2,47 @@
 
 ## S04-02 current source and operational limits — 2026-10-18
 
+The exact five-path diagnostic40ba71a1 is integrated after independentbd760636
+source/consumer review. It preserves the exact closed phase/category at the first
+failed metadata operation without raw values, guard changes or a cause claim.
+Matching author controls/format/CWE checks are reused. Normal signed admission
+and one existing helper-only changed diagnostic case remain pending.
+
+The subsequent minimal read-only passdb projection passed3.922 seconds (947816e9):
+sole sql driver and canonical /etc/dovecot/dovecot-sql.conf.ext path, with original
+configuration/master and four utility groups preserved. No referenced DSN file,
+network/authentication/SQL or service write occurred; loaded bytes are not proved.
+These facts feed real persistent submission-registration source work. The repeated
+Primary first-request failure still requires joint source cause/discriminator review
+before any new helper build or native admission. No extra collector is queued.
+
+Changed admission case6 failed18.636 seconds (3bacc35c): startup ready passes,
+then the first request still reports main_selection/Unavailable before AUTH.
+The precise internal predicate remains unknown. Helper exited0 and all40 child
+groups/outer group are gone; child exact fixture rollback/disposal is confirmed.
+Independentfa338 accepts exact same-master service/disposition witnesses;
+no recovery observer is required. Outer UNCERTAIN remains.
+No unchanged retry/build or new collector is justified. Cases5/6 receive combined
+source causal review; the installed password form remains disabled.
+
+Latest artifact-only stage6 failed6.292 seconds before stage creation/child
+execution: a buried old-claim attempt literal named case4 while the exact old
+stage is case5. Outer UNKNOWN is retained. The strict provenance-binding
+correction and combined failure review are next; no service/fixture action
+occurred and no extra host observer or helper rebuild is required.
+
+Current signed synchronized source is3e003d0b32864112f7396744f44a3825b47c6348.
+The corrected FFI source gate passed277.448 seconds (1842 Rust/0 failed/48 explicit
+native ignores) after retained127.841-second placement failure. Normal push
+passed263.228 seconds; fresh-fetch equality/clean0/0 were verified after271.613
+seconds. One helper-only native build passed58.691 seconds against458 exact inputs,
+producing701010fa/64694312 bytes with owned build group/scratch gone. Native ABI
+compilation passes; actual after-seal metadata/admission and installed password
+workflow remain unqualified. Capture/fresh staging and one changed controlled
+admission are next, with no client rebuild or extra observer.
+
+The following records preserve the source and failed-case sequence.
+
 The first mandatory metadata-source gate failed127.841 seconds at the existing
 CWE rule: unsafe expressions must live in the reviewed OpenBSD FFI boundary. No
 commit was created. Exact three-path relocation55285 preserves all behavior and

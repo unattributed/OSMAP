@@ -100,3 +100,34 @@ fn actual_duplex_retains_natural_exit_status_and_bounds_owned_cleanup() {
     // Deadline refusal with measured group cleanup does not latch uncertainty.
     assert!(!UNCERTAIN.load(Ordering::SeqCst));
 }
+
+#[test]
+fn sealed_recheck_diagnostic_errno_classes_are_closed_and_payload_free() {
+    for (errno, class) in [
+        (libc::EACCES, "denied"),
+        (libc::EINVAL, "invalid"),
+        (libc::ESRCH, "absent"),
+        (libc::EBUSY, "busy"),
+        (libc::ENOMEM, "capacity"),
+        (libc::EIO, "unknown"),
+    ] {
+        for operation in ["ps_row", "ps_argv", "builder", "spawn", "child_io"] {
+            let tag = metadata_errno_tag(operation, &std::io::Error::from_raw_os_error(errno));
+            assert!(tag.ends_with(class));
+            assert_eq!(metadata_failure_tag(tag), Some(tag));
+            assert_eq!(
+                metadata_failure(tag, false).reason,
+                "password utility unavailable"
+            );
+            assert_eq!(metadata_failure(tag, true).reason, tag);
+        }
+    }
+    for bad in [
+        "metadata_ps_row_denied password=secret",
+        "/private/path",
+        "metadata_ps_row_123",
+        "metadata_ps_row_denied\n",
+    ] {
+        assert!(metadata_failure_tag(bad).is_none());
+    }
+}

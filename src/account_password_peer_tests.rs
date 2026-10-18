@@ -327,3 +327,89 @@ fn cold_primary_late_sole_worker_is_not_accepted_and_other_roles_do_not_wait() {
     ));
     assert_eq!(calls, 1);
 }
+
+#[test]
+fn sealed_recheck_diagnostic_query_discriminates_only_fixed_failed_guard() {
+    struct Reply {
+        code: i32,
+        out: String,
+        err: String,
+        failure: Option<String>,
+    }
+    impl CommandExecutor for Reply {
+        fn run_with_stdin_bytes(
+            &self,
+            _: &str,
+            _: &[String],
+            _: &[u8],
+        ) -> Result<CommandExecution, CommandExecutionError> {
+            Err(CommandExecutionError {
+                reason: "unexpected unbounded dispatch".into(),
+            })
+        }
+
+        fn run_with_stdin_bytes_timeout_and_output_limit(
+            &self,
+            _: &str,
+            _: &[String],
+            _: &[u8],
+            _: Duration,
+            _: usize,
+        ) -> Result<CommandExecution, CommandExecutionError> {
+            if let Some(reason) = &self.failure {
+                return Err(CommandExecutionError {
+                    reason: reason.clone(),
+                });
+            }
+            Ok(CommandExecution {
+                status_code: self.code,
+                stdout: self.out.clone(),
+                stderr: self.err.clone(),
+            })
+        }
+    }
+    let mut reply = Reply {
+        code: 0,
+        out: "fixed public metadata\n".into(),
+        err: String::new(),
+        failure: None,
+    };
+    let mut stage = "primary_startup_master_fstat";
+    let deadline = || Instant::now() + Duration::from_millis(500);
+    assert!(query_with_stage(&reply, FSTAT, &fstat_args(10), deadline(), &mut stage).is_ok());
+    assert_eq!(stage, "primary_startup_master_fstat");
+    for (code, out, err, expected) in [
+        (1, "fixed\n", "", "metadata_query_exit"),
+        (0, "fixed\n", "not retained", "metadata_query_stderr"),
+        (0, "", "", "metadata_query_output"),
+        (0, "\0", "", "metadata_query_output"),
+    ] {
+        reply.code = code;
+        reply.out = out.into();
+        reply.err = err.into();
+        stage = "primary_startup_master_fstat";
+        assert_eq!(
+            query_with_stage(&reply, FSTAT, &fstat_args(10), deadline(), &mut stage),
+            Err(Error::Unavailable)
+        );
+        assert_eq!(
+            stage,
+            crate::account_password_process::metadata_phase_failure(
+                "primary_startup_master_fstat",
+                expected
+            )
+            .unwrap()
+        );
+    }
+    reply.failure = Some("metadata_ps_row_denied".into());
+    stage = "primary_startup_master_row";
+    assert!(query_with_stage(&reply, PS, &ps_args(10), deadline(), &mut stage).is_err());
+    assert_eq!(stage, "primary_startup_master_row_denied");
+    stage = "primary_startup_own_row";
+    assert!(query_with_stage(&reply, PS, &ps_args(10), deadline(), &mut stage).is_err());
+    assert_eq!(stage, "primary_startup_own_row_denied");
+    reply.failure = Some("untrusted private text".into());
+    stage = "primary_startup_master_fstat";
+    assert!(query_with_stage(&reply, FSTAT, &fstat_args(10), deadline(), &mut stage).is_err());
+    assert_eq!(stage, "primary_startup_master_fstat");
+}
