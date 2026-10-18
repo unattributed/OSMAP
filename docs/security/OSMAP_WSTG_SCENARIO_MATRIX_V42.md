@@ -1309,3 +1309,19 @@ failure/uncertainty remains. Whole-chain mask correction87d6e331 has a nested
 changed-boundary discriminator but no fresh native execution. No installed
 password workflow, owner UAT, sprint or release acceptance follows from this source
 admission. Existing capability flags, predicates, deadlines and protocols remain.
+
+
+### 2026-10-18 — observed Primary worker readiness boundary
+
+Actual case4 retained FAIL/UNCERTAIN at the exact unique-worker refusal; its owned
+cleanup and original service preservation are independently acceptedaceae093.
+One diagnostic-only same-held-stream observation2e5d then measured zero to one
+eligible reciprocal worker in0.424 seconds, with exact rollback2f1e and no AUTH,
+helper/client, SQL, rows, users or keys. It does not identify historical counts.
+Source review61c4 covers the two-path Primary-only zero-worker wait capped by
+min(original deadline, first worker discovery plus3 seconds). Multiple/error
+observations refuse immediately; held FD, immutable metadata, kernel reciprocity,
+private argv, endpoint/process continuity and Control one-shot checks remain.
+Ten targeted author controls pass, reused without another focused suite. Normal
+signed hook and changed native qualification remain separate; the existing nine
+scenarios/twenty obligations, disabled form and full workflow limits are unchanged.

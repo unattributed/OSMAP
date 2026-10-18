@@ -1463,6 +1463,45 @@ fn private_primary_argv(raw: &str) -> Result<(), Error> {
     }
     Ok(())
 }
+// A newly connected private Primary worker can still be starting before it
+// drops privileges and accepts this exact FD. Keep that stream held while only
+// an empty exact-candidate set settles; ambiguity and observation errors never
+// gain a retry. Other socket roles retain their existing one-shot semantics.
+fn ready_socket_worker(
+    path: &'static str,
+    deadline: Instant,
+    stage: &mut &'static str,
+    mut observe: impl FnMut(Instant, &mut &'static str) -> Result<Vec<Row>, Error>,
+) -> Result<Row, Error> {
+    let end = if path == PRIMARY_SOCKET {
+        deadline.min(Instant::now() + Duration::from_secs(3))
+    } else {
+        deadline
+    };
+    loop {
+        if Instant::now() >= end {
+            return Err(Error::Expired);
+        }
+        let mut workers = observe(end, stage)?;
+        *stage = "primary_probe_unique_worker";
+        if workers.len() > 1 {
+            return Err(Error::Refused);
+        }
+        if Instant::now() >= end {
+            return Err(Error::Expired);
+        }
+        if workers.len() == 1 {
+            return Ok(workers.remove(0));
+        }
+        if path != PRIMARY_SOCKET {
+            return Err(Error::Refused);
+        }
+        let left = end
+            .checked_duration_since(Instant::now())
+            .ok_or(Error::Expired)?;
+        std::thread::sleep(left.min(Duration::from_millis(10)));
+    }
+}
 #[allow(clippy::too_many_arguments)] // Independent fixed process/socket and original-budget witnesses.
 fn socket_probe(
     executor: &(dyn CommandExecutor + Send + Sync),
@@ -1545,45 +1584,43 @@ fn socket_probe_with_stage(
             .find(|pin| pin.path == HELPER)
             .ok_or(Error::Refused)?,
     )?;
-    *stage = "primary_probe_worker_snapshot";
-    let raw = query(
-        executor,
-        PS,
-        &["-ax".into(), "-o".into(), PS_FIELDS.into()],
-        deadline,
-    )?;
-    *stage = "primary_probe_worker_rows";
-    let mut workers = Vec::new();
-    for (index, line) in raw.lines().enumerate() {
-        *stage = "primary_probe_worker_rows";
-        if index >= 4096 {
-            return Err(Error::Refused);
-        }
-        let pid = line
-            .split_whitespace()
-            .next()
-            .ok_or(Error::Refused)
-            .and_then(decimal)?;
-        let candidate = row(line, pid)?;
-        if socket_worker(&candidate, &startup.master, server_uid, command).is_err() {
-            continue;
-        }
-        *stage = "primary_probe_worker_descriptors";
-        let peer = descriptors(
-            &query(executor, FSTAT, &fstat_args(pid), deadline)?,
-            &candidate,
-            auth,
+    let worker = ready_socket_worker(path, deadline, stage, |observation_deadline, stage| {
+        *stage = "primary_probe_worker_snapshot";
+        let raw = query(
+            executor,
+            PS,
+            &["-ax".into(), "-o".into(), PS_FIELDS.into()],
+            observation_deadline,
         )?;
-        *stage = "primary_probe_reciprocal_worker";
-        if reciprocal(&own, &peer, stream.as_raw_fd()).is_ok() {
-            workers.push(candidate);
+        *stage = "primary_probe_worker_rows";
+        let mut workers = Vec::new();
+        for (index, line) in raw.lines().enumerate() {
+            *stage = "primary_probe_worker_rows";
+            if index >= 4096 {
+                return Err(Error::Refused);
+            }
+            let pid = line
+                .split_whitespace()
+                .next()
+                .ok_or(Error::Refused)
+                .and_then(decimal)?;
+            let candidate = row(line, pid)?;
+            if socket_worker(&candidate, &startup.master, server_uid, command).is_err() {
+                continue;
+            }
+            *stage = "primary_probe_worker_descriptors";
+            let peer = descriptors(
+                &query(executor, FSTAT, &fstat_args(pid), observation_deadline)?,
+                &candidate,
+                auth,
+            )?;
+            *stage = "primary_probe_reciprocal_worker";
+            if reciprocal(&own, &peer, stream.as_raw_fd()).is_ok() {
+                workers.push(candidate);
+            }
         }
-    }
-    *stage = "primary_probe_unique_worker";
-    if workers.len() != 1 {
-        return Err(Error::Refused);
-    }
-    let worker = workers.remove(0);
+        Ok(workers)
+    })?;
     *stage = "primary_probe_worker_argv";
     if path == PRIMARY_SOCKET {
         private_primary_argv(&query(

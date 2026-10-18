@@ -36,6 +36,14 @@ only static, bounded failure stages to the existing authority checks; it does no
 relax those checks or prove an actual native request. Launcher mask correction is
 source-only until a fresh correctly bound changed native case. The form stays disabled.
 
+A later diagnostic-only same-held stream measured eligible reciprocal workers0→1
+in0.424 seconds, with owned rollback independently accepted2f1e89bb. Reviewed
+source769e7c51 now waits only for a zero-worker Primary snapshot under the original
+deadline and an initial3-second cap. Multiple workers and metadata errors still
+refuse immediately; all final authority checks and Control one-shot behavior remain.
+This source repair is not yet a successful native admission or installed password
+workflow; historical case3/case4 failures and their unknown exact causes remain.
+
 ## Historical operator stop — 2026-10-17
 
 Development, live/native qualification and deployment are stopped by explicit

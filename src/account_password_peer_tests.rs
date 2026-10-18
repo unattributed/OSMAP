@@ -233,3 +233,97 @@ fn diagnostic_stages_preserve_original_startup_refusal_without_metadata_dispatch
         Err(Error::Refused)
     ));
 }
+
+#[test]
+fn cold_primary_zero_then_one_keeps_the_same_held_stream_and_deadline() {
+    let (held, _other) = UnixStream::pair().unwrap();
+    let fd = held.as_raw_fd();
+    let deadline = Instant::now() + Duration::from_secs(1);
+    let expected = process(20, 10, 518, "auth");
+    let mut calls = 0;
+    let mut stage = "initial";
+    let worker = ready_socket_worker(PRIMARY_SOCKET, deadline, &mut stage, |end, _| {
+        assert_eq!(end, deadline);
+        assert_eq!(held.as_raw_fd(), fd);
+        calls += 1;
+        Ok(if calls == 1 {
+            vec![]
+        } else {
+            vec![expected.clone()]
+        })
+    })
+    .unwrap();
+    assert_eq!(worker.pid, expected.pid);
+    assert_eq!(calls, 2);
+    assert_eq!(held.as_raw_fd(), fd);
+    assert_eq!(stage, "primary_probe_unique_worker");
+}
+
+#[test]
+fn cold_primary_permanent_zero_expires_without_renewing_deadline() {
+    let deadline = Instant::now() + Duration::from_millis(4);
+    let mut stage = "initial";
+    assert!(matches!(
+        ready_socket_worker(PRIMARY_SOCKET, deadline, &mut stage, |end, _| {
+            assert_eq!(end, deadline);
+            Ok(vec![])
+        }),
+        Err(Error::Expired)
+    ));
+}
+
+#[test]
+fn cold_primary_ambiguity_and_observer_error_never_retry() {
+    let deadline = Instant::now() + Duration::from_secs(1);
+    let mut stage = "initial";
+    let mut calls = 0;
+    let worker = process(20, 10, 518, "auth");
+    assert!(matches!(
+        ready_socket_worker(PRIMARY_SOCKET, deadline, &mut stage, |_, _| {
+            calls += 1;
+            Ok(vec![worker.clone(), worker.clone()])
+        }),
+        Err(Error::Refused)
+    ));
+    assert_eq!(calls, 1);
+    calls = 0;
+    assert!(matches!(
+        ready_socket_worker(PRIMARY_SOCKET, deadline, &mut stage, |_, stage| {
+            calls += 1;
+            *stage = "primary_probe_worker_descriptors";
+            Err(Error::Refused)
+        }),
+        Err(Error::Refused)
+    ));
+    assert_eq!(calls, 1);
+    assert_eq!(stage, "primary_probe_worker_descriptors");
+}
+
+#[test]
+fn cold_primary_late_sole_worker_is_not_accepted_and_other_roles_do_not_wait() {
+    let deadline = Instant::now() + Duration::from_millis(4);
+    let mut stage = "initial";
+    assert!(matches!(
+        ready_socket_worker(PRIMARY_SOCKET, deadline, &mut stage, |end, _| {
+            std::thread::sleep(end.saturating_duration_since(Instant::now()));
+            Ok(vec![process(20, 10, 518, "auth")])
+        }),
+        Err(Error::Expired)
+    ));
+    let deadline = Instant::now() + Duration::from_secs(1);
+    let mut calls = 0;
+    assert!(matches!(
+        ready_socket_worker(
+            "/var/dovecot/osmap-account-auth-master",
+            deadline,
+            &mut stage,
+            |end, _| {
+                assert_eq!(end, deadline);
+                calls += 1;
+                Ok(vec![])
+            }
+        ),
+        Err(Error::Refused)
+    ));
+    assert_eq!(calls, 1);
+}

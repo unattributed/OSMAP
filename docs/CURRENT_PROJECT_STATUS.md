@@ -2,6 +2,42 @@
 
 ## S04-02 current source and operational limits — 2026-10-18
 
+The subsequent diagnostic-only held-stream probe passed6.573 seconds (2e5d528f),
+independently accepted2f1e89bb. On one connection with no authentication, two
+snapshots0.424 seconds apart measured eligible reciprocal workers0→1. Exact owned
+fragment/group rollback preserved original25/exact22 files, master, service and
+ordinary listeners; all39 finite groups were reaped/absent. No further observer
+or recovery is required. This demonstrates a cold readiness transition; it does
+not retrospectively establish the exact worker count/cause in the earlier failures.
+The next source repair waits only while zero eligible Primary workers are observed
+on the same held stream, within the original deadline and an initial3-second cap.
+Multiple workers or metadata errors still fail immediately; Control is unchanged.
+No greeting-protocol assumption, reconnect or identity relaxation is introduced.
+The exact two-path repair769e7c51 is now integrated after independent61c4dc5b
+source review. Ten focused peer controls passed at the author; no rerun is added.
+It awaits normal signed source admission and one changed native qualification.
+Every final authority predicate remains; no capability flag or live form changes.
+
+Latest changed admission case4 failed44.969 seconds (6de35522). The bounded
+helper diagnostic identifies `primary_probe_unique_worker error=Refused`; this
+establishes that the reciprocal worker count was not exactly one, without proving
+zero, multiple or its cause. The existing first wrong-password client still reports
+C15; correct-password admission and password mutation were not reached.
+
+The helper now stopped normally (code0, reaped, group gone), demonstrating the
+changed launcher's stop path. Forty recorded groups are reaped/absent. The child
+reports exact owned cleanup confirmed, original25 configuration preserved,
+full17 synthetic rows/Active0 unchanged before disposal, and final same-master
+reload/current-master/service checks passed. Two synthetic rows, sixteen private
+files and two purpose users/groups were removed. The outer failed-component
+consumer still records FAIL/UNCERTAIN and nested absence UNKNOWN; those fields
+are retained. Independentaceae093 accepts that enumerated disposition without an extra observer
+or recovery. Combined case3/case4 source reassessment must select the next changed
+action. No password CAS, operator credential or provider
+action occurred. The form remains disabled and S04-02 remains open.
+
+The following recovery and earlier failed case are retained historical outcomes.
+
 Latest native action is owned recovery245c4a0b PASS9.33 seconds, independently
 accepted in enumerated scope by65e530a7. It withdrew the exact temporary Primary
 configuration through supported reload, preserved the current Dovecot master and
@@ -38,11 +74,16 @@ physical-LF fixture consumer1a22497f and whole launcher correction87d6e331 remai
 source-only until fresh current native bindings. The normal signed gate is next;
 no native request result or installed password change is inferred.
 
-Current signed diagnostic source is `fd608c13012b6fd90ee2ff186dd95f3ba2028897`.
+Current signed synchronized source is `ea889ca1be89021e5939e4314a1000001f37c56f`.
+The normal two-commit push passed268.856 seconds (273.111 including fresh fetch);
+both Shopkeeper signatures verified and fresh local/origin equality was clean0/0.
+Its compiler inputs remain exactly the456 actual fd608 diagnostic build inputs.
+
+The earlier diagnostic source is `fd608c13012b6fd90ee2ff186dd95f3ba2028897`.
 Its normal hook passed292.284 seconds with1834 Rust tests, zero failed and48
-explicit native ignores; Good Shopkeeper signature verified. It is not pushed.
-The executor's unnecessary historical-register refresh requires an exact forward
-correction before synchronization; existing broader V10 limitations are preserved.
+explicit native ignores; Good Shopkeeper signature verified. The exact forward
+correction then passed258.488 seconds and was synchronized with that source.
+It restores the parent historical register; existing broader V10 limitations remain.
 The earlier normal push279.078 seconds synchronized daed2908 with fresh equality;
 that historical sync does not cover the current diagnostic commit.
 

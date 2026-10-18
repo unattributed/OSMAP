@@ -11695,3 +11695,52 @@ regenerate only the current remediation report and admit the minimal forward
 correction normally. The four product files and their reviewed tests remain
 unchanged; no extra focused suite or native/client rebuild follows from this
 reporting correction. The executor owns its additional gate cost.
+
+
+## 2026-10-18 — actual closed Primary worker refusal and owned disposition
+
+The changed diagnostic/full-mask case4 failed44.969 seconds with the exact closed
+stage `primary_probe_unique_worker` and typed `Refused`. Its reciprocal-worker
+count was not exactly one; zero, multiple and initiating cause remain unknown.
+Do not weaken that authority predicate or replay the unchanged request. The actual
+helper now stopped normally (code0/reaped/group gone), and all40 recorded groups
+(including helper/client) were reaped/absent; only the client returned101.
+Same-master/original25/final service checks passed and exact synthetic fixture
+disposal removed two rows, sixteen private files and two users/groups. Independent
+aceae093 accepts enumerated disposition without another observer/recovery action.
+The outer FAIL/UNCERTAIN and nested UNKNOWN fields stay unchanged. No password
+update, operator credential or provider action occurred. Source-only combined
+assessment of cases3/4 must select the smallest discriminating held-probe action;
+no extra framework, unchanged client build or broad assurance campaign is justified.
+
+
+## 2026-10-18 — measured cold readiness selects a bounded Primary repair
+
+Combined cases3/4 reviewf65d preserves their94.063-second failed actions and
+separate safe dispositions. One narrower held-stream diagnostic2e5d528f then
+passed6.573 seconds without helper/client execution, authentication, SQL, rows,
+users or keys. The same connection's snapshots0.424 seconds apart changed from
+zero to one eligible reciprocal worker; independent2f1e89bb accepts the diagnostic
+and exact rollback with original configuration/master/ordinary listeners restored.
+This supports a cold-readiness defect class, without rewriting the historical
+unknown worker counts or exact initiating causes.
+
+Choose a Primary-only zero-worker re-observation while retaining the same stream,
+under min(original deadline, initial worker-observation time plus3 seconds).
+Every original authority check remains; multiple eligible workers or metadata
+errors refuse immediately. The Control path, reconnect behavior and AUTH protocol
+remain unchanged. Existing process-pipe wait helpers do not establish a private
+auth greeting contract, so do not add speculative protocol reads merely to wait.
+No new collector, generic polling framework, client rebuild or unchanged AUTH
+replay is required. Exact changed-boundary tests and independent source review
+must precede the next normal source admission and helper-only build.
+
+
+The first normal readiness-source admission failed51.691 seconds:1838 Rust tests
+and clippy passed, then the mandatory formatting check rejected newly added peer
+tests. No commit was created. The executor did not normalize that touched file
+before the full hook and owns the avoidable repeat cost. Apply rustfmt to that
+file only; the production peer source remains unchanged. Mechanical whitespace-only
+review and current remediation offset refresh precede one normal required retry.
+Do not rerun focused tests, rewrite the historical baseline or create a new native
+build for this unexecuted packet's test-format update.
