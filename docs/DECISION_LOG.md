@@ -11489,3 +11489,38 @@ the process. Production queries, authority, deadlines and cleanup are unchanged.
 Renew exact backend-file CWE89 digest to7576d592 for this reviewed trace-only
 delta; no scanner permission expansion. Existing14public parser cases and one
 normal mandatory source hook supply changed-boundary QA, not another campaign.
+
+
+## 2026-10-18 — signed G31 diagnostics and matching native carrier
+
+Root verified signed34598a9325a515b949b38af00448419a6aeafa69 with the
+Shopkeeper key after the normal282.795s gate. Exact closed cfg(test) diagnostics
+remain separate from production behavior or workflow acceptance. Compiler-only
+native build4 PASS129.094s matches all456 inputs; no test or account action.
+Current2 upload PASS84.922s binds exact binary46137d36 and diagnostic driver48332558
+to a fresh protected root stage; no fixture, operation lease or execution marker
+started. Lossless gzip9 reduces transfer size without changing raw bytes,
+protocol, deadlines or security admission. Earlier failures/stages remain.
+User asks whether committed/UAT: source is signed locally; live password UAT is
+not ready while the initial SQL read and complete installed workflow are open.
+No push/synchronization is inferred. Independent reviewed first execution is
+required before any new native case; no operator password or provider email.
+
+
+## 2026-10-18 — avoid broken locked OpenBSD waitid union accessor
+
+Current2 actual G31 diagnostic records child status0/reap/group absence but duplex
+Err/output unavailable, before Pending/hash/CAS. Independent combined review
+34143d7d retains both native failures. Recovery3 first dispatch was correctly
+blocked before SSH because root omitted the required combined registration;
+original0.052s refusal/logs remain under preaction-refusal1. After actual combined
+review/root concurrence, readonly4.239s and exact cleanup6.351s PASS. Only owned
+synthetic state was removed; dirs/stages/permanent markers remain.
+
+Exact locked libc0.2.183 OpenBSD accessor disagrees with official siginfo.h.
+Use the public SIGCHLD and terminal CLD event header after unchanged exact P_PID
+waitid selection with WNOWAIT/WNOHANG. No dependency update, identity weakening,
+permissions, deadline widening or SQL tolerance. Review4fac5551/patch697b6c5e
+establish source correctness; no claim of measured historical header bytes or
+sole cause. Mandatory hook reuses the existing duplex test; matching newly built
+native component is required next. No operator password, form activation or push.

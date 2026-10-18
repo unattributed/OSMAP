@@ -1266,3 +1266,11 @@ output unavailable and malformed/missing/duplicate diagnosticsUNKNOWN. Native
 read cause remainsUNKNOWN until actual matching execution; no newnativePASS,
 permission, operatorpassword action or live password control is inferred.
 Exact reviewed backend digest7576d592 renews the existing CWE89 bytepin only.
+
+
+2026-10-18 S04-02 waitid correction: independently reviewed public terminal-event
+header replaces the locked libc OpenBSD si_pid accessor under unchanged exact
+owned-child selection and WNOWAIT. Current2 G31 remains FAIL; no Pending/hash/CAS,
+SQL output unknown. Fresh recovery/cleanup PASS applies only to owned synthetic
+state. Existing mandatory duplex check and newly built native component required;
+no installed workflow, S04-02, sprint or release acceptance inferred.

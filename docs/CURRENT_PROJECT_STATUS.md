@@ -2,6 +2,34 @@
 
 ## S04-02 current Rust integration — 2026-10-18
 
+Latest controlled current2 FAIL27.291s/G31: SQL child exits0 and is reaped with
+its group gone, but Rust duplex returns an error before delivering output.
+No Pending, Hash or credential write reached. The closed numeric trace narrows
+the boundary; SQL output and precise historical error remain unknown. Fresh
+observation PASS4.239s and reviewed cleanup PASS6.351s remove only the owned
+synthetic rows, restricted DB user, private files and purpose users/groups;
+retained evidence stages/markers/empty directories remain. No operator credential,
+mail or existing service changed.
+
+Independent review identifies a concrete ABI defect in the locked libc0.2.183
+OpenBSD si_pid accessor. The integrated one-function workaround retains the
+exact waitid child selection, unreaped ownership, security promises and deadlines;
+it reads the public terminal-event header. This source defect is consistent with
+the failed duplex observation, not retrospectively proved as the sole cause.
+Normal signed admission and newly compiled native execution remain distinct;
+the password form is disabled and S04-02/S04 remain OPEN.
+
+Current superseding source: `34598a9325a515b949b38af00448419a6aeafa69`,
+Shopkeeper signature verified; normal gate PASS282.795s,1830RustPASS/0failed/
+48native ignores,620account PythonPASS,45mailcases/2native skips. This adds only
+closed test diagnostics for the unresolved native SQL-read failure. Build4
+PASS129.094s on obsd1 with456matching inputs and fresh=false binary46137d36;
+owned build group/scratch gone. The matching controlled SQL/hash execution is
+next, not an installed password workflow. No operator password or existing
+mail service changed; form remains disabled and S04-02/S04 remain OPEN.
+Commit checkpoint was clean ahead8/behind0 against last-fetched origin; no fresh
+fetch or remote synchronization. Current ledger outcome edits follow that checkpoint.
+
 The existing nine scenarios remain the delivery contract. OSMAP-owned Rust now
 implements fixed SQL/hash execution, durable account state, authenticated
 admission, parent/child confinement and service composition; no new dependency

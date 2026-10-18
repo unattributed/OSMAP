@@ -408,7 +408,15 @@ pub(crate) fn owned_child_exited_without_reap(child_pid: u32) -> io::Result<bool
     {
         return Err(io::Error::last_os_error());
     }
-    Ok(unsafe { info.si_pid() } == child_pid as libc::pid_t)
+    // P_PID selects only this exact owned child. The public event header is
+    // sufficient and avoids libc 0.2.183's incorrect OpenBSD si_pid() accessor.
+    // WNOHANG with no event leaves this zeroed header at zero; WNOWAIT retains
+    // the selected child's PID/PGID ownership for subsequent cleanup.
+    Ok(info.si_signo == libc::SIGCHLD
+        && matches!(
+            info.si_code,
+            libc::CLD_EXITED | libc::CLD_KILLED | libc::CLD_DUMPED
+        ))
 }
 
 #[cfg(unix)]

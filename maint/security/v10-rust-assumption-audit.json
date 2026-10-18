@@ -60446,7 +60446,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "unwrap_call",
-      "line": 1776
+      "line": 1784
     },
     {
       "classification": "production_adjacent_assumption",
@@ -60454,7 +60454,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "unwrap_call",
-      "line": 1791
+      "line": 1799
     },
     {
       "classification": "startup_or_global_invariant",
@@ -60462,7 +60462,7 @@
       "fail_closed_relevance": "medium",
       "file": "src/openbsd.rs",
       "kind": "unwrap_call",
-      "line": 1808
+      "line": 1816
     },
     {
       "classification": "production_adjacent_assumption",
@@ -60470,7 +60470,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "unwrap_call",
-      "line": 1814
+      "line": 1822
     },
     {
       "classification": "production_adjacent_assumption",
@@ -60478,7 +60478,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "unwrap_call",
-      "line": 1829
+      "line": 1837
     },
     {
       "classification": "production_adjacent_assumption",
@@ -60486,7 +60486,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "unwrap_call",
-      "line": 1835
+      "line": 1843
     },
     {
       "classification": "startup_or_global_invariant",
@@ -60494,7 +60494,7 @@
       "fail_closed_relevance": "medium",
       "file": "src/openbsd.rs",
       "kind": "unwrap_call",
-      "line": 1844
+      "line": 1852
     },
     {
       "classification": "production_adjacent_assumption",
@@ -60502,7 +60502,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "unwrap_call",
-      "line": 1854
+      "line": 1862
     },
     {
       "classification": "production_adjacent_assumption",
@@ -60510,7 +60510,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "expect_call",
-      "line": 1892
+      "line": 1900
     },
     {
       "classification": "production_adjacent_assumption",
@@ -60518,7 +60518,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "unwrap_call",
-      "line": 2002
+      "line": 2010
     },
     {
       "classification": "production_adjacent_assumption",
@@ -60526,7 +60526,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "unwrap_call",
-      "line": 2024
+      "line": 2032
     },
     {
       "classification": "production_adjacent_assumption",
@@ -60534,7 +60534,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "unwrap_call",
-      "line": 2173
+      "line": 2181
     },
     {
       "classification": "production_adjacent_assumption",
@@ -60542,7 +60542,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "unwrap_call",
-      "line": 2189
+      "line": 2197
     },
     {
       "classification": "production_adjacent_assumption",
@@ -60550,7 +60550,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "unwrap_call",
-      "line": 2255
+      "line": 2263
     },
     {
       "classification": "production_adjacent_assumption",
@@ -60558,7 +60558,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "unwrap_call",
-      "line": 2258
+      "line": 2266
     },
     {
       "classification": "production_adjacent_assumption",
@@ -60566,7 +60566,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "expect_call",
-      "line": 2383
+      "line": 2391
     },
     {
       "classification": "production_adjacent_assumption",
@@ -60574,7 +60574,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "expect_call",
-      "line": 2386
+      "line": 2394
     },
     {
       "classification": "production_adjacent_assumption",
@@ -60582,7 +60582,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "expect_call",
-      "line": 2387
+      "line": 2395
     },
     {
       "classification": "production_adjacent_assumption",
@@ -60590,7 +60590,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "expect_call",
-      "line": 2388
+      "line": 2396
     },
     {
       "classification": "production_adjacent_assumption",
@@ -60598,7 +60598,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "expect_call",
-      "line": 2389
+      "line": 2397
     },
     {
       "classification": "production_adjacent_assumption",
@@ -60606,7 +60606,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "expect_call",
-      "line": 2392
+      "line": 2400
     },
     {
       "classification": "production_adjacent_assumption",
@@ -60614,7 +60614,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "expect_call",
-      "line": 2402
+      "line": 2410
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -75969,7 +75969,7 @@
       "line": 521
     }
   ],
-  "generated_at_utc": "2026-10-18T09:10:52Z",
+  "generated_at_utc": "2026-10-18T09:45:16Z",
   "non_claims": [
     "This audit does not claim that all Rust assumptions are safe.",
     "This audit does not claim that production request paths are panic-free.",
@@ -76025,7 +76025,7 @@
       "unwrap_call": 8092
     },
     "classification_complete": true,
-    "inventory_sha256": "1123092613bf4963286495b94af6b911af3e4b43eec9a1041dda45d4d093f1ea",
+    "inventory_sha256": "f306e2fcccd33086c06c5085dc80e758ab088c0a1c913dc22555c8c506a25ef2",
     "live_host_state_changed": false,
     "product_behavior_changed": false,
     "production_state_changed": false,
