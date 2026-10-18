@@ -33,6 +33,21 @@ directories and the original root evidence stage/marker remain deliberately.
 No historical PID was signalled. The corrected native plan and whole workflow
 remain unexecuted; no wider authority, retry or capability activation.
 
+Superseding matching build3 PASS138.915s: all456 current inputs match before/after;
+Cargo emits fresh=false test binary daab3b3b/182925776 bytes. Owned build group
+and scratch are gone. No tests or credentials executed. Root retrieved exact
+bytes3.345s; subagent prepares separately reviewed upload before first SQL/hash
+dispatch. Earlier failed native binary/cause remain historical.
+
+Current first native SQL/hash execution FAIL27.112s at initial Alice SQL read
+(G31), after parent seal/activation and account locking. No Pending, Hash or
+conditional password write was reached. The unique read/child/parser cause is
+UNKNOWN. Fresh recovery4.446s confirms initial rows/epochs and no purpose processes
+or binary references; reviewed cleanup6.481s removes2rows/1DBuser/7files/2users
+and groups. All22 owned groups and scratch gone; dirs/rootstage/marker retained.
+Subagent closed diagnostic candidate reuses the same ignored test, assertions
+and deadlines; no native permission or production enablement shortcut.
+
 The complete Rust workflow, sealed native utility graph, private-primary binding,
 initial SMTP routing/registration, public IMAP/policy deployment and matching
 installed pair remain unqualified. The older full-workflow failure is retained.
@@ -40,7 +55,13 @@ All native qualification flags remain false; ordinary Runtime has no account
 client and the password form remains unavailable. S04-02 and Sprint S04 are OPEN;
 S04-01 remains accepted. Root owns Git/host integration; three explicitly
 assigned workers provide development and independent source/fixture review.
-Normal signed source admission is pending; no remote synchronization authorized.
+Normal source admission is signed3529ef4f2ba82c4490d8a423001dc1990ef3b1d8
+with Good Shopkeeper signature and normal hook5 PASS281.178s:1830 RustPASS,
+0failed/48 native ignores;620 account PythonPASS;45 mail cases/2 native skips.
+Four earlier failed gates remain retained. Checkpoint was clean, ahead7/behind0
+against last-fetched origin; no fresh fetch, push or synchronization. Latest
+operator enable/continue direction is active: subagents prepare matching native
+build/owned SQL-hash custody and independent QA; no capability flag shortcut.
 
 
 ## S04-01 complete (R4 narrowed scope) — 2026-10-17

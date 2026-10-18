@@ -11461,3 +11461,31 @@ Use the existing fixed platform-Python fixture pattern with identical bytes,
 exit/EOF and delay assertions; use an unrelated unapproved executable for the
 negative command case. No forbidden-string obfuscation or legacy scanner waiver.
 Keep both gate3/4 failures and review the whole changed consumer boundary.
+
+Normal source gate5 PASS281.178s and Shopkeeper signature verified at3529ef4;
+1830 RustPASS/0failed/48nativeignores,620accountPythonPASS,45mail/2native skips.
+Source checkpoint clean, ahead7/behind0 against last-fetched origin, no push.
+All prior failures and explicit source-phase overruns remain. Operator expressly
+requests enable/continue with subagents andQA: proceed with matching current
+native component, not native flag activation or inferred installed qualification.
+Current source-admission proof and actual window closeouts remain under the
+stable sprint root; these outcome updates accompany the next real source change.
+
+2026-10-18 currentSQLHash first execution FAIL27.112 atG31 initialAliceSQLread
+afterparentseal/activation/accountlock; noPending/hash/CAS. Unique causeUNKNOWN.
+Freshrecovery2PASS4.446 confirmsinitialnonce rows/epochs, DBauth7grants, no
+purposeprocesses/testbinaryrefs. Exactcleanup2PASS6.481 removes2rows/1DBuser/
+7files/2users+groups,22ownedgroups+scratchgone; dirs/stagee4c2/marker retained.
+The previous source window closes1736/1800s withoutoverrun; all prior cost and
+failure history stays. Do not turn an unavailable SQL read into a permission
+expansion, flag activation or unchanged retry.
+
+Admit only the independently reviewed closed cfg(test) G31 diagnostic in the
+same ignored test and existing runner: stage/observederrno/status/outputlengths/
+recognised4digitSQLcode/parserstage; missing evidence remainsUNKNOWN. Explicit
+newline and strict LF physical-line parsing avoid libtest prefix/EOF ambiguity.
+No rawSQL, password, verifier, configuration, utility output or path dump leaves
+the process. Production queries, authority, deadlines and cleanup are unchanged.
+Renew exact backend-file CWE89 digest to7576d592 for this reviewed trace-only
+delta; no scanner permission expansion. Existing14public parser cases and one
+normal mandatory source hook supply changed-boundary QA, not another campaign.

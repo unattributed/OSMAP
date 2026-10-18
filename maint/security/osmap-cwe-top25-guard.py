@@ -53,7 +53,7 @@ TEST_ONLY_RUST_PATHS = {
 # Other production rules continue to scan the entire file.
 REVIEWED_SQL_RUST_PATHS = {
     "src/account_password_backend.rs":
-        "83d01fd688fac4017a87369607aa8ba629e861cc6f3998424b40fa2e233c2ec8",
+        "7576d5927c1495b5b189ba86faa23fce3963ef125630c981b484ec41049b1dd7",
 }
 
 

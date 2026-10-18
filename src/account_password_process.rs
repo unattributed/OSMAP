@@ -18,6 +18,66 @@ const LIMIT: usize = 4096;
 const INPUT_LIMIT: usize = 16384;
 const RESERVE: Duration = Duration::from_millis(100);
 
+// Scalars for the existing ignored native SQL read failure only. No raw
+// utility, SQL, password or verifier bytes leave this test-only observation.
+#[cfg(test)]
+mod native_trace {
+    use std::cell::Cell;
+    std::thread_local! { static VALUE: Cell<[i64; 6]> = const { Cell::new([0,-1,-1,-1,-1,0]) }; }
+    pub(super) fn reset() {
+        VALUE.with(|value| value.set([1, -1, -1, -1, -1, 0]));
+    }
+    pub(super) fn stage(stage: u8) {
+        VALUE.with(|value| {
+            let mut row = value.get();
+            row[0] = stage.into();
+            value.set(row);
+        });
+    }
+    pub(super) fn errno(error: &std::io::Error) {
+        VALUE.with(|value| {
+            let mut row = value.get();
+            row[1] = error.raw_os_error().map_or(-1, i64::from);
+            value.set(row);
+        });
+    }
+    pub(super) fn status(code: Option<i32>) {
+        VALUE.with(|value| {
+            let mut row = value.get();
+            row[2] = code.map_or(-1, i64::from);
+            value.set(row);
+        });
+    }
+    pub(super) fn output(stdout: &[u8], stderr: &[u8]) {
+        VALUE.with(|value| {
+            let mut row = value.get();
+            row[3] = stdout.len() as i64;
+            row[4] = stderr.len() as i64;
+            if stderr.len() >= 11
+                && stderr.starts_with(b"ERROR ")
+                && stderr[6..10].iter().all(u8::is_ascii_digit)
+                && stderr[10] == b' '
+            {
+                let code = stderr[6..10]
+                    .iter()
+                    .fold(0i64, |sum, value| sum * 10 + i64::from(value - b'0'));
+                if (1000..=9999).contains(&code) {
+                    row[5] = code;
+                }
+            }
+            value.set(row);
+        });
+    }
+    #[cfg(target_os = "openbsd")]
+    pub(super) fn snapshot() -> [i64; 6] {
+        VALUE.with(Cell::get)
+    }
+}
+#[cfg(all(test, target_os = "openbsd"))]
+pub(crate) fn native_sql_read_diagnostic() -> [i64; 6] {
+    native_trace::snapshot()
+}
+
 /// Original operation deadline is held by the trusted helper, not renewed per
 /// utility. A cleanup uncertainty latches this process unavailable.
 pub(crate) struct FixedExecutor<'a> {
@@ -186,6 +246,8 @@ impl CommandExecutor for FixedExecutor<'_> {
         timeout: Duration,
         limit: usize,
     ) -> Result<CommandExecution, CommandExecutionError> {
+        #[cfg(test)]
+        native_trace::reset();
         let primary = args.len() == crate::account_password_mail::PRIMARY.len() + 1
             && args
                 .iter()
@@ -207,14 +269,32 @@ impl CommandExecutor for FixedExecutor<'_> {
         } else {
             self.hash
         };
+        #[cfg(test)]
+        native_trace::stage(2);
         let plan = profile
             .prepare(program, args, deadline)
             .map_err(|_| unavailable())?;
+        #[cfg(test)]
+        native_trace::stage(3);
         let mut command =
-            crate::auth::password_backend_command(program, args).map_err(|_| unavailable())?;
-        crate::openbsd::install_password_child_profile(&mut command, plan)
-            .map_err(|_| unavailable())?;
-        run(command, input, deadline)
+            crate::auth::password_backend_command(program, args).map_err(|_error| {
+                #[cfg(test)]
+                native_trace::errno(&_error);
+                unavailable()
+            })?;
+        #[cfg(test)]
+        native_trace::stage(4);
+        crate::openbsd::install_password_child_profile(&mut command, plan).map_err(|_error| {
+            #[cfg(test)]
+            native_trace::errno(&_error);
+            unavailable()
+        })?;
+        let result = run(command, input, deadline);
+        #[cfg(test)]
+        if result.is_ok() {
+            native_trace::stage(9);
+        }
+        result
     }
 }
 
@@ -263,7 +343,15 @@ fn run_with_cap(
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .process_group(0);
-    let mut child = command.spawn().map_err(|_| unavailable())?;
+    #[cfg(test)]
+    native_trace::stage(5);
+    let mut child = command.spawn().map_err(|_error| {
+        #[cfg(test)]
+        native_trace::errno(&_error);
+        unavailable()
+    })?;
+    #[cfg(test)]
+    native_trace::stage(6);
     // Keep the born leader unreaped until signalling its exclusively owned
     // group. No historical/reusable PID is used as cleanup authority.
     let pid = child.id();
@@ -325,6 +413,8 @@ fn run_with_cap(
     })();
     // Kill while this unreaped Popen leader still leases the PGID; then reap
     // and prove absence. Descendants holding pipes cannot prolong a reader join.
+    #[cfg(test)]
+    native_trace::stage(7);
     let signal = crate::openbsd::kill_process_group(pid);
     let signal_ok = signal.is_ok()
         || signal
@@ -334,7 +424,16 @@ fn run_with_cap(
         if let Ok(Some(status)) = child.try_wait() {
             let gone = crate::openbsd::process_group_exists(pid).is_ok_and(|exists| !exists);
             if gone && Instant::now() < deadline {
+                #[cfg(test)]
+                {
+                    native_trace::status(status.code());
+                    native_trace::stage(8);
+                }
                 let (stdout, stderr) = result?;
+                #[cfg(test)]
+                {
+                    native_trace::output(&stdout, &stderr);
+                }
                 return Ok(CommandExecution {
                     status_code: status.code().unwrap_or(-1),
                     stdout: String::from_utf8(stdout).map_err(|_| unavailable())?,

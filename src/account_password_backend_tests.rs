@@ -556,7 +556,13 @@ fn native_parent_sealed_sql_hash_cas_preserves_bob_and_contains_alice() -> Resul
     let result = (|| -> Result<(), &'static str> {
         let alice = backend
             .read(ALICE, original)
-            .map_err(|_| "initial Alice SQL read refused")?;
+            .map_err(|_| {
+                let [stage, errno, status, stdout_len, stderr_len, sql_code] =
+                    crate::account_password_process::native_sql_read_diagnostic();
+                let parser = native_read_diagnostic();
+                println!("\nnative_sql_read_diagnostic stage={stage} errno={errno} status={status} stdout_len={stdout_len} stderr_len={stderr_len} sql_code={sql_code} parser={parser}");
+                "initial Alice SQL read refused"
+            })?;
         let bob = backend
             .read(BOB, original)
             .map_err(|_| "initial Bob SQL read refused")?;

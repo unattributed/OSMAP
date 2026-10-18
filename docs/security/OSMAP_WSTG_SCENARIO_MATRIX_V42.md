@@ -1259,3 +1259,10 @@ EOF/exit/output behaviours; negative command cases use an unapproved executable.
 No scanner exception, production permission, test deadline or native result is
 changed. Regenerated current inventory9496/high0/source-test9411 is source scope
 only. Independent review and the next normal hook establish admission separately.
+
+Currentnative G31 diagnostics are test-only closed scalars in the SAME ignored
+component and original bounds. Newline framing/strict LF parser keep arbitrary
+output unavailable and malformed/missing/duplicate diagnosticsUNKNOWN. Native
+read cause remainsUNKNOWN until actual matching execution; no newnativePASS,
+permission, operatorpassword action or live password control is inferred.
+Exact reviewed backend digest7576d592 renews the existing CWE89 bytepin only.
