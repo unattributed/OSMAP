@@ -62,7 +62,15 @@ impl<'a, E: CommandExecutor, C: TimeProvider> Service<'a, E, C> {
         valid_deadline(original_deadline)?;
         let now = self.clock.unix_timestamp();
         let request = self.verifier.request(frame, &self.key, now)?;
-        let status = self.execute_verified(&request, original_deadline)?;
+        let status = execute_current(
+            self.store,
+            self.executor,
+            self.clock,
+            &self.key,
+            self.accounts.clone(),
+            &request,
+            original_deadline,
+        )?;
         let at = self.clock.unix_timestamp();
         if at < now || Instant::now() >= original_deadline {
             return Err(Error::Expired);
@@ -153,3 +161,18 @@ fn state_error(error: StateError) -> Error {
 #[cfg(test)]
 #[path = "account_password_admission_tests.rs"]
 mod tests;
+
+/// Existing persistent listener verifies MAC/replay/peer before this shared
+/// composition. The real account guard and primary verification remain inside
+/// execute_verified; this entry does not manufacture native executor authority.
+pub(crate) fn execute_current<E: CommandExecutor, C: TimeProvider>(
+    store: &Store,
+    executor: &E,
+    clock: &C,
+    key: &[u8],
+    accounts: std::collections::BTreeSet<String>,
+    request: &Request,
+    deadline: Instant,
+) -> Result<Option<AdmissionStatus>, Error> {
+    Service::new(store, executor, clock, key, accounts)?.execute_verified(request, deadline)
+}

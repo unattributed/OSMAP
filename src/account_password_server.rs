@@ -12,8 +12,8 @@ use crate::account_password_native::{NativeProfile, Role};
 use crate::account_password_peer::{NativeInspector, Startup};
 use crate::account_password_policy::{Fence, MonotonicClock};
 use crate::account_password_policy_endpoint::Endpoint;
-use crate::account_password_process::FixedExecutor;
 use crate::account_password_process::MetadataExecutor;
+use crate::account_password_process::{FixedExecutor, PrimaryExecutor};
 use crate::account_password_runtime::Runtime;
 use crate::account_password_state::Store;
 use crate::auth::CommandExecutor;
@@ -194,11 +194,9 @@ impl OperatorFiles {
 }
 
 /// Fixed operator entry: no caller-selected account/config/utility paths or
-/// namespace/sealing success flags. All production gates remain false.
+/// namespace/sealing success flags. Native authority is observed, not toggled.
 pub fn run_operator_service(stop: &AtomicBool) -> Result<(), Error> {
-    if !crate::account_password_native::NATIVE_QUALIFIED
-        || !crate::openbsd::password_native_authority()
-    {
+    if !crate::openbsd::password_native_authority() {
         return Err(Error::Unavailable);
     }
     let startup_deadline = Instant::now() + Duration::from_secs(5);
@@ -209,7 +207,7 @@ pub fn run_operator_service(stop: &AtomicBool) -> Result<(), Error> {
     if admission.password_accounts() != files.accounts {
         return Err(Error::Unavailable);
     }
-    let metadata = Arc::new(MetadataExecutor);
+    let metadata = Arc::new(MetadataExecutor::readonly());
     let startup = Startup::native(metadata.as_ref(), files.master_pid, startup_deadline)
         .map_err(unavailable)?;
     let startup = Arc::new(startup);
@@ -266,6 +264,13 @@ fn serve(
         crate::account_password_topology::RegistrationRefresh::capture(startup_deadline)
             .map_err(unavailable)?,
     );
+    let primary = crate::account_password_peer::PrimaryPeer::observe(
+        metadata.clone(),
+        startup.as_ref(),
+        startup_deadline,
+    )
+    .ok()
+    .map(Arc::new);
     let mut parent_plan =
         crate::account_password_confinement::ParentPlan::prepare(startup_deadline)
             .map_err(unavailable)?;
@@ -277,10 +282,10 @@ fn serve(
     let outcome = std::thread::scope(|scope| {
         let mut active: Vec<std::thread::ScopedJoinHandle<'_, ()>> = Vec::new();
         let mut observing: Option<
-            std::thread::ScopedJoinHandle<'_, Result<SubmissionNamespace, Error>>,
+            std::thread::ScopedJoinHandle<'_, Result<ReadyRuntimeAuthority, Error>>,
         > = None;
         let mut attempted_record: Option<(Identity, u64)> = None;
-        let mut runtime: Option<Arc<Runtime>> = None;
+        let mut runtime: Option<Arc<ReadyRuntime>> = None;
         while !stop.load(Ordering::SeqCst) {
             if crate::account_password_process::execution_quarantined() {
                 return Err(Error::CleanupUnconfirmed);
@@ -309,26 +314,28 @@ fn serve(
                     .ok_or(Error::Unavailable)?
                     .join()
                     .map_err(unavailable)?;
-                if let Ok(namespace) = namespace {
+                if let Ok(authority) = namespace {
                     // Only an actual live namespace observation creates this
                     // capability. The cold policy's SAME Store/Fence/registry
                     // survive activation, including captured epoch tickets.
-                    runtime = Some(Arc::new(
-                        Runtime::from_authorities(
+                    runtime = Some(Arc::new(ReadyRuntime {
+                        runtime: Runtime::from_authorities(
                             store.clone(),
                             files.accounts.clone(),
                             fence.clone(),
-                            namespace,
+                            authority.namespace,
                             Keys::new(&files.mutation, &files.session).map_err(unavailable)?,
                             admission.password_key(),
                             files.relay_uid,
                             registry.clone(),
                         )
                         .map_err(unavailable)?,
-                    ));
+                        control: authority.control,
+                        metadata: authority.metadata,
+                    }));
                 }
             }
-            if runtime.is_none() && observing.is_none() && active.len() < 4 {
+            if runtime.is_none() && primary.is_some() && observing.is_none() && active.len() < 4 {
                 // Absence/invalid data never becomes a readiness Boolean. A
                 // changed root record or actual successful after-callback only
                 // triggers one bounded observation. Neither grants readiness.
@@ -346,6 +353,7 @@ fn serve(
                     {
                         attempted_record = Some((identity(&info), after_observations));
                         let registration_refresh = registration_refresh.clone();
+                        let primary = primary.as_ref().ok_or(Error::Unavailable)?.clone();
                         let metadata = metadata.clone();
                         let startup = startup.clone();
                         let observation_deadline = Instant::now() + Duration::from_secs(5);
@@ -355,6 +363,7 @@ fn serve(
                                 startup,
                                 files,
                                 registration_refresh.as_ref(),
+                                primary,
                                 observation_deadline,
                             )
                         }));
@@ -374,9 +383,9 @@ fn serve(
                     if active.len() >= capacity {
                         break;
                     }
-                    // Authentication/admission and SQL mutation stay disabled
-                    // throughout cold policy bootstrap: zero frame intake.
-                    if role != 2 && runtime.is_none() {
+                    // Admission requires measured private primary; mutation
+                    // additionally requires measured Control plus namespace.
+                    if (role == 0 && primary.is_none()) || (role == 1 && runtime.is_none()) {
                         continue;
                     }
                     match endpoint.accept() {
@@ -394,20 +403,36 @@ fn serve(
                             let runtime = runtime.clone();
                             let fence = fence.clone();
                             let registry = registry.clone();
-                            let metadata = metadata.clone();
+                            let metadata = runtime
+                                .as_ref()
+                                .map_or_else(|| metadata.clone(), |ready| ready.metadata.clone());
                             let startup = startup.clone();
+                            let primary = primary.clone();
+                            let store = store.clone();
                             active.push(scope.spawn(move || {
                                 let _ = match role {
-                                    0 | 1 => match runtime {
-                                        Some(runtime) => operation(
+                                    0 => primary.ok_or(Error::Unavailable).and_then(|primary| {
+                                        admission_operation(
                                             stream,
-                                            runtime.as_ref(),
                                             admission,
                                             accepted,
-                                            role == 0,
+                                            store.as_ref(),
+                                            files.accounts.clone(),
+                                            primary,
+                                            runtime.as_ref().map(|ready| &ready.runtime),
+                                        )
+                                    }),
+                                    1 => match (runtime, primary) {
+                                        (Some(ready), Some(primary)) => operation(
+                                            stream,
+                                            ready.as_ref(),
+                                            accepted,
                                             files.relay_uid,
+                                            startup,
+                                            metadata,
+                                            primary,
                                         ),
-                                        None => Err(Error::Unavailable),
+                                        _ => Err(Error::Unavailable),
                                     },
                                     _ => {
                                         let inspector = NativeInspector::from_startup(
@@ -480,53 +505,99 @@ fn serve(
     outcome.and(cleanup)
 }
 
-fn operation(
+struct ReadyRuntimeAuthority {
+    namespace: SubmissionNamespace,
+    control: Arc<crate::account_password_peer::ControlPeer>,
+    metadata: Arc<MetadataExecutor>,
+}
+struct ReadyRuntime {
+    runtime: Runtime,
+    control: Arc<crate::account_password_peer::ControlPeer>,
+    metadata: Arc<MetadataExecutor>,
+}
+fn admission_operation(
     mut stream: UnixStream,
-    runtime: &Runtime,
     admission: &AdmissionService,
     accepted: Instant,
-    is_admission: bool,
-    relay_uid: u32,
+    store: &Store,
+    accounts: BTreeSet<String>,
+    peer: Arc<crate::account_password_peer::PrimaryPeer>,
+    ready: Option<&Runtime>,
 ) -> Result<(), Error> {
     if crate::account_password_process::execution_quarantined() {
         return Err(Error::CleanupUnconfirmed);
     }
-    let deadline = accepted + Duration::from_secs(if is_admission { 30 } else { 60 });
-    let expected = if is_admission {
-        admission.password_peer_uid()
-    } else {
-        relay_uid
-    };
-    if crate::openbsd::unix_stream_peer_uid(&stream).map_err(unavailable)? != expected {
+    let deadline = accepted + Duration::from_secs(30);
+    if crate::openbsd::unix_stream_peer_uid(&stream).map_err(unavailable)?
+        != admission.password_peer_uid()
+    {
         return Err(Error::Authentication);
     }
-    let sql = NativeProfile::fixed(Role::Sql, deadline).map_err(unavailable)?;
-    let hash = NativeProfile::fixed(Role::Hash, deadline).map_err(unavailable)?;
-    let primary = NativeProfile::fixed(Role::Primary, deadline).map_err(unavailable)?;
-    let control = NativeProfile::fixed(Role::Control, deadline).map_err(unavailable)?;
-    let executor = FixedExecutor::from_profiles(deadline, &sql, &hash, &primary, &control);
-    if is_admission {
-        admission.password_connection(&mut stream, deadline, |request, inherited| {
-            runtime.admission(request, &executor, deadline.min(inherited))
-        })
-    } else {
-        let backend = Backend::new(FixedExecutor::from_profiles(
-            deadline, &sql, &hash, &primary, &control,
-        ));
-        runtime
-            .mutation(stream, &backend, &executor, &executor, deadline)
-            .map_err(unavailable)
+    let profile = NativeProfile::from_primary(peer, deadline).map_err(unavailable)?;
+    let executor = PrimaryExecutor::new(&profile, deadline);
+    admission.password_connection(&mut stream, deadline, |request, inherited| {
+        if let Some(runtime) = ready {
+            return runtime.admission(request, &executor, deadline.min(inherited));
+        }
+        crate::account_password_admission::execute_current(
+            store,
+            &executor,
+            &crate::totp::SystemTimeProvider,
+            admission.password_key(),
+            accounts.clone(),
+            request,
+            deadline.min(inherited),
+        )
+    })
+}
+#[allow(clippy::too_many_arguments)] // Independent native authority and original request budget.
+fn operation(
+    stream: UnixStream,
+    ready: &ReadyRuntime,
+    accepted: Instant,
+    relay_uid: u32,
+    startup: Arc<Startup>,
+    metadata: Arc<MetadataExecutor>,
+    primary_peer: Arc<crate::account_password_peer::PrimaryPeer>,
+) -> Result<(), Error> {
+    if crate::account_password_process::execution_quarantined() {
+        return Err(Error::CleanupUnconfirmed);
     }
+    let deadline = accepted + Duration::from_secs(60);
+    if crate::openbsd::unix_stream_peer_uid(&stream).map_err(unavailable)? != relay_uid {
+        return Err(Error::Authentication);
+    }
+    let sql = NativeProfile::from_startup(Role::Sql, startup.clone(), metadata.clone(), deadline)
+        .map_err(unavailable)?;
+    let hash = NativeProfile::from_startup(Role::Hash, startup, metadata, deadline)
+        .map_err(unavailable)?;
+    let primary = NativeProfile::from_primary(primary_peer, deadline).map_err(unavailable)?;
+    let control =
+        NativeProfile::from_control(ready.control.clone(), deadline).map_err(unavailable)?;
+    let executor = FixedExecutor::from_profiles(deadline, &sql, &hash, &primary, &control);
+    let backend = Backend::new(FixedExecutor::from_profiles(
+        deadline, &sql, &hash, &primary, &control,
+    ));
+    ready
+        .runtime
+        .mutation(stream, &backend, &executor, &executor, deadline)
+        .map_err(unavailable)
 }
 
 fn fixed_submission_namespace(
-    metadata: Arc<dyn CommandExecutor + Send + Sync>,
+    _metadata: Arc<dyn CommandExecutor + Send + Sync>,
     startup: Arc<Startup>,
     files: &OperatorFiles,
     refresh: &crate::account_password_topology::RegistrationRefresh,
+    primary: Arc<crate::account_password_peer::PrimaryPeer>,
     deadline: Instant,
-) -> Result<SubmissionNamespace, Error> {
-    let profile = NativeProfile::fixed(Role::Control, deadline).map_err(unavailable)?;
+) -> Result<ReadyRuntimeAuthority, Error> {
+    let control = Arc::new(
+        crate::account_password_peer::ControlPeer::observe(primary, deadline)
+            .map_err(unavailable)?,
+    );
+    let metadata = Arc::new(MetadataExecutor::with_control(control.clone()));
+    let profile = NativeProfile::from_control(control.clone(), deadline).map_err(unavailable)?;
     let control_gid = profile.selected_control_gid().map_err(unavailable)?;
     refresh
         .refresh_stale(metadata.as_ref(), startup.as_ref(), control_gid, deadline)
@@ -539,7 +610,7 @@ fn fixed_submission_namespace(
     )
     .map_err(unavailable)?;
     let topology = crate::account_password_topology::Topology::fixed(
-        metadata,
+        metadata.clone(),
         startup,
         registration,
         control_gid,
@@ -547,5 +618,9 @@ fn fixed_submission_namespace(
         deadline,
     )
     .map_err(unavailable)?;
-    Ok(SubmissionNamespace::from_topology(topology))
+    Ok(ReadyRuntimeAuthority {
+        namespace: SubmissionNamespace::from_topology(topology),
+        control,
+        metadata,
+    })
 }

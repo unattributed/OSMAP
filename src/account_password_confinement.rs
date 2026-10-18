@@ -74,6 +74,16 @@ impl ParentPlan {
         ] {
             add(path, "rx");
         }
+        // Exact fixed private source leaves and accepting-service executables.
+        // No caller-selected path or directory write permission.
+        for path in crate::account_password_peer::PRIMARY_CONFIGURATION_PATHS {
+            add(path, "r");
+        }
+        add("/usr/local/libexec/dovecot/auth", "r");
+        add("/var/dovecot/dovecot.conf", "r");
+        // Fixed include wildcard enumeration only; no directory writes.
+        add("/etc/dovecot/conf.d", "r");
+        add("/usr/local/libexec/dovecot/anvil", "r");
         // PF's fixed query utility needs only the kernel PF control device.
         add("/dev/pf", "rw");
         let paths = rules.keys().copied().collect::<Vec<_>>();

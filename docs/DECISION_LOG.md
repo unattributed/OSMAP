@@ -11524,3 +11524,31 @@ permissions, deadline widening or SQL tolerance. Review4fac5551/patch697b6c5e
 establish source correctness; no claim of measured historical header bytes or
 sole cause. Mandatory hook reuses the existing duplex test; matching newly built
 native component is required next. No operator password, form activation or push.
+
+### 2026-10-18 — reuse the completed native SQL/hash body and owned disposition
+
+The matching signed515a99 native SQL/hash test completed its guarded success
+branch, including the conditional Alice write/readback, persisted containment
+and known write time, and the tested Bob fields/epoch preservation. Its outer
+qualifier still failed before its separate 17-column comparison and cleanup;
+the historical file-reference owner is unknown. Do not repeat the password case
+to compensate for the qualifier's own held-file-descriptor contract defect.
+
+Fresh read-only recovery4 independently confirmed the changed Alice state,
+exact own-intent uncertainty marker, original Bob state, restricted database
+principal and absence of purpose processes/current stage references. Cleanup4
+then removed exactly two reserved rows, one restricted database user, eight
+private files and two purpose users/groups. All22 owned command groups and
+scratch were gone without uncertainty. Empty directories, retained stages and
+permanent first-execution markers remain. Independent assessment33649cc9
+accepts this bounded prerequisite, while preserving the original wrapper FAIL
+and the unrun outer comparison. No operator credential or provider operation
+occurred, and no native qualification flags changed.
+
+The next product boundary is actual service Startup to production Primary and
+Control authority. Reuse the existing paired browser clients/delegation; do not
+duplicate it or infer readiness from the completed component. The latest
+operator delegation assigns account_backend the single canonical/host/Git
+queue, with root coordinating and separate agents implementing/reviewing.
+Normal signed source admission and operator review before synchronization stay
+mandatory; no push is authorized by this cleanup.

@@ -195,6 +195,12 @@ impl RegistrationRefresh {
         if admitted.version != 2 {
             return Err(Unavailable);
         }
+        // A current receipt is already a live production authority; do not
+        // incorrectly replace its separate submission master with the main
+        // mailbox master's PID. Stale refresh remains the existing closed path.
+        if registration_current(executor, &admitted, deadline).is_ok() {
+            return self.recheck(deadline);
+        }
         startup
             .recheck(executor, deadline)
             .map_err(|_| Unavailable)?;
@@ -470,6 +476,44 @@ fn record_snapshot(
     record: Identity,
     deadline: Instant,
 ) -> Result<Snapshot, Unavailable> {
+    let result = record_metadata_snapshot(executor, observed, gid, record, deadline)?;
+    // This successful fixed administrative exchange proves IPC functionality,
+    // not first login-process registration. The opaque bootstrap record above
+    // is independently required; an empty LIST never grants that authority.
+    let list = query(
+        executor,
+        crate::account_password_mail::PROGRAM,
+        &[
+            "-O",
+            "-o",
+            "stats_writer_socket_path=",
+            "proxy",
+            "list",
+            "-a",
+            IPC,
+        ],
+        deadline,
+    )?;
+    if list
+        .lines()
+        .next()
+        .map(|l| l.split_whitespace().collect::<Vec<_>>())
+        != Some(vec!["username", "proto", "src", "ip", "dest", "ip", "port"])
+    {
+        return Err(Unavailable);
+    }
+    if metadata(IPC, 0o660, gid, true)? != result.ipc || Instant::now() >= deadline {
+        return Err(Unavailable);
+    }
+    Ok(result)
+}
+fn record_metadata_snapshot(
+    executor: &(dyn CommandExecutor + Send + Sync),
+    observed: &RegistrationRecord,
+    gid: u32,
+    record: Identity,
+    deadline: Instant,
+) -> Result<Snapshot, Unavailable> {
     registration_current(executor, observed, deadline)?;
     let config = metadata(CONFIG, 0o440, gid, false)?;
     let ipc = metadata(IPC, 0o660, gid, true)?;
@@ -519,31 +563,6 @@ fn record_snapshot(
     // The native producer binds the actual executable inode/birth; do not
     // guess the kernel's potentially truncated submission-login comm spelling.
     if process != observed.submission_row {
-        return Err(Unavailable);
-    }
-    // This successful fixed administrative exchange proves IPC functionality,
-    // not first login-process registration. The opaque bootstrap record above
-    // is independently required; an empty LIST never grants that authority.
-    let list = query(
-        executor,
-        crate::account_password_mail::PROGRAM,
-        &[
-            "-O",
-            "-o",
-            "stats_writer_socket_path=",
-            "proxy",
-            "list",
-            "-a",
-            IPC,
-        ],
-        deadline,
-    )?;
-    if list
-        .lines()
-        .next()
-        .map(|l| l.split_whitespace().collect::<Vec<_>>())
-        != Some(vec!["username", "proto", "src", "ip", "dest", "ip", "port"])
-    {
         return Err(Unavailable);
     }
     if metadata(IPC, 0o660, gid, true)? != ipc
@@ -1065,4 +1084,75 @@ fn frontend_listeners(config: &str) -> Result<(), Unavailable> {
         return Err(Unavailable);
     }
     Ok(())
+}
+
+/// This bootstrap capability does not assert LIST success or namespace
+/// readiness. It binds only the already-qualified receipt and actual IPC peer,
+/// allowing unprivileged LIST to construct the existing stronger authority.
+pub(crate) struct RegisteredIpcPeer {
+    executor: Arc<dyn CommandExecutor + Send + Sync>,
+    startup: crate::account_password_peer::Startup,
+    receipt: Identity,
+    digest: [u8; 32],
+    gid: u32,
+    captured: Snapshot,
+    peer: crate::account_password_peer::SubmissionIpcPeer,
+}
+impl RegisteredIpcPeer {
+    pub(crate) fn observe(
+        executor: Arc<dyn CommandExecutor + Send + Sync>,
+        startup: &crate::account_password_peer::Startup,
+        deadline: Instant,
+    ) -> Result<Self, Unavailable> {
+        startup
+            .recheck(executor.as_ref(), deadline)
+            .map_err(|_| Unavailable)?;
+        let (receipt, bytes) = private_bytes(REGISTRATION, 0o600, 0, LIMIT)?;
+        let record: RegistrationRecord = serde_json::from_slice(&bytes).map_err(|_| Unavailable)?;
+        let gid = crate::account_password_native::control_gid(deadline).map_err(|_| Unavailable)?;
+        let captured =
+            record_metadata_snapshot(executor.as_ref(), &record, gid, receipt, deadline)?;
+        let peer = crate::account_password_peer::SubmissionIpcPeer::from_registered(
+            executor.clone(),
+            startup,
+            &record.master_row,
+            &record.ipc_row,
+            record.master_pid,
+            record.ipc_pid,
+            deadline,
+        )
+        .map_err(|_| Unavailable)?;
+        let result = Self {
+            executor,
+            startup: startup.clone(),
+            receipt,
+            digest: Sha256::digest(&bytes).into(),
+            gid,
+            captured,
+            peer,
+        };
+        result.binder_uid(deadline)?;
+        Ok(result)
+    }
+    pub(crate) fn binder_uid(&self, deadline: Instant) -> Result<u32, Unavailable> {
+        self.startup
+            .recheck(self.executor.as_ref(), deadline)
+            .map_err(|_| Unavailable)?;
+        let (receipt, bytes) = private_bytes(REGISTRATION, 0o600, 0, LIMIT)?;
+        if receipt != self.receipt || <[u8; 32]>::from(Sha256::digest(&bytes)) != self.digest {
+            return Err(Unavailable);
+        }
+        let record: RegistrationRecord = serde_json::from_slice(&bytes).map_err(|_| Unavailable)?;
+        if record_metadata_snapshot(self.executor.as_ref(), &record, self.gid, receipt, deadline)?
+            != self.captured
+        {
+            return Err(Unavailable);
+        }
+        let uid = self.peer.binder_uid(deadline).map_err(|_| Unavailable)?;
+        let (after, current) = private_bytes(REGISTRATION, 0o600, 0, LIMIT)?;
+        if after != receipt || current != bytes || Instant::now() >= deadline {
+            return Err(Unavailable);
+        }
+        Ok(uid)
+    }
 }

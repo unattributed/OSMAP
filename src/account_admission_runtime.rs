@@ -285,9 +285,7 @@ impl Service {
     /// password server. It reads the SAME fixed admission files but creates no
     /// Python engine or worker-module authority.
     pub(crate) fn from_password_operator_files() -> Result<Self, Error> {
-        if !crate::account_password_native::NATIVE_QUALIFIED
-            || !crate::openbsd::password_native_authority()
-        {
+        if !crate::openbsd::password_native_authority() {
             return Err(Error::Unavailable);
         }
         let mut bytes = Vec::new();

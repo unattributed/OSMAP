@@ -114,7 +114,21 @@ pub(crate) fn execution_quarantined() -> bool {
             .map_or(true, |children| !children.is_empty())
 }
 
-pub(crate) struct MetadataExecutor;
+pub(crate) struct MetadataExecutor {
+    control: Option<std::sync::Arc<crate::account_password_peer::ControlPeer>>,
+}
+impl MetadataExecutor {
+    pub(crate) fn readonly() -> Self {
+        Self { control: None }
+    }
+    pub(crate) fn with_control(
+        control: std::sync::Arc<crate::account_password_peer::ControlPeer>,
+    ) -> Self {
+        Self {
+            control: Some(control),
+        }
+    }
+}
 /// Closed source-owned metadata commands. PIDs are accepted only from the
 /// native inspector's current kernel/process producer, never a request frame.
 pub(crate) fn fixed_metadata_args(program: &str, args: &[String]) -> bool {
@@ -131,7 +145,10 @@ pub(crate) fn fixed_metadata_args(program: &str, args: &[String]) -> bool {
                     && args[0] == "-p"
                     && pid(&args[1])
                     && args[2] == "-o"
-                    && args[3] == crate::account_password_peer::PS_FIELDS)
+                    && matches!(
+                        args[3].as_str(),
+                        crate::account_password_peer::PS_FIELDS | "args="
+                    ))
         }
         "/usr/bin/fstat" => args.len() == 3 && args[0] == "-n" && args[1] == "-p" && pid(&args[2]),
         "/usr/local/sbin/postconf" => {
@@ -197,8 +214,8 @@ impl CommandExecutor for MetadataExecutor {
         if program == crate::account_password_mail::PROGRAM {
             // Administrative reads retain the fixed unprivileged control
             // identity/loader/socket profile; metadata never gains root WHO.
-            let profile = crate::account_password_native::NativeProfile::fixed(
-                crate::account_password_native::Role::Control,
+            let profile = crate::account_password_native::NativeProfile::from_control(
+                self.control.as_ref().ok_or_else(unavailable)?.clone(),
                 deadline,
             )
             .map_err(|_| unavailable())?;
@@ -458,3 +475,61 @@ fn run_with_cap(
 #[cfg(test)]
 #[path = "account_password_process_tests.rs"]
 mod tests;
+
+/// One-role adapter for admission before a submission namespace exists. The
+/// sealed profile only prepares PRIMARY commands; no SQL/hash/control fallback.
+pub(crate) struct PrimaryExecutor<'a> {
+    profile: &'a crate::account_password_native::NativeProfile,
+    deadline: Instant,
+}
+impl<'a> PrimaryExecutor<'a> {
+    pub(crate) fn new(
+        profile: &'a crate::account_password_native::NativeProfile,
+        deadline: Instant,
+    ) -> Self {
+        Self { profile, deadline }
+    }
+}
+impl CommandExecutor for PrimaryExecutor<'_> {
+    fn run_with_stdin_bytes(
+        &self,
+        program: &str,
+        args: &[String],
+        input: &[u8],
+    ) -> Result<CommandExecution, CommandExecutionError> {
+        self.run_with_stdin_bytes_timeout_and_output_limit(
+            program,
+            args,
+            input,
+            Duration::from_secs(25),
+            LIMIT,
+        )
+    }
+    fn run_with_stdin_bytes_timeout_and_output_limit(
+        &self,
+        program: &str,
+        args: &[String],
+        input: &[u8],
+        timeout: Duration,
+        limit: usize,
+    ) -> Result<CommandExecution, CommandExecutionError> {
+        if execution_quarantined()
+            || input.len() > INPUT_LIMIT
+            || limit != LIMIT
+            || timeout.is_zero()
+            || timeout > Duration::from_secs(25)
+        {
+            return Err(unavailable());
+        }
+        let deadline = self.deadline.min(Instant::now() + timeout);
+        let plan = self
+            .profile
+            .prepare(program, args, deadline)
+            .map_err(|_| unavailable())?;
+        let mut command =
+            crate::auth::password_backend_command(program, args).map_err(|_| unavailable())?;
+        crate::openbsd::install_password_child_profile(&mut command, plan)
+            .map_err(|_| unavailable())?;
+        run(command, input, deadline)
+    }
+}

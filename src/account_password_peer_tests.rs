@@ -26,6 +26,29 @@ fn header() -> &'static str {
 #[test]
 fn exact_process_birth_parent_principal_and_executable_are_bound() {
     let master = process(10, 1, 0, "dovecot");
+    assert!(main_master_argv("dovecot\n").is_ok());
+    assert!(main_master_argv("/usr/local/sbin/dovecot -c /etc/dovecot/dovecot.conf\n").is_ok());
+    for wrong in [
+        "dovecot -c /tmp/other.conf\n",
+        "dovecot -o passdb=other\n",
+        "dovecot -c /etc/dovecot/dovecot.conf -o auth_cache_size=1\n",
+    ] {
+        assert!(main_master_argv(wrong).is_err());
+    }
+
+    assert!(private_primary_argv("auth -o auth_policy_server_url= -o auth_cache_size=0\n").is_ok());
+    assert!(
+        private_primary_argv("dovecot/auth -o auth_policy_server_url= -o auth_cache_size=0\n")
+            .is_ok()
+    );
+    for wrong in [
+        "auth\n",
+        "auth -o auth_policy_server_url=http://bad -o auth_cache_size=0\n",
+        "auth -o auth_policy_server_url= -o auth_cache_size=1\n",
+    ] {
+        assert!(private_primary_argv(wrong).is_err());
+    }
+
     let own = process(30, 1, 0, "password-helper");
     let child = process(20, 10, 518, "imap");
     let rows = vec![master.clone(), child.clone(), own.clone()];
@@ -45,6 +68,11 @@ fn exact_process_birth_parent_principal_and_executable_are_bound() {
             Err(Error::Refused)
         );
     }
+    let private = process(21, 10, 519, "auth");
+    assert_eq!(primary_worker(&private, &master, 519), Ok(()));
+    assert!(primary_worker(&private, &master, 518).is_err());
+    assert!(primary_worker(&process(21, 11, 519, "auth"), &master, 519).is_err());
+    assert!(primary_worker(&process(21, 10, 519, "imap"), &master, 519).is_err());
     for raw in ["020 10 10 518 518 Sun Oct 18 01:02:03 2026 imap\n","20 10 10 518 518 Sun Oct 18 25:02:03 2026 imap\n","20 10 10 518 518 Sun Oct 18 01:02:03 2026 imap\n20 10 10 518 518 Sun Oct 18 01:02:03 2026 imap\n"]{assert!(row(raw,20).is_err());}
     let mut changed = rows.clone();
     changed[0].birth = "Sun Oct 18 01:02:04 2026".into();
@@ -56,15 +84,25 @@ fn exact_process_birth_parent_principal_and_executable_are_bound() {
 
 #[test]
 fn exact_text_inode_and_reciprocal_accepted_descriptor_are_required() {
-    let process = process(20, 10, 518, "imap");
+    let target = process(20, 10, 518, "imap");
     let raw = format!(
         "{}mail imap 20 text 0, 0 42 100555 r 100\nmail imap 20 7* unix stream 0x11 <-> 0x22\n",
         header()
     );
-    let peer = descriptors(&raw, &process, &pin()).unwrap();
+    let peer = descriptors(&raw, &target, &pin()).unwrap();
     let own = [(8, (0x22, 0x11))].into();
     assert_eq!(reciprocal(&own, &peer, 8), Ok((0x22, 0x11)));
     assert!(reciprocal(&own, &peer, 9).is_err());
+    let master = process(10, 1, 0, "dovecot");
+    let listening = format!("{}root dovecot 10 text 0, 0 42 100555 r 100\nroot dovecot 10 9* unix stream 0x55 {PRIMARY_SOCKET}\n", header());
+    assert_eq!(primary_listener(&listening, &master, &pin()), Ok(0x55));
+    assert!(primary_listener(&listening.replace("0x55", "0x00"), &master, &pin()).is_err());
+    assert!(primary_listener(
+        &listening.replace(PRIMARY_SOCKET, "/other"),
+        &master,
+        &pin()
+    )
+    .is_err());
     let mut wrong = peer.clone();
     wrong.insert(9, (0x11, 0x22));
     assert!(reciprocal(&own, &wrong, 8).is_err());
@@ -74,7 +112,7 @@ fn exact_text_inode_and_reciprocal_accepted_descriptor_are_required() {
         raw.replace("7* unix", "7 unix"),
         raw.replace("imap 20 text", "sh 20 text"),
     ] {
-        assert!(descriptors(&invalid, &process, &pin()).is_err());
+        assert!(descriptors(&invalid, &target, &pin()).is_err());
     }
 }
 

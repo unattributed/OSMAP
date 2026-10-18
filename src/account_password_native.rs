@@ -13,10 +13,13 @@ use std::time::{Duration, Instant};
 #[path = "account_password_native_pins.rs"]
 mod pins;
 
+#[cfg(test)]
 pub(crate) const NATIVE_QUALIFIED: bool = false;
 // Filesystem owner518 is not a kernel binder observation. Preserve the actual
 // existing source refusal until the private listener peer is qualified.
+#[cfg(test)]
 const PRIMARY_PEER_UID: Option<u32> = None;
+#[cfg(test)]
 const CONTROL_PEER_UID: Option<u32> = None;
 const CONTROL_AUTH: &str = "/var/dovecot/osmap-account-auth-master";
 const CONTROL_ANVIL: &str = "/var/dovecot/osmap-account-anvil";
@@ -141,12 +144,20 @@ impl PreparedChild {
     }
 }
 
+struct StartupAuthority {
+    startup: std::sync::Arc<crate::account_password_peer::Startup>,
+    metadata: std::sync::Arc<dyn crate::auth::CommandExecutor + Send + Sync>,
+}
 pub(crate) struct NativeProfile {
     role: Role,
     original_deadline: Instant,
     observed: Observation,
+    primary: Option<std::sync::Arc<crate::account_password_peer::PrimaryPeer>>,
+    control: Option<std::sync::Arc<crate::account_password_peer::ControlPeer>>,
+    startup: Option<StartupAuthority>,
 }
 impl NativeProfile {
+    #[cfg(test)]
     pub(crate) fn fixed(role: Role, original_deadline: Instant) -> Result<Self, Unavailable> {
         if !NATIVE_QUALIFIED {
             return Err(Unavailable);
@@ -160,6 +171,7 @@ impl NativeProfile {
     ) -> Result<Self, Unavailable> {
         Self::observe(role, deadline)
     }
+    #[cfg(test)]
     fn observe(role: Role, original_deadline: Instant) -> Result<Self, Unavailable> {
         before(original_deadline)?;
         if !crate::openbsd::password_native_authority() {
@@ -171,12 +183,67 @@ impl NativeProfile {
         if role == Role::Control && CONTROL_PEER_UID.is_none() {
             return Err(Unavailable);
         }
-        let observed = observe(role, original_deadline)?;
+        let observed = observe(role, original_deadline, None, None)?;
         before(original_deadline)?;
         Ok(Self {
             role,
             original_deadline,
             observed,
+            primary: None,
+            control: None,
+            startup: None,
+        })
+    }
+    /// The real service's measured fixed self/master authority, never a caller
+    /// qualification Boolean. SQL/hash use their unchanged graph/config checks.
+    pub(crate) fn from_startup(
+        role: Role,
+        startup: std::sync::Arc<crate::account_password_peer::Startup>,
+        metadata: std::sync::Arc<dyn crate::auth::CommandExecutor + Send + Sync>,
+        deadline: Instant,
+    ) -> Result<Self, Unavailable> {
+        if !matches!(role, Role::Sql | Role::Hash) {
+            return Err(Unavailable);
+        }
+        startup
+            .recheck(metadata.as_ref(), deadline)
+            .map_err(unavailable)?;
+        let observed = observe(role, deadline, None, None)?;
+        Ok(Self {
+            role,
+            original_deadline: deadline,
+            observed,
+            primary: None,
+            control: None,
+            startup: Some(StartupAuthority { startup, metadata }),
+        })
+    }
+    pub(crate) fn from_primary(
+        peer: std::sync::Arc<crate::account_password_peer::PrimaryPeer>,
+        deadline: Instant,
+    ) -> Result<Self, Unavailable> {
+        let observed = observe(Role::Primary, deadline, Some(peer.as_ref()), None)?;
+        Ok(Self {
+            role: Role::Primary,
+            original_deadline: deadline,
+            observed,
+            primary: Some(peer),
+            control: None,
+            startup: None,
+        })
+    }
+    pub(crate) fn from_control(
+        peer: std::sync::Arc<crate::account_password_peer::ControlPeer>,
+        deadline: Instant,
+    ) -> Result<Self, Unavailable> {
+        let observed = observe(Role::Control, deadline, None, Some(peer.as_ref()))?;
+        Ok(Self {
+            role: Role::Control,
+            original_deadline: deadline,
+            observed,
+            primary: None,
+            control: Some(peer),
+            startup: None,
         })
     }
     /// Read only the fixed control identity already admitted by observe(). No
@@ -198,9 +265,20 @@ impl NativeProfile {
     ) -> Result<PreparedChild, Unavailable> {
         let deadline = self.original_deadline.min(phase_deadline);
         before(deadline)?;
+        if let Some(authority) = &self.startup {
+            authority
+                .startup
+                .recheck(authority.metadata.as_ref(), deadline)
+                .map_err(unavailable)?;
+        }
         if !matches_command(self.role, program, args)
             || !crate::openbsd::password_native_authority()
-            || observe(self.role, deadline)? != self.observed
+            || observe(
+                self.role,
+                deadline,
+                self.primary.as_deref(),
+                self.control.as_deref(),
+            )? != self.observed
         {
             return Err(Unavailable);
         }
@@ -709,7 +787,12 @@ fn socket(
     before(deadline)?;
     Ok((path.into(), identity, ancestry))
 }
-fn observe(role: Role, deadline: Instant) -> Result<Observation, Unavailable> {
+fn observe(
+    role: Role,
+    deadline: Instant,
+    primary: Option<&crate::account_password_peer::PrimaryPeer>,
+    control: Option<&crate::account_password_peer::ControlPeer>,
+) -> Result<Observation, Unavailable> {
     before(deadline)?;
     let mut public = graph(role, deadline)?;
     let mut endpoints = Vec::new();
@@ -766,27 +849,31 @@ fn observe(role: Role, deadline: Instant) -> Result<Observation, Unavailable> {
         )?;
         public.extend([("/etc/passwd".into(), p, ph), ("/etc/group".into(), g, gh)]);
         if role == Role::Primary {
+            let peer = primary.ok_or(Unavailable)?;
+            let (server_uid, binder_uid) = peer.identities(deadline).map_err(unavailable)?;
             endpoints.push(socket(
                 PRIMARY_SOCKET,
-                518,
+                server_uid,
                 Some(ids.1),
-                PRIMARY_PEER_UID.ok_or(Unavailable)?,
+                binder_uid,
                 deadline,
             )?);
+            peer.recheck(deadline).map_err(unavailable)?;
         }
         if role == Role::Control {
-            for path in [
+            let binders = control
+                .ok_or(Unavailable)?
+                .identities(deadline)
+                .map_err(unavailable)?;
+            for (path, binder) in [
                 CONTROL_AUTH,
                 CONTROL_ANVIL,
                 crate::account_password_topology::IPC,
-            ] {
-                endpoints.push(socket(
-                    path,
-                    0,
-                    Some(ids.1),
-                    CONTROL_PEER_UID.ok_or(Unavailable)?,
-                    deadline,
-                )?);
+            ]
+            .into_iter()
+            .zip(binders)
+            {
+                endpoints.push(socket(path, 0, Some(ids.1), binder, deadline)?);
             }
         }
         ids
@@ -837,3 +924,11 @@ fn observe(role: Role, deadline: Instant) -> Result<Observation, Unavailable> {
 #[cfg(test)]
 #[path = "account_password_native_tests.rs"]
 mod tests;
+
+/// Identity lookup alone supplies no execution authority. Measured ControlPeer
+/// plus this same fixed principal/DAC check is required by from_control.
+pub(crate) fn control_gid(deadline: Instant) -> Result<u32, Unavailable> {
+    let (_, _, passwd) = public_file("/etc/passwd", false, 65536, deadline)?;
+    let (_, _, group) = public_file("/etc/group", false, 65536, deadline)?;
+    Ok(selected(&passwd, &group, b"_osmapcontrol")?.1)
+}

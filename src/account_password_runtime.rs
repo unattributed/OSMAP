@@ -76,14 +76,15 @@ impl Runtime {
         Option<crate::account_password_admission::AdmissionStatus>,
         crate::account_admission::Error,
     > {
-        crate::account_password_admission::Service::new(
+        crate::account_password_admission::execute_current(
             self.store.as_ref(),
             primary,
             &SystemTimeProvider,
             &self.admission_key,
             self.accounts.clone(),
-        )?
-        .execute_verified(request, original_deadline)
+            request,
+            original_deadline,
+        )
     }
 
     /// The root process supplies independently confined SQL/hash, private

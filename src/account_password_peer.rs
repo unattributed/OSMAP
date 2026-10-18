@@ -872,6 +872,829 @@ fn query<E: CommandExecutor + ?Sized>(
     Ok(result.stdout)
 }
 
+// A measured private-auth process/socket observation is not a loaded-config or
+// deployment qualification receipt. Production still requires its closed gate.
+const PRIMARY_AUTH: &str = "/usr/local/libexec/dovecot/auth";
+const PRIMARY_SOCKET: &str = "/var/dovecot/osmap-account-auth-client";
+const PRIMARY_FRAGMENT: &str = "/etc/dovecot/conf.d/99-osmap-private-primary.conf";
+const PRIMARY_FRAGMENT_SHA256: [u8; 32] = [
+    116, 100, 239, 200, 106, 6, 129, 145, 121, 10, 118, 175, 51, 64, 37, 104, 100, 223, 158, 130,
+    219, 195, 1, 118, 1, 94, 138, 64, 48, 74, 81, 244,
+];
+pub(crate) const PRIMARY_CONFIGURATION_PATHS: &[&str] = &[
+    "/etc/dovecot/dovecot.conf",
+    "/etc/dovecot/conf.d/10-auth.conf",
+    "/etc/dovecot/conf.d/10-director.conf",
+    "/etc/dovecot/conf.d/10-logging.conf",
+    "/etc/dovecot/conf.d/10-mail.conf",
+    "/etc/dovecot/conf.d/10-master.conf",
+    "/etc/dovecot/conf.d/10-metrics.conf",
+    "/etc/dovecot/conf.d/10-ssl.conf",
+    "/etc/dovecot/conf.d/15-lda.conf",
+    "/etc/dovecot/conf.d/15-mailboxes.conf",
+    "/etc/dovecot/conf.d/20-imap.conf",
+    "/etc/dovecot/conf.d/20-lmtp.conf",
+    "/etc/dovecot/conf.d/20-managesieve.conf",
+    "/etc/dovecot/conf.d/20-pop3.conf",
+    "/etc/dovecot/conf.d/20-submission.conf",
+    "/etc/dovecot/conf.d/90-acl.conf",
+    "/etc/dovecot/conf.d/90-plugin.conf",
+    "/etc/dovecot/conf.d/90-quota.conf",
+    "/etc/dovecot/conf.d/90-sieve-extprograms.conf",
+    "/etc/dovecot/conf.d/90-sieve.conf",
+    "/etc/dovecot/conf.d/99-bbs-imaps-only.conf",
+    "/etc/dovecot/conf.d/99-bbs-managesieve-policy.conf",
+    "/etc/dovecot/conf.d/99-rspamd-warning-labels.conf",
+    "/etc/dovecot/local.conf",
+    "/etc/dovecot/conf.d/auth-sql.conf.ext",
+    "/etc/dovecot/conf.d/99-osmap-private-primary.conf",
+    "/etc/dovecot/conf.d/99-osmap-private-control.conf",
+];
+const PRIMARY_CONFIGURATION_HASHES: &[(&str, &str)] = &[
+    (
+        "/etc/dovecot/conf.d/99-osmap-private-control.conf",
+        "ce8b95772da4512462083a248553aac8a30131650839033e65b88fb728a1aabc",
+    ),
+    (
+        "/etc/dovecot/dovecot.conf",
+        "2a869bce0fe0a6a193827bd91b716a46a02bff0267f5fb34ce2111e3ac279d66",
+    ),
+    (
+        "/etc/dovecot/conf.d/10-auth.conf",
+        "cbd482e1f0177b89902a6d8380e26be8c660ee98ff814e0772a246af7f3fca0b",
+    ),
+    (
+        "/etc/dovecot/conf.d/10-director.conf",
+        "49decee086a8fc7b396a1fad842b8b95d707825b2c4072526139731c70a07377",
+    ),
+    (
+        "/etc/dovecot/conf.d/10-logging.conf",
+        "5c8205ea0a2276a220caccabbcf3d4201d8758452d613b8a1c89cb2987c09292",
+    ),
+    (
+        "/etc/dovecot/conf.d/10-mail.conf",
+        "015a213d56db22168eb171f67816edea22dedf4c69cc644da48f641a2765b267",
+    ),
+    (
+        "/etc/dovecot/conf.d/10-master.conf",
+        "2fab3304f7d8bf88ab936cddd43377e1dc6fa0ad3989a94a0b208db17a5ab66b",
+    ),
+    (
+        "/etc/dovecot/conf.d/10-metrics.conf",
+        "dd4871b89ca692c560cd6882e9179ba983682d273f3d7aef099de13141e5ee1d",
+    ),
+    (
+        "/etc/dovecot/conf.d/10-ssl.conf",
+        "e44e97e4157afe8b05ae2e35813487ac961683aa209969360391a2806ee3d2a9",
+    ),
+    (
+        "/etc/dovecot/conf.d/15-lda.conf",
+        "d401e22a98187429b7fb30671553d0f2a5953bf87fb023764dd553b029185c62",
+    ),
+    (
+        "/etc/dovecot/conf.d/15-mailboxes.conf",
+        "1edf599e43e8c2498ccd9f8ebe46eb8cfdb68706bb14c514054a8e894ba6bcf6",
+    ),
+    (
+        "/etc/dovecot/conf.d/20-imap.conf",
+        "b6e0abad74a8bd3ddb449a25e1d55c346b8afdd676f2d768adeb57a2c08c029a",
+    ),
+    (
+        "/etc/dovecot/conf.d/20-lmtp.conf",
+        "897a163ae1b06b883a7c2bf68751457f11179a18a58edf2dd67ceb3e822fc3b8",
+    ),
+    (
+        "/etc/dovecot/conf.d/20-managesieve.conf",
+        "7df9d199d3682dfa529b79572692b2b9f15c9df67e90589af0e80edde39b4420",
+    ),
+    (
+        "/etc/dovecot/conf.d/20-pop3.conf",
+        "9c44864b6867d1707ff55a1f45ba6112d68e1c7a613df6e814ca38d598a55375",
+    ),
+    (
+        "/etc/dovecot/conf.d/20-submission.conf",
+        "6f0dcb7b17579672116c1e8c8e6aee88c70c5cfceb842f8a36f44ee7e4fe7fd2",
+    ),
+    (
+        "/etc/dovecot/conf.d/90-acl.conf",
+        "89e257dcdc03b18e4f3a1d4ae8bd95e3abd3278acdc4b5d5bfbb48ff51271ef6",
+    ),
+    (
+        "/etc/dovecot/conf.d/90-plugin.conf",
+        "2e07c87dacc547632b902056507ea406ed34ad3d7363c296f0be350d96e4013f",
+    ),
+    (
+        "/etc/dovecot/conf.d/90-quota.conf",
+        "cd0a0dfc0af65ec52a283435c71861b7c043d0c423f517c47c901bfd2a323b78",
+    ),
+    (
+        "/etc/dovecot/conf.d/90-sieve-extprograms.conf",
+        "ffa14b5f38da5acbd93fd20d3cc0b28517cabeb6797539c97b2090d96983430d",
+    ),
+    (
+        "/etc/dovecot/conf.d/90-sieve.conf",
+        "9910f435ce74aceb8b0f2a4e019f789b96785c2248f8c29a8e892a5080b0231c",
+    ),
+    (
+        "/etc/dovecot/conf.d/99-bbs-imaps-only.conf",
+        "9c931338bea2c81bab144563f67d0259c75ec16e05481bb37ffe6d542d12f517",
+    ),
+    (
+        "/etc/dovecot/conf.d/99-bbs-managesieve-policy.conf",
+        "90bf803ffc0937af5a5e2f1fdf3830275277e1a5a2645eba6ee26609dd218bce",
+    ),
+    (
+        "/etc/dovecot/conf.d/99-rspamd-warning-labels.conf",
+        "d22d9ee9c3a730e782cd29397f7a5a2595607233378e61c86dacb668e8ef508b",
+    ),
+    (
+        "/etc/dovecot/local.conf",
+        "f1ebb49ef250de35708eb83205a4cb7ea0216776704d32ad5baac2a56200ab09",
+    ),
+    (
+        "/etc/dovecot/conf.d/auth-sql.conf.ext",
+        "df0b657c2a4c963e31ab7f693a8afd2601694701d383c282323e3ea5c6e8986d",
+    ),
+    (
+        "/etc/dovecot/conf.d/99-osmap-private-primary.conf",
+        "7464efc86a068191790a76af3340256864df9e82dbc30176015e8a40304a51f4",
+    ),
+];
+struct PrimaryFile {
+    path: &'static str,
+    identity: [u64; 11],
+    digest: [u8; 32],
+}
+fn primary_file(path: &'static str, deadline: Instant) -> Result<PrimaryFile, Error> {
+    primary_file_bytes(path, deadline).map(|(pin, _)| pin)
+}
+fn primary_file_bytes(
+    path: &'static str,
+    deadline: Instant,
+) -> Result<(PrimaryFile, Vec<u8>), Error> {
+    use std::io::Read;
+    use std::os::unix::fs::OpenOptionsExt;
+    crate::account_password_custody::ancestors(path, None, deadline)
+        .map_err(|_| Error::Unavailable)?;
+    let metadata = |m: &fs::Metadata| {
+        [
+            m.dev(),
+            m.ino(),
+            m.uid().into(),
+            m.gid().into(),
+            m.mode().into(),
+            m.nlink(),
+            m.len(),
+            m.mtime() as u64,
+            m.mtime_nsec() as u64,
+            m.ctime() as u64,
+            m.ctime_nsec() as u64,
+        ]
+    };
+    let limit = if path == PRIMARY_AUTH {
+        64 * 1024 * 1024
+    } else {
+        128 * 1024
+    };
+    let before = fs::symlink_metadata(path).map_err(|_| Error::Unavailable)?;
+    if !before.is_file()
+        || before.uid() != 0
+        || before.nlink() != 1
+        || before.mode() & 0o022 != 0
+        || before.len() > limit
+        || Instant::now() >= deadline
+    {
+        return Err(Error::Refused);
+    }
+    let mut file = fs::OpenOptions::new()
+        .read(true)
+        .custom_flags(libc::O_NOFOLLOW | libc::O_NONBLOCK | libc::O_CLOEXEC)
+        .open(path)
+        .map_err(|_| Error::Unavailable)?;
+    if metadata(&file.metadata().map_err(|_| Error::Unavailable)?) != metadata(&before) {
+        return Err(Error::Refused);
+    }
+    let mut bytes = Vec::new();
+    let mut buffer = [0; 4096];
+    loop {
+        if Instant::now() >= deadline {
+            return Err(Error::Expired);
+        }
+        let count = file.read(&mut buffer).map_err(|_| Error::Unavailable)?;
+        if count == 0 {
+            break;
+        }
+        if bytes.len() + count > limit as usize {
+            return Err(Error::Refused);
+        }
+        bytes.extend_from_slice(&buffer[..count]);
+    }
+    if bytes.len() as u64 != before.len()
+        || metadata(&file.metadata().map_err(|_| Error::Unavailable)?) != metadata(&before)
+        || metadata(&fs::symlink_metadata(path).map_err(|_| Error::Unavailable)?)
+            != metadata(&before)
+        || path == PRIMARY_FRAGMENT
+            && <[u8; 32]>::from(Sha256::digest(&bytes)) != PRIMARY_FRAGMENT_SHA256
+    {
+        return Err(Error::Refused);
+    }
+    let digest: [u8; 32] = Sha256::digest(&bytes).into();
+    if let Some((_, expected)) = PRIMARY_CONFIGURATION_HASHES
+        .iter()
+        .find(|(name, _)| *name == path)
+    {
+        let actual: String = digest.iter().map(|value| format!("{value:02x}")).collect();
+        if actual != *expected {
+            return Err(Error::Refused);
+        }
+    }
+    Ok((
+        PrimaryFile {
+            path,
+            identity: metadata(&before),
+            digest,
+        },
+        bytes,
+    ))
+}
+#[derive(PartialEq, Eq)]
+struct PrimarySocketSnapshot {
+    binder: (u32, u32, u32),
+    listener: u64,
+    worker: Row,
+    endpoint: [u64; 7],
+}
+/// Native-only, immutable same-master socket observer. It never supplies a
+/// caller-selected UID/path or treats socket chown metadata as kernel identity.
+pub(crate) struct PrimaryPeer {
+    executor: std::sync::Arc<dyn CommandExecutor + Send + Sync>,
+    startup: Startup,
+    auth: FilePin,
+    files: Vec<PrimaryFile>,
+    server_uid: u32,
+    snapshot: PrimarySocketSnapshot,
+    selection: MainConfigurationSelection,
+}
+#[cfg(test)]
+fn primary_worker(process: &Row, master: &Row, server_uid: u32) -> Result<(), Error> {
+    socket_worker(process, master, server_uid, "auth")
+}
+fn socket_worker(process: &Row, master: &Row, server_uid: u32, command: &str) -> Result<(), Error> {
+    if process.parent != master.pid
+        || process.uid != server_uid
+        || server_uid == 0
+        || process.command != command
+        || process.pid == master.pid
+    {
+        Err(Error::Refused)
+    } else {
+        Ok(())
+    }
+}
+#[cfg(test)]
+fn primary_listener(raw: &str, master: &Row, pin: &FilePin) -> Result<u64, Error> {
+    socket_listener(raw, master, PRIMARY_SOCKET, pin)
+}
+fn socket_listener(raw: &str, master: &Row, path: &str, pin: &FilePin) -> Result<u64, Error> {
+    descriptors(raw, master, pin)?;
+    let mut found = None;
+    for line in raw.lines().skip(1) {
+        let fields = line.split_whitespace().collect::<Vec<_>>();
+        if fields.last().copied() != Some(path) {
+            continue;
+        }
+        if fields.len() != 8
+            || fields[4..6] != ["unix", "stream"]
+            || decimal(fields[3].strip_suffix('*').ok_or(Error::Refused)?)? >= i32::MAX as u32
+            || found.is_some()
+        {
+            return Err(Error::Refused);
+        }
+        let pcb = u64::from_str_radix(fields[6].strip_prefix("0x").ok_or(Error::Refused)?, 16)
+            .map_err(|_| Error::Refused)?;
+        if pcb == 0 {
+            return Err(Error::Refused);
+        }
+        found = Some(pcb);
+    }
+    found.ok_or(Error::Refused)
+}
+fn primary_include_matches(deadline: Instant) -> Result<(), Error> {
+    let mut found = std::collections::BTreeSet::new();
+    for (index, entry) in fs::read_dir("/etc/dovecot/conf.d")
+        .map_err(|_| Error::Unavailable)?
+        .enumerate()
+    {
+        if index >= 256 || Instant::now() >= deadline {
+            return Err(Error::Expired);
+        }
+        let name = entry
+            .map_err(|_| Error::Unavailable)?
+            .file_name()
+            .into_string()
+            .map_err(|_| Error::Refused)?;
+        if name.ends_with(".conf") {
+            found.insert(format!("/etc/dovecot/conf.d/{name}"));
+        }
+    }
+    let expected = PRIMARY_CONFIGURATION_PATHS
+        .iter()
+        .filter(|path| path.starts_with("/etc/dovecot/conf.d/") && path.ends_with(".conf"))
+        .map(|path| path.to_string())
+        .collect::<std::collections::BTreeSet<_>>();
+    if found != expected {
+        Err(Error::Refused)
+    } else {
+        Ok(())
+    }
+}
+impl PrimaryPeer {
+    pub(crate) fn observe(
+        executor: std::sync::Arc<dyn CommandExecutor + Send + Sync>,
+        startup: &Startup,
+        deadline: Instant,
+    ) -> Result<Self, Error> {
+        startup.recheck(executor.as_ref(), deadline)?;
+        primary_include_matches(deadline)?;
+        let (passwd, bytes) = primary_file_bytes("/etc/passwd", deadline)?;
+        let records = std::str::from_utf8(&bytes).map_err(|_| Error::Refused)?;
+        let matches = records
+            .lines()
+            .filter(|line| line.starts_with("_dovecot:"))
+            .collect::<Vec<_>>();
+        if matches.len() != 1 {
+            return Err(Error::Refused);
+        }
+        let fields = matches[0].split(':').collect::<Vec<_>>();
+        if fields.len() != 7 {
+            return Err(Error::Refused);
+        }
+        let reread = primary_file("/etc/passwd", deadline)?;
+        if passwd.identity != reread.identity
+            || passwd.digest != reread.digest
+            || <[u8; 32]>::from(Sha256::digest(&bytes)) != passwd.digest
+        {
+            return Err(Error::Refused);
+        }
+        let uid = decimal(fields[2])?;
+        if uid == 0
+            || records
+                .lines()
+                .filter(|line| line.split(':').nth(2) == Some(fields[2]))
+                .count()
+                != 1
+        {
+            return Err(Error::Refused);
+        }
+        let mut files = PRIMARY_CONFIGURATION_PATHS
+            .iter()
+            .map(|path| primary_file(path, deadline))
+            .collect::<Result<Vec<_>, _>>()?;
+        files.push(passwd);
+        files.push(primary_file(PRIMARY_AUTH, deadline)?);
+        let auth = file_pin(PRIMARY_AUTH)?;
+        let selection = main_configuration_selection(executor.as_ref(), startup, deadline)?;
+        let mut result = Self {
+            executor,
+            startup: startup.clone(),
+            auth,
+            files,
+            server_uid: uid,
+            selection,
+            snapshot: PrimarySocketSnapshot {
+                binder: (0, 0, 0),
+                listener: 0,
+                worker: startup.own.clone(),
+                endpoint: [0; 7],
+            },
+        };
+        result.snapshot = result.probe(deadline)?;
+        result.recheck(deadline)?;
+        Ok(result)
+    }
+    pub(crate) fn identities(&self, deadline: Instant) -> Result<(u32, u32), Error> {
+        self.recheck(deadline)?;
+        Ok((self.server_uid, self.snapshot.binder.1))
+    }
+    fn probe(&self, deadline: Instant) -> Result<PrimarySocketSnapshot, Error> {
+        socket_probe(
+            self.executor.as_ref(),
+            &self.startup,
+            &self.auth,
+            PRIMARY_SOCKET,
+            "auth",
+            self.server_uid,
+            self.server_uid,
+            deadline,
+        )
+    }
+    pub(crate) fn recheck(&self, deadline: Instant) -> Result<(), Error> {
+        if main_configuration_selection(self.executor.as_ref(), &self.startup, deadline)?
+            != self.selection
+        {
+            return Err(Error::Refused);
+        }
+        primary_include_matches(deadline)?;
+        for old in &self.files {
+            let new = primary_file(old.path, deadline)?;
+            if old.identity != new.identity || old.digest != new.digest {
+                return Err(Error::Refused);
+            }
+        }
+        if self.probe(deadline)? != self.snapshot
+            || main_configuration_selection(self.executor.as_ref(), &self.startup, deadline)?
+                != self.selection
+        {
+            return Err(Error::Refused);
+        }
+        primary_include_matches(deadline)
+    }
+}
+
+const MAIN_CONFIG_LINK: &str = "/var/dovecot/dovecot.conf";
+const MAIN_CONFIG: &str = "/etc/dovecot/dovecot.conf";
+#[derive(PartialEq, Eq)]
+struct MainConfigurationSelection {
+    argv: String,
+    link: [u64; 11],
+}
+fn main_master_argv(raw: &str) -> Result<(), Error> {
+    let words = raw.split_whitespace().collect::<Vec<_>>();
+    if raw.lines().count() != 1
+        || !matches!(words.first().copied(), Some("dovecot" | MASTER))
+        || !(words.len() == 1 || (words.len() == 3 && words[1..] == ["-c", MAIN_CONFIG]))
+    {
+        return Err(Error::Refused);
+    }
+    Ok(())
+}
+fn main_configuration_selection(
+    executor: &(dyn CommandExecutor + Send + Sync),
+    startup: &Startup,
+    deadline: Instant,
+) -> Result<MainConfigurationSelection, Error> {
+    startup.recheck(executor, deadline)?;
+    let argv = query(
+        executor,
+        PS,
+        &[
+            "-p".into(),
+            startup.master.pid.to_string(),
+            "-o".into(),
+            "args=".into(),
+        ],
+        deadline,
+    )?;
+    main_master_argv(&argv)?;
+    crate::account_password_custody::ancestors(MAIN_CONFIG_LINK, None, deadline)
+        .map_err(|_| Error::Unavailable)?;
+    let pin = |m: &fs::Metadata| {
+        [
+            m.dev(),
+            m.ino(),
+            u64::from(m.uid()),
+            u64::from(m.gid()),
+            u64::from(m.mode()),
+            m.nlink(),
+            m.len(),
+            m.mtime() as u64,
+            m.mtime_nsec() as u64,
+            m.ctime() as u64,
+            m.ctime_nsec() as u64,
+        ]
+    };
+    let before = fs::symlink_metadata(MAIN_CONFIG_LINK).map_err(|_| Error::Unavailable)?;
+    if !before.file_type().is_symlink()
+        || before.uid() != 0
+        || before.gid() != 0
+        || before.nlink() != 1
+        || before.len() > 256
+        || fs::read_link(MAIN_CONFIG_LINK).map_err(|_| Error::Unavailable)?
+            != Path::new(MAIN_CONFIG)
+        || pin(&fs::symlink_metadata(MAIN_CONFIG_LINK).map_err(|_| Error::Unavailable)?)
+            != pin(&before)
+        || Instant::now() >= deadline
+    {
+        return Err(Error::Refused);
+    }
+    // Dovecot's own main_init creates this link from the selected full config
+    // path. Combined with same-master listener/birth/text and exact argv this
+    // binds selection, not proof that current on-disk bytes are loaded.
+    Ok(MainConfigurationSelection {
+        argv,
+        link: pin(&before),
+    })
+}
+fn private_primary_argv(raw: &str) -> Result<(), Error> {
+    let fields = raw.split_whitespace().collect::<Vec<_>>();
+    if raw.lines().count() != 1
+        || fields.len() != 5
+        || !matches!(fields[0], "auth" | "dovecot/auth" | PRIMARY_AUTH)
+        || fields[1..] != ["-o", "auth_policy_server_url=", "-o", "auth_cache_size=0"]
+    {
+        return Err(Error::Refused);
+    }
+    Ok(())
+}
+#[allow(clippy::too_many_arguments)] // Independent fixed process/socket and original-budget witnesses.
+fn socket_probe(
+    executor: &(dyn CommandExecutor + Send + Sync),
+    startup: &Startup,
+    auth: &FilePin,
+    path: &'static str,
+    command: &'static str,
+    server_uid: u32,
+    owner_uid: u32,
+    deadline: Instant,
+) -> Result<PrimarySocketSnapshot, Error> {
+    startup.recheck(executor, deadline)?;
+    let endpoint = fs::symlink_metadata(path).map_err(|_| Error::Unavailable)?;
+    use std::os::unix::fs::FileTypeExt;
+    if !endpoint.file_type().is_socket()
+        || endpoint.uid() != owner_uid
+        || endpoint.nlink() != 1
+        || endpoint.mode() & 0o777 != 0o660
+    {
+        return Err(Error::Refused);
+    }
+    let shape = [
+        endpoint.dev(),
+        endpoint.ino(),
+        endpoint.uid().into(),
+        endpoint.gid().into(),
+        endpoint.mode().into(),
+        endpoint.mtime() as u64,
+        endpoint.ctime() as u64,
+    ];
+    let listener = socket_listener(
+        &query(executor, FSTAT, &fstat_args(startup.master.pid), deadline)?,
+        &startup.master,
+        path,
+        startup
+            .pins
+            .iter()
+            .find(|pin| pin.path == MASTER)
+            .ok_or(Error::Refused)?,
+    )?;
+    let stream = crate::openbsd::connect_unix_before(Path::new(path), deadline)
+        .map_err(|_| Error::Unavailable)?;
+    let binder = kernel(&stream)?;
+    let own = descriptors(
+        &query(executor, FSTAT, &fstat_args(startup.own.pid), deadline)?,
+        &startup.own,
+        startup
+            .pins
+            .iter()
+            .find(|pin| pin.path == HELPER)
+            .ok_or(Error::Refused)?,
+    )?;
+    let raw = query(
+        executor,
+        PS,
+        &["-ax".into(), "-o".into(), PS_FIELDS.into()],
+        deadline,
+    )?;
+    let mut workers = Vec::new();
+    for (index, line) in raw.lines().enumerate() {
+        if index >= 4096 {
+            return Err(Error::Refused);
+        }
+        let pid = line
+            .split_whitespace()
+            .next()
+            .ok_or(Error::Refused)
+            .and_then(decimal)?;
+        let candidate = row(line, pid)?;
+        if socket_worker(&candidate, &startup.master, server_uid, command).is_err() {
+            continue;
+        }
+        let peer = descriptors(
+            &query(executor, FSTAT, &fstat_args(pid), deadline)?,
+            &candidate,
+            auth,
+        )?;
+        if reciprocal(&own, &peer, stream.as_raw_fd()).is_ok() {
+            workers.push(candidate);
+        }
+    }
+    if workers.len() != 1 {
+        return Err(Error::Refused);
+    }
+    let worker = workers.remove(0);
+    if path == PRIMARY_SOCKET {
+        private_primary_argv(&query(
+            executor,
+            PS,
+            &[
+                "-p".into(),
+                worker.pid.to_string(),
+                "-o".into(),
+                "args=".into(),
+            ],
+            deadline,
+        )?)?;
+    }
+
+    let expected = if binder.0 == startup.master.pid {
+        &startup.master
+    } else {
+        &worker
+    };
+    if (expected.pid, expected.uid, expected.gid) != binder
+        || file_pin(auth.path)? != *auth
+        || row(
+            &query(executor, PS, &ps_args(worker.pid), deadline)?,
+            worker.pid,
+        )? != worker
+        || kernel(&stream)? != binder
+        || Instant::now() >= deadline
+    {
+        return Err(Error::Refused);
+    }
+    let after = fs::symlink_metadata(path).map_err(|_| Error::Unavailable)?;
+    if [
+        after.dev(),
+        after.ino(),
+        after.uid().into(),
+        after.gid().into(),
+        after.mode().into(),
+        after.mtime() as u64,
+        after.ctime() as u64,
+    ] != shape
+    {
+        return Err(Error::Refused);
+    }
+    Ok(PrimarySocketSnapshot {
+        binder,
+        listener,
+        worker,
+        endpoint: shape,
+    })
+}
+
+/// Source-owned accepting-socket authority for an already-admitted submission
+/// registration. The topology module supplies a verified current record; this
+/// constructor still measures the actual kernel/descriptor acceptance path.
+pub(crate) struct SubmissionIpcPeer {
+    executor: std::sync::Arc<dyn CommandExecutor + Send + Sync>,
+    startup: Startup,
+    program: FilePin,
+    worker: Row,
+    captured: PrimarySocketSnapshot,
+}
+impl SubmissionIpcPeer {
+    pub(crate) fn from_registered(
+        executor: std::sync::Arc<dyn CommandExecutor + Send + Sync>,
+        startup: &Startup,
+        master_row: &str,
+        ipc_row: &str,
+        master_pid: u32,
+        ipc_pid: u32,
+        deadline: Instant,
+    ) -> Result<Self, Error> {
+        startup.recheck(executor.as_ref(), deadline)?;
+        let master = row(master_row, master_pid)?;
+        let worker = row(ipc_row, ipc_pid)?;
+        if master.parent != 1
+            || master.uid != 0
+            || master.gid != 0
+            || master.command != "dovecot"
+            || master.group != master.pid
+            || worker.parent != master.pid
+            || worker.command != "ipc"
+            || worker.uid == 0
+        {
+            return Err(Error::Refused);
+        }
+        let mut context = startup.clone();
+        context.master = master;
+        let program = file_pin("/usr/local/libexec/dovecot/ipc")?;
+        let captured = socket_probe(
+            executor.as_ref(),
+            &context,
+            &program,
+            crate::account_password_topology::IPC,
+            "ipc",
+            worker.uid,
+            0,
+            deadline,
+        )?;
+        if captured.worker != worker {
+            return Err(Error::Refused);
+        }
+        Ok(Self {
+            executor,
+            startup: context,
+            program,
+            worker,
+            captured,
+        })
+    }
+    pub(crate) fn binder_uid(&self, deadline: Instant) -> Result<u32, Error> {
+        let now = socket_probe(
+            self.executor.as_ref(),
+            &self.startup,
+            &self.program,
+            crate::account_password_topology::IPC,
+            "ipc",
+            self.worker.uid,
+            0,
+            deadline,
+        )?;
+        if now != self.captured {
+            return Err(Error::Refused);
+        }
+        Ok(now.binder.1)
+    }
+}
+/// All three control endpoints are measured independently: anvil/auth belong
+/// to the original mail master, IPC to the already-qualified submission master.
+pub(crate) struct ControlPeer {
+    primary: std::sync::Arc<PrimaryPeer>,
+    auth: PrimarySocketSnapshot,
+    anvil: PrimarySocketSnapshot,
+    anvil_program: FilePin,
+    ipc: crate::account_password_topology::RegisteredIpcPeer,
+}
+impl ControlPeer {
+    pub(crate) fn observe(
+        primary: std::sync::Arc<PrimaryPeer>,
+        deadline: Instant,
+    ) -> Result<Self, Error> {
+        primary.recheck(deadline)?;
+        let auth = socket_probe(
+            primary.executor.as_ref(),
+            &primary.startup,
+            &primary.auth,
+            "/var/dovecot/osmap-account-auth-master",
+            "auth",
+            primary.server_uid,
+            0,
+            deadline,
+        )?;
+        let anvil_program = file_pin("/usr/local/libexec/dovecot/anvil")?;
+        let anvil = socket_probe(
+            primary.executor.as_ref(),
+            &primary.startup,
+            &anvil_program,
+            "/var/dovecot/osmap-account-anvil",
+            "anvil",
+            primary.server_uid,
+            0,
+            deadline,
+        )?;
+        let ipc = crate::account_password_topology::RegisteredIpcPeer::observe(
+            primary.executor.clone(),
+            &primary.startup,
+            deadline,
+        )
+        .map_err(|_| Error::Refused)?;
+        let result = Self {
+            primary,
+            auth,
+            anvil,
+            anvil_program,
+            ipc,
+        };
+        result.identities(deadline)?;
+        Ok(result)
+    }
+    pub(crate) fn identities(&self, deadline: Instant) -> Result<[u32; 3], Error> {
+        self.primary.recheck(deadline)?;
+        let auth = socket_probe(
+            self.primary.executor.as_ref(),
+            &self.primary.startup,
+            &self.primary.auth,
+            "/var/dovecot/osmap-account-auth-master",
+            "auth",
+            self.primary.server_uid,
+            0,
+            deadline,
+        )?;
+        let anvil = socket_probe(
+            self.primary.executor.as_ref(),
+            &self.primary.startup,
+            &self.anvil_program,
+            "/var/dovecot/osmap-account-anvil",
+            "anvil",
+            self.primary.server_uid,
+            0,
+            deadline,
+        )?;
+        if auth != self.auth
+            || anvil != self.anvil
+            || file_pin(self.anvil_program.path)? != self.anvil_program
+        {
+            return Err(Error::Refused);
+        }
+        Ok([
+            auth.binder.1,
+            anvil.binder.1,
+            self.ipc.binder_uid(deadline).map_err(|_| Error::Refused)?,
+        ])
+    }
+}
+
 #[cfg(test)]
 #[path = "account_password_peer_tests.rs"]
 mod tests;

@@ -15,6 +15,18 @@ fn fixed_commands_have_hash_only_isolation_and_no_caller_program() {
     }
     use crate::account_password_backend::{HASH_ARGS, HASH_PROGRAM, SQL_ARGS, SQL_PROGRAM};
     let strings = |args: &[&str]| args.iter().map(|s| (*s).into()).collect::<Vec<String>>();
+    assert!(fixed_metadata_args(
+        "/bin/ps",
+        &strings(&["-p", "123", "-o", "args="])
+    ));
+    assert!(!fixed_metadata_args(
+        "/bin/ps",
+        &strings(&["-p", "123", "-o", "env="])
+    ));
+    assert!(!fixed_metadata_args(
+        "/bin/ps",
+        &strings(&["-p", "0123", "-o", "args="])
+    ));
     let hash = crate::auth::password_backend_command(HASH_PROGRAM, &strings(HASH_ARGS)).unwrap();
     let env = hash.get_envs().collect::<Vec<_>>();
     assert!(env.contains(&(

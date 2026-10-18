@@ -7,8 +7,11 @@ nine defined test scenarios. Follow the current active work order and
 `docs/UX_SLICE_S04_02.md`. OSMAP-owned Rust implements workflow/helpers, with
 fixed bounded existing MariaDB/Dovecot utilities and no new dependencies.
 S04-01 stays accepted; other stopped slices do not resume. Historical stop and
-closeout text below is provenance. Root owns integration/Git/native execution;
-normal signed source review before any remote synchronization remains required.
+closeout text below is provenance. The operator's latest all-work delegation
+assigns `/root/account_backend` the single canonical integration, host and Git
+execution queue for S04-02; `/root` coordinates and the other agents implement
+or independently review isolated work. Do not duplicate that execution queue.
+Normal signed source review before any remote synchronization remains required.
 
 ## Historical bounded closeout — 2026-10-17
 

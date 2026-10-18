@@ -2,6 +2,40 @@
 
 ## S04-02 current Rust integration — 2026-10-18
 
+Latest matching source is signed515a99c9, verified Shopkeeper, with the normal
+mandatory gate PASS and no subsequent synchronization (ahead9/behind0 against
+last-fetched origin). Build5 compiled all456 exact inputs and produced e473ab94.
+The controlled native SQL/hash body reached its guarded PASS branch: actual
+conditional Alice write/readback, persisted Contained0/known write time and
+tested Bob preservation. The outer qualifier remains FAIL49.436s; its separate
+17-column comparison and original cleanup were not reached. Its historical
+file-reference owner is UNKNOWN. No password case was repeated.
+
+Fresh recovery4 PASS4.275s explicitly confirmed all three post-body predicates,
+exact restricted database auth/seven grants, empty purpose processes and zero
+current stage references. Independently reviewed cleanup4 PASS7.546s removed
+only two reserved rows, one database user, eight private files and two purpose
+users/groups. All22 owned groups and scratch were gone without uncertainty;
+stages, permanent markers and empty directories remain. Independent assessment
+33649cc9 accepts this bounded prerequisite. Full S04-02, installed authentication,
+IMAP/SMTP/browser containment and owner usability remain OPEN; native flags and
+the installed form remain disabled. Next work is the existing production
+Startup-to-Primary/Control path, reusing current browser/client delegation.
+
+The next source increment now connects actual fixed service Startup to measured
+private Primary and Control capabilities and the existing production consumers.
+Authenticated admission reuses the real shared account guard, current-password
+check and signed epoch response. Mutation still requires measured Control plus
+the actual registered submission namespace; missing authority stays cold.
+The protected main-config selection, include set, accepting processes and
+reciprocal sockets are rechecked under the original deadlines. Local focused
+composition/parser tests and independent source review pass; matching native
+service, loaded-config, installed journey and owner usability remain unrun.
+No qualification Boolean, new dependency or duplicate browser path was added.
+
+The following attempt sequence is retained history and does not supersede the
+latest bounded outcome above.
+
 Latest controlled current2 FAIL27.291s/G31: SQL child exits0 and is reaped with
 its group gone, but Rust duplex returns an error before delivering output.
 No Pending, Hash or credential write reached. The closed numeric trace narrows

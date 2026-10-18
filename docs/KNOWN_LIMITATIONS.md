@@ -1,6 +1,20 @@
 # Known Limitations
 
-## Current operator stop — 2026-10-17
+## Current bounded resumption — 2026-10-18
+
+The operator resumed S04-02 only and assigned its implementation and review to
+subagents. Account_backend owns the single canonical/host/Git execution queue;
+root coordinates. Other stopped slices do not resume. The actual native SQL/hash
+body and separate exact-owned fixture cleanup are independently accepted as a
+bounded prerequisite; the original outer qualifier remains FAIL. Actual
+production Startup/Primary/Control execution and the complete installed
+password-change journey remain unqualified. The new source consumer requires
+measured native capabilities; source review does not activate the form or
+qualify the actual service/configuration/namespace.
+Normal signed source review before any push or synchronization remains required;
+the latest resumption does not authorize a push.
+
+## Historical operator stop — 2026-10-17
 
 Development, live/native qualification and deployment are stopped by explicit
 operator direction. Only documentation preservation, signed repository commits
