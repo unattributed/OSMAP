@@ -190,3 +190,46 @@ fn primary_configuration_membership_is_fixed_and_control_is_separately_required(
     assert!(captured_control_configuration(&primary).is_err());
     assert!(captured_control_configuration(&control).is_ok());
 }
+
+#[test]
+fn diagnostic_stages_preserve_original_startup_refusal_without_metadata_dispatch() {
+    let startup = Startup {
+        master: process(10, 1, 0, "dovecot"),
+        // Deliberately foreign current process identity; refusal precedes all I/O.
+        own: process(std::process::id().saturating_add(1), 1, 0, "account-passwd"),
+        pins: Vec::new(),
+    };
+    let deadline = Instant::now() + Duration::from_millis(500);
+    let mut stage = "not_observed";
+    let result = PrimaryPeer::observe(std::sync::Arc::new(Never), &startup, deadline, &mut stage);
+    assert!(matches!(result, Err(Error::Refused)));
+    assert_eq!(stage, "primary_startup_recheck");
+    stage = "not_observed";
+    let result = socket_probe_with_stage(
+        &Never,
+        &startup,
+        &pin(),
+        PRIMARY_SOCKET,
+        "auth",
+        518,
+        518,
+        deadline,
+        &mut stage,
+    );
+    assert!(matches!(result, Err(Error::Refused)));
+    assert_eq!(stage, "primary_probe_startup");
+    // The existing untagged consumer retains precisely the same closed refusal.
+    assert!(matches!(
+        socket_probe(
+            &Never,
+            &startup,
+            &pin(),
+            PRIMARY_SOCKET,
+            "auth",
+            518,
+            518,
+            deadline
+        ),
+        Err(Error::Refused)
+    ));
+}

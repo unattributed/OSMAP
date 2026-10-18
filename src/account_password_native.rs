@@ -222,7 +222,15 @@ impl NativeProfile {
         peer: std::sync::Arc<crate::account_password_peer::PrimaryPeer>,
         deadline: Instant,
     ) -> Result<Self, Unavailable> {
-        let observed = observe(Role::Primary, deadline, Some(peer.as_ref()), None)?;
+        Self::from_primary_with_stage(peer, deadline, &mut "admission_profile")
+    }
+    pub(crate) fn from_primary_with_stage(
+        peer: std::sync::Arc<crate::account_password_peer::PrimaryPeer>,
+        deadline: Instant,
+        stage: &mut &'static str,
+    ) -> Result<Self, Unavailable> {
+        let observed =
+            observe_with_stage(Role::Primary, deadline, Some(peer.as_ref()), None, stage)?;
         Ok(Self {
             role: Role::Primary,
             original_deadline: deadline,
@@ -793,7 +801,18 @@ fn observe(
     primary: Option<&crate::account_password_peer::PrimaryPeer>,
     control: Option<&crate::account_password_peer::ControlPeer>,
 ) -> Result<Observation, Unavailable> {
+    observe_with_stage(role, deadline, primary, control, &mut "native_profile")
+}
+fn observe_with_stage(
+    role: Role,
+    deadline: Instant,
+    primary: Option<&crate::account_password_peer::PrimaryPeer>,
+    control: Option<&crate::account_password_peer::ControlPeer>,
+    stage: &mut &'static str,
+) -> Result<Observation, Unavailable> {
+    *stage = "primary_profile_deadline";
     before(deadline)?;
+    *stage = "primary_profile_graph";
     let mut public = graph(role, deadline)?;
     let mut endpoints = Vec::new();
     let ids = if role == Role::Sql {
@@ -834,6 +853,7 @@ fn observe(
         endpoints.push(endpoint);
         ids
     } else {
+        *stage = "primary_profile_principal";
         let (p, ph, passwd) = public_file("/etc/passwd", false, 65536, deadline)?;
         let (g, gh, group) = public_file("/etc/group", false, 65536, deadline)?;
         let ids = selected(
@@ -850,7 +870,8 @@ fn observe(
         public.extend([("/etc/passwd".into(), p, ph), ("/etc/group".into(), g, gh)]);
         if role == Role::Primary {
             let peer = primary.ok_or(Unavailable)?;
-            let (server_uid, binder_uid) = peer.identities(deadline).map_err(unavailable)?;
+            let (server_uid, binder_uid) = peer.identities(deadline, stage).map_err(unavailable)?;
+            *stage = "primary_profile_socket_dac";
             endpoints.push(socket(
                 PRIMARY_SOCKET,
                 server_uid,
@@ -858,7 +879,8 @@ fn observe(
                 binder_uid,
                 deadline,
             )?);
-            peer.recheck(deadline).map_err(unavailable)?;
+            peer.recheck_with_stage(deadline, stage)
+                .map_err(unavailable)?;
         }
         if role == Role::Control {
             let binders = control
@@ -878,6 +900,7 @@ fn observe(
         }
         ids
     };
+    *stage = "primary_profile_null";
     let ancestry = parents("/dev/null", None, deadline)?;
     let m = fs::symlink_metadata("/dev/null").map_err(unavailable)?;
     if !m.file_type().is_char_device()
@@ -902,6 +925,7 @@ fn observe(
         ],
         ancestry,
     );
+    *stage = "primary_profile_material_ancestry";
     let mut private_ancestry = Vec::new();
     let material_paths: &[&str] = if role == Role::Sql {
         &[SQL_PLAN, SQL_CONFIG, "/etc/passwd", "/etc/group"]
@@ -911,6 +935,7 @@ fn observe(
     for path in material_paths {
         private_ancestry.push(((*path).into(), parents(path, None, deadline)?));
     }
+    *stage = "primary_profile_final_deadline";
     before(deadline)?;
     Ok(Observation {
         ids,
@@ -931,4 +956,16 @@ pub(crate) fn control_gid(deadline: Instant) -> Result<u32, Unavailable> {
     let (_, _, passwd) = public_file("/etc/passwd", false, 65536, deadline)?;
     let (_, _, group) = public_file("/etc/group", false, 65536, deadline)?;
     Ok(selected(&passwd, &group, b"_osmapcontrol")?.1)
+}
+
+#[cfg(test)]
+mod diagnostic_tests {
+    use super::*;
+    #[test]
+    fn original_expired_profile_refusal_has_a_closed_stage_before_io() {
+        let mut stage = "not_observed";
+        let result = observe_with_stage(Role::Primary, Instant::now(), None, None, &mut stage);
+        assert!(matches!(result, Err(Unavailable)));
+        assert_eq!(stage, "primary_profile_deadline");
+    }
 }

@@ -3,8 +3,9 @@
 ## Current bounded resumption — 2026-10-18
 
 The operator resumed S04-02 only and assigned its implementation and review to
-subagents. Account_backend owns the single canonical/host/Git execution queue;
-root coordinates. Other stopped slices do not resume. The actual native SQL/hash
+subagents. S04_readiness owns the single canonical/host/Git execution queue;
+root coordinates, password_delivery_engineer authors isolated changes and
+account_backend independently reviews. Other stopped slices do not resume. The actual native SQL/hash
 body and separate exact-owned fixture cleanup are independently accepted as a
 bounded prerequisite; the original outer qualifier remains FAIL. Actual
 production Startup/Primary/Control execution and the complete installed
@@ -12,7 +13,8 @@ password-change journey remain unqualified. The new source consumer requires
 measured native capabilities; source review does not activate the form or
 qualify the actual service/configuration/namespace.
 Normal signed source review before any push or synchronization remains required;
-the latest resumption does not authorize a push.
+the operator explicitly authorized normal signed UX-branch push and reversible
+implementation on obsd1 against the authoritative backend.
 
 The current Primary-only source graph accepts the mandatory26 files without
 Control, and binds optional Control immutably when present. Local policy tests
@@ -24,6 +26,15 @@ subsequently restored and the exact temporary fixture disposed of, independently
 reviewed as de9f7bf4/89cfd318. Original failed/uncertain outcomes remain recorded.
 Do not add or change anvil listeners through a live reload. No full password
 journey or owner usability claim follows from source checks or service recovery.
+
+The later Primary-only case3 reached helper/client startup but failed at its
+first wrong-password request. The initiating cause remains unknown; correct-password
+admission and password mutation were not reached. Its retained fixture was safely
+disposed by exact recovery245c4a0b, independently accepted65e530a7. The original
+failed/uncertain receipt remains historical. The reviewed diagnostic source adds
+only static, bounded failure stages to the existing authority checks; it does not
+relax those checks or prove an actual native request. Launcher mask correction is
+source-only until a fresh correctly bound changed native case. The form stays disabled.
 
 ## Historical operator stop — 2026-10-17
 

@@ -11613,3 +11613,68 @@ configuration before Control socket/IPC authority. Five focused peer tests pass;
 actual native filesystem/loaded-config/service admission remains unqualified.
 Keep the existing sealed maximum path grants; a granted pathname is not a
 configured capability. No native flag, frontend path or dependency changed.
+
+## 2026-10-18 — authorized source synchronization and minimal service integration
+
+The operator explicitly authorized push and implementation on obsd1. All eleven
+outgoing Shopkeeper signatures verified; the normal mandatory pre-push hook passed
+in279.078 seconds and fresh origin equality matched signed daed2908. No application
+or service activation follows merely from that synchronization.
+
+The sole executor is now s04_readiness, with password_delivery_engineer preparing
+isolated work and account_backend reviewing independently. Historical owners and
+unknown costs remain preserved. Current read-only inventory2e770f31 and independent
+scope4ec2748a confirm ordinary Dovecot availability, original25/exact22 configuration
+custody and absence of account helper/private listeners/runtime. The next action
+uses those facts for minimal Primary-only integration and owned rollback. Never
+repeat the unsupported anvil reload, reset prior failures, replay SQL/hash proof,
+or enable the password control from a source-only checkpoint. Full installed
+password change, containment, independent audit and owner usability remain open.
+
+## 2026-10-18 — actual Primary admission advances and retains failure state
+
+The first Primary-only case failed before helper startup because its fixed fstat
+query returned16,461 bytes against an inherited16,384-byte fixture cap. Its exact
+rollback preserved original25 files/full17 rows/Active0 and removed the owned
+fixture. A one-call fixture correction aligns that query with the existing
+production65,536-byte metadata limit; original deadlines and other caps stay fixed.
+The actual old-sized case fails and the changed positive/negative controls pass.
+A separate executor attempt-ID typo refused locally in0.052 seconds before SSH;
+that receipt is retained independently and only the ledger ID was corrected.
+
+Changed case3 reached kernel-measured private Primary readiness and the real
+helper/client. The first wrong-password request returned an unavailable-reply
+error; neither wrong-password admission nor correct-password success is proved.
+Helper graceful-stop failure required forced owned reap, leaving group absence
+unknown. Retain all fixture rows/identities/files/configuration until fresh current
+read-only custody selects exact reviewed disposition. No password update, provider
+message or operator credential action occurred. The49.094-second overall failure
+and outer uncertainty remain. Reuse the current helper/client bytes; do not retry
+unchanged, signal historical PIDs or turn this prerequisite into password UAT.
+
+
+## 2026-10-18 — owned recovery and complete launcher-mask correction
+
+Fresh retained-state collection6359dca8 measured ordinary Dovecot availability
+and exact owned fixture custody. It did not authorize deletion by itself. The
+separately reviewed recovery245c4a0b classified the sole remaining reference as
+the current master's private Primary listener, withdrew only the owned include,
+and used the supported reload. Same-master service, original25/exact22 files,
+private-path and kernel absence passed before exact fixture disposal. Two synthetic
+rows, sixteen private files, three stale helper sockets and two purpose users/groups
+were removed. Four empty directory inodes remain root:root0700; evidence stages
+and permanent claims remain. Independent65e530a7 accepts this enumerated disposition;
+the historical case3 failure and uncertain receipt are not rewritten.
+
+Inspection found inherited blocked stop signals through outer driver and inner
+helper/client launch boundaries. Restoring only the parent's mask, or restoring
+an already blocked driver's captured mask in its children, does not fix the chain.
+The initial inner-only review07284112 missed the outer inheritance; its scope
+limitation and reviewer correction are retained. Whole-chain correction87d6e331
+has one nested discriminator starting with the relevant signals blocked, showing
+owned TERM delivery/reap while preserving an unrelated SIGUSR1 mask and the parent
+mask. This is source evidence for the launcher repair, not proof that it uniquely
+caused the historical unavailable reply. Preserve that first-request cause as
+unknown and expose only a bounded closed stage diagnostic if existing evidence
+cannot identify it. Do not rebuild the unchanged client or repeat native admission
+without an independently reviewed changed boundary.

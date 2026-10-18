@@ -8,9 +8,11 @@ nine defined test scenarios. Follow the current active work order and
 fixed bounded existing MariaDB/Dovecot utilities and no new dependencies.
 S04-01 stays accepted; other stopped slices do not resume. Historical stop and
 closeout text below is provenance. The operator's latest all-work delegation
-assigns `/root/account_backend` the single canonical integration, host and Git
-execution queue for S04-02; `/root` coordinates and the other agents implement
-or independently review isolated work. Do not duplicate that execution queue.
+now assigns `/root/s04_readiness` the single canonical integration, host and Git
+execution queue for S04-02; `/root` coordinates, `/root/password_delivery_engineer`
+prepares isolated changes and `/root/account_backend` independently reviews.
+The operator explicitly authorized current UX-branch push and implementation on
+obsd1 against the authoritative mail backend. Do not duplicate the execution queue.
 Normal signed source review before any remote synchronization remains required.
 
 ## Historical bounded closeout — 2026-10-17
@@ -79,6 +81,13 @@ Concrete helper/native tests alone do not qualify a wrapper's inherited default.
 The 2026-10-15 folder-facts repair demonstrated this integration gap; reuse
 unchanged backend evidence and test the changed composition, without a new QA
 framework or blanket repeat of passing workflows.
+
+For guarded subprocess launches, audit the complete outer guardian, fixture and
+helper/client exec chain. Blocking stop signals around Popen is inherited by the
+child; restoring the parent mask or signal dispositions does not repair that
+child mask. Restore the intended child mask at every changed exec boundary,
+preserve unrelated mask state, and use one bounded nested discriminator. Do not
+infer a unique historical request failure from a separate shutdown-mask defect.
 
 For OpenBSD integration, check the actual command/syscall contract before
 modelling it in a local fake. `ps -p` takes one PID. Empty unveil permissions

@@ -1248,11 +1248,17 @@ impl PrimaryPeer {
         executor: std::sync::Arc<dyn CommandExecutor + Send + Sync>,
         startup: &Startup,
         deadline: Instant,
+        stage: &mut &'static str,
     ) -> Result<Self, Error> {
+        *stage = "primary_startup_recheck";
         startup.recheck(executor.as_ref(), deadline)?;
+        *stage = "primary_configuration_files";
         let mut files = primary_configuration_files(deadline)?;
+        *stage = "primary_include_membership";
         primary_include_matches(&files, deadline)?;
+        *stage = "primary_passwd_file";
         let (passwd, bytes) = primary_file_bytes("/etc/passwd", deadline)?;
+        *stage = "primary_passwd_shape";
         let records = std::str::from_utf8(&bytes).map_err(|_| Error::Refused)?;
         let matches = records
             .lines()
@@ -1265,6 +1271,7 @@ impl PrimaryPeer {
         if fields.len() != 7 {
             return Err(Error::Refused);
         }
+        *stage = "primary_passwd_continuity";
         let reread = primary_file("/etc/passwd", deadline)?;
         if passwd.identity != reread.identity
             || passwd.digest != reread.digest
@@ -1272,6 +1279,7 @@ impl PrimaryPeer {
         {
             return Err(Error::Refused);
         }
+        *stage = "primary_passwd_identity";
         let uid = decimal(fields[2])?;
         if uid == 0
             || records
@@ -1283,8 +1291,10 @@ impl PrimaryPeer {
             return Err(Error::Refused);
         }
         files.push(passwd);
+        *stage = "primary_auth_binary";
         files.push(primary_file(PRIMARY_AUTH, deadline)?);
         let auth = file_pin(PRIMARY_AUTH)?;
+        *stage = "primary_main_selection";
         let selection = main_configuration_selection(executor.as_ref(), startup, deadline)?;
         let mut result = Self {
             executor,
@@ -1300,16 +1310,24 @@ impl PrimaryPeer {
                 endpoint: [0; 7],
             },
         };
-        result.snapshot = result.probe(deadline)?;
-        result.recheck(deadline)?;
+        result.snapshot = result.probe_with_stage(deadline, stage)?;
+        result.recheck_with_stage(deadline, stage)?;
         Ok(result)
     }
-    pub(crate) fn identities(&self, deadline: Instant) -> Result<(u32, u32), Error> {
-        self.recheck(deadline)?;
+    pub(crate) fn identities(
+        &self,
+        deadline: Instant,
+        stage: &mut &'static str,
+    ) -> Result<(u32, u32), Error> {
+        self.recheck_with_stage(deadline, stage)?;
         Ok((self.server_uid, self.snapshot.binder.1))
     }
-    fn probe(&self, deadline: Instant) -> Result<PrimarySocketSnapshot, Error> {
-        socket_probe(
+    fn probe_with_stage(
+        &self,
+        deadline: Instant,
+        stage: &mut &'static str,
+    ) -> Result<PrimarySocketSnapshot, Error> {
+        socket_probe_with_stage(
             self.executor.as_ref(),
             &self.startup,
             &self.auth,
@@ -1318,27 +1336,44 @@ impl PrimaryPeer {
             self.server_uid,
             self.server_uid,
             deadline,
+            stage,
         )
     }
     pub(crate) fn recheck(&self, deadline: Instant) -> Result<(), Error> {
+        self.recheck_with_stage(deadline, &mut "primary_recheck")
+    }
+    pub(crate) fn recheck_with_stage(
+        &self,
+        deadline: Instant,
+        stage: &mut &'static str,
+    ) -> Result<(), Error> {
+        *stage = "primary_recheck_main_selection";
         if main_configuration_selection(self.executor.as_ref(), &self.startup, deadline)?
             != self.selection
         {
             return Err(Error::Refused);
         }
+        *stage = "primary_recheck_includes";
         primary_include_matches(&self.files, deadline)?;
+        *stage = "primary_recheck_files";
         for old in &self.files {
             let new = primary_file(old.path, deadline)?;
             if old.identity != new.identity || old.digest != new.digest {
                 return Err(Error::Refused);
             }
         }
-        if self.probe(deadline)? != self.snapshot
-            || main_configuration_selection(self.executor.as_ref(), &self.startup, deadline)?
+        if {
+            let observed = self.probe_with_stage(deadline, stage)?;
+            *stage = "primary_recheck_snapshot";
+            observed != self.snapshot
+        } || {
+            *stage = "primary_recheck_main_selection";
+            main_configuration_selection(self.executor.as_ref(), &self.startup, deadline)?
                 != self.selection
-        {
+        } {
             return Err(Error::Refused);
         }
+        *stage = "primary_final_includes";
         primary_include_matches(&self.files, deadline)
     }
 }
@@ -1439,7 +1474,33 @@ fn socket_probe(
     owner_uid: u32,
     deadline: Instant,
 ) -> Result<PrimarySocketSnapshot, Error> {
+    socket_probe_with_stage(
+        executor,
+        startup,
+        auth,
+        path,
+        command,
+        server_uid,
+        owner_uid,
+        deadline,
+        &mut "primary_probe",
+    )
+}
+#[allow(clippy::too_many_arguments)] // Same fixed witnesses plus closed diagnostic output.
+fn socket_probe_with_stage(
+    executor: &(dyn CommandExecutor + Send + Sync),
+    startup: &Startup,
+    auth: &FilePin,
+    path: &'static str,
+    command: &'static str,
+    server_uid: u32,
+    owner_uid: u32,
+    deadline: Instant,
+    stage: &mut &'static str,
+) -> Result<PrimarySocketSnapshot, Error> {
+    *stage = "primary_probe_startup";
     startup.recheck(executor, deadline)?;
+    *stage = "primary_probe_endpoint";
     let endpoint = fs::symlink_metadata(path).map_err(|_| Error::Unavailable)?;
     use std::os::unix::fs::FileTypeExt;
     if !endpoint.file_type().is_socket()
@@ -1458,6 +1519,7 @@ fn socket_probe(
         endpoint.mtime() as u64,
         endpoint.ctime() as u64,
     ];
+    *stage = "primary_probe_listener";
     let listener = socket_listener(
         &query(executor, FSTAT, &fstat_args(startup.master.pid), deadline)?,
         &startup.master,
@@ -1468,9 +1530,12 @@ fn socket_probe(
             .find(|pin| pin.path == MASTER)
             .ok_or(Error::Refused)?,
     )?;
+    *stage = "primary_probe_connect";
     let stream = crate::openbsd::connect_unix_before(Path::new(path), deadline)
         .map_err(|_| Error::Unavailable)?;
+    *stage = "primary_probe_kernel_peer";
     let binder = kernel(&stream)?;
+    *stage = "primary_probe_own_descriptors";
     let own = descriptors(
         &query(executor, FSTAT, &fstat_args(startup.own.pid), deadline)?,
         &startup.own,
@@ -1480,14 +1545,17 @@ fn socket_probe(
             .find(|pin| pin.path == HELPER)
             .ok_or(Error::Refused)?,
     )?;
+    *stage = "primary_probe_worker_snapshot";
     let raw = query(
         executor,
         PS,
         &["-ax".into(), "-o".into(), PS_FIELDS.into()],
         deadline,
     )?;
+    *stage = "primary_probe_worker_rows";
     let mut workers = Vec::new();
     for (index, line) in raw.lines().enumerate() {
+        *stage = "primary_probe_worker_rows";
         if index >= 4096 {
             return Err(Error::Refused);
         }
@@ -1500,19 +1568,23 @@ fn socket_probe(
         if socket_worker(&candidate, &startup.master, server_uid, command).is_err() {
             continue;
         }
+        *stage = "primary_probe_worker_descriptors";
         let peer = descriptors(
             &query(executor, FSTAT, &fstat_args(pid), deadline)?,
             &candidate,
             auth,
         )?;
+        *stage = "primary_probe_reciprocal_worker";
         if reciprocal(&own, &peer, stream.as_raw_fd()).is_ok() {
             workers.push(candidate);
         }
     }
+    *stage = "primary_probe_unique_worker";
     if workers.len() != 1 {
         return Err(Error::Refused);
     }
     let worker = workers.remove(0);
+    *stage = "primary_probe_worker_argv";
     if path == PRIMARY_SOCKET {
         private_primary_argv(&query(
             executor,
@@ -1527,6 +1599,7 @@ fn socket_probe(
         )?)?;
     }
 
+    *stage = "primary_probe_process_fd_continuity";
     let expected = if binder.0 == startup.master.pid {
         &startup.master
     } else {
@@ -1543,6 +1616,7 @@ fn socket_probe(
     {
         return Err(Error::Refused);
     }
+    *stage = "primary_probe_endpoint_continuity";
     let after = fs::symlink_metadata(path).map_err(|_| Error::Unavailable)?;
     if [
         after.dev(),

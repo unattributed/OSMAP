@@ -2,9 +2,9 @@
 
 Status: IN PROGRESS (operator resumed 2026-10-18); engineering completion and human acceptance are OPEN.
 Project coordination owner: `/root`; sole canonical integration/host/Git
-executor under the latest operator delegation: `/root/account_backend`.
-Independent current source/evidence review: `/root/s04_02_independent_review`;
-the Rust developer owns isolated source preparation. Prior independent source
+executor under the latest operator delegation: `/root/s04_readiness`.
+Independent current source/evidence review: `/root/account_backend`;
+`/root/password_delivery_engineer` owns isolated source preparation. Prior independent source
 reviews remain provenance; authors do not clear their own changed code. This specification applies the operator's
 2026-10-16 SOP to the slice already in flight; it does not claim that earlier work
 followed this contract or that historical component passes closed the slice.
@@ -21,7 +21,7 @@ not the final Rust implementation or installed qualification.
 
 Reuse the existing form, Rust step-up/rate/session/transport types and truthful
 status consumers. Implement a narrow SQL/hash adapter, durable account authority
-and fixed native service composition. Account_backend owns integration/host/Git;
+and fixed native service composition. S04_readiness owns integration/host/Git;
 backend and durable-state developers own separate Rust paths; independent review
 checks producer, cleanup and actual consumer. No generic SQL/command endpoint or
 caller-selected authority. Exact fixed paths/configuration and the original

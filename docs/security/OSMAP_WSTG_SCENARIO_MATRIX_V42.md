@@ -1288,3 +1288,24 @@ measured service restoration and exact fixture disposal are retained in the
 execution ledger/decision log; no failed or uncertain native result becomes PASS.
 Do not repeat an unsupported anvil-listener live reload or treat syntax exit0 as
 service-readiness evidence.
+
+
+### 2026-10-18 — bounded Primary admission diagnostics and retained-state disposition
+
+The unchanged S04-02 nine-scenario/twenty-obligation contract remains open.
+Reviewed four-path source184ccb60 adds only static failure-stage/error-class
+reporting around the existing Primary observation and first admission profile.
+One first-failure latch bounds concurrent reporting; no account, password, raw
+protocol, SQL output or private material is included. Thirteen distinct targeted
+source controls passed. Closed fixture consumer1a22497f accepts physical-LF static
+lines only and consumes them only after confirmed helper close; unknown output and
+forced/uncertain outcomes remain refused. These are source controls, not native PASS.
+
+Actual case3 failed before correct-password admission with its initiating error
+unknown. Fresh observation followed by separately reviewed owned recovery245c4a0b
+preserved ordinary Dovecot/master/original configuration and disposed the exact
+synthetic fixture. Independent65e530a7 accepts that disposition only; historical
+failure/uncertainty remains. Whole-chain mask correction87d6e331 has a nested
+changed-boundary discriminator but no fresh native execution. No installed
+password workflow, owner UAT, sprint or release acceptance follows from this source
+admission. Existing capability flags, predicates, deadlines and protocols remain.

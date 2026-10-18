@@ -2,9 +2,48 @@
 
 ## S04-02 current source and operational limits — 2026-10-18
 
-The previous completed source checkpoint is signed
-`abe5b7b71e35b195359f7f6d570bd2625d5acb67`, verified Shopkeeper; its normal
-mandatory gate passed1830 Rust cases. No subsequent synchronization is authorized.
+Latest native action is owned recovery245c4a0b PASS9.33 seconds, independently
+accepted in enumerated scope by65e530a7. It withdrew the exact temporary Primary
+configuration through supported reload, preserved the current Dovecot master and
+original configuration, and removed two synthetic rows, sixteen private files,
+three stale helper sockets and two purpose users/groups. Four empty directories
+retain their inodes as root:root0700; evidence stages and permanent claims remain.
+No active fixture remains from case3. This disposition does not qualify password
+change or UAT; the form remains disabled and S04-02 remains open.
+
+The preceding actual admission case3 failed49.094 seconds (e8d6493c). The private
+Primary listener was measured and the real helper/client started, but the first
+wrong-password request returned an error before correct-password admission. Its
+initiating cause remains unknown. Helper graceful shutdown timed out and its owned
+process was forcibly reaped; the original failed receipt's uncertainty remains.
+Fresh read-only observation6359dca8 established ordinary-service health before the
+separately reviewed recovery above. No password CAS, operator credential or provider
+action occurred. Do not infer a historical outage from this failed case.
+
+Whole-chain source correction87d6e331 covers the outer driver and both inner
+helper/utility-client child launch sites. A nested discriminator verifies stop
+signals reach the child while an unrelated initial blocked signal and the parent's
+mask remain preserved. Earlier inner-only review07284112 did not cover the outer
+inheritance; its limited clearance is retained. This is fixture source evidence,
+not a native authentication pass or a uniquely established historical failure cause.
+The independently unresolved first-reply failure is the next source boundary; no
+unchanged native retry or client rebuild is justified.
+
+Reviewed four-path source diagnostic184ccb60 is integrated over the current
+signed source. Its static metadata-free failure stages expose existing authority
+refusals; one latch bounds first-admission failure reporting. Thirteen distinct
+targeted author controls pass and are reused. No authority predicate, deadline,
+protocol, qualification flag or frontend behavior changes. The separate strict
+physical-LF fixture consumer1a22497f and whole launcher correction87d6e331 remain
+source-only until fresh current native bindings. The normal signed gate is next;
+no native request result or installed password change is inferred.
+
+Current signed source is `daed2908e7da75678697b5023e49c10a1e2a33b2`.
+The operator-authorized normal push passed its mandatory security hook in
+279.078 seconds; all eleven outgoing Shopkeeper signatures verified. Fresh
+fetch proved local/origin equality and clean 0/0 before this continuation's
+records. This is source synchronization, not password deployment or UAT.
+
 The current source increment removes an unnecessary Control-configuration
 requirement from Primary-only admission. Its mandatory26-file graph is captured
 once. Optional Control, when present, receives the same protected identity/hash
@@ -36,6 +75,17 @@ Control/IMAP/SMTP/browser containment, installed password change and owner UAT
 remain OPEN. The form remains disabled. No provider message or operator credential
 was used in this work. Further native work requires a separately reviewed safe
 activation and rollback; this source checkpoint does not authorize another reload.
+
+A current read-only backend inventory passed in4.773 seconds with checked
+pre-action admission and independent collection-scope review4ec2748a. The
+original25 files and exact22 include membership were preserved. Dovecot's
+current root master/PID file, main configuration selection and ordinary kernel
+listeners were measured. The private helper, eleven account runtime paths,
+two private fragments, three purpose identities and policy port10058 were
+absent. No configuration, service, authentication or SQL operation occurred.
+These facts select the minimal safe Primary-only integration; they do not
+establish loaded-byte equality or service admission. Sole executor is
+`/root/s04_readiness`; engineering and independent review remain separate.
 
 The following attempt sequence is retained history and does not supersede the
 latest bounded outcome above.

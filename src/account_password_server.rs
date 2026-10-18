@@ -264,13 +264,18 @@ fn serve(
         crate::account_password_topology::RegistrationRefresh::capture(startup_deadline)
             .map_err(unavailable)?,
     );
+    let mut primary_stage = "primary_startup";
     let primary = crate::account_password_peer::PrimaryPeer::observe(
         metadata.clone(),
         startup.as_ref(),
         startup_deadline,
-    )
-    .ok()
-    .map(Arc::new);
+        &mut primary_stage,
+    );
+    match &primary {
+        Ok(_) => eprintln!("account_password_service stage=primary_ready result=ok"),
+        Err(error) => eprintln!("account_password_service stage={primary_stage} error={error:?}"),
+    }
+    let primary = primary.ok().map(Arc::new);
     let mut parent_plan =
         crate::account_password_confinement::ParentPlan::prepare(startup_deadline)
             .map_err(unavailable)?;
@@ -279,6 +284,7 @@ fn serve(
     if Instant::now() >= startup_deadline {
         return Err(Error::Expired);
     }
+    let admission_failure_reported = AtomicBool::new(false);
     let outcome = std::thread::scope(|scope| {
         let mut active: Vec<std::thread::ScopedJoinHandle<'_, ()>> = Vec::new();
         let mut observing: Option<
@@ -409,9 +415,12 @@ fn serve(
                             let startup = startup.clone();
                             let primary = primary.clone();
                             let store = store.clone();
+                            let admission_failure_reported = &admission_failure_reported;
                             active.push(scope.spawn(move || {
                                 let _ = match role {
-                                    0 => primary.ok_or(Error::Unavailable).and_then(|primary| {
+                                    0 => {
+                                        let mut stage = "admission_primary";
+                                        let result = primary.ok_or(Error::Unavailable).and_then(|primary| {
                                         admission_operation(
                                             stream,
                                             admission,
@@ -420,8 +429,16 @@ fn serve(
                                             files.accounts.clone(),
                                             primary,
                                             runtime.as_ref().map(|ready| &ready.runtime),
+                                            &mut stage,
                                         )
-                                    }),
+                                        });
+                                        if let Err(error) = result {
+                                            if first_admission_failure(admission_failure_reported) {
+                                                eprintln!("account_password_service stage={stage} error={error:?}");
+                                            }
+                                        }
+                                        result
+                                    },
                                     1 => match (runtime, primary) {
                                         (Some(ready), Some(primary)) => operation(
                                             stream,
@@ -515,6 +532,7 @@ struct ReadyRuntime {
     control: Arc<crate::account_password_peer::ControlPeer>,
     metadata: Arc<MetadataExecutor>,
 }
+#[allow(clippy::too_many_arguments)] // Independent existing authority plus closed diagnostic stage.
 fn admission_operation(
     mut stream: UnixStream,
     admission: &AdmissionService,
@@ -523,18 +541,23 @@ fn admission_operation(
     accounts: BTreeSet<String>,
     peer: Arc<crate::account_password_peer::PrimaryPeer>,
     ready: Option<&Runtime>,
+    stage: &mut &'static str,
 ) -> Result<(), Error> {
     if crate::account_password_process::execution_quarantined() {
         return Err(Error::CleanupUnconfirmed);
     }
     let deadline = accepted + Duration::from_secs(30);
+    *stage = "admission_peer";
     if crate::openbsd::unix_stream_peer_uid(&stream).map_err(unavailable)?
         != admission.password_peer_uid()
     {
         return Err(Error::Authentication);
     }
-    let profile = NativeProfile::from_primary(peer, deadline).map_err(unavailable)?;
+    *stage = "admission_profile";
+    let profile =
+        NativeProfile::from_primary_with_stage(peer, deadline, stage).map_err(unavailable)?;
     let executor = PrimaryExecutor::new(&profile, deadline);
+    *stage = "admission_password_connection";
     admission.password_connection(&mut stream, deadline, |request, inherited| {
         if let Some(runtime) = ready {
             return runtime.admission(request, &executor, deadline.min(inherited));
@@ -623,4 +646,29 @@ fn fixed_submission_namespace(
         control,
         metadata,
     })
+}
+
+fn first_admission_failure(reported: &AtomicBool) -> bool {
+    !reported.swap(true, Ordering::SeqCst)
+}
+
+#[cfg(test)]
+mod diagnostic_tests {
+    use super::*;
+    #[test]
+    fn first_failure_is_bounded_across_concurrent_connections() {
+        let reported = AtomicBool::new(false);
+        let winners = std::thread::scope(|scope| {
+            let handles = (0..8)
+                .map(|_| scope.spawn(|| first_admission_failure(&reported)))
+                .collect::<Vec<_>>();
+            handles
+                .into_iter()
+                .map(|handle| handle.join().unwrap())
+                .filter(|first| *first)
+                .count()
+        });
+        assert_eq!(winners, 1);
+        assert!(!first_admission_failure(&reported));
+    }
 }
