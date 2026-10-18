@@ -151,3 +151,42 @@ fn unknown_native_authority_never_creates_peer_or_dispatches_metadata() {
     assert_eq!(ps_args(1234), vec!["-p", "1234", "-o", PS_FIELDS]);
     assert_eq!(fstat_args(1234), vec!["-n", "-p", "1234"]);
 }
+
+#[test]
+fn primary_configuration_membership_is_fixed_and_control_is_separately_required() {
+    // These are graph-policy inputs, not native file or loaded-config witnesses.
+    let files = |control: bool| {
+        PRIMARY_CONFIGURATION_PATHS
+            .iter()
+            .copied()
+            .filter(|path| control || *path != CONTROL_FRAGMENT)
+            .map(|path| PrimaryFile {
+                path,
+                identity: [0; 11],
+                digest: [0; 32],
+            })
+            .collect::<Vec<_>>()
+    };
+    let names = |files: &[PrimaryFile]| {
+        files
+            .iter()
+            .map(|file| file.path)
+            .filter(|path| path.starts_with("/etc/dovecot/conf.d/") && path.ends_with(".conf"))
+            .map(str::to_owned)
+            .collect::<BTreeSet<_>>()
+    };
+    let primary = files(false);
+    let control = files(true);
+    assert_eq!(primary.len(), 26);
+    assert_eq!(control.len(), 27);
+    assert!(primary_include_names_match(&names(&primary), &primary).is_ok());
+    assert!(primary_include_names_match(&names(&control), &control).is_ok());
+    // The same captured graph rejects either subsequent membership transition.
+    assert!(primary_include_names_match(&names(&control), &primary).is_err());
+    assert!(primary_include_names_match(&names(&primary), &control).is_err());
+    let mut extra = names(&primary);
+    extra.insert("/etc/dovecot/conf.d/99-unobserved.conf".to_owned());
+    assert!(primary_include_names_match(&extra, &primary).is_err());
+    assert!(captured_control_configuration(&primary).is_err());
+    assert!(captured_control_configuration(&control).is_ok());
+}

@@ -15,13 +15,15 @@ native account lookup; historical UID518 does not establish a kernel binder.
 The private purpose child uses only this socket and its existing public utility
 graph. It receives no SQL configuration, DSN, keys or additional database grants.
 
-Current missing producer/consumer integration is in
-`src/account_password_native.rs` (`NativeProfile::Primary`, `observe`, `socket`)
-and the existing `src/account_password_peer.rs::Startup`. NativeProfile currently
-pins the utility graph and listener owner/group plus an unavailable
-`PRIMARY_PEER_UID=None`; it does not yet bind this private service to the current
-public master and accepting private auth process. Keep that gate unavailable
-until actual matching native evidence exists.
+The source producer now connects actual `Startup` and `PrimaryPeer` to
+`NativeProfile::from_primary` and the existing paired admission service. Primary
+captures its mandatory26-file configuration graph independently of Control.
+If the fixed Control include exists initially, its existing protected identity
+and expected hash are captured too. Either later membership transition or any
+unobserved include is refused. Control still requires the captured Control
+configuration plus its independent actual socket/IPC authority; optional absence
+never supplies mutation authority. Legacy qualification flags remain unavailable,
+and source integration is not matching native or installed acceptance.
 
 Root must pin the installed parent configuration containing the exact existing
 fragment, its protected owner/mode/inode/bounded bytes/hash, and complete
@@ -52,6 +54,14 @@ authentication stays unchanged. Public Pending authentication must still fail.
 No mail session, provider message or operator password change belongs to this
 private prerequisite. Source review and the fragment's presence are not native
 or installed PASS.
+
+Do not add anvil listeners to the running master through a live reload.
+Dovecot2.3.21.1 does not support that listener migration. The October18 controlled
+fixture lost master continuity after such a reload; the precise fatal cause is
+unproven. Its original configuration and measured service status were restored,
+and exact fixture disposal is independently accepted. Parser/reload exit0 does
+not establish daemon continuity. Control needs a separately reviewed supported
+activation strategy; it is not a prerequisite for Primary-only admission.
 
 Root installs only the missing existing fragment using the maintained bounded
 configuration helper and preserved original bytes/metadata, syntax-checks, then

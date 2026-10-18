@@ -1274,3 +1274,17 @@ owned-child selection and WNOWAIT. Current2 G31 remains FAIL; no Pending/hash/CA
 SQL output unknown. Fresh recovery/cleanup PASS applies only to owned synthetic
 state. Existing mandatory duplex check and newly built native component required;
 no installed workflow, S04-02, sprint or release acceptance inferred.
+
+### 2026-10-18 — S04-02 immutable Primary configuration boundary
+
+The existing password-change scenarios and20 obligations are unchanged. Source
+now permits Primary-only admission with its captured mandatory26 files; optional
+Control must be exact and captured initially, and include membership transitions
+or unknown files are refused. Control's captured include and independent native
+socket/IPC authority remain mandatory for mutation. Five focused peer tests are
+source policy evidence only. Actual production admission and the installed
+password journey remain OPEN. The controlled anvil-reload failure, separately
+measured service restoration and exact fixture disposal are retained in the
+execution ledger/decision log; no failed or uncertain native result becomes PASS.
+Do not repeat an unsupported anvil-listener live reload or treat syntax exit0 as
+service-readiness evidence.

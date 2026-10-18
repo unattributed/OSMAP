@@ -1,37 +1,41 @@
 # Current Project Status
 
-## S04-02 current Rust integration — 2026-10-18
+## S04-02 current source and operational limits — 2026-10-18
 
-Latest matching source is signed515a99c9, verified Shopkeeper, with the normal
-mandatory gate PASS and no subsequent synchronization (ahead9/behind0 against
-last-fetched origin). Build5 compiled all456 exact inputs and produced e473ab94.
-The controlled native SQL/hash body reached its guarded PASS branch: actual
-conditional Alice write/readback, persisted Contained0/known write time and
-tested Bob preservation. The outer qualifier remains FAIL49.436s; its separate
-17-column comparison and original cleanup were not reached. Its historical
-file-reference owner is UNKNOWN. No password case was repeated.
+The previous completed source checkpoint is signed
+`abe5b7b71e35b195359f7f6d570bd2625d5acb67`, verified Shopkeeper; its normal
+mandatory gate passed1830 Rust cases. No subsequent synchronization is authorized.
+The current source increment removes an unnecessary Control-configuration
+requirement from Primary-only admission. Its mandatory26-file graph is captured
+once. Optional Control, when present, receives the same protected identity/hash
+checks; either later membership transition or an unknown include is refused.
+Control still requires its captured configuration and the existing independent
+socket/IPC authority. Mutation readiness and native qualification flags are unchanged.
+Five focused peer tests pass; this is source policy evidence, not native admission.
 
-Fresh recovery4 PASS4.275s explicitly confirmed all three post-body predicates,
-exact restricted database auth/seven grants, empty purpose processes and zero
-current stage references. Independently reviewed cleanup4 PASS7.546s removed
-only two reserved rows, one database user, eight private files and two purpose
-users/groups. All22 owned groups and scratch were gone without uncertainty;
-stages, permanent markers and empty directories remain. Independent assessment
-33649cc9 accepts this bounded prerequisite. Full S04-02, installed authentication,
-IMAP/SMTP/browser containment and owner usability remain OPEN; native flags and
-the installed form remain disabled. Next work is the existing production
-Startup-to-Primary/Control path, reusing current browser/client delegation.
+The controlled production-service fixtures never reached Rust helper/client
+startup or current-password authentication. After an exact-warning fixture repair,
+a changed case passed configuration syntax checking and requested a reload, then
+lost the existing Dovecot master. Fresh observation confirmed the service stopped.
+The added anvil listener is an unsupported live-reload strategy in Dovecot2.3.21.1;
+the precise native fatal cause remains unknown. Do not repeat that reload.
 
-The next source increment now connects actual fixed service Startup to measured
-private Primary and Control capabilities and the existing production consumers.
-Authenticated admission reuses the real shared account guard, current-password
-check and signed epoch response. Mutation still requires measured Control plus
-the actual registered submission namespace; missing authority stays cold.
-The protected main-config selection, include set, accepting processes and
-reciprocal sockets are rechecked under the original deadlines. Local focused
-composition/parser tests and independent source review pass; matching native
-service, loaded-config, installed journey and owner usability remain unrun.
-No qualification Boolean, new dependency or duplicate browser path was added.
+The two owned temporary includes were removed with all25 original files preserved.
+Fresh independent observation then confirmed successful service status, a new root
+master matching its PID file and expected descendants. The earlier restoration
+receipt remains uncertain; it is distinct from the later measured recovery.
+Exact fixture disposal subsequently removed two reserved rows, fifteen private
+files and three users/groups. Four empty directories retained their inodes and
+were secured as root:root0700; stages and permanent markers remain. Independent
+reviews de9f7bf4 and89cfd318 accept only service-status restoration and enumerated
+disposal. Historical failed/uncertain receipts and executor/reviewer errors remain.
+
+The accepted native SQL/hash prerequisite33649cc9 is reused without repeating its
+password case. Actual Primary-only service admission, loaded configuration,
+Control/IMAP/SMTP/browser containment, installed password change and owner UAT
+remain OPEN. The form remains disabled. No provider message or operator credential
+was used in this work. Further native work requires a separately reviewed safe
+activation and rollback; this source checkpoint does not authorize another reload.
 
 The following attempt sequence is retained history and does not supersede the
 latest bounded outcome above.

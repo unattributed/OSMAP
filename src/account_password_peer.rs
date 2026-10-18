@@ -877,10 +877,12 @@ fn query<E: CommandExecutor + ?Sized>(
 const PRIMARY_AUTH: &str = "/usr/local/libexec/dovecot/auth";
 const PRIMARY_SOCKET: &str = "/var/dovecot/osmap-account-auth-client";
 const PRIMARY_FRAGMENT: &str = "/etc/dovecot/conf.d/99-osmap-private-primary.conf";
+const CONTROL_FRAGMENT: &str = "/etc/dovecot/conf.d/99-osmap-private-control.conf";
 const PRIMARY_FRAGMENT_SHA256: [u8; 32] = [
     116, 100, 239, 200, 106, 6, 129, 145, 121, 10, 118, 175, 51, 64, 37, 104, 100, 223, 158, 130,
     219, 195, 1, 118, 1, 94, 138, 64, 48, 74, 81, 244,
 ];
+// Maximum fixed read grants; actual PrimaryFile membership is captured once.
 pub(crate) const PRIMARY_CONFIGURATION_PATHS: &[&str] = &[
     "/etc/dovecot/dovecot.conf",
     "/etc/dovecot/conf.d/10-auth.conf",
@@ -1179,7 +1181,49 @@ fn socket_listener(raw: &str, master: &Row, path: &str, pin: &FilePin) -> Result
     }
     found.ok_or(Error::Refused)
 }
-fn primary_include_matches(deadline: Instant) -> Result<(), Error> {
+fn primary_configuration_files(deadline: Instant) -> Result<Vec<PrimaryFile>, Error> {
+    let mut files = Vec::with_capacity(PRIMARY_CONFIGURATION_PATHS.len());
+    for &path in PRIMARY_CONFIGURATION_PATHS {
+        if Instant::now() >= deadline {
+            return Err(Error::Expired);
+        }
+        if path == CONTROL_FRAGMENT {
+            match fs::symlink_metadata(path) {
+                Err(error) if error.kind() == std::io::ErrorKind::NotFound => continue,
+                Err(_) => return Err(Error::Unavailable),
+                Ok(_) => {}
+            }
+        }
+        // Present Control receives the same identity/hash checks as every
+        // mandatory file. Its absence is never reconsidered as authority.
+        files.push(primary_file(path, deadline)?);
+    }
+    Ok(files)
+}
+fn captured_control_configuration(files: &[PrimaryFile]) -> Result<(), Error> {
+    if files.iter().any(|file| file.path == CONTROL_FRAGMENT) {
+        Ok(())
+    } else {
+        Err(Error::Refused)
+    }
+}
+fn primary_include_names_match(
+    found: &BTreeSet<String>,
+    files: &[PrimaryFile],
+) -> Result<(), Error> {
+    let expected = files
+        .iter()
+        .map(|file| file.path)
+        .filter(|path| path.starts_with("/etc/dovecot/conf.d/") && path.ends_with(".conf"))
+        .map(str::to_owned)
+        .collect::<BTreeSet<_>>();
+    if *found != expected {
+        Err(Error::Refused)
+    } else {
+        Ok(())
+    }
+}
+fn primary_include_matches(files: &[PrimaryFile], deadline: Instant) -> Result<(), Error> {
     let mut found = std::collections::BTreeSet::new();
     for (index, entry) in fs::read_dir("/etc/dovecot/conf.d")
         .map_err(|_| Error::Unavailable)?
@@ -1197,16 +1241,7 @@ fn primary_include_matches(deadline: Instant) -> Result<(), Error> {
             found.insert(format!("/etc/dovecot/conf.d/{name}"));
         }
     }
-    let expected = PRIMARY_CONFIGURATION_PATHS
-        .iter()
-        .filter(|path| path.starts_with("/etc/dovecot/conf.d/") && path.ends_with(".conf"))
-        .map(|path| path.to_string())
-        .collect::<std::collections::BTreeSet<_>>();
-    if found != expected {
-        Err(Error::Refused)
-    } else {
-        Ok(())
-    }
+    primary_include_names_match(&found, files)
 }
 impl PrimaryPeer {
     pub(crate) fn observe(
@@ -1215,7 +1250,8 @@ impl PrimaryPeer {
         deadline: Instant,
     ) -> Result<Self, Error> {
         startup.recheck(executor.as_ref(), deadline)?;
-        primary_include_matches(deadline)?;
+        let mut files = primary_configuration_files(deadline)?;
+        primary_include_matches(&files, deadline)?;
         let (passwd, bytes) = primary_file_bytes("/etc/passwd", deadline)?;
         let records = std::str::from_utf8(&bytes).map_err(|_| Error::Refused)?;
         let matches = records
@@ -1246,10 +1282,6 @@ impl PrimaryPeer {
         {
             return Err(Error::Refused);
         }
-        let mut files = PRIMARY_CONFIGURATION_PATHS
-            .iter()
-            .map(|path| primary_file(path, deadline))
-            .collect::<Result<Vec<_>, _>>()?;
         files.push(passwd);
         files.push(primary_file(PRIMARY_AUTH, deadline)?);
         let auth = file_pin(PRIMARY_AUTH)?;
@@ -1294,7 +1326,7 @@ impl PrimaryPeer {
         {
             return Err(Error::Refused);
         }
-        primary_include_matches(deadline)?;
+        primary_include_matches(&self.files, deadline)?;
         for old in &self.files {
             let new = primary_file(old.path, deadline)?;
             if old.identity != new.identity || old.digest != new.digest {
@@ -1307,7 +1339,7 @@ impl PrimaryPeer {
         {
             return Err(Error::Refused);
         }
-        primary_include_matches(deadline)
+        primary_include_matches(&self.files, deadline)
     }
 }
 
@@ -1622,6 +1654,7 @@ impl ControlPeer {
         deadline: Instant,
     ) -> Result<Self, Error> {
         primary.recheck(deadline)?;
+        captured_control_configuration(&primary.files)?;
         let auth = socket_probe(
             primary.executor.as_ref(),
             &primary.startup,
@@ -1661,6 +1694,7 @@ impl ControlPeer {
     }
     pub(crate) fn identities(&self, deadline: Instant) -> Result<[u32; 3], Error> {
         self.primary.recheck(deadline)?;
+        captured_control_configuration(&self.primary.files)?;
         let auth = socket_probe(
             self.primary.executor.as_ref(),
             &self.primary.startup,

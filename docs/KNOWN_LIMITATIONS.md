@@ -14,6 +14,17 @@ qualify the actual service/configuration/namespace.
 Normal signed source review before any push or synchronization remains required;
 the latest resumption does not authorize a push.
 
+The current Primary-only source graph accepts the mandatory26 files without
+Control, and binds optional Control immutably when present. Local policy tests
+pass; actual service admission and loaded-byte qualification remain open.
+The controlled service experiment did not reach helper/client authentication;
+an anvil-listener live reload lost master continuity and a fresh observation
+confirmed Dovecot stopped. The original configuration and service status were
+subsequently restored and the exact temporary fixture disposed of, independently
+reviewed as de9f7bf4/89cfd318. Original failed/uncertain outcomes remain recorded.
+Do not add or change anvil listeners through a live reload. No full password
+journey or owner usability claim follows from source checks or service recovery.
+
 ## Historical operator stop — 2026-10-17
 
 Development, live/native qualification and deployment are stopped by explicit

@@ -11552,3 +11552,64 @@ operator delegation assigns account_backend the single canonical/host/Git
 queue, with root coordinating and separate agents implementing/reviewing.
 Normal signed source admission and operator review before synchronization stay
 mandatory; no push is authorized by this cleanup.
+
+## 2026-10-18 — service-admission failure and exact recovery
+
+The signed source checkpoint `abe5b7b71e35b195359f7f6d570bd2625d5acb67`
+passed the normal mandatory checks. Its compiler and local tests did not qualify
+production service admission. The controlled service-admission case stopped
+before starting the Rust helper or client, so no current-password authentication,
+credential change, installed password journey or owner UAT is accepted.
+
+The first fixture rejected configuration parsing that exited successfully with
+stderr. A separate read-only, order-preserving parse identified only three exact
+Dovecot listener-path warnings. The corrected fixture permits those literal,
+LF-terminated warnings only for its fixed syntax command; unknown diagnostics
+and every other command retain strict refusal. The original failed diagnostic
+bytes were not retained, so matching byte counts are supporting evidence rather
+than historical byte-identity proof. A later constant-binding error used a string
+where the remote producer required a Path; executor and independent review both
+missed that type distinction. It refused before opening the stage or reserving
+execution, and its failure remains recorded.
+
+The changed case then passed syntax checking and requested a Dovecot reload,
+but lost the existing master's continuity. It did not reach helper/client startup.
+Fresh process, PID-file and service observations confirmed Dovecot was stopped.
+Upstream Dovecot 2.3.21.1 explicitly treats changes to anvil listeners during
+reload as unsupported. The fixture's added private anvil listener is therefore
+an unsafe activation strategy; the precise native fatal cause is unproven.
+Do not repeat that reload. A successful parser or reload command is insufficient
+service-readiness evidence.
+
+Exactly the two owned temporary includes were removed; all 25 original
+configuration files remained unchanged. The existing service was started.
+Its first restoration receipt remained uncertain because generic finite-child
+group cleanup was wrongly reused for a deliberately persistent service.
+Fresh independent observations then established successful service status,
+root master PID 43724 with its matching PID file and expected descendants.
+The daemon's group differed from the uncertain control-command group; an actual
+daemon kill was not established. Preserve the original failed/uncertain receipts
+and distinguish them from the later measured restoration.
+
+Fresh custody checks then supported exact disposal: two reserved rows, fifteen
+private files and three temporary users/groups were removed. All eleven cleanup
+command groups were reaped and absent, with no mutation or cleanup uncertainty.
+Four empty purpose-group directories retained their inodes and were secured as
+root:root 0700; this is privilege cleanup, not a claim of original-mode restoration.
+Evidence stages, permanent markers and other directories remain. Independent
+reviews `de9f7bf4` and `89cfd318` accept service-status restoration and enumerated
+fixture disposal only. No provider message or operator credential was used.
+
+The incident native queue is closed. Further development must remove the
+unnecessary dependency between Primary-only admission and Control configuration,
+while preserving exact immutable include custody and independent Control
+capability requirements. Mutation, native qualification flags, installed password
+controls and the full S04-02 journey remain unaccepted. No further service change
+or native case is authorized by a source-only checkpoint.
+
+The reviewed two-path source correction now captures the mandatory26/optional27
+configuration membership immutably and explicitly requires captured Control
+configuration before Control socket/IPC authority. Five focused peer tests pass;
+actual native filesystem/loaded-config/service admission remains unqualified.
+Keep the existing sealed maximum path grants; a granted pathname is not a
+configured capability. No native flag, frontend path or dependency changed.
