@@ -10273,7 +10273,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "status": "PENDING",
     "reference": "Only minimal well-defined own-password usability after all agent-owned development/matching deployed QA/independent audit PASS. No operator password is changed by agent qualification; use controlled disposable Alice and preserve Bob/operator state. NOT RUN."
   },
-  "next_action": "Integrate exact four-path Primary/admission closed diagnostic source5e2b reviewed184ccb, retain maskchain87d6 and closedconsumer1a224 source-only. Normal signed source admission with short privateTMPDIR/current unchangedderivedreports, then one reviewed currenthelper-only build/capture and correctly bound fresh changed case; unchanged client reused. Full installed password workflow remains required; no flag shortcut/UATclaim.",
+  "next_action": "Complete exactreviewed forwardgovernancecorrection7b0a17c8 with normalshortTMPDIRsignedhook; actualhelperbuildb067 alreadyPASS/currentfd608456source, so prove futurecorrectedHEADinputequivalence/no duplicatebuild. Then approvednormalpush+freshequality and existingonehelpercapture/freshlocalstage/currentchangedcase. No fullworkflow/UATclaim.",
   "accountability": {
     "functional_exit": "Working own-account Settings password change through authoritative Toronto credentials, shared epoch, browser/IMAP/SMTP/cache containment, old-password refusal/new-login success and Bob/mail preservation, followed by matching isolated installation and independent audit. Fixture changes are prerequisites, not product delivery.",
     "owner": "/root/s04_readiness",
@@ -13296,6 +13296,50 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "elapsed_status": "MEASURED",
         "elapsed_seconds": 9.33,
         "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/primary-only-readiness-cap-correction3/retained-fixture-cleanup1/result.json SHA256 245c4a0bd679ee690054e8c26891e1f4ea6090e62cbde5b521468d2ecd466212; actual9.33s/preactionPASS/SSH0CONFIRMED/17utilities0reapedgone/scratchgone/no uncertainties. SoleinitialreferenceclassifiedlivecurrentmasterPrimarylistener, ownedfragmentrollback/original25+22/samemasterrcok/Primarypath+kernelabsence;3stalehelpersocketskernelzero/exactunlink;2syntheticrows/16files/2users+groupsremoved;4dirsretaininode/normalize0:0/0700/no originalmodeclaim. Stage/claims retained; nooperatorcredential/provider/authaction. Independent65e530a7faada20a8c35f74900de3f744ff37d586bcfea3625507b0b62e42251 accepts enumeratedowneddispositiononly; originalcase3FAIL/UNCERTAIN/C15UNKNOWN unchanged."
+      },
+      {
+        "id": "S04-02-primary-diagnostic-source-admission1",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root/s04_readiness",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "5e2b2e29baf27287bd757c35b51843ca0159105a264b29e7c0df23e2cc4ecc4b",
+        "change_reference": "Four exact product paths over signeddaed2908/452unchanged inputs. Static metadata-free stage/error diagnostics and one firstfailure latch, no authority/I/O/order/deadline/protocol change; author13distinct targetedPASS reused. Current docs record actual push/recovery/failures/owner/window, currentderived scanner reports regenerate with unchangedgenerators. Normal signedcommit securityhook once with short privateTMPDIR; no extra focusedsuite/clientbuild/host action.",
+        "success_chain_review": {
+          "reviewer": "/root/account_backend",
+          "reference": "primary-admission-diagnostic1/independent-product-source-review.json SHA256 184ccb60ba140119fca151d04079471ebebe14cc7aef164edcd29e60e6a949df; exact456baseline/fourpathpatch/sourceauthority/producer-errorboundconsumer reviewed. Separate closed physicalLF fixtureconsumer review1a22497fc3a05925e8eeb32789b2d6a7742ac6777ae3911965fc17adaf297bda and wholelauncher87d6 retained sourceonly, no nativebindings.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 292.284,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/primary-admission-diagnostic1/canonical-admission1/signed-source-proof.json; GoodShopkeeperfd608c1/normalhook1834Rust0fail48nativeignores/clean-ahead1-lastfetch. SOURCEONLY/no push. EXECUTORERROR unintended historicalSlice4reportrefresh retained inthissignedcommit; exactparentrestore+currentV11regen beforeanypush. MandatoryhookPASS does not establish broadergovernance/release/UAT."
+      },
+      {
+        "id": "S04-02-native-diagnostic-helper-build3",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root/s04_readiness",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "d5922194fdaf32e58b986553cd1025e7e46e207052b833506ca420c31d89a2cf",
+        "change_reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/native-diagnostic-helper-build3/readiness.json SHA256 77845505a5b2094ec94733f33cdb3482b55f466e55dd96f8008ecf05ba692e60; exactsignedfd608/456actualsource/4diagnosticschanged452same/archive79b71b15/manifestf1b89084/154closure. Existinghelperonlyofflinebuild230/180/260; no testoverlay/client/app/service/auth/mutation. Forwardreportcorrectionpendingseparately,no sourcebytechange; aftercorrectiveHEADprove456equivalence withoutrebuild.",
+        "success_chain_review": {
+          "reviewer": "/root/account_backend",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/native-diagnostic-helper-build3/independent-signed-binding-review.json SHA2562e24d9089c503dcd2f4ce3fc5f85dd5c4b508ebf83cc37640e23b7ae83bb57da; wholederivative3865a5db + verifiedactualfd608literal only, actualHEAD/productpins checked inside immutableexecutor beforeSSH.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 58.442,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/native-diagnostic-helper-build3/result.json SHA256b067de6207d87edbc4b1db563d61b68f367f3232f0b94d53dc94e71bf9eb30b7; preactionPASS/SSH0CONFIRMED/freshfalse/current456beforeafter/groupgone/scratchgone/nouncertainty. Helperb762aa9a30e289eb4f7dd4720d031b70311153c7122b22fec1891e9fa0bbcc66/64363776B. Actualcompiledsourcefd608 retained; no app/test/service/account execution; correctedHEAD later456equivalence instead ofrebuild."
       }
     ],
     "prior_investigations": [
@@ -13590,16 +13634,16 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
       }
     ],
     "next_attempt": {
-      "id": "S04-02-primary-diagnostic-source-admission1",
+      "id": "S04-02-primary-diagnostic-governance-correction1",
       "boundary": "authoritative-native-password-workflow",
       "owner": "/root/s04_readiness",
       "scope": "FIXTURE",
       "adoption": "CURRENT",
-      "source_revision": "5e2b2e29baf27287bd757c35b51843ca0159105a264b29e7c0df23e2cc4ecc4b",
-      "change_reference": "Four exact product paths over signeddaed2908/452unchanged inputs. Static metadata-free stage/error diagnostics and one firstfailure latch, no authority/I/O/order/deadline/protocol change; author13distinct targetedPASS reused. Current docs record actual push/recovery/failures/owner/window, currentderived scanner reports regenerate with unchangedgenerators. Normal signedcommit securityhook once with short privateTMPDIR; no extra focusedsuite/clientbuild/host action.",
+      "source_revision": "fd608c13012b6fd90ee2ff186dd95f3ba2028897",
+      "change_reference": "Forward correction of executorintroduced historicalbaseline drift only; exactdaed2908parent historicalSlice4bytes SHA2562dbac6136e64e93d3eebc1084538f0d72244480998e8860c1a23f8b9d3acf346 restored, currentV11refinedreport regenerated againstthatbaseline. Fourproductsourcehashes unchanged from184ccb. Preserve actual292.284s/error/signature/history; normalrequiredsignedhook with shortprivateTMPDIR/noextraQA/noamend/pushuntilcorrected.",
       "success_chain_review": {
         "reviewer": "/root/account_backend",
-        "reference": "primary-admission-diagnostic1/independent-product-source-review.json SHA256 184ccb60ba140119fca151d04079471ebebe14cc7aef164edcd29e60e6a949df; exact456baseline/fourpathpatch/sourceauthority/producer-errorboundconsumer reviewed. Separate closed physicalLF fixtureconsumer review1a22497fc3a05925e8eeb32789b2d6a7742ac6777ae3911965fc17adaf297bda and wholelauncher87d6 retained sourceonly, no nativebindings.",
+        "reference": "primary-admission-diagnostic1/governance-correction1/independent-forward-correction-review.json SHA2567b0a17c8a11f32fd3c0fda90aac3683697a49534efaa32f256da50d1bba4a895; exactintroduceddriftcorrection only; preexistingf306vs112309 mismatchnotfixed/nofullV10claim.",
         "covers": [
           "producer",
           "cleanup",

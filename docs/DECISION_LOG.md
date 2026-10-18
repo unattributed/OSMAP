@@ -11678,3 +11678,20 @@ caused the historical unavailable reply. Preserve that first-request cause as
 unknown and expose only a bounded closed stage diagnostic if existing evidence
 cannot identify it. Do not rebuild the unchanged client or repeat native admission
 without an independently reviewed changed boundary.
+
+
+## 2026-10-18 — preserve baseline after executor regeneration error
+
+Normal signed diagnostic-source admission fd608c1 passed its mandatory hook in
+292.284 seconds (1834 Rust tests passed, zero failed,48 explicit native ignores).
+The executor also regenerated the historical Slice4 assumption register in error.
+That second refresh was unnecessary: the normal hook's V11 path checks only the
+current remediation report, while reading the preserved Slice4 baseline. The
+broader V10 governance path compares the historical register with its claims;
+a normal-hook pass does not establish that broader consistency. Do not push the
+inconsistent state or amend its signed history. Restore exactly the parent baseline
+(SHA2562dbac6136e64e93d3eebc1084538f0d72244480998e8860c1a23f8b9d3acf346),
+regenerate only the current remediation report and admit the minimal forward
+correction normally. The four product files and their reviewed tests remain
+unchanged; no extra focused suite or native/client rebuild follows from this
+reporting correction. The executor owns its additional gate cost.

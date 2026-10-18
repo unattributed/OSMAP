@@ -38,11 +38,19 @@ physical-LF fixture consumer1a22497f and whole launcher correction87d6e331 remai
 source-only until fresh current native bindings. The normal signed gate is next;
 no native request result or installed password change is inferred.
 
-Current signed source is `daed2908e7da75678697b5023e49c10a1e2a33b2`.
-The operator-authorized normal push passed its mandatory security hook in
-279.078 seconds; all eleven outgoing Shopkeeper signatures verified. Fresh
-fetch proved local/origin equality and clean 0/0 before this continuation's
-records. This is source synchronization, not password deployment or UAT.
+Current signed diagnostic source is `fd608c13012b6fd90ee2ff186dd95f3ba2028897`.
+Its normal hook passed292.284 seconds with1834 Rust tests, zero failed and48
+explicit native ignores; Good Shopkeeper signature verified. It is not pushed.
+The executor's unnecessary historical-register refresh requires an exact forward
+correction before synchronization; existing broader V10 limitations are preserved.
+The earlier normal push279.078 seconds synchronized daed2908 with fresh equality;
+that historical sync does not cover the current diagnostic commit.
+
+One helper-only native buildb067de62 passed58.442 seconds against the456 actual
+signed diagnostic inputs. The binary is b762aa9a/64363776 bytes, fresh=false,
+source before/after matching, owned build group and scratch gone. No application,
+service or native test executed. A later report-only corrected HEAD must prove
+identical456 compiler inputs and reuse this binary; no duplicate build is needed.
 
 The current source increment removes an unnecessary Control-configuration
 requirement from Primary-only admission. Its mandatory26-file graph is captured
