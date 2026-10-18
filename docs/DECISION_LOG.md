@@ -11744,3 +11744,71 @@ file only; the production peer source remains unchanged. Mechanical whitespace-o
 review and current remediation offset refresh precede one normal required retry.
 Do not rerun focused tests, rewrite the historical baseline or create a new native
 build for this unexecuted packet's test-format update.
+
+
+## 2026-10-18 — cold startup passes; first sealed profile recheck remains open
+
+Changed case5 failed19.105 seconds. The actual Primary startup now reports ready,
+then the first admission returns `primary_recheck_main_selection` / `Unavailable`.
+No password authentication or mutation is established, and the precise cause remains
+unknown. Independent1fed23e3 accepts exact owned disposition:41 finite child groups
+and the outer group gone, normal helper exit0, same-master final service/original25
+configuration/full17 rows/Active0 preserved and exact fixture disposal. Keep overall
+FAIL/UNCERTAIN/nested UNKNOWN untouched. No additional recovery observer is needed.
+
+The next functional source boundary is the post-seal metadata/main-selection recheck.
+While its static audit continues, root authorized the already defined minimal
+read-only NC/CA/loader prerequisite in the same queue after safe disposition. It
+supplies measured existing-utility inputs for concrete first-registration code;
+it must not contact a network service, authenticate, query SQL, activate a feature,
+change configuration or become a new generic collector. It is a S04-02 dependency,
+not completion or a substitute for the installed password workflow.
+
+
+## 2026-10-18 — fixed measured public graphs and sealed metadata design
+
+The single combined fixed public-facts action e32b0b3d passed4.192 seconds after
+an explicitly retained0.050-second local prerequisite refusal. That refusal never
+dispatched SSH or created an attempt marker; owner and independent reviewer732776fc
+acknowledged the prior source-format and native case5 failures before the same
+immutable read-only packet ran. Four finite utility groups were reaped/absent.
+Actual fstat depends on libc103/libkvm18/ld.so; actual ps ldd reports only its
+executable/loader. NC help, CA and bounded fixed TLS library graph were captured.
+No network-service, authentication, SQL, configuration or service write occurred.
+
+Source analysis separately identifies ps self-unveil incompatibility with the
+existing locked execution view. Select the smallest existing-libc native sysctl
+adapter for three fixed process metadata shapes after sealing, retaining external
+pre-seal capture and exact row/argv consumers. Independent before-edit design5dcb
+permits isolated authoring only. Preserve all identity guards and finite deadlines;
+no broker, global promise/directory relaxation or cached authority substitute.
+Measured fstat closure and fixed bootstrap NC constructor remain explicit source
+inputs. Final source review and matching installed functional evidence remain
+required; no extra collector or unchanged credential replay is justified.
+
+
+The exact nine-path source cf0656a7 is integrated after independent4fff670f
+review of native buffer framing, actual-seal dispatch, measured fstat leaf custody
+and preserved authority/row/argv guards. Four changed-boundary author tests pass
+and touched-file formatting/apply checks pass before the mandatory normal gate.
+The OpenBSD syscall bridge remains uncompiled/unexecuted at this intake; source
+acceptance does not establish admission, password change, installed readiness or
+UAT. Only the current remediation report is regenerated; historical baseline and
+frozen claims remain unchanged.
+
+
+The first mandatory sealed-metadata source gate failed127.841 seconds because
+six unsafe expressions were outside the repository’s reviewed OpenBSD FFI boundary.
+No commit was created. Owner intake, author and independent source review missed
+that placement rule; preserve the failure and cost. Exact three-path relocation
+c463ad11 moves the same unsafe native bridge into openbsd.rs behind a fixed safe
+API, with original bounds and guards unchanged. Independent55285d93 clears that
+delta; existing CWE scanner passes0.826 seconds and one changed row-bridge control
+passes. No scanner exception, broad test campaign or permission waiver is added.
+
+Discontinue the isolated NC synthetic-qualifier approach and retain its artifacts;
+it did not implement actual production first registration. No S04-02 product
+requirement is parked or removed. Persistent submission-process/IPC topology
+registration and refresh against the actual submission master remain required
+active work after the metadata correction. Measured public NC facts remain
+reusable facts, with no installed TLS or product completion claim.

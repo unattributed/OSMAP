@@ -2,7 +2,56 @@
 
 ## S04-02 current source and operational limits — 2026-10-18
 
-The subsequent diagnostic-only held-stream probe passed6.573 seconds (2e5d528f),
+The first mandatory metadata-source gate failed127.841 seconds at the existing
+CWE rule: unsafe expressions must live in the reviewed OpenBSD FFI boundary. No
+commit was created. Exact three-path relocation55285 preserves all behavior and
+bounds, moves native operations to openbsd.rs, and passes the existing scanner
+and one changed row-bridge control. One normal signed gate retry is next.
+The isolated NC synthetic-qualifier approach is discontinued with artifacts
+retained; real persistent submission-registration/refresh remains required active
+S04-02 engineering. No deliverable is parked by that approach correction.
+
+One combined fixed public-facts action passed4.192 seconds (e32b0b3d), with four
+finite utilities reaped/absent and no network-service, authentication, SQL, account,
+configuration or service mutation. The actual fstat closure includes libkvm18;
+ps reports executable/loader only. NC/CA and its fixed public TLS graph are measured.
+A separate0.050-second local pre-action refusal is retained as NOT DISPATCHED;
+combined source-format and case5 failure acknowledgment preceded the actual action.
+The next source design uses three fixed native sysctl shapes for sealed PS metadata,
+retaining external pre-seal capture and exact consumers; measured fstat libraries
+remain narrowly pinned. Independent design5dcb and exact nine-path source4fff670f now clear canonical
+intake. Four essential author tests plus touched-file formatting/apply checks
+pass; the native syscall bridge is not yet compiled or executed. The normal
+signed source gate and matching helper-only native build are next.
+No broker, global confinement waiver or extra host observer is introduced.
+
+Latest changed case5 failed19.105 seconds (40d35c67). The cold-readiness repair
+now passes actual startup (`primary_ready result=ok`), then the first admission
+refuses at `primary_recheck_main_selection error=Unavailable`; its precise post-seal
+cause remains unknown and no password authentication is established. Independent
+1fed23e3 accepts enumerated owned disposition:41 child groups and the outer group
+were reaped/absent, helper exited0, original25 configuration/full17 rows/Active0
+were preserved, same-master final service checks passed and the exact synthetic
+fixture was disposed. The outer FAIL/UNCERTAIN/nested UNKNOWN remains historical.
+No recovery observer or active incident remains. Static executor/seal source review
+and the measured public facts now select the scoped repair above; no unchanged
+AUTH replay, feature activation, operator credential or provider action is authorized
+by this prerequisite result. S04-02 and its installed password journey remain open.
+
+Current signed synchronized source is ecfd0cd1526bdbd5b081cce1719f9c282ef07389.
+Its normal signed hook passed271.453 seconds after an explicitly retained51.691-second
+format-only admission failure;1838 Rust tests passed, zero failed and48 explicit
+native ignores. Normal push passed265.248 seconds, with fresh-fetch equality and
+clean0/0 measured269.401 seconds after start. The historical baseline is unchanged.
+One helper-only native builda3da2dbb passed58.396 seconds against456 exact source
+inputs: binary74a0762a/64369000 bytes, fresh=false, owned build group and scratch
+gone. No application, native test, service activation or password change executed.
+Those bytes were captured and staged for the failed case5 above. A new changed
+product boundary requires its own reviewed source and matching helper build.
+
+The following paragraphs retain the preceding diagnostic and source sequence.
+
+The diagnostic-only held-stream probe passed6.573 seconds (2e5d528f),
 independently accepted2f1e89bb. On one connection with no authentication, two
 snapshots0.424 seconds apart measured eligible reciprocal workers0→1. Exact owned
 fragment/group rollback preserved original25/exact22 files, master, service and
@@ -15,7 +64,7 @@ Multiple workers or metadata errors still fail immediately; Control is unchanged
 No greeting-protocol assumption, reconnect or identity relaxation is introduced.
 The exact two-path repair769e7c51 is now integrated after independent61c4dc5b
 source review. Ten focused peer controls passed at the author; no rerun is added.
-It awaits normal signed source admission and one changed native qualification.
+Its normal signed admission and changed case5 results are recorded above.
 Every final authority predicate remains; no capability flag or live form changes.
 
 Latest changed admission case4 failed44.969 seconds (6de35522). The bounded
@@ -74,7 +123,7 @@ physical-LF fixture consumer1a22497f and whole launcher correction87d6e331 remai
 source-only until fresh current native bindings. The normal signed gate is next;
 no native request result or installed password change is inferred.
 
-Current signed synchronized source is `ea889ca1be89021e5939e4314a1000001f37c56f`.
+Earlier signed synchronized source was `ea889ca1be89021e5939e4314a1000001f37c56f`.
 The normal two-commit push passed268.856 seconds (273.111 including fresh fetch);
 both Shopkeeper signatures verified and fresh local/origin equality was clean0/0.
 Its compiler inputs remain exactly the456 actual fd608 diagnostic build inputs.

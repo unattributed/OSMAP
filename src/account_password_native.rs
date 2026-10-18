@@ -327,6 +327,7 @@ fn matches_command(role: Role, program: &str, args: &[String]) -> bool {
 /// by ParentPlan; no runtime request contributes a path or permission.
 pub(crate) fn parent_rules() -> Vec<(&'static str, &'static str)> {
     let mut rows = Vec::new();
+    rows.extend(pins::METADATA_FILES.iter().map(|pin| (pin.path, "r")));
     for (files, program) in [
         (
             pins::SQL_FILES,
@@ -358,6 +359,20 @@ pub(crate) fn parent_rules() -> Vec<(&'static str, &'static str)> {
         (crate::account_password_topology::IPC, "rw"),
     ]);
     rows
+}
+
+/// The measured additional public closure required by fixed fstat after seal.
+/// Other metadata authority is unchanged; no library directory is exposed.
+pub(crate) fn verify_metadata_graph(deadline: Instant) -> Result<(), Unavailable> {
+    for pin in pins::METADATA_FILES {
+        pinned_parents(pin.path, pin.parents, deadline)?;
+        let (identity, digest, _) = public_file(pin.path, false, FILE_CAP, deadline)?;
+        let text: String = digest.iter().map(|byte| format!("{byte:02x}")).collect();
+        if identity != pin.identity || text != pin.sha256 {
+            return Err(Unavailable);
+        }
+    }
+    before(deadline)
 }
 fn prepared(role: Role, _ids: (u32, u32), deadline: Instant) -> Result<PreparedChild, Unavailable> {
     let files = if role == Role::Sql {

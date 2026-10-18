@@ -571,6 +571,140 @@ pub(crate) struct PasswordParentSeal {
 #[cfg(target_os = "openbsd")]
 static PASSWORD_PARENT_SEALED: std::sync::atomic::AtomicBool =
     std::sync::atomic::AtomicBool::new(false);
+#[cfg(target_os = "openbsd")]
+pub(crate) fn password_parent_is_sealed() -> bool {
+    PASSWORD_PARENT_SEALED.load(std::sync::atomic::Ordering::Acquire)
+}
+#[cfg(all(unix, any(test, target_os = "openbsd")))]
+pub(crate) fn password_process_birth(seconds: u64) -> io::Result<String> {
+    let stamp: libc::time_t = seconds
+        .try_into()
+        .map_err(|_| io::Error::from(io::ErrorKind::InvalidData))?;
+    let mut local: libc::tm = unsafe { std::mem::zeroed() };
+    // libc's localtime has the same local timezone as the pre-seal fixed PS.
+    // The existing stdio promise permits its internal timezone lookup.
+    if unsafe { libc::localtime_r(&stamp, &mut local) }.is_null() {
+        return Err(io::Error::from(io::ErrorKind::InvalidData));
+    }
+    let mut birth = [0u8; 64];
+    let count = unsafe {
+        libc::strftime(
+            birth.as_mut_ptr().cast(),
+            birth.len(),
+            c"%a %b %e %T %Y".as_ptr(),
+            &local,
+        )
+    };
+    if count == 0 {
+        return Err(io::Error::from(io::ErrorKind::InvalidData));
+    }
+    std::str::from_utf8(&birth[..count])
+        .map(str::to_owned)
+        .map_err(|_| io::ErrorKind::InvalidData.into())
+}
+
+#[cfg(target_os = "openbsd")]
+pub(crate) fn password_process_observation(
+    args: &[String],
+    deadline: std::time::Instant,
+    cap: usize,
+) -> io::Result<String> {
+    use crate::account_password_metadata::{
+        arguments, before, bounded, refused, render_row, request, row_count, ProcessRow, Request,
+        BYTES, ROWS,
+    };
+    if !crate::openbsd::password_native_authority()
+        || !crate::openbsd::password_parent_is_sealed()
+        || !matches!(cap, 4096 | 16384 | BYTES)
+    {
+        return Err(refused());
+    }
+    let request = request(args)?;
+    before(deadline)?;
+    if let Request::Arguments(pid) = request {
+        let mut raw = vec![0u8; BYTES];
+        let mut length = raw.len();
+        let mib = [
+            libc::CTL_KERN,
+            libc::KERN_PROC_ARGS,
+            pid,
+            libc::KERN_PROC_ARGV,
+        ];
+        if unsafe {
+            libc::sysctl(
+                mib.as_ptr(),
+                mib.len() as u32,
+                raw.as_mut_ptr().cast(),
+                &mut length,
+                std::ptr::null_mut(),
+                0,
+            )
+        } != 0
+            || length > raw.len()
+        {
+            return Err(refused());
+        }
+        return arguments(&raw[..length], raw.as_ptr() as usize, cap, deadline);
+    }
+    let (selection, pid, count) = match request {
+        Request::All => (libc::KERN_PROC_ALL, 0, ROWS),
+        Request::Row(pid) => (libc::KERN_PROC_PID, pid, 1),
+        Request::Arguments(_) => return Err(refused()),
+    };
+    let mut rows: Vec<libc::kinfo_proc> = vec![unsafe { std::mem::zeroed() }; count];
+    let width = std::mem::size_of::<libc::kinfo_proc>();
+    let mut length = rows.len().checked_mul(width).ok_or_else(refused)?;
+    let capacity = length;
+    let mib = [
+        libc::CTL_KERN,
+        libc::KERN_PROC,
+        selection,
+        pid,
+        width.try_into().map_err(|_| refused())?,
+        count.try_into().map_err(|_| refused())?,
+    ];
+    if unsafe {
+        libc::sysctl(
+            mib.as_ptr(),
+            mib.len() as u32,
+            rows.as_mut_ptr().cast(),
+            &mut length,
+            std::ptr::null_mut(),
+            0,
+        )
+    } != 0
+    {
+        return Err(refused());
+    }
+    before(deadline)?;
+    rows.truncate(row_count(length, capacity, width)?);
+    rows.sort_by_key(|row| row.p_pid);
+    let mut result = String::new();
+    for row in rows {
+        if matches!(request, Request::Row(expected) if row.p_pid != expected) {
+            return Err(refused());
+        }
+        let command = row.p_comm.map(|byte| byte as u8);
+        result.push_str(&render_row(
+            ProcessRow {
+                pid: row.p_pid,
+                parent: row.p_ppid,
+                group: row.p__pgid,
+                uid: row.p_uid,
+                gid: row.p_gid,
+                started: row.p_ustart_sec,
+                valid: row.p_uvalid != 0,
+                command: &command,
+            },
+            deadline,
+        )?);
+        if result.len() > cap {
+            return Err(refused());
+        }
+    }
+    bounded(result, cap, deadline)
+}
+
 impl PasswordParentSeal {
     pub(crate) fn is_current_process(&self) -> bool {
         self.pid == std::process::id()

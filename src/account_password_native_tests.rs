@@ -1,6 +1,29 @@
 use super::*;
 
 #[test]
+fn sealed_metadata_adds_only_the_measured_fstat_library_leaf() {
+    let rules = parent_rules();
+    assert_eq!(pins::METADATA_FILES.len(), 1);
+    let pin = &pins::METADATA_FILES[0];
+    assert_eq!(pin.path, "/usr/lib/libkvm.so.18.0");
+    assert_eq!(
+        rules
+            .iter()
+            .filter(|(path, _)| *path == pin.path)
+            .copied()
+            .collect::<Vec<_>>(),
+        vec![(pin.path, "r")]
+    );
+    assert!(!rules
+        .iter()
+        .any(|(path, _)| matches!(*path, "/usr/lib" | "/dev" | "/")));
+    assert_eq!(
+        pin.sha256,
+        "7c43550d2515b1c4e12471fc37d34b4fc215e0f1127e3a7ba6db24292e3e1582"
+    );
+}
+
+#[test]
 fn native_roles_keep_exact_separate_commands_and_existing_permission_boundaries() {
     use crate::account_password_backend::{HASH_ARGS, HASH_PROGRAM, SQL_ARGS, SQL_PROGRAM};
     let strings = |v: &[&str]| v.iter().map(|s| s.to_string()).collect::<Vec<_>>();

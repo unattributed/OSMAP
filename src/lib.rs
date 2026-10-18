@@ -169,3 +169,6 @@ pub mod account_password_server;
 pub(crate) mod account_password_confinement;
 #[cfg(unix)]
 pub(crate) mod account_password_custody;
+
+#[cfg(all(unix, any(test, target_os = "openbsd")))]
+mod account_password_metadata;

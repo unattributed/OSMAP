@@ -1,6 +1,37 @@
 //! Literal transcription of existing reviewed public graph pins.
 //! Source: maint/account-runtime/account_{hash,sql}_graph_pins.py; no host discovery.
 use super::{FilePin, ParentPin};
+// Actual fixed-facts receipt e32b0b3d, 2026-10-18. All other fstat loader leaves
+// are already present in the existing SQL/hash parent union.
+pub(super) const METADATA_FILES: &[FilePin] = &[FilePin {
+    path: "/usr/lib/libkvm.so.18.0",
+    identity: [
+        1024,
+        51860,
+        0,
+        7,
+        33060,
+        1,
+        230872,
+        1778093096974310255,
+        1788488609522755088,
+    ],
+    sha256: "7c43550d2515b1c4e12471fc37d34b4fc215e0f1127e3a7ba6db24292e3e1582",
+    parents: &[
+        ParentPin {
+            path: "/usr/lib",
+            identity: [1024, 51841, 0, 0, 16877],
+        },
+        ParentPin {
+            path: "/usr",
+            identity: [1024, 51840, 0, 0, 16877],
+        },
+        ParentPin {
+            path: "/",
+            identity: [1024, 2, 0, 0, 16877],
+        },
+    ],
+}];
 pub(super) const HASH_FILES: &[FilePin] = &[
     FilePin {
         path: "/usr/lib/libc.so.103.0",

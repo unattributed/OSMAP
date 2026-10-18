@@ -17,6 +17,7 @@ impl ParentPlan {
         if !crate::openbsd::password_native_authority() || Instant::now() >= deadline {
             return Err(Unavailable);
         }
+        crate::account_password_native::verify_metadata_graph(deadline).map_err(|_| Unavailable)?;
         let mut rules = BTreeMap::<&'static str, String>::new();
         let mut add = |path: &'static str, permissions: &str| {
             let actual = rules.entry(path).or_default();
@@ -119,7 +120,8 @@ impl ParentPlan {
         {
             return Err(Unavailable);
         }
-        self.custody.recheck(deadline)
+        self.custody.recheck(deadline)?;
+        crate::account_password_native::verify_metadata_graph(deadline).map_err(|_| Unavailable)
     }
     pub(crate) fn activate(
         &mut self,

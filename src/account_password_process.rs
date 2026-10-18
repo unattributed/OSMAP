@@ -211,6 +211,21 @@ impl CommandExecutor for MetadataExecutor {
             return Err(unavailable());
         }
         let deadline = Instant::now() + timeout;
+        #[cfg(target_os = "openbsd")]
+        if program == crate::account_password_peer::PS
+            && crate::openbsd::password_parent_is_sealed()
+        {
+            // PS calls unveil itself and cannot run under our inherited locked
+            // table. Keep the pre-seal external captures; after the real seal,
+            // observe only these same fixed process fields through the kernel.
+            let stdout = crate::openbsd::password_process_observation(args, deadline, cap)
+                .map_err(|_| unavailable())?;
+            return Ok(CommandExecution {
+                status_code: 0,
+                stdout,
+                stderr: String::new(),
+            });
+        }
         if program == crate::account_password_mail::PROGRAM {
             // Administrative reads retain the fixed unprivileged control
             // identity/loader/socket profile; metadata never gains root WHO.
