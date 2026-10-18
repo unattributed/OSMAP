@@ -11331,3 +11331,133 @@ stable Settings/session evidence root. Prior failed gates, wrong zoom-pref and
 root pre-action execution-control deviation remain retained; no retroactive PASS.
 No new service, password, factor, provider email or synchronization is authorized
 by this closeout. The sections below preserve historical intermediate states.
+
+## 2026-10-18 — S04-02 explicitly resumed with Rust utility boundary
+
+Operator requested subagents to complete S04-02 using the existing nine tests.
+Reuse the working Rust form, step-up, rate, session and wire authority; replace
+Python application execution with OSMAP-owned Rust and bounded installed MariaDB/
+Dovecot utilities, without new dependencies. Preserve D04, four outcomes and20
+obligations, including real SMTP TCP containment and restart-safe pending state.
+SQL adapter receipts cannot imply overall success. Keep prior54 attempts and
+HTTP24/25 outcomes; root owns one integration/native queue and normal signed
+source review. No other stopped slice or remote synchronization is resumed.
+
+
+## 2026-10-18 — S04-02 Rust composition and bounded custody corrections
+
+Retain the existing nine-scenario/four-outcome contract. New application workflow
+and helpers are OSMAP Rust with existing approved dependencies and fixed installed
+MariaDB/Dovecot utilities. Do not equate successful SQL with completed password
+change: durable pending precedes CAS, incomplete effects remain contained, and
+all account-specific browser/IMAP/SMTP/cache plus old/new credential witnesses
+are mandatory. No automatic credential rollback or ambiguous repeat.
+
+OpenBSD exec with explicit execpromises inherits the locked parent unveil union;
+children permanently drop all IDs/groups and reduce pledge, rather than trying
+to unveil again. Establish cwd before sealing and do not chdir after sealing.
+Use distinct nonroot SQL/hash/private-auth/control roles with role DAC; actual
+native loader and kernel qualification remains open. IMAP lifetime authority
+uses owned stream FDs carried on the existing publication channel and channel
+closure; numeric PID reuse cannot authorize a signal. Reuse the existing
+public-master private-primary fragment instead of a second Dovecot instance.
+
+SMTP continuity may refresh only an already admitted exact receipt, independently
+checking current process birth/text, reciprocal IPC, configuration/Postfix/PF
+hashes, enabled PF and a non-skipped loopback interface. It never creates initial
+qualification or accepts empty topology as proof. Actual forwarding, bypass
+denial and first-registration remain installation requirements.
+
+The compiler2 preaction sequencing deviation is retained: validation failed, but
+the root shell proceeded. Future transports must enforce the existing validator
+inside the dispatcher and bind the planned attempt/source before spawning SSH.
+The next read-only preflight actually enforced this correction. No frozen plan,
+security scanner or mandatory hook was weakened. No native flag/form activation,
+operator credential mutation, source synchronization or slice closure follows.
+
+The first current native test build exposed an incomplete carrier:37 missing
+compile-time fixture references. Add exactly19 external files to the carrier;
+all437 prior source bytes and the compiler command/budgets remain unchanged.
+Independent review resolves all154 literal include sites before retry. Actual
+corrected456-input build passes125.259s with fresh binary/hash and exact owned
+cleanup; no unit/native test was executed by that build. Carrier byte parity
+alone cannot establish compiler dependency completeness. Retain the failure.
+The first read-only Dovecot inventory truthfully reports unsupported glob
+configuration, not an application failure or complete configuration authority.
+A changed bounded exact-file enumeration must retain that refusal; no guessed
+path, master-loaded-state claim or configuration mutation follows discovery.
+
+
+Actual first staged SQL/hash execution FAIL16.554s (inner11.326s) at G17,
+fixed parent plan unavailable. This precedes FixedExecutor construction and any
+Rust SQL read/hash/CAS dispatch. Actual SQL/Hash profile construction was reached,
+but native role execution and password replacement were not proved. Provisioning
+created the reserved test rows, restricted DB user, two purpose principals and
+private configuration/epoch. Cleanup removed nothing because the foreign-session
+getsid check failed before reaping the test leader; actual errno was not exported.
+OpenBSD's documented getsid/session-exit semantics invalidate that cleanup model.
+The source reviewer explicitly records having missed it. The outer direct driver
+was reaped and its group gone; that does not establish nested cleanup. Retain
+process uncertainty and all owned artifacts; no historical PID signal, credential
+retry or fabricated cleanup. Fresh namespace/file/FD/principal proof and exact
+pre-executor G17 control flow are required for bounded recovery. Parent-plan
+missing-ancestor/configuration cause remains UNKNOWN until actual observation.
+
+The retained-state observer author queued a message to a completed reviewer;
+root later verified the reviewer was idle and explicitly dispatched followup.
+No review had occurred during the wait. Preserve that coordination lapse; its
+separate duration is UNKNOWN. Frozen-packet handoff must trigger a root-owned
+review dispatch and actual running-state confirmation before waiting. Existing
+AGENTS policy already required this; no declaration of compliance substitutes
+for the actual tool state or independent review artifact.
+
+Fresh read-only recovery4.921s establishes the concrete parent-plan defect:
+compiled /usr/local/etc/postfix parents are absent and installed postconf names
+/etc/postfix. Change only main.cf/master.cf leaf grants to that actual path.
+No fake directory or wider unveil permission is introduced; native factory stays
+closed and the changed plan is not claimed re-executed. Fresh unchanged nonce
+rows/epochs, matching DB role, no purpose processes and no retained-stage file
+references support a separately reviewed owned-state cleanup; preserve empty
+directories/rootstage because original RAM birth leases were not persisted.
+
+Actual separately reviewed retained-state cleanup PASS5.713s (result2753b57f):
+full17-column/nonce/hash CAS removed only both synthetic rows; exact restricted
+DB user, seven private files and both locked users/groups removed. All22 born
+utility groups reaped/gone, scratch gone, cleanup_uncertainFALSE. Empty dirs and
+old rootstage/permanent marker remain because original RAM birth leases were
+not persisted. Historical cleanup failure is preserved, not retroactively PASS.
+No operator password, mail, existing services/config, native qualification or
+provider action. The two actual Postfix path substitutions have source-only
+independent CLEARc7e77; mandatory source gate remains the admission boundary.
+
+Normal signed admission1 FAIL66.562s:1830 RustPASS/0failed/48 explicitnative
+ignores plusV4/clippy/fmt PASS, then unchangedV15 rejects stale manifest digest.
+Root omitted derivedrecord refresh after adding account-passwd bin. Change only
+that digest; all8 dependencies/features/versions and82-package lock unchanged.
+Independent source review CLEAR; no policy/scanner waiver, no commit fromfailure.
+
+Normal admission2 FAIL89.656s at unchangedV11: generated register exposed two
+new production unwraps plus a fixture panic outside the scanner-recognized test
+module. Replace both Option unwraps with existing refusal paths; relocate only
+the existing test-only helper into the existing cfg(test) module and re-export
+its unchanged API. No scanner, policy or exception changes. Regeneration now
+counts9496 assumptions/9411 source-test classifications/high0; this is scoped
+source handling, not application-wide panic freedom or native qualification.
+Both failed gate records remain; independent combined review precedes gate3.
+
+Normal admission3 FAIL113.272s: V11/V13/TLS pass, CWE guard rejects12 new
+Rust SQL/test-fixture patterns. This is an integration omission against the
+operator-approved Rust-owned SQL boundary, not permission to hide SQL strings.
+Register only the exact reviewed backend bytes for CWE89 and actual cfg(test)
+parents for four fixture files; altered SQL, absent parent markers and unrelated
+production patterns must still refuse. Independent exact review and existing
+guard regressions precede one changed normal gate. Preserve actual failure.
+
+Normal admission4 FAIL93.470s after exactCWE boundary/regressions PASS at
+legacy unsafe grep. Five actual fixture ancillary-FFI lines must move into
+existing OpenBSD test boundary. Root examined subsequent legacy shell/process
+consumers: the fixed shell fixture and two negative shell literals also conflict.
+Use the existing fixed platform-Python fixture pattern with identical bytes,
+exit/EOF and delay assertions; use an unrelated unapproved executable for the
+negative command case. No forbidden-string obfuscation or legacy scanner waiver.
+Keep both gate3/4 failures and review the whole changed consumer boundary.

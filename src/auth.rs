@@ -45,6 +45,87 @@ pub const DEFAULT_EXTERNAL_COMMAND_OUTPUT_MAX_BYTES: usize = 4 * 1024 * 1024;
 /// Minimal bounded environment supplied to external commands.
 const SAFE_COMMAND_PATH: &str = "/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin";
 
+/// Password helper's two fixed utility invocations. This is not a web command
+/// interface; SQL text and password input are supplied through private stdin.
+#[cfg(unix)]
+pub(crate) fn password_backend_command(program: &str, args: &[String]) -> io::Result<Command> {
+    use crate::account_password_backend::{HASH_ARGS, HASH_PROGRAM, SQL_ARGS, SQL_PROGRAM};
+    let hash = program == HASH_PROGRAM
+        && args
+            .iter()
+            .map(String::as_str)
+            .eq(HASH_ARGS.iter().copied());
+    let sql =
+        program == SQL_PROGRAM && args.iter().map(String::as_str).eq(SQL_ARGS.iter().copied());
+    let mail = program == HASH_PROGRAM
+        && (crate::account_password_mail::fixed_args(args)
+            || crate::account_password_mail::fixed_control_args(args));
+    if !hash && !sql && !mail {
+        return Err(io::ErrorKind::PermissionDenied.into());
+    }
+    if std::env::current_dir()? != std::path::Path::new("/") {
+        return Err(io::ErrorKind::PermissionDenied.into());
+    }
+    let mut command = Command::new(if sql { SQL_PROGRAM } else { HASH_PROGRAM });
+    command
+        .args(args)
+        .env_clear()
+        .env("PATH", SAFE_COMMAND_PATH)
+        .env("LC_ALL", "C");
+    if hash || mail {
+        command
+            .env("CONFIG_FILE", "/dev/null")
+            .env("STATS_WRITER_SOCKET_PATH", "");
+    }
+    Ok(command)
+}
+
+/// Fixed password-service metadata builders share the nonblocking owned-child
+/// runner; this constructor never supplies a shell or caller-selected options.
+#[cfg(unix)]
+pub(crate) fn password_metadata_command(program: &str, args: &[String]) -> io::Result<Command> {
+    if program == crate::account_password_mail::PROGRAM
+        || !crate::account_password_process::fixed_metadata_args(program, args)
+    {
+        return Err(io::ErrorKind::PermissionDenied.into());
+    }
+    if std::env::current_dir()? != std::path::Path::new("/") {
+        return Err(io::ErrorKind::PermissionDenied.into());
+    }
+    let mut command = match program {
+        "/bin/ps" => Command::new("/bin/ps"),
+        "/usr/bin/fstat" => Command::new("/usr/bin/fstat"),
+        "/usr/local/sbin/postconf" => Command::new("/usr/local/sbin/postconf"),
+        "/usr/local/bin/doveconf" => Command::new("/usr/local/bin/doveconf"),
+        "/sbin/pfctl" => Command::new("/sbin/pfctl"),
+        _ => return Err(io::ErrorKind::PermissionDenied.into()),
+    };
+    command
+        .args(args)
+        .env_clear()
+        .env("PATH", SAFE_COMMAND_PATH)
+        .env("LC_ALL", "C");
+    Ok(command)
+}
+
+/// Run the fixed command-shape test with the service's pre-seal root cwd.
+/// This avoids changing the parallel test process cwd or adding a post-seal
+/// child chdir, which would require forbidden ancestor pathname authority.
+#[cfg(all(unix, test))]
+pub(crate) fn password_command_shape_fixture() -> io::Result<Command> {
+    let mut command = Command::new(std::env::current_exe()?);
+    command
+        .args([
+            "--exact",
+            "account_password_process::tests::fixed_commands_have_hash_only_isolation_and_no_caller_program",
+        ])
+        .current_dir("/");
+    Ok(command)
+}
+
+#[cfg(all(unix, test))]
+pub(crate) use tests::password_process_fixture_command;
+
 /// Construct only the operator-mapped public inventory worker invocation.
 /// Its caller validates both paths; browser requests cannot supply either path.
 #[cfg(unix)]
@@ -1655,6 +1736,25 @@ pub(crate) fn mutation_real_worker_fixture_command(witness: &std::path::Path) ->
 
 #[cfg(test)]
 mod tests {
+    #[cfg(unix)]
+    pub(crate) fn password_process_fixture_command(mode: &str) -> Command {
+        let script = match mode {
+            "blocked" => "import time; time.sleep(2)",
+            "early_eof" => "import os,time; os.close(1); os.close(2); time.sleep(0.05); os._exit(7)",
+            "result" => "import os; os.write(1,b'fixed-result\\n'); os.write(2,b'fixed-error\\n'); os._exit(7)",
+            _ => panic!("unknown fixed password-process fixture"),
+        };
+        let engine = if cfg!(target_os = "openbsd") {
+            "/usr/local/bin/python3"
+        } else {
+            "/usr/bin/python3"
+        };
+        let mut command = Command::new(engine);
+        command.args(["-I", "-c", script]);
+        command.env_clear().env("LC_ALL", "C");
+        command
+    }
+
     use super::*;
     use crate::config::LogFormat;
     use crate::logging::Logger;

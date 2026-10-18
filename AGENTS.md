@@ -1,6 +1,16 @@
 # OSMAP Agent Notes
 
-## Current bounded closeout — 2026-10-17
+## Current bounded resumption — 2026-10-18
+
+The operator explicitly resumed S04-02 and requested subagents to complete its
+nine defined test scenarios. Follow the current active work order and
+`docs/UX_SLICE_S04_02.md`. OSMAP-owned Rust implements workflow/helpers, with
+fixed bounded existing MariaDB/Dovecot utilities and no new dependencies.
+S04-01 stays accepted; other stopped slices do not resume. Historical stop and
+closeout text below is provenance. Root owns integration/Git/native execution;
+normal signed source review before any remote synchronization remains required.
+
+## Historical bounded closeout — 2026-10-17
 
 **S04-01 complete (R4 narrowed scope).** Operator `S04_01_UAT=PASS` follows
 matching installed QA and independent audit GO. Finalize the signed closeout
@@ -100,6 +110,11 @@ For an existing idle or completed worker, use `followup_task` to dispatch work;
 before recording an assignment as active or waiting for its result. If the
 worker is absent from the current team, reconcile retained files and dispatch
 the remaining concrete task rather than assuming historical work is continuing.
+A source author reporting that a review was requested does not establish an
+active reviewer. At each frozen handoff, root must dispatch the concrete review
+with followup_task and verify running state before waiting. Review-request
+messages are advisory; root retains queue ownership and cannot count idle time
+as active review. The 2026-10-18 retained-state observer handoff lapse is preserved.
 Use the existing execution ledger, decision log and UAT record rather than
 creating a parallel status system. Required user journeys need frontend,
 backend, persistence and actual integration evidence before readiness claims.
@@ -116,6 +131,20 @@ and owner, UTC-started bounded investigation, honest full-action wall-clock
 records, whole producer/cleanup/consumer review and changed retry/reassessment
 records are required. Package renaming cannot reset the functional boundary.
 Preserve historical facts and continue independent authorized work.
+Enforce this check inside the actual dispatcher before SSH/spawn: a nonzero,
+timed-out or missing validator result aborts dispatch. Bind its exact planned
+attempt and source pins, and create a permanent dispatch receipt. Running a
+validator in a preceding shell command without fail-fast is not enforcement.
+The 2026-10-18 compiler2 sequencing deviation remains retained; no retrospective
+pre-action PASS may be claimed.
+On OpenBSD, do not use getsid(target_pid) across a born child session as a
+cleanup authority: the platform contract restricts foreign-session queries,
+and session-leader exit can erase the session ID reported by process inventory.
+Do not infer historical descendant absence from a PID/SID or accept ESRCH as
+proof. Preserve uncertainty, use matching executed control flow plus fresh
+namespace/executable/FD/principal ownership for any reviewed recovery, and never
+signal a historical PID. The S04-02 native SQL/hash attempt2 wrapper missed this
+contract; retain its failure and observed cleanup uncertainty.
 
 The operator's 2026-10-16 slice delivery SOP applies to every OSMAP-UX slice.
 Before implementation or continuation, define and verify the active ledger's

@@ -11,6 +11,85 @@ use std::sync::Arc;
 const KEY: [u8; 32] = [17; 32];
 const SESSION_KEY: [u8; 32] = [19; 32];
 const ACCOUNT: &str = "alice@example.test";
+
+#[test]
+fn rust_server_guarded_authority_and_pending_ack_match_existing_issuer() {
+    let fixture = Fixture::new();
+    let frame = fixture.frame();
+    let received = Instant::now();
+    let (request, authority) = verify_guarded(&frame, &KEY, &SESSION_KEY, 100001, received)
+        .unwrap()
+        .consume();
+    assert_eq!(request.account(), ACCOUNT);
+    authority.authorize(&request, 100002).unwrap();
+    assert!(authority.authorize(&request, 100001).is_err());
+    let changed_request = fixture.request();
+    assert!(authority.authorize(&changed_request, 100003).is_err());
+    let pending = crate::account_mutation_continuity::PendingChallenge::new(
+        &request, &authority, &KEY, 100003,
+    )
+    .unwrap();
+    let challenge = pending.bytes().unwrap();
+    let ack =
+        crate::account_mutation_continuity::acknowledge(&request, &frame, &challenge, &KEY, 100004)
+            .unwrap();
+    pending.verify_ack(&ack, &KEY, 100005).unwrap();
+}
+
+#[test]
+fn rust_server_refuses_changed_guarded_bytes_keys_nested_duplicates_and_ack_binding() {
+    let fixture = Fixture::new();
+    let frame = fixture.frame();
+    assert!(verify_guarded(&frame, &KEY, &KEY, 100001, Instant::now()).is_err());
+    for field in ["account", "session_id", "budget_sha256", "deadline_millis"] {
+        let mut value: serde_json::Value = serde_json::from_slice(&frame).unwrap();
+        value["session_proof"][field] = if field == "deadline_millis" {
+            serde_json::json!(101999)
+        } else {
+            serde_json::json!("x".repeat(64))
+        };
+        assert!(verify_guarded(
+            &serde_json::to_vec(&value).unwrap(),
+            &KEY,
+            &SESSION_KEY,
+            100001,
+            Instant::now()
+        )
+        .is_err());
+    }
+    let text = std::str::from_utf8(&frame).unwrap();
+    let duplicate = text.replacen("\"budget\":{", "\"budget\":{\"schema\":\"duplicate\",", 1);
+    assert_ne!(duplicate, text);
+    assert!(verify_guarded(
+        duplicate.as_bytes(),
+        &KEY,
+        &SESSION_KEY,
+        100001,
+        Instant::now()
+    )
+    .is_err());
+    let (request, authority) = verify_guarded(&frame, &KEY, &SESSION_KEY, 100001, Instant::now())
+        .unwrap()
+        .consume();
+    let pending = crate::account_mutation_continuity::PendingChallenge::new(
+        &request, &authority, &KEY, 100002,
+    )
+    .unwrap();
+    let challenge = pending.bytes().unwrap();
+    let ack =
+        crate::account_mutation_continuity::acknowledge(&request, &frame, &challenge, &KEY, 100003)
+            .unwrap();
+    // The MAC is valid, but another challenge's nonce cannot be substituted.
+    let other = crate::account_mutation_continuity::PendingChallenge::new(
+        &request, &authority, &KEY, 100003,
+    )
+    .unwrap();
+    assert!(other.verify_ack(&ack, &KEY, 100004).is_err());
+    pending.verify_ack(&ack, &KEY, 100004).unwrap();
+    assert!(authority
+        .authorize(&request, authority.deadline_millis())
+        .is_err());
+}
 struct Clock;
 impl TimeProvider for Clock {
     fn unix_timestamp(&self) -> u64 {

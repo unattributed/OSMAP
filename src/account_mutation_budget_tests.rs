@@ -45,3 +45,29 @@ fn expired_future_tampered_retargeted_or_other_domain_outer_never_authenticates(
         assert!(issue(&request(), &KEY, sent, end).is_err());
     }
 }
+
+#[test]
+fn rust_receiver_verifies_exact_budget_without_renewing_original_deadline() {
+    let request = request();
+    let raw = issue(&request, &KEY, 101001, 101401).unwrap();
+    let received = Instant::now();
+    let verified = verify(&raw, &KEY, 101201, received).unwrap();
+    assert_eq!(verified.raw(), request.bytes().unwrap());
+    assert_eq!(verified.deadline(), received + Duration::from_millis(200));
+    assert_eq!(verified.deadline_millis(), 101401);
+    for now in [101000, 101401] {
+        assert!(verify(&raw, &KEY, now, received).is_err());
+    }
+    let mut changed: serde_json::Value = serde_json::from_slice(&raw).unwrap();
+    changed["request_hex"] = serde_json::json!("00");
+    assert!(verify(
+        &serde_json::to_vec(&changed).unwrap(),
+        &KEY,
+        101201,
+        received
+    )
+    .is_err());
+    let text = std::str::from_utf8(&raw).unwrap();
+    let duplicate = text.replacen("{", "{\"schema\":\"duplicate\",", 1);
+    assert!(verify(duplicate.as_bytes(), &KEY, 101201, received).is_err());
+}

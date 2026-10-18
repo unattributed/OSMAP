@@ -318,3 +318,25 @@ helper. Rollback restores the old helper before the old web. Preserve existing
 4 MiB native/1 MiB helper limits, commands, deadlines, routing, configuration,
 keys, policies and mail. Require actual disposable native and browser ordering,
 saved-setting and reader identity results; health checks alone cannot close UAT.
+
+
+### S04-02 Rust password service — unqualified source, 2026-10-18
+
+The new account-passwd Rust target and owned IMAP PUBLISH2/SCM_RIGHTS plugin are
+source-delivered prerequisites only. Build both from the same reviewed source;
+qualify the actual parent-sealed role utilities, private-primary binding, public
+policy/publication, SMTP forwarding/PF/registration and cross-host web/helper
+composition before any reversible installed-pair delivery. Matching configuration,
+source/binary parity, nine-scenario outcomes, owned cleanup and independent audit
+are required. Current native flags are false and the ordinary password form is
+unavailable. Compiler success and historical Python fixtures are not release
+qualification. Preserve keys, operator accounts, unrelated services and rollback
+custody; never repeat an uncertain credential write.
+
+The first controlled current Rust SQL/hash execution does not qualify release:
+it fails before executor construction at parent-plan preparation. Retained
+fixture resources and uncertain cleanup are explicit; existing services and
+operator credentials are preserved. Fresh recovery disposition is required.
+Do not infer a password update from successful root fixture provisioning or
+private profile construction. The wrapper's cross-session getsid model was
+invalid on OpenBSD and must not authorize cleanup or historical PID signals.

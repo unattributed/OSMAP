@@ -1,5 +1,48 @@
 # Current Project Status
 
+## S04-02 current Rust integration — 2026-10-18
+
+The existing nine scenarios remain the delivery contract. OSMAP-owned Rust now
+implements fixed SQL/hash execution, durable account state, authenticated
+admission, parent/child confinement and service composition; no new dependency
+was introduced. The existing IMAP publication channel now transfers owned client
+sockets, and SMTP registration refresh rechecks current process/socket/PF
+authority. Source reviews and focused tests are scoped evidence, not workflow
+acceptance. Actual obsd1 Rust/C compiler compatibility passes; a read-only
+authoritative MariaDB preflight confirms the schema and disposable-account and
+purpose-principal absence. The pre-path-repair OpenBSD test binary builds from456 inputs including all154
+literal include sites,125.259s. Its first SQL/hash execution and failure are
+recorded below; the later two-string path correction has not been executed natively. Earlier
+37 missing-fixture compiler errors and69.872s failure are retained. Read-only
+Dovecot discovery identifies configured /etc/dovecot/dovecot.conf and an
+initial unsupported glob include. The changed read-only inventory passes over25
+files/66518bytes; loaded-runtime equality remains unestablished. The first SQL/Hash
+fixture attempt refuses before driver start after slow artifact upload; no
+fixture account lease or SQL provisioning was reached. Its exact root artifact
+is retained for one separately reviewed first-execution action.
+The first staged SQL/hash test then FAILS at parent-plan preparation, before
+any Rust password update. Controlled temporary rows, restricted DB user, purpose
+principals and private fixture state were provisioned; the original failure
+retained them after cleanup uncertainty. No operator credential, mail or existing service changed.
+Fresh read-only observation confirms unchanged temporary credentials/epochs, no
+purpose processes or retained executable references. It also proves the wrong
+Postfix parent path: change two source grants to installed /etc/postfix. The separately reviewed cleanup then PASSes5.713s: two synthetic rows, one
+restricted DB user, seven private files and both purpose users/groups removed.
+All22 owned utility groups are reaped/gone and observer scratch is gone. Empty
+directories and the original root evidence stage/marker remain deliberately.
+No historical PID was signalled. The corrected native plan and whole workflow
+remain unexecuted; no wider authority, retry or capability activation.
+
+The complete Rust workflow, sealed native utility graph, private-primary binding,
+initial SMTP routing/registration, public IMAP/policy deployment and matching
+installed pair remain unqualified. The older full-workflow failure is retained.
+All native qualification flags remain false; ordinary Runtime has no account
+client and the password form remains unavailable. S04-02 and Sprint S04 are OPEN;
+S04-01 remains accepted. Root owns Git/host integration; three explicitly
+assigned workers provide development and independent source/fixture review.
+Normal signed source admission is pending; no remote synchronization authorized.
+
+
 ## S04-01 complete (R4 narrowed scope) — 2026-10-17
 
 Operator explicitly reported `S04_01_UAT=PASS` after agent-owned engineering,

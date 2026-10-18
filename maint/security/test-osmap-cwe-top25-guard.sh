@@ -136,4 +136,53 @@ reqwest = "0.12"
 EOF
 assert_fails_with "$http_repo" "CWE-918"
 
+
+# Only the exact reviewed password adapter receives CWE-89 admission. A changed
+# SQL statement and an unrelated production SQL path still fail closed.
+reviewed_sql_repo=$(make_repo reviewed_password_sql)
+cp "$repo_root/src/account_password_backend.rs" "$reviewed_sql_repo/src/account_password_backend.rs"
+assert_passes "$reviewed_sql_repo"
+python3 - "$reviewed_sql_repo/src/account_password_backend.rs" <<'PYCODE'
+from pathlib import Path
+import sys
+path = Path(sys.argv[1])
+source = path.read_text()
+assert "LIMIT 2;" in source
+path.write_text(source.replace("LIMIT 2;", "LIMIT 3;", 1))
+PYCODE
+assert_fails_with "$reviewed_sql_repo" "reviewed SQL boundary changed"
+
+unknown_sql_repo=$(make_repo unknown_production_sql)
+cat > "$unknown_sql_repo/src/mailbox.rs" <<'EOF'
+pub fn unreviewed_query() -> &'static str { "SELECT password FROM mailbox" }
+EOF
+assert_fails_with "$unknown_sql_repo" "CWE-89"
+
+# Each external fixture exclusion depends on its real cfg(test) parent marker.
+# Losing the marker must expose the child to normal production scanning.
+for stem in backend native policy_endpoint process; do
+    registered_repo=$(make_repo "registered_password_$stem")
+    parent="account_password_$stem.rs"
+    fixture="account_password_${stem}_tests.rs"
+    cp "$repo_root/src/$parent" "$registered_repo/src/$parent"
+    cat > "$registered_repo/src/$fixture" <<'EOF'
+pub fn hostile_scanner_fixture() {
+    let _ = "/bin/sh";
+    let _ = "SELECT password FROM mailbox";
+    let _ = unsafe { 1 };
+}
+EOF
+    assert_passes "$registered_repo"
+    python3 - "$registered_repo/src/$parent" "$fixture" <<'PYCODE'
+from pathlib import Path
+import sys
+path = Path(sys.argv[1])
+source = path.read_text()
+marker = '#[cfg(test)]\n#[path = "' + sys.argv[2] + '"]\nmod tests;'
+assert source.count(marker) == 1
+path.write_text(source.replace(marker, marker.replace('#[cfg(test)]\n', ''), 1))
+PYCODE
+    assert_fails_with "$registered_repo" "$fixture"
+done
+
 echo "CWE Top 25 guard regression checks passed"

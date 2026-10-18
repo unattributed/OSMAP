@@ -281,6 +281,81 @@ impl Service {
             engine: Some(engine),
         })
     }
+    /// Existing persistent MAC/replay/capacity/cleanup authority for the Rust
+    /// password server. It reads the SAME fixed admission files but creates no
+    /// Python engine or worker-module authority.
+    pub(crate) fn from_password_operator_files() -> Result<Self, Error> {
+        if !crate::account_password_native::NATIVE_QUALIFIED
+            || !crate::openbsd::password_native_authority()
+        {
+            return Err(Error::Unavailable);
+        }
+        let mut bytes = Vec::new();
+        file(
+            Path::new("/etc/osmap/account-admission.json"),
+            0,
+            false,
+            65536,
+        )
+        .map_err(unavailable)?
+        .take(65537)
+        .read_to_end(&mut bytes)
+        .map_err(unavailable)?;
+        let config: Config = serde_json::from_slice(&bytes).map_err(|_| Error::Invalid)?;
+        if config.version != 1
+            || config.trusted_web_uid == 0
+            || config.trusted_web_uid == u32::MAX
+            || config.socket != Path::new("/var/run/osmap-account-admission/admission.sock")
+            || config.accounts.is_empty()
+            || config.accounts.len() > 64
+        {
+            return Err(Error::Invalid);
+        }
+        let mut unique = BTreeSet::new();
+        for account in &config.accounts {
+            crate::account_admission::valid_account(account)?;
+            if !unique.insert(account) {
+                return Err(Error::Invalid);
+            }
+        }
+        private_dir(config.socket.parent().ok_or(Error::Invalid)?, 0, true).map_err(unavailable)?;
+        private_dir(Path::new(EPOCH_ROOT), 0, false).map_err(unavailable)?;
+        Ok(Self {
+            active: Mutex::new(BTreeSet::new()),
+            cleanup_unconfirmed: AtomicBool::new(false),
+            config,
+            key: secret(Path::new("/etc/osmap/account-admission.key")).map_err(unavailable)?,
+            verifier: Mutex::new(Verifier::default()),
+            engine: None,
+        })
+    }
+    pub(crate) fn password_accounts(&self) -> BTreeSet<String> {
+        self.config.accounts.iter().cloned().collect()
+    }
+    pub(crate) fn password_key(&self) -> &[u8] {
+        &self.key
+    }
+    pub(crate) fn password_peer_uid(&self) -> u32 {
+        self.config.trusted_web_uid
+    }
+    pub(crate) fn password_connection(
+        &self,
+        stream: &mut UnixStream,
+        deadline: Instant,
+        execute: impl FnOnce(&Request, Instant) -> Result<Option<AdmissionStatus>, Error>,
+    ) -> Result<(), Error> {
+        self.connection_with_status_deadline(stream, deadline, |request, inherited| {
+            if crate::account_password_process::execution_quarantined() {
+                return Err(Error::CleanupUnconfirmed);
+            }
+            let value = execute(request, inherited)?;
+            if crate::account_password_process::execution_quarantined() {
+                return Err(Error::CleanupUnconfirmed);
+            }
+            Ok(value)
+        })
+    }
+
     #[cfg(test)]
     fn process(
         &self,
@@ -468,7 +543,22 @@ impl Service {
         stream: &mut UnixStream,
         execute: impl FnOnce(&Request, Instant) -> Result<Option<AdmissionStatus>, Error>,
     ) -> Result<(), Error> {
-        let deadline = Instant::now() + Duration::from_secs(30);
+        self.connection_with_status_deadline(
+            stream,
+            Instant::now() + Duration::from_secs(30),
+            execute,
+        )
+    }
+    fn connection_with_status_deadline(
+        &self,
+        stream: &mut UnixStream,
+        deadline: Instant,
+        execute: impl FnOnce(&Request, Instant) -> Result<Option<AdmissionStatus>, Error>,
+    ) -> Result<(), Error> {
+        let accepted_now = Instant::now();
+        if deadline <= accepted_now || deadline > accepted_now + Duration::from_secs(30) {
+            return Err(Error::Expired);
+        }
         if crate::openbsd::unix_stream_peer_uid(stream).map_err(unavailable)?
             != self.config.trusted_web_uid
         {
@@ -674,7 +764,7 @@ impl InstalledEngine {
 }
 
 type EndpointIdentity = (u64, u64, u32, u32, u32, u64);
-struct AdmissionEndpoint {
+pub(crate) struct AdmissionEndpoint {
     listener: UnixListener,
     path: PathBuf,
     parent: File,
@@ -693,7 +783,7 @@ impl AdmissionEndpoint {
             info.nlink(),
         )
     }
-    fn bind(path: &Path) -> Result<Self, Error> {
+    pub(crate) fn bind(path: &Path) -> Result<Self, Error> {
         let owner = crate::openbsd::effective_uid();
         let parent_path = path.parent().ok_or(Error::Invalid)?;
         private_dir(parent_path, owner, true).map_err(unavailable)?;
@@ -776,7 +866,10 @@ impl AdmissionEndpoint {
             .map_err(unavailable)?;
         Ok(endpoint)
     }
-    fn recheck(&self) -> Result<(), Error> {
+    pub(crate) fn accept(&self) -> std::io::Result<(UnixStream, std::os::unix::net::SocketAddr)> {
+        self.listener.accept()
+    }
+    pub(crate) fn recheck(&self) -> Result<(), Error> {
         let parent_path = self.path.parent().ok_or(Error::Invalid)?;
         if Self::identity(&self.parent.metadata().map_err(unavailable)?) != self.parent_identity
             || Self::identity(&fs::symlink_metadata(parent_path).map_err(unavailable)?)
@@ -788,7 +881,7 @@ impl AdmissionEndpoint {
         }
         Ok(())
     }
-    fn remove(&mut self) -> Result<(), Error> {
+    pub(crate) fn remove(&mut self) -> Result<(), Error> {
         self.recheck()?;
         fs::remove_file(&self.path).map_err(unavailable)?;
         self.removed = true;

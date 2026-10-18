@@ -4,12 +4,181 @@
 use crate::account_mutation::{Error, Request, Verifier};
 use crate::session::GuardedSessionLease;
 use hmac::{Hmac, Mac};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
+use std::cell::Cell;
 use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
 const SCHEMA: &str = "osmap-guarded-session-proof-v1";
 pub(crate) const MAX_FRAME: usize = 12288;
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ReceivedFrame {
+    budget: crate::account_mutation_budget::Envelope,
+    session_proof: ReceivedProof,
+}
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ReceivedProof {
+    schema: String,
+    account: String,
+    epoch: u64,
+    session_id: String,
+    request_id: String,
+    source: String,
+    intent_reference: String,
+    request_sha256: String,
+    budget_sha256: String,
+    checked_millis: u64,
+    session_expires: u64,
+    idle_expires: u64,
+    issued: u64,
+    expires: u64,
+    deadline_millis: u64,
+    signature: String,
+}
+
+/// Server-owned immutable result of both independent MAC verifications. This
+/// type cannot be cloned/deserialized or manufactured from request booleans.
+pub(crate) struct VerifiedGuardedMutation {
+    request: Request,
+    authority: GuardedAuthority,
+}
+impl VerifiedGuardedMutation {
+    pub(crate) fn consume(self) -> (Request, GuardedAuthority) {
+        (self.request, self.authority)
+    }
+}
+
+pub(crate) struct GuardedAuthority {
+    request_sha256: String,
+    frame_sha256: String,
+    sent_millis: u64,
+    deadline_millis: u64,
+    deadline: Instant,
+    last_millis: Cell<u64>,
+}
+impl GuardedAuthority {
+    pub(crate) fn deadline(&self) -> Instant {
+        self.deadline
+    }
+    pub(crate) fn deadline_millis(&self) -> u64 {
+        self.deadline_millis
+    }
+    pub(crate) fn frame_sha256(&self) -> &str {
+        &self.frame_sha256
+    }
+    pub(crate) fn authorize(&self, request: &Request, now_millis: u64) -> Result<(), Error> {
+        if Instant::now() >= self.deadline
+            || now_millis < self.sent_millis
+            || now_millis < self.last_millis.get()
+            || now_millis >= self.deadline_millis
+            || now_millis / 1000 < request.issued()
+            || now_millis / 1000 >= request.expires()
+            || hex(&Sha256::digest(request.bytes()?)) != self.request_sha256
+        {
+            return Err(Error::Expired);
+        }
+        self.last_millis.set(now_millis);
+        Ok(())
+    }
+}
+
+/// Private kernel-peer admission must precede this parser. `received` and
+/// `received_millis` are one original receiver sample, never sampled afresh to
+/// extend the sender's signed remaining budget.
+pub(crate) fn verify_guarded(
+    raw: &[u8],
+    mutation_key: &[u8],
+    proof_key: &[u8],
+    received_millis: u64,
+    received: Instant,
+) -> Result<VerifiedGuardedMutation, Error> {
+    if raw.is_empty()
+        || raw.len() > MAX_FRAME
+        || mutation_key == proof_key
+        || !(32..=1024).contains(&proof_key.len())
+    {
+        return Err(Error::Authentication);
+    }
+    let frame: ReceivedFrame = serde_json::from_slice(raw).map_err(|_| Error::Invalid)?;
+    let budget = crate::account_mutation_budget::verify_envelope(
+        &frame.budget,
+        mutation_key,
+        received_millis,
+        received,
+    )?;
+    // The existing issuer hashes a sorted JSON object, not struct field order.
+    let canonical =
+        serde_json::to_vec(&serde_json::to_value(&frame.budget).map_err(|_| Error::Invalid)?)
+            .map_err(|_| Error::Invalid)?;
+    let proof = frame.session_proof;
+    let request = budget.request();
+    let p = Proof {
+        schema: SCHEMA,
+        account: &proof.account,
+        epoch: proof.epoch,
+        session_id: &proof.session_id,
+        request_id: &proof.request_id,
+        source: &proof.source,
+        intent_reference: &proof.intent_reference,
+        request_sha256: proof.request_sha256.clone(),
+        budget_sha256: proof.budget_sha256.clone(),
+        checked_millis: proof.checked_millis,
+        session_expires: proof.session_expires,
+        idle_expires: proof.idle_expires,
+        issued: proof.issued,
+        expires: proof.expires,
+        deadline_millis: proof.deadline_millis,
+        signature: String::new(),
+    };
+    for value in [
+        &proof.session_id,
+        &proof.intent_reference,
+        &proof.request_sha256,
+        &proof.budget_sha256,
+    ] {
+        crate::account_mutation_budget::decode_hex(value, 64)?;
+    }
+    if proof.schema != SCHEMA
+        || proof.checked_millis != budget.sent_millis()
+        || proof.deadline_millis != budget.deadline_millis()
+        || proof.idle_expires > proof.session_expires
+        || proof.deadline_millis > proof.idle_expires.checked_mul(1000).ok_or(Error::Expired)?
+        || received_millis >= proof.idle_expires.checked_mul(1000).ok_or(Error::Expired)?
+        || proof.account != request.account()
+        || proof.epoch != request.epoch()
+        || proof.session_id != request.session_id()
+        || proof.request_id != request.request_id()
+        || proof.source != request.source()
+        || proof.intent_reference != request.intent_reference()
+        || proof.issued != request.issued()
+        || proof.expires != request.expires()
+        || proof.request_sha256 != hex(&Sha256::digest(budget.raw()))
+        || proof.budget_sha256 != hex(&Sha256::digest(&canonical))
+    {
+        return Err(Error::Authentication);
+    }
+    let signature = crate::account_mutation_budget::decode_hex(&proof.signature, 64)?;
+    let mut mac = Hmac::<Sha256>::new_from_slice(proof_key).map_err(|_| Error::Authentication)?;
+    mac.update(&payload(&p)?);
+    mac.verify_slice(&signature)
+        .map_err(|_| Error::Authentication)?;
+    let authority = GuardedAuthority {
+        request_sha256: hex(&Sha256::digest(request.bytes()?)),
+        frame_sha256: hex(&Sha256::digest(raw)),
+        sent_millis: budget.sent_millis(),
+        deadline_millis: budget.deadline_millis(),
+        deadline: budget.deadline(),
+        last_millis: Cell::new(received_millis),
+    };
+    authority.authorize(request, received_millis)?;
+    Ok(VerifiedGuardedMutation {
+        request: budget.into_request(),
+        authority,
+    })
+}
 
 #[derive(Serialize)]
 struct Proof<'a> {

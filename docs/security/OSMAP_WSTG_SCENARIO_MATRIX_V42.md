@@ -1204,3 +1204,58 @@ stable Settings/session evidence root. Prior failed gates, wrong zoom-pref and
 root pre-action execution-control deviation remain retained; no retroactive PASS.
 No new service, password, factor, provider email or synchronization is authorized
 by this closeout. The sections below preserve historical intermediate states.
+
+
+### 2026-10-18 S04-02 changed boundary — source only
+
+The Rust password service adds fixed conditional SQL/hash execution, durable
+pending/epoch/replay state and authenticated helper admission. Privilege roles
+are distinct and nonroot; OpenBSD children inherit the locked parent unveil
+union and reduce pledge after permanent identity drop. IMAP publication carries
+owned stream descriptors over its existing channel. SMTP receipt refresh checks
+actual process/socket/configuration/PF continuity, including loopback skip state.
+Scoped tests/reviews and native compiler compatibility do not establish deployed
+authentication or full password-change security. Original T03–T08 native and
+installed scenarios, Bob isolation, interruption containment and old/new login
+remain required; historical full-workflow failures stay retained. No WSTG or
+release-wide PASS is claimed and no new external/provider traffic was generated.
+
+Actual current native SQL/hash test FAILS16.554s before executor/CAS at parent
+plan preparation. Temporary fixture provisioning succeeded but cleanup was
+unconfirmed; all removals remain zero pending reviewed fresh ownership. No
+password-change or native role-execution PASS is established. Cross-session
+getsid cleanup assumption was incompatible with OpenBSD; retain the failed
+evidence and actual errno UNKNOWN. No release/security-wide claim follows.
+
+Superseding retained-state disposition: reviewed cleanup1 PASS5.713s removes
+exactly2 synthetic rows/1 restricted DB user/7 private files/2 locked users and
+2 groups after fresh ownership proofs;22 born groups and scratch gone. Empty
+dirs and old rootstage/marker remain. Original native failure and missing full
+workflow qualification are unchanged. The actual Postfix path repair is source
+reviewed only; no WSTG/release/installed password-change PASS follows.
+
+Normal admission2 FAIL89.656s at unchangedV11: generated register exposed two
+new production unwraps plus a fixture panic outside the scanner-recognized test
+module. Replace both Option unwraps with existing refusal paths; relocate only
+the existing test-only helper into the existing cfg(test) module and re-export
+its unchanged API. No scanner, policy or exception changes. Regeneration now
+counts9496 assumptions/9411 source-test classifications/high0; this is scoped
+source handling, not application-wide panic freedom or native qualification.
+Both failed gate records remain; independent combined review precedes gate3.
+
+Rust SQL source admission is restricted to the exact reviewed password-backend
+SHA83d01fd6 for CWE89 only; any byte drift is an explicit renewed-review failure
+even if the generic SQL regex finds nothing. All other production rules remain.
+Four external hostile fixture files are excluded only with their exact actual
+cfg(test) parent markers. Existing guard regressions cover approved bytes,
+changed SQL, unrelated SQL and each missing-marker refusal. This authorizes
+source scanning of the fixed reviewed adapter, not native SQL execution or
+release acceptance; normal gate result remains separately measured.
+
+Legacy-consumer source repair after gate4 moves only SCM_RIGHTS fixture FFI
+into the existing openbsd.rs test module; its assertions/first-byte/FD contract
+remain. Fixed platform-Python fixture replaces shell use with identical bounded
+EOF/exit/output behaviours; negative command cases use an unapproved executable.
+No scanner exception, production permission, test deadline or native result is
+changed. Regenerated current inventory9496/high0/source-test9411 is source scope
+only. Independent review and the next normal hook establish admission separately.

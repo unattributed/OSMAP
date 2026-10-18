@@ -3,6 +3,7 @@ use crate::account_mutation::Request;
 use hmac::{Hmac, Mac};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
+use std::time::Instant;
 const SCHEMA: &str = "osmap-account-mutation-continuity-v1";
 pub(crate) const LIMIT: usize = 2048;
 #[derive(Serialize, Deserialize)]
@@ -101,6 +102,99 @@ pub(crate) fn acknowledge(
         return Err(());
     }
     Ok(result)
+}
+
+/// A single pending-before-write server challenge on the already verified
+/// guarded frame. The caller creates it only after durable account pending and
+/// accepts it only after reading exactly one bounded ACK followed by EOF.
+pub(crate) struct PendingChallenge {
+    challenge: Challenge,
+    deadline: Instant,
+}
+impl PendingChallenge {
+    pub(crate) fn new(
+        request: &Request,
+        authority: &crate::account_guarded_mutation::GuardedAuthority,
+        key: &[u8],
+        now_millis: u64,
+    ) -> Result<Self, ()> {
+        if !(32..=1024).contains(&key.len()) {
+            return Err(());
+        }
+        authority.authorize(request, now_millis).map_err(|_| ())?;
+        let inner: serde_json::Value =
+            serde_json::from_slice(&request.bytes().map_err(|_| ())?).map_err(|_| ())?;
+        let mut nonce = [0u8; 32];
+        getrandom::getrandom(&mut nonce).map_err(|_| ())?;
+        let mut challenge = Challenge {
+            schema: SCHEMA.into(),
+            phase: "challenge".into(),
+            account: request.account().into(),
+            epoch: request.epoch(),
+            intent_reference: request.intent_reference().into(),
+            request_signature: inner
+                .get("signature")
+                .and_then(|v| v.as_str())
+                .ok_or(())?
+                .into(),
+            frame_sha256: authority.frame_sha256().into(),
+            nonce: hex(&nonce),
+            deadline_millis: authority.deadline_millis(),
+            challenged_millis: now_millis,
+            signature: String::new(),
+        };
+        let mut mac = Hmac::<Sha256>::new_from_slice(key).map_err(|_| ())?;
+        mac.update(&payload(&challenge)?);
+        challenge.signature = hex(&mac.finalize().into_bytes());
+        if Instant::now() >= authority.deadline() {
+            return Err(());
+        }
+        Ok(Self {
+            challenge,
+            deadline: authority.deadline(),
+        })
+    }
+
+    pub(crate) fn bytes(&self) -> Result<Vec<u8>, ()> {
+        if Instant::now() >= self.deadline {
+            return Err(());
+        }
+        let raw = serde_json::to_vec(&self.challenge).map_err(|_| ())?;
+        if raw.len() > LIMIT {
+            return Err(());
+        }
+        Ok(raw)
+    }
+
+    /// Consuming self makes both successful and failed ACK checks single use.
+    /// This validates authenticity and binding; the socket owner separately
+    /// enforces exact framing, EOF and the same original deadline before use.
+    pub(crate) fn verify_ack(self, raw: &[u8], key: &[u8], now_millis: u64) -> Result<(), ()> {
+        if raw.is_empty()
+            || raw.len() > LIMIT
+            || !(32..=1024).contains(&key.len())
+            || now_millis < self.challenge.challenged_millis
+            || now_millis >= self.challenge.deadline_millis
+            || Instant::now() >= self.deadline
+        {
+            return Err(());
+        }
+        let mut ack: Challenge = serde_json::from_slice(raw).map_err(|_| ())?;
+        if ack.schema != SCHEMA || ack.phase != "ack" || !lower(&ack.signature) {
+            return Err(());
+        }
+        let signature =
+            crate::account_mutation_budget::decode_hex(&ack.signature, 64).map_err(|_| ())?;
+        let mut mac = Hmac::<Sha256>::new_from_slice(key).map_err(|_| ())?;
+        mac.update(&payload(&ack)?);
+        mac.verify_slice(&signature).map_err(|_| ())?;
+        // Compare every non-signature binding with the exact issued challenge.
+        ack.phase = "challenge".into();
+        if payload(&ack)? != payload(&self.challenge)? || Instant::now() >= self.deadline {
+            return Err(());
+        }
+        Ok(())
+    }
 }
 
 #[cfg(all(test, unix))]

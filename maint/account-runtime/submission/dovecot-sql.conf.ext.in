@@ -1,0 +1,7 @@
+# Root0600. Copy the existing authoritative SQL driver/DSN only after its exact
+# identity/grants are checked; do not create another password database.
+driver = mysql
+connect = @EXISTING_AUTHORITATIVE_READONLY_SQL_DSN@
+# password verifies the presented credential. No nopassword, no master user,
+# no proxy_noauth, no destuser or proxy-password override is returned.
+password_query = SELECT username AS user, password, 'Y' AS proxy, '127.0.0.1' AS host, 2525 AS port, 'after' AS osmap_epoch_phase FROM mailbox WHERE username = '%u' AND active = 1 AND smtp_active = 1

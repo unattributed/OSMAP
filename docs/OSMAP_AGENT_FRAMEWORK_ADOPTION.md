@@ -1,6 +1,15 @@
 # OSMAP adoption of the functional agent framework
 
-## Current bounded authorization — 2026-10-17
+## Current bounded authorization — 2026-10-18
+
+The operator resumed S04-02 with named subagents and the existing nine-scenario
+contract. Implement the Rust application/helper path using existing bounded
+MariaDB/Dovecot utilities and approved dependencies only. Reuse working Rust
+front-end/authority; finish demonstrated backend/containment gaps. Root owns
+integration/Git/host actions. Other stopped slices remain stopped, S04-01 remains
+accepted, and normal signed source review precedes remote synchronization.
+
+## Historical bounded authorization — 2026-10-17
 
 Resume S04-01 only under the current ledger and `UX_SLICE_S04_01.md`: preserve
 working code/evidence, repair demonstrated gaps and use minimum changed-boundary
@@ -154,6 +163,11 @@ Fixture repair/PASS is distinct from product delivery; retain all existing
 functional closure checks. A timebox overrun needs an explicit disposition in the
 same ledger. This validator checks declared structure and consistency, not evidence
 truth, complete history, usable software, runtime state or actual compute cost.
+The actual native dispatcher must check validator success before launching any
+SSH/spawn. Nonzero, timeout, missing output or mismatched planned attempt/source
+pins abort dispatch; retain one permanent dispatch receipt. A previous shell
+command is insufficient unless failure prevents transport. Preserve the actual
+2026-10-18 compiler2 deviation rather than retrospectively claiming compliance.
 No new board, runner, routine human approval or repeat passing suite is required;
 continue independent authorized password work while accountable preparation runs.
 

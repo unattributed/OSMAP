@@ -1,10 +1,52 @@
 # S04-02 delivery specification — authoritative own-password change
 
-Status: IN PROGRESS; engineering completion and human acceptance are OPEN.
+Status: IN PROGRESS (operator resumed 2026-10-18); engineering completion and human acceptance are OPEN.
 Accountable integration/project owner: `/root`. Independent Scrum/security
-review: `/root/scrum_security_review`. This specification applies the operator's
+review: `/root/s04_02_frontend` and `/root/s04_02_rust_backend` for the current
+Rust source boundaries, with `/root/account_backend` independent review of
+root custody. Historical Scrum reviews remain provenance. This specification applies the operator's
 2026-10-16 SOP to the slice already in flight; it does not claim that earlier work
 followed this contract or that historical component passes closed the slice.
+
+## Current Rust delivery contract — operator resumed 2026-10-18
+
+The operator explicitly assigned subagents to complete S04-02 against the nine
+existing scenarios. S04-01 remains accepted; no other stopped slice resumes.
+All new workflow/backend application code is OSMAP-owned Rust. Reuse the existing
+approved dependencies and fixed bounded MariaDB/Dovecot utilities; no new
+third-party dependencies. Preserve the four outcomes,20 obligations and T01–T09
+below. Earlier Python workers and HTTP fixture passes are historical references,
+not the final Rust implementation or installed qualification.
+
+Reuse the existing form, Rust step-up/rate/session/transport types and truthful
+status consumers. Implement a narrow SQL/hash adapter, durable account authority
+and fixed native service composition. Root integrates and owns host/Git actions;
+backend and durable-state developers own separate Rust paths; independent review
+checks producer, cleanup and actual consumer. No generic SQL/command endpoint or
+caller-selected authority. Exact fixed paths/configuration and the original
+operation deadline are code/operator-owned, never browser fields.
+
+The SQL adapter returns only a private database receipt. A verified zero-row CAS
+refuses without replay. A dispatched write with uncertain result remains contained
+and cannot retry or restore. Durable pending state precedes mutation and survives
+restart; current authority is rechecked under the shared account lock. Final
+success requires real account-specific IMAP/SMTP/cache and browser containment,
+old-password rejection/new-password admission and Bob preservation. Dovecot
+submission proxy list/kick is the existing utility candidate for TCP ownership;
+its actual routing and ordinary-login lock participation require measured source/
+host qualification, not a caller assertion or SASL-socket closure.
+
+Testing remains exactly the nine scenarios below. Reuse matching T01/T02 and
+unchanged Rust evidence. One successful installed controlled journey may supply
+T03/T06/T07/T08 observations; T04 replay/races/limits and T05 interruption have
+distinct checks. T09 owner usability follows all agent-owned passes. No operator
+credential mutation or external provider email during engineering. No automatic
+push/synchronization is authorized by this resumption.
+
+The prior HTTP9/10 narrative and source-specific findings below are historical;
+HTTP24 fixture PASS and HTTP25 Bob-login FAIL remain retained in the ledger.
+Neither qualifies the replacement Rust service or the installed pair. This
+contract does not reset investigation costs, native deadlines or failure history.
 
 ## Authority and scope
 

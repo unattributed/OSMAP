@@ -205,6 +205,458 @@ pub(crate) fn kill_process_group(child_pid: u32) -> io::Result<()> {
     Ok(())
 }
 
+/// Owned ancillary sockets; no Clone, raw-FD constructor or serialization.
+#[cfg(unix)]
+pub(crate) struct ReceivedImapIo {
+    sockets: Vec<std::os::fd::OwnedFd>,
+}
+#[cfg(unix)]
+impl ReceivedImapIo {
+    pub(crate) fn len(&self) -> usize {
+        self.sockets.len()
+    }
+    pub(crate) fn fd(&self, index: usize) -> Option<&std::os::fd::OwnedFd> {
+        self.sockets.get(index)
+    }
+}
+#[cfg(unix)]
+pub(crate) fn password_shutdown_imap_io(io: &ReceivedImapIo) -> io::Result<()> {
+    let mut failure = None;
+    for socket in &io.sockets {
+        if let Err(error) = password_shutdown_socket(socket) {
+            // Input/output can be distinct FDs for one socket description, or
+            // the client can already have disconnected. This alone is never a
+            // completion witness: Registry still requires control EOF and WHO0.
+            if error.raw_os_error() != Some(libc::ENOTCONN) {
+                failure = Some(error);
+            }
+        }
+    }
+    failure.map_or(Ok(()), Err)
+}
+
+/// Observe only the private lifetime-control socket; never read/peek mail data.
+#[cfg(unix)]
+pub(crate) fn password_imap_control_eof(stream: &UnixStream) -> io::Result<bool> {
+    let mut byte = 0u8;
+    let count = unsafe {
+        libc::recv(
+            stream.as_raw_fd(),
+            (&mut byte as *mut u8).cast(),
+            1,
+            libc::MSG_PEEK | libc::MSG_DONTWAIT,
+        )
+    };
+    if count == 0 {
+        return Ok(true);
+    }
+    if count > 0 {
+        return Err(io::ErrorKind::InvalidData.into());
+    }
+    let error = io::Error::last_os_error();
+    if matches!(
+        error.kind(),
+        io::ErrorKind::WouldBlock | io::ErrorKind::Interrupted
+    ) {
+        Ok(false)
+    } else {
+        Err(error)
+    }
+}
+
+/// Receive the first publication byte and one or two socket descriptors. The
+/// caller has already authenticated the Unix peer. Kernel CLOEXEC is atomic
+/// with receipt, so concurrently spawned utilities cannot inherit these FDs.
+#[cfg(unix)]
+pub(crate) fn password_receive_imap_io_first(
+    stream: &UnixStream,
+    deadline: std::time::Instant,
+) -> io::Result<(u8, ReceivedImapIo)> {
+    use std::os::fd::{FromRawFd, OwnedFd};
+    let mut byte = [0u8; 1];
+    loop {
+        let left = deadline
+            .checked_duration_since(std::time::Instant::now())
+            .filter(|v| !v.is_zero())
+            .ok_or(io::ErrorKind::TimedOut)?;
+        stream.set_read_timeout(Some(left))?;
+        // cmsghdr elements supply native alignment as well as enough capacity
+        // to recover and close surplus descriptors on a rejected transfer.
+        let mut control: [libc::cmsghdr; 16] = unsafe { std::mem::zeroed() };
+        let mut vector = libc::iovec {
+            iov_base: byte.as_mut_ptr().cast(),
+            iov_len: 1,
+        };
+        let mut message: libc::msghdr = unsafe { std::mem::zeroed() };
+        message.msg_iov = &mut vector;
+        message.msg_iovlen = 1;
+        message.msg_control = control.as_mut_ptr().cast();
+        message.msg_controllen = std::mem::size_of_val(&control) as _;
+        let received =
+            unsafe { libc::recvmsg(stream.as_raw_fd(), &mut message, libc::MSG_CMSG_CLOEXEC) };
+        if received < 0 {
+            let error = io::Error::last_os_error();
+            if error.kind() == io::ErrorKind::Interrupted {
+                continue;
+            }
+            return Err(error);
+        }
+        let mut descriptors: Vec<OwnedFd> = Vec::new();
+        let mut valid =
+            received == 1 && message.msg_flags & (libc::MSG_CTRUNC | libc::MSG_TRUNC) == 0;
+        let mut count = 0usize;
+        let mut header = unsafe { libc::CMSG_FIRSTHDR(&message) };
+        while !header.is_null() {
+            let h = unsafe { &*header };
+            let base = unsafe { libc::CMSG_LEN(0) } as usize;
+            let length = h.cmsg_len as usize;
+            let data = length.checked_sub(base);
+            if h.cmsg_level != libc::SOL_SOCKET
+                || h.cmsg_type != libc::SCM_RIGHTS
+                || data.is_none()
+                || data.unwrap_or(1) % std::mem::size_of::<libc::c_int>() != 0
+            {
+                valid = false;
+            } else {
+                count += 1;
+                let slots = data.unwrap_or(0) / std::mem::size_of::<libc::c_int>();
+                for index in 0..slots {
+                    let fd = unsafe {
+                        std::ptr::read_unaligned(
+                            libc::CMSG_DATA(header).cast::<libc::c_int>().add(index),
+                        )
+                    };
+                    if fd < 0 {
+                        valid = false;
+                        continue;
+                    }
+                    // Every installed right is owned immediately, including
+                    // surplus/non-socket rights; all refusals drop the vector.
+                    let fd = unsafe { OwnedFd::from_raw_fd(fd) };
+                    if password_stream_socket(&fd).is_err() {
+                        valid = false;
+                    }
+                    descriptors.push(fd);
+                }
+            }
+            header = unsafe { libc::CMSG_NXTHDR(&message, header) };
+        }
+        if !valid
+            || count != 1
+            || !(1..=2).contains(&descriptors.len())
+            || std::time::Instant::now() >= deadline
+        {
+            return Err(io::ErrorKind::InvalidData.into());
+        }
+        return Ok((
+            byte[0],
+            ReceivedImapIo {
+                sockets: descriptors,
+            },
+        ));
+    }
+}
+
+#[cfg(unix)]
+pub(crate) fn password_stream_socket(fd: &std::os::fd::OwnedFd) -> io::Result<()> {
+    let mut kind: libc::c_int = 0;
+    let mut size = std::mem::size_of_val(&kind) as libc::socklen_t;
+    if unsafe {
+        libc::getsockopt(
+            fd.as_raw_fd(),
+            libc::SOL_SOCKET,
+            libc::SO_TYPE,
+            (&mut kind as *mut libc::c_int).cast(),
+            &mut size,
+        )
+    } != 0
+    {
+        return Err(io::Error::last_os_error());
+    }
+    if size as usize != std::mem::size_of_val(&kind) || kind != libc::SOCK_STREAM {
+        return Err(io::ErrorKind::InvalidData.into());
+    }
+    Ok(())
+}
+
+#[cfg(unix)]
+pub(crate) fn password_shutdown_socket(fd: &std::os::fd::OwnedFd) -> io::Result<()> {
+    password_stream_socket(fd)?;
+    if unsafe { libc::shutdown(fd.as_raw_fd(), libc::SHUT_RDWR) } != 0 {
+        return Err(io::Error::last_os_error());
+    }
+    Ok(())
+}
+
+/// Observe only this direct child's exit while retaining its unreaped PID/PGID
+/// lease. EOF is not process completion. The caller remains responsible for
+/// final owned-group cleanup and Child::try_wait reaping.
+#[cfg(unix)]
+pub(crate) fn owned_child_exited_without_reap(child_pid: u32) -> io::Result<bool> {
+    if child_pid <= 1 {
+        return Err(io::ErrorKind::InvalidInput.into());
+    }
+    let mut info: libc::siginfo_t = unsafe { std::mem::zeroed() };
+    if unsafe {
+        libc::waitid(
+            libc::P_PID,
+            child_pid as libc::id_t,
+            &mut info,
+            libc::WEXITED | libc::WNOWAIT | libc::WNOHANG,
+        )
+    } != 0
+    {
+        return Err(io::Error::last_os_error());
+    }
+    Ok(unsafe { info.si_pid() } == child_pid as libc::pid_t)
+}
+
+#[cfg(unix)]
+pub(crate) fn private_leaf_open(
+    directory: &fs::File,
+    name: &std::ffi::CStr,
+    flags: i32,
+) -> io::Result<fs::File> {
+    use std::os::fd::FromRawFd;
+    let fd = unsafe {
+        libc::openat(
+            directory.as_raw_fd(),
+            name.as_ptr(),
+            flags | libc::O_NOFOLLOW | libc::O_NONBLOCK | libc::O_CLOEXEC,
+            0o600,
+        )
+    };
+    if fd < 0 {
+        return Err(io::Error::last_os_error());
+    }
+    Ok(unsafe { fs::File::from_raw_fd(fd) })
+}
+#[cfg(unix)]
+pub(crate) fn private_file_try_lock(file: &fs::File) -> io::Result<()> {
+    if unsafe { libc::flock(file.as_raw_fd(), libc::LOCK_EX | libc::LOCK_NB) } == 0 {
+        Ok(())
+    } else {
+        Err(io::Error::last_os_error())
+    }
+}
+#[cfg(unix)]
+pub(crate) fn private_file_unlock(file: &fs::File) -> io::Result<()> {
+    if unsafe { libc::flock(file.as_raw_fd(), libc::LOCK_UN) } == 0 {
+        Ok(())
+    } else {
+        Err(io::Error::last_os_error())
+    }
+}
+#[cfg(unix)]
+pub(crate) fn private_leaf_rename(
+    directory: &fs::File,
+    from: &std::ffi::CStr,
+    to: &std::ffi::CStr,
+) -> io::Result<()> {
+    if unsafe {
+        libc::renameat(
+            directory.as_raw_fd(),
+            from.as_ptr(),
+            directory.as_raw_fd(),
+            to.as_ptr(),
+        )
+    } == 0
+    {
+        Ok(())
+    } else {
+        Err(io::Error::last_os_error())
+    }
+}
+#[cfg(unix)]
+pub(crate) fn private_leaf_unlink(directory: &fs::File, name: &std::ffi::CStr) -> io::Result<()> {
+    if unsafe { libc::unlinkat(directory.as_raw_fd(), name.as_ptr(), 0) } == 0 {
+        Ok(())
+    } else {
+        Err(io::Error::last_os_error())
+    }
+}
+#[cfg(unix)]
+pub(crate) fn private_leaf_exists(directory: &fs::File, name: &std::ffi::CStr) -> io::Result<bool> {
+    let mut info: libc::stat = unsafe { std::mem::zeroed() };
+    if unsafe {
+        libc::fstatat(
+            directory.as_raw_fd(),
+            name.as_ptr(),
+            &mut info,
+            libc::AT_SYMLINK_NOFOLLOW,
+        )
+    } == 0
+    {
+        return Ok(true);
+    }
+    let error = io::Error::last_os_error();
+    if error.raw_os_error() == Some(libc::ENOENT) {
+        Ok(false)
+    } else {
+        Err(error)
+    }
+}
+
+/// Fixed native password-service authority, without caller-selected host or
+/// numeric identity. Other platforms cannot construct a production profile.
+pub(crate) fn password_native_authority() -> bool {
+    #[cfg(target_os = "openbsd")]
+    {
+        if !cfg!(target_arch = "x86_64")
+            || !cfg!(target_endian = "little")
+            || unsafe { libc::getuid() } != 0
+            || unsafe { libc::geteuid() } != 0
+        {
+            return false;
+        }
+        let mut info: libc::utsname = unsafe { std::mem::zeroed() };
+        let mut host = [0u8; 256];
+        if unsafe { libc::uname(&mut info) } != 0
+            || unsafe { libc::gethostname(host.as_mut_ptr().cast(), host.len()) } != 0
+        {
+            return false;
+        }
+        let system = unsafe { std::ffi::CStr::from_ptr(info.sysname.as_ptr()) };
+        let release = unsafe { std::ffi::CStr::from_ptr(info.release.as_ptr()) };
+        system.to_bytes() == b"OpenBSD"
+            && release.to_bytes() == b"7.9"
+            && host
+                .iter()
+                .position(|v| *v == 0)
+                .is_some_and(|end| &host[..end] == b"mail.blackbagsecurity.com")
+    }
+    #[cfg(not(target_os = "openbsd"))]
+    {
+        false
+    }
+}
+
+/// Installs already prepared code-owned strings/IDs. The post-fork closure
+/// performs only fixed syscalls: no hashes, filesystem inspection or allocation.
+#[cfg(unix)]
+pub(crate) fn install_password_child_profile(
+    command: &mut std::process::Command,
+    plan: crate::account_password_native::PreparedChild,
+) -> io::Result<()> {
+    if std::time::Instant::now() >= plan.deadline()
+        || plan.rules().is_empty()
+        || plan.promises().to_bytes().is_empty()
+    {
+        return Err(io::ErrorKind::InvalidInput.into());
+    }
+    #[cfg(target_os = "openbsd")]
+    {
+        imp::password_child_profile(command, plan)
+    }
+    #[cfg(not(target_os = "openbsd"))]
+    {
+        let _ = (command, plan);
+        Err(io::ErrorKind::Unsupported.into())
+    }
+}
+
+/// Constructible only after the current process actually locks its fixed native
+/// unveil table and installs its pledge promises. No caller Boolean is accepted.
+pub(crate) struct PasswordParentSeal {
+    pid: u32,
+}
+#[cfg(target_os = "openbsd")]
+static PASSWORD_PARENT_SEALED: std::sync::atomic::AtomicBool =
+    std::sync::atomic::AtomicBool::new(false);
+impl PasswordParentSeal {
+    pub(crate) fn is_current_process(&self) -> bool {
+        self.pid == std::process::id()
+    }
+}
+pub(crate) fn seal_password_parent(
+    plan: &crate::account_password_confinement::ParentPlan,
+) -> io::Result<PasswordParentSeal> {
+    if plan.rules().is_empty() || plan.promises().to_bytes().is_empty() {
+        return Err(io::ErrorKind::InvalidInput.into());
+    }
+    #[cfg(target_os = "openbsd")]
+    {
+        if !password_native_authority() {
+            return Err(io::ErrorKind::PermissionDenied.into());
+        }
+        // Establish the inherited cwd before unveil hides ancestor paths.
+        std::env::set_current_dir("/")?;
+        imp::password_parent_seal(plan)?;
+        PASSWORD_PARENT_SEALED.store(true, std::sync::atomic::Ordering::Release);
+        Ok(PasswordParentSeal {
+            pid: std::process::id(),
+        })
+    }
+    #[cfg(not(target_os = "openbsd"))]
+    {
+        let _ = plan;
+        Err(io::ErrorKind::Unsupported.into())
+    }
+}
+
+pub(crate) struct PasswordKernelPeer {
+    pid: u32,
+    uid: u32,
+    gid: u32,
+}
+#[cfg(unix)]
+pub(crate) fn password_device_parts(device: u64) -> (u32, u32) {
+    (
+        libc::major(device as libc::dev_t) as u32,
+        libc::minor(device as libc::dev_t) as u32,
+    )
+}
+impl PasswordKernelPeer {
+    pub(crate) fn pid(&self) -> u32 {
+        self.pid
+    }
+    pub(crate) fn uid(&self) -> u32 {
+        self.uid
+    }
+    pub(crate) fn gid(&self) -> u32 {
+        self.gid
+    }
+}
+/// Connect-time kernel credentials from the accepted native Unix socket. File
+/// ownership or a PID in request bytes cannot construct this value.
+#[cfg(unix)]
+pub(crate) fn password_kernel_peer(stream: &UnixStream) -> io::Result<PasswordKernelPeer> {
+    #[cfg(target_os = "openbsd")]
+    {
+        let mut value: libc::sockpeercred = unsafe { std::mem::zeroed() };
+        let mut size = std::mem::size_of::<libc::sockpeercred>() as libc::socklen_t;
+        if unsafe {
+            libc::getsockopt(
+                stream.as_raw_fd(),
+                libc::SOL_SOCKET,
+                libc::SO_PEERCRED,
+                (&mut value as *mut libc::sockpeercred).cast(),
+                &mut size,
+            )
+        } != 0
+        {
+            return Err(io::Error::last_os_error());
+        }
+        if size as usize != std::mem::size_of::<libc::sockpeercred>()
+            || value.pid <= 1
+            || value.uid == u32::MAX
+            || value.gid == u32::MAX
+        {
+            return Err(io::ErrorKind::PermissionDenied.into());
+        }
+        Ok(PasswordKernelPeer {
+            pid: value.pid as u32,
+            uid: value.uid,
+            gid: value.gid,
+        })
+    }
+    #[cfg(not(target_os = "openbsd"))]
+    {
+        let _ = stream;
+        Err(io::ErrorKind::Unsupported.into())
+    }
+}
+
 /// Exact owned process-group existence; permission/other errors are unknown.
 #[cfg(unix)]
 pub(crate) fn process_group_exists(child_pid: u32) -> io::Result<bool> {
@@ -1135,6 +1587,72 @@ mod imp {
         fn unveil(path: *const c_char, permissions: *const c_char) -> c_int;
     }
 
+    pub(super) fn password_parent_seal(
+        plan: &crate::account_password_confinement::ParentPlan,
+    ) -> io::Result<()> {
+        for (path, access) in plan.rules() {
+            if unsafe { unveil(path.as_ptr(), access.as_ptr()) } != 0 {
+                return Err(io::Error::last_os_error());
+            }
+        }
+        if unsafe { unveil(std::ptr::null(), std::ptr::null()) } != 0
+            || unsafe { pledge(plan.promises().as_ptr(), plan.promises().as_ptr()) } != 0
+        {
+            return Err(io::Error::last_os_error());
+        }
+        Ok(())
+    }
+
+    pub(super) fn password_child_profile(
+        command: &mut std::process::Command,
+        plan: crate::account_password_native::PreparedChild,
+    ) -> io::Result<()> {
+        use std::os::unix::process::CommandExt;
+        if !super::password_native_authority()
+            || !super::PASSWORD_PARENT_SEALED.load(std::sync::atomic::Ordering::Acquire)
+            || std::time::Instant::now() >= plan.deadline()
+        {
+            return Err(io::ErrorKind::PermissionDenied.into());
+        }
+        // SAFETY: all captured C strings and IDs were prepared/validated by the
+        // code-owned native profile. Only async-signal-safe fixed syscalls run.
+        unsafe {
+            command.pre_exec(move || {
+                if std::time::Instant::now() >= plan.deadline() {
+                    return Err(io::ErrorKind::TimedOut.into());
+                }
+                let (uid, gid) = plan.ids();
+                if libc::setgroups(0, std::ptr::null()) != 0
+                    || libc::setresgid(gid, gid, gid) != 0
+                    || libc::setresuid(uid, uid, uid) != 0
+                {
+                    return Err(io::Error::last_os_error());
+                }
+                let (mut ruid, mut euid, mut suid, mut rgid, mut egid, mut sgid) =
+                    (0, 0, 0, 0, 0, 0);
+                if libc::getresuid(&mut ruid, &mut euid, &mut suid) != 0
+                    || libc::getresgid(&mut rgid, &mut egid, &mut sgid) != 0
+                    || (ruid, euid, suid) != (uid, uid, uid)
+                    || (rgid, egid, sgid) != (gid, gid, gid)
+                    || libc::getgroups(0, std::ptr::null_mut()) != 0
+                {
+                    return Err(io::ErrorKind::PermissionDenied.into());
+                }
+                // fork inherits the parent's already locked closed filesystem view.
+                // Re-unveiling would fail EPERM. Role-specific UID/GID/DAC and
+                // narrower pledge/execpromises reduce that inherited authority.
+                if pledge(plan.promises().as_ptr(), plan.promises().as_ptr()) != 0 {
+                    return Err(io::Error::last_os_error());
+                }
+                if std::time::Instant::now() >= plan.deadline() {
+                    return Err(io::ErrorKind::TimedOut.into());
+                }
+                Ok(())
+            });
+        }
+        Ok(())
+    }
+
     /// Applies the current plan by reducing promises, unveiling paths, locking
     /// the view, and then dropping the `unveil` promise.
     pub fn apply_plan(plan: &OpenbsdConfinementPlan) -> Result<(), String> {
@@ -1215,7 +1733,49 @@ pub(crate) fn close_disposable_fixture_output() -> Result<(), String> {
 }
 
 #[cfg(test)]
+pub(crate) use tests::publish_rights;
+
+#[cfg(test)]
 mod tests {
+    // Send rights attached to the first byte, matching the fixed C publication
+    // contract. No mail data is read or retained by the ancillary transport.
+    pub(crate) fn publish_rights(
+        stream: &mut std::os::unix::net::UnixStream,
+        bytes: &[u8],
+        fds: &[&std::os::unix::net::UnixStream],
+    ) {
+        use std::io::Write;
+        use std::os::fd::AsRawFd;
+        let raw = fds.iter().map(|fd| fd.as_raw_fd()).collect::<Vec<_>>();
+        assert!((1..=2).contains(&raw.len()));
+        let length = raw.len() * std::mem::size_of::<libc::c_int>();
+        let mut byte = [bytes[0]];
+        let mut control: [libc::cmsghdr; 4] = unsafe { std::mem::zeroed() };
+        let mut vector = libc::iovec {
+            iov_base: byte.as_mut_ptr().cast(),
+            iov_len: 1,
+        };
+        let mut message: libc::msghdr = unsafe { std::mem::zeroed() };
+        message.msg_iov = &mut vector;
+        message.msg_iovlen = 1;
+        message.msg_control = control.as_mut_ptr().cast();
+        message.msg_controllen = unsafe { libc::CMSG_SPACE(length as _) } as _;
+        let header = unsafe { libc::CMSG_FIRSTHDR(&message) };
+        unsafe {
+            (*header).cmsg_level = libc::SOL_SOCKET;
+            (*header).cmsg_type = libc::SCM_RIGHTS;
+            (*header).cmsg_len = libc::CMSG_LEN(length as _) as _;
+            for (index, fd) in raw.into_iter().enumerate() {
+                std::ptr::write_unaligned(
+                    libc::CMSG_DATA(header).cast::<libc::c_int>().add(index),
+                    fd,
+                );
+            }
+            assert_eq!(libc::sendmsg(stream.as_raw_fd(), &message, 0), 1);
+        }
+        stream.write_all(&bytes[1..]).unwrap();
+    }
+
     use super::*;
     use crate::config::{AppRunMode, LogFormat, RuntimeEnvironment};
     use crate::state::{StateLayout, StateLayoutPaths};

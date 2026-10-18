@@ -9,6 +9,7 @@ out of the production Rust boundary unless they are reviewed and allowlisted.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import re
 import sys
 from dataclasses import dataclass
@@ -20,6 +21,22 @@ TOP25_VERSION = "MITRE CWE Top 25 2025"
 # These files are compiled exclusively through cfg(test) modules. Verify the
 # registration before excluding their native-fixture process calls.
 TEST_ONLY_RUST_PATHS = {
+    "src/account_password_backend_tests.rs": (
+        "src/account_password_backend.rs",
+        '#[cfg(test)]\n#[path = "account_password_backend_tests.rs"]\nmod tests;',
+    ),
+    "src/account_password_native_tests.rs": (
+        "src/account_password_native.rs",
+        '#[cfg(test)]\n#[path = "account_password_native_tests.rs"]\nmod tests;',
+    ),
+    "src/account_password_policy_endpoint_tests.rs": (
+        "src/account_password_policy_endpoint.rs",
+        '#[cfg(test)]\n#[path = "account_password_policy_endpoint_tests.rs"]\nmod tests;',
+    ),
+    "src/account_password_process_tests.rs": (
+        "src/account_password_process.rs",
+        '#[cfg(test)]\n#[path = "account_password_process_tests.rs"]\nmod tests;',
+    ),
     "src/openpgp_public_admin_tests.rs": (
         "src/openpgp_public_admin.rs",
         '#[cfg(test)]\n#[path = "openpgp_public_admin_tests.rs"]\nmod tests;',
@@ -28,6 +45,15 @@ TEST_ONLY_RUST_PATHS = {
         "src/http_gateway_mail.rs",
         'include!("http/protected_send_gateway_native_tests.rs");',
     ),
+}
+
+
+# Operator-approved fixed password SQL adapter. Admission covers CWE-89 only;
+# every byte change requires renewed source review, even without a regex hit.
+# Other production rules continue to scan the entire file.
+REVIEWED_SQL_RUST_PATHS = {
+    "src/account_password_backend.rs":
+        "83d01fd688fac4017a87369607aa8ba629e861cc6f3998424b40fa2e233c2ec8",
 }
 
 
@@ -177,8 +203,18 @@ def scan_rust(root: Path) -> list[Finding]:
                 or "#[cfg(test)]\nmod tests {" in parent_source
             ):
                 continue
+        reviewed_sql = False
+        if rel in REVIEWED_SQL_RUST_PATHS:
+            reviewed_sql = hashlib.sha256(path.read_bytes()).hexdigest() == REVIEWED_SQL_RUST_PATHS[rel]
+            if not reviewed_sql:
+                findings.append(Finding(
+                    "CWE-89", "reviewed SQL boundary changed; renewed source review required",
+                    Path(rel), 1, "fixed password adapter digest differs",
+                ))
         for line_number, line in production_rust_lines(path):
             for rule in PRODUCTION_RULES:
+                if rule.cwe == "CWE-89" and reviewed_sql:
+                    continue
                 if rel in rule.allow_paths:
                     continue
                 if rule.pattern.search(line):

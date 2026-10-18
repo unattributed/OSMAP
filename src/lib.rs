@@ -137,5 +137,35 @@ mod native_stored_issuer_fixture;
 pub mod folder_delete;
 mod folder_delete_backend;
 
+pub(crate) mod account_password_admission;
+pub(crate) mod account_password_backend;
+#[cfg(unix)]
+pub(crate) mod account_password_connection;
+pub(crate) mod account_password_mail;
+pub(crate) mod account_password_native;
+#[cfg(unix)]
+pub(crate) mod account_password_peer;
+pub(crate) mod account_password_policy;
+pub(crate) mod account_password_policy_endpoint;
+#[cfg(unix)]
+pub(crate) mod account_password_process;
+pub(crate) mod account_password_service;
+pub(crate) mod account_password_state;
 #[cfg(all(test, unix))]
 mod native_factory_stored_issuer_fixture;
+
+#[cfg(unix)]
+pub(crate) mod account_password_runtime;
+#[cfg(unix)]
+pub(crate) mod account_password_topology;
+
+#[cfg(unix)]
+pub(crate) mod account_password_imap;
+
+#[cfg(unix)]
+pub mod account_password_server;
+
+#[cfg(unix)]
+pub(crate) mod account_password_confinement;
+#[cfg(unix)]
+pub(crate) mod account_password_custody;
