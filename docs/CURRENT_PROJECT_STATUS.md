@@ -2,59 +2,62 @@
 
 ## S04-02 current source and operational limits — 2026-10-18
 
-One instrumented diagnostic of retained older case10 helper80fc/source6ec
-completed6.455s (7075fef3). Collection and owned cleanup passed; the worker
-failed after Hello READY with parent RPC EOF at0.401531s, exit1. The trace
-contains7790 syscall records from one owned PID, with no spawn or fstat seen;
-1666 reads and1785 clock calls occurred. These aggregate observations locate a
-pre-spawn boundary; a unique cause remains unproved. Five finite utilities and
-the worker are reaped/group-gone, current master/configuration and old artifacts
-are preserved. The new diagnostic claim and672800-byte syscall-only trace are
-retained privately. No AUTH, SQL or service/configuration mutation occurred.
-This older-source instrumented result does not qualify production timing,
-current diagnostic5, or the password workflow. Author and reviewer are assessing
-the minimal causal source correction; no unchanged probe is queued.
+Latest candidate release-profile Primary case12 failed 18.900s (31a5b5b6),
+with Primary ready followed by generic service unavailable and client guard C04.
+The helper exited 1 and was reaped; its initial absence field was an
+unmeasured sentinel. Fresh partial observer6 passed6.986s and actually verified
+the client plus full16 files, no helper/worker or purpose processes, same master
+and service OK. Observer5's earlier generic ValueError remains UNKNOWN.
 
-Diagnostic5 compiled58.946s/captured5.953s with459 exact inputs, but two
-single-helper uploads failed188.918s/184.631s. First created no stage/child;
-second received the pinned wire but left29,360,128 of65,454,648 bytes in an
-owned private artifact stage. No worker, account, service or config ran/changed.
-Independent977b9585 retains both failures and373.549s; storage/network cause is
-unknown. No third upload, deadline increase, rebuild or observer is queued.
-No active mail incident remains; partial artifact is unqualified. Window15
-closed1749.721s without overrun; same-objective continuation16 began00:24:13Z.
-No failure, cost or expired fixture authority is reset by the continuation.
+Exact owned recovery5 passed8.848s (52a49cc3): original25+22, same master/service
+and ordinary three listeners preserved; private Primary path/kernel listener
+absent. Two synthetic rows,16 files,two users/groups were removed; four retained
+empty directories normalized root0700,three helper sockets already absent.
+All17 utility groups were reaped/gone with no cleanup uncertainty. Independent565a3575 confirms
+the enumerated disposition; the incident is closed. Functional case12 FAIL/UNCERTAIN remains;
+no outage, specific cause, or absence of synthetic AUTH is inferred.
 
-Latest actual changed case10 failed19.666s (10ebdf3c). Worker bootstrap and
-Primary startup now reached `primary_ready`; the first controlled request then
-failed `primary_startup_master_fstat_child_deadline / Unavailable`, clientC15,
-before successful AUTH or password mutation. The tag currently merges parent
-RPC and worker command deadlines; it does not establish fstat spawn, kernel
-hang, or a unique cause. Raw FAIL/UNCERTAIN/nested UNKNOWN remain retained.
+The exact three-path main-link candidate grants fixed `/var/dovecot` read-only
+metadata authority while retaining fresh link checks and full content hashes.
+The existing actual-union control passed 1/0 in 8.386s; release build12 passed
+73.909s, capture 0.686s, unprivileged prefile 20.293s and root local publication
+7.844s. Candidate manifest ace1/459 inputs is distinct from signed base e22;
+no candidate signed delivery, installed workflow, or UAT acceptance is claimed.
+Independent case12 outcome4b8e9f06 requires current observation before disposal.
 
-Exact current observation4 passed7.081s (3db46d99); owned recovery4 then
-passed9.041s (7516586d), independently accepted76a783b4. Original25,
-exact22, same public master43724/rc OK, ordinary three listeners and private
-Primary absence are confirmed. Exact2 synthetic rows/16 files/2 users and groups
-were removed; four shared inodes retained and normalizedroot0700. All17 finite
-utility groups are reaped/gone, scratch removed, no cleanup or mutation
-uncertainty. Three helper sockets remained absent with zero socket unlink.
-No operator credential changed; only controlled fixture rows were deleted.
-No active retained fixture remains. Historical failed/uncertain cases stay
-retained; this recovery does not qualify the failed request or password UAT.
+Historical case11 failed 16.120s at primary_main_link_metadata/Unavailable;
+independent5434f67b confirmed its scoped owned rollback/disposal. Historical
+FAIL/UNCERTAIN remains unchanged. The source-supported follow-versus-no-follow
+unveil mismatch selected the current exact directory grant; case12 does not
+establish whole password workflow success.
 
-Exact endpoint/closefrom correction is independently reviewed4dc8: release
-Command's retained child endpoint after Child custody and before Hello; accept
-only successful or actual EBADF already-empty closefrom(3). Five-leaf candidate
-over signed base8c0 has459 exact inputs. Unchanged canonical TLS lexical guard
-passed3.606s; helper-only build9/capture/staging passed58.844s/5.935s/61.751s.
-These prerequisites and actual startup progress do not close the admission or
-password workflow. No timeout or parent permission widening was introduced.
+Current signed sourcee22aeedc789bd368d978571668c086c321416dec passed the
+normal commit hook296.859s, both outgoing commits verified Shopkeeper, normal
+push264.491s and fresh origin equality0ahead/0behind. Source459manifest7a244
+is the signed baseline; exact reviewed main-link3 and installer2 are pending
+source-only signed admission, with uncompiled composition3 excluded. Ongoing ledger/evidence updates remain uncommitted for the next
+real source admission; no standalone paperwork checkpoint is planned.
 
-Lifecycle/root activation producer and explicit worker composition are source
-reviewed239c53cf/8b563bee in an isolated462-input candidate. Native activation,
-loaded Generation and full installed password workflow remain unqualified.
-The password form stays disabled; UAT is not ready.
+The same signed source now has an actual intended release build: opt_level3,
+debuginfo0, testfalse, helper91a5/2,641,648 bytes, compilePASS88.669s. Fixed
+capture passed0.718s, gzip1,040,722 bytes. Existing unprivileged-prefile and
+root local-file publication passed21.046s/7.747s, fresh stage70a2d. Full
+per-query content hashes and original400/500ms bounds are preserved. A proposed
+metadata-only weakening failed its mutation control and was never admitted.
+
+Earlier debugopt0 case10 and the one instrumented older-source observation
+remain failed. Same retained trace reclassification located401092us of
+non-channel file bytework before exit without fstat spawn; that observation
+does not qualify production timing or uniquely assign unrelated errors. Two
+earlier gzip uploads failed188.918s/184.631s (373.549s), with one partial
+public artifact retained and unknown unique cause. No third identical root
+stdin transfer or timeout increase was used. All historical failures remain.
+
+Lifecycle/root activation producer and explicit worker composition remain
+source-reviewed239c53cf/8b563bee in an isolated462-input candidate. The
+installer/rc source is also isolated and under review, with no host activation.
+Native loaded Generation and the full installed password workflow remain
+unqualified. The password form stays disabled; UAT is not ready.
 
 Earlier source and candidate checkpoints follow as provenance.
 

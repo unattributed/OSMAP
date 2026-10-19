@@ -81,7 +81,6 @@ impl ParentPlan {
             add(path, "r");
         }
         add("/usr/local/libexec/dovecot/auth", "r");
-        add("/var/dovecot/dovecot.conf", "r");
         // Fixed include wildcard enumeration only; no directory writes.
         add("/etc/dovecot/conf.d", "r");
         add("/usr/local/libexec/dovecot/anvil", "r");

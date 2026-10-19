@@ -12008,3 +12008,58 @@ This source preservation is independently useful and does not wait for full
 S04-02 acceptance. Mandatory normal hooks, Shopkeeper signature verification and
 operator-authorized normal push/fresh equality remain required. Causal changes
 stay isolated until a later reviewed admission; no amend or history rewrite.
+
+
+## 2026-10-19 — match native timing evidence to deployment profile
+
+The retained native compiler JSON identified prior helpers as Cargo dev
+opt_level0/debuginfo2. That profile is functional source evidence and does not
+establish intended production timing. The same retained trace showed request
+framing completed, then401092 microseconds of non-channel file bytework before
+exit, without spawning fstat. No authentication or KERN_FILE failure was inferred.
+
+An isolated metadata-only replacement failed its same-size overwrite/restored
+mtime control because all nine metadata fields could remain equal within one
+filesystem clock tick. Abandon that draft; none of its source was admitted.
+Retain full per-query content hashes and the original400/500ms bounds. Root
+selected the existing --release profile on unchanged signed sourcee22/4597a244.
+Actual compiler JSON records opt_level3/debuginfo0/testfalse and the standard
+release assertions/overflow settings. Record the actual Cargo profile with
+future native performance evidence and match the intended deployment profile;
+do not silently treat a debug artefact as production timing qualification.
+
+Release build passed88.669s, helper2,641,648 bytes/gzip1,040,722 bytes. The
+existing unprivileged-prefile transfer and local-file root publication passed
+21.046s/7.747s, preserving their original finite bounds. The earlier assertion
+that all working receivers lacked EOF checks was incorrect: successful finite
+local-file receivers contain a valid EOF guard. The unique causes of the two
+failed uploads remain UNKNOWN; no retrospective cause or erased cost follows.
+
+Actual release case11 failed16.120s after advancing past Startup/FSTAT/argv to
+primary_main_link_metadata/Unavailable. This is not whole timing or password
+workflow success. Independent5434f67b confirms exact owned rollback/disposal,
+all40 groups and outer gone, same-master rc OK/original25/full17/Active0 and
+2rows/16files/2users and groups removed. Raw outer FAIL/UNCERTAIN is preserved.
+No new observer or unchanged native replay is needed; the precise post-seal
+main-link metadata boundary is the next source question.
+
+The current exact main-link candidate was qualified through the existing
+reviewed release chain with a single prospective review8d8650ba. Receipt-derived
+hash/size/path/lease substitutions received local whole-body parity and typed
+Path/string checks; unchanged consumers were not repeatedly re-audited. Final
+functional outcomes still require independent assessment. Case12 failed18.900s
+at clientC04 after readiness, with helper1 and retained cleanup uncertainty;
+one existing current-state observation is required before exact owned recovery.
+No historical failure/cost was reset, no operator password action was performed,
+and no synthetic AUTH or specific cause inference is made from the coarse stage.
+
+Preserve completed reviewed main-link and installer source under a source-only
+signed admission after the actual main-link path advanced through a valid
+wrong-credential response. Correct C04/Err and form-disabled limits remain;
+uncompiled composition3 is excluded. Installer source is INSTALLED_NOT_ACTIVATED
+when eventually run, not evidence that installation has happened. Recovery5
+independent565a3575 closes the enumerated retained incident, preserving the
+case12 failure and observer5 refusal. Controlled candidate qualification uses a
+signed base plus exact candidate manifest; final completed admission still runs
+all normal signing/push hooks and fresh origin equality. Deadline qualification
+must use the intended recorded Cargo profile and full content hashes.

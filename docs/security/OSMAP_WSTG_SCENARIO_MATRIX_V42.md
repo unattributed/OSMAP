@@ -1,5 +1,18 @@
 # OSMAP WSTG v4.2 Scenario Matrix
 
+S04-02 source-only main-link and installation increment, 2026-10-19: the exact
+ParentPlan grants fixed `/var/dovecot` read-only metadata access, retaining fresh
+link identity/target and full-hash checks. Existing actual-union control passes
+1/0; release candidate native case12 reaches a valid wrong-credential refusal,
+then the correct-credential call returns C04/Err. No cause or full password/UAT
+success is inferred. Exact owned recovery independently confirms original
+configuration, same master/service and ordinary listeners, private listener
+absence and removal of the controlled rows/files/principals. The fixed root
+foreground rc/atomic installer source has13 isolated controls; native install
+and activation are NOT RUN and existing enablement is unmodified. The Settings
+password form remains disabled. Full authoritative password change, containment,
+installed workflow and human UAT remain OPEN.
+
 S04-01 bounded Settings repair, 2026-10-17: POST `/settings/timezone` uses the
 validated session's account, same-origin/CSRF, exact bounded fields and private
 revision CAS. Six changed source cases pass canonical offset/date boundaries,

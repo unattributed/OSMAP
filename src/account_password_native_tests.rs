@@ -24,6 +24,21 @@ fn sealed_metadata_adds_only_the_measured_fstat_library_leaf() {
 }
 
 #[test]
+fn parent_main_selection_link_has_only_fixed_directory_read_authority() {
+    // Exercise the actual fixed union consumed by ParentPlan::prepare.
+    let rules = parent_rules();
+    assert_eq!(
+        rules
+            .iter()
+            .filter(|(path, _)| *path == "/var/dovecot")
+            .copied()
+            .collect::<Vec<_>>(),
+        vec![("/var/dovecot", "r")]
+    );
+    assert!(!rules.iter().any(|(path, _)| matches!(*path, "/var" | "/")));
+}
+
+#[test]
 fn native_roles_keep_exact_separate_commands_and_existing_permission_boundaries() {
     use crate::account_password_backend::{HASH_ARGS, HASH_PROGRAM, SQL_ARGS, SQL_PROGRAM};
     let strings = |v: &[&str]| v.iter().map(|s| s.to_string()).collect::<Vec<_>>();

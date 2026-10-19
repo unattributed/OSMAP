@@ -353,6 +353,10 @@ pub(crate) fn parent_rules() -> Vec<(&'static str, &'static str)> {
         ("/etc/group", "r"),
         ("/dev/null", "rwc"),
         (SQL_SOCKET, "rw"),
+        // unveil follows final symlinks. Fresh lstat/readlink of Dovecot's
+        // selection link requires this fixed containing directory readable.
+        // This grants recursive read/metadata, never write/create/connect.
+        ("/var/dovecot", "r"),
         (PRIMARY_SOCKET, "rw"),
         (CONTROL_AUTH, "rw"),
         (CONTROL_ANVIL, "rw"),
