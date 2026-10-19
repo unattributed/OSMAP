@@ -49,6 +49,7 @@ pub(crate) enum Role {
     Hash,
     Primary,
     Control,
+    StockPrimary,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) struct Unavailable;
@@ -155,6 +156,7 @@ pub(crate) struct NativeProfile {
     primary: Option<std::sync::Arc<crate::account_password_peer::PrimaryPeer>>,
     control: Option<std::sync::Arc<crate::account_password_peer::ControlPeer>>,
     startup: Option<StartupAuthority>,
+    stock: Option<std::sync::Arc<crate::account_password_peer::StockPeer>>,
 }
 impl NativeProfile {
     #[cfg(test)]
@@ -192,6 +194,7 @@ impl NativeProfile {
             primary: None,
             control: None,
             startup: None,
+            stock: None,
         })
     }
     /// The real service's measured fixed self/master authority, never a caller
@@ -216,14 +219,17 @@ impl NativeProfile {
             primary: None,
             control: None,
             startup: Some(StartupAuthority { startup, metadata }),
+            stock: None,
         })
     }
+    #[allow(dead_code)] // Retained private-listener adapter constructor.
     pub(crate) fn from_primary(
         peer: std::sync::Arc<crate::account_password_peer::PrimaryPeer>,
         deadline: Instant,
     ) -> Result<Self, Unavailable> {
         Self::from_primary_with_stage(peer, deadline, &mut "admission_profile")
     }
+    #[allow(dead_code)]
     pub(crate) fn from_primary_with_stage(
         peer: std::sync::Arc<crate::account_password_peer::PrimaryPeer>,
         deadline: Instant,
@@ -238,6 +244,7 @@ impl NativeProfile {
             primary: Some(peer),
             control: None,
             startup: None,
+            stock: None,
         })
     }
     pub(crate) fn from_control(
@@ -252,10 +259,39 @@ impl NativeProfile {
             primary: None,
             control: Some(peer),
             startup: None,
+            stock: None,
         })
+    }
+    pub(crate) fn from_stock(
+        role: Role,
+        peer: std::sync::Arc<crate::account_password_peer::StockPeer>,
+        deadline: Instant,
+    ) -> Result<Self, Unavailable> {
+        if role != Role::StockPrimary {
+            return Err(Unavailable);
+        }
+        let observed = observe_stock(role, peer.as_ref(), deadline)?;
+        Ok(Self {
+            role,
+            original_deadline: deadline,
+            observed,
+            primary: None,
+            control: None,
+            startup: None,
+            stock: Some(peer),
+        })
+    }
+    pub(crate) fn command_args(&self, args: &[String]) -> Result<Vec<String>, Unavailable> {
+        match self.role {
+            Role::StockPrimary => {
+                crate::account_password_mail::stock_args(args, true).ok_or(Unavailable)
+            }
+            _ => Ok(args.to_vec()),
+        }
     }
     /// Read only the fixed control identity already admitted by observe(). No
     /// fabricated command/utility preparation is used to discover its GID.
+    #[allow(dead_code)]
     pub(crate) fn selected_control_gid(&self) -> Result<u32, Unavailable> {
         before(self.original_deadline)?;
         if self.role != Role::Control || self.observed.ids.1 == 0 {
@@ -281,12 +317,16 @@ impl NativeProfile {
         }
         if !matches_command(self.role, program, args)
             || !crate::openbsd::password_native_authority()
-            || observe(
-                self.role,
-                deadline,
-                self.primary.as_deref(),
-                self.control.as_deref(),
-            )? != self.observed
+            || if let Some(stock) = &self.stock {
+                observe_stock(self.role, stock.as_ref(), deadline)?
+            } else {
+                observe(
+                    self.role,
+                    deadline,
+                    self.primary.as_deref(),
+                    self.control.as_deref(),
+                )?
+            } != self.observed
         {
             return Err(Unavailable);
         }
@@ -320,6 +360,9 @@ fn matches_command(role: Role, program: &str, args: &[String]) -> bool {
         }
         Role::Control => {
             program == HASH_PROGRAM && crate::account_password_mail::fixed_control_args(args)
+        }
+        Role::StockPrimary => {
+            program == HASH_PROGRAM && crate::account_password_mail::fixed_stock_args(args, true)
         }
     }
 }
@@ -529,6 +572,15 @@ fn prepared(role: Role, _ids: (u32, u32), deadline: Instant) -> Result<PreparedC
                 (pins::SEARCH_DIRECTORY, "r"),
                 ("/dev/null", "rwc"),
                 (PRIMARY_SOCKET, "rw"),
+            ]);
+            "stdio rpath unix prot_exec exec wpath cpath"
+        }
+        Role::StockPrimary => {
+            rows.extend([
+                (pins::MODULE_DIRECTORY, "r"),
+                (pins::SEARCH_DIRECTORY, "r"),
+                ("/dev/null", "rwc"),
+                (crate::account_password_mail::STOCK_AUTH, "rw"),
             ]);
             "stdio rpath unix prot_exec exec wpath cpath"
         }
@@ -952,6 +1004,9 @@ fn observe_with_stage(
     control: Option<&crate::account_password_peer::ControlPeer>,
     stage: &mut &'static str,
 ) -> Result<Observation, Unavailable> {
+    if role == Role::StockPrimary {
+        return Err(Unavailable);
+    }
     *stage = "primary_profile_deadline";
     before(deadline)?;
     *stage = "primary_profile_graph";
@@ -1094,10 +1149,58 @@ mod tests;
 
 /// Identity lookup alone supplies no execution authority. Measured ControlPeer
 /// plus this same fixed principal/DAC check is required by from_control.
+#[allow(dead_code)] // Stock authentication has no private control role.
 pub(crate) fn control_gid(deadline: Instant) -> Result<u32, Unavailable> {
     let (_, _, passwd) = public_file("/etc/passwd", false, 65536, deadline)?;
     let (_, _, group) = public_file("/etc/group", false, 65536, deadline)?;
     Ok(selected(&passwd, &group, b"_osmapcontrol")?.1)
+}
+
+fn observe_stock(
+    role: Role,
+    peer: &crate::account_password_peer::StockPeer,
+    deadline: Instant,
+) -> Result<Observation, Unavailable> {
+    if role != Role::StockPrimary || !crate::openbsd::password_native_authority() {
+        return Err(Unavailable);
+    }
+    // Existing graph/custody checks, then the actual public socket owner IDs.
+    // Root/HMAC/SQL/epoch material remains inaccessible to this child by DAC.
+    let mut observed = observe(Role::Hash, deadline, None, None)?;
+    let (uid, gid, binder) = peer.stock_ids(deadline).map_err(unavailable)?;
+    let endpoint = socket(
+        crate::account_password_mail::STOCK_AUTH,
+        uid,
+        None,
+        binder,
+        deadline,
+    )?;
+    if endpoint.1[4] & 0o7777 != 0o600 || endpoint.1[3] != 0 || uid == 0 || gid == 0 {
+        return Err(Unavailable);
+    }
+    if !role_traverses(&endpoint.2, (uid, gid))
+        || !role_permission(
+            endpoint.1[2] as u32,
+            endpoint.1[3] as u32,
+            endpoint.1[4] as u32,
+            (uid, gid),
+            2,
+        )
+    {
+        return Err(Unavailable);
+    }
+    observed.ids = (uid, gid);
+    observed.endpoints = vec![endpoint];
+    Ok(observed)
+}
+pub(crate) fn stock_parent_rules() -> Vec<(&'static str, &'static str)> {
+    let mut rows = parent_rules();
+    rows.retain(|(path, _)| {
+        !matches!(*path, PRIMARY_SOCKET | CONTROL_AUTH | CONTROL_ANVIL)
+            && *path != crate::account_password_topology::IPC
+    });
+    rows.extend([(crate::account_password_mail::STOCK_AUTH, "rw")]);
+    rows
 }
 
 #[cfg(test)]

@@ -1,5 +1,204 @@
 # Current Project Status
 
+Local source-preservation resumption (2026-10-19 19:11 UTC): the operator
+assigned a subagent to fix the interrupted mandatory commit gate and preserve
+the reviewed changes in a signed local commit. This resumes only that local
+task; S04-02 remains BLOCKED and UAT not ready. Root retains the sole Git/test
+queue. The proposed root-chosen allowance is fifteen minutes for this task,
+including one normal commit-hook run bounded at600 seconds and signature/state
+verification. These are prospective limits, not measured duration or a gate
+PASS. The preceding95-second interruption remains an incomplete gate, not a
+proven Python test failure. Existing successful normal source admissions took
+259.397 and320.259 seconds; the hook continues well beyond the interrupted
+account-regression phase. No hook, test or guard is weakened or skipped.
+HEAD is still `e5a5ee417851cd51cb67d9605d3d865c69ecf62d` pending the actual
+result. No password/native retry, backend service/configuration action,
+deployment, qualification-flag change or push is included. Preserve the normal
+hook result and actual whole-action duration, verify any resulting Shopkeeper
+signature, then stop for operator source review.
+The actual gate, commit and signature outcome is retained in the sprint-root
+[local preservation result](/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/commit-gate-recovery-20261019/final-result.json); this prospective
+source entry does not predeclare that result or close the slice.
+The first renewed run ended after89.438345 seconds on stale V10 generated
+inventories, rather than timing out. The unchanged generators refreshed the
+two inventories and three count/hash links in their claims register. Root
+review confirmed scanner/gate source and security classifications unchanged;
+a matching normal hook must pass before signed preservation is complete.
+
+Current S04-02 outcome (2026-10-19 18:39 UTC): **incomplete; UAT not ready**.
+The pre-lint stock adapter compiled on OpenBSD and its changed command control
+passed. Mechanical lint preservation changes need no functional/native retry
+and do not inherit exact byte parity with the earlier build.
+The one changed full-workflow attempt46 failed at the helper-start stage (including its intent checkpoint), before any
+HTTP request or password operation. Its original exit status and stderr were
+not retained, so the unique startup cause is UNKNOWN. No further functional
+retry or production qualification-flag change is authorized in this phase.
+
+Fresh read-only observation47 passed in3.820439s: the current helper command,
+owned-role processes, original actor and fixed utility children were absent;
+the exact helper inode had no open references and both private sockets were
+absent. Original failed receipt/flags were unchanged. This establishes current
+absence, not successful fixture cleanup. Exact independently reviewed backend disposition48 then passed in6.071819s:
+the two synthetic rows/restricted SQL principal, runtime material, two purpose
+roles and published connectors/forced entries were removed. Public original25
+and the mail master were preserved; no public service/configuration operation
+was performed. Original authorized-key bytes/owner/group/mode were restored;
+its current metadata is recorded separately from original inode identity.
+Frontend50 then passed in0.601s: exactly four owned files and their empty
+nonce directory were removed; the shared key directory and two historical
+bridge processes were preserved. Original failed49 local registration refusal
+(0.011s, before gate/SSH) remains recorded. All current test operational effects
+are disposed; root evidence stages/receipts remain as provenance. The helper is not presumed live from its earlier false
+`helper_stopped` field, and no historical PID is signalled.
+
+Earlier owned backend/frontend effects35/41 and42/43 were disposed successfully.
+Compiler38 passed in179.655s with460 matching inputs and actual fresh helper and
+libtest artifacts; no unchanged Rust rebuild follows from Python-only repairs.
+The later failure46 remains separate. Public Dovecot/Postfix/MariaDB lifecycle
+and public configuration changes are excluded from the selected test path.
+No further native/functional action is admitted in this phase. Source/document
+reconciliation and mandatory normal signed preservation remain.
+The first commit hook passed Rust tests but failed lint. The independently
+reviewed mechanical fix passed lint/formatting in the second hook, whose
+95-second guard stopped it during account Python checks. Full gate INCOMPLETE;
+no new commit/signature or synchronization occurred. Reviewed changes remain
+staged. No further expensive/native action is admitted by the expired phase. Historical checkpoints below do not
+override this current result or qualify installed password functionality.
+
+Current source and owned-state outcome (2026-10-19 17:50 UTC): the selected
+stock adapter and truthful external-mail-session notice are integrated in the
+canonical source. The changed fixed-command control passed (one test); it does
+not establish native or installed readiness. Account authentication uses the
+existing stock Dovecot socket and conditional SQL path. The selected code does
+not install private listener fragments, a public SMTP proxy, an IMAP plugin or
+public-mail lifecycle changes.
+
+Exact old backend prefix disposition35 passed in5.762543s: two synthetic rows,
+one restricted SQL principal, fourteen runtime files and six locked roles/groups
+were removed. Twenty-one born child groups and the SSH group were reaped and
+gone; original configuration, target states, authorized keys, receipt and marker
+were preserved. Public mail service/configuration operations were zero. The
+four frontend purpose files remain a separate disposition until its actual
+result. Wrapper37 refused locally before gate/SSH because its new comparison
+misread the original ownership receipt's nesting; the root/reviewer miss and
+0.004s cost are retained, with no remote effect.
+
+Compiler36 failed in23.351s because its459-input packet omitted one existing
+literal include_str SQL template. Its helper compiler group and scratch were
+disposed; libtest was not started. The original outer UNCERTAIN classification
+is retained alongside those narrower actual facts. Changed package38 adds only
+that template (460 inputs), preserves all Rust bytes and original bounds, and
+is executing once. S04-02 remains incomplete; installed QA and UAT are not ready.
+The chronological checkpoints below are historical where superseded here.
+
+Current operator correction (2026-10-19 16:55 UTC): S04-02 resumes as OSMAP
+frontend/password integration work. The operator rejects the downtime-dependent
+test design. Retire the composed cold-cutover fixture; no new test may control
+public Dovecot/Postfix/MariaDB service lifecycle or mutate their public
+configuration. The existing three workers are active on the minimal product
+path, focused QA and independent requirement/safety review; root retains the
+single integration/host queue. This source-only resumption does not admit a
+live retry. Original failures, expired leases and remaining owned state remain
+recorded below. S04-02 is incomplete and is not ready for UAT.
+
+Independent accepted-control reconciliation now confirms that R2-22-011 requires
+all browser sessions revoked and R2-22-012 requires actual old-password rejection
+and new-password admission. The global public-mail epoch/SMTP-proxy/plugin
+architecture was a stronger implementation assumption. The selected smaller
+adapter preserves OSMAP epoch locking, step-up, conditional SQL, cache handling,
+all-browser revocation, truthful time/uncertainty and Bob preservation. It must
+disclose that existing third-party SMTP/IMAP connections may remain authenticated.
+No failed old test is relabelled PASS and no missing native authority is bypassed.
+
+Operational incident and restoration (2026-10-19 16:02 UTC): the operator
+reported Thunderbird connection refusal. Actual observation29 confirmed Dovecot
+down while MariaDB and Postfix remained up. Password development and further
+backend-affecting workflow tests are held. Restoration32 PASS6.741s removed
+the two owned private fragments, restored the three changed directory metadata
+records and reloaded original Dovecot configuration. It verified all three
+services, original25/nine-target continuity, and a trusted IMAPS greeting from
+the workstation through mail.blackbagsecurity.com:993 (actual peer10.44.0.1).
+This is the actual project/VPN client route, not independent public-internet
+qualification. Dovecot master22768/birth15:59:04 was already running when
+restoration32 began; the action reloaded it and did not establish its start.
+
+S04-02 remains incomplete/UAT NOT READY. The first functional29 attempt failed
+at snapshot_targets before HTTP/password processing; source/actual inventory
+confirm the separate PUBLIC_SQL baseline was missing from the original25-map
+handoff. The exact historical exception pointer and Dovecot outage cause remain
+unproved. Isolated source31 corrects snapshot/render/restore baseline handling;
+it is not integrated or native qualified. Fifteen recorded runtime files,
+two synthetic rows, the restricted SQL principal, six locked roles and frontend
+purpose material remain protected under unchanged failed receipt82a; they are
+not full-cleanup PASS. Use paired30-retained-disposition.json and actual32 as
+separate restoration provenance for the next exact disposition. No further
+mail-backend-affecting password test may run before the outage is understood
+and its safety gap corrected. Earlier outcomes and allowances below are history.
+
+Actual prerequisite outcome (2026-10-19 15:36 UTC): preflight28 PASS4.422s,
+SSH0 and confirmed owned scratch disposal. Dovecot, MariaDB and Postfix are up.
+The actual complete selected Dovecot parse returned0 with exactly9 warnings
+for each of the three fixed listener paths and no unknown warning lines.
+Original25 configuration files and nine target states are unchanged; both
+utility groups were reaped and gone. This closes the configuration prerequisite
+only. S04-02 remains incomplete. Next use the measured warning compatibility
+in both existing fixed public-syntax calls, review and run the controlled
+password journey with the original bounded cutover/restoration. No Rust rebuild.
+
+Operator-authorized resumption (2026-10-19 15:23:39 UTC): root resumes S04-02
+with the same developer, independent QA and delivery controller. The operator
+reaffirms complete technical authority and explicitly permits OSMAP start,
+restart and stop; the mail backend must remain up and is not a separate UX
+workstream. One root-allocated 2400-second window ends16:03:39 UTC, retaining
+the original start, prior allowance, actual costs and all failures. First fix
+the preflight custody/report gaps, review, and run one read-only backend
+availability plus full-control configuration parse. Only actual PASS admits
+new test roles/rows and the next controlled password journey. No unchanged
+Rust rebuild, repeated passed QA or operator password mutation is planned.
+S04-02 remains incomplete and UAT NOT READY. Earlier holds below are history.
+
+Current execution hold (2026-10-19 15:16:12 UTC): the21600-second cumulative
+window has ended. The native/development queue is held without an automatic
+increase. Both current22 owned cleanup outcomes below are independently PASS;
+there is no outstanding current22 operational incident to re-observe or repeat.
+S04-02 and T03 remain incomplete/UAT NOT READY. Full-control preflight28 is
+SOURCE_NOT_NATIVE_ADMISSIBLE/NOT RUN: capture scratch and partial-file birth
+before writes and retain its custody on failure; restrict the zero-private-read
+claim to the copier because the external Dovecot utility's reads are UNKNOWN.
+Those findings supersede its earlier complete-path source review. No source
+change, test or native action after the ceiling is admitted by this handoff.
+The next bounded proposal is these two source corrections, exact review, then
+one actual full-control configuration parse before any new roles or SQL rows.
+
+Superseding operator resumption and actual outcome (2026-10-19 15:14 UTC): the
+operator explicitly assigned completion of S04 starting with02 and instructed
+the existing team to proceed. Three existing workers cover development,
+independent QA and delivery control; root retains Git/host/integration. The new
+bounded root/controller allocation is1800additional seconds, cumulative21600
+ending15:16:12 from the original09:16:12 clock. This numeric allocation was not
+chosen by the operator; all original spend/failures/post-cap work are retained.
+
+Current22 test effects are now operationally disposed: backend26 PASS5.842s
+removed2syntheticrows/3purposeusers+groups/14runtimefiles and restored3borrowed
+directories; original receipt/fixture marker remain as evidence. Front26
+PASS0.611s removed four exactly owned purpose-key/public files and their empty
+nonce root, preserving shared keys directory and the two original bridge
+processes. These independently reviewed results close the current owned
+incident only. Historical21 quarantine/unknown namespace remain untouched.
+
+Source review found a concrete regression: passed C04 allowed only its exact
+measured primary-listener `doveconf -n` warning; the later qualification dropped
+that classifier and demanded empty stderr. Isolated cd830 restores the exact
+C04 classifier; actor6cf9 includes the SQL uncertainty-success correction and
+closed failure metadata. Focused oldRED/newPASS and independent QA pass. The
+original22 unique guard remains UNKNOWN. The two additional control-listener
+warning paths are NOT RUN/UNQUALIFIED: a complete configuration parse must pass
+before any new roles, rows or T03 workflow. The ledger records this PENDING
+prerequisite. No remaining650-second paired action plus300-second conditional
+disposition fits this window. S04-02 remains incomplete; production control
+disabled and UAT NOT READY. UniversalSOP commit e5a5ee4 is signed/verified,
+normal security gate PASS; no push was authorized/performed.
+
 Latest actual outcome (2026-10-19 14:43 UTC): S04-02 remains INCOMPLETE and UAT
 is NOT READY. The corrected controlled action22 failed in7.457s during backend
 fixture provision, before the HTTP password journey. Both SSH groups were reaped;

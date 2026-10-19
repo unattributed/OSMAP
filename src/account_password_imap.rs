@@ -58,6 +58,7 @@ pub(crate) struct Registry {
     entries: Mutex<BTreeMap<(String, String), Entry>>,
 }
 impl Registry {
+    #[allow(dead_code)] // Retained legacy IMAP publication qualification constructor.
     pub(crate) fn new() -> Self {
         Self {
             entries: Mutex::new(BTreeMap::new()),

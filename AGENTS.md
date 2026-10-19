@@ -1,5 +1,25 @@
 # OSMAP Agent Notes
 
+## Current operator boundary — frontend work without mail downtime, 2026-10-19
+
+The operator permits starting, stopping and restarting OSMAP as needed; the
+mail backend must remain available and is not a separate UX workstream. Do not
+infer that frontend authority permits stopping public mail for UX tests. The
+operator's connection-refused report was confirmed: Dovecot was down. Original
+mail configuration and client TLS access have been restored. The operator has
+now explicitly rejected the test design that required backend downtime: OSMAP
+is the web frontend. Retire that fixture/cold-cutover path. New S04-02 development
+and tests must not stop, start, restart or reload public Dovecot, Postfix or
+MariaDB, or change their public configuration. Use existing bounded account
+operations and the smallest necessary OSMAP integration changes. Source review
+must verify the actual reachable dispatch path, not just a written prohibition.
+The historical outage's precise cause remains UNKNOWN; do not repeat its setup
+to investigate it. Necessary incident restoration is separately authorized.
+Preserve the exact failed fixture/retained-state evidence and do not replay its
+expired profile or already completed restoration effects. The explicit latest
+instruction to complete S04-02 resumes source work; it does not authorize a
+new live action merely by changing an allowance or a qualification flag.
+
 ## Mandatory delivery SOP — all OSMAP development, 2026-10-19
 
 The operator explicitly requires regimented delivery for all OSMAP development,

@@ -145,7 +145,11 @@ pub(crate) mod account_password_mail;
 pub(crate) mod account_password_native;
 #[cfg(unix)]
 pub(crate) mod account_password_peer;
+// Retain the superseded private-ingress adapter for its existing scoped tests.
+// The stock password-service entry does not select these components.
+#[allow(dead_code)]
 pub(crate) mod account_password_policy;
+#[allow(dead_code)]
 pub(crate) mod account_password_policy_endpoint;
 #[cfg(unix)]
 pub(crate) mod account_password_process;
@@ -157,6 +161,7 @@ mod native_factory_stored_issuer_fixture;
 #[cfg(unix)]
 pub(crate) mod account_password_runtime;
 #[cfg(unix)]
+#[allow(dead_code)] // Superseded private submission topology; not stock authority.
 pub(crate) mod account_password_topology;
 
 #[cfg(unix)]

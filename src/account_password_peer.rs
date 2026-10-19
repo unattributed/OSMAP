@@ -205,6 +205,7 @@ fn descriptors(
 /// description independently of its per-process descriptor number. Connected
 /// Unix transports include TLS-login proxies; direct TCP transports use the
 /// kernel TCP PCB plus exact endpoints/direction. Other kinds never attest IO.
+#[allow(dead_code)] // Historical private registration evidence, not stock admission.
 fn socket_descriptions(
     raw: &str,
     process: &Row,
@@ -336,12 +337,14 @@ fn registered(raw: &str, account: &str, pid: u32) -> Result<(), Error> {
 }
 
 #[derive(Clone, PartialEq, Eq)]
+#[allow(dead_code)]
 struct Snapshot {
     master: Row,
     peer: Row,
     own: Row,
     pcb: (u64, u64),
 }
+#[allow(dead_code)]
 struct Bound {
     stream: UnixStream,
     fd: i32,
@@ -352,10 +355,12 @@ struct Bound {
     io: Option<Vec<(i32, i32, String)>>,
     deadline: Instant,
 }
+#[allow(dead_code)]
 pub(crate) struct Binding {
     fd: i32,
     deadline: Instant,
 }
+#[allow(dead_code)]
 pub(crate) struct NativeRegistration {
     account: String,
     session: String,
@@ -365,6 +370,7 @@ pub(crate) struct NativeRegistration {
     birth: u64,
     observed: Instant,
 }
+#[allow(dead_code)]
 impl NativeRegistration {
     pub(crate) fn account(&self) -> &str {
         &self.account
@@ -388,6 +394,7 @@ impl NativeRegistration {
         self.observed
     }
 }
+#[allow(dead_code)]
 pub(crate) struct NativeInspector<'a, E> {
     executor: &'a E,
     master: Row,
@@ -523,6 +530,7 @@ impl Startup {
     }
 }
 
+#[allow(dead_code)]
 impl<'a, E: CommandExecutor> NativeInspector<'a, E> {
     pub(crate) fn from_startup(
         executor: &'a E,
@@ -1240,6 +1248,7 @@ fn socket_listener(raw: &str, master: &Row, path: &str, pin: &FilePin) -> Result
     }
     found.ok_or(Error::Refused)
 }
+#[allow(dead_code)] // Retained legacy private-primary qualification; stock uses StockPeer.
 fn primary_configuration_files(deadline: Instant) -> Result<Vec<PrimaryFile>, Error> {
     let mut files = Vec::with_capacity(PRIMARY_CONFIGURATION_PATHS.len());
     for &path in PRIMARY_CONFIGURATION_PATHS {
@@ -1303,6 +1312,7 @@ fn primary_include_matches(files: &[PrimaryFile], deadline: Instant) -> Result<(
     primary_include_names_match(&found, files)
 }
 impl PrimaryPeer {
+    #[allow(dead_code)] // Retained legacy private-primary qualification entry.
     pub(crate) fn observe(
         executor: std::sync::Arc<dyn CommandExecutor + Send + Sync>,
         startup: &Startup,
@@ -1563,7 +1573,10 @@ fn ready_socket_worker(
         if workers.len() == 1 {
             return Ok(workers.remove(0));
         }
-        if path != PRIMARY_SOCKET {
+        if !matches!(
+            path,
+            PRIMARY_SOCKET | "/var/dovecot/auth-client" | "/var/dovecot/auth-master"
+        ) {
             return Err(Error::Refused);
         }
         let left = end
@@ -1615,7 +1628,15 @@ fn socket_probe_with_stage(
     if !endpoint.file_type().is_socket()
         || endpoint.uid() != owner_uid
         || endpoint.nlink() != 1
-        || endpoint.mode() & 0o777 != 0o660
+        || endpoint.mode() & 0o777
+            != if matches!(
+                path,
+                "/var/dovecot/auth-client" | "/var/dovecot/auth-master"
+            ) {
+                0o600
+            } else {
+                0o660
+            }
     {
         return Err(Error::Refused);
     }
@@ -1706,6 +1727,29 @@ fn socket_probe_with_stage(
         )?)?;
     }
 
+    if matches!(
+        path,
+        "/var/dovecot/auth-client" | "/var/dovecot/auth-master"
+    ) {
+        let args = query(
+            executor,
+            PS,
+            &[
+                "-p".into(),
+                worker.pid.to_string(),
+                "-o".into(),
+                "args=".into(),
+            ],
+            deadline,
+        )?;
+        let words = args.split_whitespace().collect::<Vec<_>>();
+        if args.lines().count() != 1
+            || words.len() != 1
+            || !matches!(words[0], "auth" | PRIMARY_AUTH)
+        {
+            return Err(Error::Refused);
+        }
+    }
     *stage = "primary_probe_process_fd_continuity";
     let expected = if binder.0 == startup.master.pid {
         &startup.master
@@ -1756,6 +1800,7 @@ pub(crate) struct SubmissionIpcPeer {
     captured: PrimarySocketSnapshot,
 }
 impl SubmissionIpcPeer {
+    #[allow(dead_code)]
     pub(crate) fn from_registered(
         executor: std::sync::Arc<dyn CommandExecutor + Send + Sync>,
         startup: &Startup,
@@ -1830,6 +1875,7 @@ pub(crate) struct ControlPeer {
     ipc: crate::account_password_topology::RegisteredIpcPeer,
 }
 impl ControlPeer {
+    #[allow(dead_code)]
     pub(crate) fn observe(
         primary: std::sync::Arc<PrimaryPeer>,
         deadline: Instant,
@@ -1913,3 +1959,435 @@ impl ControlPeer {
 #[cfg(test)]
 #[path = "account_password_peer_tests.rs"]
 mod tests;
+
+/// Stock Dovecot authority: same live master, protected existing configuration,
+/// and real reciprocal kernel/descriptor observations. No public configuration
+/// is written and no private listener, policy callback or Generation is used.
+pub(crate) struct StockPeer {
+    executor: std::sync::Arc<dyn CommandExecutor + Send + Sync>,
+    startup: Startup,
+    auth: FilePin,
+    files: Vec<PrimaryFile>,
+    server_uid: u32,
+    selection: MainConfigurationSelection,
+    auth_snapshot: PrimarySocketSnapshot,
+    server_gid: u32,
+}
+pub(crate) fn stock_master_pid(deadline: Instant) -> Result<u32, Error> {
+    let (_, bytes) = primary_file_bytes("/var/dovecot/master.pid", deadline)?;
+    let text = std::str::from_utf8(&bytes).map_err(|_| Error::Refused)?;
+    let pid = decimal(text.strip_suffix('\n').ok_or(Error::Refused)?)?;
+    if pid <= 1 || pid >= i32::MAX as u32 {
+        return Err(Error::Refused);
+    }
+    Ok(pid)
+}
+impl StockPeer {
+    pub(crate) fn observe(
+        executor: std::sync::Arc<dyn CommandExecutor + Send + Sync>,
+        startup: &Startup,
+        deadline: Instant,
+    ) -> Result<Self, Error> {
+        startup.recheck(executor.as_ref(), deadline)?;
+        let mut files = Vec::new();
+        for &path in PRIMARY_CONFIGURATION_PATHS {
+            if !matches!(path, PRIMARY_FRAGMENT | CONTROL_FRAGMENT) {
+                files.push(primary_file(path, deadline)?);
+            }
+        }
+        primary_include_matches(&files, deadline)?;
+        // The pinned original25 closure fixes the main/include routing. Validate
+        // its sole source-selected SQL passdb before admitting the writer.
+        let (_, passdb) = primary_file_bytes("/etc/dovecot/conf.d/auth-sql.conf.ext", deadline)?;
+        stock_sql::passdb(&passdb).map_err(|_| Error::Refused)?;
+        let (sql, sql_bytes) = primary_file_bytes("/etc/dovecot/dovecot-sql.conf.ext", deadline)?;
+        stock_sql::validate(&sql_bytes).map_err(|_| Error::Refused)?;
+        files.push(sql);
+        for path in ["/var/dovecot/master.pid", PRIMARY_AUTH] {
+            files.push(primary_file(path, deadline)?);
+        }
+        let (passwd, bytes) = primary_file_bytes("/etc/passwd", deadline)?;
+        let text = std::str::from_utf8(&bytes).map_err(|_| Error::Refused)?;
+        let selected = text
+            .lines()
+            .filter(|line| line.starts_with("_dovecot:"))
+            .collect::<Vec<_>>();
+        if selected.len() != 1 {
+            return Err(Error::Refused);
+        }
+        let fields = selected[0].split(':').collect::<Vec<_>>();
+        if fields.len() != 7 {
+            return Err(Error::Refused);
+        }
+        let uid = decimal(fields[2])?;
+        let gid = decimal(fields[3])?;
+        if gid == 0 || gid >= i32::MAX as u32 {
+            return Err(Error::Refused);
+        }
+        if uid == 0
+            || text
+                .lines()
+                .filter(|line| line.split(':').nth(2) == Some(fields[2]))
+                .count()
+                != 1
+        {
+            return Err(Error::Refused);
+        }
+        files.push(passwd);
+        let auth = file_pin(PRIMARY_AUTH)?;
+        let selection = main_configuration_selection(
+            executor.as_ref(),
+            startup,
+            deadline,
+            &mut "primary_main_selection",
+        )?;
+        let auth_snapshot = socket_probe(
+            executor.as_ref(),
+            startup,
+            &auth,
+            crate::account_password_mail::STOCK_AUTH,
+            "auth",
+            uid,
+            uid,
+            deadline,
+        )?;
+        // Fixed current read-only configuration observation, before the parent
+        // is sealed. No cache is enabled/populated and no fabricated flush occurs.
+        let doveconf = primary_file("/usr/local/bin/doveconf", deadline)?;
+        if query(
+            executor.as_ref(),
+            "/usr/local/bin/doveconf",
+            &[
+                "-c".into(),
+                "/etc/dovecot/dovecot.conf".into(),
+                "-h".into(),
+                "auth_cache_size".into(),
+            ],
+            deadline,
+        )? != "0\n"
+        {
+            return Err(Error::Refused);
+        }
+        let after = primary_file("/usr/local/bin/doveconf", deadline)?;
+        if doveconf.identity != after.identity || doveconf.digest != after.digest {
+            return Err(Error::Refused);
+        }
+        files.push(doveconf);
+        let value = Self {
+            executor,
+            startup: startup.clone(),
+            auth,
+            files,
+            server_uid: uid,
+            selection,
+            auth_snapshot,
+            server_gid: gid,
+        };
+        value.recheck(deadline)?;
+        Ok(value)
+    }
+    pub(crate) fn recheck(&self, deadline: Instant) -> Result<(), Error> {
+        if main_configuration_selection(
+            self.executor.as_ref(),
+            &self.startup,
+            deadline,
+            &mut "primary_main_selection",
+        )? != self.selection
+        {
+            return Err(Error::Refused);
+        }
+        primary_include_matches(&self.files, deadline)?;
+        for old in &self.files {
+            let new = primary_file(old.path, deadline)?;
+            if old.identity != new.identity || old.digest != new.digest {
+                return Err(Error::Refused);
+            }
+        }
+        if socket_probe(
+            self.executor.as_ref(),
+            &self.startup,
+            &self.auth,
+            crate::account_password_mail::STOCK_AUTH,
+            "auth",
+            self.server_uid,
+            self.server_uid,
+            deadline,
+        )? != self.auth_snapshot
+        {
+            return Err(Error::Refused);
+        }
+        Ok(())
+    }
+    pub(crate) fn stock_ids(&self, deadline: Instant) -> Result<(u32, u32, u32), Error> {
+        self.recheck(deadline)?;
+        Ok((
+            self.server_uid,
+            self.server_gid,
+            self.auth_snapshot.binder.1,
+        ))
+    }
+}
+
+// Exact reviewed existing SQL-metadata functions retained from composed23.
+// Only the public false branch is callable. Original configuration bytes stay
+// unchanged and credential fields never leave this bounded private reader.
+mod stock_sql {
+    use std::collections::{BTreeMap, BTreeSet};
+    const LIMIT: usize = 16384;
+    const MYSQL_SOCKET: &str = "/var/run/mysql/mysql.sock";
+    #[derive(Debug)]
+    pub(super) struct Unavailable;
+    pub(super) fn validate(raw: &[u8]) -> Result<(), Unavailable> {
+        sql_password_source(raw, false)
+    }
+    fn key_values(raw: &[u8]) -> Result<BTreeMap<String, String>, Unavailable> {
+        if raw.len() > LIMIT || !raw.is_ascii() || raw.contains(&0) || raw.contains(&b'\r') {
+            return Err(Unavailable);
+        }
+        let mut fields = BTreeMap::new();
+        let mut logical = String::new();
+        let mut continuing = false;
+        for line in std::str::from_utf8(raw)
+            .map_err(|_| Unavailable)?
+            .lines()
+            .map(str::trim)
+            .filter(|l| !l.is_empty() && !l.starts_with('#'))
+        {
+            let part = line.strip_suffix('\\');
+            if !logical.is_empty() {
+                logical.push(' ');
+            }
+            logical.push_str(part.unwrap_or(line).trim_end());
+            if logical.len() > LIMIT {
+                return Err(Unavailable);
+            }
+            continuing = part.is_some();
+            if continuing {
+                continue;
+            }
+            let (k, v) = logical.split_once('=').ok_or(Unavailable)?;
+            let key = k.trim();
+            let value = v.trim();
+            let value = if let Some(quote @ (b'\'' | b'"')) = value.as_bytes().first().copied() {
+                if value.len() < 2 || value.as_bytes().last() != Some(&quote) {
+                    return Err(Unavailable);
+                }
+                let inner = &value[1..value.len() - 1];
+                // Admit only the observed simple whole-value envelope. General
+                // escape/environment expansion remains outside this fixed model.
+                if inner
+                    .bytes()
+                    .any(|b| b == quote || b == b'\\' || !(0x20..=0x7e).contains(&b))
+                {
+                    return Err(Unavailable);
+                }
+                inner
+            } else {
+                value
+            };
+            if key.is_empty()
+                || !key.bytes().all(|b| b.is_ascii_lowercase() || b == b'_')
+                || fields.insert(key.to_string(), value.to_string()).is_some()
+            {
+                return Err(Unavailable);
+            }
+            logical.clear();
+        }
+        if continuing {
+            return Err(Unavailable);
+        }
+        Ok(fields)
+    }
+
+    /// Parse only bounded native mysql connection assignments in RAM. Credentials
+    /// are never returned, logged or used to make an extra connection.
+    fn mysql_route(connect: &str, frontend: bool) -> Result<(), Unavailable> {
+        if connect.is_empty()
+            || connect.contains('\\')
+            || connect.len() > 4096
+            || !connect.bytes().all(|b| (0x20..=0x7e).contains(&b))
+        {
+            return Err(Unavailable);
+        }
+        // The maintained Dovecot mysql driver splits literal spaces and the first
+        // equals sign. Per-field shell quotes are literal bytes, never decoded.
+        let mut fields = BTreeMap::new();
+        for token in connect.split(' ').filter(|value| !value.is_empty()) {
+            let (key, value) = token.split_once('=').ok_or(Unavailable)?;
+            if fields.insert(key, value).is_some() {
+                return Err(Unavailable);
+            }
+        }
+        let host = fields.get("host").copied();
+        // Public localhost is the observed existing passdb route qualified by the
+        // matching same-master C04 nonce admission. It never authorizes a remote
+        // route or an implicit dedicated submission endpoint. Dedicated SQL uses
+        // the explicit fixed socket and the separate restricted mutation role.
+        if fields.len() != 4
+            || (host != Some(MYSQL_SOCKET) && (frontend || host != Some("localhost")))
+            || fields.get("dbname").copied() != Some("postfixadmin")
+            || !fields
+                .get("user")
+                .is_some_and(|v| !v.is_empty() && v.len() <= 64)
+            || !fields
+                .get("password")
+                .is_some_and(|v| !v.is_empty() && v.len() <= 256)
+            || fields
+                .keys()
+                .any(|k| !matches!(*k, "host" | "dbname" | "user" | "password"))
+        {
+            return Err(Unavailable);
+        }
+        Ok(())
+    }
+
+    fn sql_password_source(raw: &[u8], frontend: bool) -> Result<(), Unavailable> {
+        let fields = key_values(raw)?;
+        if fields.get("driver").map(String::as_str) != Some("mysql")
+            || fields.keys().any(|k| {
+                !matches!(
+                    k.as_str(),
+                    "driver"
+                        | "connect"
+                        | "password_query"
+                        | "user_query"
+                        | "iterate_query"
+                        | "default_pass_scheme"
+                )
+            })
+        {
+            return Err(Unavailable);
+        }
+        mysql_route(fields.get("connect").ok_or(Unavailable)?, frontend)?;
+        let query = fields
+            .get("password_query")
+            .ok_or(Unavailable)?
+            .split_whitespace()
+            .collect::<Vec<_>>()
+            .join(" ");
+        if frontend {
+        // Compare with the existing OSMAP-owned deployment policy, rather than
+        // duplicating or constructing SQL in this metadata-only reader.
+        let expected = include_str!("../maint/account-runtime/submission/dovecot-sql.conf.ext.in")
+            .lines()
+            .find_map(|line| line.strip_prefix("password_query = "))
+            .ok_or(Unavailable)?;
+        if query != expected {
+            return Err(Unavailable);
+        }
+    } else if ![
+        "select password from mailbox where username = '%u' and active = 1",
+        "select password from mailbox where username = '%u' and active = '1'",
+        "select username as user, password from mailbox where username = '%u' and active = 1",
+        "select username as user, password from mailbox where username = '%u' and active = '1'",
+        "select password, 'after' as osmap_epoch_phase from mailbox where username = '%u' and active = 1",
+        "select password, 'after' as osmap_epoch_phase from mailbox where username = '%u' and active = '1'",
+        "select username as user, password, 'after' as osmap_epoch_phase from mailbox where username = '%u' and active = 1",
+        "select username as user, password, 'after' as osmap_epoch_phase from mailbox where username = '%u' and active = '1'",
+    ]
+    .contains(&query.to_ascii_lowercase().as_str())
+        || (!frontend && query.to_ascii_lowercase().contains("osmap_epoch_phase")
+            && !query.contains("'after'"))
+    {
+        return Err(Unavailable);
+    }
+        Ok(())
+    }
+    const BACKEND_SQL: &str = "/etc/dovecot/dovecot-sql.conf.ext";
+    pub(super) fn passdb(raw: &[u8]) -> Result<(), Unavailable> {
+        if raw.len() > LIMIT || !raw.is_ascii() || raw.contains(&0) || raw.contains(&b'\r') {
+            return Err(Unavailable);
+        }
+        passdb_source(
+            std::str::from_utf8(raw).map_err(|_| Unavailable)?,
+            BACKEND_SQL,
+        )
+        .map(|_| ())
+    }
+    fn passdb_source(effective: &str, sql_source: &'static str) -> Result<bool, Unavailable> {
+        let mut stack = Vec::new();
+        let mut db = None;
+        let mut count = 0;
+        let mut lowercases = false;
+        for line in effective
+            .lines()
+            .map(str::trim)
+            .filter(|l| !l.is_empty() && !l.starts_with('#'))
+        {
+            if let Some(head) = line.strip_suffix('{') {
+                if stack.len() >= 8 {
+                    return Err(Unavailable);
+                }
+                stack.push(head.trim());
+                if head.trim() == "passdb" && stack != ["passdb"] {
+                    return Err(Unavailable);
+                }
+                if stack == ["passdb"] {
+                    db = Some(BTreeMap::new());
+                    count += 1;
+                }
+            } else if line == "}" {
+                if stack.pop().is_none() {
+                    return Err(Unavailable);
+                }
+            } else {
+                let (key, value) = line.split_once('=').ok_or(Unavailable)?;
+                if (key.trim() == "auth_cache_size" && value.trim() != "0")
+                    || (key.trim() == "auth_master_user_separator" && !value.trim().is_empty())
+                {
+                    return Err(Unavailable);
+                }
+                if key.trim() == "auth_username_format" {
+                    lowercases |= username_mapping(value.trim(), "", sql_source == BACKEND_SQL)?;
+                }
+                if key.trim() == "auth_username_translation" && !value.trim().is_empty() {
+                    return Err(Unavailable);
+                }
+                if key.trim() == "auth_mechanisms" {
+                    let methods = value.split_whitespace().collect::<BTreeSet<_>>();
+                    if methods.is_empty()
+                        || methods
+                            .iter()
+                            .any(|method| !matches!(*method, "plain" | "login"))
+                    {
+                        return Err(Unavailable);
+                    }
+                }
+                if stack == ["passdb"] {
+                    let key = key.trim();
+                    let value = value.trim();
+                    if !matches!(key, "driver" | "args")
+                        || db.as_mut().ok_or(Unavailable)?.insert(key, value).is_some()
+                    {
+                        return Err(Unavailable);
+                    }
+                }
+            }
+        }
+        let db = db.ok_or(Unavailable)?;
+        if !stack.is_empty()
+            || count != 1
+            || db.len() != 2
+            || db.get("driver") != Some(&"sql")
+            || db.get("args") != Some(&sql_source)
+        {
+            return Err(Unavailable);
+        }
+        Ok(lowercases)
+    }
+
+    fn username_mapping(
+        format: &str,
+        translation: &str,
+        backend: bool,
+    ) -> Result<bool, Unavailable> {
+        if !translation.trim().is_empty() {
+            return Err(Unavailable);
+        }
+        match format.trim() {
+            "%u" => Ok(false),
+            "%Lu" if backend => Ok(true),
+            _ => Err(Unavailable),
+        }
+    }
+}

@@ -1,6 +1,37 @@
 # S04-02 delivery specification — authoritative own-password change
 
-Status: IN PROGRESS (operator resumed 2026-10-19 with executable guardrails); engineering completion and human acceptance are OPEN.
+Current18:34UTC outcome: S04-02 is IN_PROGRESS and UAT NOT READY. The stock
+adapter's changed command control and matching460-input OpenBSD compilation
+passed. Actual workflow46 failed at the helper-start stage, before HTTP/password
+processing. Its exact exit/stderr were not retained; unique cause UNKNOWN.
+No further functional retry or production native-flag activation is authorized
+in the current phase. Retain all20 obligations and nine scenario IDs.
+
+Actual read-only observation47 confirms current helper/owned-role/actor/fixed
+utility absence, zero helper-inode references and absent private sockets, while
+preserving the original failed receipt/flags. This is not fixture cleanup PASS.
+Backend disposition48 subsequently passed6.071819s, preserving original
+public25/master/authbytes/security and original failed receipt/flags. Complete
+only normal source preservation. Actual frontend50 passed0.601s, removing
+all four owned files and the empty nonce root, preserving the shared key
+directory/historical bridge processes. The earlier local49 registration typo
+refused before SSH in0.011s and remains retained. Current operational effects
+are disposed; retained root evidence stages/receipts remain provenance. Earlier backend/frontend effects35/41 and42/43 are disposed;
+their results do not qualify the failed46 fixture or the installed product.
+The operator rejected the outage-dependent test design: no selected test may
+control public Dovecot/Postfix/MariaDB lifecycle or public configuration.
+
+Current17:50UTC clarification: stock adapter source is integrated and its one
+changed-command test passed. Actual disposition35 removed the old backend's
+two synthetic rows/principal/runtime files/six roles; original evidence and
+public mail configuration were preserved. Frontend purpose-file disposition
+is separate. The original459-input compiler packet failed for a missing existing
+literal SQL-template include; changed package38 includes460 inputs with identical
+Rust bytes. No installed/native workflow pass or UAT readiness is claimed.
+Earlier retained-state and hold descriptions below are historical when superseded
+by the active ledger and exact later result; no failed test is rewritten.
+
+Status: IN_PROGRESS, source-only resumption under the operator's explicit correction at16:55UTC on2026-10-19. OSMAP is the web frontend; retire the test/cold-cutover design that needs public mail downtime. No new test may stop/start/restart/reload public Dovecot/Postfix/MariaDB or change their public configuration. Review the smallest existing account-operation path before any changed native action. Earlier functional29 failed before HTTP; restoration32 restored original mail access. Its precise outage cause remains UNKNOWN and will not be investigated by replaying the unsafe setup. Source31 is isolated and not native qualified; retained SQL/runtime/roles/frontend material remains explicitly protected, not full cleanup PASS. Engineering completion and human acceptance remain OPEN; UAT NOT READY. Original costs, failures and expired allowances remain preserved.
 Project coordination and sole canonical integration/host/Git executor: `/root`.
 Independent current source/evidence and delivery-control review: `/root/delivery_controller`;
 `/root/password_engineer` owns isolated product source preparation and
@@ -92,11 +123,11 @@ The SQL adapter returns only a private database receipt. A verified zero-row CAS
 refuses without replay. A dispatched write with uncertain result remains contained
 and cannot retry or restore. Durable pending state precedes mutation and survives
 restart; current authority is rechecked under the shared account lock. Final
-success requires real account-specific IMAP/SMTP/cache and browser containment,
-old-password rejection/new-password admission and Bob preservation. Dovecot
-submission proxy list/kick is the existing utility candidate for TCP ownership;
-its actual routing and ordinary-login lock participation require measured source/
-host qualification, not a caller assertion or SASL-socket closure.
+success requires actual account-specific authentication-cache handling, all
+OSMAP browser-session revocation, old-password rejection/new-password admission
+and Bob preservation. The later global submission-proxy/IMAP-plugin design is
+superseded by the adapter-scope correction below; it is not a frozen product
+requirement and its failed tests are not reclassified as passes.
 
 Testing remains exactly the nine scenarios below. Reuse matching T01/T02 and
 unchanged Rust evidence. One successful installed controlled journey may supply
@@ -110,6 +141,33 @@ HTTP24 fixture PASS and HTTP25 Bob-login FAIL remain retained in the ledger.
 Neither qualifies the replacement Rust service or the installed pair. This
 contract does not reset investigation costs, native deadlines or failure history.
 
+## Qualified adapter scope correction — 2026-10-19
+
+Independent requirements review reconciles the selected implementation with
+the accepted controls. R2-22-011 requires revoking every browser session,
+including the current one. R2-22-012 requires actual new-password admission and
+old-password rejection by the authoritative mail backend. Accepted D04 explicitly
+warns that existing SMTP/IMAP connections may outlive credential changes and
+requires truthful reporting of the qualified adapter's actual impact.
+
+The selected adapter therefore owns the authenticated user's conditional SQL
+credential update, current-password/fresh-TOTP checks, account authentication
+cache handling, durable OSMAP epoch/login-issuance lock and browser-session
+revocation. Existing third-party SMTP/IMAP connections are outside its termination
+scope and may remain authenticated. The UI and audit must state that limit;
+neither an authentication-cache flush nor old-password rejection proves those
+connections were terminated. OSMAP-owned resources must still be disposed safely.
+Bob's credentials, browser sessions and mail connections must remain unaffected.
+
+Global public-mail epoch hooks, a new SMTP proxy topology, PF redirection,
+cold-generation retirement and public-service shutdown are selected architecture,
+not additional acceptance requirements. Retire those tests from the next method.
+Preserve their original FAIL/UNKNOWN evidence. The same nine scenarios and20
+obligations remain, with OSMAP login races and actual backend authentication
+impact tested at their correct boundaries. No missing native authority may be
+replaced by a qualification Boolean. This is an execution-method correction,
+not a frozen-plan amendment or a claim that the adapter has been implemented.
+
 ## Authority and scope
 
 Preserve accepted R2 `6b3ce8fff27ca3dabf87039d54098bd9967a2e42`, signed R3
@@ -122,7 +180,7 @@ R2-20-001/002; and R2-22-001 through R2-22-014. They remain mapped to the four
 outcomes in the active `UX_EXECUTION_LEDGER.md` work order:
 
 - **authoritative-native-password-workflow:** a verified own-account credential
-  update with exact backend authority and mail containment.
+  update with exact backend authority and verified mail-authentication impact.
 - **fresh-stepup-and-session-containment:** current password plus fresh,
   replay-protected TOTP; action-bound authorization; shared lock/epoch and actual
   revocation of all the changing account's browser sessions.
@@ -174,8 +232,10 @@ historical/prior data may remain Unknown without inventing a timestamp. Generic
 mailbox `modified` is not a password epoch or proof of a password change.
 
 A successful outcome includes actual browser revocation, including the current
-session, required account-specific IMAP/SMTP session and cache containment, old
-credential rejection and new credential admission. Preserve Bob's credential,
+session, required account-specific authentication-cache handling, old credential
+rejection and new credential admission. Disclose that existing third-party
+SMTP/IMAP connections may remain authenticated; do not claim their revocation.
+Preserve Bob's credential,
 epoch, sessions, connections and mail. A transport receipt, SQL write or health
 check alone cannot report overall success. Lost or incomplete post-write effects
 leave the account contained and the UI/audit explicitly incomplete, requiring
@@ -225,15 +285,18 @@ Run changed-boundary checks and mandatory normal hooks, not 403 cases by default
   changed-at timestamp. Preserve other accounts and sensitive-value exclusion.
 - **S04-02-T03 — real composed native change (native):** actual stored sessions,
   trusted admission, current-password/TOTP step-up, conditional update, epoch,
-  IMAP/SMTP/cache containment, old rejection/new admission and Bob preservation.
-  Expect one verified change, all required revocations, positive actual flush
+  OSMAP browser revocation and authentication-cache handling, old rejection/new
+  admission and Bob preservation. Expect one verified change, all browser
+  revocations, positive actual flush
   witnesses, exact completion/reap and owned disposition. This scenario currently
   FAILS; historical local component passes do not override that result.
 - **S04-02-T04 — pre-write authority, replay and races (native):** age299/300 boundary (valid at299 only if all other checks pass; refused
   at300), consumed permit/TOTP, wrong binding/current password, durable
   account/source limits across success/restart, stale epoch and concurrent
   issuance/mutation. Expect refusal before write, no second dispatch and no
-  authentication through a locked/stale epoch; preserve Bob and active limits.
+  OSMAP authentication/session issuance through a locked/stale epoch; preserve
+  Bob and active limits. This does not require adding epoch hooks to third-party
+  public mail login.
 - **S04-02-T05 — post-write uncertainty and recovery (native):** interrupt a
   required cleanup/response after the one controlled update. Expect contained,
   explicit incomplete outcome, old-cookie rejection, no automatic SQL replay

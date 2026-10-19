@@ -21,6 +21,7 @@ const PREFIX: usize = 10;
 // carry no paths, PIDs, arguments, frames, native stderr or credential material.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[repr(u8)]
+#[allow(dead_code)] // Preserve stable historical phase IDs for retained evidence.
 pub(crate) enum StartupOperation {
     ServiceNative = 0,
     ServiceDumps = 1,

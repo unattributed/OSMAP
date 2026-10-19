@@ -48,12 +48,14 @@ pub(crate) enum Error {
 /// Code-owned namespace supplied by the trusted service composition. It cannot
 /// be constructed from a browser request; the native producer must also attest
 /// root-owned config/IPC custody, complete routing and shared epoch enforcement.
+#[allow(dead_code)] // Retained private-proxy adapter, not the selected stock path.
 pub(crate) struct SubmissionNamespace {
     ipc: PathBuf,
     backend: IpAddr,
     port: u16,
     topology: Option<crate::account_password_topology::Topology>,
 }
+#[allow(dead_code)]
 impl SubmissionNamespace {
     #[cfg(test)]
     fn fixture() -> Self {
@@ -111,6 +113,36 @@ pub(crate) fn fixed_args(args: &[String]) -> bool {
                 .eq(prefix.iter().copied())
             && crate::account_admission::valid_account(args.last().unwrap()).is_ok()
     })
+}
+
+/// Existing public sockets, selected only by the dedicated stock child roles.
+pub(crate) const STOCK_AUTH: &str = "/var/dovecot/auth-client";
+pub(crate) const STOCK_CACHE: &str = "/var/dovecot/auth-master";
+pub(crate) fn stock_args(args: &[String], primary: bool) -> Option<Vec<String>> {
+    let prefix = if primary { PRIMARY } else { FLUSH };
+    if args.len() != prefix.len() + 1
+        || !args[..prefix.len()]
+            .iter()
+            .map(String::as_str)
+            .eq(prefix.iter().copied())
+        || crate::account_admission::valid_account(args.last()?).is_err()
+    {
+        return None;
+    }
+    let mut actual = args.to_vec();
+    let slot = if primary { 6 } else { 7 };
+    actual[slot] = if primary { STOCK_AUTH } else { STOCK_CACHE }.into();
+    Some(actual)
+}
+pub(crate) fn fixed_stock_args(args: &[String], primary: bool) -> bool {
+    let mut original = args.to_vec();
+    let slot = if primary { 6 } else { 7 };
+    let path = if primary { STOCK_AUTH } else { STOCK_CACHE };
+    if original.get(slot).map(String::as_str) != Some(path) {
+        return false;
+    }
+    original[slot] = if primary { PRIMARY[slot] } else { FLUSH[slot] }.into();
+    stock_args(&original, primary).as_deref() == Some(args)
 }
 
 /// Exact unprivileged control utility surface. IMAP termination uses the
@@ -344,3 +376,38 @@ impl<'a, E: CommandExecutor> SubmissionControl<'a, E> {
 #[cfg(test)]
 #[path = "account_password_mail_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+mod stock_command_tests {
+    use super::*;
+    #[test]
+    fn stock_commands_translate_only_fixed_single_account_operations() {
+        for primary in [true, false] {
+            let input =
+                account_args(if primary { PRIMARY } else { FLUSH }, "alice@example.test").unwrap();
+            let actual = stock_args(&input, primary).unwrap();
+            assert!(fixed_stock_args(&actual, primary));
+            assert!(!fixed_stock_args(&actual, !primary));
+            assert_eq!(actual.len(), input.len());
+            assert_eq!(actual.last(), input.last());
+            let slot = if primary { 6 } else { 7 };
+            assert_eq!(actual[slot], if primary { STOCK_AUTH } else { STOCK_CACHE });
+            assert!(actual
+                .iter()
+                .enumerate()
+                .all(|(index, value)| index == slot || value == &input[index]));
+            let mut wrong = input.clone();
+            wrong[slot] = "/caller/socket".into();
+            assert!(stock_args(&wrong, primary).is_none());
+            let mut extra = input.clone();
+            extra.push("--all".into());
+            assert!(stock_args(&extra, primary).is_none());
+            let mut wildcard = input.clone();
+            *wildcard.last_mut().unwrap() = "*".into();
+            assert!(stock_args(&wildcard, primary).is_none());
+            assert!(stock_args(&actual, primary).is_none());
+        }
+        assert!(stock_args(&account_args(WHO, "alice@example.test").unwrap(), false).is_none());
+        assert!(stock_args(&["rcctl".into(), "restart".into(), "dovecot".into()], false).is_none());
+    }
+}

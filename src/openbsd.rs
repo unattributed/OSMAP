@@ -1542,6 +1542,7 @@ pub(crate) fn fixture_http_pilot_root_control_identity(
 /// Transfer the one fixed HTTP control descriptor and close its authority at
 /// every later exec boundary. It was inheritable only for this launch.
 #[cfg(all(test, unix))]
+#[allow(dead_code)] // Retained historical HTTP pilot role/profile.
 pub(crate) fn fixture_owned_http_pilot_control(raw: i32) -> Result<UnixStream, String> {
     let stream = fixture_owned_unix_stream(raw)?;
     fixture_http_pilot_root_control_identity(&stream)?;
@@ -1998,6 +1999,62 @@ pub(crate) fn close_disposable_fixture_output() -> Result<(), String> {
 
 #[cfg(test)]
 pub(crate) use tests::publish_rights;
+
+#[cfg(all(test, unix))]
+fn fixture_current_rust_http_groups_exact() -> bool {
+    let mut groups = [0 as libc::gid_t; 3];
+    // Fixed observed obsd1 profile, never caller-selected supplementary groups.
+    if unsafe { libc::getgroups(3, groups.as_mut_ptr()) } != 3 {
+        return false;
+    }
+    groups.sort_unstable();
+    groups == [1001, 1002, 1003]
+}
+
+#[cfg(all(test, unix))]
+pub(crate) fn fixture_current_rust_http_pilot_root_control_identity(
+    stream: &UnixStream,
+) -> Result<(libc::dev_t, libc::ino_t, libc::mode_t), String> {
+    let (mut real_uid, mut effective_uid, mut saved_uid) = (0, 0, 0);
+    let (mut real_gid, mut effective_gid, mut saved_gid) = (0, 0, 0);
+    // SAFETY: native credential queries write only to these local scalars.
+    if unsafe { libc::getresuid(&mut real_uid, &mut effective_uid, &mut saved_uid) } != 0
+        || unsafe { libc::getresgid(&mut real_gid, &mut effective_gid, &mut saved_gid) } != 0
+        || (real_uid, effective_uid, saved_uid) != (1001, 1001, 1001)
+        || (real_gid, effective_gid, saved_gid) != (1001, 1001, 1001)
+        || !fixture_current_rust_http_groups_exact()
+    {
+        return Err("fixed HTTP web identity refused".into());
+    }
+    let mut info = std::mem::MaybeUninit::<libc::stat>::uninit();
+    // SAFETY: fstat inspects the already-owned descriptor without changing it.
+    if unsafe { libc::fstat(stream.as_raw_fd(), info.as_mut_ptr()) } != 0 {
+        return Err("HTTP root control metadata unavailable".into());
+    }
+    let info = unsafe { info.assume_init() };
+    if info.st_uid != 0 {
+        return Err("HTTP control was not created by root".into());
+    }
+    fixture_unix_stream_identity_for_peer(stream, Some(0))
+}
+
+#[cfg(all(test, unix))]
+pub(crate) fn fixture_current_rust_owned_http_pilot_control(
+    raw: i32,
+) -> Result<UnixStream, String> {
+    let stream = fixture_owned_unix_stream(raw)?;
+    fixture_current_rust_http_pilot_root_control_identity(&stream)?;
+    // SAFETY: only this already-owned descriptor's exec-inheritance flag changes.
+    let flags = unsafe { libc::fcntl(stream.as_raw_fd(), libc::F_GETFD) };
+    if flags < 0
+        || unsafe { libc::fcntl(stream.as_raw_fd(), libc::F_SETFD, flags | libc::FD_CLOEXEC) } < 0
+        || !descriptor_is_cloexec(stream.as_raw_fd())
+            .map_err(|_| "HTTP control flags unavailable")?
+    {
+        return Err("HTTP control exec inheritance refused".into());
+    }
+    Ok(stream)
+}
 
 #[cfg(test)]
 mod tests {

@@ -1,14 +1,33 @@
 # Current System Architecture
 
-## Current operator stop — 2026-10-17
+## Current S04-02 integration note — 2026-10-19
 
-Development, live/native qualification and deployment are stopped by explicit
-operator direction. Only documentation preservation, signed repository commits
-and synchronization of `feat/ux-completion-20260929` are currently authorized.
-S04-02 password change and S04 remain incomplete; the installed password-change
-control remains disabled. Historical work orders do not authorize resumption.
-See [the stopped-work handoff](UX_STOPPED_HANDOFF_20261017.md) and
-[Current Project Status](CURRENT_PROJECT_STATUS.md) for current results and limits.
+The March 27 host inventory below is historical; it is not an assertion of the
+current deployed service set. Current password development selects OSMAP's
+existing browser/session coordinator and account-scoped Rust SQL/auth helper
+over the stock mail backend. It requires browser-session revocation, old/new
+credential verification and other-account preservation. A verified disabled
+authentication cache supplies a typed zero-cache capability; no cache flush is
+performed. Existing authenticated external mail connections may remain.
+
+The selected helper does not require public Dovecot, Postfix or MariaDB lifecycle
+or configuration changes, a new IMAP plugin, submission proxy/Generation or
+global mail-ingress epoch fence. The unsafe historical fixture/cold-cutover path
+is retired. Root retains one host queue and separately reviews any finite owned
+state disposition; an expired fixture is not renewed.
+
+Current stock journey46 failed at helper startup, before HTTP or any ordered
+backend event. Its result leaves helper disposition unconfirmed; subsequent
+observations/dispositions must be read in the current ledger rather than
+inferred from transport exit. The native flags remain false, password form
+remains disabled and installed password change/operator UAT are not ready.
+This update makes no WSTG, slice or release PASS claim.
+
+The October 17 stop remains a historical outcome in
+[the stopped-work handoff](UX_STOPPED_HANDOFF_20261017.md). Explicit later
+operator instructions resumed S04-02; the current assignment and retained results
+are in [the execution ledger](UX_EXECUTION_LEDGER.md) and
+[Current Project Status](CURRENT_PROJECT_STATUS.md).
 
 ## Scope
 

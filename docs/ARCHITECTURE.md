@@ -1,14 +1,36 @@
 # Architecture Overview
 
-## Current operator stop — 2026-10-17
+## Selected S04-02 account path — 2026-10-19
 
-Development, live/native qualification and deployment are stopped by explicit
-operator direction. Only documentation preservation, signed repository commits
-and synchronization of `feat/ux-completion-20260929` are currently authorized.
-S04-02 password change and S04 remain incomplete; the installed password-change
-control remains disabled. Historical work orders do not authorize resumption.
-See [the stopped-work handoff](UX_STOPPED_HANDOFF_20261017.md) and
-[Current Project Status](CURRENT_PROJECT_STATUS.md) for current results and limits.
+OSMAP remains a web frontend over the existing mail stack. The selected password
+source uses the existing Rust browser coordinator, account admission, durable
+account epoch/pending state and conditional SQL update. A fixed account helper
+performs current-password authentication through the existing Dovecot auth
+socket with an unprivileged stock-auth child. Protected configuration, selected
+SQL passdb, socket/worker custody and the current mail master must match the
+captured authority before requests are admitted.
+
+Successful completion requires all OSMAP browser sessions for the changed
+account to be revoked and authoritative old-password rejection/new-password
+acceptance, with another account preserved. The stock adapter requires a
+source-bound, observed disabled authentication cache; it does not perform or
+claim a cache flush. Existing external IMAP/SMTP authenticated connections may
+remain open. The selected path does not use a global mail-ingress epoch fence,
+IMAP plugin, submission proxy/Generation or public mail configuration/lifecycle
+changes. Earlier fixture/cold-cutover designs are retired from this path.
+
+This describes selected source, not deployed password functionality. Native
+stock journey46 failed at helper startup (stage5), before HTTP or any ordered
+backend event; helper disposition was unconfirmed in that result. Both native
+qualification flags remain false and the installed form remains disabled.
+S04-02, installed acceptance, operator UAT and release readiness remain open.
+No additional functional retry follows from this documentation update.
+
+The October 17 stop remains a historical outcome in
+[the stopped-work handoff](UX_STOPPED_HANDOFF_20261017.md). Explicit later
+operator instructions resumed S04-02; the current assignment and retained results
+are in [the execution ledger](UX_EXECUTION_LEDGER.md) and
+[Current Project Status](CURRENT_PROJECT_STATUS.md).
 
 ## Status
 

@@ -151,6 +151,7 @@ impl MetadataExecutor {
     ) -> Result<crate::account_password_fstat::Recheck, CommandExecutionError> {
         self.fstat.as_ref().ok_or_else(unavailable)?.recheck(end)
     }
+    #[allow(dead_code)] // Historical private control-adapter metadata extension.
     pub(crate) fn with_control(
         &self,
         control: std::sync::Arc<crate::account_password_peer::ControlPeer>,
@@ -189,7 +190,10 @@ pub(crate) fn fixed_metadata_args(program: &str, args: &[String]) -> bool {
         "/usr/local/sbin/postconf" => {
             equal(&["-M"]) || equal(&["-P"]) || equal(&["-h", "smtpd_sasl_auth_enable"])
         }
-        "/usr/local/bin/doveconf" => equal(&["-c", crate::account_password_topology::CONFIG, "-n"]),
+        "/usr/local/bin/doveconf" => {
+            equal(&["-c", crate::account_password_topology::CONFIG, "-n"])
+                || equal(&["-c", "/etc/dovecot/dovecot.conf", "-h", "auth_cache_size"])
+        }
         "/sbin/pfctl" => {
             equal(&["-sr"])
                 || equal(&["-s", "info"])
@@ -788,6 +792,8 @@ impl CommandExecutor for FixedExecutor<'_> {
         };
         #[cfg(test)]
         native_trace::stage(2);
+        let actual_args = profile.command_args(args).map_err(|_| unavailable())?;
+        let args = actual_args.as_slice();
         let plan = profile
             .prepare(program, args, deadline)
             .map_err(|_| unavailable())?;
@@ -1086,6 +1092,8 @@ impl CommandExecutor for PrimaryExecutor<'_> {
             return Err(unavailable());
         }
         let deadline = self.deadline.min(Instant::now() + timeout);
+        let actual_args = self.profile.command_args(args).map_err(|_| unavailable())?;
+        let args = actual_args.as_slice();
         let plan = self
             .profile
             .prepare(program, args, deadline)

@@ -1,5 +1,31 @@
 # OSMAP WSTG v4.2 Scenario Matrix
 
+## Current S04-02 stock-adapter evidence boundary — 2026-10-19
+
+The selected source uses the existing browser/account coordinator, conditional
+SQL update and stock Dovecot authentication with durable OSMAP account state.
+The required outcome is revocation of all OSMAP browser sessions, authoritative
+old-password rejection/new-password acceptance and other-account preservation.
+Existing authenticated external IMAP/SMTP connections may remain. This is the
+frozen browser-session/credential distinction, not a new WSTG PASS or removal
+of any of the twenty obligations/nine scenario identities.
+
+The stock path requires a source-bound observed disabled authentication cache;
+it issues no cache flush. Plugin, submission proxy/Generation, global mail-
+ingress epoch fencing and public mail lifecycle/configuration mutations are
+excluded. Historical private-fixture evidence below retains its original scope.
+It does not qualify this changed adapter.
+
+Actual stock journey46 is FAIL at helper startup (stage5), before HTTP or any
+ordered backend event. Both born SSH groups were reaped/gone; remote helper
+disposition remained unconfirmed. Further owned-state disposition is separate
+from functional qualification and is recorded in the execution ledger. Native
+qualification flags remain false and the live password form remains disabled.
+No authentication, session, password-change, installed, release, S04-02 or UAT
+result is promoted by source/build/cleanup checks or this documentation update.
+
+## Historical source and validation records
+
 S04-02 source-only main-link and installation increment, 2026-10-19: the exact
 ParentPlan grants fixed `/var/dovecot` read-only metadata access, retaining fresh
 link identity/target and full-hash checks. Existing actual-union control passes

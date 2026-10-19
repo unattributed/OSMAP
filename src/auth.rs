@@ -59,7 +59,8 @@ pub(crate) fn password_backend_command(program: &str, args: &[String]) -> io::Re
         program == SQL_PROGRAM && args.iter().map(String::as_str).eq(SQL_ARGS.iter().copied());
     let mail = program == HASH_PROGRAM
         && (crate::account_password_mail::fixed_args(args)
-            || crate::account_password_mail::fixed_control_args(args));
+            || crate::account_password_mail::fixed_control_args(args)
+            || crate::account_password_mail::fixed_stock_args(args, true));
     if !hash && !sql && !mail {
         return Err(io::ErrorKind::PermissionDenied.into());
     }

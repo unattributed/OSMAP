@@ -8,18 +8,37 @@ fn password_unicode_scalar_boundary_matches_html_utf16_cap_without_secret_reads(
     assert_eq!(valid.chars().count(), 128);
     assert_eq!(valid.encode_utf16().count(), 256);
     assert!(crate::password_change::Request::new(
-        "Current-public-password", &valid, &valid, "123456"
-    ).is_ok());
-    assert!(matches!(crate::password_change::Request::new(
-        "Current-public-password", &invalid, &invalid, "123456"
-    ), Err(crate::password_change::Error::Invalid)));
+        "Current-public-password",
+        &valid,
+        &valid,
+        "123456"
+    )
+    .is_ok());
+    assert!(matches!(
+        crate::password_change::Request::new(
+            "Current-public-password",
+            &invalid,
+            &invalid,
+            "123456"
+        ),
+        Err(crate::password_change::Error::Invalid)
+    ));
 
     let app = password_app(BrowserPasswordDecision::KnownRefused);
-    let page = app.handle_request(&request("GET", "/settings/password",
-        &authenticated_same_origin_headers(), ""), "127.0.0.1");
+    let page = app.handle_request(
+        &request(
+            "GET",
+            "/settings/password",
+            &authenticated_same_origin_headers(),
+            "",
+        ),
+        "127.0.0.1",
+    );
     let html = body_text(&page);
     for name in ["new_password", "confirmation"] {
-        assert!(html.contains(&format!("name=\"{name}\" type=\"password\" autocomplete=\"new-password\" maxlength=\"256\"")));
+        assert!(html.contains(&format!(
+            "name=\"{name}\" type=\"password\" autocomplete=\"new-password\" maxlength=\"256\""
+        )));
     }
     for (value, expected_status, calls) in [(&valid, 409, 1), (&invalid, 400, 1)] {
         let body = password_form().replace("New-public-password", &url_encode(value));
@@ -34,8 +53,16 @@ fn password_form() -> String {
     format!("csrf_token={}&current_password=Current-public-password&new_password=New-public-password&confirmation=New-public-password&totp_code=123456", url_encode("fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210"))
 }
 fn password_request(body: &str) -> HttpRequest {
-    let mut request = request("POST", "/settings/password", &authenticated_same_origin_headers(), body);
-    request.headers.insert("content-type".into(), "application/x-www-form-urlencoded".into());
+    let mut request = request(
+        "POST",
+        "/settings/password",
+        &authenticated_same_origin_headers(),
+        body,
+    );
+    request.headers.insert(
+        "content-type".into(),
+        "application/x-www-form-urlencoded".into(),
+    );
     request
 }
 fn password_app(decision: BrowserPasswordDecision) -> BrowserApp<StubGateway> {
@@ -131,11 +158,30 @@ fn assert_no_password_echo(response: &HandledHttpResponse) {
 #[test]
 fn password_route_unavailable_and_field_security_refuse_without_dispatch() {
     let unavailable = app();
-    let get = unavailable.handle_request(&request("GET", "/settings/password", &authenticated_same_origin_headers(), ""), "127.0.0.1");
+    let get = unavailable.handle_request(
+        &request(
+            "GET",
+            "/settings/password",
+            &authenticated_same_origin_headers(),
+            "",
+        ),
+        "127.0.0.1",
+    );
     assert_eq!(get.response.status_code, 503);
     assert!(body_text(&get).contains("<fieldset disabled>"));
-    assert_eq!(unavailable.handle_request(&password_request(&password_form()), "127.0.0.1").response.status_code, 503);
-    assert!(unavailable.gateway.password_calls.lock().unwrap().is_empty());
+    assert_eq!(
+        unavailable
+            .handle_request(&password_request(&password_form()), "127.0.0.1")
+            .response
+            .status_code,
+        503
+    );
+    assert!(unavailable
+        .gateway
+        .password_calls
+        .lock()
+        .unwrap()
+        .is_empty());
 
     let enabled = password_app(BrowserPasswordDecision::Changed);
     for body in [
@@ -149,38 +195,94 @@ fn password_route_unavailable_and_field_security_refuse_without_dispatch() {
         assert_no_password_echo(&result);
     }
     let mut foreign = password_request(&password_form());
-    foreign.headers.insert("origin".into(), "https://foreign.example".into());
-    assert_eq!(enabled.handle_request(&foreign, "127.0.0.1").response.status_code, 403);
+    foreign
+        .headers
+        .insert("origin".into(), "https://foreign.example".into());
+    assert_eq!(
+        enabled
+            .handle_request(&foreign, "127.0.0.1")
+            .response
+            .status_code,
+        403
+    );
     let mut absent = password_request(&password_form());
     absent.headers.remove("cookie");
-    assert_eq!(enabled.handle_request(&absent, "127.0.0.1").response.status_code, 303);
+    assert_eq!(
+        enabled
+            .handle_request(&absent, "127.0.0.1")
+            .response
+            .status_code,
+        303
+    );
     assert!(enabled.gateway.password_calls.lock().unwrap().is_empty());
 }
 
 #[test]
 fn password_route_result_classes_clear_cookie_only_for_changed_or_uncertain() {
     for (decision, status, clear, text) in [
-        (BrowserPasswordDecision::Changed, 200, true, "password was changed"),
-        (BrowserPasswordDecision::Unconfirmed, 503, true, "Do not repeat"),
-        (BrowserPasswordDecision::KnownRefused, 409, false, "No password change was made"),
-        (BrowserPasswordDecision::PrewriteRefused(crate::password_change::Error::Authentication), 403, false, "No change was submitted"),
-        (BrowserPasswordDecision::PrewriteRefused(crate::password_change::Error::Throttled), 429, false, "temporarily limited"),
+        (
+            BrowserPasswordDecision::Changed,
+            200,
+            true,
+            "password was changed",
+        ),
+        (
+            BrowserPasswordDecision::Unconfirmed,
+            503,
+            true,
+            "Do not repeat",
+        ),
+        (
+            BrowserPasswordDecision::KnownRefused,
+            409,
+            false,
+            "No password change was made",
+        ),
+        (
+            BrowserPasswordDecision::PrewriteRefused(crate::password_change::Error::Authentication),
+            403,
+            false,
+            "No change was submitted",
+        ),
+        (
+            BrowserPasswordDecision::PrewriteRefused(crate::password_change::Error::Throttled),
+            429,
+            false,
+            "temporarily limited",
+        ),
     ] {
         let app = password_app(decision);
         let result = app.handle_request(&password_request(&password_form()), "127.0.0.1");
         assert_eq!(result.response.status_code, status);
         assert!(body_text(&result).contains(text));
-        assert_eq!(result.response.headers.iter().any(|(k,v)| k == "Set-Cookie" && v.contains("Max-Age=0")), clear);
+        assert_eq!(
+            result
+                .response
+                .headers
+                .iter()
+                .any(|(k, v)| k == "Set-Cookie" && v.contains("Max-Age=0")),
+            clear
+        );
         assert_eq!(app.gateway.password_calls.lock().unwrap().len(), 1);
         assert_no_password_echo(&result);
-        if clear { assert!(!body_text(&result).contains("password-change-form")); }
+        if clear {
+            assert!(!body_text(&result).contains("password-change-form"));
+        }
     }
 }
 
 #[test]
 fn password_page_uses_exact_script_csp_and_independent_empty_fields() {
     let app = password_app(BrowserPasswordDecision::Changed);
-    let result = app.handle_request(&request("GET", "/settings/password", &authenticated_same_origin_headers(), ""), "127.0.0.1");
+    let result = app.handle_request(
+        &request(
+            "GET",
+            "/settings/password",
+            &authenticated_same_origin_headers(),
+            "",
+        ),
+        "127.0.0.1",
+    );
     assert_eq!(result.response.status_code, 200);
     let html = body_text(&result);
     for name in ["current_password", "new_password", "confirmation"] {
@@ -188,13 +290,30 @@ fn password_page_uses_exact_script_csp_and_independent_empty_fields() {
         assert!(html.contains(&format!("aria-controls=\"{name}\"")));
     }
     assert!(html.contains("href=\"/settings?section=security\">Cancel"));
-    let csp = result.response.headers.iter().find(|(k,_)| k == "Content-Security-Policy").unwrap().1.clone();
+    let csp = result
+        .response
+        .headers
+        .iter()
+        .find(|(k, _)| k == "Content-Security-Policy")
+        .unwrap()
+        .1
+        .clone();
     assert!(csp.contains("script-src 'sha256-"));
     assert!(csp.contains("script-src-attr 'none'; connect-src 'none'"));
     assert!(!csp.contains("script-src 'self'") && !csp.contains("script-src 'unsafe-inline'"));
-    let settings = app.handle_request(&request("GET", "/settings?section=security", &authenticated_same_origin_headers(), ""), "127.0.0.1");
+    let settings = app.handle_request(
+        &request(
+            "GET",
+            "/settings?section=security",
+            &authenticated_same_origin_headers(),
+            "",
+        ),
+        "127.0.0.1",
+    );
     assert!(body_text(&settings).contains("href=\"/settings/password\""));
-    assert!(!body_text(&settings).contains("Password and recovery changes remain unavailable here."));
+    assert!(
+        !body_text(&settings).contains("Password and recovery changes remain unavailable here.")
+    );
     // The source gate independently verifies the exact script bytes/hash and
     // rejects changed-hash network/secret-read/CSP broadening controls.
 }
@@ -203,15 +322,45 @@ fn password_page_uses_exact_script_csp_and_independent_empty_fields() {
 fn password_runtime_trait_delegates_to_unqualified_owned_capability_without_state_creation() {
     use crate::session::{FileSessionStore, SessionService, SystemRandomSource};
     let root = temp_dir("password-runtime-trait");
-    let service = SessionService::new(FileSessionStore::new(root.join("sessions")), crate::totp::SystemTimeProvider, SystemRandomSource, 3600, 1800);
-    let context = AuthenticationContext { request_id:"public-password".into(), remote_addr:"127.0.0.1".into(), user_agent:"public fixture".into() };
-    let issued = service.issue(&context, "alice@example.test", RequiredSecondFactor::Totp).unwrap();
+    let service = SessionService::new(
+        FileSessionStore::new(root.join("sessions")),
+        crate::totp::SystemTimeProvider,
+        SystemRandomSource,
+        3600,
+        1800,
+    );
+    let context = AuthenticationContext {
+        request_id: "public-password".into(),
+        remote_addr: "127.0.0.1".into(),
+        user_agent: "public fixture".into(),
+    };
+    let issued = service
+        .issue(&context, "alice@example.test", RequiredSecondFactor::Totp)
+        .unwrap();
     let session = service.validate(&context, &issued.token).unwrap();
     let gateway = RuntimeBrowserGateway::for_test(&root);
-    assert!(!BrowserGateway::password_change_available(&gateway, &session));
-    let action = crate::password_change::Request::new("Current-public-password", "New-public-password", "New-public-password", "123456").unwrap();
-    let result = BrowserGateway::change_own_password(&gateway, &context, &session, &issued.token, action, std::time::Instant::now()+std::time::Duration::from_secs(60));
-    assert_eq!(result.decision, BrowserPasswordDecision::PrewriteRefused(crate::password_change::Error::Unavailable));
+    assert!(!BrowserGateway::password_change_available(
+        &gateway, &session
+    ));
+    let action = crate::password_change::Request::new(
+        "Current-public-password",
+        "New-public-password",
+        "New-public-password",
+        "123456",
+    )
+    .unwrap();
+    let result = BrowserGateway::change_own_password(
+        &gateway,
+        &context,
+        &session,
+        &issued.token,
+        action,
+        std::time::Instant::now() + std::time::Duration::from_secs(60),
+    );
+    assert_eq!(
+        result.decision,
+        BrowserPasswordDecision::PrewriteRefused(crate::password_change::Error::Unavailable)
+    );
     assert!(!root.join("settings/password-stepup-rate").exists());
     std::fs::remove_dir_all(root).unwrap();
 }
@@ -221,20 +370,37 @@ fn password_runtime_trait_delegates_to_unqualified_owned_capability_without_stat
 fn assert_password_source_t02_refusal(response: &HandledHttpResponse) {
     assert_no_password_echo(response);
     let text = format!("{} {:?}", body_text(response), response.audit_events);
-    for invented in ["Your password was changed", "password_changed_at", "credential_changed_at", "changed_at="] {
-        assert!(!text.contains(invented), "refusal fabricated a changed-at/result claim");
+    for invented in [
+        "Your password was changed",
+        "password_changed_at",
+        "credential_changed_at",
+        "changed_at=",
+    ] {
+        assert!(
+            !text.contains(invented),
+            "refusal fabricated a changed-at/result claim"
+        );
     }
 }
 
 #[test]
 fn password_source_t02_exact_minimum_is_admitted_without_claiming_change() {
     let minimum = "a".repeat(15);
-    assert!(crate::password_change::Request::new("Current-public-password", &minimum, &minimum, "123456").is_ok());
+    assert!(crate::password_change::Request::new(
+        "Current-public-password",
+        &minimum,
+        &minimum,
+        "123456"
+    )
+    .is_ok());
     let app = password_app(BrowserPasswordDecision::KnownRefused);
     let body = password_form().replace("New-public-password", &minimum);
     let response = app.handle_request(&password_request(&body), "127.0.0.1");
     assert_eq!(response.response.status_code, 409);
-    assert_eq!(*app.gateway.password_calls.lock().unwrap(), vec!["alice@example.com"]);
+    assert_eq!(
+        *app.gateway.password_calls.lock().unwrap(),
+        vec!["alice@example.com"]
+    );
     assert!(body_text(&response).contains("No password change was made"));
     assert_password_source_t02_refusal(&response);
     let too_short = password_form().replace("New-public-password", &"a".repeat(14));
@@ -252,8 +418,14 @@ fn password_source_t02_missing_malformed_and_unbound_fields_do_not_dispatch() {
         valid.replace("current_password=Current-public-password&", ""),
         valid.replace("confirmation=New-public-password&", ""),
         valid.replace("csrf_token=", "csrf_token=%GG"),
-        valid.replace("current_password=Current-public-password", "current_password=%ff"),
-        valid.replace("current_password=Current-public-password", "account=bob%40example.com"),
+        valid.replace(
+            "current_password=Current-public-password",
+            "current_password=%ff",
+        ),
+        valid.replace(
+            "current_password=Current-public-password",
+            "account=bob%40example.com",
+        ),
         format!("{valid}&%63urrent_password=duplicate"),
         valid.replace("New-public-password", "Current-public-password"),
     ];
@@ -269,12 +441,16 @@ fn password_source_t02_missing_malformed_and_unbound_fields_do_not_dispatch() {
     let error = parse_http_request_bytes(raw.as_bytes(), &HttpPolicy::default()).unwrap_err();
     assert_eq!(error.reason, "http body exceeded maximum length");
     let mut wrong_type = password_request(&valid);
-    wrong_type.headers.insert("content-type".into(), "application/json".into());
+    wrong_type
+        .headers
+        .insert("content-type".into(), "application/json".into());
     let response = app.handle_request(&wrong_type, "127.0.0.1");
     assert_eq!(response.response.status_code, 400);
     assert_password_source_t02_refusal(&response);
     let mut query = password_request(&valid);
-    query.query_params.insert("account".into(), "bob@example.com".into());
+    query
+        .query_params
+        .insert("account".into(), "bob@example.com".into());
     let response = app.handle_request(&query, "127.0.0.1");
     assert_eq!(response.response.status_code, 400);
     assert_password_source_t02_refusal(&response);
@@ -286,34 +462,73 @@ fn password_source_t02_revoked_real_file_session_refuses_without_record_rewrite(
     use crate::session::{FileSessionStore, SessionService, SystemRandomSource};
     let root = temp_dir("password-source-t02-revoked");
     let session_root = root.join("sessions");
-    let service = SessionService::new(FileSessionStore::new(&session_root), crate::totp::SystemTimeProvider, SystemRandomSource, 3600, 1800);
-    let context = AuthenticationContext {request_id:"public-t02".into(), remote_addr:"127.0.0.1".into(), user_agent:"Firefox/Test".into()};
-    let alice = service.issue(&context, "alice@example.com", RequiredSecondFactor::Totp).unwrap();
-    let bob = service.issue(&context, "bob@example.com", RequiredSecondFactor::Totp).unwrap();
-    let app = BrowserApp::new(HttpPolicy::default(), StubGateway {
-        password_result:Some(BrowserPasswordDecision::Changed),
-        fixture_sessions:Some(fixture_sessions::FixtureSessions::new(session_root.clone())),
-        ..StubGateway::default()
-    });
+    let service = SessionService::new(
+        FileSessionStore::new(&session_root),
+        crate::totp::SystemTimeProvider,
+        SystemRandomSource,
+        3600,
+        1800,
+    );
+    let context = AuthenticationContext {
+        request_id: "public-t02".into(),
+        remote_addr: "127.0.0.1".into(),
+        user_agent: "Firefox/Test".into(),
+    };
+    let alice = service
+        .issue(&context, "alice@example.com", RequiredSecondFactor::Totp)
+        .unwrap();
+    let bob = service
+        .issue(&context, "bob@example.com", RequiredSecondFactor::Totp)
+        .unwrap();
+    let app = BrowserApp::new(
+        HttpPolicy::default(),
+        StubGateway {
+            password_result: Some(BrowserPasswordDecision::Changed),
+            fixture_sessions: Some(fixture_sessions::FixtureSessions::new(session_root.clone())),
+            ..StubGateway::default()
+        },
+    );
     let cookie = format!("osmap_session={}", alice.token.as_str());
-    let mut get = request("GET", "/settings/password", &authenticated_same_origin_headers(), "");
+    let mut get = request(
+        "GET",
+        "/settings/password",
+        &authenticated_same_origin_headers(),
+        "",
+    );
     get.headers.insert("cookie".into(), cookie.clone());
-    assert_eq!(app.handle_request(&get, "127.0.0.1").response.status_code, 200);
-    assert!(service.revoke_by_token(&context, &alice.token).unwrap().newly_revoked);
+    assert_eq!(
+        app.handle_request(&get, "127.0.0.1").response.status_code,
+        200
+    );
+    assert!(
+        service
+            .revoke_by_token(&context, &alice.token)
+            .unwrap()
+            .newly_revoked
+    );
     let store = FileSessionStore::new(&session_root);
     let alice_path = store.session_path(&alice.record.session_id);
     let bob_path = store.session_path(&bob.record.session_id);
     let before_alice = fs::read(&alice_path).unwrap();
     let before_bob = fs::read(&bob_path).unwrap();
-    let body = password_form().replace("fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210", &url_encode(&alice.record.csrf_token));
+    let body = password_form().replace(
+        "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210",
+        &url_encode(&alice.record.csrf_token),
+    );
     let mut post = password_request(&body);
     post.headers.insert("cookie".into(), cookie);
     let response = app.handle_request(&post, "127.0.0.1");
     assert_eq!(response.response.status_code, 303);
     assert_password_source_t02_refusal(&response);
     assert!(app.gateway.password_calls.lock().unwrap().is_empty());
-    assert!(fs::read(&alice_path).unwrap() == before_alice, "refused Alice record changed");
-    assert!(fs::read(&bob_path).unwrap() == before_bob, "unrelated Bob record changed");
+    assert!(
+        fs::read(&alice_path).unwrap() == before_alice,
+        "refused Alice record changed"
+    );
+    assert!(
+        fs::read(&bob_path).unwrap() == before_bob,
+        "unrelated Bob record changed"
+    );
     assert!(service.validate(&context, &bob.token).is_ok());
     fs::remove_dir_all(root).unwrap();
 }
@@ -335,7 +550,7 @@ mod genuine_http_pilot {
     use std::time::{Duration, Instant};
 
     const WEB_UID: u32 = 1001;
-    const WEB_GID: u32 = 1003;
+    const WEB_GID: u32 = 1001;
     // Original ten workflow requests plus eight exact T07 history views.
     const CONNECTIONS: usize = 18;
     const HOST: &str = "password-pilot.osmap.invalid";
@@ -377,12 +592,13 @@ mod genuine_http_pilot {
     }
     impl Control {
         fn owned(stream: UnixStream) -> Result<Self, ()> {
-            let identity = crate::openbsd::fixture_http_pilot_root_control_identity(&stream)
-                .map_err(|_| ())?;
+            let identity =
+                crate::openbsd::fixture_current_rust_http_pilot_root_control_identity(&stream)
+                    .map_err(|_| ())?;
             Ok(Self { stream, identity })
         }
         fn current(&self) -> Result<(), ()> {
-            if crate::openbsd::fixture_http_pilot_root_control_identity(&self.stream)
+            if crate::openbsd::fixture_current_rust_http_pilot_root_control_identity(&self.stream)
                 .map_err(|_| ())?
                 != self.identity
             {
@@ -417,17 +633,97 @@ mod genuine_http_pilot {
         }
         Ok(())
     }
-    fn config_and_seed(root: &Path) -> Result<crate::config::AppConfig, ()> {
+    #[derive(serde::Deserialize)]
+    #[serde(deny_unknown_fields)]
+    struct PairedRelayProfile {
+        version: u8,
+        authority: String,
+        purpose: String,
+        admission_helper_uid: u32,
+        mutation_helper_uid: u32,
+    }
+    fn paired_relay_profile(raw: &[u8]) -> Result<PairedRelayProfile, ()> {
+        let profile: PairedRelayProfile = serde_json::from_slice(raw).map_err(|_| ())?;
+        if profile.version != 1
+            || profile.authority != "mail.blackbagsecurity.com"
+            || profile.purpose != "osmap-password-rust-http-fixture"
+            || [profile.admission_helper_uid, profile.mutation_helper_uid]
+                .iter()
+                .any(|uid| *uid == 0 || *uid == u32::MAX)
+        {
+            return Err(());
+        }
+        Ok(profile)
+    }
+    fn paired_profile_file(path: &Path) -> Result<Vec<u8>, ()> {
+        let before = fs::symlink_metadata(path).map_err(|_| ())?;
+        let identity = |m: &fs::Metadata| {
+            (
+                m.dev(),
+                m.ino(),
+                m.uid(),
+                m.gid(),
+                m.mode(),
+                m.nlink(),
+                m.len(),
+                m.mtime(),
+                m.mtime_nsec(),
+                m.ctime(),
+                m.ctime_nsec(),
+            )
+        };
+        if !before.is_file()
+            || before.uid() != 0
+            || before.gid() != WEB_GID
+            || before.mode() & 0o7777 != 0o440
+            || before.nlink() != 1
+            || before.len() == 0
+            || before.len() > 2048
+        {
+            return Err(());
+        }
+        let mut file = OpenOptions::new()
+            .read(true)
+            .custom_flags(libc::O_NOFOLLOW | libc::O_NONBLOCK | libc::O_CLOEXEC)
+            .open(path)
+            .map_err(|_| ())?;
+        if identity(&file.metadata().map_err(|_| ())?) != identity(&before) {
+            return Err(());
+        }
+        use std::io::Read;
+        let mut bytes = Vec::new();
+        (&mut file)
+            .take(2049)
+            .read_to_end(&mut bytes)
+            .map_err(|_| ())?;
+        if bytes.len() as u64 != before.len()
+            || identity(&file.metadata().map_err(|_| ())?) != identity(&before)
+            || identity(&fs::symlink_metadata(path).map_err(|_| ())?) != identity(&before)
+        {
+            return Err(());
+        }
+        Ok(bytes)
+    }
+    fn fixture_accounts(paired: bool) -> [&'static str; 2] {
+        if paired {
+            ["alice@osmap-password.invalid", "bob@osmap-password.invalid"]
+        } else {
+            ["alice@osmap-proxy.invalid", "bob@osmap-proxy.invalid"]
+        }
+    }
+    fn config_and_seed(root: &Path, paired: bool) -> Result<crate::config::AppConfig, ()> {
         let runtime = root.parent().ok_or(())?;
         directory(runtime, 0, 0o750)?;
         directory(root, 0, 0o750)?;
-        directory(&runtime.join("admission"), 0, 0o750)?;
+        if !paired {
+            directory(&runtime.join("admission"), 0, 0o750)?;
+        }
         directory(&root.join("keys"), 0, 0o750)?;
         directory(&root.join("secrets"), 0, 0o750)?;
         let mut config =
             crate::config::AppConfig::from_env_map(&std::collections::BTreeMap::from([
                 ("OSMAP_RUN_MODE".into(), "serve".into()),
-            ("OSMAP_ENV".into(), "staging".into()),
+                ("OSMAP_ENV".into(), "staging".into()),
                 ("OSMAP_STATE_DIR".into(), root.to_str().ok_or(())?.into()),
                 ("OSMAP_ALLOWED_HOSTS".into(), HOST.into()),
                 ("OSMAP_LISTEN_ADDR".into(), "127.0.0.1:0".into()),
@@ -460,8 +756,21 @@ mod genuine_http_pilot {
             session_proof_key_file: root.join("keys/session-proof.key"),
             mutation_helper_uid: 0,
         });
+        if paired {
+            // Fixed local purpose relays perform the existing two-host transport.
+            // Protected startup selects explicit peers; every real client still
+            // checks the socket's kernel peer and purpose-separated private keys.
+            // Neither this profile nor test construction grants native readiness.
+            let path = root.join("keys/paired-relays.json");
+            let profile = paired_relay_profile(&paired_profile_file(&path)?)?;
+            let account = config.account_runtime.as_mut().ok_or(())?;
+            account.admission_socket = "/var/lib/osmap-bridge/run/admission.sock".into();
+            account.mutation_socket = "/var/lib/osmap-bridge/run/mutation.sock".into();
+            account.admission_helper_uid = profile.admission_helper_uid;
+            account.mutation_helper_uid = profile.mutation_helper_uid;
+        }
         let store = crate::totp::FileTotpSecretStore::new(&config.state_layout.totp_secret_dir);
-        for account in ["alice@osmap-proxy.invalid", "bob@osmap-proxy.invalid"] {
+        for account in fixture_accounts(paired) {
             let mut file = OpenOptions::new()
                 .write(true)
                 .create_new(true)
@@ -492,12 +801,53 @@ mod genuine_http_pilot {
         ] { assert!(bootstrap(raw).is_err()); }
     }
 
+    #[test]
+    fn paired_relay_profile_refuses_peer_shortcuts_and_extra_authority() {
+        let valid = br#"{"version":1,"authority":"mail.blackbagsecurity.com","purpose":"osmap-password-rust-http-fixture","admission_helper_uid":1004,"mutation_helper_uid":1004}"#;
+        assert!(paired_relay_profile(valid).is_ok());
+        for raw in [
+            String::from_utf8(valid.to_vec())
+                .unwrap()
+                .replace("1004", "0"),
+            String::from_utf8(valid.to_vec())
+                .unwrap()
+                .replace("1004", "4294967295"),
+            String::from_utf8(valid.to_vec())
+                .unwrap()
+                .replace("1004", "true"),
+            String::from_utf8(valid.to_vec())
+                .unwrap()
+                .replace("mail.blackbagsecurity.com", "other.invalid"),
+            String::from_utf8(valid.to_vec())
+                .unwrap()
+                .replace("fixture\"", "other\""),
+            String::from_utf8(valid.to_vec())
+                .unwrap()
+                .replace("{", "{\"native_ready\":true,"),
+            String::from_utf8(valid.to_vec())
+                .unwrap()
+                .replace("{", "{\"version\":1,"),
+        ] {
+            assert!(paired_relay_profile(raw.as_bytes()).is_err());
+        }
+    }
+
     /// Root starts this already irreversibly nonroot. Role records/topology,
     /// paired real account services and the complete HTTP consumer must pass
     /// separate frozen review; this entry cannot declare their outcomes.
     #[test]
     #[ignore = "root-reviewed genuine HTTP/password fixture only; no installed activation"]
     fn native_http_password_runtime_entrypoint() {
+        native_http_password_runtime(false);
+    }
+
+    #[test]
+    #[ignore = "root-reviewed current Rust backend and actual purpose-paired relays required"]
+    fn native_current_rust_http_password_runtime_entrypoint() {
+        native_http_password_runtime(true);
+    }
+
+    fn native_http_password_runtime(paired: bool) {
         assert_eq!(std::env::consts::OS, "openbsd");
         const {
             assert!(!crate::account_admission_runtime::NATIVE_CONFINEMENT_QUALIFIED);
@@ -510,7 +860,7 @@ mod genuine_http_pilot {
             .filter(|v| (3..=1024).contains(v))
             .expect("HTTP fixture descriptor required");
         let mut control = Control::owned(
-            crate::openbsd::fixture_owned_http_pilot_control(fd)
+            crate::openbsd::fixture_current_rust_owned_http_pilot_control(fd)
                 .expect("HTTP fixture descriptor refused"),
         )
         .expect("HTTP fixture fixed role/root peer refused");
@@ -521,7 +871,7 @@ mod genuine_http_pilot {
                 .expect("HTTP fixture bootstrap refused"),
         )
         .expect("HTTP fixture namespace refused");
-        let config = config_and_seed(&boot.root).expect("HTTP fixture state refused");
+        let config = config_and_seed(&boot.root, paired).expect("HTTP fixture state refused");
         let account = config
             .account_runtime
             .as_ref()
@@ -529,7 +879,7 @@ mod genuine_http_pilot {
         let admission = crate::account_admission_runtime::Client::paired_fixture_files(
             &account.admission_socket,
             &account.admission_key_file,
-            0,
+            account.admission_helper_uid,
         )
         .expect("HTTP fixture admission custody refused");
         // Same Arc custody is finalized by the actual paired Serve seal below.
@@ -538,7 +888,7 @@ mod genuine_http_pilot {
             &account.mutation_socket,
             &account.mutation_key_file,
             &account.session_proof_key_file,
-            0,
+            account.mutation_helper_uid,
         )
         .expect("HTTP fixture mutation custody refused");
         let mut gateway = RuntimeBrowserGateway::from_config(&config)
@@ -613,15 +963,16 @@ mod genuine_http_pilot {
         // Local cookie revocation must not substitute for a direct stale-epoch
         // negative against the same actual sealed account service. These use
         // the existing sequence deadline and add no HTTP request or actor.
+        let [alice, bob] = fixture_accounts(paired);
         assert!(matches!(
-            epoch_probe.admit_before("alice@osmap-proxy.invalid", 0, deadline),
+            epoch_probe.admit_before(alice, 0, deadline),
             Err(crate::account_admission::Error::Refused)
         ));
         epoch_probe
-            .admit_before("alice@osmap-proxy.invalid", 1, deadline)
+            .admit_before(alice, 1, deadline)
             .expect("HTTP fixture current Alice epoch refused");
         epoch_probe
-            .admit_before("bob@osmap-proxy.invalid", 0, deadline)
+            .admit_before(bob, 0, deadline)
             .expect("HTTP fixture preserved Bob epoch refused");
         // The authenticated client verifier binds every active epoch to the
         // exact requested epoch before admit_before can return Ok(()).

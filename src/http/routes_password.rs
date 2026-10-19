@@ -181,10 +181,12 @@ impl<G: BrowserGateway> BrowserApp<G> {
                     BrowserPasswordDecision::Unconfirmed => "unconfirmed",
                     BrowserPasswordDecision::PrewriteRefused(_) => "prewrite_refused",
                 },
-            ),
+            )
+            .with_field("session_revocation_scope", "osmap_browser_sessions")
+            .with_field("external_mail_session_termination", "not_requested"),
         );
         let (status, reason, message, clear) = match outcome.decision {
-            BrowserPasswordDecision::Changed => (200, "OK", "Your password was changed and your existing browser sessions were revoked. Sign in again with your new password.", true),
+            BrowserPasswordDecision::Changed => (200, "OK", "Your password was changed and your existing browser sessions were revoked. Sign in again with your new password. Mail clients already authenticated through IMAP or SMTP may remain connected.", true),
             BrowserPasswordDecision::KnownRefused => (409, "Conflict", "The account service refused this change. No password change was made.", false),
             BrowserPasswordDecision::Unconfirmed => (503, "Service Unavailable", "The password change or session cleanup could not be confirmed. Your session is cleared. Do not repeat this request; contact support to reconcile the account state.", true),
             BrowserPasswordDecision::PrewriteRefused(error) => match error {
@@ -198,7 +200,7 @@ impl<G: BrowserGateway> BrowserApp<G> {
             .filter(|v| crate::account_mutation::changed_at_valid(v))
             .map(|v| {
                 let state = if outcome.decision == BrowserPasswordDecision::Changed {
-                    "Password change and required containment were confirmed."
+                    "Password change and required OSMAP session cleanup were confirmed."
                 } else {
                     "Required containment remains incomplete; this is not a completed password change."
                 };

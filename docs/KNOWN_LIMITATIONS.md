@@ -1,6 +1,32 @@
 # Known Limitations
 
-## Current bounded resumption — 2026-10-18
+## Current S04-02 limits — 2026-10-19
+
+Password change is not ready for installed acceptance or operator UAT. Native
+stock journey46 failed at helper startup (stage5), with zero HTTP and zero
+ordered backend events. Its helper disposition remained unconfirmed even though
+both SSH groups were reaped/gone and the frontend reported its request producer
+stopped. Separate owned observations/cleanup never turn that functional FAIL
+into PASS; use the current execution ledger for their exact disposition scope.
+Both native qualification flags remain false and the password form is disabled.
+
+The selected stock adapter retains OSMAP account epoch/pending/CAS and browser
+session revocation, requires authoritative old-password rejection/new-password
+acceptance and other-account preservation, and requires a verified disabled
+authentication cache. It performs no cache flush and does not force existing
+external IMAP/SMTP authenticated sessions to close. Those sessions may remain.
+It excludes the retired global mail-ingress fence, plugin, proxy/Generation and
+public mail lifecycle/configuration mutation design. New tests must preserve
+public Dovecot, Postfix and MariaDB availability without those operations.
+
+All twenty S04-02 obligations and nine scenario identities remain tracked; a
+source, build, endpoint or cleanup PASS is not complete scenario qualification.
+No new functional retry, release/WSTG PASS or scope acceptance is asserted here.
+The historical stops and earlier outcomes below are retained as provenance,
+not current assignments. [Current Project Status](CURRENT_PROJECT_STATUS.md) and
+[the execution ledger](UX_EXECUTION_LEDGER.md) govern current results.
+
+## Historical bounded resumption — 2026-10-18
 
 The operator resumed S04-02 only and assigned its implementation and review to
 subagents. S04_readiness owns the single canonical/host/Git execution queue;
@@ -54,10 +80,10 @@ control remains disabled. Historical work orders do not authorize resumption.
 See [the stopped-work handoff](UX_STOPPED_HANDOFF_20261017.md) and
 [Current Project Status](CURRENT_PROJECT_STATUS.md) for current results and limits.
 
-## Current account and protected-mail limits
+## Historical account and protected-mail snapshot — 2026-10-17
 
 S04-02 password change has no installed obsd1-to-Toronto workflow PASS. The
-latest changed integration HTTP25 failed at the initial controlled Bob login
+then-latest changed integration HTTP25 failed at the initial controlled Bob login
 with401; no mutation was reached and the underlying cause is unknown. A
 separate stock private-auth component passed8 controls. These results do not
 permit enabling the live form. Settings acceptance, recovery contacts and
