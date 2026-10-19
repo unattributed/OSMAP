@@ -651,6 +651,14 @@ struct State {
     sequence: u64,
     failed: bool,
 }
+/// Current permits the server to continue custody checks; Busy grants no
+/// authority and postpones the iteration before any accepted connection.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum Recheck {
+    Current,
+    Busy,
+}
+
 pub(crate) struct Observer {
     state: Mutex<State>,
 }
@@ -836,23 +844,24 @@ impl Observer {
             }
         }
     }
-    pub(crate) fn recheck(&self, end: Instant) -> Result<(), CommandExecutionError> {
-        let mut state = loop {
-            match self.state.try_lock() {
-                Ok(s) => break s,
-                Err(std::sync::TryLockError::Poisoned(p)) => {
-                    let mut state = p.into_inner();
-                    state.failed = true;
-                    break state;
-                }
-                Err(std::sync::TryLockError::WouldBlock) => {
-                    std::thread::sleep(remaining(end).map_err(error)?.min(Duration::from_millis(1)))
-                }
+    pub(crate) fn recheck(&self, end: Instant) -> Result<Recheck, CommandExecutionError> {
+        let mut state = match self.state.try_lock() {
+            Ok(state) => state,
+            Err(std::sync::TryLockError::Poisoned(poisoned)) => {
+                let mut state = poisoned.into_inner();
+                state.failed = true;
+                state
+            }
+            Err(std::sync::TryLockError::WouldBlock) => {
+                // A finite in-flight observation owns this lock. Busy is not
+                // a liveness attestation and never permits new admission.
+                remaining(end).map_err(error)?;
+                return Ok(Recheck::Busy);
             }
         };
         if !state.failed && worker_exited(&state).is_ok_and(|exited| !exited) {
             remaining(end).map_err(error)?;
-            return Ok(());
+            return Ok(Recheck::Current);
         }
         state.failed = true;
         crate::account_password_process::metadata_stopped();
@@ -1221,6 +1230,31 @@ mod tests {
         assert!(trace.tag().ends_with("_deadline"));
         drop(other);
     }
+    #[test]
+    fn service_recheck_defers_live_contention_and_refuses_expired_budget() {
+        let (stream, _peer) = UnixStream::pair().unwrap();
+        let observer = Observer {
+            state: Mutex::new(State {
+                child: None,
+                stream,
+                sequence: 0,
+                failed: false,
+            }),
+        };
+        let held = observer.state.lock().unwrap();
+        let result = observer.recheck(Instant::now() + Duration::from_millis(500));
+        assert_eq!(format!("{:?}", result.unwrap()), "Busy");
+        assert_eq!(
+            observer
+                .recheck(Instant::now() - Duration::from_millis(1))
+                .unwrap_err()
+                .reason,
+            "metadata_child_deadline"
+        );
+        assert!(!held.failed);
+        drop(held);
+    }
+
     #[test]
     fn closed_pid_frames_and_closed_failures_keep_their_exact_stage() {
         let now = Instant::now();

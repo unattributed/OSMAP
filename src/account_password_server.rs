@@ -20,7 +20,7 @@ use crate::openpgp_inventory_runtime::{file, private_dir, secret};
 use serde::Deserialize;
 use std::collections::BTreeSet;
 use std::fs;
-use std::io::Read;
+use std::io::{Read, Write};
 use std::net::{Ipv4Addr, SocketAddrV4, TcpListener};
 use std::os::unix::fs::MetadataExt;
 use std::os::unix::net::UnixStream;
@@ -279,6 +279,14 @@ fn run_operator_service_with_trace(
     if cleanup.is_err() {
         trace.cleanup_failed();
     }
+    if outcome.is_ok() {
+        if let Err(error) = &cleanup {
+            let _ = writeln!(
+                std::io::stderr().lock(),
+                "account_password_service stage=service_observer_cleanup error={error:?}"
+            );
+        }
+    }
     outcome.and(cleanup)
 }
 
@@ -373,14 +381,43 @@ fn serve(
                 return Err(Error::CleanupUnconfirmed);
             }
             let custody_deadline = Instant::now() + Duration::from_millis(500);
-            metadata
-                .recheck_fstat(custody_deadline)
-                .map_err(unavailable)?;
-            parent_plan.recheck(custody_deadline).map_err(unavailable)?;
-            files.recheck(custody_deadline)?;
-            admission_socket.recheck()?;
-            mutation_socket.recheck()?;
-            publication_socket.recheck()?;
+            let metadata_check = metadata.recheck_fstat(custody_deadline);
+            let metadata_reason = metadata_check
+                .as_ref()
+                .err()
+                .map(|error| error.reason.as_str());
+            if loop_custody(
+                metadata_check.as_ref().copied().map_err(unavailable),
+                Op::BeforeRecheck,
+                stop,
+                metadata_reason,
+            )? == crate::account_password_fstat::Recheck::Busy
+            {
+                // No accept, observation scheduling or credential action is
+                // reachable while the existing metadata operation owns custody.
+                std::thread::sleep(Duration::from_millis(10));
+                continue;
+            }
+            loop_custody(
+                parent_plan.recheck(custody_deadline).map_err(unavailable),
+                Op::ParentActivate,
+                stop,
+                None,
+            )?;
+            loop_custody(
+                files.recheck(custody_deadline),
+                Op::ServiceFiles,
+                stop,
+                None,
+            )?;
+            loop_custody(admission_socket.recheck(), Op::AdmissionBind, stop, None)?;
+            loop_custody(mutation_socket.recheck(), Op::MutationBind, stop, None)?;
+            loop_custody(
+                publication_socket.recheck(),
+                Op::PublicationBind,
+                stop,
+                None,
+            )?;
             let mut pending = Vec::new();
             for thread in active.drain(..) {
                 if thread.is_finished() {
@@ -598,6 +635,17 @@ fn serve(
         .remove()
         .and(mutation_socket.remove())
         .and(publication_socket.remove());
+    if let Err(error) = &outcome {
+        let _ = writeln!(
+            std::io::stderr().lock(),
+            "account_password_service stage=service_loop error={error:?}"
+        );
+    } else if let Err(error) = &cleanup {
+        let _ = writeln!(
+            std::io::stderr().lock(),
+            "account_password_service stage=service_endpoint_cleanup error={error:?}"
+        );
+    }
     outcome.and(cleanup)
 }
 
@@ -725,6 +773,40 @@ fn fixed_submission_namespace(
         control,
         metadata,
     })
+}
+
+// Only the first failing loop guard reaches this error-only diagnostic: the
+// unchanged Err immediately leaves the loop. The stop snapshot distinguishes
+// a guard failure observed during requested shutdown from a pre-stop failure.
+// The existing closed trace vocabulary carries no native payload or identity.
+fn loop_custody<T>(
+    result: Result<T, Error>,
+    operation: crate::account_password_fstat::StartupOperation,
+    stop: &AtomicBool,
+    metadata_reason: Option<&str>,
+) -> Result<T, Error> {
+    if let Err(error) = &result {
+        use crate::account_password_fstat::{StartupCategory as Cat, StartupOperation as Op};
+        let mut trace = crate::account_password_fstat::StartupTrace::new(operation);
+        if operation == Op::BeforeRecheck {
+            match metadata_reason {
+                Some(
+                    "metadata_child_deadline"
+                    | "metadata_fstat_rpc_deadline"
+                    | "metadata_child_budget",
+                ) => trace.category(Cat::Deadline),
+                Some("metadata_fstat_worker_exit" | "metadata_query_exit") => {
+                    trace.category(Cat::Exit)
+                }
+                Some("metadata_child_cleanup") => trace.cleanup_failed(),
+                _ => {}
+            }
+        }
+        let requested = stop.load(Ordering::SeqCst);
+        eprintln!("account_password_service stage=service_loop_guard stop_requested={requested}");
+        trace.emit(error);
+    }
+    result
 }
 
 fn first_admission_failure(reported: &AtomicBool) -> bool {

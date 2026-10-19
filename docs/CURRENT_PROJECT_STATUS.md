@@ -1,5 +1,60 @@
 # Current Project Status
 
+## Current S04-02 regimented resumption — 2026-10-19
+
+The operator explicitly resumed only S04-02 and approved executable guardrails,
+managed developers and independent delivery control. Root owns the single
+canonical Git/host/native queue; password_engineer prepares isolated changes,
+guardrails_engineer owns the existing validator/tests and isolated HTTP fixture
+integration, and delivery_controller
+independently reviews source, required QA, scope and cumulative effort.
+The active ledger execution_contract is authoritative; older snapshots below
+are provenance. Plan36 inputs and accepted R2/R3/R4 signatures are verified.
+
+Latest controlled C04 execution18 failed14.766s before password mutation.
+Its diagnostic identifies metadata recheck before stop was observed; the unique
+underlying cause remains UNKNOWN. Fresh observation18 passed6.554s and owned
+recovery18 passed9.0s. Independent c40aff88 closes that operational incident:
+two synthetic rows,16 files and two purpose users/groups removed; four directories
+retained/normalized; original25+22, same mail master and ordinary three listeners
+preserved. No historical signals, live socket unlink, operator credential change
+or provider message occurred.
+
+The reviewed three-leaf repair returns typed Busy only for live mutex contention
+within the original deadline. Busy defers before acceptance/credential work;
+genuine failure/expiry still refuses. The same held-lock regression fails on old
+code and passes on new code, including expired-deadline refusal (44.233s; both
+test groups and scratch gone). Independent d1192a50 is CLEAR for source/local
+scope. Native19 has NOT RUN and does not establish execution18's unique cause.
+
+T01/T02 matching source PASS retained; T03/T07 FAIL; T04/T05/T06/T08/T09
+are not closed. The production form remains disabled; UAT is NOT READY. The
+original7200s allowance ends11:16:12UTC. The full next native chain and reserved
+disposition do not fit; complete reviewed source/mandatory signed admission
+without starting it. A revised cumulative forecast is required before more
+execution; no slice completion or automatic budget renewal follows.
+The bounded PostfixAdmin source reconciliation is complete: its installed public
+Login implementation verifies the current password, hashes the new password and
+updates the named account, requiring exactly one row. It can use a stored hash's
+tag for verification; the observed Crypt implementation supports ARGON2ID. This
+source inspection is not a runtime compatibility or complete workflow pass.
+Guardrail source13 focused and full52 existing validator tests pass. Independent
+controller source review is CLEAR. Local registration refusals performed no
+SSH/native action and are retained separately from executed functional failures.
+Fresh observations confirmed historical timed-out compiler groups absent; their
+scratch remains retained without deletion authority. Compiler17 and release
+helper18 passed with exact source/compiler receipts. The opt0 controlled client
+does not qualify production timing. The superseding execution18 failure and
+completed owned recovery above control current status.
+
+Read-only backend facts1/facts2 establish the installed PostfixAdmin model,
+multiline SQL form, explicit no-AUTH existing10.44:2525 route and original
+service enablement. DSN route/database classification remains UNSUPPORTED, not
+proof of a bad server. Existing routes are preserved. Actual bootstrap/service
+publication, loaded C-plugin race qualification, paired complete native journey
+and ordinary installed Runtime remain unfinished. Isolated bootstrap/HTTP source
+is not admitted or qualified by the metadata repair.
+
 ## S04-02 current source and operational limits — 2026-10-18
 
 Latest candidate release-profile Primary case12 failed 18.900s (31a5b5b6),
@@ -31,11 +86,11 @@ FAIL/UNCERTAIN remains unchanged. The source-supported follow-versus-no-follow
 unveil mismatch selected the current exact directory grant; case12 does not
 establish whole password workflow success.
 
-Current signed sourcee22aeedc789bd368d978571668c086c321416dec passed the
-normal commit hook296.859s, both outgoing commits verified Shopkeeper, normal
-push264.491s and fresh origin equality0ahead/0behind. Source459manifest7a244
-is the signed baseline; exact reviewed main-link3 and installer2 are pending
-source-only signed admission, with uncompiled composition3 excluded. Ongoing ledger/evidence updates remain uncommitted for the next
+Current signed source9b240f7192d402145f1606a22c3326882ff38c93 passed the
+normal commit hook273.353s, the outgoing commit verified Shopkeeper, normal
+push264.691s and fresh origin UX equality0ahead/0behind (cd868636). Exact
+reviewed main-link3 and installer2 are committed; Rust459manifestace1 matches
+the prior candidate bytes. Uncompiled composition3 is excluded. Ongoing ledger/evidence updates remain uncommitted for the next
 real source admission; no standalone paperwork checkpoint is planned.
 
 The same signed source now has an actual intended release build: opt_level3,

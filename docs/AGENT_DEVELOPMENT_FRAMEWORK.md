@@ -356,3 +356,81 @@ This is a reusable adoption snippet, not a global installation. The parent must
 actually create bounded assignments, obtain the relevant independent reviews and
 enforce the checkpoints; writing this document alone does not launch a team or
 prove a development outcome.
+
+## Direct delivery lessons applied to S04-02
+
+### Operator-approved executable guardrails — 2026-10-19
+
+S04-02 uses its existing active ledger work order plus an execution_contract:
+two explicitly identified environments with dated sanitized evidence; demonstrated
+gaps mapped to the unchanged nine scenarios; fixed source/discovery/native/install
+recipes with permitted paths, commands, privileges, prerequisites and expected
+observations; a cumulative remaining-work allowance and an exact planned action.
+Use the existing acceptance validator, not another board or execution framework.
+
+The actual dispatcher checks --work-order-only --pre-action --attempt-id before
+SSH/spawn and aborts on refusal, timeout or missing output. PAUSED/BLOCKED cannot
+dispatch development. Native/install authority requires matching PASS environment
+and prerequisite artifact pins; bounded read-only discovery may resolve explicitly
+PENDING facts. Declaration validation and file hashes do not establish facts are
+true; the independent reviewer inspects their contents and actual consumer.
+
+Root retains one objective and service/native queue. The independent delivery
+controller checks useful progress, exact cleanup and all failed-boundary history.
+The initial resumed allowance is7200seconds from the ledger's recorded UTC start,
+with1800second investigations. It includes integration/review/build/publication
+time across workers; parallel wall-clock is not added twice. Historical token and
+monetary costs and unmeasured intervals remain UNKNOWN. An extension needs a
+recorded root/controller technical decision preserving cumulative consumed time,
+original action/fixture deadlines and prior failures; no silent clock reset.
+
+Before coding, record the smallest demonstrated gap and its discriminating test.
+Reuse working Rust, standard backend utilities and matching passes. Qualify one
+complete controlled installed journey for overlapping scenarios; retain distinct
+replay/race and interruption checks. Do not build unrelated targets or introduce
+diagnostics without an unanswered causal question. Required installed QA and
+independent audit precede minimal separate owner UAT. No source-only acceptance.
+
+Use one small delivery loop: fix a demonstrated defect, answer one necessary
+causal question, or verify an existing acceptance result. Before changing code,
+record the expected observation, essential changed-boundary checks, finite time
+allowance and stop condition in the existing work order/design record. Do not
+substitute new diagnostic mechanisms for a working user journey. Reuse still-valid
+passing checks; retain the normal mandatory commit and push gates.
+
+Record and check the actual deployment Cargo profile and artifact kind. A debug
+build can establish functionality but cannot qualify production deadlines. Keep
+full security checks while investigating performance. Error categories must be
+payload-free, finite and actionable; diagnostic output must not prevent cleanup.
+Keep functional PASS/FAIL/UNKNOWN separate from cleanup PASS/FAIL/UNKNOWN.
+
+The same password objective retains cumulative failed attempts and elapsed-time
+history across packet names and continuation windows. Record actual measured
+segments and UNKNOWN gaps honestly; neither renaming work nor acknowledging a
+review erases its cost or failed outcome. After two failures at the same functional
+boundary, combine the evidence and independently reassess the next changed action.
+Preserve the original nine S04-02 scenarios as the end-to-end exit; a component
+pass does not replace them or authorize a slice-completion claim.
+
+Review the exact frozen producer, cleanup and consumer chain once. Later actual
+hash/size/path/lease substitutions require deterministic binding checks against
+receipts. Review any nonbinding semantic change before execution. Controlled native
+qualification may precede final VERIFIED-to-COMMITTED admission under the existing
+contract, with signed-base and candidate identities explicit. Final completed
+source still requires normal signing, push authority and fresh remote equality.
+
+Existing enforcement and review-policy limits:
+
+| Rule | Existing mechanism and limit |
+| --- | --- |
+| Bounded declared action, owner and combined failures | `maint/ux/validate_acceptance.py --work-order-only --pre-action` checks the declared current window, stable boundary, exact failed IDs and independent reassessment including the executor. It does not infer that a renamed boundary is semantically the same objective or measure all historical wall time; preserving that identity and cumulative history is review policy. |
+| Profile, artifact and runtime bindings | The current reviewed native compiler/transport receipts check actual release profile, real helper versus libtest kind, source/artifact hashes and held file leases. Future carriers must retain those reviewed checks; this document adds no universal profile validator. |
+| Required checks and source preservation | Existing normal commit/push hooks run the repository gates; signature and fresh tracked-branch equality are verified separately. Choosing essential changed-boundary tests and avoiding redundant unchanged runs remains review policy. |
+| Safe diagnostics and cleanup | Current reviewed closed consumers reject unknown/error payloads and retain cleanup uncertainty. Newly reviewed causal diagnostics separate client category, terminal helper scope and owned pre-stop status; native qualification is still pending. These are scoped mechanisms, not a claim that every application error is instrumented. |
+| Source, installed workflow and acceptance | Existing acceptance validation checks declaration/scope consistency, not evidence truth. Independent observation, the original nine scenarios and operator UAT determine delivery readiness. Source-only synchronization cannot close S04-02. |
+
+These lessons extend the existing work-order schema and acceptance validator,
+with updates to the mutable SOP and AGENTS. They create no parallel governance
+framework, test matrix, approval flow or frozen-plan edit.
+Current S04-02 sequence is one bounded C04 causal observation, the demonstrated
+repair, then the original full installed password workflow and independent review.

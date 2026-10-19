@@ -325,7 +325,149 @@ def validate_slice_contract(order, outcome_ids, repo):
                 "existing human acceptance flag and evidence required")
 
 
-def validate_work_order(order, matrix, catalogue, changed_paths, pre_action=False, repo=None):
+def validate_execution_contract(order, outcome_ids, pre_action=False, attempt_id=None):
+    """Bind the declared S04-02 action, not evidence truth or arbitrary shell use."""
+    contract = order.get("execution_contract")
+    require(isinstance(contract, dict) and set(contract) == {"version", "environment", "gaps", "recipes", "budget", "planned_action"}
+            and type(contract.get("version")) is int and contract["version"] == 1,
+            "S04-02 execution contract version1 and exact fields required")
+    now = datetime.now(timezone.utc)
+
+    def utc(value):
+        require(isinstance(value, str) and re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", value),
+                "execution contract requires explicit UTC times")
+        return datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+
+    def paths(values):
+        require(isinstance(values, list) and values and len(values) == len(set(values))
+                and all(text(value) and value in order["allowed_paths"] for value in values),
+                "execution recipe/gap paths must stay within active allowed paths")
+
+    def evidence(value, required=False):
+        if value is None:
+            require(not required, "PASS execution authority requires pinned metadata evidence")
+            return
+        require(isinstance(value, dict) and set(value) == {"path", "sha256"} and text(value["path"])
+                and isinstance(value["sha256"], str) and re.fullmatch(r"[0-9a-f]{64}", value["sha256"]),
+                "execution metadata evidence requires path and exact SHA256")
+        if pre_action:
+            target = Path(value["path"])
+            require(target.is_absolute() and target.is_file() and not target.is_symlink(),
+                    "execution metadata evidence must be an existing absolute nonsymlink file")
+            require(hashlib.sha256(target.read_bytes()).hexdigest() == value["sha256"],
+                    "execution metadata evidence SHA256 mismatch")
+
+    environments = contract["environment"]
+    require(isinstance(environments, list) and environments, "named execution environments required")
+    env = {}
+    for item in environments:
+        require(isinstance(item, dict) and set(item) == {"id", "host", "address", "status", "software", "observed_at", "evidence"}
+                and text(item["id"]) and item["id"] not in env and item["id"] != "local"
+                and text(item["host"]) and text(item["address"]) and item["status"] in {"PASS", "PENDING"},
+                "unique execution environment identity/status required")
+        software = item["software"]
+        require(isinstance(software, dict) and all(text(name) and text(version) for name, version in software.items()),
+                "execution software facts must be explicit observed versions")
+        if item["observed_at"] is not None:
+            observed = utc(item["observed_at"])
+            require(not pre_action or observed <= now, "execution observation cannot be in the future")
+        require(item["status"] != "PASS" or software and item["observed_at"] is not None,
+                "PASS environment requires observed software and timestamp")
+        evidence(item["evidence"], item["status"] == "PASS")
+        env[item["id"]] = item
+
+    test_ids = {test["id"] for test in order["slice_contract"]["tests"]}
+    gaps, recipes = {}, {}
+    require(isinstance(contract["gaps"], list) and contract["gaps"], "demonstrated execution gaps required")
+    for item in contract["gaps"]:
+        require(isinstance(item, dict) and set(item) == {"id", "outcome_ids", "test_ids", "allowed_paths", "reference"}
+                and text(item["id"]) and item["id"] not in gaps and text(item["reference"]),
+                "unique demonstrated gap and retained reference required")
+        for key, permitted in (("outcome_ids", outcome_ids), ("test_ids", test_ids)):
+            values = item[key]
+            require(isinstance(values, list) and values and len(values) == len(set(values)) and set(values) <= permitted,
+                    "execution gap must link existing outcomes and slice tests")
+        paths(item["allowed_paths"])
+        gaps[item["id"]] = item
+    require(isinstance(contract["recipes"], list) and contract["recipes"], "fixed execution recipes required")
+    for item in contract["recipes"]:
+        require(isinstance(item, dict) and set(item) == {"id", "kind", "environment_ids", "gap_ids", "test_ids", "allowed_paths", "operations", "expected", "prerequisites"}
+                and text(item["id"]) and item["id"] not in recipes
+                and item["kind"] in {"SOURCE", "DISCOVERY", "NATIVE", "INSTALL"} and text(item["expected"]),
+                "unique fixed execution recipe/kind and expected result required")
+        for key, permitted, nonempty in (("environment_ids", set(env), item["kind"] != "SOURCE"),
+                ("gap_ids", set(gaps), True), ("test_ids", test_ids, True)):
+            values = item[key]
+            require(isinstance(values, list) and (values or not nonempty)
+                    and len(values) == len(set(values)) and set(values) <= permitted,
+                    "execution recipe has missing or unplanned environment/gap/test linkage")
+        paths(item["allowed_paths"])
+        mapped = [gaps[identifier] for identifier in item["gap_ids"]]
+        require(set(item["allowed_paths"]) <= set().union(*(set(gap["allowed_paths"]) for gap in mapped))
+                and set(item["test_ids"]) <= set().union(*(set(gap["test_ids"]) for gap in mapped)),
+                "execution recipe exceeds its demonstrated gaps")
+        require(isinstance(item["operations"], list) and item["operations"], "fixed operation commands required")
+        for operation in item["operations"]:
+            require(isinstance(operation, dict) and set(operation) == {"target_id", "program", "arguments", "privilege"}
+                    and operation["target_id"] in {"local", *item["environment_ids"]}
+                    and text(operation["program"]) and Path(operation["program"]).is_absolute()
+                    and ".." not in Path(operation["program"]).parts
+                    and operation["privilege"] in {"user", "root"}
+                    and isinstance(operation["arguments"], list)
+                    and all(isinstance(arg, str) and not any(char in arg for char in "\0\r\n") for arg in operation["arguments"]),
+                    "fixed operation requires exact target, absolute program, arguments and privilege")
+        prerequisites = item["prerequisites"]
+        require(isinstance(prerequisites, list), "explicit execution prerequisites required")
+        seen = set()
+        for prerequisite in prerequisites:
+            require(isinstance(prerequisite, dict) and set(prerequisite) == {"id", "status", "evidence"}
+                    and text(prerequisite["id"]) and prerequisite["id"] not in seen
+                    and prerequisite["status"] in {"PASS", "PENDING", "FAIL", "UNKNOWN"},
+                    "unique execution prerequisite/status required")
+            evidence(prerequisite["evidence"], prerequisite["status"] == "PASS")
+            seen.add(prerequisite["id"])
+        recipes[item["id"]] = item
+
+    budget = contract["budget"]
+    owners = {owner for values in order["roles"].values() for owner in values}
+    require(isinstance(budget, dict) and set(budget) == {"objective", "owner", "started_at", "deadline_at", "allowance_seconds", "consumed_seconds", "history_reference"}
+            and budget["objective"] == "S04-02" and budget["owner"] in owners and text(budget["history_reference"]),
+            "stable slice objective, cumulative budget owner and retained history required")
+    started, deadline = utc(budget["started_at"]), utc(budget["deadline_at"])
+    allowance, consumed = budget["allowance_seconds"], budget["consumed_seconds"]
+    require(type(allowance) is int and allowance > 0 and type(consumed) in (int, float)
+            and math.isfinite(consumed) and consumed >= 0 and deadline > started
+            and (deadline - started).total_seconds() <= allowance,
+            "finite cumulative allowance and nonrenewed absolute phase deadline required")
+    action = contract["planned_action"]
+    require(action is not None or not pre_action, "pre-action requires a planned execution action")
+    if action is None:
+        return
+    require(isinstance(action, dict) and set(action) == {"attempt_id", "recipe_id", "source_revision", "not_after", "max_seconds"}
+            and text(action["attempt_id"]) and action["recipe_id"] in recipes
+            and isinstance(action["source_revision"], str) and re.fullmatch(r"[0-9a-f]{40}|[0-9a-f]{64}", action["source_revision"])
+            and type(action["max_seconds"]) is int and action["max_seconds"] > 0,
+            "exact planned execution action, recipe, source and bounded duration required")
+    not_after = utc(action["not_after"])
+    require(started < not_after <= deadline, "planned action deadline must remain within original phase")
+    if pre_action:
+        require(order["state"] == "IN_PROGRESS", "pre-action requires IN_PROGRESS; paused or blocked dispatch refused")
+        require(text(attempt_id) and attempt_id == action["attempt_id"], "pre-action requires matching --attempt-id")
+        next_attempt = order["accountability"].get("next_attempt", {})
+        require(isinstance(next_attempt, dict) and next_attempt.get("id") == attempt_id
+                and next_attempt.get("source_revision") == action["source_revision"],
+                "execution action must match exact accountability attempt and source")
+        remaining = min((deadline - now).total_seconds(), (not_after - now).total_seconds(), allowance - consumed)
+        require(now >= started and remaining >= action["max_seconds"], "execution action expired or exceeds remaining cumulative allowance")
+        recipe = recipes[action["recipe_id"]]
+        require(all(item["status"] == "PASS" for item in recipe["prerequisites"]),
+                "planned execution prerequisites have not passed")
+        if recipe["kind"] in {"NATIVE", "INSTALL"}:
+            require(all(env[identifier]["status"] == "PASS" for identifier in recipe["environment_ids"]),
+                    "native/install requires authoritative PASS environment metadata")
+
+
+def validate_work_order(order, matrix, catalogue, changed_paths, pre_action=False, repo=None, attempt_id=None):
     require(isinstance(order, dict) and order.get("version") == 1, "invalid active work order")
     slices = dict(re.findall(r"^\| (S\d{2}-\d{2}) \| ([^|]+) \|", catalogue, re.MULTILINE))
     parent = order.get("slice")
@@ -351,6 +493,7 @@ def validate_work_order(order, matrix, catalogue, changed_paths, pre_action=Fals
     state = order.get("state")
     require(state in {"IN_PROGRESS", "BLOCKED", "PAUSED", "ENGINEERING_COMPLETE", "UAT_READY", "ACCEPTED"},
             "invalid work-order state; checkpoints cannot park or close work")
+    require(not pre_action or state == "IN_PROGRESS", "pre-action requires IN_PROGRESS; paused or blocked dispatch refused")
     if parent == "S11-04" and state in {"ENGINEERING_COMPLETE", "UAT_READY", "ACCEPTED"}:
         validate_closure(matrix, "EPIC", repo)
     if state == "PAUSED":
@@ -402,6 +545,8 @@ def validate_work_order(order, matrix, catalogue, changed_paths, pre_action=Fals
     if state == "ACCEPTED":
         require(human["status"] == "PASS" and text(human.get("reference")), "human acceptance evidence required for accepted slice")
     validate_slice_contract(order, set(ids), repo if repo is not None else Path(__file__).resolve().parents[2])
+    if parent == "S04-02":
+        validate_execution_contract(order, set(ids), pre_action, attempt_id)
     return {"active_slice": parent, "required_obligations": len(expected), "state": state,
             "claim": "declaration/scope consistency only; no evidence truth or functional acceptance inferred"}
 
@@ -476,6 +621,7 @@ def main():
     parser.add_argument("--repo", type=Path, default=Path(__file__).resolve().parents[2])
     parser.add_argument("--work-order-only", action="store_true")
     parser.add_argument("--pre-action", action="store_true", help="validate the recorded next expensive/native attempt before dispatch")
+    parser.add_argument("--attempt-id", help="bind S04-02 pre-action to its exact planned attempt")
     parser.add_argument("--closure-scope", choices=("S04", "EPIC"), help="require accepted original rows, including required R4 followups; not a sprint/release QA certificate")
     args = parser.parse_args()
     repo = args.repo.resolve()
@@ -483,7 +629,7 @@ def main():
         matrix = json.loads((repo / "maint/ux/acceptance.json").read_text())
         catalogue = (repo / "docs/UX_FULL_FUNCTIONAL_SLICES.md").read_text()
         order = active_work_order((repo / "docs/UX_EXECUTION_LEDGER.md").read_text())
-        result = validate_work_order(order, matrix, catalogue, work_order_changed_paths(repo, order.get("source_baseline")), pre_action=args.pre_action, repo=repo)
+        result = validate_work_order(order, matrix, catalogue, work_order_changed_paths(repo, order.get("source_baseline")), pre_action=args.pre_action, repo=repo, attempt_id=args.attempt_id)
         if args.closure_scope:
             result = {**result, **validate_closure(matrix, args.closure_scope, repo)}
         elif not args.work_order_only:

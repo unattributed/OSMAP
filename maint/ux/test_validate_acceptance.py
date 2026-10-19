@@ -5,12 +5,14 @@ import copy
 import hashlib
 import tempfile
 import json
+import re
 from pathlib import Path
 import unittest
 from datetime import datetime, timedelta, timezone
 
 from validate_acceptance import (active_work_order, validate, validate_work_order, validate_slice_contract,
-    r4_scope, validate_closure, R4_PROFILE, R4_SUPPLEMENT, R4_PROPOSAL, R4_FOLLOWUPS)
+    validate_accountability, validate_execution_contract, r4_scope, validate_closure,
+    R4_PROFILE, R4_SUPPLEMENT, R4_PROPOSAL, R4_FOLLOWUPS)
 
 
 REPO = Path(__file__).resolve().parents[2]
@@ -217,11 +219,13 @@ class AccountabilityTests(unittest.TestCase):
         return order
 
     def check(self, order, pre_action=True):
-        return validate_work_order(order, self.matrix, self.catalogue, (), pre_action=pre_action)
+        # These counterexamples isolate retained failure/reassessment rules;
+        # execution binding has independent discriminators below.
+        return validate_accountability(order, {outcome["id"] for outcome in order["outcomes"]}, pre_action)
 
     def test_valid_history_and_current_pre_action_preserve_unknown_elapsed(self):
         order = self.order()
-        self.assertIn("no evidence truth", self.check(order)["claim"])
+        self.check(order)
         action = order["accountability"]["next_attempt"]
         action.update(result="PASS", elapsed_status="MEASURED", elapsed_seconds=12.5, reference="synthetic measured wall-clock action")
         order["accountability"]["attempts"].append(action)
@@ -305,6 +309,138 @@ class AccountabilityTests(unittest.TestCase):
             self.check(order)
         window["overrun_reference"] = "synthetic explicit bounded-investigation reassessment/disposition"
         self.check(order)
+
+
+class ExecutionContractTests(unittest.TestCase):
+    """Synthetic action declarations; no application, host or acceptance proof."""
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory(prefix="osmap-execution-contract-")
+        self.addCleanup(temporary.cleanup)
+        self.evidence = Path(temporary.name) / "metadata.json"
+        self.evidence.write_text('{"synthetic_metadata_only":true}\n')
+        self.pin = {"path": str(self.evidence), "sha256": hashlib.sha256(self.evidence.read_bytes()).hexdigest()}
+        now = datetime.now(timezone.utc)
+        utc = lambda value: value.strftime("%Y-%m-%dT%H:%M:%SZ")
+        self.order = dict(slice="S04-02", state="IN_PROGRESS", allowed_paths=["src/account_password_server.rs"],
+            roles={"developers": ["owner"], "security_review": ["reviewer"]},
+            slice_contract={"tests": [{"id": "S04-02-T03"}]},
+            accountability={"next_attempt": {"id": "exact-source-action", "source_revision": "a" * 64}},
+            execution_contract=dict(version=1,
+                environment=[dict(id="authoritative-mail", host="mail.osmap.invalid", address="192.0.2.1",
+                    status="PENDING", software={}, observed_at=None, evidence=None)],
+                gaps=[dict(id="demonstrated-runtime-gap", outcome_ids=["password-workflow"],
+                    test_ids=["S04-02-T03"], allowed_paths=["src/account_password_server.rs"],
+                    reference="Synthetic retained result proving the named runtime gap.")],
+                recipes=[dict(id="fixed-source-repair", kind="SOURCE", environment_ids=[],
+                    gap_ids=["demonstrated-runtime-gap"], test_ids=["S04-02-T03"],
+                    allowed_paths=["src/account_password_server.rs"],
+                    operations=[dict(target_id="local", program="/usr/bin/python3", arguments=["-V"], privilege="user")],
+                    expected="Synthetic changed-boundary discriminator reports the closed result.", prerequisites=[])],
+                budget=dict(objective="S04-02", owner="owner", started_at=utc(now - timedelta(seconds=5)),
+                    deadline_at=utc(now + timedelta(seconds=600)), allowance_seconds=7200,
+                    consumed_seconds=120, history_reference="Original unknown spend and measured phase history retained."),
+                planned_action=dict(attempt_id="exact-source-action", recipe_id="fixed-source-repair",
+                    source_revision="a" * 64, not_after=utc(now + timedelta(seconds=300)), max_seconds=45)))
+        self.outcomes = {"password-workflow"}
+
+    def check(self, order=None, pre_action=True, attempt_id="exact-source-action"):
+        return validate_execution_contract(order or self.order, self.outcomes, pre_action, attempt_id)
+
+    def native(self):
+        recipe = self.order["execution_contract"]["recipes"][0]
+        recipe.update(kind="NATIVE", environment_ids=["authoritative-mail"])
+        recipe["operations"][0]["target_id"] = "authoritative-mail"
+        return recipe
+
+    def test_source_and_inventory_can_resolve_pending_environment_without_claiming_native_pass(self):
+        self.check()
+        recipe = self.native()
+        recipe["kind"] = "DISCOVERY"
+        self.check()
+        recipe["kind"] = "NATIVE"
+        with self.assertRaisesRegex(ValueError, "authoritative PASS"):
+            self.check()
+        self.check(pre_action=False)
+
+    def test_paused_blocked_and_finished_pre_action_refuse(self):
+        for state in ("PAUSED", "BLOCKED", "ENGINEERING_COMPLETE", "UAT_READY", "ACCEPTED"):
+            self.order["state"] = state
+            with self.subTest(state=state), self.assertRaisesRegex(ValueError, "IN_PROGRESS"):
+                self.check()
+
+    def test_exact_attempt_source_and_recipe_are_bound(self):
+        for supplied in (None, "renamed-action"):
+            with self.subTest(supplied=supplied), self.assertRaisesRegex(ValueError, "attempt-id"):
+                self.check(attempt_id=supplied)
+        for change in (lambda c: c["planned_action"].update(recipe_id="unplanned"),
+                lambda c: c["planned_action"].update(source_revision="b" * 64)):
+            order = copy.deepcopy(self.order); change(order["execution_contract"])
+            with self.assertRaisesRegex(ValueError, "exact planned|exact accountability"):
+                self.check(order)
+        self.order["execution_contract"]["planned_action"] = None
+        self.check(pre_action=False)
+        with self.assertRaisesRegex(ValueError, "planned execution action"):
+            self.check()
+
+    def test_expired_phase_action_and_cumulative_allowance_cannot_dispatch(self):
+        now = datetime.now(timezone.utc)
+        utc = lambda value: value.strftime("%Y-%m-%dT%H:%M:%SZ")
+        for change in (lambda c: c["planned_action"].update(not_after=utc(now - timedelta(seconds=1))),
+                lambda c: c["planned_action"].update(max_seconds=1000),
+                lambda c: c["budget"].update(consumed_seconds=7190),
+                lambda c: c["budget"].update(consumed_seconds=float("nan")),
+                lambda c: c["budget"].update(deadline_at=utc(now + timedelta(seconds=8000)))):
+            order = copy.deepcopy(self.order); change(order["execution_contract"])
+            with self.assertRaisesRegex(ValueError, "expired|allowance|phase"):
+                self.check(order)
+        self.order["execution_contract"]["budget"].update(
+            started_at=utc(now - timedelta(seconds=600)), deadline_at=utc(now - timedelta(seconds=1)))
+        self.order["execution_contract"]["planned_action"]["not_after"] = utc(now - timedelta(seconds=2))
+        with self.assertRaisesRegex(ValueError, "expired"):
+            self.check()
+
+    def test_unplanned_paths_tests_targets_and_commands_refuse(self):
+        for change in (lambda c: c["recipes"][0].update(allowed_paths=["src/unassigned.rs"]),
+                lambda c: c["gaps"][0].update(test_ids=["S04-02-EXTRA"]),
+                lambda c: c["recipes"][0].update(gap_ids=["invented-gap"]),
+                lambda c: c["recipes"][0]["operations"][0].update(target_id="other-host"),
+                lambda c: c["recipes"][0]["operations"][0].update(program="caller-command"),
+                lambda c: c["recipes"][0]["operations"][0].update(arguments=["first\nsecond"])):
+            order = copy.deepcopy(self.order); change(order["execution_contract"])
+            with self.assertRaises(ValueError):
+                self.check(order)
+
+    def test_native_install_requires_pinned_environment_and_pass_prerequisites(self):
+        recipe = self.native()
+        environment = self.order["execution_contract"]["environment"][0]
+        environment.update(status="PASS", software={"MariaDB": "synthetic-observed-version"},
+            observed_at=self.order["execution_contract"]["budget"]["started_at"], evidence=self.pin)
+        prerequisite = dict(id="owned-cleanup", status="PASS", evidence=self.pin)
+        recipe["prerequisites"] = [prerequisite]
+        for kind in ("NATIVE", "INSTALL"):
+            recipe["kind"] = kind
+            self.check()
+        for status in ("PENDING", "FAIL", "UNKNOWN"):
+            prerequisite["status"] = status
+            with self.subTest(status=status), self.assertRaisesRegex(ValueError, "prerequisites have not passed"):
+                self.check()
+        prerequisite["status"] = "PASS"
+        prerequisite["evidence"] = None
+        with self.assertRaisesRegex(ValueError, "pinned metadata"):
+            self.check()
+
+    def test_changed_or_missing_metadata_refuses_before_execution(self):
+        self.native()
+        environment = self.order["execution_contract"]["environment"][0]
+        environment.update(status="PASS", software={"OS": "synthetic-native-version"},
+            observed_at=self.order["execution_contract"]["budget"]["started_at"], evidence=self.pin)
+        self.check()
+        self.evidence.write_text("changed metadata\n")
+        with self.assertRaisesRegex(ValueError, "SHA256 mismatch"):
+            self.check()
+        self.evidence.unlink()
+        with self.assertRaisesRegex(ValueError, "existing absolute nonsymlink"):
+            self.check()
 
 
 class SliceContractTests(unittest.TestCase):
@@ -424,7 +560,17 @@ class R4ScopeTests(unittest.TestCase):
     def setUpClass(cls):
         cls.matrix = json.loads((REPO / "maint/ux/acceptance.json").read_text())
         cls.catalogue = (REPO / "docs/UX_FULL_FUNCTIONAL_SLICES.md").read_text()
-        cls.base = active_work_order((REPO / "docs/UX_EXECUTION_LEDGER.md").read_text())
+        # R4 is a preserved S04-01 amendment, independent of whichever slice is
+        # currently active. Reuse its retained accepted contract rather than
+        # converting the mutable password work order into a Settings fixture.
+        ledger = (REPO / "docs/UX_EXECUTION_LEDGER.md").read_text()
+        retained = [json.loads(block) for block in re.findall(r"```json\n(.*?)\n```", ledger, re.DOTALL)]
+        candidates = [order for order in retained if isinstance(order, dict)
+            and order.get("slice") == "S04-01" and order.get("scope_revision") == "R4"
+            and order.get("state") == "ACCEPTED" and "slice_contract" in order]
+        if len(candidates) != 1:
+            raise AssertionError("one preserved accepted S04-01 R4 contract required")
+        cls.base = candidates[0]
         cls.core, cls.followups = r4_scope(cls.matrix, REPO)
         cls.original = cls.core | cls.followups
 
@@ -436,7 +582,7 @@ class R4ScopeTests(unittest.TestCase):
             order["scope_revision"] = "R4"
         else:
             order.pop("scope_revision", None)
-        # One current functional outcome is retained; only its declared map changes.
+        # One retained Settings outcome is used; only its declared map changes.
         self.assertEqual(len(order["outcomes"]), 1)
         order["outcomes"][0]["requirement_ids"] = sorted(self.core if narrowed else self.original)
         return order
@@ -532,9 +678,11 @@ class R4ScopeTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "approved proposal SHA256"): r4_scope(self.matrix, repo)
 
     def test_partial_core_cannot_close_even_when_stage_flags_claim_pass(self):
+        partial = copy.deepcopy(self.matrix)
+        next(row for row in partial["approved_control_cases"] if row["id"] in self.core)["result"]["status"] = "PARTIALLY_VERIFIED"
         for state in ("ENGINEERING_COMPLETE", "UAT_READY", "ACCEPTED"):
             order = self.order(state=state); self.complete_declarations(order)
-            with self.subTest(state=state), self.assertRaisesRegex(ValueError, "actual closure stage"): self.check(order)
+            with self.subTest(state=state), self.assertRaisesRegex(ValueError, "actual closure stage"): self.check(order, partial)
         matrix = self.accepted_matrix()
         approved_core = [row for row in matrix["approved_control_cases"] if row["id"] in self.core]
         self.assertEqual(len(approved_core), 43)

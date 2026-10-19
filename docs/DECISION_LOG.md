@@ -12063,3 +12063,94 @@ case12 failure and observer5 refusal. Controlled candidate qualification uses a
 signed base plus exact candidate manifest; final completed admission still runs
 all normal signing/push hooks and fresh origin equality. Deadline qualification
 must use the intended recorded Cargo profile and full content hashes.
+
+2026-10-19 operator-requested delivery lessons: AGENTS and the existing mutable
+AGENT_DEVELOPMENT_FRAMEWORK SOP now require one necessary step/expected result,
+essential checks/time/stop, actual deployment profile, safe actionable errors
+separate from cleanup, same-objective cumulative failures/time, two-failure
+combined reassessment, source/installed/slice distinction and one frozen-chain
+review with receipt binding checks. The SOP explicitly separates existing
+validator/receipt/hook enforcement from review policy and UNKNOWN history; no new
+automation or parallel test matrix or frozen R2/R3/R4 change is claimed. Apply this to
+one C04 causal observation, its demonstrated repair and the original nine S04-02
+scenarios. Attach these mutable documentation changes to the next real source
+admission; do not create a paper-only checkpoint.
+
+### S04-02 executable guardrails and managed resumption — 2026-10-19
+
+The operator approved codifying the proposed guardrails and explicitly resumed
+S04-02 with managed developers and an independent delivery controller. Root owns
+the canonical Git/host/native queue. The original20 obligations/nine scenarios
+and accepted R2/R3/R4 bytes remain unchanged. Do not replay accepted S04-01,
+Folders or historical supervision work, or mutate operator credentials.
+
+Extend the existing work-order validator and tests only: environment facts and
+metadata pins, demonstrated gap/test/path mapping, fixed operation recipes,
+prerequisites, declared cumulative remaining allowance and exact planned action.
+Enforce state, --attempt-id, source, budget and prerequisite checks inside the
+actual dispatcher immediately before SSH/spawn. Declared references and hashes
+do not prove truth, safe commands or complete historical accounting; independent
+review remains required. Root/controller accept7200seconds remaining allowance
+from09:16:12UTC and1800second investigations. Historical spend/unknown intervals
+and every failure remain retained; no package/worker/window reset.
+
+Independent implementer/controller found the build13 command selected unrelated
+binary test harnesses via --tests. Correct only the selection to required
+library-test/helper outputs within the original action bounds. Build13 remains
+FAIL178.741/remoteUNCERTAIN; fresh read-only current ownership observation must
+precede related host work. Historical PID/group and retained scratch path do
+not grant signalling/deletion authority. The independently reviewed discovery
+also records bounded installed PostfixAdmin metadata/hash-selection facts;
+that projection alone does not establish its full password-update behaviour.
+
+Focused guardrail13 checks PASS. First full existing-validator run52 tests
+failed five R4 fixture assertions because the tests assumed the active work
+order still had one Settings outcome. Correct the test-only fixture to use the
+preserved accepted R4 Settings order; retain all57/46/11 scope/closure refusals.
+Do not relax product/plan guards or call this a password workflow pass.
+
+Actual full existing-validator run52 subsequently passed after the accepted R4
+fixture correction; focused13 checks passed. The active execution contract is
+an extension to the existing schema/validator, not a separate framework. Fixed
+checked dispatch refuses before SSH on mismatched attempt/source/prerequisites,
+expired allowance or required missing independent reassessment. It cannot prove
+that a declared observation is true or police arbitrary out-of-band shell work.
+
+Release helper17 and changed helper18 used actual opt3/testfalse compiler
+receipts; the reused opt0 client is only a controlled caller. Actual C04 runs17
+and18 failed before password mutation. Run18 identifies metadata recheck before
+stop was observed, without identifying its unique inner cause. Both retained
+incidents received fresh read-only observation and exact owned recovery; latest
+recovery18 PASS9.0 independently c40aff88 removed2rows/16files/2users+groups,
+normalized4retained directories and preserved original25+22/currentmaster/
+ordinary3listeners. Every failure/unknown and pre-dispatch registration refusal
+remains retained. Refused local registration is not executed native evidence.
+
+The source-demonstrated contention defect is separate from the unknown unique
+native cause: the server's500ms recheck spins on the same mutex held by finite
+metadata work and can mistake live work for lost custody. Return typed Busy
+only for WouldBlock with the original caller deadline still valid; continue the
+server loop before scheduling or accepting work. Current still performs the
+existing checks; poisoned/failed/exit/expired/cleanup errors retain fail-stop.
+Keep actual observation deadlines unchanged. Map only existing finite error
+reasons into existing diagnostic categories before error detail is discarded;
+emit no raw values or additional unbounded output. Same held-lock oldRED/newPASS
+and expired contention refusal passed44.233s; source/local review d1192a50 and
+final freeze af717be8 are CLEAR. Native19 remains NOT RUN, not a password pass.
+
+Read-only actual PostfixAdmin reconciliation confirms current-password verify,
+supported salted hash/update and exactly one named row; it does not supply
+OSMAP's additional epoch/session guarantees. Actual backend facts reveal nine
+SQL logical continuations, supported password form3 and an existing2525 route
+with explicit SASL=no. Preserve that route; DSN classification UNSUPPORTED is
+not a bad-server diagnosis. Actual bootstrap/plugin publication and complete
+installed Runtime are unfinished. Isolated installer/HTTP and TRUE-gate plugin
+candidates are not admitted. No new dependencies or frozen plan changes follow.
+
+The original resumption7200s allowance ends11:16:12UTC. The next native chain's
+full producer/action/owned disposition bounds exceed the remainder; do not
+start it. Finish reviewed source/normal mandatory signed admission. Any further
+execution requires an explicit root/controller technical reassessment with a
+new cumulative forecast retaining the original allowance, actual spend, failure
+IDs and uncertainty. This is not automatic renewal or a claim of human blocker;
+normal operator review before remote synchronization remains required.

@@ -1202,3 +1202,111 @@ fn full_factory_admission_fixture(trusted_web_uid: u32, descriptor_variable: &st
     assert!(!service.cleanup_unconfirmed.load(Ordering::SeqCst));
     println!("full_factory_admission_stopped=PASS");
 }
+
+/// Only the existing Rust client drives the actual fixed production helper.
+/// Root owns the bounded fixture/provisioning and supplies bootstrap bytes via
+/// private stdin after dropping this process to its dedicated nonroot UID.
+#[cfg(unix)]
+#[test]
+#[ignore = "requires reviewed OpenBSD actual Rust service and fresh owned private-primary fixture"]
+fn native_rust_private_primary_admission() -> Result<(), &'static str> {
+    use std::io::{Read, Write};
+    use std::os::unix::fs::MetadataExt;
+    #[derive(serde::Deserialize)]
+    #[serde(deny_unknown_fields)]
+    struct Bootstrap {
+        version: u8,
+        client_root: PathBuf,
+        alice_password: String,
+        wrong_password: String,
+    }
+    if !cfg!(target_os = "openbsd") || crate::openbsd::effective_uid() == 0 {
+        return Err("fixed nonroot OpenBSD client required");
+    }
+    crate::openbsd::disable_core_dumps().map_err(|_| "client core limit refused")?;
+    let deadline = Instant::now() + Duration::from_secs(35);
+    let mut bytes = Vec::new();
+    std::io::stdin()
+        .take(4097)
+        .read_to_end(&mut bytes)
+        .map_err(|_| "private bootstrap read refused")?;
+    if bytes.len() > 4096 {
+        return Err("private bootstrap bound refused");
+    }
+    let boot: Bootstrap =
+        serde_json::from_slice(&bytes).map_err(|_| "private bootstrap shape refused")?;
+    let root = &boot.client_root;
+    let fixed_name = root.parent() == Some(Path::new("/var/run"))
+        && root
+            .file_name()
+            .and_then(|x| x.to_str())
+            .is_some_and(|name| {
+                name.strip_prefix("osmap-service-admission-client-")
+                    .is_some_and(|suffix| {
+                        suffix.len() == 16
+                            && suffix
+                                .bytes()
+                                .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+                    })
+            });
+    let password = |value: &str| {
+        value.len() == 64
+            && value
+                .bytes()
+                .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+    };
+    if boot.version != 1
+        || !fixed_name
+        || !password(&boot.alice_password)
+        || !password(&boot.wrong_password)
+        || boot.alice_password == boot.wrong_password
+    {
+        return Err("private bootstrap authority refused");
+    }
+    let directory = std::fs::symlink_metadata(root).map_err(|_| "client directory unavailable")?;
+    if !directory.is_dir() || directory.uid() != 0 || directory.mode() & 0o7777 != 0o750 {
+        return Err("client directory custody refused");
+    }
+    let client = Client::paired_fixture_files(
+        Path::new("/var/run/osmap-account-admission/admission.sock"),
+        &root.join("admission.key"),
+        0,
+    )
+    .map_err(|_| "existing Rust client custody refused")?;
+    let wrong = client
+        .authenticate_before(
+            "alice@osmap-password.invalid",
+            &boot.wrong_password,
+            deadline,
+        )
+        .map_err(|_| "wrong password reply unavailable")?;
+    if wrong.is_some() {
+        return Err("wrong password admitted");
+    }
+    let good = client
+        .authenticate_before(
+            "alice@osmap-password.invalid",
+            &boot.alice_password,
+            deadline,
+        )
+        .map_err(|error| {
+            // Error contains only the existing eight payload-free variants.
+            let _ = writeln!(
+                std::io::stderr().lock(),
+                "native_private_primary_admission error={error:?}"
+            );
+            "correct password reply unavailable"
+        })?
+        .ok_or("correct password refused")?;
+    if good.account != "alice@osmap-password.invalid" || good.epoch != 0 {
+        return Err("signed epoch binding mismatch");
+    }
+    client
+        .admit_before(&good.account, good.epoch, deadline)
+        .map_err(|_| "signed epoch revalidation refused")?;
+    if Instant::now() >= deadline {
+        return Err("original client deadline expired");
+    }
+    println!("\nnative_private_primary_admission result=PASS wrong_password_rejected=true correct_password_admitted=true signed_epoch=0 epoch_revalidated=true credential_write=false full_workflow_qualified=false");
+    Ok(())
+}

@@ -1,13 +1,40 @@
 # S04-02 delivery specification — authoritative own-password change
 
-Status: IN PROGRESS (operator resumed 2026-10-18); engineering completion and human acceptance are OPEN.
-Project coordination owner: `/root`; sole canonical integration/host/Git
-executor under the latest operator delegation: `/root/s04_readiness`.
-Independent current source/evidence review: `/root/account_backend`;
-`/root/password_delivery_engineer` owns isolated source preparation. Prior independent source
+Status: IN PROGRESS (operator resumed 2026-10-19 with executable guardrails); engineering completion and human acceptance are OPEN.
+Project coordination and sole canonical integration/host/Git executor: `/root`.
+Independent current source/evidence and delivery-control review: `/root/delivery_controller`;
+`/root/password_engineer` owns isolated product source preparation and
+`/root/guardrails_engineer` owns the existing validator/tests and isolated HTTP/
+backend-bootstrap producer preparation. Prior independent source
 reviews remain provenance; authors do not clear their own changed code. This specification applies the operator's
 2026-10-16 SOP to the slice already in flight; it does not claim that earlier work
 followed this contract or that historical component passes closed the slice.
+
+## Current bounded execution — 2026-10-19
+
+The operator approved codifying environment-bound execution guardrails and
+resuming only S04-02 with managed subagents. The existing active ledger's
+execution_contract records actual environments, permitted recipes, demonstrated
+gaps, exact next action, prerequisites and cumulative allowance. The checked
+existing dispatcher invokes the validator with the exact attempt ID before host
+execution. No frozen requirement or nine-scenario exit changes. Current T01/T02
+source PASS evidence is reused only for its matching boundary; historical PARTIAL
+prose below remains provenance. T03/T07 FAIL and all other unrun scenarios remain
+open. Historical compiler failures and fresh observations remain retained.
+Latest execution18 failed before password mutation at metadata recheck. Fresh
+observation and exact owned recovery18 completed and independently passed.
+The three-leaf typed contention deferral passes the same old-RED/new-PASS
+regression and expiry refusal; native19 and installed workflow remain NOT RUN.
+The original7200s allowance ends11:16:12UTC; no new native chain starts if its
+full reserved producer/execution/disposition bounds do not fit. Record a revised
+cumulative forecast before further execution, retaining all prior spend/failures.
+
+PostfixAdmin is the installed functional reference, not an assumed source of
+OSMAP's additional step-up/epoch/session guarantees. Record its observed fixed
+hash/update path without reading operator credential material. Existing working
+TOTP login is reused; action-bound reauthentication and exact installed password
+workflow still require the defined evidence. No operator password mutation or
+external provider message is authorized for engineering.
 
 ## Current Rust delivery contract — operator resumed 2026-10-18
 

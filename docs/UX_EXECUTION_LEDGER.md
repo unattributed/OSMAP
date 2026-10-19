@@ -9888,14 +9888,15 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
   "original_requirement": "Page 22 own-account password change, authoritative backend and step-up; independent accessible Show/Hide on current/new/confirmation",
   "source_baseline": "2d99ff4bb1a75d9d5446a62e0aca7f6728ca67b6",
   "state": "IN_PROGRESS",
-  "integration_owner": "/root/s04_readiness",
+  "integration_owner": "/root",
   "roles": {
     "project_manager": [
       "/root"
     ],
     "scrum_lead": [
       "/root/password_delivery_review",
-      "/root/s04_02_independent_review"
+      "/root/s04_02_independent_review",
+      "/root/delivery_controller"
     ],
     "developers": [
       "/root/bin_preparation_engineer",
@@ -9910,7 +9911,9 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
       "/root/s04_02_frontend",
       "/root/account_backend",
       "/root/s04_readiness",
-      "/root/password_delivery_engineer"
+      "/root/password_delivery_engineer",
+      "/root/password_engineer",
+      "/root/guardrails_engineer"
     ],
     "qa": [
       "/root",
@@ -9918,7 +9921,8 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
       "/root/s04_02_independent_review",
       "/root/s04_02_frontend",
       "/root/account_backend",
-      "/root/s04_02_rust_backend"
+      "/root/s04_02_rust_backend",
+      "/root/delivery_controller"
     ],
     "security_review": [
       "/root/scrum_security_review",
@@ -9929,7 +9933,8 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
       "/root/s04_02_independent_review",
       "/root/s04_02_frontend",
       "/root/account_backend",
-      "/root/s04_02_rust_backend"
+      "/root/s04_02_rust_backend",
+      "/root/delivery_controller"
     ],
     "technical_writer": [
       "/root",
@@ -10280,19 +10285,19 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "status": "PENDING",
     "reference": "Only minimal well-defined own-password usability after all agent-owned development/matching deployed QA/independent audit PASS. No operator password is changed by agent qualification; use controlled disposable Alice and preserve Bob/operator state. NOT RUN."
   },
-  "next_action": "Normal signed source-only admission of exact reviewed main-link3 +installer2, factual evidence; matching first wrongcredential proves mainlinkpath, correctC04/fullworkflow stillOPEN. Exclude uncompiled464composition3. Mandatory hooks/signature then authorized normalpush/freshUXequality. Source-only diagnosis isolated inparallel.",
+  "next_action": "OneboundedactualPostfixAdminpublichandler/hashfunctionprojectionwhilematchedC04artifactcapturebinds; currentmixedhelper/clientcompilePASSsemanticsonly.",
   "accountability": {
     "functional_exit": "Working own-account Settings password change through authoritative Toronto credentials, shared epoch, browser/IMAP/SMTP/cache containment, old-password refusal/new-login success and Bob/mail preservation, followed by matching isolated installation and independent audit. Fixture changes are prerequisites, not product delivery.",
-    "owner": "/root/s04_readiness",
+    "owner": "/root",
     "elapsed_scope": "wall_clock",
-    "history_reference": "Retained HTTP1\u20134 evidence below and existing ledger. Outer native/SSH elapsed sums122.497s only; earlier full-action source/review/model time is UNKNOWN. No token or monetary compute cost is asserted.; Completed bounded investigation /home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/account-relay-deployment-successor18/canonical-integration1/investigation-window-closeout.json SHA256 5d1fa485650d262068f10bdd5328262332008c666176a127c1d31657761ce6d4 records actual UTC-wall 2886.045s and explicit mandatory-hook overrun; no failed history removed.; Completed source20 investigation /home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/proxy-config-isolation-successor20/canonical-integration1/investigation-window-closeout.json SHA256bb4e5e887444aca514bddb558e8974fea623f6c3684ecdc9ce3d8c2eb43e550c retains actual elapsed/overrun and explicit finite source admission disposition.; /home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/proxy-child-signal-observation-successor22/investigation-window-closeout.json SHA256c3122712c7321f00b1f4ad91507c99299529d8c4812976da8101c8832ce1e104 retains source/native8/9/10 window actual elapsed/overrun, finiteonecase disposition and failed outcomes.; /home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/slice-contract-validator-successor24/investigation-window-closeout.json SHA256a1243ba238c66dc546a8ae33f0d5c4b94a55afdb72abdabe46ebb04307bfb93b retains actual mixed-task window and directoperator SOP reprioritization; task split UNKNOWN.; /home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/slice-contract-validator-successor24/canonical-integration1/investigation-window-closeout2.json SHA2568aa3f093052393ed7a73c6ec537b77b459c5030322529f81db2d3ddd6e7a86d2 actual complete SOP window; failed attempts retained.; Closed source25/26window /home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/proxy-command-endpoint-successor25/canonical-integration1/investigation-window-closeout.json SHA2560c2a06f7ad35c02b548ca225f406ea5dcbd7d3772dfa3613be0a9aee9af15478 actual4006.757/original1800/overrun2206.757s. No renewed native allowance.; Closedcurrentcompiler/publicationwindow /home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/captured-control-lifetime-successor26/current-native-investigation1-closeout.json SHA256a41aff3ec5cbdcff62996cf8f23ee161aef0965d3866ace0e2a2f6e421d8592e actualUTCwall2340.825s/original1800/explicitoverrun/late-dispatchdeviation retained.; Sourcewindow2closeoutc9db9719 plus explicitwindow3 under password-status-implementation2/canonical-integration1; sourceadmissionf9ab/aea6 and normalgate1FAIL retained.; /home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/password-status-implementation2/canonical-integration1/investigation-window3-closeout.json SHAc98e409f331b6b15deb856e3c3f1555bc52e588bfd3dce1605f1234137a68c6e; /home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/password-status-implementation2/canonical-integration1/investigation-window4-closeout.json SHAe00b4b8e740b7668b1b9d44abf24454da755ceb2a505ae21fb3c6bb9b0b65495; /home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/password-status-implementation2/canonical-integration1/investigation-window5-closeout.json SHA84a63ecf6e0e268cc0e348062eebba558685b79f4ae6ae23d4f2a974066e9dfb records actual window5 wall/overrun, HTTP16FAIL, operator directions and worker continuity fault; failure history unchanged.; Source admission13572: normalgate1 missingTMPDIR failure retained63edbc8a, unchangedsource properprivateTMPDIR gate2+pushPASS1763Rust/0failed/48nativeignores and597accountPython; signed/freshorigin0/0clean proof38a50db5/source-onlyTorontoFFd62ec8bb. Window6closeout actual3840.948s/original3600/overrun240.948 retained; explicitwindow7 original1800 begun 2026-10-16T13:02:24.948313+00:00; no native deadlines or failure history renewed.; window7 actual1873.43/original1800/overrun73.43s retained /home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/password-status-implementation2/canonical-integration1/investigation-window7-closeout.json; first19freezeblockedUNEXECUTED/correctedregistrypendingreview, no existingfailure reset.; window20closeout /home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/password-status-implementation2/canonical-integration1/investigation-window20-closeout.json actualUTCwall 1144.888s;19FAIL/20componentPASS/25FAIL retained; no failure/cost reset.",
+    "history_reference": "Retained HTTP1\u20134 evidence below and existing ledger. Outer native/SSH elapsed sums122.497s only; earlier full-action source/review/model time is UNKNOWN. No token or monetary compute cost is asserted.; Completed bounded investigation /home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/account-relay-deployment-successor18/canonical-integration1/investigation-window-closeout.json SHA256 5d1fa485650d262068f10bdd5328262332008c666176a127c1d31657761ce6d4 records actual UTC-wall 2886.045s and explicit mandatory-hook overrun; no failed history removed.; Completed source20 investigation /home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/proxy-config-isolation-successor20/canonical-integration1/investigation-window-closeout.json SHA256bb4e5e887444aca514bddb558e8974fea623f6c3684ecdc9ce3d8c2eb43e550c retains actual elapsed/overrun and explicit finite source admission disposition.; /home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/proxy-child-signal-observation-successor22/investigation-window-closeout.json SHA256c3122712c7321f00b1f4ad91507c99299529d8c4812976da8101c8832ce1e104 retains source/native8/9/10 window actual elapsed/overrun, finiteonecase disposition and failed outcomes.; /home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/slice-contract-validator-successor24/investigation-window-closeout.json SHA256a1243ba238c66dc546a8ae33f0d5c4b94a55afdb72abdabe46ebb04307bfb93b retains actual mixed-task window and directoperator SOP reprioritization; task split UNKNOWN.; /home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/slice-contract-validator-successor24/canonical-integration1/investigation-window-closeout2.json SHA2568aa3f093052393ed7a73c6ec537b77b459c5030322529f81db2d3ddd6e7a86d2 actual complete SOP window; failed attempts retained.; Closed source25/26window /home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/proxy-command-endpoint-successor25/canonical-integration1/investigation-window-closeout.json SHA2560c2a06f7ad35c02b548ca225f406ea5dcbd7d3772dfa3613be0a9aee9af15478 actual4006.757/original1800/overrun2206.757s. No renewed native allowance.; Closedcurrentcompiler/publicationwindow /home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/captured-control-lifetime-successor26/current-native-investigation1-closeout.json SHA256a41aff3ec5cbdcff62996cf8f23ee161aef0965d3866ace0e2a2f6e421d8592e actualUTCwall2340.825s/original1800/explicitoverrun/late-dispatchdeviation retained.; Sourcewindow2closeoutc9db9719 plus explicitwindow3 under password-status-implementation2/canonical-integration1; sourceadmissionf9ab/aea6 and normalgate1FAIL retained.; /home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/password-status-implementation2/canonical-integration1/investigation-window3-closeout.json SHAc98e409f331b6b15deb856e3c3f1555bc52e588bfd3dce1605f1234137a68c6e; /home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/password-status-implementation2/canonical-integration1/investigation-window4-closeout.json SHAe00b4b8e740b7668b1b9d44abf24454da755ceb2a505ae21fb3c6bb9b0b65495; /home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/password-status-implementation2/canonical-integration1/investigation-window5-closeout.json SHA84a63ecf6e0e268cc0e348062eebba558685b79f4ae6ae23d4f2a974066e9dfb records actual window5 wall/overrun, HTTP16FAIL, operator directions and worker continuity fault; failure history unchanged.; Source admission13572: normalgate1 missingTMPDIR failure retained63edbc8a, unchangedsource properprivateTMPDIR gate2+pushPASS1763Rust/0failed/48nativeignores and597accountPython; signed/freshorigin0/0clean proof38a50db5/source-onlyTorontoFFd62ec8bb. Window6closeout actual3840.948s/original3600/overrun240.948 retained; explicitwindow7 original1800 begun 2026-10-16T13:02:24.948313+00:00; no native deadlines or failure history renewed.; window7 actual1873.43/original1800/overrun73.43s retained /home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/password-status-implementation2/canonical-integration1/investigation-window7-closeout.json; first19freezeblockedUNEXECUTED/correctedregistrypendingreview, no existingfailure reset.; window20closeout /home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/password-status-implementation2/canonical-integration1/investigation-window20-closeout.json actualUTCwall 1144.888s;19FAIL/20componentPASS/25FAIL retained; no failure/cost reset.; dispatch_refusals14/15retainallfacts; before-dispatch-refusal-reconciliation.json preservesoriginalregistration.",
     "investigation": {
-      "owner": "/root/s04_readiness",
-      "started_at": "2026-10-19T01:19:45Z",
-      "timebox_seconds": 1800,
+      "owner": "/root",
+      "started_at": "2026-10-19T10:53:08Z",
+      "timebox_seconds": 1383,
       "elapsed_status": "UNMEASURED",
       "elapsed_seconds": null,
-      "reference": "SAME objective continuation18 after /home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/delegated-implementation-window17-closeout.json SHA256 f5c1787d11ccb63651f8593e0ccf94d6ddff60423d00cfc4a37505b1ddb3e7b7; prospective unchangedchain8d865. Preserve all historical failures/costs/leases; release fullhash candidate459ace1; capture/prefile/localpublication/case only original bounds."
+      "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/phase3-closeout.json SHA256 2d2a54f9832bacaa6ccbe58844fbfa896f9ce4c3f6f1286f6d8598739c6c4f20; phase4 actualremaining-only within original7200/global11:16:12. Independent controller approved cleanup18 then typed repair/source/helper19/one changed causal case only if original bounds plus400s disposition reserve fit; no native after11:04:32. Full slice remains unqualified."
     },
     "attempts": [
       {
@@ -14991,6 +14996,636 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "elapsed_status": "MEASURED",
         "elapsed_seconds": 8.848,
         "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/native-main-link-release-helper-build12/retained-fixture-cleanup5/result.json SHA256 52a49cc3ed66261c8fef5742248dd66d3a74cae4726765f920e89b5b971fe05c; exact scopedrollback/disposal, samemasterrcOK/original25+22/ordinary3/privatePrimaryabsent/2rows16files2IDs+groupsgone17utilitiesgone/no uncertainty. Final independent outcome pending.; independent recovery outcome565a35755c72f7f6723c54ee826c6c268a64b51978888da97192fe0924d6da6a CONFIRMED incidentCLOSED."
+      },
+      {
+        "id": "S04-02-reviewed-main-link-installer-source-preservation1",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root/s04_readiness",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "source_revision": "9dc3083f5f49b0b40d1a11da206dced29476cdec64ee7add51c6886595f0dc35",
+        "change_reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/primary-main-link-unveil-correction1/source-preservation1/source-freeze.json SHA256 9dc3083f5f49b0b40d1a11da206dced29476cdec64ee7add51c6886595f0dc35; exact5reviewedsource +factualdocs/currentderivedreport, sourceonly normal signedgate, no installer/live/UAT claim; source immutable duringhook.",
+        "success_chain_review": {
+          "reviewer": "/root/account_backend",
+          "reference": "Mainlinksemantic106ca0/formattedtestfinalf162 exact3, installer2 corrected11283 exact2/13controls; nativecase12outcome4b8e/recovery565a confirm limits. Mandatory normalhook/signature/push/freshUXequality under explicitroot/userpush authority.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 273.353,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/primary-main-link-unveil-correction1/source-preservation1/signed-source-proof.json SHA256 f9702a449c880fecf7567c0f4386efba0531c06edcf0b2802d15f2fb5bc3756d; normal signedcommitgate273.353; exact5source/all459parity/signatureGOOD/clean at verification; sourceonly/C04OPEN/nativeinstallerNOTRUN."
+      },
+      {
+        "id": "S04-02-reviewed-main-link-installer-authorized-push1",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root/s04_readiness",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "source_revision": "9b240f7192d402145f1606a22c3326882ff38c93",
+        "change_reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/primary-main-link-unveil-correction1/source-preservation1/signed-source-proof.json SHA256 f9702a449c880fecf7567c0f4386efba0531c06edcf0b2802d15f2fb5bc3756d; userexplicitpush and rootcurrentauthority, all1outgoingShopkeepersigned, normalpushhook/no force orhistoryrewrite; sourceonly",
+        "success_chain_review": {
+          "reviewer": "/root/account_backend",
+          "reference": "Exactmainlink106ca0+installer11283, actualscope4b8e/recovery565a/sourcefreeze9dc3; mandatorynormalcommitPASS273.353/signature, normalpushhook/fetch/exactUXequalityconsumer. No source/bodychange or newQA.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 264.691,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/primary-main-link-unveil-correction1/source-preservation1/signed-sync-proof.json SHA256 cd8686368aa744dff82eb4bdd0bbb19db9397bbe6df2dba43c9a983c2f7838f9; normalpush264.691/freshfetchUXequality9b240/0-0/GOODShopkeeper, ledgeronlydirty/sourcecommitted; sourceonly/fullworkflowOPEN."
+      },
+      {
+        "id": "S04-02-causal-c04-reviewed-source-intake1",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root/s04_readiness",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "source_revision": "9e3cbf1bcbf61cfe49ec2b7261f793546cd7bcfc7a5f213d68cbcecb2b439bca",
+        "change_reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/causal-c04-diagnostic1/readiness.json SHA256 bb43074b1ffc78d4e5f135dd4a97c60d5f9311c3b25d603192bb8da9b73cd7dd; exact2reviewedRustleaves server+selectednativefixture plus sourceonlycarrierfbce/989d; no behavioral/permission/deadline changes, normalpre-native fullgate intentionallydeferred under existing controlledcandidatecontract. Pairedcompiler actual binfalse/libtesttrue release once.",
+        "success_chain_review": {
+          "reviewer": "/root/account_backend",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/causal-c04-diagnostic1/independent-final-source-consumer-review.json SHA256 5aed9d48b16e8222aae3115af1e487fedbb3def35d537f8c78ae505e38c3e23c",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 0.018,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/causal-c04-diagnostic1/canonical-intake-result.json SHA256 60d90c5e5a73d0ed84e8fe506b2e6bfe1c126a78cbb74a1b1085ea50a2521a16; exact459currentcandidate, sourceonly/no nativeclaim; unchangedTLS lexical guard separatelyPASS"
+      },
+      {
+        "id": "S04-02-native-c04-release-pair-build13",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root/s04_readiness",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "85edad1cff57cb0f27c6ecef6eaec390c8d70e65bdbe69d473b12b9b1cf4975c",
+        "change_reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/native-c04-release-pair-build13/readiness.json SHA256 7f21bdcc03d43747ae56697fba9ba960e67767b330edfbe48a446cb45c9fb558; exactrealhelperkindbin/testfalse +nativeclientkindlib/testtrue bothactualreleaseopt3; candidate4599e3c/9b240base/2reviewed457same; no tests/app/service/auth execution; same230/180/260",
+        "success_chain_review": {
+          "reviewer": "/root/account_backend",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/native-c04-release-pair-build13/independent-paired-release-compiler-review.json SHA256 d82c438a783b478b0268ac78486d1d78891beba83af9b42ea69868d657a468f3",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "FAIL",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 178.741,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/native-c04-release-pair-build13/result.json SHA256 19d450353ced3e770a66553b9d145465e4094f0be1d1f321c009b6735cfabfcf; unrelatedharnesses thenTimeout; groupabsenceunconfirmed/scratchretained; freshobserverfirst."
+      },
+      {
+        "id": "S04-02-resume-build13-observation1",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "5b65c58b2d7ac412d063398a993451636c22ef6b3b66cdb0874efe45605918dc",
+        "change_reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/observe-build13/execute.py SHA256 4ff15c10a2fea893041b7740fbab988e18b54b9fdd6ccacaa30c3265b08b2ec6; exactread-onlyobsd1mode remoteSHA 5b65c58b2d7ac412d063398a993451636c22ef6b3b66cdb0874efe45605918dc; freshcurrentbuild13group/scratchsnapshotONLY/noownershipordeleteclaim; noSQL/auth/servicechanges.",
+        "success_chain_review": {
+          "reviewer": "/root/delivery_controller",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/independent-review.json SHA256 67a1f1e28580ca21cf81dd03ca74b9e8d955c817365ebba5a8548661686a3318; fixed100local/65SSH/45remote, exactrecipe/source/attempt/gate/strictreadonlyconsumer reviewed",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 0.458,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/observe-build13/result.json SHA256 7684ac184a76bcf323816c99f9a8e34c76dd80b990798a4fd383505198f564d0; actualreadonlycurrentfacts, nohistoricalownership/cleanupgrant"
+      },
+      {
+        "id": "S04-02-resume-backend-model-observation1",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "5b65c58b2d7ac412d063398a993451636c22ef6b3b66cdb0874efe45605918dc",
+        "change_reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/observe-backend-model/execute.py SHA256 64788b37574122bdbca0b39682bd47fd3719fde7dc684676d0d36db81a86648f; exactreadonlyauthoritative-backend-model mode remoteSHA 5b65c58b2d7ac412d063398a993451636c22ef6b3b66cdb0874efe45605918dc; installedpackages/sourcehash/hashselectionmarkersONLY, noSQL/auth/configwrites/provider.",
+        "success_chain_review": {
+          "reviewer": "/root/delivery_controller",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/independent-review.json SHA256 67a1f1e28580ca21cf81dd03ca74b9e8d955c817365ebba5a8548661686a3318 exact100/65/45boundedreadonlyproducer/cleanup/consumer",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "FAIL",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 4.008,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/observe-backend-model/result.json SHA256 101d194925f252213d180ea48e5ae44014f262d71f2a6af37cbfc067925fe6fe; remoteFAIL atnonessentialpkg_info RuntimeError/actualchildreapedgroupgone; wrapperUNKNOWNKeyErrorsuccess-onlyconsumer; uniqueutilitycauseUNKNOWN/noSQL/auth/sourceconfigread."
+      },
+      {
+        "id": "S04-02-native-c04-targeted-pair-build16",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "9e3cbf1bcbf61cfe49ec2b7261f793546cd7bcfc7a5f213d68cbcecb2b439bca",
+        "change_reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/compile-targeted-c04-pair16/readiness.json; dispatcherSHA 246a22d5591392c3866a0dee5e1bded4c2aeedafca6c045780ce5f7086a46f9f remoteSHA 3bb92bc9e2675b62e02c823e365a56d3bd0fe841505cab1724f89a6086a0cebd; only2identityliteralchanges/unchanged459source+selector+originalbounds; correctedhistorypreflightPASS/no15hostretry.",
+        "success_chain_review": {
+          "reviewer": "/root/delivery_controller",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/compile14-review.json unchangedsemantics + /home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/combined-reassessment2.json SHA256 310f53e056aeb7fb3fff3802d1914e3616055e179352045404ce063a4dab5651 controllerbindingaudit/rootexact2literalcomparison",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "reassessment": {
+          "reviewers": [
+            "/root",
+            "/root/delivery_controller"
+          ],
+          "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/combined-reassessment2.json SHA256 310f53e056aeb7fb3fff3802d1914e3616055e179352045404ce063a4dab5651",
+          "next_action": "Bind one successor16 to the already reviewed target-selected compiler source9e3c/remote3bb9/459 inputs/validator3ac6; only fresh exact attempt/recipe/path bindings may change. Execute once after current contract and review pins pass, within unchanged230remote/180phase/260SSH/local300 limits and original cumulative allowance.",
+          "failed_attempt_ids": [
+            "S04-02-native-c04-release-pair-build13",
+            "S04-02-resume-backend-model-observation1"
+          ]
+        },
+        "result": "FAIL",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 178.701,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/compile-targeted-c04-pair16/result.json SHA256 addc732744bef9b8eacf59217eb47ac2173e7fe28ccc09c65349f7793d047afe; targetlibtestopt3timeout178.701/helperNOTSTARTED; groupabsenceunconfirmed/scratchretained, noapp/account/serviceactions."
+      },
+      {
+        "id": "S04-02-resume-backend-model-observation2",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "fb13a5ae909678a7332d19b112d9d23bc02a08de9fee9602f3c8881889364822",
+        "change_reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/observe-backend-model2/execute.py SHA256 975552cdeb7a77e0feccb8926419ade22fc2d493896ab9ff36e867088aaf5d8d remoteSHA fb13a5ae909678a7332d19b112d9d23bc02a08de9fee9602f3c8881889364822; removeONLYnonessentialfailedpkgutility/keepunknownversions, preserveFAILconsumerbeforemissingfields; noSQL/operatoractions.",
+        "success_chain_review": {
+          "reviewer": "/root/delivery_controller",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/model2-review.json SHA256 fc225e7b2abc381a6e36040890dbd86d5aa4e171cf5c5dd272ecdf1729acead6 fixed100/65/45readonlysource/cleanup/consumer",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 3.666,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/observe-backend-model2/result.json SHA256 11221a98a7f66a3c9c7f03c85010cffe653912f11b6784fcdad066e732e03231; boundedpublicsourcemetadata/readonlyPASS, completePostfixAdminbehaviour/effectivehashNOTQUALIFIED"
+      },
+      {
+        "id": "S04-02-resume-build16-observation2",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "bf77b1909d06fffd90664b43f70f38931490949f89619362e65da09bb589ee0d",
+        "change_reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/observe-build16/execute.py SHA256 a8c2b4d6d78c5f5566ca1c889dce2f6461e1ae09caa92644d56c180060183d97 remoteSHA bf77b1909d06fffd90664b43f70f38931490949f89619362e65da09bb589ee0d; observerfixedscratchlsbc4so2/group74308ONLY, nohistoricalsignals/delete or cleanupauthority.",
+        "success_chain_review": {
+          "reviewer": "/root/delivery_controller",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/observer16-review.json SHA256 b10a4126223ef9bc3b15d00b5f0ee6e4e1e02fd1f64f1fadad11d7f76af750ca fixed100/65/45read-onlyproducer/cleanup/consumer",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 0.508,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/observe-build16/result.json SHA256 a2ac764b9b8f1aac2cbf2c1afe1cd307023ff223a5276ff9d5f3610c25fc0033; Freshcurrentcompiler16groupabsence snapshot/nohistoricalownership/deletionauthority"
+      },
+      {
+        "id": "S04-02-native-c04-mixed-pair-build17",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "9e3cbf1bcbf61cfe49ec2b7261f793546cd7bcfc7a5f213d68cbcecb2b439bca",
+        "change_reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/compile-mixed-current-c04-pair17/execute.py SHA256 50853226c1852135ad811bcddf68570d0fbd3c6c149d4a5cf59dfd14fcf83773 remoteSHA 1cef40ca2e794e42f6f9ec31d6b70996f59010b2e54aa9e98d3876a1edd917d1; helperreleasefirst/explicitperchildtestopt0debug0 ONLY, actualprofilesasserted; same459/230whole180phase260SSH/noapp/account/serviceactions.",
+        "success_chain_review": {
+          "reviewer": "/root/delivery_controller",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/compiler17-review.json SHA256 fff713436beb876ab3fcdb2872cfda165282f03f6e2ff332566025813c987c81 plus17-reviewbasis2b54; sameactualproducer/cleanup/profileconsumer andpurpose",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 199.87,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/compile-mixed-current-c04-pair17/result.json SHA256 271f99d695d01bb300b5623a05da2826d127bfa8aa15873a9e3609c528252b3e; Actualhelperreleaseopt3/nativeclienttestopt0debug0; all459sourceparity/artifacthashes/ownedgroups/scratchconfirmed; noapp/SQL/auth/serviceexecution."
+      },
+      {
+        "id": "S04-02-resume-backend-model-observation3",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "410bae0c3242e95234cb63658e6b58b9dd32b8f2d14f7bd23f79feb1d3f74485",
+        "change_reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/observe-backend-model3/execute.py SHA256 8ed2bd4b59cd65f60edf7bed786b82a8cfce1513c8ef2122ee9260200ccbf519 remoteSHA 410bae0c3242e95234cb63658e6b58b9dd32b8f2d14f7bd23f79feb1d3f74485; bounded2publicsourcewindows/4fixedpins/noactualconfigcredentialexport.",
+        "success_chain_review": {
+          "reviewer": "/root/delivery_controller",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/model3-review.json SHA256 9a806bec65a18344ea0af7eddd5ea8809c807136102c9a0397e787a6f96cb1b4 exactread-onlyproducer/cleanup/consumer",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 3.666,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/observe-backend-model3/result.json SHA256 2e51b9c9d2ba2637673bcbaf1d1122ec644310291ffb0fc16a18e8a6bf0ac9f2; fixedpublicsourceprojection; no runtime/DB/modelbehaviour qualification"
+      },
+      {
+        "id": "S04-02-native-c04-current-artifact-capture17",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "9e3cbf1bcbf61cfe49ec2b7261f793546cd7bcfc7a5f213d68cbcecb2b439bca",
+        "change_reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/compile-mixed-current-c04-pair17/artifact-capture17/capture.py SHA256 772511ac70d2b7fc4f529090f77174a0053393cca09ebd336e4e165bb4d752c4; exact compiler17 twoartifact capture only/helperreleaseopt3 and clienttestopt0 separately recorded",
+        "success_chain_review": {
+          "reviewer": "/root/delivery_controller",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/capture17-review.json SHA256 898fd5bb37804d626b0904e8174431bf09b5ac8f57952aa271caebfc29fc335d",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 6.229,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/compile-mixed-current-c04-pair17/artifact-capture17/result.json SHA256 5321fb502f2a86ebf517a7cc0b7d8638b4d1d2662942ab2c81c2666904b39537; Read-onlytwoartifactcapture; losslessgzip/rawpins exact; transportreaped/groupgone; no tests/application/serviceaction."
+      },
+      {
+        "id": "S04-02-resume-backend-model-observation4",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "d56c7b77adad73b15b8c9895c04ed8d7cad6f20fdd4a9871d7629409b3683abd",
+        "change_reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/observe-backend-model4/execute.py SHA256 726a9855b44234d4aa655f958a226d223a617af6dc84a0829bbf65895d55b740; fixedpublicLogin/hashdefinitiononly; no configuration/DB/auth/operatorhash/utilityaction.",
+        "success_chain_review": {
+          "reviewer": "/root/delivery_controller",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/model4-review.json SHA256 6d8fe67eef27c5c44631c243afaf5f94bb66071a48e23bf1993c05e5876c1087",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 3.938,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/observe-backend-model4/result.json SHA256 f26dec9ad75f971dece06e6ad618bb26a1b8694d0a15df401607e633a5392efe; FixedpublicLogin/changePassword/hashsourceonly; actualmodel64lineapproachreconciled, no runtimequalification or furthergeneraldiscovery."
+      },
+      {
+        "id": "S04-02-native-c04-prefile-transfer17",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "9e3cbf1bcbf61cfe49ec2b7261f793546cd7bcfc7a5f213d68cbcecb2b439bca",
+        "change_reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/current-c04-native17/prefile-transfer17/execute.py SHA256 2afd5b6248e0bb63dde2cde2a6b3c53813f812661fffbe54da6e1a9e22e3402b; fixed16MBpacket2a309b9b837f55a3f9d510ea90af6629ba2b6c4cbe7483f1d577c549afc0078d/currentraw+wirepins; existingunprivilegedprefileonly. remote_sha256=ea0c99ea08e150958a3597d02d758a123deeca733ea69d4071e69fdb77e0b44d dispatcher_sha256=2afd5b6248e0bb63dde2cde2a6b3c53813f812661fffbe54da6e1a9e22e3402b",
+        "success_chain_review": {
+          "reviewer": "/root/delivery_controller",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/prefile17-review.json SHA256 0a82c7232ae7f4e9431225b7ffac79964515e64acc46789f6274f032333df7a2",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 36.543,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/current-c04-native17/prefile-transfer17/result.json SHA256 bd060b29ee3067c678c0e1b2847a2e809743325ec8b8c27e588b5ccefcd87461; 36.543s exactcurrent16MBprivatepacket; nohelper/fixture/claim/auth/SQL/serviceeffect. Priorregistrationrefusalretainedseparately."
+      },
+      {
+        "id": "S04-02-native-c04-local-publication17",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "9e3cbf1bcbf61cfe49ec2b7261f793546cd7bcfc7a5f213d68cbcecb2b439bca",
+        "change_reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/current-c04-native17/local-publication17/execute.py dispatcher_sha256=968fde2ea95d08bf3612a3801ee89287f5df1f29473138dd179ba4e81b69ff4d remote_sha256=5d9747c32788e9411995bacbc49fa62b4d62234c820082bb41c67023a304695d; actualprefilereceipt bd060b29ee3067c678c0e1b2847a2e809743325ec8b8c27e588b5ccefcd87461 sixartifactstageonly.",
+        "success_chain_review": {
+          "reviewer": "/root/delivery_controller",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/publication17-review.json SHA256 5573746ee21b0aec83da00fa3e910efff21abcd7a68cde506b61a16014c7f1fe",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 7.453,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/current-c04-native17/local-publication17/result.json SHA256 55ba6a7a8bb731e07c326fa7f99f36c395cc88f61d8a5fb6a8c97f19ebba7446; Actualfreshroot7548/sixexactpayloadleases; artifactpublicationonly no fixture/helper/config activation."
+      },
+      {
+        "id": "S04-02-native-c04-current-first-execution17",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "9e3cbf1bcbf61cfe49ec2b7261f793546cd7bcfc7a5f213d68cbcecb2b439bca",
+        "change_reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/current-c04-native17/first-execution17/execute.py dispatcher_sha256=779aa1add0865dc71940d0c95d39273aaa3e493d90682d0f4c4a6f80ccc0c43e remote_sha256=95b4b349ef661fd8dc1b7b5fea02f2fe02c22d581e1b4b20728eb0c1e92c4ecb; exactfreshactualrootstage/6leases/publication55ba6a7a8bb731e07c326fa7f99f36c395cc88f61d8a5fb6a8c97f19ebba7446; onecausaladmissioncomponentonly no passwordrotation.",
+        "success_chain_review": {
+          "reviewer": "/root/delivery_controller",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/execution17-review.json SHA256 06fb31b0bcb01accabfe311fa70faec2b517c44a9420f123767c7966be4d677c",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "FAIL",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 15.631,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/current-c04-native17/first-execution17/result.json SHA256 b3014c6b6710bafce3e036a87100118fdf93462a185dbd835e40d41220eec5f2; Actual15.631s/UNCERTAIN: expectedwrong-passwordnonadmission reached; correctcallC04Unavailable. Primaryreadyonly; no per-operationfailurestage; NO_EXIT_OBSERVEDbeforeTERM doesnotdate service_loopUnavailable. Helper1/reapedbutgroup/nestedabsenceunconfirmed, cleanup0, syntheticstate7548retained; no credentialrotation/provideraction. No unchangedretry."
+      },
+      {
+        "id": "S04-02-current-c04-retained-observation17",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "49e4a26cc14bd13ca54dd9c2c452558dd186e599a48d725dd3d9a471df203e8a",
+        "change_reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/current-c04-native17/retained-fixture-observation17/execute.py dispatcher_sha256=915ea008e270fd404a371d06846abcc4b1d9d4bc2e28330d4358c4fb629037f8 remote_sha256=49e4a26cc14bd13ca54dd9c2c452558dd186e599a48d725dd3d9a471df203e8a; currentfixedstage/marker/17rows only; no mutations/signals/lease renewal.",
+        "success_chain_review": {
+          "reviewer": "/root/delivery_controller",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/observer17-review.json SHA256 59516fdfdb40916513a70cffdafaa032d9967648f032b18da76e2e59faf88842",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "reassessment": {
+          "reviewers": [
+            "/root",
+            "/root/delivery_controller"
+          ],
+          "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/execution17-outcome-reassessment.json SHA256 7e90e192791f11ae632e2b3cb66ce855ce2c712d008b5c054f4e82e547bc0c02",
+          "failed_attempt_ids": [
+            "S04-02-native-c04-targeted-pair-build16",
+            "S04-02-native-c04-current-first-execution17"
+          ],
+          "next_action": "Fresh read-only current ownership observation, then separately reviewed owned recovery only; no unchanged admission retry or cause inference."
+        },
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 4.719,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/current-c04-native17/retained-fixture-observation17/result.json SHA256 7e2447d69f47020d1371f2d4704cdf9f40cd782d79930d5746ae98a88f09bd89; Freshcurrentownershiponly; allpurposequiet/original25bytes+currentDovecotok/initialrows+epochs, privatepathsretained; notdisposalauthoritybyitself."
+      },
+      {
+        "id": "S04-02-current-c04-owned-recovery17",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "dbcc98595d7c9f8d10a1b8d2ada1904659812af055da7638f71cf5594677e655",
+        "change_reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/current-c04-native17/retained-fixture-recovery17/execute.py dispatcher_sha256=252b23c79ff2f4fc7c130806c71d1e2d5d2783e73ce25a899cfd387527ec9043 remote_sha256=dbcc98595d7c9f8d10a1b8d2ada1904659812af055da7638f71cf5594677e655; actualobservation 7e2447d69f47020d1371f2d4704cdf9f40cd782d79930d5746ae98a88f09bd89 fixedfreshownedrecovery notfixtureleaserenewal.",
+        "success_chain_review": {
+          "reviewer": "/root/delivery_controller",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/recovery17-review.json SHA256 2d7f8703ff7b7fb1db9aaaf2edc68d8f7385f390c2a0a33edf88894933b82207",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 8.341,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/current-c04-native17/retained-fixture-recovery17/result.json SHA256 ed4688db470a9d8ad864f42a2878bfb708961157079be0757ed21d5df35ef0c7; Actual8.341s confirmedowneddisposal; no operatorcredentials. Synthetic2rows/16files/2users+groups removed,4retaineddirsnormalized; original25/currentmaster/ordinarylistenerspreserved. Originalfailureunchanged."
+      },
+      {
+        "id": "S04-02-native-c04-loop-helper-build18",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "b2aa005378499fcf1214e075347a91abf372dc898399bbdfbca9898c0bea2ed9",
+        "change_reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/compile-helper-loop18/execute.py dispatcher_sha256=30c9abb93a4becbc625f803ebf3431ad4b072189670ba4486031e34ff867e745 remote_sha256=6559f040dcd193a9e23f4cb806bf1b4352f6e98273e65ab3e250cba13b386792; canonical459parity; helper-onlydiagnostics8947, unchangedclientf2b7separateoldsource9e3c.",
+        "success_chain_review": {
+          "reviewer": "/root/delivery_controller",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/compile18-review.json SHA256 8ee6b052dd59ca52ed93327bf7058f4bf0297acd7abf7df846880e5646062ce1; /home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/loop18-product-review.json SHA256 9d439e01f94f9d2027f06f4c0de04d65c9a396c65535ca5feb5c73e1794ba733",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 73.925,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/compile-helper-loop18/result.json SHA256 53de3575f4ddd79ca3406c5de0fecf56c95b059255c1b1376e7138c3db75b763; Actual73.925s releaseopt3current459helper6dbcfcc1/2647752; sourcebeforeafter/freshfalse/groupsscratchgone; noapplication/clientrebuild. Clientf2b7 stillold9e3csource explicit."
+      },
+      {
+        "id": "S04-02-native-c04-loop-helper-capture18",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "b2aa005378499fcf1214e075347a91abf372dc898399bbdfbca9898c0bea2ed9",
+        "change_reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/compile-helper-loop18/artifact-capture18/capture.py dispatcher_sha256=4a06a4923872ce5ce3dffda7e9de5e5a7beeedc5f82e12be9d4d552c02110148; actualbuild 53de3575f4ddd79ca3406c5de0fecf56c95b059255c1b1376e7138c3db75b763 helper6dbc/2647752only; oldclientnotcopied/rebuilt.",
+        "success_chain_review": {
+          "reviewer": "/root/delivery_controller",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/capture18-review.json SHA256 ccc02256467108ca2b06804ec9c3e7363431840b40a6e8ee83942ef8083f6827",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 0.674,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/compile-helper-loop18/artifact-capture18/result.json SHA256 4118155992ba2f112651bb1ec7f9be627b2b8223d061172c2a52a450f43f505c; Actual0.674s exacthelper6dbc/2647752; losslessgzipd696/1042771; ownedSCPgroupgone. Noapplicationexecution."
+      },
+      {
+        "id": "S04-02-observe-fixed-bootstrap-facts1",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "d18f7d0bf6e7e418d0b2ed93e377f2f7df2c732c2c9fb21c4c80e872a6048c44",
+        "change_reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/bootstrap-carrier1/observe-execution1/execute.py dispatcher_sha256=3b6d7a494caadc2e63a31113c982a7a52e25f0adc89368017ef564c91fe227f2 remote_sha256=d18f7d0bf6e7e418d0b2ed93e377f2f7df2c732c2c9fb21c4c80e872a6048c44; fixed sanitized existing config/version/role/PF facts only, no rawquery/DSN/secret output, no SQL/auth/serviceaction.",
+        "success_chain_review": {
+          "reviewer": "/root/delivery_controller",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/bootstrap-observer-dispatch-review.json SHA256 db6a210f7b0012af1b9bf1abc76f432ffcefaa37864a46a905c61e6d15102bd4; /home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/bootstrap-observer-source-review.json SHA256 f8e7548272340b94b3225669ba5f31255f8df1f25f43087003e125247644b220",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "FAIL",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 4.864,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/bootstrap-carrier1/observe-execution1/result.json SHA256 ff35b285a84a5af8f28accf25c161b1cb33dd85c8af255507e8db60998e5a2c3; Actual4.864s read-onlyconfirmed/cleanuptrue; service_enabled_shape refusal after measured25/versions/PF/Postfixfacts; SQLmultilineunknown. Reusepartialfacts; no auth/SQL/config/serviceaction, no bootstrapqualification."
+      },
+      {
+        "id": "S04-02-native-c04-loop-prefile-transfer18",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "b2aa005378499fcf1214e075347a91abf372dc898399bbdfbca9898c0bea2ed9",
+        "change_reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/current-c04-native18/prefile-transfer18/execute.py dispatcher_sha256=84f7333bd577403951a75ad2b62fbe7e411ab2e9e31eb1d491a79dc72bd26b73 remote_sha256=39af7006e6f67e6fa4fce608ba0b4b3306e586b3709d85ba6f2d3323251b00b7; actual18helper6dbc+oldclientf2b7/source9e3c packetonly.",
+        "success_chain_review": {
+          "reviewer": "/root/delivery_controller",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/prefile18-review.json SHA256 3d77dc714c531ebb229f773495becbdfe1b3287448e99a370948ba8839e9821a",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 106.452,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/current-c04-native18/prefile-transfer18/result.json SHA256 1b7ab4353f719e9e536a62ab057f41f5e5a94426148fa367cc23ca95b46cc492; Actual106.452s exactprivatepacket/currenthelper18+oldclient17. TransportelapsedcauseUNKNOWN; nohelper/service/SQL/auth/fixtureaction."
+      },
+      {
+        "id": "S04-02-native-c04-loop-local-publication18",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "b2aa005378499fcf1214e075347a91abf372dc898399bbdfbca9898c0bea2ed9",
+        "change_reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/current-c04-native18/local-publication18/execute.py dispatcher_sha256=eb0009e78fa7d4aa753c895d8919942a3838e70d45e3a6bb20467d30a26a8faf remote_sha256=4fb40979b442657f5be4101f3512bca945e6fa690c6cdc91b22edbb6c40c02e0; actualprefile 1b7ab4353f719e9e536a62ab057f41f5e5a94426148fa367cc23ca95b46cc492 Pathconstructorcorrectedbeforeexecution/heldoldsourceNOTRUN; sixartifactonly.",
+        "success_chain_review": {
+          "reviewer": "/root/delivery_controller",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/publication18-review.json SHA256 28ed18e295e67ce888d5118b20256c6c7a881a0a37de27f143c91980d19b19c0",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 7.321,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/current-c04-native18/local-publication18/result.json SHA256 ef3da92e65c597324fc312b903eabd483792c8beab3c62f4eac623875edc1ca2; Actual7.321s rootbc71/sixexactpayloadleases; nohelper/fixture/claim/serviceexecution. Heldc1e8stringbindingwasNOTRUN, final4fbPathcorrect."
+      },
+      {
+        "id": "S04-02-native-c04-loop-first-execution18",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "b2aa005378499fcf1214e075347a91abf372dc898399bbdfbca9898c0bea2ed9",
+        "change_reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/current-c04-native18/first-execution18/execute.py dispatcher_sha256=75b3d2cabad5e1889a77e7409992dce51967428b8f904fd22bac88a1c7a766ae remote_sha256=9b76daf7370dccb6d50cc22666796f2c46c5d4073fc8064aa7fa83bac27f0441; exactactualbc71+6fileleases; helper18b2aa/client17old9e3 explicit. One6site causalcomponent, no passwordrotation/unchangedretry.",
+        "success_chain_review": {
+          "reviewer": "/root/delivery_controller",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/execution18-review.json SHA256 1e035bc8671ec9d32a489e6d543406e4c6175d643b9583ad20c16f75581fcb1d",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "FAIL",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 14.766,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/current-c04-native18/first-execution18/result.json SHA256 11fb4a13bda48156950daa45a279927e936ba69ef280d908038b130a08492561; Actual14.766s UNCERTAIN; fixedBeforeRecheckguardUnavailable atstop_requested=false, underlyingcategoryUNKNOWN. ClientC04Unavailable; helperexit1/reaped/nestedabsenceunconfirmed/cleanup0; stagebc71retained. No unchangedretry, no passwordrotation/operator/provideraction."
+      },
+      {
+        "id": "S04-02-current-c04-retained-observation18",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "4adb587f957fd5d0347636dc63b4e520afffdeeca6b5cf9e63632420129ac630",
+        "change_reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/current-c04-native18/retained-fixture-observation18/execute.py dispatcher_sha256=e5d724b41585371fcc40326ec9593e2d25bb722ed27c740e570818042345db3c remote_sha256=4adb587f957fd5d0347636dc63b4e520afffdeeca6b5cf9e63632420129ac630; exactcurrentbc71/marker3343687/read-onlyownershiponly no signals/mutations/renewal.",
+        "success_chain_review": {
+          "reviewer": "/root/delivery_controller",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/observer18-review.json SHA256 f1894050a8765b5d6a580571b425a70c6bfc9b76ea3174b69badc5d7d0074328",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "reassessment": {
+          "reviewers": [
+            "/root",
+            "/root/delivery_controller"
+          ],
+          "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/execution18-outcome-reassessment.json SHA256 09f7dfd9a9509e7a7d2ff3f391cf0fd0755bcbea45b0a4f2524cce06a02b86d9",
+          "failed_attempt_ids": [
+            "S04-02-observe-fixed-bootstrap-facts1",
+            "S04-02-native-c04-loop-first-execution18"
+          ],
+          "next_action": "One fresh read-only ownership observation then separately reviewed owned recovery. Typed metadata-busy product repair requires independent source/new native proof; no unchanged admission retry."
+        },
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 6.554,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/current-c04-native18/retained-fixture-observation18/result.json SHA256 9aaba82a9e2f1e3a3eafe83da928fdb3d6b99719e9e259f2d7eb310eb5905252; Fresh read-only custody: exact original25+current master/service/rows+epochs and both quiet purpose IDs. Private primary socket remains; copy-reference shape UNKNOWN. This is observation PASS, not cleanup or password PASS."
+      },
+      {
+        "id": "S04-02-current-c04-owned-recovery18",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "19fd54b65dff26943df409a8f1db9761f5484ed6a7f7bfc10bbdb4190da26d76",
+        "change_reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/current-c04-native18/retained-fixture-recovery18/execute.py dispatcher_sha256=6bec72d0c48cfb862fec3360d3e72695d2196b8ccbe74b6078c76ac0c629ad9b remote_sha256=19fd54b65dff26943df409a8f1db9761f5484ed6a7f7bfc10bbdb4190da26d76",
+        "success_chain_review": {
+          "reviewer": "/root/delivery_controller",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/recovery18-review.json SHA256 d4ced27cafea3562ec9f3560af287259315bac4304ade68351f332cfab3bd1a4",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 9.0,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/current-c04-native18/retained-fixture-recovery18/result.json SHA256 2c5202aa33d8907b87a0db6f3f9ee262c32d7a176b20d0b21233d78cbf29cc8d; Exact current18 owned disposal:2 syntheticrows16files2users/groups4dirs normalized; original25+22/currentmaster/ordinary3 preserved; no sockets unlinked/historicalsignals/fixtureauthority renewal. Functional18 FAIL retained."
+      },
+      {
+        "id": "S04-02-observe-missing-bootstrap-facts2",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "84f7b59915874b9422d98b25c780702e119c8d921eb63887f84681ac344f717f",
+        "change_reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/bootstrap-carrier1/observe-execution2/execute.py dispatcher_sha256=bf2e94c1168b554491a0d796cdfe94f72a318b3a0c3314dcf8b33b7e927d3985 remote_sha256=84f7b59915874b9422d98b25c780702e119c8d921eb63887f84681ac344f717f",
+        "success_chain_review": {
+          "reviewer": "/root/delivery_controller",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/bootstrap-missing-facts2-review.json SHA256 879398f87ded87516a79290b16ffa19d197ead159052173bade08a9047b48678",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 4.169,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/bootstrap-carrier1/observe-execution2/result.json SHA256 196d8a37d973abf7345c1cbafc030c1390099d74df43288fd2424bb221d8b486; Read-only missingfacts obtained: logicalSQL9continuations/form3/userquerysupported; DSNroute/databaseUNSUPPORTED retained. Existing10.44:2525 explicitSASLno preserved/consumerUNKNOWN; Postfixenabled. No auth/SQL/config/servicechange; nobootstrapclaim."
       }
     ],
     "prior_investigations": [
@@ -15180,6 +15815,17 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "disposition": "Old7075collection6.455workerFAIL, same-traceordered4.494 locates401092usquery bytework/no spawn. Metadata-only draft rejected mutationcontrol/neverintaken. Sourcepreservatione22normalgate296.859+push264.491/freshorigin0/0/cde4. Intendedreleaseprofileopt3 same459source fullhash buildPASS88.669/helper91a52.64MB, capturePASS0.718/gzip1.04MB, changedunprivprefilePASS21.046/0eebdf. No new worker/service/auth/SQL/operator action; localpublication/sourcebindings review pending. Full240 publication margin no longer fits oldwindow, no late dispatch. All failed histories/373.549upload costs and currentpartial retained, no budget reset.",
         "closeout_reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/delegated-implementation-window16-closeout.json",
         "closeout_sha256": "0212e79d7e7a48e38a549d76c7218da27e24d7bae25d748bcb0f19ed0f6cf36a"
+      },
+      {
+        "owner": "/root",
+        "started_at": "2026-10-19T10:12:46Z",
+        "timebox_seconds": 2400,
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 2422.642,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/phase2-closeout.json SHA256 84f82c0f5ad241eff12f92fdadefcd1fe22b523cf704fc19da176ab4a827b0a1; phase3causalrun/minimalrepair; global7200deadline11:16:12UNCHANGE\u200bD; exactexecutionreview06fb/controller informed. Explicit600s extension /home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/phase3-explicit-extension.json SHA256 ff37a849f7d54667004d16208f070dca4f6e11985f6497e998b5e067a39a73a8; original1800 retained, global7200deadlineUNCHANGED.",
+        "ended_at": "2026-10-19T10:53:08Z",
+        "disposition": "Actual18 failed before credential mutation at metadata observer; fresh observationPASS. Source typed-busy repair and bootstrap producers isolated. No functional claim; any overrun explicitly retained, global7200 unchanged.",
+        "overrun_seconds": 22.642
       }
     ],
     "completed_investigations": [
@@ -15460,33 +16106,114 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "overrun_seconds": 0,
         "result": "SIGNED_LOCAL_WORKER8C0_SOURCE_PASS; POSTSEAL_SOCKET_PERMISSION_STATIC_GAP_FOUND_BEFORE_NATIVE; CANDIDATE_NATIVE_SEQUENCE_APPROVED",
         "disposition": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/delegated-implementation-window11-closeout.json SHA256cf1842bfca1e58ca0fc859164c63d3f4dc94463e72d6bfd157acfd5153732a72; Sourcehook1FAIL129.577 doclexical only, commentreview369/TLSguardPASS3.603, hook2PASS273.283 andGoodShopkeeper8c0/all459parity. No push/build/host action run. Exact worker-only unix correction0a32/leafc8a2 independently9a4 clear+changed1PASS24.698 nowuncommittedcandidate over signedBASE8c0. Root accepts existing VERIFIED-before-COMMITTED controllednative candidate sequence; final normalhooks/sign/push notwaived. Lifecycleisolatedproducer fixes continue, no UAT/installed/fullS04claim. Failure/timehistory retained."
+      },
+      {
+        "owner": "/root/s04_readiness",
+        "started_at": "2026-10-19T01:42:47Z",
+        "timebox_seconds": 1800,
+        "elapsed_status": "UNMEASURED",
+        "elapsed_seconds": null,
+        "reference": "Same objective continuation19 after truthful /home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/delegated-implementation-window18-closeout.json SHA256 3a19ed0ca78d5ee7e495caa21d8b0c80769fe9ee4c0087eb44848868c6fc03d5; normalauthorized signedsource9b240 push/freshUXequality only first, source-onlycausaldiagnosis isolated. No native/fullworkflow/install/UATclaim; all priorfailures/costs retained.",
+        "disposition": "Operatorpausedafterbuild13; elapsedspanUNKNOWN; preservepriorfailures. Oct19remainingallowanceexplicit, nothistoricalcostreset."
+      },
+      {
+        "owner": "/root",
+        "started_at": "2026-10-19T09:16:12Z",
+        "timebox_seconds": 1800,
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 1836.0,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/resumption-baseline.json; userresumption/controller7200remaining/1800investigation.",
+        "disposition": "Phase1closedtruthfully; guardrailsimplemented/reviewed52PASS, currentobs13PASS/model2metadataPASS, executedoptimizedharness16FAIL anddispatchrefusals14/15retained; noaccount/servicechanges. Phase2 mixedprofile/C04 continueswithinORIGINAL7200/globaldeadline, notcostreset."
       }
     ],
-    "next_attempt": {
-      "id": "S04-02-reviewed-main-link-installer-source-preservation1",
-      "boundary": "authoritative-native-password-workflow",
-      "owner": "/root/s04_readiness",
-      "scope": "PRODUCT_DELIVERY",
-      "adoption": "CURRENT",
-      "source_revision": "9dc3083f5f49b0b40d1a11da206dced29476cdec64ee7add51c6886595f0dc35",
-      "change_reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/primary-main-link-unveil-correction1/source-preservation1/source-freeze.json SHA256 9dc3083f5f49b0b40d1a11da206dced29476cdec64ee7add51c6886595f0dc35; exact5reviewedsource +factualdocs/currentderivedreport, sourceonly normal signedgate, no installer/live/UAT claim; source immutable duringhook.",
-      "success_chain_review": {
-        "reviewer": "/root/account_backend",
-        "reference": "Mainlinksemantic106ca0/formattedtestfinalf162 exact3, installer2 corrected11283 exact2/13controls; nativecase12outcome4b8e/recovery565a confirm limits. Mandatory normalhook/signature/push/freshUXequality under explicitroot/userpush authority.",
-        "covers": [
-          "producer",
-          "cleanup",
-          "consumer"
-        ]
+    "dispatch_refusals": [
+      {
+        "id": "S04-02-native-c04-targeted-pair-build14",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "9e3cbf1bcbf61cfe49ec2b7261f793546cd7bcfc7a5f213d68cbcecb2b439bca",
+        "change_reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/compile-targeted-c04-pair14/readiness.json; dispatcherSHA 0bf45621f74058584416b47afc91a6d6d48b41cb84b3fe1bdc6b157365c1bf50 remoteSHA 3bb92bc9e2675b62e02c823e365a56d3bd0fe841505cab1724f89a6086a0cebd; existing459candidate/explicitlibtest+fixedhelperONLY; no --tests/alltargets/noaccount/serviceexecution; original230/180/260.",
+        "success_chain_review": {
+          "reviewer": "/root/delivery_controller",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/compile14-review.json SHA256 745c927fd189dbd3dcad4fd53c30ed1afd8bde83e0f9e51dfc26f2bbdf818458 exactproducer/cleanup/twoartifactconsumer/source/profilebindings",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "FAIL",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 0.052,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/compile-targeted-c04-pair14/result.json SHA256 0bfd541013a6f1f252e40bf647c16a0d0a109b8efd68db8a1bdcd845be8ef52a; preactionguardREFUSED missingcombinedreassessment; SSHNOTDISPATCHED, preservefailure/noaccountaction.",
+        "dispatch": "NOT_DISPATCHED",
+        "pre_action_gate": "FAIL",
+        "functional_execution": "NOT_RUN",
+        "disposition": "Actualfailedguarddispatch/noSSH, preserveoriginalFAIL/cost/chronology; notexecutedfunctionalattempt."
+      },
+      {
+        "id": "S04-02-native-c04-targeted-pair-build15",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "9e3cbf1bcbf61cfe49ec2b7261f793546cd7bcfc7a5f213d68cbcecb2b439bca",
+        "change_reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/compile-targeted-c04-pair15/readiness.json; dispatcherSHA c4e3439788a1bfe0686a710cc58c7b10f6e394f3797b42fa98a0d7ec5e63f67f remoteSHA 3bb92bc9e2675b62e02c823e365a56d3bd0fe841505cab1724f89a6086a0cebd; exact2literalbindingchanges14to15only, targetselected459candidate/nativeboundsunchanged; gate14NOTDISPATCHEDretained.",
+        "success_chain_review": {
+          "reviewer": "/root/delivery_controller",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/compile14-review.json SHA256 745c927fd189dbd3dcad4fd53c30ed1afd8bde83e0f9e51dfc26f2bbdf818458 plus /home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/combined-reassessment.json SHA256 ad487eee3d5fd8258c5204a1486cbd14ef91d662065ed1d524a371a5ad7237cd; rootverified2literalbindingdeltaonly; /home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/combined-reassessment2.json SHA256 310f53e056aeb7fb3fff3802d1914e3616055e179352045404ce063a4dab5651",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "reassessment": {
+          "reviewers": [
+            "/root",
+            "/root/delivery_controller"
+          ],
+          "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/combined-reassessment.json SHA256 ad487eee3d5fd8258c5204a1486cbd14ef91d662065ed1d524a371a5ad7237cd",
+          "next_action": "Root binds successor S04-02-native-c04-targeted-pair-build15 to the exact already-reviewed selector00d3318d/remote3bb92bc9/source459 candidate9e3cbf1b/currentvalidator3ac6, permanent fresh receipt and checked attempt-id. Successor dispatcher changes only explicit attempt/path identity bindings. Execute once only with sufficient original phase/cumulative allowance; preserve all failure history.",
+          "failed_attempt_ids": [
+            "S04-02-native-c04-release-pair-build13",
+            "S04-02-resume-backend-model-observation1",
+            "S04-02-native-c04-targeted-pair-build14"
+          ]
+        },
+        "result": "FAIL",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 0.058,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/compile-targeted-c04-pair15/result.json SHA256 f883cd283b6a108901d8c971f84dcb38d0cf4104e3d9e6d18ebe5d6d05737140",
+        "dispatch": "NOT_DISPATCHED",
+        "pre_action_gate": "FAIL",
+        "functional_execution": "NOT_RUN",
+        "disposition": "Actualfailedguarddispatch/noSSH, preserveoriginalFAIL/cost/chronology; notexecutedfunctionalattempt."
+      },
+      {
+        "id": "S04-02-native-c04-prefile-transfer17-registration1",
+        "result": "NOT_RUN",
+        "remote_disposition": "NOT_DISPATCHED",
+        "elapsed_seconds": 0.061,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/current-c04-native17/prefile-transfer17/predispatch-refusal1/disposition.json SHA256 7057b554916ce7c78667e0d8f81f978071a2315f95e05aa99dbe2600bcf840b0; no permanentlease; controllerdirectreviewapprovedcorrectedbindingonly."
+      },
+      {
+        "id": "S04-02-current-c04-owned-recovery18-registration1",
+        "result": "REFUSED_BEFORE_SSH",
+        "elapsed_seconds": 0.066,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/current-c04-native18/retained-fixture-recovery18/predispatch-refusal1/result.json SHA256 fe787d0fec94432cf49e481f0afe00391ea82567210fe8f8b81c2afb24a47836",
+        "reason": "Root redundantly carried alreadyacknowledged observer18 reassessment IDs when current failurewindow empty; removes only stale repeated declaration. Carrier/source/native bounds unchanged."
       }
-    }
+    ]
   },
   "slice_contract": {
     "version": 1,
     "slice": "S04-02",
     "specification": {
       "path": "docs/UX_SLICE_S04_02.md",
-      "sha256": "f491acb05a5c1c69546ca529aed358efb8e0b1721a712f9d1f53e1926c3a40df"
+      "sha256": "7aa80909c90435149939508d5b3d630c781e1573d9a0f3875805ad45132677bf"
     },
     "design": {
       "journey": "Security or Authentication & Recovery \u2192 GET/POST /settings/password \u2192 own-account current password+fresh TOTP \u2192 confirmed authoritative change and current-session revocation, or explicit refusal/contained incomplete result. Navigation/Cancel submit no mutation.",
@@ -15700,6 +16427,1355 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "cost_accounting": "Report actual full-action wall-clock; monetary/token compute cost remains UNKNOWN unless measured. No implied budget reset from a new package, investigation window or agent.",
     "preserved": "Original20 obligations, nine scenarios, frozen R2/R3 requirements and genuine safety boundaries remain; no scope reduction or fabricated acceptance.",
     "current_named_gap": "Actual Rust SQL/hash/coordinator and native service execution replace Python application workers; required ordinary-login/SMTP TCP containment remains unqualified. No new frontend framework or unchanged fixture rerun."
+  },
+  "execution_contract": {
+    "version": 1,
+    "environment": [
+      {
+        "id": "obsd1",
+        "host": "obsd1.blackbagsecurity.com",
+        "address": "192.168.1.44",
+        "status": "PASS",
+        "software": {
+          "OpenBSD": "7.9",
+          "machine": "amd64"
+        },
+        "observed_at": "2026-10-19T09:24:46Z",
+        "evidence": {
+          "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/observe-build13/result.json",
+          "sha256": "7684ac184a76bcf323816c99f9a8e34c76dd80b990798a4fd383505198f564d0"
+        }
+      },
+      {
+        "id": "mail",
+        "host": "mail.blackbagsecurity.com",
+        "address": "216.128.179.75",
+        "status": "PASS",
+        "software": {
+          "OpenBSD": "7.9",
+          "machine": "amd64",
+          "PostfixAdmin": "versionUNKNOWN; sourcefixedmetadataobserved"
+        },
+        "observed_at": "2026-10-19T09:42:45Z",
+        "evidence": {
+          "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/observe-backend-model2/result.json",
+          "sha256": "11221a98a7f66a3c9c7f03c85010cffe653912f11b6784fcdad066e732e03231"
+        }
+      }
+    ],
+    "gaps": [
+      {
+        "id": "execution-guardrails",
+        "outcome_ids": [
+          "authoritative-native-password-workflow",
+          "fresh-stepup-and-session-containment",
+          "password-form-and-navigation",
+          "actual-password-status"
+        ],
+        "test_ids": [
+          "S04-02-T04",
+          "S04-02-T05"
+        ],
+        "allowed_paths": [
+          "AGENTS.md",
+          "docs/UX_SLICE_S04_02.md",
+          "docs/AGENT_DEVELOPMENT_FRAMEWORK.md",
+          "docs/CURRENT_PROJECT_STATUS.md",
+          "docs/DECISION_LOG.md",
+          "docs/UX_EXECUTION_LEDGER.md",
+          "maint/ux/validate_acceptance.py",
+          "maint/ux/test_validate_acceptance.py"
+        ],
+        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/resumption-baseline.json; pauseddrift/refusaldispatch/targetscope gaps."
+      },
+      {
+        "id": "primary-c04",
+        "outcome_ids": [
+          "authoritative-native-password-workflow"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "src/account_password_server.rs",
+          "src/account_admission_runtime_tests.rs",
+          "src/account_password_fstat.rs",
+          "src/account_password_process.rs"
+        ],
+        "reference": "Case12FAIL/C04; reviewed2Rustdiagnosticsonly, uniqueproductcauseUNKNOWN."
+      },
+      {
+        "id": "installed-workflow",
+        "outcome_ids": [
+          "authoritative-native-password-workflow",
+          "fresh-stepup-and-session-containment",
+          "password-form-and-navigation",
+          "actual-password-status"
+        ],
+        "test_ids": [
+          "S04-02-T03",
+          "S04-02-T04",
+          "S04-02-T05",
+          "S04-02-T06",
+          "S04-02-T07",
+          "S04-02-T08",
+          "S04-02-T09"
+        ],
+        "allowed_paths": [
+          "src/account_password_server.rs",
+          "src/account_admission_runtime_tests.rs"
+        ],
+        "reference": "Composition3sourceclear/uncompiled; SQL/hash/primary/containment/RuntimeinstalledOPEN; expandreviewedfilesonlyfordemonstratedgap."
+      },
+      {
+        "id": "backend-bootstrap",
+        "outcome_ids": [
+          "authoritative-native-password-workflow",
+          "fresh-stepup-and-session-containment",
+          "password-form-and-navigation",
+          "actual-password-status"
+        ],
+        "test_ids": [
+          "S04-02-T03",
+          "S04-02-T04",
+          "S04-02-T05",
+          "S04-02-T06",
+          "S04-02-T07",
+          "S04-02-T08"
+        ],
+        "allowed_paths": [
+          "maint/account-runtime/install_account_password.py",
+          "maint/account-runtime/rc.d/osmap_account_password",
+          "maint/account-runtime/submission/dovecot.conf.in",
+          "maint/account-runtime/submission/dovecot-sql.conf.ext.in",
+          "maint/account-runtime/submission/pf-anchor.conf",
+          "maint/account-runtime/submission/postfix-master.cf.fragment",
+          "maint/account-runtime/osmap-imap-epoch-plugin.c",
+          "src/account_password_submission.rs",
+          "src/http/password_tests.rs"
+        ],
+        "reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/bootstrap-scope-review.json SHA256 3f313b9a4a9f335ae981a0b01a63e9075557ad81acace8ba0bd7f3b1c181400b; actual renderer/role/relay/C-plugin qualification missing. Service-wide submission cutover with account-scoped policy, not purely account-only config. No fake Generation or ABI-only qualification."
+      }
+    ],
+    "recipes": [
+      {
+        "id": "guardrails-source-check",
+        "kind": "SOURCE",
+        "environment_ids": [],
+        "gap_ids": [
+          "execution-guardrails"
+        ],
+        "test_ids": [
+          "S04-02-T04",
+          "S04-02-T05"
+        ],
+        "allowed_paths": [
+          "AGENTS.md",
+          "docs/UX_SLICE_S04_02.md",
+          "docs/AGENT_DEVELOPMENT_FRAMEWORK.md",
+          "docs/CURRENT_PROJECT_STATUS.md",
+          "docs/DECISION_LOG.md",
+          "docs/UX_EXECUTION_LEDGER.md",
+          "maint/ux/validate_acceptance.py",
+          "maint/ux/test_validate_acceptance.py"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/usr/bin/python3",
+            "arguments": [
+              "-B",
+              "-m",
+              "unittest",
+              "discover",
+              "-s",
+              "maint/ux",
+              "-p",
+              "test_validate_acceptance.py"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "Focusedvalidatorrefusals+existingtestsPASS; sourceonly/notnativeT04/T05closure.",
+        "prerequisites": []
+      },
+      {
+        "id": "observe-build13",
+        "kind": "DISCOVERY",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "primary-c04"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "src/account_password_server.rs",
+          "src/account_admission_runtime_tests.rs"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/usr/bin/python3",
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/observe-build13/execute.py"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "Freshread-only identity/ownership or installedmodelmetadata, zeroSQL/auth/configwrites/historicalsignals/deletion; allnewutilitygroupsreapedgone. Metadataisnotfullbackendworkflowproof.",
+        "prerequisites": [
+          {
+            "id": "independent-frozen-dispatch-review",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/independent-review.json",
+              "sha256": "67a1f1e28580ca21cf81dd03ca74b9e8d955c817365ebba5a8548661686a3318"
+            }
+          },
+          {
+            "id": "fixed-read-only-source",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/observe-build13/remote.py",
+              "sha256": "5b65c58b2d7ac412d063398a993451636c22ef6b3b66cdb0874efe45605918dc"
+            }
+          }
+        ]
+      },
+      {
+        "id": "observe-backend-model",
+        "kind": "DISCOVERY",
+        "environment_ids": [
+          "mail"
+        ],
+        "gap_ids": [
+          "primary-c04"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "src/account_password_server.rs",
+          "src/account_admission_runtime_tests.rs"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/usr/bin/python3",
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/observe-backend-model/execute.py"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "Freshread-only identity/ownership or installedmodelmetadata, zeroSQL/auth/configwrites/historicalsignals/deletion; allnewutilitygroupsreapedgone. Metadataisnotfullbackendworkflowproof.",
+        "prerequisites": [
+          {
+            "id": "independent-frozen-dispatch-review",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/independent-review.json",
+              "sha256": "67a1f1e28580ca21cf81dd03ca74b9e8d955c817365ebba5a8548661686a3318"
+            }
+          },
+          {
+            "id": "fixed-read-only-source",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/observe-backend-model/remote.py",
+              "sha256": "5b65c58b2d7ac412d063398a993451636c22ef6b3b66cdb0874efe45605918dc"
+            }
+          }
+        ]
+      },
+      {
+        "id": "compile-targeted-c04-pair",
+        "kind": "NATIVE",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "primary-c04"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "src/account_password_server.rs",
+          "src/account_admission_runtime_tests.rs"
+        ],
+        "operations": [
+          {
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/compile-targeted-c04-pair14/execute.py"
+            ],
+            "privilege": "user",
+            "program": "/usr/bin/python3",
+            "target_id": "local"
+          }
+        ],
+        "expected": "PASS exact current libkind/profile.testtrue executable and binkind/profile.testfalse helper; opt3/freshfalse/fullhash/metadata; source459beforeafter; bothborncompilergroupsgone/scratchgone. Anyfailure retains actualdisposition, no nativeapp/SQL/account/service actions.",
+        "prerequisites": [
+          {
+            "id": "frozen-target-selected-compiler-review",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/compile14-review.json",
+              "sha256": "745c927fd189dbd3dcad4fd53c30ed1afd8bde83e0f9e51dfc26f2bbdf818458"
+            }
+          },
+          {
+            "id": "fresh-build13-readonly-disposition",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/observe-build13/result.json",
+              "sha256": "7684ac184a76bcf323816c99f9a8e34c76dd80b990798a4fd383505198f564d0"
+            }
+          }
+        ]
+      },
+      {
+        "id": "compile-targeted-c04-pair15",
+        "kind": "NATIVE",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "primary-c04"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "src/account_password_server.rs",
+          "src/account_admission_runtime_tests.rs"
+        ],
+        "operations": [
+          {
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/compile-targeted-c04-pair15/execute.py"
+            ],
+            "privilege": "user",
+            "program": "/usr/bin/python3",
+            "target_id": "local"
+          }
+        ],
+        "expected": "PASS exact current libkind/profile.testtrue executable and binkind/profile.testfalse helper; opt3/freshfalse/fullhash/metadata; source459beforeafter; bothborncompilergroupsgone/scratchgone. Anyfailure retains actualdisposition, no nativeapp/SQL/account/service actions.",
+        "prerequisites": [
+          {
+            "id": "frozen-target-selected-compiler-review",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/compile14-review.json",
+              "sha256": "745c927fd189dbd3dcad4fd53c30ed1afd8bde83e0f9e51dfc26f2bbdf818458"
+            }
+          },
+          {
+            "id": "fresh-build13-readonly-disposition",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/observe-build13/result.json",
+              "sha256": "7684ac184a76bcf323816c99f9a8e34c76dd80b990798a4fd383505198f564d0"
+            }
+          },
+          {
+            "id": "combined-three-failure-reassessment",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/combined-reassessment.json",
+              "sha256": "ad487eee3d5fd8258c5204a1486cbd14ef91d662065ed1d524a371a5ad7237cd"
+            }
+          }
+        ]
+      },
+      {
+        "id": "compile-targeted-c04-pair16",
+        "kind": "NATIVE",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "primary-c04"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "src/account_password_server.rs",
+          "src/account_admission_runtime_tests.rs"
+        ],
+        "operations": [
+          {
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/compile-targeted-c04-pair16/execute.py"
+            ],
+            "privilege": "user",
+            "program": "/usr/bin/python3",
+            "target_id": "local"
+          }
+        ],
+        "expected": "PASS exact current libkind/profile.testtrue executable and binkind/profile.testfalse helper; opt3/freshfalse/fullhash/metadata; source459beforeafter; bothborncompilergroupsgone/scratchgone. Anyfailure retains actualdisposition, no nativeapp/SQL/account/service actions.",
+        "prerequisites": [
+          {
+            "id": "frozen-target-selected-compiler-review",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/compile14-review.json",
+              "sha256": "745c927fd189dbd3dcad4fd53c30ed1afd8bde83e0f9e51dfc26f2bbdf818458"
+            }
+          },
+          {
+            "id": "fresh-build13-readonly-disposition",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/observe-build13/result.json",
+              "sha256": "7684ac184a76bcf323816c99f9a8e34c76dd80b990798a4fd383505198f564d0"
+            }
+          },
+          {
+            "id": "combined-two-executed-failures-and-two-dispatch-refusals",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/combined-reassessment2.json",
+              "sha256": "310f53e056aeb7fb3fff3802d1914e3616055e179352045404ce063a4dab5651"
+            }
+          }
+        ]
+      },
+      {
+        "id": "observe-backend-model2",
+        "kind": "DISCOVERY",
+        "environment_ids": [
+          "mail"
+        ],
+        "gap_ids": [
+          "primary-c04"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "src/account_password_server.rs",
+          "src/account_admission_runtime_tests.rs"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/usr/bin/python3",
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/observe-backend-model2/execute.py"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "FixedpublicPostfixAdminsource/hashselectionmetadata or truthfulFAIL; no nonessentialpackageutility, noDB/auth/configwrites/historicalsignals/deletes. Successnotmodelbehaviourqualification.",
+        "prerequisites": [
+          {
+            "id": "independent-model2-delta-review",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/model2-review.json",
+              "sha256": "fc225e7b2abc381a6e36040890dbd86d5aa4e171cf5c5dd272ecdf1729acead6"
+            }
+          }
+        ]
+      },
+      {
+        "id": "observe-build16",
+        "kind": "DISCOVERY",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "primary-c04"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "src/account_password_server.rs",
+          "src/account_admission_runtime_tests.rs"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/usr/bin/python3",
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/observe-build16/execute.py"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "Freshcurrentcompiler16group/scratchmetadata; nohistoricalsignalling/delete/ownershipclaim; fixedlegacyselectorlabeldeclared, sourceactualtargets16.",
+        "prerequisites": [
+          {
+            "id": "independent-observer16-binding-review",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/observer16-review.json",
+              "sha256": "b10a4126223ef9bc3b15d00b5f0ee6e4e1e02fd1f64f1fadad11d7f76af750ca"
+            }
+          }
+        ]
+      },
+      {
+        "id": "compile-mixed-current-c04-pair17",
+        "kind": "NATIVE",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "primary-c04"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "src/account_password_server.rs",
+          "src/account_admission_runtime_tests.rs"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/usr/bin/python3",
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/compile-mixed-current-c04-pair17/execute.py"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "Exactproductionhelperreleaseopt3/debug0/bin + semanticclienttestopt0/debug0/lib/debugdeps; all459sources/hash/fresh/profile/ownedgroups/scratchconfirmed. TestclientNOTproductiontimingqualification.",
+        "prerequisites": [
+          {
+            "id": "independent-mixedprofile-compiler17-review",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/compiler17-review.json",
+              "sha256": "fff713436beb876ab3fcdb2872cfda165282f03f6e2ff332566025813c987c81"
+            }
+          },
+          {
+            "id": "fresh-compiler16-readonly-absence",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/observe-build16/result.json",
+              "sha256": "a2ac764b9b8f1aac2cbf2c1afe1cd307023ff223a5276ff9d5f3610c25fc0033"
+            }
+          }
+        ]
+      },
+      {
+        "id": "observe-backend-model3",
+        "kind": "DISCOVERY",
+        "environment_ids": [
+          "mail"
+        ],
+        "gap_ids": [
+          "primary-c04"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "src/account_password_server.rs",
+          "src/account_admission_runtime_tests.rs"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/usr/bin/python3",
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/observe-backend-model3/execute.py"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "Fourexactobservedsourcepins/publichandler/hashfunctionwindow/configalgorithm-includepathsONLY; noPHPexecution/DBcredentialexport/SQL/auth/mutation. Sourceinterpretationrequired, runtimeNOTQUALIFIED.",
+        "prerequisites": [
+          {
+            "id": "independent-sourceprojection-review",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/model3-review.json",
+              "sha256": "9a806bec65a18344ea0af7eddd5ea8809c807136102c9a0397e787a6f96cb1b4"
+            }
+          }
+        ]
+      },
+      {
+        "id": "capture-current-c04-artifacts17",
+        "kind": "NATIVE",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "primary-c04"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "src/account_password_server.rs",
+          "src/account_admission_runtime_tests.rs"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/usr/bin/python3",
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/compile-mixed-current-c04-pair17/artifact-capture17/capture.py"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "Twoexactownedrawartifacts/fullhashandlosslessgzip; read-onlySCPgroupgone; noexecution/service/credentialeffect. Productionhelper/testclientprofilesdistinct.",
+        "prerequisites": [
+          {
+            "id": "actual-compiler17-PASS",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/compile-mixed-current-c04-pair17/result.json",
+              "sha256": "271f99d695d01bb300b5623a05da2826d127bfa8aa15873a9e3609c528252b3e"
+            }
+          },
+          {
+            "id": "independent-exactcapture-review",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/capture17-review.json",
+              "sha256": "898fd5bb37804d626b0904e8174431bf09b5ac8f57952aa271caebfc29fc335d"
+            }
+          }
+        ]
+      },
+      {
+        "id": "observe-backend-model4",
+        "kind": "DISCOVERY",
+        "environment_ids": [
+          "mail"
+        ],
+        "gap_ids": [
+          "primary-c04"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "src/account_password_server.rs",
+          "src/account_admission_runtime_tests.rs"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/usr/bin/python3",
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/observe-backend-model4/execute.py"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "BoundedfixedpublicLogin and hashdefinition sourceprojection; noPHPexecution/SQL/auth/credentialread ormutation; notruntimeproof.",
+        "prerequisites": [
+          {
+            "id": "independent-fixed-publicsource-review",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/model4-review.json",
+              "sha256": "6d8fe67eef27c5c44631c243afaf5f94bb66071a48e23bf1993c05e5876c1087"
+            }
+          }
+        ]
+      },
+      {
+        "id": "prefile-current-c04-artifacts17",
+        "kind": "NATIVE",
+        "environment_ids": [
+          "mail"
+        ],
+        "gap_ids": [
+          "primary-c04"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "src/account_password_server.rs",
+          "src/account_admission_runtime_tests.rs"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/usr/bin/python3",
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/current-c04-native17/prefile-transfer17/execute.py"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "Exactprivateexclusivefoo0700stage/packet0600/count/hash/EOF/lease; norootwrite/children/helper/service/SQL/authenticationeffects.",
+        "prerequisites": [
+          {
+            "id": "actual-capture17-PASS",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/compile-mixed-current-c04-pair17/artifact-capture17/result.json",
+              "sha256": "5321fb502f2a86ebf517a7cc0b7d8638b4d1d2662942ab2c81c2666904b39537"
+            }
+          },
+          {
+            "id": "independent-prefile17-review",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/prefile17-review.json",
+              "sha256": "0a82c7232ae7f4e9431225b7ffac79964515e64acc46789f6274f032333df7a2"
+            }
+          }
+        ]
+      },
+      {
+        "id": "publish-current-c04-artifacts17",
+        "kind": "NATIVE",
+        "environment_ids": [
+          "mail"
+        ],
+        "gap_ids": [
+          "primary-c04"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "src/account_password_server.rs",
+          "src/account_admission_runtime_tests.rs"
+        ],
+        "operations": [
+          {
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/current-c04-native17/local-publication17/execute.py"
+            ],
+            "privilege": "user",
+            "program": "/usr/bin/python3",
+            "target_id": "local"
+          }
+        ],
+        "expected": "Validate exactcurrentregularprefileidentity/hash thenexecunchangedbounddualreceiver; newexclusive root0700stage/sixexactcurrentpayloads/leases; nohelper/fixture/claim/service/SQL/auth. Preserveoldimmutablecase12sixfiles/claim. Partialstage retained onfailure.",
+        "prerequisites": [
+          {
+            "id": "actual-current-prefile-PASS",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/current-c04-native17/prefile-transfer17/result.json",
+              "sha256": "bd060b29ee3067c678c0e1b2847a2e809743325ec8b8c27e588b5ccefcd87461"
+            }
+          },
+          {
+            "id": "independent-publication17-review",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/publication17-review.json",
+              "sha256": "5573746ee21b0aec83da00fa3e910efff21abcd7a68cde506b61a16014c7f1fe"
+            }
+          }
+        ]
+      },
+      {
+        "id": "execute-current-c04-admission17",
+        "kind": "NATIVE",
+        "environment_ids": [
+          "mail"
+        ],
+        "gap_ids": [
+          "primary-c04"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "src/account_password_server.rs",
+          "src/account_admission_runtime_tests.rs"
+        ],
+        "operations": [
+          {
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/current-c04-native17/first-execution17/execute.py"
+            ],
+            "privilege": "user",
+            "program": "/usr/bin/python3",
+            "target_id": "local"
+          }
+        ],
+        "expected": "Oneexisting150scontrolledRustserviceadmissioncase; actualwrongpwrefusal/correctpwadmission+epochrevalidation OR exactC04Error8/terminalstage/preTERMstate. Ownedcleanup/operatorstatepreservation measured; anyuncertaintyretainsstate/noauto retry. Nopasswordrotation/provider/operatorcredentialmutation; componentonlynotfullworkflow.",
+        "prerequisites": [
+          {
+            "id": "actual-current-publication-PASS",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/current-c04-native17/local-publication17/result.json",
+              "sha256": "55ba6a7a8bb731e07c326fa7f99f36c395cc88f61d8a5fb6a8c97f19ebba7446"
+            }
+          },
+          {
+            "id": "independent-execution17-review",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/execution17-review.json",
+              "sha256": "06fb31b0bcb01accabfe311fa70faec2b517c44a9420f123767c7966be4d677c"
+            }
+          }
+        ]
+      },
+      {
+        "id": "observe-current-c04-retained17",
+        "kind": "DISCOVERY",
+        "environment_ids": [
+          "mail"
+        ],
+        "gap_ids": [
+          "primary-c04"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "src/account_password_server.rs",
+          "src/account_admission_runtime_tests.rs"
+        ],
+        "operations": [
+          {
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/current-c04-native17/retained-fixture-observation17/execute.py"
+            ],
+            "privilege": "user",
+            "program": "/usr/bin/python3",
+            "target_id": "local"
+          }
+        ],
+        "expected": "current17 retained-state read-only ownership observation only; no renewed fixture authority, mutation or historical PID signal",
+        "prerequisites": [
+          {
+            "id": "independent-observer17-review",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/observer17-review.json",
+              "sha256": "59516fdfdb40916513a70cffdafaa032d9967648f032b18da76e2e59faf88842"
+            }
+          },
+          {
+            "id": "combined-current-failure-reassessment",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/execution17-outcome-reassessment.json",
+              "sha256": "7e90e192791f11ae632e2b3cb66ce855ce2c712d008b5c054f4e82e547bc0c02"
+            }
+          }
+        ]
+      },
+      {
+        "id": "recover-current-c04-owned17",
+        "kind": "NATIVE",
+        "environment_ids": [
+          "mail"
+        ],
+        "gap_ids": [
+          "primary-c04"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "src/account_password_server.rs",
+          "src/account_admission_runtime_tests.rs"
+        ],
+        "operations": [
+          {
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/current-c04-native17/retained-fixture-recovery17/execute.py"
+            ],
+            "privilege": "user",
+            "program": "/usr/bin/python3",
+            "target_id": "local"
+          }
+        ],
+        "expected": "fresh-owned exact current17 disposal only; no expired fixture authority renewed Exact2rows16files2users/groups4normalizeddirs/original25+ordinary3+samecurrentmasterpreserved; nohistoricalsignals/livesocketunlink.",
+        "prerequisites": [
+          {
+            "id": "actual-fresh-owned-observation",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/current-c04-native17/retained-fixture-observation17/result.json",
+              "sha256": "7e2447d69f47020d1371f2d4704cdf9f40cd782d79930d5746ae98a88f09bd89"
+            }
+          },
+          {
+            "id": "independent-recovery17-review",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/recovery17-review.json",
+              "sha256": "2d7f8703ff7b7fb1db9aaaf2edc68d8f7385f390c2a0a33edf88894933b82207"
+            }
+          }
+        ]
+      },
+      {
+        "id": "compile-helper-loop18",
+        "kind": "NATIVE",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "primary-c04"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "src/account_password_server.rs",
+          "src/account_admission_runtime_tests.rs"
+        ],
+        "operations": [
+          {
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/compile-helper-loop18/execute.py"
+            ],
+            "privilege": "user",
+            "program": "/usr/bin/python3",
+            "target_id": "local"
+          }
+        ],
+        "expected": "helper-only release compile of six-site loop error discriminator; no test/client/application/service/account action Exactreleaseopt3helper/current459/sourcebeforeafter/freshfalse/rawhash/ownedcompilergroup/scratchgone; no unchangedclientrebuild.",
+        "prerequisites": [
+          {
+            "id": "actual-owned-recovery17-PASS",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/current-c04-native17/retained-fixture-recovery17/result.json",
+              "sha256": "ed4688db470a9d8ad864f42a2878bfb708961157079be0757ed21d5df35ef0c7"
+            }
+          },
+          {
+            "id": "independent-helpercompiler18-review",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/compile18-review.json",
+              "sha256": "8ee6b052dd59ca52ed93327bf7058f4bf0297acd7abf7df846880e5646062ce1"
+            }
+          },
+          {
+            "id": "independent-loop-source-clientreuse-review",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/loop18-product-review.json",
+              "sha256": "9d439e01f94f9d2027f06f4c0de04d65c9a396c65535ca5feb5c73e1794ba733"
+            }
+          }
+        ]
+      },
+      {
+        "id": "capture-current-c04-loop-helper18",
+        "kind": "NATIVE",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "primary-c04"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "src/account_password_server.rs",
+          "src/account_admission_runtime_tests.rs"
+        ],
+        "operations": [
+          {
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/compile-helper-loop18/artifact-capture18/capture.py"
+            ],
+            "privilege": "user",
+            "program": "/usr/bin/python3",
+            "target_id": "local"
+          }
+        ],
+        "expected": "actual build18 helper-only capture; existing controlled client retained from17, no execution Exactrawhash/size and losslessgzip; ownedSCPgroupreaped/gone.",
+        "prerequisites": [
+          {
+            "id": "actual-helper18-build-PASS",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/compile-helper-loop18/result.json",
+              "sha256": "53de3575f4ddd79ca3406c5de0fecf56c95b059255c1b1376e7138c3db75b763"
+            }
+          },
+          {
+            "id": "independent-capture18-review",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/capture18-review.json",
+              "sha256": "ccc02256467108ca2b06804ec9c3e7363431840b40a6e8ee83942ef8083f6827"
+            }
+          }
+        ]
+      },
+      {
+        "id": "observe-fixed-bootstrap-facts1",
+        "kind": "DISCOVERY",
+        "environment_ids": [
+          "mail"
+        ],
+        "gap_ids": [
+          "backend-bootstrap"
+        ],
+        "test_ids": [
+          "S04-02-T03",
+          "S04-02-T06"
+        ],
+        "allowed_paths": [
+          "maint/account-runtime/install_account_password.py",
+          "maint/account-runtime/rc.d/osmap_account_password",
+          "maint/account-runtime/submission/dovecot.conf.in",
+          "maint/account-runtime/submission/dovecot-sql.conf.ext.in",
+          "maint/account-runtime/submission/pf-anchor.conf",
+          "maint/account-runtime/submission/postfix-master.cf.fragment",
+          "maint/account-runtime/osmap-imap-epoch-plugin.c",
+          "src/account_password_submission.rs",
+          "src/http/password_tests.rs"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/usr/bin/python3",
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/bootstrap-carrier1/observe-execution1/execute.py"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "Bounded read-only actual config/version/role/PF selection facts or retained explicit failure; no bootstrap/runtime qualification",
+        "prerequisites": [
+          {
+            "id": "actual-owned-recovery17-PASS",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/current-c04-native17/retained-fixture-recovery17/result.json",
+              "sha256": "ed4688db470a9d8ad864f42a2878bfb708961157079be0757ed21d5df35ef0c7"
+            }
+          },
+          {
+            "id": "independent-bootstrap-observer-review",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/bootstrap-observer-dispatch-review.json",
+              "sha256": "db6a210f7b0012af1b9bf1abc76f432ffcefaa37864a46a905c61e6d15102bd4"
+            }
+          },
+          {
+            "id": "independent-bounded-observer-source-review",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/bootstrap-observer-source-review.json",
+              "sha256": "f8e7548272340b94b3225669ba5f31255f8df1f25f43087003e125247644b220"
+            }
+          }
+        ]
+      },
+      {
+        "id": "prefile-current-c04-loop-artifacts18",
+        "kind": "NATIVE",
+        "environment_ids": [
+          "mail"
+        ],
+        "gap_ids": [
+          "primary-c04"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "src/account_password_server.rs",
+          "src/account_admission_runtime_tests.rs"
+        ],
+        "operations": [
+          {
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/current-c04-native18/prefile-transfer18/execute.py"
+            ],
+            "privilege": "user",
+            "program": "/usr/bin/python3",
+            "target_id": "local"
+          }
+        ],
+        "expected": "Exactcurrent16000230Bprivatepacket/newexclusivefoo0700stage+0600file/count/hash/EOF/leases; no root/helper/fixture/claim/auth/SQL/serviceeffect.",
+        "prerequisites": [
+          {
+            "id": "actual-helper18-capture-PASS",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/compile-helper-loop18/artifact-capture18/result.json",
+              "sha256": "4118155992ba2f112651bb1ec7f9be627b2b8223d061172c2a52a450f43f505c"
+            }
+          },
+          {
+            "id": "independent-prefile18-review",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/prefile18-review.json",
+              "sha256": "3d77dc714c531ebb229f773495becbdfe1b3287448e99a370948ba8839e9821a"
+            }
+          }
+        ]
+      },
+      {
+        "id": "publish-current-c04-loop-artifacts18",
+        "kind": "NATIVE",
+        "environment_ids": [
+          "mail"
+        ],
+        "gap_ids": [
+          "primary-c04"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "src/account_password_server.rs",
+          "src/account_admission_runtime_tests.rs"
+        ],
+        "operations": [
+          {
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/current-c04-native18/local-publication18/execute.py"
+            ],
+            "privilege": "user",
+            "program": "/usr/bin/python3",
+            "target_id": "local"
+          }
+        ],
+        "expected": "ExactactualprefilePath/leases/currentraw+wirehashes; newrootstage/sixpayloads only; nohelper/fixture/claim/auth/SQL/serviceeffects.",
+        "prerequisites": [
+          {
+            "id": "actual-prefile18-PASS",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/current-c04-native18/prefile-transfer18/result.json",
+              "sha256": "1b7ab4353f719e9e536a62ab057f41f5e5a94426148fa367cc23ca95b46cc492"
+            }
+          },
+          {
+            "id": "independent-publication18-corrected-review",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/publication18-review.json",
+              "sha256": "28ed18e295e67ce888d5118b20256c6c7a881a0a37de27f143c91980d19b19c0"
+            }
+          }
+        ]
+      },
+      {
+        "id": "execute-current-c04-loop-admission18",
+        "kind": "NATIVE",
+        "environment_ids": [
+          "mail"
+        ],
+        "gap_ids": [
+          "primary-c04"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "src/account_password_server.rs",
+          "src/account_admission_runtime_tests.rs"
+        ],
+        "operations": [
+          {
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/current-c04-native18/first-execution18/execute.py"
+            ],
+            "privilege": "user",
+            "program": "/usr/bin/python3",
+            "target_id": "local"
+          }
+        ],
+        "expected": "Oneexistingcontrolledadmission: actualwrong/correct/epoch OR fixed6site loopfailure/stopobservation plus strictownedcleanup. No productcauseinferencefromgenericerror; nofullworkflowclaim.",
+        "prerequisites": [
+          {
+            "id": "actual-publication18-PASS",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/current-c04-native18/local-publication18/result.json",
+              "sha256": "ef3da92e65c597324fc312b903eabd483792c8beab3c62f4eac623875edc1ca2"
+            }
+          },
+          {
+            "id": "actual-owned-recovery17-PASS",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/current-c04-native17/retained-fixture-recovery17/result.json",
+              "sha256": "ed4688db470a9d8ad864f42a2878bfb708961157079be0757ed21d5df35ef0c7"
+            }
+          },
+          {
+            "id": "independent-execution18-review",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/execution18-review.json",
+              "sha256": "1e035bc8671ec9d32a489e6d543406e4c6175d643b9583ad20c16f75581fcb1d"
+            }
+          }
+        ]
+      },
+      {
+        "id": "observe-current-c04-retained18",
+        "kind": "DISCOVERY",
+        "environment_ids": [
+          "mail"
+        ],
+        "gap_ids": [
+          "primary-c04"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "src/account_password_server.rs",
+          "src/account_admission_runtime_tests.rs"
+        ],
+        "operations": [
+          {
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/current-c04-native18/retained-fixture-observation18/execute.py"
+            ],
+            "privilege": "user",
+            "program": "/usr/bin/python3",
+            "target_id": "local"
+          }
+        ],
+        "expected": "Fresh exactcurrent18owned-state observation only, no signalledPID/lease renewal/mutation; not cleanupauthorityalone.",
+        "prerequisites": [
+          {
+            "id": "independent-observer18-review",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/observer18-review.json",
+              "sha256": "f1894050a8765b5d6a580571b425a70c6bfc9b76ea3174b69badc5d7d0074328"
+            }
+          },
+          {
+            "id": "combined-current-failure-reassessment",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/execution18-outcome-reassessment.json",
+              "sha256": "09f7dfd9a9509e7a7d2ff3f391cf0fd0755bcbea45b0a4f2524cce06a02b86d9"
+            }
+          }
+        ]
+      },
+      {
+        "id": "recover-current-c04-owned18",
+        "kind": "NATIVE",
+        "environment_ids": [
+          "mail"
+        ],
+        "gap_ids": [
+          "primary-c04"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "src/account_password_server.rs",
+          "src/account_admission_runtime_tests.rs"
+        ],
+        "operations": [
+          {
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/current-c04-native18/retained-fixture-recovery18/execute.py"
+            ],
+            "privilege": "user",
+            "program": "/usr/bin/python3",
+            "target_id": "local"
+          }
+        ],
+        "expected": "Current18 exact owned cleanup:2 syntheticrows16files2users/groups4normalizeddirs, original25+exact22/ordinary3/currentmasterpreserved. No historicalsignals/livesocketunlink/expiredlease renewal.",
+        "prerequisites": [
+          {
+            "id": "actual-fresh-owned-observation",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/current-c04-native18/retained-fixture-observation18/result.json",
+              "sha256": "9aaba82a9e2f1e3a3eafe83da928fdb3d6b99719e9e259f2d7eb310eb5905252"
+            }
+          },
+          {
+            "id": "independent-recovery18-review",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/recovery18-review.json",
+              "sha256": "d4ced27cafea3562ec9f3560af287259315bac4304ade68351f332cfab3bd1a4"
+            }
+          }
+        ]
+      },
+      {
+        "id": "observe-missing-bootstrap-facts2",
+        "kind": "DISCOVERY",
+        "environment_ids": [
+          "mail"
+        ],
+        "gap_ids": [
+          "backend-bootstrap"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "maint/account-runtime/install_account_password.py",
+          "maint/account-runtime/submission/dovecot-sql.conf.ext.in"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/usr/bin/python3",
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/bootstrap-carrier1/observe-execution2/execute.py"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "Read-only missing logical SQL assignment classification, exact existing10.44:2525 SASL category and Postfixrcctl enabled exitstatus only; no repeated configinventory, no auth/SQL/service change.",
+        "prerequisites": [
+          {
+            "id": "independent-exact-minimal-facts-review",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/bootstrap-missing-facts2-review.json",
+              "sha256": "879398f87ded87516a79290b16ffa19d197ead159052173bade08a9047b48678"
+            }
+          },
+          {
+            "id": "actual-current18-owned-recovery",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/current-c04-native18/retained-fixture-recovery18/result.json",
+              "sha256": "2c5202aa33d8907b87a0db6f3f9ee262c32d7a176b20d0b21233d78cbf29cc8d"
+            }
+          }
+        ]
+      }
+    ],
+    "budget": {
+      "objective": "S04-02",
+      "owner": "/root",
+      "started_at": "2026-10-19T09:16:12Z",
+      "deadline_at": "2026-10-19T11:16:12Z",
+      "allowance_seconds": 7200,
+      "consumed_seconds": 6278.631,
+      "history_reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/resumption-baseline.json; historicalUNKNOWN/measuredsegmentsretained; absolutecurrentclock/noparalleldoublecount."
+    },
+    "planned_action": null
   }
 }
 ```
@@ -18905,3 +20981,63 @@ No history rewrite, waiver, public feature activation or full workflow claim.
 - First single-helper upload failed188.918s/remote180.012 before stage or child. My additional transport EOF wait was absent the existing working receiver and unnecessary after fixed count+SHA; removed with independent5894 review. Exact historical blocked subphase remains unknown. No new I/O/EOF/validation may be added to a reused carrier merely for assurance without a demonstrated missing requirement.
 - Corrected upload failed184.631s/remote180.002 after exact wire/hash and partial29360128of65454648-byte publication at owned root stage376add4dc3794ba8; no worker, SQL, principal, config or service action. Partial artifact remains unqualified and retained, no operational incident. Independent977b9585 combined373.549s retained; no third upload, deadline increase, unchanged rebuild or observer.
 - Root/reviewer assess using the already complete retained case10 helper80fc with its explicit older6ec source and a separate fresh diagnostic claim, plus bounded owned-only base syscall trace if needed. New diagnostic5 remains compile-only; current product workflow/form/UAT OPEN. No native probe is yet dispatched.
+
+### 2026-10-19 direct delivery lessons (mutable continuation note)
+
+Operator-requested rules are recorded in AGENTS.md and the existing mutable
+`docs/AGENT_DEVELOPMENT_FRAMEWORK.md`; decision evidence is in DECISION_LOG.md.
+Existing pre-action validation enforces declared windows/owner/exact failure
+reassessment; current receipt checks enforce actual profile/kinds/hashes/leases;
+mandatory hooks and final signatures/equality remain. Expected results, essential
+checks/time/stop, same-objective cumulative accounting, avoiding redundant work,
+safe diagnostics/separate cleanup and acceptance truth remain review duties where
+no existing mechanical check establishes them. No new automation or frozen-plan
+change is asserted. Current build13 action fields remain immutable during compile.
+Continue one C04 causal observation, demonstrated repair and original nine-scenario
+installed workflow; source synchronization alone is not UAT readiness.
+
+### 2026-10-19 regimented resumption — source admission and retained outcomes
+
+The active work order above contains actual fixed environments, demonstrated
+gaps, allowed paths, recipes, checked next action, prerequisite pins and the
+original7200s cumulative allowance from09:16:12UTC. Existing validator13 focused/
+52 full tests pass after correcting test-only R4 fixture assumptions; acceptance
+requirements57/46/11 and all20 password obligations remain. Structural PASS is
+not evidence truth or functional acceptance. Local pre-dispatch refusals retain
+actual costs, no SSH and no claim; root's unsupported extra execution_notes
+field was refused locally and removed without changing the validator/schema.
+
+Actual run17 failed15.631s; run18 failed14.766s at metadata recheck before stop
+was observed. Unique underlying cause remains UNKNOWN. Both operational
+incidents were reconciled with fresh observation and exact owned recovery;
+latest observation18 `9aaba82a` PASS6.554s and recovery18 `2c5202aa` PASS9.0s,
+independent `c40aff88`, preserve original25+22/currentmaster/ordinary3listeners.
+Two synthetic rows,16files,two users/groups removed; four retained directories
+normalized; zero live-socket unlink or historical signal. These cleanup results
+do not upgrade native password FAIL. Rootstage claims/artifacts remain provenance.
+
+Source defect: a live metadata operation holds the same mutex the service's
+500ms liveness recheck spins on. Typed Busy now defers before accept/scheduling
+only for WouldBlock with valid original caller deadline. Other errors retain
+fail-stop and original operation deadlines. Existing closed error categories
+preserve bounded first-site cause information; no raw secret/error text output.
+Exact three-leaf source `a3efb952/048cb7c7/61b6ead4`, patch `38462747`, same
+oldRED/newPASS+expiry regression result `b43d2de9` PASS44.233s, independent source
+`d1192a50` and finalfreeze `af717be8` CLEAR. Native19 remains NOT RUN. No claim
+that live contention uniquely caused native18 or that the password workflow works.
+
+Actual PostfixAdmin/backend reconciliation reused four bounded source reads and
+facts1/facts2. Facts2 `196d8a37` PASS4.169s: nine logical SQL continuations,
+supported password form3/user-query shape, explicit SASL=no on existing2525 route,
+Postfix enabled. DSN projection remains UNSUPPORTED; preserve actual route and
+private DSN, do not infer bad configuration. Isolated unfinished installer/HTTP/
+TRUE-gate plugin candidates are excluded. Full bootstrap/publication, paired
+native scenarios, installed ordinary Runtime, truthful status and owner UAT
+remain open. The original nine scenarios are unchanged.
+
+The next full native19 chain cannot fit the original remaining allowance with
+owned disposition reserved. Complete only this reviewed source admission and
+normal mandatory signed hook; any next execution requires an explicit recorded
+root/controller cumulative forecast and changed action, retaining original7200s,
+all actual spend/failures and uncertainty. This is not an automatic restart or
+permission to report completion. No push is authorized by this resumption.

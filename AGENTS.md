@@ -1,5 +1,36 @@
 # OSMAP Agent Notes
 
+## Current S04-02 regimented resumption — 2026-10-19
+
+The operator explicitly resumed S04-02, approved the execution guardrails and
+requested managed implementation, independent QA and delivery-control agents.
+`/root` owns the single canonical Git/host/native queue and current ledger;
+`/root/password_engineer` prepares isolated product changes,
+`/root/guardrails_engineer` owns the existing acceptance validator/tests and the
+separately isolated HTTP fixture integration; it does not independently approve
+its own changes,
+and `/root/delivery_controller` independently checks scope, evidence, effort,
+producer/cleanup/consumer compatibility and installed readiness. Historical
+agent names and pause/resumption snapshots below are provenance.
+
+The one active ledger work order and its execution_contract govern S04-02.
+Before each expensive/native action, the actual checked dispatcher must call
+the existing validator with the exact --attempt-id. PAUSED/BLOCKED, an expired
+allowance, mismatched source/action, missing prerequisites or out-of-scope
+recipes refuse before dispatch. Preserve cumulative effort/history across
+workers and attempts; independent reassessment does not erase elapsed work.
+Use source-backed environment facts and fixed operation recipes; a newly
+discovered assumption is a named gap, not authority to expand infrastructure.
+Retain all20 obligations and nine scenarios, matching passing evidence and
+operator-account preservation. No new dependency or general QA framework.
+Operator UAT follows all required agent-owned passes and independent review.
+Normal signed commit and operator review before synchronization still apply.
+
+Only S04-02 resumes. Respect the operator's single completion-message request,
+except a concrete blocker requiring operator action. This paragraph records
+authorization and policy; it does not claim deployed functionality or that
+validator declarations prove evidence truth.
+
 ## Current bounded resumption — 2026-10-18
 
 The operator explicitly resumed S04-02 and requested subagents to complete its
@@ -312,3 +343,27 @@ This repository uses sprint-scoped artifact storage for all operator deliveries 
   closeout. The PR #56 directory above remains the historical Slice 00 root.
 
 This layout is mandatory for newly generated sprint artifacts. Existing top-level Downloads artifacts may remain in place unless a separate bounded cleanup or archival operation is explicitly authorized.
+
+## Direct delivery and evidence discipline
+
+For an active delivery, follow the existing mutable SOP in
+`docs/AGENT_DEVELOPMENT_FRAMEWORK.md` and keep the existing active execution
+ledger current. Each step must fix a demonstrated defect, answer one necessary
+question, or verify a required acceptance result. Before code, state the expected
+result, essential checks, finite time allowance and stop condition. Reuse passing
+checks when their source and relevant boundary are unchanged; run changed-boundary
+checks and all mandatory normal commit/push hooks.
+
+Qualify deadlines with the actual intended deployment build profile and artifact
+kind, checked from the compiler receipt. Emit safe, actionable, bounded error
+categories; report functional failure and cleanup disposition separately. Preserve
+same-objective cumulative failure/time history across names, windows and retries.
+Two failed attempts at one boundary require combined independent reassessment
+before another changed action, using the existing validator and ledger.
+
+Review a frozen producer/cleanup/consumer chain once. Permit only validated
+receipt-derived scalar bindings afterward; a semantic/body/source change requires
+review of that change. Keep reviewed source, installed workflow, slice acceptance
+and human UAT distinct. These instructions add review policy, not new automation
+or another approval checkpoint; the SOP identifies the existing mechanical checks
+and their limits. Do not alter frozen plan anchors or manifests to record progress.

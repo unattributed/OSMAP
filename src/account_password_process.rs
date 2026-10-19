@@ -145,7 +145,10 @@ impl MetadataExecutor {
             fstat: Some(fstat),
         }
     }
-    pub(crate) fn recheck_fstat(&self, end: Instant) -> Result<(), CommandExecutionError> {
+    pub(crate) fn recheck_fstat(
+        &self,
+        end: Instant,
+    ) -> Result<crate::account_password_fstat::Recheck, CommandExecutionError> {
         self.fstat.as_ref().ok_or_else(unavailable)?.recheck(end)
     }
     pub(crate) fn with_control(
