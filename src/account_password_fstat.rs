@@ -664,6 +664,7 @@ pub(crate) struct Observer {
     state: Mutex<State>,
 }
 impl Observer {
+    #[allow(dead_code)] // Retained private observer lifecycle, unselected by stock.
     pub(crate) fn start(
         startup: &crate::account_password_peer::Startup,
         metadata: &crate::account_password_process::MetadataExecutor,
@@ -873,6 +874,7 @@ impl Observer {
             Failure::Cleanup
         }))
     }
+    #[allow(dead_code)] // Retained private observer lifecycle, unselected by stock.
     pub(crate) fn shutdown(&self, end: Instant) -> Result<(), CommandExecutionError> {
         let mut state = loop {
             match self.state.try_lock() {

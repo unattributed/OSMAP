@@ -142,13 +142,8 @@ impl ParentPlan {
             add(path, "rwc");
         }
         add("/etc/osmap/account-runtime", "");
-        for path in [
-            "/bin/ps",
-            "/usr/bin/fstat",
-            "/usr/local/libexec/osmap/account-passwd",
-        ] {
-            add(path, "rx");
-        }
+        add("/bin/ps", "rx");
+        add("/usr/local/libexec/osmap/account-passwd", "r");
         for path in crate::account_password_peer::PRIMARY_CONFIGURATION_PATHS {
             if !matches!(
                 *path,

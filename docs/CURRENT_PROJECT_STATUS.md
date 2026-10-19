@@ -1,5 +1,103 @@
 # Current Project Status
 
+Local source gate61 actually failed after57.28046seconds: Rust tests passed,
+but all-target clippy identified one remaining retained legacy Startup::native
+constructor unused in the non-test library. Root adds one function-local
+dead_code annotation, with exact byte parity after removing that line. No
+function body, authority predicate, visibility, cfg or mandatory check changes.
+The seven retained legacy annotations are now explicit; earlier six-annotation
+records remain historical. Existing V10 scanners refresh only shifted current
+inventory/hash links (count9558 and refined high0 unchanged). The failed hook
+and zero-commit result remain retained. One changed normal-hook retry62, actual
+signing and verification must finish within the same approved fifteen minutes.
+Actual retry outcome is source-preservation62/result.json under the existing
+stock-helper-start51 evidence root; no PASS is predeclared.
+
+Operator-authorized local source preservation, 2026-10-19 18:36:53 Toronto
+(22:36:53UTC), fifteen minutes through18:51:53 Toronto. The operator explicitly
+approved the normal gate, signing and commit presentation. This supersedes the
+previous allowance blocker only for that local task; it does not reopen native
+execution, deployment, qualification flags or synchronization. Root verified
+all seven reviewed Rust source hashes unchanged. Reuse the independent source
+reviews, pure control58 and historical held-host prerequisite59 without reruns.
+One normal signed commit runs existing mandatory hooks, then signature/current
+state verification; failure stays failure and no hook is waived. S04-02, native
+workflow, installed QA and UAT remain incomplete. The actual gate/commit/signature
+outcome is recorded at stock-helper-start51/source-preservation61/result.json
+under the existing sprint root. No prospective source entry predeclares PASS.
+
+Current finite-phase blocker, 2026-10-19 20:15UTC: S04-02 is incomplete.
+The285-second normal signed-source action was refused at20:12:42 before Git,
+hooks or signing because only about260.5seconds remained to20:17:03. The latest
+matching normal gate took262.306868seconds, so root will neither shrink the cap
+on inference nor extend the allowance automatically. Seven reviewed Rust source
+leaves, current documentation and derived V10 records remain preserved but
+uncommitted and undeployed. HEAD remains5561df229bd438d5da2f72b7bdeb2e82bd522c3b.
+Current changed source: pure test/typecheck PASS13.107661s; actual held public
+authentication contract59 PASS3.968568s; independent source reconciliation CLEAR.
+Changed OpenBSD artifact, full password workflow and installed QA remain NOT RUN;
+flags remain false and UAT is not invited. All owned53 effects were disposed by
+55/56; protected root evidence stages/failed receipts remain provenance.
+Next bounded proposal is the normal signed local source gate and signature/
+state verification, then operator review before synchronization under AGENTS.
+A later changed native artifact/fresh controlled journey is still required.
+
+Current source intake20:11UTC: the selected password service now uses a typed
+stock-backend authority instead of the optional persistent FSTAT observer.
+Legacy constructors remain unchanged. The same stock authority binds protected
+configuration/SQL writer/cache0, master identity, held auth-client/kernel root
+peer and direct auth child to SQL/hash/primary profiles. One changed pure control
+and typecheck PASS13.107661s. Six function-local legacy dead-code annotations
+are mechanical; no body/guard was suppressed. Existing V10 generators refreshed
+only derived current inventory/hash links; total9558/refined high0 unchanged.
+
+Actual public contract59 PASS3.968568s: a held zero-frame socket connection
+observed one direct auth child UID/GID518 with exact one-token/no-overrides
+argv, matching master/birth and protected socket/root-peer custody.57's idle
+absence remains true historical evidence; it did not establish a UID mismatch.
+Actual53 backend55 PASS6.574204s and frontend56 PASS0.513s disposed all current
+owned operational effects, preserving original public25/master/authbytes/security
+and failed flags. Root evidence stages remain provenance.
+
+Release/WSTG boundary: authentication/authorization/session controls remain
+qualified only to their recorded source or native evidence. Historical53 is
+FAIL, changed-source native workflow and installed QA are NOT RUN, and human
+T09 is not invited. Both qualification flags stay false; source/gate/commit
+results never close S04-02. One normal signed local source admission is pending;
+its actual result/signature live at reduced-stock-path/signed-source-result.json
+under stock-helper-start51. No new native build, fixture, deployment, password
+operation, public service/configuration change or synchronization is included.
+
+Actual19:48UTC outcome: publication52 PASS9.101s, then controlled password
+journey53 FAIL8.751s before HTTP/password mutation. The helper was actually
+created and reaped with exit1; the bounded existing Rust trace identifies
+primary_fstat_after_recheck/unknown/Unavailable. The precise inner cause is
+not yet established. Frontend producer stopped/files retained; transport groups
+are gone, but remote effects remain UNCERTAIN pending fresh absence-qualified
+disposition. No automatic retry, public mail operation, owner-account mutation
+or production flag activation follows. Source investigation and owned cleanup
+continue inside the same finite phase.
+
+Current operator resumption (2026-10-19 19:32 UTC): complete Sprint S04,
+beginning with the existing S04-02 password workflow; then S04-03, S04-04 and
+the accepted R4 retained obligations. Root owns integration/host/Git; the
+password engineer, independent QA and delivery controller own the current
+bounded source/review tasks. This supersedes the earlier local-only hold.
+Signed source preservation completed at `5561df229bd438d5da2f72b7bdeb2e82bd522c3b`:
+normal mandatory gate PASS262.306868s, verified Shopkeeper signature, clean
+tree at completion, cached ahead3/behind0; no push or deployment. The three
+derived V10 records changed without weakening scanner/gate/classification.
+
+The next narrow correction distinguishes helper-start checkpoint/launch
+failures, restores the child signal mask and retains closed startup/exit
+scalars before the unchanged strict cleanup refusal. Focused actual-method
+controls PASS0.138246s; independent source and producer/cleanup/consumer reviews
+are CLEAR. Historical46's cause remains UNKNOWN. A fresh exact publication and
+checked finite action are still required before native execution. No public
+mail lifecycle/configuration operation, unchanged Rust rebuild or production
+qualification-flag activation is included. S04-02 remains incomplete/UAT not
+ready. Earlier checkpoints below are provenance where superseded here.
+
 Local source-preservation resumption (2026-10-19 19:11 UTC): the operator
 assigned a subagent to fix the interrupted mandatory commit gate and preserve
 the reviewed changes in a signed local commit. This resumes only that local

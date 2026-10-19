@@ -12684,3 +12684,157 @@ bounded by the remaining original local task after signature/cleanup reserve;
 it does not renew the native window, erase either failure or create a product
 acceptance claim. Final actual gate/signature/state evidence is final-result.json
 under commit-gate-recovery-20261019, separate from the retained first failure.
+
+
+2026-10-19 19:32 UTC — Operator resumes Sprint S04 completion with managed
+development, independent QA and delivery control. Root retains one integration
+objective and one host/Git queue: finish S04-02, then S04-03/S04-04 and the R4
+retained Sprint requirements. This is a new explicit resumption, not an agent-only
+renewal of the expired earlier phase; all original cost/failure history remains.
+Root chooses a finite45-minute phase through20:17:03UTC.
+
+Signed source preservation is complete at5561df229bd438d5da2f72b7bdeb2e82bd522c3b,
+normal hook PASS262.306868s and verified Shopkeeper signature. No remote write,
+installation or password qualification follows from it. The unchanged scanner
+refresh corrected derived V10 drift; the earlier interruption and failure remain.
+
+Helper-start51 source review identified missing child signal-mask restoration
+and discarded startup/exit evidence. Correct those demonstrated gaps and retain
+fixed checkpoint/launch substeps before containment. The final actual-class
+control PASS0.138246s supersedes a retained unfaithful exception shim caught by
+independent QA. Source QA321c9a79 and whole-chain review1f9a0542 are CLEAR,
+but do not admit a native action. Historical46 cause remains UNKNOWN. Preserve
+strict nonzero/socket/group and recovery refusal; bind new purpose publication
+to actual48 restored authorized-key metadata. Reuse compiler38's exact helper/
+libtest manifest separately from publisher5561; no unchanged Rust rebuild.
+
+The selected cache0 adapter requires actual source-bound disabled-cache evidence,
+not a positive flush event. The T03 execution wording now reflects that already
+accepted method; all20 controls/nine scenarios are unchanged. No public mail
+service lifecycle/configuration action or owner-account mutation is authorized
+by the controlled synthetic journey.
+
+
+2026-10-19 19:55 UTC — Actual52 public artifact publication PASS9.101s;
+actual53 controlled workflow FAIL8.751s before HTTP/password processing.
+The helper was born, reaped exit1, stdout0/stderr123; exact closed diagnostic
+is primary_fstat_after_recheck/unknown/Unavailable. It establishes worker hello
+completed and subsequent custody recheck refused; no unique inner predicate or
+historical46 cause is established. Preserve original helperFalse/requestsFalse,
+retained effects and both stopped SSH groups separately from remote cleanup.
+Independent outcome review0b135187 confirms this interpretation. Original local
+settlement patch-output truncation was corrected before binder/53 dispatch; it
+changed no actor source, admission expiry or host effect.
+
+Fresh observation54 PASS4.088181s: no current helper/actor/owned-role/fixed-utility
+process, helper inode references0 and both private sockets absent. Protected
+receipt7070a536/full9 and original false flags unchanged; no fixture cleanup
+claim. Exact independently reviewed owned disposition remains required.
+
+Independent scope review finds persistent FSTAT worker and reciprocal PID/text/
+PCB graph are implementation mechanisms, not named R2/D04 outcomes. A possible
+smaller stock-only adapter must retain source-bound SQL/writer/query/cache0,
+root master birth/argv, protected fixed auth-client identity/ancestry/kernel
+root peer, verified direct nonroot auth child, confinement and all password/
+TOTP/CAS/epoch/browser/Bob/uncertainty semantics. Source design comparison and
+isolated candidate are authorized; no authority check may be silently deleted
+or native flag asserted from source review. Legacy FSTAT path/failure remains.
+
+
+2026-10-19 20:11 UTC — Selected stock authority source admission.
+
+Current source intake20:11UTC: the selected password service now uses a typed
+stock-backend authority instead of the optional persistent FSTAT observer.
+Legacy constructors remain unchanged. The same stock authority binds protected
+configuration/SQL writer/cache0, master identity, held auth-client/kernel root
+peer and direct auth child to SQL/hash/primary profiles. One changed pure control
+and typecheck PASS13.107661s. Six function-local legacy dead-code annotations
+are mechanical; no body/guard was suppressed. Existing V10 generators refreshed
+only derived current inventory/hash links; total9558/refined high0 unchanged.
+
+Actual public contract59 PASS3.968568s: a held zero-frame socket connection
+observed one direct auth child UID/GID518 with exact one-token/no-overrides
+argv, matching master/birth and protected socket/root-peer custody.57's idle
+absence remains true historical evidence; it did not establish a UID mismatch.
+Actual53 backend55 PASS6.574204s and frontend56 PASS0.513s disposed all current
+owned operational effects, preserving original public25/master/authbytes/security
+and failed flags. Root evidence stages remain provenance.
+
+Release/WSTG boundary: authentication/authorization/session controls remain
+qualified only to their recorded source or native evidence. Historical53 is
+FAIL, changed-source native workflow and installed QA are NOT RUN, and human
+T09 is not invited. Both qualification flags stay false; source/gate/commit
+results never close S04-02. One normal signed local source admission is pending;
+its actual result/signature live at reduced-stock-path/signed-source-result.json
+under stock-helper-start51. No new native build, fixture, deployment, password
+operation, public service/configuration change or synchronization is included.
+
+The next matching native action needs a newly compiled changed helper/client
+from the exact final source manifest and one fresh controlled journey, then the
+combined installed T04–T08 checks. Do not reuse compiler38 as changed-source
+qualification, repeat passed source checks, activate flags, renew profiles, or
+assert release/UAT readiness. Preserve the original finite phase/failure history.
+
+
+
+Current finite-phase blocker, 2026-10-19 20:15UTC: S04-02 is incomplete.
+The285-second normal signed-source action was refused at20:12:42 before Git,
+hooks or signing because only about260.5seconds remained to20:17:03. The latest
+matching normal gate took262.306868seconds, so root will neither shrink the cap
+on inference nor extend the allowance automatically. Seven reviewed Rust source
+leaves, current documentation and derived V10 records remain preserved but
+uncommitted and undeployed. HEAD remains5561df229bd438d5da2f72b7bdeb2e82bd522c3b.
+Current changed source: pure test/typecheck PASS13.107661s; actual held public
+authentication contract59 PASS3.968568s; independent source reconciliation CLEAR.
+Changed OpenBSD artifact, full password workflow and installed QA remain NOT RUN;
+flags remain false and UAT is not invited. All owned53 effects were disposed by
+55/56; protected root evidence stages/failed receipts remain provenance.
+Next bounded proposal is the normal signed local source gate and signature/
+state verification, then operator review before synchronization under AGENTS.
+A later changed native artifact/fresh controlled journey is still required.
+
+Root retains both58invalid-enum and60insufficient-time local refusals, with no
+compiler/host/Git claim for either refusal. No gate/validator/timeout waiver or
+unsigned commit follows. Current actual source result and phase closeout are
+under stock-helper-start51/reduced-stock-path and phase-closeout.json.
+
+
+
+Operator-authorized local source preservation, 2026-10-19 18:36:53 Toronto
+(22:36:53UTC), fifteen minutes through18:51:53 Toronto. The operator explicitly
+approved the normal gate, signing and commit presentation. This supersedes the
+previous allowance blocker only for that local task; it does not reopen native
+execution, deployment, qualification flags or synchronization. Root verified
+all seven reviewed Rust source hashes unchanged. Reuse the independent source
+reviews, pure control58 and historical held-host prerequisite59 without reruns.
+One normal signed commit runs existing mandatory hooks, then signature/current
+state verification; failure stays failure and no hook is waived. S04-02, native
+workflow, installed QA and UAT remain incomplete. The actual gate/commit/signature
+outcome is recorded at stock-helper-start51/source-preservation61/result.json
+under the existing sprint root. No prospective source entry predeclares PASS.
+
+The preserved previous phase-closeout source_only/new_workflow fields apply to
+its reduced-source candidate, not the whole phase that executed53 and owned
+dispositions. A hash-bound scope addendum preserves that distinction without
+rewriting the historical receipt. The pasted daily GPG output is operator
+evidence only; actual signing is verified through this normal commit.
+
+
+2026-10-19 18:41 Toronto —
+Local source gate61 actually failed after57.28046seconds: Rust tests passed,
+but all-target clippy identified one remaining retained legacy Startup::native
+constructor unused in the non-test library. Root adds one function-local
+dead_code annotation, with exact byte parity after removing that line. No
+function body, authority predicate, visibility, cfg or mandatory check changes.
+The seven retained legacy annotations are now explicit; earlier six-annotation
+records remain historical. Existing V10 scanners refresh only shifted current
+inventory/hash links (count9558 and refined high0 unchanged). The failed hook
+and zero-commit result remain retained. One changed normal-hook retry62, actual
+signing and verification must finish within the same approved fifteen minutes.
+Actual retry outcome is source-preservation62/result.json under the existing
+stock-helper-start51 evidence root; no PASS is predeclared.
+
+Independent annotation/combined53+61 review93cf5677 clears exactly one changed
+normal local hook62. Original53FAIL and61lintFAIL57.28046s retain distinct
+causes/cost; no guard or test is waived, and no native/remote action is admitted.
+The original operator15minute deadline22:51:53UTC remains unchanged.

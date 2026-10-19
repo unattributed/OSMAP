@@ -199,6 +199,7 @@ impl NativeProfile {
     }
     /// The real service's measured fixed self/master authority, never a caller
     /// qualification Boolean. SQL/hash use their unchanged graph/config checks.
+    #[allow(dead_code)] // Retained legacy text-graph authority; stock binds StockPeer.
     pub(crate) fn from_startup(
         role: Role,
         startup: std::sync::Arc<crate::account_password_peer::Startup>,
@@ -281,6 +282,26 @@ impl NativeProfile {
             stock: Some(peer),
         })
     }
+    pub(crate) fn from_stock_backend(
+        role: Role,
+        peer: std::sync::Arc<crate::account_password_peer::StockPeer>,
+        deadline: Instant,
+    ) -> Result<Self, Unavailable> {
+        if !matches!(role, Role::Sql | Role::Hash) {
+            return Err(Unavailable);
+        }
+        peer.recheck(deadline).map_err(unavailable)?;
+        let observed = observe(role, deadline, None, None)?;
+        Ok(Self {
+            role,
+            original_deadline: deadline,
+            observed,
+            primary: None,
+            control: None,
+            startup: None,
+            stock: Some(peer),
+        })
+    }
     pub(crate) fn command_args(&self, args: &[String]) -> Result<Vec<String>, Unavailable> {
         match self.role {
             Role::StockPrimary => {
@@ -318,7 +339,15 @@ impl NativeProfile {
         if !matches_command(self.role, program, args)
             || !crate::openbsd::password_native_authority()
             || if let Some(stock) = &self.stock {
-                observe_stock(self.role, stock.as_ref(), deadline)?
+                if self.role == Role::StockPrimary {
+                    observe_stock(self.role, stock.as_ref(), deadline)?
+                } else {
+                    if !matches!(self.role, Role::Sql | Role::Hash) {
+                        return Err(Unavailable);
+                    }
+                    stock.recheck(deadline).map_err(unavailable)?;
+                    observe(self.role, deadline, None, None)?
+                }
             } else {
                 observe(
                     self.role,

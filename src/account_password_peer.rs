@@ -415,6 +415,7 @@ impl Startup {
     pub(crate) fn master_pid(&self) -> u32 {
         self.master.pid
     }
+    #[allow(dead_code)] // Retained legacy private-authority constructor; stock service uses StockStartup.
     pub(crate) fn native(
         executor: &(impl CommandExecutor + ?Sized),
         master_pid: u32,
@@ -1471,13 +1472,21 @@ fn main_configuration_selection(
     stage: &mut &'static str,
 ) -> Result<MainConfigurationSelection, Error> {
     startup.recheck_with_stage(executor, deadline, stage)?;
+    main_configuration_selection_bound(executor, &startup.master, deadline, stage)
+}
+fn main_configuration_selection_bound(
+    executor: &(dyn CommandExecutor + Send + Sync),
+    master: &Row,
+    deadline: Instant,
+    stage: &mut &'static str,
+) -> Result<MainConfigurationSelection, Error> {
     *stage = "primary_main_argv";
     let argv = query_with_stage(
         executor,
         PS,
         &[
             "-p".into(),
-            startup.master.pid.to_string(),
+            master.pid.to_string(),
             "-o".into(),
             "args=".into(),
         ],
@@ -1960,17 +1969,210 @@ impl ControlPeer {
 #[path = "account_password_peer_tests.rs"]
 mod tests;
 
+/// Stock-only process/material anchors. These never attest a legacy text or
+/// descriptor graph and cannot enter the legacy Startup constructors.
+struct StockStartup {
+    master: Row,
+    own: Row,
+    pins: Vec<FilePin>,
+}
+impl StockStartup {
+    fn observe(
+        executor: &(dyn CommandExecutor + Send + Sync),
+        deadline: Instant,
+    ) -> Result<Self, Error> {
+        if !crate::openbsd::password_native_authority() || Instant::now() >= deadline {
+            return Err(Error::Refused);
+        }
+        let master_pid = stock_master_pid(deadline)?;
+        let own_pid = std::process::id();
+        let master = row(
+            &query(executor, PS, &ps_args(master_pid), deadline)?,
+            master_pid,
+        )?;
+        let own = row(&query(executor, PS, &ps_args(own_pid), deadline)?, own_pid)?;
+        if master.parent != 1
+            || master.pid != master.group
+            || master.uid != 0
+            || master.gid != 0
+            || master.command != "dovecot"
+            || own.uid != 0
+            || own.gid != 0
+            || own.group != own.pid
+            || own.command != "account-passwd"
+            || own.pid == master.pid
+        {
+            return Err(Error::Refused);
+        }
+        let pins = [PS, MASTER, HELPER]
+            .into_iter()
+            .map(file_pin)
+            .collect::<Result<Vec<_>, _>>()?;
+        let value = Self { master, own, pins };
+        value.recheck(executor, deadline)?;
+        Ok(value)
+    }
+    fn recheck(
+        &self,
+        executor: &(dyn CommandExecutor + Send + Sync),
+        deadline: Instant,
+    ) -> Result<(), Error> {
+        if !crate::openbsd::password_native_authority()
+            || std::process::id() != self.own.pid
+            || Instant::now() >= deadline
+        {
+            return Err(Error::Refused);
+        }
+        for pin in &self.pins {
+            if file_pin(pin.path)? != *pin {
+                return Err(Error::Refused);
+            }
+        }
+        for expected in [&self.master, &self.own] {
+            if row(
+                &query(executor, PS, &ps_args(expected.pid), deadline)?,
+                expected.pid,
+            )? != *expected
+            {
+                return Err(Error::Refused);
+            }
+        }
+        if Instant::now() >= deadline {
+            return Err(Error::Expired);
+        }
+        Ok(())
+    }
+}
+#[derive(PartialEq, Eq)]
+struct StockSocketSnapshot {
+    endpoint: [u64; 11],
+    binder: (u32, u32, u32),
+    worker: Row,
+    argv: String,
+}
+fn stock_auth_argv(raw: &str) -> Result<(), Error> {
+    let words = raw.split_whitespace().collect::<Vec<_>>();
+    if raw.lines().count() != 1
+        || words.len() != 1
+        || !matches!(words[0], "auth" | "dovecot/auth" | PRIMARY_AUTH)
+    {
+        return Err(Error::Refused);
+    }
+    Ok(())
+}
+fn stock_auth_role(worker: &Row, master: &Row, uid: u32, gid: u32) -> Result<(), Error> {
+    socket_worker(worker, master, uid, "auth")?;
+    if gid == 0 || worker.gid != gid {
+        return Err(Error::Refused);
+    }
+    Ok(())
+}
+fn stock_socket_probe(
+    executor: &(dyn CommandExecutor + Send + Sync),
+    startup: &StockStartup,
+    auth: &FilePin,
+    uid: u32,
+    gid: u32,
+    deadline: Instant,
+) -> Result<StockSocketSnapshot, Error> {
+    let path = crate::account_password_mail::STOCK_AUTH;
+    startup.recheck(executor, deadline)?;
+    if file_pin(auth.path)? != *auth {
+        return Err(Error::Refused);
+    }
+    crate::account_password_custody::ancestors(path, None, deadline)
+        .map_err(|_| Error::Unavailable)?;
+    let identity = |m: &fs::Metadata| {
+        [
+            m.dev(),
+            m.ino(),
+            m.uid().into(),
+            m.gid().into(),
+            m.mode().into(),
+            m.nlink(),
+            m.len(),
+            m.mtime() as u64,
+            m.mtime_nsec() as u64,
+            m.ctime() as u64,
+            m.ctime_nsec() as u64,
+        ]
+    };
+    let before = fs::symlink_metadata(path).map_err(|_| Error::Unavailable)?;
+    if !std::os::unix::fs::FileTypeExt::is_socket(&before.file_type())
+        || before.uid() != uid
+        || before.gid() != 0
+        || before.mode() & 0o7777 != 0o600
+        || before.nlink() != 1
+    {
+        return Err(Error::Refused);
+    }
+    // The same held real connection supplies kernel authority throughout this
+    // observation. File ownership is distinct from the root listener binder.
+    let stream = crate::openbsd::connect_unix_before(Path::new(path), deadline)
+        .map_err(|_| Error::Unavailable)?;
+    let binder = kernel(&stream)?;
+    if binder.1 != 0 || binder.2 != 0 {
+        return Err(Error::Refused);
+    }
+    let mut selected_argv = String::new();
+    let worker = ready_socket_worker(path, deadline, &mut "stock_auth_worker", |end, _| {
+        let raw = query(
+            executor,
+            PS,
+            &["-ax".into(), "-o".into(), PS_FIELDS.into()],
+            end,
+        )?;
+        let mut matches = Vec::new();
+        for (index, line) in raw.lines().enumerate() {
+            if index >= 4096 {
+                return Err(Error::Refused);
+            }
+            let pid = decimal(line.split_whitespace().next().ok_or(Error::Refused)?)?;
+            let candidate = row(line, pid)?;
+            if stock_auth_role(&candidate, &startup.master, uid, gid).is_err() {
+                continue;
+            }
+            let argv = query(
+                executor,
+                PS,
+                &["-p".into(), pid.to_string(), "-o".into(), "args=".into()],
+                end,
+            )?;
+            stock_auth_argv(&argv)?;
+            if row(&query(executor, PS, &ps_args(pid), end)?, pid)? != candidate {
+                return Err(Error::Refused);
+            }
+            selected_argv = argv;
+            matches.push(candidate);
+        }
+        Ok(matches)
+    })?;
+    startup.recheck(executor, deadline)?;
+    if identity(&fs::symlink_metadata(path).map_err(|_| Error::Unavailable)?) != identity(&before)
+        || kernel(&stream)? != binder
+        || file_pin(auth.path)? != *auth
+        || Instant::now() >= deadline
+    {
+        return Err(Error::Refused);
+    }
+    Ok(StockSocketSnapshot {
+        endpoint: identity(&before),
+        binder,
+        worker,
+        argv: selected_argv,
+    })
+}
 /// Stock Dovecot authority: same live master, protected existing configuration,
-/// and real reciprocal kernel/descriptor observations. No public configuration
+/// and actual kernel peer/process observations. No public configuration
 /// is written and no private listener, policy callback or Generation is used.
 pub(crate) struct StockPeer {
     executor: std::sync::Arc<dyn CommandExecutor + Send + Sync>,
-    startup: Startup,
+    startup: StockStartup,
     auth: FilePin,
     files: Vec<PrimaryFile>,
     server_uid: u32,
     selection: MainConfigurationSelection,
-    auth_snapshot: PrimarySocketSnapshot,
+    auth_snapshot: StockSocketSnapshot,
     server_gid: u32,
 }
 pub(crate) fn stock_master_pid(deadline: Instant) -> Result<u32, Error> {
@@ -1985,10 +2187,9 @@ pub(crate) fn stock_master_pid(deadline: Instant) -> Result<u32, Error> {
 impl StockPeer {
     pub(crate) fn observe(
         executor: std::sync::Arc<dyn CommandExecutor + Send + Sync>,
-        startup: &Startup,
         deadline: Instant,
     ) -> Result<Self, Error> {
-        startup.recheck(executor.as_ref(), deadline)?;
+        let startup = StockStartup::observe(executor.as_ref(), deadline)?;
         let mut files = Vec::new();
         for &path in PRIMARY_CONFIGURATION_PATHS {
             if !matches!(path, PRIMARY_FRAGMENT | CONTROL_FRAGMENT) {
@@ -2035,22 +2236,14 @@ impl StockPeer {
         }
         files.push(passwd);
         let auth = file_pin(PRIMARY_AUTH)?;
-        let selection = main_configuration_selection(
+        let selection = main_configuration_selection_bound(
             executor.as_ref(),
-            startup,
+            &startup.master,
             deadline,
             &mut "primary_main_selection",
         )?;
-        let auth_snapshot = socket_probe(
-            executor.as_ref(),
-            startup,
-            &auth,
-            crate::account_password_mail::STOCK_AUTH,
-            "auth",
-            uid,
-            uid,
-            deadline,
-        )?;
+        let auth_snapshot =
+            stock_socket_probe(executor.as_ref(), &startup, &auth, uid, gid, deadline)?;
         // Fixed current read-only configuration observation, before the parent
         // is sealed. No cache is enabled/populated and no fabricated flush occurs.
         let doveconf = primary_file("/usr/local/bin/doveconf", deadline)?;
@@ -2075,7 +2268,7 @@ impl StockPeer {
         files.push(doveconf);
         let value = Self {
             executor,
-            startup: startup.clone(),
+            startup,
             auth,
             files,
             server_uid: uid,
@@ -2086,10 +2279,14 @@ impl StockPeer {
         value.recheck(deadline)?;
         Ok(value)
     }
+    pub(crate) fn master_pid(&self) -> u32 {
+        self.startup.master.pid
+    }
     pub(crate) fn recheck(&self, deadline: Instant) -> Result<(), Error> {
-        if main_configuration_selection(
+        self.startup.recheck(self.executor.as_ref(), deadline)?;
+        if main_configuration_selection_bound(
             self.executor.as_ref(),
-            &self.startup,
+            &self.startup.master,
             deadline,
             &mut "primary_main_selection",
         )? != self.selection
@@ -2103,14 +2300,12 @@ impl StockPeer {
                 return Err(Error::Refused);
             }
         }
-        if socket_probe(
+        if stock_socket_probe(
             self.executor.as_ref(),
             &self.startup,
             &self.auth,
-            crate::account_password_mail::STOCK_AUTH,
-            "auth",
             self.server_uid,
-            self.server_uid,
+            self.server_gid,
             deadline,
         )? != self.auth_snapshot
         {
@@ -2388,6 +2583,72 @@ mod stock_sql {
             "%u" => Ok(false),
             "%Lu" if backend => Ok(true),
             _ => Err(Unavailable),
+        }
+    }
+}
+
+#[cfg(test)]
+mod stock_authority_tests {
+    use super::*;
+
+    #[test]
+    fn stock_auth_requires_same_master_nonroot_role_and_no_overrides() {
+        let master = Row {
+            pid: 42,
+            parent: 1,
+            group: 42,
+            uid: 0,
+            gid: 0,
+            birth: "Mon Oct 19 01:02:03 2026".into(),
+            command: "dovecot".into(),
+        };
+        let worker = Row {
+            pid: 43,
+            parent: 42,
+            group: 42,
+            uid: 518,
+            gid: 518,
+            birth: "Mon Oct 19 01:02:03 2026".into(),
+            command: "auth".into(),
+        };
+        assert_eq!(stock_auth_role(&worker, &master, 518, 518), Ok(()));
+        for wrong in [
+            Row {
+                parent: 1,
+                ..worker.clone()
+            },
+            Row {
+                uid: 0,
+                ..worker.clone()
+            },
+            Row {
+                gid: 0,
+                ..worker.clone()
+            },
+            Row {
+                command: "imap".into(),
+                ..worker.clone()
+            },
+        ] {
+            assert!(stock_auth_role(&wrong, &master, 518, 518).is_err());
+        }
+        for good in [
+            "auth\n",
+            "dovecot/auth\n",
+            "/usr/local/libexec/dovecot/auth\n",
+        ] {
+            assert_eq!(stock_auth_argv(good), Ok(()));
+        }
+        for wrong in [
+            "auth -w\n",
+            "auth -o auth_cache_size=0\n",
+            "auth -o auth_cache_size=1\n",
+            "auth -o auth_policy_server_url=http://other\n",
+            "auth\nauth\n",
+            "/tmp/auth\n",
+            "",
+        ] {
+            assert!(stock_auth_argv(wrong).is_err());
         }
     }
 }

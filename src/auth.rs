@@ -109,6 +109,7 @@ pub(crate) fn password_metadata_command(program: &str, args: &[String]) -> io::R
     Ok(command)
 }
 #[cfg(unix)]
+#[allow(dead_code)] // Retained private FSTAT worker builder; stock starts no observer.
 pub(crate) fn password_fstat_worker_command() -> io::Result<Command> {
     if std::env::current_dir()? != std::path::Path::new("/") {
         return Err(io::ErrorKind::PermissionDenied.into());

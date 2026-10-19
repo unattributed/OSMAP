@@ -8,7 +8,7 @@ use crate::account_admission_runtime::{AdmissionEndpoint, Service as AdmissionSe
 use crate::account_password_backend::Backend;
 use crate::account_password_connection::Keys;
 use crate::account_password_native::{NativeProfile, Role};
-use crate::account_password_peer::{Startup, StockPeer};
+use crate::account_password_peer::StockPeer;
 use crate::account_password_process::MetadataExecutor;
 use crate::account_password_process::{FixedExecutor, PrimaryExecutor};
 use crate::account_password_runtime::StockRuntime;
@@ -17,7 +17,7 @@ use crate::openpgp_inventory_runtime::{file, private_dir, secret};
 use serde::Deserialize;
 use std::collections::BTreeSet;
 use std::fs;
-use std::io::{Read, Write};
+use std::io::Read;
 use std::os::unix::fs::MetadataExt;
 use std::os::unix::net::UnixStream;
 use std::path::Path;
@@ -186,76 +186,36 @@ fn run_operator_service_with_trace(
     })?;
     let metadata = Arc::new(MetadataExecutor::readonly());
     trace.set(Op::ServiceStartup);
-    let master_pid =
-        crate::account_password_peer::stock_master_pid(startup_deadline).map_err(unavailable)?;
-    let startup =
-        Startup::native(metadata.as_ref(), master_pid, startup_deadline).map_err(unavailable)?;
-    let startup = Arc::new(startup);
-    let observer = Arc::new(
-        crate::account_password_fstat::Observer::start(
-            startup.as_ref(),
-            metadata.as_ref(),
-            startup_deadline,
-            trace,
-        )
-        .map_err(unavailable)?,
-    );
-    let metadata = Arc::new(MetadataExecutor::with_fstat(observer.clone()));
-    let outcome = (|| {
-        // Public read-only stock/cache authority precedes every private key,
-        // restricted SQL file and epoch-store load.
-        let stock = Arc::new(
-            StockPeer::observe(metadata.clone(), startup.as_ref(), startup_deadline)
-                .map_err(unavailable)?,
-        );
-        trace.set(Op::ServiceFiles);
-        let files = OperatorFiles::read(startup_deadline)?;
-        trace.set(Op::ServiceAdmission);
-        let admission = AdmissionService::from_password_operator_files()?;
-        trace.set(Op::ServiceAccounts);
-        if admission.password_accounts() != files.accounts
-            || admission.password_key() == files.mutation
-            || admission.password_key() == files.session
-        {
-            trace.category(Cat::Invalid);
-            return Err(Error::Unavailable);
-        }
-        if files.master_pid != startup.master_pid() {
-            return Err(Error::Unavailable);
-        }
-        trace.set(Op::ServiceStore);
-        let store = Arc::new(Store::open(Path::new(EPOCH), 0).map_err(unavailable)?);
-        if Instant::now() >= startup_deadline {
-            return Err(Error::Expired);
-        }
-        serve(
-            stop,
-            &files,
-            &admission,
-            store,
-            stock,
-            startup,
-            metadata,
-            startup_deadline,
-            trace,
-        )
-    })();
-    // Native child custody is part of service exit, including failed setup.
-    let cleanup = observer
-        .shutdown(Instant::now() + Duration::from_millis(500))
-        .map_err(unavailable);
-    if cleanup.is_err() {
-        trace.cleanup_failed();
+    let stock = Arc::new(StockPeer::observe(metadata, startup_deadline).map_err(unavailable)?);
+    trace.set(Op::ServiceFiles);
+    let files = OperatorFiles::read(startup_deadline)?;
+    trace.set(Op::ServiceAdmission);
+    let admission = AdmissionService::from_password_operator_files()?;
+    trace.set(Op::ServiceAccounts);
+    if admission.password_accounts() != files.accounts
+        || admission.password_key() == files.mutation
+        || admission.password_key() == files.session
+    {
+        trace.category(Cat::Invalid);
+        return Err(Error::Unavailable);
     }
-    if outcome.is_ok() {
-        if let Err(error) = &cleanup {
-            let _ = writeln!(
-                std::io::stderr().lock(),
-                "account_password_service stage=service_observer_cleanup error={error:?}"
-            );
-        }
+    if files.master_pid != stock.master_pid() {
+        return Err(Error::Unavailable);
     }
-    outcome.and(cleanup)
+    trace.set(Op::ServiceStore);
+    let store = Arc::new(Store::open(Path::new(EPOCH), 0).map_err(unavailable)?);
+    if Instant::now() >= startup_deadline {
+        return Err(Error::Expired);
+    }
+    serve(
+        stop,
+        &files,
+        &admission,
+        store,
+        stock,
+        startup_deadline,
+        trace,
+    )
 }
 
 #[allow(clippy::too_many_arguments)] // Fixed independent custody and original startup budget.
@@ -265,8 +225,6 @@ fn serve(
     admission: &AdmissionService,
     store: Arc<Store>,
     stock: Arc<StockPeer>,
-    startup: Arc<Startup>,
-    metadata: Arc<MetadataExecutor>,
     startup_deadline: Instant,
     trace: &mut crate::account_password_fstat::StartupTrace,
 ) -> Result<(), Error> {
@@ -308,18 +266,6 @@ fn serve(
                 return Err(Error::CleanupUnconfirmed);
             }
             let custody_deadline = Instant::now() + Duration::from_millis(500);
-            let check = metadata.recheck_fstat(custody_deadline);
-            let reason = check.as_ref().err().map(|e| e.reason.as_str());
-            if loop_custody(
-                check.as_ref().copied().map_err(unavailable),
-                Op::BeforeRecheck,
-                stop,
-                reason,
-            )? == crate::account_password_fstat::Recheck::Busy
-            {
-                std::thread::sleep(Duration::from_millis(10));
-                continue;
-            }
             loop_custody(
                 parent_plan.recheck(custody_deadline).map_err(unavailable),
                 Op::ParentActivate,
@@ -361,12 +307,10 @@ fn serve(
                         endpoint.recheck()?;
                         let runtime = runtime.clone();
                         let stock = stock.clone();
-                        let metadata = metadata.clone();
-                        let startup = startup.clone();
                         let reported = &admission_failure_reported;
                         active.push(scope.spawn(move || {
                             let result = if mutation {
-                                stock_operation(stream, runtime.as_ref(), accepted, files.relay_uid, startup, metadata, stock)
+                                stock_operation(stream, runtime.as_ref(), accepted, files.relay_uid, stock)
                             } else { stock_admission(stream, admission, runtime.as_ref(), stock, accepted) };
                             if let Err(error) = result {
                                 if first_admission_failure(reported) { eprintln!("account_password_service stage=stock_operation error={error:?}"); }
@@ -410,17 +354,15 @@ fn stock_operation(
     runtime: &StockRuntime,
     accepted: Instant,
     relay_uid: u32,
-    startup: Arc<Startup>,
-    metadata: Arc<MetadataExecutor>,
     stock: Arc<StockPeer>,
 ) -> Result<(), Error> {
     let deadline = accepted + Duration::from_secs(60);
     if crate::openbsd::unix_stream_peer_uid(&stream).map_err(unavailable)? != relay_uid {
         return Err(Error::Authentication);
     }
-    let sql = NativeProfile::from_startup(Role::Sql, startup.clone(), metadata.clone(), deadline)
+    let sql = NativeProfile::from_stock_backend(Role::Sql, stock.clone(), deadline)
         .map_err(unavailable)?;
-    let hash = NativeProfile::from_startup(Role::Hash, startup, metadata, deadline)
+    let hash = NativeProfile::from_stock_backend(Role::Hash, stock.clone(), deadline)
         .map_err(unavailable)?;
     let primary = NativeProfile::from_stock(Role::StockPrimary, stock.clone(), deadline)
         .map_err(unavailable)?;

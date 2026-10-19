@@ -56,6 +56,14 @@ reviewer must inspect the actual prerequisite evidence and dispatch decision.
 
 ## Current S04-02 regimented resumption — 2026-10-19
 
+Latest19:32UTC operator direction resumes completion of Sprint S04 with the
+existing developers, independent QA and delivery controller. Keep one active
+integration objective: S04-02, followed by S04-03/S04-04 and accepted R4 retained
+Sprint obligations. Earlier local source-preservation-only holds are historical.
+The current ledger's fresh, finite, independently reviewed recipe remains
+mandatory before a host action. No public mail downtime or configuration
+mutation is permitted; source preservation does not qualify the password form.
+
 The operator explicitly resumed S04-02, approved the execution guardrails and
 requested managed implementation, independent QA and delivery-control agents.
 `/root` owns the single canonical Git/host/native queue and current ledger;

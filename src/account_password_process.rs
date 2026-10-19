@@ -137,6 +137,7 @@ impl MetadataExecutor {
             fstat: None,
         }
     }
+    #[allow(dead_code)] // Retained private FSTAT observer adapter, unselected by stock.
     pub(crate) fn with_fstat(
         fstat: std::sync::Arc<crate::account_password_fstat::Observer>,
     ) -> Self {
@@ -145,6 +146,7 @@ impl MetadataExecutor {
             fstat: Some(fstat),
         }
     }
+    #[allow(dead_code)] // Retained private observer liveness check, unselected by stock.
     pub(crate) fn recheck_fstat(
         &self,
         end: Instant,
