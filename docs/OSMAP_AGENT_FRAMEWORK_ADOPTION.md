@@ -1,5 +1,16 @@
 # OSMAP adoption of the functional agent framework
 
+## Universal delivery enforcement — operator direction, 2026-10-19
+
+The mandatory delivery SOP in `AGENT_DEVELOPMENT_FRAMEWORK.md` now applies to all
+OSMAP development. The lead integration/delivery agent owns enforcement; the
+delivery controller independently verifies it. Role assignment is not proof of
+compliance. Actual environment prerequisites precede dependent implementation,
+known incompatibilities block dispatch, two failures require combined review,
+and exhausted allowances cannot be repeatedly increased by agents. Preserve
+existing requirements and use the existing work order/gates with minimum
+changed-boundary QA. This is not a new framework or a completed feature claim.
+
 ## Current bounded authorization — 2026-10-18
 
 The operator resumed S04-02 with named subagents and the existing nine-scenario
@@ -157,7 +168,8 @@ action before retry; after two such attempts at the same existing outcome ID,
 record combined independent reassessment covering that window’s unreviewed failed IDs and the
 next action. Successor/package names and fixture/product labels do not reset the
 count. Completed combined reassessment acknowledges its covered IDs and may
-start a new bounded investigation window; all history stays retained. It does
+start a bounded investigation only within the remaining authorized cumulative
+allowance; it does not increase an exhausted allowance. All history stays retained. It does
 not require another full reassessment after every subsequent attempt forever.
 Fixture repair/PASS is distinct from product delivery; retain all existing
 functional closure checks. A timebox overrun needs an explicit disposition in the

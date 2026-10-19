@@ -4,7 +4,85 @@ Version 1, 2026-10-03. A portable operating framework for development teams usin
 agents. Adapt the repository, tooling, deployment targets and security rules;
 retain the outcome and accountability rules below.
 
-## Purpose and operating principle
+## Mandatory OSMAP delivery SOP — 2026-10-19
+
+The operator applies this SOP to **all OSMAP development**, not only the current
+UX epic. It supplements the existing work order, acceptance records and gates;
+it creates no parallel planning system or QA framework. Keep accepted product
+requirements, repository signing/review rules and higher-priority instructions.
+For a documentation-only or similarly limited task, scope prerequisites and
+checks to that change; do not contact a live host merely to satisfy this policy.
+
+**Accountable owner:** the lead integration/delivery agent (`/root` in the current
+team) enforces the SOP, including against its own proposed actions. The delivery
+controller independently verifies compliance and records a refusal when evidence
+is missing. Developers provide source and results; they do not approve their own
+independent review. The operator is not the team's process monitor or engineering
+troubleshooter.
+
+1. **Define the exit before work.** In the existing work order record the one
+   user-observable outcome, included/excluded work, preservation requirements,
+   source baseline, owners, cumulative elapsed allowance and stop condition.
+   Map each required test to prerequisite, action, expected result and actual
+   evidence. Planned tests remain NOT RUN. Retain required security outcomes;
+   simplify implementation and evidence collection rather than removing them.
+2. **Establish the real prerequisites first.** For each changed dependency,
+   record the relevant target identity, installed version, schema/configuration,
+   exact utility/API contract and authority. Privately inspect real configuration
+   where required; never export credentials. Verify a narrow read-only or
+   controlled discriminator before building dependent integration or fixtures.
+   Reuse matching evidence. A mock of an assumed platform interface is not that
+   verification. Mark irrelevant prerequisites not applicable with a reason.
+3. **Carry contradictions forward as blockers.** An unsupported configuration,
+   unresolved failure or missing authority in earlier evidence must appear in
+   the next dependent work order and review. Resolve it with actual evidence
+   before dispatch. The lead and controller inspect that evidence directly;
+   author reports, manifests and declaration validators cannot supply its truth.
+   Review must cover the successful functional path as well as source custody,
+   refusal and cleanup.
+4. **Implement the smallest complete correction.** Extend the existing working
+   application/backend path. Every new helper, service, protocol or test carrier
+   needs a demonstrated requirement and an integration/maintenance justification.
+   Delegate bounded tasks with file ownership and a measurable exit; keep one
+   integration owner and one live/native queue. A diagnostic or fixture repair
+   is a prerequisite, not a delivered product capability.
+5. **Test only what establishes the exit.** Use focused changed-behaviour tests,
+   required security boundaries and existing mandatory repository hooks. Preserve
+   matching passes; repeat only when a relevant change or unresolved failure
+   invalidates them. Qualify the actual frontend/backend/persistence journey
+   before installed readiness. Source, build, native, installed and human
+   outcomes remain distinct. No test-count, health or page-rendering substitute.
+6. **Enforce the cost and failure stops.** Count all work at the same functional
+   boundary across agents, renamed packages, retries and interruptions. Record
+   full-action elapsed time or UNKNOWN; never invent token or monetary costs.
+   Two failures stop further workflow retries until one combined independent
+   reassessment identifies the failed assumption, smallest changed action and
+   its distinguishing test. Reassessment does not replenish the allowance.
+   An exhausted allowance cannot be increased automatically or by agents alone:
+   record the blocker and a bounded proposal for the operator. Necessary safe
+   disposition of already-owned effects remains permitted within explicit finite
+   recovery bounds; it does not authorize another workflow or expired lease.
+7. **Close against observations.** Independently reconcile each required test
+   with exact actual evidence and unresolved findings. Preserve failed attempts
+   and partial/uncertain effects. Complete normal signed source admission and
+   authorized delivery. Offer only the defined minimal human judgment after
+   agent-owned implementation, matching functional QA and independent review
+   pass. Update the existing ledger, decisions and issues to the same scope.
+
+The existing validator can reject inconsistent declarations, expired allowances
+and mismatched planned actions where its checked dispatcher is used. It cannot
+prove an omitted environmental fact or truthful review. Those checks remain
+explicit lead/controller responsibilities. Do not describe this SOP as an
+unbypassable system-level control or as proof that a slice is complete.
+
+The S04-02 configuration error is a retained example: a 10:57 readiness record
+already identified an unsupported Dovecot SQL connection configuration, yet
+later integration/build admission did not carry that blocker forward. The
+schema and MariaDB utility path being known did not qualify the new connection
+reader. The elementary actual-configuration test belonged before dependent
+composition. Earlier reviews and elapsed work are not retrospectively compliant.
+
+## Purpose and operating principle (framework)
 
 Deliver usable frontend-to-backend behaviour while preserving the application's
 working functions and security boundaries. A page, control, build, helper test,
@@ -101,7 +179,8 @@ consumer path. Every failed/unconfirmed retry names its concrete change. After
 two unreviewed failures at the same functional boundary, record a combined
 independent reassessment and next action before proceeding; successor/package
 renaming and fixture/product labels do not reset it. Completed reassessment may
-start a new bounded investigation window while all prior IDs/facts stay retained.
+start an investigation only within the remaining authorized allowance; it does
+not extend an exhausted delivery budget. All prior IDs/facts stay retained.
 Fixture repair is distinct from product delivery. Pre-adoption history remains
 historical, not retrospectively compliant. Validate declarations honestly: a
 structural gate cannot prove evidence truth, complete history or useful software.
@@ -380,9 +459,12 @@ controller checks useful progress, exact cleanup and all failed-boundary history
 The initial resumed allowance is7200seconds from the ledger's recorded UTC start,
 with1800second investigations. It includes integration/review/build/publication
 time across workers; parallel wall-clock is not added twice. Historical token and
-monetary costs and unmeasured intervals remain UNKNOWN. An extension needs a
-recorded root/controller technical decision preserving cumulative consumed time,
-original action/fixture deadlines and prior failures; no silent clock reset.
+monetary costs and unmeasured intervals remain UNKNOWN. Increasing an exhausted
+allowance requires explicit operator authorization and preserves cumulative
+consumed time, original action/fixture deadlines and prior failures. Root and
+controller cannot replenish it themselves. Necessary safe disposition of owned
+effects remains separately bounded; it does not authorize a workflow retry or
+fixture renewal. No silent clock reset.
 
 Before coding, record the smallest demonstrated gap and its discriminating test.
 Reuse working Rust, standard backend utilities and matching passes. Qualify one

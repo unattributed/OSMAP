@@ -1,5 +1,39 @@
 # OSMAP Agent Notes
 
+## Mandatory delivery SOP — all OSMAP development, 2026-10-19
+
+The operator explicitly requires regimented delivery for all OSMAP development,
+including work outside the UX epic. Apply the delivery SOP in
+`docs/AGENT_DEVELOPMENT_FRAMEWORK.md` before implementation or continuation.
+The lead integration/delivery agent owns enforcement and must block its own or
+a subagent's noncompliant action. The delivery controller independently checks
+that enforcement; assigning that role does not transfer accountability to it or
+to the operator. Higher-priority instructions and explicit operator directions
+retain precedence.
+
+Define one observable outcome, scope, actual environment prerequisites, minimum
+tests, expected results, owners, cumulative allowance and failure stop rule in
+the existing work order. Verify the relevant installed schema/configuration/
+utility contract before composing dependent code or an expensive test fixture.
+A known unsupported prerequisite blocks dependent execution; an author's PASS,
+source hash or structurally valid declaration is not proof that it was resolved.
+Use working application/backend paths and the smallest demonstrated correction.
+Do not introduce another general QA framework or repeat matching passing tests.
+
+Two failures at the same functional boundary stop further workflow retries for
+combined independent reassessment. A renamed package or completed reassessment
+does not reset cumulative cost or replenish an allowance. No automatic or
+agent-only increase of an exhausted delivery allowance is permitted. Report the
+concrete blocker and bounded next proposal; only necessary, finite safe
+disposition of already-owned effects continues under existing authority. Never
+renew an expired fixture or infer cleanup from a stopped transport.
+
+Close only against the defined outcome and matching functional/security
+evidence. Preserve failures, actual elapsed work and UNKNOWN costs. Apply normal
+signed-commit, review, synchronization and minimal human-acceptance rules.
+Policy text is not proof of runtime enforcement: the lead and independent
+reviewer must inspect the actual prerequisite evidence and dispatch decision.
+
 ## Current S04-02 regimented resumption — 2026-10-19
 
 The operator explicitly resumed S04-02, approved the execution guardrails and

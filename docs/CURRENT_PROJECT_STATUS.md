@@ -1,5 +1,72 @@
 # Current Project Status
 
+Latest actual outcome (2026-10-19 14:43 UTC): S04-02 remains INCOMPLETE and UAT
+is NOT READY. The corrected controlled action22 failed in7.457s during backend
+fixture provision, before the HTTP password journey. Both SSH groups were reaped;
+that did not establish remote cleanup. Fresh read-only observation then passed
+in4.113s: three locked purpose users/groups, fifteen recorded files, three
+changed borrowed-directory metadata records and two synthetic rows are retained.
+Both private Dovecot fragments were published. Original25 configuration files,
+nine bootstrap targets and the original mail master remain consistent with
+recorded custody; no helper, actor, connector or purpose SSH entry was present.
+The exact failing guard within the final fragment-reload operation is UNKNOWN.
+
+An isolated partial-prefix disposition reuses the original full17 conditional
+row deletion and owned cleanup, with exact fresh prerequisite checks; it has
+NOT RUN. Its checked210-second action no longer fit the original14:46:12
+cumulative deadline while independent review was completing. Root/controller
+held dispatch. No third workflow, further horizon reshuffle, fixture renewal or
+agent-only allowance increase is admitted. The retained test state is not a
+completed cleanup and must not be silently adopted or deleted.
+
+The operator now requires the delivery SOP for ALL OSMAP development. Root owns
+enforcement; the delivery controller independently verifies it. Actual relevant
+environment prerequisites must precede dependent code/fixtures, known failures
+block admission, and review must inspect real evidence. Two failures require
+combined reassessment; an exhausted allowance needs operator authorization to
+increase. Existing gates check declarations, not the truth of an omitted fact.
+This policy corrects the earlier missed SQL prerequisite and repeated extension
+pattern; it does not retrospectively qualify that work or complete S04-02.
+
+Latest actual outcome (2026-10-19 14:15 UTC): the reviewed SQL metadata correction
+passes against the actual unchanged protected SQL file (5.874s), including public
+byte preservation, dedicated explicit-socket projection and query projection.
+The changed release helper then compiled once: PASS78.558s/CONFIRMED, source474
+before/after, helper961db250/3,069,848B, opt3/debug0, owned group and scratch gone.
+Its actual captured raw/gzip bytes match (PASS0.756s). Frontend7b6/source5770 and
+C module2bf0 are reused with their separate unchanged provenance. No application,
+account, service or configuration action is established by these build results.
+
+The installed SQL uses a whole double-quote envelope, nine continuations,
+localhost, database postfixadmin and exactly four connection fields. The old
+metadata reader mishandled these syntax/route facts. The narrow public-only
+localhost policy is bound to the existing C04 unique-verifier/public-passdb
+evidence and current configuration/master/library custody; it is not a universal
+default-socket claim. The dedicated private connection uses the fixed Unix
+socket; the public connection bytes remain unchanged. The retained 10:57 record had
+already marked the DSN unsupported; source and whole-chain admission failed to
+carry that prerequisite forward. No new password attempt, SQL/configuration
+change, production activation or owner test followed these observations.
+
+The two inactive fixed purpose-key slots from failed journey21 were preserved
+by exact-inode reversible moves into a new root0700 quarantine: actual PASS
+0.467s, both slots absent, zero fresh open references and two pre-existing bridge
+processes preserved. No private bytes/hash/deletion occurred; original key
+creation attribution and the older public namespace remain UNKNOWN/retained.
+Original journey21 FAIL4.708s and its unknown first cause remain historical.
+The actual diagnostic observations took3.932/4.131/4.036s; their PASS labels
+describe collected evidence only, never environment or workflow acceptance.
+
+The direct, secret-screened connection description used the installed Dovecot
+2.3.21.1 SQL grammar; only public endpoint, database and option names left memory.
+Credentials remained excluded. Backend-only staged publication and the corrected
+controlled workflow are next, with source/custody review before execution. The
+same cumulative execution clock continues from09:16:12UTC, now with an explicit
+root/controller ceiling19800s/14:46:12UTC for one corrected controlled journey
+and honest owned disposition. All previous limits, spend and failures
+remain recorded. No unchanged build, full-suite repetition or new QA framework
+is authorized. S04-02 and its installed owner acceptance remain OPEN.
+
 ## Current S04-02 regimented resumption — 2026-10-19
 
 The operator explicitly resumed only S04-02 and approved executable guardrails,
@@ -11,28 +78,40 @@ independently reviews source, required QA, scope and cumulative effort.
 The active ledger execution_contract is authoritative; older snapshots below
 are provenance. Plan36 inputs and accepted R2/R3/R4 signatures are verified.
 
-Latest controlled C04 execution18 failed14.766s before password mutation.
-Its diagnostic identifies metadata recheck before stop was observed; the unique
-underlying cause remains UNKNOWN. Fresh observation18 passed6.554s and owned
-recovery18 passed9.0s. Independent c40aff88 closes that operational incident:
-two synthetic rows,16 files and two purpose users/groups removed; four directories
-retained/normalized; original25+22, same mail master and ordinary three listeners
-preserved. No historical signals, live socket unlink, operator credential change
-or provider message occurred.
+Latest controlled C04 execution19 PASS26.401s/CONFIRMED (`282ed0e9`), independently
+`30af33e9`: wrong credentials rejected, correct credentials admitted, signed
+epoch0 revalidated. Current release helper40116b/e850/459source6e12 used the
+unchanged controlled oldclientf2b7/9e3 source; client production timing is not
+qualified. All41 utility groups and outer are gone;2rows/16files/2purpose users
+and groups/1runtime directory removed, original25/same mail master preserved,
+both17-field rows and epochs unchanged. No password rotation, operator credential
+change or provider message occurred. Do not rerun this passed prerequisite.
+
+Historical execution18 FAIL14.766s and unique inner cause UNKNOWN remain.
+Its fresh observation18 PASS6.554s and owned recovery18 PASS9.0s independently
+c40aff88 closed that separate operational incident; no retained incident19
+requires another observation or cleanup action.
 
 The reviewed three-leaf repair returns typed Busy only for live mutex contention
 within the original deadline. Busy defers before acceptance/credential work;
 genuine failure/expiry still refuses. The same held-lock regression fails on old
 code and passes on new code, including expired-deadline refusal (44.233s; both
 test groups and scratch gone). Independent d1192a50 is CLEAR for source/local
-scope. Native19 has NOT RUN and does not establish execution18's unique cause.
+scope. Actual native19 now supplies the separate admission prerequisite pass;
+it does not retrospectively establish execution18's unique cause.
 
 T01/T02 matching source PASS retained; T03/T07 FAIL; T04/T05/T06/T08/T09
 are not closed. The production form remains disabled; UAT is NOT READY. The
-original7200s allowance ends11:16:12UTC. The full next native chain and reserved
-disposition do not fit; complete reviewed source/mandatory signed admission
-without starting it. A revised cumulative forecast is required before more
-execution; no slice completion or automatic budget renewal follows.
+original7200s allowance and all actual spend/failures remain. Root/controller
+explicitly approved one additional2400s bounded C04 window, cumulative ceiling
+9600/global11:56:12UTC; actual successful exit is recorded in its closeout.
+The two essential metadata observations completed. Root and the independent
+controller then explicitly allowed1800s for the missing real two-node source
+integration, cumulative11400/global12:26:12UTC. All original elapsed work stays
+recorded. This allowance permits no build/native/live run. The fixed pair must
+implement four ordered authoritative snapshots and one held-mail witness, stop
+the frontend request producer before backend restoration, and dispose frontend
+relays/keys last. A transport template alone is not that producer.
 The bounded PostfixAdmin source reconciliation is complete: its installed public
 Login implementation verifies the current password, hashes the new password and
 updates the named account, requiring exactly one row. It can use a stored hash's
@@ -52,8 +131,50 @@ multiline SQL form, explicit no-AUTH existing10.44:2525 route and original
 service enablement. DSN route/database classification remains UNSUPPORTED, not
 proof of a bad server. Existing routes are preserved. Actual bootstrap/service
 publication, loaded C-plugin race qualification, paired complete native journey
-and ordinary installed Runtime remain unfinished. Isolated bootstrap/HTTP source
-is not admitted or qualified by the metadata repair.
+and ordinary installed Runtime remain unfinished. Actual frontend/backend
+material observations `38113943/002d813e` prove both account-purpose SSH keys,
+forced entries and connectors are absent. Frontend web identity is1001/1001
+with groups1001,1002,1003; it differs from the historical Toronto fixture drop.
+Implement the missing reversible purpose transports and correct current test
+consumer using existing patterns; ordinary keys remain untouched. Isolated
+bootstrap/HTTP/plugin source is not qualified by the admission pass.
+
+The next actual474-input composition5770314d compiled on obsd1: PASS182.682s,
+all three compiler groups/scratch gone and before/after source parity. Release
+helper2f5625c7, current controlled HTTP test7b6ac5be and plugin2bf0d05f are
+compiled, not installed or executed. The release helper was retrieved and
+losslessly compressed once (PASS0.740s, raw3,072,656B/gzip1,207,885B). The
+controlled HTTP binary stays on obsd1; no unused59MB backend client transfer.
+
+Concrete two-host node/18-request HTTP/SMTP+IMAP source now exists. Native
+remains HOLD for durable fixed recovery ownership, exact protected publication
+and actual qualification. Root/controller approved1800s further source work,
+cumulative13200/global12:56:12UTC, retaining all prior elapsed work. Persist
+only the fixed original/current leases, backups, service/purpose/row authority
+and synthetic maildir disposition needed by the existing fresh recovery
+consumer. No generic recovery framework, password replay/rollback, expired
+fixture renewal, historical PID signal or unchanged Rust rebuild is admitted.
+All nine-scenario/installed acceptance limits above remain unchanged.
+
+The fixed durable producer/recovery consumer source is independently CLEAR
+671efdd7 after the actual focused changed controls, preserving both local REDs.
+The separately pinned Python recovery package changes no compiled Rust input
+(474-byte map exact,463 compiled/literal input closure unchanged). One finite
+artifact publication actually passed11.275s/CONFIRMED: frontend9 source/receipt
+leaves plus current local60MB test copy, backend20 leaves plus its one original
+600s admission expiry. Both protected namespaces and full custody are retained.
+Exact scalar binding is independently CLEAR115c1607. The first paired native
+journey actually FAILED4.708s/UNCERTAIN after the checked gate. Backend
+SSHcode1/stderr0 supplied no safe stage frame; earliest cause/effects are
+UNKNOWN. Frontend later failed at stage10/class2, with actual producerstopTRUE
+and filesretainedTRUE. Both SSH groups are gone, which is transport evidence
+only;0 backend events does not establish zero SQL/config effects. The original
+13:04:41 expiry remains provenance, never renewed. Fresh fixed ownership
+observation precedes any changed action. Source inspection found missing eager
+transitive imports in the witness; that is not yet unique observed causation.
+The new root/controller technical allowance is cumulative15000/global13:26:12,
+including conditional300s disposition and independent review; all prior cost
+and failures remain. No operator password/provider message action is admitted.
 
 ## S04-02 current source and operational limits — 2026-10-18
 

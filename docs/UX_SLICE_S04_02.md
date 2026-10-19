@@ -12,6 +12,20 @@ followed this contract or that historical component passes closed the slice.
 
 ## Current bounded execution — 2026-10-19
 
+Superseding actual outcome14:43UTC: corrected action22 FAILED7.457s in backend
+provision before HTTP/password mutation. Fresh observation PASS4.113s confirms
+the retained partial setup (two synthetic rows, three purpose identities,
+fifteen files and three borrowed directories), not successful cleanup. Original
+configuration/master and untouched bootstrap targets match recorded custody.
+The final fragment-reload operation is localized; its precise guard is UNKNOWN.
+An independently reviewed narrow partial disposition remains NOT RUN because
+its complete action ceased to fit the cumulative14:46:12 deadline. Dispatch is
+held; no third workflow or agent-only allowance increase. All nine scenarios
+and twenty obligations remain; T03/T07 and installed readiness are not closed.
+The universal SOP in AGENTS/framework now makes root explicitly accountable
+for enforcing real prerequisite checks and the cost/failure stops. Policy
+codification is not password-feature completion.
+
 The operator approved codifying environment-bound execution guardrails and
 resuming only S04-02 with managed subagents. The existing active ledger's
 execution_contract records actual environments, permitted recipes, demonstrated
@@ -24,10 +38,30 @@ open. Historical compiler failures and fresh observations remain retained.
 Latest execution18 failed before password mutation at metadata recheck. Fresh
 observation and exact owned recovery18 completed and independently passed.
 The three-leaf typed contention deferral passes the same old-RED/new-PASS
-regression and expiry refusal; native19 and installed workflow remain NOT RUN.
-The original7200s allowance ends11:16:12UTC; no new native chain starts if its
-full reserved producer/execution/disposition bounds do not fit. Record a revised
-cumulative forecast before further execution, retaining all prior spend/failures.
+regression and expiry refusal. Actual native19 then passed the admission-only
+prerequisite in26.401s with confirmed owned disposition, independent30af33e9;
+the complete installed password workflow is still unqualified. Root/controller
+explicitly recorded2400s additional allowance, cumulative9600/global11:56:12UTC,
+retaining original7200 and all spend/failures. After actual C04 and material
+observations, root/controller explicitly approved1800s further source-only
+integration, cumulative11400/global12:26:12UTC. No native/build is admitted by
+that source window. Its exit is the executable two-host node producer using the
+existing HTTP journey, four fixed snapshots, one mail witness and ordered
+producer-stop/backend-restore/frontend-dispose cleanup. Wire-only source does
+not qualify this exit or any scenario.
+The actual current474 composition then compiled successfully on obsd1 without
+running an application/account/service action. Subsequent Python-only custody
+changes need their own exact source review and unchanged compiler/include
+closure proof; they do not justify rebuilding identical Rust. Concrete actors
+and SMTP/IMAP witnesses are source-only. Root/controller explicitly approved
+the next1800s fixed-recovery source window, cumulative13200/12:56:12UTC, because
+original metadata/current publication leases and service/purpose restoration
+authority must survive connection loss. Whole paired native execution remains
+HOLD until that specific producer/consumer closure and exact owned synthetic
+maildir scope pass independent review. No product requirement or test is waived.
+Actual two-host observations prove purpose keys/forced entries/connectors absent
+and identify the current frontend drop. Complete those concrete producers;
+never promote admission or source mechanisms to a complete password scenario.
 
 PostfixAdmin is the installed functional reference, not an assumed source of
 OSMAP's additional step-up/epoch/session guarantees. Record its observed fixed

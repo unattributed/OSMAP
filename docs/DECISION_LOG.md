@@ -12154,3 +12154,154 @@ execution requires an explicit root/controller technical reassessment with a
 new cumulative forecast retaining the original allowance, actual spend, failure
 IDs and uncertainty. This is not automatic renewal or a claim of human blocker;
 normal operator review before remote synchronization remains required.
+
+The reviewed source admission is signed e850a08da7acbf81da53cecd6acf0c3ed64259d9,
+Good Shopkeeper, normal mandatory gate PASS320.259s (1856library/0failed/
+49explicit native ignores,620account Python,45mail cases/2native skips).
+No push occurred; local source is one commit ahead of cached origin. Root and
+controller explicitly approved additional2400s for one changed C04 chain,
+cumulative ceiling9600/global11:56:12; original7200 and all actual costs remain.
+Stable-chain review ae8a2856 permits exact successful receipt-derived scalar
+bindings, not semantic changes. Root's local registration shadowing/sequencing
+failure and author/reviewer JSON-list-versus-tuple binding miss were caught
+before SSH, retained and corrected without changing guards or native budgets.
+Dependent orchestration must return immediately on a failed mutation; perform
+actual receipt-container comparisons before declaring scalar binding complete.
+
+Actual C04native19 passed26.401s/CONFIRMED (282ed0e9), independent30af33e9:
+wrong credential refusal, correct admission and epoch0 revalidation; helper0,
+all41groups+outer gone, rows/epochs unchanged,2rows/16files/2purpose users and
+groups/1runtime directory removed, original25/same master preserved. No
+credential rotation/operator mutation/provider action. This closes the
+admission prerequisite only; retain earlier17/18 failures/unknown causes and
+do not rerun unchanged passing evidence. Native/deployed T03–T08 and T09 remain
+open at their actual full-scenario scope.
+
+The two necessary metadata observations now establish the missing integration:
+frontend admission/mutation purpose keys and listeners absent, backend fixed
+connectors absent and purpose forced entries0/0. Ordinary transport material
+is preserved. Actual frontend1001/1001/groups1001,1002,1003 differs from the
+old Toronto test drop1001/1003/emptygroups. Reuse the S05 protected provisioning
+pattern for exactly two missing purpose transports, owned rollback and the
+matching current test consumer. Source author900s and loaded-plugin real
+Store/Fence producer900s run within the unchanged global remainder, with a
+before-edit design and independent review. No fake policy/registry callback,
+placeholder wrapper, new framework, blanket installer admission or private
+key-byte inspection is permitted. Actual loaded plugin/publication/denial/
+lifetime/race, complete native mutation and installed Runtime remain required.
+
+### S04-02 actual paired-producer source and compile — 2026-10-19
+
+Root/controller explicitly added1800s source integration, cumulative11400/
+12:26:12UTC, retaining all work from09:16:12. The previously absent concrete
+frontend/backend actors now reuse the existing18-request HTTP journey, four
+fixed authoritative snapshots and actual held-mail witnesses. Stop/reap the
+request producer and relay workers before backend restoration, then dispose
+retained frontend private files. Corrected exact ASCII HMAC bytes, current
+frontend UID/GID/groups and the finite three generated-state directories; no
+generic RPC, parser or cleanup acceptance was introduced.
+
+The initial paired-action design is600s for setup/cutover/HTTP/restoration,
+not a password request timeout. All original nested request caps remain or
+tighten to the original caller end. The unexecuted held-witness draft90 cap
+did not compose with setup+HTTP+finish155s; root/controller explicitly corrected
+that new witness cap to180 once, within the same original600s end. No previously
+qualified90 evidence, running lease or production timeout was changed.
+
+The independently cleared474-input composition5770314d and compiler wrapper
+were allowed one unprivileged compile-only action within the same11400 ceiling,
+explicitly superseding the earlier source-only scheduling restriction. Actual
+compile21 PASS182.682s/SSH0/CONFIRMED (b829cd49), independentaaab1b1d: current
+release helper2f5625c7, controlled HTTP debug0 test7b6ac5be and C plugin2bf0d05f;
+all three compiler groups and scratch gone, source parity before/after. No
+application, account, service or plugin load occurred; do not rebuild unchanged
+Rust for subsequent Python custody-source changes. The old controlled client
+does not qualify the new composition. No canonical gateTRUE admission follows.
+
+Whole paired native execution remains HOLD: installer target originals/current
+publication leases, service prestates and purpose authorized-file restoration
+authority must survive connection loss. Existing backup bytes plus the new
+v2 row/role marker are insufficient while those ownership fields remain only
+in RAM. Close this specific durable producer/consumer gap before any global
+cutover; no generic recovery framework, automatic credential replay/rollback,
+historical PID signal or expired fixture renewal is authorized. Actual SMTP
+and cache evidence must accompany IMAP; an IMAP-only pass cannot close T03.
+
+### S04-02 actual SQL configuration compatibility correction — 2026-10-19
+
+The retained10:57 readiness record already marked the SQL route unsupported;
+the later composition/build and whole-chain review failed to carry that missing
+environment prerequisite forward. Preserve that admission failure, all elapsed
+effort and native21's separate unknown first cause. Read-only predicate checks
+were too lossy; one direct secret-screened description using maintained Dovecot
+2.3.21.1 SQL grammar established localhost/postfixadmin, exactly four fields,
+whole double quotes and nine logical continuations. No credentials were exported
+and no password, SQL, authentication or configuration action occurred.
+
+Retain the public connection bytes. The C04 primary fragment only adds an auth
+listener and zero cache; its actual unique fixed-socket Alice/Bob verifiers were
+authenticated through the unchanged public passdb under the original25 config
+map and same master. Admit localhost only for that public-source context, with
+existing backend/process/Generation/socket custody and exact four fields/database.
+The private dedicated projection replaces only the parsed host token with the
+fixed Unix socket; credential substrings, whitespace and quotes remain private
+and unchanged. No generic fallback, new Boolean authority or endpoint waiver.
+
+Rust3c3fcf6b and Pythonace050 implement bounded logical SQL values and native
+literal-space/first-equals grammar. Retained old Rust control RED101/newPASS0
+and ten Python controls are source evidence only. Python0.000212s is control-body
+time; its whole action is UNKNOWN. Actual changed-parser preflight PASS5.874s
+qualifies the current file and pure projections. Actual helper-only compile23
+PASS78.558s/CONFIRMED and capture23 PASS0.756s identify helper961db250 and source
+cf867b70. Reuse frontend7b6/source5770 and unchanged C2bf0 separately; do not
+rebuild them or substitute their provenance. Neither result closes the workflow.
+
+Two inactive fixed private-key slots from failed21 were reversibly preserved
+in a new root0700 quarantine (PASS0.467s) using exact current inode/FD/lease
+checks. No private bytes/hash/deletion; original creation attribution and older
+public namespace remain UNKNOWN/retained. Explicit root/controller allowances
+preserve the original09:16:12 clock and all overrun history: current ceiling
+19800s/14:46:12UTC permits one corrected controlled journey with full650 action,
+300 conditional disposition and60 outcome-review reserve. No automatic third
+native action or expired fixture renewal; actual failures require reassessment.
+
+### Universal delivery SOP and enforced S04-02 hold — 2026-10-19
+
+The operator explicitly commanded enforcement and application to ALL OSMAP
+development. Root owns enforcement; the delivery controller independently
+checks it. AGENTS and the existing framework/adoption now require actual
+environment prerequisites before dependent implementation, propagation of
+known incompatibilities as blockers, direct review of prerequisite evidence,
+the smallest complete correction, minimum changed-boundary QA and outcome-based
+closure. Two failures require combined reassessment. Exhausted allowances
+cannot be replenished automatically or by root/controller alone. Necessary safe
+disposition remains finite and cannot authorize another workflow or fixture
+renewal. Existing declaration gates are not evidence-truth validators.
+
+The independent controller explicitly accepts its missed10:57 unsupported SQL
+prerequisite, over-weighted custody/declaration review and repeated allowance
+extensions. Initial7200 grew to19800seconds (2.75 times); token/monetary costs
+remain UNKNOWN. Those facts and previous failed compute are preserved rather
+than retrospectively labelled compliant. Independent reassessment baaa22d0
+and universalSOP source review3d5402d2 are retained under the stable resumption
+root. Documentation review alone cannot establish effective runtime delivery.
+
+Actual corrected controlled action22 FAILED7.457s during fixture provision,
+before HTTP/password mutation. Both transport groups were reaped, but remote
+cleanup remained uncertain. Fresh observation PASS4.113s (061f9e40) established
+the partial prefix:2rows/3locked identities/15full file leases/3borrowed dirs,
+both private fragments present, original25+9targets/current master preserved,
+no helper/actor/purpose connector/forced-key entries. The last provision operation
+is fragment reload; its exact failing guard remains UNKNOWN. Separately, source
+review demonstrates that the composed SQL wrapper never restores its prior
+uncertainty flag after acknowledged SQL success. That bookkeeping defect is
+not proof of the historical reload failure and has not yet been repaired.
+
+The source-reviewed narrow partial disposition68ca preserves the failed receipt
+and fixture marker, verifies actual initial full17 rows/immutable15/initial
+verifier digests/nonce/Active0 and fresh ownership, then reuses original cleanup.
+Final bound source38223440/carriereee8b857 remains NOT RUN. Its complete210s
+action ceased to fit the14:46:12 cumulative deadline during review; root and
+controller held dispatch. No further horizon reshuffle, third workflow, T05,
+automatic extension or operator credential action occurred. The current test
+resources remain retained. S04-02 and installed UAT remain OPEN/NOT READY.
