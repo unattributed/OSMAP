@@ -393,30 +393,55 @@ fn fstat_worker_pins() -> Result<Vec<&'static FilePin>, Unavailable> {
     Ok(files)
 }
 pub(crate) fn verify_fstat_worker_graph(deadline: Instant) -> Result<(), Unavailable> {
+    verify_fstat_worker_graph_with_trace(
+        deadline,
+        &mut crate::account_password_fstat::StartupTrace::new(
+            crate::account_password_fstat::StartupOperation::BeforeRecheck,
+        ),
+    )
+}
+pub(crate) fn verify_fstat_worker_graph_with_trace(
+    deadline: Instant,
+    trace: &mut crate::account_password_fstat::StartupTrace,
+) -> Result<(), Unavailable> {
+    use crate::account_password_fstat::{StartupCategory as Cat, StartupOperation as Op};
     for pin in fstat_worker_pins()? {
+        trace.set(match pin.path {
+            "/usr/bin/fstat" => Op::GraphFstat,
+            "/usr/lib/libkvm.so.18.0" => Op::GraphKvm,
+            "/usr/lib/libc.so.103.0" => Op::GraphLibc,
+            "/usr/libexec/ld.so" => Op::GraphLoader,
+            _ => Op::GraphHints,
+        });
         pinned_parents(pin.path, pin.parents, deadline)?;
         let (identity, digest, _) = public_file(pin.path, false, FILE_CAP, deadline)?;
         let text: String = digest.iter().map(|byte| format!("{byte:02x}")).collect();
         if identity != pin.identity || text != pin.sha256 {
+            trace.category(Cat::Invalid);
             return Err(Unavailable);
         }
     }
     before(deadline)
 }
 /// One fixed metadata process, not a password Role or a caller execution plan.
+const FSTAT_WORKER_PROMISES: &str = "stdio rpath unix proc exec prot_exec";
 pub(crate) struct FstatWorkerPlan {
     rules: Vec<(CString, CString)>,
     promises: CString,
     custody: std::sync::Arc<crate::account_password_custody::Custody>,
 }
 impl FstatWorkerPlan {
-    pub(crate) fn capture(deadline: Instant) -> Result<Self, Unavailable> {
+    pub(crate) fn capture(
+        deadline: Instant,
+        trace: &mut crate::account_password_fstat::StartupTrace,
+    ) -> Result<Self, Unavailable> {
         if !crate::openbsd::password_native_authority() {
             return Err(Unavailable);
         }
-        verify_fstat_worker_graph(deadline)?;
+        verify_fstat_worker_graph_with_trace(deadline, trace)?;
         let files = fstat_worker_pins()?;
         let paths = files.iter().map(|pin| pin.path).collect::<Vec<_>>();
+        trace.set(crate::account_password_fstat::StartupOperation::CustodyCapture);
         let custody = crate::account_password_custody::Custody::capture(&paths, deadline)
             .map_err(unavailable)?;
         let mut rules = std::collections::BTreeMap::new();
@@ -445,7 +470,7 @@ impl FstatWorkerPlan {
                 .collect::<Result<_, Unavailable>>()?,
             // No execpromises are set: fixed fstat exec resets the view, runs
             // its KERN_FILE observation, then installs its own native pledge.
-            promises: CString::new("stdio rpath proc exec prot_exec").map_err(unavailable)?,
+            promises: CString::new(FSTAT_WORKER_PROMISES).map_err(unavailable)?,
             custody,
         })
     }
@@ -1074,6 +1099,20 @@ pub(crate) fn control_gid(deadline: Instant) -> Result<u32, Unavailable> {
 #[cfg(test)]
 mod diagnostic_tests {
     use super::*;
+    #[test]
+    fn fixed_fstat_timeout_policy_has_unix_without_inet_or_dns() {
+        let actual = FSTAT_WORKER_PROMISES
+            .split_ascii_whitespace()
+            .collect::<Vec<_>>();
+        assert_eq!(
+            actual,
+            ["stdio", "rpath", "unix", "proc", "exec", "prot_exec"]
+        );
+        assert!(!actual
+            .iter()
+            .any(|promise| matches!(*promise, "inet" | "dns")));
+    }
+
     #[test]
     fn original_expired_profile_refusal_has_a_closed_stage_before_io() {
         let mut stage = "not_observed";

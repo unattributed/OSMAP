@@ -343,6 +343,9 @@ const META_FIXED: &[&str] = &[
     "metadata_ps_argv_frame",
     "metadata_ps_unknown",
     "metadata_child_preflight",
+    "metadata_child_budget",
+    "metadata_fstat_rpc_deadline",
+    "metadata_fstat_graph",
     "metadata_child_deadline",
     "metadata_child_pipe",
     "metadata_child_output",
@@ -577,6 +580,15 @@ pub(crate) fn metadata_phase_failure(phase: &str, detail: &str) -> Option<&'stat
         ("primary_startup_master_fstat", "metadata_child_io_unknown") => {
             Some("primary_startup_master_fstat_child_io_unknown")
         }
+        ("primary_startup_master_fstat", "metadata_child_budget") => {
+            Some("primary_startup_master_fstat_child_budget")
+        }
+        ("primary_startup_master_fstat", "metadata_fstat_rpc_deadline") => {
+            Some("primary_startup_master_fstat_rpc_deadline")
+        }
+        ("primary_startup_master_fstat", "metadata_fstat_graph") => {
+            Some("primary_startup_master_fstat_worker_graph")
+        }
         ("primary_startup_master_fstat", "metadata_child_preflight") => {
             Some("primary_startup_master_fstat_child_preflight")
         }
@@ -663,6 +675,15 @@ pub(crate) fn metadata_phase_failure(phase: &str, detail: &str) -> Option<&'stat
         }
         ("primary_startup_own_fstat", "metadata_child_io_unknown") => {
             Some("primary_startup_own_fstat_child_io_unknown")
+        }
+        ("primary_startup_own_fstat", "metadata_child_budget") => {
+            Some("primary_startup_own_fstat_child_budget")
+        }
+        ("primary_startup_own_fstat", "metadata_fstat_rpc_deadline") => {
+            Some("primary_startup_own_fstat_rpc_deadline")
+        }
+        ("primary_startup_own_fstat", "metadata_fstat_graph") => {
+            Some("primary_startup_own_fstat_worker_graph")
         }
         ("primary_startup_own_fstat", "metadata_child_preflight") => {
             Some("primary_startup_own_fstat_child_preflight")
@@ -859,11 +880,11 @@ fn run_with_group(
     labeled: bool,
     fstat_seal: Option<&crate::openbsd::PasswordFstatSeal>,
 ) -> Result<CommandExecution, CommandExecutionError> {
-    if !matches!(cap, 4096 | 16384 | 65536)
-        || execution_quarantined()
-        || deadline.saturating_duration_since(Instant::now()) <= RESERVE
-    {
+    if !matches!(cap, 4096 | 16384 | 65536) || execution_quarantined() {
         return Err(metadata_failure("metadata_child_preflight", labeled));
+    }
+    if deadline.saturating_duration_since(Instant::now()) <= RESERVE {
+        return Err(metadata_failure("metadata_child_budget", labeled));
     }
     let io_deadline = deadline - RESERVE;
     command

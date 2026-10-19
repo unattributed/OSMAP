@@ -195,18 +195,45 @@ impl OperatorFiles {
 /// Fixed operator entry: no caller-selected account/config/utility paths or
 /// namespace/sealing success flags. Native authority is observed, not toggled.
 pub fn run_operator_service(stop: &AtomicBool) -> Result<(), Error> {
+    let mut trace = crate::account_password_fstat::StartupTrace::new(
+        crate::account_password_fstat::StartupOperation::ServiceNative,
+    );
+    let result = run_operator_service_with_trace(stop, &mut trace);
+    if let Err(error) = &result {
+        trace.emit(error);
+    }
+    result
+}
+fn run_operator_service_with_trace(
+    stop: &AtomicBool,
+    trace: &mut crate::account_password_fstat::StartupTrace,
+) -> Result<(), Error> {
+    use crate::account_password_fstat::{StartupCategory as Cat, StartupOperation as Op};
     if !crate::openbsd::password_native_authority() {
         return Err(Error::Unavailable);
     }
     let startup_deadline = Instant::now() + Duration::from_secs(5);
-    crate::openbsd::disable_core_dumps().map_err(unavailable)?;
-    std::env::set_current_dir("/").map_err(unavailable)?;
+    trace.set(Op::ServiceDumps);
+    crate::openbsd::disable_core_dumps().map_err(|e| {
+        trace.io(&e);
+        unavailable(e)
+    })?;
+    trace.set(Op::ServiceCwd);
+    std::env::set_current_dir("/").map_err(|e| {
+        trace.io(&e);
+        unavailable(e)
+    })?;
+    trace.set(Op::ServiceFiles);
     let files = OperatorFiles::read(startup_deadline)?;
+    trace.set(Op::ServiceAdmission);
     let admission = AdmissionService::from_password_operator_files()?;
+    trace.set(Op::ServiceAccounts);
     if admission.password_accounts() != files.accounts {
+        trace.category(Cat::Invalid);
         return Err(Error::Unavailable);
     }
     let metadata = Arc::new(MetadataExecutor::readonly());
+    trace.set(Op::ServiceStartup);
     let startup = Startup::native(metadata.as_ref(), files.master_pid, startup_deadline)
         .map_err(unavailable)?;
     let startup = Arc::new(startup);
@@ -215,12 +242,15 @@ pub fn run_operator_service(stop: &AtomicBool) -> Result<(), Error> {
             startup.as_ref(),
             metadata.as_ref(),
             startup_deadline,
+            trace,
         )
         .map_err(unavailable)?,
     );
     let metadata = Arc::new(MetadataExecutor::with_fstat(observer.clone()));
     let outcome = (|| {
+        trace.set(Op::ServiceStore);
         let store = Arc::new(Store::open(Path::new(EPOCH), 0).map_err(unavailable)?);
+        trace.set(Op::ServiceFence);
         let fence = Arc::new(
             Fence::new(store.clone(), files.accounts.clone(), MonotonicClock)
                 .map_err(unavailable)?,
@@ -239,12 +269,16 @@ pub fn run_operator_service(stop: &AtomicBool) -> Result<(), Error> {
             startup,
             metadata,
             startup_deadline,
+            trace,
         )
     })();
     // Native child custody is part of service exit, including failed setup.
     let cleanup = observer
         .shutdown(Instant::now() + Duration::from_millis(500))
         .map_err(unavailable);
+    if cleanup.is_err() {
+        trace.cleanup_failed();
+    }
     outcome.and(cleanup)
 }
 
@@ -259,23 +293,40 @@ fn serve(
     startup: Arc<Startup>,
     metadata: Arc<MetadataExecutor>,
     startup_deadline: Instant,
+    trace: &mut crate::account_password_fstat::StartupTrace,
 ) -> Result<(), Error> {
+    use crate::account_password_fstat::{StartupCategory as Cat, StartupOperation as Op};
+    trace.set(Op::AdmissionBind);
     let mut admission_socket = AdmissionEndpoint::bind(Path::new(ADMISSION))?;
+    trace.set(Op::MutationBind);
     let mut mutation_socket = AdmissionEndpoint::bind(Path::new(MUTATION))?;
+    trace.set(Op::PublicationBind);
     let mut publication_socket = AdmissionEndpoint::bind(Path::new(PUBLICATION))?;
+    trace.set(Op::PublicationGroup);
     if fs::symlink_metadata(Path::new(PUBLICATION).parent().ok_or(Error::Unavailable)?)
         .map_err(unavailable)?
         .gid()
         != files.connector_gid
     {
+        trace.category(Cat::Invalid);
         return Err(Error::Unavailable);
     }
-    let policy =
-        TcpListener::bind(SocketAddrV4::new(Ipv4Addr::LOCALHOST, 10058)).map_err(unavailable)?;
-    policy.set_nonblocking(true).map_err(unavailable)?;
+    trace.set(Op::PolicyBind);
+    let policy = TcpListener::bind(SocketAddrV4::new(Ipv4Addr::LOCALHOST, 10058)).map_err(|e| {
+        trace.io(&e);
+        unavailable(e)
+    })?;
+    trace.set(Op::PolicyNonblocking);
+    policy.set_nonblocking(true).map_err(|e| {
+        trace.io(&e);
+        unavailable(e)
+    })?;
+    trace.set(Op::SetupDeadline);
     if Instant::now() >= startup_deadline {
+        trace.category(Cat::Deadline);
         return Err(Error::Expired);
     }
+    trace.set(Op::RegistrationRefresh);
     let registration_refresh = Arc::new(
         crate::account_password_topology::RegistrationRefresh::capture(startup_deadline)
             .map_err(unavailable)?,
@@ -292,14 +343,23 @@ fn serve(
         Err(error) => eprintln!("account_password_service stage={primary_stage} error={error:?}"),
     }
     let primary = primary.ok().map(Arc::new);
+    trace.set(Op::ParentPrepare);
     let mut parent_plan =
         crate::account_password_confinement::ParentPlan::prepare(startup_deadline)
             .map_err(unavailable)?;
-    let seal = crate::openbsd::seal_password_parent(&parent_plan).map_err(unavailable)?;
+    trace.set(Op::ParentSeal);
+    let seal = crate::openbsd::seal_password_parent(&parent_plan).map_err(|e| {
+        trace.io(&e);
+        unavailable(e)
+    })?;
+    trace.set(Op::ParentActivate);
     parent_plan.activate(seal).map_err(unavailable)?;
+    trace.set(Op::SetupDeadline);
     if Instant::now() >= startup_deadline {
+        trace.category(Cat::Deadline);
         return Err(Error::Expired);
     }
+    trace.finish();
     let admission_failure_reported = AtomicBool::new(false);
     let outcome = std::thread::scope(|scope| {
         let mut active: Vec<std::thread::ScopedJoinHandle<'_, ()>> = Vec::new();

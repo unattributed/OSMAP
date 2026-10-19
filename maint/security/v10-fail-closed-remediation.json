@@ -24,20 +24,20 @@
     "This slice does not claim broad public release readiness.",
     "This slice does not change production deployment state."
   ],
-  "generated_at_utc": "2026-10-18T22:16:01Z",
+  "generated_at_utc": "2026-10-19T00:28:34Z",
   "purpose": "Targeted fail-closed remediation register for Rust assumption handling after the Slice 4 audit.",
   "refined_current": {
     "by_classification": {
       "control_flow_invariant": 4,
-      "test_or_fixture_assumption": 9528
+      "test_or_fixture_assumption": 9540
     },
     "by_fail_closed_relevance": {
-      "low": 9528,
+      "low": 9540,
       "medium": 4
     },
     "high_relevance_top_files": {},
-    "inventory_sha256": "e1077770ab55452b428cafb51091c6bc993bdd86474afe85fc612d369b31713a",
-    "total_count": 9532
+    "inventory_sha256": "679fb0a86842fcd236805b622197c2f04df516ff0b87b92a9b267aef7c8c6857",
+    "total_count": 9544
   },
   "required_followups": [
     "Use the refined high-relevance list to select the first concrete runtime code remediation.",
@@ -46,7 +46,7 @@
   ],
   "schema_version": 1,
   "selected_remediation": {
-    "classification_change_count": 9447,
+    "classification_change_count": 9459,
     "live_host_state_changed": false,
     "product_behavior_changed": false,
     "production_state_changed": false,
@@ -63,9 +63,9 @@
     "live_host_state_changed": false,
     "product_behavior_changed": false,
     "production_state_changed": false,
-    "refined_total_count": 9532,
-    "source_test_module_assumption_count": 9447,
-    "test_or_fixture_after": 9528,
+    "refined_total_count": 9544,
+    "source_test_module_assumption_count": 9459,
+    "test_or_fixture_after": 9540,
     "test_or_fixture_before": 7068
   }
 }

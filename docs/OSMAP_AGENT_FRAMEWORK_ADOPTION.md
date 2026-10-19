@@ -414,3 +414,23 @@ this framework delivery, not application repair or readiness.
 ## Preserve the validated temporary directory through ordinary Git gates
 
 The integration owner uses the same validated owner-only TMPDIR for focused checks and both normal commit and push hooks, explicitly setting it for each invocation. Preserve inherited shared temporary directories. Retain setup failures and their corrected invocation; do not interpret an unchanged-source passing gate as a product repair, and never bypass a hook or weaken an assertion. This operational correction adds no approval gate.
+
+
+## Controlled candidate qualification before completed source admission
+
+The accepted execution state machine is IN_PROGRESS → VERIFIED → COMMITTED.
+For explicitly authorized private native development, a frozen independently
+reviewed candidate may be qualified before its final completed-change commit.
+The existing carrier must bind a verified signed baseline, exact candidate delta,
+complete compiler-input hashes and actual binary/fixture custody; record that it
+is candidate evidence, never signed-candidate or installed-product evidence.
+Permanent checked attempts, current finite deadlines, whole producer/cleanup/
+consumer review and recovery rules remain mandatory. Do not silently bypass a
+cold guard or substitute a signed baseline SHA for the candidate bytes.
+
+After matching functional proof, complete the normal signed forward commit and
+authorized normal push through every existing mandatory hook, verify signatures
+and fresh origin equality, and prove final-source/native-input parity. Reuse the
+unchanged qualified binary when every input matches; do not rebuild solely for
+commit metadata. This corrects the agent-imposed serial full-hook cycle for each
+failed native prototype; it waives no required check and changes no frozen plan.

@@ -131,3 +131,14 @@ fn sealed_recheck_diagnostic_errno_classes_are_closed_and_payload_free() {
         assert!(metadata_failure_tag(bad).is_none());
     }
 }
+
+#[test]
+fn metadata_budget_expiry_is_distinct_before_any_spawn() {
+    let command = || crate::auth::password_process_fixture_command("result");
+    let end = Instant::now();
+    let invalid_cap = run_with_cap_labeled(command(), b"", end, 1, true).unwrap_err();
+    assert_eq!(invalid_cap.reason, "metadata_child_preflight");
+    let insufficient = run_with_cap_labeled(command(), b"", end, 4096, true).unwrap_err();
+    assert_eq!(insufficient.reason, "metadata_child_budget");
+    assert!(!execution_quarantined());
+}

@@ -595,6 +595,16 @@ pub(crate) fn password_monotonic_ns() -> io::Result<u64> {
         .and_then(|n| n.checked_add(nanos))
         .ok_or_else(|| io::ErrorKind::InvalidData.into())
 }
+#[cfg(any(test, target_os = "openbsd"))]
+fn password_fstat_descriptor_closure(result: i32, error: io::Error) -> io::Result<()> {
+    // Fixed closefrom(3): EBADF proves that all open descriptors are below3.
+    // An interrupted/other failure supplies no such absence proof.
+    if result == 0 || (result == -1 && error.raw_os_error() == Some(libc::EBADF)) {
+        Ok(())
+    } else {
+        Err(error)
+    }
+}
 pub(crate) fn password_close_fstat_inherited_descriptors() -> io::Result<()> {
     #[cfg(target_os = "openbsd")]
     {
@@ -603,10 +613,8 @@ pub(crate) fn password_close_fstat_inherited_descriptors() -> io::Result<()> {
         }
         // This fixed mode has no parent lock/key/listener descriptors. Its
         // private duplex channel is fd0, stdout/stderr are already /dev/null.
-        if unsafe { libc::closefrom(3) } != 0 {
-            return Err(io::Error::last_os_error());
-        }
-        Ok(())
+        let result = unsafe { libc::closefrom(3) };
+        password_fstat_descriptor_closure(result, io::Error::last_os_error())
     }
     #[cfg(not(target_os = "openbsd"))]
     {
@@ -1993,6 +2001,35 @@ pub(crate) use tests::publish_rights;
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn fixed_fstat_closefrom_accepts_only_success_or_already_empty() {
+        assert!(super::password_fstat_descriptor_closure(
+            0,
+            std::io::Error::from_raw_os_error(libc::EINTR)
+        )
+        .is_ok());
+        assert!(super::password_fstat_descriptor_closure(
+            -1,
+            std::io::Error::from_raw_os_error(libc::EBADF)
+        )
+        .is_ok());
+        for errno in [libc::EINTR, libc::EPERM, libc::EBUSY] {
+            assert_eq!(
+                super::password_fstat_descriptor_closure(
+                    -1,
+                    std::io::Error::from_raw_os_error(errno)
+                )
+                .unwrap_err()
+                .raw_os_error(),
+                Some(errno)
+            );
+        }
+        assert!(super::password_fstat_descriptor_closure(
+            1,
+            std::io::Error::from_raw_os_error(libc::EBADF)
+        )
+        .is_err());
+    }
     // Send rights attached to the first byte, matching the fixed C publication
     // contract. No mail data is read or retained by the ancillary transport.
     pub(crate) fn publish_rights(

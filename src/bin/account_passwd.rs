@@ -2,7 +2,10 @@
 fn main() -> std::process::ExitCode {
     let result = if std::env::args_os().len() == 1 {
         osmap::openbsd::AccountAdmissionSignals::install()
-            .map_err(|_| osmap::account_admission::Error::Unavailable)
+            .map_err(|error| {
+                osmap::account_password_fstat::report_signal_setup_failure(&error);
+                osmap::account_admission::Error::Unavailable
+            })
             .and_then(|signals| {
                 osmap::account_password_server::run_operator_service(signals.stop_flag())
             })

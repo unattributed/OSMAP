@@ -1325,3 +1325,15 @@ private argv, endpoint/process continuity and Control one-shot checks remain.
 Ten targeted author controls pass, reused without another focused suite. Normal
 signed hook and changed native qualification remain separate; the existing nine
 scenarios/twenty obligations, disabled form and full workflow limits are unchanged.
+
+
+### S04-02 source-only worker custody and diagnostic update — 2026-10-19
+
+The reviewed fixed-worker socket permission, Command endpoint release and exact
+OpenBSD closefrom(3) already-empty handling are retained with closed startup and
+request phase diagnostics. Current source459 manifest7a244 compiled on OpenBSD;
+normal source admission is separate from installed qualification. Controlled
+case10 and the instrumented older-source worker observation remain failed. Exact
+owned fixture recovery and diagnostic process cleanup passed in their enumerated
+scopes. No WSTG authentication, password-change, installed or release scenario is
+upgraded by this source update; matching complete workflow evidence is pending.

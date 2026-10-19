@@ -11901,3 +11901,110 @@ passed. Existing TLS scanner matched anonymous in a peer-authority doc comment.
 Use exact comment-only wording369178 (private), keep scanner/allowlist unchanged,
 run that same scanner then mandatory signed hook. No semantic fix, focused Rust
 rerun, native build or password action follows from this correction.
+
+
+## 2026-10-18 — honest frozen-candidate native qualification before commit
+
+Worker source8c0 was normally signed after129.577s lexical failure +273.283s
+passing hook (402.860s total), but was not pushed or built when static audit
+identified the worker-only Unix socket-option permission gap. Keep that signed
+history. Exact0a32/c8a2 correction9a4 remains uncommitted pending native proof.
+
+Root verified the accepted IN_PROGRESS→VERIFIED→COMMITTED contract permits
+private controlled qualification before final source admission. Earlier strict
+signed-each-prototype packaging was an agent choice that spent repeated full
+hook cycles before a native failure. Use existing carriers with signedBASE8c0
+and complete reviewed candidate459input hashes/explicit candidate provenance,
+not a false signed-candidate claim. All final normal signed-commit/push hooks,
+fresh source equality and artifact parity remain required after actual matching
+functional proof. No new framework, frozen-plan rewrite, force/amend, skipped
+check, unreviewed host action or installed password readiness follows.
+
+## 2026-10-18 — candidate worker startup failure and owned disposition
+
+The explicitly unsigned candidate over signed base8c0 compiled with all459
+inputs pinned (58.373s); capture and artifact staging passed. Changed case8
+failed18.432s before Primary readiness or authentication, with only the fixed
+unavailable diagnostic. Its exact startup cause remains UNKNOWN. The helper's
+reported false group-absence field was an unmeasured sentinel: exit1 refused
+before that observation. It proves neither group survival nor worker absence.
+No historical PID signal or unchanged authentication retry is justified.
+
+The existing read-only observer passed6.418s: current service/master, original
+configuration, initial full17 rows and epochs were preserved; no current helper
+or purpose process was observed. A separate reviewed action classified the
+current-master Primary reference before any write, withdrew only the owned
+fragment and disposed of exact synthetic state. Recovery passed9.900s, with
+same-master rc OK, ordinary three listeners, original25/exact22 and private
+Primary absence. Exact2 rows/16 files/2 users/groups were removed; four shared
+directory inodes were retained and normalized. Independent dc9063 confirms that
+scope. The earlier failed/uncertain result remains historical; recovery is not
+admission, installation or slice acceptance.
+
+Continue only the reviewed closed startup operation/category diagnostic needed
+to distinguish this failure, through the existing candidate carriers and their
+original bounds. Keep the64KiB driver bound by compacting duplicate fixed stage
+storage with exact evaluated-vocabulary and parser parity. The independently
+reviewed lifecycle producer (239c53cf) remains isolated pending explicit worker
+composition and actual native qualification; source inspection cannot mint a
+loaded generation or enable the password form.
+
+
+## 2026-10-18 — descriptor ownership correction and first-request deadline
+
+The independently reviewed endpoint/closefrom correction4dc8 releases the
+reusable Command child endpoint after actual Child custody, before Hello, and
+accepts only success or actual OpenBSD EBADF for the fixed already-empty
+closefrom(3). Local real-child/pure-result controls passed; unchanged canonical
+TLS guard passed3.606s. Exact five-leaf unsigned candidate over signed base8c0
+compiled with459 inputs in58.844s; capture/staging passed5.935s/61.751s through
+existing carriers, without intermediate full hooks or a client rebuild.
+
+Actual case10 reached Primary readiness, then failed19.666s at the first
+request: primary_startup_master_fstat_child_deadline/Unavailable, clientC15.
+That closed tag merges parent RPC and worker command deadlines; it does not
+establish an actual fstat spawn, kernel hang, or unique cause. Earlier case9
+HelloDeadline18.354s remains historical; combined boundary failures38.020s
+are preserved. Do not increase the timeout or repeat the unchanged case.
+
+Current read-only observation passed7.081s, followed by independently reviewed
+owned recovery PASS9.041s/76a783b4. Current-master Primary reference classified
+before withdrawal; original25/exact22, same-master rc OK and ordinary three
+listeners restored, private Primary absent. Exact2 rows/16 files/2 purpose
+users and groups removed, four retained directory inodes normalizedroot0700;
+all17 utility groups gone, no uncertainty. Synthetic disposal mutation is
+recorded true, operator credential mutation false. No active incident remains.
+Source-only causal discrimination now precedes any new native action.
+
+The separate lifecycle/worker composition2 is independently source clear8b563
+with462 exact inputs and156 includes. It remains isolated and native-cold;
+no loaded-generation, installed password workflow or UAT claim follows.
+
+
+## 2026-10-19 — preserve reviewed source while diagnosing native failure
+
+Preserve the reviewed seven-leaf diagnostic5 candidate as a source-only normal
+signed commit under the operator's explicit push instruction. Source review
+9e424 and earlier socket/startup/endpoint reviews, current459 manifest7a244,
+OpenBSD compile58.946s and unchanged lexical guard3.636s are bounded evidence;
+none qualifies a working password change. The form remains disabled.
+
+Two single-helper uploads failed188.918s/184.631s (373.549s combined). A novel
+EOF wait absent from the working receiver was an avoidable carrier change;
+removing it preserved fixed count/hash but did not resolve the second slow
+publication. Retain both failures, partial artifact and unknown unique cause.
+Do not add validation or I/O to reused carriers without a demonstrated missing
+requirement. No third upload, timeout increase or unchanged rebuild is justified.
+
+One instrumented observation reused the complete older80fc/source6ec helper,
+with a separate fresh claim and exact base-tool pins. Collection/owned cleanup
+passed6.455s; worker failed after Hello with EOF0.401531s/code1. The bounded
+syscall-only trace has one owned PID and no spawn/fstat. Aggregate counts do not
+establish a unique cause. Reclassify that same retained trace if needed; do not
+repeat the worker. Current candidate and older executed bytes remain separate.
+No SQL, authentication, service configuration or operator credential changed.
+
+This source preservation is independently useful and does not wait for full
+S04-02 acceptance. Mandatory normal hooks, Shopkeeper signature verification and
+operator-authorized normal push/fresh equality remain required. Causal changes
+stay isolated until a later reviewed admission; no amend or history rewrite.
