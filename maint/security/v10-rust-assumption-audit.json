@@ -6510,87 +6510,7 @@
       "fail_closed_relevance": "high",
       "file": "src/account_password_fstat.rs",
       "kind": "unwrap_call",
-      "line": 1113
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/account_password_fstat.rs",
-      "kind": "unwrap_call",
-      "line": 1114
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/account_password_fstat.rs",
-      "kind": "unwrap_call",
-      "line": 1121
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/account_password_fstat.rs",
-      "kind": "unwrap_call",
-      "line": 1130
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/account_password_fstat.rs",
-      "kind": "unwrap_call",
-      "line": 1131
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/account_password_fstat.rs",
-      "kind": "unwrap_call",
-      "line": 1134
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/account_password_fstat.rs",
-      "kind": "unwrap_call",
-      "line": 1159
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/account_password_fstat.rs",
-      "kind": "unwrap_call",
-      "line": 1179
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/account_password_fstat.rs",
-      "kind": "unwrap_call",
-      "line": 1199
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/account_password_fstat.rs",
-      "kind": "unwrap_call",
-      "line": 1222
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/account_password_fstat.rs",
-      "kind": "unwrap_call",
-      "line": 1238
+      "line": 1246
     },
     {
       "classification": "production_adjacent_assumption",
@@ -6606,7 +6526,7 @@
       "fail_closed_relevance": "high",
       "file": "src/account_password_fstat.rs",
       "kind": "unwrap_call",
-      "line": 1249
+      "line": 1254
     },
     {
       "classification": "production_adjacent_assumption",
@@ -6614,7 +6534,7 @@
       "fail_closed_relevance": "high",
       "file": "src/account_password_fstat.rs",
       "kind": "unwrap_call",
-      "line": 1269
+      "line": 1263
     },
     {
       "classification": "production_adjacent_assumption",
@@ -6622,7 +6542,7 @@
       "fail_closed_relevance": "high",
       "file": "src/account_password_fstat.rs",
       "kind": "unwrap_call",
-      "line": 1270
+      "line": 1264
     },
     {
       "classification": "production_adjacent_assumption",
@@ -6630,7 +6550,7 @@
       "fail_closed_relevance": "high",
       "file": "src/account_password_fstat.rs",
       "kind": "unwrap_call",
-      "line": 1286
+      "line": 1267
     },
     {
       "classification": "production_adjacent_assumption",
@@ -6638,7 +6558,7 @@
       "fail_closed_relevance": "high",
       "file": "src/account_password_fstat.rs",
       "kind": "unwrap_call",
-      "line": 1287
+      "line": 1292
     },
     {
       "classification": "production_adjacent_assumption",
@@ -6646,7 +6566,7 @@
       "fail_closed_relevance": "high",
       "file": "src/account_password_fstat.rs",
       "kind": "unwrap_call",
-      "line": 1288
+      "line": 1312
     },
     {
       "classification": "production_adjacent_assumption",
@@ -6654,7 +6574,7 @@
       "fail_closed_relevance": "high",
       "file": "src/account_password_fstat.rs",
       "kind": "unwrap_call",
-      "line": 1290
+      "line": 1332
     },
     {
       "classification": "production_adjacent_assumption",
@@ -6662,7 +6582,7 @@
       "fail_closed_relevance": "high",
       "file": "src/account_password_fstat.rs",
       "kind": "unwrap_call",
-      "line": 1315
+      "line": 1355
     },
     {
       "classification": "production_adjacent_assumption",
@@ -6670,7 +6590,7 @@
       "fail_closed_relevance": "high",
       "file": "src/account_password_fstat.rs",
       "kind": "unwrap_call",
-      "line": 1318
+      "line": 1371
     },
     {
       "classification": "production_adjacent_assumption",
@@ -6678,7 +6598,7 @@
       "fail_closed_relevance": "high",
       "file": "src/account_password_fstat.rs",
       "kind": "unwrap_call",
-      "line": 1339
+      "line": 1380
     },
     {
       "classification": "production_adjacent_assumption",
@@ -6686,7 +6606,7 @@
       "fail_closed_relevance": "high",
       "file": "src/account_password_fstat.rs",
       "kind": "unwrap_call",
-      "line": 1350
+      "line": 1382
     },
     {
       "classification": "production_adjacent_assumption",
@@ -6694,7 +6614,7 @@
       "fail_closed_relevance": "high",
       "file": "src/account_password_fstat.rs",
       "kind": "unwrap_call",
-      "line": 1356
+      "line": 1402
     },
     {
       "classification": "production_adjacent_assumption",
@@ -6702,7 +6622,7 @@
       "fail_closed_relevance": "high",
       "file": "src/account_password_fstat.rs",
       "kind": "unwrap_call",
-      "line": 1359
+      "line": 1403
     },
     {
       "classification": "production_adjacent_assumption",
@@ -6710,7 +6630,7 @@
       "fail_closed_relevance": "high",
       "file": "src/account_password_fstat.rs",
       "kind": "unwrap_call",
-      "line": 1365
+      "line": 1419
     },
     {
       "classification": "production_adjacent_assumption",
@@ -6718,7 +6638,7 @@
       "fail_closed_relevance": "high",
       "file": "src/account_password_fstat.rs",
       "kind": "unwrap_call",
-      "line": 1366
+      "line": 1420
     },
     {
       "classification": "production_adjacent_assumption",
@@ -6726,7 +6646,7 @@
       "fail_closed_relevance": "high",
       "file": "src/account_password_fstat.rs",
       "kind": "unwrap_call",
-      "line": 1372
+      "line": 1421
     },
     {
       "classification": "production_adjacent_assumption",
@@ -6734,7 +6654,7 @@
       "fail_closed_relevance": "high",
       "file": "src/account_password_fstat.rs",
       "kind": "unwrap_call",
-      "line": 1375
+      "line": 1423
     },
     {
       "classification": "production_adjacent_assumption",
@@ -6742,7 +6662,7 @@
       "fail_closed_relevance": "high",
       "file": "src/account_password_fstat.rs",
       "kind": "unwrap_call",
-      "line": 1388
+      "line": 1448
     },
     {
       "classification": "production_adjacent_assumption",
@@ -6750,7 +6670,7 @@
       "fail_closed_relevance": "high",
       "file": "src/account_password_fstat.rs",
       "kind": "unwrap_call",
-      "line": 1389
+      "line": 1451
     },
     {
       "classification": "production_adjacent_assumption",
@@ -6758,7 +6678,7 @@
       "fail_closed_relevance": "high",
       "file": "src/account_password_fstat.rs",
       "kind": "unwrap_call",
-      "line": 1396
+      "line": 1472
     },
     {
       "classification": "production_adjacent_assumption",
@@ -6766,7 +6686,7 @@
       "fail_closed_relevance": "high",
       "file": "src/account_password_fstat.rs",
       "kind": "unwrap_call",
-      "line": 1407
+      "line": 1483
     },
     {
       "classification": "production_adjacent_assumption",
@@ -6774,7 +6694,7 @@
       "fail_closed_relevance": "high",
       "file": "src/account_password_fstat.rs",
       "kind": "unwrap_call",
-      "line": 1408
+      "line": 1489
     },
     {
       "classification": "production_adjacent_assumption",
@@ -6782,7 +6702,7 @@
       "fail_closed_relevance": "high",
       "file": "src/account_password_fstat.rs",
       "kind": "unwrap_call",
-      "line": 1410
+      "line": 1492
     },
     {
       "classification": "production_adjacent_assumption",
@@ -6790,7 +6710,7 @@
       "fail_closed_relevance": "high",
       "file": "src/account_password_fstat.rs",
       "kind": "unwrap_call",
-      "line": 1411
+      "line": 1498
     },
     {
       "classification": "production_adjacent_assumption",
@@ -6798,7 +6718,7 @@
       "fail_closed_relevance": "high",
       "file": "src/account_password_fstat.rs",
       "kind": "unwrap_call",
-      "line": 1412
+      "line": 1499
     },
     {
       "classification": "production_adjacent_assumption",
@@ -6806,7 +6726,7 @@
       "fail_closed_relevance": "high",
       "file": "src/account_password_fstat.rs",
       "kind": "unwrap_call",
-      "line": 1415
+      "line": 1505
     },
     {
       "classification": "production_adjacent_assumption",
@@ -6814,7 +6734,7 @@
       "fail_closed_relevance": "high",
       "file": "src/account_password_fstat.rs",
       "kind": "unwrap_call",
-      "line": 1416
+      "line": 1508
     },
     {
       "classification": "production_adjacent_assumption",
@@ -6822,7 +6742,87 @@
       "fail_closed_relevance": "high",
       "file": "src/account_password_fstat.rs",
       "kind": "unwrap_call",
-      "line": 1418
+      "line": 1521
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/account_password_fstat.rs",
+      "kind": "unwrap_call",
+      "line": 1522
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/account_password_fstat.rs",
+      "kind": "unwrap_call",
+      "line": 1529
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/account_password_fstat.rs",
+      "kind": "unwrap_call",
+      "line": 1540
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/account_password_fstat.rs",
+      "kind": "unwrap_call",
+      "line": 1541
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/account_password_fstat.rs",
+      "kind": "unwrap_call",
+      "line": 1543
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/account_password_fstat.rs",
+      "kind": "unwrap_call",
+      "line": 1544
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/account_password_fstat.rs",
+      "kind": "unwrap_call",
+      "line": 1545
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/account_password_fstat.rs",
+      "kind": "unwrap_call",
+      "line": 1548
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/account_password_fstat.rs",
+      "kind": "unwrap_call",
+      "line": 1549
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/account_password_fstat.rs",
+      "kind": "unwrap_call",
+      "line": 1551
     },
     {
       "classification": "production_adjacent_assumption",
@@ -7758,7 +7758,7 @@
       "fail_closed_relevance": "high",
       "file": "src/account_password_server.rs",
       "kind": "unwrap_call",
-      "line": 428
+      "line": 429
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -76465,7 +76465,7 @@
       "line": 521
     }
   ],
-  "generated_at_utc": "2026-10-19T22:40:54Z",
+  "generated_at_utc": "2026-10-19T23:51:20Z",
   "non_claims": [
     "This audit does not claim that all Rust assumptions are safe.",
     "This audit does not claim that production request paths are panic-free.",
@@ -76521,7 +76521,7 @@
       "unwrap_call": 8154
     },
     "classification_complete": true,
-    "inventory_sha256": "a75c054603bace93404ea4265120b7b627aa1c35ebaabf6ed67c77daf1d489bf",
+    "inventory_sha256": "7ac7c385c7f400ab456c387aea0319c70555de5cb051b8e77f7dafd9117f8d97",
     "live_host_state_changed": false,
     "product_behavior_changed": false,
     "production_state_changed": false,

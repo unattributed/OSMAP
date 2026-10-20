@@ -912,6 +912,9 @@ fn query_with_stage<E: CommandExecutor + ?Sized>(
                 crate::account_password_process::metadata_phase_failure(stage, &error.reason)
             {
                 *stage = tag;
+            } else if *stage == "stock_metadata_query" {
+                *stage = crate::account_password_process::metadata_failure_tag(&error.reason)
+                    .unwrap_or("metadata_ps_unknown");
             }
             Error::Unavailable
         })?;
@@ -934,6 +937,8 @@ fn query_with_stage<E: CommandExecutor + ?Sized>(
         if let Some(combined) = crate::account_password_process::metadata_phase_failure(stage, tag)
         {
             *stage = combined;
+        } else if *stage == "stock_metadata_query" {
+            *stage = tag;
         }
         return Err(Error::Unavailable);
     }
@@ -1098,6 +1103,15 @@ struct PrimaryFile {
 fn primary_file(path: &'static str, deadline: Instant) -> Result<PrimaryFile, Error> {
     primary_file_bytes(path, deadline).map(|(pin, _)| pin)
 }
+// Configuration/SQL/passwd readers retain the existing128KiB ceiling. Only
+// these two code-owned executable paths use the existing64MiB binary ceiling.
+fn primary_file_limit(path: &str) -> u64 {
+    if matches!(path, PRIMARY_AUTH | "/usr/local/bin/doveconf") {
+        64 * 1024 * 1024
+    } else {
+        128 * 1024
+    }
+}
 fn primary_file_bytes(
     path: &'static str,
     deadline: Instant,
@@ -1121,11 +1135,7 @@ fn primary_file_bytes(
             m.ctime_nsec() as u64,
         ]
     };
-    let limit = if path == PRIMARY_AUTH {
-        64 * 1024 * 1024
-    } else {
-        128 * 1024
-    };
+    let limit = primary_file_limit(path);
     let before = fs::symlink_metadata(path).map_err(|_| Error::Unavailable)?;
     if !before.is_file()
         || before.uid() != 0
@@ -1980,17 +1990,25 @@ impl StockStartup {
     fn observe(
         executor: &(dyn CommandExecutor + Send + Sync),
         deadline: Instant,
+        trace: &mut crate::account_password_fstat::StartupTrace,
     ) -> Result<Self, Error> {
         if !crate::openbsd::password_native_authority() || Instant::now() >= deadline {
             return Err(Error::Refused);
         }
+        trace.set(crate::account_password_fstat::StartupOperation::StockMasterPid);
         let master_pid = stock_master_pid(deadline)?;
         let own_pid = std::process::id();
+        trace.set(crate::account_password_fstat::StartupOperation::StockMasterRow);
         let master = row(
-            &query(executor, PS, &ps_args(master_pid), deadline)?,
+            &stock_query(executor, PS, &ps_args(master_pid), deadline, trace)?,
             master_pid,
         )?;
-        let own = row(&query(executor, PS, &ps_args(own_pid), deadline)?, own_pid)?;
+        trace.set(crate::account_password_fstat::StartupOperation::StockHelperRow);
+        let own = row(
+            &stock_query(executor, PS, &ps_args(own_pid), deadline, trace)?,
+            own_pid,
+        )?;
+        trace.set(crate::account_password_fstat::StartupOperation::StockRoles);
         if master.parent != 1
             || master.pid != master.group
             || master.uid != 0
@@ -2004,18 +2022,20 @@ impl StockStartup {
         {
             return Err(Error::Refused);
         }
+        trace.set(crate::account_password_fstat::StartupOperation::StockProgramPins);
         let pins = [PS, MASTER, HELPER]
             .into_iter()
             .map(file_pin)
             .collect::<Result<Vec<_>, _>>()?;
         let value = Self { master, own, pins };
-        value.recheck(executor, deadline)?;
+        value.recheck(executor, deadline, trace)?;
         Ok(value)
     }
     fn recheck(
         &self,
         executor: &(dyn CommandExecutor + Send + Sync),
         deadline: Instant,
+        trace: &mut crate::account_password_fstat::StartupTrace,
     ) -> Result<(), Error> {
         if !crate::openbsd::password_native_authority()
             || std::process::id() != self.own.pid
@@ -2023,14 +2043,20 @@ impl StockStartup {
         {
             return Err(Error::Refused);
         }
+        trace.set(crate::account_password_fstat::StartupOperation::StockProgramPins);
         for pin in &self.pins {
             if file_pin(pin.path)? != *pin {
                 return Err(Error::Refused);
             }
         }
         for expected in [&self.master, &self.own] {
+            trace.set(if expected.pid == self.master.pid {
+                crate::account_password_fstat::StartupOperation::StockMasterRow
+            } else {
+                crate::account_password_fstat::StartupOperation::StockHelperRow
+            });
             if row(
-                &query(executor, PS, &ps_args(expected.pid), deadline)?,
+                &stock_query(executor, PS, &ps_args(expected.pid), deadline, trace)?,
                 expected.pid,
             )? != *expected
             {
@@ -2042,6 +2068,18 @@ impl StockStartup {
         }
         Ok(())
     }
+}
+fn stock_query<E: CommandExecutor + ?Sized>(
+    executor: &E,
+    program: &str,
+    args: &[String],
+    deadline: Instant,
+    trace: &mut crate::account_password_fstat::StartupTrace,
+) -> Result<String, Error> {
+    let mut site = "stock_metadata_query";
+    query_with_stage(executor, program, args, deadline, &mut site).inspect_err(|_| {
+        trace.metadata(site);
+    })
 }
 #[derive(PartialEq, Eq)]
 struct StockSocketSnapshot {
@@ -2074,12 +2112,15 @@ fn stock_socket_probe(
     uid: u32,
     gid: u32,
     deadline: Instant,
+    trace: &mut crate::account_password_fstat::StartupTrace,
 ) -> Result<StockSocketSnapshot, Error> {
     let path = crate::account_password_mail::STOCK_AUTH;
-    startup.recheck(executor, deadline)?;
+    startup.recheck(executor, deadline, trace)?;
+    trace.set(crate::account_password_fstat::StartupOperation::StockAuthPin);
     if file_pin(auth.path)? != *auth {
         return Err(Error::Refused);
     }
+    trace.set(crate::account_password_fstat::StartupOperation::StockSocketMetadata);
     crate::account_password_custody::ancestors(path, None, deadline)
         .map_err(|_| Error::Unavailable)?;
     let identity = |m: &fs::Metadata| {
@@ -2108,19 +2149,23 @@ fn stock_socket_probe(
     }
     // The same held real connection supplies kernel authority throughout this
     // observation. File ownership is distinct from the root listener binder.
+    trace.set(crate::account_password_fstat::StartupOperation::StockSocketConnect);
     let stream = crate::openbsd::connect_unix_before(Path::new(path), deadline)
         .map_err(|_| Error::Unavailable)?;
+    trace.set(crate::account_password_fstat::StartupOperation::StockSocketPeer);
     let binder = kernel(&stream)?;
     if binder.1 != 0 || binder.2 != 0 {
         return Err(Error::Refused);
     }
     let mut selected_argv = String::new();
     let worker = ready_socket_worker(path, deadline, &mut "stock_auth_worker", |end, _| {
-        let raw = query(
+        trace.set(crate::account_password_fstat::StartupOperation::StockWorkerRows);
+        let raw = stock_query(
             executor,
             PS,
             &["-ax".into(), "-o".into(), PS_FIELDS.into()],
             end,
+            trace,
         )?;
         let mut matches = Vec::new();
         for (index, line) in raw.lines().enumerate() {
@@ -2132,14 +2177,17 @@ fn stock_socket_probe(
             if stock_auth_role(&candidate, &startup.master, uid, gid).is_err() {
                 continue;
             }
-            let argv = query(
+            trace.set(crate::account_password_fstat::StartupOperation::StockWorkerArgv);
+            let argv = stock_query(
                 executor,
                 PS,
                 &["-p".into(), pid.to_string(), "-o".into(), "args=".into()],
                 end,
+                trace,
             )?;
             stock_auth_argv(&argv)?;
-            if row(&query(executor, PS, &ps_args(pid), end)?, pid)? != candidate {
+            trace.set(crate::account_password_fstat::StartupOperation::StockWorkerBirth);
+            if row(&stock_query(executor, PS, &ps_args(pid), end, trace)?, pid)? != candidate {
                 return Err(Error::Refused);
             }
             selected_argv = argv;
@@ -2147,7 +2195,8 @@ fn stock_socket_probe(
         }
         Ok(matches)
     })?;
-    startup.recheck(executor, deadline)?;
+    startup.recheck(executor, deadline, trace)?;
+    trace.set(crate::account_password_fstat::StartupOperation::StockSocketContinuity);
     if identity(&fs::symlink_metadata(path).map_err(|_| Error::Unavailable)?) != identity(&before)
         || kernel(&stream)? != binder
         || file_pin(auth.path)? != *auth
@@ -2188,25 +2237,32 @@ impl StockPeer {
     pub(crate) fn observe(
         executor: std::sync::Arc<dyn CommandExecutor + Send + Sync>,
         deadline: Instant,
+        trace: &mut crate::account_password_fstat::StartupTrace,
     ) -> Result<Self, Error> {
-        let startup = StockStartup::observe(executor.as_ref(), deadline)?;
+        let startup = StockStartup::observe(executor.as_ref(), deadline, trace)?;
+        trace.set(crate::account_password_fstat::StartupOperation::StockConfigFiles);
         let mut files = Vec::new();
         for &path in PRIMARY_CONFIGURATION_PATHS {
             if !matches!(path, PRIMARY_FRAGMENT | CONTROL_FRAGMENT) {
                 files.push(primary_file(path, deadline)?);
             }
         }
+        trace.set(crate::account_password_fstat::StartupOperation::StockConfigIncludes);
         primary_include_matches(&files, deadline)?;
         // The pinned original25 closure fixes the main/include routing. Validate
         // its sole source-selected SQL passdb before admitting the writer.
+        trace.set(crate::account_password_fstat::StartupOperation::StockPassdb);
         let (_, passdb) = primary_file_bytes("/etc/dovecot/conf.d/auth-sql.conf.ext", deadline)?;
         stock_sql::passdb(&passdb).map_err(|_| Error::Refused)?;
+        trace.set(crate::account_password_fstat::StartupOperation::StockSql);
         let (sql, sql_bytes) = primary_file_bytes("/etc/dovecot/dovecot-sql.conf.ext", deadline)?;
         stock_sql::validate(&sql_bytes).map_err(|_| Error::Refused)?;
         files.push(sql);
+        trace.set(crate::account_password_fstat::StartupOperation::StockRuntimeFiles);
         for path in ["/var/dovecot/master.pid", PRIMARY_AUTH] {
             files.push(primary_file(path, deadline)?);
         }
+        trace.set(crate::account_password_fstat::StartupOperation::StockPasswd);
         let (passwd, bytes) = primary_file_bytes("/etc/passwd", deadline)?;
         let text = std::str::from_utf8(&bytes).map_err(|_| Error::Refused)?;
         let selected = text
@@ -2235,19 +2291,30 @@ impl StockPeer {
             return Err(Error::Refused);
         }
         files.push(passwd);
+        trace.set(crate::account_password_fstat::StartupOperation::StockAuthPin);
         let auth = file_pin(PRIMARY_AUTH)?;
+        trace.set(crate::account_password_fstat::StartupOperation::StockMainSelection);
         let selection = main_configuration_selection_bound(
             executor.as_ref(),
             &startup.master,
             deadline,
             &mut "primary_main_selection",
         )?;
-        let auth_snapshot =
-            stock_socket_probe(executor.as_ref(), &startup, &auth, uid, gid, deadline)?;
+        let auth_snapshot = stock_socket_probe(
+            executor.as_ref(),
+            &startup,
+            &auth,
+            uid,
+            gid,
+            deadline,
+            trace,
+        )?;
         // Fixed current read-only configuration observation, before the parent
         // is sealed. No cache is enabled/populated and no fabricated flush occurs.
+        trace.set(crate::account_password_fstat::StartupOperation::StockCachePin);
         let doveconf = primary_file("/usr/local/bin/doveconf", deadline)?;
-        if query(
+        trace.set(crate::account_password_fstat::StartupOperation::StockCacheQuery);
+        if stock_query(
             executor.as_ref(),
             "/usr/local/bin/doveconf",
             &[
@@ -2257,10 +2324,12 @@ impl StockPeer {
                 "auth_cache_size".into(),
             ],
             deadline,
+            trace,
         )? != "0\n"
         {
             return Err(Error::Refused);
         }
+        trace.set(crate::account_password_fstat::StartupOperation::StockCachePin);
         let after = primary_file("/usr/local/bin/doveconf", deadline)?;
         if doveconf.identity != after.identity || doveconf.digest != after.digest {
             return Err(Error::Refused);
@@ -2276,14 +2345,26 @@ impl StockPeer {
             auth_snapshot,
             server_gid: gid,
         };
-        value.recheck(deadline)?;
+        value.recheck_with_trace(deadline, trace)?;
         Ok(value)
     }
     pub(crate) fn master_pid(&self) -> u32 {
         self.startup.master.pid
     }
     pub(crate) fn recheck(&self, deadline: Instant) -> Result<(), Error> {
-        self.startup.recheck(self.executor.as_ref(), deadline)?;
+        let mut trace = crate::account_password_fstat::StartupTrace::new(
+            crate::account_password_fstat::StartupOperation::StockRecheckSnapshot,
+        );
+        self.recheck_with_trace(deadline, &mut trace)
+    }
+    fn recheck_with_trace(
+        &self,
+        deadline: Instant,
+        trace: &mut crate::account_password_fstat::StartupTrace,
+    ) -> Result<(), Error> {
+        self.startup
+            .recheck(self.executor.as_ref(), deadline, trace)?;
+        trace.set(crate::account_password_fstat::StartupOperation::StockMainSelection);
         if main_configuration_selection_bound(
             self.executor.as_ref(),
             &self.startup.master,
@@ -2293,22 +2374,26 @@ impl StockPeer {
         {
             return Err(Error::Refused);
         }
+        trace.set(crate::account_password_fstat::StartupOperation::StockConfigIncludes);
         primary_include_matches(&self.files, deadline)?;
+        trace.set(crate::account_password_fstat::StartupOperation::StockRecheckFiles);
         for old in &self.files {
             let new = primary_file(old.path, deadline)?;
             if old.identity != new.identity || old.digest != new.digest {
                 return Err(Error::Refused);
             }
         }
-        if stock_socket_probe(
+        let observed = stock_socket_probe(
             self.executor.as_ref(),
             &self.startup,
             &self.auth,
             self.server_uid,
             self.server_gid,
             deadline,
-        )? != self.auth_snapshot
-        {
+            trace,
+        )?;
+        trace.set(crate::account_password_fstat::StartupOperation::StockRecheckSnapshot);
+        if observed != self.auth_snapshot {
             return Err(Error::Refused);
         }
         Ok(())
@@ -2590,6 +2675,28 @@ mod stock_sql {
 #[cfg(test)]
 mod stock_authority_tests {
     use super::*;
+    #[test]
+    fn fixed_doveconf_binary_bound_preserves_configuration_ceiling() {
+        // A fixed executable larger than128KiB must reach the actual cache
+        // query; changing its reader bound cannot enlarge any config reader.
+        let above_configuration_limit = 128 * 1024 + 1;
+        assert!(above_configuration_limit <= primary_file_limit("/usr/local/bin/doveconf"));
+        assert_eq!(primary_file_limit(PRIMARY_AUTH), 64 * 1024 * 1024);
+        assert_eq!(
+            primary_file_limit("/usr/local/bin/doveconf"),
+            64 * 1024 * 1024
+        );
+        for path in [
+            "/etc/dovecot/dovecot.conf",
+            "/etc/dovecot/dovecot-sql.conf.ext",
+            "/etc/passwd",
+            "/usr/local/bin/other",
+        ] {
+            assert_eq!(primary_file_limit(path), 128 * 1024);
+            assert!(above_configuration_limit > primary_file_limit(path));
+        }
+        assert!(64 * 1024 * 1024 + 1 > primary_file_limit("/usr/local/bin/doveconf"));
+    }
 
     #[test]
     fn stock_auth_requires_same_master_nonroot_role_and_no_overrides() {

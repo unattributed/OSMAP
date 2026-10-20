@@ -63,6 +63,30 @@ pub(crate) enum StartupOperation {
     ParentActivate = 37,
     SetupDeadline = 38,
     ServiceSignals = 39,
+    StockMasterPid = 40,
+    StockMasterRow = 41,
+    StockHelperRow = 42,
+    StockRoles = 43,
+    StockProgramPins = 44,
+    StockConfigFiles = 45,
+    StockConfigIncludes = 46,
+    StockPassdb = 47,
+    StockSql = 48,
+    StockRuntimeFiles = 49,
+    StockPasswd = 50,
+    StockAuthPin = 51,
+    StockMainSelection = 52,
+    StockSocketMetadata = 53,
+    StockSocketConnect = 54,
+    StockSocketPeer = 55,
+    StockWorkerRows = 56,
+    StockWorkerArgv = 57,
+    StockWorkerBirth = 58,
+    StockSocketContinuity = 59,
+    StockCachePin = 60,
+    StockCacheQuery = 61,
+    StockRecheckFiles = 62,
+    StockRecheckSnapshot = 63,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[repr(u8)]
@@ -98,7 +122,7 @@ macro_rules! startup_tags {
         ]
     };
 }
-const STARTUP_TAGS: [[&str; 12]; 40] = [
+const STARTUP_TAGS: [[&str; 12]; 64] = [
     startup_tags!("primary_fstat_service_native"),
     startup_tags!("primary_fstat_service_dumps"),
     startup_tags!("primary_fstat_service_cwd"),
@@ -139,8 +163,32 @@ const STARTUP_TAGS: [[&str; 12]; 40] = [
     startup_tags!("primary_fstat_parent_activate"),
     startup_tags!("primary_fstat_setup_deadline"),
     startup_tags!("primary_fstat_service_signals"),
+    startup_tags!("primary_fstat_stock_master_pid"),
+    startup_tags!("primary_fstat_stock_master_row"),
+    startup_tags!("primary_fstat_stock_helper_row"),
+    startup_tags!("primary_fstat_stock_roles"),
+    startup_tags!("primary_fstat_stock_program_pins"),
+    startup_tags!("primary_fstat_stock_config_files"),
+    startup_tags!("primary_fstat_stock_config_includes"),
+    startup_tags!("primary_fstat_stock_passdb"),
+    startup_tags!("primary_fstat_stock_sql"),
+    startup_tags!("primary_fstat_stock_runtime_files"),
+    startup_tags!("primary_fstat_stock_passwd"),
+    startup_tags!("primary_fstat_stock_auth_pin"),
+    startup_tags!("primary_fstat_stock_main_selection"),
+    startup_tags!("primary_fstat_stock_socket_metadata"),
+    startup_tags!("primary_fstat_stock_socket_connect"),
+    startup_tags!("primary_fstat_stock_socket_peer"),
+    startup_tags!("primary_fstat_stock_worker_rows"),
+    startup_tags!("primary_fstat_stock_worker_argv"),
+    startup_tags!("primary_fstat_stock_worker_birth"),
+    startup_tags!("primary_fstat_stock_socket_continuity"),
+    startup_tags!("primary_fstat_stock_cache_pin"),
+    startup_tags!("primary_fstat_stock_cache_query"),
+    startup_tags!("primary_fstat_stock_recheck_files"),
+    startup_tags!("primary_fstat_stock_recheck_snapshot"),
 ];
-const WORKER_STARTUP_TAGS: [[&str; 12]; 40] = [
+const WORKER_STARTUP_TAGS: [[&str; 12]; 64] = [
     startup_tags!("primary_fstat_bootstrap_service_native"),
     startup_tags!("primary_fstat_bootstrap_service_dumps"),
     startup_tags!("primary_fstat_bootstrap_service_cwd"),
@@ -181,6 +229,30 @@ const WORKER_STARTUP_TAGS: [[&str; 12]; 40] = [
     startup_tags!("primary_fstat_bootstrap_parent_activate"),
     startup_tags!("primary_fstat_bootstrap_setup_deadline"),
     startup_tags!("primary_fstat_bootstrap_service_signals"),
+    startup_tags!("primary_fstat_bootstrap_stock_master_pid"),
+    startup_tags!("primary_fstat_bootstrap_stock_master_row"),
+    startup_tags!("primary_fstat_bootstrap_stock_helper_row"),
+    startup_tags!("primary_fstat_bootstrap_stock_roles"),
+    startup_tags!("primary_fstat_bootstrap_stock_program_pins"),
+    startup_tags!("primary_fstat_bootstrap_stock_config_files"),
+    startup_tags!("primary_fstat_bootstrap_stock_config_includes"),
+    startup_tags!("primary_fstat_bootstrap_stock_passdb"),
+    startup_tags!("primary_fstat_bootstrap_stock_sql"),
+    startup_tags!("primary_fstat_bootstrap_stock_runtime_files"),
+    startup_tags!("primary_fstat_bootstrap_stock_passwd"),
+    startup_tags!("primary_fstat_bootstrap_stock_auth_pin"),
+    startup_tags!("primary_fstat_bootstrap_stock_main_selection"),
+    startup_tags!("primary_fstat_bootstrap_stock_socket_metadata"),
+    startup_tags!("primary_fstat_bootstrap_stock_socket_connect"),
+    startup_tags!("primary_fstat_bootstrap_stock_socket_peer"),
+    startup_tags!("primary_fstat_bootstrap_stock_worker_rows"),
+    startup_tags!("primary_fstat_bootstrap_stock_worker_argv"),
+    startup_tags!("primary_fstat_bootstrap_stock_worker_birth"),
+    startup_tags!("primary_fstat_bootstrap_stock_socket_continuity"),
+    startup_tags!("primary_fstat_bootstrap_stock_cache_pin"),
+    startup_tags!("primary_fstat_bootstrap_stock_cache_query"),
+    startup_tags!("primary_fstat_bootstrap_stock_recheck_files"),
+    startup_tags!("primary_fstat_bootstrap_stock_recheck_snapshot"),
 ];
 pub(crate) struct StartupTrace {
     operation: StartupOperation,
@@ -225,6 +297,22 @@ impl StartupTrace {
                 ErrorKind::UnexpectedEof => StartupCategory::Eof,
                 _ => StartupCategory::Unknown,
             },
+        };
+    }
+    pub(crate) fn metadata(&mut self, tag: &str) {
+        self.category = match tag.rsplit('_').next() {
+            Some("denied") => StartupCategory::Denied,
+            Some("invalid") => StartupCategory::Invalid,
+            Some("absent") => StartupCategory::Absent,
+            Some("busy") => StartupCategory::Busy,
+            Some("capacity") => StartupCategory::Capacity,
+            Some("deadline" | "budget") => StartupCategory::Deadline,
+            Some("eof") => StartupCategory::Eof,
+            Some("exit") => StartupCategory::Exit,
+            Some("signal") => StartupCategory::Signal,
+            Some("protocol") => StartupCategory::Protocol,
+            Some("output" | "encoding" | "stderr") => StartupCategory::Output,
+            _ => StartupCategory::Unknown,
         };
     }
     fn failure(&mut self, failure: Failure) {
@@ -1108,6 +1196,51 @@ fn worker() -> Result<(), Failure> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn stock_startup_fixed_sites_preserve_historical_ids_and_error_categories() {
+        assert_eq!(StartupOperation::ServiceSignals as u8, 39);
+        let mut tags = std::collections::BTreeSet::new();
+        for operation in [
+            StartupOperation::StockMasterPid,
+            StartupOperation::StockMasterRow,
+            StartupOperation::StockHelperRow,
+            StartupOperation::StockRoles,
+            StartupOperation::StockProgramPins,
+            StartupOperation::StockConfigFiles,
+            StartupOperation::StockConfigIncludes,
+            StartupOperation::StockPassdb,
+            StartupOperation::StockSql,
+            StartupOperation::StockRuntimeFiles,
+            StartupOperation::StockPasswd,
+            StartupOperation::StockAuthPin,
+            StartupOperation::StockMainSelection,
+            StartupOperation::StockSocketMetadata,
+            StartupOperation::StockSocketConnect,
+            StartupOperation::StockSocketPeer,
+            StartupOperation::StockWorkerRows,
+            StartupOperation::StockWorkerArgv,
+            StartupOperation::StockWorkerBirth,
+            StartupOperation::StockSocketContinuity,
+            StartupOperation::StockCachePin,
+            StartupOperation::StockCacheQuery,
+            StartupOperation::StockRecheckFiles,
+            StartupOperation::StockRecheckSnapshot,
+        ] {
+            let mut trace = StartupTrace::new(operation);
+            assert!(tags.insert(trace.tag()));
+            assert!(trace.tag().starts_with("primary_fstat_stock_"));
+            trace.metadata("metadata_builder_denied");
+            assert!(trace.tag().ends_with("_denied"));
+            trace.metadata("metadata_child_deadline");
+            assert!(trace.tag().ends_with("_deadline"));
+            trace.metadata("unrecognized");
+            assert!(trace.tag().ends_with("_unknown"));
+            // Stock sites cannot manufacture a legacy worker-bootstrap frame.
+            let mut parent = StartupTrace::new(StartupOperation::Hello);
+            assert!(parent.accept_bootstrap(&trace.bootstrap_frame()).is_err());
+        }
+        assert_eq!(tags.len(), 24);
+    }
     #[test]
     fn startup_released_command_peer_exposes_actual_child_exit_as_eof() {
         let (own, child_peer) = UnixStream::pair().unwrap();

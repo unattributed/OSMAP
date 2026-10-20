@@ -1,5 +1,86 @@
 # Current Project Status
 
+Current operator authorization, 2026-10-20 03:38:38UTC: a new30-minute
+continuation through04:08:38UTC permits the normal signed reviewed-source gate,
+then existing startup/password-workflow checks. GPG-agent readiness is operator
+reported; actual signing must verify. All earlier failures/idle intervals remain
+recorded. Source/native/install/UAT outcomes remain separate; public mail
+services/configuration remain untouched. No push is authorized by this approval.
+
+
+Current blocker, 2026-10-20 00:01UTC: S04-02 remains incomplete and UAT is
+not ready. The reviewed executable-cap correction and actual OpenBSD build75
+PASS are preserved. Source77 and77a were both refused by the pre-action validator
+before Git/hooks/signing (0.061963s and0.061786s). The first declared paths beyond
+its demonstrated gap; the second corrected its own recipe but left invalid77
+in the active recipe set. Independent combined reassessment clears retirement
+of that unexecuted invalid recipe only, with its exact proposal and both failures
+retained. The corrected whole contract must pass static validation. No third
+signed attempt fits the remaining300-second mandatory gate allowance before
+00:04:32UTC; no gate has run or new commit been created. Ten owned changed files
+remain staged for review; HEAD remains67711. Capture75/diagnostic76, native full
+workflow, durable deployment, installed QA and owner UAT remain unexecuted/open.
+No public mail service/configuration action or synchronization was performed.
+
+
+Current disposition, 2026-10-19 23:57UTC: changed helper-only OpenBSD build75
+PASS70.105s, all460 source inputs/parity and owned build cleanup confirmed.
+Manifest04607c05 binds signed67711 plus exactly three cumulative source leaves;
+new helper20598cfffab1b747b9748ba5039651277f962d5a99f46176a9e09dff2d4c6f74.
+The63 client was not rebuilt and retains separate provenance. Capture75 and the
+prepared no-account startup diagnostic76 are HELD/NOT RUN so their full bounds
+and the300-second normal signed-source gate fit the current phase honestly.
+No startup PASS is inferred from this build. Next functional action requires
+matching ordinary-helper startup proof, then a fresh controlled full workflow;
+production qualification flags, durable deployment and installed QA remain open.
+Source77 pre-action FAIL0.061963s refused an overbroad recipe path list before
+Git/hooks/signing. Successor77a changes only that declaration to the three Rust
+gap paths, retaining all ten independently reviewed staged files and normal
+hooks. Its actual result is external at resume63/source-preservation77a/result.json;
+no PASS is predeclared. S04-02 is
+not complete, no UAT is invited, and no synchronization is authorized.
+
+
+Current actual source outcome, 2026-10-19 23:52UTC: S04-02 remains open and
+not ready for UAT. Diagnostic73 collected StockCachePin/Unavailable, with its
+owned helper/stage removed and no SQL, account or public-service action.
+Read-only metadata74 PASS3.856324s measured the fixed doveconf executable at
+209,968 bytes, above the generic128KiB reader limit. The reviewed correction
+uses the existing64MiB executable bound for only that fixed path and the existing
+authentication executable; all configuration/SQL/passwd/other paths remain128KiB.
+Custody, hashing, deadlines and operation order remain intact. One focused
+production-limit regression PASS1/0failed/0ignored (compile6.88s; whole wall time
+UNKNOWN); one assertion formatting correction follows. No qualification flag,
+production installation or password workflow PASS is claimed. Changed native
+build is pending; no source checkpoint closes T03 or the nine-scenario slice.
+
+Current actual outcome, 2026-10-19 23:39UTC: S04-02 remains incomplete and not
+ready for owner UAT. Signed67711 passed its normal local gate; actual changed
+OpenBSD build63 PASS182.709s and capture64 PASS0.666s. Publication65 was refused
+locally before SSH because its declaration omitted both receiver hashes;
+the guard remained intact, its NOT_RUN/NOT_DISPATCHED receipt is retained, and
+corrected exact-scalar publication65a PASS9.029s. Actual journey66 FAIL8.015s:
+the new helper exited1 at ServiceStartup before HTTP or backend events, with
+its inner predicate UNKNOWN. Neither source/build nor absence evidence closes
+the workflow. Actual68 observation PASS3.720329s, strict backend69 disposition
+PASS5.570731s and frontend70 disposition PASS0.571s removed the current owned
+operational effects, preserving original public configuration/master and failed
+receipt/default flags. Protected root evidence stages remain provenance.
+
+The minimal diagnostic source71 adds fixed startup sites to the existing trace,
+without changing predicates, command shapes, operation order or budgets. One
+focused static trace test PASS; formatting-only corrections are independently
+reviewed. Actual helper-only build72 PASS81.337s and capture72 PASS0.657s bind
+signed67711 plus exactly three formatted diagnostic leaves, not unchanged67711.
+The existing63 HTTP client is explicitly separate and was not rebuilt. Next is
+the independently reviewed, material-absent normal helper invocation73; it must
+not create accounts/roles, perform SQL, change public services/configuration or
+replay the disposed66 fixture. T04/T05, production activation and installed QA
+remain held. No current-source fix, new workflow PASS, synchronization, installed
+password form or human acceptance is claimed.
+
+Current operator resumption, 2026-10-19 23:04UTC: complete S04-02 with managed subagents. Signed local source67711 and mandatory gate62 PASS278.959099s are complete; native changed-source workflow and installed QA remain NOT RUN. Root owns the one host/Git queue. Prepare changed compiler63/capture64, current55-bound publication65 and one fresh controlled journey66, with independent producer/cleanup/consumer review. Public mail services/configuration remain unchanged. One prospective3600-second phase ends2026-10-20T00:04:32Z; preserve prior costs/failures and never renew expired fixture leases. No push is inferred.
+
 Local source gate61 actually failed after57.28046seconds: Rust tests passed,
 but all-target clippy identified one remaining retained legacy Startup::native
 constructor unused in the non-test library. Root adds one function-local

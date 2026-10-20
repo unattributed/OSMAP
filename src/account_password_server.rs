@@ -186,7 +186,8 @@ fn run_operator_service_with_trace(
     })?;
     let metadata = Arc::new(MetadataExecutor::readonly());
     trace.set(Op::ServiceStartup);
-    let stock = Arc::new(StockPeer::observe(metadata, startup_deadline).map_err(unavailable)?);
+    let stock =
+        Arc::new(StockPeer::observe(metadata, startup_deadline, trace).map_err(unavailable)?);
     trace.set(Op::ServiceFiles);
     let files = OperatorFiles::read(startup_deadline)?;
     trace.set(Op::ServiceAdmission);

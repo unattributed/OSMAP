@@ -1,5 +1,62 @@
 # S04-02 delivery specification — authoritative own-password change
 
+Current operator authorization, 2026-10-20 03:38:38UTC: a new30-minute
+continuation through04:08:38UTC permits the normal signed reviewed-source gate,
+then existing startup/password-workflow checks. GPG-agent readiness is operator
+reported; actual signing must verify. All earlier failures/idle intervals remain
+recorded. Source/native/install/UAT outcomes remain separate; public mail
+services/configuration remain untouched. No push is authorized by this approval.
+
+
+Current blocker, 2026-10-20 00:01UTC: S04-02 remains incomplete and UAT is
+not ready. The reviewed executable-cap correction and actual OpenBSD build75
+PASS are preserved. Source77 and77a were both refused by the pre-action validator
+before Git/hooks/signing (0.061963s and0.061786s). The first declared paths beyond
+its demonstrated gap; the second corrected its own recipe but left invalid77
+in the active recipe set. Independent combined reassessment clears retirement
+of that unexecuted invalid recipe only, with its exact proposal and both failures
+retained. The corrected whole contract must pass static validation. No third
+signed attempt fits the remaining300-second mandatory gate allowance before
+00:04:32UTC; no gate has run or new commit been created. Ten owned changed files
+remain staged for review; HEAD remains67711. Capture75/diagnostic76, native full
+workflow, durable deployment, installed QA and owner UAT remain unexecuted/open.
+No public mail service/configuration action or synchronization was performed.
+
+
+Current disposition, 2026-10-19 23:57UTC: changed helper-only OpenBSD build75
+PASS70.105s, all460 source inputs/parity and owned build cleanup confirmed.
+Manifest04607c05 binds signed67711 plus exactly three cumulative source leaves;
+new helper20598cfffab1b747b9748ba5039651277f962d5a99f46176a9e09dff2d4c6f74.
+The63 client was not rebuilt and retains separate provenance. Capture75 and the
+prepared no-account startup diagnostic76 are HELD/NOT RUN so their full bounds
+and the300-second normal signed-source gate fit the current phase honestly.
+No startup PASS is inferred from this build. Next functional action requires
+matching ordinary-helper startup proof, then a fresh controlled full workflow;
+production qualification flags, durable deployment and installed QA remain open.
+Source77 pre-action FAIL0.061963s refused an overbroad recipe path list before
+Git/hooks/signing. Successor77a changes only that declaration to the three Rust
+gap paths, retaining all ten independently reviewed staged files and normal
+hooks. Its actual result is external at resume63/source-preservation77a/result.json;
+no PASS is predeclared. S04-02 is
+not complete, no UAT is invited, and no synchronization is authorized.
+
+
+Current actual source outcome, 2026-10-19 23:52UTC: S04-02 remains open and
+not ready for UAT. Diagnostic73 collected StockCachePin/Unavailable, with its
+owned helper/stage removed and no SQL, account or public-service action.
+Read-only metadata74 PASS3.856324s measured the fixed doveconf executable at
+209,968 bytes, above the generic128KiB reader limit. The reviewed correction
+uses the existing64MiB executable bound for only that fixed path and the existing
+authentication executable; all configuration/SQL/passwd/other paths remain128KiB.
+Custody, hashing, deadlines and operation order remain intact. One focused
+production-limit regression PASS1/0failed/0ignored (compile6.88s; whole wall time
+UNKNOWN); one assertion formatting correction follows. No qualification flag,
+production installation or password workflow PASS is claimed. Changed native
+build is pending; no source checkpoint closes T03 or the nine-scenario slice.
+
+
+Current operator resumption, 2026-10-19 23:04UTC: complete S04-02 with managed subagents. Signed local source67711 and mandatory gate62 PASS278.959099s are complete; native changed-source workflow and installed QA remain NOT RUN. Root owns the one host/Git queue. Prepare changed compiler63/capture64, current55-bound publication65 and one fresh controlled journey66, with independent producer/cleanup/consumer review. Public mail services/configuration remain unchanged. One prospective3600-second phase ends2026-10-20T00:04:32Z; preserve prior costs/failures and never renew expired fixture leases. No push is inferred.
+
 Local source gate61 actually failed after57.28046seconds: Rust tests passed,
 but all-target clippy identified one remaining retained legacy Startup::native
 constructor unused in the non-test library. Root adds one function-local
@@ -420,14 +477,17 @@ T02/T04/T05; they do not establish the complete native/deployed scenarios.
 Do not rerun unchanged tests merely to fill a new row or promote their aggregate
 pass count to the slice's required integration results.
 
-Read-only QA reconciliation classifies T01 and T02 as PARTIAL at source scope.
-Rendering/CSP, mocked route refusals and selected policy/results assertions have
-executed evidence; DOM/keyboard/paste/populated Cancel and some complete route
-boundaries remain unexecuted. These scoped passes do not establish real backend
-preservation or matching installed browser behaviour. Retain the gaps in the
-ledger test rows; no aggregate pass is promoted to full scenario acceptance.
+The current ledger records T01 and T02 as PASS at their defined source scope.
+The later October16 T01 evidence includes actual Edge155 independent visibility
+controls, keyboard, trusted paste and populated Cancel/navigation with no
+submission, clipboard API, storage or network effects. T02 adds actual stored
+session refusal and the targeted malformed/policy cases. The independent
+controller reconciled these later records on October19; the earlier PARTIAL
+assessment is superseded only at source scope. Reuse these matching passes.
+They do not establish matching installed browser/backend behaviour required by
+T06–T08.
 
-## Current findings and remaining work
+## Historical findings and remaining-work provenance
 
 Signed source checkpoint `765446e49210ffe9bddc7ca19e576828e7e8285d` is
 synchronized; installed pair324b and production account-client/form activation

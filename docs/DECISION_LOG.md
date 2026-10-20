@@ -12838,3 +12838,65 @@ Independent annotation/combined53+61 review93cf5677 clears exactly one changed
 normal local hook62. Original53FAIL and61lintFAIL57.28046s retain distinct
 causes/cost; no guard or test is waived, and no native/remote action is admitted.
 The original operator15minute deadline22:51:53UTC remains unchanged.
+
+
+2026-10-19 23:04UTC — S04-02 operator-authorized completion resumption.
+Current operator resumption, 2026-10-19 23:04UTC: complete S04-02 with managed subagents. Signed local source67711 and mandatory gate62 PASS278.959099s are complete; native changed-source workflow and installed QA remain NOT RUN. Root owns the one host/Git queue. Prepare changed compiler63/capture64, current55-bound publication65 and one fresh controlled journey66, with independent producer/cleanup/consumer review. Public mail services/configuration remain unchanged. One prospective3600-second phase ends2026-10-20T00:04:32Z; preserve prior costs/failures and never renew expired fixture leases. No push is inferred.
+
+Root selected the numerical phase, not an operator numerical budget. Existing reviewed source and matching passing controls are reused; two-failure reassessment and finite owned disposition remain mandatory. No public backend downtime/configuration, provider mail or operator credential action is authorized by a fixture.
+
+## 2026-10-19 — S04-02 exact stock executable reader correction
+
+Actual journey66 failed at helper ServiceStartup before HTTP/backend events;
+its original failed receipt and false stop fields remain preserved. Fresh68
+observation and actual69/70 dispositions removed the owned synthetic rows,
+restricted SQL principal, two temporary roles/runtime material/publications and
+frontend files. Public configuration and master were preserved. Authorized-key
+bytes/security were restored with a new inode; original inode birth is not
+claimed. Protected evidence stages remain retained.
+
+Root used the existing helper entry with runtime material absent to locate
+StockCachePin, rather than provisioning another account fixture. Diagnostic73
+PASS means bounded observation/cleanup only. Metadata74 measured209968B for
+fixed /usr/local/bin/doveconf, proving the source's128KiB configuration cap
+cannot admit this current executable. Only that fixed executable receives the
+existing64MiB binary ceiling; every other non-auth path remains128KiB. Existing
+custody/hash/deadline guards and strict stderr refusal remain unchanged. The
+focused limit-selector regression passed; fixed source is independently reviewed.
+No cause is retrospectively assigned to historical53/66 from this observation.
+
+Reuse matching source/native evidence and the existing helper-only build.
+Full workflow, installed ordinary client/session/persistence/secrets checks and
+minimal owner UAT remain open. No production flag/installer admission, public
+mail restart, provider Send, synchronization, slice or sprint closure is implied.
+Keep all20 obligations/nine scenario IDs and the3600-second phase ceiling
+2026-10-20T00:04:32Z; reserve the normal signed-commit gate rather than waive it.
+
+Actual changed helper75 build PASS70.105s/full460source parity and cleanup;
+no application or startup execution. Hold capture75/diagnostic76 when their
+full declared bounds plus the existing300-second normal commit allowance cannot
+fit the fixed phase. No shrinking limits, automatic extension or source/build
+substitution for workflow acceptance. Source-preservation77 actual gate/signature
+receipt remains external; operator source review precedes any remote write.
+
+Source77 pre-action refused its recipe path declaration in0.061963s before Git,
+hooks or signing. Restrict only successor77a declared gap paths to the actual
+three Rust leaves, following existing62; preserve all ten reviewed staged files,
+normal hooks, deadline and failed receipt. No new source/host/functional retry.
+
+Combined77/77a refusal disposition: validator evaluates every active recipe;
+correcting only the successor left invalid77 active. Both failures preceded
+Git/hooks/signing. Retire only the invalid unexecuted77 recipe from the active
+contract; preserve exact external recipe/proposal and failed attempt histories,
+retain valid77a and no pending dispatch. Independent review b0b5e0b31cc6a12fbc918951fc953b4858a7c02272a10552ab9c112cd09d4ddd.
+No third attempt fits the declared300-second source gate before00:04:32;
+source remains uncommitted/staged, with no flag/deploy/sync/UAT claim.
+
+## 2026-10-20 — explicit30-minute continuation
+
+Operator authorized the proposed30-minute continuation and reports GPG-agent
+updated. Exact phase03:38:38–04:08:38UTC. Preserve prior77/77a declaration
+failures/combined review and all actual costs; intervening idle wall time is not
+claimed as compute. Sign existing reviewed source with normal hooks, then reuse
+actual75 binary and existing startup/full-workflow controls. No new dependency,
+public mail lifecycle/configuration action, automatic lease renewal or push.
