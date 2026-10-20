@@ -1,5 +1,60 @@
 # S04-02 delivery specification — authoritative own-password change
 
+Current outcome, 2026-10-20: S04-02 remains incomplete; production password
+form, ordinary production setup, installed QA and UAT are not qualified. Actual
+workflow85 FAIL101.297s: request11 (fresh password form) began with1624ms of the
+fixture's90s aggregate budget remaining, timed out reading after1635ms with zero
+bytes, and total sequence elapsed90010ms. Ten prior HTTP exchanges and four
+backend snapshots completed, including the password-change response/new-password
+login. This proves aggregate test-budget starvation, not a unique product/page
+fault or its underlying88.376s cost. Actual80 FAIL is retained. Independent
+combined reassessment stops automatic workflow retries and deadline increases.
+Read-only86 PASS4.3284s confirms backend RESTORED, synthetic rows/principal/roles/
+runtime/producers absent, original authorized bytes restored, and public mail/
+SQL/master preserved. Frontend purpose-only87 PASS0.544s confirms the known purpose slots/nonce are absent;
+other HTTP scratch remains UNKNOWN retained. Two narrow canonical corrections are admitted: the installer's observed
+ten-column FSTAT header (NAME), and deferred StockPrimary construction only
+for authenticated Authenticate requests; readonly Admit retains runtime peer,
+account, signed request, Store lock and epoch checks. The existing real-Store
+current/stale/readonly-auth-refusal test PASS1/0failed; source/security review CLEAR.
+No measured speed improvement or native/full-workflow PASS is inferred. The new
+Rust source has not been rebuilt on OpenBSD; old75helper/63client evidence remains
+limited to its earlier exact source. No flags or installed activation. Current
+approval ends05:38:47UTC (01:38:47Toronto); no further full action plus disposition
+and normal gate fits. Finish owned disposition, normally sign reviewed work and
+stop without an automatic extension or push.
+
+Current operator authorization, 2026-10-20 04:38:47UTC: one hour through
+05:38:47UTC is explicitly approved. Continue the existing full password workflow
+79/80 using signed3cad60, actual76 startup proof and existing reviewed artifacts;
+then the smallest remaining integration justified by actual outcomes. Prior
+passes/failures/idle intervals remain retained. No public mail lifecycle/config
+change, lease renewal, new QA framework or inferred push authority.
+
+
+Current verified outcome, 2026-10-20 03:55UTC: reviewed source normally committed
+as3cad60f10a7fb9093f1075c874cbf7b8ec5f0922, Good Shopkeeper signature. Normal
+mandatory gate PASS274.793681s (1861 library passes/0failed/50 explicitignores;
+existing account Python620 PASS). All460 current compiler inputs match actual75
+helper build manifest04607c05; no Rust rebuild. Actual capture75 PASS0.78s with
+raw/gzip parity. Actual backend startup76 PASS50.565709s: StockPeer completed,
+then expected ServiceFiles operation4/Unavailable with account material absent.
+Temporary helper/stage/producers removed, SQL/auth/roles/rows/publicservice/config
+operations zero. This is scoped startup proof, not helperREADY or password CAS.
+Five first native component checks67 PASS0.738095s (fivepasses, zero failures or
+ignored), native file/TOTP/rate/flock/ACK+EOF only, scripted backend dependencies.
+No literal concurrent issuance, full T04/T05, installed workflow or UAT claim.
+
+The existing full workflow79/80 is prepared and independently reviewed, with
+signedHEAD3cad60 and actual76 bound. Its650-second functional plus560-second
+conditional disposition reserve no longer fits the current04:08:38 phase.
+No generator/profile mint, publication79 or native80 occurred. A15-minute
+extension request is pending; elapsed time or its preselected option is not
+approval. Do not lower existing bounds, reuse expired profiles or change public
+mail services. Source remains unpushed; only subsequent progress documents are
+locally changed. S04-02 remains open and the live password control stays disabled.
+
+
 Current operator authorization, 2026-10-20 03:38:38UTC: a new30-minute
 continuation through04:08:38UTC permits the normal signed reviewed-source gate,
 then existing startup/password-workflow checks. GPG-agent readiness is operator

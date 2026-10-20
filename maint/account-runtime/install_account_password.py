@@ -258,7 +258,7 @@ def require_helper_absent(images, end):
     raw = fixed_observation('fstat', end)
     lines = raw.splitlines()
     require(lines and lines[0].split() ==
-            [b'USER', b'CMD', b'PID', b'FD', b'DEV', b'INUM', b'MODE', b'R/W', b'SZ|DV'],
+            [b'USER', b'CMD', b'PID', b'FD', b'DEV', b'INUM', b'MODE', b'R/W', b'SZ|DV', b'NAME'],
             'installation_fstat_header')
     for line in lines[1:]:
         fields = line.split()

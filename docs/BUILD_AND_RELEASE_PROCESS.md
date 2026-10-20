@@ -1,6 +1,24 @@
 # Build And Release Process
 
-## Current operator stop — 2026-10-17
+## Current S04-02 source and delivery boundary — 2026-10-20
+
+The operator resumed bounded S04-02 development; the historical stop below is
+superseded for that scope. The current hour ends05:38:47UTC. The observed OpenBSD
+FSTAT NAME column is admitted by the installer's existing exact header predicate;
+command, row grammar, process ownership and reference refusals are unchanged.
+Readonly epoch admission also stops constructing an unused primary-auth profile;
+profile construction remains in authenticated Authenticate with the same deadline.
+The focused real-Store/stale/readonly-refusal test passes; changed OpenBSD
+qualification and performance remain NOT_RUN. Prior native binaries do not
+qualify this new source by implication.
+Focused compatibility/refusal control and independent source review pass. No
+production qualification flag, activation or installed/release claim follows.
+Actual full workflows80/85 failed;85 exhausted its90s aggregate fixture budget
+during request11.86 independently confirms restored backend state/public service
+preservation. HTTP scratch remains retained/UNKNOWN. Normal signing/gates and
+explicit push authorization remain; see Current Project Status and the ledger.
+
+## Historical operator stop — 2026-10-17
 
 Development, live/native qualification and deployment are stopped by explicit
 operator direction. Only documentation preservation, signed repository commits

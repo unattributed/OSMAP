@@ -162,8 +162,10 @@ fn authenticated_current_password_returns_existing_client_epoch_and_bound_status
 #[test]
 fn admit_status_is_readonly_and_stale_epoch_refuses_without_primary_dispatch() {
     let f = Fixture::new();
-    let p = primary(&f);
-    let mut service = make_service(&f, &p);
+    // The stock listener supplies this exact non-primary executor for Admit.
+    let readonly = crate::account_password_process::MetadataExecutor::readonly();
+    let mut service =
+        Service::new(&f.store, &readonly, &f.clock, KEY, [ALICE.into()].into()).unwrap();
     for (epoch, accepted) in [(7, true), (6, false)] {
         let request = f.request(Operation::Admit { epoch });
         let reply = service.process(&request.bytes().unwrap(), until()).unwrap();
@@ -174,7 +176,14 @@ fn admit_status_is_readonly_and_stale_epoch_refuses_without_primary_dispatch() {
             assert_eq!(result.err(), Some(Error::Refused));
         }
     }
-    assert!(p.calls.lock().unwrap().is_empty());
+    // Accidental authentication through the readonly branch fails closed.
+    let request = f.request(Operation::Authenticate {
+        password: "public current passphrase".into(),
+    });
+    assert_eq!(
+        service.process(&request.bytes().unwrap(), until()).err(),
+        Some(Error::Unavailable)
+    );
 }
 
 #[test]

@@ -12900,3 +12900,89 @@ failures/combined review and all actual costs; intervening idle wall time is not
 claimed as compute. Sign existing reviewed source with normal hooks, then reuse
 actual75 binary and existing startup/full-workflow controls. No new dependency,
 public mail lifecycle/configuration action, automatic lease renewal or push.
+
+## 2026-10-20 03:55UTC — actual startup prerequisite and scoped native controls
+
+Normal78 hook/signature PASS274.793681s introduces3cad60f with all460 compiler
+inputs matching actual75. Capture75 PASS0.78s. Actual76 ordinary entry passed
+StockPeer and stopped at the expected absent-ServiceFiles boundary; its temporary
+helper/stage and owned groups were removed. No account/SQL/public-service action.
+Do not translate that refusal into helperREADY or workflow completion. First
+native67 ran the five already planned component selectors, allPASS; its retained
+compiled63 source remains distinct from helper75/current3cad. No fullscenario
+or literal-concurrency claim follows from these component results.
+
+Keep full650+560 reserve for conditional79/80, no mint under insufficient current
+phase. Operator15-minute extension request is pending; preselection/elapsedtime
+is not approval. Bound generation is ready but unexecuted. No public mail change,
+operator password action, extra Rust build, deployment, push or UAT invitation.
+
+## 2026-10-20 04:38UTC — explicit one-hour execution authority
+
+Operator approved one hour04:38:47–05:38:47UTC. This supersedes the unanswered
+15-minute proposal with explicit3600seconds; no prior cost/failure is erased.
+Use existing79/80 reviewed preparation/receiver/binder and actual75helper plus
+separate63client, after current gate. No repeated Rust build or passed67/76
+checks. Preserve public mail and account/operator state. Exact original600s
+fixture expiry/minimum495 and500+650+560 execution/disposition bounds remain.
+
+### 2026-10-20 — actual80 HTTP boundary and81 backend restoration
+
+Fresh79 publication PASS60.548s. Actual80 full workflow FAIL102.283s after ten
+completed HTTP exchanges/four authoritative snapshot events; stage111 lacks
+enough exported metadata to identify deadline starvation versus request11 wait.
+No retry or deadline increase. Actual read-only81 PASS4.306865s independently
+confirms RESTORED, synthetic rows/principal/roles/runtime/producers absent,
+original authorized bytes restored with a new inode, and public25/SQL/master
+preserved. Frontend four known purpose slots require current-or-absent82; HTTP
+scratch ownership remains unproved/retained. Export only existing closed request
+metadata before a fresh unchanged-bound workflow. Source3cad60 remains signed,
+production flags disabled, no UAT or synchronization claim.
+
+Evidence: stock-helper-start51/resume63/{publication79,native80,observation81}/result.json
+under the existing private Sprint04 evidence root.
+
+### 2026-10-20 — operator activates focused delivery directive
+
+The operator activates the supplied OSMAP DELIVERY DIRECTIVE for current S04-02
+and subsequent epic work. Retain existing implementation, utilities, approved
+requirements and matching passes; no added governance/testing framework, roles,
+optional hardening or broader backend control. Supporting work must resolve a
+demonstrated current acceptance defect. Root owns scope, installed delivery and
+the existing05:38:47UTC cutoff, with no inferred extension or push. Mandatory
+signing/security checks and finite owned disposition remain. Actual82 purpose-only
+cleanup PASS0.516s: four files already absent, only the owned empty nonce removed;
+HTTP namespace UNKNOWN retained. Actual84 publication PASS24.309s, followed by
+original-expiry binding and the independently reviewed85 workflow with only the
+83 closed failure projection. Prior80 FAIL remains;85 outcome not predeclared.
+
+### 2026-10-20 — measured aggregate fixture expiry; preserve functional failure
+
+Actual85 FAIL101.297s: READ11 started with1624ms, elapsed1635ms, received0bytes,
+EOFfalse, total90010ms. Ten prior exchanges/four snapshots completed. Aggregate
+fixture starvation is demonstrated; pre11 cost attribution and unique product
+cause remain UNKNOWN. Combined80/85 reassessment stops automatic retries; no
+timer increase or requirement weakening. Actual86 readonlyPASS4.3284 confirms
+RESTORED/rows/roles/runtime/producers absent/publicmail+SQL preserved. Root admits
+only the independently reviewed installer NAME header compatibility correction
+(exact candidate6b573; focused oldRED/newPASS/sixrefusals). Mandatory gate and
+signature remain separate. Finish exact purpose-only87 disposition, preserve
+HTTPscratchUNKNOWN, source-sign within05:38:47UTC and stop without extension/push.
+
+### 2026-10-20 — defer unused primary profile on readonly admission
+
+Source inspection demonstrates stock_admission eagerly builds StockPrimary for
+Admit although execute_verified performs only a signed request/account/Store
+epoch check and never calls its primary executor. Inside the already verified
+password_connection callback, Admit now supplies existing MetadataExecutor::readonly
+and Authenticate constructs the unchanged profile/executor with the original
+accepted+30 capped by inherited deadline. StockRuntime peer recheck, startup
+SQL graph/cache0/parent seal, account/HMAC/nonce/epoch/flock and mutation profiles
+are unchanged. No new runtime abstraction or dependency. Existing real Store
+current7/stale6 status test uses that exact readonly executor and proves an
+unexpected Authenticate failsUnavailable: root targeted PASS1/0failed/0ignored,
+compile9.11s; full-action wallUNKNOWN. Independent review77f291 covers source
+semantics; rustfmt is the only subsequent structural normalization. Historical
+88.376s attribution remainsUNKNOWN; no measured performance, native or installed
+PASS. Normal source gate/signature result is retained separately; do not overlay
+old75helper/63client provenance with this new source.

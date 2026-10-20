@@ -1,5 +1,22 @@
 # OSMAP WSTG v4.2 Scenario Matrix
 
+## Current S04-02 outcome — 2026-10-20
+
+Actual80 and85 full workflows remain FAIL.85 completed ten HTTP exchanges/four
+authoritative snapshots, including the password-change response/new-password
+login; fresh-form request11 received only1624ms of the original90s aggregate
+fixture budget and timed out with zero bytes. It does not establish a unique
+page/product defect or close installed authentication/session requirements.
+Read-only86 PASS independently confirms restored backend rows/roles/runtime and
+public mail/SQL/master preservation. Frontend HTTP scratch remains retained with
+UNKNOWN disposition. The installer NAME header correction has focused
+compatibility/refusal evidence and independent review. Readonly Admit now uses
+the existing readonly executor; only verified Authenticate constructs its unchanged
+StockPrimary profile. Runtime peer, signed-request/account/epoch/Store locks and
+startup SQL graph remain. The existing real-Store current/stale/readonly-auth
+refusal test passes; new source native qualification/performance remain NOT_RUN.
+No flags change. No installed WSTG, slice, UAT or release PASS is claimed.
+
 ## Current S04-02 stock-adapter evidence boundary — 2026-10-19
 
 The selected source uses the existing browser/account coordinator, conditional

@@ -342,11 +342,22 @@ fn stock_admission(
     {
         return Err(Error::Authentication);
     }
-    let profile =
-        NativeProfile::from_stock(Role::StockPrimary, stock, deadline).map_err(unavailable)?;
-    let executor = PrimaryExecutor::new(&profile, deadline);
     admission.password_connection(&mut stream, deadline, |request, inherited| {
-        runtime.admission(request, &executor, deadline.min(inherited))
+        let deadline = deadline.min(inherited);
+        match request.operation() {
+            crate::account_admission::Operation::Admit { .. } => {
+                // Epoch/status admission performs no primary command. Keep the
+                // runtime's peer/account/Store checks without an unused auth graph.
+                runtime.admission(request, &MetadataExecutor::readonly(), deadline)
+            }
+            crate::account_admission::Operation::Authenticate { .. } => {
+                let profile =
+                    NativeProfile::from_stock(Role::StockPrimary, stock.clone(), deadline)
+                        .map_err(unavailable)?;
+                let executor = PrimaryExecutor::new(&profile, deadline);
+                runtime.admission(request, &executor, deadline)
+            }
+        }
     })
 }
 #[allow(clippy::too_many_arguments)] // Independent source-owned native authorities.
