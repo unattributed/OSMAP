@@ -25,7 +25,7 @@ import time
 
 NATIVE_RELAY_QUALIFIED=False
 REMOTE='216.128.179.75'
-PEER_UID=1001
+PEER_NAME='_osmap'
 PURPOSE='osmap-account-admission'
 LISTEN=Path('/var/lib/osmap-bridge/run/admission.sock')
 IDENTITY=Path('/var/lib/osmap-bridge/keys/admission')
@@ -159,6 +159,20 @@ def _material():
             or LISTEN.exists() or LISTEN.is_symlink()):
         raise Unavailable('admission listener unavailable')
 
+def _trusted_peer_uid():
+    # Resolve the source-owned service principal, not one host's UID allocation.
+    # The system account database is trusted; kernel peer checking remains mandatory.
+    try:
+        entry=pwd.getpwnam(PEER_NAME)
+        uid=entry.pw_uid
+        if (entry.pw_name!=PEER_NAME or type(uid)is not int or not 0<uid<2**32-1
+                or pwd.getpwuid(uid).pw_name!=PEER_NAME):
+            raise ValueError
+        return uid
+    except (KeyError,ValueError):
+        raise Unavailable('named web peer unavailable') from None
+
+
 class _Relay:
     def __init__(self,trusted_uid):
         if type(trusted_uid) is not int or not 0<trusted_uid<=2**32-1:raise Unavailable('admission peer unavailable')
@@ -169,7 +183,7 @@ class _Relay:
         if not NATIVE_RELAY_QUALIFIED:raise Unavailable('native admission relay unavailable')
         resource.setrlimit(resource.RLIMIT_CORE,(0,0))
         _material()
-        return cls(PEER_UID)
+        return cls(_trusted_peer_uid())
     @staticmethod
     def _command():return ssh_argv()
     @staticmethod

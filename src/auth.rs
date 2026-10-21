@@ -169,6 +169,26 @@ pub(crate) fn public_inventory_command(
 }
 
 /// Fixed account-admission worker; no browser field becomes argv/environment.
+#[cfg(unix)]
+pub(crate) fn installed_dependencies_command(
+    program: &std::path::Path,
+) -> std::io::Result<Command> {
+    // Only the fixed trusted programs admitted by the OpenBSD resolver may
+    // reach the platform loader's inspection interface.
+    if !crate::openbsd::dependency_program_allowed(program) {
+        return Err(std::io::ErrorKind::PermissionDenied.into());
+    }
+    let mut command = Command::new("/usr/bin/ldd");
+    command
+        .arg(program)
+        .env_clear()
+        .env("LC_ALL", "C")
+        .env("PATH", SAFE_COMMAND_PATH)
+        .current_dir("/");
+    Ok(command)
+}
+
+/// Fixed account-admission worker; no browser field becomes argv/environment.
 #[cfg(all(unix, test))]
 pub(crate) fn account_admission_command() -> Command {
     let mut command = fixed_account_admission_command();
@@ -179,11 +199,18 @@ pub(crate) fn account_admission_command() -> Command {
 /// Admission's confined parent has already established and rechecked `/`.
 /// Do not issue a pre-exec chdir requiring recursive read authority for `/`.
 #[cfg(unix)]
-pub(crate) fn account_admission_inherited_root_command() -> std::io::Result<Command> {
-    if std::env::current_dir()? != std::path::Path::new("/") {
+pub(crate) fn account_admission_inherited_root_command(
+    program: &std::path::Path,
+) -> std::io::Result<Command> {
+    if std::env::current_dir()? != std::path::Path::new("/")
+        || program.parent() != Some(std::path::Path::new("/usr/local/bin"))
+        || !program.file_name().is_some_and(|name| {
+            crate::account_admission_runtime::python_target_name(std::path::Path::new(name))
+        })
+    {
         return Err(std::io::ErrorKind::PermissionDenied.into());
     }
-    let mut command = Command::new("/usr/local/bin/python3.13");
+    let mut command = Command::new(program);
     configure_account_admission(&mut command);
     Ok(command)
 }
@@ -232,7 +259,9 @@ pub(crate) fn admission_parent_native_fixture_command(
 
 #[cfg(all(test, target_os = "openbsd"))]
 pub(crate) fn admission_parent_interpreter_fixture_command() -> std::io::Result<Command> {
-    let fixed = account_admission_inherited_root_command()?;
+    let program = crate::account_admission_runtime::installed_python_program()
+        .map_err(std::io::Error::other)?;
+    let fixed = account_admission_inherited_root_command(&program)?;
     let mut command = Command::new(fixed.get_program());
     command
         .args([
@@ -268,7 +297,9 @@ pub(crate) fn full_factory_admission_fixture_command(
     if !fixed_stage {
         return Err(std::io::Error::from(std::io::ErrorKind::PermissionDenied));
     }
-    let mut command = Command::new("/usr/local/bin/python3.13");
+    let program = crate::account_admission_runtime::installed_python_program()
+        .map_err(std::io::Error::other)?;
+    let mut command = Command::new(program);
     command
         .arg("-I")
         .arg(stage.join("native_factory_admission_worker.py"))

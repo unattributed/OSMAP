@@ -5,11 +5,20 @@ Local Linux peer/group/process evidence is not native SSH or Toronto authority.
 from pathlib import Path
 import hashlib,hmac,json,os,signal,socket,sys,threading,time,unittest
 from unittest.mock import patch
+from types import SimpleNamespace
 import admission_relay as relay
 KEY=bytes([23])*32
 SCHEMA='osmap-account-admission-v1'
 def encoded(value):return json.dumps(value,separators=(',',':'),ensure_ascii=False).encode()
 class RelayTests(unittest.TestCase):
+ def test_named_peer_accepts_reallocation_and_rejects_foreign_identity(self):
+  for uid in (1001,2401):
+   entry=SimpleNamespace(pw_name='_osmap',pw_uid=uid)
+   with patch.object(relay.pwd,'getpwnam',return_value=entry),patch.object(relay.pwd,'getpwuid',return_value=entry):
+    self.assertEqual(relay._trusted_peer_uid(),uid)
+  with patch.object(relay.pwd,'getpwnam',return_value=SimpleNamespace(pw_name='_osmap',pw_uid=2401)),patch.object(relay.pwd,'getpwuid',return_value=SimpleNamespace(pw_name='other')):
+   with self.assertRaises(relay.Unavailable):relay._trusted_peer_uid()
+
  def raw(self,admit=False):
   now=int(time.time());op={'operation':'admit','epoch':4}if admit else{'operation':'authenticate','password':'public unicode é🙂'}
   value=dict(schema=SCHEMA,account='alice@example.test',operation=op,issued=now,expires=now+35,nonce='b'*32)

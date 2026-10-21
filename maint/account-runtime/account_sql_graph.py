@@ -77,13 +77,10 @@ class SqlInstalledGraph:
     def __init__(self,*_args,**_kwargs):raise Refused('SQL graph construction unavailable')
     @classmethod
     def native(cls,budget,deadline,material):
-        _bound(budget,deadline);_material(material);system=os.uname()
-        if (sys.platform!='openbsd7' or system.sysname!='OpenBSD' or system.release!='7.9'
-                or system.machine!='amd64' or sys.byteorder!='little'
-                or socket.gethostname()!=AUTHORITY or os.getuid()!=0 or os.geteuid()!=0):
-            raise Refused('SQL graph authority unavailable')
-        states=cls._observe(budget,deadline,material)
-        value=object.__new__(cls);value._budget=budget;value._material=material;value._states=states;return value
+        # Retired duplicate Python candidate. The maintained Rust helper owns
+        # installed dependency admission. Do not revive historical graph pins
+        # by enabling a legacy profile or replaying a qualification fixture.
+        raise Refused('legacy Python graph retired; use Rust account helper')
     @staticmethod
     def _observe(budget,deadline,material):
         _bound(budget,deadline);_material(material)

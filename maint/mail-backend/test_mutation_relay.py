@@ -2,6 +2,7 @@
 from pathlib import Path
 import hashlib,hmac,json,os,signal,socket,subprocess,sys,threading,time,unittest
 from unittest.mock import patch
+from types import SimpleNamespace
 import mutation_relay as relay
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'account-runtime'))
 import test_guarded_mutation_worker as gf
@@ -10,6 +11,14 @@ from account_mutation_continuity import signed,verify
 from account_mutation_codec import response,verify_request
 
 class RelayTests(unittest.TestCase):
+ def test_named_peer_accepts_reallocation_and_rejects_foreign_identity(self):
+  for uid in (1001,2401):
+   entry=SimpleNamespace(pw_name='_osmap',pw_uid=uid)
+   with patch.object(relay.pwd,'getpwnam',return_value=entry),patch.object(relay.pwd,'getpwuid',return_value=entry):
+    self.assertEqual(relay._trusted_peer_uid(),uid)
+  with patch.object(relay.pwd,'getpwnam',return_value=SimpleNamespace(pw_name='_osmap',pw_uid=2401)),patch.object(relay.pwd,'getpwuid',return_value=SimpleNamespace(pw_name='other')):
+   with self.assertRaises(relay.Unavailable):relay._trusted_peer_uid()
+
  def raw(self,millis=1000,unicode=False):
   sent=int(time.time()*1000);now=sent//1000
   args=dict(issued=now,expires=now+300)

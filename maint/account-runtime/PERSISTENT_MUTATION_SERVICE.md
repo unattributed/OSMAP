@@ -315,3 +315,17 @@ The existing private Composition fixture must qualify actual primary verificatio
 under its held lock, current-to-new mutation/changed-primary verification, public
 IMAP policy/publication race and unrelated-account preservation together under
 the original deadlines. No installed integration is claimed here.
+
+
+### Update-sensitive dependency repair (2026-10-21)
+
+The duplicate Python `HashInstalledGraph`, `SqlInstalledGraph` and
+`PrimaryInstalledGraph` native admission paths are retired and refuse before
+host inspection or execution. Their historical pin tables and local fixtures
+remain evidence only. `_PROFILES` stays empty. Maintained native dependency
+admission belongs to the Rust account helper; do not revive these Python paths
+by enabling a legacy profile. The native material reader admits a trusted
+relative `python3.<minor>` package alias and rechecks its target for the operation.
+Relay peer identity resolves the named `_osmap` account; the legacy private
+primary identity resolves `_dovecot` from protected public records while its
+separate unqualified kernel-peer gate remains closed.

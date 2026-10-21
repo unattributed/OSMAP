@@ -1075,43 +1075,6 @@ const OPENBSD_HELPER_PROMISES_BEFORE_LOCK: &str =
 const OPENBSD_HELPER_PROMISES_AFTER_LOCK: &str =
     "stdio rpath wpath cpath fattr flock unix proc exec";
 
-/// The system-library prefixes the helper-side `doveadm` execution currently
-/// resolves on the validated OpenBSD host.
-const OPENBSD_SYSTEM_LIBRARY_PREFIXES: [&str; 4] =
-    ["libc.so.", "libm.so.", "libpthread.so.", "libz.so."];
-
-/// The local-library prefixes the helper-side `doveadm` execution currently
-/// resolves on the validated OpenBSD host.
-const OPENBSD_LOCAL_LIBRARY_PREFIXES: [&str; 6] = [
-    "libbz2.so.",
-    "libiconv.so.",
-    "liblz4.so.",
-    "liblzma.so.",
-    "libsodium.so.",
-    "libzstd.so.",
-];
-
-/// The system-library prefixes the local sendmail path resolves on the
-/// validated OpenBSD host.
-const OPENBSD_SENDMAIL_SYSTEM_LIBRARY_PREFIXES: [&str; 7] = [
-    "libc.so.",
-    "libcrypto.so.",
-    "libm.so.",
-    "libpthread.so.",
-    "libssl.so.",
-    "libutil.so.",
-    "libz.so.",
-];
-
-/// The local-library prefixes the local sendmail path resolves on the
-/// validated OpenBSD host.
-const OPENBSD_SENDMAIL_LOCAL_LIBRARY_PREFIXES: [&str; 4] = [
-    "libmariadb.so.",
-    "libpcre2-8.so.",
-    "libsasl2.so.",
-    "libsqlite3.so.",
-];
-
 /// One unveiled path plus the permissions granted to it.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct OpenbsdUnveilRule {
@@ -1125,6 +1088,7 @@ pub struct OpenbsdConfinementPlan {
     pub promises_before_lock: &'static str,
     pub promises_after_lock: &'static str,
     pub unveil_rules: Vec<OpenbsdUnveilRule>,
+    dependency_error: Option<String>,
 }
 
 /// Admission's Rust supervisor only. The fixed worker starts without inherited
@@ -1133,6 +1097,7 @@ pub struct OpenbsdConfinementPlan {
 /// recursive reads of public ancestors or epoch/private-material directories.
 pub(crate) fn account_admission_parent_plan(
     socket: &Path,
+    python: &Path,
 ) -> Result<OpenbsdConfinementPlan, String> {
     use std::path::Component;
     if !socket.is_absolute()
@@ -1151,7 +1116,7 @@ pub(crate) fn account_admission_parent_plan(
     crate::openpgp_inventory_runtime::private_dir(parent, effective_uid(), true)
         .map_err(|_| "account admission namespace unavailable")?;
     let mut rules = BTreeMap::new();
-    for path in [socket, Path::new("/usr/local/bin/python3.13")] {
+    for path in [socket, python] {
         for ancestor in path.ancestors().skip(1) {
             // Empty ancestor permissions pin the unveiled directory inodes;
             // they do not permit ancestor lstat (measured native ENOENT).
@@ -1161,8 +1126,9 @@ pub(crate) fn account_admission_parent_plan(
     }
     add_rule(&mut rules, parent, "r");
     add_rule(&mut rules, socket, "rwc");
-    add_rule(&mut rules, Path::new("/usr/local/bin/python3.13"), "rx");
+    add_rule(&mut rules, python, "rx");
     Ok(OpenbsdConfinementPlan {
+        dependency_error: None,
         promises_before_lock: "stdio rpath wpath cpath unix proc exec unveil",
         promises_after_lock: "stdio rpath wpath cpath unix proc exec",
         unveil_rules: rules
@@ -1182,8 +1148,9 @@ pub(crate) struct AccountAdmissionParentSeal {
 /// No disabled/log-only branch exists for this mandatory parent policy.
 pub(crate) fn apply_account_admission_parent_confinement(
     socket: &Path,
+    python: &Path,
 ) -> Result<AccountAdmissionParentSeal, String> {
-    let plan = account_admission_parent_plan(socket)?;
+    let plan = account_admission_parent_plan(socket, python)?;
     #[cfg(target_os = "openbsd")]
     {
         imp::apply_plan(&plan)?;
@@ -1218,8 +1185,9 @@ impl OpenbsdConfinementPlan {
                     add_parent_dir_rules(&mut rules, path);
                 }
 
-                add_doveadm_dependency_rules(&mut rules);
-                add_sendmail_dependency_rules(&mut rules);
+                let dependency_error = add_doveadm_dependency_rules(&mut rules)
+                    .and_then(|()| add_sendmail_dependency_rules(&mut rules))
+                    .err();
                 add_rule(&mut rules, Path::new("/dev/null"), "rw");
 
                 if let Some(auth_socket_path) = &config.doveadm_auth_socket_path {
@@ -1280,6 +1248,7 @@ impl OpenbsdConfinementPlan {
                 }
 
                 Self {
+                    dependency_error,
                     promises_before_lock: if config.mailbox_helper_socket_path.is_some()
                         || config.openpgp_inventory.is_some()
                         || config.openpgp_crypto.is_some()
@@ -1312,7 +1281,7 @@ impl OpenbsdConfinementPlan {
                 // mailbox reads.
                 add_rule(&mut rules, &config.state_root, "r");
                 add_rule(&mut rules, &config.state_layout.runtime_dir, "rwc");
-                add_doveadm_dependency_rules(&mut rules);
+                let dependency_error = add_doveadm_dependency_rules(&mut rules).err();
                 add_rule(&mut rules, Path::new("/dev/null"), "rw");
 
                 if let Some(userdb_socket_path) = &config.doveadm_userdb_socket_path {
@@ -1338,6 +1307,7 @@ impl OpenbsdConfinementPlan {
                 }
 
                 Self {
+                    dependency_error,
                     promises_before_lock: OPENBSD_HELPER_PROMISES_BEFORE_LOCK,
                     promises_after_lock: OPENBSD_HELPER_PROMISES_AFTER_LOCK,
                     unveil_rules: rules
@@ -1347,6 +1317,7 @@ impl OpenbsdConfinementPlan {
                 }
             }
             crate::config::AppRunMode::Bootstrap => Self {
+                dependency_error: None,
                 promises_before_lock: OPENBSD_SERVE_PROMISES_BEFORE_LOCK,
                 promises_after_lock: OPENBSD_SERVE_PROMISES_AFTER_LOCK,
                 unveil_rules: Vec::new(),
@@ -1397,6 +1368,9 @@ pub(crate) fn apply_runtime_confinement_for_accounts(
         }
         OpenbsdConfinementMode::Enforce => {
             let plan = OpenbsdConfinementPlan::from_config(config);
+            if let Some(error) = &plan.dependency_error {
+                return Err(error.clone());
+            }
             logger.emit(&build_plan_event(config, &plan, "plan_enforcing"));
             // Concrete paired preflight immediately precedes actual apply.
             // A constructor-time snapshot alone cannot authorize the seal.
@@ -1668,121 +1642,402 @@ fn add_parent_dir_rules(rules: &mut BTreeMap<PathBuf, String>, path: &Path) {
     }
 }
 
-/// Adds the current helper-side `doveadm` dependency view. The helper prefers
-/// exact executable, loader, library, config, and Dovecot socket paths when it
-/// can resolve them on the current host, but falls back to the broader library
-/// roots if a host does not expose the expected versioned files.
-fn add_doveadm_dependency_rules(rules: &mut BTreeMap<PathBuf, String>) {
+/// Exact executable and loader-selected library grants. Resolution failure
+/// prevents confinement activation; it never expands a library-directory grant.
+fn add_doveadm_dependency_rules(rules: &mut BTreeMap<PathBuf, String>) -> Result<(), String> {
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(30);
     add_rule(rules, Path::new("/usr/local/bin/doveadm"), "x");
-    add_if_exists(rules, Path::new("/usr/local/bin/doveconf"), "x");
-
-    if !add_if_exists(rules, Path::new("/usr/libexec/ld.so"), "r") {
-        add_rule(rules, Path::new("/usr/libexec"), "rx");
-    }
-    add_if_exists(rules, Path::new("/var/run/ld.so.hints"), "r");
-
-    add_resolved_library_rules(
-        rules,
-        Path::new("/usr/lib"),
-        &OPENBSD_SYSTEM_LIBRARY_PREFIXES,
-    );
-    add_resolved_library_rules(
-        rules,
-        Path::new("/usr/local/lib"),
-        &OPENBSD_LOCAL_LIBRARY_PREFIXES,
-    );
-
-    if !add_if_exists(rules, Path::new("/usr/local/lib/dovecot"), "rx") {
-        add_rule(rules, Path::new("/usr/local/lib"), "rx");
-    }
-
-    let mut added_explicit_config_path = false;
-    added_explicit_config_path |= add_if_exists(rules, Path::new("/etc/dovecot/dovecot.conf"), "r");
-    added_explicit_config_path |= add_if_exists(rules, Path::new("/etc/dovecot/conf.d"), "r");
-    added_explicit_config_path |= add_if_exists(rules, Path::new("/etc/dovecot/local.conf"), "r");
-    if !added_explicit_config_path {
-        add_if_exists(rules, Path::new("/etc/dovecot"), "r");
-    }
-
-    add_if_exists(rules, Path::new("/var/dovecot/config"), "rw");
-}
-
-/// Adds the current browser-runtime sendmail dependency view. This follows the
-/// validated OpenBSD path where `/usr/sbin/sendmail` is a mailwrapper that
-/// dispatches into the local Postfix sendmail compatibility binary.
-fn add_sendmail_dependency_rules(rules: &mut BTreeMap<PathBuf, String>) {
-    add_if_exists(rules, Path::new("/usr/sbin/sendmail"), "x");
-    add_if_exists(rules, Path::new("/usr/local/sbin/sendmail"), "x");
-    add_if_exists(rules, Path::new("/usr/local/sbin/postdrop"), "x");
-
-    if !add_if_exists(rules, Path::new("/usr/libexec/ld.so"), "r") {
-        add_rule(rules, Path::new("/usr/libexec"), "rx");
-    }
-    add_if_exists(rules, Path::new("/var/run/ld.so.hints"), "r");
-
-    add_resolved_library_rules(
-        rules,
-        Path::new("/usr/lib"),
-        &OPENBSD_SENDMAIL_SYSTEM_LIBRARY_PREFIXES,
-    );
-    add_resolved_library_rules(
-        rules,
-        Path::new("/usr/local/lib"),
-        &OPENBSD_SENDMAIL_LOCAL_LIBRARY_PREFIXES,
-    );
-
-    add_if_exists(rules, Path::new("/etc/mailer.conf"), "r");
-    add_if_exists(rules, Path::new("/etc/postfix/main.cf"), "r");
-    add_if_exists(rules, Path::new("/etc/localtime"), "r");
-    add_if_exists(rules, Path::new("/usr/share/zoneinfo/posixrules"), "r");
-    add_if_exists(rules, Path::new("/etc/pwd.db"), "r");
-    add_if_exists(rules, Path::new("/etc/group"), "r");
-    add_if_exists(rules, Path::new("/dev/urandom"), "r");
-    add_if_exists(rules, Path::new("/var/spool/postfix"), "rwc");
-}
-
-/// Adds exact versioned library paths when they can be resolved under the
-/// supplied directory, otherwise falls back to the broader directory path.
-fn add_resolved_library_rules(
-    rules: &mut BTreeMap<PathBuf, String>,
-    dir: &Path,
-    prefixes: &[&str],
-) {
-    match resolve_prefixed_paths(dir, prefixes) {
-        Some(paths) => {
-            for path in paths {
+    add_rule(rules, Path::new("/usr/local/bin/doveconf"), "x");
+    add_installed_dependency_rules(rules, Path::new("/usr/local/bin/doveadm"), deadline)?;
+    add_installed_dependency_rules(rules, Path::new("/usr/local/bin/doveconf"), deadline)?;
+    // Dovecot enumerates these fixed protected module directories at runtime.
+    // Keep that required read grant, without the old /usr/local/lib fallback.
+    for dir in ["/usr/local/lib/dovecot", "/usr/local/lib/dovecot/doveadm"] {
+        trusted_dependency_directory(Path::new(dir))?;
+        add_rule(rules, Path::new(dir), "r");
+        for (count, entry) in fs::read_dir(dir)
+            .map_err(|_| "Dovecot modules unavailable")?
+            .enumerate()
+        {
+            if count >= 256 {
+                return Err("Dovecot module inventory limit".into());
+            }
+            let path = entry.map_err(|_| "Dovecot modules unavailable")?.path();
+            if dependency_program_allowed(&path) {
                 add_rule(rules, &path, "r");
-            }
-        }
-        None => {
-            if dir.exists() {
-                add_rule(rules, dir, "rx");
+                add_installed_dependency_rules(rules, &path, deadline)?;
             }
         }
     }
+    add_if_exists(rules, Path::new("/etc/dovecot/dovecot.conf"), "r");
+    add_if_exists(rules, Path::new("/etc/dovecot/conf.d"), "r");
+    add_if_exists(rules, Path::new("/etc/dovecot/local.conf"), "r");
+    add_if_exists(rules, Path::new("/var/dovecot/config"), "rw");
+    Ok(())
 }
 
-/// Returns one stable exact path for every requested filename prefix inside the
-/// supplied directory, or `None` when any prefix cannot be resolved.
-fn resolve_prefixed_paths(dir: &Path, prefixes: &[&str]) -> Option<Vec<PathBuf>> {
-    let entries = fs::read_dir(dir).ok()?;
-    let mut file_names = entries
-        .filter_map(|entry| entry.ok())
-        .map(|entry| entry.path())
-        .collect::<Vec<_>>();
-    file_names.sort();
-
-    let mut resolved = Vec::with_capacity(prefixes.len());
-    for prefix in prefixes {
-        let path = file_names.iter().find(|path| {
-            path.file_name()
-                .and_then(|name| name.to_str())
-                .is_some_and(|name| name.starts_with(prefix))
-        })?;
-        resolved.push(path.clone());
+fn add_sendmail_dependency_rules(rules: &mut BTreeMap<PathBuf, String>) -> Result<(), String> {
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(15);
+    for program in [
+        "/usr/sbin/sendmail",
+        "/usr/local/sbin/sendmail",
+        "/usr/local/sbin/postdrop",
+    ] {
+        add_rule(rules, Path::new(program), "x");
+        add_installed_dependency_rules(rules, Path::new(program), deadline)?;
     }
+    for path in [
+        "/etc/mailer.conf",
+        "/etc/postfix/main.cf",
+        "/etc/localtime",
+        "/usr/share/zoneinfo/posixrules",
+        "/etc/pwd.db",
+        "/etc/group",
+        "/dev/urandom",
+    ] {
+        add_if_exists(rules, Path::new(path), "r");
+    }
+    add_if_exists(rules, Path::new("/var/spool/postfix"), "rwc");
+    Ok(())
+}
 
-    Some(resolved)
+fn add_installed_dependency_rules(
+    rules: &mut BTreeMap<PathBuf, String>,
+    program: &Path,
+    deadline: std::time::Instant,
+) -> Result<(), String> {
+    let libraries = installed_library_paths_before(program, deadline)?;
+    if program == Path::new("/usr/sbin/sendmail") {
+        add_rule(rules, Path::new("/usr/sbin/mailwrapper"), "x");
+    }
+    for path in libraries {
+        add_rule(rules, &path, "r");
+    }
+    for path in ["/usr/libexec/ld.so", "/var/run/ld.so.hints"] {
+        trusted_dependency_file(Path::new(path))?;
+        add_rule(rules, Path::new(path), "r");
+    }
+    Ok(())
+}
+
+/// The caller cannot turn dependency discovery into arbitrary program execution.
+pub(crate) fn dependency_program_allowed(program: &Path) -> bool {
+    matches!(
+        program.to_str(),
+        Some(
+            "/usr/bin/fstat"
+                | "/usr/local/bin/doveadm"
+                | "/usr/local/bin/doveconf"
+                | "/usr/local/bin/mariadb"
+                | "/usr/sbin/sendmail"
+                | "/usr/sbin/mailwrapper"
+                | "/usr/local/sbin/sendmail"
+                | "/usr/local/sbin/postdrop"
+        )
+    ) || (matches!(
+        program.parent().and_then(Path::to_str),
+        Some("/usr/local/lib/dovecot" | "/usr/local/lib/dovecot/doveadm")
+    ) && program
+        .file_name()
+        .and_then(|p| p.to_str())
+        .is_some_and(|name| {
+            (name.ends_with(".so")
+                || name.rsplit_once(".so.").is_some_and(|(_, suffix)| {
+                    !suffix.is_empty()
+                        && suffix.split('.').all(|part| {
+                            !part.is_empty() && part.bytes().all(|b| b.is_ascii_digit())
+                        })
+                }))
+                && name
+                    .bytes()
+                    .all(|b| b.is_ascii_alphanumeric() || b"._-".contains(&b))
+        }))
+}
+
+fn dependency_library_allowed(path: &Path) -> bool {
+    path == Path::new("/usr/libexec/ld.so")
+        || (matches!(
+            path.parent().and_then(Path::to_str),
+            Some(
+                "/usr/lib"
+                    | "/usr/local/lib"
+                    | "/usr/local/lib/dovecot"
+                    | "/usr/local/lib/dovecot/doveadm"
+            )
+        ) && path
+            .file_name()
+            .and_then(|p| p.to_str())
+            .is_some_and(|name| {
+                name.starts_with("lib")
+                    && name.contains(".so")
+                    && name
+                        .bytes()
+                        .all(|b| b.is_ascii_alphanumeric() || b"._-".contains(&b))
+            }))
+}
+
+#[cfg(unix)]
+fn trusted_dependency_directory(path: &Path) -> Result<(), String> {
+    use std::os::unix::fs::MetadataExt;
+    for ancestor in path.ancestors() {
+        let m = fs::symlink_metadata(ancestor).map_err(|_| "dependency ancestry unavailable")?;
+        if !m.is_dir() || m.uid() != 0 || m.mode() & 0o022 != 0 {
+            return Err("dependency ancestry is not protected".into());
+        }
+    }
+    Ok(())
+}
+#[cfg(not(unix))]
+fn trusted_dependency_directory(_: &Path) -> Result<(), String> {
+    Err("native dependencies unavailable".into())
+}
+
+#[cfg(unix)]
+fn trusted_dependency_file(path: &Path) -> Result<(), String> {
+    use std::os::unix::fs::MetadataExt;
+    trusted_dependency_directory(path.parent().ok_or("dependency parent unavailable")?)?;
+    let m = fs::symlink_metadata(path).map_err(|_| "dependency file unavailable")?;
+    if !m.is_file() || m.uid() != 0 || m.mode() & 0o022 != 0 || m.len() > 128 * 1024 * 1024 {
+        return Err("dependency file is not protected".into());
+    }
+    Ok(())
+}
+#[cfg(not(unix))]
+fn trusted_dependency_file(_: &Path) -> Result<(), String> {
+    Err("native dependencies unavailable".into())
+}
+
+/// sendmail is the system mailwrapper alias on OpenBSD. No other program
+/// symlink is admitted, and its one supported target is checked independently.
+#[cfg(unix)]
+fn trusted_dependency_program(path: &Path) -> Result<(), String> {
+    use std::os::unix::fs::MetadataExt;
+    if path == Path::new("/usr/sbin/sendmail") {
+        trusted_dependency_directory(Path::new("/usr/sbin"))?;
+        let metadata = fs::symlink_metadata(path).map_err(|_| "mailwrapper alias unavailable")?;
+        if metadata.file_type().is_symlink() {
+            if metadata.uid() != 0
+                || !matches!(fs::read_link(path).ok().as_deref(),
+                Some(p) if p == Path::new("mailwrapper") || p == Path::new("/usr/sbin/mailwrapper"))
+            {
+                return Err("mailwrapper alias target refused".into());
+            }
+            return trusted_dependency_program(Path::new("/usr/sbin/mailwrapper"));
+        }
+    }
+    trusted_dependency_file(path)?;
+    let metadata = fs::metadata(path).map_err(|_| "dependency program unavailable")?;
+    if metadata.mode() & 0o004 == 0 {
+        return Err("dependency program must be readable for loader tracing".into());
+    }
+    Ok(())
+}
+
+/// Parse OpenBSD ld.so trace rows, rejecting unknown rows and unresolved names.
+/// The actual loader chooses versions: no lexical prefix or directory fallback.
+fn parse_installed_libraries(output: &str, program: &Path) -> Result<Vec<PathBuf>, String> {
+    let mut libraries = std::collections::BTreeSet::new();
+    let mut header = false;
+    for line in output
+        .lines()
+        .map(str::trim)
+        .filter(|line| !line.is_empty())
+    {
+        if line == format!("{}:", program.display())
+            || (program == Path::new("/usr/sbin/sendmail") && line == "/usr/sbin/mailwrapper:")
+            || (program.starts_with("/usr/local/lib/dovecot") && line == "/usr/bin/ldd:")
+        {
+            continue;
+        }
+        let fields: Vec<_> = line.split_whitespace().collect();
+        if fields == ["Start", "End", "Type", "Open", "Ref", "GrpRef", "Name"] {
+            if header {
+                return Err("duplicate dependency header".into());
+            }
+            header = true;
+            continue;
+        }
+        if !header
+            || fields.len() != 7
+            || !fields[..2]
+                .iter()
+                .all(|v| v.bytes().all(|b| b.is_ascii_hexdigit()))
+            || !fields[3..6].iter().all(|v| v.parse::<u64>().is_ok())
+        {
+            return Err("unsupported dependency trace".into());
+        }
+        let path = Path::new(fields[6]);
+        match fields[2] {
+            "exe"
+                if path == program
+                    || (program == Path::new("/usr/sbin/sendmail")
+                        && path == Path::new("/usr/sbin/mailwrapper")) => {}
+            "rlib" | "dlib" | "ld.so" if dependency_library_allowed(path) => {
+                libraries.insert(path.to_path_buf());
+            }
+            _ => return Err("untrusted or unresolved dependency".into()),
+        }
+    }
+    if !header || libraries.is_empty() {
+        return Err("dependency trace is empty".into());
+    }
+    Ok(libraries.into_iter().collect())
+}
+
+#[cfg(unix)]
+fn dependency_identity(path: &Path) -> Result<[u64; 10], String> {
+    use std::os::unix::fs::MetadataExt;
+    let m = fs::symlink_metadata(path).map_err(|_| "dependency identity unavailable")?;
+    Ok([
+        m.dev(),
+        m.ino(),
+        m.mode() as u64,
+        m.uid() as u64,
+        m.gid() as u64,
+        m.len(),
+        m.mtime() as u64,
+        m.mtime_nsec() as u64,
+        m.ctime() as u64,
+        m.ctime_nsec() as u64,
+    ])
+}
+
+/// Resolve only protected installed programs before confinement. The result is
+/// fresh for this admission; callers hold/recheck their existing operation pins.
+#[cfg(unix)]
+pub(crate) fn installed_library_paths_before(
+    program: &Path,
+    deadline: std::time::Instant,
+) -> Result<Vec<PathBuf>, String> {
+    use std::io::Read;
+    use std::os::unix::process::CommandExt;
+    use std::process::Stdio;
+    use std::time::{Duration, Instant};
+    let deadline = deadline.min(Instant::now() + Duration::from_secs(5));
+    if Instant::now() >= deadline {
+        return Err("dependency resolution deadline".into());
+    }
+    if !dependency_program_allowed(program) {
+        return Err("dependency program refused".into());
+    }
+    trusted_dependency_program(program)?;
+    trusted_dependency_file(Path::new("/usr/bin/ldd"))?;
+    for path in ["/usr/libexec/ld.so", "/var/run/ld.so.hints"] {
+        trusted_dependency_file(Path::new(path))?;
+    }
+    let mut custody_paths = vec![
+        program,
+        Path::new("/usr/bin/ldd"),
+        Path::new("/usr/libexec/ld.so"),
+        Path::new("/var/run/ld.so.hints"),
+    ];
+    if program == Path::new("/usr/sbin/sendmail")
+        && fs::symlink_metadata(program)
+            .map_err(|_| "mailwrapper alias unavailable")?
+            .file_type()
+            .is_symlink()
+    {
+        custody_paths.push(Path::new("/usr/sbin/mailwrapper"));
+    }
+    let before = custody_paths
+        .iter()
+        .map(|p| dependency_identity(p))
+        .collect::<Result<Vec<_>, _>>()?;
+    let mut command = crate::auth::installed_dependencies_command(program)
+        .map_err(|_| "dependency command refused")?;
+    command
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .process_group(0);
+    let mut child = command
+        .spawn()
+        .map_err(|_| "dependency resolver unavailable")?;
+    let mut status = None;
+    let result = (|| {
+        let mut stdout = child.stdout.take().ok_or("dependency stdout unavailable")?;
+        let mut stderr = child.stderr.take().ok_or("dependency stderr unavailable")?;
+        for fd in [stdout.as_raw_fd(), stderr.as_raw_fd()] {
+            let flags = unsafe { libc::fcntl(fd, libc::F_GETFL) };
+            if flags < 0 || unsafe { libc::fcntl(fd, libc::F_SETFL, flags | libc::O_NONBLOCK) } < 0
+            {
+                return Err("dependency pipe unavailable".into());
+            }
+        }
+        let mut out = Vec::new();
+        let mut err = Vec::new();
+        let mut out_eof = false;
+        let mut err_eof = false;
+        loop {
+            for (reader, data, eof) in [
+                (&mut stdout as &mut dyn Read, &mut out, &mut out_eof),
+                (&mut stderr as &mut dyn Read, &mut err, &mut err_eof),
+            ] {
+                let mut buffer = [0u8; 4096];
+                loop {
+                    match reader.read(&mut buffer) {
+                        Ok(0) => {
+                            *eof = true;
+                            break;
+                        }
+                        Ok(count) => {
+                            data.extend_from_slice(&buffer[..count]);
+                            if data.len() > 65536 {
+                                return Err("dependency output limit".into());
+                            }
+                        }
+                        Err(e) if e.kind() == io::ErrorKind::WouldBlock => break,
+                        Err(_) => return Err("dependency output unavailable".into()),
+                    }
+                }
+            }
+            if status.is_none() {
+                status = child
+                    .try_wait()
+                    .map_err(|_| "dependency wait unavailable")?;
+            }
+            if let Some(exit) = status {
+                if out_eof && err_eof {
+                    if !exit.success() || !err.is_empty() {
+                        return Err("dependency resolution failed".into());
+                    }
+                    break;
+                }
+            }
+            if Instant::now() >= deadline {
+                return Err("dependency resolution deadline".into());
+            }
+            std::thread::sleep(Duration::from_millis(10));
+        }
+        let output = std::str::from_utf8(&out).map_err(|_| "dependency output encoding")?;
+        let libraries = parse_installed_libraries(output, program)?;
+        for library in &libraries {
+            trusted_dependency_file(library)?;
+        }
+        trusted_dependency_program(program)?;
+        let after = custody_paths
+            .iter()
+            .map(|p| dependency_identity(p))
+            .collect::<Result<Vec<_>, _>>()?;
+        if before != after {
+            return Err("dependency changed during resolution".into());
+        }
+        Ok(libraries)
+    })();
+    if result.is_err() && status.is_none() {
+        unsafe {
+            libc::kill(-(child.id() as i32), libc::SIGKILL);
+        }
+        let _ = child.wait();
+    }
+    result
+}
+#[cfg(not(unix))]
+pub(crate) fn installed_library_paths_before(
+    _: &Path,
+    _: std::time::Instant,
+) -> Result<Vec<PathBuf>, String> {
+    Err("native dependencies unavailable".into())
 }
 
 /// Adds one rule only when the path currently exists on the host.
@@ -1821,6 +2076,10 @@ fn build_plan_event(
     .with_field("promises_before_lock", plan.promises_before_lock)
     .with_field("promises_after_lock", plan.promises_after_lock)
     .with_field("unveil_rule_count", plan.unveil_rules.len().to_string())
+    .with_field(
+        "dependency_admission",
+        plan.dependency_error.as_deref().unwrap_or("ready"),
+    )
     .with_field("unveiled_paths", unveiled_paths)
 }
 
@@ -1921,6 +2180,9 @@ mod imp {
     /// Applies the current plan by reducing promises, unveiling paths, locking
     /// the view, and then dropping the `unveil` promise.
     pub fn apply_plan(plan: &OpenbsdConfinementPlan) -> Result<(), String> {
+        if let Some(error) = &plan.dependency_error {
+            return Err(error.clone());
+        }
         pledge_raw(plan.promises_before_lock)?;
 
         for rule in &plan.unveil_rules {
@@ -2129,7 +2391,6 @@ mod tests {
     use super::*;
     use crate::config::{AppRunMode, LogFormat, RuntimeEnvironment};
     use crate::state::{StateLayout, StateLayoutPaths};
-    use std::time::{SystemTime, UNIX_EPOCH};
 
     #[cfg(unix)]
     #[test]
@@ -2727,28 +2988,91 @@ mod tests {
     }
 
     #[test]
-    fn resolves_prefixed_paths_to_stable_exact_matches() {
-        let now = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .expect("clock should be after epoch")
-            .as_nanos();
-        let temp_dir = std::env::temp_dir().join(format!("osmap-openbsd-paths-{now}"));
-        fs::create_dir_all(&temp_dir).expect("temp dir should be created");
-        fs::write(temp_dir.join("libalpha.so.2.0"), "").expect("alpha file should exist");
-        fs::write(temp_dir.join("libbeta.so.1.0"), "").expect("beta file should exist");
-        fs::write(temp_dir.join("libgamma.txt"), "").expect("noise file should exist");
-
-        let resolved = resolve_prefixed_paths(&temp_dir, &["libalpha.so.", "libbeta.so."])
-            .expect("prefixes should resolve");
-
+    fn dependency_trace_uses_actual_loader_selection() {
+        let program = Path::new("/usr/local/bin/doveadm");
+        let output = "/usr/local/bin/doveadm:\nStart End Type Open Ref GrpRef Name\n001 002 exe 1 0 0 /usr/local/bin/doveadm\n003 004 rlib 0 1 0 /usr/lib/libc.so.103.2\n005 006 rlib 0 1 0 /usr/local/lib/libzstd.so.9.0\n";
+        let paths = parse_installed_libraries(output, program).unwrap();
         assert_eq!(
-            resolved,
+            paths,
             vec![
-                temp_dir.join("libalpha.so.2.0"),
-                temp_dir.join("libbeta.so.1.0")
+                PathBuf::from("/usr/lib/libc.so.103.2"),
+                PathBuf::from("/usr/local/lib/libzstd.so.9.0")
             ]
         );
+        assert!(!paths.contains(&PathBuf::from("/usr/lib")));
+        assert!(!paths.contains(&PathBuf::from("/usr/lib/libc.so.103.0")));
+    }
 
-        fs::remove_dir_all(&temp_dir).expect("temp dir should be removed");
+    #[test]
+    fn dependency_trace_accepts_module_trace_and_current_soname() {
+        let program = Path::new("/usr/local/lib/dovecot/libdovecot.so.0.0");
+        assert!(dependency_program_allowed(program));
+        let output = "/usr/bin/ldd:\nStart End Type Open Ref GrpRef Name\n001 002 dlib 1 0 0 /usr/local/lib/dovecot/libdovecot.so.0.0\n003 004 rlib 0 1 0 /usr/lib/libc.so.103.2\n005 006 ld.so 0 1 0 /usr/libexec/ld.so\n";
+        let paths = parse_installed_libraries(output, program).unwrap();
+        assert!(paths.contains(&program.to_path_buf()));
+        assert!(paths.contains(&PathBuf::from("/usr/libexec/ld.so")));
+        assert!(!dependency_program_allowed(Path::new(
+            "/usr/local/lib/dovecot/libevil.so.bad"
+        )));
+    }
+
+    #[test]
+    fn dependency_trace_refuses_missing_foreign_and_malformed_paths() {
+        let program = Path::new("/usr/local/bin/doveadm");
+        for row in [
+            "003 004 rlib 0 1 0 /tmp/libc.so.103.2",
+            "libc.so.103.0 => not found",
+            "003 004 rlib 0 1 0 /usr/lib/../tmp/libc.so.1",
+            "003 004 unknown 0 1 0 /usr/lib/libc.so.103.2",
+        ] {
+            let output = format!("Start End Type Open Ref GrpRef Name\n{row}\n");
+            assert!(parse_installed_libraries(&output, program).is_err());
+        }
+        assert!(!dependency_program_allowed(Path::new("/tmp/ldd")));
+        assert!(!dependency_program_allowed(Path::new(
+            "/usr/local/lib/dovecot/../evil.so"
+        )));
+    }
+    #[cfg(target_os = "openbsd")]
+    #[test]
+    #[ignore = "requires installed OpenBSD mail dependencies; read-only loader trace"]
+    fn installed_dependency_native_trace() {
+        for program in [
+            "/usr/bin/fstat",
+            "/usr/local/bin/doveadm",
+            "/usr/local/bin/doveconf",
+            "/usr/local/bin/mariadb",
+            "/usr/sbin/sendmail",
+            "/usr/local/sbin/sendmail",
+            "/usr/local/sbin/postdrop",
+        ] {
+            let libraries = installed_library_paths_before(
+                Path::new(program),
+                std::time::Instant::now() + std::time::Duration::from_secs(5),
+            )
+            .unwrap_or_else(|error| panic!("{program}: {error}"));
+            assert!(!libraries.is_empty());
+            assert!(libraries
+                .iter()
+                .all(|path| dependency_library_allowed(path)));
+            println!(
+                "DEPENDENCIES_PASS program={program} count={}",
+                libraries.len()
+            );
+        }
+    }
+    #[cfg(target_os = "openbsd")]
+    #[test]
+    #[ignore = "requires installed root-owned Python alias; read-only selection"]
+    fn installed_python_native_selection() {
+        let python = crate::account_admission_runtime::installed_python_program()
+            .expect("trusted installed Python");
+        assert_eq!(python.parent(), Some(Path::new("/usr/local/bin")));
+        assert!(python
+            .file_name()
+            .and_then(|p| p.to_str())
+            .is_some_and(|p| p.starts_with("python3.")));
+        trusted_dependency_file(&python).expect("protected Python executable");
+        println!("PYTHON_SELECTION_PASS program={}", python.display());
     }
 }

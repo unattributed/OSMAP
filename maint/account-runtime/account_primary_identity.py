@@ -13,8 +13,8 @@ from authoritative_password import Refused
 from operation_budget import _OriginalReceipt
 NAME='_osmapprimary'
 SOCKET=Path('/var/dovecot/osmap-account-auth-client')
-SERVER_UID=518
-# Authoritative metadata15October observes ordinary filesystem owner518.
+SERVER_NAME=b'_dovecot'
+# Resolve filesystem ownership from the protected public account records.
 # The selected private listener is absent; its kernel binder is not observed.
 # Tagged kernel records bind identity, not chown owner/accepting process UID.
 PEER_BIND_UID=None
@@ -26,13 +26,23 @@ def _original(budget,deadline):
     if type(receipt)is not _OriginalReceipt:raise Refused('primary original receipt unavailable')
     budget.require_original(sent_millis=receipt.sent_millis,deadline_millis=receipt.deadline_millis,expires_at=receipt.expires_at)
 
+def _server_uid(passwd):
+    users=h._records(passwd,7)
+    found=[u for u in users if u[0]==SERVER_NAME]
+    if len(found)!=1:raise Refused('primary named server unavailable')
+    uid=h._number(found[0][2])
+    if not 0<uid<2**32-1 or sum(h._number(u[2])==uid for u in users)!=1:
+        raise Refused('primary named server unavailable')
+    return uid
+
+
 def _selected(passwd,group):
-    users=h._records(passwd,7);groups=h._records(group,4);name=NAME.encode('ascii')
+    server_uid=_server_uid(passwd);users=h._records(passwd,7);groups=h._records(group,4);name=NAME.encode('ascii')
     found=[u for u in users if u[0]==name];chosen=[g for g in groups if g[0]==name]
     if len(found)!=1 or len(chosen)!=1:raise Refused('primary private identity unavailable')
     user=found[0];entry=chosen[0];uid=h._number(user[2]);gid=h._number(user[3])
     if (not 0<uid<=2147483647 or not 0<gid<=2147483647
-            or uid in (SERVER_UID,32766,32767) or gid in (32766,32767)
+            or uid in (server_uid,32766,32767) or gid in (32766,32767)
             or h._number(entry[2])!=gid or user[5:]!=[b'/var/empty',b'/sbin/nologin'] or entry[3]
             or sum(h._number(u[2])==uid for u in users)!=1
             or sum(h._number(u[3])==gid for u in users)!=1
@@ -41,15 +51,15 @@ def _selected(passwd,group):
         raise Refused('primary private identity unavailable')
     return uid,gid
 
-def _socket(uid,gid,budget,deadline):
+def _socket(uid,gid,budget,deadline,server_uid):
     # UID/GID only arrive from the source-fixed selected public record; no
     # public class accepts them. Parent is privileged, sends zero auth bytes.
     _original(budget,deadline)
     if type(PEER_BIND_UID)is not int or not 0<=PEER_BIND_UID<2**32-1:
         raise Refused('primary fixed kernel peer admission unavailable')
     parents=h._parents(SOCKET,budget,deadline);before=SOCKET.lstat()
-    if (uid==SERVER_UID or gid==0 or not stat.S_ISSOCK(before.st_mode)
-            or before.st_uid!=SERVER_UID or before.st_gid!=gid or before.st_nlink!=1
+    if (uid==server_uid or gid==0 or not stat.S_ISSOCK(before.st_mode)
+            or before.st_uid!=server_uid or before.st_gid!=gid or before.st_nlink!=1
             or stat.S_IMODE(before.st_mode)!=0o660):
         raise Refused('primary private listener DAC unavailable')
     _original(budget,deadline)
@@ -79,7 +89,7 @@ class PrimaryChildIdentity:
         if any(not callable(getattr(os,n,None))for n in ('setgroups','getgroups','setresgid','getresgid','setresuid','getresuid')):
             raise Refused('primary identity ABI unavailable')
         total=[0];p,passwd=h._read(h.PASSWD,budget,deadline,total);g,group=h._read(h.GROUP,budget,deadline,total)
-        uid,gid=_selected(passwd,group);null=h._null(budget,deadline);endpoint=_socket(uid,gid,budget,deadline)
+        uid,gid=_selected(passwd,group);null=h._null(budget,deadline);endpoint=_socket(uid,gid,budget,deadline,_server_uid(passwd))
         value=object.__new__(cls);value._budget=budget;value._uid=uid;value._gid=gid
         value._public=(p,g);value._null=null;value._socket=endpoint;value.recheck(budget,deadline);return value
     def recheck(self,budget,deadline):
@@ -88,7 +98,7 @@ class PrimaryChildIdentity:
         p,passwd=h._read(h.PASSWD,budget,deadline,total);g,group=h._read(h.GROUP,budget,deadline,total)
         if (self._public!=(p,g) or _selected(passwd,group)!=(self._uid,self._gid)
                 or h._null(budget,deadline)!=self._null
-                or _socket(self._uid,self._gid,budget,deadline)!=self._socket):
+                or _socket(self._uid,self._gid,budget,deadline,_server_uid(passwd))!=self._socket):
             raise Refused('primary identity custody changed')
         _original(budget,deadline)
     def drop(self,budget,deadline):

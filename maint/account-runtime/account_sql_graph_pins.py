@@ -1,3 +1,6 @@
+# Historical fixture data only. Native Python graph admission is retired.
+# These values must never qualify an installed system; retained tests preserve
+# earlier failure/race evidence. The Rust helper is the maintained runtime.
 """Fixed observed MariaDB ELF closure; no loader completeness or profile claim."""
 # Loader hints only refreshed from read-only authoritative observation20261015
 # SHA256 b5e427934a8094d83b1f18384e59e92edb1ba77ae6941c58d8a4944b71f68e40. Other inventory13 pins unchanged; change origin UNKNOWN.

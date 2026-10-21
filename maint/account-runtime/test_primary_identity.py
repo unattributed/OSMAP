@@ -8,7 +8,7 @@ import account_primary_identity as q,account_hash_identity as h,test_hash_identi
 from account_mutation_supervisor import _peer
 from authoritative_password import Refused
 from operation_budget import OperationBudget
-PASS=helper_source.PASS.replace(b'_osmaphash',b'_osmapprimary')
+PASS=helper_source.PASS.replace(b'_osmaphash',b'_osmapprimary')+b'_dovecot:*:718:718:Dovecot:/var/empty:/sbin/nologin\n'
 GROUP=helper_source.GROUP.replace(b'_osmaphash',b'_osmapprimary')
 class PrimaryIdentityTests(unittest.TestCase):
  def setUp(self):
@@ -20,7 +20,7 @@ class PrimaryIdentityTests(unittest.TestCase):
   endpoint=Path(tmp.name)/'private-auth';server=socket.socket(socket.AF_UNIX,socket.SOCK_STREAM);server.bind(str(endpoint));server.listen(32);server.settimeout(.1);self.addCleanup(server.close);endpoint.chmod(0o660);actual_lstat=Path.lstat;real=observed
   def project(path):
    value=real(path)
-   if path==endpoint:return helper.project(value,st_uid=q.SERVER_UID,st_gid=12346)
+   if path==endpoint:return helper.project(value,st_uid=718,st_gid=12346)
    return value
   local_platform='linux'
   def peer(stream):
@@ -36,7 +36,7 @@ class PrimaryIdentityTests(unittest.TestCase):
    count+=1
   self.assertEqual(count,expected)
  def test_fixed_private_listener_original0600_and_no_caller_profile(self):
-  self.assertEqual((q.NAME,str(q.SOCKET),q.SERVER_UID,q.PEER_BIND_UID),('_osmapprimary','/var/dovecot/osmap-account-auth-client',518,None))
+  self.assertEqual((q.NAME,str(q.SOCKET),q.SERVER_NAME,q.PEER_BIND_UID),('_osmapprimary','/var/dovecot/osmap-account-auth-client',b'_dovecot',None))
   self.assertNotEqual(str(q.SOCKET),'/var/dovecot/auth-client')
   with patch.object(self.b,'inherited_group',return_value=True),patch.object(h.os,'open',side_effect=AssertionError),patch.object(q.socket,'socket',side_effect=AssertionError):
    with self.assertRaises(Refused):q.PrimaryChildIdentity.native(self.b,self.end)
@@ -45,9 +45,14 @@ class PrimaryIdentityTests(unittest.TestCase):
   with self.assertRaises(TypeError):q.PrimaryChildIdentity.native(self.b,self.end,uid=12345)
  def test_public_private_UID_GID_inert_unique_and_no_server_reuse(self):
   self.assertEqual(q._selected(PASS,GROUP),(12345,12346))
-  for users,groups in ((PASS.replace(b'12345',b'518'),GROUP),(PASS.replace(b'12346',b'1003'),GROUP),(PASS.replace(b'/sbin/nologin',b'/bin/ksh'),GROUP),(PASS,GROUP.replace(b'_osmapprimary:*:12346:',b'_osmapprimary:*:12346:fixture')),(PASS+b'other:*:12345:777:opaque:/var/empty:/sbin/nologin\n',GROUP),(PASS,GROUP+b'other:*:888:_osmapprimary\n')):
+  for users,groups in ((PASS.replace(b'12345',b'718'),GROUP),(PASS.replace(b'12346',b'1003'),GROUP),(PASS.replace(b'/sbin/nologin',b'/bin/ksh'),GROUP),(PASS,GROUP.replace(b'_osmapprimary:*:12346:',b'_osmapprimary:*:12346:fixture')),(PASS+b'other:*:12345:777:opaque:/var/empty:/sbin/nologin\n',GROUP),(PASS,GROUP+b'other:*:888:_osmapprimary\n')):
    with self.assertRaises(Refused):q._selected(users,groups)
   self.assertEqual(q._selected(PASS.replace(b'root:*:0:0:root',b'opaque-\xff:placeholder:0:0:utf8-\xc3\xa9'),GROUP.replace(b'wheel:*:',b'opaque-\xff:placeholder:')),(12345,12346))
+ def test_named_server_reallocation_and_ambiguous_identity(self):
+  self.assertEqual(q._server_uid(PASS),718)
+  self.assertEqual(q._server_uid(PASS.replace(b':718:718:',b':818:818:')),818)
+  for changed in (PASS.replace(b'_dovecot',b'foreign'),PASS+b'foreign:*:718:719:x:/var/empty:/sbin/nologin\n'):
+   with self.assertRaises(Refused):q._server_uid(changed)
  def test_genuine_local_socket_native_metadata_projection_and_zero_protocol_peer(self):
   p,g,null,endpoint,server,extra,project=self.fixture();value=q.PrimaryChildIdentity.native(self.b,self.end);self.assertEqual((value._uid,value._gid),(12345,12346));value.recheck(self.b,self.end);self.drain(server,3)
  def test_original600_wrong_socket_owner_group_mode_links_refuse_before_connect(self):
@@ -58,28 +63,28 @@ class PrimaryIdentityTests(unittest.TestCase):
     if path==endpoint:return NS(**{**vars(old),**change})
     return old
    with patch.object(Path,'lstat',altered),patch.object(q.socket,'socket',side_effect=AssertionError('DAC precedes connect')):
-    with self.assertRaises(Refused):q._socket(12345,12346,self.b,self.end)
+    with self.assertRaises(Refused):q._socket(12345,12346,self.b,self.end,718)
   self.drain(server,0)
  def test_actual_linux_peer_identity_differs_from_projected_file_owner(self):
   p,g,null,endpoint,server,extra,project=self.fixture()
   # Actual peer is local socket binding UID; a projected filesystem owner does
   # not change it. No native518 peer is manufactured by this actual countercase.
   with patch.object(q,'PEER_BIND_UID',518):
-   with self.assertRaises(Refused):q._socket(12345,12346,self.b,self.end)
+   with self.assertRaises(Refused):q._socket(12345,12346,self.b,self.end,718)
   self.drain(server,1)
  def test_actual_socket_inode_replacement_at_peer_check_refuses_and_closes(self):
   p,g,null,endpoint,server,extra,project=self.fixture();replacement=socket.socket(socket.AF_UNIX,socket.SOCK_STREAM);self.addCleanup(replacement.close);other=endpoint.with_name('replacement');replacement.bind(str(other));replacement.listen(1);other.chmod(0o660);before=set(os.listdir('/proc/self/fd'));ordinary=q._peer
   def swap(stream):
    result=ordinary(stream);os.replace(other,endpoint);return result
   with patch.object(q,'_peer',side_effect=swap):
-   with self.assertRaises(Refused):q._socket(12345,12346,self.b,self.end)
+   with self.assertRaises(Refused):q._socket(12345,12346,self.b,self.end,718)
   self.assertEqual(set(os.listdir('/proc/self/fd')),before);self.drain(server,1)
  def test_original_receipt_phase_and_public_custody_changes_refuse(self):
   p,g,null,endpoint,server,extra,project=self.fixture();value=q.PrimaryChildIdentity.native(self.b,self.end)
   generic=OperationBudget(int(time.time())+8,maximum_seconds=8)
   with patch.object(generic,'inherited_group',return_value=True),patch.object(q.socket,'socket',side_effect=AssertionError):
-   with self.assertRaises(Refused):q._socket(12345,12346,generic,self.end)
-   with self.assertRaises(Refused):q._socket(12345,12346,self.b,time.monotonic()-1)
+   with self.assertRaises(Refused):q._socket(12345,12346,generic,self.end,718)
+   with self.assertRaises(Refused):q._socket(12345,12346,self.b,time.monotonic()-1,718)
   p.write_bytes(PASS+b'compatible:*:888:889:opaque:/var/empty:/sbin/nologin\n')
   with patch.object(q.socket,'socket',side_effect=AssertionError):
    with self.assertRaises(Refused):value.recheck(self.b,self.end)

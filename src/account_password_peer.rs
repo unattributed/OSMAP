@@ -985,116 +985,6 @@ pub(crate) const PRIMARY_CONFIGURATION_PATHS: &[&str] = &[
     "/etc/dovecot/conf.d/99-osmap-private-primary.conf",
     "/etc/dovecot/conf.d/99-osmap-private-control.conf",
 ];
-const PRIMARY_CONFIGURATION_HASHES: &[(&str, &str)] = &[
-    (
-        "/etc/dovecot/conf.d/99-osmap-private-control.conf",
-        "ce8b95772da4512462083a248553aac8a30131650839033e65b88fb728a1aabc",
-    ),
-    (
-        "/etc/dovecot/dovecot.conf",
-        "2a869bce0fe0a6a193827bd91b716a46a02bff0267f5fb34ce2111e3ac279d66",
-    ),
-    (
-        "/etc/dovecot/conf.d/10-auth.conf",
-        "cbd482e1f0177b89902a6d8380e26be8c660ee98ff814e0772a246af7f3fca0b",
-    ),
-    (
-        "/etc/dovecot/conf.d/10-director.conf",
-        "49decee086a8fc7b396a1fad842b8b95d707825b2c4072526139731c70a07377",
-    ),
-    (
-        "/etc/dovecot/conf.d/10-logging.conf",
-        "5c8205ea0a2276a220caccabbcf3d4201d8758452d613b8a1c89cb2987c09292",
-    ),
-    (
-        "/etc/dovecot/conf.d/10-mail.conf",
-        "015a213d56db22168eb171f67816edea22dedf4c69cc644da48f641a2765b267",
-    ),
-    (
-        "/etc/dovecot/conf.d/10-master.conf",
-        "2fab3304f7d8bf88ab936cddd43377e1dc6fa0ad3989a94a0b208db17a5ab66b",
-    ),
-    (
-        "/etc/dovecot/conf.d/10-metrics.conf",
-        "dd4871b89ca692c560cd6882e9179ba983682d273f3d7aef099de13141e5ee1d",
-    ),
-    (
-        "/etc/dovecot/conf.d/10-ssl.conf",
-        "e44e97e4157afe8b05ae2e35813487ac961683aa209969360391a2806ee3d2a9",
-    ),
-    (
-        "/etc/dovecot/conf.d/15-lda.conf",
-        "d401e22a98187429b7fb30671553d0f2a5953bf87fb023764dd553b029185c62",
-    ),
-    (
-        "/etc/dovecot/conf.d/15-mailboxes.conf",
-        "1edf599e43e8c2498ccd9f8ebe46eb8cfdb68706bb14c514054a8e894ba6bcf6",
-    ),
-    (
-        "/etc/dovecot/conf.d/20-imap.conf",
-        "b6e0abad74a8bd3ddb449a25e1d55c346b8afdd676f2d768adeb57a2c08c029a",
-    ),
-    (
-        "/etc/dovecot/conf.d/20-lmtp.conf",
-        "897a163ae1b06b883a7c2bf68751457f11179a18a58edf2dd67ceb3e822fc3b8",
-    ),
-    (
-        "/etc/dovecot/conf.d/20-managesieve.conf",
-        "7df9d199d3682dfa529b79572692b2b9f15c9df67e90589af0e80edde39b4420",
-    ),
-    (
-        "/etc/dovecot/conf.d/20-pop3.conf",
-        "9c44864b6867d1707ff55a1f45ba6112d68e1c7a613df6e814ca38d598a55375",
-    ),
-    (
-        "/etc/dovecot/conf.d/20-submission.conf",
-        "6f0dcb7b17579672116c1e8c8e6aee88c70c5cfceb842f8a36f44ee7e4fe7fd2",
-    ),
-    (
-        "/etc/dovecot/conf.d/90-acl.conf",
-        "89e257dcdc03b18e4f3a1d4ae8bd95e3abd3278acdc4b5d5bfbb48ff51271ef6",
-    ),
-    (
-        "/etc/dovecot/conf.d/90-plugin.conf",
-        "2e07c87dacc547632b902056507ea406ed34ad3d7363c296f0be350d96e4013f",
-    ),
-    (
-        "/etc/dovecot/conf.d/90-quota.conf",
-        "cd0a0dfc0af65ec52a283435c71861b7c043d0c423f517c47c901bfd2a323b78",
-    ),
-    (
-        "/etc/dovecot/conf.d/90-sieve-extprograms.conf",
-        "ffa14b5f38da5acbd93fd20d3cc0b28517cabeb6797539c97b2090d96983430d",
-    ),
-    (
-        "/etc/dovecot/conf.d/90-sieve.conf",
-        "9910f435ce74aceb8b0f2a4e019f789b96785c2248f8c29a8e892a5080b0231c",
-    ),
-    (
-        "/etc/dovecot/conf.d/99-bbs-imaps-only.conf",
-        "9c931338bea2c81bab144563f67d0259c75ec16e05481bb37ffe6d542d12f517",
-    ),
-    (
-        "/etc/dovecot/conf.d/99-bbs-managesieve-policy.conf",
-        "90bf803ffc0937af5a5e2f1fdf3830275277e1a5a2645eba6ee26609dd218bce",
-    ),
-    (
-        "/etc/dovecot/conf.d/99-rspamd-warning-labels.conf",
-        "d22d9ee9c3a730e782cd29397f7a5a2595607233378e61c86dacb668e8ef508b",
-    ),
-    (
-        "/etc/dovecot/local.conf",
-        "f1ebb49ef250de35708eb83205a4cb7ea0216776704d32ad5baac2a56200ab09",
-    ),
-    (
-        "/etc/dovecot/conf.d/auth-sql.conf.ext",
-        "df0b657c2a4c963e31ab7f693a8afd2601694701d383c282323e3ea5c6e8986d",
-    ),
-    (
-        "/etc/dovecot/conf.d/99-osmap-private-primary.conf",
-        "7464efc86a068191790a76af3340256864df9e82dbc30176015e8a40304a51f4",
-    ),
-];
 struct PrimaryFile {
     path: &'static str,
     identity: [u64; 11],
@@ -1175,19 +1065,15 @@ fn primary_file_bytes(
             != metadata(&before)
         || path == PRIMARY_FRAGMENT
             && <[u8; 32]>::from(Sha256::digest(&bytes)) != PRIMARY_FRAGMENT_SHA256
+        || path == CONTROL_FRAGMENT
+            && Sha256::digest(&bytes)
+                != Sha256::digest(include_bytes!(
+                    "../maint/account-runtime/dovecot-private-control.conf"
+                ))
     {
         return Err(Error::Refused);
     }
     let digest: [u8; 32] = Sha256::digest(&bytes).into();
-    if let Some((_, expected)) = PRIMARY_CONFIGURATION_HASHES
-        .iter()
-        .find(|(name, _)| *name == path)
-    {
-        let actual: String = digest.iter().map(|value| format!("{value:02x}")).collect();
-        if actual != *expected {
-            return Err(Error::Refused);
-        }
-    }
     Ok((
         PrimaryFile {
             path,
@@ -2233,6 +2119,50 @@ pub(crate) fn stock_master_pid(deadline: Instant) -> Result<u32, Error> {
     }
     Ok(pid)
 }
+// Keep the configuration closure explicit. No include outside the admitted
+// files may influence a later authentication operation without being rechecked.
+fn stock_configuration_includes(path: &str, raw: &[u8]) -> Result<(), Error> {
+    let text = std::str::from_utf8(raw).map_err(|_| Error::Refused)?;
+    if text.contains('\0') {
+        return Err(Error::Refused);
+    }
+    for line in text
+        .lines()
+        .map(|line| line.split('#').next().unwrap_or("").trim())
+    {
+        if !line.starts_with('!') {
+            continue;
+        }
+        let fields = line.split_whitespace().collect::<Vec<_>>();
+        if fields.len() != 2 || !matches!(fields[0], "!include" | "!include_try") {
+            return Err(Error::Refused);
+        }
+        let target = fields[1];
+        let resolved = if target.starts_with('/') {
+            std::path::PathBuf::from(target)
+        } else {
+            Path::new(path).parent().ok_or(Error::Refused)?.join(target)
+        };
+        if resolved.components().any(|c| {
+            matches!(
+                c,
+                std::path::Component::ParentDir | std::path::Component::CurDir
+            )
+        }) {
+            return Err(Error::Refused);
+        }
+        let resolved = resolved.to_str().ok_or(Error::Refused)?;
+        if resolved == "/etc/dovecot/conf.d/*.conf" {
+            continue;
+        }
+        if !PRIMARY_CONFIGURATION_PATHS.contains(&resolved)
+            || matches!(resolved, PRIMARY_FRAGMENT | CONTROL_FRAGMENT)
+        {
+            return Err(Error::Refused);
+        }
+    }
+    Ok(())
+}
 impl StockPeer {
     pub(crate) fn observe(
         executor: std::sync::Arc<dyn CommandExecutor + Send + Sync>,
@@ -2244,13 +2174,16 @@ impl StockPeer {
         let mut files = Vec::new();
         for &path in PRIMARY_CONFIGURATION_PATHS {
             if !matches!(path, PRIMARY_FRAGMENT | CONTROL_FRAGMENT) {
-                files.push(primary_file(path, deadline)?);
+                let (file, bytes) = primary_file_bytes(path, deadline)?;
+                stock_configuration_includes(path, &bytes)?;
+                files.push(file);
             }
         }
         trace.set(crate::account_password_fstat::StartupOperation::StockConfigIncludes);
         primary_include_matches(&files, deadline)?;
-        // The pinned original25 closure fixes the main/include routing. Validate
-        // its sole source-selected SQL passdb before admitting the writer.
+        // Protected current configuration and its closed include set replace
+        // historical whole-file hashes. Validate the effective sole SQL passdb
+        // as well as its source before admitting the writer.
         trace.set(crate::account_password_fstat::StartupOperation::StockPassdb);
         let (_, passdb) = primary_file_bytes("/etc/dovecot/conf.d/auth-sql.conf.ext", deadline)?;
         stock_sql::passdb(&passdb).map_err(|_| Error::Refused)?;
@@ -2332,6 +2265,31 @@ impl StockPeer {
         trace.set(crate::account_password_fstat::StartupOperation::StockCachePin);
         let after = primary_file("/usr/local/bin/doveconf", deadline)?;
         if doveconf.identity != after.identity || doveconf.digest != after.digest {
+            return Err(Error::Refused);
+        }
+        // Effective settings catch additional passdb declarations in any admitted
+        // fragment. Output is held only in RAM and never emitted as evidence.
+        let effective = stock_query(
+            executor.as_ref(),
+            "/usr/local/bin/doveconf",
+            &["-c".into(), "/etc/dovecot/dovecot.conf".into(), "-n".into()],
+            deadline,
+            trace,
+        )?;
+        stock_sql::passdb(effective.as_bytes()).map_err(|_| Error::Refused)?;
+        let username_format = stock_query(
+            executor.as_ref(),
+            "/usr/local/bin/doveconf",
+            &[
+                "-c".into(),
+                "/etc/dovecot/dovecot.conf".into(),
+                "-h".into(),
+                "auth_username_format".into(),
+            ],
+            deadline,
+            trace,
+        )?;
+        if !matches!(username_format.trim(), "%u" | "%Lu") {
             return Err(Error::Refused);
         }
         files.push(doveconf);
@@ -2675,6 +2633,97 @@ mod stock_sql {
 #[cfg(test)]
 mod stock_authority_tests {
     use super::*;
+    #[cfg(target_os = "openbsd")]
+    #[test]
+    #[ignore = "operator-run root-only read-only current Dovecot configuration admission"]
+    fn installed_configuration_admits_required_authentication_semantics() {
+        assert!(crate::openbsd::password_native_authority());
+        let deadline = Instant::now() + Duration::from_secs(10);
+        let mut files = Vec::new();
+        for &path in PRIMARY_CONFIGURATION_PATHS {
+            if matches!(path, PRIMARY_FRAGMENT | CONTROL_FRAGMENT) {
+                continue;
+            }
+            let (file, bytes) =
+                primary_file_bytes(path, deadline).expect("protected current configuration");
+            stock_configuration_includes(path, &bytes)
+                .expect("bounded configuration include closure");
+            files.push(file);
+        }
+        primary_include_matches(&files, deadline).expect("current include membership");
+        let (_, sql) = primary_file_bytes("/etc/dovecot/dovecot-sql.conf.ext", deadline)
+            .expect("protected SQL configuration");
+        stock_sql::validate(&sql).expect("required SQL password source");
+        let executor = crate::auth::SystemCommandExecutor;
+        let effective = query(
+            &executor,
+            "/usr/local/bin/doveconf",
+            &["-c".into(), "/etc/dovecot/dovecot.conf".into(), "-n".into()],
+            deadline,
+        )
+        .expect("effective configuration query");
+        stock_sql::passdb(effective.as_bytes()).expect("effective sole SQL passdb");
+        let cache = query(
+            &executor,
+            "/usr/local/bin/doveconf",
+            &[
+                "-c".into(),
+                "/etc/dovecot/dovecot.conf".into(),
+                "-h".into(),
+                "auth_cache_size".into(),
+            ],
+            deadline,
+        )
+        .expect("cache query");
+        assert_eq!(cache, "0\n");
+        for old in files {
+            let now = primary_file(old.path, deadline).expect("configuration recheck");
+            assert!(old.identity == now.identity && old.digest == now.digest);
+        }
+        eprintln!("DEPENDENCY_CONFIGURATION_ADMISSION=PASS");
+    }
+
+    #[test]
+    fn current_configuration_accepts_formatting_but_rejects_external_includes() {
+        assert!(stock_configuration_includes(
+            "/etc/dovecot/dovecot.conf",
+            b"# changed comment\n  !include conf.d/*.conf # comment\n!include_try local.conf\n"
+        )
+        .is_ok());
+        assert!(stock_configuration_includes(
+            "/etc/dovecot/conf.d/10-auth.conf",
+            b"!include auth-sql.conf.ext\n"
+        )
+        .is_ok());
+        for raw in [
+            b"!include /tmp/passdb.conf\n".as_slice(),
+            b"!include ../outside.conf\n",
+            b"!include conf.d/*\n",
+        ] {
+            assert!(stock_configuration_includes("/etc/dovecot/dovecot.conf", raw).is_err());
+        }
+    }
+    #[test]
+    fn effective_passdb_rejects_extra_or_changed_authentication_routes() {
+        let good = b"# formatting changes are harmless\npassdb {\n driver = sql\n args = /etc/dovecot/dovecot-sql.conf.ext\n}\n";
+        assert!(stock_sql::passdb(good).is_ok());
+        let mut duplicate = good.to_vec();
+        duplicate.extend_from_slice(good);
+        assert!(stock_sql::passdb(&duplicate).is_err());
+        assert!(stock_sql::passdb(
+            &String::from_utf8_lossy(good)
+                .replace("driver = sql", "driver = pam")
+                .into_bytes()
+        )
+        .is_err());
+        assert!(stock_sql::passdb(
+            &String::from_utf8_lossy(good)
+                .replace("/etc/dovecot/dovecot-sql.conf.ext", "/tmp/passdb")
+                .into_bytes()
+        )
+        .is_err());
+    }
+
     #[test]
     fn fixed_doveconf_binary_bound_preserves_configuration_ceiling() {
         // A fixed executable larger than128KiB must reach the actual cache

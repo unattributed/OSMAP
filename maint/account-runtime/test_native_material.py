@@ -30,9 +30,9 @@ class MaterialFixture(unittest.TestCase):
         self.programs = [self.root / name for name in ('mariadb', 'doveadm', 'python3', 'worker.py')]
         for p in self.programs:
             p.write_bytes(b'public fixed fixture program\n'); p.chmod(0o500)
-        self.engine_target = self.root / m.ENGINE_TARGET
+        self.engine_target = self.root / 'python3.13'
         self.programs[2].rename(self.engine_target)
-        self.programs[2].symlink_to(m.ENGINE_TARGET)
+        self.programs[2].symlink_to('python3.13')
         self.server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         self.server.bind(str(self.path)); self.server.listen(16)
         self.plan.write_text(json.dumps({'version': 1, 'authority': m.AUTHORITY, 'purpose': m.PURPOSE,
@@ -131,11 +131,20 @@ class NativeMaterialTests(MaterialFixture):
         state = material._states[2][2]
         self.assertEqual(state[1], 'python3.13')
         self.assertNotEqual(state[0][:2], state[2][0][:2])
+    def test_trusted_interpreter_upgrade_admitted_on_new_operation(self):
+        old = self.load()
+        upgraded = self.root / 'python3.14'
+        upgraded.write_bytes(b'new public interpreter'); upgraded.chmod(0o500)
+        self.programs[2].unlink(); self.programs[2].symlink_to(upgraded.name)
+        with self.assertRaises(Unavailable): old.recheck(self.budget)
+        new = self.load()
+        self.assertEqual(new._states[2][2][1], 'python3.14')
+
     def test_engine_alias_foreign_absolute_version_and_chain_refuse(self):
-        for target in ('python3.12', str(self.engine_target), 'doveadm'):
+        for target in ('python2.7', 'python3.14/other', str(self.engine_target), 'doveadm'):
             self.programs[2].unlink(); self.programs[2].symlink_to(target)
             with self.assertRaises(Unavailable): self.load()
-        self.programs[2].unlink(); self.programs[2].symlink_to(m.ENGINE_TARGET)
+        self.programs[2].unlink(); self.programs[2].symlink_to('python3.13')
         self.engine_target.unlink(); self.engine_target.symlink_to('doveadm')
         with self.assertRaises(Unavailable): self.load()
     def test_engine_target_public_writable_setuid_and_nonexecutable_refuse(self):
@@ -144,7 +153,7 @@ class NativeMaterialTests(MaterialFixture):
             with self.assertRaises(Unavailable): self.load()
     def test_engine_alias_same_literal_replacement_refuses(self):
         material = self.load()
-        self.programs[2].unlink(); self.programs[2].symlink_to(m.ENGINE_TARGET)
+        self.programs[2].unlink(); self.programs[2].symlink_to('python3.13')
         with self.assertRaises(Unavailable): material.recheck(self.budget)
     def test_engine_target_same_bytes_replacement_refuses(self):
         material = self.load(); replacement = self.root / 'new-engine'

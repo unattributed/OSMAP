@@ -5,7 +5,10 @@
 daemon="/usr/local/bin/python3"
 script="/usr/local/libexec/osmap/mail-backend/relay.py"
 daemon_user="_osmapbridge"
-daemon_flags="${script} --purpose mailbox --listen /var/lib/osmap-bridge/run/mailbox.sock --identity /var/lib/osmap-bridge/keys/mailbox --known-hosts /var/lib/osmap-bridge/known_hosts --control-path /var/lib/osmap-bridge/control/mailbox-ssh.sock --remote-host 216.128.179.75 --trusted-uid 1001"
+# Bind the named web principal using the protected system account database.
+trusted_uid=$(/usr/bin/id -u _osmap) || exit 1
+case "$trusted_uid" in ''|0|*[!0-9]*) exit 1;; esac
+daemon_flags="${script} --purpose mailbox --listen /var/lib/osmap-bridge/run/mailbox.sock --identity /var/lib/osmap-bridge/keys/mailbox --known-hosts /var/lib/osmap-bridge/known_hosts --control-path /var/lib/osmap-bridge/control/mailbox-ssh.sock --remote-host 216.128.179.75 --trusted-uid ${trusted_uid}"
 rc_bg=YES
 rc_reload=NO
 

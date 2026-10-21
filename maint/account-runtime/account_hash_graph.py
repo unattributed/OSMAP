@@ -126,13 +126,10 @@ class HashInstalledGraph:
     def __init__(self,*_args,**_kwargs):raise Refused('hash graph construction unavailable')
     @classmethod
     def native(cls,budget,deadline):
-        _bound(budget,deadline);system=os.uname()
-        if (sys.platform!='openbsd7' or system.sysname!='OpenBSD' or system.release!='7.9'
-                or system.machine!='amd64' or sys.byteorder!='little'
-                or socket.gethostname()!=AUTHORITY or os.getuid()!=0 or os.geteuid()!=0):
-            raise Refused('hash graph authority unavailable')
-        states=cls._observe(budget,deadline)
-        value=object.__new__(cls);value._budget=budget;value._states=states;return value
+        # Retired duplicate Python candidate. The maintained Rust helper owns
+        # installed dependency admission. Do not revive historical graph pins
+        # by enabling a legacy profile or replaying a qualification fixture.
+        raise Refused('legacy Python graph retired; use Rust account helper')
     @staticmethod
     def _observe(budget,deadline):
         _bound(budget,deadline);directory=_modules(budget,deadline);search=_search_directory(budget,deadline);total=[0];states=[]

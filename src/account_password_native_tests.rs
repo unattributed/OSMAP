@@ -1,41 +1,28 @@
 use super::*;
 
 #[test]
-fn sealed_metadata_adds_only_the_measured_fstat_library_leaf() {
-    let rules = parent_rules();
-    assert_eq!(pins::METADATA_FILES.len(), 1);
-    let pin = &pins::METADATA_FILES[0];
-    assert_eq!(pin.path, "/usr/lib/libkvm.so.18.0");
-    assert_eq!(
-        rules
-            .iter()
-            .filter(|(path, _)| *path == pin.path)
-            .copied()
-            .collect::<Vec<_>>(),
-        vec![(pin.path, "r")]
-    );
+fn fixed_authority_never_exposes_system_library_directories() {
+    let rules = fixed_parent_rules();
     assert!(!rules
         .iter()
-        .any(|(path, _)| matches!(*path, "/usr/lib" | "/dev" | "/")));
-    assert_eq!(
-        pin.sha256,
-        "7c43550d2515b1c4e12471fc37d34b4fc215e0f1127e3a7ba6db24292e3e1582"
-    );
+        .any(|(path, _)| matches!(path.as_str(), "/usr/lib" | "/usr/local/lib" | "/dev" | "/")));
 }
 
 #[test]
 fn parent_main_selection_link_has_only_fixed_directory_read_authority() {
     // Exercise the actual fixed union consumed by ParentPlan::prepare.
-    let rules = parent_rules();
+    let rules = fixed_parent_rules();
     assert_eq!(
         rules
             .iter()
             .filter(|(path, _)| *path == "/var/dovecot")
-            .copied()
+            .cloned()
             .collect::<Vec<_>>(),
-        vec![("/var/dovecot", "r")]
+        vec![("/var/dovecot".to_owned(), "r")]
     );
-    assert!(!rules.iter().any(|(path, _)| matches!(*path, "/var" | "/")));
+    assert!(!rules
+        .iter()
+        .any(|(path, _)| matches!(path.as_str(), "/var" | "/")));
 }
 
 #[test]
@@ -64,7 +51,13 @@ fn native_roles_keep_exact_separate_commands_and_existing_permission_boundaries(
     *primary.last_mut().unwrap() = "alice@example.test;whoami".into();
     assert!(!matches_command(Role::Primary, HASH_PROGRAM, &primary));
     let deadline = Instant::now() + Duration::from_secs(1);
-    let sql = prepared(Role::Sql, (1008, 1008), deadline).unwrap();
+    let sql = prepared_paths(
+        Role::Sql,
+        (1008, 1008),
+        deadline,
+        &[SQL_PROGRAM, "/usr/lib/libc.so.current"],
+    )
+    .unwrap();
     assert_eq!(sql.ids(), (1008, 1008));
     assert!(!sql.promises().to_bytes().windows(5).any(|v| v == b"wpath"));
     for (path, access) in sql.rules() {
@@ -74,7 +67,13 @@ fn native_roles_keep_exact_separate_commands_and_existing_permission_boundaries(
         assert!(!access.to_bytes().contains(&b'c'));
     }
     for role in [Role::Hash, Role::Primary, Role::Control] {
-        let plan = prepared(role, (1005, 1005), deadline).unwrap();
+        let plan = prepared_paths(
+            role,
+            (1005, 1005),
+            deadline,
+            &[HASH_PROGRAM, "/usr/lib/libc.so.current"],
+        )
+        .unwrap();
         for (path, access) in plan.rules() {
             if access.to_bytes().contains(&b'c') {
                 assert_eq!(path.to_bytes(), b"/dev/null");
@@ -207,4 +206,65 @@ fn sql_role_requires_unique_locked_identity_and_exact_readonly_private_grant() {
         &[("/etc/osmap".into(), [1, 2, 0, 0, 0o040700])],
         ids
     ));
+}
+
+#[cfg(target_os = "openbsd")]
+#[test]
+#[ignore = "operator-run root-only installed dependency admission; no credentials or service mutation"]
+fn installed_dependency_graphs_admit_current_trusted_system() {
+    assert!(crate::openbsd::password_native_authority());
+    let started = Instant::now();
+    let deadline = started + Duration::from_secs(5);
+    for program in [
+        "/usr/bin/fstat",
+        crate::account_password_backend::HASH_PROGRAM,
+        crate::account_password_backend::SQL_PROGRAM,
+    ] {
+        eprintln!("DEPENDENCY_ADMISSION_PROGRAM={program}");
+        let admitted =
+            installed_graph(program, deadline).expect("trusted installed dependency admission");
+        assert!(!admitted.files.is_empty());
+        admitted
+            .recheck(deadline)
+            .expect("installed graph continuity");
+    }
+    eprintln!(
+        "DEPENDENCY_GRAPH_ADMISSION=PASS; ELAPSED_MS={}",
+        started.elapsed().as_millis()
+    );
+}
+
+#[cfg(target_os = "linux")]
+#[test]
+fn installed_graph_uses_fresh_trusted_bytes_and_rejects_stale_operation_snapshots() {
+    let deadline = Instant::now() + Duration::from_secs(2);
+    let path = "/usr/bin/true";
+    let (identity, digest, _) = public_file(path, false, FILE_CAP, deadline).unwrap();
+    let mut graph = InstalledGraph {
+        files: vec![(path.into(), identity, digest)],
+        directories: vec![],
+    };
+    graph.recheck(deadline).unwrap();
+    graph.files[0].1[1] ^= 1;
+    assert!(graph.recheck(deadline).is_err());
+    graph.files[0].1 = identity;
+    graph.files[0].2[0] ^= 1;
+    assert!(graph.recheck(deadline).is_err());
+    graph.files[0].2 = digest;
+    graph.recheck(deadline).unwrap();
+    assert!(public_file("/tmp/", false, FILE_CAP, deadline).is_err());
+}
+
+#[test]
+fn named_private_role_uses_unique_current_identity_without_historical_uid() {
+    for uid in [518, 1700] {
+        let passwd = format!("root:*:0:0:root:/root:/bin/ksh\n_dovecot:*:519:519:mail:/var/empty:/sbin/nologin\n_osmapprimary:*:{uid}:{uid}:role:/var/empty:/sbin/nologin\n");
+        let group = format!("wheel:*:0:root\n_dovecot:*:519:\n_osmapprimary:*:{uid}:\n");
+        assert_eq!(
+            selected(passwd.as_bytes(), group.as_bytes(), b"_osmapprimary"),
+            Ok((uid, uid))
+        );
+        let shared = passwd.replace("_dovecot:*:519:519", &format!("_dovecot:*:{uid}:519"));
+        assert!(selected(shared.as_bytes(), group.as_bytes(), b"_osmapprimary").is_err());
+    }
 }

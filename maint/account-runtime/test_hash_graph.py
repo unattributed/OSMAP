@@ -137,6 +137,13 @@ class GraphTests(unittest.TestCase):
    part=actual(fd,count);now[0]=self.end+1;return part
   with self.context((row,)),patch.object(g.os,'read',expire),patch('time.monotonic',side_effect=lambda:now[0]):
    with self.assertRaisesRegex(Refused,'original phase'):self.read(p,row)
+ def test_all_legacy_native_graphs_retired_before_host_actions(self):
+  from account_sql_graph import SqlInstalledGraph
+  from account_primary_graph import PrimaryInstalledGraph
+  with patch('os.open',side_effect=AssertionError('no host action')),patch('subprocess.Popen',side_effect=AssertionError('no subprocess')),patch('os.uname',side_effect=AssertionError('no platform probe')):
+   for cls,args in ((g.HashInstalledGraph,(self.b,self.end)),(SqlInstalledGraph,(self.b,self.end,None)),(PrimaryInstalledGraph,(self.b,self.end))):
+    with self.assertRaisesRegex(Refused,'retired'):cls.native(*args)
+  self.assertEqual(k._PROFILES,())
  def test_graph_native_authority_and_constructor_closed(self):
   with self.assertRaises(Refused):g.HashInstalledGraph(self.b,self.end)
   with patch.object(self.b,'inherited_group',return_value=True),patch.object(g.HashInstalledGraph,'_observe',side_effect=AssertionError):

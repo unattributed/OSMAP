@@ -59,7 +59,27 @@ const WORKER_MODULES: [&str; 33] = [
     "smtp_topology.py",
 ];
 const ENGINE: &str = "/usr/local/bin/python3";
-const ENGINE_TARGET: &str = "python3.13";
+/// Only a single relative CPython 3 minor-version basename is admitted.
+/// Package upgrades may change the minor; paths and arbitrary executables may not.
+pub(crate) fn python_target_name(target: &Path) -> bool {
+    target.components().count() == 1
+        && target.to_str().is_some_and(|name| {
+            name.strip_prefix("python3.").is_some_and(|minor| {
+                !minor.is_empty() && minor.len() <= 2 && minor.bytes().all(|b| b.is_ascii_digit())
+            })
+        })
+}
+
+#[cfg(test)]
+pub(crate) fn installed_python_program() -> Result<PathBuf, String> {
+    InstalledEngine::observe(
+        Path::new(ENGINE),
+        0,
+        Instant::now() + Duration::from_secs(5),
+    )
+    .map(|engine| engine.target)
+    .map_err(|_| "trusted installed Python interpreter unavailable".to_owned())
+}
 const EPOCH_ROOT: &str = "/var/db/osmap-account/epoch";
 type AdmissionStatus = (u64, Option<String>);
 fn unavailable<T>(_: T) -> Error {
@@ -510,14 +530,13 @@ impl Service {
         if std::env::current_dir().map_err(unavailable)? != Path::new("/") {
             return Err(Error::Unavailable);
         }
-        self.engine
-            .as_ref()
-            .ok_or(Error::Unavailable)?
-            .recheck(deadline)?;
+        let engine = self.engine.as_ref().ok_or(Error::Unavailable)?;
+        engine.recheck(deadline)?;
         Self::fixed_worker_status_command(
             request,
             deadline,
-            crate::auth::account_admission_inherited_root_command().map_err(unavailable)?,
+            crate::auth::account_admission_inherited_root_command(&engine.target)
+                .map_err(unavailable)?,
         )
     }
     /// Retained closed finite-connection API. Only `serve` owns mandatory
@@ -624,20 +643,22 @@ impl InstalledEngine {
             return Err(Error::Unavailable);
         }
         let before = fs::symlink_metadata(alias).map_err(unavailable)?;
+        let target_name = fs::read_link(alias).map_err(unavailable)?;
         if !before.file_type().is_symlink()
             || before.uid() != owner
             || before.nlink() != 1
-            || fs::read_link(alias).map_err(unavailable)? != Path::new(ENGINE_TARGET)
+            || !python_target_name(&target_name)
         {
             return Err(Error::Unavailable);
         }
-        let target = alias.parent().ok_or(Error::Invalid)?.join(ENGINE_TARGET);
+        let target = alias.parent().ok_or(Error::Invalid)?.join(&target_name);
         let ancestors = Self::ancestors(&target, owner)?;
         let target_before =
             installed_identity(&fs::symlink_metadata(&target).map_err(unavailable)?);
         let mut descriptor = file(&target, owner, true, 64 * 1024 * 1024).map_err(unavailable)?;
         if target_before.5 != 1
             || target_before.6 == 0
+            || target_before.4 & 0o6000 != 0
             || !crate::openbsd::descriptor_is_cloexec(descriptor.as_raw_fd())
                 .map_err(unavailable)?
             || installed_identity(&descriptor.metadata().map_err(unavailable)?) != target_before
@@ -668,7 +689,7 @@ impl InstalledEngine {
                 != target_before
             || installed_identity(&fs::symlink_metadata(alias).map_err(unavailable)?)
                 != alias_identity
-            || fs::read_link(alias).map_err(unavailable)? != Path::new(ENGINE_TARGET)
+            || fs::read_link(alias).map_err(unavailable)? != target_name
             || Self::ancestors(&target, owner)? != ancestors
             || Instant::now() >= deadline
         {
@@ -695,8 +716,11 @@ impl InstalledEngine {
         // checking ancestor ownership/mode. Trusted administration preserves it.
         self.recheck(deadline)?;
         endpoint.recheck()?;
-        let seal = crate::openbsd::apply_account_admission_parent_confinement(&endpoint.path)
-            .map_err(unavailable)?;
+        let seal = crate::openbsd::apply_account_admission_parent_confinement(
+            &endpoint.path,
+            &self.target,
+        )
+        .map_err(unavailable)?;
         self.sealed.set(seal).map_err(unavailable)?;
         self.recheck(deadline)
     }

@@ -1,3 +1,6 @@
+# Historical fixture data only. Native Python graph admission is retired.
+# These values must never qualify an installed system; retained tests preserve
+# earlier failure/race evidence. The Rust helper is the maintained runtime.
 """Exact public bytes/custody measured by authoritative inventory13.
 Source constants only; never decode caller reports at runtime. This selects a
 hash qualification candidate, not a complete loader resolution attestation.

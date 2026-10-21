@@ -32,7 +32,7 @@ SERVER = '_mysql'
 DATABASE_USER = 'osmap_account_mutation'
 STARTUP_SECONDS = 5
 PEER_SECONDS = 1
-ENGINE_TARGET = 'python3.13'
+ENGINE_BASENAME = re.compile(r'python3\.[0-9]{1,2}\Z')
 
 
 def _identity(info):
@@ -107,21 +107,22 @@ def _read(path, owner, private, limit, budget, *, executable=False):
 
 
 def _engine(path, owner, budget):
-    # The current authoritative OpenBSD package exposes this ONE fixed relative
-    # alias. No general symlink following: exact link + regular sibling target
+    # Admit a relative Python 3 package alias within the same trusted directory.
+    # No arbitrary path or symlink chain: link + regular sibling target
     # receive separate custody identities/digests and are both rechecked.
     budget.remaining()
     _ancestry(path.parent, owner)
     before = path.lstat()
+    target = os.readlink(path) if stat.S_ISLNK(before.st_mode) else ""
     if (not stat.S_ISLNK(before.st_mode) or before.st_uid != owner or before.st_nlink != 1
-            or os.readlink(path) != ENGINE_TARGET):
+            or ENGINE_BASENAME.fullmatch(target) is None):
         raise Unavailable('native mutation engine alias unavailable')
-    state, _unused = _read(path.parent / ENGINE_TARGET, owner, False, 64*1024*1024,
+    state, _unused = _read(path.parent / target, owner, False, 64*1024*1024,
                             budget, executable=True)
-    if _identity(path.lstat()) != _identity(before) or os.readlink(path) != ENGINE_TARGET:
+    if _identity(path.lstat()) != _identity(before) or os.readlink(path) != target:
         raise Unavailable('native mutation engine alias changed')
     budget.remaining()
-    return (_identity(before), ENGINE_TARGET, state)
+    return (_identity(before), target, state)
 
 
 @dataclass(frozen=True, repr=False)

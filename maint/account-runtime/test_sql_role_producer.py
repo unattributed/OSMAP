@@ -88,7 +88,25 @@ class SqlRoleTests(unittest.TestCase):
    with self.assertRaises(Refused):seal.preexec(A.SQL_PROGRAM,A.SQL_ARGS,deadline=self.end)
   seal._rows=original
  def test_actual_owned_SQL_role_source_transport_closed_children(self):
-  child=subprocess.Popen((sys.executable,'-I','-B',str(R/'owned_sql_role.py'),str(R)),stdout=subprocess.PIPE,stderr=subprocess.PIPE,start_new_session=True,env={'PATH':'/usr/bin:/bin','LC_ALL':'C'})
+  # The Python native graph is retired. This transport test explicitly injects
+  # its existing local projected graph; it must not reopen production admission.
+  with self.assertRaisesRegex(Refused,'legacy Python graph retired'):
+   q.SqlInstalledGraph.native(self.b,self.end,self.material)
+  harness='''import runpy,sys
+from pathlib import Path
+from unittest.mock import patch
+sys.path.insert(0,sys.argv[1])
+import account_sql_graph as q
+def projected_graph(cls,budget,deadline,material):
+ q._bound(budget,deadline);q._material(material)
+ value=object.__new__(cls)
+ value._budget=budget;value._material=material
+ value._states=cls._observe(budget,deadline,material)
+ return value
+with patch.object(q.SqlInstalledGraph,'native',classmethod(projected_graph)):
+ runpy.run_path(str(Path(sys.argv[1])/'owned_sql_role.py'),run_name='__main__')
+'''
+  child=subprocess.Popen((sys.executable,'-I','-B','-c',harness,str(R)),stdout=subprocess.PIPE,stderr=subprocess.PIPE,start_new_session=True,env={'PATH':'/usr/bin:/bin','LC_ALL':'C'})
   try:
    out,err=child.communicate(timeout=15);self.assertEqual(child.returncode,0,err);self.assertEqual(out,b'PUBLIC_SQL_ROLE_SOURCE_TRANSPORT_2_CHILDREN_REAPED_KERNEL_ROOT_LOADER_SQL_PROJECTED\n')
    with self.assertRaises(ProcessLookupError):os.killpg(child.pid,0)

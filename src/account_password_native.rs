@@ -1,6 +1,6 @@
-//! Fixed child-role custody for authoritative password utilities. Public pins
-//! are transcribed from the existing reviewed installed graphs. No provision,
-//! permission repair, host discovery or production activation occurs here.
+//! Fixed child-role custody for authoritative password utilities. Dependencies
+//! are admitted from the trusted installed graph before confinement, then held
+//! stable for this helper lifetime. No historical OS/package bytes are required.
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
 use std::ffi::{CStr, CString};
@@ -33,16 +33,6 @@ const TOTAL_CAP: u64 = 128 * 1024 * 1024;
 type Fingerprint = [u64; 9];
 type Ancestry = Vec<(String, [u64; 5])>;
 type Endpoint = (String, Fingerprint, Ancestry);
-struct ParentPin {
-    path: &'static str,
-    identity: [u64; 5],
-}
-struct FilePin {
-    path: &'static str,
-    identity: Fingerprint,
-    sha256: &'static str,
-    parents: &'static [ParentPin],
-}
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Role {
     Sql,
@@ -79,37 +69,12 @@ fn fingerprint(m: &fs::Metadata) -> Result<Fingerprint, Unavailable> {
         stamp(m.ctime(), m.ctime_nsec())?,
     ])
 }
-fn dir_identity(m: &fs::Metadata) -> [u64; 5] {
-    [
-        m.dev(),
-        m.ino(),
-        m.uid().into(),
-        m.gid().into(),
-        m.mode().into(),
-    ]
-}
 fn parents(
     path: &str,
     extra_owner: Option<u32>,
     deadline: Instant,
 ) -> Result<Ancestry, Unavailable> {
     crate::account_password_custody::ancestors(path, extra_owner, deadline).map_err(unavailable)
-}
-fn pinned_parents(
-    path: &str,
-    expected: &[ParentPin],
-    deadline: Instant,
-) -> Result<(), Unavailable> {
-    let actual = parents(path, None, deadline)?;
-    if actual.len() != expected.len()
-        || actual
-            .iter()
-            .zip(expected)
-            .any(|((p, m), e)| p != e.path || *m != e.identity)
-    {
-        return Err(Unavailable);
-    }
-    Ok(())
 }
 #[derive(PartialEq, Eq)]
 struct Observation {
@@ -397,26 +362,135 @@ fn matches_command(role: Role, program: &str, args: &[String]) -> bool {
 }
 /// Closed parent union of the existing child graphs. Duplicates are merged
 /// by ParentPlan; no runtime request contributes a path or permission.
-pub(crate) fn parent_rules() -> Vec<(&'static str, &'static str)> {
-    let mut rows = Vec::new();
-    rows.extend(pins::METADATA_FILES.iter().map(|pin| (pin.path, "r")));
-    for (files, program) in [
-        (
-            pins::SQL_FILES,
-            crate::account_password_backend::SQL_PROGRAM,
-        ),
-        (
-            pins::HASH_FILES,
-            crate::account_password_backend::HASH_PROGRAM,
-        ),
-    ] {
-        rows.extend(
-            files
-                .iter()
-                .map(|pin| (pin.path, if pin.path == program { "rx" } else { "r" })),
-        );
+type PublicSnapshot = (String, Fingerprint, [u8; 32]);
+struct InstalledGraph {
+    files: Vec<PublicSnapshot>,
+    directories: Vec<PublicSnapshot>,
+}
+static HASH_GRAPH: std::sync::OnceLock<Result<InstalledGraph, Unavailable>> =
+    std::sync::OnceLock::new();
+static SQL_GRAPH: std::sync::OnceLock<Result<InstalledGraph, Unavailable>> =
+    std::sync::OnceLock::new();
+static FSTAT_GRAPH: std::sync::OnceLock<Result<InstalledGraph, Unavailable>> =
+    std::sync::OnceLock::new();
+
+// Resolve only before seal. Subsequent operations recheck precisely this admitted
+// closure. A package update requires a fresh OSMAP helper, never public mail restart.
+fn installed_graph(
+    program: &'static str,
+    deadline: Instant,
+) -> Result<&'static InstalledGraph, Unavailable> {
+    let cache = match program {
+        crate::account_password_backend::SQL_PROGRAM => &SQL_GRAPH,
+        crate::account_password_backend::HASH_PROGRAM => &HASH_GRAPH,
+        "/usr/bin/fstat" => &FSTAT_GRAPH,
+        _ => return Err(Unavailable),
+    };
+    let value = cache
+        .get_or_init(|| capture_graph(program, deadline))
+        .as_ref()
+        .map_err(|_| Unavailable)?;
+    value.recheck(deadline)?;
+    Ok(value)
+}
+impl InstalledGraph {
+    fn recheck(&self, deadline: Instant) -> Result<(), Unavailable> {
+        for (path, identity, digest) in &self.files {
+            let (now, hash, _) = public_file(path, false, FILE_CAP, deadline)?;
+            if &now != identity || &hash != digest {
+                return Err(Unavailable);
+            }
+        }
+        for old in &self.directories {
+            if directory_snapshot(&old.0, deadline)? != *old {
+                return Err(Unavailable);
+            }
+        }
+        before(deadline)
     }
-    rows.extend([
+}
+fn capture_graph(program: &'static str, deadline: Instant) -> Result<InstalledGraph, Unavailable> {
+    let mut paths = std::collections::BTreeSet::new();
+    paths.extend([
+        program.to_owned(),
+        "/usr/libexec/ld.so".into(),
+        "/var/run/ld.so.hints".into(),
+    ]);
+    let mut sources = vec![program.to_owned()];
+    let mut resolved_inputs = std::collections::BTreeMap::new();
+    for path in ["/usr/libexec/ld.so", "/var/run/ld.so.hints"] {
+        let (identity, digest, _) = public_file(path, false, FILE_CAP, deadline)?;
+        resolved_inputs.insert(path.to_owned(), (identity, digest));
+    }
+    let mut directories = Vec::new();
+    if program == crate::account_password_backend::HASH_PROGRAM {
+        for dir in [pins::MODULE_DIRECTORY, pins::SEARCH_DIRECTORY] {
+            directories.push(directory_snapshot(dir, deadline)?);
+            // doveadm discovers these modules itself. Its dependent core
+            // libraries are resolved recursively by ldd, not by scanning every
+            // unrelated shared object in Dovecot's search directory.
+            if dir != pins::MODULE_DIRECTORY {
+                continue;
+            }
+            for entry in fs::read_dir(dir).map_err(unavailable)? {
+                before(deadline)?;
+                let path = entry.map_err(unavailable)?.path();
+                let name = path
+                    .file_name()
+                    .and_then(|v| v.to_str())
+                    .ok_or(Unavailable)?;
+                if name.ends_with(".so") || name.contains(".so.") {
+                    if sources.len() >= 128 {
+                        return Err(Unavailable);
+                    }
+                    let path = path.to_str().ok_or(Unavailable)?.to_owned();
+                    public_file(&path, false, FILE_CAP, deadline)?;
+                    paths.insert(path.clone());
+                    sources.push(path);
+                }
+            }
+        }
+    }
+    for source in sources {
+        before(deadline)?;
+        let (initial_identity, initial_hash, _) = public_file(&source, false, FILE_CAP, deadline)?;
+        #[cfg(test)]
+        eprintln!("DEPENDENCY_RESOLUTION_SOURCE={source}");
+        for path in crate::openbsd::installed_library_paths_before(Path::new(&source), deadline)
+            .map_err(|error| {
+                #[cfg(test)]
+                eprintln!("DEPENDENCY_RESOLUTION_FAILURE={error}");
+                unavailable(error)
+            })?
+        {
+            paths.insert(path.to_str().ok_or(Unavailable)?.to_owned());
+        }
+        let (final_identity, final_hash, _) = public_file(&source, false, FILE_CAP, deadline)?;
+        if initial_identity != final_identity || initial_hash != final_hash || paths.len() > 256 {
+            return Err(Unavailable);
+        }
+        resolved_inputs.insert(source, (initial_identity, initial_hash));
+    }
+    let mut files = Vec::new();
+    let mut total = 0u64;
+    for path in paths {
+        let (identity, digest, _) = public_file(&path, false, FILE_CAP, deadline)?;
+        total = total.checked_add(identity[6]).ok_or(Unavailable)?;
+        if total > TOTAL_CAP
+            || resolved_inputs
+                .get(&path)
+                .is_some_and(|old| old != &(identity, digest))
+        {
+            return Err(Unavailable);
+        }
+        files.push((path, identity, digest));
+    }
+    let graph = InstalledGraph { files, directories };
+    graph.recheck(deadline)?;
+    Ok(graph)
+}
+fn fixed_parent_rules() -> Vec<(String, &'static str)> {
+    [
         (pins::MODULE_DIRECTORY, "r"),
         (pins::SEARCH_DIRECTORY, "r"),
         (SQL_CONFIG, "r"),
@@ -425,79 +499,46 @@ pub(crate) fn parent_rules() -> Vec<(&'static str, &'static str)> {
         ("/etc/group", "r"),
         ("/dev/null", "rwc"),
         (SQL_SOCKET, "rw"),
-        // unveil follows final symlinks. Fresh lstat/readlink of Dovecot's
-        // selection link requires this fixed containing directory readable.
-        // This grants recursive read/metadata, never write/create/connect.
         ("/var/dovecot", "r"),
         (PRIMARY_SOCKET, "rw"),
         (CONTROL_AUTH, "rw"),
         (CONTROL_ANVIL, "rw"),
         (crate::account_password_topology::IPC, "rw"),
-    ]);
-    rows
+    ]
+    .into_iter()
+    .map(|(p, a)| (p.to_owned(), a))
+    .collect()
 }
-
-/// The measured additional public closure required by fixed fstat after seal.
-/// Other metadata authority is unchanged; no library directory is exposed.
-pub(crate) fn verify_metadata_graph(deadline: Instant) -> Result<(), Unavailable> {
-    for pin in pins::METADATA_FILES {
-        pinned_parents(pin.path, pin.parents, deadline)?;
-        let (identity, digest, _) = public_file(pin.path, false, FILE_CAP, deadline)?;
-        let text: String = digest.iter().map(|byte| format!("{byte:02x}")).collect();
-        if identity != pin.identity || text != pin.sha256 {
-            return Err(Unavailable);
-        }
-    }
-    before(deadline)
-}
-fn fstat_worker_pins() -> Result<Vec<&'static FilePin>, Unavailable> {
-    let mut files = vec![&pins::FSTAT_PROGRAM];
-    files.extend(pins::METADATA_FILES.iter());
-    for path in [
-        "/usr/lib/libc.so.103.0",
-        "/usr/libexec/ld.so",
-        "/var/run/ld.so.hints",
+pub(crate) fn parent_rules(deadline: Instant) -> Result<Vec<(String, &'static str)>, Unavailable> {
+    let mut rows = fixed_parent_rules();
+    for program in [
+        crate::account_password_backend::SQL_PROGRAM,
+        crate::account_password_backend::HASH_PROGRAM,
+        "/usr/bin/fstat",
     ] {
-        files.push(
-            pins::SQL_FILES
+        rows.extend(
+            installed_graph(program, deadline)?
+                .files
                 .iter()
-                .chain(pins::HASH_FILES.iter())
-                .find(|pin| pin.path == path)
-                .ok_or(Unavailable)?,
+                .map(|(path, _, _)| (path.clone(), if path == program { "rx" } else { "r" })),
         );
     }
-    Ok(files)
+    Ok(rows)
+}
+pub(crate) fn verify_metadata_graph(deadline: Instant) -> Result<(), Unavailable> {
+    installed_graph("/usr/bin/fstat", deadline).map(|_| ())
 }
 pub(crate) fn verify_fstat_worker_graph(deadline: Instant) -> Result<(), Unavailable> {
-    verify_fstat_worker_graph_with_trace(
-        deadline,
-        &mut crate::account_password_fstat::StartupTrace::new(
-            crate::account_password_fstat::StartupOperation::BeforeRecheck,
-        ),
-    )
+    verify_metadata_graph(deadline)
 }
 pub(crate) fn verify_fstat_worker_graph_with_trace(
     deadline: Instant,
     trace: &mut crate::account_password_fstat::StartupTrace,
 ) -> Result<(), Unavailable> {
-    use crate::account_password_fstat::{StartupCategory as Cat, StartupOperation as Op};
-    for pin in fstat_worker_pins()? {
-        trace.set(match pin.path {
-            "/usr/bin/fstat" => Op::GraphFstat,
-            "/usr/lib/libkvm.so.18.0" => Op::GraphKvm,
-            "/usr/lib/libc.so.103.0" => Op::GraphLibc,
-            "/usr/libexec/ld.so" => Op::GraphLoader,
-            _ => Op::GraphHints,
-        });
-        pinned_parents(pin.path, pin.parents, deadline)?;
-        let (identity, digest, _) = public_file(pin.path, false, FILE_CAP, deadline)?;
-        let text: String = digest.iter().map(|byte| format!("{byte:02x}")).collect();
-        if identity != pin.identity || text != pin.sha256 {
-            trace.category(Cat::Invalid);
-            return Err(Unavailable);
-        }
-    }
-    before(deadline)
+    trace.set(crate::account_password_fstat::StartupOperation::GraphFstat);
+    verify_metadata_graph(deadline).inspect_err(|_| {
+        trace.category(crate::account_password_fstat::StartupCategory::Invalid);
+    })
 }
 /// One fixed metadata process, not a password Role or a caller execution plan.
 const FSTAT_WORKER_PROMISES: &str = "stdio rpath unix proc exec prot_exec";
@@ -515,23 +556,25 @@ impl FstatWorkerPlan {
             return Err(Unavailable);
         }
         verify_fstat_worker_graph_with_trace(deadline, trace)?;
-        let files = fstat_worker_pins()?;
-        let paths = files.iter().map(|pin| pin.path).collect::<Vec<_>>();
+        let graph = installed_graph("/usr/bin/fstat", deadline)?;
+        let paths = graph
+            .files
+            .iter()
+            .map(|(path, _, _)| path.as_str())
+            .collect::<Vec<_>>();
         trace.set(crate::account_password_fstat::StartupOperation::CustodyCapture);
         let custody = crate::account_password_custody::Custody::capture(&paths, deadline)
             .map_err(unavailable)?;
-        let mut rules = std::collections::BTreeMap::new();
-        for pin in files {
-            for parent in pin.parents {
-                rules.entry(parent.path).or_insert("");
+        let mut rules = std::collections::BTreeMap::<String, &str>::new();
+        for path in paths {
+            for parent in Path::new(path).ancestors().skip(1) {
+                rules
+                    .entry(parent.to_str().ok_or(Unavailable)?.to_owned())
+                    .or_insert("");
             }
             rules.insert(
-                pin.path,
-                if pin.path == "/usr/bin/fstat" {
-                    "rx"
-                } else {
-                    "r"
-                },
+                path.to_owned(),
+                if path == "/usr/bin/fstat" { "rx" } else { "r" },
             );
         }
         Ok(Self {
@@ -567,20 +610,33 @@ impl FstatWorkerPlan {
         verify_fstat_worker_graph(deadline)
     }
 }
-fn prepared(role: Role, _ids: (u32, u32), deadline: Instant) -> Result<PreparedChild, Unavailable> {
-    let files = if role == Role::Sql {
-        pins::SQL_FILES
-    } else {
-        pins::HASH_FILES
-    };
+fn prepared(role: Role, ids: (u32, u32), deadline: Instant) -> Result<PreparedChild, Unavailable> {
     let program = if role == Role::Sql {
         crate::account_password_backend::SQL_PROGRAM
     } else {
         crate::account_password_backend::HASH_PROGRAM
     };
-    let mut rows: Vec<(&str, &str)> = files
+    let paths = installed_graph(program, deadline)?
+        .files
         .iter()
-        .map(|p| (p.path, if p.path == program { "rx" } else { "r" }))
+        .map(|(p, _, _)| p.as_str())
+        .collect::<Vec<_>>();
+    prepared_paths(role, ids, deadline, &paths)
+}
+fn prepared_paths(
+    role: Role,
+    _ids: (u32, u32),
+    deadline: Instant,
+    paths: &[&str],
+) -> Result<PreparedChild, Unavailable> {
+    let program = if role == Role::Sql {
+        crate::account_password_backend::SQL_PROGRAM
+    } else {
+        crate::account_password_backend::HASH_PROGRAM
+    };
+    let mut rows: Vec<(&str, &str)> = paths
+        .iter()
+        .map(|p| (*p, if *p == program { "rx" } else { "r" }))
         .collect();
     let promises = match role {
         Role::Sql => {
@@ -746,103 +802,67 @@ fn protected_file(
     before(deadline)?;
     Ok((expected, hash.finalize().into(), data))
 }
-fn graph(
-    role: Role,
-    deadline: Instant,
-) -> Result<Vec<(String, Fingerprint, [u8; 32])>, Unavailable> {
-    let mut result = Vec::new();
-    let mut total = 0u64;
-    for pin in if role == Role::Sql {
-        pins::SQL_FILES
+fn graph(role: Role, deadline: Instant) -> Result<Vec<PublicSnapshot>, Unavailable> {
+    let program = if role == Role::Sql {
+        crate::account_password_backend::SQL_PROGRAM
     } else {
-        pins::HASH_FILES
-    } {
-        pinned_parents(pin.path, pin.parents, deadline)?;
-        let (identity, digest, _) = public_file(pin.path, false, FILE_CAP, deadline)?;
-        total = total.checked_add(identity[6]).ok_or(Unavailable)?;
-        if total > TOTAL_CAP || identity != pin.identity {
-            return Err(Unavailable);
-        }
-        let text: String = digest.iter().map(|b| format!("{b:02x}")).collect();
-        if text != pin.sha256 {
-            return Err(Unavailable);
-        }
-        result.push((pin.path.into(), identity, digest));
-    }
-    if role != Role::Sql {
-        directories(deadline)?;
-    }
-    Ok(result)
+        crate::account_password_backend::HASH_PROGRAM
+    };
+    let admitted = installed_graph(program, deadline)?;
+    Ok(admitted
+        .files
+        .iter()
+        .chain(&admitted.directories)
+        .cloned()
+        .collect())
 }
-fn directories(deadline: Instant) -> Result<(), Unavailable> {
-    for (path, ancestry) in [
-        (pins::MODULE_DIRECTORY, pins::MODULE_ANCESTRY),
-        (pins::SEARCH_DIRECTORY, pins::SEARCH_ANCESTRY),
-    ] {
-        pinned_parents(path, ancestry, deadline)?;
-        let before_info = fs::symlink_metadata(path).map_err(unavailable)?;
-        if !before_info.is_dir() || before_info.uid() != 0 || before_info.mode() & 0o022 != 0 {
-            return Err(Unavailable);
-        }
-        let directory = OpenOptions::new()
-            .read(true)
-            .custom_flags(libc::O_DIRECTORY | libc::O_NOFOLLOW | libc::O_NONBLOCK | libc::O_CLOEXEC)
-            .open(path)
-            .map_err(unavailable)?;
-        if dir_identity(&directory.metadata().map_err(unavailable)?) != dir_identity(&before_info) {
-            return Err(Unavailable);
-        }
-        let mut names = Vec::new();
-        let mut name_bytes = 0usize;
-        for entry in fs::read_dir(path).map_err(unavailable)? {
-            before(deadline)?;
-            let entry = entry.map_err(unavailable)?;
-            let name = entry.file_name().into_string().map_err(unavailable)?;
-            name_bytes += name.len();
-            if name.is_empty() || name.len() > 255 || names.len() >= 256 || name_bytes > 16384 {
-                return Err(Unavailable);
-            }
-            names.push(name);
-        }
-        names.sort();
-        if path == pins::MODULE_DIRECTORY {
-            let mut expected: Vec<_> = pins::MODULE_NAMES.iter().map(|v| v.to_string()).collect();
-            expected.sort();
-            if dir_identity(&before_info) != pins::MODULE_IDENTITY || names != expected {
-                return Err(Unavailable);
-            }
-        } else {
-            if fingerprint(&before_info)? != pins::SEARCH_IDENTITY
-                || names.len() != pins::SEARCH_ENTRIES.len()
-            {
-                return Err(Unavailable);
-            }
-            for (actual, (name, expected)) in names.iter().zip(pins::SEARCH_ENTRIES) {
-                before(deadline)?;
-                if actual != name
-                    || fingerprint(
-                        &fs::symlink_metadata(Path::new(path).join(name)).map_err(unavailable)?,
-                    )? != *expected
-                {
-                    return Err(Unavailable);
-                }
-            }
-        }
-        if dir_identity(&fs::symlink_metadata(path).map_err(unavailable)?)
-            != dir_identity(&before_info)
-            || dir_identity(&directory.metadata().map_err(unavailable)?)
-                != dir_identity(&before_info)
-        {
-            return Err(Unavailable);
-        }
-        if path == pins::SEARCH_DIRECTORY
-            && fingerprint(&directory.metadata().map_err(unavailable)?)? != pins::SEARCH_IDENTITY
-        {
-            return Err(Unavailable);
-        }
-        pinned_parents(path, ancestry, deadline)?;
+fn directory_snapshot(path: &str, deadline: Instant) -> Result<PublicSnapshot, Unavailable> {
+    let ancestry = parents(path, None, deadline)?;
+    let before_info = fs::symlink_metadata(path).map_err(unavailable)?;
+    if !before_info.is_dir() || before_info.uid() != 0 || before_info.mode() & 0o022 != 0 {
+        return Err(Unavailable);
     }
-    Ok(())
+    let directory = OpenOptions::new()
+        .read(true)
+        .custom_flags(libc::O_DIRECTORY | libc::O_NOFOLLOW | libc::O_NONBLOCK | libc::O_CLOEXEC)
+        .open(path)
+        .map_err(unavailable)?;
+    let initial = fingerprint(&before_info)?;
+    if fingerprint(&directory.metadata().map_err(unavailable)?)? != initial {
+        return Err(Unavailable);
+    }
+    let mut entries = Vec::new();
+    let mut total = 0usize;
+    for entry in fs::read_dir(path).map_err(unavailable)? {
+        before(deadline)?;
+        let entry = entry.map_err(unavailable)?;
+        let name = entry.file_name().into_string().map_err(unavailable)?;
+        total += name.len();
+        if name.is_empty() || name.len() > 255 || entries.len() >= 256 || total > 16384 {
+            return Err(Unavailable);
+        }
+        let info = fs::symlink_metadata(entry.path()).map_err(unavailable)?;
+        if info.uid() != 0 || info.mode() & 0o022 != 0 || info.file_type().is_symlink() {
+            return Err(Unavailable);
+        }
+        entries.push((name, fingerprint(&info)?));
+    }
+    entries.sort();
+    let mut hash = Sha256::new();
+    for (name, identity) in entries {
+        hash.update(name.as_bytes());
+        hash.update([0]);
+        for value in identity {
+            hash.update(value.to_le_bytes());
+        }
+    }
+    if fingerprint(&fs::symlink_metadata(path).map_err(unavailable)?)? != initial
+        || fingerprint(&directory.metadata().map_err(unavailable)?)? != initial
+        || parents(path, None, deadline)? != ancestry
+    {
+        return Err(Unavailable);
+    }
+    Ok((path.to_owned(), initial, hash.finalize().into()))
 }
 
 fn records(raw: &[u8], fields: usize) -> Result<Vec<Vec<&[u8]>>, Unavailable> {
@@ -924,7 +944,6 @@ fn selected(passwd: &[u8], group: &[u8], name: &[u8]) -> Result<(u32, u32), Unav
             g[3].split(|b| *b == b',')
                 .any(|member| member.trim_ascii() == name)
         })
-        || (name == b"_osmapprimary" && uid == 518)
     {
         return Err(Unavailable);
     }
@@ -1222,14 +1241,16 @@ fn observe_stock(
     observed.endpoints = vec![endpoint];
     Ok(observed)
 }
-pub(crate) fn stock_parent_rules() -> Vec<(&'static str, &'static str)> {
-    let mut rows = parent_rules();
+pub(crate) fn stock_parent_rules(
+    deadline: Instant,
+) -> Result<Vec<(String, &'static str)>, Unavailable> {
+    let mut rows = parent_rules(deadline)?;
     rows.retain(|(path, _)| {
-        !matches!(*path, PRIMARY_SOCKET | CONTROL_AUTH | CONTROL_ANVIL)
+        !matches!(path.as_str(), PRIMARY_SOCKET | CONTROL_AUTH | CONTROL_ANVIL)
             && *path != crate::account_password_topology::IPC
     });
-    rows.extend([(crate::account_password_mail::STOCK_AUTH, "rw")]);
-    rows
+    rows.extend([(crate::account_password_mail::STOCK_AUTH.to_owned(), "rw")]);
+    Ok(rows)
 }
 
 #[cfg(test)]

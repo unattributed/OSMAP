@@ -28387,3 +28387,10 @@ but generator/profile/publication/native80 NOTRUN pending extra15minuteoperator
 authority plus650+560reserve. No automaticextension or new production flags,
 installedQA/UAT, deployment or push. Current codecommit remains3cad60; this entry
 is a later local progress record, to accompany the next real source admission.
+
+
+## 2026-10-21 — Consolidated installed-dependency correction
+
+Operator requested one executable repair bundle following the complete tracked-source review. Five finding families are corrected: historical native dependency snapshots, whole-file public Dovecot configuration pins, lexical library selection with broad fallback, fixed Python minor version, and fixed service UIDs. Trusted installed dependencies are admitted before confinement and rechecked during the helper lifetime; updates require a fresh OSMAP helper. Required authentication semantics, protected ancestry, request/key identity, private template integrity and existing disabled gates remain. Retired Python authentication graph factories explicitly refuse before dispatch.
+
+Local changed-boundary tests and independent source review precede the normal signed-commit gate. The operator bundle at `/home/foo/Downloads/osmap-ux-s04/dependency-repair-20261021` builds the exact source, runs read-only native admission checks, replaces existing matching OSMAP artifacts with backups, preserves initially stopped services and captures structured installation/rollback evidence. Public Dovecot, Postfix and MariaDB operations, password writes, policy changes and automatic retries are excluded. OpenBSD execution, installed authentication/password workflow, WSTG/release qualification and S04-02 completion remain NOT RUN/OPEN until actual matching evidence exists. No push is authorized by this bundle request.

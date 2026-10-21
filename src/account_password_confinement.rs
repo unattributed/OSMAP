@@ -19,17 +19,19 @@ impl ParentPlan {
             return Err(Unavailable);
         }
         crate::account_password_native::verify_metadata_graph(deadline).map_err(|_| Unavailable)?;
-        let mut rules = BTreeMap::<&'static str, String>::new();
-        let mut add = |path: &'static str, permissions: &str| {
-            let actual = rules.entry(path).or_default();
+        let mut rules = BTreeMap::<String, String>::new();
+        let mut add = |path: &str, permissions: &str| {
+            let actual = rules.entry(path.to_owned()).or_default();
             for p in permissions.chars() {
                 if !actual.contains(p) {
                     actual.push(p);
                 }
             }
         };
-        for (path, permissions) in crate::account_password_native::parent_rules() {
-            add(path, permissions);
+        for (path, permissions) in
+            crate::account_password_native::parent_rules(deadline).map_err(|_| Unavailable)?
+        {
+            add(&path, permissions);
         }
         for path in [
             "/etc/osmap/account-admission.json",
@@ -87,7 +89,7 @@ impl ParentPlan {
         add("/usr/local/libexec/dovecot/anvil", "r");
         // PF's fixed query utility needs only the kernel PF control device.
         add("/dev/pf", "rw");
-        let paths = rules.keys().copied().collect::<Vec<_>>();
+        let paths = rules.keys().map(String::as_str).collect::<Vec<_>>();
         let custody = Custody::capture(&paths, deadline)?;
         let rules = rules
             .into_iter()
@@ -111,17 +113,19 @@ impl ParentPlan {
             return Err(Unavailable);
         }
         crate::account_password_native::verify_metadata_graph(deadline).map_err(|_| Unavailable)?;
-        let mut rules = BTreeMap::<&'static str, String>::new();
-        let mut add = |path: &'static str, access: &str| {
-            let actual = rules.entry(path).or_default();
+        let mut rules = BTreeMap::<String, String>::new();
+        let mut add = |path: &str, access: &str| {
+            let actual = rules.entry(path.to_owned()).or_default();
             for p in access.chars() {
                 if !actual.contains(p) {
                     actual.push(p);
                 }
             }
         };
-        for (path, access) in crate::account_password_native::stock_parent_rules() {
-            add(path, access);
+        for (path, access) in
+            crate::account_password_native::stock_parent_rules(deadline).map_err(|_| Unavailable)?
+        {
+            add(&path, access);
         }
         for path in [
             "/etc/osmap/account-admission.json",
@@ -160,7 +164,7 @@ impl ParentPlan {
         // path is selected; read custody only, no IMAP spawn authority.
         add("/usr/local/libexec/dovecot/imap", "r");
         add("/etc/dovecot/conf.d", "r");
-        let paths = rules.keys().copied().collect::<Vec<_>>();
+        let paths = rules.keys().map(String::as_str).collect::<Vec<_>>();
         let custody = Custody::capture(&paths, deadline)?;
         let rules = rules
             .into_iter()

@@ -260,7 +260,11 @@ fn account_client_parent_allows_new_private_sibling_without_custody_change() {
 fn parent_policy_is_narrow_and_failed_seal_prevents_accept_then_removes_owned_endpoint() {
     let root = listener_root();
     let socket = root.join("admission.sock");
-    let plan = crate::openbsd::account_admission_parent_plan(&socket).unwrap();
+    let plan = crate::openbsd::account_admission_parent_plan(
+        &socket,
+        Path::new("/usr/local/bin/python3.14"),
+    )
+    .unwrap();
     let rows: std::collections::BTreeMap<_, _> = plan
         .unveil_rules
         .iter()
@@ -270,7 +274,7 @@ fn parent_policy_is_narrow_and_failed_seal_prevents_accept_then_removes_owned_en
     assert_eq!(rows.get(root.as_path()), Some(&"r"));
     assert_eq!(rows.get(Path::new("/usr/local/bin/python3")), None);
     assert_eq!(
-        rows.get(Path::new("/usr/local/bin/python3.13")),
+        rows.get(Path::new("/usr/local/bin/python3.14")),
         Some(&"rx")
     );
     for ancestor in ["/", "/usr", "/usr/local", "/usr/local/bin"] {
@@ -319,13 +323,18 @@ fn inherited_worker_cwd_refuses_changed_root_in_disposable_process() {
     if std::env::var_os(CHILD).is_some() {
         std::env::set_current_dir(std::env::temp_dir()).unwrap();
         assert_eq!(
-            crate::auth::account_admission_inherited_root_command()
-                .unwrap_err()
-                .kind(),
+            crate::auth::account_admission_inherited_root_command(Path::new(
+                "/usr/local/bin/python3.13"
+            ))
+            .unwrap_err()
+            .kind(),
             std::io::ErrorKind::PermissionDenied
         );
         std::env::set_current_dir("/").unwrap();
-        let inherited = crate::auth::account_admission_inherited_root_command().unwrap();
+        let inherited = crate::auth::account_admission_inherited_root_command(Path::new(
+            "/usr/local/bin/python3.13",
+        ))
+        .unwrap();
         let ordinary = crate::auth::account_admission_command();
         assert_eq!(inherited.get_program(), "/usr/local/bin/python3.13");
         assert_eq!(ordinary.get_program(), "/usr/local/bin/python3");
@@ -384,7 +393,7 @@ fn native_parent_confinement_preserves_metadata_spawn_and_owned_unlink() {
             .create_new(true)
             .open(outside.join("forbidden-create"))
             .is_err());
-        let fixed = crate::auth::account_admission_inherited_root_command().unwrap();
+        let fixed = crate::auth::account_admission_inherited_root_command(&engine.target).unwrap();
         assert_eq!(fixed.get_current_dir(), None);
         // Interpreter-only public control. It deliberately does not invoke the
         // installed private worker or pretend its module closure is qualified.
@@ -460,6 +469,41 @@ fn fixed_python_alias_admits_only_exact_target_and_refuses_target_replacement() 
     fs::remove_file(parent_alias).unwrap();
     fs::remove_file(alias).unwrap();
     fs::remove_file(target).unwrap();
+    fs::remove_dir(root).unwrap();
+}
+
+#[test]
+fn installed_python_accepts_minor_upgrade_but_refuses_target_escape() {
+    let root = listener_root();
+    let alias = root.join("python3");
+    let owner = crate::openbsd::effective_uid();
+    for name in ["python3.13", "python3.14"] {
+        let path = root.join(name);
+        fs::write(&path, b"synthetic interpreter").unwrap();
+        fs::set_permissions(&path, fs::Permissions::from_mode(0o700)).unwrap();
+        std::os::unix::fs::symlink(name, &alias).unwrap();
+        let engine =
+            InstalledEngine::observe(&alias, owner, Instant::now() + Duration::from_secs(2))
+                .unwrap();
+        assert_eq!(engine.target, path);
+        fs::set_permissions(&path, fs::Permissions::from_mode(0o4700)).unwrap();
+        assert!(
+            InstalledEngine::observe(&alias, owner, Instant::now() + Duration::from_secs(2))
+                .is_err()
+        );
+        fs::remove_file(&alias).unwrap();
+        fs::remove_file(path).unwrap();
+    }
+    for bad in [
+        "../python3.14",
+        "/usr/local/bin/python3.14",
+        "python3.14/",
+        "python3.14x",
+        "python2.7",
+        "sh",
+    ] {
+        assert!(!python_target_name(Path::new(bad)), "{bad}");
+    }
     fs::remove_dir(root).unwrap();
 }
 
