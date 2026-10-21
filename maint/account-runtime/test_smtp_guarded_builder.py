@@ -1,5 +1,5 @@
 """Actual owned child and issuer/control Unix descriptors; no native activation."""
-import fcntl,json,os,selectors,signal,socket,subprocess,sys,tempfile,time,unittest
+import fcntl,json,os,selectors,signal,socket,subprocess,sys,tempfile,threading,time,unittest
 from pathlib import Path
 from unittest.mock import patch
 from account_mutation_continuity import verify,signed
@@ -99,7 +99,7 @@ class GuardedBuilder(unittest.TestCase):
 
 class Startup(unittest.TestCase):
     def setUp(self):
-        self.case=fixtures.MutationContainment('runTest');self.case.setUp();self.addCleanup(self.case.doCleanups)
+        self.case=fixtures.MutationContainment('runTest');self.addCleanup(self.case.doCleanups);self.case.setUp()
         self.boot=_Bootstrap(fixtures.fixtures.KEY,fixtures.fixtures.SESSION_KEY,self.case.f.authority.accounts,os.getuid())
     def startup_root(self):
         from account_mutation_supervisor import AUTHORITY,PURPOSE
@@ -214,4 +214,43 @@ class Startup(unittest.TestCase):
             with self.assertRaises(Unavailable):worker.execute_guarded(fixtures.fixtures.guarded(),clock_millis=lambda:1000000,_continuity_stream=stream)
         with self.assertRaises(Unavailable):worker.execute(fixtures.fixtures.encoded({}))
         self.assertEqual(calls,[]);self.assertEqual(self.case.journal._record(self.case.journal._paths(self.case.alice)[1])['entries'],[])
+class FixtureStartup(unittest.TestCase):
+    def test_bound_socket_does_not_publish_endpoint_before_listener_ready(self):
+        case=fixtures.MutationContainment('runTest');self.addCleanup(case.doCleanups)
+        bound=threading.Event();release=threading.Event();finished=threading.Event();errors=[]
+        chmod=os.chmod;endpoint=fixtures.bridge.PrivateControlEndpoint
+        def delayed(path,mode,*args,**kwargs):
+            if Path(path).name=='control.sock':
+                bound.set()
+                if not release.wait(1):raise RuntimeError('controlled listener release timed out')
+            return chmod(path,mode,*args,**kwargs)
+        def setup():
+            try:case.setUp()
+            except Exception as error:errors.append(error)
+            finally:finished.set()
+        with patch.object(fixtures.service.os,'chmod',side_effect=delayed),patch.object(fixtures.bridge,'PrivateControlEndpoint',wraps=endpoint)as publish:
+            thread=threading.Thread(target=setup);thread.start()
+            try:
+                self.assertTrue(bound.wait(1),'listener did not bind')
+                self.assertTrue(case.path.exists())
+                # This is the old path-exists discriminator: custody is not ready.
+                with self.assertRaises(Refused):endpoint(case.path,os.getuid())
+                self.assertFalse(finished.wait(.1));publish.assert_not_called()
+            finally:
+                release.set();thread.join(2)
+            self.assertFalse(thread.is_alive());self.assertEqual(errors,[])
+            publish.assert_called_once_with(case.path,os.getuid())
+        case.doCleanups()
+        self.assertFalse(case.thread.is_alive());self.assertFalse(case.path.exists())
+    def test_nested_startup_failure_is_bounded_and_cleans_owned_fixture(self):
+        case=Startup('test_exact_local_guarded_binding_rewires_one_coordinator_without_password_transport');result=unittest.TestResult();listeners=[]
+        def fail(listener,*args):
+            listeners.append(listener);raise OSError('controlled pre-bind startup failure')
+        started=time.monotonic()
+        with patch.object(fixtures.service.PrivateControlListener,'_run',fail),patch.object(fixtures.bridge,'PrivateControlEndpoint')as publish:
+            case.run(result)
+            publish.assert_not_called()
+        self.assertEqual(len(result.errors),1);self.assertIn('local SMTP listener did not become ready',result.errors[0][1])
+        self.assertEqual(len(listeners),1);self.assertLess(time.monotonic()-started,3)
+        self.assertFalse(case.case.thread.is_alive());self.assertFalse(listeners[0].path.parent.exists())
 if __name__=='__main__':unittest.main(verbosity=2)

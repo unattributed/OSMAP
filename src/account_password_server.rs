@@ -27,8 +27,8 @@ use std::time::{Duration, Instant};
 
 const ROOT: &str = "/etc/osmap/account-runtime";
 const EPOCH: &str = "/var/db/osmap-account/epoch";
-const ADMISSION: &str = "/var/run/osmap-account-admission/admission.sock";
-const MUTATION: &str = "/var/run/osmap-account-mutation/mutation.sock";
+const ADMISSION: &str = crate::config::LOCAL_ACCOUNT_ADMISSION_SOCKET;
+const MUTATION: &str = crate::config::LOCAL_ACCOUNT_MUTATION_SOCKET;
 const FILES: [&str; 3] = ["config.json", "mutation.key", "session-proof.key"];
 type Identity = (u64, u64, u32, u32, u32, u64, u64, i64, i64, i64, i64);
 fn identity(m: &fs::Metadata) -> Identity {

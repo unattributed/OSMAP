@@ -10127,6 +10127,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "maint/mail-backend/test_mutation_relay.py",
     "maint/mail-backend/mutation_relay_fixture.py",
     "docs/UX_SLICE_S04_02.md",
+    "docs/UX_S04_02_SINGLE_HOST_EXECUTION.md",
     "maint/ux/password_controls_workflows.cjs",
     "src/http/ux_browser_server.rs",
     "maint/account-runtime/test_mail_session_containment.py",
@@ -19281,7 +19282,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "slice": "S04-02",
     "specification": {
       "path": "docs/UX_SLICE_S04_02.md",
-      "sha256": "ca4fc056b5765b812ec34fae31ee8e94e88a7444a89c9dd86e04106bd07740f8"
+      "sha256": "bd4f3ff93ac637ae5ac99248539bdce0f9bbfafd13d2515650125bbc821bf139"
     },
     "design": {
       "journey": "Security or Authentication & Recovery \u2192 GET/POST /settings/password \u2192 own-account current password+fresh TOTP \u2192 confirmed authoritative change and current-session revocation, or explicit refusal/contained incomplete result. Navigation/Cancel submit no mutation.",
@@ -30356,3 +30357,229 @@ Implementation commit `6c12a45a2e415b82bf0bc43f7df92b4af481275a` has a verified 
 The consolidated operator bundle covers all five finding families from the tracked-source review. Local archive/member/hash, script syntax, public-service refusal, atomic replacement/restoration and pre-action registration simulation checks passed. OpenBSD build/install/native admission and the actual password workflow have NOT run in this delivery. The bundle will report those separately and retain rollback/cleanup evidence. No host or public-service action occurred during preparation.
 
 The operator now explicitly requests all outstanding work be committed and synchronized to the appropriate GitHub UX branch. The four pending documentation records are preserved in full and admitted together; previous source and observed failure history are not rewritten. Target branch: `feat/ux-completion-20260929`; no main promotion. The bundle is refreshed to the final synchronized revision before delivery. S04-02 remains OPEN.
+
+## 2026-10-21 — Single-host source commit admission correction
+
+The operator's attempted local signed commit at baseline
+`aba1b57149e5101a20d4d2c95e3925d029e5bb0c` reached the normal pre-commit
+hook and refused `docs/UX_S04_02_SINGLE_HOST_EXECUTION.md` as outside the active
+work order. The source change and new document were already staged. No new
+commit or functional result followed that refusal. Root's earlier advice omitted
+the necessary matching ledger metadata; this entry preserves that failure.
+
+Bounded observable exit: preserve the existing five-file single-host source
+candidate with its matching work-order metadata in a normally checked, signed
+local commit. Add only the new document's explicit allowed path and refresh the
+mutable slice-specification hash to its reviewed current bytes. Root owns project
+management, Scrum coordination, integration and writing; `/root/delivery_controller`
+independently reviews this admission correction. Relevant prerequisites are the
+actual local index, specification bytes and existing validator; no installed-host
+prerequisite applies to this metadata correction. The staged ledger correction
+must leave all earlier unstaged ledger changes outside the commit.
+
+At `2026-10-21T21:04:16Z`, the finite source-preservation disposition is bounded
+to one normal commit-hook invocation and 900 seconds including signing and
+disposition. Stop on a hook, signing or preservation-integrity failure; no
+automatic retry or workflow execution follows. Earlier diagnosis elapsed time
+is UNKNOWN. The existing exhausted execution allowance, attempts, all 20
+obligations, nine scenarios, null planned action and frozen plan remain intact.
+This local disposition does not replenish that allowance or authorize a host,
+public-service, credential, fixture, synchronization or deployment action.
+
+Before staging, root and the independent controller exercised the actual
+work-order consumer in memory: adding the path alone refused the stale slice
+specification hash; adding the path and matching specification hash passed
+declaration/scope checks for all 20 obligations. The controller also verified
+the same correction against the HEAD ledger, so unrelated unstaged updates need
+not be included. Frozen-plan and nested design checksums, signed R2 anchor and
+`cargo fmt --check` passed. Normal hook, new signature and completed source
+preservation remain PENDING here; installed QA, native qualification, UAT and
+S04-02 completion are not established by these metadata checks.
+
+Actual local commit attempt: `2026-10-21T21:06:01Z` through
+`2026-10-21T21:06:37Z`, measured 36 seconds at whole-second UTC precision,
+exit 1. Work-order validation passed all 20 obligations and the new
+`production_account_runtime_requires_native_single_host_endpoints` regression
+passed. The Rust suite reported 1,862 passed, seven failed and 50 ignored.
+All seven failures were at local Unix socket binding with
+`path must be shorter than SUN_LEN`: root selected the unnecessarily long
+private TMPDIR `/tmp/osmap-s04-02-source-commit.uua_wa9r`, so these tests did not
+reach their intended assertions. No product-source correction follows from
+this invocation failure. No new commit was created and no hook retry was run.
+The hook log SHA256 is
+`462b4c55626a4835c95d36a7bbff19a5e342322cca9a0f73108eee1d540a204e`;
+log and structured result are retained under
+`/home/foo/Downloads/osmap-ux-s04/single-host-source-commit-20261021T210416Z/`.
+
+The independent controller reassessed both the original admission refusal and
+this setup failure. The changed invocation uses a fresh owner-only
+`mktemp -d /tmp/oc.XXXXXX` directory, preserving the normal hook and its assertions.
+The actual affected path builders and installed 108-byte Unix socket pathname
+capacity give an at-most 90-byte path with that 14-byte TMPDIR prefix, including
+a conservative ten-digit PID and twenty-digit nanosecond timestamp. This is
+invocation prerequisite evidence, not a passing rerun of the seven cases.
+The one permitted hook attempt is spent: root stops without another hook,
+signing attempt or allowance increase. Next proposal is one operator-executed
+corrected signed-commit command over the same six staged files. Prior unstaged
+ledger changes remain outside the candidate; S04-02 remains OPEN.
+
+## 2026-10-21 — Operator hook result and documentation-index correction
+
+The operator supplied the next normal signed-commit attempt using private
+TMPDIR `/tmp/oc.Tsvj7y`. The Rust library suite passed 1,869 tests with zero
+failures and 50 explicit ignores, including the single-host configuration test.
+The reported check, formatting, lint, supply-chain, V7/V8 and publication phases
+passed. The hook then refused the missing backticked
+`UX_S04_02_SINGLE_HOST_EXECUTION.md` entry in `docs/README.md`; no commit was
+created. Operator full-action elapsed time is UNKNOWN. The unaltered supplied
+output and structured result are retained under
+`/home/foo/Downloads/osmap-ux-s04/single-host-doc-index-20261021T211349Z/`.
+
+The current user request is handled as bounded local documentation correction
+and source preservation. Observable exit: index the existing execution document
+in the public documentation map and preserve the reviewed source candidate in
+one normally checked signed local commit. `docs/README.md` is already allowed
+by the active work order. The actual governance script requires every docs
+Markdown path in backticks; inspect that complete consumer and run its existing
+guard before attempting the normal hook. No application or guard change is
+needed. Root owns PM/Scrum, the two documentation edits, integration and writing;
+`/root/delivery_controller` independently reassesses the combined admission,
+temporary-path and documentation-index failures and reviews the final delta.
+
+The local prerequisites are the unchanged source/index, a short owner-only
+TMPDIR, actual documentation guard and signing agent. Host prerequisites are
+inapplicable. Essential checks are the existing documentation guard, staged
+scope/byte-preservation checks, independent review and normal mandatory commit
+hook/signature verification. This disposition is finite: 900 seconds from
+`2026-10-21T21:13:49Z`, with at most one additional normal hook invocation after
+review; stop on failure without automatic retry. This is the fourth known hook
+invocation in this source-preservation sequence if dispatched. All earlier
+failures and measured/UNKNOWN elapsed costs remain retained; the exhausted
+functional/native allowance and null planned action are unchanged. No workflow,
+host, public-service, credential, synchronization or deployment action follows.
+Focused guard, final independent review, hook and new signature are PENDING at
+this definition. S04-02 functional qualification and acceptance remain OPEN.
+
+Changed-boundary result: the complete existing documentation governance guard
+now PASS after the single index entry. Independent combined reassessment read
+the complete consumer and identified exactly that one missing Markdown path;
+its fixed file/text and decision-date contracts showed no additional gap.
+Stage only this index entry and the new append-only result, preserving the prior
+six-file candidate and all earlier unstaged ledger bytes. Final frozen review
+precedes the single normal commit invocation; only its observed exit and actual
+signature verification can establish this local source-preservation result.
+
+Actual fourth known hook invocation ran `2026-10-21T21:16:03Z` through
+`2026-10-21T21:17:35Z`: 92 seconds at whole-second UTC precision, exit 1.
+The documentation correction passed, as did Rust 1,869/zero failures/50 ignores,
+623 account-runtime tests, 47 mail-backend tests (two skipped), and 19 local
+socket-recovery tests. V11 then refused the stale V10 refined-current register:
+9,579 versus 9,581 entries, 9,494 versus 9,496 source-test assumptions, and a
+changed inventory hash. Full hook FAIL; no commit or new signature. The retained
+hook log SHA256 is
+`952df80fb395b4dfd48a75ee759584b598d2c684daff23a7b649cc381ee7647c`.
+
+Independent actual-scanner reassessment reconstructed the HEAD inventory and
+matched the old refined register exactly. The candidate adds exactly two low
+test-only unwraps in `src/config.rs`; production refined classifications remain
+zero high and four medium. The coarse audit register and claims already have
+older independent drift, so refreshing only the V11 input would leave the V10
+consumer inconsistent. All three existing JSON paths are already allowed.
+Preserve their before-images and unchanged generator/consumer hashes in the
+same sprint evidence directory. Within the remaining current disposition,
+refresh the mutable coarse audit with its unchanged generator, then generate
+the refined register from that audit and current source, then bind only the
+claims' corresponding count/hash/classification scalars from those receipts.
+Preserve slice-0 count 712, historical assessed source, explicit nonclaims,
+classifiers, guards, frozen plan and prior records. This corrects derived source
+metadata; it does not prove a production-path remediation or native readiness.
+Use only the existing V10/V11 metadata checks and final independent delta review.
+The normal-hook cap is spent: no further automatic commit/hook or native action.
+Another normal signed commit remains an operator-executed next step after these
+checks; no elapsed history or exhausted allowance is reset.
+
+Actual changed-evidence checks PASS: unchanged generators refreshed all three
+existing records coherently; `make v10-check v11-check` passed both complete
+metadata consumers. Refined total is 9,581, source-test count 9,496 and refined
+high/medium remain zero/four. The older coarse audit's 9,559 count and older
+claims values are preserved as pre-existing drift in before-images and Git;
+the current two assertions alone account for the refined 9,579-to-9,581 change.
+The prior application/source candidate and unstaged ledger updates are preserved.
+Final normal security hook, new signature and local commit remain NOT RUN after
+this evidence correction; a source-only correction does not close S04-02.
+
+## 2026-10-21 — Local control-fixture readiness repair
+
+The next operator-executed normal hook passed Rust 1,869/zero failures/50 ignores
+and documentation governance, then failed one of 623 account-runtime tests in
+`Startup.test_exact_local_guarded_binding_rewires_one_coordinator_without_password_transport`.
+Its nested `MutationContainment.setUp` constructed `PrivateControlEndpoint`
+before socket custody was ready, yielding `SMTP control endpoint socket unavailable`.
+The two supplied attachments have identical SHA256
+`1810f2a6774d52cae91619ac0d5054d6ddb11fbafaed18d35249e6db53d72bd3`;
+count this as one fifth known hook invocation, not two runs. Full-action elapsed
+is UNKNOWN; no commit was created. Exact output and before-images are retained
+under `/home/foo/Downloads/osmap-ux-s04/single-host-fixture-ready-20261021T212724Z/`.
+
+Bounded observable exit for the current request: correct the local test fixture's
+startup/cleanup boundary and complete the already prepared signed source
+checkpoint through the normal hook. Actual source shows `bind` creates the path
+before `chmod(0600)` and `listen`; the fixture's path-exists poll is insufficient.
+The existing listener `_run` accepts a readiness event and publishes it only
+after private custody recheck and successful listen. Reuse that exact one-shot
+path with its existing barrier; preserve production endpoint checks and all
+native flags. No host/service/backend change or new dependency is required.
+
+Root owns PM/Scrum, ledger, integration, Git and technical writing.
+`/root/guardrails_engineer` owns bounded fixture/test changes in the two already
+allowed files `test_smtp_mutation_containment.py` and `test_smtp_guarded_builder.py`
+under `maint/account-runtime/`. `/root/delivery_controller` independently checks
+the actual readiness, custody, failure and cleanup chain, focused evidence and
+frozen candidate. Minimum checks: a controlled bind-to-ready delay discriminator,
+bounded startup-failure/owned cleanup evidence, affected fixture/Startup tests,
+then one normal commit hook and signature verification after independent review.
+Expected result is no early endpoint construction or surviving owned listener;
+the exact production refusal remains effective until listener readiness.
+
+The current local repair/preservation disposition is 900 seconds from
+`2026-10-21T21:27:24Z`, with at most one normal hook after focused passes and
+independent review. A sixth known hook invocation is prospective only. Stop on
+two failed focused attempts at one boundary for combined reassessment; stop on
+hook/signing/preservation failure without automatic retry. Preserve all prior
+failures and measured/UNKNOWN elapsed history, the original ten-file candidate,
+earlier unstaged ledger changes, and the exhausted functional/native allowance.
+The old disposition is not renewed. This new request supplies only this local
+fixture repair and source preservation; no native, public-service, credential,
+synchronization or deployment action follows. Focused tests, final hook and
+signature remain NOT RUN at definition; S04-02 remains functionally OPEN.
+
+Frozen fixture proof: only the two assigned Python test files changed. The
+existing one-shot listener now receives its existing readiness event, with the
+original one-second wait; cleanup registration precedes nested setup and owned
+release precedes bounded join/dead-thread assertion and nested disposal. The
+production listener, endpoint mode/custody predicates, authenticated budgets,
+native flags and initial ten-file candidate remain unchanged.
+
+Focused command with short private TMPDIR and `PYTHONPATH=maint/account-runtime`:
+`python3 -m unittest -v test_smtp_guarded_builder.FixtureStartup test_smtp_mutation_containment.MutationContainment test_smtp_guarded_builder.Startup`.
+Matching final `focused3.log` reports 22/22 PASS in 2.290 seconds. The controlled
+real pre-chmod hold demonstrates that the published socket path is insufficient:
+the actual strict endpoint refuses it until custody/listen readiness; the
+changed fixture waits and later constructs one endpoint. Owned thread/socket
+cleanup and nested startup-failure cleanup pass. The retained old setUp injected
+in memory fails the same observation in 0.040 seconds (`old-discriminator2.log`);
+no repository baseline was replayed or replaced.
+
+Preserve proof-development failures: the first new failure test selected a
+nonexistent `Startup.runTest` method (`focused.log`); correcting it to an existing
+method gave `focused2.log` 22/22 PASS. The first old-source counterfactual passed
+inadequately because the hold ended before its path poll woke. The strengthened
+observation gave the recorded old failure and `focused3.log` matching PASS.
+Root requested a hold for combined independent reassessment; focused3 had
+already dispatched before the hold arrived. Retain that sequencing deviation;
+no retrospective prior-review PASS is claimed and no later developer rerun
+followed. The controller independently examined actual source, all retained
+failures and matching old/new results, found the bounded causal evidence adequate
+and prohibited a redundant rerun. Technical fixture review is CLEAR; integrated
+frozen ledger/hash review precedes root's single normal hook. Configured-agent
+batch signing readiness passed separately; it is not a completed Git commit.

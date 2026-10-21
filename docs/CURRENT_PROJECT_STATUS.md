@@ -1,5 +1,19 @@
 # Current Project Status
 
+## 2026-10-21 S04.02 single-host architecture correction
+
+Operator confirmed one-host application plus mail stack for development
+and production. obsd1 remains the source/build/isolated local qualification
+host; mail is the later standalone production deployment host. The
+cross-host SSH paired fixture is no longer the required S04.02 path.
+The existing Rust account-passwd server already binds native local
+admission/mutation Unix sockets, reused by the browser gateway.
+A focused source change now requires the native socket paths for
+configured production clients; it does not enable the currently
+closed confinement gates or prove startup, T03 through T09, installed QA or UAT.
+The earlier two-host tests and failures are retained verbatim below.
+See docs/UX_S04_02_SINGLE_HOST_EXECUTION.md.
+
 2026-10-21 prerequisite105 evidence reviewed: archive SHA256
 9c2f2d957d8132d5cfaae4808a3810871bff73d229ea0a13e8cbaa3834612cc3,
 portable sidecar and all archived/local member bytes verified. Capture PASS;

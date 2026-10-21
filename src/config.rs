@@ -262,11 +262,54 @@ pub struct AccountRuntimeConfig {
     pub session_proof_key_file: PathBuf,
     pub mutation_helper_uid: u32,
 }
+/// Fixed local sockets created by the authoritative Rust account service.
+/// Never substitute a cross-host SSH relay socket in production.
+pub(crate) const LOCAL_ACCOUNT_ADMISSION_SOCKET: &str =
+    "/var/run/osmap-account-admission/admission.sock";
+pub(crate) const LOCAL_ACCOUNT_MUTATION_SOCKET: &str =
+    "/var/run/osmap-account-mutation/mutation.sock";
+
 impl std::fmt::Debug for AccountRuntimeConfig {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str("AccountRuntimeConfig(<private configuration>)")
     }
 }
+/// Production account operations always target the native services on this
+/// OpenBSD host. A local SSH relay's Unix socket is still a relay and cannot
+/// substitute for the authoritative native socket. Development fixtures may
+/// use other bounded local Unix socket paths.
+fn validate_single_host_account_runtime(
+    environment: RuntimeEnvironment,
+    account_runtime: Option<&AccountRuntimeConfig>,
+) -> Result<(), BootstrapError> {
+    if environment != RuntimeEnvironment::Production {
+        return Ok(());
+    }
+    let Some(config) = account_runtime else {
+        return Ok(());
+    };
+    for (field, actual, expected) in [
+        (
+            "OSMAP_ACCOUNT_ADMISSION_SOCKET",
+            config.admission_socket.as_path(),
+            Path::new(LOCAL_ACCOUNT_ADMISSION_SOCKET),
+        ),
+        (
+            "OSMAP_ACCOUNT_MUTATION_SOCKET",
+            config.mutation_socket.as_path(),
+            Path::new(LOCAL_ACCOUNT_MUTATION_SOCKET),
+        ),
+    ] {
+        if actual != expected {
+            return Err(BootstrapError::InvalidConfig {
+                field,
+                reason: "production account services require native local Unix sockets; relay endpoints are unsupported".into(),
+            });
+        }
+    }
+    Ok(())
+}
+
 fn parse_account_runtime(
     env: &BTreeMap<String, String>,
 ) -> Result<Option<AccountRuntimeConfig>, BootstrapError> {
@@ -863,8 +906,10 @@ impl AppConfig {
             mailbox_helper_grant_key_path.as_deref(),
         )?;
 
+        let account_runtime = parse_account_runtime(env_map)?;
+        validate_single_host_account_runtime(environment, account_runtime.as_ref())?;
         Ok(Self {
-            account_runtime: parse_account_runtime(env_map)?,
+            account_runtime,
             openpgp_inventory: parse_openpgp_inventory(env_map)?,
             openpgp_crypto: parse_openpgp_crypto(env_map)?,
             openpgp_public_admin: parse_openpgp_public_admin(env_map)?,
@@ -1201,6 +1246,77 @@ fn is_loopback_listener(listen_addr: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn production_account_runtime_requires_native_single_host_endpoints() {
+        let mut env = BTreeMap::<String, String>::from([
+            ("OSMAP_ENV".into(), "production".into()),
+            (
+                "OSMAP_ACCOUNT_ADMISSION_SOCKET".into(),
+                LOCAL_ACCOUNT_ADMISSION_SOCKET.into(),
+            ),
+            (
+                "OSMAP_ACCOUNT_ADMISSION_KEY_FILE".into(),
+                "/private/admission.key".into(),
+            ),
+            ("OSMAP_ACCOUNT_ADMISSION_HELPER_UID".into(), "0".into()),
+            (
+                "OSMAP_ACCOUNT_MUTATION_SOCKET".into(),
+                LOCAL_ACCOUNT_MUTATION_SOCKET.into(),
+            ),
+            (
+                "OSMAP_ACCOUNT_MUTATION_KEY_FILE".into(),
+                "/private/mutation.key".into(),
+            ),
+            (
+                "OSMAP_ACCOUNT_MUTATION_SESSION_PROOF_KEY_FILE".into(),
+                "/private/session-proof.key".into(),
+            ),
+            ("OSMAP_ACCOUNT_MUTATION_HELPER_UID".into(), "0".into()),
+        ]);
+        let native = AppConfig::from_env_map(&env).unwrap();
+        assert!(native.account_runtime.is_some());
+
+        // A local relay socket is not an authoritative local account service.
+        env.insert(
+            "OSMAP_ACCOUNT_ADMISSION_SOCKET".into(),
+            "/var/lib/osmap-bridge/run/admission.sock".into(),
+        );
+        assert!(matches!(
+            AppConfig::from_env_map(&env),
+            Err(BootstrapError::InvalidConfig {
+                field: "OSMAP_ACCOUNT_ADMISSION_SOCKET",
+                ..
+            })
+        ));
+        env.insert(
+            "OSMAP_ACCOUNT_ADMISSION_SOCKET".into(),
+            LOCAL_ACCOUNT_ADMISSION_SOCKET.into(),
+        );
+        env.insert(
+            "OSMAP_ACCOUNT_MUTATION_SOCKET".into(),
+            "/var/lib/osmap-bridge/run/mutation.sock".into(),
+        );
+        assert!(matches!(
+            AppConfig::from_env_map(&env),
+            Err(BootstrapError::InvalidConfig {
+                field: "OSMAP_ACCOUNT_MUTATION_SOCKET",
+                ..
+            })
+        ));
+
+        // Nonproduction disposable fixtures remain possible without granting
+        // any actual native qualification or changing service state.
+        env.insert("OSMAP_ENV".into(), "development".into());
+        assert!(AppConfig::from_env_map(&env).is_ok());
+        assert!(AppConfig::from_env_map(&BTreeMap::from([(
+            "OSMAP_ENV".into(),
+            "production".into()
+        )]))
+        .unwrap()
+        .account_runtime
+        .is_none());
+    }
+
     #[test]
     fn account_runtime_config_requires_complete_explicit_distinct_authority() {
         let fields = [

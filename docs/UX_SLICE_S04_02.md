@@ -1,5 +1,17 @@
 # S04-02 delivery specification — authoritative own-password change
 
+## Current topology correction, 2026-10-21
+
+The operator confirms that development and production target a single-host
+OSMAP plus mail-backend configuration. See
+[S04.02 single-host execution](UX_S04_02_SINGLE_HOST_EXECUTION.md).
+Existing two-host obsd1/Toronto SSH wiring remains historical fixture
+evidence, not a required production mode or S04.02 completion gate.
+Reuse existing native local Unix clients and the fixed Rust account
+service sockets. The 20 obligations, four outcomes, D04, T01 through T09,
+historical failures, and disabled native qualification gates remain
+unchanged. No source/build/installed/human PASS follows this correction.
+
 2026-10-21 prerequisite105 evidence reviewed: archive SHA256
 9c2f2d957d8132d5cfaae4808a3810871bff73d229ea0a13e8cbaa3834612cc3,
 portable sidecar and all archived/local member bytes verified. Capture PASS;

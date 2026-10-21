@@ -15,7 +15,7 @@ import test_required_mail_containment as sqlfixtures
 
 class MutationContainment(unittest.TestCase):
     def setUp(self):
-        self.f=fixtures.ServiceTests('runTest');self.f.setUp();self.addCleanup(self.f.doCleanups)
+        self.f=fixtures.ServiceTests('runTest');self.addCleanup(self.f.doCleanups);self.f.setUp()
         self.local=self.f.fixture;self.clock=self.f.clock;self.calls=[];self.dependencies=[]
         self.now=lambda:int(self.clock.now)
         self.guarded=verify_guarded(fixtures.guarded(),fixtures.KEY,fixtures.SESSION_KEY,1000000)
@@ -32,11 +32,14 @@ class MutationContainment(unittest.TestCase):
         self.imap_results=[(0,MailSessionContainment.WHO_HEADER,b''),(0,b'0 cache entries flushed\n',b''),(68,b'no users kicked\n',b''),(0,MailSessionContainment.WHO_HEADER,b'')]
         self.listener_results=[];parent=self.f.f.root/'worker-listener';parent.mkdir(mode=0o700);self.path=parent/'control.sock'
         listener=service.PrivateControlListener(self.path,os.getuid(),self.f.supervisor)
+        ready=threading.Event()
         def listen():
-            try:self.listener_results.append(listener.one())
+            try:self.listener_results.append(listener._run(None,ready))
             except Exception as e:self.listener_results.append(e)
         self.thread=threading.Thread(target=listen);self.thread.start()
-        self.addCleanup(lambda:self.thread.join(2))
+        def joined():
+            self.thread.join(2);self.assertFalse(self.thread.is_alive(),'local SMTP listener survived cleanup')
+        self.addCleanup(joined)
         # If a pre-pending denial never connects, release only this local listener.
         def release():
             if self.path.exists():
@@ -45,8 +48,7 @@ class MutationContainment(unittest.TestCase):
                 except OSError:pass
                 finally:stream.close()
         self.addCleanup(release)
-        end=time.monotonic()+1
-        while not self.path.exists()and time.monotonic()<end:time.sleep(.005)
+        if not ready.wait(1):raise RuntimeError('local SMTP listener did not become ready')
         self.endpoint=bridge.PrivateControlEndpoint(self.path,os.getuid())
     def proxy(self,program,args,*rest):self.calls.append('proxy-'+('kick'if 'kick'in args else 'query'));return self.proxy_results.pop(0)
     def imap(self,program,args,*rest):self.calls.append('imap-'+args[0]);return self.imap_results.pop(0)
