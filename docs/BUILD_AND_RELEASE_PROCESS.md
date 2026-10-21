@@ -1,5 +1,23 @@
 # Build And Release Process
 
+## Current automatic GitHub preservation — 2026-10-21
+
+The operator's standing instruction makes GitHub preservation part of delivery.
+Inventory all tracked/untracked repository changes, inspect their contents and
+include all public-safe code, tests, documentation, generated evidence and ledger
+updates in independently reviewed Shopkeeper-signed commits. Verify each
+signature, run the normal commit/push hooks, and push to the current approved
+branch without a separate operator source-review pause. Fetch after pushing and
+prove exact local/remote SHA equality and zero ahead/behind. Do not leave eligible
+work local while reporting delivery or backup complete.
+
+Existing secret/private-artifact exclusions and explicit operator holds apply.
+Failed checks or divergence remain blockers; do not bypass hooks, force updates,
+rewrite history or renew exhausted allowances. Retain actual failures and report
+what remains local. This source-preservation authority does not authorize binary
+deployment, public-service changes or acceptance of unfinished workflows. It
+supersedes older manual push-approval requirements in the historical sections.
+
 ## Current S04-02 source and delivery boundary — 2026-10-20
 
 The operator resumed bounded S04-02 development; the historical stop below is

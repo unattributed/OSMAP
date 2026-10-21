@@ -360,6 +360,23 @@ documentation current in the same delivery; separate documentation-only
 delivery from runtime readiness. Do not add signing or approval requirements
 to a repository that does not require them, or waive those that it does.
 
+For OSMAP, the operator's 2026-10-21 standing GitHub preservation direction is
+part of delivery: inventory all tracked/untracked repository work, inspect it,
+and include all public-safe code, tests, documentation, generated records and
+outstanding ledger updates in reviewed Shopkeeper-signed checkpoints. Run normal
+commit and push hooks, verify signatures and push to the current approved branch
+without a separate operator source-review pause. Fetch after pushing and prove
+exact local/remote SHA equality and zero ahead/behind. Eligible uncommitted or
+unpushed work is still local and must be reported as such.
+
+Preserve existing secret/private-artifact exclusions, explicit operator holds,
+finite allowances and failure stops. Do not force, rewrite history or resolve
+divergence automatically. Source backup does not imply deployment, installed QA
+or human acceptance. Keep final synchronization receipts in the existing sprint
+evidence root and completion message; do not create another source change solely
+to insert its own final commit SHA. Older manual push-approval instructions are
+superseded by this direct operator direction; frozen plan bytes remain intact.
+
 Use one completion message per agreed slice/sprint; exceptions are genuine
 blockers or required human interaction. State what works, what was actually
 verified, exact delivered identity, concise UAT and remaining limits. During

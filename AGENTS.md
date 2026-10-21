@@ -1,5 +1,31 @@
 # OSMAP Agent Notes
 
+## Current GitHub preservation SOP — operator direction, 2026-10-21
+
+The operator requires all public-safe repository work to be saved to GitHub
+as part of normal delivery. This is standing authorization to commit and push
+to the current approved branch after independent source review, mandatory
+checks, Shopkeeper signing and signature verification; no additional operator
+source-review pause is required before routine synchronization. This direction
+supersedes older manual push-approval clauses below and in execution documents,
+without editing frozen plan bytes or changing functional acceptance.
+
+Before a delivery or planned agent handoff, inventory tracked and untracked
+repository changes. Preserve and include all public-safe work, including code,
+tests, documentation, generated evidence and outstanding ledger updates, in
+signed checkpoints and ordinary non-forced pushes. Inspect content before
+staging; secrets, private mail, credentials and raw private artifacts remain
+excluded under the existing rules. Do not silently leave eligible work local
+or describe it as backed up while it is uncommitted or ahead of GitHub.
+
+Run normal commit and push hooks without bypass. After each push, fetch origin
+and prove exact local/remote SHA equality and zero ahead/behind before claiming
+preservation complete. On failed checks, transport, divergence or expiry,
+preserve the failure and report exactly what remains local; do not force,
+rewrite history or replenish an exhausted allowance. Explicit operator holds
+override automatic dispatch. GitHub preservation does not authorize host
+deployment, live account operations or acceptance of unfinished functionality.
+
 ## Current operator boundary — frontend work without mail downtime, 2026-10-19
 
 The operator permits starting, stopping and restarting OSMAP as needed; the
@@ -86,7 +112,8 @@ discovered assumption is a named gap, not authority to expand infrastructure.
 Retain all20 obligations and nine scenarios, matching passing evidence and
 operator-account preservation. No new dependency or general QA framework.
 Operator UAT follows all required agent-owned passes and independent review.
-Normal signed commit and operator review before synchronization still apply.
+Normal signed commits, independent review and the current GitHub preservation
+SOP apply; operator functional acceptance remains separate.
 
 Only S04-02 resumes. Respect the operator's single completion-message request,
 except a concrete blocker requiring operator action. This paragraph records
@@ -275,10 +302,10 @@ not retroactively declared complete. Routine technical decisions remain delegate
 - Preserve unrelated local or remote worktree changes unless the operator
   explicitly asks to remove them.
 - For completed development changes, finish with a signed Git commit, verify
-  the signature, and stop for operator review before any push or synchronization.
-  The latest operator-supplied AGENTS instructions supersede the older
-  2026-10-01 automatic-sync default. Local source delivery, synchronization,
-  deployment and operator acceptance remain distinct.
+  the signature, then push through normal hooks under the standing GitHub
+  preservation SOP and prove fresh remote equality. Preserve all public-safe
+  repository work before the delivery handoff. Source synchronization,
+  deployment and operator functional acceptance remain distinct.
 
 ## Git and signing workflow
 
@@ -300,11 +327,12 @@ For example:
 
 Do not create unsigned commits.
 
-Do not automatically push, pull, synchronize, force push, rewrite published
-history, amend existing commits or resolve branch divergence. Only an explicit
-instruction such as “push” or “sync” authorizes a remote write after signed
-review. R4 scope approval is not push approval. If a separately authorized push
-gate fails, fix the issue without bypassing checks or forcing the update.
+The operator's standing GitHub preservation instruction authorizes routine
+push/synchronization of reviewed, signed work on the current approved branch.
+Do not automatically pull, force push, rewrite published history, amend existing
+commits or resolve branch divergence. If a push gate fails, preserve the result
+and fix the demonstrated issue within the current work order without bypassing
+checks or forcing the update. An explicit operator hold takes precedence.
 
 Do not create or switch branches unless the task requires it or the operator
 explicitly approves it.
@@ -323,9 +351,9 @@ superseded the manual clipboard/Proton Pass checkpoint on 2026-09-14.
 - Use the agent's existing credential cache. Noninteractive signing may use
   `gpg --batch --pinentry-mode error`; if the agent cannot sign, report the
   concrete failure rather than creating an unsigned commit or bypassing checks.
-- This removes only the manual signing checkpoint. Signature verification and
-  operator review before synchronization remain required; UX acceptance is a
-  separate outcome.
+- This removes only the manual signing checkpoint. Signature verification,
+  independent source review and normal hooks remain required before automatic
+  synchronization; operator UX acceptance is a separate outcome.
 
 After each commit, verify:
 
@@ -334,8 +362,9 @@ After each commit, verify:
     git show --show-signature --stat --oneline HEAD
 
 Then report the commit SHA, signature result, changed files, working-tree state
-and ahead/behind state for operator inspection. Do not push or synchronize until
-explicitly authorized. Human acceptance remains separate from source review.
+and ahead/behind state for operator inspection. Complete routine synchronization
+under the standing GitHub preservation SOP before the delivery handoff. Human
+functional acceptance remains separate from source review and synchronization.
 
 After each push, refresh `origin` and prove local/remote SHA equality
 before reporting synchronization as successful:

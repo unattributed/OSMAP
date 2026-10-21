@@ -1,5 +1,22 @@
 # OSMAP adoption of the functional agent framework
 
+## Current GitHub preservation delivery SOP — 2026-10-21
+
+The operator requires all public-safe repository work to be preserved on GitHub
+as part of each delivery. The integration owner inventories tracked/untracked
+changes, includes code/tests/docs/generated records and outstanding ledger work
+in independently reviewed Shopkeeper-signed checkpoints, verifies signatures,
+and runs ordinary pushes through all mandatory hooks on the current approved
+branch. No separate operator source-review pause is required. After push, fetch
+and prove exact HEAD/origin equality and zero ahead/behind before calling the
+work saved remotely. This supersedes historical manual push-approval clauses.
+
+Secret/private-artifact exclusions, explicit operator holds, failure stops and
+finite work allowances remain. No force push, history rewrite or automatic
+divergence repair follows. Keep synchronization separate from deployment,
+native/installed qualification and operator UAT; retain the frozen plan and all
+historical failures. Final SHA receipts use the existing sprint evidence root.
+
 ## Universal delivery enforcement — operator direction, 2026-10-19
 
 The mandatory delivery SOP in `AGENT_DEVELOPMENT_FRAMEWORK.md` now applies to all
