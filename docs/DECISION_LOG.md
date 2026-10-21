@@ -1,5 +1,56 @@
 # Decision Log
 
+## 2026-10-21 — diagnostic104 locates an error inside the backend helper
+
+The relay wrote the initial-login request but received no complete reply; the
+backend helper recorded stock_operation/Unavailable. Source confirms this
+label is shared by admission and mutation handlers. Preserve that distinction:
+no password write was requested and no SQL, TOTP or public outage cause is
+established. Locate the specific helper admission/profile/runtime failure before
+choosing a correction; do not change credentials, service configuration or
+operation deadlines on this evidence. Both-node cleanup passed. S04-02 OPEN.
+
+
+## 2026-10-21 — preserve the primary-backend failure boundary
+
+Capture103 establishes login_backend_error, not incorrect credentials or TOTP.
+Do not change password logic, relax authorization, increase deadlines or infer
+public mail downtime from this generic response. Preserve the existing relay's
+last completed fixed stage and helper's existing bounded error projection when
+owned cleanup succeeds. Unknown/multiple relay output refuses; no raw text or
+credentials enter evidence. Reuse both compiled binaries and stop at request2.
+This is a diagnostic candidate for operator execution/evidence review, not a
+product fix, independent audit or slice completion. See current status for
+exact evidence and bundle. No host actions or synchronization in preparation.
+
+
+## 2026-10-21 — collect only the missing authentication observation
+
+Actual build102 passes with461 inputs and confirmed cleanup. Reuse its binary;
+do not rebuild for assurance or repeat the full password workflow to discover
+a login branch. The next operator-executed bundle stops immediately after its
+second HTTP request and closed auth-stage frame, before any password route.
+The existing complete workflow assertions remain unchanged. Diagnostic capture
+requires actual cleanup; unknown stage or uncertain disposition cannot pass.
+Bind fresh public authorization-file metadata into the new local fixture from
+a read-only observation; keep exact identity/content checks and do not rewrite
+retained server source. Reuse the already reviewed guardian-code ownership fix
+for new failure-path disposition. Public mail services stay running. This scoped
+diagnostic and the operator evidence-review recipe do not close S04-02.
+
+
+## 2026-10-21 — operator accepts one compile execution/evidence-review recipe
+
+The operator explicitly removes the current pre-build review blocker and accepts
+an executable bundle with one uploadable evidence file as the review recipe.
+Apply that decision only to the diagnostic frontend compile on obsd1. Root acts
+directly, without subagents; the existing validator is unchanged. The runner
+records the human operator review authority for this action, preserves history,
+and uses fixed existing compile/transport bounds. This is not an independent
+engineering audit or S04-02 acceptance. The bundle performs no password workflow,
+backend/service operation or deployment. Actual output review remains pending.
+
+
 ## 2026-10-14 — own Crypto listener directly and restore native termination
 
 Actual current helper metadata shows ignored TERM; the first bounded native stop
@@ -12987,9 +13038,215 @@ semantics; rustfmt is the only subsequent structural normalization. Historical
 PASS. Normal source gate/signature result is retained separately; do not overlay
 old75helper/63client provenance with this new source.
 
+## 2026-10-21 — one bounded current-source prototype journey
+
+The operator explicitly approved one controlled current-source run against the
+authoritative backend while public mail remains running. Root selected a2400s
+phase05:24:09–06:04:09UTC with560s disposition reserve, retaining prior costs and
+all failures. No push/production activation or automatic extension is inferred.
+Existing developer and independent reviewer own narrow preparation/review;
+root alone dispatches. Current d23092e helper build90 and capture pass; reuse of
+older compile63 is limited to its unchanged frontend path, not full-crate parity.
+The pre-publication stale attempt identifier was corrected before host execution.
+Actual native90 fails stage3 after controlled account provisioning but before
+helper/HTTP/password action. Source plus observation91 identify the absent-directory
+umask/exact-mode fixture mismatch. Preserve executed source; stage0700 then use
+the existing group/final0750 transition in a separate future candidate, proven
+only by one local POSIX counterexample. No second journey or deadline increase.
+Public services/configuration/master preservation is observed; exact partial
+owned disposition is required before closeout. This changes no accepted scope,
+password requirement or production security control.
+
+Actual disposition: observation91 PASS4.701947s; backend92 PASS6.674s removes
+the exact two synthetic rows, restricted principal, two users/groups, six files
+and two directories while preserving public configuration/master. Its original
+failed receipt remains unchanged. Frontend93 FAIL0.470s stops after fresh ps and
+before mutation: its inherited Oct17 process baseline is unconfirmed; exact
+cause within that guard remains unobserved. Retain four owned purpose files and
+nonce directory, with no private bytes read or historical signals. A future
+current process observation is required before changed frontend disposition;
+no unchanged retry. The root's two local admission refusals (mutable spec hash
+and omitted actual independent QA role) occurred before SSH and are retained.
+Only this bounded run and its outcome records close; S04-02 remains OPEN,
+production unavailable and owner UAT NOT READY. No push was authorized here.
+
+Final source94 admission refused before Git/staging/hooks/signing: combined
+reassessment required after native90/frontend93 failures. Preserve refusal; no
+validator bypass or300s gate bound reduction. Four unsigned outcome-document
+edits retained at signedd23092e; no new commit/push or further scheduled action.
+
+2026-10-21 operator bundle decision: current readonly frontend observation
+proves old Oct17 process baseline stale; exact Oct21 rows and header-only fstat
+replace that baseline, without process signals or weaker ownership guards.
+Independent source review clears one cleanup94 then fresh publication95/native95
+with corrected directory staging. Original600s fixture expiry, existing action
+bounds, public-mail availability and uncertain-state retention preserved.
+Package is operator-executed/one-use; diagnostic stage/guard/metadata/timing only,
+no secrets or raw frames. Source d23092e unchanged; controlled PASS is separate
+from ordinary installed acceptance. Archive87c1cf23 at existing S04 artifact root.
+
+2026-10-21 actual operator95: oldfrontendcleanup94 PASS; publication95 PASS;
+native95 FAIL7.884s stage4 before helper/credential action. Old exact authorized
+file timestamps conflict with current readonly metadata; same first7/contents
+hash. Exact thrown guard remains UNKNOWN because installer Refused class is
+not mapped to closed category/guard. New owned teststate remains retained;
+public3services read-only checked running. No lease renewal/retry or cleanup
+claim. Preserve run/FAILURE_ANALYSIS.json and original receipts.
+
+2026-10-21 operator requests next smallest tested/verified correction with
+reusable evidence. Bundle is disposition-first/metadata-only: remove exact95
+owned state, then update one retained fixture metadata binding, preserving
+actual authorization-file contents/ownership and the existing exact guard.
+No password workflow retry. Focused old-reject/new-accept/drift-refusal tests
+and verified original-source backup before atomic replacement; stable one-use
+EVIDENCE.json and sidecar are the next handoff. Original stage4 exception remains
+unobserved. Source review7d4e5ae9 and local checks PASS; native execution pending.
+
+Verified operator cleanup/metadata correction, 2026-10-21: all three scoped
+steps PASS in11.605s actual whole execution. Backend96 removes two controlled
+rows/one DB principal/two users+groups/12files/3dirs; frontend97 removes four
+purpose files/nonce, preserving shared directory and pre-existing bridges.
+Metadata98 changes exactly one retained fixture source line; exact-guard old
+reject/new accept/drift refusal PASS, original backup verified, public
+authorization-file bytes/metadata preserved. Other historical HTTPscratch
+remains UNKNOWN/retained; no blanket cleanup claim. Password workflow NOT_RUN.
+Evidence `/home/foo/Downloads/osmap-ux-s04/metadata-fix-20261021/run/EVIDENCE.json` SHA256
+6d9e546728646acffb1c848b39c7b6d45c6bc25cb4d4d4eb032f286f04a8c11c.
+Next iteration must adopt corrected-installer4b4c9ef4b245a01f0f42529ac9fbfaa9c89d7b26ccfab6991eed4614ca14d791
+from evidence next_iteration_inputs, with a fresh packet/profile; never old replay.
+S04-02 and ordinary installed acceptance remain OPEN.
+
+2026-10-21 fresh controlled workflow99 operator bundle prepared: corrected
+installer4b4c9ef4 and actual cleanup/metadata EVIDENCE6d9e are exact prerequisites;
+no cleanup replay. Only additional source correction maps the dynamically loaded
+installer Refused to existing closed numeric diagnostics (guard19 appended),
+preserving unknown/unlisted errors and historical95 failure. Local preparation,
+source/dependency parity, evidence preservation and package refusal checks PASS;
+independent review25ead867 CLEAR. Actual native99 NOT_RUN; no production activation.
+Bundle /home/foo/Downloads/osmap-ux-s04/password-next-20261021/VERIFY_AND_EXECUTE.sh;
+archive SHA256 e4f425ac002b7bf2022acbe75b161c9f43f0efdb76e73bb4af2421e0ebc3b3ff.
+At operator execution only: one1800s root phase, unchanged600s fresh fixture expiry,
+one publication99 and existing controlled journey99; no publicservice lifecycle,
+automatic retry or old lease renewal. Stable run/EVIDENCE.json plus portable
+sidecar retain actual steps/failure diagnostics and next-iteration hashes.
+Unchanged historical frontend63 binary limits persist. S04-02/ordinary installed
+path/UAT remain OPEN; signed product HEADd23092e unchanged, no commit/push.
+
+2026-10-21 actual workflow99 and read-only reconciliation100: workflow99 FAIL
+at request2 (Bob initial login), HTTP401/no cookie,3.508s response, zero ordered
+backend events; full38.352s operator run. Public response deliberately collapses
+primary/password, TOTP and session failures; exact failed branch UNKNOWN. Do
+not infer a Rust fix or retry credential actions. Actual backend abort cleanup
+acknowledged, frontend disposal unconfirmed in99. Existing gated observation100
+PASS0.462s against obsd1 only: all four purpose leaves absent, both relay sockets
+absent, same shared key directory and historical bridge processes preserved;
+empty purpose nonce remains. One run-window HTTP root has3dirs/1regularfile;
+filter/time alone is not deletion authority. No private bytes read or remote
+mutation. Evidence /home/foo/Downloads/osmap-ux-s04/login99-analysis-20261021/EVIDENCE.json SHA256 7564cc7b7c080a3f00cd5df3daf7795a1df013dccf1a453ab2fc9bcac74ee41f.
+Source review identifies separate failure-path web-code custody gap: guardian
+removes its copied executable only after success; frontend failure cleanup does
+not register those guardian-created leaves. Exact remaining leaf identity and
+safe cleanup remain open; login failure cause remains distinct/UNKNOWN. Old
+4b installer metadata literal will also need fresh binding after99's authorized
+file restore; never replay expired99 or claim unchanged literal suitable.
+Next smallest work is bounded existing-channel authentication-stage diagnostics
+and exact owned scratch disposition, not speculative product changes or another
+full workflow. Production activation/S04-02/UAT remain OPEN. No push or newcommit.
+
+2026-10-21 bounded source follow-up complete: isolated frontend cleanup candidate
+ad440c8dcb4375c28cc1d80df2f4e76db29a38d1c9b1e7cabb9843c9d327317e
+records only guardian-created web-code directory/copied executable in existing
+ownership maps after actual custody and staged build/source lease checks. No
+generic cleanup-rule relaxation or authentication change. Actual local capture
+producer→cleanup consumer test caught/fixed expected parent nlink growth before
+any host action; present/already-removed/changed/foreign and changed staged-source
+refusal checks PASS (root verified exit0). Independent source review7359e3fd CLEAR.
+Artifacts /home/foo/Downloads/osmap-ux-s04/login99-analysis-20261021/cleanup-candidate/.
+Candidate is NOT INSTALLED/NATIVE-QUALIFIED and does not delete retained99 state.
+No password workflow replay, server write, public service change or product Git
+change. Authentication branch remains UNKNOWN; one closed diagnostic through the
+existing trusted test channel is still needed before another workflow. Preserve
+read-only100 actual evidence and S04-02 OPEN; no human password test requested.
+
+2026-10-21 operator requests root-only, concise authentication-stage diagnostic
+bundle; no subagents used. Candidate records only code-owned audit action IDs
+inside the paired test's second HTTP request, before existing logger filtering;
+normal production build/public response/legacy unpaired wire remain unchanged.
+One schema+integer0-8 frame follows the existing trusted control path through
+guardian, HTTP consumer and strict result validation. No event fields/secrets.
+Three new Rust module tests PASS; final isolated whole-crate tests typecheck
+PASS14.023s; actual Python channel consumers/refusal checks and local bundle
+executor PASS. Initial isolated compile missing unchanged MIME fixtures and
+negative-test exception-class mismatch are retained in artifact QA, corrected
+without product change. No host/password workflow, OpenBSD rebuild, deployment,
+independent-agent review or Git commit/push. Existing cleanup candidate separate.
+Operator bundle /home/foo/Downloads/osmap-ux-s04/auth-stage-diagnostic-20261021/VERIFY_AND_EXECUTE.sh
+archive SHA256 b0bdc32749a3a3e7b161f8ae4d9a8448f6ac62e79e60b55648cf247d96443bf3.
+Command prepares/tests local candidate only and writes run/EVIDENCE.json plus
+portable sidecar. Fresh matching OpenBSD frontend test build remains required
+before any actual stage observation; never replay expired99. S04-02 OPEN.
+
+2026-10-21 operator diagnostic bundle execution verified: exact evidence SHA256
+427d91a31eaa2cb5fbb87a7cf203c81f28c06a584d5142027383dbca08c5a42b
+and portable sidecar PASS; all candidate hashes match. Three focused execution
+steps exit0; whole local execution0.153s. AUTH_STAGE_DIAGNOSTIC_LOCAL_PASS only;
+actual authentication stage NOT_OBSERVED, no server/password workflow/activation.
+Evidence /home/foo/Downloads/osmap-ux-s04/auth-stage-diagnostic-20261021/run/EVIDENCE.json.
+Next: admit matching source/channel changes and prepare a fresh OpenBSD frontend
+test build; no live retry or expired99 replay authorized by this result alone.
+S04-02 remains OPEN; prior failures and retained-state limits unchanged.
+
+2026-10-21 native diagnostic build preparation retains root-only instruction.
+Do not fabricate current independent review from historical compile63/90 reports.
+Prepare source packet and local checks; hold native dispatch for the existing
+mandatory independent review. No host action, gate waiver or new review role.
+
+### 2026-10-21 — S04-02 source research before another host journey
+
+The retained104 helper Unavailable does not identify a unique guard. Source
+research identifies an authentication-only exact public graph prerequisite not
+proved by helper startup. Prepare one read-only source-to-installed comparison
+using existing SSH/receipt handling; do not repin from discovery, weaken custody,
+provision accounts or retry a password. MATCH leaves confinement/peer/command
+paths unresolved; MISMATCH identifies a violated prerequisite, not necessarily
+the only failure. Exact recipe/evidence reference is in the current ledger.
+
+### 2026-10-21 — installed library mismatch is now demonstrated
+
+2026-10-21 prerequisite105 evidence reviewed: archive SHA256
+9c2f2d957d8132d5cfaae4808a3810871bff73d229ea0a13e8cbaa3834612cc3,
+portable sidecar and all archived/local member bytes verified. Capture PASS;
+AUTH_GRAPH=MISMATCH, exactly3/22 checked objects. libc.so.103.0 and ld.so have
+changed inode/mtime/ctime AND SHA256; ld.so.hints has changed inode/mtime/ctime
+but identical SHA256. All other checked files/directories match. Recorded owner,
+group, mode and size did not differ for these three. Remote0.126s, SSH/action
+4.481s, exit0/no stderr/transport cleanup confirmed. No server writes, login,
+password change or public service action. This proves the compiled helper's
+HASH graph prerequisite rejects the observed installed state; it does not prove
+that this was the sole104 failure or that SQL's additional graph matches.
+OpenBSD upstream etc/rc reorder_libs intentionally relinks libc/libcrypto/ld.so;
+this explains why persistent exact binary/inode pins are operationally brittle.
+Actual cause of this host's replacements remains unverified. Do not disable OS
+randomization, roll back system libraries, blindly repin or retry credentials.
+Next source correction must handle trusted installed-library lifecycle while
+retaining fixed paths, root ownership/DAC, bounded reads and per-operation
+continuity; review the existing shared HASH/SQL checks before selecting its
+smallest implementation. S04-02 remains OPEN; no product source or host change.
+
+Primary source: https://raw.githubusercontent.com/openbsd/src/master/etc/rc (reorder_libs; upstream source is not proof of this host replacement event).
+
 
 ## 2026-10-21 — Consolidated installed-dependency correction
 
 Operator requested one executable repair bundle following the complete tracked-source review. Five finding families are corrected: historical native dependency snapshots, whole-file public Dovecot configuration pins, lexical library selection with broad fallback, fixed Python minor version, and fixed service UIDs. Trusted installed dependencies are admitted before confinement and rechecked during the helper lifetime; updates require a fresh OSMAP helper. Required authentication semantics, protected ancestry, request/key identity, private template integrity and existing disabled gates remain. Retired Python authentication graph factories explicitly refuse before dispatch.
 
 Local changed-boundary tests and independent source review precede the normal signed-commit gate. The operator bundle at `/home/foo/Downloads/osmap-ux-s04/dependency-repair-20261021` builds the exact source, runs read-only native admission checks, replaces existing matching OSMAP artifacts with backups, preserves initially stopped services and captures structured installation/rollback evidence. Public Dovecot, Postfix and MariaDB operations, password writes, policy changes and automatic retries are excluded. OpenBSD execution, installed authentication/password workflow, WSTG/release qualification and S04-02 completion remain NOT RUN/OPEN until actual matching evidence exists. No push is authorized by this bundle request.
+
+
+## 2026-10-21 — Reviewed dependency correction and authorized synchronization
+
+Implementation commit `6c12a45a2e415b82bf0bc43f7df92b4af481275a` has a verified Shopkeeper signature and passed the normal developer/pre-commit security gate, including 1,868 Rust library tests (zero failed, 50 explicit native ignores) and 623 account-runtime Python tests. Independent source and bundle reviews are CLEAR. The normal gate retained three earlier failures: inherited group-writable scratch, a test-only selector missing cfg(test), and a legacy SQL producer test invoking the retired native factory. These were corrected without weakening production authorization or the existing SQL transport assertions. The current refined scanner register was regenerated; the historical baseline is unchanged.
+
+The consolidated operator bundle covers all five finding families from the tracked-source review. Local archive/member/hash, script syntax, public-service refusal, atomic replacement/restoration and pre-action registration simulation checks passed. OpenBSD build/install/native admission and the actual password workflow have NOT run in this delivery. The bundle will report those separately and retain rollback/cleanup evidence. No host or public-service action occurred during preparation.
+
+The operator now explicitly requests all outstanding work be committed and synchronized to the appropriate GitHub UX branch. The four pending documentation records are preserved in full and admitted together; previous source and observed failure history are not rewritten. Target branch: `feat/ux-completion-20260929`; no main promotion. The bundle is refreshed to the final synchronized revision before delivery. S04-02 remains OPEN.

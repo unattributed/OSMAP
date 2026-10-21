@@ -1,5 +1,79 @@
 # S04-02 delivery specification — authoritative own-password change
 
+2026-10-21 prerequisite105 evidence reviewed: archive SHA256
+9c2f2d957d8132d5cfaae4808a3810871bff73d229ea0a13e8cbaa3834612cc3,
+portable sidecar and all archived/local member bytes verified. Capture PASS;
+AUTH_GRAPH=MISMATCH, exactly3/22 checked objects. libc.so.103.0 and ld.so have
+changed inode/mtime/ctime AND SHA256; ld.so.hints has changed inode/mtime/ctime
+but identical SHA256. All other checked files/directories match. Recorded owner,
+group, mode and size did not differ for these three. Remote0.126s, SSH/action
+4.481s, exit0/no stderr/transport cleanup confirmed. No server writes, login,
+password change or public service action. This proves the compiled helper's
+HASH graph prerequisite rejects the observed installed state; it does not prove
+that this was the sole104 failure or that SQL's additional graph matches.
+OpenBSD upstream etc/rc reorder_libs intentionally relinks libc/libcrypto/ld.so;
+this explains why persistent exact binary/inode pins are operationally brittle.
+Actual cause of this host's replacements remains unverified. Do not disable OS
+randomization, roll back system libraries, blindly repin or retry credentials.
+Next source correction must handle trusted installed-library lifecycle while
+retaining fixed paths, root ownership/DAC, bounded reads and per-operation
+continuity; review the existing shared HASH/SQL checks before selecting its
+smallest implementation. S04-02 remains OPEN; no product source or host change.
+
+
+2026-10-21 source-first prerequisite comparison prepared (105), NOT RUN.
+Research traced Authenticate -> NativeProfile::from_stock -> observe(Hash)
+-> exact public HASH files/module/search-directory checks. Startup's metadata
+check does not establish this later prerequisite. Literal pins match the helper90
+compiled source; no actual mismatch or unique failure cause is yet established.
+One operator-executed read-only comparison replaces another login retry. Reports
+exact metadata/hash differences; a captured report and MATCH remain distinct
+from authentication/password success. No repinning, credentials, provisioning,
+public-service operations, build or production activation. Local focused and
+existing pre-action declaration checks PASS; no native claim. Bundle:
+/home/foo/Downloads/osmap-ux-s04/auth-prerequisite-20261021/VERIFY_AND_EXECUTE.sh
+Archive SHA256 34d5e2b9f205521ce125ef677d73c7185799f15eaf50a9e701c4788651bce659.
+Next review input: run/EVIDENCE.tar.gz and portable sidecar. S04-02 OPEN.
+
+
+Current2026-10-21: capture103 observed primary_backend_unavailable(id2),401/no
+cookie, prior to TOTP/password change; both-node cleanup confirmed. Diagnostic
+capture PASS is not T03/workflow PASS. Underlying cause UNKNOWN. Next104 captures
+only relay progress and existing helper error via cleanup receipts, reusing
+compiled frontend102/helper90 and stopping after request2. Local checks PASS;
+operator execution NOT_RUN. No added acceptance scenario or product scope.
+Details and exact artifact references: docs/CURRENT_PROJECT_STATUS.md.
+
+
+Actual diagnostic frontend build102 PASS (109.053s operator run),461 inputs
+unchanged and owned cleanup confirmed; source/binary/evidence hashes reviewed.
+Next is one diagnostic-only initial login capture, stopped at request2 before
+a password route, using that binary. Capture-bundle local checks PASS, actual
+capture NOT_RUN. This does not pass T03 or any full workflow scenario. Exact
+current evidence and bundle are in docs/CURRENT_PROJECT_STATUS.md.
+
+Operator-approved next action,2026-10-21: one frontend diagnostic compile-only
+bundle on obsd1, with post-execution review of run/EVIDENCE.tar.gz. Independent-
+agent pre-build review is replaced only for this action by the operator-accepted
+recipe; no independent audit or native pass is claimed. Local preparation PASS;
+OpenBSD build NOT_RUN; authentication branch still UNKNOWN. No password workflow
+or production activation. See current delivery note and exact artifact checksum
+in docs/CURRENT_PROJECT_STATUS.md. Nine acceptance scenarios remain unchanged.
+
+Latest execution, 2026-10-21: signed d23092e helper build90 PASS74.165s,
+460-input parity; capture90 PASS0.661s and fresh publication90 PASS24.924s.
+Native90 FAIL9.027s at fixture stage3 before helper/HTTP/password submission.
+The first absent shared directory was created0700 by umask0077 while its fixture
+requested/asserted0750. One-line private0700 staging candidate has a local
+counterexample PASS, not native qualification. Observation91 confirms the public
+mail/SQL services and original configuration/master preserved. Backend cleanup92
+PASS6.674s removes the two rows/principal/two roles/six files/two directories.
+Frontend cleanup93 FAIL0.470s before mutation leaves four purpose files/nonce
+directory retained behind its unresolved process-baseline guard. Original failed
+artifacts are immutable. No journey
+retry, installed activation, human UAT or parent acceptance follows this run.
+Exact evidence: `/home/foo/Downloads/osmap-ux-s04/prototype-d23092e-20261021/`.
+
 Current outcome, 2026-10-20: S04-02 remains incomplete; production password
 form, ordinary production setup, installed QA and UAT are not qualified. Actual
 workflow85 FAIL101.297s: request11 (fresh password form) began with1624ms of the
