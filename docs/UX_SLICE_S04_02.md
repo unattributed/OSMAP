@@ -532,8 +532,11 @@ requirements follows the existing amendment process.
 
 Root prepares disposable Alice and Bob, temporary credentials and controlled
 mail/connections. No agent changes Duncan's password, keys or policies. Frontend
-validation is obsd1 `192.168.1.44`; authoritative backend validation is Toronto
-`mail.blackbagsecurity.com` `216.128.179.75`. Label host evidence correctly.
+validation and authoritative backend qualification use the local single-host
+stack on obsd1 `192.168.1.44`, expected hostname
+`obsd1.blackbagsecurity.com`. Toronto is the later independent production
+installation target; do not contact it for this development phase. Label host
+evidence correctly and retain historical two-host results as historical only.
 Public provider delivery is not part of password qualification; issue no
 MAIL/RCPT/DATA/BDAT or provider email. Keep operator accounts and unrelated
 services/configuration/mail intact.

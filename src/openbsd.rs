@@ -505,8 +505,22 @@ pub(crate) fn private_leaf_exists(directory: &fs::File, name: &std::ffi::CStr) -
     }
 }
 
+/// Fixed production and operator-selected development hosts. The kernel
+/// hostname is read into a zeroed fixed buffer; hidden bytes after a terminator
+/// or an unterminated/truncated observation are never an admitted identity.
+#[cfg(any(test, target_os = "openbsd"))]
+fn password_native_hostname(host: &[u8; 256]) -> bool {
+    host.iter().position(|v| *v == 0).is_some_and(|end| {
+        matches!(
+            &host[..end],
+            b"mail.blackbagsecurity.com" | b"obsd1.blackbagsecurity.com"
+        ) && host[end..].iter().all(|v| *v == 0)
+    })
+}
+
 /// Fixed native password-service authority, without caller-selected host or
-/// numeric identity. Other platforms cannot construct a production profile.
+/// numeric identity. The selected development host uses the same platform,
+/// root, custody and confinement checks; client qualification remains separate.
 pub(crate) fn password_native_authority() -> bool {
     #[cfg(target_os = "openbsd")]
     {
@@ -528,10 +542,7 @@ pub(crate) fn password_native_authority() -> bool {
         let release = unsafe { std::ffi::CStr::from_ptr(info.release.as_ptr()) };
         system.to_bytes() == b"OpenBSD"
             && release.to_bytes() == b"7.9"
-            && host
-                .iter()
-                .position(|v| *v == 0)
-                .is_some_and(|end| &host[..end] == b"mail.blackbagsecurity.com")
+            && password_native_hostname(&host)
     }
     #[cfg(not(target_os = "openbsd"))]
     {
@@ -2320,6 +2331,43 @@ pub(crate) fn fixture_current_rust_owned_http_pilot_control(
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn password_native_hostname_accepts_only_exact_production_and_selected_development() {
+        let buffer = |name: &[u8]| {
+            let mut host = [0_u8; 256];
+            host[..name.len()].copy_from_slice(name);
+            host
+        };
+        for name in [
+            b"mail.blackbagsecurity.com".as_slice(),
+            b"obsd1.blackbagsecurity.com".as_slice(),
+        ] {
+            assert!(super::password_native_hostname(&buffer(name)));
+        }
+        for name in [
+            b"".as_slice(),
+            b"mail",
+            b"obsd1",
+            b"Mail.blackbagsecurity.com",
+            b"Obsd1.blackbagsecurity.com",
+            b"mail.blackbagsecurity.com.attacker.invalid",
+            b"obsd1.blackbagsecurity.com.attacker.invalid",
+            b"xmail.blackbagsecurity.com",
+            b"xobsd1.blackbagsecurity.com",
+            b"mail.blackbagsecurity.com.",
+            b"obsd1.blackbagsecurity.com.",
+            b"mail.blackbagsecurity.com\0hidden",
+            b"obsd1.blackbagsecurity.com\0hidden",
+            b"obsd1.blackbagsecurity.co",
+        ] {
+            assert!(!super::password_native_hostname(&buffer(name)));
+        }
+        let mut unterminated = [b'x'; 256];
+        let name = b"obsd1.blackbagsecurity.com";
+        unterminated[..name.len()].copy_from_slice(name);
+        assert!(!super::password_native_hostname(&unterminated));
+    }
+
     #[test]
     fn fixed_fstat_closefrom_accepts_only_success_or_already_empty() {
         assert!(super::password_fstat_descriptor_closure(

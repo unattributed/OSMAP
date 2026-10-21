@@ -558,6 +558,13 @@ mod genuine_http_pilot {
     // store consume it; the parent computes distinct accepted counter inputs.
     const SEED: &[u8] = b"secret=GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ\n";
 
+    #[derive(Clone, Copy, PartialEq, Eq)]
+    enum Topology {
+        LegacyPrivate,
+        PairedRelay,
+        NativeLocal,
+    }
+
     #[derive(serde::Deserialize)]
     #[serde(deny_unknown_fields)]
     struct Bootstrap {
@@ -704,18 +711,43 @@ mod genuine_http_pilot {
         }
         Ok(bytes)
     }
-    fn fixture_accounts(paired: bool) -> [&'static str; 2] {
-        if paired {
+    fn fixture_accounts(topology: Topology) -> [&'static str; 2] {
+        if topology != Topology::LegacyPrivate {
             ["alice@osmap-password.invalid", "bob@osmap-password.invalid"]
         } else {
             ["alice@osmap-proxy.invalid", "bob@osmap-proxy.invalid"]
         }
     }
-    fn config_and_seed(root: &Path, paired: bool) -> Result<crate::config::AppConfig, ()> {
+    fn account_config(
+        root: &Path,
+        runtime: &Path,
+        topology: Topology,
+    ) -> crate::config::AccountRuntimeConfig {
+        let native = topology == Topology::NativeLocal;
+        crate::config::AccountRuntimeConfig {
+            rollout_account: None,
+            admission_socket: if native {
+                crate::config::LOCAL_ACCOUNT_ADMISSION_SOCKET.into()
+            } else {
+                runtime.join("admission/admission.sock")
+            },
+            admission_key_file: root.join("keys/admission.key"),
+            admission_helper_uid: 0,
+            mutation_socket: if native {
+                crate::config::LOCAL_ACCOUNT_MUTATION_SOCKET.into()
+            } else {
+                runtime.join("rust-mutation.sock")
+            },
+            mutation_key_file: root.join("keys/mutation.key"),
+            session_proof_key_file: root.join("keys/session-proof.key"),
+            mutation_helper_uid: 0,
+        }
+    }
+    fn config_and_seed(root: &Path, topology: Topology) -> Result<crate::config::AppConfig, ()> {
         let runtime = root.parent().ok_or(())?;
         directory(runtime, 0, 0o750)?;
         directory(root, 0, 0o750)?;
-        if !paired {
+        if topology == Topology::LegacyPrivate {
             directory(&runtime.join("admission"), 0, 0o750)?;
         }
         directory(&root.join("keys"), 0, 0o750)?;
@@ -746,17 +778,8 @@ mod genuine_http_pilot {
                 return Err(());
             }
         }
-        config.account_runtime = Some(crate::config::AccountRuntimeConfig {
-            rollout_account: None,
-            admission_socket: runtime.join("admission/admission.sock"),
-            admission_key_file: root.join("keys/admission.key"),
-            admission_helper_uid: 0,
-            mutation_socket: runtime.join("rust-mutation.sock"),
-            mutation_key_file: root.join("keys/mutation.key"),
-            session_proof_key_file: root.join("keys/session-proof.key"),
-            mutation_helper_uid: 0,
-        });
-        if paired {
+        config.account_runtime = Some(account_config(root, runtime, topology));
+        if topology == Topology::PairedRelay {
             // Fixed local purpose relays perform the existing two-host transport.
             // Protected startup selects explicit peers; every real client still
             // checks the socket's kernel peer and purpose-separated private keys.
@@ -770,7 +793,7 @@ mod genuine_http_pilot {
             account.mutation_helper_uid = profile.mutation_helper_uid;
         }
         let store = crate::totp::FileTotpSecretStore::new(&config.state_layout.totp_secret_dir);
-        for account in fixture_accounts(paired) {
+        for account in fixture_accounts(topology) {
             let mut file = OpenOptions::new()
                 .write(true)
                 .create_new(true)
@@ -782,6 +805,54 @@ mod genuine_http_pilot {
             file.sync_all().map_err(|_| ())?;
         }
         Ok(config)
+    }
+
+    #[test]
+    fn single_host_http_config_uses_native_pair_without_relay_profile() {
+        // Pure construction: no profile file or socket is opened. Native
+        // custody is still checked by the actual clients before HTTP startup.
+        let runtime = Path::new("/var/run/osmap-pxp-0123456789abcdef");
+        let root = runtime.join("http-state");
+        let local = account_config(&root, runtime, Topology::NativeLocal);
+        assert_eq!(
+            local.admission_socket,
+            Path::new(crate::config::LOCAL_ACCOUNT_ADMISSION_SOCKET)
+        );
+        assert_eq!(
+            local.mutation_socket,
+            Path::new(crate::config::LOCAL_ACCOUNT_MUTATION_SOCKET)
+        );
+        assert_eq!(
+            (local.admission_helper_uid, local.mutation_helper_uid),
+            (0, 0)
+        );
+        assert_eq!(local.admission_key_file, root.join("keys/admission.key"));
+        assert_eq!(local.mutation_key_file, root.join("keys/mutation.key"));
+        assert_eq!(
+            local.session_proof_key_file,
+            root.join("keys/session-proof.key")
+        );
+        assert!(local.rollout_account.is_none());
+        assert_eq!(
+            fixture_accounts(Topology::NativeLocal),
+            fixture_accounts(Topology::PairedRelay)
+        );
+        assert_eq!(
+            fixture_accounts(Topology::LegacyPrivate),
+            ["alice@osmap-proxy.invalid", "bob@osmap-proxy.invalid"]
+        );
+        for topology in [Topology::LegacyPrivate, Topology::PairedRelay] {
+            let legacy = account_config(&root, runtime, topology);
+            assert_eq!(
+                legacy.admission_socket,
+                runtime.join("admission/admission.sock")
+            );
+            assert_eq!(legacy.mutation_socket, runtime.join("rust-mutation.sock"));
+        }
+        const {
+            assert!(!crate::account_admission_runtime::NATIVE_CONFINEMENT_QUALIFIED);
+            assert!(!crate::account_mutation_client::NATIVE_CONFINEMENT_QUALIFIED);
+        }
     }
 
     #[test]
@@ -838,16 +909,22 @@ mod genuine_http_pilot {
     #[test]
     #[ignore = "root-reviewed genuine HTTP/password fixture only; no installed activation"]
     fn native_http_password_runtime_entrypoint() {
-        native_http_password_runtime(false);
+        native_http_password_runtime(Topology::LegacyPrivate);
     }
 
     #[test]
     #[ignore = "root-reviewed current Rust backend and actual purpose-paired relays required"]
     fn native_current_rust_http_password_runtime_entrypoint() {
-        native_http_password_runtime(true);
+        native_http_password_runtime(Topology::PairedRelay);
     }
 
-    fn native_http_password_runtime(paired: bool) {
+    #[test]
+    #[ignore = "requires reviewed single-host Rust account service and disposable accounts"]
+    fn native_single_host_rust_http_password_runtime_entrypoint() {
+        native_http_password_runtime(Topology::NativeLocal);
+    }
+
+    fn native_http_password_runtime(topology: Topology) {
         assert_eq!(std::env::consts::OS, "openbsd");
         const {
             assert!(!crate::account_admission_runtime::NATIVE_CONFINEMENT_QUALIFIED);
@@ -871,7 +948,7 @@ mod genuine_http_pilot {
                 .expect("HTTP fixture bootstrap refused"),
         )
         .expect("HTTP fixture namespace refused");
-        let config = config_and_seed(&boot.root, paired).expect("HTTP fixture state refused");
+        let config = config_and_seed(&boot.root, topology).expect("HTTP fixture state refused");
         let account = config
             .account_runtime
             .as_ref()
@@ -963,7 +1040,7 @@ mod genuine_http_pilot {
         // Local cookie revocation must not substitute for a direct stale-epoch
         // negative against the same actual sealed account service. These use
         // the existing sequence deadline and add no HTTP request or actor.
-        let [alice, bob] = fixture_accounts(paired);
+        let [alice, bob] = fixture_accounts(topology);
         assert!(matches!(
             epoch_probe.admit_before(alice, 0, deadline),
             Err(crate::account_admission::Error::Refused)

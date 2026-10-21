@@ -9957,7 +9957,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
   "slice": "S04-02",
   "original_requirement": "Page 22 own-account password change, authoritative backend and step-up; independent accessible Show/Hide on current/new/confirmation",
   "source_baseline": "d23092e8bbc5feefc61a0daaa36643a10b362e2a",
-  "state": "IN_PROGRESS",
+  "state": "BLOCKED",
   "integration_owner": "/root",
   "roles": {
     "project_manager": [
@@ -10391,19 +10391,19 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "status": "PENDING",
     "reference": "Only minimal well-defined own-password usability after all agent-owned development/matching deployed QA/independent audit PASS. No operator password is changed by agent qualification; use controlled disposable Alice and preserve Bob/operator state. NOT RUN."
   },
-  "next_action": "Operator bundle step S04-02-dependency-repair106 FAIL; inspect retained exact result before further action.",
+  "next_action": "Finish reviewed source-only checkpoint with normal mandatory hooks, Shopkeeper signature verification and standing authorized GitHub push/fresh SHA equality. No native/build/helper/password or host sync retry in this phase. Current gates false; T03-T09 remain unqualified; all20 obligations retained.",
   "accountability": {
-    "functional_exit": "Working own-account Settings password change through authoritative Toronto credentials, fresh password/TOTP step-up, conditional SQL, durable OSMAP epoch and all-browser revocation, actual source-bound cache handling, old-password refusal/new-login success and Bob preservation; disclose that existing external SMTP/IMAP sessions may remain authenticated. Then matching installed QA/independent audit and minimal owner usability.",
+    "functional_exit": "Working own-account Settings password change through the selected single-host obsd1 local account service and authoritative local backend, fresh password/TOTP step-up, one conditional SQL update, durable OSMAP epoch and all-browser revocation, actual source-bound cache handling, old-password refusal/new-login success and Bob preservation. Existing third-party SMTP/IMAP sessions may remain authenticated. Matching installed QA, independent audit and minimal owner usability remain required. Toronto is later separate production installation.",
     "owner": "/root",
     "elapsed_scope": "wall_clock",
     "history_reference": "Retained HTTP1\u20134 evidence below and existing ledger. Outer native/SSH elapsed sums122.497s only; earlier full-action source/review/model time is UNKNOWN. No token or monetary compute cost is asserted.; Completed bounded investigation /home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/account-relay-deployment-successor18/canonical-integration1/investigation-window-closeout.json SHA256 5d1fa485650d262068f10bdd5328262332008c666176a127c1d31657761ce6d4 records actual UTC-wall 2886.045s and explicit mandatory-hook overrun; no failed history removed.; Completed source20 investigation /home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/proxy-config-isolation-successor20/canonical-integration1/investigation-window-closeout.json SHA256bb4e5e887444aca514bddb558e8974fea623f6c3684ecdc9ce3d8c2eb43e550c retains actual elapsed/overrun and explicit finite source admission disposition.; /home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/proxy-child-signal-observation-successor22/investigation-window-closeout.json SHA256c3122712c7321f00b1f4ad91507c99299529d8c4812976da8101c8832ce1e104 retains source/native8/9/10 window actual elapsed/overrun, finiteonecase disposition and failed outcomes.; /home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/slice-contract-validator-successor24/investigation-window-closeout.json SHA256a1243ba238c66dc546a8ae33f0d5c4b94a55afdb72abdabe46ebb04307bfb93b retains actual mixed-task window and directoperator SOP reprioritization; task split UNKNOWN.; /home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/slice-contract-validator-successor24/canonical-integration1/investigation-window-closeout2.json SHA2568aa3f093052393ed7a73c6ec537b77b459c5030322529f81db2d3ddd6e7a86d2 actual complete SOP window; failed attempts retained.; Closed source25/26window /home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/proxy-command-endpoint-successor25/canonical-integration1/investigation-window-closeout.json SHA2560c2a06f7ad35c02b548ca225f406ea5dcbd7d3772dfa3613be0a9aee9af15478 actual4006.757/original1800/overrun2206.757s. No renewed native allowance.; Closedcurrentcompiler/publicationwindow /home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/captured-control-lifetime-successor26/current-native-investigation1-closeout.json SHA256a41aff3ec5cbdcff62996cf8f23ee161aef0965d3866ace0e2a2f6e421d8592e actualUTCwall2340.825s/original1800/explicitoverrun/late-dispatchdeviation retained.; Sourcewindow2closeoutc9db9719 plus explicitwindow3 under password-status-implementation2/canonical-integration1; sourceadmissionf9ab/aea6 and normalgate1FAIL retained.; /home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/password-status-implementation2/canonical-integration1/investigation-window3-closeout.json SHAc98e409f331b6b15deb856e3c3f1555bc52e588bfd3dce1605f1234137a68c6e; /home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/password-status-implementation2/canonical-integration1/investigation-window4-closeout.json SHAe00b4b8e740b7668b1b9d44abf24454da755ceb2a505ae21fb3c6bb9b0b65495; /home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/password-status-implementation2/canonical-integration1/investigation-window5-closeout.json SHA84a63ecf6e0e268cc0e348062eebba558685b79f4ae6ae23d4f2a974066e9dfb records actual window5 wall/overrun, HTTP16FAIL, operator directions and worker continuity fault; failure history unchanged.; Source admission13572: normalgate1 missingTMPDIR failure retained63edbc8a, unchangedsource properprivateTMPDIR gate2+pushPASS1763Rust/0failed/48nativeignores and597accountPython; signed/freshorigin0/0clean proof38a50db5/source-onlyTorontoFFd62ec8bb. Window6closeout actual3840.948s/original3600/overrun240.948 retained; explicitwindow7 original1800 begun 2026-10-16T13:02:24.948313+00:00; no native deadlines or failure history renewed.; window7 actual1873.43/original1800/overrun73.43s retained /home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/password-status-implementation2/canonical-integration1/investigation-window7-closeout.json; first19freezeblockedUNEXECUTED/correctedregistrypendingreview, no existingfailure reset.; window20closeout /home/foo/Downloads/osmap-ux-s04/revalidation-20261004/password-change/serve-sealed-account-clients-20261015/password-status-implementation2/canonical-integration1/investigation-window20-closeout.json actualUTCwall 1144.888s;19FAIL/20componentPASS/25FAIL retained; no failure/cost reset.; dispatch_refusals14/15retainallfacts; before-dispatch-refusal-reconciliation.json preservesoriginalregistration.; cleanup92 local pre-action refusal /home/foo/Downloads/osmap-ux-s04/prototype-d23092e-20261021/cleanup92/pre-action-refusal.json SHA256 27e664186e8671992d53c5ab25d4a2e11a0e101a3df853b8a89e64d64d9a1eb2; noSSH/noeffect; mutable outcome header pointer refreshed.; frontend93 local pre-action refusal /home/foo/Downloads/osmap-ux-s04/prototype-d23092e-20261021/frontend93/pre-action-refusal.json SHA256 65fb3fb4e400ae4e78675db0d27d7be5abbf73c0f0ff826c0630c9e18b56989f; noSSH/noeffect; actual independent reviewer QA assignment recorded.",
     "investigation": {
       "owner": "/root",
-      "started_at": "2026-10-21T15:43:52Z",
-      "timebox_seconds": 2400,
+      "started_at": "2026-10-21T22:10:06Z",
+      "timebox_seconds": 5400,
       "elapsed_status": "UNKNOWN",
       "elapsed_seconds": null,
-      "progress": "/home/foo/Downloads/osmap-ux-s04/dependency-repair-20261021/run/RUN_STARTED.json"
+      "progress": "/home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/combined-capacity-review.json SHA256 827177c73bcb76a3aa19f72c5dfe34a1bba46ef07f936bd10fdcd453b79e9d93; original5400s phase and23:40:06 deadline retained; source preservation normal hooks ongoing, full-window wall recorded in retained final delivery receipt; selected1.329s is not total cost."
     },
     "attempts": [
       {
@@ -18450,6 +18450,194 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "elapsed_status": "MEASURED",
         "elapsed_seconds": 33.83,
         "reference": "/home/foo/Downloads/osmap-ux-s04/dependency-repair-20261021/run/EVIDENCE.json SHA256 b6caba0396492e1ea62fcae9cc446deb2efda3265d3a4990830a337a7f79b92f"
+      },
+      {
+        "id": "S04-02-single-host-observe107",
+        "adoption": "CURRENT",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "source_revision": "8a3288b09c8d88cc3d75147763a81340dca0ee619d7a2788651f43b90c3b9aaf",
+        "change_reference": "Fresh source-backed obsd1 read-only observation replaces retired two-host INSTALL106; no source or credential execution. Signedbaseline15fee615 and exact dispatcher bound.",
+        "success_chain_review": {
+          "reviewer": "/root/delivery_controller",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/observation-review.json SHA256 362269b22d61a3a01986ecbaa729041d97c25fa8e6aa049682dc4e94443e150f",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 0.851,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/dispatch.json SHA256 7150b599d8d31ee01e1fc759db201af89d4ed7a6e95343d95e24944ac3817a41"
+      },
+      {
+        "id": "S04-02-single-host-backend108",
+        "adoption": "CURRENT",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "source_revision": "245b08e62f9b588b1ab8ee2ccbaed829b4376adb5caac255993ade250edfc1cf",
+        "change_reference": "107 confirms selected local host/tools and absent account namespaces. This next read-only static schema/count/log-cache/role query establishes actual local fixture prerequisites, never replays106 or credentials.",
+        "success_chain_review": {
+          "reviewer": "/root/delivery_controller",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/backend-observation-review.json SHA256 5cdc1d4e03648967cc372144db445790f4678a4d071cd45b86af5691e512727b",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 0.815,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/backend-dispatch.json SHA256 c66af5cd09c9ba120c2c0056f76370319983ffcd5d487ebe5a39a31d4a9e373f"
+      },
+      {
+        "id": "S04-02-single-host-build109",
+        "adoption": "CURRENT",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "source_revision": "69c6063d1fee3b5ccd7b3e7ede60be5c0848d17228cca77e9cb51463bb83c07e",
+        "change_reference": "Current actual107/108 obsd1 prerequisites and independently reviewed exact461-input source candidate replace retired two-host106. Compileonly with actualreleaseprofile and sourceparity; no tests/authentication/SQL mutation.",
+        "success_chain_review": {
+          "reviewer": "/root/delivery_controller",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/build-review.json SHA256 6d6f5f603f5d1a81aa78790444e7eab17a81c41fa379fb42a27e230054294728",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "FAIL",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 116.266,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/build-dispatch.json SHA256 994d40396c96dfe34dcae478d633f1caed8aea50277fdeee9c4615b30586c9b7"
+      },
+      {
+        "id": "S04-02-single-host-diagnostic110",
+        "adoption": "CURRENT",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "source_revision": "5c563abb399bb838b5f16cd33eff3247a841ee832cca76ba4964c67a5eabbcfe",
+        "change_reference": "Actual109 libtest compiler101 requires exact retained compiler-message diagnosis before any source change/build retry. No compile or journey execution.",
+        "success_chain_review": {
+          "reviewer": "/root/delivery_controller",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/compiler-diagnostic-review.json SHA256 7d06f089bd6e6745a32ea4084516b959efe12d7ceb357c88d55e226989616d91",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "reassessment": {
+          "reviewers": [
+            "/root",
+            "/root/delivery_controller"
+          ],
+          "reference": "/home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/compiler-diagnostic-review.json SHA256 7d06f089bd6e6745a32ea4084516b959efe12d7ceb357c88d55e226989616d91",
+          "failed_attempt_ids": [
+            "S04-02-dependency-repair106",
+            "S04-02-single-host-build109"
+          ],
+          "next_action": "One reviewed bounded read-only protected compiler109 diagnostic capture, preserve106 unique missing path UNKNOWN and all actual/UNKNOWN costs. No build or journey retry admitted."
+        },
+        "result": "UNKNOWN",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 0.537,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/compiler-diagnostic-dispatch.json SHA256 6708b1323c2066b64364cefa228680d54c7258245a2fa6a7c74072fb3616f51a"
+      },
+      {
+        "id": "S04-02-single-host-cause111",
+        "adoption": "CURRENT",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "source_revision": "8717f51be5f3579e67e5f1ea4c0965d9ac1779072ca224594a8c10069d2619e1",
+        "change_reference": "110 reader asserted nonempty structurederrors and failedwithoutwrites; changed111 safelyprojects bounded stderrterminationcategories and captureszeroerrors. Preserve actual110UNKNOWN0.537s plus106/109combinedhistory.",
+        "success_chain_review": {
+          "reviewer": "/root/delivery_controller",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/compiler-cause-review.json SHA256 7b3a5127af8664a4bd255f41b6d067bbc63a1dfcf6b866cb431915404c54738c",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 0.422,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/compiler-cause-dispatch.json SHA256 54d12906a05b28bf1da96fbdb4030d1b16d7c97c896ff669ca01960213ae8480"
+      },
+      {
+        "id": "S04-02-single-host-readiness112",
+        "adoption": "CURRENT",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "source_revision": "443f74dd2b77c779a001bbb9ddb9982d919de11be72ea1a457b592c5ee40a54e",
+        "change_reference": "111 captures explicitcompilerOOM/SIGABRT but initiatingcapacityconstraint UNKNOWN; observe actual limits/physical capacity and current localconfigpreservation baseline beforeproposingchangedcompiler or localfixture. No retries or resourceschanges.",
+        "success_chain_review": {
+          "reviewer": "/root/delivery_controller",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/readiness-review.json SHA256 62368a1d8c222db7413d407b39c486895ca47260d0abc29d8e7491e59482af44",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 0.609,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/readiness-dispatch.json SHA256 216c28bae0a340c263eb431bbfef7ead05405626050e109d5fc6038aa4cfcfdc; readonly112 capture PASS, config map REFUSED exactly2historicalnames missing,24leaves inclSQL custodyPASS; no compiler/app/account/config/service action."
+      },
+      {
+        "id": "S04-02-single-host-presence114",
+        "adoption": "CURRENT",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "source_revision": "0a61dc5fc9c9e53335ce47a470c64819355bc17b5df8c86de65e98f746eb9a45",
+        "change_reference": "Actual112returnedCONFIG_SET_INCOMPLETE exactly2missing99-bbsnames; readonlychangedobservercapturesstrictfixedabsenceinstead ofcreatingpublicconfig. Existing2missingproductprerequisite remainsseparateblocker; no dependentadmission bycapture.",
+        "success_chain_review": {
+          "reviewer": "/root/delivery_controller",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/presence-review.json SHA256 6c1648a5a478380557d121c4c447998345bc48eeb62f1d72e750a1c73b32daf6",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 0.728,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/presence-dispatch.json SHA256 ed7128995e3d1998a892ef71d79a378e6415372245734e7ad0d67a34569c9dd7; actualrootCAPTURE_PASS23strictconfigdigests+exact2nullpreservedabsence and separatelymandatorySQLhash. No hostfilewrites/auth/account/serviceaction."
+      },
+      {
+        "id": "S04-02-single-host-resource113",
+        "adoption": "CURRENT",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "source_revision": "02e4ffb5f88145fbd0724e34dc1e999cda976b415d4c6722efb57679063b1132",
+        "change_reference": "Changed compiler capacity hypothesis afteractual109 OOM/SIGABRT +112 observed1.5GiBsoft/128GiBhard/16.45GBphysical. Pure11parserchecks and actualfreshfree-memory admission; no unique initiatingcause inferred, originalfailed109/diagnostic110 retained. No profile/deadline relaxation.",
+        "success_chain_review": {
+          "reviewer": "/root/delivery_controller",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/resource-build-final-review.json SHA256 8c53e83095fbe07d34512fedb3f6759be58aceeff63fa379c721ca0bb7ee5869",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "FAIL",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 0.792,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/resource-build-dispatch.json SHA256 b12277e345c4badc9fcfe0edd06aa68c53a9b01b69ac8a579bd479335ff92dbf; FAILbeforeANYcompiler: actualfree5879267328bytes <required6GiB; physical16450846720. No compilerchildlimit/app/account/publicserviceaction. Parentlimitsunchanged,bothbornprobesgone,exactscratchgone,cleanup_uncertainfalse; userprivateartifactstage2v9r6m9u retainedonlymanifest/logs."
       }
     ],
     "prior_investigations": [
@@ -19148,6 +19336,14 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "elapsed_status": "UNKNOWN",
         "elapsed_seconds": null,
         "progress": "/home/foo/Downloads/osmap-ux-s04/auth-prerequisite-20261021/run/STARTED.json; one fixed public prerequisite comparison; no authentication or provisioning."
+      },
+      {
+        "owner": "/root",
+        "started_at": "2026-10-21T15:43:52Z",
+        "timebox_seconds": 2400,
+        "elapsed_status": "UNKNOWN",
+        "elapsed_seconds": null,
+        "progress": "/home/foo/Downloads/osmap-ux-s04/dependency-repair-20261021/run/RUN_STARTED.json"
       }
     ],
     "dispatch_refusals": [
@@ -19314,7 +19510,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "slice": "S04-02",
     "specification": {
       "path": "docs/UX_SLICE_S04_02.md",
-      "sha256": "bd4f3ff93ac637ae5ac99248539bdce0f9bbfafd13d2515650125bbc821bf139"
+      "sha256": "9a201d052625c627a080c509a9c60459770b5fa29a194b92e5396e38c342af8e"
     },
     "design": {
       "journey": "Security or Authentication & Recovery \u2192 GET/POST /settings/password \u2192 own-account current password+fresh TOTP \u2192 confirmed authoritative change and current-session revocation, or explicit refusal/contained incomplete result. Navigation/Cancel submit no mutation.",
@@ -19391,7 +19587,8 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
           "native-t07-qualifier1/native-http-attempt24/result.json SHAbbd9e9e47177248040ec9a1f7e95cfe4c424a80a926ee0a3b1d892a0fa07cb3d; actualordinaryfixturePASS18HTTP17rows/report/authoritativechanged_at+reloadbothviews/oldDeniednewAdmitted/Alicecontainment/BobSQL17sessionMail/cacheflush1. Bob23NOOP/noerror/joined;32SQLreaped/3roles+drivergroupgone; sourcebeforeafterparityTRUE; allfreshrootnamespacesstagesHTTPcarrierremoved. Ownedgroupstop_sentTRUE retained; no no-stop claim. IndependentactualscopePASSae5f1e23/controlledfixtureonly; heldthirdAUTHrace/publicsharedcache/productionfactory/installedpair remainunqualified, no formactivation/operator/provider. Priorfailures23/22/21retained; this does not upgrade deployed T07 or fullnative T03.",
           "Actual Primary-only prerequisite case5 40d35c67 FAIL19.105 and changed case6 3bacc35c FAIL18.636 both startupready thenfirstmain_selectionUnavailable/C15 beforeAUTH; combined37.741s causeUNKNOWN. Independent1fed/fa338 exactownedrollback/disposalconfirmed/no currentincident, outerFAIL_UNCERTAIN/nestedUNKNOWN preserved. Source diagnostic40ba/bd760 adds onlyclosedphase-categorydiscriminator; no fullT03/installedqualification or UAT claim.",
           "Original stronger globalingress/forcedthirdpartyconnection tests retained as actualFAIL/UNKNOWN; supersededmethod decision /home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/safe-existing-backend-path33/independent-requirement-path-assessment.json SHA256 a0411a20c5c6e5c66b4fa4494b7a495b9ff41a2bf668d608d23980605e74832e. Current narrower realworkflow remains NOTqualified; no oldFAILrelabelled.",
-          "Actual80FAIL102.283 and85FAIL101.297 retained under stock-helper-start51/resume63/native80,native85.85READ11budget1624ms/elapsed1635/0bytes/sequence90010.86read-onlyRESTOREDPASS4.3284/87purpose-onlyPASS0.544; HTTPscratchUNKNOWNretained.88source-lazyprofile/realStore targetedPASS1 doesnotcloseT03 orinstalledworkflow."
+          "Actual80FAIL102.283 and85FAIL101.297 retained under stock-helper-start51/resume63/native80,native85.85READ11budget1624ms/elapsed1635/0bytes/sequence90010.86read-onlyRESTOREDPASS4.3284/87purpose-onlyPASS0.544; HTTPscratchUNKNOWNretained.88source-lazyprofile/realStore targetedPASS1 doesnotcloseT03 orinstalledworkflow.",
+          "Current20261021 single-host source/prerequisites only:107/108 readonly PASS;109 normal-release bins compile PASS/libtest OOM-SIGABRT FAIL;111diagnostic PASS/112limits PASS with config GAPS;114strict23hashes+2absence+SQL CAPTURE_PASS. Minimal hostname/native-local HTTP/closed optional config source checks PASS and independent reviews.113 fresh capacity refusal BEFORE compiler at5879267328free<6GiB. No new current native HTTP/password journey executed; no functionalT03 promotion. /home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/combined-capacity-review.json SHA256 827177c73bcb76a3aa19f72c5dfe34a1bba46ef07f936bd10fdcd453b79e9d93"
         ]
       },
       {
@@ -19442,7 +19639,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         ],
         "kind": "positive",
         "level": "deployed",
-        "prerequisites": "Matching qualified pair installed reversibly, actual configured trusted paired startup/grants/containment, obsd1 frontend+authoritative Toronto backend; disposable accounts.",
+        "prerequisites": "Matching qualified local account service and application installed on obsd1 (192.168.1.44, expected hostname obsd1.blackbagsecurity.com), actual configured Runtime, controlled Alice/Bob, reviewed recovery and original native qualification evidence. No Toronto relay or public mail service/configuration change.",
         "action": "On matchinginstalledbrowser verify retainedformcontrols asneeded, then ownaccountchange throughactualRuntime/pair, reloadverifiedtimestamp, oldreject/newadmit/allOSMAPbrowserrevocation/accountcache and Bob. UIstates existingthirdpartySMTP/IMAPconnections mayremainauthenticated. No publicservice/config cutover.",
         "expected": "All touched form/navigation/local controls work in matching actual browser without unintended mutation or secret persistence; full native behaviour occurs through installed configured path with truthful UI/persistent status, exact revocations/old denial/new admission and independent QA/audit PASS.",
         "preserved": "Operator accounts/keys/policies/mail, Bob and unrelated services/configuration; no provider Send.",
@@ -19514,7 +19711,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
   },
   "execution_scope_control": {
     "operator_direction": "2026-10-16: this slice is over compute budget; scope exactly as needed, no additional validation/verification drift",
-    "functional_exit": "Working own-password change on obsd1 through authoritative Toronto backend, with the existing S04-02 security/containment/status requirements and matching installed audit; then notify owner for the one defined live test.",
+    "functional_exit": "Working own-password change on obsd1 through its authoritative local backend, with the existing S04-02 security/containment/status requirements and matching installed audit; then notify owner for the one defined live test.",
     "allowed_remaining_work": [
       "Resolve only a named prerequisite preventing the configured password workflow from operating safely.",
       "Integrate and install the matching frontend/backend through existing reversible delivery.",
@@ -19578,12 +19775,15 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "status": "PASS",
         "software": {
           "OpenBSD": "7.9",
-          "machine": "amd64"
+          "machine": "amd64",
+          "cargo": "cargo 1.94.1 (29ea6fb6a 2026-03-24) (built from a source tarball)",
+          "rustc": "rustc 1.94.1 (e408947bf 2026-03-25) (built from a source tarball)",
+          "Python": "Python 3.13.16"
         },
-        "observed_at": "2026-10-19T09:24:46Z",
+        "observed_at": "2026-10-21T22:15:54Z",
         "evidence": {
-          "path": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/observe-build13/result.json",
-          "sha256": "7684ac184a76bcf323816c99f9a8e34c76dd80b990798a4fd383505198f564d0"
+          "path": "/home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/observe.stdout.json",
+          "sha256": "429bf5f2112575afcbe3e1afd11e825e7ca46b671620c8c3026cccebdb840277"
         }
       },
       {
@@ -19737,6 +19937,26 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
           "maint/account-runtime/dovecot-private-primary.conf"
         ],
         "reference": "Actual22 setupFAIL and reviewedC04reuse regression: qualification1bcaa dropped exactmeasuredprimary-onlysyntaxwarningclassifier. Correctedcd830 restoresONLYclientwarning; twoextraabsolute control/master/anvil listeners remain NOTRUN_UNQUALIFIED. Actual complete selectedconfigparse must pass BEFORE newroles/SQLrows/workflow. Nativepreflight must be finite/privatecopiedconfigtree, no service/SQL/auth/helperexecution, safe warningcounts and ownedcleanup; no existingcomponentPASS substitution."
+      },
+      {
+        "id": "single-host-readiness",
+        "outcome_ids": [
+          "authoritative-native-password-workflow"
+        ],
+        "test_ids": [
+          "S04-02-T03",
+          "S04-02-T06"
+        ],
+        "allowed_paths": [
+          "src/openbsd.rs",
+          "src/account_password_server.rs",
+          "src/http/password_tests.rs",
+          "docs/UX_EXECUTION_LEDGER.md",
+          "src/account_password_peer.rs",
+          "src/account_password_peer_tests.rs",
+          "src/account_password_confinement.rs"
+        ],
+        "reference": "Signed single-host correction and current source review: production-only native hostname, legacy relay HTTP mode, current installed obsd1 prerequisites unverified. Preserve106 compile spawnFAIL.; Actual112 finds exactlytwo missing historicalsite-specificconfigpaths. Source inspection account_password_peer.rsStockPeer::observe and confinementParentPlan::prepare_stock stillrequire both, so fixtureabsencealone cannotstarthelper. Beforedependentbuild, permitonlyclosedtwo-name currentpresence admission, protectedancestors/presentfilecustody and exactincludeclosure/lifetimerechecks. No publicfilecreation/config/servicechanges."
       }
     ],
     "recipes": [
@@ -26870,22 +27090,566 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "test_ids": [
           "S04-02-T03"
         ]
+      },
+      {
+        "id": "single-host-observe107",
+        "kind": "DISCOVERY",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "single-host-readiness"
+        ],
+        "test_ids": [
+          "S04-02-T03",
+          "S04-02-T06"
+        ],
+        "allowed_paths": [
+          "src/openbsd.rs",
+          "src/account_password_server.rs",
+          "src/http/password_tests.rs",
+          "docs/UX_EXECUTION_LEDGER.md"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/usr/bin/python3",
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/dispatch_observe.py"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "One read-only obsd1 identity/tool/metadata receipt; no service/configuration/account/database writes, no secrets or private-key hashes. Presence is not startup or native qualification. On timeout or invalid output UNKNOWN; no retry.",
+        "prerequisites": [
+          {
+            "id": "independent-frozen-observation-review",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/observation-review.json",
+              "sha256": "362269b22d61a3a01986ecbaa729041d97c25fa8e6aa049682dc4e94443e150f"
+            }
+          },
+          {
+            "id": "exact-reviewed-observer",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/observe.py",
+              "sha256": "8a3288b09c8d88cc3d75147763a81340dca0ee619d7a2788651f43b90c3b9aaf"
+            }
+          },
+          {
+            "id": "exact-checked-dispatcher",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/dispatch_observe.py",
+              "sha256": "bbd9da9d3118258def26ec6f37e071c3c00111328be6196f3851bb42f156bef9"
+            }
+          }
+        ]
+      },
+      {
+        "id": "single-host-backend108",
+        "kind": "DISCOVERY",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "single-host-readiness"
+        ],
+        "test_ids": [
+          "S04-02-T03",
+          "S04-02-T06"
+        ],
+        "allowed_paths": [
+          "src/openbsd.rs",
+          "src/account_password_server.rs",
+          "src/http/password_tests.rs",
+          "docs/UX_EXECUTION_LEDGER.md"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/usr/bin/python3",
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/dispatch_backend.py"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "One root read-only obsd1 schema/fixture-role/log-cache observation; capturePASS/GAPS_PRESENT is not prerequisitePASS. No credential row values, account operations, database/configuration/service writes or automatic dependent execution.",
+        "prerequisites": [
+          {
+            "id": "independent-frozen-backend-review",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/backend-observation-review.json",
+              "sha256": "5cdc1d4e03648967cc372144db445790f4678a4d071cd45b86af5691e512727b"
+            }
+          },
+          {
+            "id": "exact-reviewed-backend-observer",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/observe_backend.py",
+              "sha256": "245b08e62f9b588b1ab8ee2ccbaed829b4376adb5caac255993ade250edfc1cf"
+            }
+          },
+          {
+            "id": "exact-checked-backend-dispatcher",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/dispatch_backend.py",
+              "sha256": "6ce37a5fc190bdfc9d0085facb9baa0ddad4692fe5fa3942888ebd6bc4980f54"
+            }
+          }
+        ]
+      },
+      {
+        "id": "single-host-build109",
+        "kind": "NATIVE",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "single-host-readiness"
+        ],
+        "test_ids": [
+          "S04-02-T03",
+          "S04-02-T06"
+        ],
+        "allowed_paths": [
+          "src/openbsd.rs",
+          "src/account_password_server.rs",
+          "src/http/password_tests.rs",
+          "docs/UX_EXECUTION_LEDGER.md"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/usr/bin/python3",
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/dispatch_build.py"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "Compile only frozen461-input candidate using normal releaseopt3 profile, offline locked bins/libtest no-run; actual Cargo receipt checks, source parity, ownedcompiler groupclosure and exactscratchcleanup. No test/helper/account/service execution. FitUNKNOWN; stoponcap/no retry, preserve600-second normaldelivery reserve.",
+        "prerequisites": [
+          {
+            "id": "independent-frozen-compiler-review",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/build-review.json",
+              "sha256": "6d6f5f603f5d1a81aa78790444e7eab17a81c41fa379fb42a27e230054294728"
+            }
+          },
+          {
+            "id": "exact-reviewed-compiler",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/build/build_remote.py",
+              "sha256": "69c6063d1fee3b5ccd7b3e7ede60be5c0848d17228cca77e9cb51463bb83c07e"
+            }
+          },
+          {
+            "id": "exact-checked-compiler-dispatcher",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/dispatch_build.py",
+              "sha256": "bf5230a5ed3589767202beac32799787553342a54921bd238d8107efa4aff98d"
+            }
+          },
+          {
+            "id": "exact-input-manifest",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/build/input-manifest.json",
+              "sha256": "33802b58f7f02b22fd7cc8907b1a8ca7f5e0bfb8eb25b4afded480f82520e243"
+            }
+          },
+          {
+            "id": "actual-local-prerequisite-observation",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/backend.stdout.json",
+              "sha256": "ea9bddeccca9b3bffe1f06a282b910376e51a68f114f1a81585d7fbe2b3dc123"
+            }
+          }
+        ]
+      },
+      {
+        "id": "single-host-diagnostic110",
+        "kind": "DISCOVERY",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "single-host-readiness"
+        ],
+        "test_ids": [
+          "S04-02-T03",
+          "S04-02-T06"
+        ],
+        "allowed_paths": [
+          "src/openbsd.rs",
+          "src/account_password_server.rs",
+          "src/http/password_tests.rs",
+          "docs/UX_EXECUTION_LEDGER.md"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/usr/bin/python3",
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/dispatch_compile_error.py"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "Read only exact retained compiler109 logs with private custody/size checks, emit bounded errors and spans without rendered/source arrays. No process/compile/app/account/config/service action or retained-stage deletion; no retry.",
+        "prerequisites": [
+          {
+            "id": "independent-combined-diagnostic-review",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/compiler-diagnostic-review.json",
+              "sha256": "7d06f089bd6e6745a32ea4084516b959efe12d7ceb357c88d55e226989616d91"
+            }
+          },
+          {
+            "id": "exact-reviewed-diagnostic-reader",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/read_compile_error.py",
+              "sha256": "5c563abb399bb838b5f16cd33eff3247a841ee832cca76ba4964c67a5eabbcfe"
+            }
+          },
+          {
+            "id": "exact-checked-diagnostic-dispatcher",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/dispatch_compile_error.py",
+              "sha256": "81cfe4e07ab9474eb7d1972739d67d6f6a89dbdd2bb5c7ce18346eca37149332"
+            }
+          }
+        ]
+      },
+      {
+        "id": "single-host-cause111",
+        "kind": "DISCOVERY",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "single-host-readiness"
+        ],
+        "test_ids": [
+          "S04-02-T03",
+          "S04-02-T06"
+        ],
+        "allowed_paths": [
+          "src/openbsd.rs",
+          "src/account_password_server.rs",
+          "src/http/password_tests.rs",
+          "docs/UX_EXECUTION_LEDGER.md"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/usr/bin/python3",
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/dispatch_compile_cause.py"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "Read only exact retained109 compiler logs; permit zero structured error messages and return bounded signal/exit/OOM/internal markers without raw stderr/source. Signal alone does not prove unique cause. No compile/app/test/account/service action or stage deletion.",
+        "prerequisites": [
+          {
+            "id": "independent-changed-diagnostic-review",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/compiler-cause-review.json",
+              "sha256": "7b3a5127af8664a4bd255f41b6d067bbc63a1dfcf6b866cb431915404c54738c"
+            }
+          },
+          {
+            "id": "exact-reviewed-cause-reader",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/read_compile_cause.py",
+              "sha256": "8717f51be5f3579e67e5f1ea4c0965d9ac1779072ca224594a8c10069d2619e1"
+            }
+          },
+          {
+            "id": "exact-checked-cause-dispatcher",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/dispatch_compile_cause.py",
+              "sha256": "c6bc1002d28b7b81290c3f9a8b129d2e77c589b82322d2db5641af0770e4b44d"
+            }
+          }
+        ]
+      },
+      {
+        "id": "single-host-readiness112",
+        "kind": "DISCOVERY",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "single-host-readiness"
+        ],
+        "test_ids": [
+          "S04-02-T03",
+          "S04-02-T06"
+        ],
+        "allowed_paths": [
+          "src/openbsd.rs",
+          "src/account_password_server.rs",
+          "src/http/password_tests.rs",
+          "docs/UX_EXECUTION_LEDGER.md"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/usr/bin/python3",
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/dispatch_readiness.py"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "Read only actual foo process limits, bounded physical/VM numeric counters (UNKNOWN unsupported), then fixedroot config-preservation map and parentmetadata via exactpinned stdin code. No memory/profile/CPU/stack changes, compiler/app/account/service execution. Capture does not admitdependentactions automatically.",
+        "prerequisites": [
+          {
+            "id": "independent-frozen-readiness-review",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/readiness-review.json",
+              "sha256": "62368a1d8c222db7413d407b39c486895ca47260d0abc29d8e7491e59482af44"
+            }
+          },
+          {
+            "id": "exact-reviewed-readiness-wrapper",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/observe_readiness.py",
+              "sha256": "443f74dd2b77c779a001bbb9ddb9982d919de11be72ea1a457b592c5ee40a54e"
+            }
+          },
+          {
+            "id": "exact-checked-readiness-dispatcher",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/dispatch_readiness.py",
+              "sha256": "1661912d2ccef0ed2d5c7d3e08feefb33b7cd2da9db11b43f113accff269a473"
+            }
+          },
+          {
+            "id": "exact-root-map-observer",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/observe_config_map.py",
+              "sha256": "24b7d5aa14cc081f349a3fe0852ae92a1f44cebb8eea24c42885782a9256dce8"
+            }
+          }
+        ]
+      },
+      {
+        "id": "single-host-presence114",
+        "kind": "DISCOVERY",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "single-host-readiness"
+        ],
+        "test_ids": [
+          "S04-02-T03",
+          "S04-02-T06"
+        ],
+        "allowed_paths": [
+          "src/openbsd.rs",
+          "src/account_password_server.rs",
+          "src/http/password_tests.rs",
+          "docs/UX_EXECUTION_LEDGER.md"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/usr/bin/python3",
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/dispatch_presence.py"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "Read only actualclosed25configmap: exactly2observedhistoricalsite-specificnames may be explicitnullabsence, allother23and separateSQL requirestrictrootcustody+hash. Preserve absentancestoridentity; no publicfilecreation, resourceprobe/retry, compiler/app/account/config/serviceaction. Capture isprerequisite only, nothelperstartup/journey.",
+        "prerequisites": [
+          {
+            "id": "independent-frozen-presence-review",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/presence-review.json",
+              "sha256": "6c1648a5a478380557d121c4c447998345bc48eeb62f1d72e750a1c73b32daf6"
+            }
+          },
+          {
+            "id": "exact-reviewed-presence-wrapper",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/observe_presence.py",
+              "sha256": "0a61dc5fc9c9e53335ce47a470c64819355bc17b5df8c86de65e98f746eb9a45"
+            }
+          },
+          {
+            "id": "exact-checked-presence-dispatcher",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/dispatch_presence.py",
+              "sha256": "09a1ea31bbae4f28e5371266e2d79eb3090b809e8a34556832f9cd97952ca8c4"
+            }
+          },
+          {
+            "id": "exact-root-presence-observer",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/observe_config_presence.py",
+              "sha256": "d6b0a304b3cba6394c2a2f5c212ac47db1ba60fa055abb7a574df2c18785478c"
+            }
+          },
+          {
+            "id": "independent-absence-consumer-review",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/absence-review2.json",
+              "sha256": "c451e30224942c3cf0739abb42325219ae7442f1781359a3a770f0c2a1e3c2f7"
+            }
+          }
+        ]
+      },
+      {
+        "id": "single-host-resource113",
+        "kind": "NATIVE",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "single-host-readiness"
+        ],
+        "test_ids": [
+          "S04-02-T03",
+          "S04-02-T06"
+        ],
+        "allowed_paths": [
+          "src/openbsd.rs",
+          "src/account_password_server.rs",
+          "src/http/password_tests.rs",
+          "docs/UX_EXECUTION_LEDGER.md"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/usr/bin/python3",
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/dispatch_resource_build_final.py"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "One changed compile-only normal release opt3/defaultdebugfalse offline locked build, bins then libtest no-run,300s each650s total. BeforeEACHphase current trusted vmstat-s requires6GiBfree/9GiBphysical/hardlimit>=3GiB; only compilerchild DATAsoft3GiB/jobs1, parent/hard/otherlimitsunchanged. Outputexactartifact custody/profile/sourceparity + cleanup. No tests/app/account/publicserviceoperations; no automaticretry.",
+        "prerequisites": [
+          {
+            "id": "independent-frozen-resource-review",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/resource-build-final-review.json",
+              "sha256": "8c53e83095fbe07d34512fedb3f6759be58aceeff63fa379c721ca0bb7ee5869"
+            }
+          },
+          {
+            "id": "exact-reviewed-resource-builder",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/resource113/build_resource_remote.py",
+              "sha256": "02e4ffb5f88145fbd0724e34dc1e999cda976b415d4c6722efb57679063b1132"
+            }
+          },
+          {
+            "id": "exact-checked-resource-dispatcher",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/dispatch_resource_build_final.py",
+              "sha256": "b3227e8dbdbef5085014e9a608fd373e519970736b73efbf934623df65ca7fbc"
+            }
+          },
+          {
+            "id": "exact-input-manifest",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/resource113/input-manifest.json",
+              "sha256": "320e3233a4063e48f8c456d894f3c64e7007299b22e400abf5b7da3c9aa3bd90"
+            }
+          },
+          {
+            "id": "actual-resource-observation",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/readiness.stdout.json",
+              "sha256": "5556a75fbba2a17e93985e80540d7720364db14c1e438aec727c2ce19f5e319b"
+            }
+          },
+          {
+            "id": "actual-backend-prerequisites",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/backend.stdout.json",
+              "sha256": "ea9bddeccca9b3bffe1f06a282b910376e51a68f114f1a81585d7fbe2b3dc123"
+            }
+          },
+          {
+            "id": "resource-parser-checks",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/build/RESOURCE_PREPARATION.json",
+              "sha256": "4cb3930efc0d7794f1af7e9624c8a234dca3463d3e52d3fe9c3ee25d915ae1cc"
+            }
+          },
+          {
+            "id": "independent-stock-presence-review",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/product-presence-review.json",
+              "sha256": "6410cd5962d96a11382e03bc8f6ffab1b04b6c871ad12fdf973ec8c945a15a61"
+            }
+          },
+          {
+            "id": "actual-preservation-capture",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/presence.stdout.json",
+              "sha256": "bb75c11a21f122215232329687cf4125207fc2ee08de1aed2cfe5d04f71e0c20"
+            }
+          }
+        ]
       }
     ],
     "budget": {
       "objective": "S04-02",
       "owner": "/root",
       "started_at": "2026-10-19T09:16:12Z",
-      "deadline_at": "2026-10-21T16:23:52Z",
-      "allowance_seconds": 198460,
-      "consumed_seconds": 196060.599325,
-      "history_reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/resumption-baseline.json; historicalUNKNOWN/measuredsegmentsretained; absolutecurrentclock/noparalleldoublecount.; Explicitadditional2400/cumulative9600 /home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/native19-next-window-technical-decision.json SHA256 7dea2dc09f8b0b2b484b7055462b94409c9f35c273b11d6d1628f5169532815b; original7200 andactualwallretained.; explicit root/controller paired-node source +1800 technical decision /home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/paired-source-window-technical-decision.json SHA256 6e92108931dfcbe59b5f55e8f200b30623d2d3cb4dd872ea2693fc6d82ce9a2c; explicit fixedrecovery SOURCE +1800 /home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/fixed-recovery-source-technical-decision.json SHA256 1c270889c96a1422170aa825866f6de4a28018d2b0107e0b76ebf21174c3ae09; originalactualworkretained; explicit next1800 actualpairedworkflow/disposition /home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/paired-native-window-technical-decision.json SHA256 3f189894439dda776895e1219504f6af22e96241bf0b4297ec3bd43849dbba9f; explicit +1800 from15000 actualcost, NOT unexecuted+1200 proposal: /home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/paired22-functional-window-technical-decision.json SHA256 d4d6467d7f3b6e616df8584e80daf2cd268700282f8c41d1c890f589fe48d920; explicit finite +1800 source/parser/readiness and ONE changedpair /home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/paired22-execution-readiness-technical-decision.json SHA256 b7e9217d7ffd2be3a0a95902d2cd46f22dc18ae1f6c3eb315a1ce362474fd0ee; all originalactualspend/failures retained.; explicit +1200 from18600 AFTERactualcoherentrepair/read-onlyPASS/helpercompile (not oldunexecutedproposal) /home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/paired22-corrected-metadata-execution-window.json SHA256 ef45a39c3d9143195562a81f7bad1c61d73d8035b1f6f8e06ba8788a1861b05d; cumulativeactualhistoryretained.; UniversalSOP source/handoff/admission work after14:46:12 is recorded separately wholeelapsedUNKNOWN and does NOT replenish native/development allowance; consumed_seconds is only a UTC wall-clock snapshot from originalstart, not finaltoken/monetarycost.; New explicit operator resumption afterSOP stop: assign subagents completeS04starting02; goahead/makeprogress/youownepic. Root/controller one bounded additional1800 allocation/cumulative21600 ends15:16:12; numericduration chosenbyroot, all actualpostcapUTC/history retained, no futureautomaticincrease. Exact resumedprefix review48e93ed6.; Explicitoperatorrenewal20261019afterblockedhandoff, rootone2400swindow15:23:39\u201316:03:39UTC; previousceiling21600/originalstart09:16:12 and447sinterveningactualwallretained, newabsoluteallowance24447. No source/nativeactionduringprevioushold.; Beforeunexpired16:03:39 rootexplicittechnical+600 to16:13:39 underlatestoperator100percentcontrol/autonomousplanning. PurposeONLYfirstfunctional29+original650/300 afteradministrative495latencyrefusal, neverprofile/gateextension orfailure/costreset. Notautomaticoroperatornumericrequest; no furtherfunctionalretry admittedinthisallocation.; NEWexplicitoperatorresumption16:55Z afteroldexpiredhold, source-only1800s ends17:25Z; numericchoice root/controller, notoperatornumericrequest or fixturelease renewal. Old16:13:39ceiling25047/original09:16:12 preserved, intervening work/compute UNKNOWN. No native/build/live action admitted by this window.; Explicit PRE-expiry root/controller next3600sstockintegrationphase 2026-10-19T17:24:56Z to2026-10-19T18:24:56Z. Prior1800sourcephase/17:25target remainsincompletedinvestigations; numericalforecastnotoperatorhardbudget orfixturelease renewal. No native/build admitted merely byclock; actualspecificprerequisites/recipe/failurestop remain.; ExplicitPRE-EXPIRY root/controller oneprospective1800stock46phase /home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/stock-native40/prospective-stock46-technical-decision.json SHA256 fa1ff7009ab07b70f1bdf0753656f43eb09ea7ca58b599800348d377c905e28d; rootchosenforecast/notoperatornumericbudget, original32924/18:24:56andallactualcost/failuresretained; ONEchangedworkflow/noautomaticfurtherretry.; Newexplicitoperatorinstruction continue/assignsubagents/completeSprintS04 afterlocal signed5561preservation. Root45minutephase /home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/stock-helper-start51/operator-resumption.json SHA256 552cd26b306ce20a933b0a6493719dd1383d42b747825c57a476c512f78f2a36; original33811/18:39:43andalllaterlocalcost/failures retained; notexpiredprofile renewal, numericchoice root.; Operator explicitly approved15-minute local source preservation beginning2026-10-19T22:36:53Z through22:51:53Z. Prior19:32\u201320:15phase closed, intervening wallclock is idle/not continuous compute. No prior cost/failure removed or expired profile renewed.; NEW operator completion resumption /home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/stock-helper-start51/resume63/operator-resumption.json SHA256 6d16f09da0e2648a97383f73bea56e1ef964c8aaabb3cb4f62449daab65c51d3; root selected one3600-second phase23:04:32UTC to00:04:32UTC, prior48941/22:51:53 retained; no automatic extension or fixture lease renewal.; NEW explicitoperator30minuteauthorization /home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/stock-helper-start51/resume63/source-preservation78/operator-authorization.json SHA256 0d32480885043bf30a3a748ee482f73be8b5fc408064717c02406212e54fa398; priorbudget {\"allowance_seconds\": 53300, \"consumed_seconds\": 53095.688474, \"deadline_at\": \"2026-10-20T00:04:32Z\"} retained; phase03:38:38-04:08:38, interveningwall idle/notcompute, noexpiredfixture renewal.; ExplicitoperatorONEHOUR /home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/stock-helper-start51/resume63/workflow80/hour-20261020/operator-authorization.json SHA256 2d2d673d13d998bcacbe8ab2dd71c28c352c48fcd99f9fe9161412d63be96437; previous {\"allowance_seconds\": 67946, \"consumed_seconds\": 67106.265134, \"deadline_at\": \"2026-10-20T04:08:38Z\"} retained, idle interval notcompute.; NEW explicit operator single bounded run /home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/stock-helper-start51/resume63/operator-resumption90.json SHA256 2d90bede4b05bd32410bf4576d38b15aa417ce09f5f2f06c5252c613b0e0e7b6; prior phase/cost/failures retained; idle interval not compute. Current numeric2400s root-selected.; NEW explicit operator cleanup/fresh workflow bundle /home/foo/Downloads/osmap-ux-s04/password-workflow-bundle-20261021/run/RUN_STARTED.json prior {\"allowance_seconds\": 161277, \"consumed_seconds\": 161018.276935, \"deadline_at\": \"2026-10-21T06:04:09Z\"} retained; idle interval notcompute. Root numeric2400s, no automatic extension.; explicit operator cleanup+metadata correction /home/foo/Downloads/osmap-ux-s04/metadata-fix-20261021/run/STARTED.json prior {\"allowance_seconds\": 173599, \"consumed_seconds\": 171242.638538, \"deadline_at\": \"2026-10-21T09:29:31Z\"} retained; idle interval notcompute; root900s bound/no renewal or password retry.; explicit operator fresh controlled journey /home/foo/Downloads/osmap-ux-s04/password-next-20261021/run/STARTED.json prior {\"allowance_seconds\": 177496, \"consumed_seconds\": 176603.622911, \"deadline_at\": \"2026-10-21T10:34:28Z\"} retained; idle interval notcompute; root1800s/no fixture timer increase, renewal or automatic retry.; New explicit operator accepted compile-only execution/evidence review /home/foo/Downloads/osmap-ux-s04/auth-stage-openbsd-build-20261021/run/operator-review-recipe.json; original {\"allowance_seconds\": 180860, \"consumed_seconds\": 179858.022041, \"deadline_at\": \"2026-10-21T11:30:32Z\"} retained; idle interval not compute,900s phase includes300s action/disposition reserve, no fixture lease or renewal.; New operator review/advise/proceed instruction; one diagnostic capture bundle /home/foo/Downloads/osmap-ux-s04/auth-stage-capture-20261021/run/STARTED.json prior {\"allowance_seconds\": 186275, \"consumed_seconds\": 185375.223051, \"deadline_at\": \"2026-10-21T13:00:47Z\"} retained; root2400s includes unchanged disposition reserve, no fixture lease renewal or automatic retry.; New operator review/advise/proceed instruction; one diagnostic capture bundle /home/foo/Downloads/osmap-ux-s04/auth-boundary-capture-20261021/run/STARTED.json prior {\"allowance_seconds\": 189072, \"consumed_seconds\": 186760.918961, \"deadline_at\": \"2026-10-21T13:47:24Z\"} retained; root2400s includes unchanged disposition reserve, no fixture lease renewal or automatic retry.; New operator review/advise/proceed instruction; one read-only prerequisite comparison bundle /home/foo/Downloads/osmap-ux-s04/auth-prerequisite-20261021/run/STARTED.json prior {\"allowance_seconds\": 189868, \"consumed_seconds\": 187484.198532, \"deadline_at\": \"2026-10-21T14:00:40Z\"} retained; root900s includes unchanged disposition reserve, no fixture lease renewal or automatic retry.; explicit operator consolidated repair bundle /home/foo/Downloads/osmap-ux-s04/dependency-repair-20261021/run/RUN_STARTED.json max2400s incl disposition; retained prior {\"allowance_seconds\": 190797, \"consumed_seconds\": 189897.447393, \"deadline_at\": \"2026-10-21T14:16:09Z\"}; idle interval is not compute."
+      "deadline_at": "2026-10-21T23:40:06Z",
+      "allowance_seconds": 224634,
+      "consumed_seconds": 222759.968691,
+      "history_reference": "/home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/resumption-baseline.json; historicalUNKNOWN/measuredsegmentsretained; absolutecurrentclock/noparalleldoublecount.; Explicitadditional2400/cumulative9600 /home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/native19-next-window-technical-decision.json SHA256 7dea2dc09f8b0b2b484b7055462b94409c9f35c273b11d6d1628f5169532815b; original7200 andactualwallretained.; explicit root/controller paired-node source +1800 technical decision /home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/paired-source-window-technical-decision.json SHA256 6e92108931dfcbe59b5f55e8f200b30623d2d3cb4dd872ea2693fc6d82ce9a2c; explicit fixedrecovery SOURCE +1800 /home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/fixed-recovery-source-technical-decision.json SHA256 1c270889c96a1422170aa825866f6de4a28018d2b0107e0b76ebf21174c3ae09; originalactualworkretained; explicit next1800 actualpairedworkflow/disposition /home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/paired-native-window-technical-decision.json SHA256 3f189894439dda776895e1219504f6af22e96241bf0b4297ec3bd43849dbba9f; explicit +1800 from15000 actualcost, NOT unexecuted+1200 proposal: /home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/paired22-functional-window-technical-decision.json SHA256 d4d6467d7f3b6e616df8584e80daf2cd268700282f8c41d1c890f589fe48d920; explicit finite +1800 source/parser/readiness and ONE changedpair /home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/paired22-execution-readiness-technical-decision.json SHA256 b7e9217d7ffd2be3a0a95902d2cd46f22dc18ae1f6c3eb315a1ce362474fd0ee; all originalactualspend/failures retained.; explicit +1200 from18600 AFTERactualcoherentrepair/read-onlyPASS/helpercompile (not oldunexecutedproposal) /home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/paired22-corrected-metadata-execution-window.json SHA256 ef45a39c3d9143195562a81f7bad1c61d73d8035b1f6f8e06ba8788a1861b05d; cumulativeactualhistoryretained.; UniversalSOP source/handoff/admission work after14:46:12 is recorded separately wholeelapsedUNKNOWN and does NOT replenish native/development allowance; consumed_seconds is only a UTC wall-clock snapshot from originalstart, not finaltoken/monetarycost.; New explicit operator resumption afterSOP stop: assign subagents completeS04starting02; goahead/makeprogress/youownepic. Root/controller one bounded additional1800 allocation/cumulative21600 ends15:16:12; numericduration chosenbyroot, all actualpostcapUTC/history retained, no futureautomaticincrease. Exact resumedprefix review48e93ed6.; Explicitoperatorrenewal20261019afterblockedhandoff, rootone2400swindow15:23:39\u201316:03:39UTC; previousceiling21600/originalstart09:16:12 and447sinterveningactualwallretained, newabsoluteallowance24447. No source/nativeactionduringprevioushold.; Beforeunexpired16:03:39 rootexplicittechnical+600 to16:13:39 underlatestoperator100percentcontrol/autonomousplanning. PurposeONLYfirstfunctional29+original650/300 afteradministrative495latencyrefusal, neverprofile/gateextension orfailure/costreset. Notautomaticoroperatornumericrequest; no furtherfunctionalretry admittedinthisallocation.; NEWexplicitoperatorresumption16:55Z afteroldexpiredhold, source-only1800s ends17:25Z; numericchoice root/controller, notoperatornumericrequest or fixturelease renewal. Old16:13:39ceiling25047/original09:16:12 preserved, intervening work/compute UNKNOWN. No native/build/live action admitted by this window.; Explicit PRE-expiry root/controller next3600sstockintegrationphase 2026-10-19T17:24:56Z to2026-10-19T18:24:56Z. Prior1800sourcephase/17:25target remainsincompletedinvestigations; numericalforecastnotoperatorhardbudget orfixturelease renewal. No native/build admitted merely byclock; actualspecificprerequisites/recipe/failurestop remain.; ExplicitPRE-EXPIRY root/controller oneprospective1800stock46phase /home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/stock-native40/prospective-stock46-technical-decision.json SHA256 fa1ff7009ab07b70f1bdf0753656f43eb09ea7ca58b599800348d377c905e28d; rootchosenforecast/notoperatornumericbudget, original32924/18:24:56andallactualcost/failuresretained; ONEchangedworkflow/noautomaticfurtherretry.; Newexplicitoperatorinstruction continue/assignsubagents/completeSprintS04 afterlocal signed5561preservation. Root45minutephase /home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/stock-helper-start51/operator-resumption.json SHA256 552cd26b306ce20a933b0a6493719dd1383d42b747825c57a476c512f78f2a36; original33811/18:39:43andalllaterlocalcost/failures retained; notexpiredprofile renewal, numericchoice root.; Operator explicitly approved15-minute local source preservation beginning2026-10-19T22:36:53Z through22:51:53Z. Prior19:32\u201320:15phase closed, intervening wallclock is idle/not continuous compute. No prior cost/failure removed or expired profile renewed.; NEW operator completion resumption /home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/stock-helper-start51/resume63/operator-resumption.json SHA256 6d16f09da0e2648a97383f73bea56e1ef964c8aaabb3cb4f62449daab65c51d3; root selected one3600-second phase23:04:32UTC to00:04:32UTC, prior48941/22:51:53 retained; no automatic extension or fixture lease renewal.; NEW explicitoperator30minuteauthorization /home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/stock-helper-start51/resume63/source-preservation78/operator-authorization.json SHA256 0d32480885043bf30a3a748ee482f73be8b5fc408064717c02406212e54fa398; priorbudget {\"allowance_seconds\": 53300, \"consumed_seconds\": 53095.688474, \"deadline_at\": \"2026-10-20T00:04:32Z\"} retained; phase03:38:38-04:08:38, interveningwall idle/notcompute, noexpiredfixture renewal.; ExplicitoperatorONEHOUR /home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/stock-helper-start51/resume63/workflow80/hour-20261020/operator-authorization.json SHA256 2d2d673d13d998bcacbe8ab2dd71c28c352c48fcd99f9fe9161412d63be96437; previous {\"allowance_seconds\": 67946, \"consumed_seconds\": 67106.265134, \"deadline_at\": \"2026-10-20T04:08:38Z\"} retained, idle interval notcompute.; NEW explicit operator single bounded run /home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/stock-helper-start51/resume63/operator-resumption90.json SHA256 2d90bede4b05bd32410bf4576d38b15aa417ce09f5f2f06c5252c613b0e0e7b6; prior phase/cost/failures retained; idle interval not compute. Current numeric2400s root-selected.; NEW explicit operator cleanup/fresh workflow bundle /home/foo/Downloads/osmap-ux-s04/password-workflow-bundle-20261021/run/RUN_STARTED.json prior {\"allowance_seconds\": 161277, \"consumed_seconds\": 161018.276935, \"deadline_at\": \"2026-10-21T06:04:09Z\"} retained; idle interval notcompute. Root numeric2400s, no automatic extension.; explicit operator cleanup+metadata correction /home/foo/Downloads/osmap-ux-s04/metadata-fix-20261021/run/STARTED.json prior {\"allowance_seconds\": 173599, \"consumed_seconds\": 171242.638538, \"deadline_at\": \"2026-10-21T09:29:31Z\"} retained; idle interval notcompute; root900s bound/no renewal or password retry.; explicit operator fresh controlled journey /home/foo/Downloads/osmap-ux-s04/password-next-20261021/run/STARTED.json prior {\"allowance_seconds\": 177496, \"consumed_seconds\": 176603.622911, \"deadline_at\": \"2026-10-21T10:34:28Z\"} retained; idle interval notcompute; root1800s/no fixture timer increase, renewal or automatic retry.; New explicit operator accepted compile-only execution/evidence review /home/foo/Downloads/osmap-ux-s04/auth-stage-openbsd-build-20261021/run/operator-review-recipe.json; original {\"allowance_seconds\": 180860, \"consumed_seconds\": 179858.022041, \"deadline_at\": \"2026-10-21T11:30:32Z\"} retained; idle interval not compute,900s phase includes300s action/disposition reserve, no fixture lease or renewal.; New operator review/advise/proceed instruction; one diagnostic capture bundle /home/foo/Downloads/osmap-ux-s04/auth-stage-capture-20261021/run/STARTED.json prior {\"allowance_seconds\": 186275, \"consumed_seconds\": 185375.223051, \"deadline_at\": \"2026-10-21T13:00:47Z\"} retained; root2400s includes unchanged disposition reserve, no fixture lease renewal or automatic retry.; New operator review/advise/proceed instruction; one diagnostic capture bundle /home/foo/Downloads/osmap-ux-s04/auth-boundary-capture-20261021/run/STARTED.json prior {\"allowance_seconds\": 189072, \"consumed_seconds\": 186760.918961, \"deadline_at\": \"2026-10-21T13:47:24Z\"} retained; root2400s includes unchanged disposition reserve, no fixture lease renewal or automatic retry.; New operator review/advise/proceed instruction; one read-only prerequisite comparison bundle /home/foo/Downloads/osmap-ux-s04/auth-prerequisite-20261021/run/STARTED.json prior {\"allowance_seconds\": 189868, \"consumed_seconds\": 187484.198532, \"deadline_at\": \"2026-10-21T14:00:40Z\"} retained; root900s includes unchanged disposition reserve, no fixture lease renewal or automatic retry.; explicit operator consolidated repair bundle /home/foo/Downloads/osmap-ux-s04/dependency-repair-20261021/run/RUN_STARTED.json max2400s incl disposition; retained prior {\"allowance_seconds\": 190797, \"consumed_seconds\": 189897.447393, \"deadline_at\": \"2026-10-21T14:16:09Z\"}; idle interval is not compute.; NEW explicit operator assign-subagents-complete-S04-02 resumption /home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/STARTED.json retains old198460/196060.599325/16:23:52 and investigation. Root3600s22:10:06-23:10:06UTC; calendar idle is not continuous compute. No automatic extension or fixture renewal.; EXPLICIT prospective root/controller technical forecast AFTERactual112 and BEFOREunexpired23:10:06: /home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/PROSPECTIVE_ADJUSTMENT.json preserves old3600 phase/ceiling/cumulativehistory, adds1800 to23:40:06 for named resource/config corrections and matching proof+normal delivery; no existingattempt/profile/lease renewal or automaticretry."
     },
     "planned_action": null
   },
-  "blocker": "S04-02 remains incomplete: fixture missing-directory mode correction only locally proved; frontend process-baseline disposition unresolved. No operator diagnosis requested.",
-  "independent_next_action": "Current password_prototype_review checks each concrete frozen producer/cleanup/consumer. Root sole host/Git queue.",
-  "updated_at": "2026-10-21T15:44:26Z"
+  "blocker": "Current normal-release compiler113 refused before compilation: actual free5879267328 bytes below reviewed6442450944(6GiB). No matching new helper/libtest artifacts. Two failures110UNKNOWN+113FAIL independently reassessed; no native retry or threshold/profile lowering admitted. /home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/combined-capacity-review.json SHA256 827177c73bcb76a3aa19f72c5dfe34a1bba46ef07f936bd10fdcd453b79e9d93",
+  "independent_next_action": "After fresh supported capacity and finite independently reviewed recipe, rebuild current461source normal release under existing3GiBchild/6GiBfresh-free contract, then review actual root stager+cleanup+consumer before ONE fresh single-host positive journey. T04/T05 negative and interruption producers, T06 installed workflow/T07status/T08security and T09minimal human acceptance remain separate. No public mail service/configuration changes, operator credential trial or expired lease.",
+  "updated_at": "2026-10-21T23:08:51Z"
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->
@@ -30722,3 +31486,110 @@ under the new user scope, not an operator-specified duration. Preserve the
 original 900-second/21:56:44UTC limit as history; no expired allowance, failure
 count, native budget or fixture lease is reset. At most one documentation commit
 invocation and one ordinary push are permitted; stop on failure without retry.
+
+
+## 2026-10-21 - Managed single-host S04-02 completion resumption
+
+The operator directs assign subagents to complete S04-02 and limits messages to completion or a concrete blocker. Root owns PM/integration/Git/host/writing; password_engineer owns isolated product work, guardrails_engineer independent QA/security, delivery_controller independent delivery/effort and Scrum review. All three were dispatched and observed running.
+
+One prospective root-selected 3600-second phase runs22:10:06-23:10:06UTC under the new completion instruction. /home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/STARTED.json preserves previous198460 allowance/196060.599325 snapshot/16:23:52 deadline, old investigation, failures and UNKNOWN costs. No fixture lease or failure counter is renewed; no automatic extension. First action is one reviewed read-only obsd1 observation107 with no database/account/service/configuration writes and checked exact pre-action admission before SSH.
+
+Actual Runtime delegation exists. Current HTTP qualification modes select old relays or per-fixture sockets rather than the fixed native pair. Shared native authority currently admits only the production hostname; observe actual obsd1 identity before a closed-host correction. Production client gates remainfalse; T01/T02 sourcePASS, T03FAIL, T04/T05/T06NOT_RUN, T07deployedFAIL, T08/T09NOT_RUN and all20 obligations retained. No public Dovecot/Postfix/MariaDB operations or Toronto contact. No native or installed PASS is declared.
+
+Before implementation: password_engineer owns only src/http/password_tests.rs
+for an additive cfg(test) NativeLocal topology selecting the fixed production
+socket constants and root helper peers, existing private purpose-key copies,
+actual Runtime and Serve seal. Preserve legacy private and paired-relay modes,
+existing account mappings, production false gates and the original HTTP deadline.
+Observable source exit: a pure discriminator proves exact local sockets/UID0
+and key paths without a relay profile, both historical entrypoints retain their
+mode, and the new ignored entrypoint uses the existing actual HTTP consumer.
+Minimum checks are that discriminator, retained relay-profile rejection and
+normal changed-source mandatory hooks; native/installed outcomes remain open.
+One 600-second source task within the original3600 phase, no extra allowance.
+Stop on scope/custody ambiguity, failed prerequisite or a failed focused check
+pending diagnosis. Independent QA is guardrails_engineer; controller reviews
+integrated delivery. No other file or host action is assigned to this worker.
+
+Actual observation107 PASS at22:15:54UTC, whole action0.851s, validator0/SSH0;
+receipt and source-pinned metadata are in the same single-host-completion sprint
+directory. Actual hostname obsd1.blackbagsecurity.com, OpenBSD7.9/amd64, fooUID1000,
+cargo/rustc1.94.1 and Python3.13.16 observed. _osmap UID/GID1001/1001. Required
+account runtime/config/epoch/helper/socket namespaces are absent; auth-master
+and SQL sockets exist. Presence is not schema/grant/authentication qualification.
+Existing ~/OSMAP is clean fix/openbsd-cargo-target-test at2a6993fe; preserve it,
+use a frozen candidate scratch build instead of replacing that checkout.
+
+Before the next source edit: password_engineer additionally owns src/openbsd.rs
+to admit exactly the existing production FQDN and the now-observed selected
+obsd1 FQDN through the central native-authority check. Keep real/effective root,
+OpenBSD7.9, x86_64/little-endian and syscall/NUL-buffer checks; all nested callers,
+purpose/custody guards, logical service realm and false client gates remain.
+No caller/env-selected host or host rename. Minimum pure discriminator accepts
+the two exact names and refuses short names, altered case, suffix/prefix,
+trailing dot, embedded NUL and unterminated/truncated buffer. One600s source task
+within the same phase; no new allowance. Independent QA reviews the frozen
+change. Source admission alone does not qualify startup or installed activation.
+
+Source freezes are independently reviewed: HTTP fixture2e2fa5fd with two focused
+passes (fixture-review a3af6caa), central authorityf963c580 with one focused pass
+(authority-review b55f30a5). Before normal admission root refreshes only the
+existing three V10 derived registers using unchanged generators and their
+receipt-derived scalar claim fields. Rust line offsets/counts affect inventory
+digests; preserve historical baseline, assessed-source provenance and nonclaims.
+Expected minimum check is existing v10-check/v11-check plus mandatory normal
+hooks. This maintenance is within the same phase and existing allowed paths;
+it does not establish native qualification, release readiness or activation.
+
+Actual backend prerequisite108 PASS at22:23:01UTC, whole action0.815s,
+validator0/SSH0 and PREREQUISITES_MATCH. This proves only the observed root
+read-only schema, reserved counts, exact HTTP fixture identity/groups and
+secret-log/cache predicates. Receipt backend.stdout.json/backend-dispatch.json
+under the same phase root; native trusted dependency admission and account
+service startup remain unqualified. No mutation or public service action.
+
+Before native-carrier preparation: root owns the exact checked compile dispatcher;
+password_engineer prepares the frozen release compiler/input closure only.
+guardrails_engineer prepares an isolated single-host derivative of the existing
+current stock custodian and genuine HTTP18 journey, preserving latest owned
+cleanup and original90s HTTP deadline, with no relay or public mail control.
+Use actual108 _osmap UID/GID/groups rather than hardcoded older primaryGID1003;
+never change public group membership. Retain99 normal guardian result protocol
+and104 custody corrections; do not replay diagnostic-only or expired profiles.
+Observable preparation exit is a frozen complete producer/cleanup/consumer
+source map plus focused local admission/refusal simulation where meaningful,
+not native PASS. Preparation600s within this same3600 phase; stop on unsupported
+prerequisite, missing ownership evidence or scope drift. Root/controller
+independently review before any actual compile/provision/HTTP dispatch, and
+only root registers exact reviewed recipes, finite actions and source pins.
+
+Actual compiler109 FAIL: whole116.266s; release binaries compile0 in73.058s,
+release libtest compile101 in42.458s. Both born groups gone, exact scratchgone,
+cleanup_uncertainfalse; no test/application/account/service execution. Preserve
+the private retained stage /home/foo/.osmap-single-host-artifacts-tnoh9_7i and
+both local build receipts. Do not attribute this to profile or timeout. Original
+106 spawn FileNotFound cause remainsUNKNOWN. Root/controller combined review
+admits only one bounded read-only compile diagnostic110, not a compiler retry.
+
+The prepared journey passed AST only and failed independent source review
+df28211d with four concrete defects: old104 request-two diagnostic dead-end,
+blocked stop mask inherited by base utility children, recovery131072 producer
+versus16384 publication consumer cap, and missing immediate guardian birth
+checkpoint. No journey ran. Preserve original source registry d08e303d and
+review; no PASS or effects are inferred. Before correction, guardrails_engineer
+owns only those four private carrier changes, with actual request-two/final
+report, wrong-count/cleanup refusal, nested mask and >16KiB receipt discriminators.
+One bounded300-second review-remediation action uses the remaining original
+3600-second phase; preserve initial preparation and review cost, no overall
+allowance increase or fixture renewal. Stop on failed discriminator or scope
+gap. password_engineer independently reviews frozen correction; root/controller
+must admit the whole actual successful chain before any native journey.
+
+
+### Prospective forecast correction before phase expiry
+
+Actual111 identifies compiler OOM text/SIGABRT, with initiating capacity cause stillUNKNOWN. Actual112 captures DATAsoft1.5GiB/hard128GiB and physical16.45GB; free RAM unsupported by sysctl remainsUNKNOWN. Its root config capture refuses only the two named Toronto-only99 policy files missing on obsd1; all other24 files pass custody. Do not create those public files. Existing helper parent is protected and present.
+
+Root/controller explicitly adjust the UNEXPIRED forecast from23:10:06 to23:40:06UTC, original22:10:06 start and all old budgets/costs retained in /home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/PROSPECTIVE_ADJUSTMENT.json. This is a prospective numeric technical choice under the active completion instruction, not an exhausted allowance increase. Existing action112 deadline stays23:00:06 and no profile/fixture lease is renewed. No automatic further extension.
+
+Changed compiler preparation is limited to existing frozen461 inputs, normalreleaseopt3/defaultdebugfalse, jobs1, and compiler-child-only DATAsoft3GiB within observedhard. Actual fresh vmstat free>=6GiB and physical>=9GiB required BEFORE each phase, otherwise refuse; parent/global limits and public mail unchanged. Use fixed trusted vmstat -s and anchored upstream bytes-per-page/pages-free fields, bounded5s. Exact source/profile/limit/cleanup review precedes any new build. guardrails owns only an exact two-path absence preservation adapter with changed-presence refusal; no genericoptional/config fallback or publicwrites. Each preparation action bounded300s within the same cumulative5400 phase; independent source/consumer review and actual pre-action admission remain mandatory.

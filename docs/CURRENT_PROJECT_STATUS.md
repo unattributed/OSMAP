@@ -1,5 +1,41 @@
 # Current Project Status
 
+## 2026-10-21 S04.02 source correction; native qualification BLOCKED
+
+The resumed team prepared the single-host controlled HTTP entrypoint using the
+existing native account sockets, admitted only the exact selected obsd1 hostname
+alongside production in the native authority check, and corrected the actual
+StockPeer/ParentPlan dispatch to tolerate absence of only the two known
+site-specific 99-bbs configuration files. Protected ancestors, strict present-file
+custody, exact include membership and lifetime rechecks remain required. Four
+focused Rust checks and independent source reviews passed. The unchanged V10
+generators refreshed source offsets and the two new test-only assumptions;
+V10/V11 checks passed. Both production client qualification gates remain false.
+
+Read-only obsd1 observations107/108 passed the selected host/tool/account/schema
+prerequisites;114 captured23 configuration hashes, exactly two explicit absences
+and the separate mandatory SQL hash. Earlier build109 compiled release binaries
+but its release test-binary compilation failed with OOM/SIGABRT; the initiating
+resource cause remains UNKNOWN. Changed build113 refused before any compiler:
+fresh free memory5879267328 bytes was below its reviewed6442450944-byte(6GiB)
+requirement. Parent limits were unchanged, both probe groups were gone and source
+scratch was removed. No current matching helper/test artifacts were produced.
+Combined independent reassessment of110 UNKNOWN and113 FAIL stopped native
+retries; no threshold/profile reduction, public mail-service operation, public
+configuration change, password journey or new installation occurred.
+
+S04-02 remains OPEN with all20 obligations: T01/T02 retain their source-scope
+PASS, T03 remains FAIL/unqualified, T04/T05/T06/T08/T09 remain NOT_RUN and T07
+remains FAIL for deployed acceptance. Source delivery is not native, installed
+or human acceptance. The existing ledger is BLOCKED with no planned host action.
+At this source freeze, signed source preservation and GitHub synchronization
+await their mandatory hooks and signature verification. Retained receipts and independent
+reviews are under
+`/home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/`.
+Resume only with supported fresh capacity, a finite reviewed recipe, matching
+compiler artifacts and reviewed staging/cleanup before the controlled journey;
+negative/interruption, installed and security evidence must follow before UAT.
+
 ## 2026-10-21 S04.02 single-host architecture correction
 
 Operator confirmed one-host application plus mail stack for development

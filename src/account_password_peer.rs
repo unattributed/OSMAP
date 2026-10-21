@@ -985,6 +985,58 @@ pub(crate) const PRIMARY_CONFIGURATION_PATHS: &[&str] = &[
     "/etc/dovecot/conf.d/99-osmap-private-primary.conf",
     "/etc/dovecot/conf.d/99-osmap-private-control.conf",
 ];
+// These production-host policy fragments are absent on the selected development
+// host. Absence grants no substitute configuration: the exact conf.d membership
+// is still captured and rechecked by StockPeer before each admitted operation.
+const STOCK_OPTIONAL_CONFIGURATION_PATHS: &[&str] = &[
+    "/etc/dovecot/conf.d/99-bbs-imaps-only.conf",
+    "/etc/dovecot/conf.d/99-bbs-managesieve-policy.conf",
+];
+fn stock_configuration_presence(
+    path: &str,
+    observed: Result<bool, std::io::ErrorKind>,
+) -> Result<bool, Error> {
+    match observed {
+        Ok(true) => Ok(true),
+        Err(std::io::ErrorKind::NotFound) if STOCK_OPTIONAL_CONFIGURATION_PATHS.contains(&path) => {
+            Ok(false)
+        }
+        _ => Err(Error::Unavailable),
+    }
+}
+fn stock_configuration_paths_with(
+    deadline: Instant,
+    mut present: impl FnMut(&'static str) -> Result<bool, Error>,
+) -> Result<Vec<&'static str>, Error> {
+    let mut paths = Vec::new();
+    for &path in PRIMARY_CONFIGURATION_PATHS {
+        if Instant::now() >= deadline {
+            return Err(Error::Expired);
+        }
+        if !matches!(path, PRIMARY_FRAGMENT | CONTROL_FRAGMENT) && present(path)? {
+            paths.push(path);
+        }
+    }
+    if Instant::now() >= deadline {
+        return Err(Error::Expired);
+    }
+    Ok(paths)
+}
+/// Shared pre-seal admission for the stock peer and its actual parent plan.
+/// Missing parents, unreadable metadata and symlinks never mean optional absence.
+/// Present leaves retain their existing strict file/content/custody checks.
+pub(crate) fn stock_configuration_paths(deadline: Instant) -> Result<Vec<&'static str>, Error> {
+    stock_configuration_paths_with(deadline, |path| {
+        crate::account_password_custody::ancestors(path, None, deadline)
+            .map_err(|_| Error::Unavailable)?;
+        stock_configuration_presence(
+            path,
+            fs::symlink_metadata(path)
+                .map(|metadata| metadata.is_file())
+                .map_err(|error| error.kind()),
+        )
+    })
+}
 struct PrimaryFile {
     path: &'static str,
     identity: [u64; 11],
@@ -2172,12 +2224,10 @@ impl StockPeer {
         let startup = StockStartup::observe(executor.as_ref(), deadline, trace)?;
         trace.set(crate::account_password_fstat::StartupOperation::StockConfigFiles);
         let mut files = Vec::new();
-        for &path in PRIMARY_CONFIGURATION_PATHS {
-            if !matches!(path, PRIMARY_FRAGMENT | CONTROL_FRAGMENT) {
-                let (file, bytes) = primary_file_bytes(path, deadline)?;
-                stock_configuration_includes(path, &bytes)?;
-                files.push(file);
-            }
+        for path in stock_configuration_paths(deadline)? {
+            let (file, bytes) = primary_file_bytes(path, deadline)?;
+            stock_configuration_includes(path, &bytes)?;
+            files.push(file);
         }
         trace.set(crate::account_password_fstat::StartupOperation::StockConfigIncludes);
         primary_include_matches(&files, deadline)?;

@@ -153,6 +153,59 @@ fn unknown_native_authority_never_creates_peer_or_dispatches_metadata() {
 }
 
 #[test]
+fn stock_configuration_optional_presence_is_closed_and_membership_changes_refuse() {
+    use std::io::ErrorKind;
+    let deadline = Instant::now() + Duration::from_secs(2);
+    let selected = stock_configuration_paths_with(deadline, |path| {
+        stock_configuration_presence(
+            path,
+            if STOCK_OPTIONAL_CONFIGURATION_PATHS.contains(&path) {
+                Err(ErrorKind::NotFound)
+            } else {
+                Ok(true)
+            },
+        )
+    })
+    .unwrap();
+    assert_eq!(selected.len(), 23);
+    let files = selected
+        .iter()
+        .map(|&path| PrimaryFile {
+            path,
+            identity: [0; 11],
+            digest: [0; 32],
+        })
+        .collect::<Vec<_>>();
+    let names = selected
+        .iter()
+        .filter(|path| path.starts_with("/etc/dovecot/conf.d/") && path.ends_with(".conf"))
+        .map(|path| (*path).to_owned())
+        .collect::<BTreeSet<_>>();
+    assert!(primary_include_names_match(&names, &files).is_ok());
+    for path in STOCK_OPTIONAL_CONFIGURATION_PATHS {
+        assert_eq!(stock_configuration_presence(path, Ok(true)), Ok(true));
+        assert!(stock_configuration_presence(path, Ok(false)).is_err()); // symlink/nonfile
+        assert!(stock_configuration_presence(path, Err(ErrorKind::PermissionDenied)).is_err());
+        let mut appeared = names.clone();
+        appeared.insert((*path).to_owned()); // also represents a broken symlink name
+        assert!(primary_include_names_match(&appeared, &files).is_err());
+    }
+    for path in [
+        "/etc/dovecot/dovecot.conf",
+        "/etc/dovecot/conf.d/99-unapproved.conf",
+    ] {
+        assert!(stock_configuration_presence(path, Err(ErrorKind::NotFound)).is_err());
+    }
+    let mut disappeared = names.clone();
+    disappeared.remove("/etc/dovecot/conf.d/10-auth.conf");
+    assert!(primary_include_names_match(&disappeared, &files).is_err());
+    assert!(stock_configuration_paths_with(Instant::now(), |_| panic!(
+        "expired before observation"
+    ))
+    .is_err());
+}
+
+#[test]
 fn primary_configuration_membership_is_fixed_and_control_is_separately_required() {
     // These are graph-policy inputs, not native file or loaded-config witnesses.
     let files = |control: bool| {

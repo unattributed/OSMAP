@@ -148,14 +148,10 @@ impl ParentPlan {
         add("/etc/osmap/account-runtime", "");
         add("/bin/ps", "rx");
         add("/usr/local/libexec/osmap/account-passwd", "r");
-        for path in crate::account_password_peer::PRIMARY_CONFIGURATION_PATHS {
-            if !matches!(
-                *path,
-                "/etc/dovecot/conf.d/99-osmap-private-primary.conf"
-                    | "/etc/dovecot/conf.d/99-osmap-private-control.conf"
-            ) {
-                add(path, "r");
-            }
+        for path in crate::account_password_peer::stock_configuration_paths(deadline)
+            .map_err(|_| Unavailable)?
+        {
+            add(path, "r");
         }
         add("/usr/local/libexec/dovecot/auth", "r");
         add("/usr/local/bin/doveconf", "r");
