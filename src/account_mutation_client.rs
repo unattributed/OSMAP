@@ -46,6 +46,10 @@ struct ClientState {
     verifier: Mutex<Verifier>,
     state: Mutex<State>,
     cleanup_unconfirmed: AtomicBool,
+    #[cfg(test)]
+    fixture_native_replay: AtomicBool,
+    #[cfg(test)]
+    fixture_native_replay_refusal: Mutex<Option<&'static str>>,
     paths: crate::account_admission_runtime::AccountClientPaths,
 }
 #[derive(Clone)]
@@ -144,6 +148,10 @@ impl Client {
                 quarantine: BTreeSet::new(),
             }),
             cleanup_unconfirmed: AtomicBool::new(false),
+            #[cfg(test)]
+            fixture_native_replay: AtomicBool::new(false),
+            #[cfg(test)]
+            fixture_native_replay_refusal: Mutex::new(None),
             paths,
         })))
     }
@@ -162,6 +170,17 @@ impl Client {
         lease: crate::session::GuardedSessionLease<'_>,
         original_deadline: Instant,
     ) -> Result<TerminalReceipt, Error> {
+        #[cfg(test)]
+        if self.0.fixture_native_replay.load(Ordering::SeqCst) {
+            let (receipt, refusal) =
+                self.native_stored_consumed_replay_fixture(dispatch, lease, original_deadline)?;
+            *self
+                .0
+                .fixture_native_replay_refusal
+                .lock()
+                .map_err(|_| Error::Uncertain)? = Some(refusal);
+            return Ok(receipt);
+        }
         let proof = self
             .0
             .session_proof_key
@@ -219,6 +238,141 @@ impl Client {
     ) -> Result<TerminalReceipt, Error> {
         self.execute_guarded_mode(action, &SystemTimeProvider, true)
     }
+    #[cfg(test)]
+    pub(crate) fn enable_native_consumed_replay_fixture(&self) -> Result<(), Error> {
+        if !cfg!(target_os = "openbsd")
+            || self.0.helper_uid != 0
+            || self.0.socket != Path::new(crate::config::LOCAL_ACCOUNT_MUTATION_SOCKET)
+        {
+            return Err(Error::Invalid);
+        }
+        if self.0.fixture_native_replay.swap(true, Ordering::SeqCst) {
+            return Err(Error::Invalid);
+        }
+        Ok(())
+    }
+    #[cfg(test)]
+    pub(crate) fn native_consumed_replay_refusal_fixture(&self) -> Option<&'static str> {
+        self.0
+            .fixture_native_replay_refusal
+            .lock()
+            .ok()
+            .and_then(|value| *value)
+    }
+
+    /// Fixed native replay discriminator only. The exact guarded frame remains
+    /// in this call's memory and is never printed, serialized or retained.
+    #[cfg(test)]
+    pub(crate) fn native_stored_consumed_replay_fixture(
+        &self,
+        dispatch: Dispatch<'_>,
+        lease: crate::session::GuardedSessionLease<'_>,
+        original_deadline: Instant,
+    ) -> Result<(TerminalReceipt, &'static str), Error> {
+        if !cfg!(target_os = "openbsd")
+            || self.0.helper_uid != 0
+            || self.0.socket != Path::new(crate::config::LOCAL_ACCOUNT_MUTATION_SOCKET)
+            || dispatch.account() != "alice@osmap-password.invalid"
+        {
+            return Err(Error::Invalid);
+        }
+        let proof = self
+            .0
+            .session_proof_key
+            .as_ref()
+            .ok_or(Error::Unavailable)?;
+        let request = self.issue(dispatch)?;
+        let guarded = lease
+            .authorize_mutation(request, &self.0.key, proof, original_deadline)
+            .map_err(|_| Error::Unavailable)?;
+        guarded.consume(|request, frame, deadline| {
+            let clock = SystemTimeProvider;
+            let mut at = clock.unix_timestamp();
+            let deadline = bound_deadline(&request, deadline, at)?;
+            let _permit = self.enter(request.account())?;
+            let request_bytes = request.bytes().map_err(|_| Error::Invalid)?;
+            let request = self
+                .0
+                .verifier
+                .try_lock()
+                .map_err(|_| Error::Unavailable)?
+                .request(&request_bytes, &self.0.key, at)
+                .map_err(codec_error)?;
+            self.0.paths.recheck().map_err(|_| Error::Unavailable)?;
+            check_time(&request, deadline, &clock, &mut at)?;
+            let stream = crate::openbsd::connect_unix_before(&self.0.socket, deadline)
+                .map_err(|_| Error::Unavailable)?;
+            let receipt =
+                self.exchange_mode(request, frame.clone(), stream, deadline, &clock, at, true)?;
+            if !matches!(
+                receipt.outcome(),
+                crate::account_mutation::Outcome::Changed { .. }
+            ) {
+                return Err(Error::Uncertain);
+            }
+            // Intentionally use a fresh verifier for the second connection:
+            // the assertion concerns native durable refusal, not local cache.
+            let mut replay_verifier = Verifier::default();
+            let mut at = clock.unix_timestamp();
+            let replay = replay_verifier
+                .request(&request_bytes, &self.0.key, at)
+                .map_err(codec_error)?;
+            check_time(&replay, deadline, &clock, &mut at)?;
+            self.0.paths.recheck().map_err(|_| Error::Unavailable)?;
+            let mut stream = crate::openbsd::connect_unix_before(&self.0.socket, deadline)
+                .map_err(|_| Error::Unavailable)?;
+            if crate::openbsd::unix_stream_peer_uid(&stream).map_err(|_| Error::Unavailable)? != 0 {
+                return Err(Error::Unavailable);
+            }
+            write_frame(&mut stream, &frame, deadline).map_err(|_| Error::Uncertain)?;
+            stream
+                .shutdown(std::net::Shutdown::Write)
+                .map_err(|_| Error::Uncertain)?;
+            stream
+                .set_read_timeout(Some(remaining(deadline).map_err(|_| Error::Uncertain)?))
+                .map_err(|_| Error::Uncertain)?;
+            let mut header = [0u8; 4];
+            if stream
+                .read(&mut header[..1])
+                .map_err(|_| Error::Uncertain)?
+                == 0
+            {
+                check_time(&replay, deadline, &clock, &mut at)?;
+                return Ok((receipt, "CLOSED_WITHOUT_RECEIPT"));
+            }
+            stream
+                .read_exact(&mut header[1..])
+                .map_err(|_| Error::Uncertain)?;
+            let size = u32::from_be_bytes(header) as usize;
+            if size == 0 || size > MAX_FRAME {
+                return Err(Error::Uncertain);
+            }
+            let mut bytes = vec![0; size];
+            stream
+                .set_read_timeout(Some(remaining(deadline).map_err(|_| Error::Uncertain)?))
+                .map_err(|_| Error::Uncertain)?;
+            stream
+                .read_exact(&mut bytes)
+                .map_err(|_| Error::Uncertain)?;
+            let mut extra = [0; 1];
+            if stream.read(&mut extra).map_err(|_| Error::Uncertain)? != 0 {
+                return Err(Error::Uncertain);
+            }
+            check_time(&replay, deadline, &clock, &mut at)?;
+            let refused = replay_verifier
+                .terminal_response(replay, &bytes, &self.0.key, at)
+                .map_err(|_| Error::Uncertain)?;
+            if !matches!(
+                refused.outcome(),
+                crate::account_mutation::Outcome::KnownRefused
+            ) {
+                return Err(Error::Uncertain);
+            }
+            remaining(deadline).map_err(|_| Error::Uncertain)?;
+            Ok((receipt, "SIGNED_KNOWN_REFUSED"))
+        })
+    }
+
     fn execute_guarded_with(
         &self,
         action: crate::account_guarded_mutation::GuardedMutation<'_>,

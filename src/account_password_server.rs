@@ -428,6 +428,54 @@ fn first_admission_failure(reported: &AtomicBool) -> bool {
 #[cfg(test)]
 mod diagnostic_tests {
     use super::*;
+    /// Own process only: root has provisioned the existing fixed configuration,
+    /// keys and fresh Alice/Bob accounts. Public mail stays untouched.
+    #[test]
+    #[ignore = "requires root-reviewed native postwrite fixture and independent owned cleanup"]
+    fn native_stock_postwrite_refusal_service_entrypoint() {
+        assert!(crate::openbsd::password_native_authority());
+        let files = OperatorFiles::read(Instant::now() + Duration::from_secs(5)).unwrap();
+        assert_eq!(
+            files.accounts,
+            BTreeSet::from([
+                "alice@osmap-password.invalid".to_owned(),
+                "bob@osmap-password.invalid".to_owned(),
+            ])
+        );
+        assert!(
+            !crate::account_password_runtime::STOCK_POSTWRITE_REFUSAL.swap(true, Ordering::SeqCst)
+        );
+        let signals = crate::openbsd::AccountAdmissionSignals::install()
+            .expect("native postwrite signal handlers refused");
+        run_operator_service(signals.stop_flag())
+            .expect("native postwrite service lifecycle refused");
+    }
+
+    #[test]
+    #[ignore = "requires root-reviewed before-write rendezvous and independent admission actor"]
+    fn native_stock_concurrent_mutation_service_entrypoint() {
+        assert!(crate::openbsd::password_native_authority());
+        let files = OperatorFiles::read(Instant::now() + Duration::from_secs(5)).unwrap();
+        assert_eq!(
+            files.accounts,
+            BTreeSet::from([
+                "alice@osmap-password.invalid".to_owned(),
+                "bob@osmap-password.invalid".to_owned(),
+            ])
+        );
+        let fd: i32 = std::env::var("OSMAP_TEST_NATIVE_MUTATION_GATE_FD")
+            .unwrap()
+            .parse()
+            .unwrap();
+        assert!((3..=1024).contains(&fd));
+        let control = crate::openbsd::fixture_owned_unix_stream(fd).unwrap();
+        crate::account_password_runtime::arm_native_mutation_gate_fixture(control).unwrap();
+        let signals = crate::openbsd::AccountAdmissionSignals::install()
+            .expect("native concurrent signal handlers refused");
+        run_operator_service(signals.stop_flag())
+            .expect("native concurrent service lifecycle refused");
+    }
+
     #[test]
     fn first_failure_is_bounded_across_concurrent_connections() {
         let reported = AtomicBool::new(false);

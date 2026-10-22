@@ -194,7 +194,14 @@ pub(crate) fn fixed_metadata_args(program: &str, args: &[String]) -> bool {
         }
         "/usr/local/bin/doveconf" => {
             equal(&["-c", crate::account_password_topology::CONFIG, "-n"])
+                || equal(&["-c", "/etc/dovecot/dovecot.conf", "-n"])
                 || equal(&["-c", "/etc/dovecot/dovecot.conf", "-h", "auth_cache_size"])
+                || equal(&[
+                    "-c",
+                    "/etc/dovecot/dovecot.conf",
+                    "-h",
+                    "auth_username_format",
+                ])
         }
         "/sbin/pfctl" => {
             equal(&["-sr"])

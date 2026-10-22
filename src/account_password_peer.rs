@@ -2319,6 +2319,7 @@ impl StockPeer {
         }
         // Effective settings catch additional passdb declarations in any admitted
         // fragment. Output is held only in RAM and never emitted as evidence.
+        trace.set(crate::account_password_fstat::StartupOperation::StockCacheQuery);
         let effective = stock_query(
             executor.as_ref(),
             "/usr/local/bin/doveconf",
@@ -2327,6 +2328,7 @@ impl StockPeer {
             trace,
         )?;
         stock_sql::passdb(effective.as_bytes()).map_err(|_| Error::Refused)?;
+        trace.set(crate::account_password_fstat::StartupOperation::StockCacheQuery);
         let username_format = stock_query(
             executor.as_ref(),
             "/usr/local/bin/doveconf",

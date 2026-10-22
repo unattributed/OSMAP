@@ -1,5 +1,8 @@
 # OSMAP WSTG v4.2 Scenario Matrix
 
+2026-10-22 S04-02 delta: focused source guard regression PASS for the two exact stock Dovecot read-only observations required at helper startup; wrong configuration paths, secret keys and extra options refuse. Actual single-host116 failed before HTTP and does not qualify a password workflow. Fresh retained-state119a plus exact owned disposition121 PASS preserve public mail and operator state. New cfg(test) incomplete-change, duplicate-request and concurrent-issuance probes are compiled but NOT RUN natively; full native/installed/password acceptance remains open. See the active execution ledger and current project status; no broader WSTG/release PASS is inferred.
+
+
 ## Current S04-02 outcome — 2026-10-20
 
 Actual80 and85 full workflows remain FAIL.85 completed ten HTTP exchanges/four

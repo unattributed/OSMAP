@@ -142,3 +142,33 @@ fn metadata_budget_expiry_is_distinct_before_any_spawn() {
     assert_eq!(insufficient.reason, "metadata_child_budget");
     assert!(!execution_quarantined());
 }
+
+#[test]
+fn fixed_stock_configuration_queries_are_admitted_without_arbitrary_options() {
+    let strings = |args: &[&str]| args.iter().map(|s| (*s).to_owned()).collect::<Vec<_>>();
+    for args in [
+        vec!["-c", "/etc/dovecot/dovecot.conf", "-n"],
+        vec!["-c", "/etc/dovecot/dovecot.conf", "-h", "auth_cache_size"],
+        vec![
+            "-c",
+            "/etc/dovecot/dovecot.conf",
+            "-h",
+            "auth_username_format",
+        ],
+    ] {
+        assert!(fixed_metadata_args(
+            "/usr/local/bin/doveconf",
+            &strings(&args)
+        ));
+    }
+    for args in [
+        vec!["-c", "/tmp/dovecot.conf", "-n"],
+        vec!["-c", "/etc/dovecot/dovecot.conf", "-h", "ssl_key"],
+        vec!["-c", "/etc/dovecot/dovecot.conf", "-n", "extra"],
+    ] {
+        assert!(!fixed_metadata_args(
+            "/usr/local/bin/doveconf",
+            &strings(&args)
+        ));
+    }
+}

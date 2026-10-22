@@ -344,6 +344,19 @@ impl StockRuntime {
             account: RefCell::new(None),
             phase: Cell::new(Phase::New),
         };
+        #[cfg(test)]
+        if STOCK_POSTWRITE_REFUSAL.load(std::sync::atomic::Ordering::SeqCst) {
+            return account_password_connection::serve_once(
+                stream,
+                self.connector_uid,
+                self.store.as_ref(),
+                backend,
+                &PostwriteRefusalEffects(&effects),
+                &SystemTimeProvider,
+                &self.keys,
+                deadline,
+            );
+        }
         account_password_connection::serve_once(
             stream,
             self.connector_uid,
@@ -354,6 +367,112 @@ impl StockRuntime {
             &self.keys,
             deadline,
         )
+    }
+}
+// Armed only by the ignored root/native service entrypoint in its own process.
+// No production binary contains a selector or reads a fault configuration.
+#[cfg(test)]
+pub(crate) static STOCK_POSTWRITE_REFUSAL: std::sync::atomic::AtomicBool =
+    std::sync::atomic::AtomicBool::new(false);
+
+#[cfg(test)]
+type NativeGateIdentity = (libc::dev_t, libc::ino_t, libc::mode_t);
+#[cfg(test)]
+static NATIVE_MUTATION_GATE: std::sync::Mutex<Option<(UnixStream, NativeGateIdentity)>> =
+    std::sync::Mutex::new(None);
+
+#[cfg(test)]
+pub(crate) fn arm_native_mutation_gate_fixture(stream: UnixStream) -> Result<(), Unavailable> {
+    use std::os::fd::AsRawFd;
+    if !crate::openbsd::password_native_authority() {
+        return Err(Unavailable);
+    }
+    let identity =
+        crate::openbsd::fixture_unix_stream_identity(&stream).map_err(|_| Unavailable)?;
+    // A new owned duplicate must be non-inheritable before any native exec.
+    let stream = stream.try_clone().map_err(|_| Unavailable)?;
+    if !crate::openbsd::descriptor_is_cloexec(stream.as_raw_fd()).map_err(|_| Unavailable)?
+        || crate::openbsd::fixture_unix_stream_identity(&stream).map_err(|_| Unavailable)?
+            != identity
+    {
+        return Err(Unavailable);
+    }
+    let mut slot = NATIVE_MUTATION_GATE.try_lock().map_err(|_| Unavailable)?;
+    if slot.is_some() {
+        return Err(Unavailable);
+    }
+    *slot = Some((stream, identity));
+    Ok(())
+}
+
+#[cfg(test)]
+fn native_mutation_gate_before_write_fixture(
+    account: &str,
+    original: Instant,
+) -> Result<(), DependencyError> {
+    if account != "alice@osmap-password.invalid" {
+        return Ok(());
+    }
+    let mut slot = NATIVE_MUTATION_GATE
+        .try_lock()
+        .map_err(|_| DependencyError::Unavailable)?;
+    let Some((mut stream, identity)) = slot.take() else {
+        return Ok(());
+    };
+    drop(slot);
+    let deadline = original.min(Instant::now() + std::time::Duration::from_secs(5));
+    let current = |stream: &UnixStream| {
+        if Instant::now() >= deadline
+            || crate::openbsd::fixture_unix_stream_identity(stream).ok() != Some(identity)
+        {
+            return Err(DependencyError::Unavailable);
+        }
+        Ok(())
+    };
+    // Service still owns its real Store guard here, before the single SQL update.
+    current(&stream)?;
+    crate::openpgp_inventory_runtime::write_frame(&mut stream, b"P", deadline)
+        .map_err(|_| DependencyError::Unavailable)?;
+    current(&stream)?;
+    let release = crate::openpgp_inventory_runtime::read_frame(&mut stream, 1, deadline)
+        .map_err(|_| DependencyError::Unavailable)?;
+    current(&stream)?;
+    if release != b"G" {
+        return Err(DependencyError::Unavailable);
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+struct PostwriteRefusalEffects<'a, E>(&'a E);
+#[cfg(test)]
+impl<E: Effects> Effects for PostwriteRefusalEffects<'_, E> {
+    fn authenticate(&self, a: &str, p: &str, d: Instant) -> Result<bool, DependencyError> {
+        self.0.authenticate(a, p, d)
+    }
+    fn preflight(
+        &self,
+        r: &crate::account_mutation::Request,
+        d: Instant,
+    ) -> Result<(), DependencyError> {
+        self.0.preflight(r, d)
+    }
+    fn before_write(
+        &self,
+        r: &crate::account_mutation::Request,
+        d: Instant,
+    ) -> Result<(), DependencyError> {
+        self.0.before_write(r, d)
+    }
+    fn invalidate_cache(&self, a: &str, d: Instant) -> Result<(), DependencyError> {
+        // Service calls this only after real SQL readback and durable timing.
+        if a == "alice@osmap-password.invalid" {
+            return Err(DependencyError::Unavailable);
+        }
+        self.0.invalidate_cache(a, d)
+    }
+    fn finish_mail(&self, a: &str, d: Instant) -> Result<(), DependencyError> {
+        self.0.finish_mail(a, d)
     }
 }
 struct StockEffects<'a, P> {
@@ -415,6 +534,8 @@ impl<P: CommandExecutor> Effects for StockEffects<'_, P> {
         }
         self.current(request.account(), deadline)?;
         self.phase.set(Phase::WriteAdmitted);
+        #[cfg(test)]
+        native_mutation_gate_before_write_fixture(request.account(), deadline)?;
         Ok(())
     }
     fn invalidate_cache(&self, account: &str, deadline: Instant) -> Result<(), DependencyError> {
@@ -440,5 +561,83 @@ impl<P: CommandExecutor> Effects for StockEffects<'_, P> {
         self.current(account, deadline)?;
         self.phase.set(Phase::Finished);
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod postwrite_fixture_tests {
+    use super::*;
+    struct Probe(RefCell<Vec<&'static str>>);
+    impl Effects for Probe {
+        fn authenticate(&self, _: &str, _: &str, _: Instant) -> Result<bool, DependencyError> {
+            self.0.borrow_mut().push("authenticate");
+            Ok(true)
+        }
+        fn preflight(
+            &self,
+            _: &crate::account_mutation::Request,
+            _: Instant,
+        ) -> Result<(), DependencyError> {
+            self.0.borrow_mut().push("preflight");
+            Ok(())
+        }
+        fn before_write(
+            &self,
+            _: &crate::account_mutation::Request,
+            _: Instant,
+        ) -> Result<(), DependencyError> {
+            self.0.borrow_mut().push("before_write");
+            Ok(())
+        }
+        fn invalidate_cache(&self, _: &str, _: Instant) -> Result<(), DependencyError> {
+            self.0.borrow_mut().push("invalidate_cache");
+            Ok(())
+        }
+        fn finish_mail(&self, _: &str, _: Instant) -> Result<(), DependencyError> {
+            self.0.borrow_mut().push("finish_mail");
+            Ok(())
+        }
+    }
+    #[test]
+    fn closed_postwrite_fixture_delegates_all_other_effects_and_preserves_bob() {
+        let probe = Probe(RefCell::new(Vec::new()));
+        let fault = PostwriteRefusalEffects(&probe);
+        let request = crate::account_mutation::tests::issue(
+            "public-old-value",
+            "public-new-passphrase",
+            3,
+            100,
+        )
+        .unwrap();
+        let deadline = Instant::now() + std::time::Duration::from_secs(1);
+        assert!(fault
+            .authenticate("alice@osmap-password.invalid", "public-old-value", deadline)
+            .unwrap());
+        fault.preflight(&request, deadline).unwrap();
+        fault.before_write(&request, deadline).unwrap();
+        assert_eq!(
+            fault.invalidate_cache("alice@osmap-password.invalid", deadline),
+            Err(DependencyError::Unavailable)
+        );
+        assert_eq!(
+            &*probe.0.borrow(),
+            &["authenticate", "preflight", "before_write"]
+        );
+        fault
+            .invalidate_cache("bob@osmap-password.invalid", deadline)
+            .unwrap();
+        fault
+            .finish_mail("bob@osmap-password.invalid", deadline)
+            .unwrap();
+        assert_eq!(
+            &*probe.0.borrow(),
+            &[
+                "authenticate",
+                "preflight",
+                "before_write",
+                "invalidate_cache",
+                "finish_mail"
+            ]
+        );
     }
 }

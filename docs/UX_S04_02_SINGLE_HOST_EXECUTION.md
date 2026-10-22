@@ -1,5 +1,8 @@
 # S04.02 single-host execution correction
 
+Current2026-10-22 working correction: actual116 reached the production Rust helper but stopped before HTTP. Owned disposition121 PASS restored the temporary namespace without public mail operations. The actual source calls to public doveconf effective configuration and auth_username_format were missing from the fixed metadata guard; only these two literal read-only shapes are now admitted, with a distinguishing local guard regression PASS. This source gap is established independently; its unique contribution to the historical116 failure is not claimed. Native positive/negative and ordinary installed qualification remain required. New native failure/replay/concurrency probes are cfg(test) only and have no ordinary activation flag. Continue small failure-learning loops under existing checks; do not add a parallel framework.
+
+
 ## Operator decision, 2026-10-21
 
 **OSMAP production is single-host only.** Development and functional

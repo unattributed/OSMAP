@@ -924,7 +924,293 @@ mod genuine_http_pilot {
         native_http_password_runtime(Topology::NativeLocal);
     }
 
+    #[test]
+    #[ignore = "requires reviewed native no-write negative consumer and disposable accounts"]
+    fn native_single_host_prewrite_runtime_entrypoint() {
+        native_http_password_runtime_case(Topology::NativeLocal, false, false, false);
+    }
+
+    #[test]
+    #[ignore = "requires fixed native postwrite refusal service and independent state witnesses"]
+    fn native_single_host_postwrite_runtime_entrypoint() {
+        native_http_password_runtime_case(Topology::NativeLocal, true, true, false);
+    }
+
+    /// Actual OpenBSD file locks/durable rate records plus live epoch authority.
+    /// This does not claim complete wire replay or a concurrent credential write.
+    #[test]
+    #[ignore = "requires reviewed root bootstrap, fresh state and actual local account service"]
+    fn native_single_host_rate_restart_entrypoint() {
+        use crate::totp::TimeProvider;
+        assert_eq!(std::env::consts::OS, "openbsd");
+        crate::openbsd::disable_core_dumps().unwrap();
+        let fd: i32 = std::env::var("OSMAP_TEST_HTTP_PILOT_FD")
+            .unwrap()
+            .parse()
+            .unwrap();
+        assert!((3..=1024).contains(&fd));
+        let mut control = Control::owned(
+            crate::openbsd::fixture_current_rust_owned_http_pilot_control(fd).unwrap(),
+        )
+        .unwrap();
+        let deadline = Instant::now() + Duration::from_secs(20);
+        let boot = bootstrap(&control.read(2048, deadline).unwrap()).unwrap();
+        let config = config_and_seed(&boot.root, Topology::NativeLocal).unwrap();
+        let account = config.account_runtime.as_ref().unwrap();
+        let client = crate::account_admission_runtime::Client::paired_fixture_files(
+            &account.admission_socket,
+            &account.admission_key_file,
+            0,
+        )
+        .unwrap();
+        for a in fixture_accounts(Topology::NativeLocal) {
+            client.admit_before(a, 0, deadline).unwrap();
+        }
+        let path = config
+            .state_layout
+            .settings_dir
+            .join("password-stepup-rate");
+        let store = crate::password_change_rate::Store::new(path.clone());
+        let now = crate::totp::SystemTimeProvider.unix_timestamp();
+        // Fixed private rate subjects only; no backend account is created.
+        let a = "rate-a@osmap-password.invalid";
+        for _ in 0..4 {
+            assert!(!store
+                .admit(a, "192.0.2.11", now)
+                .unwrap()
+                .failed(now)
+                .unwrap());
+        }
+        store
+            .admit(a, "192.0.2.12", now)
+            .unwrap()
+            .confirm()
+            .unwrap();
+        assert!(store
+            .admit(a, "192.0.2.13", now)
+            .unwrap()
+            .failed(now)
+            .unwrap());
+        assert!(crate::password_change_rate::Store::new(path.clone())
+            .admit(a, "192.0.2.14", now)
+            .is_err());
+        let source = "192.0.2.21";
+        for a in [
+            "rate-b@osmap-password.invalid",
+            "rate-c@osmap-password.invalid",
+        ] {
+            for _ in 0..4 {
+                store.admit(a, source, now).unwrap().failed(now).unwrap();
+            }
+        }
+        for _ in 0..2 {
+            store
+                .admit("rate-d@osmap-password.invalid", source, now)
+                .unwrap()
+                .failed(now)
+                .unwrap();
+        }
+        assert!(crate::password_change_rate::Store::new(path.clone())
+            .admit("rate-e@osmap-password.invalid", source, now)
+            .is_err());
+        let held = store
+            .admit("rate-f@osmap-password.invalid", "192.0.2.31", now)
+            .unwrap();
+        std::thread::scope(|scope| {
+            let path = path.clone();
+            assert!(scope
+                .spawn(move || crate::password_change_rate::Store::new(path)
+                    .admit("rate-f@osmap-password.invalid", "192.0.2.32", now)
+                    .is_err())
+                .join()
+                .unwrap());
+        });
+        held.confirm().unwrap();
+        drop(held);
+        store
+            .admit("rate-f@osmap-password.invalid", "192.0.2.32", now)
+            .unwrap()
+            .confirm()
+            .unwrap();
+        for a in fixture_accounts(Topology::NativeLocal) {
+            client.admit_before(a, 0, deadline).unwrap();
+        }
+        assert!(Instant::now() < deadline);
+        control.write(b"{\"schema\":\"osmap-native-rate-restart-v1\",\"account_limit\":5,\"source_limit\":10,\"success_preserved_failures\":true,\"restart_refused\":true,\"concurrent_issuance_refused\":true,\"alice_epoch\":0,\"bob_epoch\":0,\"credential_write\":false}", deadline).unwrap();
+    }
+
+    #[test]
+    #[ignore = "requires real native mutation replay and independent no-second-write witnesses"]
+    fn native_single_host_replay_runtime_entrypoint() {
+        native_http_password_runtime_case(Topology::NativeLocal, true, false, true);
+    }
+    /// Literal second issuer during the native mutation's held Store interval.
+    /// Tests the epoch gate after actual primary authentication; factor replay
+    /// remains the separate genuine HTTP/TOTP consumer's responsibility.
+    #[test]
+    #[ignore = "requires root-owned P/G mutation rendezvous and actual native service"]
+    fn native_single_host_concurrent_issuance_entrypoint() {
+        use crate::account_admission::EpochAuthority;
+        use crate::session::{FileSessionStore, SessionService, SystemRandomSource};
+        use crate::totp::SystemTimeProvider;
+        use std::sync::Arc;
+        assert_eq!(std::env::consts::OS, "openbsd");
+        crate::openbsd::disable_core_dumps().unwrap();
+        let fd: i32 = std::env::var("OSMAP_TEST_HTTP_PILOT_FD")
+            .unwrap()
+            .parse()
+            .unwrap();
+        assert!((3..=1024).contains(&fd));
+        let mut control = Control::owned(
+            crate::openbsd::fixture_current_rust_owned_http_pilot_control(fd).unwrap(),
+        )
+        .unwrap();
+        let deadline = Instant::now() + Duration::from_secs(45);
+        let boot = bootstrap(&control.read(2048, deadline).unwrap()).unwrap();
+        let runtime = boot.root.parent().unwrap();
+        directory(runtime, 0, 0o750).unwrap();
+        directory(&boot.root, 0, 0o750).unwrap();
+        directory(&boot.root.join("keys"), 0, 0o750).unwrap();
+        let config = crate::config::AppConfig::from_env_map(&std::collections::BTreeMap::from([
+            ("OSMAP_RUN_MODE".into(), "serve".into()),
+            ("OSMAP_ENV".into(), "staging".into()),
+            ("OSMAP_STATE_DIR".into(), boot.root.to_str().unwrap().into()),
+            ("OSMAP_ALLOWED_HOSTS".into(), HOST.into()),
+            ("OSMAP_LISTEN_ADDR".into(), "127.0.0.1:0".into()),
+            ("OSMAP_OPENBSD_CONFINEMENT_MODE".into(), "enforce".into()),
+        ]))
+        .unwrap();
+        directory(&config.state_layout.runtime_dir, WEB_UID, 0o700).unwrap();
+        let account = account_config(&boot.root, runtime, Topology::NativeLocal);
+        let client = crate::account_admission_runtime::Client::paired_fixture_files(
+            &account.admission_socket,
+            &account.admission_key_file,
+            0,
+        )
+        .unwrap();
+        #[derive(serde::Deserialize)]
+        #[serde(deny_unknown_fields)]
+        struct Primary {
+            alice_password: String,
+        }
+        let primary: Primary =
+            serde_json::from_slice(&control.read(256, deadline).unwrap()).unwrap();
+        assert!(
+            primary.alice_password.len() == 64
+                && primary
+                    .alice_password
+                    .bytes()
+                    .all(|b| b.is_ascii_hexdigit())
+        );
+        let captured = client
+            .authenticate_before(
+                "alice@osmap-password.invalid",
+                &primary.alice_password,
+                deadline,
+            )
+            .unwrap()
+            .unwrap();
+        assert_eq!(captured.account, "alice@osmap-password.invalid");
+        assert_eq!(captured.epoch, 0);
+        drop(primary);
+        let session_root = config.state_layout.runtime_dir.join("t04-issuer-sessions");
+        fs::create_dir(&session_root).unwrap();
+        fs::set_permissions(
+            &session_root,
+            <fs::Permissions as std::os::unix::fs::PermissionsExt>::from_mode(0o700),
+        )
+        .unwrap();
+        control
+            .write(
+                b"{\"schema\":\"osmap-native-issuance-race-ready-v1\",\"captured_epoch\":0}",
+                deadline,
+            )
+            .unwrap();
+        assert_eq!(control.read(1, deadline).unwrap(), b"G");
+        struct HeldEpoch {
+            client: crate::account_admission_runtime::Client,
+            deadline: Instant,
+            calls: Arc<std::sync::atomic::AtomicUsize>,
+            result: Arc<std::sync::Mutex<Option<crate::account_admission::Error>>>,
+        }
+        impl EpochAuthority for HeldEpoch {
+            fn admit(&self, a: &str, e: u64) -> Result<(), crate::account_admission::Error> {
+                self.calls.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+                let outcome = self.client.admit_before(a, e, self.deadline);
+                *self.result.lock().unwrap() = outcome.as_ref().err().copied();
+                outcome
+            }
+        }
+        let probe = Instant::now();
+        let calls = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let held_result = Arc::new(std::sync::Mutex::new(None));
+        let sessions = SessionService::new(
+            FileSessionStore::new(session_root.clone()),
+            SystemTimeProvider,
+            SystemRandomSource,
+            600,
+            300,
+        )
+        .with_epoch_authority(Arc::new(HeldEpoch {
+            client: client.clone(),
+            deadline: probe + Duration::from_secs(2),
+            calls: calls.clone(),
+            result: held_result.clone(),
+        }));
+        let context = crate::auth::AuthenticationContext::new(
+            crate::auth::AuthenticationPolicy::default(),
+            "native-t04-concurrent-issuer",
+            "127.0.0.1",
+            "OSMAP/NativeT04",
+        )
+        .unwrap();
+        assert!(sessions
+            .issue_with_epoch(
+                &context,
+                &captured.account,
+                crate::auth::RequiredSecondFactor::Totp,
+                Some(captured.epoch)
+            )
+            .is_err());
+        assert!(probe.elapsed() < Duration::from_secs(3));
+        assert_eq!(calls.load(std::sync::atomic::Ordering::SeqCst), 1);
+        let refusal = match *held_result.lock().unwrap() {
+            Some(crate::account_admission::Error::Refused) => "SIGNED_REFUSED",
+            Some(crate::account_admission::Error::Unavailable) => "UNAVAILABLE",
+            Some(crate::account_admission::Error::Expired) => "EXPIRED",
+            _ => panic!("actual bounded native admission refusal not observed"),
+        };
+        assert!(!fs::read_dir(&session_root).unwrap().any(|entry| entry
+            .unwrap()
+            .path()
+            .extension()
+            .and_then(|x| x.to_str())
+            == Some("session")));
+        let held = serde_json::to_vec(&serde_json::json!({"schema":"osmap-native-issuance-race-held-v1","issuance_denied":true,"new_sessions":0,"native_admission_deadline_ms":2000,"native_admission_calls":1,"native_admission_refusal":refusal})).unwrap();
+        control.write(&held, deadline).unwrap();
+        assert_eq!(control.read(1, deadline).unwrap(), b"G");
+        assert!(matches!(
+            client.admit_before(&captured.account, 0, deadline),
+            Err(crate::account_admission::Error::Refused)
+        ));
+        client.admit_before(&captured.account, 1, deadline).unwrap();
+        client
+            .admit_before("bob@osmap-password.invalid", 0, deadline)
+            .unwrap();
+        control.write(b"{\"schema\":\"osmap-native-issuance-race-v1\",\"issuance_denied\":true,\"new_sessions\":0,\"stale_epoch_refused\":true,\"current_epoch\":1,\"bob_epoch\":0}", deadline).unwrap();
+    }
+
     fn native_http_password_runtime(topology: Topology) {
+        native_http_password_runtime_case(topology, true, false, false);
+    }
+    fn native_http_password_runtime_case(
+        topology: Topology,
+        changed: bool,
+        incomplete: bool,
+        replay: bool,
+    ) {
+        // Fixed case selectors are cfg(test) callers; bootstrap cannot select one.
+        let connections = if changed { CONNECTIONS } else { 32 };
         assert_eq!(std::env::consts::OS, "openbsd");
         const {
             assert!(!crate::account_admission_runtime::NATIVE_CONFINEMENT_QUALIFIED);
@@ -968,6 +1254,12 @@ mod genuine_http_pilot {
             account.mutation_helper_uid,
         )
         .expect("HTTP fixture mutation custody refused");
+        let replay_probe = mutation.clone();
+        if replay {
+            mutation
+                .enable_native_consumed_replay_fixture()
+                .expect("native replay fixture refused");
+        }
         let mut gateway = RuntimeBrowserGateway::from_config(&config)
             .with_account_fixture_clients(admission, mutation);
         assert!(gateway.account_runtime.confinement_clients().is_some());
@@ -999,7 +1291,7 @@ mod genuine_http_pilot {
         let app = BrowserApp::new(HttpPolicy::from_config(&config), gateway);
         use crate::totp::TimeProvider;
         let ready = serde_json::to_vec(&serde_json::json!({"schema":"osmap-http-password-ready-v1",
-            "port":port,"connections":CONNECTIONS,"totp_counter":crate::totp::SystemTimeProvider.unix_timestamp()/30})).unwrap();
+            "port":port,"connections":connections,"totp_counter":crate::totp::SystemTimeProvider.unix_timestamp()/30})).unwrap();
         control
             .write(&ready, setup)
             .expect("HTTP fixture ready refused");
@@ -1013,7 +1305,7 @@ mod genuine_http_pilot {
         let began = Instant::now();
         let deadline = began + Duration::from_secs(90);
         let mut handled = 0;
-        while handled < CONNECTIONS {
+        while handled < connections {
             assert!(
                 Instant::now() < deadline,
                 "HTTP fixture original outer deadline expired"
@@ -1041,24 +1333,45 @@ mod genuine_http_pilot {
         // negative against the same actual sealed account service. These use
         // the existing sequence deadline and add no HTTP request or actor.
         let [alice, bob] = fixture_accounts(topology);
-        assert!(matches!(
-            epoch_probe.admit_before(alice, 0, deadline),
-            Err(crate::account_admission::Error::Refused)
-        ));
-        epoch_probe
-            .admit_before(alice, 1, deadline)
-            .expect("HTTP fixture current Alice epoch refused");
+        if changed {
+            assert!(matches!(
+                epoch_probe.admit_before(alice, 0, deadline),
+                Err(crate::account_admission::Error::Refused)
+            ));
+            if incomplete {
+                assert!(matches!(
+                    epoch_probe.admit_before(alice, 1, deadline),
+                    Err(crate::account_admission::Error::Refused)
+                ));
+            } else {
+                epoch_probe
+                    .admit_before(alice, 1, deadline)
+                    .expect("HTTP fixture current Alice epoch refused");
+            }
+        } else {
+            epoch_probe
+                .admit_before(alice, 0, deadline)
+                .expect("no-write Alice epoch changed");
+        }
         epoch_probe
             .admit_before(bob, 0, deadline)
             .expect("HTTP fixture preserved Bob epoch refused");
         // The authenticated client verifier binds every active epoch to the
         // exact requested epoch before admit_before can return Ok(()).
-        let report = serde_json::to_vec(
-            &serde_json::json!({"schema":"osmap-http-password-runtime-v1",
+        let mut report = serde_json::json!({"schema":"osmap-http-password-runtime-v1",
             "handled_connections":handled,"elapsed_millis":began.elapsed().as_millis(),
-            "alice_epoch0_refused":true,"alice_epoch1_admitted":1,"bob_epoch0_admitted":0}),
-        )
-        .unwrap();
+            "alice_epoch0_refused":changed,"alice_epoch1_admitted":if changed && !incomplete { Some(1) } else { None },"bob_epoch0_admitted":0});
+        if replay {
+            let refusal = replay_probe
+                .native_consumed_replay_refusal_fixture()
+                .expect("actual consumed native replay not observed");
+            assert!(matches!(
+                refusal,
+                "SIGNED_KNOWN_REFUSED" | "CLOSED_WITHOUT_RECEIPT"
+            ));
+            report["consumed_mutation_replay_refusal"] = serde_json::json!(refusal);
+        }
+        let report = serde_json::to_vec(&report).unwrap();
         control
             .write(&report, deadline)
             .expect("HTTP fixture report refused");

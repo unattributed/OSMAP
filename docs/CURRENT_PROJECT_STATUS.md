@@ -1,5 +1,12 @@
 # Current Project Status
 
+2026-10-22 S04-02 working-path correction: the real single-host attempt116 stopped before HTTP at helper startup and retained its owned setup. Fresh119a observations matched all recorded ownership, initial17-column rows, SQL principal/grants, public configuration and Dovecot master, with no helper/role processes or executable references. Independently reviewed121 disposition PASS removed exactly both rows (actual counts[1,1]), the owned principal, two locked roles/groups, twelve files and five empty directories; historical stages/receipts remain retained. No public mail service/configuration operation or operator password change occurred.
+
+Source inspection then established that StockPeer requests two public read-only doveconf shapes which its fixed argument guard rejected. Admit only those exact effective-configuration/username-format queries and mark their trace phase before dispatch. Focused122 compiled the reviewed candidate and passed the distinguishing guard test (1/0failed). Added native test-only prewrite/postwrite/rate/restart/replay/concurrency entrypoints remain unexecuted; qualification gates remain false. S04-02 is OPEN: native positive/negative, ordinary installed Runtime, independent acceptance and owner UAT are outstanding. The operator directs short failure-learning loops using existing checks, without another governance framework.
+
+Evidence root: `/home/foo/Downloads/osmap-ux-s04/functional-completion-20261022T041520Z/`. Actual118 helper/controlled TEST build PASS304.624 follows preserved115 artifact-collector FAIL303.297 (both compilers0; private0700 versus inherited0755 collection guard). Observer117 established that mode mismatch; the collector now accepts protected0700/0755 cache sources and retains bounded compiler diagnostics. No RAM floor is reinstated. Actual116 FAIL2.765 and119 pre-action refusal0.073 remain retained. The helper diagnostic indexes are one-based:61=StockCachePin,1=Unknown,3=Unavailable. Earlier CacheQuery/Denied interpretations were corrected, not treated as cause proof.
+
+
 ## 2026-10-21 operator ruling: added memory requirement abandoned
 
 The operator abandoned the team-imposed 6 GiB free-RAM gate. It is no longer

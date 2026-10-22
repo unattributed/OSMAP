@@ -1,5 +1,8 @@
 # Decision Log
 
+2026-10-22 — S04-02 stock configuration dispatch correction. Actual startup116 stopped before HTTP; safe owned disposition121 passed after fresh ownership and public-preservation observation119a. Source review found two current StockPeer queries refused by fixed_metadata_args: public doveconf -n and -h auth_username_format. Admit exactly those read-only forms, retain all wrong-path/key/extra-option refusals and existing process confinement/output/deadline checks, and set the query diagnostic phase before dispatch. The focused guard regression passed; native workflow and ordinary installed evidence remain outstanding. Keep new interruption, duplicate-frame and concurrent-issuance probes test-only, with actual shared state/native clients and independent SQL/Store/Bob witnesses. No production qualification flag or public mail configuration/lifecycle changes. Existing execution ledger and test runners remain the only delivery mechanism; operator requests iterative fixes without additional governance engineering.
+
+
 ## 2026-10-21 — diagnostic104 locates an error inside the backend helper
 
 The relay wrote the initial-login request but received no complete reply; the
