@@ -15,6 +15,22 @@ outcomes, D04 policy, T01 through T09 requirements, independently measured
 results and prior failures remain unchanged. All production qualification
 flags remain CLOSED until their original functional/security evidence exists.
 
+## Operator ruling on build memory, 2026-10-21
+
+The operator abandoned the team-added 6 GiB free-RAM gate and the assumption
+that a full optimized library-test build is a blanket completion prerequisite.
+Neither is an OSMAP runtime memory requirement. No measured peak-memory study
+established that floor, and the113 refusal is not evidence of inadequate host
+capacity. Do not replace the withdrawn requirement with another unsupported
+fixed memory floor. Scope builds and tests to the actual acceptance outcome;
+retain the intended production artifact configuration where that claim depends
+on it, required functional/security evidence and normal delivery hooks.
+
+Keep original109/113 failures, source pins and private carriers unchanged as
+historical evidence. The113 carrier/recipe is retired and must not be replayed.
+Removing the requirement does not manufacture matching native/installed passes
+or change qualification flags, execution leases or mail-service boundaries.
+
 ## Existing implementation to reuse
 
 OSMAP already has paired Unix-domain socket clients in

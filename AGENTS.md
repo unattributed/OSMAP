@@ -1,5 +1,24 @@
 # OSMAP Agent Notes
 
+## Operator ruling — abandon the added memory requirement, 2026-10-21
+
+The operator has abandoned the team-imposed 6 GiB free-RAM admission
+requirement. It is not an OSMAP runtime, build or S04-02 acceptance requirement.
+Do not restore it through a renamed recipe or substitute another unmeasured
+fixed free-memory floor. A full optimized library-test build is not a blanket
+completion prerequisite; use the build/test configuration required by the
+specific functional or release claim. Retain necessary functional/security
+tests, normal delivery hooks and matching evidence for production artifacts.
+
+Preserve attempt113's actual precompiler refusal and attempt109's compiler
+failure as history. The retired guard does not establish inadequate server
+capacity. Existing reviewed private carriers containing that guard are retired
+execution methods, not templates for future dispatch. Preserve their exact
+bytes and receipts; replace the method through the existing work order when
+further execution is authorized. This ruling does not itself claim a build or
+journey PASS, enable qualification flags, renew an expired execution window or
+authorize public mail-service/configuration changes.
+
 ## Current GitHub preservation SOP — operator direction, 2026-10-21
 
 The operator requires all public-safe repository work to be saved to GitHub

@@ -1,6 +1,29 @@
 # Current Project Status
 
-## 2026-10-21 S04.02 source correction; native qualification BLOCKED
+## 2026-10-21 operator ruling: added memory requirement abandoned
+
+The operator abandoned the team-imposed 6 GiB free-RAM gate. It is no longer
+a build-admission or S04-02 completion requirement, and the full optimized
+library-test build is not a blanket acceptance prerequisite. No measured
+peak-memory evidence established that floor. Attempt113 proves that our guard
+refused its own condition; it does not establish inadequate server capacity.
+Do not substitute another unsupported fixed free-memory floor.
+
+Source checkpoint ac336004e74191f9fbace7a38d18eb17d676d151 was signed with
+Shopkeeper and pushed to the UX branch with fresh local/origin SHA equality,
+zero ahead/behind and a clean worktree. Its normal commit/push hooks passed.
+The original109 compiler failure and113 precompiler refusal remain historical
+failures, not current hardware requirements. Original private scripts/receipts
+are preserved; the113 execution method is retired. No new build, host action,
+deployment or password change is claimed by this documentation correction.
+
+S04-02 remains functionally incomplete. All20 obligations and T01-T09 scenario
+results below remain unchanged; both production qualification gates stay false.
+Future build/test work must use a configuration justified by the actual
+functional or release outcome. Required functional/security evidence, normal
+delivery hooks and the public-mail preservation boundary remain in force.
+
+## Historical source checkpoint, 2026-10-21: pre-ruling memory guard
 
 The resumed team prepared the single-host controlled HTTP entrypoint using the
 existing native account sockets, admitted only the exact selected obsd1 hostname
@@ -32,8 +55,9 @@ At this source freeze, signed source preservation and GitHub synchronization
 await their mandatory hooks and signature verification. Retained receipts and independent
 reviews are under
 `/home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/`.
-Resume only with supported fresh capacity, a finite reviewed recipe, matching
-compiler artifacts and reviewed staging/cleanup before the controlled journey;
+The then-current next proposal required supported fresh capacity, a finite
+reviewed recipe, matching compiler artifacts and reviewed staging/cleanup;
+the operator subsequently withdrew the fixed memory gate above. Required
 negative/interruption, installed and security evidence must follow before UAT.
 
 ## 2026-10-21 S04.02 single-host architecture correction

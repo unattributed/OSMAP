@@ -10391,7 +10391,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "status": "PENDING",
     "reference": "Only minimal well-defined own-password usability after all agent-owned development/matching deployed QA/independent audit PASS. No operator password is changed by agent qualification; use controlled disposable Alice and preserve Bob/operator state. NOT RUN."
   },
-  "next_action": "Finish reviewed source-only checkpoint with normal mandatory hooks, Shopkeeper signature verification and standing authorized GitHub push/fresh SHA equality. No native/build/helper/password or host sync retry in this phase. Current gates false; T03-T09 remain unqualified; all20 obligations retained.",
+  "next_action": "Operator abandoned the team-added6GiB free-RAM gate and blanketfulloptimizedlibtest prerequisite. Record this documentation-only retirement, independently review, run normal signedcommit/push hooks and prove freshGitHubSHAequality. No build/native/host action planned; no replacement unsupportedmemoryfloor.",
   "accountability": {
     "functional_exit": "Working own-account Settings password change through the selected single-host obsd1 local account service and authoritative local backend, fresh password/TOTP step-up, one conditional SQL update, durable OSMAP epoch and all-browser revocation, actual source-bound cache handling, old-password refusal/new-login success and Bob preservation. Existing third-party SMTP/IMAP sessions may remain authenticated. Matching installed QA, independent audit and minimal owner usability remain required. Toronto is later separate production installation.",
     "owner": "/root",
@@ -19763,6 +19763,32 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
       ],
       "parent_acceptance": "S04-01R4coreaccepted; no blanketSprintPASS. Requireddependencies andhumanidentityboundaries remain.",
       "source_preservation_completed": "5561df2 GOODShopkeeper/normalgatePASS262.306868/clean/no push; oldPENDING entries historical."
+    },
+    "memory_requirement_retirement": {
+      "operator_direction": [
+        "I rule this is not needful",
+        "I rule this requirement will be abandoned"
+      ],
+      "reference": "/home/foo/Downloads/osmap-ux-s04/memory-requirement-retirement-20261022T035758Z/AUTHORIZATION.json SHA256 07131b8b690edc13df1fd149713532488654cad7630264f2619f70f638d6be41",
+      "scope": "Retire team-imposed6GiB free-RAM admission prerequisite and blanketfulloptimizedlibtest requirement. Documentation/instructions only; preserve measured failures and functional/security requirements. No builds, host operations, runtime/profile changes, native budget/lease renewal or qualification activation.",
+      "owner": "/root",
+      "reviewer": "/root/delivery_controller",
+      "started_at": "2026-10-22T03:59:05.622035+00:00",
+      "deadline_at": "2026-10-22T04:29:05.622035+00:00",
+      "allowance_seconds": 1800,
+      "allowed_paths": [
+        "AGENTS.md",
+        "docs/UX_S04_02_SINGLE_HOST_EXECUTION.md",
+        "docs/CURRENT_PROJECT_STATUS.md",
+        "docs/UX_EXECUTION_LEDGER.md"
+      ],
+      "expected": "Active guidance no longer requires arbitrary6GiB/freeRAMfloor or blanketoptimizedlibrarytest; historic113refusal remainsFAILbut no currenthardwarecapacityclaim; signednormalhooks andGitHubbackup.",
+      "essential_checks": "Existingworkorder/declaration consistency, historicalattempt/scenario/plan preservation, independentexactdiffreview, mandatorynormalcommit/pushhooks and signature/freshorigin equality. No additionalruntime tests.",
+      "stop_rule": "Stop on unresolvedscope/evidence/signing/hook/transportfailure; preservefailurewithoutbypass. No nativebudget/fixture renewal; priorcumulativehistoryunchanged.",
+      "retired_recipes": [
+        "single-host-build109",
+        "single-host-resource113"
+      ]
     }
   },
   "execution_contract": {
@@ -27234,7 +27260,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
             "privilege": "user"
           }
         ],
-        "expected": "Compile only frozen461-input candidate using normal releaseopt3 profile, offline locked bins/libtest no-run; actual Cargo receipt checks, source parity, ownedcompiler groupclosure and exactscratchcleanup. No test/helper/account/service execution. FitUNKNOWN; stoponcap/no retry, preserve600-second normaldelivery reserve.",
+        "expected": "RETIRED by direct operator ruling; historical expected result only, not a current admission requirement. Compile only frozen461-input candidate using normal releaseopt3 profile, offline locked bins/libtest no-run; actual Cargo receipt checks, source parity, ownedcompiler groupclosure and exactscratchcleanup. No test/helper/account/service execution. FitUNKNOWN; stoponcap/no retry, preserve600-second normaldelivery reserve.",
         "prerequisites": [
           {
             "id": "independent-frozen-compiler-review",
@@ -27274,6 +27300,14 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
             "evidence": {
               "path": "/home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/backend.stdout.json",
               "sha256": "ea9bddeccca9b3bffe1f06a282b910376e51a68f114f1a81585d7fbe2b3dc123"
+            }
+          },
+          {
+            "id": "operator-withdrawn-memory-build-method",
+            "status": "FAIL",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/memory-requirement-retirement-20261022T035758Z/AUTHORIZATION.json",
+              "sha256": "07131b8b690edc13df1fd149713532488654cad7630264f2619f70f638d6be41"
             }
           }
         ]
@@ -27559,7 +27593,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
             "privilege": "user"
           }
         ],
-        "expected": "One changed compile-only normal release opt3/defaultdebugfalse offline locked build, bins then libtest no-run,300s each650s total. BeforeEACHphase current trusted vmstat-s requires6GiBfree/9GiBphysical/hardlimit>=3GiB; only compilerchild DATAsoft3GiB/jobs1, parent/hard/otherlimitsunchanged. Outputexactartifact custody/profile/sourceparity + cleanup. No tests/app/account/publicserviceoperations; no automaticretry.",
+        "expected": "RETIRED by direct operator ruling; historical expected result only, not a current admission requirement. One changed compile-only normal release opt3/defaultdebugfalse offline locked build, bins then libtest no-run,300s each650s total. BeforeEACHphase current trusted vmstat-s requires6GiBfree/9GiBphysical/hardlimit>=3GiB; only compilerchild DATAsoft3GiB/jobs1, parent/hard/otherlimitsunchanged. Outputexactartifact custody/profile/sourceparity + cleanup. No tests/app/account/publicserviceoperations; no automaticretry.",
         "prerequisites": [
           {
             "id": "independent-frozen-resource-review",
@@ -27632,6 +27666,14 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
               "path": "/home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/presence.stdout.json",
               "sha256": "bb75c11a21f122215232329687cf4125207fc2ee08de1aed2cfe5d04f71e0c20"
             }
+          },
+          {
+            "id": "operator-withdrawn-memory-build-method",
+            "status": "FAIL",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/memory-requirement-retirement-20261022T035758Z/AUTHORIZATION.json",
+              "sha256": "07131b8b690edc13df1fd149713532488654cad7630264f2619f70f638d6be41"
+            }
           }
         ]
       }
@@ -27647,9 +27689,9 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     },
     "planned_action": null
   },
-  "blocker": "Current normal-release compiler113 refused before compilation: actual free5879267328 bytes below reviewed6442450944(6GiB). No matching new helper/libtest artifacts. Two failures110UNKNOWN+113FAIL independently reassessed; no native retry or threshold/profile lowering admitted. /home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/combined-capacity-review.json SHA256 827177c73bcb76a3aa19f72c5dfe34a1bba46ef07f936bd10fdcd453b79e9d93",
-  "independent_next_action": "After fresh supported capacity and finite independently reviewed recipe, rebuild current461source normal release under existing3GiBchild/6GiBfresh-free contract, then review actual root stager+cleanup+consumer before ONE fresh single-host positive journey. T04/T05 negative and interruption producers, T06 installed workflow/T07status/T08security and T09minimal human acceptance remain separate. No public mail service/configuration changes, operator credential trial or expired lease.",
-  "updated_at": "2026-10-21T23:08:51Z"
+  "blocker": "The operator withdrew the memory admission requirement; host capacity is not established as inadequate. Matching current native/installed password workflow evidence remains incomplete and the previous execution window is closed. This documentation change supplies no new build/journey PASS, native execution recipe or allowance. /home/foo/Downloads/osmap-ux-s04/memory-requirement-retirement-20261022T035758Z/AUTHORIZATION.json SHA256 07131b8b690edc13df1fd149713532488654cad7630264f2619f70f638d6be41",
+  "independent_next_action": "Use the existing functional outcome and a future finite reviewed build/test recipe with no arbitrary free-RAM floor or blanketoptimizedtest prerequisite. Inspect actual per-process limits and build settings only as needed for the compiler failure; choose artifact configurations that match each functional or release claim. Retain T03-T08 evidence requirements, false gates, public-mail preservation and T09 after agent-owned passes.",
+  "updated_at": "2026-10-22T04:00:33Z"
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->
