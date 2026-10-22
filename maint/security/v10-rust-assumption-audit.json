@@ -61918,7 +61918,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "panic_macro",
-      "line": 3101
+      "line": 3132
     },
     {
       "classification": "production_adjacent_assumption",
@@ -61926,7 +61926,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "expect_call",
-      "line": 3117
+      "line": 3148
     },
     {
       "classification": "production_adjacent_assumption",
@@ -61934,7 +61934,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "expect_call",
-      "line": 3123
+      "line": 3154
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -77289,7 +77289,7 @@
       "line": 521
     }
   ],
-  "generated_at_utc": "2026-10-22T05:20:23Z",
+  "generated_at_utc": "2026-10-22T06:16:03Z",
   "non_claims": [
     "This audit does not claim that all Rust assumptions are safe.",
     "This audit does not claim that production request paths are panic-free.",
@@ -77345,7 +77345,7 @@
       "unwrap_call": 8241
     },
     "classification_complete": true,
-    "inventory_sha256": "ed2051b619f3f7a9b255f64ce90afbba55a81ac67e7357a847e2db63d47cabd4",
+    "inventory_sha256": "1a5138e4f45c8c82440934172f33cc6f1c922a6fd8a6d93287daca098e276250",
     "live_host_state_changed": false,
     "product_behavior_changed": false,
     "production_state_changed": false,

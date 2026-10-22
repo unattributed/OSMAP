@@ -1783,7 +1783,7 @@ fn dependency_library_allowed(path: &Path) -> bool {
                     && name.contains(".so")
                     && name
                         .bytes()
-                        .all(|b| b.is_ascii_alphanumeric() || b"._-".contains(&b))
+                        .all(|b| b.is_ascii_alphanumeric() || b"._-+".contains(&b))
             }))
 }
 
@@ -3061,6 +3061,37 @@ mod tests {
         assert!(paths.contains(&PathBuf::from("/usr/libexec/ld.so")));
         assert!(!dependency_program_allowed(Path::new(
             "/usr/local/lib/dovecot/libevil.so.bad"
+        )));
+    }
+
+    #[test]
+    fn dependency_trace_accepts_installed_cpp_libraries_only_in_protected_paths() {
+        let program = Path::new("/usr/local/bin/mariadb");
+        // Exact library names and trace rows observed on obsd1 in capture130.
+        let output = concat!(
+            "Start End Type Open Ref GrpRef Name\n",
+            "0000007534615000 0000007534730000 rlib 0 1 0 /usr/lib/libc++.so.12.0\n",
+            "00000074ebb23000 00000074ebb6e000 rlib 0 2 0 /usr/lib/libc++abi.so.9.0\n",
+        );
+        assert_eq!(
+            parse_installed_libraries(output, program),
+            Ok(vec![
+                PathBuf::from("/usr/lib/libc++.so.12.0"),
+                PathBuf::from("/usr/lib/libc++abi.so.9.0"),
+            ])
+        );
+        for path in [
+            "/tmp/libc++.so.12.0",
+            "/usr/lib/../tmp/libc++.so.12.0",
+            "/usr/lib/libc++.so.12.0?",
+            "/usr/lib/libc++@abi.so.9.0",
+        ] {
+            let output =
+                format!("Start End Type Open Ref GrpRef Name\n001 002 rlib 0 1 0 {path}\n");
+            assert!(parse_installed_libraries(&output, program).is_err());
+        }
+        assert!(!dependency_program_allowed(Path::new(
+            "/usr/local/lib/dovecot/libc++.so.12.0"
         )));
     }
 
