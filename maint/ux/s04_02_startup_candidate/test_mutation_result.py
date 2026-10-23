@@ -117,8 +117,10 @@ class MutationIntegration(unittest.TestCase):
         frames=[{**common,'schema':'osmap-single-host-stage-birth-v1','frontend':None},
             {**common,'schema':'osmap-single-host-stage-birth-v1','frontend':'local-frontend'},ready,report]
         parsed=[];wrapper.parse_actor_frames(b''.join(json.dumps(v).encode()+b'\n'for v in frames),parsed)
-        transport={'schema':'osmap-single-host-transport-v1','result':'COMPLETE','born_child_reaped':True,
-            'born_group_gone':True,'root_exit':0,'stderr_bytes':0,'failure':None,'frames':parsed}
+        successful=report['result']=='PASS'
+        transport={'schema':'osmap-single-host-transport-v1','result':'COMPLETE'if successful else'FAIL',
+            'born_child_reaped':True,'born_group_gone':True,'root_exit':0 if successful else 1,
+            'stderr_bytes':0,'failure':None,'frames':parsed}
         return peer,states,phases,report,transport,packet
 
     def test_success_runs_real_caller_actor_frame_parser_and_consumer(self):
@@ -132,6 +134,9 @@ class MutationIntegration(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError,'operation_actor_binding'):
                 consumer.inspect(bad,0,123,mismatched)
             self.assertEqual(peer.writes,1)
+            self.assertEqual(report['mutation_requests'],1)
+            self.assertEqual(report['initial_authority_digests'],
+                {password.ALICE:'a'*64,password.BOB:'a'*64})
             self.assertIn(('MUTATION_SUBMISSION_INTENT',True),phases)
             self.assertTrue(states['backend'].disposed and states['frontend'].disposed)
             self.assertFalse((Path(name)/'http-state').exists())
@@ -168,22 +173,51 @@ class MutationIntegration(unittest.TestCase):
                 peer,states,phases,report,value,packet=self.run_actor(Path(name),fault)
                 self.assertEqual((report['result'],report['disposition']),('FAIL','RETAINED_REQUIRES_REVIEW'))
                 self.assertEqual(peer.writes,1)
+                self.assertEqual(report['mutation_requests'],1)
+                self.assertTrue(report['http_failure_scalars']['http_observation_known'])
+                self.assertGreater(report['http_failure_scalars']['http_request_ordinal'],0)
                 self.assertTrue(states['frontend'].requests_stopped and states['backend'].helper_stopped)
                 self.assertFalse(states['frontend'].disposed or states['backend'].disposed)
                 self.assertTrue(list((Path(name)/'http-state/sessions').iterdir()))
                 self.assertEqual(report['final_authority'][password.ALICE]['changed_at'],'20261023120001')
                 self.assertNotEqual(report['milestones'].get('milestone3',{}).get('result'),'PASS')
-                with self.assertRaises(RuntimeError):consumer.inspect(value,0,123,packet)
+                accepted=consumer.inspect(value,1,123,packet)
+                self.assertEqual(accepted['result'],'FAIL')
+                self.assertEqual(accepted['disposition'],'UNCERTAIN')
+                self.assertEqual(accepted['reported_disposition'],'RETAINED_REQUIRES_REVIEW')
+                self.assertIsNone(accepted['password_mutation'])
+                self.assertFalse(accepted['cleanup_confirmed'])
+                self.assertEqual(accepted['failure_reason'],report['failure_reason'])
 
     def test_proven_prewrite_refusal_disposes_without_mutation(self):
         with tempfile.TemporaryDirectory()as name:
             peer,states,phases,report,value,packet=self.run_actor(Path(name),'expired')
             self.assertEqual(peer.writes,0)
             self.assertFalse(report['mutation_submission_started'])
+            self.assertEqual(report['mutation_requests'],0)
+            self.assertEqual(set(report['initial_authority_digests']),{password.ALICE,password.BOB})
             self.assertTrue(report['proven_before_submission_no_write'])
             self.assertEqual(report['disposition'],'CONFIRMED')
             self.assertTrue(states['frontend'].disposed and states['backend'].disposed)
-            with self.assertRaises(RuntimeError):consumer.inspect(value,0,123,packet)
+            accepted=consumer.inspect(value,1,123,packet)
+            self.assertEqual((accepted['result'],accepted['disposition']),('FAIL','CONFIRMED'))
+            self.assertIs(accepted['password_mutation'],False)
+            self.assertTrue(accepted['proven_before_submission_no_write'])
+            for field in ('initial_authority_digests','final_authority','durable_intents',
+                    'mutation_requests','frontend_cleanup','owned_effects_report','helper_diagnostic'):
+                bad=copy.deepcopy(value);del bad['frames'][-1][field]
+                unproven=consumer.inspect(bad,1,123,packet)
+                self.assertEqual(unproven['disposition'],'UNCERTAIN',field)
+                self.assertFalse(unproven['cleanup_confirmed'],field)
+            bad=copy.deepcopy(value)
+            bad['frames'][-1]['final_authority'][password.ALICE]['row_sha256']='b'*64
+            unproven=consumer.inspect(bad,1,123,packet)
+            self.assertIsNone(unproven['password_mutation'])
+            self.assertEqual(unproven['disposition'],'UNCERTAIN')
+            bad=copy.deepcopy(value);bad['frames'][-1]['public_config_writes']=True
+            self.assertEqual(consumer.inspect(bad,1,123,packet)['disposition'],'UNCERTAIN')
+            with self.assertRaisesRegex(RuntimeError,'transport_or_cleanup'):
+                consumer.inspect(value,0,123,packet)
 
     def test_cleanup_failure_cannot_emit_milestone_pass_or_dispose_sessions(self):
         with tempfile.TemporaryDirectory()as name:
@@ -193,6 +227,9 @@ class MutationIntegration(unittest.TestCase):
             self.assertFalse(states['frontend'].disposed)
             self.assertEqual(report['cleanup_failures'][0]['reason'],'local_cleanup_failure')
             self.assertTrue((Path(name)/'http-state/sessions').exists())
-            with self.assertRaises(RuntimeError):consumer.inspect(value,0,123,packet)
+            accepted=consumer.inspect(value,1,123,packet)
+            self.assertEqual((accepted['result'],accepted['disposition']),('FAIL','UNCERTAIN'))
+            self.assertFalse(accepted['cleanup_confirmed'])
+            self.assertIsNone(accepted['password_mutation'])
 
 if __name__=='__main__':unittest.main()

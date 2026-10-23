@@ -10,10 +10,55 @@ import argparse
 import json
 import os
 from pathlib import Path
+import re
 import signal
+import shutil
 import subprocess
+import sys
 import tempfile
 import time
+
+STOP_SECONDS = 5
+
+
+def preview_origin(ready):
+    origin = ready.get('origin') if type(ready) is dict else None
+    match = re.fullmatch(r'http://127\.0\.0\.1:([0-9]{1,5})', origin) if type(origin) is str else None
+    if type(ready) is not dict or ready.get('synthetic') is not True or match is None or not 1 <= int(match[1]) <= 65535:
+        raise RuntimeError('Preview did not provide a synthetic loopback origin')
+    return origin
+
+
+def stop_preview(process, root):
+    """Return any marker error only after proving the born group absent."""
+    marker_error = None
+    try:
+        (root / 'stop').touch()
+    except OSError as error:
+        marker_error = error
+    if process.returncode is None and marker_error is None:
+        try:
+            process.wait(timeout=STOP_SECONDS)
+        except subprocess.TimeoutExpired:
+            pass
+    for number in (signal.SIGTERM, signal.SIGKILL):
+        if process.returncode is not None:
+            break
+        try:
+            os.killpg(process.pid, number)
+        except ProcessLookupError:
+            pass
+        try:
+            process.wait(timeout=STOP_SECONDS)
+        except subprocess.TimeoutExpired:
+            if number == signal.SIGKILL:
+                raise RuntimeError('Preview process cleanup unconfirmed') from None
+    # Reaped PID: observe absence only, never signal a historical group.
+    try:
+        os.killpg(process.pid, 0)
+    except ProcessLookupError:
+        return marker_error
+    raise RuntimeError('Preview group remains after direct reap')
 
 
 def main():
@@ -29,18 +74,24 @@ def main():
     def interrupted(signum, frame):
         raise KeyboardInterrupt
     signal.signal(signal.SIGTERM, interrupted)
-    with tempfile.TemporaryDirectory(prefix='osmap-ux-preview-') as temporary:
-        root = Path(temporary)
+    root = Path(tempfile.mkdtemp(prefix='osmap-ux-preview-'))
+    process = None
+    cleanup_confirmed = False
+    try:
         os.chmod(root, 0o700)
         env = dict(os.environ, OSMAP_UX_BROWSER_STATE=str(root),
                    OSMAP_UX_PREVIEW_MINUTES=str(args.minutes))
         with (root / 'fixture.log').open('w+') as log:
-            process = subprocess.Popen(
-                ['cargo', 'test', '--lib', 'ux_synthetic_browser_server', '--',
-                 '--ignored', '--nocapture'], cwd=repo, env=env,
-                stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
+            deadline = time.monotonic() + 120
+            previous = signal.pthread_sigmask(signal.SIG_BLOCK,
+                {signal.SIGINT, signal.SIGTERM, signal.SIGHUP})
             try:
-                deadline = time.monotonic() + 120
+                process = subprocess.Popen(
+                    ['cargo', 'test', '--lib', 'ux_synthetic_browser_server', '--',
+                     '--ignored', '--nocapture'], cwd=repo, env=env,
+                    stdout=log, stderr=subprocess.STDOUT, start_new_session=True,
+                    preexec_fn=lambda: signal.pthread_sigmask(signal.SIG_SETMASK, previous))
+                signal.pthread_sigmask(signal.SIG_SETMASK, previous)
                 while not (root / 'ready.json').exists():
                     if process.poll() is not None:
                         raise RuntimeError('Preview build/start failed; run cargo test --lib for diagnostics')
@@ -48,29 +99,30 @@ def main():
                         raise RuntimeError('Preview did not become ready within two minutes')
                     time.sleep(.05)
                 ready = json.loads((root / 'ready.json').read_text())
-                origin = ready['origin']
-                if not ready.get('synthetic') or not origin.startswith('http://127.0.0.1:'):
-                    raise RuntimeError('Preview did not provide a synthetic loopback origin')
+                origin = preview_origin(ready)
                 print(f'OSMAP synthetic UX preview: {origin}/login', flush=True)
                 print('Public fixture account: alice@example.com (or bob@example.com)', flush=True)
                 print('Public fixture password: correct horse battery staple | TOTP: 123456', flush=True)
                 print(f'Disposable data; no real email. Stops after {args.minutes} minutes or Ctrl+C.', flush=True)
-                result = process.wait()
+                result = process.wait(timeout=args.minutes * 60 + 5)
                 if result:
                     raise RuntimeError('Preview fixture exited unsuccessfully')
             except KeyboardInterrupt:
                 pass
             finally:
-                (root / 'stop').touch()
                 try:
-                    process.wait(timeout=5)
-                except subprocess.TimeoutExpired:
-                    os.killpg(process.pid, signal.SIGTERM)
-                    try:
-                        process.wait(timeout=5)
-                    except subprocess.TimeoutExpired:
-                        os.killpg(process.pid, signal.SIGKILL)
-                        process.wait()
+                    if process is not None:
+                        marker_error = stop_preview(process, root)
+                        cleanup_confirmed = True
+                        if marker_error is not None:
+                            raise marker_error
+                finally:
+                    signal.pthread_sigmask(signal.SIG_SETMASK, previous)
+    finally:
+        if process is None or cleanup_confirmed:
+            shutil.rmtree(root)
+        else:
+            print(f'Preview cleanup unconfirmed; retained disposable state: {root}', file=sys.stderr)
     print('Preview stopped; disposable data removed.', flush=True)
 
 

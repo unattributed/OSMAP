@@ -39,7 +39,10 @@ class EpochStore:
         name=hashlib.sha256(b'osmap-account-epoch-v1\0'+account.encode()).hexdigest()
         return self.root/(name+'.lock'),self.root/(name+'.json')
     def _private(self,path,flags):
-        descriptor=os.open(path,flags|os.O_NOFOLLOW,0o600)
+        # Reject a special-file replacement without waiting for a FIFO writer.
+        # NONBLOCK has no effect on the admitted regular files and also covers
+        # replacement between a prior caller observation and this open.
+        descriptor=os.open(path,flags|os.O_NOFOLLOW|os.O_NONBLOCK,0o600)
         info=os.fstat(descriptor)
         if (not stat.S_ISREG(info.st_mode) or info.st_uid!=self.uid or
                 info.st_mode&0o077 or info.st_nlink!=1):

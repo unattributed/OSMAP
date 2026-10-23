@@ -4,10 +4,13 @@ import copy
 import importlib.util
 import json
 from pathlib import Path
+import re
+import sys
 import tempfile
 import time
 from types import SimpleNamespace
 import unittest
+from unittest.mock import Mock
 
 
 ROOT = Path(__file__).resolve().parent
@@ -22,6 +25,7 @@ def load(name, path):
 
 witness = load('mail_witness_actual', 'sources/backend/stock_mail_witness.py')
 front = load('mail_witness_consumer', 'sources/frontend/native_http_front_driver.py')
+custody = load('mail_witness_custody', 'sources/backend/custody.py')
 
 
 class LocalCommands:
@@ -44,16 +48,21 @@ class LocalCommands:
 path = ROOT / 'sources/backend/stock_qualification.py'
 tree = ast.parse(path.read_text())
 cls = next(node for node in tree.body if isinstance(node, ast.ClassDef) and node.name == 'Qualification')
-cls.body = [next(node for node in cls.body if isinstance(node, ast.FunctionDef) and node.name == 'run')]
+cls.body = [node for node in cls.body if isinstance(node, ast.FunctionDef)
+    and node.name in ('run', '_provision_accounts')]
 namespace = {'base': SimpleNamespace(Fixture=LocalCommands, SQL=('local-sql',), HASH=('local-hash',)),
     'require': witness.require, 'MAIN': witness.MAIN, 'HELPER': Path('/local-helper'), 'ROLES': ()}
+namespace.update({name: getattr(custody, name) for name in (
+    'NAMES', 'ACCOUNTS', 'EPOCH', 'PRINCIPAL', 'GRANTS', 'CONFIG', 'PLAN', 'HASH', 'ARGON',
+    'COLUMNS', 'hexsql', 'hashlib', 'secrets')})
+namespace.update(Path=Path, json=json)
 exec(compile(ast.Module(body=[cls], type_ignores=[]), str(path), 'exec'), namespace)
 
 
 class LocalFixture(namespace['Qualification']):
     def __init__(self, root):
         self.end = time.monotonic() + 120
-        self.lease = '0123456789abcdef'
+        self.lease = '0123456789abcdef' * 4
         self.home = root / ('bob-' + self.lease)
         self.values = {'home': (str(self.home) + '\n').encode(), 'mail': b'',
             'uid': b'1001\n', 'gid': b'1001\n'}
@@ -109,6 +118,43 @@ class MailWitnessTests(unittest.TestCase):
         self.assertEqual(len(self.fixture.commands), 10)
         self.assertFalse(any(argv[-1] == 'mail_location' for argv in self.fixture.commands))
 
+    def test_actual_provisioned_maildir_through_observed_concat_projection(self):
+        # Execute the real fixture producer, replacing only native effects. The
+        # installed user_query CONCATs the same maildir into home and mail;
+        # preserve its suffix rather than invent a normalized utility reply.
+        fixture = Mock()
+        fixture.lease = self.fixture.lease
+        fixture.report = {}
+        fixture.users = {'_osmapsql': (1002, 1002), '_osmaphash': (1003, 1003)}
+        hashed = '{ARGON2ID}$argon2id$v=19$m=65536,t=3,p=1$' + 'a' * 22 + '$' + 'a' * 43
+        fixture.run.return_value = (hashed + '\n').encode()
+        fixture.sql.side_effect = [b'', b'',
+            ''.join(column + '\t' + privilege + '\n' for column, privilege in custody.GRANTS).encode(),
+            b'0\n0\n0\n', b'local-create', b'local-grants', b'']
+        fixture.row_read.return_value = [{'password': hashed,
+            'name': 'osmap fixture ' + fixture.lease, 'active': 1, 'smtp_active': 1}
+            for _ in custody.ACCOUNTS]
+        namespace['Qualification']._provision_accounts(fixture)
+        insert = fixture.sql.call_args_list[-1].args[0]
+        values = [bytes.fromhex(value).decode() for value in re.findall(r'CONVERT\(0x([a-f0-9]+) USING utf8mb4\)', insert)]
+        maildir = next(value for value in values if value.startswith('osmap-password.invalid/bob-'))
+        self.assertTrue(maildir.endswith('/'))
+        # Only the absolute protected root differs in this filesystem test.
+        home = str(Path(self.temp.name)) + '/' + maildir
+        self.fixture.values.update(home=(home + '\n').encode(),
+            mail=('maildir:' + home + '\n').encode())
+        self.observer.begin()
+        self.assertEqual(self.observer.before['home'], home.rstrip('/'))
+        self.assertEqual(self.observer.before['mail'], home.rstrip('/'))
+        self.consume(self.observer.finish_after_change())
+        self.assertEqual(list(Path(self.temp.name).iterdir()), [])
+
+    def test_trailing_home_separator_with_relative_mail_location(self):
+        self.fixture.values['home'] = (str(self.fixture.home) + '/\n').encode()
+        self.observer.begin()
+        self.assertEqual(self.observer.before['mail'], str(self.fixture.home / 'Maildir'))
+        self.consume(self.observer.finish_after_change())
+
     def test_preexisting_home_refuses_before_write(self):
         self.fixture.home.mkdir()
         with self.assertRaisesRegex(RuntimeError, '^stock_bob_mail_must_be_absent$'):
@@ -131,7 +177,11 @@ class MailWitnessTests(unittest.TestCase):
             ('gid', b'1\n2\n', 'stock_bob_userdb_field'),
             ('mail', b'mbox:~/mail\n', 'stock_bob_maildir_storage'),
             ('mail', b'maildir:/foreign/mail\n', 'stock_bob_maildir_projection'),
-            ('mail', b'maildir:%h/../elsewhere\n', 'stock_bob_maildir_projection')]
+            ('mail', b'maildir:%h/../elsewhere\n', 'stock_bob_mail_parent_traversal'),
+            ('home', b'relative/bob\n', 'stock_bob_home_not_absolute'),
+            ('home', b'/foreign/../home/\n', 'stock_bob_home_parent_traversal'),
+            ('home', b'/foreign/./home/\n', 'stock_bob_home_noncanonical'),
+            ('home', b'/foreign/\xff\n', 'stock_bob_userdb_non_ascii')]
         for field, raw, code in cases:
             with self.subTest(field=field, raw=raw):
                 self.fixture.values = {**original, field: raw}
@@ -164,6 +214,18 @@ class MailWitnessTests(unittest.TestCase):
             with self.subTest(argv=argv), self.assertRaisesRegex(RuntimeError, '^stock_fixed_command_only$'):
                 self.fixture.run(argv, 'local_negative')
         self.assertEqual(self.fixture.commands, [])
+
+    def test_real_bounded_child_preserves_failure_and_cleanup_observation(self):
+        fixture = custody.Fixture()
+        with self.assertRaises(custody.Refused) as failure:
+            fixture.run((sys.executable, '-c', 'print("controlled-output")'),
+                'local_output_limit', cap=1, seconds=3)
+        self.assertEqual(failure.exception.code, 'phase_output_cap')
+        group = fixture.report['groups'][-1]
+        self.assertEqual(group['failure'], 'phase_output_cap')
+        self.assertTrue(group['reaped'])
+        self.assertTrue(group['group_gone'])
+        self.assertFalse(fixture.process_uncertain)
 
     def test_consumer_rejects_missing_preservation_and_invented_credential_claim(self):
         self.observer.begin()

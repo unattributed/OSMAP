@@ -657,11 +657,12 @@ class ContainmentExecutor:
             raise Refused('mail containment process authority refused')
         duration = self._budget.cap_seconds(seconds)
         inherited = self._budget.inherited_group()
+        # Process creation consumes this phase; it cannot restart its clock.
+        deadline = time.monotonic() + duration
         child = subprocess.Popen((program,) + args, stdin=subprocess.DEVNULL,
                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                  shell=False, close_fds=True, start_new_session=not inherited,
                                  env=self._environment())
-        deadline = time.monotonic() + duration
         output = bytearray()
         diagnostic = bytearray()
         try:
@@ -695,14 +696,24 @@ class ContainmentExecutor:
                 self._budget.remaining()
                 return code, bytes(output), bytes(diagnostic)
         except BaseException:
-            try:
-                if inherited:
-                    child.kill()
+            # A late deadline failure may occur after wait() reaped the leader.
+            # Its numeric PID no longer grants destructive signal authority.
+            if child.returncode is None:
+                try:
+                    if inherited:
+                        child.kill()
+                    else:
+                        os.killpg(child.pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
+                child.wait(timeout=2)
+            if not inherited:
+                try:
+                    os.killpg(child.pid, 0)
+                except ProcessLookupError:
+                    pass
                 else:
-                    os.killpg(child.pid, signal.SIGKILL)
-            except ProcessLookupError:
-                pass
-            child.wait(timeout=2)
+                    raise Refused('mail containment cleanup unconfirmed') from None
             raise
         finally:
             for pipe in (child.stdout, child.stderr):

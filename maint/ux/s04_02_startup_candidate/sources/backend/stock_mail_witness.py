@@ -20,6 +20,18 @@ def require(value, code):
         raise RuntimeError(code)
 
 
+def directory_path(value, code):
+    """Accept directory suffix separators without changing traversal semantics."""
+    require(value.startswith('/'), code + '_not_absolute')
+    require('..' not in value.split('/'), code + '_parent_traversal')
+    # The real mailbox.maildir fixture ends in '/', and the installed userdb
+    # CONCAT projection preserves it. pathlib drops that directory suffix.
+    # Trim only the suffix; other noncanonical spelling still refuses.
+    value = value.rstrip('/') or '/'
+    require(str(Path(value)) == value, code + '_noncanonical')
+    return value
+
+
 class StockMailWitness:
     def __init__(self, fixture, end):
         require(type(end) in (int, float) and math.isfinite(end) and end <= fixture.end
@@ -37,18 +49,18 @@ class StockMailWitness:
                 'stock_bob_userdb_' + field, cap=4096, seconds=5, absolute=self.end)
             require((raw == b'' and field == 'mail') or raw.count(b'\n') == 1
                 and raw.endswith(b'\n') and b'\0' not in raw, 'stock_bob_userdb_field')
+            require(raw.isascii(), 'stock_bob_userdb_non_ascii')
             values[field] = raw.removesuffix(b'\n').decode('ascii')
-        home = values['home']
+        home = directory_path(values['home'], 'stock_bob_home')
         nonce = 'bob-' + self.fixture.lease
-        require(home.startswith('/') and str(Path(home)) == home
-            and nonce in Path(home).parts and '..' not in Path(home).parts,
-            'stock_bob_nonce_home')
+        require(nonce in Path(home).parts, 'stock_bob_nonce_home')
         mail = values['mail']
         if not mail:
             raw = self.fixture.run(('/usr/local/bin/doveconf', '-c', MAIN, '-h', 'mail_location'),
                 'stock_bob_effective_mail_location', cap=4096, seconds=5, absolute=self.end)
             require(raw.count(b'\n') == 1 and raw.endswith(b'\n') and b'\0' not in raw,
                 'stock_bob_mail_location')
+            require(raw.isascii(), 'stock_bob_mail_location_non_ascii')
             mail = raw[:-1].decode('ascii')
         require(mail.startswith('maildir:') and ':' not in mail[8:], 'stock_bob_maildir_storage')
         mail = mail[8:]
@@ -56,9 +68,10 @@ class StockMailWitness:
             mail = home + mail[1:]
         for key, value in {'%h': home, '%u': BOB, '%n': 'bob', '%d': 'osmap-password.invalid'}.items():
             mail = mail.replace(key, value)
-        require('%' not in mail and mail.startswith('/') and str(Path(mail)) == mail
+        mail = directory_path(mail, 'stock_bob_mail')
+        require('%' not in mail
             and Path(mail).is_relative_to(Path(home)) and nonce in Path(mail).parts
-            and '..' not in Path(mail).parts and values['uid'].isdigit() and values['gid'].isdigit()
+            and values['uid'].isdigit() and values['gid'].isdigit()
             and int(values['uid']) > 0 and int(values['gid']) > 0, 'stock_bob_maildir_projection')
         ancestors = []
         for path in reversed((Path(home), *Path(home).parents)):

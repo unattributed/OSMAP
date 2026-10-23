@@ -11,7 +11,7 @@ import tempfile
 from urllib.parse import urlparse
 
 from playwright.sync_api import sync_playwright, expect
-from browser_workflows import start_server, stop_server
+from browser_workflows import start_server, stop_server, require
 from contrast_audit import TEXT_AUDIT
 
 
@@ -51,9 +51,9 @@ def main():
 
         def visit(page, path):
             response = page.goto(origin + path, wait_until="networkidle")
-            assert response.status == 200
-            assert response.headers["cache-control"] == "no-store"
-            assert page.locator("script").count() == 0
+            require((response.status == 200), 'session_workflows_check_54')
+            require((response.headers["cache-control"] == "no-store"), 'session_workflows_check_55')
+            require((page.locator("script").count() == 0), 'session_workflows_check_56')
 
         def activate(page, button, keyboard=False):
             if keyboard:
@@ -70,7 +70,7 @@ def main():
                         page.keyboard.press("Enter")
                     else:
                         button.click()
-            assert posted.value.status == 303
+            require((posted.value.status == 303), 'session_workflows_check_73')
 
         def login(page, username="alice@example.com"):
             visit(page, "/login")
@@ -80,16 +80,16 @@ def main():
             with page.expect_navigation(wait_until="networkidle"):
                 page.get_by_role("button", name="Sign In", exact=True).click()
             visit(page, "/sessions")
-            assert urlparse(page.url).path == "/sessions"
+            require((urlparse(page.url).path == "/sessions"), 'session_workflows_check_83')
             expect(page.locator(".session-status-current")).to_have_count(1)
 
         def denied(page):
             visit(page, "/sessions")
-            assert urlparse(page.url).path == "/login"
+            require((urlparse(page.url).path == "/login"), 'session_workflows_check_88')
 
         def active(page, others):
             visit(page, "/sessions")
-            assert urlparse(page.url).path == "/sessions"
+            require((urlparse(page.url).path == "/sessions"), 'session_workflows_check_92')
             expect(page.locator(".session-status-current")).to_have_count(1)
             expect(page.locator(".session-status-active")).to_have_count(others)
 
@@ -100,7 +100,7 @@ def main():
             login(foreign, "bob@example.com")
             active(primary, 1)
             locations = primary.locator('td[data-label="Location"]').all_text_contents()
-            assert locations and all(text.strip() == "Unknown" for text in locations)
+            require((locations and all(text.strip() == "Unknown" for text in locations)), 'session_workflows_check_103')
             checks.append("session location truthfully Unknown; independent authenticated contexts create separate real stored sessions")
             report["captures"] = []
             for theme in ["light", "dark"]:
@@ -114,8 +114,8 @@ def main():
                         filename = f"sessions-{theme}-{width}-{forced}.png"
                         primary.screenshot(path=str(args.output / filename), full_page=True)
                         report["captures"].append(dict(file=filename, overflow=overflow, contrast=audit, boxes=boxes))
-                        assert not overflow
-                        assert not audit["failures"] and not audit["ui_failures"]
+                        require((not overflow), 'session_workflows_check_117')
+                        require((not audit["failures"] and not audit["ui_failures"]), 'session_workflows_check_118')
             checks.append("light/dark and both forced-colour palettes at 1600/1440/768/360: no overflow or detected text/UI contrast failures")
 
             primary.emulate_media(forced_colors="none", color_scheme="light")
@@ -139,8 +139,8 @@ def main():
             login(secondary)
             secondary.get_by_text("Session details and timeout policy", exact=True).click()
             activate(secondary, secondary.get_by_role("button", name="Revoke This Session", exact=True))
-            assert urlparse(secondary.url).path == "/login"
-            assert not any(cookie["name"] == "osmap_session" for cookie in secondary.context.cookies())
+            require((urlparse(secondary.url).path == "/login"), 'session_workflows_check_142')
+            require((not any(cookie["name"] == "osmap_session" for cookie in secondary.context.cookies())), 'session_workflows_check_143')
             denied(secondary)
             active(primary, 0)
             checks.append("current-session revoke clears browser cookie, redirects Login, denies later authenticated route and preserves another session")
@@ -151,14 +151,14 @@ def main():
 
             primary.get_by_text("Session details and timeout policy", exact=True).click()
             activate(primary, primary.get_by_role("button", name="Revoke All Sessions", exact=True))
-            assert urlparse(primary.url).path == "/login"
-            assert not any(cookie["name"] == "osmap_session" for cookie in primary.context.cookies())
+            require((urlparse(primary.url).path == "/login"), 'session_workflows_check_154')
+            require((not any(cookie["name"] == "osmap_session" for cookie in primary.context.cookies())), 'session_workflows_check_155')
             for page in [primary, secondary, third]:
                 denied(page)
             active(foreign, 0)
             checks.append("foreign-account session remains authenticated after selected, others and all revocations")
             checks.append("revoke all clears current cookie and invalidates all three independent browser sessions")
-            assert not external and not scripts
+            require((not external and not scripts), 'session_workflows_check_161')
             checks.append("native controls work with JavaScript disabled; zero page scripts and zero external requests")
             report["result"] = "PASS"
         except Exception as error:

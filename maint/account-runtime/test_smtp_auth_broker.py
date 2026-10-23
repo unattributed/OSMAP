@@ -56,9 +56,13 @@ class BrokerTests(unittest.TestCase):
             part=stream.recv(1)
             if not part:return bytes(out)
             out.extend(part)
+            if len(out)>4096:raise AssertionError('fixture protocol line exceeded its bound')
         return bytes(out)
 
     def backend_start(self):
+        # A failure before the broker connects must not strand a non-daemon
+        # fixture thread in accept() after its bounded join has returned.
+        self.listener.settimeout(1)
         def run():
             try:
                 stream,_=self.listener.accept()
@@ -345,7 +349,9 @@ class AcceptorTests(unittest.TestCase):
             try:results.append(self.service._serve(path,os.getuid(),stop,startup))
             except BaseException as error:results.append(type(error).__name__)
         with patch.object(socket.socket,'listen',listen),patch.object(self.service,'_authentication_budget',side_effect=self.budget)as mint:
-            worker=threading.Thread(target=run);worker.start();self.addCleanup(stop.set);self.addCleanup(lambda:worker.join(2))
+            worker=threading.Thread(target=run);worker.start()
+            # unittest cleanups run last-in first-out: stop before waiting.
+            self.addCleanup(lambda:worker.join(2));self.addCleanup(stop.set)
             self.assertTrue(control_entered.wait(1));self.assertFalse(path.exists());mint.assert_not_called()
             control_release.set();self.assertTrue(front_ready.wait(1));self.service.control_listener.recheck()
             backend_thread=self.backend_start()
@@ -353,7 +359,11 @@ class AcceptorTests(unittest.TestCase):
             auth=base64.b64encode(b'\0'+control_fixtures.fixtures.ALICE.encode()+b'\0public synthetic phrase')
             front.sendall(b'VERSION\t1\t0\nCPID\t123\nAUTH\t1\tPLAIN\tservice=smtp\tresp='+auth+b'\n')
             expected=b'OK\t1\tuser='+control_fixtures.fixtures.ALICE.encode()+b'\n';raw=bytearray()
-            while not raw.endswith(expected):raw.extend(front.recv(4096))
+            while not raw.endswith(expected):
+                part=front.recv(4096)
+                self.assertTrue(part,'proxy closed before the expected reply')
+                raw.extend(part)
+                self.assertLessEqual(len(raw),4096)
             mint.assert_called_once();self.assertEqual(len(self.auth_frames),1)
             stop.set();worker.join(2);self.assertFalse(worker.is_alive());backend_thread.join(1)
         self.assertEqual(results,[1]);self.assertTrue(self.closed.is_set());self.assertEqual(self.backend_errors,[])

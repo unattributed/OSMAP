@@ -40,6 +40,7 @@ class ProxyOkTests(baseline.LifecycleTests):
         line=self.reply(b'ssl=yes\tport=2525\tproxy\thost=127.0.0.1')
         receipt=self.registry.verified(channel,line)
         self.registry.publish(channel,receipt)
+        front.settimeout(.2)
         self.assertEqual(front.recv(4096),line)
 
     def test_unknown_credentials_mechanism_and_partial_metadata_refuse_before_publication(self):

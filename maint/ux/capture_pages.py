@@ -16,6 +16,7 @@ from threading import Thread
 
 from playwright.sync_api import sync_playwright
 from contrast_audit import TEXT_AUDIT
+from browser_workflows import require
 
 
 def main():
@@ -38,9 +39,9 @@ def main():
     args = parser.parse_args()
     fixtures = args.fixtures.resolve(strict=True)
     routes = json.loads((fixtures / "routes.json").read_text())
-    assert all(item["synthetic"] and item["tokens_redacted"] for item in routes)
+    require((all(item["synthetic"] and item["tokens_redacted"] for item in routes)), 'capture_pages_check_41')
     if args.names:
-        assert set(args.names) <= {item["name"] for item in routes}
+        require((set(args.names) <= {item["name"] for item in routes}), 'capture_pages_check_43')
         routes = [item for item in routes if item["name"] in args.names]
     policies = {f"/{item['name']}.html": item["csp"] for item in routes}
     args.output.mkdir(parents=True, exist_ok=True, mode=0o700)
@@ -96,7 +97,7 @@ def main():
                     page = context.new_page()
                     for item in routes:
                         response = page.goto(f"{origin}/{item['name']}.html", wait_until="networkidle")
-                        assert response and response.status == 200
+                        require((response and response.status == 200), 'capture_pages_check_99')
                         if args.forced_colors == "active":
                             # Edge can retain the media-query value but lose its
                             # actual forced palette on a later navigation after
@@ -105,38 +106,38 @@ def main():
                             page.emulate_media(forced_colors="active")
                         if args.shell_checks and item["name"] in {"settings", "settings-long-identity"}:
                             page.keyboard.press("Tab")
-                            assert page.locator(":focus").get_attribute("class") == "skip-link"
+                            require((page.locator(":focus").get_attribute("class") == "skip-link"), 'capture_pages_check_108')
                             page.keyboard.press("Enter")
-                            assert page.locator(":focus").get_attribute("id") == "main-content"
+                            require((page.locator(":focus").get_attribute("id") == "main-content"), 'capture_pages_check_110')
                             page.evaluate("window.scrollTo(0, 0)")
                             toggle = page.locator(".rail-disclosure summary")
                             focus = None
                             if toggle.is_visible():
                                 toggle.focus()
                                 page.keyboard.press("Enter")
-                                assert page.locator(".rail-disclosure").get_attribute("open") is not None
+                                require((page.locator(".rail-disclosure").get_attribute("open") is not None), 'capture_pages_check_117')
                                 focus = toggle.evaluate("e => ({style:getComputedStyle(e).outlineStyle,width:parseFloat(getComputedStyle(e).outlineWidth)})")
-                                assert focus["style"] != "none" and focus["width"] >= 2
-                            assert page.locator(".rail-label").first.is_visible()
-                            assert page.locator(".rail-links a[aria-current=page]").get_attribute("aria-label") == "Settings"
+                                require((focus["style"] != "none" and focus["width"] >= 2), 'capture_pages_check_119')
+                            require((page.locator(".rail-label").first.is_visible()), 'capture_pages_check_120')
+                            require((page.locator(".rail-links a[aria-current=page]").get_attribute("aria-label") == "Settings"), 'capture_pages_check_121')
                             expanded = args.output / f"{item['name']}-expanded-{scheme}-{width}.png"
                             page.screenshot(path=str(expanded), full_page=True)
                             if toggle.is_visible():
                                 page.keyboard.press("Enter")
-                                assert page.locator(".rail-disclosure").get_attribute("open") is None
+                                require((page.locator(".rail-disclosure").get_attribute("open") is None), 'capture_pages_check_126')
                             if page.locator(".protection-menu").count():
                                 page.locator(".protection-menu summary").focus()
                                 page.keyboard.press("Enter")
-                                assert page.locator(".protection-menu").get_attribute("open") is not None
+                                require((page.locator(".protection-menu").get_attribute("open") is not None), 'capture_pages_check_130')
                             menu = page.locator(".account-menu summary")
                             menu.focus()
                             page.keyboard.press("Enter")
                             if page.locator(".protection-menu").count():
-                                assert page.locator(".protection-menu").get_attribute("open") is None
-                            assert page.locator(".account-menu-panel .logout-button").is_visible()
-                            assert page.locator(".account-menu-panel a[href='/sessions']").is_visible()
+                                require((page.locator(".protection-menu").get_attribute("open") is None), 'capture_pages_check_135')
+                            require((page.locator(".account-menu-panel .logout-button").is_visible()), 'capture_pages_check_136')
+                            require((page.locator(".account-menu-panel a[href='/sessions']").is_visible()), 'capture_pages_check_137')
                             bounds = page.locator(".account-menu .account-menu-panel").bounding_box()
-                            assert bounds and bounds["x"] >= 0 and bounds["x"] + bounds["width"] <= width + 1
+                            require((bounds and bounds["x"] >= 0 and bounds["x"] + bounds["width"] <= width + 1), 'capture_pages_check_139')
                             account = args.output / f"{item['name']}-account-menu-{scheme}-{width}.png"
                             page.screenshot(path=str(account), full_page=True)
                             page.keyboard.press("Enter")
@@ -150,13 +151,13 @@ def main():
                             search = page.locator(".global-search-menu summary")
                             search.focus()
                             page.keyboard.press("Enter")
-                            assert page.get_by_label("Search all mail", exact=True).is_visible()
+                            require((page.get_by_label("Search all mail", exact=True).is_visible()), 'capture_pages_check_153')
                             bounds = page.locator(".global-search-panel").bounding_box()
-                            assert bounds and bounds["x"] >= 0 and bounds["x"] + bounds["width"] <= width + 1
+                            require((bounds and bounds["x"] >= 0 and bounds["x"] + bounds["width"] <= width + 1), 'capture_pages_check_155')
                             opened = args.output / f"{item['name']}-search-menu-{scheme}-{width}.png"
                             page.screenshot(path=str(opened), full_page=not args.viewport_only)
                             page.locator(".account-menu summary").click()
-                            assert page.locator(".global-search-menu").get_attribute("open") is None
+                            require((page.locator(".global-search-menu").get_attribute("open") is None), 'capture_pages_check_159')
                             page.locator(".account-menu summary").click()
                             shell_results.append({"fixture": item["name"], "scheme": scheme, "width": width,
                                                   "global_search_keyboard": True, "global_search_within_viewport": True,
@@ -172,14 +173,14 @@ def main():
                                 closed.first.click()
                         table_checks = []
                         for region in page.locator(".table-wrap").all():
-                            assert region.get_attribute("tabindex") == "0"
-                            assert region.get_attribute("aria-label")
+                            require((region.get_attribute("tabindex") == "0"), 'capture_pages_check_175')
+                            require((region.get_attribute("aria-label")), 'capture_pages_check_176')
                             region.focus()
                             overflow = region.evaluate("e => e.scrollWidth > e.clientWidth")
                             if overflow:
                                 page.keyboard.press("ArrowRight")
                                 page.wait_for_timeout(150)
-                                assert region.evaluate("e => e.scrollLeft") > 0
+                                require((region.evaluate("e => e.scrollLeft") > 0), 'capture_pages_check_182')
                                 region.evaluate("e => e.scrollLeft = 0")
                             table_checks.append({"keyboard_focus": True, "horizontal_scroll": overflow})
                         metrics = page.evaluate("""() => ({
@@ -209,7 +210,7 @@ def main():
                                         "expected_appearance": item["appearance"], "table_checks": table_checks,
                                         "expected_script_count": item.get("script_count", 0),
                                         "sha256": hashlib.sha256(screenshot.read_bytes()).hexdigest()})
-                    assert not blocked_requests, "synthetic pages attempted external requests"
+                    require((not blocked_requests), lambda: ("synthetic pages attempted external requests"))
                     context.close()
             failures = []
             for result in results:

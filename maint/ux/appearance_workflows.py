@@ -32,7 +32,7 @@ def main():
     if args.zoom_only and (args.engine != "chromium" or args.preview_only):
         parser.error("--zoom-only requires Chromium and cannot combine with --preview-only")
     sys.path.insert(0, str(args.repo / "maint/ux"))
-    from browser_workflows import start_server, stop_server
+    from browser_workflows import start_server, stop_server, require
     args.output.mkdir(parents=True, exist_ok=True, mode=0o700)
     args.output.chmod(0o700)
     prior = [args.output / name for name in ("synthetic-server.log", "workflows.json") if (args.output / name).exists()]
@@ -69,12 +69,12 @@ def main():
                         visualScale:visualViewport.scale,cssZoom:Number(getComputedStyle(document.documentElement).zoom),
                         overflow:document.documentElement.scrollWidth > innerWidth})""")
                     report[label] = value  # Retain actual measurements even when a witness refuses.
-                    assert 1.95 <= value["dpr"] <= 2.05, "native zoom DPR witness absent"
-                    assert 1.95 <= value["outer"] / value["inner"] <= 2.05, "native page zoom width witness absent"
-                    assert value["visualScale"] == 1 and value["cssZoom"] == 1, "pinch/CSS zoom is not native page zoom"
+                    require((1.95 <= value["dpr"] <= 2.05), lambda: ("native zoom DPR witness absent"))
+                    require((1.95 <= value["outer"] / value["inner"] <= 2.05), lambda: ("native page zoom width witness absent"))
+                    require((value["visualScale"] == 1 and value["cssZoom"] == 1), lambda: ("pinch/CSS zoom is not native page zoom"))
                     return value
                 response = page.goto(origin + "/login", wait_until="networkidle")
-                assert response.status == 200
+                require((response.status == 200), 'appearance_workflows_check_77')
                 report["native_zoom_before"] = witness("native_zoom_before")
                 page.get_by_label("Username or Email").fill("alice@example.com")
                 page.get_by_label("Password", exact=True).fill("correct horse battery staple")
@@ -82,7 +82,7 @@ def main():
                 with page.expect_navigation(wait_until="networkidle"):
                     page.get_by_role("button", name="Sign In", exact=True).click()
                 response = page.goto(origin + SETTINGS, wait_until="networkidle")
-                assert response.status == 200 and response.headers["cache-control"] == "no-store"
+                require((response.status == 200 and response.headers["cache-control"] == "no-store"), 'appearance_workflows_check_85')
                 form = page.locator('form[action="/settings/display"]')
                 form.locator('[name="font_size"]').focus()
                 page.keyboard.press("End")
@@ -97,13 +97,13 @@ def main():
                 expect(page.locator("html")).to_have_attribute("data-font-size", "large")
                 expect(page.locator('[name="font_size"]')).to_have_value("large")
                 report["native_zoom_after"] = witness("native_zoom_after")
-                assert not report["native_zoom_after"]["overflow"], "large-font settings overflow at native200percent"
+                require((not report["native_zoom_after"]["overflow"]), lambda: ("large-font settings overflow at native200percent"))
                 saved_button = page.locator('form[action="/settings/display"] button[type="submit"]')
                 for _ in range(60):
                     page.keyboard.press("Tab")
                     if saved_button.evaluate("e => e === document.activeElement"): break
                 else: raise AssertionError("saved large-font Save not keyboard reachable at native200percent")
-                assert page.locator("script").count() == 0 and not external and not scripts
+                require((page.locator("script").count() == 0 and not external and not scripts), 'appearance_workflows_check_106')
                 checks.append("nativeChromium200percent witnessed DPR/outer-to-inner ratio with visual/CSS scale1; native keyboard large-font Save/reload persists with no horizontal overflow")
                 report["result"] = "PASS"
                 ctx.close(); ctx = None
@@ -145,17 +145,17 @@ def main():
 
         def visit(page, path):
             response = page.goto(origin + path, wait_until="networkidle")
-            assert response.status == 200
-            assert response.headers["cache-control"] == "no-store"
+            require((response.status == 200), 'appearance_workflows_check_148')
+            require((response.headers["cache-control"] == "no-store"), 'appearance_workflows_check_149')
             if not path.startswith(("/compose", "/draft?")):
-                assert page.locator("script").count() == 0
+                require((page.locator("script").count() == 0), 'appearance_workflows_check_151')
 
         def state(page, values):
             form = page.locator('form[action="/settings/display"]')
-            assert form.count() == 1, page.evaluate("({path:location.pathname, headings:[...document.querySelectorAll('h1,h2')].map(e=>e.textContent), forms:[...document.forms].map(f=>({action:f.getAttribute('action'),names:[...f.elements].map(e=>e.name)}))})")
+            require((form.count() == 1), lambda: (page.evaluate("({path:location.pathname, headings:[...document.querySelectorAll('h1,h2')].map(e=>e.textContent), forms:[...document.forms].map(f=>({action:f.getAttribute('action'),names:[...f.elements].map(e=>e.name)}))})")))
             for name, value in values.items():
                 field = form.locator(f'[name="{name}"]')
-                if isinstance(value, bool): assert field.is_checked() == value
+                if isinstance(value, bool): require((field.is_checked() == value), 'appearance_workflows_check_158')
                 elif field.first.evaluate("e => e.tagName") == "SELECT": expect(field).to_have_value(value)
                 else: expect(form.locator(f'[name="{name}"][value="{value}"]')).to_be_checked()
             for name, value in values.items():
@@ -165,7 +165,7 @@ def main():
 
         def save(page, values, keyboard=False):
             form = page.locator('form[action="/settings/display"]')
-            assert form.count() == 1, page.evaluate("({path:location.pathname, headings:[...document.querySelectorAll('h1,h2')].map(e=>e.textContent), forms:[...document.forms].map(f=>({action:f.getAttribute('action'),names:[...f.elements].map(e=>e.name)}))})")
+            require((form.count() == 1), lambda: (page.evaluate("({path:location.pathname, headings:[...document.querySelectorAll('h1,h2')].map(e=>e.textContent), forms:[...document.forms].map(f=>({action:f.getAttribute('action'),names:[...f.elements].map(e=>e.name)}))})")))
             for name, value in values.items():
                 field = form.locator(f'[name="{name}"]')
                 if isinstance(value, bool): field.set_checked(value)
@@ -214,15 +214,15 @@ def main():
             page.locator('input[name="appearance"][value="light"]').focus()
             page.keyboard.press("ArrowRight")
             expect(page.locator('input[name="appearance"][value="dark"]')).to_be_checked()
-            assert preview_metrics(page)["background"] != original["background"]
+            require((preview_metrics(page)["background"] != original["background"]), 'appearance_workflows_check_217')
             page.locator('#settings-density').focus()
             page.keyboard.press("End")
             expect(page.locator('#settings-density')).to_have_value("compact")
-            assert preview_metrics(page)["height"] < original["height"]
+            require((preview_metrics(page)["height"] < original["height"]), 'appearance_workflows_check_221')
             page.locator('#settings-font-size').focus()
             page.keyboard.press("End")
             expect(page.locator('#settings-font-size')).to_have_value("large")
-            assert preview_metrics(page)["font"] > original["font"]
+            require((preview_metrics(page)["font"] > original["font"]), 'appearance_workflows_check_225')
             page.locator('#settings-reader-layout').focus()
             page.keyboard.press("End")
             expect(page.locator('#settings-reader-layout')).to_have_value("stacked")
@@ -231,16 +231,16 @@ def main():
                 page.keyboard.press("Space")
                 expect(page.locator(field)).not_to_be_checked()
             selected = preview_metrics(page)
-            assert selected["reader"]["y"] >= selected["message"]["bottom"]
-            assert selected["avatar"] == "none" and selected["snippet"] == "none"
+            require((selected["reader"]["y"] >= selected["message"]["bottom"]), 'appearance_workflows_check_234')
+            require((selected["avatar"] == "none" and selected["snippet"] == "none"), 'appearance_workflows_check_235')
             expect(page.locator('.settings-preview-saved')).to_contain_text("Saved: system, comfortable, medium")
             expect(page.locator('html')).to_have_attribute('data-appearance', 'system')
-            assert appearance_bytes() == before, "unsaved preview wrote durable preferences"
+            require((appearance_bytes() == before), lambda: ("unsaved preview wrote durable preferences"))
             # A separate context reads the same account's still-saved defaults.
             unchanged = new_page("alice")
             state(unchanged, DEFAULTS)
             unchanged.context.close()
-            assert appearance_bytes() == before
+            require((appearance_bytes() == before), 'appearance_workflows_check_243')
             checks.append("six native keyboard selections update computed sample only; durable appearance bytes and fresh account defaults stay unchanged before Save")
             # System follows device only inside preview before save.
             page.locator('input[name="appearance"][value="dark"]').focus()
@@ -248,7 +248,7 @@ def main():
             page.emulate_media(color_scheme="light")
             light = preview_metrics(page)["background"]
             page.emulate_media(color_scheme="dark")
-            assert preview_metrics(page)["background"] != light
+            require((preview_metrics(page)["background"] != light), 'appearance_workflows_check_251')
             page.keyboard.press("ArrowLeft")
             expect(page.locator('input[name="appearance"][value="dark"]')).to_be_checked()
             save(page, CHANGED, keyboard=True)
@@ -256,9 +256,9 @@ def main():
             state(page, CHANGED)
             expect(page.locator('.settings-preview-saved')).to_contain_text("Saved: dark, compact, large")
             changed = metrics(page)
-            assert changed["padding"] < baseline["padding"] and changed["font"] > baseline["font"]
-            assert changed["avatar"] == "none" and changed["snippet"] == "none"
-            assert changed["reader"]["y"] >= changed["list"]["bottom"] - 2
+            require((changed["padding"] < baseline["padding"] and changed["font"] > baseline["font"]), 'appearance_workflows_check_259')
+            require((changed["avatar"] == "none" and changed["snippet"] == "none"), 'appearance_workflows_check_260')
+            require((changed["reader"]["y"] >= changed["list"]["bottom"] - 2), 'appearance_workflows_check_261')
             bob = new_page("bob")
             state(bob, DEFAULTS)
             bob.context.close()
@@ -267,17 +267,17 @@ def main():
         def post(page, path, values, expected):
             response = page.context.request.post(origin + path, data=urlencode(values),
                 headers={"Content-Type":"application/x-www-form-urlencoded", "Origin":origin}, max_redirects=0)
-            assert response.status == expected
+            require((response.status == expected), 'appearance_workflows_check_270')
 
         try:
             alice = new_page("alice")
             state(alice, DEFAULTS)
             baseline = metrics(alice)
-            assert baseline["avatar"] != "none" and baseline["snippet"] != "none"
-            assert baseline["reader"]["x"] > baseline["list"]["x"]
+            require((baseline["avatar"] != "none" and baseline["snippet"] != "none"), 'appearance_workflows_check_276')
+            require((baseline["reader"]["x"] > baseline["list"]["x"]), 'appearance_workflows_check_277')
             if args.preview_only:
                 preview_boundary(alice, baseline)
-                assert not external and not scripts
+                require((not external and not scripts), 'appearance_workflows_check_280')
                 report["result"] = "PASS"
                 return
             # Populate Drafts through its normal native form for real avatar checks.
@@ -290,10 +290,10 @@ def main():
             visit(alice, SETTINGS)
             save(alice, CHANGED, keyboard=True)
             changed = metrics(alice)
-            assert changed["padding"] < baseline["padding"], "density did not reduce actual row spacing"
-            assert changed["font"] > baseline["font"], "font choice did not change actual message text"
-            assert changed["avatar"] == "none" and changed["snippet"] == "none"
-            assert changed["reader"]["y"] >= changed["list"]["bottom"] - 2
+            require((changed["padding"] < baseline["padding"]), lambda: ("density did not reduce actual row spacing"))
+            require((changed["font"] > baseline["font"]), lambda: ("font choice did not change actual message text"))
+            require((changed["avatar"] == "none" and changed["snippet"] == "none"), 'appearance_workflows_check_295')
+            require((changed["reader"]["y"] >= changed["list"]["bottom"] - 2), 'appearance_workflows_check_296')
             visit(alice, "/drafts")
             expect(alice.locator(".draft-list .sender-avatar").first).to_be_hidden()
             visit(alice, SETTINGS)
@@ -325,14 +325,14 @@ def main():
                 save(restored, dict(retained, appearance=theme))
                 restored.emulate_media(color_scheme="dark" if theme == "system" else theme,
                                        forced_colors="active" if forced else "none")
-                assert restored.evaluate("document.documentElement.scrollWidth <= innerWidth")
+                require((restored.evaluate("document.documentElement.scrollWidth <= innerWidth")), 'appearance_workflows_check_328')
                 restored.screenshot(path=str(args.output / f"appearance-{theme}-{width}-{'forced' if forced else 'normal'}.png"), full_page=True)
             restored.emulate_media(forced_colors="none", color_scheme="light")
             light = restored.evaluate("getComputedStyle(document.body).backgroundColor")
             restored.emulate_media(color_scheme="dark")
-            assert restored.evaluate("getComputedStyle(document.body).backgroundColor") != light
+            require((restored.evaluate("getComputedStyle(document.body).backgroundColor") != light), 'appearance_workflows_check_333')
             checks.append("light/dark/system and forced-colour widths 360/768/1600 have no overflow; system follows media change without scripts")
-            assert not external and not scripts
+            require((not external and not scripts), 'appearance_workflows_check_335')
             report["result"] = "PASS"
         except Exception as error:
             report["failure_type"] = type(error).__name__

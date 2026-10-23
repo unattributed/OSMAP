@@ -9,7 +9,7 @@ import tempfile
 import time
 from urllib.parse import urlencode, urlsplit, parse_qs
 from playwright.sync_api import sync_playwright, expect
-from browser_workflows import start_server, stop_server
+from browser_workflows import start_server, stop_server, require
 
 SETTINGS = "/settings?section=reading"
 INLINE = "/mailbox?name=INBOX&selected_mailbox=INBOX&selected_uid=9"
@@ -42,9 +42,9 @@ def main():
 
         def visit(page, path=SETTINGS, status=200):
             response = page.goto(origin + path, wait_until="networkidle")
-            assert response.status == status, (path, response.status)
-            assert response.headers["cache-control"] == "no-store"
-            assert page.locator("script").count() == 0
+            require((response.status == status), lambda: ((path, response.status)))
+            require((response.headers["cache-control"] == "no-store"), 'reading_workflows_check_46')
+            require((page.locator("script").count() == 0), 'reading_workflows_check_47')
             return response
 
         def submit(page, name, keyboard=False):
@@ -53,7 +53,7 @@ def main():
             with page.expect_navigation(wait_until="networkidle") as nav:
                 if keyboard: page.keyboard.press("Enter")
                 else: button.click()
-            assert nav.value.status == 200
+            require((nav.value.status == 200), 'reading_workflows_check_56')
 
         def login(account="alice", target="/mailboxes", forged=None):
             ctx = browser.new_context(java_script_enabled=False, viewport=dict(width=1600, height=1100), color_scheme="light")
@@ -73,7 +73,7 @@ def main():
             page.get_by_label("Password", exact=True).fill("correct horse battery staple")
             page.get_by_label("TOTP Code").fill("123456")
             submit(page, "Sign In")
-            assert page.url == origin + target, ("login destination", urlsplit(page.url).path)
+            require((page.url == origin + target), lambda: (("login destination", urlsplit(page.url).path)))
             return page
 
         def token(page):
@@ -82,30 +82,30 @@ def main():
         def post(page, path, fields, expected=303):
             response = page.context.request.post(origin + path, data=urlencode(fields),
                 headers={"Origin":origin, "Content-Type":"application/x-www-form-urlencoded"}, max_redirects=0)
-            assert response.status == expected
+            require((response.status == expected), 'reading_workflows_check_85')
 
         def state(page, start="drafts", changed=True):
             visit(page)
             expect(page.get_by_label("Default start page", exact=True)).to_have_value(start)
             expect(page.get_by_label("Conversation ordering", exact=True)).to_have_value("oldest" if changed else "newest")
             for label in ("Show source shortcut", "Attachment details"):
-                assert page.get_by_label(label, exact=True).is_checked() == (not changed)
+                require((page.get_by_label(label, exact=True).is_checked() == (not changed)), 'reading_workflows_check_92')
 
         def ordering(page, path, expected):
             visit(page, path)
             actual = [int(parse_qs(urlsplit(href).query)["selected_uid"][0]) for href in page.locator(".message-subject-link").evaluate_all("els=>els.map(e=>e.getAttribute('href'))")]
-            assert actual == expected, (path, actual, expected)
+            require((actual == expected), lambda: ((path, actual, expected)))
 
         def reader(page, path, visible):
             visit(page, path)
             source = page.locator(".reader-source-shortcut")
             details = page.locator(".reader-file-details")
-            assert source.count() == 1 and details.count() >= 1
+            require((source.count() == 1 and details.count() >= 1), 'reading_workflows_check_103')
             for item in [source, *details.all()]:
                 if visible: expect(item).to_be_visible()
                 else: expect(item).to_be_hidden()
-            assert page.locator(".body-panel pre").inner_text().strip() == "Hello world"
-            assert page.locator(".body-panel script, .body-panel img, .body-panel iframe").count() == 0
+            require((page.locator(".body-panel pre").inner_text().strip() == "Hello world"), 'reading_workflows_check_107')
+            require((page.locator(".body-panel script, .body-panel img, .body-panel iframe").count() == 0), 'reading_workflows_check_108')
             expect(page.get_by_text("Message content is displayed with active content and remote images removed.", exact=True)).to_be_visible()
             download = page.get_by_role("link", name="Download", exact=True).first
             expect(download).to_be_visible()
@@ -118,9 +118,9 @@ def main():
                 for width in ((1600,360) if args.captures_only else (1600,768,360)):
                     page.set_viewport_size(dict(width=width,height=1100))
                     visit(page)
-                    assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
+                    require((page.evaluate("document.documentElement.scrollWidth <= innerWidth")), 'reading_workflows_check_121')
                     gaps = page.locator(".general-card > form").evaluate_all("els=>els.map(e=>e.nextElementSibling.getBoundingClientRect().top-e.getBoundingClientRect().bottom)")
-                    assert all(gap >= 8 for gap in gaps), ("form boundary spacing", gaps)
+                    require((all(gap >= 8 for gap in gaps)), lambda: (("form boundary spacing", gaps)))
                     report.setdefault("capture_geometry", []).append(dict(color=color,width=width,height=page.evaluate("document.documentElement.scrollHeight"),form_gaps=gaps))
                     page.screenshot(path=str(args.output/f"reading-{color}-{width}.png"),full_page=True)
             page.emulate_media(forced_colors="active")
@@ -128,9 +128,9 @@ def main():
                 page.set_viewport_size(dict(width=width,height=1100))
                 page.get_by_label("Default start page",exact=True).focus()
                 expect(page.get_by_label("Default start page",exact=True)).to_be_focused()
-                assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
+                require((page.evaluate("document.documentElement.scrollWidth <= innerWidth")), 'reading_workflows_check_131')
                 page.screenshot(path=str(args.output/f"reading-forced-focus-{width}.png"),full_page=True)
-            assert not external and not scripts
+            require((not external and not scripts), 'reading_workflows_check_133')
             checks.append("light/dark and forced-colour keyboard focus at requested desktop/narrow widths have no horizontal overflow; zero script/external requests")
 
         try:
@@ -149,39 +149,39 @@ def main():
             for label in ("Show source shortcut", "Attachment details"):
                 page.get_by_label(label, exact=True).uncheck()
             submit(page, "Save reading preferences", keyboard=True)
-            assert parse_qs(urlsplit(page.url).query) == {"section":["reading"], "updated":["1"]}
+            require((parse_qs(urlsplit(page.url).query) == {"section":["reading"], "updated":["1"]}), 'reading_workflows_check_152')
             expect(page.locator('[role="status"]')).to_be_visible()
-            assert post_shapes[-1] == dict(path="/settings/reading", keys=["csrf_token","date_order","start_page"], return_section=None)
+            require((post_shapes[-1] == dict(path="/settings/reading", keys=["csrf_token","date_order","start_page"], return_section=None)), 'reading_workflows_check_154')
             state(page)
             ordering(page, "/mailbox?name=INBOX", [9,10])
             ordering(page, "/mailbox?name=INBOX&sort=received&dir=desc", [10,9])
             reader(page, INLINE, False)
             reader(page, READER, False)
             source_response = page.context.request.get(origin + source_path)
-            assert source_response.status == 200
+            require((source_response.status == 200), 'reading_workflows_check_161')
             source_csp = source_response.headers["content-security-policy"]
-            assert "default-src 'none'" in source_csp and "script-src " not in source_csp
+            require(("default-src 'none'" in source_csp and "script-src " not in source_csp), 'reading_workflows_check_163')
             downloaded = page.context.request.get(origin + download_path)
-            assert downloaded.status == 200 and downloaded.body() == b"%PDF-stub%"
-            assert downloaded.headers["content-disposition"].startswith("attachment;")
+            require((downloaded.status == 200 and downloaded.body() == b"%PDF-stub%"), 'reading_workflows_check_165')
+            require((downloaded.headers["content-disposition"].startswith("attachment;")), 'reading_workflows_check_166')
             signed_out = browser.new_context(java_script_enabled=False)
             for path in (source_path, download_path):
                 refused = signed_out.request.get(origin + path, max_redirects=0)
-                assert refused.status == 303 and refused.headers["location"].startswith("/login")
+                require((refused.status == 303 and refused.headers["location"].startswith("/login")), 'reading_workflows_check_170')
             signed_out.close()
             checks.append("native preference save changes actual UID order9/10, explicit URL sort wins; source/file details hide in both readers while protected body/download bytes stay unchanged and direct routes require login")
 
             visit(page)
             page.get_by_label("Default content", exact=True).select_option("prefer_plain_text")
             submit(page, "Save content preference")
-            assert parse_qs(urlsplit(page.url).query)["section"] == ["reading"]
-            assert post_shapes[-1] == dict(path="/settings", keys=["csrf_token","html_display_preference","return_section","settings_action"], return_section=["reading"])
+            require((parse_qs(urlsplit(page.url).query)["section"] == ["reading"]), 'reading_workflows_check_177')
+            require((post_shapes[-1] == dict(path="/settings", keys=["csrf_token","html_display_preference","return_section","settings_action"], return_section=["reading"])), 'reading_workflows_check_178')
             archive = page.get_by_label("Archive folder", exact=True)
-            assert "Archive/2026" in archive.locator("option").evaluate_all("els=>els.map(e=>e.value)")
+            require(("Archive/2026" in archive.locator("option").evaluate_all("els=>els.map(e=>e.value)")), 'reading_workflows_check_180')
             archive.select_option("Archive/2026")
             submit(page, "Save archive folder", keyboard=True)
-            assert parse_qs(urlsplit(page.url).query)["section"] == ["reading"]
-            assert post_shapes[-1]["return_section"] == ["reading"]
+            require((parse_qs(urlsplit(page.url).query)["section"] == ["reading"]), 'reading_workflows_check_183')
+            require((post_shapes[-1]["return_section"] == ["reading"]), 'reading_workflows_check_184')
             expect(page.get_by_label("Default content", exact=True)).to_have_value("prefer_plain_text")
             expect(page.get_by_label("Archive folder", exact=True)).to_have_value("Archive/2026")
             checks.append("native independent content/archive forms POST exact settings fields with return_section=reading; available Archive/2026 persists without losing content preference")
@@ -194,11 +194,11 @@ def main():
                     (base+[("unexpected","1")],400), ([("csrf_token",csrf),("start_page","other"),("date_order","newest")],400),
                     (base[1:],403), ([("csrf_token","invalid"),*base[1:]],403)]:
                 post(page,"/settings/reading",fields,code)
-                assert path.read_bytes() == saved
+                require((path.read_bytes() == saved), 'reading_workflows_check_197')
             path.write_bytes(b'{"version":99}\n')
             visit(page, SETTINGS,503)
-            assert page.locator('form[action="/settings/reading"]').count() == 0
-            assert path.read_bytes() == b'{"version":99}\n'
+            require((page.locator('form[action="/settings/reading"]').count() == 0), 'reading_workflows_check_200')
+            require((path.read_bytes() == b'{"version":99}\n'), 'reading_workflows_check_201')
             path.write_bytes(saved)
             checks.append("malformed/duplicate/unsupported/invalid-CSRF updates preserve record bytes; corrupt persisted record gives503 without a preference form or default overwrite")
 

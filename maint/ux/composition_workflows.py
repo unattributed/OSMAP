@@ -13,7 +13,7 @@ import tempfile
 import time
 from urllib.parse import urlencode, urlsplit
 from playwright.sync_api import sync_playwright, expect
-from browser_workflows import start_server, stop_server
+from browser_workflows import start_server, stop_server, require
 from contrast_audit import TEXT_AUDIT
 
 SETTINGS = '/settings?section=composition'
@@ -45,19 +45,19 @@ def main():
 
         def visit(p, path=SETTINGS, status=200):
             response = p.goto(origin+path, wait_until='networkidle')
-            assert response.status == status, (path, response.status)
-            assert response.headers['cache-control'] == 'no-store'
+            require((response.status == status), lambda: ((path, response.status)))
+            require((response.headers['cache-control'] == 'no-store'), 'composition_workflows_check_49')
             if p.locator('#compose-form').count():
-                assert p.locator('script:not(#osmap-compose-local)').count() == 0
-                assert p.locator('.compose-recipient-editor').count() == 0
-            else: assert p.locator('script').count() == 0
+                require((p.locator('script:not(#osmap-compose-local)').count() == 0), 'composition_workflows_check_51')
+                require((p.locator('.compose-recipient-editor').count() == 0), 'composition_workflows_check_52')
+            else: require((p.locator('script').count() == 0), 'composition_workflows_check_53')
 
         def submit(p, name, status=200):
             button = p.get_by_role('button', name=name, exact=True)
             button.focus()
             with p.expect_navigation(wait_until='networkidle') as navigation:
                 p.keyboard.press('Enter')
-            assert navigation.value.status == status, (name, navigation.value.status)
+            require((navigation.value.status == status), lambda: ((name, navigation.value.status)))
 
         def login(account='alice'):
             ctx = browser.new_context(java_script_enabled=False, viewport=dict(width=1600, height=1100),
@@ -91,13 +91,13 @@ def main():
             p.get_by_label('Format', exact=True).select_option(mode)
             p.get_by_label('Reply placement', exact=True).select_option(placement)
             submit(p, 'Save composition preferences')
-            assert p.url.endswith('/settings?section=composition&updated=1')
+            require((p.url.endswith('/settings?section=composition&updated=1')), 'composition_workflows_check_94')
             saved(p, mode, placement)
 
         def post(p, fields, expected=303):
             response = p.context.request.post(origin+'/settings/composition', data=urlencode(fields),
                 headers={'Origin':origin, 'Content-Type':'application/x-www-form-urlencoded'}, max_redirects=0)
-            assert response.status == expected
+            require((response.status == expected), 'composition_workflows_check_100')
 
         def draft(p, mode):
             visit(p, '/compose')
@@ -112,17 +112,17 @@ def main():
             p = login()
             saved(p, 'plain', 'above')
             record = root/'settings'/(hashlib.sha256(b'osmap-composition-preferences-v1\0alice@example.com').hexdigest()+'.json')
-            assert not record.exists()
+            require((not record.exists()), 'composition_workflows_check_115')
             record.parent.mkdir(exist_ok=True, mode=0o700)
             record.parent.chmod(0o700)
             legacy = b'{"version":1,"default_body_format":"formatted"}\n'
             record.write_bytes(legacy)
             record.chmod(0o600)
             saved(p, 'formatted', 'above')
-            assert record.read_bytes() == legacy
+            require((record.read_bytes() == legacy), 'composition_workflows_check_122')
             old_plain, old_formatted = draft(p, 'plain'), draft(p, 'formatted')
             preferences(p, 'formatted', 'below')
-            assert json.loads(record.read_bytes()) == dict(version=2, default_body_format='formatted', reply_placement='below')
+            require((json.loads(record.read_bytes()) == dict(version=2, default_body_format='formatted', reply_placement='below')), 'composition_workflows_check_125')
             report['checks'].append('Absent defaults and v1 Above read without rewrite; native save upgrades private record to v2')
             visit(p, '/compose')
             expect(p.locator('#compose-body-format')).to_have_value('formatted')
@@ -142,10 +142,10 @@ def main():
                 visit(p, '/compose?'+urlencode(dict(mode=mode, mailbox='INBOX', uid=9)))
                 expect(p.locator('#compose-body-format')).to_have_value('plain')
                 body = p.locator('#compose-body').input_value()
-                assert '[x](unsupported:target)' in body and '**literal**' in body
+                require(('[x](unsupported:target)' in body and '**literal**' in body), 'composition_workflows_check_145')
                 # The renderer preserves the builder's two leading blank lines.
-                assert above.startswith('\n\n')
-                assert body == (forward if mode == 'forward' else above[2:]+'\n\n')
+                require((above.startswith('\n\n')), 'composition_workflows_check_147')
+                require((body == (forward if mode == 'forward' else above[2:]+'\n\n')), 'composition_workflows_check_148')
             report['checks'].append('New blank format applies; opposite-default saved drafts retain format/source; reply/reply-all move only blank lines and preserve literal notation; forward unchanged')
             visit(p, '/settings?section=general')
             p.get_by_label('Default format', exact=True).select_option('plain')
@@ -170,7 +170,7 @@ def main():
             record.write_bytes(b'{"version":99}\n')
             submit(p, 'Save composition preferences', 503)
             expect(p.get_by_text('The preference save could not be confirmed.', exact=False)).to_be_visible()
-            assert record.read_bytes() == b'{"version":99}\n'
+            require((record.read_bytes() == b'{"version":99}\n'), 'composition_workflows_check_173')
             visit(p)
             expect(p.get_by_label('Format', exact=True)).to_be_disabled()
             expect(p.get_by_label('Reply placement', exact=True)).to_be_disabled()
@@ -183,15 +183,15 @@ def main():
                         p.set_viewport_size(dict(width=width, height=1100))
                         p.emulate_media(color_scheme=scheme, forced_colors=forced)
                         visit(p)
-                        assert p.evaluate('document.documentElement.scrollWidth <= innerWidth')
+                        require((p.evaluate('document.documentElement.scrollWidth <= innerWidth')), 'composition_workflows_check_186')
                         p.get_by_label('Format', exact=True).focus()
                         expect(p.get_by_label('Format', exact=True)).to_be_focused()
                         audit = p.evaluate(TEXT_AUDIT)
                         filename = f'composition-{scheme}-{width}'+('-forced' if forced=='active' else '')+'.png'
                         p.screenshot(path=str(out/filename), full_page=True)
                         report['captures'].append(dict(file=filename, overflow=False, contrast=audit, card_boxes=p.locator('.composition-settings-grid > section').evaluate_all('els=>els.map(e=>({top:e.getBoundingClientRect().top,bottom:e.getBoundingClientRect().bottom}))')))
-                        assert not audit['failures'] and not audit['ui_failures'], filename
-            assert report['external_requests'] == report['script_requests'] == report['send_requests'] == 0
+                        require((not audit['failures'] and not audit['ui_failures']), lambda: (filename))
+            require((report['external_requests'] == report['script_requests'] == report['send_requests'] == 0), 'composition_workflows_check_194')
             report['limitations'] = ['Compose retains its existing inline enhancement script, disabled by browser context; no page scripts execute.', 'Computed flat-colour audit is not full accessibility certification; native controls and forced palettes require visual review.', 'Pre-publication I/O failure and concurrent-writer guarantees rely on focused Rust store tests.']
             report['result'] = 'PASS'
         except Exception as error:

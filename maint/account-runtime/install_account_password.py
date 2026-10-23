@@ -37,6 +37,19 @@ def require(value, reason):
         raise Refused(reason)
 
 
+def failure_code(error):
+    """Export source-owned refusal codes without paths or exception payloads."""
+    if (type(error) is Refused and len(error.args) == 1 and
+            isinstance(error.args[0], str) and
+            re.fullmatch(r'[a-z][a-z0-9_]{0,127}', error.args[0])):
+        return error.args[0]
+    if isinstance(error, OSError):
+        return 'installation_os_error'
+    if isinstance(error, ValueError):
+        return 'installation_invalid_input'
+    return 'installation_publication_refused'
+
+
 def before(end):
     require(time.monotonic() < end, 'installation_deadline')
 
@@ -376,7 +389,7 @@ def install(stage, expected_hash, source, end):
                 same_snapshot(path, old[path], LIMIT if path == BINARY else 16384, body_end)
                 publish(path, data, mode, os.geteuid(), os.getegid(), body_end, owned)
             result.update(result='INSTALLED_NOT_ACTIVATED', installed=True)
-        except BaseException:
+        except BaseException as failure:
             # No historical PID signals or service changes during restoration.
             for number in (signal.SIGHUP, signal.SIGTERM, signal.SIGINT):
                 signal.signal(number, signal.SIG_IGN)
@@ -407,9 +420,10 @@ def install(stage, expected_hash, source, end):
                                 (m[2], m[3], stat.S_IMODE(m[4])) ==
                                 (original[2], original[3], stat.S_IMODE(original[4])),
                                 'rollback_readback_unknown')
-                except BaseException:
+                except BaseException as rollback_failure:
                     result['rollback'] = 'UNKNOWN'
-            result['failure'] = 'installation_publication_refused'
+                    result.setdefault('rollback_failures', {})[str(path)] = failure_code(rollback_failure)
+            result['failure'] = failure_code(failure)
         write_exclusive(backup / 'result.json',
                         json.dumps(result, sort_keys=True).encode() + b'\n', end)
         sync_directory(backup)
@@ -446,8 +460,9 @@ def main():
 if __name__ == '__main__':
     try:
         raise SystemExit(main())
-    except (Refused, OSError, ValueError):
+    except (Refused, OSError, ValueError) as failure:
         print(json.dumps({'result': 'FAIL', 'installed': False, 'activation': False,
                           'enablement': 'UNKNOWN_UNMODIFIED',
-                          'failure': 'fixed_installation_refused'}))
+                          'rollback': 'UNKNOWN',
+                          'failure': failure_code(failure)}))
         raise SystemExit(1)

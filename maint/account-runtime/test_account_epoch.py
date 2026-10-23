@@ -1,4 +1,4 @@
-import pathlib,tempfile,os,unittest,json,threading,time
+import pathlib,tempfile,os,unittest,json,threading,time,subprocess,sys
 from authoritative_password import AuthoritativePasswordAdapter as Adapter,Refused,Unconfirmed,Receipt
 from account_epoch import EpochStore,PasswordCoordinator
 ACCOUNT='alice@example.test';REF='a'*64;NOW=1000;NEW='long synthetic password'
@@ -61,6 +61,25 @@ class EpochTests(unittest.TestCase):
         with self.assertRaises(Refused):self.store.admission(ACCOUNT)
         path.unlink();path.symlink_to('/dev/null')
         with self.assertRaises(Refused):self.store.admission(ACCOUNT)
+    def test_fifo_record_refuses_without_waiting_for_a_writer(self):
+        _,path=self.store._paths(ACCOUNT)
+        path.unlink();os.mkfifo(path,0o600)
+        body='''import os,sys
+sys.path.insert(0,sys.argv[1])
+from account_epoch import EpochStore
+from authoritative_password import Refused
+try:
+    EpochStore(sys.argv[2],os.getuid()).admission(sys.argv[3])
+except Refused:
+    print('REFUSED')
+else:
+    raise SystemExit('FIFO record admitted')
+'''
+        result=subprocess.run((sys.executable,'-I','-B','-c',body,
+            str(pathlib.Path(__file__).resolve().parent),str(self.root),ACCOUNT),
+            stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=2,check=False)
+        self.assertEqual((result.returncode,result.stdout,result.stderr),(0,b'REFUSED\n',b''))
+        self.assertTrue(path.is_fifo())
     def test_generated_state_contains_no_password_totp_or_account_text(self):
         self.change()
         for file in self.root.iterdir():

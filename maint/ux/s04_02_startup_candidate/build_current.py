@@ -254,10 +254,13 @@ def execute(root):
         record['local_transport_group_gone'] = False
         if child is not None:
             try:
-                try:
-                    os.killpg(child.pid, signal.SIGKILL)
-                except ProcessLookupError:
-                    pass
+                # communicate() reaps on ordinary completion. Its historical
+                # PID must never authorize a later destructive group signal.
+                if child.returncode is None:
+                    try:
+                        os.killpg(child.pid, signal.SIGKILL)
+                    except ProcessLookupError:
+                        pass
                 child.wait(timeout=5)
                 record['local_transport_reaped'] = True
                 try:

@@ -6,7 +6,7 @@ from pathlib import Path
 import tempfile
 from urllib.parse import urlsplit
 from playwright.sync_api import sync_playwright, expect
-from browser_workflows import start_server, stop_server
+from browser_workflows import start_server, stop_server, require
 from contrast_audit import TEXT_AUDIT
 
 def main():
@@ -38,8 +38,8 @@ def main():
         p = ctx.new_page()
         def visit(path):
             response = p.goto(origin+path, wait_until='networkidle')
-            assert response.status == 200
-            assert response.headers['cache-control'] == 'no-store'
+            require((response.status == 200), 'security_settings_workflows_check_41')
+            require((response.headers['cache-control'] == 'no-store'), 'security_settings_workflows_check_42')
         try:
             visit('/login')
             p.get_by_label('Username or Email').fill('alice@example.com')
@@ -52,7 +52,7 @@ def main():
             p.keyboard.press('Enter')
             p.wait_for_url('**/settings?section=security')
             expect(p.get_by_role('heading', name='Security Controls')).to_be_visible()
-            assert p.locator('.security-control button:not([disabled])').count() == 0
+            require((p.locator('.security-control button:not([disabled])').count() == 0), 'security_settings_workflows_check_55')
             p.get_by_role('link', name='Manage sessions', exact=True).click()
             p.wait_for_url('**/sessions')
             visit('/settings?section=security')
@@ -61,11 +61,11 @@ def main():
             p.get_by_role('navigation', name='Settings sections').get_by_role('link', name='Authentication & Recovery', exact=True).click()
             p.wait_for_url('**/settings?section=authentication')
             expect(p.get_by_role('heading', name='Authentication', exact=True)).to_be_visible()
-            assert p.locator('.authentication-cards button:not([disabled])').count() == 0
+            require((p.locator('.authentication-cards button:not([disabled])').count() == 0), 'security_settings_workflows_check_64')
             p.get_by_role('link', name='Manage sessions', exact=True).click()
             p.wait_for_url('**/sessions')
             visit('/settings?q=authentication')
-            assert p.locator('main a[href="/settings?section=authentication"]').count() > 0
+            require((p.locator('main a[href="/settings?section=authentication"]').count() > 0), 'security_settings_workflows_check_68')
             other = browser.new_context(java_script_enabled=False, viewport=dict(width=1600, height=1100))
             other.route('**/*', bounded)
             bob = other.new_page()
@@ -77,12 +77,12 @@ def main():
             bob.wait_for_url('**/mailboxes')
             for section in ('security', 'authentication'):
                 response = bob.goto(origin+'/settings?section='+section, wait_until='networkidle')
-                assert response.status == 200
+                require((response.status == 200), 'security_settings_workflows_check_80')
                 expect(bob.locator('main')).to_contain_text('1 active browser sessions')
-                assert 'alice@example.com' not in bob.locator('body').inner_text()
+                require(('alice@example.com' not in bob.locator('body').inner_text()), 'security_settings_workflows_check_82')
                 visit('/settings?section='+section)
                 expect(p.locator('main')).to_contain_text('1 active browser sessions')
-                assert 'bob@example.com' not in p.locator('body').inner_text()
+                require(('bob@example.com' not in p.locator('body').inner_text()), 'security_settings_workflows_check_85')
             report['account_isolation'] = 'PASS: each of two real session stores exposes only its account session'
             other.close()
             for section in ('security', 'authentication'):
@@ -92,14 +92,14 @@ def main():
                             p.set_viewport_size(dict(width=width, height=1100))
                             p.emulate_media(color_scheme=scheme, forced_colors=forced)
                             visit('/settings?section='+section)
-                            assert p.locator('script').count() == 0
+                            require((p.locator('script').count() == 0), 'security_settings_workflows_check_95')
                             overflow = p.evaluate('document.documentElement.scrollWidth > innerWidth')
                             audit = p.evaluate(TEXT_AUDIT)
                             file = f'{section}-{scheme}-{width}-{forced}.png'
                             p.screenshot(path=str(args.output/file), full_page=True)
                             report['captures'].append(dict(file=file, overflow=overflow, contrast=audit, boxes=p.locator('.security-card').evaluate_all('els=>els.map(e=>({top:e.getBoundingClientRect().top,bottom:e.getBoundingClientRect().bottom}))')))
-                            assert not overflow and not audit['failures'] and not audit['ui_failures'], file
-            assert report['external_requests'] == report['post_requests'] == report['script_requests'] == 0
+                            require((not overflow and not audit['failures'] and not audit['ui_failures']), lambda: (file))
+            require((report['external_requests'] == report['post_requests'] == report['script_requests'] == 0), 'security_settings_workflows_check_102')
             report['result'] = 'PASS'
         finally:
             (args.output/'report.json').write_text(json.dumps(report, indent=2)+'\n')

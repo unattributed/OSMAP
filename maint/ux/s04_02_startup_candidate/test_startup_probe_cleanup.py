@@ -51,10 +51,10 @@ class ProbeTests(unittest.TestCase):
         def load(name):
             spec=importlib.util.spec_from_file_location('closure_'+name,PATH.parent/(name+'.py'))
             module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module);return module
-        stage=load('stage_root');wrapper=load('remote_wrapper');packet=load('bind_startup').source_packet()
-        self.assertEqual(set(packet['sources']),set(stage.SOURCE_PINS))
+        stage=load('stage_root');wrapper=load('remote_wrapper');binder=load('bind_startup')
         for name,pin in stage.SOURCE_PINS.items():
-            self.assertEqual(hashlib.sha256(base64.b64decode(packet['sources'][name],validate=True)).hexdigest(),pin,name)
+            path=PATH if name=='backend/startup_only.py'else PATH.parent/'sources'/name
+            self.assertEqual(hashlib.sha256(binder.repository_source(path)).hexdigest(),pin,name)
         self.assertEqual(hashlib.sha256((PATH.parent/'stage_root.py').read_bytes()).hexdigest(),wrapper.ROOT_SOURCE_SHA256)
 
     def exercise(self,error=None,group_remains=False,wait_errors=(),kill_error=None,mask_restore_error=None):

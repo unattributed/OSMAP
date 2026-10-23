@@ -320,10 +320,10 @@ def journey(driver):
     # Submission uncertainty is irreversible: the custodian must retain owned
     # state on any later failure, even if no authenticated response arrives.
     driver.mutation_submission_started = True
-    driver.mutation_requests = 1
     checkpoint = getattr(driver, 'mutation_submission_checkpoint', None)
     if checkpoint is not None:
         checkpoint()
+    driver.mutation_requests = 1
     changed = timed('mutation_seconds', driver.request, 'POST', '/settings/password', end, cookie=alice_cookie,
         form={'csrf_token': alice['csrf_token'], 'current_password': current_alice,
             'new_password': new_password, 'confirmation': new_password, 'totp_code': driver.code(stepup)})

@@ -117,6 +117,8 @@ def run(p,report):
     try:
         f.preflight();owner=f.recovery=Receipt(f,installer,p)
         f.provision();f.provision_service();f.prepare_rust_journey();owner.setup_complete=True;owner.checkpoint('FIXTURE_PROVISIONED')
+        report['initial_authority_digests']={account:http.digest_fields(f.baseline[index],http.COLUMNS)
+            for index,account in enumerate((http.ALICE,http.BOB))}
         f.start_helper();owner.checkpoint('HELPER_READY')
         milestones['milestone1']={'result':'PASS',**f.report['service_readiness']}
         witness=w.StockMailWitness(f,min(WORK,time.monotonic()+180));witness.begin()
@@ -173,9 +175,13 @@ def run(p,report):
                 'category':type(error).__name__,'reason':failure_reason(error)})
         submitted=web is not None and getattr(getattr(web,'driver',None),'mutation_submission_started',False)
         report['mutation_submission_started']=submitted
+        report['mutation_requests']=getattr(getattr(web,'driver',None),'mutation_requests',0)
         if owner is not None:owner.mutation_submission_started=submitted
         if web is not None and getattr(web,'driver',None) is not None:
             report['timings']=dict(getattr(web.driver,'milestone_timings',report.get('timings',{})))
+            if web.driver.actual_http_report is not None:
+                report['actual_http_report']=web.driver.actual_http_report
+            if failure:report['http_failure_scalars']=web.driver.failure_scalars()
         try:
             if web is not None:
                 if not web.requests_stopped:web.stop_requests()

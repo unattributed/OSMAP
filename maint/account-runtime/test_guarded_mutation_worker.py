@@ -179,9 +179,17 @@ class GuardedWorkerTests(unittest.TestCase):
         thread=threading.Thread(target=server);thread.start()
         try:
             right.settimeout(1);raw=guarded();right.sendall(len(raw).to_bytes(4,'big')+raw);right.shutdown(socket.SHUT_WR)
-            prefix=right.recv(4);self.assertEqual(len(prefix),4);size=int.from_bytes(prefix,'big');self.assertLessEqual(size,4096)
+            prefix=bytearray()
+            while len(prefix)<4:
+                part=right.recv(4-len(prefix))
+                self.assertTrue(part,'worker closed before the reply header')
+                prefix.extend(part)
+            size=int.from_bytes(prefix,'big');self.assertLessEqual(size,4096)
             reply=bytearray()
-            while len(reply)<size:reply.extend(right.recv(size-len(reply)))
+            while len(reply)<size:
+                part=right.recv(size-len(reply))
+                self.assertTrue(part,'worker closed before the complete reply')
+                reply.extend(part)
             self.check_reply(bytes(reply),'changed');self.assertEqual(right.recv(1),b'')
         finally:right.close();thread.join(timeout=1)
         self.assertFalse(thread.is_alive());self.assertEqual(errors,[]);self.assertEqual(self.backend.writes,1)

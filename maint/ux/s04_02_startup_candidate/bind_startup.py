@@ -27,9 +27,17 @@ def private(path,cap=4*1024*1024):
 
 def repository_source(path,cap=2*1024*1024):
     m=path.lstat();require(stat.S_ISREG(m.st_mode)and m.st_uid==os.geteuid()
-        and m.st_nlink==1 and 0<m.st_size<=cap,
+        and m.st_nlink==1 and not m.st_mode&0o002 and 0<m.st_size<=cap,
         'repository_source_custody')
-    return path.read_bytes()
+    identity=lambda x:(x.st_dev,x.st_ino,x.st_mode,x.st_uid,x.st_gid,x.st_nlink,x.st_size,x.st_mtime_ns,x.st_ctime_ns)
+    fd=os.open(path,os.O_RDONLY|os.O_NOFOLLOW|os.O_NONBLOCK|os.O_CLOEXEC)
+    try:
+        require(identity(os.fstat(fd))==identity(m),'repository_source_open')
+        raw=os.read(fd,cap+1)
+        require(len(raw)==m.st_size and identity(os.fstat(fd))==identity(m)
+            and identity(path.lstat())==identity(m),'repository_source_changed')
+        return raw
+    finally:os.close(fd)
 
 
 def source_packet():
@@ -45,7 +53,7 @@ def source_packet():
     sources={}
     for name,pin in stage_root.SOURCE_PINS.items():
         path=ROOT/'startup_only.py'if name=='backend/startup_only.py'else ROOT/'sources'/name
-        raw=private(path)
+        raw=repository_source(path)
         require(hashlib.sha256(raw).hexdigest()==pin,'candidate_source_pin_'+name.replace('/','_'))
         sources[name]=base64.b64encode(raw).decode()
     value['sources']=sources

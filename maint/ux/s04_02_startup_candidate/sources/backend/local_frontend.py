@@ -113,18 +113,20 @@ class Frontend:
                             out[key.data].extend(part);require(len(out[key.data])<=cap,'front_program_output_cap')
                     while os.waitid(os.P_PID,child.pid,os.WEXITED|os.WNOHANG|os.WNOWAIT)is None:
                         require(time.monotonic()<deadline-1,'front_program_exit_deadline');time.sleep(.01)
-            except BaseException as exc:error=type(exc).__name__
+            except BaseException as exc:error=exc
             finally:
-                try:os.killpg(child.pid,signal.SIGKILL)
-                except ProcessLookupError:pass
                 try:
+                    try:os.killpg(child.pid,signal.SIGKILL)
+                    except ProcessLookupError:pass
                     child.wait(timeout=max(.001,deadline-time.monotonic()));reaped=True
                     try:os.killpg(child.pid,0)
                     except ProcessLookupError:gone=True
-                finally:child.stdout.close();child.stderr.close()
-                self.report['groups'].append({'operation':label,'reaped':reaped,'group_gone':gone,'code':child.returncode})
-                self.process_uncertain|=not(reaped and gone)
-            require(error is None and reaped and gone and child.returncode==0 and not out[1],'actual_front_program_failed')
+                finally:
+                    child.stdout.close();child.stderr.close()
+                    self.report['groups'].append({'operation':label,'reaped':reaped,'group_gone':gone,'code':child.returncode})
+                    self.process_uncertain|=not(reaped and gone)
+            if error is not None:raise error
+            require(reaped and gone and child.returncode==0 and not out[1],'actual_front_program_failed')
             return bytes(out[0])
     def directory(self,path,uid,gid,mode):
         try:
@@ -207,8 +209,11 @@ class Frontend:
         require(set(boot)=={'version','alice_password','bob_password','new_password','admission_key','mutation_key','session_proof_key'}
             and boot['version']==1 and all(type(v)is str and re.fullmatch('[a-f0-9]{64}',v)for k,v in boot.items()if k!='version'),'fixed_front_bootstrap')
         self.boot=boot
-        # Import clocks only at READY, after backend material/startup, never at keygen.
+        # The imported Control/drain helpers run under this actor's original
+        # bound. The guardian subprocess owns its separate 120s process clock;
+        # importing its helpers must not start a second, earlier guardian clock.
         self.guard=module('fixed_front_guardian','native_http_web_guardian.py')
+        self.guard.END=END
         self.http_root=Path('/var/run')/('osmap-pxp-'+secrets.token_hex(8))
         root=self.http_root/'http-state'
         for path in(self.http_root,root,root/'keys',root/'secrets'):self.directory(path,0,GID,0o750)
@@ -241,7 +246,7 @@ class Frontend:
             and self.ready['schema']=='osmap-http-password-ready-v1'and self.ready['connections']==18
             and type(self.ready['port'])is int and 0<self.ready['port']<=65535
             and abs(self.ready['totp_counter']-int(time.time())//30)<=1,'actual_native_ready')
-        self.sequence_end=min(WORK,self.guard.END-10,time.monotonic()+90)
+        self.sequence_end=min(WORK,time.monotonic()+90)
         self.driver=self.http_module.FrontDriver(self,boot)
     def group(self,allow_web=False):
         raw=self.run(('/bin/ps','-ax','-o','pid=,ppid=,pgid=,uid=,comm='),'actual_front_guardian_group',cap=65536,cleanup=True,absolute=END-3)
@@ -279,19 +284,24 @@ class Frontend:
                 self.http_stream.close();self.http_stream=None
         if self.guardian is not None and not self.requests_stopped:
             if self.control is not None:self.control.stream.close()
-            self.group(allow_web=True)
-            # The direct guardian has not been reaped; this exact born group
-            # contains only the verified guardian and its fixed native child.
-            try:os.killpg(self.guardian.pid,signal.SIGTERM)
-            except ProcessLookupError:pass
-            stop_end=min(END-10,time.monotonic()+5)
-            while time.monotonic()<stop_end:
-                status=os.waitid(os.P_PID,self.guardian.pid,os.WEXITED|os.WNOHANG|os.WNOWAIT)
-                if status is not None:break
-                time.sleep(.02)
-            else:os.killpg(self.guardian.pid,signal.SIGKILL)
-            self.guardian.wait(timeout=max(.001,END-10-time.monotonic()))
-            self.guard.drain(self.guardian,END-10)
+            if self.guardian.returncode is None:
+                self.group(allow_web=True)
+                # The direct guardian has not been reaped; this exact born group
+                # contains only the verified guardian and its fixed native child.
+                try:os.killpg(self.guardian.pid,signal.SIGTERM)
+                except ProcessLookupError:pass
+                stop_end=min(END-10,time.monotonic()+5)
+                while time.monotonic()<stop_end:
+                    status=os.waitid(os.P_PID,self.guardian.pid,os.WEXITED|os.WNOHANG|os.WNOWAIT)
+                    if status is not None:break
+                    time.sleep(.02)
+                else:os.killpg(self.guardian.pid,signal.SIGKILL)
+                self.guardian.wait(timeout=max(.001,END-10-time.monotonic()))
+                self.guard.drain(self.guardian,END-10)
+            # finish_http may have reaped the direct child before a terminal
+            # validation/drain failure. Its historical PID no longer grants
+            # signalling authority or requires a live guardian inventory.
+            # A surviving group is uncertain and must be retained, not killed.
             try:os.killpg(self.guardian.pid,0)
             except ProcessLookupError:pass
             else:raise RuntimeError('unconfirmed_front_request_group')

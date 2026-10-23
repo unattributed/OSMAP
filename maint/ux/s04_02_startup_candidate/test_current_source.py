@@ -5,6 +5,7 @@ host binary-location adapter and native service observations are fixtures here;
 this is machinery compatibility evidence, not OpenBSD product qualification.
 """
 import copy
+import ast
 import contextlib
 import io
 import hashlib
@@ -13,11 +14,12 @@ import json
 import os
 from pathlib import Path
 import stat
+import signal
 import tempfile
 import time
 from types import SimpleNamespace
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 ROOT=Path(__file__).resolve().parent
 BUILD=Path(os.environ.get('OSMAP_CURRENT_BUILD_DIR',
@@ -162,7 +164,12 @@ class CurrentSourceIntegration(unittest.TestCase):
             def preflight(self):pass
             def provision(self):self.provisioning_started=True
             def provision_service(self):pass
-            def authoritative_snapshot(self,account,_end):
+            def authoritative_snapshot(self,account,_end,*,cleanup=False):
+                if self.helper_stopped:
+                    if not cleanup:
+                        raise RuntimeError('final_authority_did_not_use_cleanup_reserve')
+                    if _end != fakejourney.END:
+                        raise RuntimeError('final_authority_changed_absolute_deadline')
                 return {'account':account,'epoch':0,'state':'active','changed_at':None}
             def rust_epoch(self,account):return ({'epoch':0},None)
             def start_helper(self):
@@ -255,7 +262,9 @@ class CurrentSourceIntegration(unittest.TestCase):
                     self.assertEqual(peer.writes,1)
                     self.assertTrue(states['backend'].disposed and states['frontend'].disposed)
                 else:
-                    with self.assertRaises(RuntimeError):consumer.inspect(transport,0,self.p['not_after_utc'],self.p)
+                    accepted=consumer.inspect(transport,1,self.p['not_after_utc'],self.p)
+                    self.assertEqual((accepted['result'],accepted['disposition']),('FAIL','UNCERTAIN'))
+                    self.assertIsNone(accepted['password_mutation'])
                     self.assertEqual(report['disposition'],'RETAINED_REQUIRES_REVIEW')
                     self.assertTrue((runtime/'http-state/sessions').exists())
                     self.assertFalse(states['backend'].disposed or states['frontend'].disposed)
@@ -263,6 +272,34 @@ class CurrentSourceIntegration(unittest.TestCase):
                 # Local regression fixture only: native retained effects are never
                 # passed to this inert stage-only cleanup on an uncertain write.
                 self.dispose(back,front,frames)
+
+
+class BuildTransportCleanupTests(unittest.TestCase):
+    def test_actual_cleanup_never_signals_reaped_transport(self):
+        # Run the actual dispatch finally body without its host/build dispatch.
+        build=load('build_current')
+        tree=ast.parse((ROOT/'build_current.py').read_text())
+        execute=next(node for node in tree.body if isinstance(node,ast.FunctionDef)
+            and node.name=='execute')
+        terminal=next(node for node in reversed(execute.body)if isinstance(node,ast.Try))
+        code=compile(ast.Module(body=terminal.finalbody,type_ignores=[]),
+            str(ROOT/'build_current.py'),'exec')
+        for already_reaped,group_exists in ((True,False),(True,True),(False,False)):
+            with self.subTest(already_reaped=already_reaped,group_exists=group_exists):
+                child=SimpleNamespace(pid=424242,returncode=0 if already_reaped else None,
+                    stdin=None,stdout=None,stderr=None,wait=Mock(return_value=0))
+                signals=[]
+                def observe(pid,number):
+                    self.assertEqual(pid,child.pid);signals.append(number)
+                    if number==0 and not group_exists:raise ProcessLookupError
+                record={'native_result':'PASS'}
+                context={**build.__dict__,'child':child,'record':record,
+                    'root':Path('/unused-local-test'),'start':time.monotonic(),'save':Mock()}
+                with patch.object(build.os,'killpg',side_effect=observe):exec(code,context)
+                self.assertEqual(signals,[0]if already_reaped else[signal.SIGKILL,0])
+                self.assertTrue(record['local_transport_reaped'])
+                self.assertEqual(record['local_transport_group_gone'],not group_exists)
+                self.assertEqual(record['native_result'],'FAIL'if group_exists else'PASS')
 
 
 if __name__=='__main__':unittest.main(verbosity=2)

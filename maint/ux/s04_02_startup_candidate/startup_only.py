@@ -258,7 +258,7 @@ def run(p,report):
             if f.helper is not None and not f.helper_stopped:f.stop_helper()
             if owner is not None:owner.checkpoint('HELPER_STOPPED')
             if owner is not None and owner.setup_complete and 'baseline' in report:
-                observed={account:f.authoritative_snapshot(account,journey.END) for account in http.ACCOUNTS}
+                observed={account:f.authoritative_snapshot(account,journey.END,cleanup=True) for account in http.ACCOUNTS}
                 report['after']=observed
                 report['authoritative_preservation']=observed==report['baseline']
                 require(report['authoritative_preservation'],'authoritative_snapshot_changed')

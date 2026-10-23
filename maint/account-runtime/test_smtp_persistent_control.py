@@ -29,7 +29,8 @@ class PersistentTests(unittest.TestCase):
                     self.results.append(self.listener.serve(self.stop))
             except Exception as error:self.results.append(error)
         self.thread=threading.Thread(target=serve);self.thread.start()
-        self.addCleanup(self.stop.set);self.addCleanup(lambda:self.thread.join(2))
+        # unittest cleanups run last-in first-out: stop before waiting.
+        self.addCleanup(lambda:self.thread.join(2));self.addCleanup(self.stop.set)
         # bind/chmod publishes mode 600 before the kernel accepts connections.
         # Observe the actual owned listen completion without an extra connection.
         self.assertTrue(ready.wait(1),'owned listener publication incomplete')

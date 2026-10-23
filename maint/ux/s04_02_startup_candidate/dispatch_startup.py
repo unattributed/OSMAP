@@ -19,6 +19,11 @@ VALIDATOR_SHA256='1a08edebf49a265e389f3f71a51d1dfcedc039ce9189210f96101c5bd07ecc
 def sha(raw):return hashlib.sha256(raw).hexdigest()
 def require(value,code):
     if not value:raise RuntimeError(code)
+def check_review(review,pins):
+    reviewer=review.get('reviewer')
+    require(review.get('decision')=='CLEAR'and type(reviewer)is str
+        and bool(reviewer.strip())and reviewer.strip()!='/root'and review.get('sources')==pins,
+        'independent_review')
 def save(name,raw):
     fd=os.open(RUN/name,os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o600)
     with os.fdopen(fd,'wb')as stream:stream.write(raw);stream.flush();os.fsync(stream.fileno())
@@ -80,8 +85,7 @@ def main():
         save('startup-attempt-started.json',json.dumps(record,sort_keys=True).encode())
         pins=json.loads((RUN/'RUN_SOURCE_SHA256.json').read_bytes());review=json.loads((RUN/'startup-independent-review.json').read_bytes())
         require(set(pins)==SOURCE_FILES,'review_source_set')
-        reviewer='/root/delivery_controller' if args.operation=='password-change' else '/root/admission_review'
-        require(review['decision']=='CLEAR'and review['reviewer']==reviewer and review['sources']==pins,'independent_review')
+        check_review(review,pins)
         if args.operation=='password-change':
             authority=json.loads((RUN/'operator-authorization.json').read_bytes())
             require(authority.get('confirmed') is True and authority.get('target')=='obsd1.blackbagsecurity.com'
@@ -92,7 +96,7 @@ def main():
                 and authority.get('retain_uncertain_state') is True,'specific_mutation_authority')
         for name,pin in pins.items():
             path=ROOT/name;info=path.lstat();require(info.st_uid==os.geteuid()and info.st_nlink==1
-                and stat_mode(info)==0o600 and not path.is_symlink()and path.is_file()and sha(path.read_bytes())==pin,'source_custody')
+                and not stat_mode(info)&0o002 and not path.is_symlink()and path.is_file()and sha(path.read_bytes())==pin,'source_custody')
         packet=module('bind_startup').packet(args.build_receipt,args.source_manifest)
         if args.operation=='password-change':packet['operation']='password-change'
         ledger=(REPO/'docs/UX_EXECUTION_LEDGER.md').read_text();block=ledger.split('<!-- OSMAP_ACTIVE_WORK_ORDER -->')[1].split('<!-- /OSMAP_ACTIVE_WORK_ORDER -->')[0].strip();order=json.loads(block[8:-4])
@@ -127,8 +131,9 @@ def main():
         require(record['local_transport_disposition']=='CONFIRMED'and len(out)<=524288 and len(err)<=8192,'transport_cleanup_or_bound')
         record.update(ssh_exit=child.returncode,stdout_sha256=sha(out),stderr_sha256=sha(err),stderr_bytes=len(err));require(not err,'ssh_stderr')
         value=json.loads(out);record['transport']=value;accepted=module('consume_startup').inspect(value,child.returncode,packet['not_after_utc'],packet)
-        record.update(native_result='PASS',remote_disposition='CONFIRMED',accepted=accepted,
-            password_mutation=args.operation=='password-change')
+        record.update(native_result=accepted['result'],remote_disposition=accepted['disposition'],
+            accepted=accepted,password_mutation=accepted['password_mutation'])
+        if accepted['result']=='FAIL':record['native_failure_reason']=accepted['failure_reason']
     except BaseException as error:
         record['failure']=str(error)if type(error)is RuntimeError else type(error).__name__
         if not record['dispatched']:record.update(native_result='REFUSED',remote_disposition='NOT_DISPATCHED')

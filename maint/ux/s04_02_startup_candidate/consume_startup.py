@@ -8,8 +8,9 @@ def require(value,code):
 
 def inspect(value,code,expiry,packet):
     require(type(value)is dict and value.get('schema')=='osmap-single-host-transport-v1','transport_schema')
-    require(code==0 and value['result']=='COMPLETE'and value['born_child_reaped']is True
-        and value['born_group_gone']is True and value['root_exit']==0 and value['stderr_bytes']==0
+    require(type(code)is int and code in (0,1) and value['root_exit']==code
+        and value['result']==('COMPLETE'if code==0 else'FAIL')and value['born_child_reaped']is True
+        and value['born_group_gone']is True and value['stderr_bytes']==0
         and value['failure']is None,'transport_or_cleanup')
     frames=value['frames'];require(type(frames)is list and len(frames)==4,'four_frames')
     birth1,birth2,ready,actor=frames
@@ -27,7 +28,10 @@ def inspect(value,code,expiry,packet):
     require((packet.get('operation')=='password-change')==(actor.get('schema')=='osmap-single-host-controlled-journey-v1'),
         'operation_actor_binding')
     if actor.get('schema')=='osmap-single-host-controlled-journey-v1':
+        if code==1 and actor.get('result')=='FAIL':return inspect_mutation_failure(actor,packet)
+        require(code==0,'actor_exit_consistency')
         return inspect_mutation(actor,packet)
+    require(code==0,'actor_exit_consistency')
     if actor.get('schema')=='osmap-single-host-admission-v1':
         return inspect_admission(actor,packet)
     require(actor['schema']=='osmap-single-host-startup-v1'and actor['result']=='PASS'
@@ -111,6 +115,62 @@ def inspect_admission(actor,packet):
         'password_mutation':False,'cleanup_confirmed':True}
 
 
+def inspect_mutation_failure(actor,packet):
+    """Preserve a bound native failure; confirmation needs independent row proof.
+
+    This reports evidence only. It grants no cleanup or retry authority.
+    Missing evidence remains unknown even if the actor claimed clean disposal.
+    """
+    reason=actor.get('failure_reason')
+    if type(reason)is not str or re.fullmatch('[A-Za-z0-9_]{1,128}',reason)is None:
+        reason='controlled_journey_failed'
+    accounts={'alice@osmap-password.invalid','bob@osmap-password.invalid'}
+    baseline=actor.get('initial_authority_digests',{});final=actor.get('final_authority',{})
+    intents=actor.get('durable_intents',{});owned=actor.get('owned_effects_report',{})
+    helper=actor.get('helper_diagnostic',{})
+    no_write=(actor.get('mutation_submission_started')is False
+        and type(actor.get('mutation_requests'))is int and actor['mutation_requests']==0
+        and actor.get('proven_before_submission_no_write')is True
+        and type(baseline)is dict and type(final)is dict and type(intents)is dict
+        and set(baseline)==set(final)==set(intents)==accounts)
+    if no_write:
+        for account in accounts:
+            row=final[account];intent=intents[account];pin=baseline[account]
+            no_write=no_write and type(pin)is str and re.fullmatch('[a-f0-9]{64}',pin)is not None
+            no_write=no_write and type(row)is dict and row.get('account')==account \
+                and type(row.get('row_count'))is int and row['row_count']==1 \
+                and row.get('row_sha256')==pin and type(row.get('epoch'))is int \
+                and row['epoch']==0 and row.get('state')=='active'and row.get('changed_at')is None
+            no_write=no_write and type(intent)is dict and intent.get('pending_intent')is False \
+                and type(intent.get('epoch'))is int \
+                and type(intent.get('used_intent_count'))is int and intent=={'epoch':0,
+                    'state':'active','changed_at':None,'pending_intent':False,'used_intent_count':0}
+    cleanup=(actor.get('disposition')=='CONFIRMED'and no_write
+        and all(actor.get(k)is False for k in ('installed_qualification','slice_complete',
+            'public_service_controls','public_config_writes','relay_operations','credential_values_retained'))
+        and not actor.get('cleanup_failures')and type(owned)is dict
+        and all(owned.get(k)is True for k in ('cleanup_confirmed','public_original25_preserved',
+            'public_master_preserved','owned_sql_hash_uids_absent'))
+        and actor.get('frontend_cleanup')=={'requests_stopped':True,'disposed':True}
+        and all(actor['frontend_cleanup'][k]is True for k in ('requests_stopped','disposed'))
+        and type(helper)is dict and helper.get('helper_reaped')is True
+        and type(helper.get('helper_exit_code'))is int and helper['helper_exit_code']==0
+        and helper.get('helper_signaled')is False)
+    return {'result':'FAIL','failure_reason':reason,
+        'disposition':'CONFIRMED'if cleanup else'UNCERTAIN',
+        'reported_disposition':actor.get('disposition'),'cleanup_confirmed':bool(cleanup),
+        'password_mutation':False if no_write else None,
+        'proven_before_submission_no_write':bool(no_write),
+        'mutation_requests':actor.get('mutation_requests'),
+        'final_authority':final,'durable_intents':intents,
+        'http_failure_scalars':actor.get('http_failure_scalars'),
+        'actual_http_report':actor.get('actual_http_report'),'timings':actor.get('timings'),
+        'source_commit':packet['source_commit'],
+        'service_binary_sha256':packet['helper']['sha256'],
+        'web_binary_sha256':packet['web']['sha256'],
+        'installed_qualification':False,'slice_complete':False}
+
+
 def inspect_mutation(actor,packet):
     """Consume root observations plus the guarded HTTP journey after disposal."""
     require(actor['result']=='PASS' and actor['functional_result']=='PASS'
@@ -118,7 +178,9 @@ def inspect_mutation(actor,packet):
     require(all(actor[k] is False for k in ('installed_qualification','slice_complete',
         'public_service_controls','public_config_writes','relay_operations','credential_values_retained')),
         'mutation_scope')
-    require(actor['mutation_submission_started'] is True and type(actor['observed_http_requests'])is int
+    require(actor['mutation_submission_started'] is True
+        and type(actor['mutation_requests'])is int and actor['mutation_requests']==1
+        and type(actor['observed_http_requests'])is int
         and actor['observed_http_requests']==18,
         'mutation_submission')
     proof=actor['mutation_evidence']

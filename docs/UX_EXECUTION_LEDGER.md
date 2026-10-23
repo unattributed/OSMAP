@@ -10286,7 +10286,26 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "maint/ux/s04_02_startup_candidate/milestone3_evidence.json",
     "maint/ux/s04_02_startup_candidate/test_password_journey.py",
     "maint/ux/s04_02_startup_candidate/test_mutation_result.py",
-    "maint/ux/s04_02_startup_candidate/test_mail_witness.py"
+    "maint/ux/s04_02_startup_candidate/test_mail_witness.py",
+    "docs/UX_S04_PYTHON_REVIEW_20261023.md",
+    "maint/account-runtime/test_account_epoch.py",
+    "maint/account-runtime/test_guarded_mutation_worker.py",
+    "maint/account-runtime/test_install_account_password.py",
+    "maint/account-runtime/test_native_executor_phase_deadline.py",
+    "maint/account-runtime/test_smtp_auth_proxy_ok.py",
+    "maint/account-runtime/test_smtp_persistent_control.py",
+    "maint/account-runtime/test_smtp_shared_born_worker.py",
+    "maint/ux/appearance_workflows.py",
+    "maint/ux/browser_workflows.py",
+    "maint/ux/capture_pages.py",
+    "maint/ux/composition_workflows.py",
+    "maint/ux/general_preferences_workflows.py",
+    "maint/ux/general_workflows.py",
+    "maint/ux/preview.py",
+    "maint/ux/reading_workflows.py",
+    "maint/ux/security_settings_workflows.py",
+    "maint/ux/session_workflows.py",
+    "maint/ux/signature_workflows.py"
   ],
   "outcomes": [
     {
@@ -10446,7 +10465,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "status": "PENDING",
     "reference": "Only minimal well-defined own-password usability after all agent-owned development/matching deployed QA/independent audit PASS. No operator password is changed by agent qualification; use controlled disposable Alice and preserve Bob/operator state. NOT RUN."
   },
-  "next_action": "STOPPED after one authorized155 operation. Milestone3 FAIL before submission at stock_bob_nonce_home; no write/browser journey. Independent runtime and stage156 disposition confirmed. No retry or witness redesign under this authorization; next mutation requires explicit new direction.",
+  "next_action": "Sprint S04 Python review/corrections and source validation complete; preserve through the ordinary signed commit/push hooks. Execution155 consumed the one authorized operation; its proven pre-submission no-write and confirmed cleanup remain unchanged. No new native attempt is planned. T03 remains FAIL/open; the reused Rust 90-second whole-journey constraint remains unqualified and requires reconciliation before any readiness claim.",
   "accountability": {
     "functional_exit": "Working own-account Settings password change through the selected single-host obsd1 local account service and authoritative local backend, fresh password/TOTP step-up, one conditional SQL update, durable OSMAP epoch and all-browser revocation, actual source-bound cache handling, old-password refusal/new-login success and Bob preservation. Existing third-party SMTP/IMAP sessions may remain authenticated. Matching installed QA, independent audit and minimal owner usability remain required. Toronto is later separate production installation.",
     "owner": "/root",
@@ -35669,3 +35688,78 @@ Private evidence remains in milestone3-authoritative-change-20261023/execution15
 under the existing sprint root; sanitized milestone3_evidence.json records scope.
 Single-operation authorization is consumed; S04-02/T03, installed QA and UAT remain
 OPEN/NOT_QUALIFIED. Only normal source/evidence preservation follows.
+
+## 2026-10-23 — Sprint S04 Python review and correction authorized
+
+The operator demands review and correction of Python used in this sprint after
+repeated machinery refusals. Baseline f947c3502c73a043759f46a26b27b804636e42d6.
+Root owns integration, carriers/consumers, acceptance checks and Git; backend,
+journey and account-runtime reviewers own disjoint existing Python boundaries.
+Review the complete maintained S04 execution/import/test paths, distinguish
+retired evidence copies, verify environmental assumptions against retained or
+bounded read-only actual contracts, and correct demonstrated defects. Preserve
+historical source/receipts, one-shot mutation, bounded technical deadlines,
+uncertainty-safe disposition, public services and all product acceptance criteria.
+Expected outcome: a file-level review with concrete corrected defects, focused
+producer/consumer/failure regressions, independent source review and normal signed
+delivery. No new test framework or authorization mechanism. Existing milestones
+are not rerun; no rebuild or password mutation is authorized by this review.
+Stop on unresolved ambiguity affecting correctness and report it explicitly;
+source review/local regressions do not establish native T03 or installed PASS.
+
+## 2026-10-23 — Sprint S04 Python review and corrections completed
+
+The requested full maintained-source review covered156 Python files/34,663
+physical lines: all113 current account-runtime modules, all27 candidate modules,
+12 S04 browser/shared-helper modules, the observer/test pair and validator/test
+pair. Both embedded observers were decoded and reviewed. Runtime coverage
+includes full reads of all58 implementation/support modules and all54 baseline
+test modules plus the new installer test. Retained historical copies were hashed
+and preserved, not silently replaced or presented as current executable source.
+See docs/UX_S04_PYTHON_REVIEW_20261023.md for the findings, corrections and scope.
+
+Corrected the actual producer/userdb trailing-slash mismatch; parent-import
+clock truncation; missed cleanup-reserve selector; FIFO read hang; phase clock
+restart at process creation; reaped-PID signalling; obscured failure causes;
+public-source/private-receipt mode confusion; failed-result/disposition collapse;
+mutation counter/checkpoint ordering; stale observer capture pins; unjustified
+database-version/ancestor-metadata predicates;220 optimization-skippable browser
+checks; local server/preview failure cleanup; truncated-reply spins and unbounded
+fixture I/O; test discovery/cleanup ordering and interpreter-name whitelist.
+Retired the disposed startup145 cleanup dispatch defaults. No new framework,
+authorization window or native password attempt was added.
+
+Independent backend/journey/runtime cross-review and root review completed.
+The independent reviewer caught the actual observer-pin mismatch and child-birth
+interruption gap; both corrections passed subsequent independent checks. Current
+stage pins match all12 payload sources. Retained Rust manifest461 inputs includes
+zero Python files; native service/caller artifacts were reused unchanged in local
+byte-publication tests and were not executed or rebuilt. A read-only installed
+user_query observation confirmed the SQL projection contract; public config SHA
+remained2482f8710fd8f288e65af1ffc8f7ca840c80a9d3125d3ccd245c606389dd642f.
+
+Validation:59 portable carrier/workflow tests PASS;6 current-artifact local
+integration tests PASS(1.210s);54 validator tests PASS(0.944s). Interpreter and
+observer controllers PASS in normal/optimized Python; observer has8 capture,
+6 embedded contract and2 actual pin checks per mode. Full make security-check
+PASS/exit0 in302.922s:634 account-runtime tests,1880 Rust PASS/0failed/58native
+ignored and ordinary delivery gates. The first full gate stopped at the missing
+new-report docs index entry; that was corrected and both logs retained.
+
+Private review/evidence root: /home/foo/Downloads/osmap-ux-s04/python-review-20261023/.
+The156-file maintained-source inventory SHA256 is
+2a7e07074fdd8a0b4ad4ef90fb6b9fcf416f0f58f9359e0baf7fbb6780138fcc.
+Review reports include backend-review.md, backend-independent-followup.md,
+backend-final-independent-review.json, backend-workflow-independent-review.json,
+journey-review.md and runtime-review.md. Normal signed commit/push preservation
+follows with no hook bypass; final signature and fresh origin parity are recorded
+in delivery-result.json in that private root.
+
+Native execution155 remains functional FAIL before frontend/submission, zero
+password submissions/changes, active0/null changed-at for both fixtures before
+disposal, zero sessions and independently confirmed exact-owned absence. Its raw
+UNKNOWN/UNCERTAIN transport record is preserved separately. No new mutation or
+production qualification is inferred. The retained Rust90-second whole-journey
+ceiling versus60-second operation plus fresh-TOTP wait remains an explicit
+native timing limitation. T03/installed/UAT remain open and no next native
+attempt or action is scheduled.

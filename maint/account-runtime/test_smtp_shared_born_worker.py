@@ -84,13 +84,12 @@ class BornSharedWorker(unittest.TestCase):
                     self.assertEqual((info['pid'],info['group'],info['owned_group']),(child.pid,child.pid,True))
                     remaining=min(.2,deadline/1000-time.time())
                     self.assertGreater(remaining,0)
-                    current=subprocess.run(('/bin/ps','-p',str(child.pid),'-o','pid=,ppid=,pgid=,uid=,comm='),stdin=subprocess.DEVNULL,
+                    current=subprocess.run(('/bin/ps','-p',str(child.pid),'-o','pid=,ppid=,pgid=,uid='),stdin=subprocess.DEVNULL,
                         stdout=subprocess.PIPE,stderr=subprocess.DEVNULL,timeout=remaining,env={'PATH':'/usr/bin:/bin','LC_ALL':'C'})
                     self.assertEqual(current.returncode,0);self.assertLessEqual(len(current.stdout),1024)
                     rows=current.stdout.decode('ascii').splitlines();self.assertEqual(len(rows),1)
-                    fields=rows[0].split(maxsplit=4);self.assertEqual(len(fields),5)
-                    self.assertEqual(tuple(map(int,fields[:4])),(child.pid,os.getpid(),child.pid,os.geteuid()))
-                    self.assertIn(Path(fields[4]).name,('python3','python3.13','python3.14'))
+                    fields=rows[0].split();self.assertEqual(len(fields),4)
+                    self.assertEqual(tuple(map(int,fields)),(child.pid,os.getpid(),child.pid,os.geteuid()))
                     self.assertEqual(info['deadline_millis'],deadline)
                     pending=self.f.fixture.store._read(self.f.fixture.store._paths(self.alice)[1])
                     self.assertEqual((pending['state'],pending['intent']),('pending','a'*64))

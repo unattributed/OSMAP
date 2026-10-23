@@ -49,6 +49,20 @@ if [ "${OSMAP_SECURITY_PROFILE:-developer}" = "commit" ]; then
 	exit 0
 fi
 
+# Portable regressions exercise the maintained carrier's real local producers
+# and consumers. Private native compiler/receipt integration remains a separate
+# evidence check; normal source delivery must not depend on retained operator files.
+echo "==> Sprint S04 Python carrier regressions"
+python3 -B -m unittest \
+	maint.ux.s04_02_startup_candidate.test_candidate \
+	maint.ux.s04_02_startup_candidate.test_current_source.BuildTransportCleanupTests \
+	maint.ux.s04_02_startup_candidate.test_mail_witness \
+	maint.ux.s04_02_startup_candidate.test_mutation_result \
+	maint.ux.s04_02_startup_candidate.test_password_journey \
+	maint.ux.s04_02_startup_candidate.test_startup_probe_cleanup
+python3 -B maint/ux/s04_02_startup_candidate/test_interpreter_selection.py
+python3 -B maint/ux/test_s04_02_observe_current.py
+
 version_lt() {
 	left=$1
 	right=$2

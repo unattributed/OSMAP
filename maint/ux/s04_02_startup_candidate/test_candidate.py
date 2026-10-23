@@ -75,10 +75,9 @@ class StockSchemaTests(unittest.TestCase):
 
 class CarrierClosureTests(unittest.TestCase):
     def test_one_source_map_closes_packet_stager_and_wrapper(self):
-        packet = binder.source_packet()
-        self.assertEqual(set(packet['sources']), set(stage.SOURCE_PINS))
         for name, expected in stage.SOURCE_PINS.items():
-            raw = base64.b64decode(packet['sources'][name], validate=True)
+            path=ROOT/'startup_only.py'if name=='backend/startup_only.py'else ROOT/'sources'/name
+            raw = binder.repository_source(path)
             self.assertEqual(hashlib.sha256(raw).hexdigest(), expected, name)
         self.assertEqual(wrapper.ROOT_SOURCE_SHA256,
             hashlib.sha256((ROOT / 'stage_root.py').read_bytes()).hexdigest())
@@ -103,8 +102,35 @@ class CarrierClosureTests(unittest.TestCase):
             binder.packet()
 
     def test_dispatch_validator_pin_matches_current_source(self):
-        actual=hashlib.sha256((dispatch.REPO/'maint/ux/validate_acceptance.py').read_bytes()).hexdigest()
+        actual=hashlib.sha256((ROOT.parent/'validate_acceptance.py').read_bytes()).hexdigest()
         self.assertEqual(dispatch.VALIDATOR_SHA256,actual)
+
+    def test_public_git_source_mode_is_accepted_but_world_writable_or_linked_source_is_not(self):
+        with tempfile.TemporaryDirectory()as directory:
+            path=Path(directory)/'source.py';path.write_bytes(b'public source\n');path.chmod(0o644)
+            self.assertEqual(binder.repository_source(path),b'public source\n')
+            path.chmod(0o664)
+            self.assertEqual(binder.repository_source(path),b'public source\n')
+            with self.assertRaisesRegex(RuntimeError,'private_input_custody'):
+                binder.private(path)
+            path.chmod(0o666)
+            with self.assertRaisesRegex(RuntimeError,'repository_source_custody'):
+                binder.repository_source(path)
+            path.chmod(0o644);link=path.with_name('linked.py');link.symlink_to(path)
+            with self.assertRaisesRegex(RuntimeError,'repository_source_custody'):
+                binder.repository_source(link)
+            link.unlink();os.link(path,link)
+            with self.assertRaisesRegex(RuntimeError,'repository_source_custody'):
+                binder.repository_source(path)
+
+    def test_actual_independent_reviewer_identity_is_accepted_and_self_review_refused(self):
+        pins={'carrier.py':'a'*64}
+        dispatch.check_review({'reviewer':'/root/python_runtime_review','decision':'CLEAR','sources':pins},pins)
+        for reviewer in ('/root',' /root ','',None):
+            with self.subTest(reviewer=reviewer),self.assertRaisesRegex(RuntimeError,'independent_review'):
+                dispatch.check_review({'reviewer':reviewer,'decision':'CLEAR','sources':pins},pins)
+        with self.assertRaisesRegex(RuntimeError,'independent_review'):
+            dispatch.check_review({'reviewer':'independent','decision':'CLEAR','sources':{}},pins)
 
     def test_dispatch_matches_actual_operation_and_target(self):
         import copy
@@ -117,7 +143,7 @@ class CarrierClosureTests(unittest.TestCase):
                     '--source-manifest',args.source_manifest,'--run-dir',str(dispatch.RUN),
                     '--attempt-id',args.attempt_id,'--recipe',args.recipe]}]}
         order={'execution_contract':{'planned_action':{'attempt_id':args.attempt_id,
-            'source_revision':pins['remote_wrapper.py'],'recipe_id':args.recipe,'max_seconds':360},
+            'source_revision':pins['remote_wrapper.py'],'recipe_id':args.recipe,'max_seconds':690},
             'recipes':[recipe],'environment':[{'id':'obsd1','host':'obsd1.blackbagsecurity.com',
                 'address':'192.168.1.44','status':'PASS'}]}}
         dispatch.check_action(order,args,pins)
@@ -139,6 +165,12 @@ class CarrierClosureTests(unittest.TestCase):
 
 
 class CleanupTests(unittest.TestCase):
+    def test_historical_cleanup_dispatch_cannot_reuse_old_resources(self):
+        with patch.object(cleanup,'cleanup_owned')as dispose:
+            with self.assertRaisesRegex(RuntimeError,'historical_cleanup_dispatch_retired'):
+                cleanup.main()
+            dispose.assert_not_called()
+
     def setUp(self):
         cleanup.report.update(result='FAIL', removed_files=0, removed_directories=0,
             service_or_account_operations=False)

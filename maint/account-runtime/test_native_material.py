@@ -34,7 +34,7 @@ class MaterialFixture(unittest.TestCase):
         self.programs[2].rename(self.engine_target)
         self.programs[2].symlink_to('python3.13')
         self.server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        self.server.bind(str(self.path)); self.server.listen(16)
+        self.server.bind(str(self.path)); self.server.listen(16); self.server.settimeout(1)
         self.plan.write_text(json.dumps({'version': 1, 'authority': m.AUTHORITY, 'purpose': m.PURPOSE,
             'server': m.SERVER, 'socket': str(self.path), 'database_user': m.DATABASE_USER}))
         self.plan.chmod(0o600)
@@ -63,7 +63,8 @@ class NativeMaterialTests(MaterialFixture):
         self.assertNotIn('synthetic', repr(material))
         for _ in range(2):
             peer, _ = self.server.accept()
-            with peer: self.assertEqual(peer.recv(1), b'')
+            with peer:
+                peer.settimeout(1); self.assertEqual(peer.recv(1), b'')
     def test_arbitrary_client_options_include_tcp_plugin_and_extra_group_refuse(self):
         for raw in (self.valid + b'!include=/etc/private.cnf\n', self.valid.replace(b'SOCKET', b'TCP'),
                     self.valid + b'plugin-dir=/tmp\n', self.valid + b'[mariadb]\ninit-command=SELECT 1\n',
@@ -81,7 +82,8 @@ class NativeMaterialTests(MaterialFixture):
         with patch.object(m, '_peer', return_value=os.getuid() + 1):
             with self.assertRaises(Unavailable): self.load()
         peer, _ = self.server.accept()
-        with peer: self.assertEqual(peer.recv(1), b'')
+        with peer:
+            peer.settimeout(1); self.assertEqual(peer.recv(1), b'')
     def test_symlink_hardlink_public_config_and_setuid_program_refuse(self):
         os.link(self.config, self.root / 'linked')
         with self.assertRaises(Unavailable): self.load()
@@ -333,9 +335,6 @@ with contextlib.nullcontext(sys.argv[4]) as namespace:
         self.assertEqual(self.bounded_child('race'), 'REFUSED')
 
 
-if __name__ == '__main__': unittest.main()
-
-
 class OriginalOperationMaterialTests(unittest.TestCase):
     def test_native_material_uses_exact_original_budget_and_refuses_generic_before_load(self):
         budget=OperationBudget.from_original_deadline(1035,received_mono=100.,received_millis=1000000,
@@ -346,3 +345,6 @@ class OriginalOperationMaterialTests(unittest.TestCase):
         generic=OperationBudget(1035,monotonic=lambda:100.,wall=lambda:1000.)
         with patch.object(m.os,'geteuid',return_value=0),patch.object(m.sys,'platform','openbsd'),patch.object(m.socket,'gethostname',return_value=m.AUTHORITY),patch.object(generic,'inherited_group',return_value=True),patch.object(m.NativeMaterial,'_load',side_effect=AssertionError('generic private read')):
             with self.assertRaises(Unavailable):m.NativeMaterial.native(generic)
+
+
+if __name__ == '__main__': unittest.main()

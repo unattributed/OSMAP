@@ -32,7 +32,7 @@ class PrimaryIdentityTests(unittest.TestCase):
   while True:
    try:child,_=server.accept()
    except TimeoutError:break
-   with child:self.assertEqual(child.recv(1),b'')
+   with child:child.settimeout(1);self.assertEqual(child.recv(1),b'')
    count+=1
   self.assertEqual(count,expected)
  def test_fixed_private_listener_original0600_and_no_caller_profile(self):

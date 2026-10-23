@@ -4,17 +4,24 @@ Run the real journey, FrontDriver HTTP encoder/parser, cookie consumer and
 persisted session/replay readers. The local peer below substitutes backend
 effects solely to discriminate observation/refusal and one-shot behaviour.
 """
+import ast
+from contextlib import redirect_stdout, redirect_stderr
 import hashlib
 import importlib.util
+import io
 import json
 import os
 from pathlib import Path
+import re
+import signal
+import subprocess
+import sys
 import tempfile
 import threading
 import time
 from types import SimpleNamespace
 import unittest
-from unittest.mock import patch
+from unittest.mock import MagicMock, Mock, patch
 from urllib.parse import parse_qs
 
 
@@ -179,6 +186,321 @@ class ControlledSocket:
 
 
 class PasswordJourneyTests(unittest.TestCase):
+    def test_shared_fixture_birth_interrupt_is_inside_owned_cleanup(self):
+        path = ROOT.parent / 'browser_workflows.py'
+        tree = ast.parse(path.read_text())
+        functions = [node for node in tree.body if isinstance(node, ast.FunctionDef)
+            and node.name in ('require', '_reap_server', 'start_server')]
+        with tempfile.TemporaryDirectory() as name:
+            root = Path(name)
+            child = subprocess.Popen((sys.executable, '-I', '-c', 'import time; time.sleep(60)'),
+                stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL, start_new_session=True)
+            namespace = dict(os=os, re=re, signal=signal, time=time, json=json,
+                SERVER_STOP_SECONDS=.2, subprocess=SimpleNamespace(Popen=Mock(return_value=child),
+                    STDOUT=subprocess.STDOUT, TimeoutExpired=subprocess.TimeoutExpired))
+            exec(compile(ast.Module(body=functions, type_ignores=[]), str(path), 'exec'), namespace)
+            try:
+                # Deliver the pending handled interruption at mask restoration,
+                # immediately after Popen returned its owned direct handle.
+                with patch.object(signal, 'pthread_sigmask', side_effect=[set(), KeyboardInterrupt, set()]):
+                    with self.assertRaises(KeyboardInterrupt):
+                        namespace['start_server'](root, root, None)
+                self.assertIsNotNone(child.returncode)
+                with self.assertRaises(ProcessLookupError):
+                    os.killpg(child.pid, 0)
+            finally:
+                if child.returncode is None:
+                    os.killpg(child.pid, signal.SIGKILL)
+                    child.wait(timeout=2)
+
+    def test_preview_bounds_main_wait_and_retains_uncertain_state(self):
+        path = ROOT.parent / 'preview.py'
+        spec = importlib.util.spec_from_file_location('local_preview_review', path)
+        preview = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(preview)
+        self.assertEqual(preview.preview_origin({'synthetic': True,
+            'origin': 'http://127.0.0.1:1234'}), 'http://127.0.0.1:1234')
+        for value in ([], {'synthetic': True, 'origin': 'http://127.0.0.1:1@outside.invalid'},
+                {'synthetic': True, 'origin': 'http://127.0.0.1:0'},
+                {'synthetic': True, 'origin': 'http://127.0.0.1:65536'}):
+            with self.assertRaisesRegex(RuntimeError, 'synthetic loopback origin'):
+                preview.preview_origin(value)
+        for uncertain in (False, True):
+            with self.subTest(uncertain=uncertain), tempfile.TemporaryDirectory() as name:
+                root = Path(name) / 'preview'
+                root.mkdir(mode=0o700)
+                child = SimpleNamespace(returncode=0, wait=Mock(return_value=0))
+
+                def spawn(*args, **kwargs):
+                    self.assertTrue(kwargs['start_new_session'])
+                    (root / 'ready.json').write_text(json.dumps({'synthetic': True,
+                        'origin': 'http://127.0.0.1:1234'}))
+                    return child
+
+                output, error = io.StringIO(), io.StringIO()
+                with patch.object(preview.sys, 'argv', [str(path), '--minutes', '1']), \
+                        patch.object(preview.signal, 'signal'), \
+                        patch.object(preview.tempfile, 'mkdtemp', return_value=str(root)), \
+                        patch.object(preview.subprocess, 'Popen', side_effect=spawn), \
+                        patch.object(preview, 'stop_preview',
+                            side_effect=RuntimeError('local_cleanup_uncertain') if uncertain else None,
+                            return_value=None), redirect_stdout(output), redirect_stderr(error):
+                    if uncertain:
+                        with self.assertRaisesRegex(RuntimeError, 'local_cleanup_uncertain'):
+                            preview.main()
+                    else:
+                        preview.main()
+                child.wait.assert_called_once_with(timeout=65)
+                self.assertEqual(root.exists(), uncertain)
+                self.assertEqual('Preview stopped; disposable data removed.' in output.getvalue(), not uncertain)
+                self.assertEqual('retained disposable state' in error.getvalue(), uncertain)
+
+    def test_failed_stop_marker_still_reaps_shared_and_standalone_fixture(self):
+        tree = ast.parse((ROOT.parent / 'browser_workflows.py').read_text())
+        functions = [node for node in tree.body if isinstance(node, ast.FunctionDef)
+            and node.name in ('require', '_reap_server')]
+        shared = dict(os=os, signal=signal, subprocess=subprocess, SERVER_STOP_SECONDS=.2)
+        exec(compile(ast.Module(body=functions, type_ignores=[]), '<shared-fixture>', 'exec'), shared)
+        spec = importlib.util.spec_from_file_location('local_preview_stop', ROOT.parent / 'preview.py')
+        preview = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(preview)
+        for standalone in (False, True):
+            with self.subTest(standalone=standalone), tempfile.TemporaryDirectory() as name:
+                child = subprocess.Popen((sys.executable, '-I', '-c', 'import time; time.sleep(60)'),
+                    stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL, start_new_session=True)
+                marker_error = OSError('local_marker_refused')
+                try:
+                    with patch.object(Path, 'touch', side_effect=marker_error), \
+                            patch.object(preview, 'STOP_SECONDS', .2):
+                        if standalone:
+                            self.assertIs(preview.stop_preview(child, Path(name)), marker_error)
+                        else:
+                            with self.assertRaises(OSError) as caught:
+                                shared['_reap_server'](child, Path(name))
+                            self.assertIs(caught.exception, marker_error)
+                    self.assertIsNotNone(child.returncode)
+                    with self.assertRaises(ProcessLookupError):
+                        os.killpg(child.pid, 0)
+                finally:
+                    if child.returncode is None:
+                        os.killpg(child.pid, signal.SIGKILL)
+                        child.wait(timeout=2)
+
+    def test_shared_browser_fixture_reaps_readiness_failure_and_normal_stop(self):
+        path = ROOT.parent / 'browser_workflows.py'
+        tree = ast.parse(path.read_text())
+        functions = [node for node in tree.body if isinstance(node, ast.FunctionDef)
+            and node.name in ('require', '_reap_server', 'start_server', 'stop_server')]
+        for valid in (False, True):
+            with self.subTest(valid=valid), tempfile.TemporaryDirectory() as name:
+                root = Path(name)
+                children = []
+                real_popen = subprocess.Popen
+                real_killpg = os.killpg
+                signals = []
+
+                def spawn(*args, **kwargs):
+                    self.assertTrue(kwargs['start_new_session'])
+                    body = 'import time; time.sleep(60)' if not valid else \
+                        'import pathlib,sys,time\np=pathlib.Path(sys.argv[1])/"stop"\nwhile not p.exists(): time.sleep(.01)'
+                    child = real_popen((sys.executable, '-I', '-c', body, str(root)),
+                        stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL, start_new_session=True)
+                    children.append(child)
+                    (root / 'ready.json').write_text(json.dumps({'synthetic': True,
+                        'origin': 'http://127.0.0.1:1234' if valid else 'http://127.0.0.1:1@outside.invalid'}))
+                    return child
+
+                def owned_signal(pid, number):
+                    self.assertEqual(pid, children[0].pid)
+                    if number:
+                        self.assertIsNone(children[0].returncode,
+                            'historical reaped PID must not be signalled')
+                    signals.append(number)
+                    return real_killpg(pid, number)
+
+                namespace = dict(os=os, re=re, signal=signal, time=time, json=json,
+                    SERVER_STOP_SECONDS=.2, subprocess=SimpleNamespace(Popen=spawn,
+                        STDOUT=subprocess.STDOUT, TimeoutExpired=subprocess.TimeoutExpired))
+                exec(compile(ast.Module(body=functions, type_ignores=[]), str(path), 'exec', optimize=2), namespace)
+                try:
+                    with patch.object(os, 'killpg', side_effect=owned_signal):
+                        if valid:
+                            child, origin = namespace['start_server'](root, root, None)
+                            self.assertEqual(origin, 'http://127.0.0.1:1234')
+                            namespace['stop_server'](child, root)
+                            namespace['stop_server'](child, root)
+                            self.assertEqual(signals, [0, 0])
+                        else:
+                            with self.assertRaisesRegex(AssertionError, 'synthetic loopback origin refused'):
+                                namespace['start_server'](root, root, None)
+                            self.assertIn(signal.SIGTERM, signals)
+                    self.assertIsNotNone(children[0].returncode)
+                    with self.assertRaises(ProcessLookupError):
+                        real_killpg(children[0].pid, 0)
+                finally:
+                    # Test ownership cleanup remains bounded even on regression.
+                    for child in children:
+                        if child.returncode is None:
+                            real_killpg(child.pid, signal.SIGKILL)
+                            child.wait(timeout=2)
+
+    def test_sprint_workflow_actions_and_checks_survive_python_optimization(self):
+        ux = ROOT.parent
+        names = ('general_preferences_workflows.py', 'appearance_workflows.py',
+            'session_workflows.py', 'general_workflows.py', 'reading_workflows.py',
+            'composition_workflows.py', 'signature_workflows.py',
+            'security_settings_workflows.py', 'browser_workflows.py', 'capture_pages.py')
+        for name in names:
+            self.assertFalse(any(isinstance(node, ast.Assert)
+                for node in ast.walk(ast.parse((ux / name).read_text()))), name)
+        helper = next(node for node in ast.parse((ux / 'browser_workflows.py').read_text()).body
+            if isinstance(node, ast.FunctionDef) and node.name == 'require')
+        workflow = ast.parse((ux / 'general_preferences_workflows.py').read_text())
+        operation = next(node for node in ast.walk(workflow) if isinstance(node, ast.Expr)
+            and isinstance(node.value, ast.Call) and isinstance(node.value.func, ast.Name)
+            and node.value.func.id == 'require' and any(isinstance(child, ast.Call)
+                and isinstance(child.func, ast.Name) and child.func.id == 'post'
+                and child.args and isinstance(child.args[0], ast.Constant)
+                and child.args[0].value == '/settings/reading'
+                for child in ast.walk(node)))
+        source = ast.Module(body=[helper, operation], type_ignores=[])
+        for optimized in (0, 2):
+            for status in (200, 500):
+                with self.subTest(optimized=optimized, status=status):
+                    post = Mock(return_value=SimpleNamespace(status=status))
+                    namespace = {'post': post}
+                    compiled = compile(source, '<actual-sprint-workflow-check>', 'exec', optimize=optimized)
+                    if status == 200:
+                        exec(compiled, namespace)
+                    else:
+                        with self.assertRaises(AssertionError):
+                            exec(compiled, namespace)
+                    post.assert_called_once_with('/settings/reading',
+                        dict(start_page='inbox', date_order='oldest'))
+                    diagnostic = Mock(return_value='local_failure')
+                    namespace['require'](True, diagnostic)
+                    diagnostic.assert_not_called()
+                    with self.assertRaisesRegex(AssertionError, 'local_failure'):
+                        namespace['require'](False, diagnostic)
+                    diagnostic.assert_called_once_with()
+
+    def test_frontend_setup_does_not_inherit_guardian_helpers_import_clock(self):
+        keeper = load('password_journey_clock', '../backend/local_frontend.py')
+        now = time.monotonic()
+        custody = {'schema':'osmap-http-web-custody-v1','web_uid':keeper.UID,
+            'web_gid':keeper.GID,'binary_sha256':'a'*64,'selector':'local-selector',
+            'web_pid':12346,'guardian_pid':12345,'guardian_group':12345}
+        ready = {'schema':'osmap-http-password-ready-v1','port':1234,'connections':18,
+            'totp_counter':int(time.time())//30}
+        control = SimpleNamespace(write=Mock(), read=Mock(side_effect=[
+            json.dumps(custody).encode(),json.dumps(ready).encode()]))
+        guard = SimpleNamespace(END=now+1,Control=Mock(return_value=control))
+        node = keeper.Frontend.__new__(keeper.Frontend)
+        node.directory = node.file = node.capture_guardian_code = node.group = Mock()
+        node.ownership_callback = None
+        node.http_module = SimpleNamespace(FrontDriver=Mock())
+        child = SimpleNamespace(fileno=lambda:7,close=Mock())
+        boot = dict.fromkeys(('alice_password','bob_password','new_password',
+            'admission_key','mutation_key','session_proof_key'),'a'*64)
+        boot['version'] = 1
+        with patch.object(keeper,'module',return_value=guard), \
+                patch.object(keeper,'END',now+600),patch.object(keeper,'WORK',now+450), \
+                patch.object(keeper,'STAGE','/local-fixture'), \
+                patch.object(keeper.socket,'socketpair',return_value=(object(),child)), \
+                patch.object(keeper.signal,'pthread_sigmask',return_value=set()), \
+                patch.object(keeper.subprocess,'Popen',return_value=SimpleNamespace(pid=12345)):
+            node.setup(boot)
+        self.assertEqual(guard.END,now+600)
+        self.assertGreaterEqual(node.sequence_end,now+90)
+        self.assertLessEqual(node.sequence_end,time.monotonic()+90)
+        node.http_module.FrontDriver.assert_called_once_with(node,boot)
+
+    def test_real_totp_wait_uses_existing_window_and_original_deadline(self):
+        for deadline, succeeds in ((40, True), (10, False)):
+            with self.subTest(deadline=deadline):
+                clock = SimpleNamespace(elapsed=0.0)
+
+                def advance(seconds):
+                    self.assertGreater(seconds, 0)
+                    self.assertLessEqual(seconds, .25)
+                    clock.elapsed += seconds
+
+                with patch.object(front, 'CANCEL', None), \
+                        patch.object(time, 'monotonic', side_effect=lambda: clock.elapsed), \
+                        patch.object(time, 'time', side_effect=lambda: 300.125 + clock.elapsed), \
+                        patch.object(time, 'sleep', side_effect=advance):
+                    if succeeds:
+                        self.assertEqual(front.accepted_counter(deadline, minimum=12), (12, 1))
+                        self.assertAlmostEqual(clock.elapsed, 29.875)
+                    else:
+                        with self.assertRaisesRegex(RuntimeError, 'original_http_deadline'):
+                            front.accepted_counter(deadline, minimum=12)
+                        self.assertEqual(clock.elapsed, deadline)
+
+    def test_reaped_guardian_cleanup_confirms_absence_without_historical_signal(self):
+        keeper = load('password_journey_keeper', '../backend/local_frontend.py')
+        for absent in (True, False):
+            with self.subTest(absent=absent):
+                node = keeper.Frontend.__new__(keeper.Frontend)
+                node.cancelled = threading.Event()
+                node.socket_lock = threading.Lock()
+                node.http_stream = node.control = node.worker = None
+                node.guardian = SimpleNamespace(pid=12345, returncode=1)
+                node.requests_stopped = node.process_uncertain = False
+                node.group = Mock(side_effect=AssertionError('reaped identity must not be rediscovered'))
+                node.capture_generated_directories = Mock()
+                with patch.object(keeper.os, 'killpg',
+                        side_effect=ProcessLookupError if absent else None) as signal_group:
+                    if absent:
+                        node.stop_requests()
+                        self.assertTrue(node.requests_stopped)
+                        node.capture_generated_directories.assert_called_once_with()
+                    else:
+                        with self.assertRaisesRegex(RuntimeError, 'unconfirmed_front_request_group'):
+                            node.stop_requests()
+                        self.assertFalse(node.requests_stopped)
+                        node.capture_generated_directories.assert_not_called()
+                    signal_group.assert_called_once_with(12345, 0)
+                    node.group.assert_not_called()
+
+    def test_front_program_preserves_failure_reason_and_incomplete_reap(self):
+        keeper = load('password_journey_program', '../backend/local_frontend.py')
+        for reap_fails in (False, True):
+            with self.subTest(reap_fails=reap_fails):
+                node = keeper.Frontend.__new__(keeper.Frontend)
+                node.program_lock = threading.Lock()
+                node.children = []
+                node.report = {'groups': []}
+                node.process_uncertain = False
+                child = SimpleNamespace(pid=12345, returncode=-9,
+                    stdout=SimpleNamespace(fileno=lambda: 3, close=Mock()),
+                    stderr=SimpleNamespace(fileno=lambda: 4, close=Mock()),
+                    wait=Mock(side_effect=keeper.subprocess.TimeoutExpired('ps', 1)
+                        if reap_fails else None))
+                selected = MagicMock()
+                selected.__enter__.return_value = selected
+                selected.select.side_effect = RuntimeError('front_program_io_deadline')
+                with patch.object(keeper, 'WORK', time.monotonic() + 30), \
+                        patch.object(keeper, 'END', time.monotonic() + 60), \
+                        patch.object(keeper.subprocess, 'Popen', return_value=child), \
+                        patch.object(keeper.signal, 'pthread_sigmask', return_value=set()), \
+                        patch.object(keeper.selectors, 'DefaultSelector', return_value=selected), \
+                        patch.object(keeper.os, 'set_blocking'), \
+                        patch.object(keeper.os, 'killpg', side_effect=[None, ProcessLookupError]):
+                    expected = keeper.subprocess.TimeoutExpired if reap_fails else RuntimeError
+                    with self.assertRaises(expected) as caught:
+                        node.run(('/bin/ps', '-ax', '-o', 'pid=,ppid=,pgid=,uid=,comm='), 'local_ps')
+                if not reap_fails:
+                    self.assertEqual(str(caught.exception), 'front_program_io_deadline')
+                self.assertEqual(node.process_uncertain, reap_fails)
+                self.assertEqual(node.report['groups'][0]['reaped'], not reap_fails)
+                self.assertEqual(node.report['groups'][0]['group_gone'], not reap_fails)
+                child.stdout.close.assert_called_once_with()
+                child.stderr.close.assert_called_once_with()
+
     def test_authority_observation_uses_reserved_cleanup_without_renewing_end(self):
         backend = load('password_journey_backend', '../backend/rust_http_driver.py')
         for driver_module in (password, backend):
@@ -231,7 +553,7 @@ class PasswordJourneyTests(unittest.TestCase):
             checkpoint_writes = []
 
             def checkpoint():
-                password.require(driver.mutation_submission_started and driver.mutation_requests == 1,
+                password.require(driver.mutation_submission_started and driver.mutation_requests == 0,
                     'local_checkpoint_fence')
                 checkpoint_writes.append(peer.writes)
                 if fault == 'checkpoint_failed':
@@ -312,6 +634,7 @@ class PasswordJourneyTests(unittest.TestCase):
         peer, driver, result, error = self.exercise('checkpoint_failed')
         self.assertEqual(str(error), 'local_checkpoint_failed')
         self.assertEqual(peer.writes, 0)
+        self.assertEqual(driver.mutation_requests, 0)
         self.assertFalse(any(method == 'POST' and path == '/settings/password'
             for method, path, _ in peer.requests))
         self.assertTrue(driver.mutation_submission_started)

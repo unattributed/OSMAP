@@ -375,7 +375,12 @@ class Fixture:
                        if ('Error: "' + value + '"').encode('ascii') in bytes(output[1])]
             self.report['native_test_guard'] = matches[0] if len(matches) == 1 else 'UNKNOWN'
             self.report['sql_read_diagnostic'] = parse_read_diagnostic(bytes(output[0]))
-        require(not failure and child is not None and child.returncode == 0
+        if failure is not None:
+            # The owned-child disposition above is retained independently;
+            # do not replace its causal timeout/output/refusal with a generic
+            # child failure at the actor boundary.
+            raise Refused(failure)
+        require(child is not None and child.returncode == 0
                 and confirmed and not output[1], 'fixed_child_refused')
         return bytes(output[0])
 

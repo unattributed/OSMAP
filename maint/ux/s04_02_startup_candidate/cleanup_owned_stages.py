@@ -1,10 +1,7 @@
-"""Dispose only the two receipt-bound inert stages from startup145."""
+"""Exact receipt-bound inert-stage cleanup; historical direct dispatch retired."""
 import hashlib,json,os,signal,socket,stat,subprocess,sys
 from pathlib import Path
 
-BACK=Path('/var/run/osmap-service-admission-root-0464576abc319cc7')
-FRONT=Path('/tmp/osmap-pxp-stage-e242601cc38f8f97')
-RECEIPT_SHA='4db1618f4ed1c2d15b1550e8a808336b776139d5d45a7e9b58fb687daef1839c'
 report={'schema':'osmap-startup145-stage-cleanup-v1','result':'FAIL','removed_files':0,
     'removed_directories':0,'service_or_account_operations':False}
 def require(value,reason):
@@ -28,8 +25,7 @@ def read(path,cap,owner=0):
     finally:os.close(fd)
 
 
-def cleanup_owned(back,front,receipt_sha,owner=0,run_fstat=subprocess.run,
-        expected_source='b4bc371bd645ea009e4d257b269c73bd7294c8e9'):
+def cleanup_owned(back,front,receipt_sha,owner=0,run_fstat=subprocess.run,*,expected_source):
     """Validate the complete receipt graph before deleting exact owned leaves."""
     raw,receipt_identity=read(back/'stage-ownership.json',131072,owner)
     require(hashlib.sha256(raw).hexdigest()==receipt_sha,'receipt_hash')
@@ -78,9 +74,9 @@ def cleanup_owned(back,front,receipt_sha,owner=0,run_fstat=subprocess.run,
 
 
 def main():
-    require((os.getuid(),os.geteuid(),socket.gethostname(),os.uname().sysname)==
-        (0,0,'obsd1.blackbagsecurity.com','OpenBSD'),'target')
-    cleanup_owned(BACK,FRONT,RECEIPT_SHA)
+    # startup145 was disposed. Never reuse its old paths/receipt as defaults.
+    # Current callers must supply independently reconciled exact-owned inputs.
+    raise RuntimeError('historical_cleanup_dispatch_retired')
 if __name__=='__main__':
     def stop(*_):raise RuntimeError('cleanup_deadline')
     signal.signal(signal.SIGALRM,stop);signal.alarm(30)

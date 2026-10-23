@@ -433,10 +433,18 @@ class WorkerTests(unittest.TestCase):
             client.settimeout(2)
             raw = frame()
             client.sendall(len(raw).to_bytes(4, 'big') + raw)
-            size = int.from_bytes(client.recv(4), 'big')
+            prefix = bytearray()
+            while len(prefix) < 4:
+                part = client.recv(4 - len(prefix))
+                self.assertTrue(part, 'worker closed before the reply header')
+                prefix.extend(part)
+            size = int.from_bytes(prefix, 'big')
+            self.assertLessEqual(size, 4096)
             reply = b''
             while len(reply) < size:
-                reply += client.recv(size - len(reply))
+                part = client.recv(size - len(reply))
+                self.assertTrue(part, 'worker closed before the complete reply')
+                reply += part
             self.check_reply(reply, 'changed')
         finally:
             thread.join(2)
