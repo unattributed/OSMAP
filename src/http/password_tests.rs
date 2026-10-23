@@ -1301,9 +1301,11 @@ mod genuine_http_pilot {
             "HTTP fixture start refused"
         );
         // Each genuine password POST retains the production route's original
-        //60s deadline. This90s outer sequence ceiling never renews that budget.
+        // 60s deadline. The 300s whole journey allows up to 60s of fresh-counter
+        // waiting, the unchanged 60s operation and 180s for the other requests,
+        // authority reads and terminal exchange. It never renews an operation.
         let began = Instant::now();
-        let deadline = began + Duration::from_secs(90);
+        let deadline = began + Duration::from_secs(300);
         let mut handled = 0;
         while handled < connections {
             assert!(
