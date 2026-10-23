@@ -35459,3 +35459,12 @@ final47-test log SHA256
 `063baaaa4fbd35407b14d16c3e446084050fe421cd623fb79157bf2d276e83ef`.
 The specific one-write/cleanup confirmation has been requested and remains
 pending; no authority is inferred from the local review or passing tests.
+
+Signed preparation checkpoint e317feeba7056b6c08fd05c45e33fb229f9a7d5b passed
+the normal commit hook and verified Shopkeeper signature. Full `make acceptance-check`
+completed exit0, including security-check (1880 Rust PASS/0 failed/58 native ignores,
+625 account regressions PASS) and V10/V11/V12/V13 delivery gates. Authenticated
+external WSTG coverage remains credential-gated; developer/refusal checks do not
+qualify native or production release. Acceptance log SHA256
+`20c003075b2cc13ef8ff3c47e0aafb9b4831eb1c8c1be97950b8f12e22a167eb`.
+Native execution remains NOT RUN, pending the operator's specific confirmation.
