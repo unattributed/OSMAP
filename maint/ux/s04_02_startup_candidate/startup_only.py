@@ -24,7 +24,7 @@ def failure_reason(error):
     code=getattr(error,'code',None)
     if isinstance(code,str)and re.fullmatch(r'[A-Za-z0-9_.:-]{1,96}',code):return code
     reason=str(error)
-    if type(error)in(Refused,ProbeCleanupUnconfirmed)and re.fullmatch(r'[A-Za-z0-9_.:-]{1,96}',reason):return reason
+    if type(error)in(Refused,ProbeCleanupUnconfirmed,getattr(journey,'Refused',None))and re.fullmatch(r'[A-Za-z0-9_.:-]{1,96}',reason):return reason
     return 'UNEXPECTED_SANITIZED'
 def initialize():
     global journey

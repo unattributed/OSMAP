@@ -28,7 +28,8 @@ def read(path,cap,owner=0):
     finally:os.close(fd)
 
 
-def cleanup_owned(back,front,receipt_sha,owner=0,run_fstat=subprocess.run):
+def cleanup_owned(back,front,receipt_sha,owner=0,run_fstat=subprocess.run,
+        expected_source='b4bc371bd645ea009e4d257b269c73bd7294c8e9'):
     """Validate the complete receipt graph before deleting exact owned leaves."""
     raw,receipt_identity=read(back/'stage-ownership.json',131072,owner)
     require(hashlib.sha256(raw).hexdigest()==receipt_sha,'receipt_hash')
@@ -38,7 +39,7 @@ def cleanup_owned(back,front,receipt_sha,owner=0,run_fstat=subprocess.run):
         'files','historical_pid_signals','admission_sha256'},'receipt_fields')
     require(receipt['schema']=='osmap-single-host-stage-v1'
         and receipt['backend']==str(back)and receipt['frontend']==str(front)
-        and receipt['source_commit']=='b4bc371bd645ea009e4d257b269c73bd7294c8e9','receipt_scope')
+        and receipt['source_commit']==expected_source,'receipt_scope')
     require(receipt['historical_pid_signals']is False and receipt['disposition']=='STAGES_RETAINED',
         'receipt_disposition')
     for root,key in ((back,'backend_identity'),(front,'frontend_identity')):

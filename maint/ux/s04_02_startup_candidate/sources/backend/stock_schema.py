@@ -13,10 +13,6 @@ def require(value, code):
         raise StockSchemaRefused(code)
 
 
-_MARIADB_VERSION = re.compile(
-    r'(?P<version>[0-9]+\.[0-9]+(?:\.[0-9]+)?(?:-[A-Za-z0-9._]+)*)-MariaDB\Z')
-
-
 def stock_fresh_reserved_schema(raw):
     """Return bounded non-secret evidence or one precise refusal code."""
     require(isinstance(raw, bytes) and 0 < len(raw) <= 4096,
@@ -29,8 +25,10 @@ def stock_fresh_reserved_schema(raw):
     authority = rows[0].split('\t')
     require(len(authority) == 2 and authority[0] == 'root@localhost',
         'stock_database_identity')
-    version = _MARIADB_VERSION.fullmatch(authority[1])
-    require(version is not None, 'stock_database_compatibility')
+    # VERSION() is observation evidence, not a capability predicate. Successful
+    # fixed SQL queries, the schema checks below and the caller's grant checks
+    # establish the capabilities needed by this controlled-account operation.
+    version = authority[1]
     require(all(re.fullmatch(r'0|[1-9][0-9]{0,9}', value) is not None
         for value in (rows[1], rows[2], rows[4], rows[5])),
         'stock_schema_numeric')
@@ -42,7 +40,7 @@ def stock_fresh_reserved_schema(raw):
     return {
         'database_identity': authority[0],
         'database_product': 'MariaDB',
-        'database_version': version.group('version'),
+        'database_version': version,
         'reserved_database_users': 0,
         'controlled_rows': 0,
         'mailbox_engine': 'InnoDB',

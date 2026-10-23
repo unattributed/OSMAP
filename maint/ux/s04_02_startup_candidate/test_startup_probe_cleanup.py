@@ -36,7 +36,8 @@ class ProbeTests(unittest.TestCase):
         # publication expression, with host/filesystem observations mocked.
         assignment=next(n for n in function.body if isinstance(n,ast.Assign)
             and isinstance(n.value,ast.Tuple))
-        publication=next(n for n in function.body if isinstance(n,ast.Expr)
+        producer=next(n for n in tree.body if isinstance(n,ast.FunctionDef)and n.name=='produce_stage')
+        publication=next(n for n in producer.body if isinstance(n,ast.Expr)
             and isinstance(n.value,ast.Call)and getattr(n.value.func,'id',None)=='publish')
         metadata=mock.Mock();backend=mock.MagicMock();backend.lstat.return_value=metadata
         spec=importlib.util.spec_from_file_location('tested_stage',path)

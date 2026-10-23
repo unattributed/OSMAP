@@ -8,10 +8,10 @@ import base64,hashlib,json,math,os,re,resource,secrets,signal,socket,stat,sys,ti
 from pathlib import Path
 
 START=time.monotonic();END=START+600
-BASE='b4bc371bd645ea009e4d257b269c73bd7294c8e9'
+BASE='77f63794d3f60e4003db157eada39f4bd4222b6a'
 PYTHON=Path('/usr/local/bin/python3')
 PYTHON_TARGET=re.compile(r'python3\.[0-9]{1,2}\Z')
-SOURCE_PINS = {'backend/custody.py': '390e9c1ebf82dccab00323b080c8bd7fa8cb0724271bae84318c68efb56ef30e', 'backend/install_account_password.py': '536a6bcad0f666b06dbc35e0f99cd736c84d34db9774b2acc98a48f5a8ed7358', 'backend/local_frontend.py': '5b51834ba64e20aa575969bf2d1ae05b2cc2aae9c02b0be131fed6339c135a39', 'backend/local_journey.py': 'f305b1758d975e643e9fd4b65781bdb56a76a40eadf547217d70a9e40ce0542b', 'backend/rust_http_driver.py': '3f942b47f4d1068a508ffe376f8fb036c852a23841a3e5706ee392aa61a4b750', 'backend/startup_only.py': 'f3fef3ed8d4f243f7d99847ce258a445d4780f0fb2365bec2ae6ca7926e0140f', 'backend/stock_mail_witness.py': 'ee00c432821a2caa401879af3fd4bf03b5afadefeba2950618cf2d8868290874', 'backend/stock_qualification.py': '8f851a3c3b5240699b6bdcbc687e0df098fdc23f582b4252e09b8e634e6f2e86', 'backend/stock_schema.py': '638c15166d98efa5c6ffb9291faf5fdc333c98ebf21570d22182a112b4ecd0cf', 'frontend/native_http_front_driver.py': '94ed7df857ba1421afa1d724372abafe0fcc055679b3a07e33d4e97d6b0645fd', 'frontend/native_http_password_driver.py': '3f942b47f4d1068a508ffe376f8fb036c852a23841a3e5706ee392aa61a4b750', 'frontend/native_http_web_guardian.py': 'a7026319931027cd286dca0e86e7d1f844cc73bb38367808f66a1f81458d2dc7'}
+SOURCE_PINS = {'backend/custody.py': '390e9c1ebf82dccab00323b080c8bd7fa8cb0724271bae84318c68efb56ef30e', 'backend/install_account_password.py': '536a6bcad0f666b06dbc35e0f99cd736c84d34db9774b2acc98a48f5a8ed7358', 'backend/local_frontend.py': '5b51834ba64e20aa575969bf2d1ae05b2cc2aae9c02b0be131fed6339c135a39', 'backend/local_journey.py': 'f305b1758d975e643e9fd4b65781bdb56a76a40eadf547217d70a9e40ce0542b', 'backend/rust_http_driver.py': '3f942b47f4d1068a508ffe376f8fb036c852a23841a3e5706ee392aa61a4b750', 'backend/startup_only.py': '0f286ffef32a8f85c060c9055f218d750d7cef76d4a0123427de614c94b6828f', 'backend/stock_mail_witness.py': 'ee00c432821a2caa401879af3fd4bf03b5afadefeba2950618cf2d8868290874', 'backend/stock_qualification.py': '8f851a3c3b5240699b6bdcbc687e0df098fdc23f582b4252e09b8e634e6f2e86', 'backend/stock_schema.py': '51861add9908ac12efd4d648857d31f2fed852f1fcfb1bb46019995cc5a9cb90', 'frontend/native_http_front_driver.py': '94ed7df857ba1421afa1d724372abafe0fcc055679b3a07e33d4e97d6b0645fd', 'frontend/native_http_password_driver.py': '3f942b47f4d1068a508ffe376f8fb036c852a23841a3e5706ee392aa61a4b750', 'frontend/native_http_web_guardian.py': 'a7026319931027cd286dca0e86e7d1f844cc73bb38367808f66a1f81458d2dc7'}
 CONFIG_PATHS=('/etc/dovecot/dovecot.conf', '/etc/dovecot/conf.d/10-auth.conf', '/etc/dovecot/conf.d/10-director.conf', '/etc/dovecot/conf.d/10-logging.conf', '/etc/dovecot/conf.d/10-mail.conf', '/etc/dovecot/conf.d/10-master.conf', '/etc/dovecot/conf.d/10-metrics.conf', '/etc/dovecot/conf.d/10-ssl.conf', '/etc/dovecot/conf.d/15-lda.conf', '/etc/dovecot/conf.d/15-mailboxes.conf', '/etc/dovecot/conf.d/20-imap.conf', '/etc/dovecot/conf.d/20-lmtp.conf', '/etc/dovecot/conf.d/20-managesieve.conf', '/etc/dovecot/conf.d/20-pop3.conf', '/etc/dovecot/conf.d/20-submission.conf', '/etc/dovecot/conf.d/90-acl.conf', '/etc/dovecot/conf.d/90-plugin.conf', '/etc/dovecot/conf.d/90-quota.conf', '/etc/dovecot/conf.d/90-sieve-extprograms.conf', '/etc/dovecot/conf.d/90-sieve.conf', '/etc/dovecot/conf.d/99-bbs-imaps-only.conf', '/etc/dovecot/conf.d/99-bbs-managesieve-policy.conf', '/etc/dovecot/conf.d/99-rspamd-warning-labels.conf', '/etc/dovecot/local.conf', '/etc/dovecot/conf.d/auth-sql.conf.ext')
 OPTIONAL=('/etc/dovecot/conf.d/99-bbs-imaps-only.conf','/etc/dovecot/conf.d/99-bbs-managesieve-policy.conf')
 class Refused(Exception):pass
@@ -127,45 +127,24 @@ def binary_copy(pin,destination):
         if out is not None:os.close(out)
         os.close(fd)
     require(identity(destination.lstat())==owned,'binary_publication');return owned
-def main():
-    global END
-    os.umask(0o077)
-    def interrupted(_number,_frame):raise Refused('stage_interrupted')
-    for number in(signal.SIGALRM,signal.SIGHUP,signal.SIGINT,signal.SIGTERM):signal.signal(number,interrupted)
-    resource.setrlimit(resource.RLIMIT_CORE,(0,0));os.chdir('/')
-    host_identity=(os.getuid(),os.geteuid(),os.getgid(),os.getegid(),socket.gethostname(),os.uname().sysname,os.uname().machine)
-    require(host_identity==(0,0,0,0,'obsd1.blackbagsecurity.com','OpenBSD','amd64'),'root_target')
-    require(len(sys.argv)==1,'no_arguments')
-    interpreter=select_python()
-    raw=sys.stdin.buffer.read(4*1024*1024+1);require(0<len(raw)<=4*1024*1024,'packet_bound');p=decode(raw)
+def admit_packet(p):
     require(set(p)=={'version','source_commit','compiler_source_manifest_sha256','compiler_receipt_sha256','prerequisite_sha256','config_map','public_sql_sha256','sources','helper','web','not_after_utc'},'packet_fields')
     require(p['version']==1 and p['source_commit']==BASE and type(p['not_after_utc'])is int and 150<p['not_after_utc']-time.time()<=600,'original_lease')
-    END=min(END,time.monotonic()+p['not_after_utc']-time.time());signal.alarm(max(1,math.ceil(END-time.monotonic())))
     for k in('compiler_source_manifest_sha256','compiler_receipt_sha256','prerequisite_sha256','public_sql_sha256'):require(type(p[k])is str and re.fullmatch('[a-f0-9]{64}',p[k]),'receipt_scalar')
     require(set(p['sources'])==set(SOURCE_PINS),'source_set');sources={}
     for name,pin in SOURCE_PINS.items():
         value=base64.b64decode(p['sources'][name],validate=True);require(0<len(value)<=262144 and sha(value)==pin,'source_pin');sources[name]=value
-    # The selected closed set is independently checked again by the unchanged
-    # Qualification before provisioning; stage creation does not authorize it.
-    require(type(p['config_map'])is dict and set(p['config_map'])==set(CONFIG_PATHS),'config_map_shape')
-    for name,pin in p['config_map'].items():
-        path=Path(name)
-        require(path.parent==Path('/etc/dovecot')or path.parent==Path('/etc/dovecot/conf.d'),'public_fixed_parent')
-        if pin is None:
-            require(name in OPTIONAL,'absence_scope');protected(path)
-            require(not os.path.lexists(path),'absence_changed')
-        else:require(type(pin)is str and re.fullmatch('[a-f0-9]{64}',pin)and sha(read_root(path,131072))==pin,'public_changed')
-    require(sha(read_root(Path('/etc/dovecot/dovecot-sql.conf.ext'),131072))==p['public_sql_sha256'],'public_sql_changed')
     for label,test in(('helper',False),('web',True)):
-        pin=p[label];profile=pin['cargo_profile'];require(pin['profile_test']is test and profile['test']is test and pin['source_count']==461 and pin['tests_executed']is False and pin['application_executed']is False,'artifact_kind')
+        pin=p[label];profile=pin['cargo_profile'];require(pin['profile_test']is test and profile['test']is test and type(pin['source_count'])is int and pin['source_count']>0 and pin['tests_executed']is False and pin['application_executed']is False,'artifact_kind')
         require(profile['opt_level']==('0'if test else'3')and profile['debuginfo']==0 and profile['debug_assertions']is test and profile['overflow_checks']is test,'artifact_profile')
         require(pin['cargo_target_kind']==(['lib']if test else['bin'])and Path(pin['path']).name==('osmap-libtest'if test else'account-passwd'),'artifact_target')
-    protected(Path('/var/run/owned'));tmp=Path('/tmp').lstat();require(stat.S_ISDIR(tmp.st_mode)and tmp.st_uid==0,'tmp_custody')
-    require(stat.S_IMODE(Path('/tmp').lstat().st_mode)==0o1777,'tmp_sticky')
-    backend=Path('/var/run')/('osmap-service-admission-root-'+secrets.token_hex(8));frontend=Path('/tmp')/('osmap-pxp-stage-'+secrets.token_hex(8))
+    require(p['helper']['source_count']==p['web']['source_count'],'artifact_source_count')
+    return sources
+
+def produce_stage(p,sources,backend,frontend,raw,interpreter,emit):
     # No adoption or collision retries; any partial publication is retained.
     backend.mkdir(mode=0o700)
-    print(json.dumps(stage_birth_frame(backend,None,p['not_after_utc'])),flush=True)
+    emit(stage_birth_frame(backend,None,p['not_after_utc']))
     publish(backend/'stage-birth.json',encode(stage_birth_receipt(backend,
         identity(backend.lstat()),sha(raw),p['not_after_utc'])),0o600)
     frontend.mkdir(mode=0o700);files={}
@@ -174,7 +153,7 @@ def main():
     stage_path=backend/'stage-ownership.json'
     # Emit owned directory births before subsequent fallible publication. A
     # failure reports partial stages; it never dispatches or recursively removes.
-    print(json.dumps(stage_birth_frame(backend,frontend,p['not_after_utc'])),flush=True)
+    emit(stage_birth_frame(backend,frontend,p['not_after_utc']))
     for name,value in sources.items():
         target=(backend if name.startswith('backend/')else frontend)/Path(name).name;files[str(target)]=publish(target,value,0o400)
     files[str(backend/'account-passwd')]=binary_copy(p['helper'],backend/'account-passwd')
@@ -187,9 +166,39 @@ def main():
     admission={'version':1,'not_after_utc':p['not_after_utc'],'source_commit':BASE,'compiler_source_manifest_sha256':p['compiler_source_manifest_sha256'],'helper_sha256':p['helper']['sha256'],'web_sha256':p['web']['sha256'],'web_bytes':p['web']['size'],'backend_sources':back,'frontend_sources':front,'frontend_stage':str(frontend),'frontend_stage_lease':identity(frontend.lstat())[:6],'frontend_files':{name:identity((frontend/name).lstat())for name in(*front,'source-input-manifest.json','http-build.json','qualified-openbsd-libtest')},'config_map_sha256':sha(config),'public_sql_sha256':p['public_sql_sha256'],'prerequisite_sha256':p['prerequisite_sha256']}
     admission_raw=encode(admission);files[str(backend/'local-admission.json')]=publish(backend/'local-admission.json',admission_raw,0o400)
     stage['admission_sha256']=sha(admission_raw);publish(stage_path,encode(stage),0o600)
-    print(json.dumps({'schema':'osmap-single-host-stage-ready-v1','backend':str(backend),'frontend':str(frontend),'stage_receipt':str(stage_path),'stage_receipt_sha256':sha(encode(stage)),'admission_sha256':sha(admission_raw),'not_after_utc':p['not_after_utc'],'interpreter':interpreter}),flush=True)
+    emit({'schema':'osmap-single-host-stage-ready-v1','backend':str(backend),'frontend':str(frontend),'stage_receipt':str(stage_path),'stage_receipt_sha256':sha(encode(stage)),'admission_sha256':sha(admission_raw),'not_after_utc':p['not_after_utc'],'interpreter':interpreter,'source_commit':p['source_commit'],'compiler_receipt_sha256':p['compiler_receipt_sha256'],'compiler_source_manifest_sha256':p['compiler_source_manifest_sha256'],'helper_sha256':p['helper']['sha256'],'web_sha256':p['web']['sha256'],'packet_sha256':sha(raw)})
+    return sha(admission_raw)
+
+def main():
+    global END
+    os.umask(0o077)
+    def interrupted(_number,_frame):raise Refused('stage_interrupted')
+    for number in(signal.SIGALRM,signal.SIGHUP,signal.SIGINT,signal.SIGTERM):signal.signal(number,interrupted)
+    resource.setrlimit(resource.RLIMIT_CORE,(0,0));os.chdir('/')
+    host_identity=(os.getuid(),os.geteuid(),os.getgid(),os.getegid(),socket.gethostname(),os.uname().sysname,os.uname().machine)
+    require(host_identity==(0,0,0,0,'obsd1.blackbagsecurity.com','OpenBSD','amd64'),'root_target')
+    require(len(sys.argv)==1,'no_arguments')
+    interpreter=select_python()
+    raw=sys.stdin.buffer.read(4*1024*1024+1);require(0<len(raw)<=4*1024*1024,'packet_bound');p=decode(raw)
+    sources=admit_packet(p)
+    END=min(END,time.monotonic()+p['not_after_utc']-time.time());signal.alarm(max(1,math.ceil(END-time.monotonic())))
+    # The selected closed set is independently checked again by the unchanged
+    # Qualification before provisioning; stage creation does not authorize it.
+    require(type(p['config_map'])is dict and set(p['config_map'])==set(CONFIG_PATHS),'config_map_shape')
+    for name,pin in p['config_map'].items():
+        path=Path(name)
+        require(path.parent==Path('/etc/dovecot')or path.parent==Path('/etc/dovecot/conf.d'),'public_fixed_parent')
+        if pin is None:
+            require(name in OPTIONAL,'absence_scope');protected(path)
+            require(not os.path.lexists(path),'absence_changed')
+        else:require(type(pin)is str and re.fullmatch('[a-f0-9]{64}',pin)and sha(read_root(path,131072))==pin,'public_changed')
+    require(sha(read_root(Path('/etc/dovecot/dovecot-sql.conf.ext'),131072))==p['public_sql_sha256'],'public_sql_changed')
+    protected(Path('/var/run/owned'));tmp=Path('/tmp').lstat();require(stat.S_ISDIR(tmp.st_mode)and tmp.st_uid==0,'tmp_custody')
+    require(stat.S_IMODE(Path('/tmp').lstat().st_mode)==0o1777,'tmp_sticky')
+    backend=Path('/var/run')/('osmap-service-admission-root-'+secrets.token_hex(8));frontend=Path('/tmp')/('osmap-pxp-stage-'+secrets.token_hex(8))
+    admission_sha=produce_stage(p,sources,backend,frontend,raw,interpreter,lambda frame:print(json.dumps(frame),flush=True))
     deadline();require(select_python()==interpreter,'python_selection_changed')
-    os.execve('/usr/local/bin/python3',['/usr/local/bin/python3','-I','-B',str(backend/'startup_only.py'),sha(admission_raw)],{'PATH':'/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin','HOME':'/root','LC_ALL':'C'})
+    os.execve('/usr/local/bin/python3',['/usr/local/bin/python3','-I','-B',str(backend/'startup_only.py'),admission_sha],{'PATH':'/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin','HOME':'/root','LC_ALL':'C'})
 if __name__=='__main__':
     try:main()
     except BaseException as error:

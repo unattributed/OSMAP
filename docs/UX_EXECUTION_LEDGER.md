@@ -9957,7 +9957,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
   "slice": "S04-02",
   "original_requirement": "Page 22 own-account password change, authoritative backend and step-up; independent accessible Show/Hide on current/new/confirmation",
   "source_baseline": "b4bc371bd645ea009e4d257b269c73bd7294c8e9",
-  "state": "BLOCKED",
+  "state": "IN_PROGRESS",
   "integration_owner": "/root",
   "roles": {
     "project_manager": [
@@ -9987,7 +9987,9 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
       "/root/password_prototype",
       "/root/dependency_native",
       "/root/dependency_python",
-      "/root/dependency_confinement"
+      "/root/dependency_confinement",
+      "/root/integration",
+      "/root/evidence"
     ],
     "qa": [
       "/root",
@@ -10002,7 +10004,8 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
       "/root/password_prototype",
       "operator",
       "/root/dependency_python",
-      "/root/dependency_native"
+      "/root/dependency_native",
+      "/root/schema"
     ],
     "security_review": [
       "/root/scrum_security_review",
@@ -10270,7 +10273,13 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "maint/qemu/osmap-qemu-common.ksh",
     ".githooks/pre-commit",
     "Makefile",
-    "maint/security/test-osmap-install-hooks.sh"
+    "maint/security/test-osmap-install-hooks.sh",
+    "maint/ux/s04_02_startup_candidate/build_current.py",
+    "maint/ux/s04_02_startup_candidate/build_remote.py",
+    "maint/ux/s04_02_startup_candidate/test_current_source.py",
+    "maint/security/osmap-tls-policy-guard.sh",
+    "maint/ux/s04_02_startup_candidate/source_review.json",
+    "maint/ux/s04_02_startup_candidate/milestone1_evidence.json"
   ],
   "outcomes": [
     {
@@ -10430,7 +10439,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "status": "PENDING",
     "reference": "Only minimal well-defined own-password usability after all agent-owned development/matching deployed QA/independent audit PASS. No operator password is changed by agent qualification; use controlled disposable Alice and preserve Bob/operator state. NOT RUN."
   },
-  "next_action": "STOP. Preserve startup145 and cleanup evidence. No account admission, password mutation, startup retry, prerequisite query or further host action in this execution.",
+  "next_action": "Milestone1 native startup and paired non-mutating sockets PASS on signed77f artifacts. Finish normal signed preservation; next functional objective remains T03 using same binaries, with ordinary installed readiness and user acceptance unclaimed.",
   "accountability": {
     "functional_exit": "Working own-account Settings password change through the selected single-host obsd1 local account service and authoritative local backend, fresh password/TOTP step-up, one conditional SQL update, durable OSMAP epoch and all-browser revocation, actual source-bound cache handling, old-password refusal/new-login success and Bob preservation. Existing third-party SMTP/IMAP sessions may remain authenticated. Matching installed QA, independent audit and minimal owner usability remain required. Toronto is later separate production installation.",
     "owner": "/root",
@@ -19357,6 +19366,156 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "elapsed_seconds": 1.007,
         "reference": "/home/foo/Downloads/osmap-ux-s04/t03-progressive-20261023/milestone1-startup145/startup-result.json SHA256 f2e0aa9541eb18b8c985379e576d59d893310d736e56e2a0f6ecbafb05c3af56; /home/foo/Downloads/osmap-ux-s04/t03-progressive-20261023/milestone1-startup145/startup-outcome-review.json SHA256 a9b94920d485e42751f57412aee22ddbd13caeb2fd6690dfc33d52a43e84b6d2; /home/foo/Downloads/osmap-ux-s04/t03-progressive-20261023/milestone1-startup145/cleanup-result.json SHA256 372e6cc8c77384b78fd7377fbce59d7f5f5c8baffdc9001d1ca1118f80c05256; /home/foo/Downloads/osmap-ux-s04/t03-progressive-20261023/milestone1-startup145/cleanup-independent-review.json SHA256 76c2bca34036445f407603c76d291afa488dd9b0f6ed9825699c634701043432",
         "reason": "Retained Build141 binaries passed fixed staging; actual prerequisite root_sql exited0, then stock_fresh_reserved_schema aggregate refused before Rust child creation. Individual failed predicate unavailable because rows were not retained and Refused.code was masked as UNEXPECTED_SANITIZED. No ParentPrepare, ParentSeal, socket probes, fixture/account/password or public-service mutation. All born processes reaped/group absent. One independently reviewed exact-owned cleanup executed in0.345s and failed KeyError before any deletion: consumer expected frontend in stage-birth receipt although producer omits that field. Two root0700 inert staging roots remain at /var/run/osmap-service-admission-root-0464576abc319cc7 and /tmp/osmap-pxp-stage-e242601cc38f8f97. No retry; native Milestone1/T03 NOT_RUN. Preserve original result and review without rewriting them."
+      },
+      {
+        "id": "S04-02-current-source-retained-cleanup146",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "54bbd19fb525cbabf34bf160e8692d48f5e95cb2825ff87c85518260c8c2e9c9",
+        "change_reference": "Current explicit operator authorization and corrected birth receipt shape; previous cleanup deleted nothing. /home/foo/Downloads/osmap-ux-s04/current-source-milestone1-20261023/cleanup-review.json",
+        "success_chain_review": {
+          "reviewer": "/root/schema",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/current-source-milestone1-20261023/cleanup-review.json SHA256 3d920151e1586212ed69a2eb0681a14d09b9e9c0cde63a2b4ebe8a35f3c5905a",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 0.617,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/current-source-milestone1-20261023/cleanup-result.json SHA256 373f64419bcbb572d6cbbeca6390133b24ef9195bbf05fb302f7783fd1bb6d43",
+        "reason": "Actual obsd1 exact-owned cleanup PASS:19 leaves and2 directories removed, both paths absent, no open leaf references, transport reaped/groupgone. No account or service operations."
+      },
+      {
+        "id": "S04-02-current-source-build146",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "2c73b7b76d09e9b59aa34241fb57b28220c013bf7f6d69852171ef92d99c3471",
+        "change_reference": "Current signed77f closure. Dispatcher SHA256 9fccb5086b1399959a16aa0e2e5bc13a4adde23db9b3c273a612f368d78e3594 remote SHA256 9f56ba4df20bd884efbe123ed38f84267140f9277046c05eb923749dc49b4a76; old Build141 obsolete, not reused. Current operator explicitly authorizes this single build.",
+        "success_chain_review": {
+          "reviewer": "/root/schema",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/current-source-milestone1-20261023/build/independent-review.json SHA256 846b0e793dc776fb9f7777983fa8eda1827c43361b67bf0ea92a2b051c434864",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 374.632,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/current-source-milestone1-20261023/build/result.json SHA256 8199a698536b6d0f5c78f0901cc33c693e146df4643ede712ca9a68974071896",
+        "reason": "Actual current77f native build PASS once; source before/after parity, release helper and opt0/debug0 caller retained with exact hashes/compiler evidence. No application/tests/account/service operations; scratchgone and born groups gone. Reuse without rebuilding."
+      },
+      {
+        "id": "S04-02-current-source-startup147",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "444aa0c0751dfa00edfd3975efc76ddda558ec7db5e1c3165d0f9f28a3f781bb",
+        "change_reference": "Current explicit operator M1 authorization. Corrected MariaDB evidence-only version semantics and actual77f build receipt identity; actual artifact producer/consumer success and real failed-admission/cleanup local3 PASS, prior inert stages disposed on host. No old-build receipt success substitute, no rebuilt artifacts.",
+        "success_chain_review": {
+          "reviewer": "/root/schema",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/current-source-milestone1-20261023/startup/startup-independent-review.json SHA256 cda06ce613107113d537e5c7779d2d03fab55759b8b09015212c9be622c52542; MariaDB authored by schema independently reviewed /root/evidence at /home/foo/Downloads/osmap-ux-s04/current-source-milestone1-20261023/schema-review.json",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "FAIL",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 0.821,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/current-source-milestone1-20261023/startup/startup-result.json SHA256 046c163df7f11a3c5a59b77e12f6fc7fe8f020ecd01743421ca7300473178ff1",
+        "reason": "Local predispatch refusal validator_source_changed: stale dispatcher validator SHA. No SSH/native dispatch, no host effects, no product runtime result. Correct exact current77f validator hash and distinguish locally before new one-shot startup148; build146 remains matching reusable."
+      },
+      {
+        "id": "S04-02-current-source-startup148",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "444aa0c0751dfa00edfd3975efc76ddda558ec7db5e1c3165d0f9f28a3f781bb",
+        "change_reference": "Exact stale validator SHA corrected to existing current77f validator1a08edeb; focused actual-file pin regression PASS. Previous147 no-host refusal preserved. Independent review proves other16 execution files and current build unchanged; one native startup, no rebuild.",
+        "success_chain_review": {
+          "reviewer": "/root/schema",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/current-source-milestone1-20261023/startup148/startup-independent-review.json SHA256 ae7fa9417fbde7db0d384ca94398238a2740bc58db9b6528113b7abf9f750a6e",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 5.08,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/current-source-milestone1-20261023/startup148/startup-result.json SHA256 16e7b114cb87c94ffd11aa7d8aaf8f2310ebe650f144edb4f52e7a3d68c66c78",
+        "reason": "Actual current77f Rust startup PASS0.627818s; ParentPrepare/Seal and both UID-authorized EOF probes PASS; no credential frames/write; owned fixture effects disposed/public config/master preserved. Inert root staging and final recovery receipt separately pending disposition. T03 NOT_RUN.",
+        "reassessment": {
+          "reviewers": [
+            "/root",
+            "/root/schema"
+          ],
+          "reference": "Retrospective record reconciliation AFTER actual148 PASS; independent schema reviewer confirms original145 aggregate pre-Rust predicate UNKNOWN and broken birth-field cleanup, fixed/disposed by146;147 local stale validator no-host refusal. Actual148 source/integration review /home/foo/Downloads/osmap-ux-s04/current-source-milestone1-20261023/startup148/startup-independent-review.json preceded execution. This accounting does not claim a retrospective pre-action gate/pass or erase failures.",
+          "next_action": "No further runtime retry: Milestone1 actual148 PASS and exact stage cleanup150 PASS. Retain current binaries for next separately recorded functional milestone; T03 remains open.",
+          "failed_attempt_ids": [
+            "S04-02-native-milestone1-startup145",
+            "S04-02-current-source-startup147"
+          ]
+        }
+      },
+      {
+        "id": "S04-02-current-source-recovery-observe149",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "dec6d8f06a8fc7675152d5fd371bb35b8ed2d898ae96653f5d4cf75fdc0d3045",
+        "change_reference": "Preserve exact final DISPOSED recovery evidence before current stage disposition; one read-only receipt, no runtime repeat.",
+        "success_chain_review": {
+          "reviewer": "/root/schema",
+          "reference": "Independent startup148 cleanup outcome review and current explicit recovery evidence direction; final receipt to be checked before deletion.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "elapsed_status": "UNKNOWN",
+        "elapsed_seconds": null,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/current-source-milestone1-20261023/startup148/recovery-snapshot.json SHA256 b4a875b28d213672f273148bfca0adb7664069a779ad2563b194bfe20b371c13",
+        "reason": "Read-only actual final local-owned-recovery.json retained with SHA/inode metadata. PhaseDISPOSED, helperstopped/requestsstopped, all4uncertaintyflagsfalse, current77f. No state mutation."
+      },
+      {
+        "id": "S04-02-current-source-stage-cleanup150",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "1690389a5fea347fdf15356d77156e275c749bceed362f96d59e2f1f05faec87",
+        "change_reference": "Current148 native fixture cleanup PASS; recovery evidence retained privately. Exact two current stages plus current final recovery receipt hash4ecc523f/identity bound; independent successful actual-recovery producer/cleanup and changed-recovery refusal checked.",
+        "success_chain_review": {
+          "reviewer": "/root/schema",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/current-source-milestone1-20261023/startup148/cleanup-review.json SHA256 3d5308e832edbc394393e63b24966a7a64d5b798d478c7cf9afe9a9601b6faab",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 0.557,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/current-source-milestone1-20261023/startup148/cleanup-result.json SHA256 419db3fb0095af249e535b3ad74cdaeefdfe70060165409be962fa8983f601db",
+        "reason": "Actual current148 exact-owned stages disposed:21 files/two directories removed, bothpathsabsent/openreferencesabsent; final DISPOSED recovery bytes retained privately first. No account/service operation. Current compiled artifacts intentionally retained for reuse."
       }
     ],
     "prior_investigations": [
@@ -20771,16 +20930,16 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "address": "192.168.1.44",
         "status": "PASS",
         "software": {
-          "OpenBSD": "7.9",
+          "OpenBSD": "8.0",
           "machine": "amd64",
-          "cargo": "cargo 1.94.1 (29ea6fb6a 2026-03-24) (built from a source tarball)",
-          "rustc": "rustc 1.94.1 (e408947bf 2026-03-25) (built from a source tarball)",
+          "cargo": "cargo 1.98.1 (797e8a9bc 2026-08-05) (built from a source tarball)",
+          "rustc": "rustc 1.98.1 (48a229cea 2026-09-01) (built from a source tarball)",
           "Python": "Python 3.13.16"
         },
-        "observed_at": "2026-10-21T22:15:54Z",
+        "observed_at": "2026-10-23T14:48:55Z",
         "evidence": {
-          "path": "/home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/observe.stdout.json",
-          "sha256": "429bf5f2112575afcbe3e1afd11e825e7ca46b671620c8c3026cccebdb840277"
+          "path": "/home/foo/Downloads/osmap-ux-s04/current-source-milestone1-20261023/build/result.json",
+          "sha256": "8199a698536b6d0f5c78f0901cc33c693e146df4643ede712ca9a68974071896"
         }
       },
       {
@@ -30572,6 +30731,301 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
             }
           }
         ]
+      },
+      {
+        "id": "current-source-retained-cleanup146",
+        "kind": "NATIVE",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "single-host-readiness"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "docs/UX_EXECUTION_LEDGER.md"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/usr/bin/python3",
+            "arguments": [
+              "-B",
+              "/home/foo/Downloads/osmap-ux-s04/current-source-milestone1-20261023/execute_cleanup.py"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "One corrected exact-owned disposition of startup145 inert roots. Revalidate receipt SHA, birth shape, exact inode/leaf graph and fstat no open references before finite deletion. Require both paths absent; no account/service operations or historical PID signals.",
+        "prerequisites": [
+          {
+            "id": "independent-exact-owned-cleanup",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/current-source-milestone1-20261023/cleanup-review.json",
+              "sha256": "3d920151e1586212ed69a2eb0681a14d09b9e9c0cde63a2b4ebe8a35f3c5905a"
+            }
+          }
+        ]
+      },
+      {
+        "id": "current-source-native-build146",
+        "kind": "NATIVE",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "single-host-readiness"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "docs/UX_EXECUTION_LEDGER.md"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/usr/bin/python3",
+            "arguments": [
+              "/home/foo/Workspace/OSMAP/maint/ux/s04_02_startup_candidate/build_current.py",
+              "execute"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "Build signed77f current native account-passwd release opt3/debug0 and future caller libtest opt0/debug0 exactly once; retain compiler versions/hashes/logs and binary hashes/profiles, source parity and finite cleanup. No test/application/account/public-service execution. Reuse artifacts for startup and subsequent tests.",
+        "prerequisites": [
+          {
+            "id": "independent-current-build",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/current-source-milestone1-20261023/build/independent-review.json",
+              "sha256": "846b0e793dc776fb9f7777983fa8eda1827c43361b67bf0ea92a2b051c434864"
+            }
+          }
+        ]
+      },
+      {
+        "id": "current-source-milestone1-startup147",
+        "kind": "NATIVE",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "single-host-readiness"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "docs/UX_EXECUTION_LEDGER.md"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/usr/bin/python3",
+            "arguments": [
+              "/home/foo/Workspace/OSMAP/maint/ux/s04_02_startup_candidate/dispatch_startup.py",
+              "--build-receipt",
+              "/home/foo/Downloads/osmap-ux-s04/current-source-milestone1-20261023/build/result.json",
+              "--source-manifest",
+              "/home/foo/Downloads/osmap-ux-s04/current-source-milestone1-20261023/build/manifest.json",
+              "--run-dir",
+              "/home/foo/Downloads/osmap-ux-s04/current-source-milestone1-20261023/startup",
+              "--attempt-id",
+              "S04-02-current-source-startup147",
+              "--recipe",
+              "current-source-milestone1-startup147"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "One current77f real Rust startup using build146 existing artifacts without recompilation. Measure initialization; prove ParentPrepare/ParentSeal through authorized-UID handled EOF on both fixed Unix sockets. No credential frames or password mutation. Preserve public mail/config/operator accounts/native confinement and exact-owned finite cleanup; retain first actual runtime failure and stop.",
+        "prerequisites": [
+          {
+            "id": "current-build",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/current-source-milestone1-20261023/build/outcome-review.json",
+              "sha256": "99be7579346b412c18f9bbefedbc0f3f9bc2c629a108bb27b0f657a156da893f"
+            }
+          },
+          {
+            "id": "current-real-artifact-integration",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/current-source-milestone1-20261023/startup/startup-independent-review.json",
+              "sha256": "cda06ce613107113d537e5c7779d2d03fab55759b8b09015212c9be622c52542"
+            }
+          },
+          {
+            "id": "independent-mariadb-semantics",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/current-source-milestone1-20261023/schema-review.json",
+              "sha256": "8b1c371fa6baf5a1fe75509f581d806c4ccc99aaacdf8454edd816f7942df73b"
+            }
+          },
+          {
+            "id": "actual-retained-stage-disposition",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/current-source-milestone1-20261023/cleanup-result.json",
+              "sha256": "373f64419bcbb572d6cbbeca6390133b24ef9195bbf05fb302f7783fd1bb6d43"
+            }
+          }
+        ]
+      },
+      {
+        "id": "current-source-milestone1-startup148",
+        "kind": "NATIVE",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "single-host-readiness"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "docs/UX_EXECUTION_LEDGER.md"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/usr/bin/python3",
+            "arguments": [
+              "/home/foo/Workspace/OSMAP/maint/ux/s04_02_startup_candidate/dispatch_startup.py",
+              "--build-receipt",
+              "/home/foo/Downloads/osmap-ux-s04/current-source-milestone1-20261023/build/result.json",
+              "--source-manifest",
+              "/home/foo/Downloads/osmap-ux-s04/current-source-milestone1-20261023/build/manifest.json",
+              "--run-dir",
+              "/home/foo/Downloads/osmap-ux-s04/current-source-milestone1-20261023/startup148",
+              "--attempt-id",
+              "S04-02-current-source-startup148",
+              "--recipe",
+              "current-source-milestone1-startup148"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "One current77f real Rust startup using build146 existing artifacts without recompilation. Measure initialization; prove ParentPrepare/ParentSeal through authorized-UID handled EOF on both fixed Unix sockets. No credential frames or password mutation. Preserve public mail/config/operator accounts/native confinement and exact-owned finite cleanup; retain first actual runtime failure and stop.",
+        "prerequisites": [
+          {
+            "id": "current-build",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/current-source-milestone1-20261023/build/outcome-review.json",
+              "sha256": "99be7579346b412c18f9bbefedbc0f3f9bc2c629a108bb27b0f657a156da893f"
+            }
+          },
+          {
+            "id": "current-real-artifact-integration",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/current-source-milestone1-20261023/startup148/startup-independent-review.json",
+              "sha256": "ae7fa9417fbde7db0d384ca94398238a2740bc58db9b6528113b7abf9f750a6e"
+            }
+          },
+          {
+            "id": "independent-mariadb-semantics",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/current-source-milestone1-20261023/schema-review.json",
+              "sha256": "8b1c371fa6baf5a1fe75509f581d806c4ccc99aaacdf8454edd816f7942df73b"
+            }
+          },
+          {
+            "id": "actual-retained-stage-disposition",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/current-source-milestone1-20261023/cleanup-result.json",
+              "sha256": "373f64419bcbb572d6cbbeca6390133b24ef9195bbf05fb302f7783fd1bb6d43"
+            }
+          }
+        ]
+      },
+      {
+        "id": "current-source-recovery-observe149",
+        "kind": "DISCOVERY",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "single-host-readiness"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "docs/UX_EXECUTION_LEDGER.md"
+        ],
+        "operations": [
+          {
+            "target_id": "obsd1",
+            "program": "/usr/local/bin/python3",
+            "arguments": [
+              "-I",
+              "-c",
+              "read_exact_recovery_receipt_source_sha256=dec6d8f06a8fc7675152d5fd371bb35b8ed2d898ae96653f5d4cf75fdc0d3045"
+            ],
+            "privilege": "root"
+          }
+        ],
+        "expected": "Read exactly current startup148 final recovery receipt no-follow with ownership/identity/size/continuity checks. Retain privately before exact-owned stage deletion; no service/account operation.",
+        "prerequisites": [
+          {
+            "id": "actual-native-startup-pass",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/current-source-milestone1-20261023/startup148/startup-result.json",
+              "sha256": "16e7b114cb87c94ffd11aa7d8aaf8f2310ebe650f144edb4f52e7a3d68c66c78"
+            }
+          }
+        ]
+      },
+      {
+        "id": "current-source-stage-cleanup150",
+        "kind": "NATIVE",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "single-host-readiness"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "docs/UX_EXECUTION_LEDGER.md"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/usr/bin/python3",
+            "arguments": [
+              "-B",
+              "/home/foo/Downloads/osmap-ux-s04/current-source-milestone1-20261023/startup148/execute_cleanup.py"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "Dispose exactly current148 inert stage graph plus separately retained hash/identity-bound final DISPOSED recovery leaf. Require full identity graph/fstat absence; no service/account operations. Preserve current compiler artifacts for reuse.",
+        "prerequisites": [
+          {
+            "id": "independent-current-stage-cleanup",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/current-source-milestone1-20261023/startup148/cleanup-review.json",
+              "sha256": "3d5308e832edbc394393e63b24966a7a64d5b798d478c7cf9afe9a9601b6faab"
+            }
+          }
+        ]
       }
     ],
     "budget": {
@@ -30585,9 +31039,9 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     },
     "planned_action": null
   },
-  "blocker": "Startup145 consumed the authorized single attempt and refused at stock_fresh_reserved_schema before Rust. Per-predicate evidence missing. Exact-owned cleanup failed before deletion due to birth-receipt consumer KeyError; two inert private stages retained, no running owned child. No automatic repetition.",
-  "independent_next_action": "Independent final disposition completed: /home/foo/Downloads/osmap-ux-s04/t03-progressive-20261023/milestone1-startup145/final-disposition-review.json SHA256 f3af041302d1d0bdbc18a7bdd3c0eb23349dd23cb1e1cef8f8db62f25c584ca6. Confirms pre-Rust refusal, cleanup FAIL_NO_DELETION, two retained exact staging roots, M1/T03 NOT_RUN; corrects prior cleanup CLEAR assessment. STOP with no further host calls or retries.",
-  "updated_at": "2026-10-23T13:14:40.638419+00:00"
+  "blocker": null,
+  "independent_next_action": "Independent build/startup/current-stage outcome reviews PASS; preserve exact limitations and no T03/password claim.",
+  "updated_at": "2026-10-23T14:58:06Z"
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->
@@ -34549,3 +35003,19 @@ Historical current137 observer remains immutable at SHA256 `03d529fdf77292b4c994
 Applicable non-Rust local gates PASS: Python compilation, work-order validation, five validator unit tests, V10 governance, plan signature/manifests and `git diff --check`. The full pre-commit security hook is NOT RUN because it unconditionally invokes Cargo phases, while the operator explicitly prohibited rebuilding Rust to test this Python correction.
 
 This is local fixture engineering only, not T03 progress. No remote host, Rust build, service, fixture, credential, session, public-mail or production action occurred. Prior underlying prerequisite refusal remains UNKNOWN because its inner JSON was destroyed. The prior host window is expired; future observation/build/journey/recovery requires one new explicit finite authorization. The corrected files and prior ledger changes remain local and uncommitted; no push or deployment is claimed.
+
+
+## 2026-10-23 — Current-source Milestone 1 execution resumed
+
+Operator explicitly authorizes remaining integration corrections, exact-owned retained-stage disposition, one current-source native build and real Rust service startup on obsd1. Approved Rust baseline `77f63794d3f60e4003db157eada39f4bd4222b6a` signature verified; frozen plan manifest checks PASS. Root owns integration, host and Git queue; integration agent owns startup identity/tests, evidence agent prepares current compiler carrier, schema agent corrects MariaDB evidence semantics then independently reviews cleanup. Minimum outcome is measured startup, ParentPrepare/ParentSeal and both non-mutating Unix-socket probes, or exact first product/runtime failure. Public mail controls/configuration, actual operator accounts and credential operations excluded. Technical per-action bounds and one-shot guards remain; no new administrative expiry. Prior failures and retained directories remain evidence until observed disposition. Build/startup NOT RUN at this entry.
+
+Actual retained-stage disposition146 PASS on obsd1 in0.617s: exact19 leaves/two directories removed only after receipt/identity/fstat admission; both historical staging paths absent. SSH0, local transport reaped/groupgone, no account/service operation. Evidence `/home/foo/Downloads/osmap-ux-s04/current-source-milestone1-20261023/cleanup-result.json`. Original cleanup failure remains historical; this is observed host disposition, not fixture inference.
+
+
+## 2026-10-23 — Current-source Milestone 1 PASS
+
+Signed Rust source `77f63794d3f60e4003db157eada39f4bd4222b6a` built once on obsd1 (OpenBSD8.0, cargo/rustc1.98.1 observed): build146 PASS374.632s, release helper SHA256 `8f1ed891c8349863db59a95ba1e3d4908bc62ba7d583ea8634d3259262ab3559`, controlled caller `660ba2466a163762943c1045c6df1d5dc20317d90d1b3022a02d73fa876b30f7`. Exact461 signed inputs and156 includes, compiler hashes/versions/rawlogs and artifacts retained. No rebuild for startup. MariaDB12.3.3 version is observation only; actual schema/grants/controlled-account/InnoDB/unsafe-object checks passed.
+
+Actual-current-artifact local producer/admission/consumer and genuine failed-admission/exact-cleanup integration3 PASS. Local147 refused stale validator hash before host dispatch; exact current validator pin correction and focused regression passed with independent review. Actual148 native startup PASS5.080s whole dispatch: both socket paths published in0.627818s; handled authorizedUID EOF on admission (connected0.024ms/handled572.871ms) and mutation (connected0.025ms/handled100.698ms) independently establish ParentPrepare/ParentSeal/AcceptanceLoop. No separate ParentSeal timestamp is claimed. No credential frames/password write; controlled Alice/Bob full17 state and zero epochs preserved. Native confinement unchanged. Public original25 config/master and operator accounts preserved; owned fixture2users/2groups/2rows/1DBuser/12files/5dirs disposed, service exit0/reaped/groupgone.
+
+Host exact-owned cleanup146 removed old145 retained19files/two dirs; cleanup150 removed current148 inert21files/two dirs only after retaining final DISPOSED recovery evidence. Both sets of paths confirmed absent; no historical PID signalling/public service control. Compiler artifacts retained for subsequent functional work. Sanitized evidence in `maint/ux/s04_02_startup_candidate/milestone1_evidence.json`; private source/compiler/runtime/recovery evidence root `/home/foo/Downloads/osmap-ux-s04/current-source-milestone1-20261023/`. Milestone1 is PASS; T03/password workflow remains NOT_RUN for current source, historical failures retained, S04-02 and ordinary installed readiness/UAT remain OPEN.

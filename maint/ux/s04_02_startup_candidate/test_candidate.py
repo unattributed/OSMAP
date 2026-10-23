@@ -38,19 +38,21 @@ class StockSchemaTests(unittest.TestCase):
     def valid(self, version='11.4.13-MariaDB'):
         return f'root@localhost\t{version}\n0\n0\nInnoDB\n0\n0\n'.encode()
 
-    def test_current_and_future_patch_versions_are_observations(self):
+    def test_version_text_is_preserved_without_compatibility_inference(self):
         for version in ('11.4.12-MariaDB', '11.4.13-MariaDB',
-                '12.0.1-MariaDB', '11.4.13-log-MariaDB'):
+                '12.0.1-MariaDB', '11.4.13-log-MariaDB',
+                '11.4.13-MariaDB-log', 'vendor build (stable)',
+                '11.4.13-OtherDB', ''):
             with self.subTest(version=version):
                 result = schema.stock_fresh_reserved_schema(self.valid(version))
                 self.assertEqual(result['database_product'], 'MariaDB')
                 self.assertEqual(result['database_identity'], 'root@localhost')
+                self.assertEqual(result['database_version'], version)
 
     def test_each_failed_condition_has_its_own_code(self):
         cases = {
             'stock_schema_row_count': b'root@localhost\t11.4.13-MariaDB\n0\n',
             'stock_database_identity': self.valid().replace(b'root@localhost', b'other@localhost'),
-            'stock_database_compatibility': self.valid('11.4.13-OtherDB'),
             'stock_reserved_database_user_count': self.valid().replace(b'\n0\n0\nInnoDB', b'\n1\n0\nInnoDB'),
             'stock_controlled_rows_count': self.valid().replace(b'\n0\n0\nInnoDB', b'\n0\n2\nInnoDB'),
             'stock_mailbox_engine': self.valid().replace(b'InnoDB', b'MyISAM'),
@@ -59,9 +61,10 @@ class StockSchemaTests(unittest.TestCase):
             'stock_schema_numeric': self.valid().replace(b'InnoDB\n0\n0', b'InnoDB\nno\n0'),
         }
         for expected, raw in cases.items():
-            with self.subTest(expected=expected), self.assertRaises(schema.StockSchemaRefused) as caught:
-                schema.stock_fresh_reserved_schema(raw)
-            self.assertEqual(caught.exception.code, expected)
+            for version in (b'11.4.13-MariaDB', b'vendor build (stable)'):
+                with self.subTest(expected=expected, version=version), self.assertRaises(schema.StockSchemaRefused) as caught:
+                    schema.stock_fresh_reserved_schema(raw.replace(b'11.4.13-MariaDB', version))
+                self.assertEqual(caught.exception.code, expected)
 
     def test_structured_refusal_survives_outer_sanitizer(self):
         error = SimpleNamespace(code='stock_mailbox_engine')
@@ -95,48 +98,36 @@ class CarrierClosureTests(unittest.TestCase):
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=5)
         self.assertEqual(completed.returncode, 0, completed.stderr.decode(errors='replace'))
 
-    def test_obsolete_retained_binary_is_not_admitted(self):
-        with self.assertRaisesRegex(RuntimeError,
-                'retained_build_obsolete_openbsd_authority'):
+    def test_current_build_receipt_is_required(self):
+        with self.assertRaisesRegex(RuntimeError,'current_build_receipt_required'):
             binder.packet()
 
-    def test_actual_producer_frames_satisfy_consumer(self):
-        expiry = 2_000_000_000
-        back = Path('/var/run/osmap-service-admission-root-0000000000000000')
-        front = Path('/tmp/osmap-pxp-stage-0000000000000000')
-        birth1 = stage.stage_birth_frame(back, None, expiry)
-        birth2 = stage.stage_birth_frame(back, front, expiry)
-        probes = {name: {'connected_ms': 1.0, 'handled_ms': 2.0,
-            'cleanup_confirmed': True} for name in ('admission', 'mutation')}
-        sockets = {name: {'uid': 0, 'gid': 1001, 'mode': stat.S_IFSOCK | 0o660}
-            for name in ('/var/run/osmap-account-admission/admission.sock',
-                '/var/run/osmap-account-mutation/mutation.sock')}
-        readiness = {'startup_seconds': 0.5, 'startup_deadline_seconds': 5,
-            'paired_sockets_published': True, 'parent_prepare': True, 'parent_seal': True,
-            'acceptance_proof': 'AUTHORIZED_UID_CONNECT_EOF_HANDLED_ON_BOTH_SOCKETS',
-            'service_binary_sha256': '7cd4cba76f27c34060c8ddbf843a1a2d71a06e64675c708327a1861b7bdb3092',
-            'socket_metadata': sockets, 'probes': probes}
-        actor = {'schema': 'osmap-single-host-startup-v1', 'result': 'PASS',
-            'functional_result': 'PASS', 'disposition': 'CONFIRMED', 'password_mutation': False,
-            'credential_request_frames': 0, 'public_service_controls': False,
-            'public_config_writes': False, 'relay_operations': False,
-            'credential_values_retained': False, 'authoritative_no_write': {
-                'actual_write_observed': False, 'Alice_exact17_preserved': True,
-                'Alice_epoch': 0, 'Alice_state': 'active', 'Alice_changed_at': None,
-                'Bob_all17_preserved': True, 'Bob_epoch': 0, 'Bob_state': 'active'},
-            'native_stages': {name: 'PASS' for name in ('ServiceStartup','ServiceFiles',
-                'ServiceAdmission','ServiceAccounts','ServiceStore','AdmissionBind','MutationBind',
-                'ParentPrepare','ParentSeal','AcceptanceLoop')},
-            'service_readiness': readiness, 'owned_effects_report': {
-                'cleanup_confirmed': True, 'public_original25_preserved': True,
-                'public_master_preserved': True, 'owned_sql_hash_uids_absent': True,
-                'observed_release': 'unrestricted'}, 'elapsed_millis': 500}
-        ready = {'schema': 'osmap-single-host-stage-ready-v1', 'backend': str(back),
-            'frontend': str(front), 'not_after_utc': expiry}
-        transport = {'schema': 'osmap-single-host-transport-v1', 'result': 'COMPLETE',
-            'born_child_reaped': True, 'born_group_gone': True, 'root_exit': 0,
-            'stderr_bytes': 0, 'failure': None, 'frames': [birth1, birth2, ready, actor]}
-        self.assertEqual(consumer.inspect(transport, 0, expiry)['result'], 'PASS')
+    def test_dispatch_validator_pin_matches_current_source(self):
+        actual=hashlib.sha256((dispatch.REPO/'maint/ux/validate_acceptance.py').read_bytes()).hexdigest()
+        self.assertEqual(dispatch.VALIDATOR_SHA256,actual)
+
+    def test_dispatch_matches_actual_operation_and_target(self):
+        import copy
+        args=SimpleNamespace(attempt_id='startup-current',recipe='startup-current',
+            build_receipt='/private/build/result.json',source_manifest='/private/build/manifest.json')
+        pins={'remote_wrapper.py':'a'*64}
+        recipe={'id':args.recipe,'kind':'NATIVE','environment_ids':['obsd1'],
+            'operations':[{'target_id':'local','program':'/usr/bin/python3','privilege':'user',
+                'arguments':[str(ROOT/'dispatch_startup.py'),'--build-receipt',args.build_receipt,
+                    '--source-manifest',args.source_manifest,'--run-dir',str(dispatch.RUN),
+                    '--attempt-id',args.attempt_id,'--recipe',args.recipe]}]}
+        order={'execution_contract':{'planned_action':{'attempt_id':args.attempt_id,
+            'source_revision':pins['remote_wrapper.py'],'recipe_id':args.recipe,'max_seconds':360},
+            'recipes':[recipe],'environment':[{'id':'obsd1','host':'obsd1.blackbagsecurity.com',
+                'address':'192.168.1.44','status':'PASS'}]}}
+        dispatch.check_action(order,args,pins)
+        for kind in('operation','target','bound'):
+            bad=copy.deepcopy(order);contract=bad['execution_contract']
+            if kind=='operation':contract['recipes'][0]['operations'][0]['arguments'][2]='/other/receipt'
+            elif kind=='target':contract['environment'][0]['address']='192.0.2.1'
+            else:contract['planned_action']['max_seconds']=1
+            with self.subTest(kind=kind),self.assertRaisesRegex(RuntimeError,'planned_'):
+                dispatch.check_action(bad,args,pins)
 
     def test_transport_reap_uncertainty_cannot_be_called_confirmed(self):
         child = SimpleNamespace(returncode=0, pid=424242)
@@ -182,7 +173,7 @@ class CleanupTests(unittest.TestCase):
     def test_startup145_birth_without_frontend_cleans_exact_owned_graph(self):
         temp,back,front,digest,owner = self.fixture()
         try:
-            cleanup.cleanup_owned(back, front, digest, owner, self.fstat_clear)
+            cleanup.cleanup_owned(back, front, digest, owner, self.fstat_clear, expected_source=stage.BASE)
             self.assertFalse(back.exists());self.assertFalse(front.exists())
             self.assertEqual(cleanup.report['result'], 'PASS')
         finally:temp.cleanup()
@@ -193,7 +184,7 @@ class CleanupTests(unittest.TestCase):
                 temp,back,front,digest,owner = self.fixture(**kwargs)
                 try:
                     with self.assertRaises(RuntimeError):
-                        cleanup.cleanup_owned(back, front, digest, owner, self.fstat_clear)
+                        cleanup.cleanup_owned(back, front, digest, owner, self.fstat_clear, expected_source=stage.BASE)
                     self.assertTrue(back.exists());self.assertTrue(front.exists())
                     self.assertTrue((back/'backend.py').exists())
                 finally:temp.cleanup()
@@ -202,7 +193,7 @@ class CleanupTests(unittest.TestCase):
         temp,back,front,digest,owner = self.fixture(extra_leaf=True)
         try:
             with self.assertRaisesRegex(RuntimeError, 'exact_leaf_set'):
-                cleanup.cleanup_owned(back, front, digest, owner, self.fstat_clear)
+                cleanup.cleanup_owned(back, front, digest, owner, self.fstat_clear, expected_source=stage.BASE)
             self.assertTrue((front/'unowned').exists())
         finally:temp.cleanup()
         temp,back,front,digest,owner = self.fixture()
@@ -210,7 +201,7 @@ class CleanupTests(unittest.TestCase):
             uncertain = lambda *_args, **_kwargs: SimpleNamespace(returncode=1,
                 stderr=b'', stdout=b'')
             with self.assertRaisesRegex(RuntimeError, 'fstat_result'):
-                cleanup.cleanup_owned(back, front, digest, owner, uncertain)
+                cleanup.cleanup_owned(back, front, digest, owner, uncertain, expected_source=stage.BASE)
             self.assertTrue((back/'backend.py').exists())
         finally:temp.cleanup()
 

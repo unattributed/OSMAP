@@ -1,11 +1,12 @@
 """Strict consumer for one startup-only native result."""
+import hashlib,json
 
 
 def require(value,code):
     if not value:raise RuntimeError(code)
 
 
-def inspect(value,code,expiry):
+def inspect(value,code,expiry,packet):
     require(type(value)is dict and value.get('schema')=='osmap-single-host-transport-v1','transport_schema')
     require(code==0 and value['result']=='COMPLETE'and value['born_child_reaped']is True
         and value['born_group_gone']is True and value['root_exit']==0 and value['stderr_bytes']==0
@@ -17,6 +18,12 @@ def inspect(value,code,expiry):
     require(birth1['frontend']is None and birth1['backend']==birth2['backend']==ready['backend']
         and birth2['frontend']==ready['frontend'],'stage_binding')
     require(all(frame['not_after_utc']==expiry for frame in frames[:3]),'actor_lease_binding')
+    require(ready['source_commit']==packet['source_commit']
+        and ready['compiler_receipt_sha256']==packet['compiler_receipt_sha256']
+        and ready['compiler_source_manifest_sha256']==packet['compiler_source_manifest_sha256']
+        and ready['helper_sha256']==packet['helper']['sha256']
+        and ready['web_sha256']==packet['web']['sha256']
+        and ready['packet_sha256']==hashlib.sha256(json.dumps(packet,sort_keys=True,separators=(',',':')).encode()).hexdigest(),'current_build_binding')
     require(actor['schema']=='osmap-single-host-startup-v1'and actor['result']=='PASS'
         and actor['functional_result']=='PASS'and actor['disposition']=='CONFIRMED','startup_result')
     require(actor['password_mutation']is False and actor['credential_request_frames']==0
@@ -32,7 +39,7 @@ def inspect(value,code,expiry):
         and readiness['paired_sockets_published']is True and readiness['parent_prepare']is True
         and readiness['parent_seal']is True
         and readiness['acceptance_proof']=='AUTHORIZED_UID_CONNECT_EOF_HANDLED_ON_BOTH_SOCKETS'
-        and readiness['service_binary_sha256']=='7cd4cba76f27c34060c8ddbf843a1a2d71a06e64675c708327a1861b7bdb3092','native_readiness')
+        and readiness['service_binary_sha256']==packet['helper']['sha256'],'native_readiness')
     require(set(readiness['socket_metadata'])=={'/var/run/osmap-account-admission/admission.sock','/var/run/osmap-account-mutation/mutation.sock'}
         and all(meta['uid']==0 and type(meta['gid'])is int and meta['gid']>0 and type(meta['mode'])is int
             for meta in readiness['socket_metadata'].values()),'socket_custody')
@@ -44,6 +51,6 @@ def inspect(value,code,expiry):
     require(type(actor['elapsed_millis'])is int and 0<actor['elapsed_millis']<=300000,'actor_elapsed')
     return {'result':'PASS','disposition':'CONFIRMED','startup_seconds':readiness['startup_seconds'],
         'probes':readiness['probes'],'native_stages':actor['native_stages'],'socket_metadata':readiness['socket_metadata'],
-        'source_commit':'b4bc371bd645ea009e4d257b269c73bd7294c8e9','service_binary_sha256':readiness['service_binary_sha256'],
+        'source_commit':packet['source_commit'],'compiler_receipt_sha256':packet['compiler_receipt_sha256'],'compiler_source_manifest_sha256':packet['compiler_source_manifest_sha256'],'service_binary_sha256':readiness['service_binary_sha256'],
         'password_mutation':False,'authoritative_no_write':actor['authoritative_no_write'],
         'public_service_operations':False,'cleanup_confirmed':True}
