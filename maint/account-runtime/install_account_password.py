@@ -426,8 +426,8 @@ def main():
     args = parser.parse_args()
     require(os.getuid() == os.geteuid() == os.getgid() == os.getegid() == 0 and
             socket.gethostname() == 'mail.blackbagsecurity.com' and
-            (os.uname().sysname, os.uname().release, os.uname().machine) ==
-            ('OpenBSD', '7.9', 'amd64'), 'fixed_installation_authority')
+            (os.uname().sysname, os.uname().machine) ==
+            ('OpenBSD', 'amd64'), 'fixed_installation_authority')
     def interrupted(_number, _frame):
         raise Refused('installation_signal')
     for number in STOPS:

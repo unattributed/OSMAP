@@ -4,6 +4,41 @@ Version 1, 2026-10-03. A portable operating framework for development teams usin
 agents. Adapt the repository, tooling, deployment targets and security rules;
 retain the outcome and accountability rules below.
 
+## Current operator ruling — the test harness is not the product
+
+As of 2026-10-23, use progressive product tests: one changed boundary, one
+expected observation, one result, then move forward.  Test machinery may enforce
+target identity, source identity, bounded operation, secret handling, one-shot
+mutation and safe cleanup.  It may not invent environmental compatibility rules,
+administrative authority, extra architectures or new acceptance milestones.
+
+In particular, hosts maintained on the current stable OpenBSD/packages must be
+tested by required capability and schema, not an exact release or patch string.
+Active code must not parse, compare, shape-check or branch on `uname` release,
+nor select a release-numbered OpenBSD image/helper by default. The release may
+be retained as non-authoritative observation evidence.
+Generated source carriers and separate producer/consumer reviews do not prove a
+serialized contract; execute the actual producer output through the consumer
+locally before host use.  A refusal must retain its structured reason and cleanup
+state.  Broad unchanged suites belong at the normal delivery gate, not inside
+every diagnostic/startup/admission step.
+
+## Current operator ruling — authority does not expire by ledger clock
+
+As of 2026-10-23, `deadline_at`, `not_after`, cumulative elapsed allowance and
+idle calendar time are historical accounting only. They do not expire a direct
+operator authorization or require a renewal request. Authorization ends when
+the stated action completes, the operator revokes it, or a substantive safety
+or failure boundary stops it. Preserve actual elapsed history, technical
+deadlines, bounded cleanup, exact admission and failure-stop controls.
+
+This exception applies only to artificial or historical accounting clocks.
+Explicit operator expirations and finite windows remain binding until the
+operator supersedes them. Record an applicable explicit expiry in the existing
+planned action's optional `operator_expires_at`; pre-action validation requires
+the bounded action, including cleanup, to fit before it. Never infer an operator
+expiry from an agent-created ledger deadline. One-shot limits remain binding.
+
 ## Mandatory OSMAP delivery SOP — 2026-10-19
 
 The operator applies this SOP to **all OSMAP development**, not only the current
@@ -22,7 +57,7 @@ troubleshooter.
 
 1. **Define the exit before work.** In the existing work order record the one
    user-observable outcome, included/excluded work, preservation requirements,
-   source baseline, owners, cumulative elapsed allowance and stop condition.
+   source baseline, owners, measured elapsed history and stop condition.
    Map each required test to prerequisite, action, expected result and actual
    evidence. Planned tests remain NOT RUN. Retain required security outcomes;
    simplify implementation and evidence collection rather than removing them.
@@ -52,16 +87,15 @@ troubleshooter.
    invalidates them. Qualify the actual frontend/backend/persistence journey
    before installed readiness. Source, build, native, installed and human
    outcomes remain distinct. No test-count, health or page-rendering substitute.
-6. **Enforce the cost and failure stops.** Count all work at the same functional
+6. **Enforce the evidence and failure stops.** Count all work at the same functional
    boundary across agents, renamed packages, retries and interruptions. Record
    full-action elapsed time or UNKNOWN; never invent token or monetary costs.
    Two failures stop further workflow retries until one combined independent
    reassessment identifies the failed assumption, smallest changed action and
-   its distinguishing test. Reassessment does not replenish the allowance.
-   An exhausted allowance cannot be increased automatically or by agents alone:
-   record the blocker and a bounded proposal for the operator. Necessary safe
-   disposition of already-owned effects remains permitted within explicit finite
-   recovery bounds; it does not authorize another workflow or expired lease.
+   its distinguishing test. Elapsed accounting never erases this history or
+   authorizes an unchanged retry. Necessary safe disposition of already-owned
+   effects remains permitted within explicit finite recovery bounds; it does
+   not authorize another workflow.
 7. **Close against observations.** Independently reconcile each required test
    with exact actual evidence and unresolved findings. Preserve failed attempts
    and partial/uncertain effects. Complete normal signed source admission and
@@ -69,8 +103,8 @@ troubleshooter.
    agent-owned implementation, matching functional QA and independent review
    pass. Update the existing ledger, decisions and issues to the same scope.
 
-The existing validator can reject inconsistent declarations, expired allowances
-and mismatched planned actions where its checked dispatcher is used. It cannot
+The existing validator can reject inconsistent declarations and mismatched
+planned actions where its checked dispatcher is used. It cannot
 prove an omitted environmental fact or truthful review. Those checks remain
 explicit lead/controller responsibilities. Do not describe this SOP as an
 unbypassable system-level control or as proof that a slice is complete.
@@ -170,21 +204,15 @@ and assigns root-cause work. Missing evidence changes the claim or blocks that
 case; it cannot be replaced by another agent's agreement.
 
 
-Accountability uses the existing work order and gate: name one functional exit
-and owner, a UTC-started bounded investigation and actual full-action elapsed
-wall-clock or explicit UNKNOWN/UNMEASURED. Do not invent token/compute cost or
-sum host intervals into an unmeasured delivery duration. Before an expensive or
-native action, independently review the whole successful producer → cleanup →
-consumer path. Every failed/unconfirmed retry names its concrete change. After
-two unreviewed failures at the same functional boundary, record a combined
-independent reassessment and next action before proceeding; successor/package
-renaming and fixture/product labels do not reset it. Completed reassessment may
-start an investigation only within the remaining authorized allowance; it does
-not extend an exhausted delivery budget. All prior IDs/facts stay retained.
-Fixture repair is distinct from product delivery. Pre-adoption history remains
-historical, not retrospectively compliant. Validate declarations honestly: a
-structural gate cannot prove evidence truth, complete history or useful software.
-Do not add a separate board, runner, routine approval or repeat QA campaign.
+Accountability records the functional exit, owner and actual result without
+becoming an admission protocol. Do not invent token/compute cost or sum host
+intervals into an unmeasured delivery duration. Before host use, test the actual
+producer → consumer contract and cleanup path once. Every failed/unconfirmed
+retry names its concrete product or harness change; successor/package naming does
+not erase history. Fixture repair is distinct from product delivery. Validate
+declarations honestly: a structural gate cannot prove evidence truth, complete
+history or useful software. Do not add a separate board, runner, routine approval
+or repeat QA campaign.
 
 ## Close the workflow, not just its components
 
@@ -457,31 +485,22 @@ prove a development outcome.
 
 ### Operator-approved executable guardrails — 2026-10-19
 
-S04-02 uses its existing active ledger work order plus an execution_contract:
-two explicitly identified environments with dated sanitized evidence; demonstrated
-gaps mapped to the unchanged nine scenarios; fixed source/discovery/native/install
-recipes with permitted paths, commands, privileges, prerequisites and expected
-observations; a cumulative remaining-work allowance and an exact planned action.
-Use the existing acceptance validator, not another board or execution framework.
+S04-02 retains its original functional/security scenarios and a single current
+planned action. Use the existing acceptance validator only for the action/source/
+recipe consistency it can establish; do not create another board, carrier layer
+or execution framework.
 
-The actual dispatcher checks --work-order-only --pre-action --attempt-id before
-SSH/spawn and aborts on refusal, timeout or missing output. PAUSED/BLOCKED cannot
-dispatch development. Native/install authority requires matching PASS environment
-and prerequisite artifact pins; bounded read-only discovery may resolve explicitly
-PENDING facts. Declaration validation and file hashes do not establish facts are
-true; the independent reviewer inspects their contents and actual consumer.
+The actual dispatcher may check `--work-order-only --pre-action --attempt-id`
+before SSH/spawn and abort on a mismatch. That check binds the exact planned
+action, source, recipe, target, prerequisite status, runtime bound and explicit
+operator expiry when present. It does not decide operator authority, validate
+history or establish that declared evidence is true.
 
-Root retains one objective and service/native queue. The independent delivery
-controller checks useful progress, exact cleanup and all failed-boundary history.
-The initial resumed allowance is7200seconds from the ledger's recorded UTC start,
-with1800second investigations. It includes integration/review/build/publication
-time across workers; parallel wall-clock is not added twice. Historical token and
-monetary costs and unmeasured intervals remain UNKNOWN. Increasing an exhausted
-allowance requires explicit operator authorization and preserves cumulative
-consumed time, original action/fixture deadlines and prior failures. Root and
-controller cannot replenish it themselves. Necessary safe disposition of owned
-effects remains separately bounded; it does not authorize a workflow retry or
-fixture renewal. No silent clock reset.
+Root retains one objective and service/native queue. Preserve measured operation
+times and prior failures. Historical ledger clocks are accounting, while explicit
+operator expirations, technical deadlines, one-shot mutations and bounded cleanup
+remain binding. Necessary disposition of owned effects does not authorize a
+workflow retry.
 
 Before coding, record the smallest demonstrated gap and its discriminating test.
 Reuse working Rust, standard backend utilities and matching passes. Qualify one
@@ -522,14 +541,13 @@ Existing enforcement and review-policy limits:
 
 | Rule | Existing mechanism and limit |
 | --- | --- |
-| Bounded declared action, owner and combined failures | `maint/ux/validate_acceptance.py --work-order-only --pre-action` checks the declared current window, stable boundary, exact failed IDs and independent reassessment including the executor. It does not infer that a renamed boundary is semantically the same objective or measure all historical wall time; preserving that identity and cumulative history is review policy. |
+| Planned action consistency | `maint/ux/validate_acceptance.py --work-order-only --pre-action` checks the current action ID, source, recipe, target, prerequisites, operation bound and explicit operator expiry. It deliberately does not validate historical attempts, authority or evidence truth. |
 | Profile, artifact and runtime bindings | The current reviewed native compiler/transport receipts check actual release profile, real helper versus libtest kind, source/artifact hashes and held file leases. Future carriers must retain those reviewed checks; this document adds no universal profile validator. |
 | Required checks and source preservation | Existing normal commit/push hooks run the repository gates; signature and fresh tracked-branch equality are verified separately. Choosing essential changed-boundary tests and avoiding redundant unchanged runs remains review policy. |
 | Safe diagnostics and cleanup | Current reviewed closed consumers reject unknown/error payloads and retain cleanup uncertainty. Newly reviewed causal diagnostics separate client category, terminal helper scope and owned pre-stop status; native qualification is still pending. These are scoped mechanisms, not a claim that every application error is instrumented. |
 | Source, installed workflow and acceptance | Existing acceptance validation checks declaration/scope consistency, not evidence truth. Independent observation, the original nine scenarios and operator UAT determine delivery readiness. Source-only synchronization cannot close S04-02. |
 
-These lessons extend the existing work-order schema and acceptance validator,
-with updates to the mutable SOP and AGENTS. They create no parallel governance
-framework, test matrix, approval flow or frozen-plan edit.
-Current S04-02 sequence is one bounded C04 causal observation, the demonstrated
-repair, then the original full installed password workflow and independent review.
+These lessons simplify the existing work-order use and acceptance validator.
+They create no parallel governance framework, test matrix, approval flow or
+frozen-plan edit. The next S04-02 work must correct a demonstrated product or
+harness defect and then resume the smallest unfinished functional milestone.

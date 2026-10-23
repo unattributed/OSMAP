@@ -166,10 +166,18 @@ set -eu
 
 log_file=${OSMAP_TEST_HOOK_LOG_FILE:?}
 
-[ "$#" -eq 1 ] && [ "$1" = "security-check" ] || {
+[ "$#" -eq 1 ] || {
 	printf 'unexpected make invocation: %s\n' "$*" >&2
 	exit 1
 }
+
+case "$1" in
+	commit-check|security-check) ;;
+	*)
+		printf 'unexpected make invocation: %s\n' "$*" >&2
+		exit 1
+		;;
+esac
 
 printf 'pwd=%s args=%s\n' "$PWD" "$*" >> "${log_file}"
 EOF
@@ -185,8 +193,8 @@ pre_commit_output=$(
 			sh "${fake_hooks_dir}/pre-commit"
 )
 
-assert_contains "${pre_commit_output}" "Running OSMAP pre-commit security check"
-assert_equals "$(cat "${pre_commit_log}")" "pwd=${fake_repo} args=security-check"
+assert_contains "${pre_commit_output}" "Running focused OSMAP pre-commit check"
+assert_equals "$(cat "${pre_commit_log}")" "pwd=${fake_repo} args=commit-check"
 
 pre_push_log="${tmp_root}/pre-push.log"
 pre_push_output=$(

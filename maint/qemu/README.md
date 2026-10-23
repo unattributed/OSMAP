@@ -22,7 +22,7 @@ pre-existing `/home/foo/VMs` layout.
 ## Scripts
 
 - `osmap-qemu-build.ksh`
-  Builds a fresh OpenBSD 7.8 base image using the upstream unattended install
+  Builds a fresh current-stable OpenBSD base image using the upstream unattended install
   model.
 - `osmap-qemu-validate-auth.ksh`
   Boots an overlay from the base image, syncs the OSMAP repository into the VM,
@@ -36,6 +36,10 @@ The wrappers assume the upstream OpenBSD lab scripts exist at:
 - `/home/foo/Workspace/openbsd-self-hosting/maint/qemu`
 
 Override that path with `OPENBSD_SELF_HOSTING_QEMU_DIR` if needed.
+The upstream helper defaults to `lab-openbsd-current-build.ksh`; override
+`OPENBSD_LAB_BUILD_SCRIPT` only to select another explicitly reviewed
+current-stable helper. A release-numbered historical image is not accepted as
+the default compatibility target.
 
 ## Typical Flow
 

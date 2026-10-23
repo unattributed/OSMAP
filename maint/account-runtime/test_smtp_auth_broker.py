@@ -569,7 +569,7 @@ class ManagedServiceEntryTests(unittest.TestCase):
             self.assertLessEqual(budget.remaining(),broker.SERVICE_STARTUP_SECONDS)
             captured.append(budget);events.append('factory');return Service()
         with ExitStack()as stack:
-            for obj,name,value in ((broker.sys,'argv',['fixed-entry']), (broker.sys,'platform','openbsd7')):
+            for obj,name,value in ((broker.sys,'argv',['fixed-entry']), (broker.sys,'platform','openbsd')):
                 stack.enter_context(patch.object(obj,name,value))
             stack.enter_context(patch.object(broker.socket,'gethostname',return_value=AUTHORITY))
             stack.enter_context(patch.object(broker.os,'getuid',return_value=0));stack.enter_context(patch.object(broker.os,'geteuid',return_value=0))
@@ -590,7 +590,7 @@ class ManagedServiceEntryTests(unittest.TestCase):
         from contextlib import ExitStack
         with ExitStack()as stack:
             stack.enter_context(patch.object(broker.sys,'argv',['fixed-entry']))
-            stack.enter_context(patch.object(broker.sys,'platform','openbsd7'))
+            stack.enter_context(patch.object(broker.sys,'platform','openbsd'))
             stack.enter_context(patch.object(broker.socket,'gethostname',return_value=AUTHORITY))
             for name in ('getuid','geteuid'):stack.enter_context(patch.object(broker.os,name,return_value=0))
             for name in ('getpid','getpgrp','getsid'):stack.enter_context(patch.object(broker.os,name,return_value=777))

@@ -48,14 +48,14 @@ class HashKernelTests(unittest.TestCase):
     assert state=={'groups':[],'gid':(12346,)*3,'uid':(12345,)*3};calls.append((self.name,args));return 0
   class Lib:unveil=Fn('unveil');pledge=Fn('pledge')
   with patch.object(self.b,'inherited_group',return_value=True),patch.object(h.HashChildIdentity,'native',return_value=identity):guard=seal.preexec(A.HASH_PROGRAM,A.HASH_ARGS,deadline=self.end)
-  with stack,patch.object(k.sys,'platform','openbsd7'),patch.object(k.ctypes,'CDLL',return_value=Lib()):guard()
+  with stack,patch.object(k.sys,'platform','openbsd'),patch.object(k.ctypes,'CDLL',return_value=Lib()):guard()
   self.assertEqual([name for name,_ in calls],['recheck','chdir','groups','gid','uid','unveil','unveil','pledge']);self.assertEqual(calls[-2],('unveil',(None,None)));self.assertEqual(calls[-1],('pledge',(seal._promises,seal._promises)));self.assertNotIn(b'id',seal._promises.split())
  def test_drop_failure_never_opens_libc_or_reaches_kernel_or_exec(self):
   helper=fixtures.IdentityTests();helper.b=self.b;helper.end=self.end;identity=helper.identity();seal=self.make();seal._hash_identity_required=True
   with patch.object(self.b,'inherited_group',return_value=True),patch.object(h.HashChildIdentity,'native',return_value=identity):guard=seal.preexec(A.HASH_PROGRAM,A.HASH_ARGS,deadline=self.end)
   for fail in ('groups','gid','uid'):
    stack,calls,_=helper.drop_fixture(identity,fail)
-   with stack,patch.object(k.sys,'platform','openbsd7'),patch.object(k.ctypes,'CDLL',side_effect=AssertionError):
+   with stack,patch.object(k.sys,'platform','openbsd'),patch.object(k.ctypes,'CDLL',side_effect=AssertionError):
     with self.assertRaises(PermissionError):guard()
  def test_sql_and_private_fixture_lane_do_not_resolve_hash_identity(self):
   for role in ('hash','sql'):
@@ -97,7 +97,7 @@ try:
    # Fresh context preserves the same actual owned public files and same budget;
    # only IDs/platform/root custody and kernel ABI are mocked, never native.
    actual_fstat=os.fstat
-   with patch.object(h,'PASSWD',p),patch.object(h,'GROUP',g),patch.object(k.sys,'platform','openbsd7'),patch.object(Path,'lstat',observed),patch.object(h.os,'fstat',lambda fd:helper.project(actual_fstat(fd))),patch.object(h.os,'getuid',lambda:state['uid'][0]),patch.object(h.os,'geteuid',lambda:state['uid'][1]),patch.object(h.os,'getgid',lambda:state['gid'][0]),patch.object(h.os,'getegid',lambda:state['gid'][1]),patch.object(h.os,'getresuid',lambda:state['uid']),patch.object(h.os,'getresgid',lambda:state['gid']),patch.object(h.os,'getgroups',lambda:state['groups']),patch.object(h.os,'setgroups',lambda groups:change('groups',groups)),patch.object(h.os,'setresgid',lambda *args:change('gid',args)),patch.object(h.os,'setresuid',lambda *args:change('uid',args)),patch.object(h.os,'chdir'),patch.object(k.ctypes,'CDLL',return_value=Lib()):guard()
+   with patch.object(h,'PASSWD',p),patch.object(h,'GROUP',g),patch.object(k.sys,'platform','openbsd'),patch.object(Path,'lstat',observed),patch.object(h.os,'fstat',lambda fd:helper.project(actual_fstat(fd))),patch.object(h.os,'getuid',lambda:state['uid'][0]),patch.object(h.os,'geteuid',lambda:state['uid'][1]),patch.object(h.os,'getgid',lambda:state['gid'][0]),patch.object(h.os,'getegid',lambda:state['gid'][1]),patch.object(h.os,'getresuid',lambda:state['uid']),patch.object(h.os,'getresgid',lambda:state['gid']),patch.object(h.os,'getgroups',lambda:state['groups']),patch.object(h.os,'setgroups',lambda groups:change('groups',groups)),patch.object(h.os,'setresgid',lambda *args:change('gid',args)),patch.object(h.os,'setresuid',lambda *args:change('uid',args)),patch.object(h.os,'chdir'),patch.object(k.ctypes,'CDLL',return_value=Lib()):guard()
    os.close(w)
   c=subprocess.Popen((sys.executable,'-I','-B','-c','import sys;assert sys.stdin.buffer.read()==b"publicfixture";print("PUBLIC_OK")'),stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,close_fds=True,pass_fds=(w,),preexec_fn=pre,start_new_session=False,env={'PATH':'/usr/bin:/bin','LC_ALL':'C'})
   os.close(w);w=None;receipt=os.read(r,64);out,err=c.communicate(b'publicfixture',timeout=2)

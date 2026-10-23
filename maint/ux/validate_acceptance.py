@@ -436,35 +436,122 @@ def validate_execution_contract(order, outcome_ids, pre_action=False, attempt_id
     started, deadline = utc(budget["started_at"]), utc(budget["deadline_at"])
     allowance, consumed = budget["allowance_seconds"], budget["consumed_seconds"]
     require(type(allowance) is int and allowance > 0 and type(consumed) in (int, float)
-            and math.isfinite(consumed) and consumed >= 0 and deadline > started
-            and (deadline - started).total_seconds() <= allowance,
-            "finite cumulative allowance and nonrenewed absolute phase deadline required")
+            and math.isfinite(consumed) and consumed >= 0 and deadline > started,
+            "valid historical execution accounting required")
     action = contract["planned_action"]
     require(action is not None or not pre_action, "pre-action requires a planned execution action")
     if action is None:
         return
-    require(isinstance(action, dict) and set(action) == {"attempt_id", "recipe_id", "source_revision", "not_after", "max_seconds"}
+    action_fields = {"attempt_id", "recipe_id", "source_revision", "not_after", "max_seconds"}
+    require(isinstance(action, dict) and action_fields <= set(action)
+            and set(action) <= action_fields | {"operator_expires_at"}
             and text(action["attempt_id"]) and action["recipe_id"] in recipes
             and isinstance(action["source_revision"], str) and re.fullmatch(r"[0-9a-f]{40}|[0-9a-f]{64}", action["source_revision"])
             and type(action["max_seconds"]) is int and action["max_seconds"] > 0,
             "exact planned execution action, recipe, source and bounded duration required")
-    not_after = utc(action["not_after"])
-    require(started < not_after <= deadline, "planned action deadline must remain within original phase")
+    # These clocks remain historical accounting. Direct operator authority is
+    # not invalidated merely because wall-clock or idle time passed.
+    utc(action["not_after"])
+    operator_expiry = utc(action["operator_expires_at"]) if "operator_expires_at" in action else None
     if pre_action:
+        require(operator_expiry is None
+                or (operator_expiry - datetime.now(timezone.utc)).total_seconds() >= action["max_seconds"],
+                "explicit operator expiration cannot accommodate action and cleanup")
         require(order["state"] == "IN_PROGRESS", "pre-action requires IN_PROGRESS; paused or blocked dispatch refused")
         require(text(attempt_id) and attempt_id == action["attempt_id"], "pre-action requires matching --attempt-id")
         next_attempt = order["accountability"].get("next_attempt", {})
         require(isinstance(next_attempt, dict) and next_attempt.get("id") == attempt_id
                 and next_attempt.get("source_revision") == action["source_revision"],
                 "execution action must match exact accountability attempt and source")
-        remaining = min((deadline - now).total_seconds(), (not_after - now).total_seconds(), allowance - consumed)
-        require(now >= started and remaining >= action["max_seconds"], "execution action expired or exceeds remaining cumulative allowance")
         recipe = recipes[action["recipe_id"]]
         require(all(item["status"] == "PASS" for item in recipe["prerequisites"]),
                 "planned execution prerequisites have not passed")
         if recipe["kind"] in {"NATIVE", "INSTALL"}:
             require(all(env[identifier]["status"] == "PASS" for identifier in recipe["environment_ids"]),
                     "native/install requires authoritative PASS environment metadata")
+
+
+def validate_pre_action(order, attempt_id):
+    """Check only the dispatch facts this declaration can mechanically prove."""
+    require(isinstance(order, dict) and order.get("version") == 1 and order.get("slice") == "S04-02",
+            "pre-action requires the active S04-02 work order")
+    require(order.get("state") == "IN_PROGRESS",
+            "pre-action requires IN_PROGRESS; paused or blocked dispatch refused")
+    contract = order.get("execution_contract")
+    require(isinstance(contract, dict) and contract.get("version") == 1,
+            "pre-action requires execution contract version1")
+    action = contract.get("planned_action")
+    required = {"attempt_id", "recipe_id", "source_revision", "not_after", "max_seconds"}
+    require(isinstance(action, dict) and required <= set(action)
+            and set(action) <= required | {"operator_expires_at"}
+            and text(action.get("attempt_id")) and action["attempt_id"] == attempt_id
+            and isinstance(action.get("source_revision"), str)
+            and re.fullmatch(r"[0-9a-f]{40}|[0-9a-f]{64}", action["source_revision"])
+            and type(action.get("max_seconds")) is int and action["max_seconds"] > 0,
+            "pre-action requires matching bounded action and exact source")
+
+    # not_after is retained historical accounting. Only an expiry explicitly
+    # attributed to the operator is an admission condition.
+    if "operator_expires_at" in action:
+        value = action["operator_expires_at"]
+        require(isinstance(value, str) and re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", value),
+                "explicit operator expiration must be UTC")
+        expiry = datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+        require((expiry - datetime.now(timezone.utc)).total_seconds() >= action["max_seconds"],
+                "explicit operator expiration cannot accommodate action and cleanup")
+
+    next_attempt = order.get("accountability", {}).get("next_attempt")
+    require(isinstance(next_attempt, dict)
+            and next_attempt.get("id") == action["attempt_id"]
+            and next_attempt.get("source_revision") == action["source_revision"],
+            "planned action must match the exact next attempt and source")
+
+    environments = contract.get("environment")
+    require(isinstance(environments, list), "pre-action requires declared environments")
+    environment_status = {}
+    for item in environments:
+        require(isinstance(item, dict) and text(item.get("id"))
+                and item["id"] not in environment_status
+                and item.get("status") in {"PASS", "PENDING"},
+                "pre-action environment identity/status invalid")
+        environment_status[item["id"]] = item["status"]
+
+    recipes = contract.get("recipes")
+    require(isinstance(recipes, list), "pre-action requires declared recipes")
+    matches = [recipe for recipe in recipes
+               if isinstance(recipe, dict) and recipe.get("id") == action.get("recipe_id")]
+    require(len(matches) == 1, "pre-action recipe is missing or ambiguous")
+    recipe = matches[0]
+    require(recipe.get("kind") in {"SOURCE", "DISCOVERY", "NATIVE", "INSTALL"}
+            and isinstance(recipe.get("environment_ids"), list)
+            and len(recipe["environment_ids"]) == len(set(recipe["environment_ids"]))
+            and set(recipe["environment_ids"]) <= set(environment_status),
+            "pre-action recipe kind or environments invalid")
+    operations = recipe.get("operations")
+    require(isinstance(operations, list) and operations, "pre-action requires fixed operations")
+    targets = {"local", *recipe["environment_ids"]}
+    for operation in operations:
+        require(isinstance(operation, dict)
+                and set(operation) == {"target_id", "program", "arguments", "privilege"}
+                and operation["target_id"] in targets
+                and text(operation["program"]) and Path(operation["program"]).is_absolute()
+                and ".." not in Path(operation["program"]).parts
+                and operation["privilege"] in {"user", "root"}
+                and isinstance(operation["arguments"], list)
+                and all(isinstance(value, str) and not any(char in value for char in "\0\r\n")
+                        for value in operation["arguments"]),
+                "pre-action operation must bind exact target, program and arguments")
+    prerequisites = recipe.get("prerequisites")
+    require(isinstance(prerequisites, list)
+            and all(isinstance(item, dict) and item.get("status") == "PASS" for item in prerequisites),
+            "pre-action recipe prerequisites have not passed")
+    if recipe["kind"] in {"NATIVE", "INSTALL"}:
+        require(recipe["environment_ids"]
+                and all(environment_status[name] == "PASS" for name in recipe["environment_ids"]),
+                "native/install requires PASS target environment")
+    return {"active_slice": "S04-02", "state": order["state"],
+            "attempt_id": action["attempt_id"],
+            "claim": "planned-action consistency only; not authority, evidence truth or product acceptance"}
 
 
 def validate_work_order(order, matrix, catalogue, changed_paths, pre_action=False, repo=None, attempt_id=None):
@@ -620,20 +707,25 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo", type=Path, default=Path(__file__).resolve().parents[2])
     parser.add_argument("--work-order-only", action="store_true")
-    parser.add_argument("--pre-action", action="store_true", help="validate the recorded next expensive/native attempt before dispatch")
+    parser.add_argument("--pre-action", action="store_true", help="check planned action/source/recipe consistency before dispatch; not an authority decision")
     parser.add_argument("--attempt-id", help="bind S04-02 pre-action to its exact planned attempt")
     parser.add_argument("--closure-scope", choices=("S04", "EPIC"), help="require accepted original rows, including required R4 followups; not a sprint/release QA certificate")
     args = parser.parse_args()
     repo = args.repo.resolve()
     try:
-        matrix = json.loads((repo / "maint/ux/acceptance.json").read_text())
-        catalogue = (repo / "docs/UX_FULL_FUNCTIONAL_SLICES.md").read_text()
         order = active_work_order((repo / "docs/UX_EXECUTION_LEDGER.md").read_text())
-        result = validate_work_order(order, matrix, catalogue, work_order_changed_paths(repo, order.get("source_baseline")), pre_action=args.pre_action, repo=repo, attempt_id=args.attempt_id)
-        if args.closure_scope:
-            result = {**result, **validate_closure(matrix, args.closure_scope, repo)}
-        elif not args.work_order_only:
-            result = {**result, **validate(matrix, json.loads((repo / "maint/ux/approved_pages.json").read_text()), catalogue, repo)}
+        if args.pre_action:
+            require(args.closure_scope is None, "pre-action cannot make a closure claim")
+            result = validate_pre_action(order, args.attempt_id)
+        else:
+            matrix = json.loads((repo / "maint/ux/acceptance.json").read_text())
+            catalogue = (repo / "docs/UX_FULL_FUNCTIONAL_SLICES.md").read_text()
+            result = validate_work_order(order, matrix, catalogue,
+                    work_order_changed_paths(repo, order.get("source_baseline")), repo=repo)
+            if args.closure_scope:
+                result = {**result, **validate_closure(matrix, args.closure_scope, repo)}
+            elif not args.work_order_only:
+                result = {**result, **validate(matrix, json.loads((repo / "maint/ux/approved_pages.json").read_text()), catalogue, repo)}
     except (ValueError, KeyError, TypeError, OSError, subprocess.CalledProcessError) as error:
         print("acceptance traceability refused: " + str(error), file=sys.stderr)
         return 1

@@ -23,18 +23,18 @@ class PeerTests(unittest.TestCase):
  def test_openbsd_missing_python_method_uses_exact_kernel_uid_gid_pointer_contract(self):
   for module in (relay,supervisor,worker):
    function=PublicFunction()
-   with self.subTest(module=module.__name__),patch.object(module.sys,'platform','openbsd7'),        patch.object(ctypes,'CDLL',return_value=NS(getpeereid=function)):
+   with self.subTest(module=module.__name__),patch.object(module.sys,'platform','openbsd'),        patch.object(ctypes,'CDLL',return_value=NS(getpeereid=function)):
     self.assertEqual(module._peer(NoMethod()),1001)
     self.assertEqual(function.calls,[7]);self.assertEqual(function.restype,ctypes.c_int)
     self.assertEqual(function.argtypes,[ctypes.c_int,ctypes.POINTER(ctypes.c_uint),ctypes.POINTER(ctypes.c_uint)])
  def test_failed_native_errno_missing_symbol_unknown_uid_gid_and_negative_fd_refuse(self):
   for module in (relay,supervisor,worker):
    for f in (PublicFunction(rc=-1,err=9),PublicFunction(uid=2**32-1),PublicFunction(gid=2**32-1)):
-    with self.subTest(module=module.__name__,result=f.rc),patch.object(module.sys,'platform','openbsd7'),         patch.object(ctypes,'CDLL',return_value=NS(getpeereid=f)):
+    with self.subTest(module=module.__name__,result=f.rc),patch.object(module.sys,'platform','openbsd'),         patch.object(ctypes,'CDLL',return_value=NS(getpeereid=f)):
      with self.assertRaises(module.Unavailable):module._peer(NoMethod())
-   with patch.object(module.sys,'platform','openbsd7'),patch.object(ctypes,'CDLL',return_value=NS()):
+   with patch.object(module.sys,'platform','openbsd'),patch.object(ctypes,'CDLL',return_value=NS()):
     with self.assertRaises(module.Unavailable):module._peer(NoMethod())
-   with patch.object(module.sys,'platform','openbsd7'),patch.object(ctypes,'CDLL',side_effect=AssertionError):
+   with patch.object(module.sys,'platform','openbsd'),patch.object(ctypes,'CDLL',side_effect=AssertionError):
     with self.assertRaises(module.Unavailable):module._peer(NS(fileno=lambda:-1))
  def test_method_and_linux_unknown_credential_values_refuse(self):
   for module in (relay,supervisor,worker):
@@ -61,7 +61,7 @@ class PeerTests(unittest.TestCase):
   instance=object.__new__(worker.MutationWorker);instance._monotonic=lambda:1.0
   calls=[];instance.execute=lambda raw,**kwargs:calls.append(raw) or b'{}'
   function=PublicFunction()
-  with patch.object(worker.sys,'platform','openbsd7'),patch.object(ctypes,'CDLL',return_value=NS(getpeereid=function)):
+  with patch.object(worker.sys,'platform','openbsd'),patch.object(ctypes,'CDLL',return_value=NS(getpeereid=function)):
    stream=Stream();instance._connection(stream,1001)
    self.assertEqual(calls,[b'{}']);self.assertEqual(stream.sent,[(2).to_bytes(4,'big')+b'{}'])
    for uid in (1002,True,2**32-1):
@@ -70,6 +70,6 @@ class PeerTests(unittest.TestCase):
     self.assertEqual(stream.reads,0);self.assertEqual(calls,[])
  def test_openbsd_native_libc_load_failure_refuses_for_all_endpoints(self):
   for module in (relay,supervisor,worker):
-   with self.subTest(module=module.__name__),patch.object(module.sys,'platform','openbsd7'),patch.object(ctypes,'CDLL',side_effect=OSError):
+   with self.subTest(module=module.__name__),patch.object(module.sys,'platform','openbsd'),patch.object(ctypes,'CDLL',side_effect=OSError):
     with self.assertRaises(module.Unavailable):module._peer(NoMethod())
 if __name__=='__main__':unittest.main()

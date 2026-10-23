@@ -82,8 +82,8 @@ class PrimaryChildIdentity:
         if type(PEER_BIND_UID)is not int or not 0<=PEER_BIND_UID<2**32-1:
             raise Refused('primary fixed kernel peer admission unavailable')
         platform=os.uname()
-        if (sys.platform!='openbsd7' or os.getuid()!=0 or os.geteuid()!=0
-                or platform.sysname!='OpenBSD' or platform.release!='7.9' or platform.machine!='amd64'
+        if (not sys.platform.startswith('openbsd') or os.getuid()!=0 or os.geteuid()!=0
+                or platform.sysname!='OpenBSD' or platform.machine!='amd64'
                 or sys.byteorder!='little' or socket.gethostname()!=h.AUTHORITY):
             raise Refused('primary identity platform unavailable')
         if any(not callable(getattr(os,n,None))for n in ('setgroups','getgroups','setresgid','getresgid','setresuid','getresuid')):

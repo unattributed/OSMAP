@@ -11,7 +11,7 @@ import unittest
 from datetime import datetime, timedelta, timezone
 
 from validate_acceptance import (active_work_order, validate, validate_work_order, validate_slice_contract,
-    validate_accountability, validate_execution_contract, r4_scope, validate_closure,
+    validate_accountability, validate_execution_contract, validate_pre_action, r4_scope, validate_closure,
     R4_PROFILE, R4_SUPPLEMENT, R4_PROPOSAL, R4_FOLLOWUPS)
 
 
@@ -321,7 +321,7 @@ class ExecutionContractTests(unittest.TestCase):
         self.pin = {"path": str(self.evidence), "sha256": hashlib.sha256(self.evidence.read_bytes()).hexdigest()}
         now = datetime.now(timezone.utc)
         utc = lambda value: value.strftime("%Y-%m-%dT%H:%M:%SZ")
-        self.order = dict(slice="S04-02", state="IN_PROGRESS", allowed_paths=["src/account_password_server.rs"],
+        self.order = dict(version=1, slice="S04-02", state="IN_PROGRESS", allowed_paths=["src/account_password_server.rs"],
             roles={"developers": ["owner"], "security_review": ["reviewer"]},
             slice_contract={"tests": [{"id": "S04-02-T03"}]},
             accountability={"next_attempt": {"id": "exact-source-action", "source_revision": "a" * 64}},
@@ -345,6 +345,20 @@ class ExecutionContractTests(unittest.TestCase):
 
     def check(self, order=None, pre_action=True, attempt_id="exact-source-action"):
         return validate_execution_contract(order or self.order, self.outcomes, pre_action, attempt_id)
+
+    def test_narrow_pre_action_does_not_treat_process_records_as_authority(self):
+        result = validate_pre_action(self.order, "exact-source-action")
+        self.assertEqual(result["attempt_id"], "exact-source-action")
+        self.assertIn("not authority", result["claim"])
+        # These deliberately incomplete structures would fail the full work-order
+        # declaration validator; they are irrelevant to mechanical dispatch.
+        self.order["roles"] = {"developers": ["owner"]}
+        self.order["slice_contract"] = {"tests": []}
+        self.assertEqual(validate_pre_action(self.order, "exact-source-action")["state"], "IN_PROGRESS")
+        self.order["execution_contract"]["planned_action"]["operator_expires_at"] = (
+            datetime.now(timezone.utc) + timedelta(seconds=1)).strftime("%Y-%m-%dT%H:%M:%SZ")
+        with self.assertRaisesRegex(ValueError, "explicit operator expiration"):
+            validate_pre_action(self.order, "exact-source-action")
 
     def native(self):
         recipe = self.order["execution_contract"]["recipes"][0]
@@ -382,21 +396,37 @@ class ExecutionContractTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "planned execution action"):
             self.check()
 
-    def test_expired_phase_action_and_cumulative_allowance_cannot_dispatch(self):
+    def test_elapsed_clock_and_cumulative_accounting_do_not_expire_operator_authority(self):
         now = datetime.now(timezone.utc)
         utc = lambda value: value.strftime("%Y-%m-%dT%H:%M:%SZ")
         for change in (lambda c: c["planned_action"].update(not_after=utc(now - timedelta(seconds=1))),
                 lambda c: c["planned_action"].update(max_seconds=1000),
                 lambda c: c["budget"].update(consumed_seconds=7190),
-                lambda c: c["budget"].update(consumed_seconds=float("nan")),
+                lambda c: c["budget"].update(consumed_seconds=9000),
                 lambda c: c["budget"].update(deadline_at=utc(now + timedelta(seconds=8000)))):
-            order = copy.deepcopy(self.order); change(order["execution_contract"])
-            with self.assertRaisesRegex(ValueError, "expired|allowance|phase"):
-                self.check(order)
+            order = copy.deepcopy(self.order); change(order["execution_contract"]); self.check(order)
         self.order["execution_contract"]["budget"].update(
             started_at=utc(now - timedelta(seconds=600)), deadline_at=utc(now - timedelta(seconds=1)))
         self.order["execution_contract"]["planned_action"]["not_after"] = utc(now - timedelta(seconds=2))
-        with self.assertRaisesRegex(ValueError, "expired"):
+        self.check()
+        self.order["execution_contract"]["budget"]["consumed_seconds"] = float("nan")
+        with self.assertRaisesRegex(ValueError, "accounting"):
+            self.check()
+
+    def test_explicit_operator_expiration_remains_binding(self):
+        action = self.order["execution_contract"]["planned_action"]
+        now = datetime.now(timezone.utc)
+        utc = lambda value: value.strftime("%Y-%m-%dT%H:%M:%SZ")
+        action["not_after"] = utc(now - timedelta(days=1))
+        action["operator_expires_at"] = utc(now + timedelta(seconds=action["max_seconds"] + 60))
+        self.check()
+        for seconds in (-1, 1):
+            action["operator_expires_at"] = utc(now + timedelta(seconds=seconds))
+            with self.subTest(seconds=seconds), self.assertRaisesRegex(ValueError, "explicit operator expiration"):
+                self.check()
+        self.check(pre_action=False)
+        action["operator_expires_at"] = "invalid"
+        with self.assertRaises(ValueError):
             self.check()
 
     def test_unplanned_paths_tests_targets_and_commands_refuse(self):

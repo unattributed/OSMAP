@@ -22,7 +22,7 @@ class IdentityTests(unittest.TestCase):
    a=actual(path)
    if stat.S_ISDIR(a.st_mode):return self.project(a,st_mode=stat.S_IFDIR|0o755)
    return self.project(a)
-  stack=ExitStack();stack.enter_context(patch.object(h,'PASSWD',p));stack.enter_context(patch.object(h,'GROUP',g));stack.enter_context(patch.object(h.sys,'platform','openbsd7'));stack.enter_context(patch.object(h.os,'uname',return_value=NS(sysname='OpenBSD',release='7.9',machine='amd64')));stack.enter_context(patch.object(h.socket,'gethostname',return_value='mail.blackbagsecurity.com'));stack.enter_context(patch.object(h.os,'getuid',return_value=0));stack.enter_context(patch.object(h.os,'geteuid',return_value=0));stack.enter_context(patch.object(self.b,'inherited_group',return_value=True));stack.enter_context(patch.object(Path,'lstat',lstat or observed));stack.enter_context(patch.object(h.os,'fstat',lambda fd:self.project(fstat(fd))));return stack,p,g,null,observed
+  stack=ExitStack();stack.enter_context(patch.object(h,'PASSWD',p));stack.enter_context(patch.object(h,'GROUP',g));stack.enter_context(patch.object(h.sys,'platform','openbsd'));stack.enter_context(patch.object(h.os,'uname',return_value=NS(sysname='OpenBSD',release='unrestricted',machine='amd64')));stack.enter_context(patch.object(h.socket,'gethostname',return_value='mail.blackbagsecurity.com'));stack.enter_context(patch.object(h.os,'getuid',return_value=0));stack.enter_context(patch.object(h.os,'geteuid',return_value=0));stack.enter_context(patch.object(self.b,'inherited_group',return_value=True));stack.enter_context(patch.object(Path,'lstat',lstat or observed));stack.enter_context(patch.object(h.os,'fstat',lambda fd:self.project(fstat(fd))));return stack,p,g,null,observed
  def test_fixed_source_authority_no_caller_identity_path_and_no_shared_fallback(self):
   self.assertEqual((h.NAME,str(h.PASSWD),str(h.GROUP),str(h.NULL_DEVICE),h.NULL_RDEV),('_osmaphash','/etc/passwd','/etc/group','/dev/null',514))
   for args in ((),({'uid':1001,'PASS':True},),('/etc/master.passwd',)):
@@ -130,7 +130,7 @@ class IdentityTests(unittest.TestCase):
     with stack,patch.object(Path,'lstat',lstat),patch.object(h.os,'open',side_effect=AssertionError):
      with self.assertRaises(Refused):h.HashChildIdentity.native(self.b,self.end)
  def test_native_wrong_platform_nonroot_group_or_expired_phase_refuse_before_files(self):
-  for platform,uid,group,end in (('linux',0,True,self.end),('openbsd7',1001,True,self.end),('openbsd7',0,False,self.end),('openbsd7',0,True,time.monotonic()-1),('openbsd7',0,True,float('nan'))):
+  for platform,uid,group,end in (('linux',0,True,self.end),('openbsd',1001,True,self.end),('openbsd',0,False,self.end),('openbsd',0,True,time.monotonic()-1),('openbsd',0,True,float('nan'))):
    with patch.object(h.sys,'platform',platform),patch.object(h.os,'getuid',return_value=uid),patch.object(h.os,'geteuid',return_value=uid),patch.object(self.b,'inherited_group',return_value=group),patch.object(h.os,'open',side_effect=AssertionError):
     with self.assertRaises(Refused):h.HashChildIdentity.native(self.b,end)
  def drop_fixture(self,identity,fail=None,expiry=False):

@@ -97,8 +97,9 @@ class PeerBootstrapTests(unittest.TestCase):
         self_case=self
         a,b=socket.socketpair();self.addCleanup(a.close);self.addCleanup(b.close)
         def inspect(call):
-            with (patch.object(peer.sys,'platform','openbsd7'),
-                  patch.object(peer.os,'uname',return_value=SimpleNamespace(release='7.9')),
+            with (patch.object(peer.sys,'platform','openbsd'),
+                  patch.object(peer.os,'uname',return_value=SimpleNamespace(
+                      sysname='OpenBSD',release='unrestricted',machine='amd64')),
                   patch.object(peer.ctypes,'CDLL',return_value=SimpleNamespace(getsockopt=call))):
                 return peer.kernel_peer(a)
         call=Get();self.assertEqual(inspect(call),(PID,101,102))

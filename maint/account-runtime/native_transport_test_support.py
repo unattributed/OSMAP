@@ -40,7 +40,7 @@ def _sealed_fixture(budget,material,target=None,*,real_material=False):
     return 0
   class Lib:unveil=Fn('unveil');pledge=Fn('pledge')
   def guard():
-   with patch.object(k.sys,'platform','openbsd7'),patch.object(k.os,'getuid',return_value=0),patch.object(k.os,'geteuid',return_value=0),patch.object(k.ctypes,'CDLL',return_value=Lib()):source_guard()
+   with patch.object(k.sys,'platform','openbsd'),patch.object(k.os,'getuid',return_value=0),patch.object(k.os,'geteuid',return_value=0),patch.object(k.ctypes,'CDLL',return_value=Lib()):source_guard()
    os.close(w)
   options['preexec_fn']=guard;options['pass_fds']=(w,)
   try:

@@ -11,10 +11,43 @@ cd "$repo_root"
 : "${CARGO_TARGET_DIR:=$repo_root/target}"
 
 mkdir -p "$TMPDIR" "$CARGO_HOME" "$CARGO_TARGET_DIR"
+# The default directory is owned by this gate and is the parent for tests whose
+# product contract requires private ancestry. A process umask does not repair a
+# directory retained from an earlier run, so normalize this exact default only;
+# never chmod a caller-supplied TMPDIR such as /tmp.
+if [ "$TMPDIR" = "/tmp/osmap-tmp" ]; then
+	chmod 700 "$TMPDIR"
+fi
 export TMPDIR CARGO_HOME CARGO_TARGET_DIR
 
-python3 -B maint/ux/validate_acceptance.py --work-order-only
-python3 -B maint/ux/test_validate_acceptance.py WorkOrderTests
+# The ordinary source gate validates the immutable acceptance mapping and the
+# validator itself. Mutable work-order prose/history is reviewed at the matching
+# delivery boundary; it is not a prerequisite for every source commit.
+python3 -B maint/ux/test_validate_acceptance.py TraceabilityTests ExecutionContractTests
+
+echo "==> validating release-independent OpenBSD policy"
+if numbered_openbsd_hits=$(git grep -nEi \
+	'(OpenBSD[[:space:]_-]*[0-9]+\.[0-9]+|openbsd[0-9]{2}|openbsd[-_][0-9]{2})' -- \
+	'*.rs' '*.py' '*.sh' '*.ksh' '*.env' '*.env.example' 'Makefile' 2>/dev/null); then
+	echo "error: active code contains a release-numbered OpenBSD requirement or asset"
+	printf '%s\n' "$numbered_openbsd_hits"
+	exit 1
+fi
+if openbsd_release_gate_hits=$(git grep -nE \
+	'(info\.release|release\.to_bytes|u\.release\.(count|split)|fullmatch\([^)]*(uname\(\)\.)?release|uname\(\)\.release[[:space:]]*(==|!=|<|>))' -- \
+	'*.rs' '*.py' '*.sh' '*.ksh' ':!maint/security/osmap-security-check.sh' 2>/dev/null); then
+	echo "error: active code uses the OpenBSD release string as an admission predicate"
+	printf '%s\n' "$openbsd_release_gate_hits"
+	exit 1
+fi
+
+if [ "${OSMAP_SECURITY_PROFILE:-developer}" = "commit" ]; then
+	echo "==> cargo check --lib"
+	cargo check --lib
+	echo "==> checking staged patch whitespace"
+	git diff --check --cached
+	exit 0
+fi
 
 version_lt() {
 	left=$1

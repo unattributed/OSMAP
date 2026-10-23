@@ -62,17 +62,32 @@ def skip_for_prohibited_patterns(path: str) -> bool:
 
 
 def pattern_source(rel: str, label: str, text: str) -> str:
-    if label != "NULL cipher" or not rel.endswith((".c", ".h")):
+    if label != "NULL cipher":
         return text
-    # A C pointer constant is not a cipher. Keep literals/comments and offsets
-    # intact so cipher names and every other prohibited pattern remain checked.
-    tokens = r'"(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\'|/\*[\s\S]*?\*/|//[^\n]*|\bNULL\b'
-    return re.sub(tokens, lambda m: " " * len(m[0]) if m[0] == "NULL" else m[0], text)
+    # NULL is also a C pointer constant and an SQL value. It is a TLS policy
+    # finding only in a physical line that names a TLS/SSL/cipher surface.
+    # Preserve offsets so any reported line remains exact.
+    lines = []
+    tls_context = re.compile(
+        r"(?:\b(?:tls|ssl|cipher|ciphers)\b|(?:tls|ssl)[._]|set_ciphers)",
+        re.IGNORECASE,
+    )
+    for line in text.splitlines(keepends=True):
+        if not tls_context.search(line):
+            line = re.sub(r"\bNULL\b", lambda m: " " * len(m[0]), line)
+        elif rel.endswith((".c", ".h")):
+            # Bare C NULL is a pointer, while a quoted NULL on a TLS line is a
+            # candidate cipher declaration and must remain visible.
+            tokens = r'"(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\'|/\*[\s\S]*?\*/|//[^\n]*|\bNULL\b'
+            line = re.sub(tokens, lambda m: " " * len(m[0]) if m[0] == "NULL" else m[0], line)
+        lines.append(line)
+    return "".join(lines)
 
 
 assert "NULL" not in pattern_source("fixture.c", "NULL cipher", "unveil(NULL, NULL);")
 assert '"NULL"' in pattern_source("fixture.c", "NULL cipher", 'tls_config_set_ciphers(c, "NULL");')
-assert "NULL" in pattern_source("fixture.py", "NULL cipher", "NULL")
+assert "NULL" not in pattern_source("fixture.py", "NULL cipher", "query = 'SELECT NULL'")
+assert '"NULL"' in pattern_source("fixture.py", "NULL cipher", 'context.set_ciphers("NULL")')
 assert "RC4" in pattern_source("fixture.c", "RC4", 'tls_config_set_ciphers(c, "RC4");')
 
 

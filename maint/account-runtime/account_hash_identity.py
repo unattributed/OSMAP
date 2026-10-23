@@ -109,8 +109,8 @@ class HashChildIdentity:
     def native(cls,budget,deadline):
         _bound(budget,deadline)
         platform=os.uname()
-        if (sys.platform!='openbsd7' or os.getuid()!=0 or os.geteuid()!=0
-                or platform.sysname!='OpenBSD' or platform.release!='7.9' or platform.machine!='amd64'
+        if (not sys.platform.startswith('openbsd') or os.getuid()!=0 or os.geteuid()!=0
+                or platform.sysname!='OpenBSD' or platform.machine!='amd64'
                 or sys.byteorder!='little' or socket.gethostname()!=AUTHORITY):
             raise Refused('hash identity platform unavailable')
         required=('setgroups','getgroups','setresgid','getresgid','setresuid','getresuid')

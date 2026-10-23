@@ -539,10 +539,7 @@ pub(crate) fn password_native_authority() -> bool {
             return false;
         }
         let system = unsafe { std::ffi::CStr::from_ptr(info.sysname.as_ptr()) };
-        let release = unsafe { std::ffi::CStr::from_ptr(info.release.as_ptr()) };
-        system.to_bytes() == b"OpenBSD"
-            && release.to_bytes() == b"7.9"
-            && password_native_hostname(&host)
+        system.to_bytes() == b"OpenBSD" && password_native_hostname(&host)
     }
     #[cfg(not(target_os = "openbsd"))]
     {

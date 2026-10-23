@@ -1,4 +1,4 @@
-"""Fixed OpenBSD 7.9 IMAP peer custody; native admission remains disabled.
+"""Fixed OpenBSD IMAP peer custody; native admission remains disabled.
 
 SO_PEERCRED is connect-time kernel authority, never a submitted PID or socket
 inode owner. Exact installed ABI, process layout and actual race remain required.
@@ -93,7 +93,8 @@ class _SockPeerCred(ctypes.Structure):
 
 def kernel_peer(stream):
     """No recv/send. Refuse unknown OS/ABI instead of another OS's option."""
-    _require(sys.platform.startswith('openbsd')and os.uname().release=='7.9'
+    _require(sys.platform.startswith('openbsd')and os.uname().sysname=='OpenBSD'
+             and os.uname().machine=='amd64'
              and type(stream)is socket.socket and stream.family==socket.AF_UNIX
              and stream.getsockopt(socket.SOL_SOCKET,socket.SO_TYPE)==socket.SOCK_STREAM
              and ctypes.sizeof(_SockPeerCred)==12
@@ -274,7 +275,8 @@ class NativeImapPeerInspector:
     def native(cls,master_pid,accounts,budget=None):
         from account_mutation_supervisor import AUTHORITY
         _require(NATIVE_IMAP_PEER_QUALIFIED and os.geteuid()==0 and os.getegid()==0
-                 and sys.platform.startswith('openbsd')and os.uname().release=='7.9'
+                 and sys.platform.startswith('openbsd')and os.uname().sysname=='OpenBSD'
+                 and os.uname().machine=='amd64'
                  and socket.gethostname()==AUTHORITY and os.getpid()==os.getpgrp()
                  and type(budget)is OperationBudget)
         value=cls(master_pid,accounts);value._anchor(budget);value._native=True

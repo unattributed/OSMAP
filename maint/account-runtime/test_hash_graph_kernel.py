@@ -49,7 +49,7 @@ class CompositionTests(unittest.TestCase):
     graph=self.graph();graph._states=g.HashInstalledGraph._observe(self.b,self.end);seal=self.seal();identity=object.__new__(h.HashChildIdentity);identity._budget=self.b
     with patch.object(g.HashInstalledGraph,'native',return_value=graph),patch.object(h.HashChildIdentity,'native',return_value=identity):guard=seal.preexec(A.HASH_PROGRAM,A.HASH_ARGS,deadline=self.end)
     aux.chmod(0o644);aux.write_bytes(b'changed fixture');aux.chmod(0o444)
-    with patch.object(k.sys,'platform','openbsd7'),patch.object(k.os,'getuid',return_value=0),patch.object(k.os,'geteuid',return_value=0),patch.object(h.HashChildIdentity,'drop',side_effect=AssertionError),patch.object(k.ctypes,'CDLL',side_effect=AssertionError):
+    with patch.object(k.sys,'platform','openbsd'),patch.object(k.os,'getuid',return_value=0),patch.object(k.os,'geteuid',return_value=0),patch.object(h.HashChildIdentity,'drop',side_effect=AssertionError),patch.object(k.ctypes,'CDLL',side_effect=AssertionError):
      with self.assertRaises(Refused):guard()
   finally:helper.doCleanups()
  def test_owned_launcher_exec_child_real_graph_recheck_then_ID_ABI_kernel_mocked(self):
@@ -85,7 +85,7 @@ try:
       assert [n for n,_ in calls]==expected;assert args==(g.PROMISES,g.PROMISES);os.write(w,b'PUBLIC_GRAPH_ID_KERNEL_MOCKED')
      return 0
    class Lib:unveil=Fn('unveil');pledge=Fn('pledge')
-   with stack,patch.object(g.HashInstalledGraph,'_observe',side_effect=observed),patch.object(k.sys,'platform','openbsd7'),patch.object(k.ctypes,'CDLL',return_value=Lib()):guard()
+   with stack,patch.object(g.HashInstalledGraph,'_observe',side_effect=observed),patch.object(k.sys,'platform','openbsd'),patch.object(k.ctypes,'CDLL',return_value=Lib()):guard()
    os.close(w)
   child=subprocess.Popen((sys.executable,'-I','-B','-c','import sys;assert sys.stdin.buffer.read()==b"publicfixture";print("PUBLIC_OK")'),stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,start_new_session=False,close_fds=True,pass_fds=(w,),preexec_fn=pre,env={'PATH':'/usr/bin:/bin','LC_ALL':'C'})
   os.close(w);w=None;receipt=os.read(r,64);out,err=child.communicate(b'publicfixture',timeout=3)

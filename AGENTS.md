@@ -1,5 +1,68 @@
 # OSMAP Agent Notes
 
+## Operator ruling — simplify test machinery and test product contracts, 2026-10-23
+
+Codex-created test and execution machinery must not become a substitute product
+or a prerequisite invented by the machinery itself.  The required outcome is a
+working OSMAP journey.  Use the smallest test that exercises the changed product
+boundary, then advance to the next functional boundary.  A carrier, compiler,
+source map, receipt, ledger declaration, review or diagnostic is evidence about
+the test; none is a product acceptance result.
+
+The following assumptions are explicitly rejected unless a product/API contract
+in the repository independently requires them:
+
+- an exact OpenBSD, MariaDB, Python or package patch release on hosts that are
+  deliberately kept current with stable updates;
+- a fixed free-memory floor, full-build prerequisite, two-host topology, public
+  mail-service outage, historical ledger clock or agent-created approval window;
+- exact output text, row count or serialized field not required by the product
+  interface; and
+- completion of a role roster, historical reassessment ceremony or prose record
+  as proof that a safe, directly authorized product test may run.
+
+Check semantic capabilities and the actual schema/configuration consumed by the
+product. Preserve observed versions as evidence, not compatibility predicates.
+Active OSMAP and mail-stack code must not parse, compare, validate the format of,
+or branch on the OpenBSD release string, and must not default to a
+release-numbered OpenBSD image or build helper. Requiring the OpenBSD operating
+system remains valid; compatibility is established by the concrete APIs,
+commands, schema and confinement behavior the product actually uses.
+Execution utilities must use explicit checks, not Python `assert`, and must
+return the structured failure code and cleanup disposition that caused refusal.
+Before host use, exercise the real producer output through the real consumer,
+including the failure and cleanup path; comparing source hashes or reviewing the
+two programs separately is insufficient.
+
+`maint/ux/validate_acceptance.py --pre-action` is a narrow consistency check for
+the recorded action ID, source, recipe, target, prerequisites, runtime bound and
+any explicit operator expiry.  It is not an authority ledger, evidence review or
+truth oracle.  Historical accounting and independent review remain available for
+post-result reconciliation, but they must not create a new dispatch prerequisite.
+The full regression/release gates remain delivery gates; do not run broad
+unchanged suites between each progressive functional milestone.
+
+## Operator ruling — remove elapsed-clock execution-authority expiry, 2026-10-23
+
+The operator has rejected the agent-created governance rule that treated a
+ledger wall-clock deadline as expiration of operator authority. Direct operator
+authorization remains effective for the stated action until that action is
+completed, explicitly revoked, or reaches a substantive safety stop. Calendar
+time and idle time are evidence/accounting fields, not dispatch authority.
+An expiration or finite window explicitly imposed by the operator remains an
+authorization condition unless the operator supersedes it. Record its actual
+expiry as `operator_expires_at` on the planned action and enforce it before
+dispatch; do not invent that field from an agent-created historical clock.
+The carrier's operation and cleanup must fit any such explicit window.
+
+Do not block an otherwise authorized action because historical `deadline_at`, `not_after`
+or cumulative elapsed arithmetic has passed. Do not ask the operator to renew
+authority solely because a clock advanced. Continue to preserve measured actual
+elapsed time and all historical failures. Product and process safety limits
+remain: fixed application deadlines, bounded I/O and cleanup, exact source and
+target admission, independent review, failure stops, no ambiguous credential
+retry, and the operator's public-service boundaries.
+
 ## Operator ruling — abandon the added memory requirement, 2026-10-21
 
 The operator has abandoned the team-imposed 6 GiB free-RAM admission
@@ -122,8 +185,8 @@ agent names and pause/resumption snapshots below are provenance.
 
 The one active ledger work order and its execution_contract govern S04-02.
 Before each expensive/native action, the actual checked dispatcher must call
-the existing validator with the exact --attempt-id. PAUSED/BLOCKED, an expired
-allowance, mismatched source/action, missing prerequisites or out-of-scope
+the existing validator with the exact --attempt-id. PAUSED/BLOCKED,
+mismatched source/action, missing prerequisites or out-of-scope
 recipes refuse before dispatch. Preserve cumulative effort/history across
 workers and attempts; independent reassessment does not erase elapsed work.
 Use source-backed environment facts and fixed operation recipes; a newly
@@ -275,17 +338,14 @@ This framework does not change the frozen UX plan or authorize application,
 policy, deployment or external side effects beyond the operator's instructions.
 
 
-The operator's 2026-10-15 accountability policy in the existing framework
-adoption document is mandatory. Before an expensive/native action, run the
-existing validator with `--work-order-only --pre-action`: one functional exit
-and owner, UTC-started bounded investigation, honest full-action wall-clock
-records, whole producer/cleanup/consumer review and changed retry/reassessment
-records are required. Package renaming cannot reset the functional boundary.
-Preserve historical facts and continue independent authorized work.
-Enforce this check inside the actual dispatcher before SSH/spawn: a nonzero,
-timed-out or missing validator result aborts dispatch. Bind its exact planned
-attempt and source pins, and create a permanent dispatch receipt. Running a
-validator in a preceding shell command without fail-fast is not enforcement.
+Before an expensive/native action, the existing validator may be run with
+`--work-order-only --pre-action` as the narrow consistency check defined above.
+The actual dispatcher must still bind the exact action, source, recipe and target
+and stop if that check refuses.  Do not make historical attempt accounting,
+review prose or a complete work-order schema part of this mechanical admission.
+Preserve historical facts after the result; package renaming does not erase a
+product failure.  Create one concise dispatch/result receipt rather than a new
+carrier or ledger layer for each progressive milestone.
 The 2026-10-18 compiler2 sequencing deviation remains retained; no retrospective
 pre-action PASS may be claimed.
 On OpenBSD, do not use getsid(target_pid) across a born child session as a
@@ -457,12 +517,12 @@ This layout is mandatory for newly generated sprint artifacts. Existing top-leve
 ## Direct delivery and evidence discipline
 
 For an active delivery, follow the existing mutable SOP in
-`docs/AGENT_DEVELOPMENT_FRAMEWORK.md` and keep the existing active execution
-ledger current. Each step must fix a demonstrated defect, answer one necessary
-question, or verify a required acceptance result. Before code, state the expected
-result, essential checks, finite time allowance and stop condition. Reuse passing
-checks when their source and relevant boundary are unchanged; run changed-boundary
-checks and all mandatory normal commit/push hooks.
+`docs/AGENT_DEVELOPMENT_FRAMEWORK.md`. Each step must fix a demonstrated defect,
+answer one necessary question, or verify a required acceptance result. Before
+code, state the expected result, essential checks, technical operation bound and
+stop condition. Reuse passing checks when their source and relevant boundary are
+unchanged; run changed-boundary checks and normal delivery gates at delivery,
+not between every unchanged progressive milestone.
 
 Qualify deadlines with the actual intended deployment build profile and artifact
 kind, checked from the compiler receipt. Emit safe, actionable, bounded error

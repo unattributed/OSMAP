@@ -1,5 +1,22 @@
 # OSMAP adoption of the functional agent framework
 
+## Current test-machinery correction — 2026-10-23
+
+The framework records results; it does not grant or expire operator authority.
+Historical work-order completeness, role rosters, investigation timeboxes,
+reassessment prose and accumulated ledger arithmetic are not dispatch
+prerequisites.  The narrow pre-action check binds only the planned action,
+source, recipe, target, PASS prerequisites, technical operation bound and an
+explicit operator expiry when one exists.
+
+Tests must express product contracts rather than a captured host snapshot.
+Current stable OpenBSD/package patch versions are observations, not fixed
+compatibility requirements.  Generated carriers must retain structured failure
+reasons and must be tested by running their actual serialized producer output
+through the actual consumer and cleanup path.  Hash/source-map agreement alone
+does not prove that interface.  Use focused changed-boundary tests while
+developing and the normal broad gates once at delivery.
+
 ## Current GitHub preservation delivery SOP — 2026-10-21
 
 The operator requires all public-safe repository work to be preserved on GitHub
@@ -11,8 +28,9 @@ branch. No separate operator source-review pause is required. After push, fetch
 and prove exact HEAD/origin equality and zero ahead/behind before calling the
 work saved remotely. This supersedes historical manual push-approval clauses.
 
-Secret/private-artifact exclusions, explicit operator holds, failure stops and
-finite work allowances remain. No force push, history rewrite or automatic
+Secret/private-artifact exclusions, explicit operator holds and failure stops
+remain. Explicit operator expirations and technical operation/cleanup bounds
+remain binding. No force push, history rewrite or automatic
 divergence repair follows. Keep synchronization separate from deployment,
 native/installed qualification and operator UAT; retain the frozen plan and all
 historical failures. Final SHA receipts use the existing sprint evidence root.
@@ -23,9 +41,9 @@ The mandatory delivery SOP in `AGENT_DEVELOPMENT_FRAMEWORK.md` now applies to al
 OSMAP development. The lead integration/delivery agent owns enforcement; the
 delivery controller independently verifies it. Role assignment is not proof of
 compliance. Actual environment prerequisites precede dependent implementation,
-known incompatibilities block dispatch, two failures require combined review,
-and exhausted allowances cannot be repeatedly increased by agents. Preserve
-existing requirements and use the existing work order/gates with minimum
+and known incompatibilities block dependent execution. Repeated failures require
+one causal reassessment before a changed action, not an administrative renewal
+or new framework. Preserve existing product requirements and use minimum
 changed-boundary QA. This is not a new framework or a completed feature claim.
 
 ## Current bounded authorization — 2026-10-18
@@ -171,34 +189,21 @@ introduced. Historical records below remain historical where this policy and R3
 supersede their execution defaults.
 
 
-The operator's 2026-10-15 accountability direction requires the existing active
-work order to name one functional exit and accountable owner, a UTC-started
-bounded investigation timebox, and chronological attempt records. Record actual
-full-action elapsed wall-clock when measured; UNKNOWN/UNMEASURED remains explicit.
-Never infer token/compute cost or substitute a sum of host intervals. Preserve
-pre-adoption failures as historical facts, not retrospectively compliant reviews.
-Before an expensive/native attempt, run the existing acceptance validator with
-`--work-order-only --pre-action`. The next record binds exact source and changed
-action references plus independent review of the whole successful producer →
-cleanup → consumer path. A failed/unconfirmed boundary needs a concrete changed
-action before retry; after two such attempts at the same existing outcome ID,
-record combined independent reassessment covering that window’s unreviewed failed IDs and the
-next action. Successor/package names and fixture/product labels do not reset the
-count. Completed combined reassessment acknowledges its covered IDs and may
-start a bounded investigation only within the remaining authorized cumulative
-allowance; it does not increase an exhausted allowance. All history stays retained. It does
-not require another full reassessment after every subsequent attempt forever.
-Fixture repair/PASS is distinct from product delivery; retain all existing
-functional closure checks. A timebox overrun needs an explicit disposition in the
-same ledger. This validator checks declared structure and consistency, not evidence
-truth, complete history, usable software, runtime state or actual compute cost.
-The actual native dispatcher must check validator success before launching any
-SSH/spawn. Nonzero, timeout, missing output or mismatched planned attempt/source
-pins abort dispatch; retain one permanent dispatch receipt. A previous shell
-command is insufficient unless failure prevents transport. Preserve the actual
-2026-10-18 compiler2 deviation rather than retrospectively claiming compliance.
-No new board, runner, routine human approval or repeat passing suite is required;
-continue independent authorized password work while accountable preparation runs.
+The active work order retains the functional exit, owner, chronological results
+and measured operation time without becoming an authority mechanism. Preserve
+pre-adoption failures as historical facts. Before an expensive/native attempt,
+`--work-order-only --pre-action` is limited to checking the exact planned action,
+source, recipe, target, prerequisites, runtime bound and an explicit operator
+expiry when one exists. It does not require a new investigation window, complete
+role roster, historical reassessment or producer-review ceremony before dispatch.
+
+Test the actual serialized producer → consumer contract and cleanup path locally;
+separate source reviews or matching hashes are not substitutes. A failed boundary
+needs a concrete changed action before retry, and all history remains retained.
+Fixture repair/PASS is distinct from product delivery. The validator does not
+prove evidence truth, authority, usable software or runtime state. Keep one
+concise dispatch/result receipt; add no new board, runner, routine human approval
+or repeat passing suite.
 
 ## Current authority — 2026-10-14
 

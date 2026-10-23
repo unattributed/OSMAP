@@ -84,7 +84,7 @@ class PrimaryKernelTests(unittest.TestCase):
   with patch.object(self.b,'inherited_group',return_value=True),patch.object(identity.PrimaryChildIdentity,'native',return_value=selected),patch.object(graph.PrimaryInstalledGraph,'native',return_value=public):
    guard=seal.preexec(PROGRAM,ARGS+(self.account,),self.account,deadline=self.end)
   with contextlib.ExitStack() as stack:
-   stack.enter_context(patch.object(k.sys,'platform','openbsd7'))
+   stack.enter_context(patch.object(k.sys,'platform','openbsd'))
    stack.enter_context(patch.object(k.os,'getuid',return_value=0));stack.enter_context(patch.object(k.os,'geteuid',return_value=0))
    stack.enter_context(patch.object(graph.PrimaryInstalledGraph,'recheck',side_effect=lambda *args:calls.append(('graph',args))))
    stack.enter_context(patch.object(identity.PrimaryChildIdentity,'drop',side_effect=lambda *args:calls.append(('drop',args))))
@@ -93,9 +93,9 @@ class PrimaryKernelTests(unittest.TestCase):
   self.assertEqual(calls[:2],[('graph',(self.b,self.end)),('drop',(self.b,self.end))])
   self.assertEqual(calls[-2:], [('unveil',(None,None)),('pledge',(graph.PROMISES,)*2)])
   self.assertEqual([args for name,args in calls if name=='unveil'][:-1],[(os.fsencode(path),access) for path,access in graph.PrimaryInstalledGraph.rows()])
-  with patch.object(k.sys,'platform','openbsd7'),patch.object(k.os,'getuid',return_value=0),patch.object(k.os,'geteuid',return_value=0),patch.object(graph.PrimaryInstalledGraph,'recheck',side_effect=Refused('changed public leaf')),patch.object(identity.PrimaryChildIdentity,'drop',side_effect=AssertionError),patch.object(k.ctypes,'CDLL',side_effect=AssertionError):
+  with patch.object(k.sys,'platform','openbsd'),patch.object(k.os,'getuid',return_value=0),patch.object(k.os,'geteuid',return_value=0),patch.object(graph.PrimaryInstalledGraph,'recheck',side_effect=Refused('changed public leaf')),patch.object(identity.PrimaryChildIdentity,'drop',side_effect=AssertionError),patch.object(k.ctypes,'CDLL',side_effect=AssertionError):
    with self.assertRaises(Refused):guard()
-  with patch.object(k.sys,'platform','openbsd7'),patch.object(k.os,'getuid',return_value=0),patch.object(k.os,'geteuid',return_value=0),patch.object(graph.PrimaryInstalledGraph,'recheck'),patch.object(identity.PrimaryChildIdentity,'drop',side_effect=Refused('drop failed')),patch.object(k.ctypes,'CDLL',side_effect=AssertionError):
+  with patch.object(k.sys,'platform','openbsd'),patch.object(k.os,'getuid',return_value=0),patch.object(k.os,'geteuid',return_value=0),patch.object(graph.PrimaryInstalledGraph,'recheck'),patch.object(identity.PrimaryChildIdentity,'drop',side_effect=Refused('drop failed')),patch.object(k.ctypes,'CDLL',side_effect=AssertionError):
    with self.assertRaises(Refused):guard()
 
 if __name__=='__main__':unittest.main(verbosity=2)

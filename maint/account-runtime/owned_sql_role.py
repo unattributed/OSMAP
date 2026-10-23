@@ -28,7 +28,7 @@ try:
   material=m.NativeMaterial._load(helper.plan,helper.config,0,m.NativeMaterial._server,b)
   program=helper.programs[0];metadata=q._identity(program.lstat());parents=tuple((str(parent),)+q._directory_identity(parent.lstat()) for parent in program.parents);row=(str(program),metadata,hashlib.sha256(program.read_bytes()).hexdigest(),parents)
   stack.enter_context(patch.object(q,'FILES',(row,)));stack.enter_context(patch.object(q,'_null',return_value=('readonly local null metadata projection',)))
-  stack.enter_context(patch.object(q.sys,'platform','openbsd7'));stack.enter_context(patch.object(q.os,'getuid',return_value=0));stack.enter_context(patch.object(q.os,'geteuid',return_value=0));stack.enter_context(patch.object(q.os,'uname',return_value=SimpleNamespace(sysname='OpenBSD',release='7.9',machine='amd64')));stack.enter_context(patch.object(q.socket,'gethostname',return_value=q.AUTHORITY))
+  stack.enter_context(patch.object(q.sys,'platform','openbsd'));stack.enter_context(patch.object(q.os,'getuid',return_value=0));stack.enter_context(patch.object(q.os,'geteuid',return_value=0));stack.enter_context(patch.object(q.os,'uname',return_value=SimpleNamespace(sysname='OpenBSD',release='current',machine='amd64')));stack.enter_context(patch.object(q.socket,'gethostname',return_value=q.AUTHORITY))
   def local_peer(stream):
    with patch.object(sys,'platform',local_platform):return real_peer(stream)
   stack.enter_context(patch.object(m,'_peer',side_effect=local_peer))

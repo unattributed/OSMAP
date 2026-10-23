@@ -42,7 +42,7 @@ def popen(command,**options):
    return 0
  class Lib:unveil=Fn('unveil');pledge=Fn('pledge')
  def guard():
-  with patch.object(k.sys,'platform','openbsd7'),patch.object(k.os,'getuid',return_value=0),patch.object(k.os,'geteuid',return_value=0),patch.object(k.ctypes,'CDLL',return_value=Lib()):original_guard()
+  with patch.object(k.sys,'platform','openbsd'),patch.object(k.os,'getuid',return_value=0),patch.object(k.os,'geteuid',return_value=0),patch.object(k.ctypes,'CDLL',return_value=Lib()):original_guard()
   os.close(w)
  # Target command, receipt fd and syscall mocks are LOCAL TEST substitutions.
  # The real source transports cannot supply these options or execution paths.

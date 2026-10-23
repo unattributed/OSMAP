@@ -135,7 +135,8 @@ class PublicationService:
         import dovecot_imap_publication as publication
         _require(NATIVE_IMAP_SERVICE_QUALIFIED and publication.NATIVE_IMAP_PUBLICATION_QUALIFIED
                  and os.getuid()==os.geteuid()==0 and os.getegid()==0
-                 and sys.platform.startswith('openbsd')and os.uname().release=='7.9'
+                 and sys.platform.startswith('openbsd')and os.uname().sysname=='OpenBSD'
+                 and os.uname().machine=='amd64'
                  and socket.gethostname()==AUTHORITY)
         startup=_Startup._read(ROOT,0,budget)
         inspector=NativeImapPeerInspector.native(startup.master_pid,startup.bootstrap.accounts,budget)

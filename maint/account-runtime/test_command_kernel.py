@@ -47,7 +47,7 @@ class SealTests(unittest.TestCase):
    def __call__(self,*args):calls.append((self.name,args));return 0
   class Lib:unveil=Fn('unveil');pledge=Fn('pledge')
   with patch.object(self.b,'inherited_group',return_value=True):guard=seal.preexec(A.HASH_PROGRAM,A.HASH_ARGS)
-  with patch.object(m.sys,'platform','openbsd7'),patch.object(m.os,'getuid',return_value=0),patch.object(m.os,'geteuid',return_value=0),patch.object(m.ctypes,'CDLL',return_value=Lib()):guard()
+  with patch.object(m.sys,'platform','openbsd'),patch.object(m.os,'getuid',return_value=0),patch.object(m.os,'geteuid',return_value=0),patch.object(m.ctypes,'CDLL',return_value=Lib()):guard()
   self.assertEqual(calls,[('unveil',(b'/fixed/public-program',b'rx')),('unveil',(None,None)),('pledge',(b'stdio rpath exec',)*2)])
  def test_each_kernel_failure_refuses_and_never_continues_after_failed_unveil(self):
   seal=self.make()
@@ -57,7 +57,7 @@ class SealTests(unittest.TestCase):
    class Fn:
     def __call__(self,*args):calls.append(args);return -1 if len(calls)==fail_at else 0
    class Lib:unveil=Fn();pledge=Fn()
-   with patch.object(m.sys,'platform','openbsd7'),patch.object(m.os,'getuid',return_value=0),patch.object(m.os,'geteuid',return_value=0),patch.object(m.ctypes,'CDLL',return_value=Lib()):
+   with patch.object(m.sys,'platform','openbsd'),patch.object(m.os,'getuid',return_value=0),patch.object(m.os,'geteuid',return_value=0),patch.object(m.ctypes,'CDLL',return_value=Lib()):
     with self.assertRaises(Refused):guard()
    self.assertEqual(len(calls),fail_at)
  def test_spawn_always_binds_kernel_hook_closed_env_and_fixed_popen_options(self):
@@ -90,7 +90,7 @@ class SealTests(unittest.TestCase):
   class Lib:unveil=Fn('unveil');pledge=Fn('pledge')
   with patch.object(self.b,'inherited_group',return_value=True),patch.object(m.time,'monotonic',side_effect=lambda:clock[0]),patch.object(m.subprocess,'Popen') as popen:
    seal.spawn(A.HASH_PROGRAM,A.HASH_ARGS,101.0);guard=popen.call_args.kwargs['preexec_fn']
-   with patch.object(m.sys,'platform','openbsd7'),patch.object(m.os,'getuid',return_value=0),patch.object(m.os,'geteuid',return_value=0),patch.object(m.ctypes,'CDLL',return_value=Lib()):
+   with patch.object(m.sys,'platform','openbsd'),patch.object(m.os,'getuid',return_value=0),patch.object(m.os,'geteuid',return_value=0),patch.object(m.ctypes,'CDLL',return_value=Lib()):
     with self.assertRaises(Refused):guard()
   self.assertEqual(len(calls),3)
  def test_non_native_platform_refuses_before_libc(self):
@@ -117,7 +117,7 @@ class Fn:
   return 0
 class Lib:unveil=Fn('unveil');pledge=Fn('pledge')
 def pre():
- with patch.object(m.sys,'platform','openbsd7'),patch.object(m.os,'getuid',return_value=0),patch.object(m.os,'geteuid',return_value=0),patch.object(m.ctypes,'CDLL',return_value=Lib()):guard()
+ with patch.object(m.sys,'platform','openbsd'),patch.object(m.os,'getuid',return_value=0),patch.object(m.os,'geteuid',return_value=0),patch.object(m.ctypes,'CDLL',return_value=Lib()):guard()
  os.close(w)
 c=None
 try:

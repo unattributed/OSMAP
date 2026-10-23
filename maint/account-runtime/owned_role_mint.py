@@ -45,7 +45,7 @@ try:
     return 0
   class Lib:unveil=Fn('unveil');pledge=Fn('pledge')
   def guard():
-   with patch.object(k.sys,'platform','openbsd7'),patch.object(k.os,'getuid',return_value=0),patch.object(k.os,'geteuid',return_value=0),patch.object(k.ctypes,'CDLL',return_value=Lib()):original_guard()
+   with patch.object(k.sys,'platform','openbsd'),patch.object(k.os,'getuid',return_value=0),patch.object(k.os,'geteuid',return_value=0),patch.object(k.ctypes,'CDLL',return_value=Lib()):original_guard()
   options['preexec_fn']=guard;options['pass_fds']=(w,)
   output='print("PUBLIC_HASH_OK")' if mode[0]=='positive' else 'print("X"*4097)'
   body='import sys;assert sys.stdin.buffer.read()==b"PUBLIC_HASH\\n";'+output

@@ -15,5 +15,5 @@ EOF_GIT_LOCAL_ENV
 repo_root=$(git rev-parse --show-toplevel)
 cd "$repo_root"
 
-echo "Running OSMAP pre-commit security check"
-exec make security-check
+echo "Running focused OSMAP pre-commit check"
+exec make commit-check

@@ -56,7 +56,8 @@ and helper-boundary documents for current OSMAP runtime claims.
 ## Host Baseline
 
 - Hostname: `mail.blackbagsecurity.com`
-- Operating system: OpenBSD 7.7 `GENERIC.MP`
+- Operating system: current stable OpenBSD `GENERIC.MP`, maintained with at
+  least weekly `syspatch` and `pkg_add -u` checks
 - Current uptime during inspection: just over five days
 - Current model: single host running both mail services and multiple web/control
   plane applications
