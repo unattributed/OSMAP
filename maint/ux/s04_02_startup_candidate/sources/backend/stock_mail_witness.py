@@ -1,118 +1,107 @@
-"""Actual fixed public SMTP AUTH witness; no message or connection-revocation claim."""
-import base64,math,re,socket,ssl,time
-ACCOUNTS=('alice@osmap-password.invalid','bob@osmap-password.invalid')
-CAP=16384
+"""Read-only cache/config and disposable Bob mailbox-preservation witness.
 
-def require(value,code):
-    if not value:raise RuntimeError(code)
+Credential results belong to the actual Rust HTTP journey. This observer sends
+no SMTP/IMAP requests, creates no mail storage and terminates no mail sessions.
+"""
+import hashlib
+import json
+import math
+import os
+from pathlib import Path
+import stat
+import time
 
-class StockSmtpProbe:
-    def __init__(self, account, end):
-        self.account, self.end, self.stream = account, end, None
-        self.bytes, self.sequence = 0, 0
-        require(account in ACCOUNTS, 'fixed_smtp_account')
-        raw = None
-        try:
-            context = ssl.create_default_context()
-            context.minimum_version = ssl.TLSVersion.TLSv1_2
-            raw = socket.create_connection(('127.0.0.1', 465), self.left())
-            raw.settimeout(self.left())
-            self.stream = context.wrap_socket(raw, server_hostname='mail.blackbagsecurity.com')
-            raw = None
-            require(self.stream.getpeername()[0] == '127.0.0.1', 'fixed_smtp_peer')
-            self.reply(220)
-            self.send(b'EHLO osmap-client.invalid')
-            self.reply(250)
-        except BaseException:
-            if raw is not None: raw.close()
-            self.close()
-            raise
+BOB = 'bob@osmap-password.invalid'
+MAIN = '/etc/dovecot/dovecot.conf'
 
-    def send(self, command):
-        require(type(command) is bytes and len(command) <= 512
-                and not any(c in command for c in (b'\r', b'\n', b'\0'))
-                and self.sequence < 8, 'fixed_smtp_command_bound')
-        self.sequence += 1
-        self.stream.settimeout(self.left())
-        self.stream.sendall(command + b'\r\n')
 
-    def reply(self, expected):
-        for _ in range(16):
-            value = self.line()
-            require(value[:3] == str(expected).encode('ascii')
-                    and value[3:4] in (b' ', b'-'), 'actual_smtp_reply_code')
-            if value[3:4] == b' ': return
-        raise RuntimeError('smtp_reply_row_cap')
-
-    def authenticate(self, password, accepted=True):
-        require(type(password) is str and re.fullmatch('[a-f0-9]{64}', password)
-                and type(accepted) is bool, 'actual_private_smtp_fixture_password')
-        payload = base64.b64encode(b'\0' + self.account.encode('ascii') + b'\0' + password.encode('ascii'))
-        self.send(b'AUTH PLAIN ' + payload)
-        self.reply(235 if accepted else 535)
-
-    def noop(self):
-        self.send(b'NOOP')
-        self.reply(250)
-
-    def left(self):
-        left = self.end - time.monotonic()
-        require(left > 0, 'imap_original_caller_deadline')
-        return min(left, 5)
-
-    def line(self):
-        value = bytearray()
-        while not value.endswith(b'\r\n'):
-            self.stream.settimeout(self.left())
-            part = self.stream.recv(1)
-            require(bool(part), 'imap_unexpected_eof')
-            value.extend(part)
-            self.bytes += len(part)
-            require(len(value) <= 4096 and self.bytes <= CAP, 'imap_reply_cap')
-        require(b'\0' not in value and value.count(b'\n') == 1, 'imap_reply_shape')
-        return bytes(value)
-
-    def close(self):
-        if self.stream is not None:
-            try:
-                self.stream.close()
-            finally:
-                self.stream = None
+def require(value, code):
+    if not value:
+        raise RuntimeError(code)
 
 
 class StockMailWitness:
-    def __init__(self,fixture,end):
-        require(type(end)in(int,float)and math.isfinite(end)and end<=fixture.end
-            and 3<end-time.monotonic()<=180,'stock_mail_original_deadline')
-        self.fixture,self.end=fixture,end
-        self.bob=None
+    def __init__(self, fixture, end):
+        require(type(end) in (int, float) and math.isfinite(end) and end <= fixture.end
+            and 3 < end - time.monotonic() <= 180, 'stock_mail_original_deadline')
+        self.fixture, self.end = fixture, end
+        self.before = None
+        self.closed = False
+
+    def projection(self):
+        """Read the existing fixed userdb projection; require nonce-owned absence."""
+        require(time.monotonic() < self.end, 'stock_mail_original_deadline')
+        values = {}
+        for field in ('home', 'mail', 'uid', 'gid'):
+            raw = self.fixture.run(('/usr/local/bin/doveadm', 'user', '-f', field, BOB),
+                'stock_bob_userdb_' + field, cap=4096, seconds=5, absolute=self.end)
+            require((raw == b'' and field == 'mail') or raw.count(b'\n') == 1
+                and raw.endswith(b'\n') and b'\0' not in raw, 'stock_bob_userdb_field')
+            values[field] = raw.removesuffix(b'\n').decode('ascii')
+        home = values['home']
+        nonce = 'bob-' + self.fixture.lease
+        require(home.startswith('/') and str(Path(home)) == home
+            and nonce in Path(home).parts and '..' not in Path(home).parts,
+            'stock_bob_nonce_home')
+        mail = values['mail']
+        if not mail:
+            raw = self.fixture.run(('/usr/local/bin/doveconf', '-c', MAIN, '-h', 'mail_location'),
+                'stock_bob_effective_mail_location', cap=4096, seconds=5, absolute=self.end)
+            require(raw.count(b'\n') == 1 and raw.endswith(b'\n') and b'\0' not in raw,
+                'stock_bob_mail_location')
+            mail = raw[:-1].decode('ascii')
+        require(mail.startswith('maildir:') and ':' not in mail[8:], 'stock_bob_maildir_storage')
+        mail = mail[8:]
+        if mail == '~' or mail.startswith('~/'):
+            mail = home + mail[1:]
+        for key, value in {'%h': home, '%u': BOB, '%n': 'bob', '%d': 'osmap-password.invalid'}.items():
+            mail = mail.replace(key, value)
+        require('%' not in mail and mail.startswith('/') and str(Path(mail)) == mail
+            and Path(mail).is_relative_to(Path(home)) and nonce in Path(mail).parts
+            and '..' not in Path(mail).parts and values['uid'].isdigit() and values['gid'].isdigit()
+            and int(values['uid']) > 0 and int(values['gid']) > 0, 'stock_bob_maildir_projection')
+        ancestors = []
+        for path in reversed((Path(home), *Path(home).parents)):
+            if os.path.lexists(path):
+                info = path.lstat()
+                require(stat.S_ISDIR(info.st_mode) and not info.st_mode & 0o002,
+                    'stock_bob_ancestor_custody')
+                # Identity/permissions are stable authority; ancestor timestamps
+                # can change when unrelated mail arrives and are not a prerequisite.
+                ancestors.append((str(path), info.st_dev, info.st_ino,
+                    info.st_uid, info.st_gid, info.st_mode))
+        require(not os.path.lexists(home) and not os.path.lexists(mail), 'stock_bob_mail_must_be_absent')
+        require(time.monotonic() < self.end, 'stock_mail_original_deadline')
+        return {'home': home, 'mail': mail, 'uid': int(values['uid']),
+            'gid': int(values['gid']), 'ancestors': ancestors}
+
+    def public_state(self):
+        actual = self.fixture.run(('/usr/local/bin/doveconf', '-c', MAIN, '-h', 'auth_cache_size'),
+            'stock_actual_cache_policy', seconds=5, absolute=self.end)
+        require(actual == b'0\n', 'stock_actual_cache_not_zero')
+        self.fixture.original_config_current()
+        require(self.fixture.master_row() == self.fixture.master, 'stock_public_master_changed')
+
     def begin(self):
-        try:
-            self.bob=StockSmtpProbe(ACCOUNTS[1],self.end)
-            self.bob.authenticate(self.fixture.initial_password(ACCOUNTS[1]))
-        except BaseException:
-            self.close();raise
+        require(self.before is None and not self.closed, 'stock_mail_one_begin')
+        self.public_state()
+        self.before = self.projection()
+
     def finish_after_change(self):
-        require(self.bob is not None,'stock_bob_born_connection')
+        require(self.before is not None and not self.closed, 'stock_bob_absence_baseline')
         try:
-            with_probe=[]
-            try:
-                old=StockSmtpProbe(ACCOUNTS[0],self.end);with_probe.append(old)
-                old.authenticate(self.fixture.initial_password(ACCOUNTS[0]),accepted=False)
-                new=StockSmtpProbe(ACCOUNTS[0],self.end);with_probe.append(new)
-                new.authenticate(self.fixture.new_password)
-                self.bob.noop()
-            finally:
-                for probe in with_probe:probe.close()
-            actual=self.fixture.run(('/usr/local/bin/doveconf','-c','/etc/dovecot/dovecot.conf','-h','auth_cache_size'),
-                'stock_actual_cache_policy',seconds=5,absolute=self.end)
-            require(actual==b'0\n','stock_actual_cache_not_zero')
-            self.fixture.original_config_current()
-            require(self.fixture.master_row()==self.fixture.master,'stock_public_master_changed')
-            return {'result':'PASS','old_password_refused':True,'new_password_admitted':True,
-                'bob_auth_preserved':True,'public_cache_zero':True,
-                'public_original25_preserved':True,'public_master_preserved':True,
-                'external_sessions_terminated':False,'flush_performed':False}
-        finally:self.close()
+            after = self.projection()
+            require(after == self.before, 'stock_bob_projection_changed')
+            self.public_state()
+            digest = hashlib.sha256(json.dumps(after, sort_keys=True,
+                separators=(',', ':')).encode('ascii')).hexdigest()
+            return {'result': 'PASS', 'public_cache_zero': True,
+                'public_original25_preserved': True, 'public_master_preserved': True,
+                'bob_mail_projection_preserved': True, 'bob_home_absent': True,
+                'bob_mail_absent': True, 'bob_projection_sha256': digest,
+                'external_sessions_terminated': False, 'flush_performed': False}
+        finally:
+            self.close()
+
     def close(self):
-        if self.bob is not None:self.bob.close();self.bob=None
+        self.closed = True

@@ -305,7 +305,9 @@ class Qualification(base.Fixture):
     def run(self,argv,label,data=b'',cap=16384,seconds=5,cleanup=False,test=False,absolute=None,client=False):
         require(not test and not client,'no_legacy_test_or_client_mode')
         readonly=(len(argv)==5 and argv[:4]==('/usr/local/bin/doveconf','-c',MAIN,'-h')
-            and argv[4]in('auth_verbose_passwords','auth_debug_passwords','verbose_proctitle','auth_cache_size'))
+            and argv[4]in('auth_verbose_passwords','auth_debug_passwords','verbose_proctitle','auth_cache_size','mail_location'))
+        readonly|=(len(argv)==5 and argv[:3]==('/usr/local/bin/doveadm','user','-f')
+            and argv[3]in('home','mail','uid','gid')and argv[4]=='bob@osmap-password.invalid')
         meta=(argv[:3]==('/bin/ps','-ax','-o')and argv[3:]in(
             ('uid=,pid=,comm=',),('pid=,ppid=,pgid=,uid=,gid=,lstart=,comm=',)))
         meta|=(len(argv)==5 and argv[:2]==('/bin/ps','-p')and argv[2].isdigit()

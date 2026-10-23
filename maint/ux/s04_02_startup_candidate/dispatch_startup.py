@@ -1,4 +1,4 @@
-"""One checked finite native admission dispatch; no mutation or automatic retry."""
+"""One checked native operation; mutation requires specific operator authority."""
 import argparse,base64,datetime,hashlib,importlib.util,json,os,shlex,signal,subprocess,sys,time
 from pathlib import Path
 
@@ -51,6 +51,8 @@ def check_action(order,args,pins):
     arguments=[str(ROOT/'dispatch_startup.py'),'--build-receipt',args.build_receipt,
         '--source-manifest',args.source_manifest,'--run-dir',str(RUN),
         '--attempt-id',args.attempt_id,'--recipe',args.recipe]
+    if getattr(args,'operation','admission')=='password-change':
+        arguments+=['--operation','password-change']
     require(recipe['kind']=='NATIVE'and recipe['environment_ids']==['obsd1']
         and recipe['operations']==[{'target_id':'local','program':'/usr/bin/python3',
             'arguments':arguments,'privilege':'user'}],'planned_operation')
@@ -64,23 +66,35 @@ def main():
     global RUN
     parser=argparse.ArgumentParser()
     for name in('build-receipt','source-manifest','run-dir','attempt-id','recipe'):parser.add_argument('--'+name,required=True)
+    parser.add_argument('--operation',choices=('admission','password-change'),default='admission')
     args=parser.parse_args();RUN=Path(args.run_dir).resolve()
     info=RUN.lstat();require(RUN.is_dir()and info.st_uid==os.geteuid()and stat_mode(info)==0o700,'run_directory_custody')
     ATTEMPT=args.attempt_id;RECIPE=args.recipe
     os.umask(0o077);started=time.monotonic();child=None
     record={'schema':'osmap-milestone1-startup-dispatch-v1','attempt_id':ATTEMPT,'dispatched':False,
-        'native_result':'NOT_RUN','remote_disposition':'NOT_DISPATCHED','password_mutation':False,'public_service_operations':False}
+        'native_result':'NOT_RUN','remote_disposition':'NOT_DISPATCHED','operation':args.operation,
+        'password_mutation':False,'public_service_operations':False}
     try:
         for name in('startup-attempt-started.json','startup-result.json','startup-pre-action-stdout.log','startup-pre-action-stderr.log'):
             require(not os.path.lexists(RUN/name),'one_shot_collision')
         save('startup-attempt-started.json',json.dumps(record,sort_keys=True).encode())
         pins=json.loads((RUN/'RUN_SOURCE_SHA256.json').read_bytes());review=json.loads((RUN/'startup-independent-review.json').read_bytes())
         require(set(pins)==SOURCE_FILES,'review_source_set')
-        require(review['decision']=='CLEAR'and review['reviewer']=='/root/admission_review'and review['sources']==pins,'independent_review')
+        reviewer='/root/delivery_controller' if args.operation=='password-change' else '/root/admission_review'
+        require(review['decision']=='CLEAR'and review['reviewer']==reviewer and review['sources']==pins,'independent_review')
+        if args.operation=='password-change':
+            authority=json.loads((RUN/'operator-authorization.json').read_bytes())
+            require(authority.get('confirmed') is True and authority.get('target')=='obsd1.blackbagsecurity.com'
+                and authority.get('account')=='alice@osmap-password.invalid'
+                and type(authority.get('password_changes')) is int and authority['password_changes']==1
+                and type(authority.get('operator_confirmation')) is str and bool(authority['operator_confirmation'].strip())
+                and authority.get('exact_owned_cleanup') is True
+                and authority.get('retain_uncertain_state') is True,'specific_mutation_authority')
         for name,pin in pins.items():
             path=ROOT/name;info=path.lstat();require(info.st_uid==os.geteuid()and info.st_nlink==1
                 and stat_mode(info)==0o600 and not path.is_symlink()and path.is_file()and sha(path.read_bytes())==pin,'source_custody')
         packet=module('bind_startup').packet(args.build_receipt,args.source_manifest)
+        if args.operation=='password-change':packet['operation']='password-change'
         ledger=(REPO/'docs/UX_EXECUTION_LEDGER.md').read_text();block=ledger.split('<!-- OSMAP_ACTIVE_WORK_ORDER -->')[1].split('<!-- /OSMAP_ACTIVE_WORK_ORDER -->')[0].strip();order=json.loads(block[8:-4])
         check_action(order,args,pins)
         require(sha((REPO/'maint/ux/validate_acceptance.py').read_bytes())==VALIDATOR_SHA256,'validator_source_changed')
@@ -93,7 +107,8 @@ def main():
         save('startup-bound-packet.json',wire);record.update(packet_sha256=sha(wire),source_revision=pins['remote_wrapper.py'],not_after_utc=packet['not_after_utc'])
         command='exec /usr/local/bin/python3 -I -c '+shlex.quote(remote.decode())
         argv=['/usr/bin/ssh','-S','none','-i','/home/foo/.ssh/id_ed25519','-o','IdentitiesOnly=yes','-o','BatchMode=yes','-o','PasswordAuthentication=no','-o','KbdInteractiveAuthentication=no','-o','StrictHostKeyChecking=yes','-o','UpdateHostKeys=no','-o','ConnectTimeout=8','-o','ConnectionAttempts=1','-o','ServerAliveInterval=15','-o','ServerAliveCountMax=2','foo@192.168.1.44',command]
-        record.update(dispatched=True,native_result='UNKNOWN',remote_disposition='UNCERTAIN');save('startup-dispatch-started.json',json.dumps(record,sort_keys=True).encode())
+        record.update(dispatched=True,native_result='UNKNOWN',remote_disposition='UNCERTAIN',
+            password_mutation=None if args.operation=='password-change' else False);save('startup-dispatch-started.json',json.dumps(record,sort_keys=True).encode())
         child=subprocess.Popen(argv,cwd=REPO,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,start_new_session=True,close_fds=True)
         try:out,err=child.communicate(wire,timeout=330)
         except subprocess.TimeoutExpired as error:
@@ -110,7 +125,8 @@ def main():
         require(record['local_transport_disposition']=='CONFIRMED'and len(out)<=524288 and len(err)<=8192,'transport_cleanup_or_bound')
         record.update(ssh_exit=child.returncode,stdout_sha256=sha(out),stderr_sha256=sha(err),stderr_bytes=len(err));require(not err,'ssh_stderr')
         value=json.loads(out);record['transport']=value;accepted=module('consume_startup').inspect(value,child.returncode,packet['not_after_utc'],packet)
-        record.update(native_result='PASS',remote_disposition='CONFIRMED',accepted=accepted)
+        record.update(native_result='PASS',remote_disposition='CONFIRMED',accepted=accepted,
+            password_mutation=args.operation=='password-change')
     except BaseException as error:
         record['failure']=str(error)if type(error)is RuntimeError else type(error).__name__
         if not record['dispatched']:record.update(native_result='REFUSED',remote_disposition='NOT_DISPATCHED')

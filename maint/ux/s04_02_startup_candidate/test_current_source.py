@@ -237,5 +237,32 @@ class CurrentSourceIntegration(unittest.TestCase):
             else:p['helper']['cargo_profile']['opt_level']='0'
             with self.subTest(kind=kind),self.assertRaises(stage.Refused):stage.admit_packet(p)
 
+    def test_mutation_current_artifacts_actual_actor_transport_consumer_and_cleanup(self):
+        mutation=load('test_mutation_result')
+        self.p['operation']='password-change'
+        for fault in (None,'response_lost'):
+            with self.subTest(fault=fault),tempfile.TemporaryDirectory()as directory:
+                root=Path(directory)
+                back,front,frames=self.stage_fixture(root)
+                runtime=root/'runtime';runtime.mkdir()
+                peer,states,phases,report,transport,packet=mutation.MutationIntegration().run_actor(
+                    runtime,fault,packet=self.p)
+                wire=b''.join(json.dumps(v).encode()+b'\n'for v in frames+[report])
+                parsed=[];wrapper.parse_actor_frames(wire,parsed);transport['frames']=parsed
+                if fault is None:
+                    accepted=consumer.inspect(transport,0,self.p['not_after_utc'],self.p)
+                    self.assertTrue(accepted['password_mutation'])
+                    self.assertEqual(peer.writes,1)
+                    self.assertTrue(states['backend'].disposed and states['frontend'].disposed)
+                else:
+                    with self.assertRaises(RuntimeError):consumer.inspect(transport,0,self.p['not_after_utc'],self.p)
+                    self.assertEqual(report['disposition'],'RETAINED_REQUIRES_REVIEW')
+                    self.assertTrue((runtime/'http-state/sessions').exists())
+                    self.assertFalse(states['backend'].disposed or states['frontend'].disposed)
+                    self.assertEqual(peer.writes,1)
+                # Local regression fixture only: native retained effects are never
+                # passed to this inert stage-only cleanup on an uncertain write.
+                self.dispose(back,front,frames)
+
 
 if __name__=='__main__':unittest.main(verbosity=2)

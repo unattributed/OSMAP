@@ -10282,7 +10282,10 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "maint/security/osmap-tls-policy-guard.sh",
     "maint/ux/s04_02_startup_candidate/source_review.json",
     "maint/ux/s04_02_startup_candidate/milestone1_evidence.json",
-    "maint/ux/s04_02_startup_candidate/milestone2_evidence.json"
+    "maint/ux/s04_02_startup_candidate/milestone2_evidence.json",
+    "maint/ux/s04_02_startup_candidate/test_password_journey.py",
+    "maint/ux/s04_02_startup_candidate/test_mutation_result.py",
+    "maint/ux/s04_02_startup_candidate/test_mail_witness.py"
   ],
   "outcomes": [
     {
@@ -10442,7 +10445,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "status": "PENDING",
     "reference": "Only minimal well-defined own-password usability after all agent-owned development/matching deployed QA/independent audit PASS. No operator password is changed by agent qualification; use controlled disposable Alice and preserve Bob/operator state. NOT RUN."
   },
-  "next_action": "Preserve independently verified Milestone2 via normal signed Git delivery; Milestone3 password mutation requires its own explicit operator instruction and is NOT_RUN. S04-02 full T03/installed acceptance remains OPEN.",
+  "next_action": "Milestone3: prepare and independently review one controlled Alice password change with two genuine stored Alice sessions, Bob preservation and uncertainty-safe cleanup. Obtain the specifically requested operator write/cleanup confirmation before host dispatch. Reuse unchanged77f6379 Rust binaries. Native mutation NOT_RUN; full T03/installed acceptance remains OPEN.",
   "accountability": {
     "functional_exit": "Working own-account Settings password change through the selected single-host obsd1 local account service and authoritative local backend, fresh password/TOTP step-up, one conditional SQL update, durable OSMAP epoch and all-browser revocation, actual source-bound cache handling, old-password refusal/new-login success and Bob preservation. Existing third-party SMTP/IMAP sessions may remain authenticated. Matching installed QA, independent audit and minimal owner usability remain required. Toronto is later separate production installation.",
     "owner": "/root",
@@ -31337,7 +31340,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "planned_action": null
   },
   "blocker": null,
-  "independent_next_action": "Independent build/startup/current-stage outcome reviews PASS; preserve exact limitations and no T03/password claim.",
+  "independent_next_action": "/root/delivery_controller reviews the actual existing mutation caller, producer/transport/consumer and cleanup delta; retain Milestone1/2 evidence. Root owns the single host/Git queue; password_engineer owns the two-session HTTP journey; guardrails_engineer owns result and incomplete-state retention. Local regressions are not native qualification.",
   "updated_at": "2026-10-23T16:24:23Z"
 }
 ```
@@ -35393,3 +35396,66 @@ no amend, history rewrite, forced synchronization or hook bypass.
 
 Retained failed push log SHA256 `cf8142c6dd1557ac6a6dc17f783ef858cef80e53b371fa1fa54de5a499a42a2d`;
 corrected security-check log SHA256 `be243c0fae6a04c0f770fa4f48b5b2c9f13d2c41246d802709f4149c6390e2b6`.
+
+## 2026-10-23 — Milestone 3 controlled-write preparation
+
+The operator requests one authoritative disposable Alice password change and
+explicitly requires confirmation of that write and its exact-owned cleanup before
+host dispatch. That specific confirmation is PENDING. No host request, provisioning,
+password mutation or native rebuild has run in this preparation. Milestone 1/2
+signed evidence and compiler artifacts are unchanged; Rust/Cargo inputs still match
+77f63794d3f60e4003db157eada39f4bd4222b6a. Native Milestone 3 is NOT RUN and full T03,
+ordinary installed readiness and owner acceptance remain NOT QUALIFIED.
+
+Root owns integration, Git and the only host queue; password_engineer corrects
+the existing HTTP journey and read-only mail witness, guardrails_engineer corrects
+the existing result/disposition path, and delivery_controller independently reviews.
+No new execution hierarchy or production qualification activation is introduced.
+
+The retained NativeLocal selector uses genuine HTTP login, persisted FileSessionStore,
+authoritative primary authentication, existing TOTP verification, the actual Serve
+seal and purpose-separated native clients. The password route holds GuardedSessionLease
+through move-only authorization, challenge/ACK and authenticated terminal consumption.
+Independent review found no demonstrated missing session-authority defect. It found
+and corrected a missing second Alice session, premature success at the first
+post-write snapshot, and destruction of incomplete-write session evidence.
+
+The corrected driver adds a second real Alice login and second old-cookie denial
+within the existing 18 requests by removing a duplicate history read. Old-password
+rejection now uses an unused valid TOTP; unchanged replay state then permits the
+same fresh factor for the new-password positive control. This avoids mistaking
+TOTP replay rejection for credential rejection. The existing 90-second sequence,
+60-second product operation and bounded cleanup remain unchanged.
+
+Before the sole POST, a durable submission-intent checkpoint precedes dispatch.
+An uncertain response or later verification failure stops born producers and
+retains account, epoch/changed-at and browser-session authority for reconciliation.
+There is no automatic mutation retry or credential restoration. Exact-owned
+disposal requires full verified success or independently proven pre-submission
+zero-write state. PASS additionally requires final authoritative agreement,
+exactly one consumed Alice intent, Bob preservation and observed disposal.
+
+The old SMTP465 witness had no matching current endpoint/TLS prerequisite evidence.
+It is removed from this controlled OSMAP-only journey. Real HTTP old/new/Bob login
+results supply credential proof; the separate read-only witness checks actual
+cache-disabled configuration and unchanged Bob userdb projection with nonce-owned
+home/mail absence before/after. Unexpected storage or incompatible projection
+refuses before mutation. No SMTP/IMAP session-revocation claim is made.
+
+Focused final candidate suite: 47 PASS in1.244s, including retained compiler inputs
+and actual packet/stage publication through mutation actor, transport parser,
+response consumer and success/retained-failure cleanup contracts. Two existing
+Rust regressions separately PASS: real stored-lease challenge/ACK/completion and
+guarded socket pending/ACK/EOF before one scripted write. Local dependency doubles
+are explicitly source evidence, never native product PASS. Evidence root:
+`/home/foo/Downloads/osmap-ux-s04/milestone3-authoritative-change-20261023/`.
+Runtime timings, actual old/new credentials, dual-session effects, SQL/epoch
+before/after and host cleanup are NOT RUN until specific operator confirmation.
+
+Independent final source review CLEAR, exact17 dispatch sources plus stage/wrapper
+pins and duplicate-driver parity verified. Review SHA256
+`3ab52ca030445cd13e7692fc24bb91dc5123633081a526b4bbb600206feb3746`;
+final47-test log SHA256
+`063baaaa4fbd35407b14d16c3e446084050fe421cd623fb79157bf2d276e83ef`.
+The specific one-write/cleanup confirmation has been requested and remains
+pending; no authority is inferred from the local review or passing tests.

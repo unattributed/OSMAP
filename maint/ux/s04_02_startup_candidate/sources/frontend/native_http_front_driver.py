@@ -144,13 +144,15 @@ class FrontDriver:
     def verify_mail_containment(self,end):
         require(self.snapshot_index==4);reply=self.node.exchange('MAIL_WITNESS',end)
         require(set(reply)=={'phase','result'} and set(reply['result'])=={
-            'result','old_password_refused','new_password_admitted','bob_auth_preserved',
-            'public_cache_zero','public_original25_preserved','public_master_preserved',
+            'result','public_cache_zero','public_original25_preserved','public_master_preserved',
+            'bob_mail_projection_preserved','bob_home_absent','bob_mail_absent','bob_projection_sha256',
             'external_sessions_terminated','flush_performed'})
         value=reply['result']
         require(value['result']=='PASS' and all(value[k]is True for k in(
-            'old_password_refused','new_password_admitted','bob_auth_preserved',
-            'public_cache_zero','public_original25_preserved','public_master_preserved'))
+            'public_cache_zero','public_original25_preserved','public_master_preserved',
+            'bob_mail_projection_preserved','bob_home_absent','bob_mail_absent'))
+            and type(value['bob_projection_sha256'])is str
+            and re.fullmatch('[a-f0-9]{64}',value['bob_projection_sha256'])
             and value['external_sessions_terminated']is False and value['flush_performed']is False)
     def finish_http(self,end,connections):
         require(connections==self.http_sequence==18)

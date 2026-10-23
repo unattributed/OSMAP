@@ -1,5 +1,5 @@
 """Strict consumer for one startup-only native result."""
-import hashlib,json
+import hashlib,json,re,math
 
 
 def require(value,code):
@@ -24,6 +24,10 @@ def inspect(value,code,expiry,packet):
         and ready['helper_sha256']==packet['helper']['sha256']
         and ready['web_sha256']==packet['web']['sha256']
         and ready['packet_sha256']==hashlib.sha256(json.dumps(packet,sort_keys=True,separators=(',',':')).encode()).hexdigest(),'current_build_binding')
+    require((packet.get('operation')=='password-change')==(actor.get('schema')=='osmap-single-host-controlled-journey-v1'),
+        'operation_actor_binding')
+    if actor.get('schema')=='osmap-single-host-controlled-journey-v1':
+        return inspect_mutation(actor,packet)
     if actor.get('schema')=='osmap-single-host-admission-v1':
         return inspect_admission(actor,packet)
     require(actor['schema']=='osmap-single-host-startup-v1'and actor['result']=='PASS'
@@ -105,3 +109,83 @@ def inspect_admission(actor,packet):
         'authoritative_preservation':True,'stored_sessions':actor['stored_sessions'],
         'source_commit':packet['source_commit'],'service_binary_sha256':packet['helper']['sha256'],
         'password_mutation':False,'cleanup_confirmed':True}
+
+
+def inspect_mutation(actor,packet):
+    """Consume root observations plus the guarded HTTP journey after disposal."""
+    require(actor['result']=='PASS' and actor['functional_result']=='PASS'
+        and actor['disposition']=='CONFIRMED','mutation_result')
+    require(all(actor[k] is False for k in ('installed_qualification','slice_complete',
+        'public_service_controls','public_config_writes','relay_operations','credential_values_retained')),
+        'mutation_scope')
+    require(actor['mutation_submission_started'] is True and type(actor['observed_http_requests'])is int
+        and actor['observed_http_requests']==18,
+        'mutation_submission')
+    proof=actor['mutation_evidence']
+    require(type(proof['mutation_requests'])is int and proof['mutation_requests']==1 and all(proof[k] is True for k in
+        ('terminal_response_confirmed','old_password_refused','new_password_admitted','bob_account_preserved')),
+        'mutation_terminal')
+    sessions=proof['alice_sessions'];bob=proof['bob_session'];new=proof['new_alice_session']
+    require(type(sessions)is list and len(sessions)==2 and all(type(s['initial_epoch'])is int and s['initial_epoch']==0
+        and s['revoked'] is True and s['old_cookie_status']==303 for s in sessions),
+        'both_alice_sessions')
+    require(type(bob['epoch'])is int and bob['epoch']==0 and bob['preserved'] is True
+        and type(new['epoch'])is int and new['epoch']==1,'other_session_epochs')
+    ids=[s['session_id_sha256']for s in sessions]+[bob['session_id_sha256'],new['session_id_sha256']]
+    require(all(type(v)is str and re.fullmatch('[a-f0-9]{64}',v)for v in ids)
+        and len(set(ids))==4,'distinct_persisted_sessions')
+    snapshots=actor['authoritative_snapshots']
+    require(set(snapshots)=={'SNAPSHOT_A0','SNAPSHOT_A1','SNAPSHOT_B0','SNAPSHOT_B1'},'authority_set')
+    before,after,b0,b1=[snapshots[k]for k in('SNAPSHOT_A0','SNAPSHOT_A1','SNAPSHOT_B0','SNAPSHOT_B1')]
+    for v,account in ((before,'alice'),(after,'alice'),(b0,'bob'),(b1,'bob')):
+        require(v['account']==account+'@osmap-password.invalid' and type(v['row_count'])is int and v['row_count']==1
+            and type(v['epoch'])is int
+            and all(type(v[k])is str and re.fullmatch('[a-f0-9]{64}',v[k])for k in
+                ('row_sha256','noncredential_sha256','password_sha256')),'authority_shape')
+    require(before['state']=='active' and before['epoch']==0 and before['changed_at']is None
+        and after['state']=='active' and after['epoch']==1
+        and type(after['changed_at'])is str and re.fullmatch('[0-9]{14}',after['changed_at'])
+        and after['changed_at']==after['sql_changed_at']==actor['known_write_time']
+        and after['sql_changed_at']!=before['sql_changed_at']
+        and before['row_sha256']!=after['row_sha256']
+        and before['password_sha256']!=after['password_sha256']
+        and before['noncredential_sha256']==after['noncredential_sha256'],'authoritative_change')
+    require(b0==b1 and b1['state']=='active' and b1['epoch']==0 and b1['changed_at']is None,'bob_authority')
+    require(actor['final_authority']=={after['account']:after,b1['account']:b1},'final_authority')
+    require(all(type(v['epoch'])is int and type(v['used_intent_count'])is int
+        and v['pending_intent']is False for v in actor['durable_intents'].values()),'durable_intent_types')
+    require(actor['durable_intents']=={after['account']:{'epoch':1,'state':'active',
+        'changed_at':after['changed_at'],'pending_intent':False,'used_intent_count':1},
+        b1['account']:{'epoch':0,'state':'active','changed_at':None,'pending_intent':False,
+            'used_intent_count':0}},'single_durable_mutation_intent')
+    mail=actor['mail_witness']
+    require(mail['result']=='PASS' and all(mail[k]is True for k in ('bob_mail_projection_preserved',
+        'bob_home_absent','bob_mail_absent','public_cache_zero','public_original25_preserved',
+        'public_master_preserved')) and type(mail['bob_projection_sha256'])is str
+        and re.fullmatch('[a-f0-9]{64}',mail['bob_projection_sha256'])
+        and mail['external_sessions_terminated']is False
+        and mail['flush_performed']is False,'mail_cache_witness')
+    native=actor['actual_http_report']
+    require(native['schema']=='osmap-http-password-runtime-v1' and native['handled_connections']==18
+        and native['alice_epoch0_refused']is True and native['alice_epoch1_admitted']==1
+        and native['bob_epoch0_admitted']==0,'native_http_result')
+    require(all(actor['milestones'][k]['result']=='PASS' for k in
+        ('milestone1','milestone2','milestone3','milestone4')),'milestone_result')
+    ready=actor['milestones']['milestone1']
+    require(ready['parent_prepare']is True and ready['parent_seal']is True
+        and ready['service_binary_sha256']==packet['helper']['sha256'],'native_service')
+    owned=actor['owned_effects_report'];helper=actor['helper_diagnostic']
+    require(all(owned[k]is True for k in ('cleanup_confirmed','public_original25_preserved',
+        'public_master_preserved','owned_sql_hash_uids_absent'))
+        and actor['frontend_cleanup']=={'requests_stopped':True,'disposed':True}
+        and helper['helper_reaped']is True and helper['helper_exit_code']==0
+        and helper['helper_signaled']is False,'mutation_cleanup')
+    timings=actor['timings']
+    require(all(type(timings[k])in(int,float) and math.isfinite(timings[k]) and timings[k]>=0
+        for k in ('authentication_seconds','totp_wait_seconds','mutation_seconds',
+            'authoritative_verification_seconds','cleanup_seconds')),'mutation_timings')
+    return {'result':'PASS','disposition':'CONFIRMED','password_mutation':True,
+        'mutation_requests':1,'authoritative_snapshots':snapshots,'mutation_evidence':proof,
+        'mail_witness':mail,'timings':timings,'cleanup_confirmed':True,
+        'source_commit':packet['source_commit'],'service_binary_sha256':packet['helper']['sha256'],
+        'web_binary_sha256':packet['web']['sha256'],'installed_qualification':False,'slice_complete':False}

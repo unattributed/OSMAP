@@ -21,6 +21,9 @@ FRONTEND_SOURCE_NAMES={'native_http_front_driver.py','native_http_password_drive
 class Refused(Exception):pass
 def require(ok,reason):
     if not ok:raise Refused(reason)
+def failure_reason(error):
+    reason=getattr(error,'code',None) or str(error)
+    return reason if type(reason)is str and re.fullmatch(r'[A-Za-z0-9_.:-]{1,96}',reason)else'UNEXPECTED_SANITIZED'
 def unique(pairs):
     out={}
     for key,value in pairs:require(key not in out,'duplicate_field');out[key]=value
@@ -77,7 +80,7 @@ def admission(expected):
 class Receipt:
     def __init__(self,f,installer,p):
         self.f,self.installer,self.p=f,installer,p;self.path=STAGE/'local-owned-recovery.json';self.previous=None
-        self.setup_complete=False;self.requests_stopped=False;self.restoration_attempted=False;self.sequence=0;self.snapshots={};self.web=None
+        self.setup_complete=False;self.requests_stopped=False;self.restoration_attempted=False;self.mutation_submission_started=False;self.sequence=0;self.snapshots={};self.web=None
         self.actor=f.run(('/bin/ps','-p',str(os.getpid()),'-o','pid=,ppid=,uid=,lstart=,comm='),'local_actor_birth',cap=2048).decode('ascii')
         row=self.actor.split();require(len(row)==9 and row[0]==str(os.getpid())and row[2]=='0','actor_birth')
         self.checkpoint('INITIAL')
@@ -87,6 +90,7 @@ class Receipt:
         web=self.web
         state['frontend']=None if web is None else {'root':None if web.http_root is None else str(web.http_root),'files':{str(k):list(v)for k,v in web.files.items()},'dirs':{str(k):list(v)for k,v in web.dirs.items()},'generated_dirs':{str(k):list(v)for k,v in web.generated_dirs.items()},'guardian_pid':None if web.guardian is None else web.guardian.pid,'custody':getattr(web,'custody',None),'requests_stopped':web.requests_stopped,'disposed':web.disposed}
         state['helper_sha256']=self.p['helper_sha256'];state['web_sha256']=self.p['web_sha256']
+        state['mutation_submission_started']=self.mutation_submission_started
         raw=json.dumps(state,sort_keys=True,separators=(',',':')).encode();require(len(raw)<=131072,'receipt_bound')
         if self.previous is None:require(not os.path.lexists(self.path),'recovery_collision')
         else:
@@ -109,6 +113,7 @@ def run(p,report):
                 if self.recovery is not None:self.recovery.checkpoint('DIRECTORY_BIRTH')
     f=LocalQualification();owner=None;web=None;witness=None;complete=False;events=[];snapshots={};failure=False
     milestones={};journey_started=None;admission_finished=None;mutation_finished=None
+    report['milestones']=milestones;report['authoritative_snapshots']=snapshots
     try:
         f.preflight();owner=f.recovery=Receipt(f,installer,p)
         f.provision();f.provision_service();f.prepare_rust_journey();owner.setup_complete=True;owner.checkpoint('FIXTURE_PROVISIONED')
@@ -135,55 +140,106 @@ def run(p,report):
                         'stored_sessions_observed':True,'mutation_totp_consumed':False}
                 elif tag=='SNAPSHOT_A1':
                     mutation_finished=time.monotonic()
-                    milestones['milestone3']={'result':'PASS','elapsed_seconds':round(mutation_finished-admission_finished,6),
+                    milestones['milestone3']={'result':'PENDING_VERIFICATION','elapsed_seconds':round(mutation_finished-admission_finished,6),
                         'authoritative_conditional_write_observed':True,'alice_epoch':value['epoch'],
                         'alice_state':value['state'],'changed_at':value['changed_at']}
                 return {'phase':tag,'snapshot':value}
             http.confirmed_change(snapshots['SNAPSHOT_A0'],snapshots['SNAPSHOT_A1'],snapshots['SNAPSHOT_B0'],snapshots['SNAPSHOT_B1'])
             value=witness.finish_after_change();require(value['result']=='PASS','mail_witness');report['mail_witness']=value
-            milestones['milestone4']={'result':'PASS','elapsed_seconds':round(time.monotonic()-mutation_finished,6),
-                'old_password_refused':value['old_password_refused'],'new_password_admitted':value['new_password_admitted'],
-                'bob_preserved':value['bob_auth_preserved'],'public_cache_zero':value['public_cache_zero'],
-                'alice_sessions_revoked':True}
+            milestones['milestone4']={'result':'PENDING_DISPOSITION','elapsed_seconds':round(time.monotonic()-mutation_finished,6),
+                'bob_mail_projection_preserved':value['bob_mail_projection_preserved'],
+                'bob_home_absent':value['bob_home_absent'],'bob_mail_absent':value['bob_mail_absent'],
+                'public_cache_zero':value['public_cache_zero']}
             return {'phase':tag,'result':value}
         web.local_exchange=exchange;web.setup(boot)
+        def mutation_submission_checkpoint():
+            owner.mutation_submission_started=True;owner.checkpoint('MUTATION_SUBMISSION_INTENT')
+        web.driver.mutation_submission_checkpoint=mutation_submission_checkpoint
         require(web.custody['selector']==SELECTOR,'native_local_selector')
         web.control.write(b'G',min(WORK,time.monotonic()+5))
         journey_started=time.monotonic()
         outcome=web.journey_module.journey(web.driver);require(events==list(EVENTS),'complete_event_set')
         require(web.requests_stopped,'actual_http_stopped');f.inspect_state(after_test=True)
-        report.update(functional_result='PASS',observed_http_requests=outcome['observed_http_requests'],known_write_time=outcome['known_write_time'],actual_http_report=web.driver.actual_http_report,milestones=milestones)
+        report.update(functional_result='PASS',observed_http_requests=outcome['observed_http_requests'],known_write_time=outcome['known_write_time'],actual_http_report=web.driver.actual_http_report,mutation_evidence=outcome['mutation_evidence'],timings=outcome['timings'])
         complete=True
     except BaseException as error:
         failure=True;report['functional_result']='FAIL'
-        reason=str(error)
         report['failure_category']=type(error).__name__
-        report['failure_reason']=reason if re.fullmatch(r'[A-Za-z0-9_.:-]{1,96}',reason)else'UNEXPECTED_SANITIZED'
+        report['failure_reason']=failure_reason(error)
     finally:
-        cleanup_ok=True
+        cleanup_started=time.monotonic();cleanup_ok=True
+        def cleanup_error(phase,error):
+            report.setdefault('cleanup_failures',[]).append({'phase':phase,
+                'category':type(error).__name__,'reason':failure_reason(error)})
+        submitted=web is not None and getattr(getattr(web,'driver',None),'mutation_submission_started',False)
+        report['mutation_submission_started']=submitted
+        if owner is not None:owner.mutation_submission_started=submitted
+        if web is not None and getattr(web,'driver',None) is not None:
+            report['timings']=dict(getattr(web.driver,'milestone_timings',report.get('timings',{})))
         try:
             if web is not None:
                 if not web.requests_stopped:web.stop_requests()
-                require(web.requests_stopped,'producer_stop_required');web.dispose()
+                require(web.requests_stopped,'producer_stop_required')
             if owner is not None:owner.requests_stopped=True;owner.checkpoint('REQUESTS_STOPPED')
-        except BaseException:cleanup_ok=False
+        except BaseException as error:
+            cleanup_ok=False;cleanup_error('frontend_stop',error)
         try:
             if witness is not None:witness.close()
-        except BaseException:cleanup_ok=False
+        except BaseException as error:
+            cleanup_ok=False;cleanup_error('witness_close',error)
         try:
             if f.helper is not None and not f.helper_stopped:f.stop_helper()
             if owner is not None:owner.checkpoint('HELPER_STOPPED')
-        except BaseException:cleanup_ok=False
+        except BaseException as error:
+            cleanup_ok=False;cleanup_error('helper_stop',error)
+        no_write=False
         try:
-            if cleanup_ok and owner is not None and owner.setup_complete and owner.requests_stopped and (f.helper is None or f.helper_stopped) and all(not getattr(f,k)for k in('sql_uncertain','process_uncertain','identity_uncertain','creation_uncertain')):
-                owner.restoration_attempted=True;owner.checkpoint('DISPOSITION_INTENT');f.cleanup();require(f.report.get('cleanup_confirmed')is True,'owned_cleanup')
+            if cleanup_ok and owner is not None and owner.setup_complete:
+                # Fresh authority reads after stopping both producers. No rollback.
+                observed={account:f.authoritative_snapshot(account,END)for account in(http.ALICE,http.BOB)}
+                report['final_authority']=observed
+                owner.snapshots.update(FINAL_ALICE=observed[http.ALICE],FINAL_BOB=observed[http.BOB])
+                owner.checkpoint('FINAL_AUTHORITY_OBSERVED')
+                epochs={account:f.rust_epoch(account)[0]for account in(http.ALICE,http.BOB)}
+                report['durable_intents']={account:{'epoch':v['epoch'],'state':v['state'],
+                    'changed_at':v['changed_at'],'pending_intent':v['intent']is not None,
+                    'used_intent_count':len(v['used_intents'])}for account,v in epochs.items()}
+                if complete:
+                    require(observed=={http.ALICE:snapshots['SNAPSHOT_A1'],http.BOB:snapshots['SNAPSHOT_B1']},
+                        'authority_changed_before_disposal')
+                    require(epochs[http.ALICE]['intent']is None and len(epochs[http.ALICE]['used_intents'])==1
+                        and epochs[http.BOB]['intent']is None and epochs[http.BOB]['used_intents']==[],
+                        'single_durable_mutation_intent')
+                no_write=not submitted and all(value['row_sha256']==http.digest_fields(f.baseline[index],http.COLUMNS)
+                    and value['epoch']==0 and value['state']=='active'and value['changed_at']is None
+                    and epochs[account]['intent']is None and epochs[account]['used_intents']==[]
+                    for index,(account,value)in enumerate(observed.items()))
+        except BaseException as error:
+            cleanup_ok=False;cleanup_error('final_authority',error)
+            if complete:report['functional_result']='FAIL';complete=False
+        report['proven_before_submission_no_write']=no_write
+        try:
+            if cleanup_ok and (complete or no_write) and owner is not None and owner.setup_complete and owner.requests_stopped and (f.helper is None or f.helper_stopped) and all(not getattr(f,k)for k in('sql_uncertain','process_uncertain','identity_uncertain','creation_uncertain')):
+                owner.checkpoint('DISPOSITION_INTENT')
+                # Full verified success or independently proven pre-submission no-write only.
+                # Keep session files until backend disposal has succeeded.
+                f.cleanup();require(f.report.get('cleanup_confirmed')is True,'owned_cleanup')
+                if web is not None:web.dispose();require(web.disposed,'frontend_disposal')
                 owner.checkpoint('DISPOSED');report['disposition']='CONFIRMED'
             elif owner is None and not f.provisioning_started:report['disposition']='NO_EFFECTS'
             else:report['disposition']='RETAINED_REQUIRES_REVIEW'
-        except BaseException:report['disposition']='RETAINED_REQUIRES_REVIEW'
+        except BaseException as error:
+            report['disposition']='RETAINED_REQUIRES_REVIEW';cleanup_error('owned_disposal',error)
+        report.setdefault('timings',{})['cleanup_seconds']=round(time.monotonic()-cleanup_started,6)
+        report['frontend_cleanup']={'requests_stopped':web is None or web.requests_stopped,'disposed':web is None or web.disposed}
         report['helper_diagnostic']=f.helper_diagnostic
         report['owned_effects_report']=f.report
         report['result']='PASS'if complete and not failure and report['disposition']=='CONFIRMED'else'FAIL'
+        if report['result']=='PASS':
+            milestones['milestone3']['result']='PASS';milestones['milestone4']['result']='PASS'
+        else:
+            for key in('milestone3','milestone4'):
+                if key in milestones:milestones[key]['result']='NOT_QUALIFIED'
         report['recovery_receipt']=None if owner is None else str(owner.path)
 
 
@@ -196,8 +252,7 @@ def main():
         require(len(sys.argv)==2,'one_admission_hash');p=admission(sys.argv[1]);signal.alarm(max(1,math.ceil(END-time.monotonic())));run(p,report)
     except BaseException as error:
         report['result']='FAIL';report['admission_or_actor_failure']=True
-        reason=str(error);report['failure_category']=type(error).__name__
-        report['failure_reason']=reason if re.fullmatch(r'[A-Za-z0-9_.:-]{1,96}',reason)else'UNEXPECTED_SANITIZED'
+        report['failure_category']=type(error).__name__;report['failure_reason']=failure_reason(error)
     finally:signal.alarm(0)
     report['elapsed_millis']=int((time.monotonic()-START)*1000);print(json.dumps(report,sort_keys=True));return 0 if report['result']=='PASS'else 1
 if __name__=='__main__':raise SystemExit(main())
