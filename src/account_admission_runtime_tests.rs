@@ -740,6 +740,26 @@ fn listener_rejects_wrong_peer_before_read_and_refuses_foreign_socket_cleanup() 
     fs::remove_file(&path).unwrap();
     fs::remove_dir(root).unwrap();
 }
+
+#[test]
+fn endpoint_bind_reports_unknown_cleanup_and_preserves_post_bind_replacement() {
+    let root = listener_root();
+    let path = root.join("admission.sock");
+    let result = AdmissionEndpoint::bind_after_create(&path, |created| {
+        assert!(fs::symlink_metadata(created)
+            .unwrap()
+            .file_type()
+            .is_socket());
+        fs::remove_file(created).unwrap();
+        fs::write(created, b"foreign replacement\n").unwrap();
+    });
+    assert!(matches!(result, Err(Error::CleanupUnconfirmed)));
+    assert_eq!(fs::read(&path).unwrap(), b"foreign replacement\n");
+    assert!(fs::symlink_metadata(&path).unwrap().is_file());
+    fs::remove_file(path).unwrap();
+    fs::remove_dir(root).unwrap();
+}
+
 #[test]
 fn wrong_peer_foreign_account_and_replay_never_dispatch_worker() {
     let (mut stream, _) = UnixStream::pair().unwrap();

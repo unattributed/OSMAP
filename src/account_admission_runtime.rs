@@ -806,6 +806,9 @@ impl AdmissionEndpoint {
         )
     }
     pub(crate) fn bind(path: &Path) -> Result<Self, Error> {
+        Self::bind_after_create(path, |_| {})
+    }
+    fn bind_after_create(path: &Path, after_create: impl FnOnce(&Path)) -> Result<Self, Error> {
         let owner = crate::openbsd::effective_uid();
         let parent_path = path.parent().ok_or(Error::Invalid)?;
         private_dir(parent_path, owner, true).map_err(unavailable)?;
@@ -825,9 +828,12 @@ impl AdmissionEndpoint {
             _ => return Err(Error::Unavailable),
         }
         let listener = UnixListener::bind(path).map_err(unavailable)?;
-        let info = fs::symlink_metadata(path).map_err(unavailable)?;
+        after_create(path);
+        let info = fs::symlink_metadata(path).map_err(|_| Error::CleanupUnconfirmed)?;
         if !info.file_type().is_socket() || info.uid() != owner || info.nlink() != 1 {
-            return Err(Error::Unavailable);
+            // The pathname no longer identifies the exact socket just created.
+            // Preserve it rather than unlinking a replacement or foreign inode.
+            return Err(Error::CleanupUnconfirmed);
         }
         let mut endpoint = Self {
             listener,
@@ -837,56 +843,61 @@ impl AdmissionEndpoint {
             socket_identity: Self::identity(&info),
             removed: false,
         };
-        endpoint.recheck()?;
-        // The source-owned namespace's group grants only reachability. It
-        // never substitutes for the independently checked exact kernel UID.
-        std::os::unix::fs::chown(path, Some(owner), Some(parent_identity.3))
-            .map_err(unavailable)?;
-        let group_info = fs::symlink_metadata(path).map_err(unavailable)?;
-        if (
-            group_info.dev(),
-            group_info.ino(),
-            group_info.uid(),
-            group_info.gid(),
-            group_info.mode(),
-            group_info.nlink(),
-        ) != (
-            info.dev(),
-            info.ino(),
-            owner,
-            parent_identity.3,
-            info.mode(),
-            1,
-        ) {
-            return Err(Error::Unavailable);
+        let publication = (|| {
+            endpoint.recheck()?;
+            // The source-owned namespace's group grants only reachability. It
+            // never substitutes for the independently checked exact kernel UID.
+            std::os::unix::fs::chown(path, Some(owner), Some(parent_identity.3))
+                .map_err(unavailable)?;
+            let group_info = fs::symlink_metadata(path).map_err(unavailable)?;
+            if (
+                group_info.dev(),
+                group_info.ino(),
+                group_info.uid(),
+                group_info.gid(),
+                group_info.mode(),
+                group_info.nlink(),
+            ) != (
+                info.dev(),
+                info.ino(),
+                owner,
+                parent_identity.3,
+                info.mode(),
+                1,
+            ) {
+                return Err(Error::Unavailable);
+            }
+            endpoint.socket_identity = Self::identity(&group_info);
+            fs::set_permissions(path, fs::Permissions::from_mode(0o660)).map_err(unavailable)?;
+            let published = fs::symlink_metadata(path).map_err(unavailable)?;
+            if (
+                published.dev(),
+                published.ino(),
+                published.uid(),
+                published.gid(),
+                published.mode(),
+                published.nlink(),
+            ) != (
+                info.dev(),
+                info.ino(),
+                owner,
+                parent_identity.3,
+                libc::S_IFSOCK | 0o660,
+                1,
+            ) {
+                return Err(Error::Unavailable);
+            }
+            endpoint.socket_identity = Self::identity(&published);
+            endpoint.recheck()?;
+            endpoint.listener.set_nonblocking(true).map_err(unavailable)
+        })();
+        match publication {
+            Ok(()) => Ok(endpoint),
+            Err(error) => match endpoint.remove() {
+                Ok(()) => Err(error),
+                Err(_) => Err(Error::CleanupUnconfirmed),
+            },
         }
-        endpoint.socket_identity = Self::identity(&group_info);
-        fs::set_permissions(path, fs::Permissions::from_mode(0o660)).map_err(unavailable)?;
-        let published = fs::symlink_metadata(path).map_err(unavailable)?;
-        if (
-            published.dev(),
-            published.ino(),
-            published.uid(),
-            published.gid(),
-            published.mode(),
-            published.nlink(),
-        ) != (
-            info.dev(),
-            info.ino(),
-            owner,
-            parent_identity.3,
-            libc::S_IFSOCK | 0o660,
-            1,
-        ) {
-            return Err(Error::Unavailable);
-        }
-        endpoint.socket_identity = Self::identity(&published);
-        endpoint.recheck()?;
-        endpoint
-            .listener
-            .set_nonblocking(true)
-            .map_err(unavailable)?;
-        Ok(endpoint)
     }
     pub(crate) fn accept(&self) -> std::io::Result<(UnixStream, std::os::unix::net::SocketAddr)> {
         self.listener.accept()

@@ -16,6 +16,7 @@ use crate::account_password_state::Store;
 use crate::openpgp_inventory_runtime::{file, private_dir, secret};
 use serde::Deserialize;
 use std::collections::BTreeSet;
+use std::fmt::Debug;
 use std::fs;
 use std::io::Read;
 use std::os::unix::fs::MetadataExt;
@@ -30,7 +31,51 @@ const EPOCH: &str = "/var/db/osmap-account/epoch";
 const ADMISSION: &str = crate::config::LOCAL_ACCOUNT_ADMISSION_SOCKET;
 const MUTATION: &str = crate::config::LOCAL_ACCOUNT_MUTATION_SOCKET;
 const FILES: [&str; 3] = ["config.json", "mutation.key", "session-proof.key"];
+const MAX_ACTIVE_WORKERS: usize = 4;
 type Identity = (u64, u64, u32, u32, u32, u64, u64, i64, i64, i64, i64);
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum EndpointKind {
+    Admission,
+    Mutation,
+}
+impl EndpointKind {
+    fn other(self) -> Self {
+        match self {
+            Self::Admission => Self::Mutation,
+            Self::Mutation => Self::Admission,
+        }
+    }
+    fn stage(self) -> &'static str {
+        match self {
+            Self::Admission => "stock_admission",
+            Self::Mutation => "stock_mutation",
+        }
+    }
+}
+fn endpoint_order(preferred: EndpointKind) -> [EndpointKind; 2] {
+    [preferred, preferred.other()]
+}
+fn worker_slot_available(active: usize) -> bool {
+    active < MAX_ACTIVE_WORKERS
+}
+fn record_accepted_endpoint(preferred: &mut EndpointKind, accepted: EndpointKind) {
+    *preferred = accepted.other();
+}
+
+enum StockOperationError {
+    Service(Error),
+    Connection(crate::account_password_connection::Error),
+}
+impl Debug for StockOperationError {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Service(error) => formatter.debug_tuple("Service").field(error).finish(),
+            Self::Connection(error) => formatter.debug_tuple("Connection").field(error).finish(),
+        }
+    }
+}
+
 fn identity(m: &fs::Metadata) -> Identity {
     (
         m.dev(),
@@ -233,101 +278,162 @@ fn serve(
     trace.set(Op::AdmissionBind);
     let mut admission_socket = AdmissionEndpoint::bind(Path::new(ADMISSION))?;
     trace.set(Op::MutationBind);
-    let mut mutation_socket = AdmissionEndpoint::bind(Path::new(MUTATION))?;
-    // All actual stock mail authority is established before accepting requests.
-    // There is no policy listener, publication endpoint, Generation or activation.
-    let runtime = Arc::new(
-        StockRuntime::new(
-            store,
-            files.accounts.clone(),
-            Keys::new(&files.mutation, &files.session).map_err(unavailable)?,
-            admission.password_key(),
-            files.relay_uid,
-            stock.clone(),
-            startup_deadline,
-        )
-        .map_err(unavailable)?,
-    );
-    trace.set(Op::ParentPrepare);
-    let mut parent_plan =
-        crate::account_password_confinement::ParentPlan::prepare_stock(startup_deadline)
-            .map_err(unavailable)?;
-    trace.set(Op::ParentSeal);
-    let seal = crate::openbsd::seal_password_parent(&parent_plan).map_err(unavailable)?;
-    parent_plan.activate(seal).map_err(unavailable)?;
-    if Instant::now() >= startup_deadline {
-        return Err(Error::Expired);
-    }
-    trace.finish();
-    let admission_failure_reported = AtomicBool::new(false);
-    let outcome = std::thread::scope(|scope| {
-        let mut active: Vec<std::thread::ScopedJoinHandle<'_, ()>> = Vec::new();
-        while !stop.load(Ordering::SeqCst) {
-            if crate::account_password_process::execution_quarantined() {
-                return Err(Error::CleanupUnconfirmed);
-            }
-            let custody_deadline = Instant::now() + Duration::from_millis(500);
-            loop_custody(
-                parent_plan.recheck(custody_deadline).map_err(unavailable),
-                Op::ParentActivate,
-                stop,
-                None,
-            )?;
-            loop_custody(
-                files.recheck(custody_deadline),
-                Op::ServiceFiles,
-                stop,
-                None,
-            )?;
-            loop_custody(admission_socket.recheck(), Op::AdmissionBind, stop, None)?;
-            loop_custody(mutation_socket.recheck(), Op::MutationBind, stop, None)?;
-            let mut pending = Vec::new();
-            for thread in active.drain(..) {
-                if thread.is_finished() {
-                    thread.join().map_err(unavailable)?;
-                } else {
-                    pending.push(thread);
-                }
-            }
-            active = pending;
-            for (mutation, endpoint) in [(false, &admission_socket), (true, &mutation_socket)] {
-                if active.len() >= 4 {
-                    break;
-                }
-                match endpoint.accept() {
-                    Ok((stream, _)) => {
-                        let accepted = Instant::now();
-                        if stop.load(Ordering::SeqCst) {
-                            drop(stream);
-                            return Ok(());
-                        }
-                        if crate::account_password_process::execution_quarantined() {
-                            drop(stream);
-                            return Err(Error::CleanupUnconfirmed);
-                        }
-                        endpoint.recheck()?;
-                        let runtime = runtime.clone();
-                        let stock = stock.clone();
-                        let reported = &admission_failure_reported;
-                        active.push(scope.spawn(move || {
-                            let result = if mutation {
-                                stock_operation(stream, runtime.as_ref(), accepted, files.relay_uid, stock)
-                            } else { stock_admission(stream, admission, runtime.as_ref(), stock, accepted) };
-                            if let Err(error) = result {
-                                if first_admission_failure(reported) { eprintln!("account_password_service stage=stock_operation error={error:?}"); }
-                            }
-                        }));
-                    }
-                    Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => {}
-                    Err(_) => return Err(Error::Unavailable),
-                }
-            }
-            std::thread::sleep(Duration::from_millis(10));
+    let mut mutation_socket = match AdmissionEndpoint::bind(Path::new(MUTATION)) {
+        Ok(endpoint) => endpoint,
+        Err(error) => {
+            let admission_cleanup = admission_socket.remove();
+            return finish_service(Err(error), admission_cleanup, Ok(()));
         }
-        Ok(())
-    });
-    let cleanup = admission_socket.remove().and(mutation_socket.remove());
-    outcome.and(cleanup)
+    };
+    let outcome = (|| {
+        // All actual stock mail authority is established before accepting requests.
+        // There is no policy listener, publication endpoint, Generation or activation.
+        let runtime = Arc::new(
+            StockRuntime::new(
+                store,
+                files.accounts.clone(),
+                Keys::new(&files.mutation, &files.session).map_err(unavailable)?,
+                admission.password_key(),
+                files.relay_uid,
+                stock.clone(),
+                startup_deadline,
+            )
+            .map_err(unavailable)?,
+        );
+        trace.set(Op::ParentPrepare);
+        let mut parent_plan =
+            crate::account_password_confinement::ParentPlan::prepare_stock(startup_deadline)
+                .map_err(unavailable)?;
+        trace.set(Op::ParentSeal);
+        let seal = crate::openbsd::seal_password_parent(&parent_plan).map_err(unavailable)?;
+        parent_plan.activate(seal).map_err(unavailable)?;
+        if Instant::now() >= startup_deadline {
+            return Err(Error::Expired);
+        }
+        trace.finish();
+        let admission_failure_reported = AtomicBool::new(false);
+        let mutation_failure_reported = AtomicBool::new(false);
+        let mut preferred = EndpointKind::Admission;
+        std::thread::scope(|scope| {
+            let mut active: Vec<std::thread::ScopedJoinHandle<'_, ()>> = Vec::new();
+            while !stop.load(Ordering::SeqCst) {
+                if crate::account_password_process::execution_quarantined() {
+                    return Err(Error::CleanupUnconfirmed);
+                }
+                let custody_deadline = Instant::now() + Duration::from_millis(500);
+                loop_custody(
+                    parent_plan.recheck(custody_deadline).map_err(unavailable),
+                    Op::ParentActivate,
+                    stop,
+                    None,
+                )?;
+                loop_custody(
+                    files.recheck(custody_deadline),
+                    Op::ServiceFiles,
+                    stop,
+                    None,
+                )?;
+                loop_custody(admission_socket.recheck(), Op::AdmissionBind, stop, None)?;
+                loop_custody(mutation_socket.recheck(), Op::MutationBind, stop, None)?;
+                let mut pending = Vec::new();
+                for thread in active.drain(..) {
+                    if thread.is_finished() {
+                        thread.join().map_err(unavailable)?;
+                    } else {
+                        pending.push(thread);
+                    }
+                }
+                active = pending;
+                for kind in endpoint_order(preferred) {
+                    if !worker_slot_available(active.len()) {
+                        break;
+                    }
+                    let endpoint = match kind {
+                        EndpointKind::Admission => &admission_socket,
+                        EndpointKind::Mutation => &mutation_socket,
+                    };
+                    match endpoint.accept() {
+                        Ok((stream, _)) => {
+                            let accepted = Instant::now();
+                            if stop.load(Ordering::SeqCst) {
+                                drop(stream);
+                                return Ok(());
+                            }
+                            if crate::account_password_process::execution_quarantined() {
+                                drop(stream);
+                                return Err(Error::CleanupUnconfirmed);
+                            }
+                            endpoint.recheck()?;
+                            record_accepted_endpoint(&mut preferred, kind);
+                            let runtime = runtime.clone();
+                            let stock = stock.clone();
+                            let reported = match kind {
+                                EndpointKind::Admission => &admission_failure_reported,
+                                EndpointKind::Mutation => &mutation_failure_reported,
+                            };
+                            active.push(scope.spawn(move || match kind {
+                                EndpointKind::Admission => {
+                                    if let Err(error) = stock_admission(
+                                        stream,
+                                        admission,
+                                        runtime.as_ref(),
+                                        stock,
+                                        accepted,
+                                    ) {
+                                        report_first_failure(kind, reported, error);
+                                    }
+                                }
+                                EndpointKind::Mutation => {
+                                    if let Err(error) = stock_operation(
+                                        stream,
+                                        runtime.as_ref(),
+                                        accepted,
+                                        files.relay_uid,
+                                        stock,
+                                    ) {
+                                        report_first_failure(kind, reported, error);
+                                    }
+                                }
+                            }));
+                        }
+                        Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => {}
+                        Err(_) => return Err(Error::Unavailable),
+                    }
+                }
+                std::thread::sleep(Duration::from_millis(10));
+            }
+            Ok(())
+        })
+    })();
+    // Both removals are always attempted. Any uncertain endpoint disposition
+    // takes precedence over an ordinary startup, loop or shutdown error.
+    finish_service_with_cleanup(
+        outcome,
+        || admission_socket.remove(),
+        || mutation_socket.remove(),
+    )
+}
+
+fn finish_service_with_cleanup(
+    outcome: Result<(), Error>,
+    admission_cleanup: impl FnOnce() -> Result<(), Error>,
+    mutation_cleanup: impl FnOnce() -> Result<(), Error>,
+) -> Result<(), Error> {
+    let admission_cleanup = admission_cleanup();
+    let mutation_cleanup = mutation_cleanup();
+    finish_service(outcome, admission_cleanup, mutation_cleanup)
+}
+
+fn finish_service(
+    outcome: Result<(), Error>,
+    admission_cleanup: Result<(), Error>,
+    mutation_cleanup: Result<(), Error>,
+) -> Result<(), Error> {
+    if admission_cleanup.is_err() || mutation_cleanup.is_err() {
+        Err(Error::CleanupUnconfirmed)
+    } else {
+        outcome
+    }
 }
 fn stock_admission(
     mut stream: UnixStream,
@@ -367,24 +473,27 @@ fn stock_operation(
     accepted: Instant,
     relay_uid: u32,
     stock: Arc<StockPeer>,
-) -> Result<(), Error> {
+) -> Result<(), StockOperationError> {
     let deadline = accepted + Duration::from_secs(60);
-    if crate::openbsd::unix_stream_peer_uid(&stream).map_err(unavailable)? != relay_uid {
-        return Err(Error::Authentication);
+    if crate::openbsd::unix_stream_peer_uid(&stream)
+        .map_err(|error| StockOperationError::Service(unavailable(error)))?
+        != relay_uid
+    {
+        return Err(StockOperationError::Service(Error::Authentication));
     }
     let sql = NativeProfile::from_stock_backend(Role::Sql, stock.clone(), deadline)
-        .map_err(unavailable)?;
+        .map_err(|error| StockOperationError::Service(unavailable(error)))?;
     let hash = NativeProfile::from_stock_backend(Role::Hash, stock.clone(), deadline)
-        .map_err(unavailable)?;
+        .map_err(|error| StockOperationError::Service(unavailable(error)))?;
     let primary = NativeProfile::from_stock(Role::StockPrimary, stock.clone(), deadline)
-        .map_err(unavailable)?;
+        .map_err(|error| StockOperationError::Service(unavailable(error)))?;
     let executor = FixedExecutor::from_profiles(deadline, &sql, &hash, &primary, &primary);
     let backend = Backend::new(FixedExecutor::from_profiles(
         deadline, &sql, &hash, &primary, &primary,
     ));
     runtime
         .mutation(stream, &backend, &executor, deadline)
-        .map_err(unavailable)
+        .map_err(StockOperationError::Connection)
 }
 
 // Only the first failing loop guard reaches this error-only diagnostic: the
@@ -421,7 +530,16 @@ fn loop_custody<T>(
     result
 }
 
-fn first_admission_failure(reported: &AtomicBool) -> bool {
+fn report_first_failure(kind: EndpointKind, reported: &AtomicBool, error: impl Debug) {
+    if first_endpoint_failure(reported) {
+        eprintln!(
+            "account_password_service stage={} error={error:?}",
+            kind.stage()
+        );
+    }
+}
+
+fn first_endpoint_failure(reported: &AtomicBool) -> bool {
     !reported.swap(true, Ordering::SeqCst)
 }
 
@@ -477,19 +595,119 @@ mod diagnostic_tests {
     }
 
     #[test]
-    fn first_failure_is_bounded_across_concurrent_connections() {
-        let reported = AtomicBool::new(false);
-        let winners = std::thread::scope(|scope| {
-            let handles = (0..8)
-                .map(|_| scope.spawn(|| first_admission_failure(&reported)))
-                .collect::<Vec<_>>();
-            handles
-                .into_iter()
-                .map(|handle| handle.join().unwrap())
-                .filter(|first| *first)
-                .count()
-        });
-        assert_eq!(winners, 1);
-        assert!(!first_admission_failure(&reported));
+    fn first_failure_is_bounded_independently_per_endpoint() {
+        let admission = AtomicBool::new(false);
+        let mutation = AtomicBool::new(false);
+        for reported in [&admission, &mutation] {
+            let winners = std::thread::scope(|scope| {
+                let handles = (0..8)
+                    .map(|_| scope.spawn(|| first_endpoint_failure(reported)))
+                    .collect::<Vec<_>>();
+                handles
+                    .into_iter()
+                    .map(|handle| handle.join().unwrap())
+                    .filter(|first| *first)
+                    .count()
+            });
+            assert_eq!(winners, 1);
+            assert!(!first_endpoint_failure(reported));
+        }
+        assert_eq!(EndpointKind::Admission.stage(), "stock_admission");
+        assert_eq!(EndpointKind::Mutation.stage(), "stock_mutation");
+    }
+
+    #[test]
+    fn a_single_free_worker_alternates_between_busy_endpoints() {
+        let mut preferred = EndpointKind::Admission;
+        let mut active = MAX_ACTIVE_WORKERS - 1;
+        let served = (0..8)
+            .map(|_| {
+                assert!(worker_slot_available(active));
+                let current = endpoint_order(preferred)[0];
+                active += 1;
+                assert_eq!(active, MAX_ACTIVE_WORKERS);
+                record_accepted_endpoint(&mut preferred, current);
+                // One worker completes before both endpoints are ready again.
+                active -= 1;
+                current
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(
+            served,
+            vec![
+                EndpointKind::Admission,
+                EndpointKind::Mutation,
+                EndpointKind::Admission,
+                EndpointKind::Mutation,
+                EndpointKind::Admission,
+                EndpointKind::Mutation,
+                EndpointKind::Admission,
+                EndpointKind::Mutation,
+            ]
+        );
+    }
+
+    #[test]
+    fn cleanup_uncertainty_has_precedence_over_service_outcome() {
+        assert_eq!(
+            finish_service(Err(Error::Expired), Err(Error::Unavailable), Ok(())),
+            Err(Error::CleanupUnconfirmed)
+        );
+        assert_eq!(
+            finish_service(Ok(()), Ok(()), Err(Error::Unavailable)),
+            Err(Error::CleanupUnconfirmed)
+        );
+        assert_eq!(
+            finish_service(Err(Error::Expired), Ok(()), Ok(())),
+            Err(Error::Expired)
+        );
+    }
+
+    #[test]
+    fn mutation_cleanup_runs_after_admission_cleanup_failure() {
+        let admission_calls = std::sync::atomic::AtomicUsize::new(0);
+        let mutation_calls = std::sync::atomic::AtomicUsize::new(0);
+        assert_eq!(
+            finish_service_with_cleanup(
+                Err(Error::Expired),
+                || {
+                    admission_calls.fetch_add(1, Ordering::SeqCst);
+                    Err(Error::Unavailable)
+                },
+                || {
+                    mutation_calls.fetch_add(1, Ordering::SeqCst);
+                    Ok(())
+                },
+            ),
+            Err(Error::CleanupUnconfirmed)
+        );
+        assert_eq!(admission_calls.load(Ordering::SeqCst), 1);
+        assert_eq!(mutation_calls.load(Ordering::SeqCst), 1);
+    }
+
+    #[test]
+    fn mutation_diagnostics_preserve_safe_closed_error_categories() {
+        assert_eq!(
+            format!(
+                "{:?}",
+                StockOperationError::Connection(crate::account_password_connection::Error::Expired)
+            ),
+            "Connection(Expired)"
+        );
+        assert_eq!(
+            format!(
+                "{:?}",
+                StockOperationError::Connection(
+                    crate::account_password_connection::Error::Authentication
+                )
+            ),
+            "Connection(Authentication)"
+        );
+        assert_eq!(
+            format!("{:?}", StockOperationError::Service(Error::Authentication)),
+            "Service(Authentication)"
+        );
+        assert_eq!(EndpointKind::Admission.stage(), "stock_admission");
+        assert_eq!(EndpointKind::Mutation.stage(), "stock_mutation");
     }
 }
