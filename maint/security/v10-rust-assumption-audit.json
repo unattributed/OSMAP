@@ -27838,7 +27838,7 @@
       "fail_closed_relevance": "low",
       "file": "src/http/password_tests.rs",
       "kind": "panic_macro",
-      "line": 1329
+      "line": 1331
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -27846,7 +27846,7 @@
       "fail_closed_relevance": "low",
       "file": "src/http/password_tests.rs",
       "kind": "expect_call",
-      "line": 1349
+      "line": 1351
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -27854,7 +27854,7 @@
       "fail_closed_relevance": "low",
       "file": "src/http/password_tests.rs",
       "kind": "expect_call",
-      "line": 1354
+      "line": 1356
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -27862,7 +27862,7 @@
       "fail_closed_relevance": "low",
       "file": "src/http/password_tests.rs",
       "kind": "expect_call",
-      "line": 1358
+      "line": 1360
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -27870,7 +27870,7 @@
       "fail_closed_relevance": "low",
       "file": "src/http/password_tests.rs",
       "kind": "expect_call",
-      "line": 1367
+      "line": 1369
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -27878,7 +27878,7 @@
       "fail_closed_relevance": "low",
       "file": "src/http/password_tests.rs",
       "kind": "unwrap_call",
-      "line": 1374
+      "line": 1376
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -27886,7 +27886,7 @@
       "fail_closed_relevance": "low",
       "file": "src/http/password_tests.rs",
       "kind": "expect_call",
-      "line": 1377
+      "line": 1379
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -77345,7 +77345,7 @@
       "line": 521
     }
   ],
-  "generated_at_utc": "2026-10-23T14:21:08Z",
+  "generated_at_utc": "2026-10-23T19:32:34Z",
   "non_claims": [
     "This audit does not claim that all Rust assumptions are safe.",
     "This audit does not claim that production request paths are panic-free.",
@@ -77401,7 +77401,7 @@
       "unwrap_call": 8248
     },
     "classification_complete": true,
-    "inventory_sha256": "0fc23f85653ebb067ff43dd9d20f21ea577dcac81c637d5df8b2f954cb6fcf07",
+    "inventory_sha256": "7d60b8d02a8809fbbe7aafa557e44a0d087a6f21652a5db711ad3d94b47aff9f",
     "live_host_state_changed": false,
     "product_behavior_changed": false,
     "production_state_changed": false,

@@ -136,3 +136,5 @@ a first Rust filter selected zero tests before the exact module filter ran all
 12; an intermediate source-map check found the expected stale wrapper hash
 before refresh. The earlier old-artifact integration correctly refused changed
 Rust inputs. None was a native compiler retry or password-operation attempt.
+
+The first ordinary delivery push stopped after103.557687s at the V11 inventory check: two added Rust comment lines shifted seven existing test assertion locations. Existing inventory generators refreshed only those positions, generated timestamps and inventory hashes; counts, classifications and product qualification flags are unchanged. Focused inventory/V11 checks PASS. The failed push and complete log are retained; no remote branch update, additional native build, startup or password attempt occurred. The ordinary push hook must pass before final delivery.
