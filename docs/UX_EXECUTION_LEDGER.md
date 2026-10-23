@@ -35371,3 +35371,25 @@ Milestone3 remains NOT_RUN and no credential mutation is authorized by this task
 Independent final outcome review PASS: `admission153/outcome-review.json` SHA256
 `890dd9f550047d83ae7545f094d7f08ac748bd854f2be74f750b4b658bdbaf5b`.
 Final signed Rust compiler-input parity remains PASS for77f6379; no rebuild.
+
+
+## 2026-10-23 — Milestone 2 delivery validation
+
+Signed implementation checkpoint032e484 passed the normal commit hook and
+Shopkeeper signature verification. Initial normal push refused before remote
+write: the root-selected long sprint-root TMPDIR exceeded Unix-socket path
+limits (1785 passed/95 failed/58 ignored). This was local test-environment failure,
+not native obsd1 evidence. Independent review found93 explicit SUN_LEN/path-limit
+failures and two compatible pre-bind callback failures; the failed log is retained.
+
+Use verified owner-foo0700 `/tmp/osmap-tmp`, the existing gate default, for focused
+checks and normal delivery hooks. No source/test assertion, hook, application
+deadline or native artifact changed for this correction. Corrected focused suite
+27 PASS; full `make security-check` PASS, including1880 Rust library tests/0 failed/
+58 ignored and625 account regression tests PASS. Release-refusal and remaining
+security guards completed. This is developer delivery evidence, not installed
+production release qualification. Normal signed forward checkpoint/push follows;
+no amend, history rewrite, forced synchronization or hook bypass.
+
+Retained failed push log SHA256 `cf8142c6dd1557ac6a6dc17f783ef858cef80e53b371fa1fa54de5a499a42a2d`;
+corrected security-check log SHA256 `be243c0fae6a04c0f770fa4f48b5b2c9f13d2c41246d802709f4149c6390e2b6`.
