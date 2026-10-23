@@ -5,7 +5,7 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parent;REPO=Path('/home/foo/Workspace/OSMAP')
 RUN=ROOT
 SOURCE_FILES={
-    'bind_startup.py','stage_root.py','dispatch_startup.py','consume_startup.py',
+    'bind_startup.py','build_current.py','stage_root.py','dispatch_startup.py','consume_startup.py',
     'remote_wrapper.py','startup_only.py',
     'sources/backend/custody.py','sources/backend/install_account_password.py',
     'sources/backend/local_frontend.py','sources/backend/local_journey.py',
@@ -58,6 +58,9 @@ def check_action(order,args,pins):
         '--attempt-id',args.attempt_id,'--recipe',args.recipe]
     if getattr(args,'operation','admission')=='password-change':
         arguments+=['--operation','password-change']
+    if getattr(args,'helper_build_receipt',None) is not None:
+        arguments+=['--helper-build-receipt',args.helper_build_receipt,
+            '--helper-source-manifest',args.helper_source_manifest]
     require(recipe['kind']=='NATIVE'and recipe['environment_ids']==['obsd1']
         and recipe['operations']==[{'target_id':'local','program':'/usr/bin/python3',
             'arguments':arguments,'privilege':'user'}],'planned_operation')
@@ -72,7 +75,10 @@ def main():
     parser=argparse.ArgumentParser()
     for name in('build-receipt','source-manifest','run-dir','attempt-id','recipe'):parser.add_argument('--'+name,required=True)
     parser.add_argument('--operation',choices=('admission','password-change'),default='admission')
+    parser.add_argument('--helper-build-receipt')
+    parser.add_argument('--helper-source-manifest')
     args=parser.parse_args();RUN=Path(args.run_dir).resolve()
+    require((args.helper_build_receipt is None)==(args.helper_source_manifest is None),'helper_receipt_pair_required')
     info=RUN.lstat();require(RUN.is_dir()and info.st_uid==os.geteuid()and stat_mode(info)==0o700,'run_directory_custody')
     ATTEMPT=args.attempt_id;RECIPE=args.recipe
     os.umask(0o077);started=time.monotonic();child=None
@@ -97,7 +103,8 @@ def main():
         for name,pin in pins.items():
             path=ROOT/name;info=path.lstat();require(info.st_uid==os.geteuid()and info.st_nlink==1
                 and not stat_mode(info)&0o002 and not path.is_symlink()and path.is_file()and sha(path.read_bytes())==pin,'source_custody')
-        packet=module('bind_startup').packet(args.build_receipt,args.source_manifest)
+        packet=module('bind_startup').packet(args.build_receipt,args.source_manifest,
+            helper_receipt_path=args.helper_build_receipt,helper_manifest_path=args.helper_source_manifest)
         if args.operation=='password-change':packet['operation']='password-change'
         ledger=(REPO/'docs/UX_EXECUTION_LEDGER.md').read_text();block=ledger.split('<!-- OSMAP_ACTIVE_WORK_ORDER -->')[1].split('<!-- /OSMAP_ACTIVE_WORK_ORDER -->')[0].strip();order=json.loads(block[8:-4])
         check_action(order,args,pins)

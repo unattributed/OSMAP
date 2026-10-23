@@ -14,6 +14,7 @@ WEB_GID=1001
 HOST='password-pilot.osmap.invalid'
 AGENT='OSMAP-fixed-genuine-HTTP-pilot'
 HTTP_RESPONSE_BYTES=262144
+JOURNEY_SECONDS=300
 CANCEL=None
 
 def require(value,reason='fixed_http_consumer_refused'):
@@ -143,6 +144,7 @@ class FrontDriver:
         return reply['snapshot']
     def verify_mail_containment(self,end):
         require(self.snapshot_index==4);reply=self.node.exchange('MAIL_WITNESS',end)
+        http_remaining(end)
         require(set(reply)=={'phase','result'} and set(reply['result'])=={
             'result','public_cache_zero','public_original25_preserved','public_master_preserved',
             'bob_mail_projection_preserved','bob_home_absent','bob_mail_absent','bob_projection_sha256',
@@ -174,7 +176,7 @@ class FrontDriver:
             self.http_response_observation = dict(request_ordinal=self.http_sequence + 1,
                 stage='budget', received_bytes=0, eof_received=False,
                 request_started=request_started,
-                request_budget_at_start_ms=max(0,min(90000,int((deadline-request_started)*1000))))
+                request_budget_at_start_ms=max(0,min(JOURNEY_SECONDS*1000,int((deadline-request_started)*1000))))
             http_remaining(deadline)
             require(method in ('GET', 'POST') and path in ('/login', '/settings/password', '/settings?section=security', '/settings?section=authentication') and self.http_sequence < 18)
             self.phase = 'http_request_' + str(self.http_sequence + 1)
@@ -209,6 +211,7 @@ class FrontDriver:
                     if len(response) > HTTP_RESPONSE_BYTES:
                         self.http_response_observation['stage'] = 'response_cap'
                     require(len(response) <= HTTP_RESPONSE_BYTES)
+            http_remaining(deadline)
             self.node.capture_generated_directories()
             self.http_sequence += 1
             self.http_response_observation['stage'] = 'parse'
@@ -231,7 +234,7 @@ class FrontDriver:
             'http_stage_id':0,'http_received_bytes':0,'http_eof_received':False,
             'http_status':0,'http_session_cookie_headers':0,'http_request_budget_at_start_ms':0,
             'http_request_elapsed_ms':0,'http_sequence_elapsed_ms':max(0,min(1000000,int((now-self.sequence_started)*1000))),
-            'http_original_remaining_ms':max(0,min(90000,int((self.sequence_end-now)*1000)))}
+            'http_original_remaining_ms':max(0,min(JOURNEY_SECONDS*1000,int((self.sequence_end-now)*1000)))}
         if value is not None:
             result.update(http_request_ordinal=value['request_ordinal'],
                 http_stage_id=stages[value['stage']],http_received_bytes=value['received_bytes'],

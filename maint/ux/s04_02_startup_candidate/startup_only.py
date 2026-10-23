@@ -185,7 +185,7 @@ def can_dispose(cleanup_ok,probe_cleanup_ok,owner,fixture):
 
 def run(p,report):
     q=journey.load('stock_qualification.py');http=journey.load('rust_http_driver.py');installer=journey.load('install_account_password.py')
-    q.HELPER_SHA256=p['helper_sha256'];q.SIGNED_SOURCE_COMMIT=p['source_commit'];q.CONFIG_MAP_SHA256=p['config_map_sha256'];q.PUBLIC_SQL_SHA256=p['public_sql_sha256'];q.CUSTODY_SHA256=p['backend_sources']['custody.py']
+    q.HELPER_SHA256=p['helper_sha256'];q.SIGNED_SOURCE_COMMIT=p.get('helper_source_commit',p['source_commit']);q.CONFIG_MAP_SHA256=p['config_map_sha256'];q.PUBLIC_SQL_SHA256=p['public_sql_sha256'];q.CUSTODY_SHA256=p['backend_sources']['custody.py']
     class LocalQualification(http.RustAuthoritativeCustodian,q.Qualification):
         def __init__(self):
             super().__init__();self.end=journey.END;self.work_end=journey.WORK;self.installer=installer;self.http=http

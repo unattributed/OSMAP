@@ -401,7 +401,7 @@ class PasswordJourneyTests(unittest.TestCase):
         node = keeper.Frontend.__new__(keeper.Frontend)
         node.directory = node.file = node.capture_guardian_code = node.group = Mock()
         node.ownership_callback = None
-        node.http_module = SimpleNamespace(FrontDriver=Mock())
+        node.http_module = SimpleNamespace(FrontDriver=Mock(),JOURNEY_SECONDS=front.JOURNEY_SECONDS)
         child = SimpleNamespace(fileno=lambda:7,close=Mock())
         boot = dict.fromkeys(('alice_password','bob_password','new_password',
             'admission_key','mutation_key','session_proof_key'),'a'*64)
@@ -414,8 +414,8 @@ class PasswordJourneyTests(unittest.TestCase):
                 patch.object(keeper.subprocess,'Popen',return_value=SimpleNamespace(pid=12345)):
             node.setup(boot)
         self.assertEqual(guard.END,now+600)
-        self.assertGreaterEqual(node.sequence_end,now+90)
-        self.assertLessEqual(node.sequence_end,time.monotonic()+90)
+        self.assertGreaterEqual(node.sequence_end,now+300)
+        self.assertLessEqual(node.sequence_end,time.monotonic()+300)
         node.http_module.FrontDriver.assert_called_once_with(node,boot)
 
     def test_real_totp_wait_uses_existing_window_and_original_deadline(self):
@@ -439,6 +439,100 @@ class PasswordJourneyTests(unittest.TestCase):
                         with self.assertRaisesRegex(RuntimeError, 'original_http_deadline'):
                             front.accepted_counter(deadline, minimum=12)
                         self.assertEqual(clock.elapsed, deadline)
+
+    def test_minimum_and_maximum_permitted_fresh_counter_waits(self):
+        for delay, expected_wait in ((0, 60), (30, 0)):
+            with self.subTest(delay=delay):
+                clock = SimpleNamespace(elapsed=0.0)
+                with patch.object(front, 'CANCEL', None), \
+                        patch.object(time, 'monotonic', side_effect=lambda: clock.elapsed), \
+                        patch.object(time, 'time', side_effect=lambda: 300 + clock.elapsed), \
+                        patch.object(time, 'sleep', side_effect=lambda n: setattr(clock, 'elapsed', clock.elapsed+n)):
+                    initial = front.accepted_counter(300)[0]
+                    other = front.accepted_counter(300, initial+1)[0]
+                    clock.elapsed += delay
+                    stepup = front.accepted_counter(300, other+1)[0]
+                    clock.elapsed += delay
+                    fresh = front.accepted_counter(300, stepup+1)[0]
+                self.assertEqual((initial,other,stepup,fresh),(10,11,12,13))
+                self.assertEqual(clock.elapsed-2*delay, expected_wait)
+
+    def test_full_journey_slow_valid_password_and_original_whole_timeout(self):
+        # The real18-request producer/consumer and actual counter selector use a
+        # deterministic clock. Only the native peer is substituted locally.
+        for ceiling, mutation_seconds in ((300,59),(90,59),(300,300)):
+            with self.subTest(ceiling=ceiling,mutation_seconds=mutation_seconds), tempfile.TemporaryDirectory() as name:
+                clock=SimpleNamespace(elapsed=0.0)
+                def advance(n):clock.elapsed+=n
+                with patch.object(time,'monotonic',side_effect=lambda:clock.elapsed), \
+                        patch.object(time,'time',side_effect=lambda:300.125+clock.elapsed), \
+                        patch.object(time,'sleep',side_effect=advance):
+                    peer=ControlledPeer(Path(name))
+                    node=SimpleNamespace(cancelled=threading.Event(),http_root=Path(name),
+                        socket_lock=threading.Lock(),http_stream=None,ready={'port':1},
+                        sequence_end=ceiling,capture_generated_directories=lambda:None,
+                        capture_replay_directory=lambda:None,exchange=peer.exchange,finish_http=peer.finish)
+                    driver=front.FrontDriver(node,peer.boot)
+                    original=peer.respond
+                    def respond(raw):
+                        advance(mutation_seconds if raw.startswith(b'POST /settings/password ') else 2)
+                        return original(raw)
+                    peer.respond=respond
+                    with patch.object(front,'WEB_UID',os.getuid()),patch.object(front,'WEB_GID',os.getgid()), \
+                            patch.object(front.socket,'create_connection',side_effect=lambda *a,**k:ControlledSocket(peer)):
+                        if ceiling==300 and mutation_seconds==59:
+                            result=password.journey(driver)
+                            self.assertEqual(result['observed_http_requests'],18)
+                            self.assertGreater(clock.elapsed,90)
+                            self.assertEqual(driver.milestone_timings['mutation_seconds'],59)
+                            self.assertTrue(peer.finished)
+                        else:
+                            with self.assertRaisesRegex(RuntimeError,'original_http_deadline'):
+                                password.journey(driver)
+                            self.assertFalse(peer.finished)
+                    self.assertEqual(driver.sequence_end,ceiling)
+                    self.assertEqual(driver.mutation_requests,1)
+                    self.assertEqual(peer.writes,1)
+                    self.assertEqual(sum(m=='POST'and p=='/settings/password'for m,p,_ in peer.requests),1)
+
+    def test_timing_contract_report_and_prebirth_actor_reserve(self):
+        guardian=load('timing_guardian','native_http_web_guardian.py')
+        keeper=load('timing_keeper','../backend/local_frontend.py')
+        self.assertEqual(front.JOURNEY_SECONDS,guardian.JOURNEY_SECONDS)
+        self.assertEqual(guardian.END-guardian.BEGAN,330)
+        self.assertEqual(keeper.END-keeper.WORK,150)
+        rust=(ROOT.parents[2]/'src/http/password_tests.rs').read_text()
+        self.assertIn('let deadline = began + Duration::from_secs(300);',rust)
+        report={'schema':'osmap-http-password-runtime-v1','handled_connections':18,
+            'elapsed_millis':299999,'alice_epoch0_refused':True,'alice_epoch1_admitted':1,'bob_epoch0_admitted':0}
+        guardian.rust_report(json.dumps(report).encode())
+        report['elapsed_millis']=300001
+        with self.assertRaisesRegex(guardian.Refused,'rust_report'):
+            guardian.rust_report(json.dumps(report).encode())
+        node=keeper.Frontend.__new__(keeper.Frontend);node.http_module=front
+        with patch.object(keeper,'WORK',329),patch.object(time,'monotonic',return_value=0), \
+                patch.object(keeper.subprocess,'Popen') as spawn:
+            with self.assertRaisesRegex(RuntimeError,'insufficient_original_journey_budget'):
+                node.setup({})
+            spawn.assert_not_called()
+
+    def test_interrupted_frontend_cleanup_keeps_original_actor_end(self):
+        keeper=load('timing_cleanup_keeper','../backend/local_frontend.py')
+        node=keeper.Frontend.__new__(keeper.Frontend)
+        node.cancelled=threading.Event();node.socket_lock=threading.Lock()
+        node.http_stream=None;node.guardian=None;node.process_uncertain=False
+        node.worker=SimpleNamespace(join=Mock(),is_alive=lambda:False)
+        node.capture_generated_directories=Mock()
+        with patch.object(keeper,'END',600),patch.object(keeper,'WORK',450), \
+                patch.object(time,'monotonic',return_value=450):
+            node.stop_requests()
+            node.worker.join.assert_called_once_with(140)
+            self.assertEqual(node.remaining(cleanup=True),150)
+            self.assertEqual(keeper.END,600)
+        self.assertTrue(node.cancelled.is_set()and node.requests_stopped)
+        with patch.object(keeper,'END',600),patch.object(time,'monotonic',return_value=600):
+            with self.assertRaisesRegex(RuntimeError,'original_frontend_horizon'):
+                node.remaining(cleanup=True)
 
     def test_reaped_guardian_cleanup_confirms_absence_without_historical_signal(self):
         keeper = load('password_journey_keeper', '../backend/local_frontend.py')
@@ -547,7 +641,7 @@ class PasswordJourneyTests(unittest.TestCase):
             peer = ControlledPeer(root, fault)
             node = SimpleNamespace(cancelled=threading.Event(), http_root=root,
                 socket_lock=threading.Lock(), http_stream=None, ready={'port': 1},
-                sequence_end=time.monotonic() + 90, capture_generated_directories=lambda: None,
+                sequence_end=time.monotonic() + front.JOURNEY_SECONDS, capture_generated_directories=lambda: None,
                 capture_replay_directory=lambda: None, exchange=peer.exchange, finish_http=peer.finish)
             driver = front.FrontDriver(node, peer.boot)
             checkpoint_writes = []

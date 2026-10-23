@@ -10,7 +10,7 @@ import tempfile
 import time
 from types import SimpleNamespace
 import unittest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 
 ROOT = Path(__file__).resolve().parent
@@ -62,6 +62,7 @@ exec(compile(ast.Module(body=[cls], type_ignores=[]), str(path), 'exec'), namesp
 class LocalFixture(namespace['Qualification']):
     def __init__(self, root):
         self.end = time.monotonic() + 120
+        self.work_end = self.end
         self.lease = '0123456789abcdef' * 4
         self.home = root / ('bob-' + self.lease)
         self.values = {'home': (str(self.home) + '\n').encode(), 'mail': b'',
@@ -108,6 +109,24 @@ class MailWitnessTests(unittest.TestCase):
         self.assertEqual(list(Path(self.temp.name).iterdir()), [])
         self.assertNotIn(str(self.fixture.home), json.dumps(value))
         self.assertNotIn('old_password_refused', value)
+
+    def test_witness_spans_180_seconds_but_never_renews_original_work(self):
+        self.fixture.end=600;self.fixture.work_end=450
+        with patch.object(time,'monotonic',return_value=0):
+            observer=witness.StockMailWitness(self.fixture,450)
+            observer.begin()
+        with patch.object(time,'monotonic',return_value=299):
+            value=observer.finish_after_change()
+            driver=object.__new__(front.FrontDriver);driver.snapshot_index=4
+            driver.node=SimpleNamespace(exchange=lambda *args:{'phase':'MAIL_WITNESS','result':value})
+            driver.verify_mail_containment(300)
+        self.assertEqual(observer.end,450)
+        with patch.object(time,'monotonic',return_value=300):
+            with self.assertRaisesRegex(RuntimeError,'original_http_deadline'):
+                driver.verify_mail_containment(300)
+        with patch.object(time,'monotonic',return_value=450):
+            with self.assertRaisesRegex(RuntimeError,'stock_mail_original_deadline'):
+                observer.projection()
         self.assertNotIn('bob_auth_preserved', value)
         self.assertEqual(len(value['bob_projection_sha256']), 64)
 

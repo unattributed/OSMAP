@@ -54,15 +54,17 @@ def private(path):
     return path.read_bytes()
 
 
-def signed_source():
-    require(subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=REPO, timeout=5).decode().strip() == BASE,
-            'approved_source_head')
-    subprocess.run(['git', 'verify-commit', BASE], cwd=REPO, capture_output=True, check=True, timeout=15)
+def signed_source(source_commit=BASE):
+    require(type(source_commit) is str and re.fullmatch('[0-9a-f]{40}', source_commit),
+            'approved_source_commit')
+    # The carrier may be committed after the exact signed compiler source.
+    # source_closure still checks every working compiler input against this tree.
+    subprocess.run(['git', 'verify-commit', source_commit], cwd=REPO, capture_output=True, check=True, timeout=15)
 
 
-def source_closure():
+def source_closure(source_commit=BASE):
     """Read the signed tree, all src files, and their literal include dependencies."""
-    archive = subprocess.check_output(['git', 'archive', '--format=tar', BASE], cwd=REPO, timeout=30)
+    archive = subprocess.check_output(['git', 'archive', '--format=tar', source_commit], cwd=REPO, timeout=30)
     with tarfile.open(fileobj=io.BytesIO(archive)) as reader:
         tree = {member.name: reader.extractfile(member).read() for member in reader.getmembers() if member.isfile()}
     names = {'Cargo.toml', 'Cargo.lock'} | {name for name in tree if name.startswith('src/')}
@@ -83,11 +85,12 @@ def source_closure():
     return data, closure
 
 
-def prepare(root):
-    signed_source()
+def prepare(root, source_commit=BASE, libtest_only=False):
+    require(type(libtest_only) is bool, 'build_selection')
+    signed_source(source_commit)
     root.mkdir(mode=0o700, parents=True, exist_ok=True)
     require(not tuple(root.iterdir()), 'build_directory_not_empty')
-    data, closure = source_closure()
+    data, closure = source_closure(source_commit)
     manifest = {name: sha(raw) for name, raw in data.items()}
     manifest_raw = encoded(manifest)
     buffer = io.BytesIO()
@@ -99,16 +102,18 @@ def prepare(root):
             writer.addfile(member, io.BytesIO(raw))
     archive = gzip.compress(buffer.getvalue(), mtime=0)
     remote = (Path(__file__).with_name('build_remote.py')).read_text()
-    for old, new in [('__SIGNED_BASE__', BASE), ('__MANIFEST_SHA__', sha(manifest_raw)),
+    build_kind = 'libtest-only' if libtest_only else 'pair'
+    for old, new in [('__SIGNED_BASE__', source_commit), ('__BUILD_KIND__', build_kind), ('__MANIFEST_SHA__', sha(manifest_raw)),
                      ('__ARCHIVE_SHA__', sha(archive)), ('__SOURCE_COUNT__', str(len(manifest)))]:
         remote = remote.replace(old, new)
     ast.parse(remote)
     require(not any(isinstance(node, ast.Assert) for node in ast.walk(ast.parse(remote))), 'assert_execution_gate')
-    packet = {'signed_base_commit': BASE, 'source_manifest_sha256': sha(manifest_raw),
+    packet = {'signed_base_commit': source_commit, 'source_manifest_sha256': sha(manifest_raw),
               'manifest': manifest, 'archive_sha256': sha(archive), 'archive': base64.b64encode(archive).decode()}
     outputs = {'manifest.json': manifest_raw, 'include-closure.json': encoded(closure),
                'source.tar.gz': archive, 'remote.py': remote.encode(), 'packet.json': encoded(packet)}
-    binding = {'schema': 'osmap-current-native-build-binding-v1', 'signed_base_commit': BASE,
+    binding = {'schema': 'osmap-current-native-build-binding-v1', 'signed_base_commit': source_commit,
+               'build_kind': build_kind,
                'source_count': len(manifest), 'literal_include_count': len(closure),
                'committed_and_working_inputs_match': True, 'native_dispatched': False,
                'dispatcher_sha256': sha(Path(__file__).read_bytes()),
@@ -122,8 +127,11 @@ def prepare(root):
 
 def inspect_receipt(observed, code, binding):
     pins = binding['hashes']
+    build_kind = binding.get('build_kind', 'pair')
+    require(build_kind in ('pair', 'libtest-only') and observed.get('build_kind', 'pair') == build_kind,
+            'compiler_build_selection')
     require(observed['schema'] == 'osmap-controlled-native-build-current-v1'
-            and observed['signed_base_commit'] == BASE
+            and observed['signed_base_commit'] == binding['signed_base_commit']
             and observed['source_manifest_sha256'] == pins['manifest.json']
             and observed['archive_sha256'] == pins['source.tar.gz'], 'compiler_source_binding')
     for key in ('tests_executed', 'application_executed', 'activation', 'account_operations',
@@ -138,9 +146,12 @@ def inspect_receipt(observed, code, binding):
                                 and all(observed[key]['group_gone'] is True for key in phases)) else 'UNCERTAIN'
     if observed['result'] != 'PASS':
         return 'FAIL', disposition
-    require(code == 0 and disposition == 'CONFIRMED' and phases == ['helper', 'rust'], 'compiler_completion')
+    expected_phases = ['rust'] if build_kind == 'libtest-only' else ['helper', 'rust']
+    require(code == 0 and disposition == 'CONFIRMED' and phases == expected_phases, 'compiler_completion')
     require(observed['source_count'] == binding['source_count'] and observed['source_before'] is True
-            and observed['source_after'] is True and observed['helper_built'] is True, 'compiler_source_parity')
+            and observed['source_after'] is True and observed['helper_built'] is (build_kind == 'pair'), 'compiler_source_parity')
+    if build_kind == 'libtest-only':
+        require('native_helper_binary' not in observed, 'unexpected_helper_artifact')
     require(observed['parent_limits_unchanged'] is True and observed['compiler_data_soft_bytes'] == 4294967296
             and observed['compiler_build_jobs'] == 1 and 0 < observed['full_action_seconds'] <= 650, 'compiler_recipe')
     for program in ('/usr/local/bin/cargo', '/usr/local/bin/rustc'):
@@ -154,8 +165,10 @@ def inspect_receipt(observed, code, binding):
     stagepath = Path(stage['path'])
     require(stagepath.parent == Path('/home/foo') and stagepath.name.startswith('.osmap-s04-02-artifacts-')
             and stage['uid'] == 1000 and stage['mode'] == 0o700, 'artifact_stage')
-    for key, test, name in [('native_helper_binary', False, 'account-passwd'),
-                            ('native_test_binary', True, 'osmap-libtest')]:
+    artifacts = [('native_test_binary', True, 'osmap-libtest')]
+    if build_kind == 'pair':
+        artifacts.insert(0, ('native_helper_binary', False, 'account-passwd'))
+    for key, test, name in artifacts:
         artifact = observed[key]
         profile = artifact['cargo_profile']
         phase = observed['rust' if test else 'helper']
@@ -184,11 +197,15 @@ def execute(root):
     require(binding['dispatcher_sha256'] == sha(Path(__file__).read_bytes()), 'dispatcher_changed')
     frozen = {name: private(root / name) for name in binding['hashes']}
     require(all(sha(raw) == binding['hashes'][name] for name, raw in frozen.items()), 'build_input_hash')
-    signed_source()
-    data, _ = source_closure()
+    source_commit = binding['signed_base_commit']
+    libtest_only = binding.get('build_kind', 'pair') == 'libtest-only'
+    attempt = 'S04-02-timing-libtest-build157' if libtest_only else ATTEMPT
+    recipe_id = 'timing-libtest-build157' if libtest_only else RECIPE
+    signed_source(source_commit)
+    data, _ = source_closure(source_commit)
     require({name: sha(raw) for name, raw in data.items()} == json.loads(frozen['manifest.json']), 'build_source_changed')
     gate = subprocess.run(['/usr/bin/python3', str(REPO / 'maint/ux/validate_acceptance.py'), '--repo', str(REPO),
-                           '--work-order-only', '--pre-action', '--attempt-id', ATTEMPT],
+                           '--work-order-only', '--pre-action', '--attempt-id', attempt],
                           cwd=REPO, capture_output=True, timeout=30)
     save(root, 'pre-action-stdout.log', gate.stdout[:65536])
     save(root, 'pre-action-stderr.log', gate.stderr[:65536])
@@ -200,14 +217,17 @@ def execute(root):
     planned = order['accountability']['next_attempt']
     action = order['execution_contract']['planned_action']
     require(order['slice'] == 'S04-02' and order['state'] == 'IN_PROGRESS'
-            and planned['id'] == ATTEMPT and planned['source_revision'] == binding['hashes']['manifest.json'],
+            and planned['id'] == attempt and planned['source_revision'] == binding['hashes']['manifest.json'],
             'planned_build_source')
-    require(action['attempt_id'] == ATTEMPT and action['recipe_id'] == RECIPE
+    require(action['attempt_id'] == attempt and action['recipe_id'] == recipe_id
             and action['source_revision'] == binding['hashes']['manifest.json']
             and action['max_seconds'] == 720, 'planned_build_action')
-    recipe = next(row for row in order['execution_contract']['recipes'] if row['id'] == RECIPE)
+    recipe = next(row for row in order['execution_contract']['recipes'] if row['id'] == recipe_id)
+    arguments = [str(Path(__file__).resolve()), 'execute']
+    if root != DEFAULT_ROOT:
+        arguments += ['--root', str(root)]
     require(recipe['kind'] == 'NATIVE' and recipe['operations'] == [{'target_id': 'local',
-            'program': '/usr/bin/python3', 'arguments': [str(Path(__file__).resolve()), 'execute'],
+            'program': '/usr/bin/python3', 'arguments': arguments,
             'privilege': 'user'}], 'planned_build_recipe')
     require(binding['dispatcher_sha256'] in json.dumps(planned, sort_keys=True)
             and binding['hashes']['remote.py'] in json.dumps(planned, sort_keys=True), 'planned_build_carrier_hashes')
@@ -221,8 +241,9 @@ def execute(root):
     environment = environments[recipe['environment_ids'][0]]
     require((environment['host'], environment['address'], environment['status']) ==
             ('obsd1.blackbagsecurity.com', '192.168.1.44', 'PASS'), 'build_environment')
-    record = {'schema': 'osmap-current-native-build-dispatch-v1', 'attempt_id': ATTEMPT,
-              'signed_base_commit': BASE, 'source_manifest_sha256': binding['hashes']['manifest.json'],
+    record = {'schema': 'osmap-current-native-build-dispatch-v1', 'attempt_id': attempt,
+              'signed_base_commit': source_commit, 'source_manifest_sha256': binding['hashes']['manifest.json'],
+              'build_kind': binding.get('build_kind', 'pair'),
               'native_result': 'UNKNOWN', 'remote_disposition': 'UNCERTAIN', 'pre_action_gate': 'PASS',
               'started_utc': datetime.datetime.now(datetime.timezone.utc).isoformat(),
               'source_build_only': True, 'ordinary_Runtime_qualification': False}
@@ -283,9 +304,15 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('action', choices=('prepare', 'execute'))
     parser.add_argument('--root', type=Path, default=DEFAULT_ROOT)
+    parser.add_argument('--source-commit', default=BASE,
+                        help='Exact signed compiler source commit (prepare only)')
+    parser.add_argument('--libtest-only', action='store_true',
+                        help='Build only the affected libtest artifact (prepare only)')
     args = parser.parse_args()
     os.umask(0o077)
-    result = prepare(args.root) if args.action == 'prepare' else execute(args.root)
+    if args.action == 'execute':
+        require(not args.libtest_only and args.source_commit == BASE, 'execute_uses_frozen_binding')
+    result = prepare(args.root, args.source_commit, args.libtest_only) if args.action == 'prepare' else execute(args.root)
     print(json.dumps({key: value for key, value in result.items() if key != 'result'}, sort_keys=True))
     return 0 if args.action == 'prepare' or (result['native_result'] == 'PASS' and result['remote_disposition'] == 'CONFIRMED') else 1
 

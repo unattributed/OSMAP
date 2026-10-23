@@ -32,7 +32,9 @@ GID = 1001
 GROUPS = [1001, 1002, 1003]
 STOPS = {signal.SIGTERM, signal.SIGINT}
 BEGAN = time.monotonic()
-END = BEGAN + 120
+JOURNEY_SECONDS = 300
+# One original lifetime: setup20 + journey300 + owned-child cleanup10.
+END = BEGAN + 330
 SETUP = min(END - 10, BEGAN + 20)
 CANCELLED = False
 
@@ -361,7 +363,7 @@ def rust_report(raw):
             'alice_epoch0_refused', 'alice_epoch1_admitted', 'bob_epoch0_admitted'}
             and report['schema'] == 'osmap-http-password-runtime-v1'
             and type(report['handled_connections']) is int and report['handled_connections'] == 18
-            and type(report['elapsed_millis']) is int and 0 <= report['elapsed_millis'] <= 90000
+            and type(report['elapsed_millis']) is int and 0 <= report['elapsed_millis'] <= JOURNEY_SECONDS * 1000
             and report['alice_epoch0_refused'] is True
             and type(report['alice_epoch1_admitted']) is int and report['alice_epoch1_admitted'] == 1
             and type(report['bob_epoch0_admitted']) is int and report['bob_epoch0_admitted'] == 0,
@@ -431,7 +433,7 @@ def main():
         parent.write(raw, SETUP)
         raw = parent.read(1, SETUP)
         require(raw == b'G', 'fixed_start')
-        sequence = min(END - 10, time.monotonic() + 90)
+        sequence = min(END - 10, time.monotonic() + JOURNEY_SECONDS)
         peer.write(raw, sequence)
         raw = peer.read(1024, sequence)
         rust_report(raw)

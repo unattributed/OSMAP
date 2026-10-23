@@ -77,7 +77,7 @@ class MutationIntegration(unittest.TestCase):
             def __init__(self,*args):
                 states['frontend']=self;self.requests_stopped=False;self.disposed=False
                 self.cancelled=threading.Event();self.socket_lock=threading.Lock();self.http_stream=None
-                self.http_root=root;self.ready={'port':1};self.sequence_end=time.monotonic()+90
+                self.http_root=root;self.ready={'port':1};self.sequence_end=time.monotonic()+front.JOURNEY_SECONDS
                 self.custody={'selector':actor.SELECTOR};self.control=SimpleNamespace(write=lambda *args:None)
                 self.journey_module=password
             def setup(self,boot):self.driver=front.FrontDriver(self,boot)

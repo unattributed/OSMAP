@@ -56,6 +56,7 @@ echo "==> Sprint S04 Python carrier regressions"
 python3 -B -m unittest \
 	maint.ux.s04_02_startup_candidate.test_candidate \
 	maint.ux.s04_02_startup_candidate.test_current_source.BuildTransportCleanupTests \
+	maint.ux.s04_02_startup_candidate.test_current_source.LibtestBuildBindingTests \
 	maint.ux.s04_02_startup_candidate.test_mail_witness \
 	maint.ux.s04_02_startup_candidate.test_mutation_result \
 	maint.ux.s04_02_startup_candidate.test_password_journey \

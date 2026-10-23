@@ -147,6 +147,16 @@ class CarrierClosureTests(unittest.TestCase):
             'recipes':[recipe],'environment':[{'id':'obsd1','host':'obsd1.blackbagsecurity.com',
                 'address':'192.168.1.44','status':'PASS'}]}}
         dispatch.check_action(order,args,pins)
+        paired=copy.deepcopy(order)
+        args.helper_build_receipt='/private/helper/result.json'
+        args.helper_source_manifest='/private/helper/manifest.json'
+        paired['execution_contract']['recipes'][0]['operations'][0]['arguments']+=[
+            '--helper-build-receipt',args.helper_build_receipt,
+            '--helper-source-manifest',args.helper_source_manifest]
+        dispatch.check_action(paired,args,pins)
+        with self.assertRaisesRegex(RuntimeError,'planned_operation'):
+            dispatch.check_action(order,args,pins)
+        args.helper_build_receipt=None;args.helper_source_manifest=None
         for kind in('operation','target','bound'):
             bad=copy.deepcopy(order);contract=bad['execution_contract']
             if kind=='operation':contract['recipes'][0]['operations'][0]['arguments'][2]='/other/receipt'

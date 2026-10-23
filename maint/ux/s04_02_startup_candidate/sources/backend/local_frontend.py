@@ -16,7 +16,7 @@ SOURCE_PINS = {}
 STAGE_FILES = {}
 START = time.monotonic()
 END = START + 600
-WORK = END - 30
+WORK = END - 150
 STOPS = {signal.SIGTERM, signal.SIGINT, signal.SIGHUP, signal.SIGALRM}
 ALICE, BOB = 'alice@osmap-password.invalid', 'bob@osmap-password.invalid'
 UID, GID = 1001, 1001
@@ -206,11 +206,16 @@ class Frontend:
     def capture_replay_directory(self):
         self.capture_generated_directories(require_replay=True)
     def setup(self,boot):
+        # Refuse before frontend birth if setup and the full journey cannot fit
+        # before the actor's protected cleanup reserve. Never shorten it silently.
+        require(WORK-time.monotonic() >= 30+self.http_module.JOURNEY_SECONDS,
+            'insufficient_original_journey_budget')
+        setup=min(WORK,time.monotonic()+20)
         require(set(boot)=={'version','alice_password','bob_password','new_password','admission_key','mutation_key','session_proof_key'}
             and boot['version']==1 and all(type(v)is str and re.fullmatch('[a-f0-9]{64}',v)for k,v in boot.items()if k!='version'),'fixed_front_bootstrap')
         self.boot=boot
         # The imported Control/drain helpers run under this actor's original
-        # bound. The guardian subprocess owns its separate 120s process clock;
+        # bound. The guardian subprocess owns its separate 330s process clock;
         # importing its helpers must not start a second, earlier guardian clock.
         self.guard=module('fixed_front_guardian','native_http_web_guardian.py')
         self.guard.END=END
@@ -222,6 +227,7 @@ class Frontend:
         for key,name in(('admission_key','admission.key'),('mutation_key','mutation.key'),('session_proof_key','session-proof.key')):
             self.file(root/'keys'/name,boot[key].encode('ascii'),UID,GID,0o600)
         parent,child=socket.socketpair();self.control=self.guard.Control(parent)
+        require(time.monotonic()<setup,'original_frontend_setup_deadline')
         previous=signal.pthread_sigmask(signal.SIG_BLOCK,STOPS)
         try:
             self.guardian=subprocess.Popen(('/usr/local/bin/python3','-I','-B',str(Path(STAGE)/'native_http_web_guardian.py')),
@@ -231,7 +237,6 @@ class Frontend:
                 preexec_fn=lambda:signal.pthread_sigmask(signal.SIG_SETMASK,previous))
             if self.ownership_callback is not None:self.ownership_callback('GUARDIAN_BIRTH')
         finally:signal.pthread_sigmask(signal.SIG_SETMASK,previous);child.close()
-        setup=min(WORK,time.monotonic()+20)
         self.control.write(json.dumps({'version':1,'http_root':str(self.http_root)}).encode(),setup)
         self.custody=decoded(self.control.read(2048,setup))
         require(set(self.custody)=={'schema','web_uid','web_gid','binary_sha256','selector','web_pid','guardian_pid','guardian_group'}
@@ -246,10 +251,12 @@ class Frontend:
             and self.ready['schema']=='osmap-http-password-ready-v1'and self.ready['connections']==18
             and type(self.ready['port'])is int and 0<self.ready['port']<=65535
             and abs(self.ready['totp_counter']-int(time.time())//30)<=1,'actual_native_ready')
-        self.sequence_end=min(WORK,time.monotonic()+90)
+        require(WORK-time.monotonic() >= 10+self.http_module.JOURNEY_SECONDS,
+            'insufficient_original_journey_budget')
+        self.sequence_end=time.monotonic()+self.http_module.JOURNEY_SECONDS
         self.driver=self.http_module.FrontDriver(self,boot)
-    def group(self,allow_web=False):
-        raw=self.run(('/bin/ps','-ax','-o','pid=,ppid=,pgid=,uid=,comm='),'actual_front_guardian_group',cap=65536,cleanup=True,absolute=END-3)
+    def group(self,allow_web=False,absolute=None):
+        raw=self.run(('/bin/ps','-ax','-o','pid=,ppid=,pgid=,uid=,comm='),'actual_front_guardian_group',cap=65536,cleanup=True,absolute=min(END-3,absolute or END))
         rows=[]
         for line in raw.decode('ascii').splitlines():
             f=line.split(maxsplit=4);require(len(f)==5 and all(re.fullmatch('[0-9]{1,10}',v)for v in f[:4]),'exact_front_group_row')
@@ -263,7 +270,7 @@ class Frontend:
     def finish_http(self,end):
         result=decoded(self.control.read(2048,end));self.guard.rust_report(json.dumps(result).encode())
         require(self.control.read(64,end)==b'WEB_DIRECT_REAPED','actual_web_direct_reap')
-        self.group();self.control.write(b'GROUP_ONLY_GUARDIAN',end)
+        self.group(absolute=end);self.control.write(b'GROUP_ONLY_GUARDIAN',end)
         require(self.control.read(64,end)==b'WEB_REAPED_GROUP_GONE','actual_web_code_disposition')
         self.guardian.wait(timeout=max(.001,end-time.monotonic()))
         capture=self.guard.drain(self.guardian,end)
@@ -271,6 +278,7 @@ class Frontend:
         try:os.killpg(self.guardian.pid,0)
         except ProcessLookupError:pass
         else:raise RuntimeError('actual_guardian_group_not_gone')
+        require(time.monotonic()<end,'original_http_deadline')
         self.requests_stopped=True;return result
     def exchange(self,tag,end):
         require(not self.cancelled.is_set() and self.local_exchange is not None,'local_backend_event_unavailable')
@@ -325,6 +333,7 @@ class Frontend:
         allowed={self.http_root,self.http_root/'http-state'}
         allowed.update(self.dirs);allowed.update(self.generated_dirs)
         for path in sorted(self.http_root.rglob('*'),key=lambda p:len(p.parts),reverse=True):
+            self.remaining(cleanup=True)
             m=path.lstat();require(path.is_relative_to(self.http_root)and not stat.S_ISLNK(m.st_mode),'HTTP_cleanup_scope')
             if stat.S_ISDIR(m.st_mode):
                 require(path in allowed,'HTTP_directory_scope')

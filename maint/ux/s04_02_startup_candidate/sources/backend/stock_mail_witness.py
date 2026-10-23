@@ -35,7 +35,8 @@ def directory_path(value, code):
 class StockMailWitness:
     def __init__(self, fixture, end):
         require(type(end) in (int, float) and math.isfinite(end) and end <= fixture.end
-            and 3 < end - time.monotonic() <= 180, 'stock_mail_original_deadline')
+            and end <= fixture.work_end
+            and 3 < end - time.monotonic() <= 450, 'stock_mail_original_deadline')
         self.fixture, self.end = fixture, end
         self.before = None
         self.closed = False

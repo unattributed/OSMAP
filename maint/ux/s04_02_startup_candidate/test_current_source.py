@@ -24,6 +24,7 @@ from unittest.mock import Mock, patch
 ROOT=Path(__file__).resolve().parent
 BUILD=Path(os.environ.get('OSMAP_CURRENT_BUILD_DIR',
     '/home/foo/Downloads/osmap-ux-s04/current-source-milestone1-20261023/build'))
+HELPER_BUILD=Path(os.environ['OSMAP_HELPER_BUILD_DIR'])if os.environ.get('OSMAP_HELPER_BUILD_DIR')else None
 
 def load(name):
     spec=importlib.util.spec_from_file_location('current_'+name,ROOT/(name+'.py'))
@@ -61,14 +62,17 @@ class CurrentSourceIntegration(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         # Never replace a missing current build with the historical successful receipt.
-        cls.packet=binder.packet(BUILD/'result.json',BUILD/'manifest.json')
+        extra={}if HELPER_BUILD is None else{'helper_receipt_path':HELPER_BUILD/'result.json',
+            'helper_manifest_path':HELPER_BUILD/'manifest.json'}
+        cls.packet=binder.packet(BUILD/'result.json',BUILD/'manifest.json',**extra)
 
     def setUp(self):
         self.p=copy.deepcopy(self.packet);self.p['not_after_utc']=int(time.time())+600
         stage.END=time.monotonic()+600
 
     def publish_binary(self,pin,destination):
-        local=BUILD/('native-'+Path(pin['path']).name)
+        artifact_root=HELPER_BUILD if HELPER_BUILD is not None and Path(pin['path']).name=='account-passwd'else BUILD
+        local=artifact_root/('native-'+Path(pin['path']).name)
         raw=binder.private(local,256*1024*1024)
         self.assertEqual(len(raw),pin['size'])
         self.assertEqual(hashlib.sha256(raw).hexdigest(),pin['sha256'])
@@ -82,7 +86,9 @@ class CurrentSourceIntegration(unittest.TestCase):
         self.assertEqual(stage.sha((back/'local-admission.json').read_bytes()),digest)
         admission=json.loads((back/'local-admission.json').read_bytes())
         self.assertEqual(admission['helper_sha256'],self.p['helper']['sha256'])
-        self.assertEqual(admission['source_commit'],binder.BUILD_SOURCE_COMMIT)
+        self.assertEqual(admission['source_commit'],self.p['source_commit'])
+        for key in stage.HELPER_BINDING:
+            if key in self.p:self.assertEqual(admission[key],self.p[key])
         self.assertEqual(admission['web_sha256'],self.p['web']['sha256'])
         return back,front,frames
 
@@ -92,7 +98,7 @@ class CurrentSourceIntegration(unittest.TestCase):
 
     def dispose(self,back,front,frames):
         cleanup.cleanup_owned(back,front,frames[-1]['stage_receipt_sha256'],os.geteuid(),
-            self.no_open_files,expected_source=binder.BUILD_SOURCE_COMMIT)
+            self.no_open_files,expected_source=self.p['source_commit'])
         self.assertFalse(back.exists());self.assertFalse(front.exists())
 
     def test_current_artifacts_packet_producer_consumer_and_exact_cleanup(self):
@@ -102,7 +108,7 @@ class CurrentSourceIntegration(unittest.TestCase):
                 'born_child_reaped':True,'born_group_gone':True,'root_exit':0,'stderr_bytes':0,
                 'failure':None,'frames':frames+[actor_fixture(self.p)]}
             accepted=consumer.inspect(value,0,self.p['not_after_utc'],self.p)
-            self.assertEqual(accepted['source_commit'],binder.BUILD_SOURCE_COMMIT)
+            self.assertEqual(accepted['source_commit'],self.p['source_commit'])
             self.assertEqual(accepted['compiler_receipt_sha256'],stage.sha((BUILD/'result.json').read_bytes()))
             for key in('compiler_receipt_sha256','helper_sha256','source_commit'):
                 bad=copy.deepcopy(value);bad['frames'][2][key]='0'*len(bad['frames'][2][key])
@@ -300,6 +306,145 @@ class BuildTransportCleanupTests(unittest.TestCase):
                 self.assertTrue(record['local_transport_reaped'])
                 self.assertEqual(record['local_transport_group_gone'],not group_exists)
                 self.assertEqual(record['native_result'],'FAIL'if group_exists else'PASS')
+
+
+class LibtestBuildBindingTests(unittest.TestCase):
+    """Portable compiler-selection and split-provenance checks; no native calls."""
+
+    @staticmethod
+    def receipt(commit,manifest_raw,kind='libtest-only'):
+        manifest=json.loads(manifest_raw);count=len(manifest)
+        phase={'code':0,'failure':None,'group_gone':True}
+        profile=lambda test:{'opt_level':'0'if test else'3','debuginfo':0,
+            'debug_assertions':test,'overflow_checks':test,'test':test}
+        def artifact(test):
+            return {'path':'/home/foo/.osmap-s04-02-artifacts-local/'+('osmap-libtest'if test else'account-passwd'),
+                'sha256':'e'*64 if test else binder.REUSED_HELPER_SHA256,
+                'size':1024,'dev':1,'ino':2 if test else 3,'uid':1000,'gid':1000,
+                'mode':0o700,'nlink':1,'source_count':count,'profile_test':test,
+                'tests_executed':False,'application_executed':False,
+                'cargo_target_kind':['lib']if test else['bin'],'cargo_profile':profile(test)}
+        digest=hashlib.sha256(manifest_raw).hexdigest()
+        build={'schema':'osmap-controlled-native-build-current-v1','signed_base_commit':commit,
+            'build_kind':kind,'source_manifest_sha256':digest,'archive_sha256':'c'*64,
+            'tests_executed':False,'application_executed':False,'activation':False,
+            'account_operations':False,'public_service_operations':False,'ordinary_Runtime_qualification':False,
+            'identity':{'hostname':'obsd1.blackbagsecurity.com','system':'OpenBSD','machine':'amd64',
+                **{key:1000 for key in('uid','euid','gid','egid')}},'scratch_gone':True,
+            'cleanup_uncertain':False,'result':'PASS','rust':dict(phase),'source_count':count,
+            'source_before':True,'source_after':True,'helper_built':kind=='pair',
+            'parent_limits_unchanged':True,'compiler_data_soft_bytes':4294967296,
+            'compiler_build_jobs':1,'full_action_seconds':100,
+            'build_programs':{name:{'resolved':name,'uid':0,'mode':0o755,'sha256':'d'*64}
+                for name in('/usr/local/bin/cargo','/usr/local/bin/rustc')},
+            'compiler_versions':{name:{**phase,'stderr':'','stdout':'version'}
+                for name in('/usr/local/bin/cargo','/usr/local/bin/rustc')},
+            'artifact_stage':{'path':'/home/foo/.osmap-s04-02-artifacts-local','uid':1000,'mode':0o700},
+            'native_test_binary':artifact(True)}
+        if kind=='pair':build.update(helper=dict(phase),native_helper_binary=artifact(False))
+        return {'native_result':'PASS','remote_disposition':'CONFIRMED','signed_base_commit':commit,
+            'source_manifest_sha256':digest,'ssh_code':0,'local_transport_reaped':True,
+            'local_transport_group_gone':True,'result':build}
+
+    def test_remote_libtest_selection_never_invokes_or_claims_helper_build(self):
+        tree=ast.parse((ROOT/'build_remote.py').read_text())
+        main=next(node for node in tree.body if isinstance(node,ast.Try))
+        selection=[node for node in main.body if isinstance(node,ast.If)
+            and isinstance(node.test,ast.Compare)and isinstance(node.test.left,ast.Name)
+            and node.test.left.id=='BUILD_KIND']
+        rust=next(node for node in main.body if isinstance(node,ast.Assign)
+            and ast.unparse(node.targets[0])=="report['rust']")
+        capture_block=next(node for node in main.body if isinstance(node,ast.If)
+            and any(isinstance(child,ast.FunctionDef)and child.name=='capture'for child in node.body))
+        final=[node for node in capture_block.body if isinstance(node,ast.If)
+            or (isinstance(node,ast.Assign)and ast.unparse(node.targets[0])=="report['native_test_binary']")]
+        for kind in('pair','libtest-only'):
+            with self.subTest(kind=kind):
+                command=Mock(return_value={'code':0,'failure':None,'group_gone':True})
+                capture=Mock(side_effect=lambda name,test:{'target':name,'test':test})
+                context={'BUILD_KIND':kind,'report':{'helper_built':False},'command':command,
+                    'capture':capture,'retain_phase':Mock(),'uncertain':False,'require':binder.require}
+                exec(compile(ast.Module(body=[*selection,rust,*final],type_ignores=[]),
+                    '<actual-native-build-selection>','exec'),context)
+                expected=[['/usr/local/bin/cargo','test','--offline','--locked','--lib','--no-run','--message-format=json']]
+                if kind=='pair':expected.insert(0,['/usr/local/bin/cargo','build','--release','--offline','--locked','--bin','account-passwd','--message-format=json'])
+                self.assertEqual([call.args[0]for call in command.call_args_list],expected)
+                self.assertIs(context['report']['helper_built'],kind=='pair')
+                self.assertEqual('native_helper_binary'in context['report'],kind=='pair')
+                self.assertEqual(capture.call_args_list[-1].args,('osmap',True))
+
+    def test_prepare_freezes_explicit_signed_source_and_libtest_selection(self):
+        compiler=load('build_current');commit='b'*40
+        with tempfile.TemporaryDirectory()as name,patch.object(compiler,'signed_source')as signed,\
+                patch.object(compiler,'source_closure',return_value=({'Cargo.toml':b'local input'},[]))as closure:
+            root=Path(name)/'prepared'
+            binding=compiler.prepare(root,commit,libtest_only=True)
+            signed.assert_called_once_with(commit);closure.assert_called_once_with(commit)
+            self.assertEqual(binding['signed_base_commit'],commit)
+            self.assertEqual(binding['build_kind'],'libtest-only')
+            tree=ast.parse((root/'remote.py').read_text())
+            constants={node.targets[0].id:node.value.value for node in tree.body
+                if isinstance(node,ast.Assign)and isinstance(node.targets[0],ast.Name)
+                and isinstance(node.value,ast.Constant)}
+            self.assertEqual(constants['BASE'],commit)
+            self.assertEqual(constants['BUILD_KIND'],'libtest-only')
+            self.assertFalse(binding['native_dispatched'])
+            self.assertFalse((root/'attempt-started.json').exists())
+            self.assertEqual(json.loads((root/'packet.json').read_text())['signed_base_commit'],commit)
+
+    def test_libtest_receipt_rejects_helper_effect_or_wrong_mode(self):
+        compiler=load('build_current');raw=b'{"Cargo.toml":"a"}\n'
+        receipt=self.receipt('a'*40,raw);observed=receipt['result']
+        binding={'signed_base_commit':'a'*40,'build_kind':'libtest-only','source_count':1,
+            'hashes':{'manifest.json':receipt['source_manifest_sha256'],'source.tar.gz':'c'*64}}
+        self.assertEqual(compiler.inspect_receipt(observed,0,binding),('PASS','CONFIRMED'))
+        for key,value in(('helper_built',True),('helper',observed['rust']),
+                ('native_helper_binary',observed['native_test_binary']),('build_kind','pair')):
+            bad=copy.deepcopy(observed);bad[key]=value
+            with self.subTest(key=key),self.assertRaises(RuntimeError):compiler.inspect_receipt(bad,0,binding)
+
+    def test_separate_signed_service_binding_accepts_only_test_file_difference(self):
+        old_commit=binder.BUILD_SOURCE_COMMIT;new_commit='a'*40
+        http=b'#[cfg(test)]\nmod tests {\nmod password_tests { include!("http/password_tests.rs"); }\n}\n'
+        old={'Cargo.toml':b'[package]\n','Cargo.lock':b'lock\n','src/http.rs':http,
+            'src/http/password_tests.rs':b'old timing\n','src/bin/account_passwd.rs':b'service\n'}
+        new={**old,'src/http/password_tests.rs':b'new timing\n'}
+        for drift in(None,'src/bin/account_passwd.rs','Cargo.lock','cfg_scope'):
+            with self.subTest(drift=drift),tempfile.TemporaryDirectory()as name:
+                root=Path(name);sources=dict(new)
+                if drift=='cfg_scope':sources['src/http.rs']=http.replace(b'#[cfg(test)]\n',b'')
+                elif drift is not None:sources[drift]+=b'changed\n'
+                trees={old_commit:old,new_commit:sources}
+                def git(argv,**kwargs):
+                    if argv[1]=='ls-tree':return ('\n'.join(trees[argv[4]])+'\n').encode()
+                    if argv[1]=='show':
+                        commit,path=argv[2].split(':',1);return trees[commit][path]
+                    raise AssertionError(argv)
+                paths=[]
+                for prefix,commit,files,kind in(('old',old_commit,old,'pair'),('new',new_commit,sources,'libtest-only')):
+                    raw=(json.dumps({key:hashlib.sha256(value).hexdigest()for key,value in files.items()},sort_keys=True)+'\n').encode()
+                    manifest=root/(prefix+'-manifest.json');manifest.write_bytes(raw);manifest.chmod(0o600)
+                    receipt=root/(prefix+'-receipt.json');receipt.write_text(json.dumps(self.receipt(commit,raw,kind)));receipt.chmod(0o600)
+                    paths.append((receipt,manifest))
+                for path,raw in sources.items():
+                    destination=root/path;destination.parent.mkdir(parents=True,exist_ok=True)
+                    destination.write_bytes(raw);destination.chmod(0o600)
+                verified=SimpleNamespace(returncode=0,stderr=('[GNUPG:] VALIDSIG '+binder.SIGNER+' ').encode())
+                with patch.object(binder,'REPO',root),patch.object(binder.subprocess,'run',return_value=verified),\
+                        patch.object(binder.subprocess,'check_output',side_effect=git),\
+                        patch.object(binder,'source_packet',return_value={}):
+                    call=lambda:binder.packet(*paths[1],helper_receipt_path=paths[0][0],helper_manifest_path=paths[0][1])
+                    if drift:
+                        with self.assertRaisesRegex(RuntimeError,'helper_non_test_source_changed'):call()
+                    else:
+                        result=call()
+                        self.assertEqual(result['source_commit'],new_commit)
+                        self.assertEqual(result['helper_source_commit'],old_commit)
+                        self.assertEqual(result['helper']['sha256'],binder.REUSED_HELPER_SHA256)
+                        self.assertNotEqual(result['compiler_source_manifest_sha256'],result['helper_compiler_source_manifest_sha256'])
+                        self.assertNotEqual(result['compiler_receipt_sha256'],result['helper_compiler_receipt_sha256'])
+                        with self.assertRaisesRegex(RuntimeError,'helper_receipt_selection'):
+                            binder.packet(*paths[1])
 
 
 if __name__=='__main__':unittest.main(verbosity=2)

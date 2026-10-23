@@ -9989,7 +9989,8 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
       "/root/dependency_python",
       "/root/dependency_confinement",
       "/root/integration",
-      "/root/evidence"
+      "/root/evidence",
+      "/root/python_backend_review"
     ],
     "qa": [
       "/root",
@@ -10006,7 +10007,9 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
       "/root/dependency_python",
       "/root/dependency_native",
       "/root/schema",
-      "/root/admission_review"
+      "/root/admission_review",
+      "/root/python_runtime_review",
+      "/root/python_journey_review"
     ],
     "security_review": [
       "/root/scrum_security_review",
@@ -10305,7 +10308,8 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "maint/ux/reading_workflows.py",
     "maint/ux/security_settings_workflows.py",
     "maint/ux/session_workflows.py",
-    "maint/ux/signature_workflows.py"
+    "maint/ux/signature_workflows.py",
+    "docs/UX_S04_02_TIMING_RECONCILIATION_20261023.md"
   ],
   "outcomes": [
     {
@@ -10465,7 +10469,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "status": "PENDING",
     "reference": "Only minimal well-defined own-password usability after all agent-owned development/matching deployed QA/independent audit PASS. No operator password is changed by agent qualification; use controlled disposable Alice and preserve Bob/operator state. NOT RUN."
   },
-  "next_action": "Sprint S04 Python review/corrections and source validation complete; preserve through the ordinary signed commit/push hooks. Execution155 consumed the one authorized operation; its proven pre-submission no-write and confirmed cleanup remain unchanged. No new native attempt is planned. T03 remains FAIL/open; the reused Rust 90-second whole-journey constraint remains unqualified and requires reconciliation before any readiness claim.",
+  "next_action": "T03 timing obstruction corrected and independent review CLEAR: Rust/frontend300s, guardian330s, witness originalWORK, actor600/cleanup150 preserved, passwordoperation60 unchanged. One native libtest-only compile157 PASS with separate disposition, qualifiedhelper reused. Portable68/currentartifact10/Rustoriginaldeadline12+expiredoperation1 PASS. Deliver through normal signed commit/push hooks. Milestone3 remains NOT QUALIFIED; prior mutation authorization consumed. No startup or password operation occurred. Next native journey requires separate explicit single-operation authorization; no action planned.",
   "accountability": {
     "functional_exit": "Working own-account Settings password change through the selected single-host obsd1 local account service and authoritative local backend, fresh password/TOTP step-up, one conditional SQL update, durable OSMAP epoch and all-browser revocation, actual source-bound cache handling, old-password refusal/new-login success and Bob preservation. Existing third-party SMTP/IMAP sessions may remain authenticated. Matching installed QA, independent audit and minimal owner usability remain required. Toronto is later separate production installation.",
     "owner": "/root",
@@ -19692,6 +19696,29 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
           ],
           "next_action": "No mutation retry. Historical151 frame schema evidence loss remains;153 subsequently confirmed admission.155 stopped pre-submission, independently confirmed no-write/runtime cleanup.156 only disposed exact inert stages after retained recovery/absence. Preserve failures and end current one-operation task."
         }
+      },
+      {
+        "id": "S04-02-timing-libtest-build157",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "c06f963f924c94f8652834eef58d9a90c4892a870864cba8f61b88b9a5c9c2ef",
+        "change_reference": "Latest operator instruction authorizes one affected testartifact build only. Exact signed213b2f3; dispatcher SHA256 b112d2567c3fe0d223ed4de5a7470bca13d785d1d6b295040c8c3d2cd73d7cfa remote SHA256 3386ad5d459307a3f5d55d51978eb36e6e2b7def17264c002a270ed2e5151126",
+        "success_chain_review": {
+          "reviewer": "/root/python_runtime_review",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/timing-reconciliation-20261023/build/independent-review.json SHA256 60f890e07ae13453554b79f9026363026a8526b26b78fd4ada79992d9da1cbfc",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 146.407,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/timing-reconciliation-20261023/build/result.json SHA256 e5ff314ae456d9988df7a324165c60ff0b0fcdce9e70e2dd1d8a705e0db075cf",
+        "reason": "One affected libtest-only nativecompile PASS,144.479s compiler/145.429s remote/146.407s full action. New web SHA256213f40e73fb6d6a8c9116950892faf711946d7c1b3fc0e27e80d449a0f7ed550. Existinghelper unchanged; no helperbuild, tests/application/startup/account/public-service operations. Separate readonly observation confirmed compiler scratch/group absent and both artifact identities."
       }
     ],
     "prior_investigations": [
@@ -31500,6 +31527,46 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
             }
           }
         ]
+      },
+      {
+        "id": "timing-libtest-build157",
+        "kind": "NATIVE",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "single-host-readiness"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "docs/UX_EXECUTION_LEDGER.md"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/usr/bin/python3",
+            "arguments": [
+              "/home/foo/Workspace/OSMAP/maint/ux/s04_02_startup_candidate/build_current.py",
+              "execute",
+              "--root",
+              "/home/foo/Downloads/osmap-ux-s04/timing-reconciliation-20261023/build"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "Exactly one compile-only libtest rebuild for signed213b2f3 native journey300s. Reuse unchanged qualified service. No test/application execution, host startup, account or public service operations. Preserve compiler receipt/hashes; stop on failure or uncertain cleanup, no retry.",
+        "prerequisites": [
+          {
+            "id": "independent-timing-build",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/timing-reconciliation-20261023/build/independent-review.json",
+              "sha256": "60f890e07ae13453554b79f9026363026a8526b26b78fd4ada79992d9da1cbfc"
+            }
+          }
+        ]
       }
     ],
     "budget": {
@@ -35763,3 +35830,7 @@ production qualification is inferred. The retained Rust90-second whole-journey
 ceiling versus60-second operation plus fresh-TOTP wait remains an explicit
 native timing limitation. T03/installed/UAT remain open and no next native
 attempt or action is scheduled.
+
+## S04-02-T03 narrow timing reconciliation — 2026-10-23
+
+Operator-requested correction from signed2512a243 is complete at source/artifact level. See `docs/UX_S04_02_TIMING_RECONCILIATION_20261023.md` for the60-second maximum TOTP waiting derivation,300-second operating envelope, unchanged product60 and actor600/cleanup150, positive/timeout/cleanup regressions and actual compiler identities. Signed compiler source213b2f3b9ee878fcbaf37e27acb45743a3782434 produced libtest SHA256213f40e73fb6d6a8c9116950892faf711946d7c1b3fc0e27e80d449a0f7ed550 once; qualified service8f1ed891 remains unchanged. Actual compiler144.479s, remote145.429s, full146.407s. Separate read-only observation confirms scratch/group absence and both artifact identities; native artifacts intentionally retained. Independent timing/compiler/integration reviews CLEAR; current-artifact producer/consumer/exact-cleanup10 tests PASS independently repeated. No new obsd1 startup, nativeapplication test or password operation. Previous operation authority remains consumed; M3 NOT QUALIFIED. Normal signed delivery hooks remain required.

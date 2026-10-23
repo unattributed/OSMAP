@@ -18,6 +18,7 @@ BACKEND_SOURCE_NAMES={'custody.py','stock_qualification.py','stock_schema.py',
     'local_frontend.py','local_journey.py'}
 FRONTEND_SOURCE_NAMES={'native_http_front_driver.py','native_http_password_driver.py',
     'native_http_web_guardian.py'}
+HELPER_BINDING={'helper_source_commit','helper_compiler_source_manifest_sha256','helper_compiler_receipt_sha256'}
 class Refused(Exception):pass
 def require(ok,reason):
     if not ok:raise Refused(reason)
@@ -59,7 +60,10 @@ def admission(expected):
     require(re.fullmatch('[a-f0-9]{64}',expected),'admission_pin')
     END=START+600;WORK=END-150
     p=decode(read(STAGE/'local-admission.json',65536,expected,0o400))
-    require(set(p)=={'version','not_after_utc','source_commit','compiler_source_manifest_sha256','helper_sha256','web_sha256','web_bytes','backend_sources','frontend_sources','frontend_stage','frontend_stage_lease','frontend_files','config_map_sha256','public_sql_sha256','prerequisite_sha256'},'admission_fields')
+    require(set(p)-HELPER_BINDING=={'version','not_after_utc','source_commit','compiler_source_manifest_sha256','helper_sha256','web_sha256','web_bytes','backend_sources','frontend_sources','frontend_stage','frontend_stage_lease','frontend_files','config_map_sha256','public_sql_sha256','prerequisite_sha256'},'admission_fields')
+    require(not(HELPER_BINDING&set(p))or HELPER_BINDING<=set(p),'helper_binding_fields')
+    if HELPER_BINDING<=set(p):
+        require(re.fullmatch('[a-f0-9]{40}',p['helper_source_commit'])and all(re.fullmatch('[a-f0-9]{64}',p[k])for k in HELPER_BINDING-{'helper_source_commit'}),'helper_binding_scalars')
     require(p['version']==1 and type(p['not_after_utc'])is int and 0<p['not_after_utc']-time.time()<=600,'fresh_original_expiry')
     END=min(END,time.monotonic()+p['not_after_utc']-time.time());WORK=END-150
     require(re.fullmatch('[a-f0-9]{40}',p['source_commit']),'source_commit')
@@ -90,6 +94,7 @@ class Receipt:
         web=self.web
         state['frontend']=None if web is None else {'root':None if web.http_root is None else str(web.http_root),'files':{str(k):list(v)for k,v in web.files.items()},'dirs':{str(k):list(v)for k,v in web.dirs.items()},'generated_dirs':{str(k):list(v)for k,v in web.generated_dirs.items()},'guardian_pid':None if web.guardian is None else web.guardian.pid,'custody':getattr(web,'custody',None),'requests_stopped':web.requests_stopped,'disposed':web.disposed}
         state['helper_sha256']=self.p['helper_sha256'];state['web_sha256']=self.p['web_sha256']
+        state.update({k:self.p[k]for k in HELPER_BINDING if k in self.p})
         state['mutation_submission_started']=self.mutation_submission_started
         raw=json.dumps(state,sort_keys=True,separators=(',',':')).encode();require(len(raw)<=131072,'receipt_bound')
         if self.previous is None:require(not os.path.lexists(self.path),'recovery_collision')
@@ -101,7 +106,7 @@ class Receipt:
 
 def run(p,report):
     q=load('stock_qualification.py');http=load('rust_http_driver.py');installer=load('install_account_password.py');w=load('stock_mail_witness.py');front=load('local_frontend.py')
-    q.HELPER_SHA256=p['helper_sha256'];q.SIGNED_SOURCE_COMMIT=p['source_commit'];q.CONFIG_MAP_SHA256=p['config_map_sha256'];q.PUBLIC_SQL_SHA256=p['public_sql_sha256'];q.CUSTODY_SHA256=p['backend_sources']['custody.py']
+    q.HELPER_SHA256=p['helper_sha256'];q.SIGNED_SOURCE_COMMIT=p.get('helper_source_commit',p['source_commit']);q.CONFIG_MAP_SHA256=p['config_map_sha256'];q.PUBLIC_SQL_SHA256=p['public_sql_sha256'];q.CUSTODY_SHA256=p['backend_sources']['custody.py']
     class LocalQualification(http.RustAuthoritativeCustodian,q.Qualification):
         def __init__(self):
             super().__init__();self.end=END;self.work_end=WORK;self.installer=installer;self.http=http
@@ -121,7 +126,9 @@ def run(p,report):
             for index,account in enumerate((http.ALICE,http.BOB))}
         f.start_helper();owner.checkpoint('HELPER_READY')
         milestones['milestone1']={'result':'PASS',**f.report['service_readiness']}
-        witness=w.StockMailWitness(f,min(WORK,time.monotonic()+180));witness.begin()
+        # This observer spans setup, all HTTP/TOTP work and final readback. Use
+        # the original work horizon, never a shorter independent lifetime.
+        witness=w.StockMailWitness(f,WORK);witness.begin()
         boot={'version':1,'alice_password':f.initial_password(http.ALICE),'bob_password':f.initial_password(http.BOB),'new_password':f.new_password}
         for key,path in(('admission_key','/etc/osmap/account-admission.key'),('mutation_key','/etc/osmap/account-runtime/mutation.key'),('session_proof_key','/etc/osmap/account-runtime/session-proof.key')):
             raw=f.private_read(Path(path),64);require(re.fullmatch(rb'[a-f0-9]{64}',raw),'purpose_key_shape');boot[key]=raw.decode('ascii')
@@ -147,7 +154,8 @@ def run(p,report):
                         'alice_state':value['state'],'changed_at':value['changed_at']}
                 return {'phase':tag,'snapshot':value}
             http.confirmed_change(snapshots['SNAPSHOT_A0'],snapshots['SNAPSHOT_A1'],snapshots['SNAPSHOT_B0'],snapshots['SNAPSHOT_B1'])
-            value=witness.finish_after_change();require(value['result']=='PASS','mail_witness');report['mail_witness']=value
+            value=witness.finish_after_change();require(time.monotonic()<end,'original_http_deadline')
+            require(value['result']=='PASS','mail_witness');report['mail_witness']=value
             milestones['milestone4']={'result':'PENDING_DISPOSITION','elapsed_seconds':round(time.monotonic()-mutation_finished,6),
                 'bob_mail_projection_preserved':value['bob_mail_projection_preserved'],
                 'bob_home_absent':value['bob_home_absent'],'bob_mail_absent':value['bob_mail_absent'],
