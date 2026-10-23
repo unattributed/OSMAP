@@ -112,13 +112,13 @@ class RustAuthoritativeCustodian:
             and record['intent'] in {item[0] for item in intents}, 'actual_pending_intent')
         return record, path
 
-    def authoritative_snapshot(self, account, deadline):
+    def authoritative_snapshot(self, account, deadline, *, cleanup=False):
         # The caller's deadline remains the one fixed sequence deadline; no
         # alternate paths/accounts/query or caller-supplied observations enter.
         import time
         require(time.monotonic() < deadline, 'snapshot_original_deadline')
         self.remaining(True)
-        rows = self.rust_rows()
+        rows = self.rust_rows(cleanup=cleanup)
         require(account in ACCOUNTS, 'fixed_snapshot_account')
         row = rows[ACCOUNTS.index(account)]
         epoch, _ = self.rust_epoch(account)

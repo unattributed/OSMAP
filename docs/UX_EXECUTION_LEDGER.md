@@ -10283,6 +10283,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "maint/ux/s04_02_startup_candidate/source_review.json",
     "maint/ux/s04_02_startup_candidate/milestone1_evidence.json",
     "maint/ux/s04_02_startup_candidate/milestone2_evidence.json",
+    "maint/ux/s04_02_startup_candidate/milestone3_evidence.json",
     "maint/ux/s04_02_startup_candidate/test_password_journey.py",
     "maint/ux/s04_02_startup_candidate/test_mutation_result.py",
     "maint/ux/s04_02_startup_candidate/test_mail_witness.py"
@@ -10445,7 +10446,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "status": "PENDING",
     "reference": "Only minimal well-defined own-password usability after all agent-owned development/matching deployed QA/independent audit PASS. No operator password is changed by agent qualification; use controlled disposable Alice and preserve Bob/operator state. NOT RUN."
   },
-  "next_action": "Milestone3: prepare and independently review one controlled Alice password change with two genuine stored Alice sessions, Bob preservation and uncertainty-safe cleanup. Obtain the specifically requested operator write/cleanup confirmation before host dispatch. Reuse unchanged77f6379 Rust binaries. Native mutation NOT_RUN; full T03/installed acceptance remains OPEN.",
+  "next_action": "STOPPED after one authorized155 operation. Milestone3 FAIL before submission at stock_bob_nonce_home; no write/browser journey. Independent runtime and stage156 disposition confirmed. No retry or witness redesign under this authorization; next mutation requires explicit new direction.",
   "accountability": {
     "functional_exit": "Working own-account Settings password change through the selected single-host obsd1 local account service and authoritative local backend, fresh password/TOTP step-up, one conditional SQL update, durable OSMAP epoch and all-browser revocation, actual source-bound cache handling, old-password refusal/new-login success and Bob preservation. Existing third-party SMTP/IMAP sessions may remain authenticated. Matching installed QA, independent audit and minimal owner usability remain required. Toronto is later separate production installation.",
     "owner": "/root",
@@ -19614,6 +19615,64 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "elapsed_seconds": 0.623,
         "reference": "/home/foo/Downloads/osmap-ux-s04/milestone2-native-admission-20261023/admission153/cleanup-result.json",
         "reason": "Final153 exact owned21 stage leaves/two directories removed after final DISPOSED receipt retained; exact fstat references absent, paths absent, no historical PID signals or account/service operations."
+      },
+      {
+        "id": "S04-02-milestone3-controlled-change155",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "source_revision": "bd1ee3252e5a84479944b7d2384fa8441c989824ce3383b6a912b99f21e9949d",
+        "change_reference": "User authorizes one operation; carrier600/work450/cleanup150, transport650/action690. Final authority explicitly uses reserved cleanup. Existing HTTP90/product60 unchanged.",
+        "success_chain_review": {
+          "reviewer": "/root/delivery_controller",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/milestone3-authoritative-change-20261023/execution155/startup-independent-review.json",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "FAIL",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 5.109,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/milestone3-authoritative-change-20261023/execution155/startup-result.json",
+        "reason": "stock_bob_nonce_home before frontend/session/password submission; independent full17 active0/null/no-intent proof and current absence confirm no-write/runtime disposal. No retry."
+      },
+      {
+        "id": "S04-02-milestone3-stage-cleanup156",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "a47d3ab5600916eddbb0a62da5d103c2d46f0e20a1473693d51eb60f3f748da0",
+        "change_reference": "Dispose only exact inert155 stages after retained DISPOSED recovery and independent no-write/runtime absence; no workflow retry.",
+        "success_chain_review": {
+          "reviewer": "/root/delivery_controller",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/milestone3-authoritative-change-20261023/execution155/cleanup-review.json",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 0.687,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/milestone3-authoritative-change-20261023/execution155/cleanup-result.json",
+        "reason": "Exact21 staging leaves/two dirs removed after independently proven pre-submission no-write. Fresh separate host observer confirms both stage paths absent; recovery retained locally.",
+        "reassessment": {
+          "reviewers": [
+            "/root",
+            "/root/delivery_controller"
+          ],
+          "reference": "/home/foo/Downloads/osmap-ux-s04/milestone3-authoritative-change-20261023/execution155/independent-outcome-review.json",
+          "failed_attempt_ids": [
+            "S04-02-native-admission151",
+            "S04-02-milestone3-controlled-change155"
+          ],
+          "next_action": "No mutation retry. Historical151 frame schema evidence loss remains;153 subsequently confirmed admission.155 stopped pre-submission, independently confirmed no-write/runtime cleanup.156 only disposed exact inert stages after retained recovery/absence. Preserve failures and end current one-operation task."
+        }
       }
     ],
     "prior_investigations": [
@@ -20674,7 +20733,8 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
           "Original stronger globalingress/forcedthirdpartyconnection tests retained as actualFAIL/UNKNOWN; supersededmethod decision /home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/safe-existing-backend-path33/independent-requirement-path-assessment.json SHA256 a0411a20c5c6e5c66b4fa4494b7a495b9ff41a2bf668d608d23980605e74832e. Current narrower realworkflow remains NOTqualified; no oldFAILrelabelled.",
           "Actual80FAIL102.283 and85FAIL101.297 retained under stock-helper-start51/resume63/native80,native85.85READ11budget1624ms/elapsed1635/0bytes/sequence90010.86read-onlyRESTOREDPASS4.3284/87purpose-onlyPASS0.544; HTTPscratchUNKNOWNretained.88source-lazyprofile/realStore targetedPASS1 doesnotcloseT03 orinstalledworkflow.",
           "Current20261021 single-host source/prerequisites only:107/108 readonly PASS;109 normal-release bins compile PASS/libtest OOM-SIGABRT FAIL;111diagnostic PASS/112limits PASS with config GAPS;114strict23hashes+2absence+SQL CAPTURE_PASS. Minimal hostname/native-local HTTP/closed optional config source checks PASS and independent reviews.113 fresh capacity refusal BEFORE compiler at5879267328free<6GiB. No new current native HTTP/password journey executed; no functionalT03 promotion. /home/foo/Downloads/osmap-ux-s04/single-host-completion-20261021T221006Z/combined-capacity-review.json SHA256 827177c73bcb76a3aa19f72c5dfe34a1bba46ef07f936bd10fdcd453b79e9d93",
-          "Actual current137 read-only prerequisite FAIL in0.573s after validatorPASS/SSH1: one embedded observer returned nonzero; capture() asserted exit zero before retaining inner JSON. Both source pins match. Which observer, inner reason, completed commands and inner cleanup status remain UNKNOWN. No build134 or journey136 dispatched; no fixture/password/public-service mutation. This is carrier evidence loss, not a new password implementation failure. T03 current NOT_RUN; historical FAIL/NOT_QUALIFIED unchanged. /home/foo/Downloads/osmap-ux-s04/t03-authorized-20261023/current-dispatch.json SHA256 11b1077725694d891403bea99c03ee8cc276ab4ad92fa68262ab970f03e45df4; /home/foo/Downloads/osmap-ux-s04/t03-authorized-20261023/current.stdout.json SHA256 70d53f51cfe84bcf43dae027168cdb41d2849a7de33aa3fd32a88500322a7860; /home/foo/Downloads/osmap-ux-s04/t03-authorized-20261023/outcome-review.json SHA256 21b641bb2fd53964bcfd8711658bf335a453f92b6eefd52d66b5bbb7b839b8ca"
+          "Actual current137 read-only prerequisite FAIL in0.573s after validatorPASS/SSH1: one embedded observer returned nonzero; capture() asserted exit zero before retaining inner JSON. Both source pins match. Which observer, inner reason, completed commands and inner cleanup status remain UNKNOWN. No build134 or journey136 dispatched; no fixture/password/public-service mutation. This is carrier evidence loss, not a new password implementation failure. T03 current NOT_RUN; historical FAIL/NOT_QUALIFIED unchanged. /home/foo/Downloads/osmap-ux-s04/t03-authorized-20261023/current-dispatch.json SHA256 11b1077725694d891403bea99c03ee8cc276ab4ad92fa68262ab970f03e45df4; /home/foo/Downloads/osmap-ux-s04/t03-authorized-20261023/current.stdout.json SHA256 70d53f51cfe84bcf43dae027168cdb41d2849a7de33aa3fd32a88500322a7860; /home/foo/Downloads/osmap-ux-s04/t03-authorized-20261023/outcome-review.json SHA256 21b641bb2fd53964bcfd8711658bf335a453f92b6eefd52d66b5bbb7b839b8ca",
+          "Current155 FAIL5.109s/actor3.291s at stock_bob_nonce_home BEFORE frontend/session/password submission; active0/null both/no intents/full17 unchanged. Independent current runtime absence and exact-stage156 cleanup PASS0.687s. maint/ux/s04_02_startup_candidate/milestone3_evidence.json. No retry; full T03 remains FAIL/NOT_QUALIFIED."
         ]
       },
       {
@@ -31326,6 +31386,101 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
             }
           }
         ]
+      },
+      {
+        "id": "milestone3-controlled-change155",
+        "kind": "NATIVE",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "single-host-readiness"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "docs/UX_EXECUTION_LEDGER.md"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/usr/bin/python3",
+            "arguments": [
+              "/home/foo/Workspace/OSMAP/maint/ux/s04_02_startup_candidate/dispatch_startup.py",
+              "--build-receipt",
+              "/home/foo/Downloads/osmap-ux-s04/current-source-milestone1-20261023/build/result.json",
+              "--source-manifest",
+              "/home/foo/Downloads/osmap-ux-s04/current-source-milestone1-20261023/build/manifest.json",
+              "--run-dir",
+              "/home/foo/Downloads/osmap-ux-s04/milestone3-authoritative-change-20261023/execution155",
+              "--attempt-id",
+              "S04-02-milestone3-controlled-change155",
+              "--recipe",
+              "milestone3-controlled-change155",
+              "--operation",
+              "password-change"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "One real Rust-authoritative Alice change: full SQL/epoch/time/old-new/session/Bob/cache proof and independent exact-owned disposition. Incomplete mutation retained; no retry or rollback.",
+        "prerequisites": [
+          {
+            "id": "direct-one-operation-authority",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/milestone3-authoritative-change-20261023/execution155/operator-authorization.json",
+              "sha256": "06757d7dbd388fc45dfed4a46ed688c09ce5e8ac529948b0714e70780f3e3093"
+            }
+          },
+          {
+            "id": "current-artifacts-and-timing-producer-consumer",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/milestone3-authoritative-change-20261023/execution155/focused-timing.log",
+              "sha256": "6185a840a0bc4d0ba81b3d2a59fb6465a0b0282916e695792002a7cf9565fa0c"
+            }
+          }
+        ]
+      },
+      {
+        "id": "milestone3-stage-cleanup156",
+        "kind": "NATIVE",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "single-host-readiness"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "docs/UX_EXECUTION_LEDGER.md"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/usr/bin/python3",
+            "arguments": [
+              "-B",
+              "/home/foo/Downloads/osmap-ux-s04/milestone3-authoritative-change-20261023/execution155/execute_cleanup.py"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "Remove only21 exact-owned staging leaves/two directories after independently confirmed pre-submission no-write and runtime disposition; preserve recovery locally. No signal/account/service operation.",
+        "prerequisites": [
+          {
+            "id": "independent-no-write-disposition",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/milestone3-authoritative-change-20261023/execution155/independent_absence.json",
+              "sha256": "2d279eda3cd4819f38d1ba1238420e37d1f94c1438518726f065c66116b29107"
+            }
+          }
+        ]
       }
     ],
     "budget": {
@@ -31340,8 +31495,8 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "planned_action": null
   },
   "blocker": null,
-  "independent_next_action": "/root/delivery_controller reviews the actual existing mutation caller, producer/transport/consumer and cleanup delta; retain Milestone1/2 evidence. Root owns the single host/Git queue; password_engineer owns the two-session HTTP journey; guardrails_engineer owns result and incomplete-state retention. Local regressions are not native qualification.",
-  "updated_at": "2026-10-23T16:24:23Z"
+  "independent_next_action": "Independent review confirms FAIL_NO_WRITE and exact-owned disposal; retain native result UNKNOWN/UNCERTAIN carrier fields as raw history. Complete normal source preservation only. T03 and installed/UAT remain unqualified.",
+  "updated_at": "2026-10-23T17:46:13Z"
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->
@@ -35468,3 +35623,49 @@ external WSTG coverage remains credential-gated; developer/refusal checks do not
 qualify native or production release. Acceptance log SHA256
 `20c003075b2cc13ef8ff3c47e0aafb9b4831eb1c8c1be97950b8f12e22a167eb`.
 Native execution remains NOT RUN, pending the operator's specific confirmation.
+
+## 2026-10-23 — One Milestone 3 operation authorized
+
+Direct operator confirmation authorizes exactly one controlled Alice password change
+on obsd1, subject to pre-dispatch timing correction. Existing actor600-second cap
+and150-second cleanup reserve now match the dispatch envelope; transport650 and
+action690 include finite outer disposition. HTTP90/product60 deadlines unchanged.
+Final authoritative SQL snapshots explicitly use reserved cleanup time while retaining
+their absolute deadline. No authorization expiry or new governance is introduced.
+Current signed Rust inputs and retained build reused; focused17 checks PASS1.425s.
+Root owns dispatch155; milestone3_review independently reviews source and outcome.
+No retry, credential rollback or uncertain-resource deletion is authorized.
+
+## 2026-10-23 — Single Milestone 3 execution FAIL before submission
+
+Actual155 dispatched once at approximately17:42:19UTC and ended17:42:23.745766UTC
+in5.109s (remote actor3.291s). Reused unchanged77f6379 Rust artifacts. Service
+socket publication took0.597657s; the read-only Bob userdb witness then refused
+at `stock_bob_nonce_home`, before frontend creation, login or mutation submission.
+The exact observed home string was not exported; the failing conjunct within
+the absolute/canonical/nonce/no-parent-traversal predicate remains UNKNOWN.
+No carrier expiry occurred; no retry or witness correction was attempted.
+
+Fresh final authority after stopping producers independently matches both full17
+provision baselines: Alice and Bob active epoch0, changed-at null, SQL modified
+20000101000000, no pending or used intents. Zero password submissions/changes;
+browser sessions, current-password/TOTP step-up, old/new password behaviour and
+session revocation are NOT_RUN. Cache0 was observed, but a completed after-change
+cache/mail witness is NOT_RUN. This is FAIL_NO_WRITE, never T03 PASS.
+
+Runtime disposal1.051379s removed two rows, one SQL principal, two OS users/groups,
+12 files/five directories. Helper exited0/reaped; nested groups and root group
+absent. Packet-bound DISPOSED recovery retained locally; separate host observation
+confirms exact runtime/SQL/principal/UID absence, unchanged public23-present/two-
+absent config entries, unchanged SQL config and same Dovecot master. No public
+service controls, operator-account changes or production qualification activation.
+Raw dispatcher UNKNOWN/UNCERTAIN from its success-only consumer remains retained;
+independent no-write/disposition evidence resolves the actual scoped outcome.
+
+Exact-owned stage cleanup156 PASS0.687s removed21 leaves/two directories after
+independent review and fstat absence. A separate fresh host read confirms both
+stage paths absent. No historical PID signal, password rollback or workflow retry.
+Private evidence remains in milestone3-authoritative-change-20261023/execution155
+under the existing sprint root; sanitized milestone3_evidence.json records scope.
+Single-operation authorization is consumed; S04-02/T03, installed QA and UAT remain
+OPEN/NOT_QUALIFIED. Only normal source/evidence preservation follows.

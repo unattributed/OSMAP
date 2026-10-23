@@ -51,7 +51,7 @@ class MutationIntegration(unittest.TestCase):
                 self.helper_stopped=True
                 self.helper_diagnostic={'helper_reaped':True,'helper_exit_code':0,'helper_signaled':False}
             def private_read(self,*args):return b'a'*64
-            def authoritative_snapshot(self,account,end):return peer.snapshot(account)
+            def authoritative_snapshot(self,account,end,*,cleanup=False):return peer.snapshot(account)
             def rust_epoch(self,account):
                 v=peer.snapshot(account)
                 return {**{k:v[k]for k in('epoch','state','changed_at')},'intent':None,

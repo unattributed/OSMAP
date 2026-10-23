@@ -196,7 +196,7 @@ def run(p,report):
         try:
             if cleanup_ok and owner is not None and owner.setup_complete:
                 # Fresh authority reads after stopping both producers. No rollback.
-                observed={account:f.authoritative_snapshot(account,END)for account in(http.ALICE,http.BOB)}
+                observed={account:f.authoritative_snapshot(account,END,cleanup=True)for account in(http.ALICE,http.BOB)}
                 report['final_authority']=observed
                 owner.snapshots.update(FINAL_ALICE=observed[http.ALICE],FINAL_BOB=observed[http.BOB])
                 owner.checkpoint('FINAL_AUTHORITY_OBSERVED')

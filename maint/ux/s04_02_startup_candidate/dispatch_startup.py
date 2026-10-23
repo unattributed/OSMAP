@@ -59,7 +59,7 @@ def check_action(order,args,pins):
     targets=[item for item in contract['environment']if item['id']=='obsd1']
     require(len(targets)==1 and targets[0]['host']=='obsd1.blackbagsecurity.com'
         and targets[0]['address']=='192.168.1.44'and targets[0]['status']=='PASS','planned_target')
-    require(action['max_seconds']>=360,'planned_operation_bound')
+    require(action['max_seconds']>=690,'planned_operation_bound')
 
 
 def main():
@@ -101,7 +101,9 @@ def main():
         gate=subprocess.run(['/usr/bin/python3','-B','maint/ux/validate_acceptance.py','--work-order-only','--pre-action','--attempt-id',ATTEMPT],cwd=REPO,stdin=subprocess.DEVNULL,stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=15)
         save('startup-pre-action-stdout.log',gate.stdout);save('startup-pre-action-stderr.log',gate.stderr)
         require(gate.returncode==0 and type(json.loads(gate.stdout))is dict,'pre_action_refused')
-        packet['not_after_utc']=int(time.time())+300
+        # Technical carrier bound: retain the actor's 150-second cleanup reserve
+        # without cutting its existing 450-second work allocation in half.
+        packet['not_after_utc']=int(time.time())+600
         root_source=(ROOT/'stage_root.py').read_bytes();remote=(ROOT/'remote_wrapper.py').read_bytes()
         wire=json.dumps({'root_source':base64.b64encode(root_source).decode(),'packet':packet},sort_keys=True,separators=(',',':')).encode();require(len(wire)<=4*1024*1024,'packet_bound')
         save('startup-bound-packet.json',wire);record.update(packet_sha256=sha(wire),source_revision=pins['remote_wrapper.py'],not_after_utc=packet['not_after_utc'])
@@ -110,7 +112,7 @@ def main():
         record.update(dispatched=True,native_result='UNKNOWN',remote_disposition='UNCERTAIN',
             password_mutation=None if args.operation=='password-change' else False);save('startup-dispatch-started.json',json.dumps(record,sort_keys=True).encode())
         child=subprocess.Popen(argv,cwd=REPO,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,start_new_session=True,close_fds=True)
-        try:out,err=child.communicate(wire,timeout=330)
+        try:out,err=child.communicate(wire,timeout=650)
         except subprocess.TimeoutExpired as error:
             out=error.output or b'';err=error.stderr or b''
             record.update(partial_stdout_sha256=sha(out),partial_stderr_sha256=sha(err),

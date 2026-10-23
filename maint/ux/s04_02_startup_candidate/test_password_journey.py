@@ -179,6 +179,46 @@ class ControlledSocket:
 
 
 class PasswordJourneyTests(unittest.TestCase):
+    def test_authority_observation_uses_reserved_cleanup_without_renewing_end(self):
+        backend = load('password_journey_backend', '../backend/rust_http_driver.py')
+        for driver_module in (password, backend):
+            with self.subTest(driver=driver_module.__name__):
+                class Authority(driver_module.RustAuthoritativeCustodian):
+                    def __init__(self):
+                        self.reads = []
+
+                    def remaining(self, cleanup=False):
+                        left = (120 if cleanup else 90) - time.monotonic()
+                        driver_module.require(left > 0, 'original_local_deadline')
+                        return left
+
+                    def row_read(self, cleanup=False):
+                        self.remaining(cleanup)
+                        self.reads.append(cleanup)
+                        return [{**dict.fromkeys(driver_module.COLUMNS),
+                            'username': account, 'password': 'local-verifier',
+                            'modified': '2026-10-23 12:00:00'}
+                            for account in driver_module.ACCOUNTS]
+
+                    def private_read(self, path, cap):
+                        self.remaining(True)
+                        return b'{"epoch":0,"state":"active","changed_at":null,"intent":null,"used_intents":[]}'
+
+                authority = Authority()
+                with patch.object(time, 'monotonic', return_value=80):
+                    initial = authority.authoritative_snapshot(driver_module.ALICE, 90)
+                self.assertEqual(authority.reads, [False])
+                with patch.object(time, 'monotonic', return_value=100):
+                    with self.assertRaisesRegex(ValueError, 'original_local_deadline'):
+                        authority.authoritative_snapshot(driver_module.ALICE, 120)
+                    final = authority.authoritative_snapshot(driver_module.ALICE, 120, cleanup=True)
+                self.assertEqual(initial, final)
+                self.assertEqual(authority.reads, [False, True])
+                with patch.object(time, 'monotonic', return_value=120):
+                    with self.assertRaisesRegex(ValueError, 'snapshot_original_deadline'):
+                        authority.authoritative_snapshot(driver_module.ALICE, 120, cleanup=True)
+                self.assertEqual(authority.reads, [False, True])
+
     def exercise(self, fault=None):
         with tempfile.TemporaryDirectory() as name:
             root = Path(name)

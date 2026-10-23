@@ -1,0 +1,119 @@
+{
+  "browser_sessions_created": 0,
+  "caller_sha256": "660ba2466a163762943c1045c6df1d5dc20317d90d1b3022a02d73fa876b30f7",
+  "case": "S04-02-T03",
+  "completed_post_change_cache_witness": "NOT_RUN",
+  "current_password_fresh_totp_authority": "NOT_RUN",
+  "disposition": "CONFIRMED_PRE_SUBMISSION_NO_WRITE_AND_EXACT_OWNED_CLEANUP",
+  "durable_intents": {
+    "alice@osmap-password.invalid": {
+      "changed_at": null,
+      "epoch": 0,
+      "pending_intent": false,
+      "state": "active",
+      "used_intent_count": 0
+    },
+    "bob@osmap-password.invalid": {
+      "changed_at": null,
+      "epoch": 0,
+      "pending_intent": false,
+      "state": "active",
+      "used_intent_count": 0
+    }
+  },
+  "evidence_sha256": {
+    "cleanup-result.json": "fdc8bd2f2c6cc93245d55f290c323b4b66ccfd14eb9ca610a696a613e45ae1ac",
+    "cleanup-review.json": "08b6a3606315d28da0eb7c646cf2a09be1eb0741b6a75491edf4c52286a410a6",
+    "focused-timing.log": "6185a840a0bc4d0ba81b3d2a59fb6465a0b0282916e695792002a7cf9565fa0c",
+    "independent_absence.json": "2d279eda3cd4819f38d1ba1238420e37d1f94c1438518726f065c66116b29107",
+    "recovery_observed.json": "56fa3a8afc66ace968497a18e9944386d0d609c505bb82ae70b4b55008982de6",
+    "stage_absence.json": "fc19f98614ca6aef180432659f8a9d08c754bb43093123ba0062d52bb50c25f4",
+    "startup-independent-review.json": "22dbe112cd65d48eee79c44814408dbd80237dba43ce0200ce731c5cd282f2ad",
+    "startup-result.json": "c0f4f189a9588be1e17ec229447e468c8b64d574171f2ecb2208fd3548e5f9cd"
+  },
+  "failure_reason": "stock_bob_nonce_home",
+  "failure_stage": "read-only Bob userdb projection before frontend setup",
+  "final_authority_before_disposal": {
+    "alice@osmap-password.invalid": {
+      "account": "alice@osmap-password.invalid",
+      "changed_at": null,
+      "epoch": 0,
+      "noncredential_sha256": "f6792a54c00385fae5900eb09f8b043286966fba1c5dabc72898b8975bfd4165",
+      "password_sha256": "4fbed9aae26c1c44bdf83bec8eb96b5b97da00ed728d262a1f43a652ee618049",
+      "row_count": 1,
+      "row_sha256": "ea9f91d1c91fdccbd48d2c09e875ac0d28f30edb588879fccd54680a59d21230",
+      "sql_changed_at": "20000101000000",
+      "state": "active"
+    },
+    "bob@osmap-password.invalid": {
+      "account": "bob@osmap-password.invalid",
+      "changed_at": null,
+      "epoch": 0,
+      "noncredential_sha256": "bd4e40386d0e5b6a01cda51506136a714a27511cabd78737d2a191f5d8373994",
+      "password_sha256": "6501d2f5f043ea04c3c801c12501052dfb1859bacbc2acd9ef2f0e157099e17e",
+      "row_count": 1,
+      "row_sha256": "fbd695fd1a3f7129879aa5a89a866c633e720d690f36b56bfa046af24d18fda4",
+      "sql_changed_at": "20000101000000",
+      "state": "active"
+    }
+  },
+  "installed_qualified": false,
+  "old_new_password_behaviour": "NOT_RUN",
+  "operation_attempts": 1,
+  "password_changes": 0,
+  "password_submissions": 0,
+  "preservation": {
+    "operator_accounts_changed": false,
+    "password_rollback": false,
+    "production_host_accessed": false,
+    "public_configuration": true,
+    "public_master": true,
+    "qualification_flags_changed": false,
+    "rebuild": false,
+    "workflow_retry": false
+  },
+  "private_evidence_root": "/home/foo/Downloads/osmap-ux-s04/milestone3-authoritative-change-20261023/execution155",
+  "public_cache_disabled": true,
+  "raw_carrier_status": {
+    "failure": "transport_or_cleanup",
+    "native_result": "UNKNOWN",
+    "remote_disposition": "UNCERTAIN"
+  },
+  "result": "FAIL",
+  "runtime_cleanup": {
+    "database_users_removed": 1,
+    "directories_removed": 5,
+    "files_removed": 12,
+    "groups_removed": 2,
+    "rows_removed": 2,
+    "users_removed": 2
+  },
+  "schema": "osmap-s04-02-milestone3-evidence-v1",
+  "service_sha256": "8f1ed891c8349863db59a95ba1e3d4908bc62ba7d583ea8634d3259262ab3559",
+  "session_revocations": "NOT_RUN",
+  "slice_complete": false,
+  "source_commit": "77f63794d3f60e4003db157eada39f4bd4222b6a",
+  "stage_cleanup": {
+    "directories_removed": 2,
+    "files_removed": 21,
+    "independent_current_absence": true
+  },
+  "t03_qualified": false,
+  "target": "obsd1.blackbagsecurity.com",
+  "technical_bounds_seconds": {
+    "action": 690,
+    "carrier": 600,
+    "http_sequence": 90,
+    "password_operation": 60,
+    "reserved_cleanup": 150,
+    "transport": 650
+  },
+  "timings_seconds": {
+    "dispatch": 5.109,
+    "remote_actor": 3.291,
+    "runtime_cleanup": 1.051379,
+    "service_socket_publication": 0.597657,
+    "stage_cleanup": 0.687
+  },
+  "unique_failed_conjunct": "UNKNOWN: actual home output not exported"
+}

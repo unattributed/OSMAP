@@ -62,7 +62,7 @@ class CurrentSourceIntegration(unittest.TestCase):
         cls.packet=binder.packet(BUILD/'result.json',BUILD/'manifest.json')
 
     def setUp(self):
-        self.p=copy.deepcopy(self.packet);self.p['not_after_utc']=int(time.time())+300
+        self.p=copy.deepcopy(self.packet);self.p['not_after_utc']=int(time.time())+600
         stage.END=time.monotonic()+600
 
     def publish_binary(self,pin,destination):
