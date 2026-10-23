@@ -1,4 +1,4 @@
-"""One checked Milestone 1 startup-only dispatch; no retry or credential frame."""
+"""One checked finite native admission dispatch; no mutation or automatic retry."""
 import argparse,base64,datetime,hashlib,importlib.util,json,os,shlex,signal,subprocess,sys,time
 from pathlib import Path
 
@@ -76,7 +76,7 @@ def main():
         save('startup-attempt-started.json',json.dumps(record,sort_keys=True).encode())
         pins=json.loads((RUN/'RUN_SOURCE_SHA256.json').read_bytes());review=json.loads((RUN/'startup-independent-review.json').read_bytes())
         require(set(pins)==SOURCE_FILES,'review_source_set')
-        require(review['decision']=='CLEAR'and review['reviewer']=='/root/schema'and review['sources']==pins,'independent_review')
+        require(review['decision']=='CLEAR'and review['reviewer']=='/root/admission_review'and review['sources']==pins,'independent_review')
         for name,pin in pins.items():
             path=ROOT/name;info=path.lstat();require(info.st_uid==os.geteuid()and info.st_nlink==1
                 and stat_mode(info)==0o600 and not path.is_symlink()and path.is_file()and sha(path.read_bytes())==pin,'source_custody')

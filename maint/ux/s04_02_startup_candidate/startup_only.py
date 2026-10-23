@@ -1,4 +1,4 @@
-"""One native service-startup qualification; no credential request is sent."""
+"""Finite native admission qualification using the existing owned fixture."""
 import importlib.util,json,math,os,resource,signal,socket,stat,subprocess,sys,time
 import re
 from pathlib import Path
@@ -6,6 +6,70 @@ from pathlib import Path
 sys.dont_write_bytecode=True
 STAGE=Path(__file__).resolve().parent
 START=time.monotonic();STOP_SIGNALS=(signal.SIGTERM,signal.SIGINT,signal.SIGHUP,signal.SIGALRM)
+
+# A real wire caller, executed as the configured trusted UID. Secrets enter
+# only its inherited stdin pipe; no mutation socket or operation is reachable.
+ADMISSION_CALLER=r'''
+import ctypes,hashlib,hmac,json,os,resource,secrets,socket,struct,sys,time
+resource.setrlimit(resource.RLIMIT_CORE,(0,0))
+class Refused(Exception):pass
+def require(ok,code):
+    if not ok:raise Refused(code)
+def encode(value):return json.dumps(value,separators=(',',':'),ensure_ascii=False).encode()
+def unique(pairs):
+    result={}
+    for k,v in pairs:require(k not in result,'duplicate_response');result[k]=v
+    return result
+def receive(sock,count,end):
+    value=b''
+    while len(value)<count:
+        left=end-time.monotonic();require(left>0,'native_deadline');sock.settimeout(left)
+        part=sock.recv(count-len(value));require(bool(part),'native_response_eof');value+=part
+    return value
+result={'result':'FAIL','frame_sent':False};started=None
+try:
+    boot=json.loads(sys.stdin.buffer.read(4097));require(set(boot)=={'account','operation','key','invalid_mac'},'boot_shape')
+    require(os.getuid()==os.geteuid()==1001,'caller_uid')
+    account=boot['account'];operation=boot['operation'];key=boot['key'].encode('ascii')
+    require(account in ('alice@osmap-password.invalid','bob@osmap-password.invalid') and len(key)==64,'caller_scope')
+    require(operation.get('operation') in ('authenticate','admit'),'admission_only')
+    require(set(operation)==({'operation','password'} if operation['operation']=='authenticate' else {'operation','epoch'}),'operation_shape')
+    schema='osmap-account-admission-v1';issued=int(time.time());nonce=secrets.token_hex(16)
+    payload=[schema,'request',account,operation,issued,issued+35,nonce]
+    signature=hmac.new(key,encode(payload),hashlib.sha256).hexdigest()
+    if boot['invalid_mac']:signature=('0' if signature[0]!='0' else '1')+signature[1:]
+    request={'schema':schema,'account':account,'operation':operation,'issued':issued,'expires':issued+35,'nonce':nonce,'signature':signature}
+    wire=encode(request);require(0<len(wire)<=4096,'request_bound')
+    started=time.monotonic();end=started+30
+    with socket.socket(socket.AF_UNIX,socket.SOCK_STREAM) as sock:
+        sock.settimeout(max(.001,end-time.monotonic()));sock.connect('/var/run/osmap-account-admission/admission.sock')
+        libc=ctypes.CDLL(None,use_errno=True);uid=ctypes.c_uint();gid=ctypes.c_uint()
+        libc.getpeereid.argtypes=[ctypes.c_int,ctypes.POINTER(ctypes.c_uint),ctypes.POINTER(ctypes.c_uint)];libc.getpeereid.restype=ctypes.c_int
+        require(libc.getpeereid(sock.fileno(),ctypes.byref(uid),ctypes.byref(gid))==0 and uid.value==0,'server_peer_uid')
+        sock.settimeout(max(.001,end-time.monotonic()));sock.sendall(struct.pack('!I',len(wire))+wire);result['frame_sent']=True
+        if boot['invalid_mac']:
+            sock.settimeout(max(.001,end-time.monotonic()));require(sock.recv(1)==b'','invalid_mac_returned_admission')
+            result.update(result='AWAITING_NATIVE_DIAGNOSTIC',status='closed',authenticated_response=False)
+        else:
+            length=struct.unpack('!I',receive(sock,4,end))[0];require(0<length<=4096,'response_bound')
+            response=json.loads(receive(sock,length,end),object_pairs_hook=unique)
+            require(set(response) in ({'schema','account','nonce','status','epoch','signature'}, {'schema','account','nonce','status','epoch','signature','changed_at'}),'response_shape')
+            require(response['schema']==schema and response['account']==account and response['nonce']==nonce,'response_binding')
+            require(issued<=int(time.time())<issued+35 and time.monotonic()<end,'response_expired')
+            response_payload=[schema,'response',account,nonce,response['status'],response['epoch']]
+            if response.get('changed_at') is not None:response_payload.append(response['changed_at'])
+            require(hmac.compare_digest(hmac.new(key,encode(response_payload),hashlib.sha256).hexdigest(),response['signature']),'response_mac')
+            require(response.get('changed_at') is None,'unexpected_changed_at')
+            require((response['status']=='active' and type(response['epoch']) is int and 0<=response['epoch']<2**64-1) or (response['status']=='rejected' and response['epoch'] is None),'response_status')
+            if operation['operation']=='admit' and response['status']=='active':require(response['epoch']==operation['epoch'],'response_epoch')
+            result.update(result='PASS',status=response['status'],epoch=response['epoch'],account=account,authenticated_response=True)
+    result.update(server_peer_uid=0,caller_uid=1001)
+except BaseException as error:
+    result['failure']=str(error) if type(error) is Refused else 'caller_'+type(error).__name__
+finally:
+    if started is not None:result['round_trip_ms']=round((time.monotonic()-started)*1000,3)
+print(json.dumps(result,sort_keys=True))
+'''
 
 
 def load_path(name,path):
@@ -35,7 +99,7 @@ def drop_probe_identity():
     os.setgroups([1001,1003]);os.setgid(1001);os.setuid(1001)
 
 
-def probe(path,absolute_end,disposition):
+def probe(path,absolute_end,disposition,boot=None):
     """One UID-authorized connect/EOF exchange; writes no protocol frame."""
     disposition.clear();disposition['cleanup_confirmed']=False
     code=("import json,socket,sys,time\n"
@@ -44,6 +108,7 @@ def probe(path,absolute_end,disposition):
           "data=s.recv(1);closed=time.monotonic();s.close()\n"
           "if data:raise SystemExit(7)\n"
           "print(json.dumps({'connected_ms':round((connected-t)*1000,3),'handled_ms':round((closed-t)*1000,3)}))\n")
+    if boot is not None:code=ADMISSION_CALLER
     child=None;result=None
     try:
         require(time.monotonic()<absolute_end,'probe_deadline')
@@ -52,13 +117,17 @@ def probe(path,absolute_end,disposition):
             def child_setup():
                 signal.pthread_sigmask(signal.SIG_SETMASK,previous);drop_probe_identity()
             child=subprocess.Popen(('/usr/local/bin/python3','-I','-c',code,str(path)),cwd='/',
-                stdin=subprocess.DEVNULL,stdout=subprocess.PIPE,stderr=subprocess.PIPE,
+                stdin=subprocess.DEVNULL if boot is None else subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,
                 close_fds=True,start_new_session=True,preexec_fn=child_setup,
                 env={'PATH':'/usr/local/bin:/usr/bin:/bin','HOME':'/var/empty','LC_ALL':'C'})
         finally:signal.pthread_sigmask(signal.SIG_SETMASK,previous)
-        out,err=child.communicate(timeout=max(.001,min(12,absolute_end-time.monotonic())))
+        timeout=max(.001,min(12 if boot is None else 32,absolute_end-time.monotonic()))
+        if boot is None:out,err=child.communicate(timeout=timeout)
+        else:out,err=child.communicate(json.dumps(boot,separators=(',',':')).encode(),timeout=timeout)
         require(child.returncode==0 and not err and 0<len(out)<=1024,'authorized_probe_failed')
-        value=json.loads(out);require(type(value)is dict and set(value)=={'connected_ms','handled_ms'}
+        value=json.loads(out)
+        require(type(value)is dict,'probe_result')
+        if boot is None:require(set(value)=={'connected_ms','handled_ms'}
             and all(type(value[k])in(int,float)and 0<=value[k]<12000 for k in value),'probe_result')
         result=value
     except subprocess.TimeoutExpired:
@@ -81,7 +150,7 @@ def probe(path,absolute_end,disposition):
                         except BaseException:cleanup_error=True
                     except BaseException:cleanup_error=True
                 reaped=child.returncode is not None
-                for pipe in(child.stdout,child.stderr):
+                for pipe in(child.stdout,child.stderr,getattr(child,'stdin',None)):
                     if pipe is not None and not pipe.closed:
                         try:pipe.close()
                         except BaseException:cleanup_error=True
@@ -128,29 +197,55 @@ def run(p,report):
                 if self.recovery is not None:self.recovery.checkpoint('DIRECTORY_BIRTH')
     f=LocalQualification();owner=None;complete=False;probe_dispositions=[]
     try:
+        overhead=time.monotonic()
         f.preflight();owner=f.recovery=journey.Receipt(f,installer,p)
         f.provision();f.provision_service();owner.setup_complete=True;owner.checkpoint('FIXTURE_PROVISIONED')
+        baseline={account:f.authoritative_snapshot(account,journey.WORK) for account in http.ACCOUNTS}
+        epoch_baseline={account:f.rust_epoch(account)[0] for account in http.ACCOUNTS}
+        report['baseline']=baseline
+        report['fixture_overhead_seconds']=round(time.monotonic()-overhead,6)
         startup_started=time.monotonic()
         try:f.start_helper()
         finally:report['startup_observation_seconds']=round(time.monotonic()-startup_started,6)
         owner.checkpoint('HELPER_READY')
-        readiness=f.report['service_readiness'];before={str(path):journey.ident(path.lstat())for path in q.SOCKETS}
-        probes={}
-        for label,path in zip(('admission','mutation'),q.SOCKETS):
+        readiness=f.report['service_readiness'];before={str(path):journey.ident(path.lstat()) for path in q.SOCKETS}
+        key=f.private_read(Path('/etc/osmap/account-admission.key'),64).decode('ascii')
+        requests=report['requests']={}
+        def request(label,account,operation,status,invalid=False):
+            report['current_operation']=label
             disposition={};probe_dispositions.append(disposition)
-            probes[label]=probe(path,min(journey.WORK,time.monotonic()+15),disposition)
-            require(os.waitid(os.P_PID,f.helper.pid,os.WEXITED|os.WNOHANG|os.WNOWAIT)is None,'helper_exited_after_probe')
-            require(journey.ident(path.lstat())==before[str(path)],'socket_changed_after_probe')
-        # The accept loop is entered only after ParentPrepare, ParentSeal and
-        # trace.finish(). Both UID-authorized handled connections therefore
-        # prove the complete native startup chain without a credential frame.
-        readiness.update(parent_prepare=True,parent_seal=True,
-            acceptance_proof='AUTHORIZED_UID_CONNECT_EOF_HANDLED_ON_BOTH_SOCKETS',probes=probes)
+            value=probe(q.SOCKETS[0],min(journey.WORK,time.monotonic()+32),disposition,
+                {'account':account,'operation':operation,'key':key,'invalid_mac':invalid})
+            requests[label]=value
+            if value.get('frame_sent') is True:report['admission_frames']+=1
+            require(value.get('result')==('AWAITING_NATIVE_DIAGNOSTIC' if invalid else 'PASS'),
+                label+'_'+value.get('failure','caller_result'))
+            require(value['status']==status,label+'_unexpected_status')
+            if status=='active':require(value['account']==account and value['epoch']==baseline[account]['epoch'],label+'_authority')
+            require(os.waitid(os.P_PID,f.helper.pid,os.WEXITED|os.WNOHANG|os.WNOWAIT)is None,'helper_exited_after_request')
+            require(all(journey.ident(path.lstat())==before[str(path)] for path in q.SOCKETS),'socket_changed_after_request')
+            return value
+        alice=request('alice_authenticate',http.ALICE,{'operation':'authenticate','password':f.initial_password(http.ALICE)},'active')
+        request('alice_admit',http.ALICE,{'operation':'admit','epoch':alice['epoch']},'active')
+        # Fixed disposable incorrect credential; never reuse another request's nonce.
+        wrong=f.initial_password(http.ALICE)+'-incorrect'
+        request('alice_wrong_password',http.ALICE,{'operation':'authenticate','password':wrong},'rejected')
+        request('alice_wrong_epoch',http.ALICE,{'operation':'admit','epoch':alice['epoch']+1},'rejected')
+        request('invalid_mac',http.ALICE,{'operation':'admit','epoch':alice['epoch']},'closed',True)
+        request('bob_authenticate',http.BOB,{'operation':'authenticate','password':f.initial_password(http.BOB)},'active')
+        report['current_operation']='authoritative_preservation'
+        after={account:f.authoritative_snapshot(account,journey.WORK) for account in http.ACCOUNTS}
+        require(after==baseline,'authoritative_snapshot_changed')
+        require(all(f.rust_epoch(account)[0]==epoch_baseline[account] for account in http.ACCOUNTS),'durable_epoch_changed')
+        report['after']=after
         f.inspect_state(after_test=False)
         no_write=authoritative_no_write(f.report)
-        report.update(functional_result='PASS',service_readiness=readiness,
-            authoritative_no_write=no_write,
-            native_stages={name:'PASS'for name in('ServiceStartup','ServiceFiles','ServiceAdmission','ServiceAccounts','ServiceStore','AdmissionBind','MutationBind','ParentPrepare','ParentSeal','AcceptanceLoop')})
+        readiness.update(parent_prepare=True,parent_seal=True,
+            acceptance_proof='SIGNED_NATIVE_ALICE_BOB_AUTHENTICATION_AND_EPOCH_ADMISSION')
+        report.update(functional_result='PENDING_INTEGRITY_DIAGNOSTIC',service_readiness=readiness,
+            authoritative_no_write=no_write,authoritative_preservation=True,
+            stored_sessions={'issuance':'NOT_RUN','existing_controlled_session':'ABSENT_IN_THIS_FIXTURE',
+                'reason':'No guarded session runtime started; epoch admission is not session issuance.'})
         complete=True
     except BaseException as error:
         report['functional_result']='FAIL';report['failure_category']=type(error).__name__
@@ -162,6 +257,11 @@ def run(p,report):
             if owner is not None:owner.requests_stopped=True;owner.checkpoint('REQUESTS_STOPPED')
             if f.helper is not None and not f.helper_stopped:f.stop_helper()
             if owner is not None:owner.checkpoint('HELPER_STOPPED')
+            if owner is not None and owner.setup_complete and 'baseline' in report:
+                observed={account:f.authoritative_snapshot(account,journey.END) for account in http.ACCOUNTS}
+                report['after']=observed
+                report['authoritative_preservation']=observed==report['baseline']
+                require(report['authoritative_preservation'],'authoritative_snapshot_changed')
         except BaseException as error:
             cleanup_ok=False;report['cleanup_failure_reason']=failure_reason(error)
         try:
@@ -173,6 +273,13 @@ def run(p,report):
         except BaseException as error:
             report['disposition']='RETAINED_REQUIRES_REVIEW'
             report['cleanup_failure_reason']=failure_reason(error)
+        if complete:
+            diagnostic=f.helper_diagnostic
+            if diagnostic.get('helper_trace_stage')=='stock_admission' and diagnostic.get('helper_trace_error')=='Authentication':
+                report['requests']['invalid_mac'].update(result='PASS',native_refusal='Authentication')
+                report['functional_result']='PASS'
+            else:
+                complete=False;report['functional_result']='FAIL';report['failure_reason']='integrity_diagnostic_missing'
         report['helper_diagnostic']=f.helper_diagnostic;report['owned_effects_report']=f.report
         report['result']='PASS'if complete and report['disposition']=='CONFIRMED'else'FAIL'
         report['recovery_receipt']=None if owner is None else str(owner.path)
@@ -180,7 +287,7 @@ def run(p,report):
 
 def main():
     resource.setrlimit(resource.RLIMIT_CORE,(0,0));os.umask(0o077);os.chdir('/')
-    report={'schema':'osmap-single-host-startup-v1','result':'FAIL','functional_result':'NOT_RUN','disposition':'NOT_RUN','password_mutation':False,'credential_request_frames':0,'public_service_controls':False,'public_config_writes':False,'relay_operations':False,'credential_values_retained':False}
+    report={'schema':'osmap-single-host-admission-v1','result':'FAIL','functional_result':'NOT_RUN','disposition':'NOT_RUN','password_mutation':False,'admission_frames':0,'mutation_frames':0,'public_service_controls':False,'public_config_writes':False,'relay_operations':False,'credential_values_retained':False}
     def stop(_number,_frame):raise journey.Refused('actor_interrupted')
     for number in STOP_SIGNALS:signal.signal(number,stop)
     try:

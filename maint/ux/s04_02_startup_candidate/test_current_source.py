@@ -28,7 +28,7 @@ def load(name):
     value=importlib.util.module_from_spec(spec);spec.loader.exec_module(value);return value
 
 binder=load('bind_startup');stage=load('stage_root');consumer=load('consume_startup')
-cleanup=load('cleanup_owned_stages');startup=load('startup_only')
+cleanup=load('cleanup_owned_stages');startup=load('startup_only');wrapper=load('remote_wrapper')
 spec=importlib.util.spec_from_file_location('current_journey',ROOT/'sources/backend/local_journey.py')
 journey=importlib.util.module_from_spec(spec);spec.loader.exec_module(journey)
 
@@ -139,10 +139,95 @@ class CurrentSourceIntegration(unittest.TestCase):
             value={'schema':'osmap-single-host-transport-v1','result':'COMPLETE',
                 'born_child_reaped':True,'born_group_gone':True,'root_exit':0,'stderr_bytes':0,
                 'failure':None,'frames':frames+[actor]}
-            with self.assertRaisesRegex(RuntimeError,'startup_result'):
+            with self.assertRaisesRegex(RuntimeError,'admission_result'):
                 consumer.inspect(value,0,self.p['not_after_utc'],self.p)
             self.assertTrue(back.exists());self.assertTrue(front.exists())
             self.dispose(back,front,frames)
+
+    def test_admission_actor_output_consumes_and_rejects_missing_proofs(self):
+        # Execute the actual actor producer. Native boundaries alone are doubles;
+        # this establishes serialization compatibility, never functional PASS.
+        accounts=('alice@osmap-password.invalid','bob@osmap-password.invalid')
+        sockets=[SimpleNamespace(lstat=lambda:None) for _ in range(2)]
+        class Fixture:
+            def __init__(self):
+                self.report={key:True for key in ('cleanup_confirmed','public_original25_preserved',
+                    'public_master_preserved','owned_sql_hash_uids_absent')}
+                self.report.update(actual_write_observed=False,Alice_exact15_preserved=True,
+                    Alice_epoch=0,Alice_state='active',Bob_all17_preserved=True)
+                self.helper=None;self.helper_stopped=False;self.provisioning_started=False
+                self.sql_uncertain=self.process_uncertain=self.identity_uncertain=self.creation_uncertain=False
+                self.helper_diagnostic={'helper_reaped':True,'helper_exit_code':0,'helper_signaled':False,
+                    'helper_trace_stage':'stock_admission','helper_trace_error':'Authentication'}
+            def preflight(self):pass
+            def provision(self):self.provisioning_started=True
+            def provision_service(self):pass
+            def authoritative_snapshot(self,account,_end):
+                return {'account':account,'epoch':0,'state':'active','changed_at':None}
+            def rust_epoch(self,account):return ({'epoch':0},None)
+            def start_helper(self):
+                self.helper=SimpleNamespace(pid=424242)
+                self.report['service_readiness']={'service_binary_sha256':self_pin,'startup_seconds':0.5}
+            def stop_helper(self):self.helper_stopped=True
+            def private_read(self,*_args):return b'a'*64
+            def initial_password(self,_account):return 'disposable-fixture-value'
+            def inspect_state(self,**_kwargs):pass
+            def cleanup(self):pass
+        class Receipt:
+            def __init__(self,*_args):self.setup_complete=False;self.requests_stopped=False;self.path='/owned/receipt'
+            def checkpoint(self,*_args):pass
+        q=SimpleNamespace(Qualification=Fixture,SOCKETS=sockets)
+        http=SimpleNamespace(RustAuthoritativeCustodian=type('Custodian',(),{}),
+            ACCOUNTS=accounts,ALICE=accounts[0],BOB=accounts[1])
+        fakejourney=SimpleNamespace(END=time.monotonic()+300,WORK=time.monotonic()+150,
+            Receipt=Receipt,ident=lambda _:0,
+            load=lambda name:{'stock_qualification.py':q,'rust_http_driver.py':http,
+                'install_account_password.py':SimpleNamespace()}[name])
+        def actual_boundary(_path,_end,disposition,boot=None):
+            disposition['cleanup_confirmed']=True
+            op=boot['operation'];invalid=boot['invalid_mac']
+            status='closed' if invalid else ('rejected' if op.get('epoch')==1 or
+                op.get('password','').endswith('-incorrect') else 'active')
+            value={'result':'AWAITING_NATIVE_DIAGNOSTIC' if invalid else 'PASS',
+                'status':status,'authenticated_response':not invalid,'frame_sent':True,
+                'cleanup_confirmed':True,'caller_uid':1001,'server_peer_uid':0,'round_trip_ms':1.0}
+            if not invalid:value.update(account=boot['account'],epoch=0 if status=='active' else None)
+            return value
+        self_pin=self.p['helper']['sha256']
+        report={'schema':'osmap-single-host-admission-v1','admission_frames':0,'mutation_frames':0,
+            **{k:False for k in ('password_mutation','public_service_controls','public_config_writes',
+                'relay_operations','credential_values_retained')}}
+        p={'helper_sha256':self_pin,'source_commit':self.p['source_commit'],'config_map_sha256':'a'*64,
+            'public_sql_sha256':'b'*64,'backend_sources':{'custody.py':'c'*64}}
+        with patch.object(startup,'journey',fakejourney),patch.object(startup,'probe',actual_boundary), \
+                patch.object(startup.os,'waitid',return_value=None):
+            startup.run(p,report)
+        serialized=json.loads(json.dumps(report))
+        self.assertEqual(consumer.inspect_admission(serialized,self.p)['result'],'PASS')
+        with tempfile.TemporaryDirectory() as directory:
+            back,front,frames=self.stage_fixture(Path(directory))
+            wire=b''.join(json.dumps(v).encode()+b'\n' for v in frames+[serialized])
+            parsed=[];wrapper.parse_actor_frames(wire,parsed)
+            transport={'schema':'osmap-single-host-transport-v1','result':'COMPLETE',
+                'born_child_reaped':True,'born_group_gone':True,'root_exit':0,
+                'stderr_bytes':0,'failure':None,'frames':parsed}
+            self.assertEqual(consumer.inspect(transport,0,self.p['not_after_utc'],self.p)['result'],'PASS')
+            retained=[]
+            with self.assertRaisesRegex(wrapper.Refused,'actor_frame_schema'):
+                wrapper.parse_actor_frames(wire+b'{"schema":"unknown"}\n',retained)
+            self.assertEqual(retained,parsed)
+            retained=[]
+            with self.assertRaisesRegex(wrapper.Refused,'actor_frame_termination'):
+                wrapper.parse_actor_frames(wire+b'{"schema":',retained)
+            self.assertEqual(retained,parsed)
+            self.dispose(back,front,frames)
+        for key in ('diagnostic','cleanup','preservation','signed_rejection'):
+            bad=copy.deepcopy(serialized)
+            if key=='diagnostic':bad['helper_diagnostic']['helper_trace_error']='Unavailable'
+            elif key=='cleanup':bad['owned_effects_report']['cleanup_confirmed']=False
+            elif key=='preservation':bad['after'][accounts[1]]['epoch']=1
+            else:bad['requests']['alice_wrong_epoch']['authenticated_response']=False
+            with self.subTest(key=key),self.assertRaises(RuntimeError):consumer.inspect_admission(bad,self.p)
 
     def test_invalid_source_and_profile_refuse_before_stage_effects(self):
         for kind in('source_commit','source_hash','profile'):

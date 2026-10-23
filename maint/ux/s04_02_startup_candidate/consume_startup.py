@@ -24,6 +24,8 @@ def inspect(value,code,expiry,packet):
         and ready['helper_sha256']==packet['helper']['sha256']
         and ready['web_sha256']==packet['web']['sha256']
         and ready['packet_sha256']==hashlib.sha256(json.dumps(packet,sort_keys=True,separators=(',',':')).encode()).hexdigest(),'current_build_binding')
+    if actor.get('schema')=='osmap-single-host-admission-v1':
+        return inspect_admission(actor,packet)
     require(actor['schema']=='osmap-single-host-startup-v1'and actor['result']=='PASS'
         and actor['functional_result']=='PASS'and actor['disposition']=='CONFIRMED','startup_result')
     require(actor['password_mutation']is False and actor['credential_request_frames']==0
@@ -54,3 +56,52 @@ def inspect(value,code,expiry,packet):
         'source_commit':packet['source_commit'],'compiler_receipt_sha256':packet['compiler_receipt_sha256'],'compiler_source_manifest_sha256':packet['compiler_source_manifest_sha256'],'service_binary_sha256':readiness['service_binary_sha256'],
         'password_mutation':False,'authoritative_no_write':actor['authoritative_no_write'],
         'public_service_operations':False,'cleanup_confirmed':True}
+
+
+def inspect_admission(actor,packet):
+    require(actor['result']=='PASS' and actor['functional_result']=='PASS'
+        and actor['disposition']=='CONFIRMED','admission_result')
+    require(actor['password_mutation'] is False and actor['mutation_frames']==0
+        and actor['admission_frames']==6 and all(actor[k] is False for k in
+        ('public_service_controls','public_config_writes','relay_operations','credential_values_retained')),'admission_scope')
+    requests=actor['requests']
+    cases={'alice_authenticate':('active','alice@osmap-password.invalid',0),
+        'alice_admit':('active','alice@osmap-password.invalid',0),
+        'alice_wrong_password':('rejected','alice@osmap-password.invalid',None),
+        'alice_wrong_epoch':('rejected','alice@osmap-password.invalid',None),
+        'bob_authenticate':('active','bob@osmap-password.invalid',0)}
+    require(set(requests)==set(cases)|{'invalid_mac'},'admission_cases')
+    for name,(status,account,epoch) in cases.items():
+        v=requests[name]
+        require(v['result']=='PASS' and v['status']==status and v['account']==account
+            and v['epoch']==epoch and v['authenticated_response'] is True,'signed_response_'+name)
+    for name,v in requests.items():
+        require(v['result']=='PASS' and v['cleanup_confirmed'] is True and v['frame_sent'] is True
+            and v['caller_uid']==1001 and v['server_peer_uid']==0
+            and type(v['round_trip_ms']) in (int,float) and 0<v['round_trip_ms']<30000,'native_boundary_'+name)
+    integrity=requests['invalid_mac'];diagnostic=actor['helper_diagnostic']
+    require(integrity['status']=='closed' and integrity['authenticated_response'] is False
+        and integrity['native_refusal']=='Authentication'
+        and diagnostic['helper_trace_stage']=='stock_admission'
+        and diagnostic['helper_trace_error']=='Authentication','integrity_refusal')
+    accounts={'alice@osmap-password.invalid','bob@osmap-password.invalid'}
+    require(actor['authoritative_preservation'] is True and set(actor['baseline'])==accounts
+        and actor['baseline']==actor['after'],'authoritative_preservation')
+    for account,v in actor['baseline'].items():
+        require(v['account']==account and v['epoch']==0 and v['state']=='active'
+            and v['changed_at'] is None,'initial_authority')
+    require(actor['authoritative_no_write']['actual_write_observed'] is False,'credential_preservation')
+    require(actor['stored_sessions']['issuance']=='NOT_RUN'
+        and actor['stored_sessions']['existing_controlled_session']=='ABSENT_IN_THIS_FIXTURE','session_scope')
+    ready=actor['service_readiness'];owned=actor['owned_effects_report']
+    require(ready['parent_prepare'] is True and ready['parent_seal'] is True
+        and ready['service_binary_sha256']==packet['helper']['sha256'],'native_service')
+    require(all(owned[k] is True for k in ('cleanup_confirmed','public_original25_preserved',
+        'public_master_preserved','owned_sql_hash_uids_absent')),'owned_cleanup')
+    require(diagnostic['helper_reaped'] is True and diagnostic['helper_exit_code']==0
+        and diagnostic['helper_signaled'] is False,'helper_cleanup')
+    return {'result':'PASS','disposition':'CONFIRMED','requests':requests,
+        'startup_seconds':ready['startup_seconds'],'fixture_overhead_seconds':actor['fixture_overhead_seconds'],
+        'authoritative_preservation':True,'stored_sessions':actor['stored_sessions'],
+        'source_commit':packet['source_commit'],'service_binary_sha256':packet['helper']['sha256'],
+        'password_mutation':False,'cleanup_confirmed':True}

@@ -71,10 +71,12 @@ def helper_trace_scalars(stdout,stderr):
     result={'helper_trace_known':False,'helper_trace_worker':False,
         'helper_trace_operation_id':0,'helper_trace_category_id':0,'helper_trace_error_id':0}
     if stdout or len(stderr)>4096 or not stderr.isascii():return result
-    for error,name in enumerate(HELPER_TRACE_ERRORS):
-        if stderr==('account_password_service stage=stock_operation error='+name+'\n').encode('ascii'):
-            result.update(helper_trace_known=True,helper_trace_operation_id=65,helper_trace_error_id=error+1)
-            return result
+    for stage,operation in (('stock_operation',65),('stock_admission',66)):
+        for error,name in enumerate(HELPER_TRACE_ERRORS):
+            if stderr==('account_password_service stage='+stage+' error='+name+'\n').encode('ascii'):
+                result.update(helper_trace_known=True,helper_trace_operation_id=operation,
+                    helper_trace_error_id=error+1,helper_trace_stage=stage,helper_trace_error=name)
+                return result
     lines=stderr.splitlines(keepends=True)
     if len(lines)!=2 or not all(x.endswith(b'\n')for x in lines) or lines[1]!=b'Account password service unavailable.\n':return result
     for worker,prefixes in((False,HELPER_TRACE_PREFIXES),(True,HELPER_WORKER_TRACE_PREFIXES)):

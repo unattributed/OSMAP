@@ -1,7 +1,7 @@
 """Fixed foo transport keeper for a hash-admitted root staging/journey actor."""
 import base64,hashlib,json,os,re,selectors,signal,socket,stat,subprocess,sys,time
 from pathlib import Path
-ROOT_SOURCE_SHA256='b5a201f8abe3616c394b8623bc7250a9656e44aa66b8be74cf47016ca246a300'
+ROOT_SOURCE_SHA256='c96634efcf9abafd5b06cff13ff7bf73158e7632f7e2e58ddc00b1ce45ef9c20'
 STOPS={signal.SIGALRM,signal.SIGHUP,signal.SIGTERM,signal.SIGINT}
 START=time.monotonic();END=START+630
 PYTHON=Path('/usr/local/bin/python3')
@@ -59,6 +59,20 @@ def spawn_actor(data,source,previous):
     interpreter=select_python()
     child=subprocess.Popen(('/usr/bin/doas','-n','/usr/local/bin/python3','-I','-c',source.decode()),cwd='/',stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,close_fds=True,start_new_session=True,preexec_fn=lambda:signal.pthread_sigmask(signal.SIG_SETMASK,previous),env={'PATH':'/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin','HOME':'/home/foo','LC_ALL':'C'})
     return interpreter,child
+
+def parse_actor_frames(raw,frames):
+    """Keep admitted ownership frames even when a later frame is refused."""
+    require(bool(raw),'actor_frame_termination')
+    for line in raw.splitlines(keepends=True):
+        require(line.endswith(b'\n'),'actor_frame_termination')
+        require(len(frames)<5,'actor_frame_count')
+        item=json.loads(line)
+        require(type(item)is dict and item.get('schema')in(
+            'osmap-single-host-stage-birth-v1','osmap-single-host-stage-ready-v1',
+            'osmap-single-host-stage-refusal-v1','osmap-single-host-startup-v1',
+            'osmap-single-host-admission-v1'),'actor_frame_schema')
+        frames.append(item)
+
 def main():
     os.umask(0o077)
     for number in STOPS:signal.signal(number,interrupted)
@@ -116,11 +130,9 @@ def main():
     # Only parsed JSON frames from the secret-excluding actor are exported.
     frames=[]
     try:
-        require(out[0].endswith(b'\n'),'actor_frame_termination')
-        for line in bytes(out[0]).splitlines():
-            item=json.loads(line);require(type(item)is dict and item.get('schema')in('osmap-single-host-stage-birth-v1','osmap-single-host-stage-ready-v1','osmap-single-host-stage-refusal-v1','osmap-single-host-startup-v1'),'actor_frame_schema');frames.append(item)
-        require(len(frames)<=5,'actor_frame_count')
-    except BaseException:frames=[];failure=failure or'actor_frames_refused'
+        parse_actor_frames(bytes(out[0]),frames)
+    except BaseException as error:
+        failure=failure or (str(error) if type(error)is Refused else 'actor_frames_refused')
     result={'schema':'osmap-single-host-transport-v1','result':'COMPLETE'if failure is None and reaped and gone and child.returncode==0 and not out[1]else'FAIL','root_exit':child.returncode,'born_child_reaped':reaped,'born_group_gone':gone,'frames':frames,'failure':failure,'interpreter':interpreter,'stdout_sha256':hashlib.sha256(out[0]).hexdigest(),'stderr_sha256':hashlib.sha256(out[1]).hexdigest(),'stderr_bytes':len(out[1]),'elapsed_millis':int((time.monotonic()-START)*1000)}
     print(json.dumps(result,sort_keys=True));return 0 if result['result']=='COMPLETE'else 1
 if __name__=='__main__':

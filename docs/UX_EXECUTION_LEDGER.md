@@ -10005,7 +10005,8 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
       "operator",
       "/root/dependency_python",
       "/root/dependency_native",
-      "/root/schema"
+      "/root/schema",
+      "/root/admission_review"
     ],
     "security_review": [
       "/root/scrum_security_review",
@@ -10021,7 +10022,8 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
       "/root/guardrails_engineer",
       "/root/password_prototype_review",
       "/root/dependency_python",
-      "/root/dependency_native"
+      "/root/dependency_native",
+      "/root/admission_review"
     ],
     "technical_writer": [
       "/root",
@@ -10279,7 +10281,8 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "maint/ux/s04_02_startup_candidate/test_current_source.py",
     "maint/security/osmap-tls-policy-guard.sh",
     "maint/ux/s04_02_startup_candidate/source_review.json",
-    "maint/ux/s04_02_startup_candidate/milestone1_evidence.json"
+    "maint/ux/s04_02_startup_candidate/milestone1_evidence.json",
+    "maint/ux/s04_02_startup_candidate/milestone2_evidence.json"
   ],
   "outcomes": [
     {
@@ -10439,7 +10442,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "status": "PENDING",
     "reference": "Only minimal well-defined own-password usability after all agent-owned development/matching deployed QA/independent audit PASS. No operator password is changed by agent qualification; use controlled disposable Alice and preserve Bob/operator state. NOT RUN."
   },
-  "next_action": "Milestone1 native startup and paired non-mutating sockets PASS on signed77f artifacts. Finish normal signed preservation; next functional objective remains T03 using same binaries, with ordinary installed readiness and user acceptance unclaimed.",
+  "next_action": "Preserve independently verified Milestone2 via normal signed Git delivery; Milestone3 password mutation requires its own explicit operator instruction and is NOT_RUN. S04-02 full T03/installed acceptance remains OPEN.",
   "accountability": {
     "functional_exit": "Working own-account Settings password change through the selected single-host obsd1 local account service and authoritative local backend, fresh password/TOTP step-up, one conditional SQL update, durable OSMAP epoch and all-browser revocation, actual source-bound cache handling, old-password refusal/new-login success and Bob preservation. Existing third-party SMTP/IMAP sessions may remain authenticated. Matching installed QA, independent audit and minimal owner usability remain required. Toronto is later separate production installation.",
     "owner": "/root",
@@ -19516,6 +19519,98 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "elapsed_seconds": 0.557,
         "reference": "/home/foo/Downloads/osmap-ux-s04/current-source-milestone1-20261023/startup148/cleanup-result.json SHA256 419db3fb0095af249e535b3ad74cdaeefdfe70060165409be962fa8983f601db",
         "reason": "Actual current148 exact-owned stages disposed:21 files/two directories removed, bothpathsabsent/openreferencesabsent; final DISPOSED recovery bytes retained privately first. No account/service operation. Current compiled artifacts intentionally retained for reuse."
+      },
+      {
+        "id": "S04-02-native-admission151",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "source_revision": "8ba0e2124d8d42827dbc260378565120f9ca46c12b3a4ecfd2833e41b5ec950a",
+        "change_reference": "Direct operator Milestone2 request: unchanged qualified Rust binary; replace EOF probes with six real wire admission frames, authoritative before/after preservation and exact native integrity diagnostic. No mutation. Existing 27 focused checks pass including actual actor producer to consumer and cleanup/refusal discriminators.",
+        "success_chain_review": {
+          "reviewer": "/root/admission_review",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/milestone2-native-admission-20261023/startup-independent-review.json",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "UNKNOWN",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 12.563,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/milestone2-native-admission-20261023/startup-result.json",
+        "reason": "Carrier defect: native actor exit0 but wrapper whitelist omitted admission result schema and erased frames. No functional PASS; exact packet-bound DISPOSED recovery retained. Initial observer compared outer packet hash and found zero; corrected inner packet hash matched exactly one. No native retry before verified disposition."
+      },
+      {
+        "id": "S04-02-admission151-stage-cleanup152",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "fe48d885bea48f3c641deeb53747fecd187a185480df173acc2be0e0598ae4f2",
+        "change_reference": "Exact native151 receipt-bound inert stage disposition using unchanged prior150 cleanup body with observed scalar binding; recovery DISPOSED retained.",
+        "success_chain_review": {
+          "reviewer": "/root/admission_review",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/milestone2-native-admission-20261023/cleanup-review.json",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 0.62,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/milestone2-native-admission-20261023/cleanup-result.json",
+        "reason": "Exact21 stage leaves/two dirs removed; independent current SQL principal/rows/OSusers/groups/runtime absence verified. No uncertainty or historical PID signals."
+      },
+      {
+        "id": "S04-02-native-admission153",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "source_revision": "c2d1bb5359749834e0ad5e667a61a40abea21a979071b8148a5dedbdd226691f",
+        "change_reference": "Fix proven151 carrier schema loss: admission schema admitted; valid frame prefix preserved on later malformed schema/partial JSON. Actual actor->stager->wrapper->consumer test27 PASS;151 fixture and stages verified disposed. No Rust/backend correction or deadline change.",
+        "success_chain_review": {
+          "reviewer": "/root/admission_review",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/milestone2-native-admission-20261023/admission153/startup-independent-review.json",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 12.31,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/milestone2-native-admission-20261023/admission153/startup-result.json",
+        "reason": "Actual signed native Alice/Bob Authenticate, epoch0 Admit, signed password/epoch refusals and invalid-MAC Authentication diagnostic PASS; full authoritative snapshots unchanged; no mutation; runtime cleanup CONFIRMED. Stored-session issuance NOT_RUN."
+      },
+      {
+        "id": "S04-02-admission153-stage-cleanup154",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "d7906d0e22fbf909f05f795324b980f017c9d168fc048bf2b426480597df5b2f",
+        "change_reference": "Final153 DISPOSED recovery retained; same reviewed exact-owned cleanup with receipt-derived scalar binding.",
+        "success_chain_review": {
+          "reviewer": "/root/admission_review",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/milestone2-native-admission-20261023/admission153/cleanup-review.json",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 0.623,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/milestone2-native-admission-20261023/admission153/cleanup-result.json",
+        "reason": "Final153 exact owned21 stage leaves/two directories removed after final DISPOSED receipt retained; exact fstat references absent, paths absent, no historical PID signals or account/service operations."
       }
     ],
     "prior_investigations": [
@@ -31026,6 +31121,208 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
             }
           }
         ]
+      },
+      {
+        "id": "milestone2-native-admission151",
+        "kind": "NATIVE",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "single-host-readiness"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "docs/UX_EXECUTION_LEDGER.md"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/usr/bin/python3",
+            "arguments": [
+              "/home/foo/Workspace/OSMAP/maint/ux/s04_02_startup_candidate/dispatch_startup.py",
+              "--build-receipt",
+              "/home/foo/Downloads/osmap-ux-s04/current-source-milestone1-20261023/build/result.json",
+              "--source-manifest",
+              "/home/foo/Downloads/osmap-ux-s04/current-source-milestone1-20261023/build/manifest.json",
+              "--run-dir",
+              "/home/foo/Downloads/osmap-ux-s04/milestone2-native-admission-20261023",
+              "--attempt-id",
+              "S04-02-native-admission151",
+              "--recipe",
+              "milestone2-native-admission151"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "Actual Rust StockPrimary Alice/Bob authentication, epoch admission, signed wrong-password/wrong-epoch refusals, invalid-MAC native Authentication refusal, unchanged authoritative rows/epochs, timing and exact-owned cleanup. First failed boundary stops sequence; no password change, mutation socket, production flags, session creation or public service controls.",
+        "prerequisites": [
+          {
+            "id": "approved-binary-build",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/current-source-milestone1-20261023/build/outcome-review.json",
+              "sha256": "99be7579346b412c18f9bbefedbc0f3f9bc2c629a108bb27b0f657a156da893f"
+            }
+          },
+          {
+            "id": "prior-owned-cleanup",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/current-source-milestone1-20261023/startup148/cleanup-result.json",
+              "sha256": "419db3fb0095af249e535b3ad74cdaeefdfe70060165409be962fa8983f601db"
+            }
+          },
+          {
+            "id": "independent-admission-integration",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/milestone2-native-admission-20261023/startup-independent-review.json",
+              "sha256": "ab4529d51657345c36469cdd75f27acad574d096871d674ef61679ea508d88e1"
+            }
+          }
+        ]
+      },
+      {
+        "id": "admission151-stage-cleanup152",
+        "kind": "NATIVE",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "single-host-readiness"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "docs/UX_EXECUTION_LEDGER.md"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/usr/bin/python3",
+            "arguments": [
+              "-B",
+              "/home/foo/Downloads/osmap-ux-s04/milestone2-native-admission-20261023/execute_cleanup.py"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "Exact152 stage cleanup after verified DISPOSED recovery; no PID signals or account/service operations.",
+        "prerequisites": [
+          {
+            "id": "exact-disposed-recovery",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/milestone2-native-admission-20261023/recovery_observed_corrected.json",
+              "sha256": "b2ecc3aa1cd9434aa3f748911aa8d6d3e422a7791f588ab4e56ff246859269c0"
+            }
+          }
+        ]
+      },
+      {
+        "id": "milestone2-native-admission153",
+        "kind": "NATIVE",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "single-host-readiness"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "docs/UX_EXECUTION_LEDGER.md"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/usr/bin/python3",
+            "arguments": [
+              "/home/foo/Workspace/OSMAP/maint/ux/s04_02_startup_candidate/dispatch_startup.py",
+              "--build-receipt",
+              "/home/foo/Downloads/osmap-ux-s04/current-source-milestone1-20261023/build/result.json",
+              "--source-manifest",
+              "/home/foo/Downloads/osmap-ux-s04/current-source-milestone1-20261023/build/manifest.json",
+              "--run-dir",
+              "/home/foo/Downloads/osmap-ux-s04/milestone2-native-admission-20261023/admission153",
+              "--attempt-id",
+              "S04-02-native-admission153",
+              "--recipe",
+              "milestone2-native-admission153"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "Actual Rust StockPrimary Alice/Bob authentication, epoch admission, signed wrong-password/wrong-epoch refusals, invalid-MAC native Authentication refusal, unchanged authoritative rows/epochs, timing and exact-owned cleanup. First failed boundary stops sequence; no password change, mutation socket, production flags, session creation or public service controls.",
+        "prerequisites": [
+          {
+            "id": "approved-binary-build",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/current-source-milestone1-20261023/build/outcome-review.json",
+              "sha256": "99be7579346b412c18f9bbefedbc0f3f9bc2c629a108bb27b0f657a156da893f"
+            }
+          },
+          {
+            "id": "actual151-disposition",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/milestone2-native-admission-20261023/cleanup-result.json",
+              "sha256": "4ed4f9da6af0623444b045c93e1569e7673e7f0eb09fc0ff178c185fa54e6108"
+            }
+          },
+          {
+            "id": "corrected-full-chain-review",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/milestone2-native-admission-20261023/admission153/startup-independent-review.json",
+              "sha256": "bad401da4eb0571ea33eff5dd2c1167e0c9559b53fb9123bd7da221cd6bb2a46"
+            }
+          }
+        ]
+      },
+      {
+        "id": "admission153-stage-cleanup154",
+        "kind": "NATIVE",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "single-host-readiness"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "docs/UX_EXECUTION_LEDGER.md"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/usr/bin/python3",
+            "arguments": [
+              "-B",
+              "/home/foo/Downloads/osmap-ux-s04/milestone2-native-admission-20261023/admission153/execute_cleanup.py"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "Final154 exact owned21 stage leaves/two dirs disposed with fstat/identity checks; no PID signals or account/service operations.",
+        "prerequisites": [
+          {
+            "id": "actual153-pass",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/milestone2-native-admission-20261023/admission153/startup-result.json",
+              "sha256": "de810d48ce93d9cf491bbdfdc4140f52d661fa2fa0e707366ce89f224e548f8f"
+            }
+          }
+        ]
       }
     ],
     "budget": {
@@ -31041,7 +31338,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
   },
   "blocker": null,
   "independent_next_action": "Independent build/startup/current-stage outcome reviews PASS; preserve exact limitations and no T03/password claim.",
-  "updated_at": "2026-10-23T14:58:06Z"
+  "updated_at": "2026-10-23T16:24:23Z"
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->
@@ -35019,3 +35316,58 @@ Signed Rust source `77f63794d3f60e4003db157eada39f4bd4222b6a` built once on obsd
 Actual-current-artifact local producer/admission/consumer and genuine failed-admission/exact-cleanup integration3 PASS. Local147 refused stale validator hash before host dispatch; exact current validator pin correction and focused regression passed with independent review. Actual148 native startup PASS5.080s whole dispatch: both socket paths published in0.627818s; handled authorizedUID EOF on admission (connected0.024ms/handled572.871ms) and mutation (connected0.025ms/handled100.698ms) independently establish ParentPrepare/ParentSeal/AcceptanceLoop. No separate ParentSeal timestamp is claimed. No credential frames/password write; controlled Alice/Bob full17 state and zero epochs preserved. Native confinement unchanged. Public original25 config/master and operator accounts preserved; owned fixture2users/2groups/2rows/1DBuser/12files/5dirs disposed, service exit0/reaped/groupgone.
 
 Host exact-owned cleanup146 removed old145 retained19files/two dirs; cleanup150 removed current148 inert21files/two dirs only after retaining final DISPOSED recovery evidence. Both sets of paths confirmed absent; no historical PID signalling/public service control. Compiler artifacts retained for subsequent functional work. Sanitized evidence in `maint/ux/s04_02_startup_candidate/milestone1_evidence.json`; private source/compiler/runtime/recovery evidence root `/home/foo/Downloads/osmap-ux-s04/current-source-milestone1-20261023/`. Milestone1 is PASS; T03/password workflow remains NOT_RUN for current source, historical failures retained, S04-02 and ordinary installed readiness/UAT remain OPEN.
+
+
+## 2026-10-23 — Milestone 2 native admission authorized
+
+Direct operator request scopes one disposable Alice/Bob fixture and one Rust service
+instance on obsd1 to Authenticate/Admit only. Reuse build77f6379/helper8f1ed891;
+compiled HTTP caller660ba246 remains identity-checked but unexecuted because its
+selector includes password mutation. The small protected-stdin Python wire caller
+uses the existing signed protocol, kernel peer validation and native StockPrimary.
+Root owns integration/host/Git; /root/admission_review owns independent source and
+result QA. Existing fixture runtime/cleanup bounds remain technical limits, not
+authorization expiry.27 focused checks pass; native result NOT_RUN at preparation.
+No production qualification, browser/session issuance or Milestone3 mutation.
+
+
+## 2026-10-23 — Milestone 2 verified native admission PASS
+
+Actual153 ran one fresh fixture/one Rust service on obsd1 with unchanged signed
+77f6379 source/helper8f1ed891. Alice Authenticate PASS canonical Alice/epoch0;
+Admit0 PASS; incorrect password and mismatched epoch returned authenticated
+rejected/null responses. One deliberately invalid MAC was closed with exact
+native stock_admission Authentication diagnostic; Bob Authenticate PASS epoch0.
+All independent requests used fresh nonces; actual caller verified MAC, account,
+epoch, freshness and root kernel peer. No mutation socket frames were dispatched.
+
+Monotonic round trips ms: Alice672.118, Admit21.800, wrong password2225.558, wrong
+epoch22.571, invalid MAC18.537, Bob4203.619. Fixture overhead1.379880s, paired socket
+publication0.628333s, whole dispatch12.310s. These are single observations, without
+backend subphase timing or speculative performance correction. Deadlines unchanged.
+
+Full17 authoritative rows/credential digests and complete epoch records unchanged
+for Alice/Bob; both epoch0 active/null changed-at; SQL modified20000101000000
+unchanged. Existing controlled stored session absent in this fixture; issuance
+NOT_RUN, no session runtime created. No mail operation or public-service control/
+configuration write, production flag change or installed-browser acceptance.
+
+First151 carrier result UNKNOWN: its wrapper omitted the new actor schema and
+discarded valid preceding frames despite root exit0. No functional PASS claimed.
+Exact packet-bound final DISPOSED recovery and independent current resource absence
+confirmed; cleanup152 removed exact21 leaves/two dirs. Small correction admits the
+new schema and preserves validated prefix on malformed/partial later frames;
+existing27 checks include actual actor->stager->wrapper->consumer integration.
+Fresh153 result independently reproduced by /root/admission_review. Runtime
+cleanup removed two rows, one SQL principal, two OS users/groups,12 files/five
+directories; service child exit0/group absent and dedicated role absence verified.
+Final154 removed21 staging leaves/two directories, exact paths/open references
+absent. Compiled artifacts retained. Private evidence root:
+`/home/foo/Downloads/osmap-ux-s04/milestone2-native-admission-20261023/`.
+Sanitized evidence: `maint/ux/s04_02_startup_candidate/milestone2_evidence.json`.
+Milestone2 PASS does not close S04-02, full password-change T03, installed QA or UAT.
+Milestone3 remains NOT_RUN and no credential mutation is authorized by this task.
+
+Independent final outcome review PASS: `admission153/outcome-review.json` SHA256
+`890dd9f550047d83ae7545f094d7f08ac748bd854f2be74f750b4b658bdbaf5b`.
+Final signed Rust compiler-input parity remains PASS for77f6379; no rebuild.
