@@ -10533,7 +10533,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "status": "PENDING",
     "reference": "Only minimal well-defined own-password usability after all agent-owned development/matching deployed QA/independent audit PASS. No operator password is changed by agent qualification; use controlled disposable Alice and preserve Bob/operator state. NOT RUN."
   },
-  "next_action": "Complete independent source review and signed delivery of minimumC. Next native candidate is matching OpenBSD libtest build plus exactly one read-only actual StockPeer constructor/recheck test with PS/FSTAT forbidden; no helper service, authentication, fixture or password operation. Native operation requires fresh explicit authority before dispatch.",
+  "next_action": "Selected native constructor gap now PASS. Prepare smallest actual helper ParentPrepare/ParentSeal/accept-loop and non-mutating admission composition under current task boundaries; do not infer R1/R2/T03 from constructor. Finish signed normal GitHub preservation of actual result.",
   "accountability": {
     "functional_exit": "Working own-account Settings password change through the selected single-host obsd1 local account service and authoritative local backend, fresh password/TOTP step-up, one conditional SQL update, durable OSMAP epoch and all-browser revocation, actual source-bound cache handling, old-password refusal/new-login success and Bob preservation. Existing third-party SMTP/IMAP sessions may remain authenticated. Matching installed QA, independent audit and minimal owner usability remain required. Toronto is later separate production installation.",
     "owner": "/root",
@@ -21670,6 +21670,54 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "reason": "UnchangedCWEguardrecognizesconventionalcfg(test)modtests; newuppercaseSQLfixturein stock_authority_testswasnotexcluded. Priorreviewmisseddeliveryconsumerconstraint. NoGitHubpushor guardbypass occurred.",
         "correction": "Moveexactregressioninto private stock_sql conventional cfg(test)modtests. Productionparser/bodyandallotherselectorsunchanged. ExactmovedRusttest1PASS; unchangedCWEguardPASS; normaldeliveryagainrequired.",
         "history": "Originalsignedcommit, logs, archive and review preserved. Noamend/rewrite/qualificationchange/host/Pythonaction."
+      },
+      "native_component_operator_authorization": {
+        "operator_direction": "I authorise you to act with full authority and autonomy to complete this task, with out having to ask me permission again. Subsequent direction: if you encounter errors, analyze them in flight, adjust, retest, examine.",
+        "applies_to": "One explicitly described S04-02-C-native-constructor-01 offline unprivileged library-test build and exact root constructor/recheck test on obsd1 192.168.1.44, with independent source/launcher review.",
+        "source_commit": "0e08f483cdf1ebbea3239834b7d14796faf5d2f2",
+        "limits": "Compile600/test20/whole720seconds; one-shot operation, no automatic unchanged native retry. No authentication, SQL execution, password/account/service/configuration changes, provisioning, production contact or retained-resource disposal. Retain earliest diagnostics and uncertainty; analyze demonstrated failure and test justified corrections within scope without repeated permission requests.",
+        "status": "FIRST_OPERATION_CONSUMED_BUILD_FAIL; LATEST_FULL_AUTONOMY_ERROR_ADJUSTMENT_DIRECTION_REMAINS",
+        "routine_permission_pause": false
+      },
+      "native_constructor01_result": {
+        "attempt_id": "S04-02-C-native-constructor-01",
+        "result": "FAIL_BUILD_BEFORE_CONSTRUCTOR",
+        "reference": "/home/foo/Downloads/osmap-ux-s04/postfixadmin-reconstruction-20261024/native-constructor/final-source/actual-result.json",
+        "sha256": "998281826bb515e3af2e0ba84ded2da3a0a0393ac716cf9ef1f3eab11305903c",
+        "elapsed_seconds": 83,
+        "first_failure": "rustc allocation25427984/12582912bytes thenSIGABRT6, cargo101. No initiatingerrno/peakallocation observed; exactcauseUNKNOWN. Actualsourcechecksum before/afterPASS;4298Bfullprivatebuildstream retained/readbackPASS. Rootstageabsenceconfirmed; constructor0.",
+        "limits_observation": "Readonlyfollowup confirms inheritedsoftDATA1572864KiB/hard134217728KiB; hostphysmem16450846720B is observation, notfreeRAMadmission. Perprocesslimit plausible, not uniquecause/globalOOMproof.",
+        "disposition": "Ownprivatebuild/source/cache retained, no deletion/adoptionofprobe165; no authentication/account/serviceaction. Missingteststream is explained by pretestbuildfailure.",
+        "next": "Combined independent reassessment permits one distinct changedmethod with onlycompilerchildsoftDATA3GiB withinexistinghard plus native time-l; same source/profile/incremental/offlineonejob, existing600/20/720 bounds. No unchangedautomaticretry or runtime/systemconfigurationchange."
+      },
+      "native_constructor02_method": {
+        "status": "EXECUTED_PASS_COMPONENT_ONLY",
+        "review": "/home/foo/Downloads/osmap-ux-s04/postfixadmin-reconstruction-20261024/native-constructor/final-source/adjusted-build02/adjusted-review.json",
+        "review_sha256": "fff6d7995cb37d293de69df2875f1e216f5754894cc24d756c99b29c7042f66b",
+        "source_revision": "935a79979c8a48a56660cd1dd7b5fb870f887d0e7ae48cddea0e8e013464706a",
+        "change": "Compilerchild softDATA3GiB within128GiBexistinghard only, native time-l measurement; sameincremental/profile/source. No globalsetting/runtimechange/RAMfloor.",
+        "failure_rule": "One changed build and first possible constructor; retain all01/02evidence. Another failure stops this method for examination; no automaticcapincrease/unchangedretry."
+      },
+      "native_constructor02_result": {
+        "attempt_id": "S04-02-C-native-constructor-02",
+        "result": "PASS_NATIVE_STOCK_CONSTRUCTOR_COMPONENT_ONLY",
+        "source_commit": "0e08f483cdf1ebbea3239834b7d14796faf5d2f2",
+        "reference": "/home/foo/Downloads/osmap-ux-s04/postfixadmin-reconstruction-20261024/native-constructor/final-source/adjusted-build02/actual-result.json",
+        "sha256": "73897ccc53945ce00ea91258b4921c83a3ef2915f77d45f4d56eaabf6cd627bb",
+        "elapsed_seconds_coarse": 105,
+        "functional_result": "ExactactualRusttest1PASS/0FAIL/0ignored/1976filtered/0.24s. Realprotectedconfiguration/SQLsource and fixedauthsocket heldkernelrootpeer observation/recheck works with PS/FSTATforbidden; expiredrecheckrefuses.",
+        "compiler": "Offlineonejobopt0debug0/assertions+overflow/incrementalunchanged; onlycompilerchildDATA3GiB. Actualbuild0/time102.41s/maxRSS2471680KiB/0reportedSwaps. SourcebeforeafterPASS. Original01causeuniquenessnotinferred.",
+        "artifact_sha256": "255950428e06ef07bba1f9619449ed5c5bc9ee354ffe0864b52ace169b82d546",
+        "custody": "User1000:1000/0700/singlelink/69985296B artifact; rootcopy0:0/0500/hashmatching/rootdir0700; rootlauncherscriptchecked/core0 beforeconfigread.",
+        "evidence": "Build857B/full/noexcess/SHA6bc4d1d7c1f20e6712dd6f6b9996b2449c477b535e453dc67fdeac7eed91ca4b; localremote teststreamhashmatch, producer/collection/finalreadbackPASS.",
+        "retention": "Bothnewexactownedstages/source/cache/binary/diagnostics retained; no disposal. Probe165and160untouched/originalcleanupUNCERTAINpreserved. No auth/SQL/account/service/production/Pythonoperation.",
+        "not_qualified": "ParentPrepare/ParentSeal/operationalR1, authenticatedadmissionR2, livecachefreshness/hashgrants/credential/epoch/session/HTTP/installed/UAT/T03 remainNOTRUN_UNQUALIFIED.",
+        "independent_result_review": {
+          "reviewer": "/root/delivery_controller",
+          "decision": "PASS_NATIVE_CONSTRUCTOR_COMPONENT_ONLY",
+          "path": "/home/foo/Downloads/osmap-ux-s04/postfixadmin-reconstruction-20261024/native-constructor/final-source/adjusted-build02/result-review.json",
+          "sha256": "50fc147c030a2590d9a142dcd99427d88999eecc4f9f7cd7ec4776695961e180"
+        }
       }
     }
   },
@@ -32717,6 +32765,104 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
             }
           }
         ]
+      },
+      {
+        "id": "minimum-c-native-constructor",
+        "kind": "NATIVE",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "single-host-readiness"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "docs/UX_EXECUTION_LEDGER.md"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/bin/sh",
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/postfixadmin-reconstruction-20261024/native-constructor/final-source/dispatch.sh"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "One actual OpenBSD StockPeer constructor/recheck test with process metadata forbidden; no authentication, SQL, accounts, public services, retained disposal or T03 qualification. Compile600/test20/whole720; retain failure/uncertainty, no automatic retry.",
+        "prerequisites": [
+          {
+            "id": "reviewed-signed-source-parity",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/postfixadmin-reconstruction-20261024/minimum-c-delivery-result.json",
+              "sha256": "fdb182db89e0e49981c6b7e7da2024869c41d95fb23647a5e75c36848adc551b"
+            }
+          },
+          {
+            "id": "independent-frozen-launcher-and-local-failure-consumer",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/postfixadmin-reconstruction-20261024/native-constructor/final-source/launcher-review.json",
+              "sha256": "c91bf897bb506dbf604f7823bb410f435d1a73c477576a4c7166dc774b074a0b"
+            }
+          }
+        ]
+      },
+      {
+        "id": "minimum-c-native-constructor-adjusted",
+        "kind": "NATIVE",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "single-host-readiness"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "docs/UX_EXECUTION_LEDGER.md"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/bin/sh",
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/postfixadmin-reconstruction-20261024/native-constructor/final-source/adjusted-build02/dispatch.sh"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "One changed compiler-subprocess softDATA3GiB within existinghard, native time-l measurement, same0e08 source/profile/incremental/offlineonejob and600/20/720bounds. Reuse exactowned private source/cache after pins; preserve01 failure. First readonlyconstructor only after artifact/selector/rootcopy checks. No auth/accounts/services/disposal/T03.",
+        "prerequisites": [
+          {
+            "id": "reviewed-signed-source-parity",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/postfixadmin-reconstruction-20261024/minimum-c-delivery-result.json",
+              "sha256": "fdb182db89e0e49981c6b7e7da2024869c41d95fb23647a5e75c36848adc551b"
+            }
+          },
+          {
+            "id": "independent-frozen-launcher-and-local-failure-consumer",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/postfixadmin-reconstruction-20261024/native-constructor/final-source/launcher-review.json",
+              "sha256": "c91bf897bb506dbf604f7823bb410f435d1a73c477576a4c7166dc774b074a0b"
+            }
+          },
+          {
+            "id": "combined-failure-reassessment-and-adjusted-source-review",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/postfixadmin-reconstruction-20261024/native-constructor/final-source/adjusted-build02/adjusted-review.json",
+              "sha256": "fff6d7995cb37d293de69df2875f1e216f5754894cc24d756c99b29c7042f66b"
+            }
+          }
+        ]
       }
     ],
     "budget": {
@@ -32730,9 +32876,9 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     },
     "planned_action": null
   },
-  "blocker": "Native selected-constructor/child-seal/helper/authentication/cache/epoch/session integration remains unqualified. SQLreason utility failed beforepredicateobservation; no further alternateprojectionretry. Await exactnativecomponentauthorization only aftersource delivery; no livecredentialauthority supplied.",
-  "independent_next_action": "Reviewbaselinepreservationregression andexactnonmutatingbackendfactinspection. Preserveexistingno-downgradecontrols; noexistingcomponentPASSupgraded.",
-  "updated_at": "2026-10-24T13:38:50Z"
+  "blocker": "Selected native StockPeer constructor/configuration/rechecks now PASS for signed0e08 on obsd1. Remaining product gaps: ParentPrepare/ParentSeal/operational helper R1; authenticated non-mutating admission R2; actual live credential-cache freshness, SQL grants/hash generation, credential/epoch/session/HTTP/installed/T03/UAT. Retained probe165 cleanup remains UNCERTAIN and separate; no constructor authorization wait remains.",
+  "independent_next_action": "Independently inspect the smallest actual helper startup and non-mutating admission composition/prerequisites; preserve constructor01 buildFAIL and02 componentPASS, all20 obligations and retained-resource limits. No constructor PASS promotion to R1/R2/T03 or unchanged retry. Complete normal signed GitHub preservation of these reviewed results.",
+  "updated_at": "2026-10-24T15:13:59Z"
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->

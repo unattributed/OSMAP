@@ -1,5 +1,36 @@
 # Current Project Status
 
+2026-10-24 UTC — **Actual native StockPeer constructor/recheck PASS; S04-02 open.**
+Signed source `0e08f483cdf1ebbea3239834b7d14796faf5d2f2` now passes the
+real OpenBSD-only constructor/recheck on obsd1: exactly one selected test passed,
+zero failed/ignored, with PS/FSTAT requests forbidden. Protected configuration
+and actual SQL-source validation, fixed socket/kernel-root-peer observation,
+successful recheck and expired-deadline refusal work in this component.
+
+Operation01 stopped before any test: rustc allocation failure/SIGABRT6,
+Cargo101. Read-only diagnosis found the same SSH profile's soft DATA limit of
+1.5GiB against a128GiB hard limit. Under the operator's full-autonomy and
+analyze/adjust/retest direction, independently reviewed operation02 changed only
+the compiler subprocess's soft DATA allowance to3GiB and added resource
+measurement. The unchanged offline, one-job, unoptimized/debug0 test build
+succeeded; reported peak RSS2471680KiB (about2.36GiB). It then ran the actual
+constructor once, passing in0.24s. No global setting or runtime requirement was
+changed. The original allocation's exact initiating syscall/limit was not
+observed; do not relabel it as global RAM exhaustion or restore a free-RAM floor.
+
+Source checks before/after build, root executable custody/hash/core0 and private
+stream readback passed. Both new owned stages and all01/02 evidence remain;
+probe165 resources/history are untouched. No authentication, SQL execution,
+password/account operation, public mail change or production contact occurred.
+No new Python source or harness change was made.
+
+This closes the selected constructor/configuration component gap. ParentPrepare,
+ParentSeal, operational helper readiness (R1), authenticated admission (R2), live
+cache freshness, SQL grants/hash generation, credential/epoch/session/HTTP and
+installed/UAT/T03 evidence remain unqualified. Next: prove the helper startup
+and non-mutating admission composition, retaining these separate outcomes.
+The active ledger binds actual receipts and independent reconciliation.
+
 2026-10-24 UTC — **Minimum-C source delivery correction; native still pending.**
 The first signed source commit5a8ab20 passed1908 Rust library tests/0fail with
 61ignored, but its normal push refused a test-only SQL literal outside the

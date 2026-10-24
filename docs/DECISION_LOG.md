@@ -1,5 +1,40 @@
 # Decision Log
 
+2026-10-24 UTC — **Use the actual Rust boundary; native constructor now works.**
+The operator granted full autonomy for the described component operation and
+explicitly directed analysis, adjustment and retesting on errors. Keep the
+first operation's build FAIL/constructor NOT_RUN and original source/evidence.
+It reported two allocation failures, SIGABRT6 and Cargo101 before creating a
+root execution stage. Source checks before/after and diagnostic readback passed.
+A bounded read-only follow-up established the SSH user's1.5GiB soft DATA limit,
+128GiB hard DATA limit and physical-memory observation; these do not establish
+that the machine lacked RAM or identify the failed allocator's exact errno.
+
+Combined engineering/independent reassessment selected one controlled change:
+compiler-subprocess soft DATA3GiB within the existing hard limit, plus native
+`time -l` measurement. Keep source0e08, incremental mode, offline/one-job,
+unoptimized/debug0/assertions/overflow and600/20/720-second bounds unchanged.
+No login-class/global setting, runtime allowance or free-memory floor changes.
+Reuse only the exact owned public-source/cache stage after source pins; preserve
+01 bytes/results and write separate02 evidence. This changed operation follows
+the latest operator authority; it is not an unchanged automatic retry.
+
+Operation02 built successfully (peak RSS2471680KiB, zero reported swaps), then
+executed exactly one real Rust constructor/recheck test on obsd1:1PASS/0FAIL,
+0ignored,0.24s. Actual configuration/SQL-source and held fixed-socket kernel-root
+peer validation work while PS/FSTAT requests are forbidden; successful and
+expired rechecks behave correctly. The root copy was hash/custody checked and
+core dumps disabled before configuration reads. Build/test streams are private,
+bounded and readback verified. No Python or product-source change was necessary
+for this native operation. The previous0e08 signed GitHub delivery remains the
+assessed product source; this result must not rewrite probe165's unknown cause.
+
+Retain both owned build/execution stages and probe165/historical resources.
+No authentication, SQL execution, credential change or mail-service action was
+performed. Constructor PASS is not ParentPrepare/ParentSeal/accept-loop R1,
+authenticated admission R2, live cache/credential/epoch/session/HTTP, installed
+acceptance, T03 or S04-02 closure. Advance to those actual composition boundaries.
+
 2026-10-24 UTC — **Normal minimum-C delivery refusal preserved; test scope corrected.**
 Signed `5a8ab20` passed its commit check and full Rust library run1908/0fail
 with61ignored, then ordinary push refused at the unchanged CWE-89 source guard.

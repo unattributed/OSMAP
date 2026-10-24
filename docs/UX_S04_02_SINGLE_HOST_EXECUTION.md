@@ -1,5 +1,47 @@
 # S04.02 single-host execution correction
 
+## 2026-10-24 UTC — authorized native constructor result: PASS component only
+
+The operator authorized the described operation with full autonomy, then
+explicitly directed in-flight analysis/adjustment/retesting. Native action01
+failed during the unprivileged library-test build (Cargo101, allocation failure,
+SIGABRT6); no constructor ran or root execution stage existed. Preserve its
+83-second coarse elapsed result, complete private compiler stream and uncertainty.
+
+Read-only diagnosis measured the same SSH profile's1.5GiB soft DATA/128GiB hard
+limit. After combined independent reassessment, distinct action02 changed only
+the compiler subprocess soft DATA to3GiB within that existing hard limit and
+added native resource measurement. No global/runtime setting or RAM admission
+floor changed. The existing exact owned source/cache was rechecked and reused;
+01 source/scripts/results remain unchanged, with separate02 outputs. Source
+`0e08f483cdf1ebbea3239834b7d14796faf5d2f2`, incremental mode, one-job/offline,
+unoptimized/debug0 and debug assertions/overflow checks remained unchanged.
+
+The build passed, measured102.41seconds and peak RSS2471680KiB. Source manifests
+passed before/after. The single selected native test below then passed in0.24s:
+1passed,0failed,0ignored,1976filtered; whole action105seconds coarse wall.
+Actual fixed socket/kernel-root-peer and protected configuration/SQL-source
+observation, successful recheck and expired-deadline refusal are established
+while the executor forbids PS/FSTAT. Root copied executable SHA256:
+`255950428e06ef07bba1f9619449ed5c5bc9ee354ffe0864b52ace169b82d546`.
+Custody/selector/root-script/core0 checks and test-stream remote readback passed.
+
+Retained stages: `/home/foo/.osmap-c-constructor-build-20261024-01` and
+`/var/tmp/osmap-c-constructor-20261024-01`. No disposal was performed. Probe165
+and historical160 resources/evidence remain untouched; original cleanup
+UNCERTAIN remains. No authentication frame, SQL execution, credential/account
+operation, public service/configuration mutation, production contact or new
+Python scaffolding occurred. Actual receipts/reviews are bound in the existing
+ledger under backend_reconstruction_20261024.
+
+This result supplies no ParentPrepare/ParentSeal/operational accept-loop R1,
+authenticated admission R2, live-cache freshness, grants/hash generation,
+credential/epoch/session/HTTP/installed/UAT/T03 qualification. The original
+allocator's precise initiating syscall was unobserved; successful adjusted
+compilation must not rewrite that uncertainty or historical compiler failures.
+The proposal below is retained historical context, now superseded by these
+actual authorized results. No second constructor or credential operation ran.
+
 ## 2026-10-24 UTC — minimum C next native component operation, NOT DISPATCHED
 
 The selected authority now has a source-only replacement for process/worker

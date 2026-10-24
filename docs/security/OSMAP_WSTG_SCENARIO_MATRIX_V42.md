@@ -1,5 +1,18 @@
 # OSMAP WSTG v4.2 Scenario Matrix
 
+2026-10-24 native S04-02 constructor component: signed0e08 now passes exactly
+one actual OpenBSD Rust constructor/recheck test on obsd1 with PS/FSTAT forbidden,
+protected configuration/SQL-source and fixed socket/kernel-root-peer observation,
+successful recheck and expired-deadline refusal. Source/artifact/root-copy/core0
+and stream readback checks passed. Original01 compiler allocation/SIGABRT failure
+remains; independently reviewed02 changed only compiler-child soft DATA to3GiB
+within its existing hard limit and added resource measurement. No runtime/global
+setting or free-RAM floor changed. No authentication/SQL/credential/mail-service,
+production, probe165 disposal or Python scaffolding action occurred. Owned new
+stages are retained. Parent/Serve confinement, operational readiness R1, admission
+R2, live freshness/hash/grants, credential/epoch/session/HTTP, installed/T03/UAT
+remain unqualified; no WSTG scenario or qualification flag is promoted.
+
 2026-10-24 S04-02 minimum C source boundary: the selected StockPeer now retains
 protected configuration/include/runtime-link witnesses and fixed auth-socket/
 held kernel root-peer continuity, without process-row/worker-argv inventory.
