@@ -1,5 +1,9 @@
 # OSMAP UX execution ledger
 
+2026-10-24 UTC — **Focused native R1/R2 validation completed once; diagnostics validated, startup FAIL and T03 NOT QUALIFIED.** Current signed463-input helper/libtest pair build164 passed in374.521s. Diagnostic continuity and exact-owned retained163 cleanup passed before fresh prerequisites matched. Probe165 ran once in4.443s: R1 now preserves `socket_validation / canonicalize / absent`; R2 propagates `StockWorkerArgv / Denied / Unavailable` from `StockRuntime::new` backend revalidation, replacing the misleading MutationBind/Unknown attribution. The denied operation is the auth-worker argv metadata query; its precise builder/spawn/child-I/O subphase and errno remain unobserved. No permission, ownership, deadline or confinement correction is inferred.
+
+READY, G, HTTP and password submission were not reached. The original actor retains UNCERTAIN cleanup after helper exit1; independent reads separately confirm both full17 rows unchanged, epoch0/active/null and no intents.33recorded runtime paths,2fixture rows,1SQLprincipal,2locked users/groups and new protected stages remain retained; helper/web/guardian processes are absent. Historical160/163 stages, public configuration/master/cache and the installed OSMAP service baseline are preserved. No automatic retry or StageB/C execution occurred. Evidence: `/home/foo/Downloads/osmap-ux-s04/r1-r2-native-20261024/delivery-result.json`.
+
 2026-10-24 UTC — **Serve confinement source diagnostics differentiated; native T03 remains NOT QUALIFIED.** The eight requested boundaries now preserve typed, sanitized identity through the existing Issue 79 capture/recovery/consumer pipeline. Independent review CLEAR and focused local regressions PASS. Execution160 syscall/errno remains UNKNOWN. The one affected libtest-only build161 passed under operator item8 (new artifact90ea5a20, signed source4668a512); no native application/probe/password operation or retained-stage deletion occurred or is authorized. See [the localization record](UX_S04_02_CONFINEMENT_LOCALIZATION_20261024.md) for the schema, tests, retained evidence and admission limitation.
 
 
@@ -10512,7 +10516,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "status": "PENDING",
     "reference": "Only minimal well-defined own-password usability after all agent-owned development/matching deployed QA/independent audit PASS. No operator password is changed by agent qualification; use controlled disposable Alice and preserve Bob/operator state. NOT RUN."
   },
-  "next_action": "Stop after authorized Stage A observation. Reconcile earlier helper runtime construction failure with bounded existing diagnostic trace before any proposed fresh native attempt; no Stage B/C execution authority. Exact-owned fixture resources retained; no speculative confinement correction.",
+  "next_action": "One focused native R1/R2 validation complete; functional startup remains FAIL/NOT_QUALIFIED. Preserve probe165 retained state; localize denied worker-argv metadata subphase before selecting correction. Any further native probe requires fresh explicit authority.",
   "accountability": {
     "functional_exit": "Working own-account Settings password change through the selected single-host obsd1 local account service and authoritative local backend, fresh password/TOTP step-up, one conditional SQL update, durable OSMAP epoch and all-browser revocation, actual source-bound cache handling, old-password refusal/new-login success and Bob preservation. Existing third-party SMTP/IMAP sessions may remain authenticated. Matching installed QA, independent audit and minimal owner usability remain required. Toronto is later separate production installation.",
     "owner": "/root",
@@ -19935,6 +19939,52 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "elapsed_seconds": 374.521,
         "reference": "/home/foo/Downloads/osmap-ux-s04/r1-r2-native-20261024/build/result.json",
         "reason": "Current signed463-input native helper/libtest pair compile PASS; source before/after identical, owned scratch/process cleanup confirmed, no test or application execution."
+      },
+      {
+        "id": "S04-02-r1-r2-retained163-disposition",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "433ee0e4588d10f3104cb5c74c36eab45a9a0b33a65cff591a55064eb0bea43f",
+        "change_reference": "User-authorized resource isolation preparation. Exact retained163 runtime cleanup only after pinned fresh full17/epoch/ownership/reference preflight. Preserve installed service exact baseline and all protected160/163 stages. Original shared-UID overclassification preflight retained; no native probe consumed. Dispatcher /home/foo/Downloads/osmap-ux-s04/r1-r2-native-20261024/execute-retained163.py SHA256 e2a8f50c9ddab9cd32cdb9aa481b0eb5de94733d6710dadeda28ad4b1bcc2e12",
+        "success_chain_review": {
+          "reviewer": "/root/rust_review",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/r1-r2-native-20261024/retained163-execute-independent-review.json SHA256 99896840109f232eb5c8d8f5ff8edab900b302466b4978096c9bd7c59ad71071",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 4.856,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/r1-r2-native-20261024/disposition-transport-result.json",
+        "reason": "One exact retained163 disposition confirmed.35runtime paths/two initial rows/principal/two lockedroles removed; four protected stages and installed OSMAP service baseline preserved. Fresh independent prerequisites match."
+      },
+      {
+        "id": "S04-02-r1-r2-probe165",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "0648e9ad28c73b0fa8d92e33d980a7edbeab30cf20ce4886b7b3c5b1a198bf2c",
+        "change_reference": "Latest operator explicitly authorizes one focused native R1/R2 validation after artifact preparation, diagnostic continuity and resource isolation. Signed4e4fa31 currentpair build164 PASS; local actualRust pipeline and currentpair integration PASS; exact163 cleanup confirmed; fresh prerequisites match. Fixed confinement-probe only, no G/HTTP/password submission or automatic retry.",
+        "success_chain_review": {
+          "reviewer": "/root/rust_review",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/r1-r2-native-20261024/probe/startup-independent-review.json SHA256 a4cd9c58811c78abe775a289d68f5906dcd6e96e4651de4839e9e1653b6f9a83",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "FAIL",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 4.443,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/r1-r2-native-20261024/probe/startup-result.json",
+        "reason": "One native R1/R2 probe consumed. R1 socket_validation/canonicalize/absent preserved COMPLETE/readbackverified. R2 StockWorkerArgv57/Denied1/Unavailable propagated after binding through StockRuntime backend recheck. NoREADY/G/HTTP/submission. Original cleanupUNCERTAIN retained; independent full17/epochs/no-intents confirms no-write.33recordedpaths2rows1SQLprincipal2roles and newstages retained; no retry or speculative permissions/confinement change."
       }
     ],
     "prior_investigations": [
@@ -21387,7 +21437,16 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
       "excluded": "Historical160 stage deletion, G, HTTP requests, password changes, StageB/StageC execution, retry of consumed165 or automatic resource adoption. No administrative authority expiry invented.",
       "stop_rule": "Any missing diagnostic continuity, stale build/source, unproven ownership or namespace collision blocks165. After one native observation stop; retain uncertain resources and earliest failure separately from cleanup/authority. A missing untriggered failure path stays NOT_OBSERVED.",
       "cost_accounting": "Prior cumulative measured and UNKNOWN time/failures retained; record actual per-action elapsed time. Build720/probe690 are technical operation bounds, not calendar expiry or a reset of history.",
-      "results": "Source continuity, build164, fresh reconciliation, necessary exact-owned disposition and probe165 NOT_RUN at this planning entry."
+      "results": "Source continuity, build164, fresh reconciliation, necessary exact-owned disposition and probe165 NOT_RUN at this planning entry.",
+      "result": {
+        "state": "COMPLETED_ONE_PROBE_FUNCTIONAL_FAIL",
+        "diagnostic_R1": "socket_validation/canonicalize/absent preserved",
+        "diagnostic_R2": "StockWorkerArgv/Denied propagated",
+        "evidence": "/home/foo/Downloads/osmap-ux-s04/r1-r2-native-20261024/delivery-result.json",
+        "independent_no_write": true,
+        "cleanup": "OriginalUNCERTAIN/newfixture retained",
+        "further_native_action": "NOT_AUTHORIZED"
+      }
     }
   },
   "execution_contract": {
@@ -32194,6 +32253,132 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
             "evidence": {
               "path": "/home/foo/Downloads/osmap-ux-s04/r1-r2-native-20261024/build/independent-review.json",
               "sha256": "97b40479c46151714fd9bb18c232c55f442ba22ab64fd50d750125cf0c1bf604"
+            }
+          }
+        ]
+      },
+      {
+        "id": "r1-r2-retained163-disposition",
+        "kind": "NATIVE",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "single-host-readiness"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "docs/UX_EXECUTION_LEDGER.md"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/usr/bin/python3",
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/r1-r2-native-20261024/execute-retained163.py"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "One exact-owned retained163 disposition; full observation equality before writes, durable journal, atomic CAS row deletion, exact resource removal, installed service/protected stages unchanged. Stop on any failure or uncertainty.",
+        "prerequisites": [
+          {
+            "id": "independent-exact-disposition-review",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/r1-r2-native-20261024/retained163-execute-independent-review.json",
+              "sha256": "99896840109f232eb5c8d8f5ff8edab900b302466b4978096c9bd7c59ad71071"
+            }
+          }
+        ]
+      },
+      {
+        "id": "r1-r2-probe165",
+        "kind": "NATIVE",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "single-host-readiness"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "docs/UX_EXECUTION_LEDGER.md"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/usr/bin/python3",
+            "arguments": [
+              "/home/foo/Workspace/OSMAP/maint/ux/s04_02_startup_candidate/dispatch_startup.py",
+              "--build-receipt",
+              "/home/foo/Downloads/osmap-ux-s04/r1-r2-native-20261024/build/result.json",
+              "--source-manifest",
+              "/home/foo/Downloads/osmap-ux-s04/r1-r2-native-20261024/build/manifest.json",
+              "--run-dir",
+              "/home/foo/Downloads/osmap-ux-s04/r1-r2-native-20261024/probe",
+              "--attempt-id",
+              "S04-02-r1-r2-probe165",
+              "--recipe",
+              "r1-r2-probe165",
+              "--operation",
+              "confinement-probe"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "One focused R1 admission construction/R2 helper runtime-recheck native validation. Preserve bounded failures through actual receipt/consumer. No G/HTTP/password frame; unexpected READY remains unqualified. Stop after actual result, no retry.",
+        "prerequisites": [
+          {
+            "id": "independent-source-chain",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/r1-r2-native-20261024/probe/startup-independent-review.json",
+              "sha256": "a4cd9c58811c78abe775a289d68f5906dcd6e96e4651de4839e9e1653b6f9a83"
+            }
+          },
+          {
+            "id": "current-artifact-pair",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/r1-r2-native-20261024/build/result.json",
+              "sha256": "dae612a06e896e892cbf80e3f7c1e2a38b4d35c19c9d734e1a9a0988bba68e78"
+            }
+          },
+          {
+            "id": "local-current-pair-integration",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/r1-r2-native-20261024/current-pair-probe-integration-result.json",
+              "sha256": "23d4aae1dfaaf4c511ad5be32857906bd3cefee5f1245b7c6c145e7292eef018"
+            }
+          },
+          {
+            "id": "diagnostic-continuity",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/r1-r2-native-20261024/local-diagnostic-pipeline-result.json",
+              "sha256": "9a6ac23c221bf09c8bc1c11939989ce8154df344b6eb5f11fd3b26c5d4c8f9f3"
+            }
+          },
+          {
+            "id": "exact-runtime-disposition",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/r1-r2-native-20261024/disposition-transport-result.json",
+              "sha256": "894c94c46ccef1569439f12a91409cc879aca84edb7828b8bf916ee339e1bfcb"
+            }
+          },
+          {
+            "id": "fresh-current-prerequisites",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/r1-r2-native-20261024/current-prerequisites.json",
+              "sha256": "4afeee33cc7e43e5e8218b0837df54cce9e1cca57c572542717562028ebe4a64"
             }
           }
         ]
