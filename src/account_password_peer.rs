@@ -415,7 +415,7 @@ impl Startup {
     pub(crate) fn master_pid(&self) -> u32 {
         self.master.pid
     }
-    #[allow(dead_code)] // Retained legacy private-authority constructor; stock service uses StockStartup.
+    #[allow(dead_code)] // Retained legacy private-authority constructor; stock uses endpoint custody.
     pub(crate) fn native(
         executor: &(impl CommandExecutor + ?Sized),
         master_pid: u32,
@@ -1447,8 +1447,17 @@ fn main_configuration_selection_bound(
         stage,
     )?;
     main_master_argv(&argv)?;
+    let link = main_configuration_link(deadline, stage)?;
+    Ok(MainConfigurationSelection { argv, link })
+}
+// The canonical runtime link binds the selected configuration pathname without
+// making process argv or a worker inventory part of the stock auth authority.
+fn main_configuration_link(
+    deadline: Instant,
+    stage: &mut &'static str,
+) -> Result<[u64; 11], Error> {
     *stage = "primary_main_link_ancestors";
-    crate::account_password_custody::ancestors(MAIN_CONFIG_LINK, None, deadline)
+    let ancestors = crate::account_password_custody::ancestors(MAIN_CONFIG_LINK, None, deadline)
         .map_err(|_| Error::Unavailable)?;
     let pin = |m: &fs::Metadata| {
         [
@@ -1474,8 +1483,11 @@ fn main_configuration_selection_bound(
         || before.len() > 256
         || {
             *stage = "primary_main_link_target";
-            fs::read_link(MAIN_CONFIG_LINK).map_err(|_| Error::Unavailable)?
-                != Path::new(MAIN_CONFIG)
+            !configuration_link_target(
+                Path::new(MAIN_CONFIG_LINK),
+                Path::new(MAIN_CONFIG),
+                deadline,
+            )?
         }
         || {
             *stage = "primary_main_link_final_metadata";
@@ -1483,16 +1495,23 @@ fn main_configuration_selection_bound(
                 != pin(&before)
         }
         || Instant::now() >= deadline
+        || crate::account_password_custody::ancestors(MAIN_CONFIG_LINK, None, deadline)
+            .map_err(|_| Error::Unavailable)?
+            != ancestors
     {
         return Err(Error::Refused);
     }
-    // Dovecot's own main_init creates this link from the selected full config
-    // path. Combined with same-master listener/birth/text and exact argv this
-    // binds selection, not proof that current on-disk bytes are loaded.
-    Ok(MainConfigurationSelection {
-        argv,
-        link: pin(&before),
-    })
+    // This is pathname/custody evidence, not proof that a live daemon loaded
+    // the current bytes or that its cache has the configuration's value.
+    Ok(pin(&before))
+}
+fn configuration_link_target(path: &Path, target: &Path, deadline: Instant) -> Result<bool, Error> {
+    if Instant::now() >= deadline {
+        return Err(Error::Expired);
+    }
+    fs::read_link(path)
+        .map(|actual| actual == target)
+        .map_err(|_| Error::Unavailable)
 }
 fn private_primary_argv(raw: &str) -> Result<(), Error> {
     let fields = raw.split_whitespace().collect::<Vec<_>>();
@@ -1922,103 +1941,8 @@ impl ControlPeer {
 #[path = "account_password_peer_tests.rs"]
 mod tests;
 
-/// Stock-only process/material anchors. These never attest a legacy text or
-/// descriptor graph and cannot enter the legacy Startup constructors.
-struct StockStartup {
-    master: Row,
-    own: Row,
-    pins: Vec<FilePin>,
-}
-impl StockStartup {
-    fn observe(
-        executor: &(dyn CommandExecutor + Send + Sync),
-        deadline: Instant,
-        trace: &mut crate::account_password_fstat::StartupTrace,
-    ) -> Result<Self, Error> {
-        if !crate::openbsd::password_native_authority() || Instant::now() >= deadline {
-            return Err(Error::Refused);
-        }
-        trace.set(crate::account_password_fstat::StartupOperation::StockMasterPid);
-        let master_pid = stock_master_pid(deadline)?;
-        let own_pid = std::process::id();
-        trace.set(crate::account_password_fstat::StartupOperation::StockMasterRow);
-        let master = row(
-            &stock_query(executor, PS, &ps_args(master_pid), deadline, trace)?,
-            master_pid,
-        )?;
-        trace.set(crate::account_password_fstat::StartupOperation::StockHelperRow);
-        let own = row(
-            &stock_query(executor, PS, &ps_args(own_pid), deadline, trace)?,
-            own_pid,
-        )?;
-        trace.set(crate::account_password_fstat::StartupOperation::StockRoles);
-        if master.parent != 1
-            || master.pid != master.group
-            || master.uid != 0
-            || master.gid != 0
-            || master.command != "dovecot"
-            || own.uid != 0
-            || own.gid != 0
-            || own.group != own.pid
-            || own.command != "account-passwd"
-            || own.pid == master.pid
-        {
-            return Err(Error::Refused);
-        }
-        trace.set(crate::account_password_fstat::StartupOperation::StockProgramPins);
-        let pins = [PS, MASTER, HELPER]
-            .into_iter()
-            .map(file_pin)
-            .collect::<Result<Vec<_>, _>>()?;
-        let value = Self { master, own, pins };
-        value.recheck(executor, deadline, trace)?;
-        Ok(value)
-    }
-    fn recheck(
-        &self,
-        executor: &(dyn CommandExecutor + Send + Sync),
-        deadline: Instant,
-        trace: &mut crate::account_password_fstat::StartupTrace,
-    ) -> Result<(), Error> {
-        use crate::account_password_fstat::{StartupCategory as Cat, StartupOperation as Op};
-        trace.set(Op::BeforeRecheck);
-        if Instant::now() >= deadline {
-            trace.category(Cat::Deadline);
-            return Err(Error::Refused);
-        }
-        if !crate::openbsd::password_native_authority() || std::process::id() != self.own.pid {
-            trace.category(Cat::Invalid);
-            return Err(Error::Refused);
-        }
-        trace.set(crate::account_password_fstat::StartupOperation::StockProgramPins);
-        for pin in &self.pins {
-            if file_pin(pin.path)? != *pin {
-                trace.category(Cat::Invalid);
-                return Err(Error::Refused);
-            }
-        }
-        for expected in [&self.master, &self.own] {
-            trace.set(if expected.pid == self.master.pid {
-                crate::account_password_fstat::StartupOperation::StockMasterRow
-            } else {
-                crate::account_password_fstat::StartupOperation::StockHelperRow
-            });
-            if row(
-                &stock_query(executor, PS, &ps_args(expected.pid), deadline, trace)?,
-                expected.pid,
-            )? != *expected
-            {
-                trace.category(Cat::Invalid);
-                return Err(Error::Refused);
-            }
-        }
-        if Instant::now() >= deadline {
-            trace.category(Cat::Deadline);
-            return Err(Error::Expired);
-        }
-        Ok(())
-    }
-}
+/// Fixed current-configuration queries retain bounded private output and the
+/// existing structured metadata failure/cleanup accounting.
 fn stock_query<E: CommandExecutor + ?Sized>(
     executor: &E,
     program: &str,
@@ -2043,9 +1967,38 @@ fn stock_query<E: CommandExecutor + ?Sized>(
 struct StockSocketSnapshot {
     endpoint: [u64; 11],
     binder: (u32, u32, u32),
-    worker: Row,
-    argv: String,
 }
+fn stock_leaf_identity(m: &fs::Metadata) -> [u64; 11] {
+    [
+        m.dev(),
+        m.ino(),
+        m.uid().into(),
+        m.gid().into(),
+        m.mode().into(),
+        m.nlink(),
+        m.len(),
+        m.mtime() as u64,
+        m.mtime_nsec() as u64,
+        m.ctime() as u64,
+        m.ctime_nsec() as u64,
+    ]
+}
+fn stock_leaf_unchanged(
+    path: &Path,
+    captured: &[u64; 11],
+    deadline: Instant,
+) -> Result<bool, Error> {
+    if Instant::now() >= deadline {
+        return Err(Error::Expired);
+    }
+    fs::symlink_metadata(path)
+        .map(|m| stock_leaf_identity(&m) == *captured)
+        .map_err(|_| Error::Unavailable)
+}
+fn stock_root_peer(credentials: (u32, u32, u32)) -> bool {
+    credentials.1 == 0 && credentials.2 == 0
+}
+#[cfg(test)]
 fn stock_auth_argv(
     raw: &str,
     trace: &mut crate::account_password_fstat::StartupTrace,
@@ -2060,6 +2013,7 @@ fn stock_auth_argv(
     }
     Ok(())
 }
+#[cfg(test)]
 fn stock_auth_role(worker: &Row, master: &Row, uid: u32, gid: u32) -> Result<(), Error> {
     socket_worker(worker, master, uid, "auth")?;
     if gid == 0 || worker.gid != gid {
@@ -2068,38 +2022,19 @@ fn stock_auth_role(worker: &Row, master: &Row, uid: u32, gid: u32) -> Result<(),
     Ok(())
 }
 fn stock_socket_probe(
-    executor: &(dyn CommandExecutor + Send + Sync),
-    startup: &StockStartup,
     auth: &FilePin,
     uid: u32,
-    gid: u32,
     deadline: Instant,
     trace: &mut crate::account_password_fstat::StartupTrace,
 ) -> Result<StockSocketSnapshot, Error> {
     let path = crate::account_password_mail::STOCK_AUTH;
-    startup.recheck(executor, deadline, trace)?;
     trace.set(crate::account_password_fstat::StartupOperation::StockAuthPin);
     if file_pin(auth.path)? != *auth {
         return Err(Error::Refused);
     }
     trace.set(crate::account_password_fstat::StartupOperation::StockSocketMetadata);
-    crate::account_password_custody::ancestors(path, None, deadline)
+    let ancestors = crate::account_password_custody::ancestors(path, None, deadline)
         .map_err(|_| Error::Unavailable)?;
-    let identity = |m: &fs::Metadata| {
-        [
-            m.dev(),
-            m.ino(),
-            m.uid().into(),
-            m.gid().into(),
-            m.mode().into(),
-            m.nlink(),
-            m.len(),
-            m.mtime() as u64,
-            m.mtime_nsec() as u64,
-            m.ctime() as u64,
-            m.ctime_nsec() as u64,
-        ]
-    };
     let before = fs::symlink_metadata(path).map_err(|_| Error::Unavailable)?;
     if !std::os::unix::fs::FileTypeExt::is_socket(&before.file_type())
         || before.uid() != uid
@@ -2116,73 +2051,34 @@ fn stock_socket_probe(
         .map_err(|_| Error::Unavailable)?;
     trace.set(crate::account_password_fstat::StartupOperation::StockSocketPeer);
     let binder = kernel(&stream)?;
-    if binder.1 != 0 || binder.2 != 0 {
+    if !stock_root_peer(binder) {
         return Err(Error::Refused);
     }
-    let mut selected_argv = String::new();
-    let worker = ready_socket_worker(path, deadline, &mut "stock_auth_worker", |end, _| {
-        trace.set(crate::account_password_fstat::StartupOperation::StockWorkerRows);
-        let raw = stock_query(
-            executor,
-            PS,
-            &["-ax".into(), "-o".into(), PS_FIELDS.into()],
-            end,
-            trace,
-        )?;
-        let mut matches = Vec::new();
-        for (index, line) in raw.lines().enumerate() {
-            if index >= 4096 {
-                return Err(Error::Refused);
-            }
-            let pid = decimal(line.split_whitespace().next().ok_or(Error::Refused)?)?;
-            let candidate = row(line, pid)?;
-            if stock_auth_role(&candidate, &startup.master, uid, gid).is_err() {
-                continue;
-            }
-            trace.set(crate::account_password_fstat::StartupOperation::StockWorkerArgv);
-            let argv = stock_query(
-                executor,
-                PS,
-                &["-p".into(), pid.to_string(), "-o".into(), "args=".into()],
-                end,
-                trace,
-            )?;
-            stock_auth_argv(&argv, trace)?;
-            trace.set(crate::account_password_fstat::StartupOperation::StockWorkerBirth);
-            if row(&stock_query(executor, PS, &ps_args(pid), end, trace)?, pid)? != candidate {
-                return Err(Error::Refused);
-            }
-            selected_argv = argv;
-            matches.push(candidate);
-        }
-        Ok(matches)
-    })?;
-    startup.recheck(executor, deadline, trace)?;
     trace.set(crate::account_password_fstat::StartupOperation::StockSocketContinuity);
-    if identity(&fs::symlink_metadata(path).map_err(|_| Error::Unavailable)?) != identity(&before)
+    if !stock_leaf_unchanged(Path::new(path), &stock_leaf_identity(&before), deadline)?
         || kernel(&stream)? != binder
         || file_pin(auth.path)? != *auth
+        || crate::account_password_custody::ancestors(path, None, deadline)
+            .map_err(|_| Error::Unavailable)?
+            != ancestors
         || Instant::now() >= deadline
     {
         return Err(Error::Refused);
     }
     Ok(StockSocketSnapshot {
-        endpoint: identity(&before),
+        endpoint: stock_leaf_identity(&before),
         binder,
-        worker,
-        argv: selected_argv,
     })
 }
-/// Stock Dovecot authority: same live master, protected existing configuration,
-/// and actual kernel peer/process observations. No public configuration
-/// is written and no private listener, policy callback or Generation is used.
+/// Stock Dovecot authority: protected current configuration and fixed endpoint
+/// custody with kernel peer credentials. No process argv attestation is used;
+/// no public configuration is written and no private listener is started.
 pub(crate) struct StockPeer {
-    executor: std::sync::Arc<dyn CommandExecutor + Send + Sync>,
-    startup: StockStartup,
+    master_pid: u32,
     auth: FilePin,
     files: Vec<PrimaryFile>,
     server_uid: u32,
-    selection: MainConfigurationSelection,
+    selection: [u64; 11],
     auth_snapshot: StockSocketSnapshot,
     server_gid: u32,
 }
@@ -2245,7 +2141,12 @@ impl StockPeer {
         deadline: Instant,
         trace: &mut crate::account_password_fstat::StartupTrace,
     ) -> Result<Self, Error> {
-        let startup = StockStartup::observe(executor.as_ref(), deadline, trace)?;
+        trace.set(crate::account_password_fstat::StartupOperation::BeforeRecheck);
+        if !crate::openbsd::password_native_authority() || Instant::now() >= deadline {
+            return Err(Error::Refused);
+        }
+        trace.set(crate::account_password_fstat::StartupOperation::StockMasterPid);
+        let master_pid = stock_master_pid(deadline)?;
         trace.set(crate::account_password_fstat::StartupOperation::StockConfigFiles);
         let mut files = Vec::new();
         for path in stock_configuration_paths(deadline)? {
@@ -2301,21 +2202,8 @@ impl StockPeer {
         trace.set(crate::account_password_fstat::StartupOperation::StockAuthPin);
         let auth = file_pin(PRIMARY_AUTH)?;
         trace.set(crate::account_password_fstat::StartupOperation::StockMainSelection);
-        let selection = main_configuration_selection_bound(
-            executor.as_ref(),
-            &startup.master,
-            deadline,
-            &mut "primary_main_selection",
-        )?;
-        let auth_snapshot = stock_socket_probe(
-            executor.as_ref(),
-            &startup,
-            &auth,
-            uid,
-            gid,
-            deadline,
-            trace,
-        )?;
+        let selection = main_configuration_link(deadline, &mut "primary_main_selection")?;
+        let auth_snapshot = stock_socket_probe(&auth, uid, deadline, trace)?;
         // Fixed current read-only configuration observation, before the parent
         // is sealed. No cache is enabled/populated and no fabricated flush occurs.
         trace.set(crate::account_password_fstat::StartupOperation::StockCachePin);
@@ -2370,8 +2258,7 @@ impl StockPeer {
         }
         files.push(doveconf);
         let value = Self {
-            executor,
-            startup,
+            master_pid,
             auth,
             files,
             server_uid: uid,
@@ -2383,7 +2270,7 @@ impl StockPeer {
         Ok(value)
     }
     pub(crate) fn master_pid(&self) -> u32 {
-        self.startup.master.pid
+        self.master_pid
     }
     pub(crate) fn recheck(&self, deadline: Instant) -> Result<(), Error> {
         let mut trace = crate::account_password_fstat::StartupTrace::new(
@@ -2413,17 +2300,25 @@ impl StockPeer {
         deadline: Instant,
         trace: &mut crate::account_password_fstat::StartupTrace,
     ) -> Result<(), Error> {
-        self.startup
-            .recheck(self.executor.as_ref(), deadline, trace)?;
+        use crate::account_password_fstat::{StartupCategory as Cat, StartupOperation as Op};
+        trace.set(Op::BeforeRecheck);
+        if Instant::now() >= deadline {
+            trace.category(Cat::Deadline);
+            return Err(Error::Expired);
+        }
+        if !crate::openbsd::password_native_authority() {
+            trace.category(Cat::Invalid);
+            return Err(Error::Refused);
+        }
+        trace.set(Op::StockMasterPid);
+        if stock_master_pid(deadline)? != self.master_pid {
+            trace.category(Cat::Invalid);
+            return Err(Error::Refused);
+        }
         trace.set(crate::account_password_fstat::StartupOperation::StockMainSelection);
         let mut selection_stage = "primary_main_selection";
-        if main_configuration_selection_bound(
-            self.executor.as_ref(),
-            &self.startup.master,
-            deadline,
-            &mut selection_stage,
-        )
-        .inspect_err(|_| trace.metadata(selection_stage))?
+        if main_configuration_link(deadline, &mut selection_stage)
+            .inspect_err(|_| trace.metadata(selection_stage))?
             != self.selection
         {
             trace.category(crate::account_password_fstat::StartupCategory::Invalid);
@@ -2439,15 +2334,7 @@ impl StockPeer {
                 return Err(Error::Refused);
             }
         }
-        let observed = stock_socket_probe(
-            self.executor.as_ref(),
-            &self.startup,
-            &self.auth,
-            self.server_uid,
-            self.server_gid,
-            deadline,
-            trace,
-        )?;
+        let observed = stock_socket_probe(&self.auth, self.server_uid, deadline, trace)?;
         trace.set(crate::account_password_fstat::StartupOperation::StockRecheckSnapshot);
         if observed != self.auth_snapshot {
             trace.category(crate::account_password_fstat::StartupCategory::Invalid);
@@ -2622,9 +2509,14 @@ mod stock_sql {
         "select username as user, password, 'after' as osmap_epoch_phase from mailbox where username = '%u' and active = 1",
         "select username as user, password, 'after' as osmap_epoch_phase from mailbox where username = '%u' and active = '1'",
     ]
-    .contains(&query.to_ascii_lowercase().as_str())
-        || (!frontend && query.to_ascii_lowercase().contains("osmap_epoch_phase")
-            && !query.contains("'after'"))
+    .contains(&query.split_whitespace().map(|token| {
+        // Only these keywords vary in case in the fixed query shapes. Table,
+        // column, alias, placeholder and literal bytes remain authoritative.
+        ["select", "from", "where", "and", "as"]
+            .into_iter()
+            .find(|keyword| token.eq_ignore_ascii_case(keyword))
+            .unwrap_or(token)
+    }).collect::<Vec<_>>().join(" ").as_str())
     {
         return Err(Unavailable);
     }
@@ -2821,6 +2713,28 @@ mod stock_authority_tests {
                 .into_bytes()
         )
         .is_err());
+    }
+
+    #[test]
+    fn sql_password_query_preserves_identifiers_placeholders_and_literals() {
+        let source = |query: &str| {
+            format!(
+                "driver = mysql\nconnect = host=/var/run/mysql/mysql.sock dbname=postfixadmin user=fixture password=fixture\npassword_query = {query}\n"
+            )
+        };
+        let query = "SELECT username AS user, password, 'after' AS osmap_epoch_phase FROM mailbox WHERE username = '%u' AND active = '1'";
+        assert!(stock_sql::validate(source(query).as_bytes()).is_ok());
+        for changed in [
+            query.replace("'%u'", "'%U'"),
+            query.replace("'%u'", "'%Lu'"),
+            query.replace("'after'", "'AFTER'"),
+            query.replace("'after'", "'before'"),
+            query.replace("FROM mailbox", "FROM MAILBOX"),
+            query.replace("username", "USERNAME"),
+            query.replace("osmap_epoch_phase", "OSMAP_EPOCH_PHASE"),
+        ] {
+            assert!(stock_sql::validate(source(&changed).as_bytes()).is_err());
+        }
     }
 
     #[test]

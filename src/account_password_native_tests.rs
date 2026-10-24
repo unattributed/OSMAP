@@ -1,6 +1,162 @@
 use super::*;
 
 #[test]
+fn selected_parent_resolves_sql_hash_only_and_legacy_keeps_fstat() {
+    use crate::account_password_backend::{HASH_PROGRAM, SQL_PROGRAM};
+    for (selection, expected) in [
+        (ParentGraphs::Stock, vec![SQL_PROGRAM, HASH_PROGRAM]),
+        (
+            ParentGraphs::Legacy,
+            vec![SQL_PROGRAM, HASH_PROGRAM, "/usr/bin/fstat"],
+        ),
+    ] {
+        let deadline = Instant::now() + Duration::from_secs(1);
+        let mut observed = Vec::new();
+        // Exercise the actual rule producer's graph selection/union. Native
+        // installed graph discovery and OpenBSD sealing are separate proofs.
+        let rules = parent_rules_with(selection, deadline, |program, inherited| {
+            assert_eq!(inherited, deadline);
+            observed.push(program);
+            Ok(vec![
+                (program.to_owned(), "rx"),
+                ("/usr/lib/libc.so.current".to_owned(), "r"),
+            ])
+        })
+        .unwrap();
+        assert_eq!(observed, expected);
+        for required in [SQL_PROGRAM, HASH_PROGRAM] {
+            assert!(rules
+                .iter()
+                .any(|(path, access)| path == required && *access == "rx"));
+        }
+        for required in [
+            SQL_CONFIG,
+            SQL_PLAN,
+            SQL_SOCKET,
+            pins::MODULE_DIRECTORY,
+            pins::SEARCH_DIRECTORY,
+        ] {
+            assert!(rules.iter().any(|(path, _)| path == required));
+        }
+        let stock = matches!(selection, ParentGraphs::Stock);
+        assert_eq!(
+            rules.iter().any(|(path, _)| path == "/usr/bin/fstat"),
+            !stock
+        );
+        assert!(!rules.iter().any(|(path, _)| path == "/bin/ps"));
+        assert_eq!(
+            rules.iter().any(
+                |(path, access)| path == crate::account_password_mail::STOCK_AUTH
+                    && *access == "rw"
+            ),
+            stock
+        );
+        for private in [
+            PRIMARY_SOCKET,
+            CONTROL_AUTH,
+            CONTROL_ANVIL,
+            crate::account_password_topology::IPC,
+        ] {
+            assert_eq!(rules.iter().any(|(path, _)| path == private), !stock);
+        }
+        assert!(!rules
+            .iter()
+            .any(|(path, _)| matches!(path.as_str(), "/" | "/usr/lib" | "/usr/local/lib")));
+    }
+}
+
+#[test]
+fn selected_parent_refuses_failed_backend_graph_and_original_deadline() {
+    use crate::account_password_backend::{HASH_PROGRAM, SQL_PROGRAM};
+    for failed in [SQL_PROGRAM, HASH_PROGRAM] {
+        let mut observed = Vec::new();
+        let result = parent_rules_with(
+            ParentGraphs::Stock,
+            Instant::now() + Duration::from_secs(1),
+            |program, _| {
+                observed.push(program);
+                if program == failed {
+                    Err(Unavailable)
+                } else {
+                    Ok(vec![(program.to_owned(), "rx")])
+                }
+            },
+        );
+        assert!(result.is_err());
+        assert_eq!(observed.last(), Some(&failed));
+        assert!(!observed.contains(&"/usr/bin/fstat"));
+    }
+    assert!(
+        parent_rules_with(ParentGraphs::Stock, Instant::now(), |_, _| {
+            panic!("expired parent deadline must refuse before graph discovery")
+        })
+        .is_err()
+    );
+    let deadline = Instant::now() + Duration::from_secs(1);
+    let mut calls = 0;
+    assert!(
+        parent_rules_with(ParentGraphs::Legacy, deadline, |program, inherited| {
+            calls += 1;
+            assert_eq!(inherited, deadline);
+            if program == "/usr/bin/fstat" {
+                Err(Unavailable)
+            } else {
+                Ok(vec![(program.to_owned(), "rx")])
+            }
+        })
+        .is_err()
+    );
+    assert_eq!(calls, 3, "legacy parent must still require its fstat graph");
+}
+
+#[test]
+fn stock_primary_role_keeps_fixed_socket_command_and_separate_material() {
+    use crate::account_password_backend::{HASH_PROGRAM, SQL_PROGRAM};
+    let mut original = crate::account_password_mail::PRIMARY
+        .iter()
+        .map(|s| (*s).to_owned())
+        .collect::<Vec<_>>();
+    original.push("alice@example.test".into());
+    let actual = crate::account_password_mail::stock_args(&original, true).unwrap();
+    assert!(matches_command(Role::StockPrimary, HASH_PROGRAM, &actual));
+    assert!(!matches_command(Role::StockPrimary, SQL_PROGRAM, &actual));
+    assert!(!matches_command(
+        Role::StockPrimary,
+        HASH_PROGRAM,
+        &original
+    ));
+    let mut foreign = actual.clone();
+    *foreign.last_mut().unwrap() = "alice@example.test;whoami".into();
+    assert!(!matches_command(Role::StockPrimary, HASH_PROGRAM, &foreign));
+    let mut extra = actual;
+    extra.push("-o".into());
+    assert!(!matches_command(Role::StockPrimary, HASH_PROGRAM, &extra));
+    let plan = prepared_paths(
+        Role::StockPrimary,
+        (518, 518),
+        Instant::now() + Duration::from_secs(1),
+        &[HASH_PROGRAM, "/usr/lib/libc.so.current"],
+    )
+    .unwrap();
+    assert_eq!(plan.ids(), (518, 518));
+    assert!(plan.rules().iter().any(|(path, access)| path.to_bytes()
+        == crate::account_password_mail::STOCK_AUTH.as_bytes()
+        && access.to_bytes() == b"rw"));
+    for (path, access) in plan.rules() {
+        assert_ne!(path.to_bytes(), SQL_CONFIG.as_bytes());
+        assert_ne!(path.to_bytes(), b"/etc/passwd");
+        assert_ne!(path.to_bytes(), b"/bin/ps");
+        assert_ne!(path.to_bytes(), b"/usr/bin/fstat");
+        if access.to_bytes().contains(&b'x') {
+            assert_eq!(path.to_bytes(), HASH_PROGRAM.as_bytes());
+        }
+        if access.to_bytes().contains(&b'c') {
+            assert_eq!(path.to_bytes(), b"/dev/null");
+        }
+    }
+}
+
+#[test]
 fn fixed_authority_never_exposes_system_library_directories() {
     let rules = fixed_parent_rules();
     assert!(!rules

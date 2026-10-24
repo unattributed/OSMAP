@@ -10533,7 +10533,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "status": "PENDING",
     "reference": "Only minimal well-defined own-password usability after all agent-owned development/matching deployed QA/independent audit PASS. No operator password is changed by agent qualification; use controlled disposable Alice and preserve Bob/operator state. NOT RUN."
   },
-  "next_action": "Deliver reviewed login preservation and Service snapshot/authentication-order correction through normal signed hooks; then reconstruct minimum helper command/endpoint authority around existing SQL/hash/Dovecot clients without worker-argv attestation. Establish actual passdb/cache freshness and helper/epoch/session integration before activation.",
+  "next_action": "Complete independent source review and signed delivery of minimumC. Next native candidate is matching OpenBSD libtest build plus exactly one read-only actual StockPeer constructor/recheck test with PS/FSTAT forbidden; no helper service, authentication, fixture or password operation. Native operation requires fresh explicit authority before dispatch.",
   "accountability": {
     "functional_exit": "Working own-account Settings password change through the selected single-host obsd1 local account service and authoritative local backend, fresh password/TOTP step-up, one conditional SQL update, durable OSMAP epoch and all-browser revocation, actual source-bound cache handling, old-password refusal/new-login success and Bob preservation. Existing third-party SMTP/IMAP sessions may remain authenticated. Matching installed QA, independent audit and minimal owner usability remain required. Toronto is later separate production installation.",
     "owner": "/root",
@@ -21595,6 +21595,71 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "S04-02-T08",
         "S04-02-T09"
       ]
+    },
+    "backend_reconstruction_20261024": {
+      "operator_direction": "lets get started, go; source/packageB then minimumC under current team specification. Existing live-action limits preserved.",
+      "source_baseline": "4634a1868d9e97bffef0541402d5bc0019ba2304",
+      "owner": "/root",
+      "backend_engineer": "/root/password_engineer",
+      "runtime_test_engineer": "/root/guardrails_engineer",
+      "independent_reviewer": "/root/delivery_controller",
+      "outcome": "Establish consumed current backend configuration facts with bounded readonlyobservation, then smallest Rust selected-authority correction removing worker/process argv dependency while retaining exact command/endpoint/config/role/loader custody and failclosed behaviour. No newPythonfiles/carriers/harness/dependencies.",
+      "source_scope": [
+        "src/account_password_peer.rs",
+        "src/account_password_peer_tests.rs",
+        "src/account_password_native.rs",
+        "src/account_password_native_tests.rs",
+        "src/account_password_confinement.rs"
+      ],
+      "authorized": "Sourceanalysis/corrections, focusedlocalRusttests, review/signednormalGitHubdelivery and necessarynarrowreadonlyobsd1contractobservation.",
+      "excluded": "Nativeappstartup/authentication/password/provisioning/disposal/deployment; publicmailservice/configchange; productioncontact; qualificationswitch; historicalresourceadoption; newPython/dependency/framework.",
+      "required_preservation": "Existinglogin/TOTP, fixedhelperAPI wherepossible, snapshot/CAS, lock/epoch/pending/replay/sessioncontracts, exactsafeerrors/earliestfailure/cleanupcertainty andall20/T01-T09.",
+      "minimum_tests": "Actualselectedendpoint/config observation and recheck positive/refusal; noPS requests onselectedpath; command/role/parentgrant restrictions; unchangedmailprimaryparser andexistingmatchinglogin/servicecontrols reused. Nativeeffectsremainunqualified.",
+      "failure_stop": "Unsupportedobservedconsumedcontract stops dependentexecution; sourceworkwithunchangedcontract maycontinue independently. No speculativepermission/UID/deadline relaxation, ambiguouscredentialretry or nativeclaim.",
+      "backend_configuration_capture": {
+        "attempt_id": "S04-02-reconstruction-backend-contract",
+        "elapsed_seconds": 0.53457,
+        "transport_exit": 0,
+        "stdout_bytes": 348,
+        "stderr_bytes": 0,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/postfixadmin-reconstruction-20261024/backend-contract/readonly-result.json",
+        "stdout_sha256": "24a007c571779c58d21b1a348f1ad5d87bdadfe90ff779b558c5b7d844056c8b",
+        "observations": [
+          "currentconfigcachezero",
+          "username%Lu/no translation/masterseparator",
+          "solefixedSQLpassdb",
+          "SQLlocalhost/defaultBLF",
+          "authsocketowner518:0/mode0600/link1/_dovecot518:518",
+          "helperSQLconfigandplanpresent"
+        ],
+        "gap": "ClosedSQLsourceprojectionUNRESOLVED; whichpredicatefailednotobserved. Projectiongap, notactualRustparserFAIL. Livecachefreshness/hashgeneration/grants/kernelpeerremainunqualified.",
+        "native_authentication": false,
+        "credential_mutation": false
+      },
+      "sql_reason_observation": {
+        "attempt_id": "S04-02-reconstruction-sql-reason",
+        "elapsed_seconds": 0.256512,
+        "transport_exit": 2,
+        "stdout_bytes": 42,
+        "stderr_bytes": 527,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/postfixadmin-reconstruction-20261024/backend-contract/reason/readonly-result.json",
+        "stderr_sha256": "aa4a7742177fac849b85081ed545535e234b53cbcee600e1033e73146dcc12f9",
+        "first_failure": "sql_projection / utility exit2; private diagnostics identify OpenBSD AWK syntax/illegal-statement at programline11 END. The local AWK proof did not establish native AWK portability. NoSQLpredicate observation was emitted.",
+        "certainty": "SQLsource shape unobserved; no Rustparser/productrefusal inferred. Remote disposition remains UNKNOWN asactualreceipt. Fixedcommands performed noauthentication/SQLexecution/credentialwrites/servicechanges/resource_disposal.",
+        "disposition": "Exactmethod/streams/receipt retained and readbackhashed; alternate AWKprojection method stopped, no retry/refinement/nativecredentialattempt. Next bounded proposal uses actualRustconstructor/validator, not anotherprojectionframework."
+      },
+      "source_result": {
+        "status": "SOURCE_CORRECTION_LOCAL_CONTROLS_PASS",
+        "change": "StockPeerselectedprocessrow/workerargvattestation replaced by protectedfile/include/canonicalconfiglink and fixedsocketheldkernelrootpeer continuity. API/callers unchanged. Stock parent SQL/hash graphs retained; selectedPSexecgrant/FSTATdependency removed, legacyprocessauthority preserved. Pledgepromises unchanged. Querycomparison foldsSQLkeywords only preserving identifiers/placeholders/literals.",
+        "local_results": "21peermodulePASS;1focusedSQLmappingPASS;4parent/rolePASS. No failingRust invocation. FinalOpenBSDonlytesttraceenumadjustment notcompiledonLinux.",
+        "native_limits": "No actualOpenBSDconstructor/parentseal/helperacceptloop/auth/write/epoch/sessionPASS. Configcachezero witness is not livefreshness proof; unchanged cacheeffect no-op remains unqualified. SQLsource actualRustacceptance, grants, hashshape remainunobserved."
+      },
+      "independent_review": {
+        "reviewer": "/root/delivery_controller",
+        "decision": "CLEAR_SOURCE_ONLY",
+        "reference": "/home/foo/Downloads/osmap-ux-s04/postfixadmin-reconstruction-20261024/minimum-c-source-review.json",
+        "limit": "No native/installed/credentialqualification or dispatchauthority supplied. Leadrecordsactualreview; source/bodyunchangedafterreview."
+      }
     }
   },
   "execution_contract": {
@@ -32567,6 +32632,80 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
             }
           }
         ]
+      },
+      {
+        "id": "reconstruction-backend-contract",
+        "kind": "DISCOVERY",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "single-host-readiness"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "docs/UX_EXECUTION_LEDGER.md"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/bin/sh",
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/postfixadmin-reconstruction-20261024/backend-contract/dispatch-readonly.sh"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "One bounded readonlyprojection of currentDovecot4settings/solepassdb/SQLsourceclasses andauthendpoint/rolemetadata/helperconfigpresence. Noauth, socketconnect, hash, SQLquery, credentialsretained, hostwrite/service/disposal. Parsedconfig!=livefreshness, presence!=grants, metadata!=kernelpeer. NonzeroUNKNOWN/noautomaticretry.",
+        "prerequisites": [
+          {
+            "id": "independent-exact-source-review",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/postfixadmin-reconstruction-20261024/backend-contract/readonly-review.json",
+              "sha256": "2dc98818fa1750b574c2a9d12f80a4f8921582408f297e44abbb739a4775fe3a"
+            }
+          }
+        ]
+      },
+      {
+        "id": "reconstruction-sql-reason",
+        "kind": "DISCOVERY",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "single-host-readiness"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "docs/UX_EXECUTION_LEDGER.md"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/bin/sh",
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/postfixadmin-reconstruction-20261024/backend-contract/reason/dispatch-readonly.sh"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "One fixedreadonlyreason-onlyprojection ofSQLsourcepredicate booleans; preserveoriginal348bytecapture. No rawconfig/query/DSN/secrets/SQLexecution/auth/socketconnect/hostwrites/disposal. ActualRust/liveacceptanceunqualified.",
+        "prerequisites": [
+          {
+            "id": "independent-fixed-reason-review",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/postfixadmin-reconstruction-20261024/backend-contract/reason/readonly-review.json",
+              "sha256": "3c9d320355324a14ca6ba1244ece2fdaa8e6ceeefb095b916bdf6bf78bcf4d0e"
+            }
+          }
+        ]
       }
     ],
     "budget": {
@@ -32580,9 +32719,9 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     },
     "planned_action": null
   },
-  "blocker": "Native helper composition, effective credential/cache policy and new epoch/session integration remain unqualified; no new native startup/authentication/password operation is authorized by this source phase.",
+  "blocker": "Native selected-constructor/child-seal/helper/authentication/cache/epoch/session integration remains unqualified. SQLreason utility failed beforepredicateobservation; no further alternateprojectionretry. Await exactnativecomponentauthorization only aftersource delivery; no livecredentialauthority supplied.",
   "independent_next_action": "Reviewbaselinepreservationregression andexactnonmutatingbackendfactinspection. Preserveexistingno-downgradecontrols; noexistingcomponentPASSupgraded.",
-  "updated_at": "2026-10-24T12:22:03Z"
+  "updated_at": "2026-10-24T13:27:33Z"
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->

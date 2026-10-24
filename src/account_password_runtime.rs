@@ -549,7 +549,9 @@ impl<P: CommandExecutor> Effects for StockEffects<'_, P> {
         }
         self.current(account, deadline)?;
         self.phase.set(Phase::FlushDispatched);
-        // Source-bound actual public daemon cache_size=0; no fictitious flush.
+        // Recheck the protected current-configuration cache-zero witness.
+        // This performs no flush and is not proof of the daemon's loaded cache
+        // state; live freshness/effects require separate native qualification.
         self.peer
             .recheck(deadline)
             .map_err(|_| DependencyError::Unavailable)?;

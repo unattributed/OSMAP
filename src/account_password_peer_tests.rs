@@ -143,6 +143,126 @@ impl CommandExecutor for Never {
         panic!("foreign native factory dispatched command")
     }
 }
+
+#[test]
+fn stock_leaf_witness_detects_real_file_socket_and_link_changes() {
+    use std::os::unix::fs::{symlink, PermissionsExt};
+    use std::os::unix::net::UnixListener;
+    let root = std::env::temp_dir().join(format!(
+        "osmap-stock-leaf-{}",
+        crate::draft::generate_draft_id().unwrap()
+    ));
+    fs::create_dir(&root).unwrap();
+    fs::set_permissions(&root, fs::Permissions::from_mode(0o700)).unwrap();
+    let deadline = Instant::now() + Duration::from_secs(3);
+    let config = root.join("config");
+    fs::write(&config, b"original configuration").unwrap();
+    let original = stock_leaf_identity(&fs::symlink_metadata(&config).unwrap());
+    assert!(stock_leaf_unchanged(&config, &original, deadline).unwrap());
+    fs::write(&config, b"changed configuration with different length").unwrap();
+    assert!(!stock_leaf_unchanged(&config, &original, deadline).unwrap());
+    assert!(stock_leaf_unchanged(&config, &original, Instant::now()).is_err());
+
+    let link = root.join("runtime-config");
+    symlink(&config, &link).unwrap();
+    assert!(configuration_link_target(&link, &config, deadline).unwrap());
+    assert!(!configuration_link_target(&link, &root.join("foreign"), deadline).unwrap());
+    assert!(configuration_link_target(&link, &config, Instant::now()).is_err());
+    let captured = stock_leaf_identity(&fs::symlink_metadata(&link).unwrap());
+    fs::remove_file(&link).unwrap();
+    symlink(root.join("foreign"), &link).unwrap();
+    assert!(!stock_leaf_unchanged(&link, &captured, deadline).unwrap());
+
+    let socket = root.join("auth");
+    let listener = UnixListener::bind(&socket).unwrap();
+    let captured = stock_leaf_identity(&fs::symlink_metadata(&socket).unwrap());
+    assert!(stock_leaf_unchanged(&socket, &captured, deadline).unwrap());
+    fs::set_permissions(&socket, fs::Permissions::from_mode(0o600)).unwrap();
+    let captured = stock_leaf_identity(&fs::symlink_metadata(&socket).unwrap());
+    fs::set_permissions(&socket, fs::Permissions::from_mode(0o660)).unwrap();
+    assert!(!stock_leaf_unchanged(&socket, &captured, deadline).unwrap());
+    drop(listener);
+    fs::remove_file(&socket).unwrap();
+    fs::write(&socket, b"not a socket").unwrap();
+    assert!(!stock_leaf_unchanged(&socket, &captured, deadline).unwrap());
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn stock_kernel_peer_requires_root_user_and_group() {
+    assert!(stock_root_peer((42, 0, 0)));
+    assert!(!stock_root_peer((42, 518, 0)));
+    assert!(!stock_root_peer((42, 0, 518)));
+}
+
+#[cfg(target_os = "openbsd")]
+#[test]
+#[ignore = "operator-run root-only fixed stock constructor and recheck; no authentication"]
+fn native_stock_constructor_and_recheck_use_no_process_metadata() -> Result<(), &'static str> {
+    use std::sync::Arc;
+    struct NoProcessMetadata(crate::account_password_process::MetadataExecutor);
+    impl CommandExecutor for NoProcessMetadata {
+        fn run_with_stdin_bytes(
+            &self,
+            _: &str,
+            _: &[String],
+            _: &[u8],
+        ) -> Result<CommandExecution, CommandExecutionError> {
+            Err(CommandExecutionError {
+                reason: "bounded metadata method required".into(),
+            })
+        }
+        fn run_with_stdin_bytes_timeout_and_output_limit(
+            &self,
+            program: &str,
+            args: &[String],
+            input: &[u8],
+            timeout: Duration,
+            limit: usize,
+        ) -> Result<CommandExecution, CommandExecutionError> {
+            if matches!(program, PS | FSTAT) {
+                return Err(CommandExecutionError {
+                    reason: "process metadata forbidden".into(),
+                });
+            }
+            self.0
+                .run_with_stdin_bytes_timeout_and_output_limit(program, args, input, timeout, limit)
+        }
+    }
+    if !crate::openbsd::password_native_authority() {
+        return Err("root OpenBSD authority required");
+    }
+    std::env::set_current_dir("/").map_err(|_| "fixed working directory unavailable")?;
+    let executor = Arc::new(NoProcessMetadata(
+        crate::account_password_process::MetadataExecutor::readonly(),
+    ));
+    let mut trace = crate::account_password_fstat::StartupTrace::new(
+        crate::account_password_fstat::StartupOperation::ServiceStartup,
+    );
+    let admission_error = |error| match error {
+        Error::Refused => crate::account_admission::Error::Refused,
+        Error::Expired => crate::account_admission::Error::Expired,
+        Error::Unavailable => crate::account_admission::Error::Unavailable,
+    };
+    let peer = StockPeer::observe(
+        executor,
+        Instant::now() + Duration::from_secs(10),
+        &mut trace,
+    )
+    .map_err(|error| {
+        trace.emit_metadata(&admission_error(error));
+        "stock construction unavailable"
+    })?;
+    peer.recheck_with_trace(Instant::now() + Duration::from_secs(3), &mut trace)
+        .map_err(|error| {
+            trace.emit_metadata(&admission_error(error));
+            "stock recheck unavailable"
+        })?;
+    if peer.recheck(Instant::now()).is_ok() {
+        return Err("expired recheck admitted");
+    }
+    Ok(())
+}
 #[test]
 fn stock_runtime_constructor_retains_runtime_and_nested_recheck_failures() {
     use crate::account_password_connection::Keys;
@@ -155,25 +275,15 @@ fn stock_runtime_constructor_retains_runtime_and_nested_recheck_failures() {
     // Deliberately incapable of native observation: both exercised guards must
     // refuse before any command, backend configuration or socket is accessed.
     let peer = Arc::new(StockPeer {
-        executor: Arc::new(Never),
-        startup: StockStartup {
-            master: process(10, 1, 0, "dovecot"),
-            own: process(0, 1, 0, "account-passwd"),
-            pins: Vec::new(),
-        },
+        master_pid: 10,
         auth: pin(),
         files: Vec::new(),
         server_uid: 518,
         server_gid: 518,
-        selection: MainConfigurationSelection {
-            argv: String::new(),
-            link: [0; 11],
-        },
+        selection: [0; 11],
         auth_snapshot: StockSocketSnapshot {
             endpoint: [0; 11],
             binder: (10, 0, 0),
-            worker: process(20, 10, 518, "auth"),
-            argv: String::new(),
         },
     });
     let root = std::env::temp_dir().join(format!(

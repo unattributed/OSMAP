@@ -1,5 +1,37 @@
 # Decision Log
 
+2026-10-24 UTC — **Minimum Rust backend reconstruction implemented; native remains unqualified.**
+The operator resumed execution after the team handoff. The selected StockPeer
+keeps its public API but replaces process/worker argv inventory with protected
+configuration/include witnesses, the canonical runtime configuration link,
+fixed auth-socket ownership/type/mode and held kernel root-peer continuity.
+Master-pid material is a consistency witness only. SQL/hash/primary roles,
+command guards, installed loader custody, child seals and deadlines remain.
+The selected parent no longer requires the unrelated FSTAT dependency graph or
+/bin/ps execution; legacy private-process authority and pledge promises remain.
+The SQL query comparator also stops case-folding identifiers, placeholders and
+literals; only its fixed SQL keyword tokens may vary in case. Local changed-
+boundary controls pass; no native construction or operational success follows.
+
+Read-only obsd1 observation confirmed current-config cache zero, lowercase
+username mapping/no translation/master separator, sole fixed SQL passdb,
+localhost SQL route/default BLF, public auth socket518:0/0600/one link matching
+_dovecot518:518, and presence of helper SQL configuration/plan. It did not prove
+running-daemon freshness, current grants, generated hash shape or successful
+Rust parsing of the SQL source. The closed source projection returned UNKNOWN.
+A separate reason-only observation then failed in the OpenBSD AWK parser before
+emitting predicates (exit2;42/527bytes). The earlier Linux-local proof was not
+native compatibility evidence. Both exact observations/diagnostics are retained;
+that alternate projection method is stopped. No further observer retry, auth,
+credential write, fixture adoption/disposal or public service action occurred.
+
+The next native candidate uses the actual changed Rust constructor/configuration
+validator with PS/FSTAT requests forbidden, not another observer parser. Its
+existing trace retains exact Refused/Expired/Unavailable on failure. It requires
+a matching OpenBSD build and fresh specific authorization; it performs no helper
+listener binding, authentication or mutation and cannot qualify parent sealing,
+accept-loop readiness, live cache effects, epoch/session integration or T03.
+
 2026-10-24 UTC — **Team execution handoff specified; no new Python scaffolding.**
 The operator requested an executable S04-02 specification for development,
 project management and independent QA, with sufficient context and prevention

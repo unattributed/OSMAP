@@ -1,5 +1,23 @@
 # Current Project Status
 
+2026-10-24 UTC — **Selected Rust authority simplified; native boundary not yet run.**
+Source now replaces selected StockPeer process/worker-argv checks with protected
+current configuration/runtime-link and fixed socket/kernel-peer continuity.
+Existing service/profile APIs, transaction/session code, roles and deadlines
+remain; selected parent retains SQL/hash custody while dropping PS execution
+and the FSTAT-only graph. A query-mapping fix preserves case-sensitive bindings.
+Focused local peer, query and parent/role controls pass; independent source
+review and signed delivery are separate. Python source/dependencies unchanged.
+
+The actual read-only backend capture supplies current configuration/socket facts
+only. SQL-source classification remained unknown; its reason-only AWK utility
+failed before producing predicates, with exact bounded evidence retained and
+no retry of that method. Actual Rust config acceptance, native construction,
+helper sealing/readiness, live freshness and account/session effects remain
+unqualified. Next: a separately authorized matching build and one read-only Rust
+constructor/recheck test; no password or retained-resource operation is queued.
+S04-02 remains open; no native/app/installed/UAT PASS follows this source work.
+
 2026-10-24 UTC — **Team execution specification added; functional status unchanged.**
 Development, PM and independent QA now have a self-contained current handoff at
 [the front of the S04-02 specification](UX_SLICE_S04_02.md#current-team-execution-specification--2026-10-24):

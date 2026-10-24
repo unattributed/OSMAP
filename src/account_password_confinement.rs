@@ -11,6 +11,7 @@ pub(crate) struct ParentPlan {
     promises: CString,
     custody: Arc<Custody>,
     seal: Option<crate::openbsd::PasswordParentSeal>,
+    legacy_metadata: bool,
 }
 impl ParentPlan {
     #[allow(dead_code)] // Historical private-ingress parent; stock uses prepare_stock.
@@ -105,14 +106,13 @@ impl ParentPlan {
             // setpw/id needed by fixed child role drops; recvfd only for exact
             // IMAP descriptor registration. Children install narrower plans.
             promises: CString::new("stdio rpath wpath cpath fattr flock unix inet recvfd proc exec prot_exec id getpw ps pf tty").map_err(|_| Unavailable)?,
-            custody, seal: None,
+            custody, seal: None, legacy_metadata: true,
         })
     }
     pub(crate) fn prepare_stock(deadline: Instant) -> Result<Self, Unavailable> {
         if !crate::openbsd::password_native_authority() || Instant::now() >= deadline {
             return Err(Unavailable);
         }
-        crate::account_password_native::verify_metadata_graph(deadline).map_err(|_| Unavailable)?;
         let mut rules = BTreeMap::<String, String>::new();
         let mut add = |path: &str, access: &str| {
             let actual = rules.entry(path.to_owned()).or_default();
@@ -146,7 +146,6 @@ impl ParentPlan {
             add(path, "rwc");
         }
         add("/etc/osmap/account-runtime", "");
-        add("/bin/ps", "rx");
         add("/usr/local/libexec/osmap/account-passwd", "r");
         for path in crate::account_password_peer::stock_configuration_paths(deadline)
             .map_err(|_| Unavailable)?
@@ -179,6 +178,7 @@ impl ParentPlan {
             .map_err(|_| Unavailable)?,
             custody,
             seal: None,
+            legacy_metadata: false,
         })
     }
     pub(crate) fn rules(&self) -> &[(CString, CString)] {
@@ -196,7 +196,11 @@ impl ParentPlan {
             return Err(Unavailable);
         }
         self.custody.recheck(deadline)?;
-        crate::account_password_native::verify_metadata_graph(deadline).map_err(|_| Unavailable)
+        if self.legacy_metadata {
+            crate::account_password_native::verify_metadata_graph(deadline)
+                .map_err(|_| Unavailable)?;
+        }
+        Ok(())
     }
     pub(crate) fn activate(
         &mut self,

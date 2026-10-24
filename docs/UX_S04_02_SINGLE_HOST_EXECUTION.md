@@ -1,5 +1,59 @@
 # S04.02 single-host execution correction
 
+## 2026-10-24 UTC — minimum C next native component operation, NOT DISPATCHED
+
+The selected authority now has a source-only replacement for process/worker
+argv inventory. The next smallest native discriminator is the actual Rust
+constructor/configuration validator, not another text-processing projection.
+Current source and local tests do not qualify it. This proposal supplies no
+execution authority and is not a password-change or full R1/R2 recipe.
+
+After independent source review and signed GitHub delivery, bind the resulting
+commit/source archive hash to exactly one obsd1 operation. Use ordinary fixed
+SSH/native Cargo commands; no new Python files, carriers or harness expansion.
+Create only fresh private build/artifact staging, refusing pre-existing candidate
+paths rather than adopting retained resources. Compile as the unprivileged
+operator user with the existing offline Cargo dependencies, one build job and
+the unoptimized test profile with debuginfo disabled. Build only the library
+test artifact required for this test; do not run the whole native suite or build
+an optimized test library. Verify source identity before/after compilation and
+the selected artifact's type, owner, link count, size and hash before execution.
+Install the verified test artifact into a new root-owned private execution stage
+and verify the copied hash/ownership/mode before the one root invocation.
+
+Fixed test selector:
+
+```text
+account_password_peer::tests::native_stock_constructor_and_recheck_use_no_process_metadata
+```
+
+Invoke only that exact ignored test with `--exact`, `--ignored`, `--nocapture`
+and `--test-threads=1`. Its constructor has a10-second budget, the successful
+recheck3seconds, and the final expired-recheck control must refuse. The executor
+refuses every PS/FSTAT metadata request. It reads protected existing files,
+runs the fixed read-only doveconf queries and opens zero-byte auth-socket
+connections for kernel credentials; no authentication frame is sent. It binds
+no helper listener and touches no account, epoch, purpose key or probe165 fixture.
+
+Technical operation bounds:600seconds compile,20seconds test,720seconds whole
+operation including transfer/disposition. Use the native timeout utility's
+child-propagating default and kill-after bound, not foreground-only signalling;
+verify the actual utility before dispatch. See the
+[OpenBSD timeout contract](https://man.openbsd.org/timeout).
+Retain bounded private compiler/test streams, actual source/artifact hashes,
+process outcomes, exact emitted StartupTrace and cleanup certainty through the
+existing evidence rules. Refusal, timeout or lost transport stops this operation;
+no automatic build/test retry, observer replacement or historical PID signalling.
+Retain newly owned stages on uncertainty, with their exact ownership inventory.
+
+A passing result proves this selected constructor/recheck on obsd1 without
+process metadata. It does not prove ParentPrepare/ParentSeal, operational accept
+loop, admission authentication, SQL grants/hash generation, live cache freshness,
+credential mutation, epoch/session integration, HTTP READY, T03 or installed UAT.
+Those remain subsequent actual product boundaries. Fresh explicit authorization
+for this precise build/read-only test is required before execution; it grants
+no public mail operation, new fixture, credential action or retained disposal.
+
 ## 2026-10-24 UTC — Issue 79 diagnostic preservation contract
 
 Every OSMAP execution failure must preserve an actionable, bounded, sanitized

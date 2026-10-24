@@ -1,5 +1,25 @@
 # OSMAP WSTG v4.2 Scenario Matrix
 
+2026-10-24 S04-02 minimum C source boundary: the selected StockPeer now retains
+protected configuration/include/runtime-link witnesses and fixed auth-socket/
+held kernel root-peer continuity, without process-row/worker-argv inventory.
+Selected parent rules retain SQL/hash installed-graph custody and remove only
+the legacy FSTAT graph and /bin/ps execution grant; existing pledge promises,
+private legacy authority, roles, command policy and deadlines remain. Fixed SQL
+query comparison preserves identifier/placeholder/literal bytes while accepting
+its SQL keywords in either case. Focused peer/query and parent/role controls
+pass locally; the OpenBSD-only positive constructor test is neither compiled
+nor executed on Linux. No native or installed WSTG scenario is promoted.
+
+Read-only backend evidence supplies current configuration/socket metadata only.
+The alternate SQL-reason AWK observation failed before predicates; its exact
+failure/streams/disposition remain retained and that method is stopped. Actual
+Rust SQL-source acceptance, native construction/sealing/readiness, live cache
+freshness, credentials/epoch/sessions and Bob effects remain unqualified. No
+Python source, dependency, host service/configuration, fixture or qualification
+flag changed. See the current ledger and separately unexecuted native component
+proposal; all20 obligations and T01–T09 remain required.
+
 2026-10-22 S04-02 loader delta: actual MariaDB loader capture130 demonstrates the C++ basename incompatibility after129's native parser FAIL. Focused131 source regression PASS accepts the two real C++ dependency rows while foreign paths, traversal, unrelated punctuation and C++ module execution refuse. Protected library directories, custody and loader types are unchanged. Journey125 remains FAIL before HTTP; owned128 disposition PASS preserves public mail/operator state. These source/diagnostic/cleanup results do not qualify password-change, installed WSTG, release or UAT; all20 obligations and T01-T09 remain governed by their original matching evidence.
 
 2026-10-22 S04-02 delta: focused source guard regression PASS for the two exact stock Dovecot read-only observations required at helper startup; wrong configuration paths, secret keys and extra options refuse. Actual single-host116 failed before HTTP and does not qualify a password workflow. Fresh retained-state119a plus exact owned disposition121 PASS preserve public mail and operator state. New cfg(test) incomplete-change, duplicate-request and concurrent-issuance probes are compiled but NOT RUN natively; full native/installed/password acceptance remains open. See the active execution ledger and current project status; no broader WSTG/release PASS is inferred.

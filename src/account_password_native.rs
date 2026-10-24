@@ -510,19 +510,52 @@ fn fixed_parent_rules() -> Vec<(String, &'static str)> {
     .collect()
 }
 pub(crate) fn parent_rules(deadline: Instant) -> Result<Vec<(String, &'static str)>, Unavailable> {
+    parent_rules_with(ParentGraphs::Legacy, deadline, installed_parent_graph_rules)
+}
+#[derive(Clone, Copy)]
+enum ParentGraphs {
+    Legacy,
+    Stock,
+}
+fn installed_parent_graph_rules(
+    program: &'static str,
+    deadline: Instant,
+) -> Result<Vec<(String, &'static str)>, Unavailable> {
+    Ok(installed_graph(program, deadline)?
+        .files
+        .iter()
+        .map(|(path, _, _)| (path.clone(), if path == program { "rx" } else { "r" }))
+        .collect())
+}
+fn parent_rules_with(
+    selection: ParentGraphs,
+    deadline: Instant,
+    mut graph: impl FnMut(&'static str, Instant) -> Result<Vec<(String, &'static str)>, Unavailable>,
+) -> Result<Vec<(String, &'static str)>, Unavailable> {
+    before(deadline)?;
     let mut rows = fixed_parent_rules();
-    for program in [
-        crate::account_password_backend::SQL_PROGRAM,
-        crate::account_password_backend::HASH_PROGRAM,
-        "/usr/bin/fstat",
-    ] {
-        rows.extend(
-            installed_graph(program, deadline)?
-                .files
-                .iter()
-                .map(|(path, _, _)| (path.clone(), if path == program { "rx" } else { "r" })),
-        );
+    let programs: &[&'static str] = match selection {
+        ParentGraphs::Legacy => &[
+            crate::account_password_backend::SQL_PROGRAM,
+            crate::account_password_backend::HASH_PROGRAM,
+            "/usr/bin/fstat",
+        ],
+        ParentGraphs::Stock => {
+            rows.retain(|(path, _)| {
+                !matches!(path.as_str(), PRIMARY_SOCKET | CONTROL_AUTH | CONTROL_ANVIL)
+                    && *path != crate::account_password_topology::IPC
+            });
+            rows.push((crate::account_password_mail::STOCK_AUTH.to_owned(), "rw"));
+            &[
+                crate::account_password_backend::SQL_PROGRAM,
+                crate::account_password_backend::HASH_PROGRAM,
+            ]
+        }
+    };
+    for &program in programs {
+        rows.extend(graph(program, deadline)?);
     }
+    before(deadline)?;
     Ok(rows)
 }
 pub(crate) fn verify_metadata_graph(deadline: Instant) -> Result<(), Unavailable> {
@@ -1244,13 +1277,7 @@ fn observe_stock(
 pub(crate) fn stock_parent_rules(
     deadline: Instant,
 ) -> Result<Vec<(String, &'static str)>, Unavailable> {
-    let mut rows = parent_rules(deadline)?;
-    rows.retain(|(path, _)| {
-        !matches!(path.as_str(), PRIMARY_SOCKET | CONTROL_AUTH | CONTROL_ANVIL)
-            && *path != crate::account_password_topology::IPC
-    });
-    rows.extend([(crate::account_password_mail::STOCK_AUTH.to_owned(), "rw")]);
-    Ok(rows)
+    parent_rules_with(ParentGraphs::Stock, deadline, installed_parent_graph_rules)
 }
 
 #[cfg(test)]
