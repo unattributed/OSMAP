@@ -1,5 +1,63 @@
 # S04.02 single-host execution correction
 
+## 2026-10-24 UTC — native credential freshness PASS; product transaction pending
+
+Action `S04-02-CREDENTIAL-native03` ran once on obsd1, using signed source
+`8f09b48844bc3668f7531e3dba0f2c977307e9aa` and the freshly custody/hash-checked
+native executable SHA256
+`62791e693675b91dafff271517452872fc43ecd5a5ae2255f88abdb78c707ce6`.
+No compilation or unchanged capture-control rerun was needed.
+
+1. One fresh fixed virtual mailbox was inserted with A, with acknowledged row
+   count and authoritative readback. No new SQL principal or OS user.
+2. The real configured nonroot Rust client refused B, authenticated A through the
+   actual sealed helper/Dovecot path under the Store epoch lock, obtained signed
+   epoch0 and revalidated it.
+3. One external conditional fixture update A-to-B was acknowledged; B readback
+   matched and the remaining15 mailbox columns were unchanged.
+4. The client refused obsolete A BEFORE attempting B, then authenticated B and
+   validated epoch0/admission again. No intervening cache flush.
+5. The owned stop byte and helper guard completed0. Helper1PASS20.87seconds,
+   first client1PASS11.87seconds, post-update client1PASS8.62seconds; all0fail/
+   0ignored. Whole24seconds coarse wall; original startup5/client35 bounds remain.
+
+Received archive SHA256
+`aac663a9588a905f98c2773d995a20f08e0498417a7defcf175191b74d1ef5ac`
+matches the root-produced archive. All49 flat regular members,48 capture hashes,
+34 root hashes and2 reused actual-control hashes verify. Local dispatch/stream
+readbacks also pass. Preservation compares the original Alice/Bob full rows,
+protected file content and identities, parent identities and fresh epoch files.
+New epoch remains0/active with no pending/used intents; no uncertainty marker;
+both born socket leaves are absent after service stop. The final fresh full-row
+digest and other15-column digest match their expected state.
+
+Retained new resources: the exact fresh virtual mailbox, its epoch JSON/lock,
+the fixed client directory with executable/key copy, original build/root stage01,
+upload/root stages02 and03 and private sprint evidence. Native01/02 did not reach INSERT/auth.
+Their artifacts and original failures remain. No deletion was dispatched; any
+later disposal needs fresh exact ownership/state checks and independent review,
+with no wildcard, guessed PID or historical165/160 deletion. Original165 cleanup
+remains UNCERTAIN. Secrets existed only in process memory/private streams.
+
+The two earlier machinery failures were analysed separately: native shell parse,
+then unlabeled custody refusal. Combined actual-host reassessment after the stop
+found the supported `/sbin/mkfifo` path. Native03 corrects that fixed path, labels
+custody guards and exercises FIFO setup before password generation/INSERT. The
+exact historical failed guard remains unknown; no guessed errno. Native02's
+actual corrected capture proof and the matching executable are reused unchanged.
+Native01/02 cost150coarse seconds plus native03's24; other work cost UNKNOWN.
+
+This is scoped real credential-freshness evidence, not global cache disablement
+or the product password transaction. All mutation dispatch stayed refused before
+backend construction. Existing successful login/TOTP and public mail services/
+configuration remain unchanged. Native03 plaintexts were intentionally RAM-only and are now unavailable; do not
+reset/reuse that retained row to invent a known-current control. The next bounded
+transaction needs a separate fresh fixture. Prove product snapshot/auth/hash/CAS/
+readback and its refusal/uncertainty, then epoch/session and browser composition. Serve/
+HTTP, installed acceptance, T03, UAT and S04-02 remain unqualified. Private evidence
+is under `postfixadmin-reconstruction-20261024/credential-freshness/native03` in
+the stable sprint root. Earlier preparation sections below are historical.
+
 ## 2026-10-24 UTC — credential-freshness preparation; native authentication NOT RUN
 
 Reuse the existing restricted R1/R2 PASS. Read-only action

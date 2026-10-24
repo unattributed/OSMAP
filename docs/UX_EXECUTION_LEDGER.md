@@ -10537,7 +10537,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "status": "PENDING",
     "reference": "Only minimal well-defined own-password usability after all agent-owned development/matching deployed QA/independent audit PASS. No operator password is changed by agent qualification; use controlled disposable Alice and preserve Bob/operator state. NOT RUN."
   },
-  "next_action": "Complete reviewedtest-onlysource delivery with normalShopkeepersigning/push/parity; independentlyreviewexactfreshfixture before firstrealcredentialfreshnessnativeoperation. PreserveR1R2PASS, no furtherproductqualificationyet.",
+  "next_action": "Use proven liveverifier inexistingServiceBackend transaction, then genuinependingACK/storedsession/epoch/revocation composition beforebrowser. Native03plaintextsRAMonlynowlost; prepareseparatefreshfixture, noresetofNative03or165rows. Currentfourrecordsindependentreviewthenmandatorysigneddelivery; nofurthernativeactionregistered.",
   "accountability": {
     "functional_exit": "Working own-account Settings password change through the selected single-host obsd1 local account service and authoritative local backend, fresh password/TOTP step-up, one conditional SQL update, durable OSMAP epoch and all-browser revocation, actual source-bound cache handling, old-password refusal/new-login success and Bob preservation. Existing third-party SMTP/IMAP sessions may remain authenticated. Matching installed QA, independent audit and minimal owner usability remain required. Toronto is later separate production installation.",
     "owner": "/root",
@@ -21869,7 +21869,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
       "measured_cost_scope": "native01 196 + native02 192 wallseconds, builds/lifecycles included once. Reconciliation/source/review/totalelapsed notfullymeasured; no costreset or continuouscomputeclaim."
     },
     "credential_freshness_20261024": {
-      "state": "SOURCE_READY_NATIVE_CREDENTIAL_PROOF_NOT_RUN",
+      "state": "LIVE_CREDENTIAL_FRESHNESS_PASS_NEXT_PRODUCT_TRANSACTION",
       "source_baseline": "e6d5ce7c4b9f25a1b568cf962e1112b774cb5ec5",
       "operator_direction": "Continue next liveDovecot/currentauthoritativecredential focus and failure-analysisloop; earlierfullautonomy persists. No routinepermissionpause.",
       "outcome": "RealRust verifier onrealDovecot accepts currentauthoritativecontrolledcredential andrejectsobsoletecredential BEFORE credentialwrite; actualSQLsource/accountbinding andheldStorelockcomposition; subsequentlyqualifyexistingCAS/readback andepoch/session beforebrowser.",
@@ -21880,7 +21880,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "evidence_QA": "/root/independent_evidence_audit",
         "PM_Scrum_technical_records": "/root"
       },
-      "current_action_scope": "Read-only actualschema/endpoint/configlogging/cache-statuscapability inspectiononly; noauthentication/provisioning/credentialmutation/cleanup. A latercomponent/nativeactionmustbeexplicitlyrecordedandreviewed, notinferPASSfromdiscovery.",
+      "current_action_scope": "Actualcurrentcredentialproof ononefreshfixedvirtualmailbox: ONEINSERTA andONEexternalconditionalAtoB only; realRusthelper/clientAuthenticate+Admit underheldepochlock. No productMutation/HTTP/Sessionissuance, original165/160writes/disposal, publicmailconfig/lifecycle, prod/principal/OSusercreation. Fullautonomy/latestcontinuation governs; ambiguouswritesstop/retain/no retry.",
       "preservation": "ReusequalifiedR1R2. No publicDovecot/Postfix/MariaDB lifecycle/config, productioncontact, newPythonframework,165/160reset/replay/disposal orrecoveredcredentialguessing. Original165plaintextnotretained; newpositivecontrolrequiresactualprovenance.",
       "source_findings": "Service.readsnapshot precedesprimary andCASusesoriginalsnapshot. StockEffects.authenticate usesrealDoveadmprimary/STDIN/exactaccount. Cachewitnessisfileconfig0; invalidate_cachedoesnoflush; runtimefreshnessunproved. Config0/wrong-goodalone/postwritechecks do not retroactivelyvalidateprewritecredential.",
       "minimum_distinguishing_test": "KnowncontrolledAacceptance, actualauthoritativecredentialdifference toB, then OBSOLETE_A_REFUSAL_FIRST beforeBsuccess (BfirstcouldrefreshcacheandmaskstaleAacceptance); authenticatesamemappingwithrealheldepochlock. This is plannedNOTRUN andnotauthoritytodispatchaSQLwritefromdiscovery.",
@@ -21888,9 +21888,9 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
       "technical_bounds": "Firstreadonlydiscovery SSH45+kill3/whole60seconds; sourceinvestigationforecast1800 notoperatorclockexpiry. Laterbuild/test bounds chosenonlyfromactualminimumrecipe. Preserveallpreviouscosts; actualnewtime measuredorUNKNOWN.",
       "tests": {
         "source_trace": "INSPECTED_CORRECT_ORDER_AND_UNQUALIFIED_FRESHNESS",
-        "native_prerequisites": "NOT_RUN",
-        "current_vs_obsolete_credential": "NOT_RUN",
-        "held_lock_authentication": "NOT_RUN",
+        "native_prerequisites": "PASS_ACTUAL_CONCRETE_CONTRACT",
+        "current_vs_obsolete_credential": "PASS_NATIVE03_OLD_FIRST",
+        "held_lock_authentication": "PASS_NATIVE03_REAL_RUST_HELPER",
         "guarded_CAS_epoch_session": "NOT_RUN"
       },
       "source_scope_candidates": [
@@ -21900,7 +21900,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "src/account_admission_runtime_tests.rs",
         "src/account_password_backend_tests.rs"
       ],
-      "next_action": "Independentlyreviewfixedreadonlyinspector, registerexactrecipe/attempt anddispatchonce; actualcapabilitycontrolsnextengineeringchoice.",
+      "next_action": "Use proven liveverifier inexistingServiceBackend transaction, then genuinependingACK/storedsession/epoch/revocation composition beforebrowser. Native03plaintextsRAMonlynowlost; prepareseparatefreshfixture, noresetofNative03or165rows. Currentfourrecordsindependentreviewthenmandatorysigneddelivery; nofurthernativeactionregistered.",
       "discovery01_plan": {
         "action": {
           "attempt_id": "S04-02-CREDENTIAL-discovery01",
@@ -21932,7 +21932,117 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "native_authentication": "NOT_RUN",
         "generated_evidence": "ExistingV10scriptsrefreshed9850total/9765source-test,+8testassumptions. InitialV10checkFAILEDstaleauditclaims count9842/hash; oldfailurelogpreserved. Bothaudit+refinedclaimbindingscorrectedtoactualregister; changedbindingV10recheckPASS(v10-focused2.log). CWEfocusedPASS; classifiers/nonclaimsunchanged; noPythonfile/runtimechange."
       },
-      "prospective_fixture_scope": "Exactfreshvirtualrowonly: oneINSERTA + oneexternalCASAtoB asfreshnessstimulus, noactualServiceMutation. Original165/160/principals/OSusers/configsunchanged. Realheld-lockhelperclientAwarms, obsoleteAfirst afterCAS thenBpositive; secretsRAM/pipes, noflushbetween. FreshEpoch0/no-intents stays; retainednewresourcesexact-owned, no disposalautomatically. NativeoperationNOTYETREVIEWEDORREGISTERED."
+      "prospective_fixture_scope": "Exactfreshvirtualrowonly: oneINSERTA + oneexternalCASAtoB asfreshnessstimulus, noactualServiceMutation. Original165/160/principals/OSusers/configsunchanged. Realheld-lockhelperclientAwarms, obsoleteAfirst afterCAS thenBpositive; secretsRAM/pipes, noflushbetween. FreshEpoch0/no-intents stays; retainednewresourcesexact-owned, no disposalautomatically. NativeoperationNOTYETREVIEWEDORREGISTERED.",
+      "native01_plan": {
+        "action": {
+          "attempt_id": "S04-02-CREDENTIAL-native01",
+          "recipe_id": "credential-freshness-one-controlled-difference",
+          "source_revision": "67cb49ceaef45ae953cb2247c833c29a23602e60de99df0c4c7a154ed66175ae",
+          "not_after": "2026-10-24T19:20:12Z",
+          "max_seconds": 900
+        },
+        "source_commit": "8f09b48844bc3668f7531e3dba0f2c977307e9aa",
+        "root_source_sha256": "7bcf88551e243cdc1f0cc62d2dfb16aa89eeeffb4ae93315249a8cc1f821a42d",
+        "reviews": [
+          {
+            "path": "/home/foo/Downloads/osmap-ux-s04/postfixadmin-reconstruction-20261024/credential-freshness/native01/native-review.json",
+            "sha256": "baa703ad19d115dff89b6006b9c6154ce295061e406d05e6347c50a1cd8e9ce6"
+          },
+          {
+            "path": "/home/foo/Downloads/osmap-ux-s04/postfixadmin-reconstruction-20261024/credential-freshness/native01/native-review-label.json",
+            "sha256": "e768f90f445d5f23d9491cff48030b06f6914dcf721ac69e021d73fce949332a"
+          }
+        ],
+        "local_controls": "Actualfrozencapture6/policy9/disposition5/epoch4/finish2; source0be+retainedmanifeststillverifies; finalschema-onlydeltaaddsactualexisting0trigger/FKcontractandboundedcountreceipt; no localproductqualification.",
+        "new_account": "s04-02-freshness-20261024-01@osmap-password.invalid",
+        "new_build_stage": "/home/foo/.osmap-credential-freshness-build-20261024-01",
+        "new_root_stage": "/var/tmp/osmap-credential-freshness-20261024-01",
+        "new_client_stage": "/var/run/osmap-service-admission-client-f7e5000020261024",
+        "failure_stop": "Everyfirsterror retainedwithphase/code/SQLoutcome andseparatestate/readback; Sstopallpaths; exactnewrow/epochfileinventorycurrentdigests; noautomaticreplay/rollback/deletion. Twofailuressameboundarycombinedreassessment.",
+        "result": "FAIL_NATIVE_SHELL_PARSE_PRE_PRODUCT"
+      },
+      "native01_result": {
+        "reference": "/home/foo/Downloads/osmap-ux-s04/postfixadmin-reconstruction-20261024/credential-freshness/native01/native01-result.json",
+        "sha256": "584f99a807a509aa54054c58da065a3a56d68a6d7fad659a2ccc43d48dbc10dd",
+        "independent_review": "/home/foo/Downloads/osmap-ux-s04/postfixadmin-reconstruction-20261024/credential-freshness/native01/native01-result-review.json",
+        "independent_review_sha256": "80ece8699910beeebc26b90299e1934453385dc5841465f31d77409a641e4b37",
+        "actual": "BuildPASS145.69s/artifact62791...source8f09, whole148coarse; native/bin/sh syntaxerrorline50 nestedcaseinsidecommand-substitution before Roottrap/SQL/privatepurposekeys/helper/Auth. RuntimeRootreceiptmissingexplainedpre-trapgrammar; boundedstderr108B/exportarchive10members9hashesverified; noINSERT/CAS/Authdispatchedbysourcecontrolflow. CurrentauthoritativeabsenceNOTOBSERVED; nextactionrequiresfreshcheck.",
+        "retention": "Source/method/reviews/failedstreams/build/rootstages untouched; no cleanupPASS or originalresourcewrite. Matchingrootcopymustfreshlyverifybeforeartifactreuse."
+      },
+      "native02_plan": {
+        "action": {
+          "attempt_id": "S04-02-CREDENTIAL-native02",
+          "recipe_id": "credential-freshness-native-grammar-corrected-artifact-reuse",
+          "source_revision": "4053f27dbd08c644947cdc248145c9caba43cfd2de300768d25be69762562eaa",
+          "not_after": "2026-10-24T19:32:42Z",
+          "max_seconds": 240
+        },
+        "review_sha256": "cc127a15ce5baa4aaafabf33857bc4dcc5f7aef86213c4251ef0a14b902f88c6",
+        "artifact_source": "8f09b48844bc3668f7531e3dba0f2c977307e9aa",
+        "artifact_sha256": "62791e693675b91dafff271517452872fc43ecd5a5ae2255f88abdb78c707ce6",
+        "new_root_stage": "/var/tmp/osmap-credential-freshness-20261024-02",
+        "new_upload_stage": "/home/foo/.osmap-credential-freshness-resume-20261024-02",
+        "new_client_stage": "/var/run/osmap-service-admission-client-f7e5000220261024",
+        "result": "FAIL_PRE_FIXTURE_UNLABELED_CUSTODY_GUARD"
+      },
+      "measured_native_seconds_coarse": 174,
+      "cost_scope": "Native1whole148includes145.69compileonce; source/review/controlcostUNKNOWN; priorR1R2history/costnotreset.",
+      "native02_result": {
+        "reference": "/home/foo/Downloads/osmap-ux-s04/postfixadmin-reconstruction-20261024/credential-freshness/native02/native02-result.json",
+        "sha256": "9d07fe1982b44cf7a9fb47d8e6664dadc1489d03a8788d158dcac3783ee10241",
+        "summary": "Actualnativeparse/control2PASS, COUNT0, artifactcustodyhash627PASS. ThenRootcustodytest1unlabeled before snapshots/helper/INSERT/CAS/Auth. Needactualid/tool/namespacefacts, no guessedcause/errno.21memberarchive20/5/2manifestchecksPASS; whole2coarse.",
+        "missing_observation": "Whichplainset-euid/tool/namespaceguardfailedwasnotemitted; no cleanup/preservation/credentialPASS."
+      },
+      "workflow_retry_state": "SELECTED_BOUNDARY_PASSED_NO_RETRY_NEEDED",
+      "reassess03_result": {
+        "inspection": {
+          "path": "/home/foo/Downloads/osmap-ux-s04/postfixadmin-reconstruction-20261024/credential-freshness/reassess03/inspect-reconciled.json",
+          "sha256": "d7843b4088efa8617f4657847df408547cf3c143101a2fcb8bff24cf31c0c795"
+        },
+        "combined_review": {
+          "path": "/home/foo/Downloads/osmap-ux-s04/postfixadmin-reconstruction-20261024/credential-freshness/reassess03/combined-reassessment.json",
+          "sha256": "a4c0e56641a5c6d9e4f989e3b7c460f77edd12937c367929b70e865f290fc4db"
+        },
+        "actual": "Actual OpenBSD /sbin/mkfifo is executable; /usr/bin/mkfifo is not executable. UID/GID1001; remaining original tools executable; all six namespaces absent and fresh row COUNT0. Historical native02 exact failed guard remains unobserved. Both failed actions and cumulative150coarse seconds retained."
+      },
+      "native03_plan": {
+        "action": {
+          "attempt_id": "S04-02-CREDENTIAL-native03",
+          "recipe_id": "credential-freshness-observed-fifo-corrected-artifact-reuse",
+          "source_revision": "ad37bfd7a102ef84b38ba30fa2e9442ef41c54b6ffd8cc4ec9941cc168fb71aa",
+          "not_after": "2026-10-24T19:57:37Z",
+          "max_seconds": 180
+        },
+        "review": {
+          "path": "/home/foo/Downloads/osmap-ux-s04/postfixadmin-reconstruction-20261024/credential-freshness/native03/native03-review.json",
+          "sha256": "4f027598dc622351f3fdf61a9a8433e1988ed5e3da7780b18528cd92374422c1"
+        },
+        "source_commit": "8f09b48844bc3668f7531e3dba0f2c977307e9aa",
+        "root_source": {
+          "path": "/home/foo/Downloads/osmap-ux-s04/postfixadmin-reconstruction-20261024/credential-freshness/native03/root-freshness.native03.sh",
+          "sha256": "94cab376b6f4f3019ab11d874fcc7885e5ceadbc519f7096c9850ea008b8e292"
+        },
+        "change": "Observed /sbin/mkfifo; labeled fixed custody guards; actual FIFO creation/mode/open before entropy/INSERT. Reuse matching built artifact and unchanged actual capture proof, no compiler/control repeat. Same one INSERTA and one external CASB, original authentication order/deadlines/security contracts.",
+        "result": "PASS_SELECTED_LIVE_CREDENTIAL_FRESHNESS"
+      },
+      "native03_result": {
+        "reference": "/home/foo/Downloads/osmap-ux-s04/postfixadmin-reconstruction-20261024/credential-freshness/native03/native03-result.json",
+        "sha256": "dd182a1d00685f236c849ca42dde9a2efd9062dd57049c5c28c9914a7224f556",
+        "actual": "Actual sealed helper1PASS20.87s; configured nonroot clients warm1PASS11.87s/postCAS1PASS8.62s. Exactly one fixture INSERTA +externalconditionalCASB acknowledged/readback; obsoleteArefusedFIRST thenBaccepted, signedepoch0+Admit0 both. Storeheld-lockrealprimary; all productMutation still refused. Whole24coarse; nocompiler or unchanged capturecontrol rerun.",
+        "archive_sha256": "aac663a9588a905f98c2773d995a20f08e0498417a7defcf175191b74d1ef5ac",
+        "evidence": "Root/received archive match49flatmembers; capture48/root34/reusedcontrol2 hashes +localstreams verified. Existing fullrows and protectedcontent/file/parentidentities match; bornsocketsabsent; freshrow final full17/other15expectationsmatch; epoch0andintents/files unchanged.",
+        "retention": "Newexactrow/epoch/lock/clientkeycopy/stages retained, no deletion orcleanupPASS; original165/160 untouched; no publicservices/configs/prod/principals/OSusers/Pythonchanges.",
+        "claims": "Only observed realcredentialfreshness PASS. No global/permanent cache claim, productServiceCAS/readback/epochadvance/session/ServeHTTP/installed/T03/UAT claim.",
+        "independent_review": {
+          "path": "/home/foo/Downloads/osmap-ux-s04/postfixadmin-reconstruction-20261024/credential-freshness/native03/native03-result-review.json",
+          "sha256": "fe9246ab4fd45eecb8ef9d4c50b23f3e2f14d967a70da7755453bd55fbfbf830"
+        },
+        "retained_resource_inventory": {
+          "path": "/home/foo/Downloads/osmap-ux-s04/postfixadmin-reconstruction-20261024/credential-freshness/native03/retained-resource-inventory.json",
+          "sha256": "40adf7271bd22b0b1a2cd0620c41ff12381327e22527291fba15ffe552e7cb52"
+        },
+        "review_consumer_corrections": "Independent local review initially assumed scalar disposition lines then a canonical trailing newline. Actual producer formatting was retained; consumer corrected to real two-field disposition and actual epoch bytes. These review-only refusals are separate, no native rerun or evidence rewrite."
+      }
     }
   },
   "execution_contract": {
@@ -33294,6 +33404,218 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
             }
           }
         ]
+      },
+      {
+        "id": "credential-freshness-one-controlled-difference",
+        "kind": "NATIVE",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "single-host-readiness"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "docs/UX_EXECUTION_LEDGER.md"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/bin/sh",
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/postfixadmin-reconstruction-20261024/credential-freshness/native01/dispatch.sh"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "Oneoffline matching8f09libtestbuild; newexactvirtualrowINSERTAonce; realnonrootRustclientwrongBthenAgood underactualhelperheldepochlock; ONEexternalconditionalAtoBfixtureUPDATE; obsoleteArefusalFIRST thenBgood. No interveningflush. Bothwritesexplicittransactions/ack+readback; noactualServiceMutation. HelperSstop+95guard/root120/client35within40+5/startup5unchanged/build600/whole900. Nativeactualresults+archivehashreadback+allrow/file/epochidentitypreservation required. Newresourcesretainedexactowned, uncertainwritesNEVERretried. No165/160mutation/disposal/publicmailconfig/lifecycle/prod/principals/OSusers/qualflags.",
+        "prerequisites": [
+          {
+            "id": "signed-matching-source-normal-hooks-fresh-parity",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/postfixadmin-reconstruction-20261024/credential-freshness/source-delivery.json",
+              "sha256": "f2a68d937af19dbd151e837d44555cd8632fa7b9472a77b9d3f4c6e2799a0af4"
+            }
+          },
+          {
+            "id": "independent-actual-native-fixture-and-consumer-review",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/postfixadmin-reconstruction-20261024/credential-freshness/native01/native-review.json",
+              "sha256": "baa703ad19d115dff89b6006b9c6154ce295061e406d05e6347c50a1cd8e9ce6"
+            }
+          },
+          {
+            "id": "final-fixed-label-and-pin-supplement",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/postfixadmin-reconstruction-20261024/credential-freshness/native01/native-review-label.json",
+              "sha256": "e768f90f445d5f23d9491cff48030b06f6914dcf721ac69e021d73fce949332a"
+            }
+          },
+          {
+            "id": "current-actual-schema-endpoint-capability-discovery",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/postfixadmin-reconstruction-20261024/credential-freshness/discovery-reconciled.json",
+              "sha256": "991823cf951a021400b21cb2df089fefcaa067f52535e70dc9ab26c7ccdde3f0"
+            }
+          }
+        ]
+      },
+      {
+        "id": "credential-freshness-native-grammar-corrected-artifact-reuse",
+        "kind": "NATIVE",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "single-host-readiness"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "docs/UX_EXECUTION_LEDGER.md"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/bin/sh",
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/postfixadmin-reconstruction-20261024/credential-freshness/native02/dispatch.sh"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "NOcompiler. Exactgrammarcorrectiononly25optionalcasepatternopens/newstagepaths. ActualOpenBSD correctedsh-n + actualcapture2controls BEFOREanyfixtures; olddryparseobservationalonly. AuthoritativefreshCOUNT0 andoldRootartifact0:0/0500/singlelink/SHA62791...freshverification beforecopy/exec. Samefreshaccount01; previousINSERTnotreached. SameoneINSERTA/oneexternalCASB/roothelper95/client35/startup5, noflush orproductMutation. Rootresume160/fixture120/whole240. CompleteactualAutholdAfirst/Bgood +row/epoch/oldstate/archives required. One-shotretention/uncertainty/no credentialretry.",
+        "prerequisites": [
+          {
+            "id": "matching-signed-published-source8f09",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/postfixadmin-reconstruction-20261024/credential-freshness/source-delivery.json",
+              "sha256": "f2a68d937af19dbd151e837d44555cd8632fa7b9472a77b9d3f4c6e2799a0af4"
+            }
+          },
+          {
+            "id": "independent-native01-failure-reconciliation",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/postfixadmin-reconstruction-20261024/credential-freshness/native01/native01-result-review.json",
+              "sha256": "80ece8699910beeebc26b90299e1934453385dc5841465f31d77409a641e4b37"
+            }
+          },
+          {
+            "id": "independent-actual-native02-fullchain-review",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/postfixadmin-reconstruction-20261024/credential-freshness/native02/native02-review.json",
+              "sha256": "cc127a15ce5baa4aaafabf33857bc4dcc5f7aef86213c4251ef0a14b902f88c6"
+            }
+          }
+        ]
+      },
+      {
+        "id": "credential-readonly-closed-custody-facts",
+        "kind": "DISCOVERY",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "single-host-readiness"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "docs/UX_EXECUTION_LEDGER.md"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/bin/sh",
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/postfixadmin-reconstruction-20261024/credential-freshness/reassess03/inspect-custody.sh"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "OneREADONLYclosedfactcheck targetRoot/id_osmap; actualresolvedtools+7originalpath-xbool;6closednamespacepresence/symlink/stat; freshCOUNT. No auth/SQLwrite/provision/cleanup/programfallback/servicechange.30+kill3/whole60; fixeddiagnostics/readback. Notaworkflowretry.",
+        "prerequisites": [
+          {
+            "id": "independent-exact-closed-readonly-source-review",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/postfixadmin-reconstruction-20261024/credential-freshness/reassess03/inspect-review.json",
+              "sha256": "b57ae057d2450b26d1472c79387f05777820047abc9ac664a720b75a7c78b228"
+            }
+          }
+        ]
+      },
+      {
+        "id": "credential-freshness-observed-fifo-corrected-artifact-reuse",
+        "kind": "NATIVE",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "single-host-readiness"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "docs/UX_EXECUTION_LEDGER.md"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/bin/sh",
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/postfixadmin-reconstruction-20261024/credential-freshness/native03/dispatch.sh"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "One-shot current native parse and fresh absence/artifact custody checks; real FIFO setup before credentials or writes; same INSERTA, held-lock AuthenticateA, externalCASB, obsoleteArefusalFIRST thenBpositive. No public service/config changes, no product Mutation, no165/160 disposal. Source8f09/artifact62791 reused; helper95/client35/startup5/root120/resume160/whole180. Retain first error and all exact-owned resources; no ambiguous write retry. Prior150coarse seconds and two failures retained.",
+        "prerequisites": [
+          {
+            "id": "published-signed-source",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/postfixadmin-reconstruction-20261024/credential-freshness/source-delivery.json",
+              "sha256": "f2a68d937af19dbd151e837d44555cd8632fa7b9472a77b9d3f4c6e2799a0af4"
+            }
+          },
+          {
+            "id": "combined-independent-actual-failure-reassessment",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/postfixadmin-reconstruction-20261024/credential-freshness/reassess03/combined-reassessment.json",
+              "sha256": "a4c0e56641a5c6d9e4f989e3b7c460f77edd12937c367929b70e865f290fc4db"
+            }
+          },
+          {
+            "id": "exact-native03-producer-stop-consumer-review",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/postfixadmin-reconstruction-20261024/credential-freshness/native03/native03-review.json",
+              "sha256": "4f027598dc622351f3fdf61a9a8433e1988ed5e3da7780b18528cd92374422c1"
+            }
+          },
+          {
+            "id": "actual-native02-capture-proof-and-artifact",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/postfixadmin-reconstruction-20261024/credential-freshness/native02/native02-result.json",
+              "sha256": "9d07fe1982b44cf7a9fb47d8e6664dadc1489d03a8788d158dcac3783ee10241"
+            }
+          }
+        ]
       }
     ],
     "budget": {
@@ -33308,8 +33630,8 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "planned_action": null
   },
   "blocker": null,
-  "independent_next_action": "Review10pathsource/records/derivedinventory checkpoint then fixedfreshfixture producersuccess/failure/retaineddisposition +actualconsumer; no unsupportedstatusreplay/permissionrelaxation/publicchanges.",
-  "updated_at": "2026-10-24T18:32:59Z"
+  "independent_next_action": "Review exactfourpublicrecords for signedcheckpoint; actualNative03result/source-order andpreservationindependentlyreconciled clear. AllproductMutation/epochadvance/session/HTTP/installed/T03/UAT remainopen.",
+  "updated_at": "2026-10-24T19:57:44Z"
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->

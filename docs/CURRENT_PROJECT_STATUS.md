@@ -1,5 +1,47 @@
 # Current Project Status
 
+2026-10-24 UTC — **Live current-credential verification PASS on obsd1.**
+Signed Rust source `8f09b48844bc3668f7531e3dba0f2c977307e9aa` now has actual
+native evidence at the next functional boundary. The real sealed helper and
+configured nonroot Rust client performed password authentication while the
+existing Store epoch lock was held. One fresh controlled mailbox was inserted
+with credential A; B was refused and A accepted. One external conditional fixture
+update then changed A to B. The client refused obsolete A FIRST, before B was
+tried, and then accepted B, with signed epoch0 and epoch revalidation in both
+exchanges. No cache flush intervened. This proves that observed A-to-B verifier
+behaviour; it does not establish global or permanent cache disablement.
+
+All three selected native Rust tests passed: helper20.87seconds, first client
+11.87seconds and post-change client8.62seconds; zero failures or ignored tests.
+The whole action measured24seconds coarse wall. The matching native executable
+was reused without compiling or repeating unchanged capture controls. Original
+five-second startup,35-second client bound, protected custody, account binding,
+identity checks and mutation refusal remained in effect.
+
+The failure loop retained two earlier pre-product failures: native shell parsing,
+then an unlabeled custody refusal. Actual native shell controls, followed by a
+combined independent read-only reassessment, established the supported FIFO tool
+path. The corrected fixture uses that path, identifies failed guards and checks
+FIFO setup before credentials or INSERT. Native03 then reached the real product
+and passed. Neither failed action nor its150coarse seconds is erased.
+
+The archive matches its root-produced SHA256
+`aac663a9588a905f98c2773d995a20f08e0498417a7defcf175191b74d1ef5ac`.
+All48 capture,34 root and2 reused-control hashes verify. Existing Alice/Bob full
+rows and protected file content/identities remain unchanged; new epoch0/empty
+intent state and its file identities remain unchanged. Born socket leaves are
+absent after helper stop. New test row, epoch/lock and private stages are retained
+with disposition evidence; no disposal or cleanup PASS is claimed. Historical
+probe165/160 resources remain untouched. No public mail-service/configuration
+change, production contact, new SQL principal/OS user or Python scaffolding.
+
+The **next product proof is OSMAP's actual credential transaction**: snapshot,
+current-password authorization, compatible hash, conditional update/readback and
+truthful refusal/uncertainty, followed by matching epoch/session effects before
+browser activation. The external fixture UPDATE above does not qualify that
+product operation. Serve/HTTP, installed journey, T03, UAT and S04-02 remain open.
+Earlier entries below retain their original preparation and result states.
+
 2026-10-24 UTC — **Next focus active: current authoritative credential verification.**
 Read-only helper R1/R2 remains qualified at its recorded source/test scope. The
 next proof is actual password verification while the real epoch lock is held,

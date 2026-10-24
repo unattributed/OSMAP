@@ -1,5 +1,47 @@
 # Decision Log
 
+2026-10-24 UTC — **Advance from live verifier proof to the product credential transaction.**
+Native action `S04-02-CREDENTIAL-native03`, assessing signed source
+`8f09b48844bc3668f7531e3dba0f2c977307e9aa`, passed the distinguishing real
+Dovecot test under the Rust helper's actual epoch lock: B refused/A accepted;
+one acknowledged external conditional A-to-B update; obsolete A refused BEFORE
+B was tested; B accepted. Both clients validated signed epoch0 and rechecked it.
+The real helper lifecycle and both clients passed, three selected tests total,
+zero failures/ignores. No intervening flush, verifier substitute, public policy
+change, relaxed guard or extended product deadline was needed. This establishes
+the observed current-versus-obsolete credential behaviour, not a permanent
+statement about loaded cache settings or all future backend configurations.
+
+Keep the failure-analysis loop tied to evidence. Native01 built the matching
+artifact but failed native shell grammar before any INSERT/authentication.
+Native02 proved the changed grammar and actual capture controls, then failed an
+unlabeled custody guard before provisioning. After the two-failure stop, Root
+and the independent controller reassessed actual host facts: `/sbin/mkfifo` was
+executable and the assumed `/usr/bin/mkfifo` path was not executable. The historical
+failed guard itself was not observed and no errno is reconstructed. Correct the
+literal path, label guards and move existing FIFO creation/mode/open ahead of
+secret generation/INSERT. Native03 reused the artifact and unchanged proven
+capture functions; its real product result passed in24coarse seconds. Prior
+failures and150coarse seconds remain,174total for these three native actions;
+source/review work cost is UNKNOWN, not zero.
+
+Preservation passed against full existing-row digests and protected content/file/
+parent identities. The fresh row's final full digest and other15 columns match;
+fresh epoch0/intents and file identities are unchanged. Root/received archive
+SHA256 `aac663a9588a905f98c2773d995a20f08e0498417a7defcf175191b74d1ef5ac`
+and48/34/2 manifest entries verify. New row/files/stages remain retained with
+exact-owned disposition records; no disposal PASS or historical165 cleanup claim.
+No production host, mail service lifecycle/config, principal or OS-user change.
+
+Reuse this verifier proof. Next exercise the actual product Service/Backend
+conditional credential write and readback, then epoch/session integration and
+browser journey. Keep the existing successful login/TOTP verifier and Python
+infrastructure unchanged. Native03 plaintexts were RAM-only and are now lost;
+its retained row cannot supply a known-current control. Prepare the next bounded
+transaction with a separate fresh fixture rather than resetting retained state. The fixture's external SQL UPDATE is test stimulus;
+it is not an OSMAP mutation transaction, epoch advancement or session-revocation
+PASS. No qualification flag, installed readiness, T03 or S04-02 acceptance changes.
+
 2026-10-24 UTC — **Prove current-credential freshness through the real verifier.**
 Continue the existing failure-analysis loop from native read-only R1/R2 PASS.
 The transaction already snapshots SQL before authentication and uses that original
