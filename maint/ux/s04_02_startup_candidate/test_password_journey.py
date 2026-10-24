@@ -516,8 +516,8 @@ class PasswordJourneyTests(unittest.TestCase):
         guardian=load('timing_guardian','native_http_web_guardian.py')
         keeper=load('timing_keeper','../backend/local_frontend.py')
         self.assertEqual(front.JOURNEY_SECONDS,guardian.JOURNEY_SECONDS)
-        self.assertEqual(guardian.END-guardian.BEGAN,330)
-        self.assertEqual(keeper.END-keeper.WORK,150)
+        self.assertAlmostEqual(guardian.END-guardian.BEGAN,330,places=7)
+        self.assertAlmostEqual(keeper.END-keeper.WORK,150,places=7)
         rust=(ROOT.parents[2]/'src/http/password_tests.rs').read_text()
         self.assertIn('let deadline = began + Duration::from_secs(300);',rust)
         report={'schema':'osmap-http-password-runtime-v1','handled_connections':18,

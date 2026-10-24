@@ -1,5 +1,13 @@
 # Decision Log
 
+2026-10-24 UTC — **Repair a delivery-test precision failure without changing execution machinery.**
+The normal push of signed b4b1d3c refused at an existing timing assertion:
+floating subtraction produced330.00000000001455 for an intended330-second
+interval. Preserve the failed gate. Compare the existing330/150-second
+intervals to seven decimal places; keep all runtime bounds, source and test
+behaviour unchanged. This is a narrow test assertion correction, not new Python
+scaffolding or native product evidence. The focused timing test passes.
+
 2026-10-24 UTC — **Apply the failure loop to the actual ParentPrepare and client-launch failures.**
 Native01 on signed70611ff compiled successfully, then helper preparation failed
 at5.00seconds before sealing. The original metadata detail was unobserved;
