@@ -1,5 +1,29 @@
 # OSMAP UX execution ledger
 
+2026-10-24 UTC — **Milestone 3 execution160 FAIL; T03 NOT QUALIFIED.** The newly
+authorized single attempt used approved signed `8848ba8`, the exact retained
+service/HTTP binaries and their separate original compiler provenance. Dispatch
+ended at `04:52:56.417046Z` after 6.062 seconds. Both native sockets published;
+the Rust HTTP child then refused `apply_runtime_confinement_for_accounts` before
+READY, BrowserApp, HTTP requests or password submission. The observed fixed code
+is `native_confinement`; its internal syscall/errno remains UNKNOWN. Child exit
+101 and guardian exit 1 were both reaped. The Issue 79 pipeline preserved COMPLETE,
+readback-verified diagnostics before runtime cleanup. This does not establish
+execution158's historical cause.
+
+Independent review confirms both initial/final full17 row digests identical,
+both epochs active/0 with null changed-at and no pending or used intents; no
+credential change occurred. A fresh observer confirms all 33 runtime paths,
+fixture rows, SQL principal and disposable roles absent; public Dovecot
+configuration/master, SQL configuration, two original absences and cache size 0
+are preserved. Protected backend/frontend staging directories and sanitized
+diagnostics remain retained because the existing exact-leaf cleanup excludes
+diagnostic leaves; no new cleanup wrapper or deletion exception was introduced.
+All login/TOTP, browser-session, password-change and Bob mail-path checks remain
+NOT RUN for this attempt. The authorization is consumed; no retry or rollback
+occurred. Milestones 1/2 retain their earlier separate PASS; installed readiness,
+slice completion and UAT remain open. See [execution160 evidence](../maint/ux/s04_02_startup_candidate/milestone3_execution160_evidence.json).
+
 2026-10-21 actual104 reviewed: uploaded archive29534173ec1b3be93a9a04935a41bd11dda78cb7e843607806ae9b5ad0f3fb8c
 verified against sidecar and all local members.30.275s operator/14.288s native.
 Relay stage4; helper operation65/error3 (stock_operation/Unavailable), clean
@@ -10314,7 +10338,8 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "maint/ux/security_settings_workflows.py",
     "maint/ux/session_workflows.py",
     "maint/ux/signature_workflows.py",
-    "docs/UX_S04_02_TIMING_RECONCILIATION_20261023.md"
+    "docs/UX_S04_02_TIMING_RECONCILIATION_20261023.md",
+    "maint/ux/s04_02_startup_candidate/milestone3_execution160_evidence.json"
   ],
   "outcomes": [
     {
@@ -10474,7 +10499,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "status": "PENDING",
     "reference": "Only minimal well-defined own-password usability after all agent-owned development/matching deployed QA/independent audit PASS. No operator password is changed by agent qualification; use controlled disposable Alice and preserve Bob/operator state. NOT RUN."
   },
-  "next_action": "Execution158 FAIL control_eof before READY/HTTP/submission; independently confirmed no-write and runtime/stage cleanup159. Authorization consumed. Preserve evidence and signed delivery; further native execution requires new explicit authorization. T03 remains NOT QUALIFIED.",
+  "next_action": "Attempt160 FAIL native_confinement before READY; internal subcause UNKNOWN. Diagnostic capture COMPLETE, confirmed no-write, runtime cleanup independently PASS, protected stages retained. No further native execution authorized. M3 FAIL/T03 NOT QUALIFIED; installed/UAT/slice remain open.",
   "accountability": {
     "functional_exit": "Working own-account Settings password change through the selected single-host obsd1 local account service and authoritative local backend, fresh password/TOTP step-up, one conditional SQL update, durable OSMAP epoch and all-browser revocation, actual source-bound cache handling, old-password refusal/new-login success and Bob preservation. Existing third-party SMTP/IMAP sessions may remain authenticated. Matching installed QA, independent audit and minimal owner usability remain required. Toronto is later separate production installation.",
     "owner": "/root",
@@ -19770,6 +19795,29 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "elapsed_seconds": 0.681,
         "reference": "/home/foo/Downloads/osmap-ux-s04/milestone3-execution-20261023/execution158/cleanup-result.json",
         "reason": "21 exact-owned staging leaves/two directories removed after independently proven pre-submission no-write and runtime absence; fresh separate host observer confirms both stage paths absent. Recovery preserved locally."
+      },
+      {
+        "id": "S04-02-milestone3-controlled-change160",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "source_revision": "dc230868ee942125b9b692876f1be70e96ff84fc14b5303011f249004fa20ea9",
+        "change_reference": "New explicit one-operation authorization after closed Issue79 at approved signed8848ba8; exact unchanged retained binaries and separate original compiler provenance. Prior158 remains FAIL with UNKNOWN unique cause. No retry authorized.",
+        "success_chain_review": {
+          "reviewer": "/root/delivery_controller",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/milestone3-execution-20261024/execution160/startup-independent-review.json SHA256 cb7a6fc515ac3d70393a14b4b3a5feceb795b933c36fa0998f6aa0076e0fafef",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "FAIL",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 6.062,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/milestone3-execution-20261024/execution160/startup-result.json",
+        "reason": "native_confinement at actual Serve seal before READY or HTTP. Child101/guardian1 reaped; diagnostic COMPLETE/READBACK_VERIFIED; no submission, full17 rows unchanged, epochs0/null/no intents. Independent33-path runtime absence PASS; protected diagnostic stages retained under Issue79. One-operation authority consumed; no retry."
       }
     ],
     "prior_investigations": [
@@ -31725,6 +31773,75 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
             }
           }
         ]
+      },
+      {
+        "id": "milestone3-controlled-change160",
+        "kind": "NATIVE",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "single-host-readiness"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "docs/UX_EXECUTION_LEDGER.md"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/usr/bin/python3",
+            "arguments": [
+              "/home/foo/Workspace/OSMAP/maint/ux/s04_02_startup_candidate/dispatch_startup.py",
+              "--build-receipt",
+              "/home/foo/Downloads/osmap-ux-s04/timing-reconciliation-20261023/build/result.json",
+              "--source-manifest",
+              "/home/foo/Downloads/osmap-ux-s04/timing-reconciliation-20261023/build/manifest.json",
+              "--run-dir",
+              "/home/foo/Downloads/osmap-ux-s04/milestone3-execution-20261024/execution160",
+              "--attempt-id",
+              "S04-02-milestone3-controlled-change160",
+              "--recipe",
+              "milestone3-controlled-change160",
+              "--operation",
+              "password-change",
+              "--helper-build-receipt",
+              "/home/foo/Downloads/osmap-ux-s04/current-source-milestone1-20261023/build/result.json",
+              "--helper-source-manifest",
+              "/home/foo/Downloads/osmap-ux-s04/current-source-milestone1-20261023/build/manifest.json"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "One newly authorized native guarded Alice password attempt using signed Issue79 diagnostic pipeline. Preserve earliest cause and recovery before cleanup; no retry. Product60/journey300/guardian330/actor600/cleanup150; original compiler provenance unchanged.",
+        "prerequisites": [
+          {
+            "id": "direct-one-operation-authority",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/milestone3-execution-20261024/execution160/operator-authorization.json",
+              "sha256": "87825ee96267dd1be59078e114750fe200a561c351d3b165a7fe283d418ee113"
+            }
+          },
+          {
+            "id": "current-prerequisites",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/milestone3-execution-20261024/execution160/current-prerequisites.json",
+              "sha256": "137e071464b81cc1b5c817b5eab7ab2209ddd682727c66e5f2fe18d22c33f4bc"
+            }
+          },
+          {
+            "id": "native-artifact-identity",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/milestone3-execution-20261024/execution160/host-identity-preflight.txt",
+              "sha256": "16e90b199d1390d8a6d93fe2228b7a25b3b94cb8e0a3fd634dcf626553acfe10"
+            }
+          }
+        ]
       }
     ],
     "budget": {
@@ -31739,8 +31856,8 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "planned_action": null
   },
   "blocker": null,
-  "independent_next_action": "Independent outcome and signed-delivery review of158/159 only; no retry, password rollback or new native dispatch.",
-  "updated_at": "2026-10-24T02:52:06Z"
+  "independent_next_action": "Independent execution160 outcome and public-safe signed-preservation review; no further native dispatch. Runtime cleanup PASS and retained protected diagnostic stages remain separate.",
+  "updated_at": "2026-10-24T04:55:48Z"
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->

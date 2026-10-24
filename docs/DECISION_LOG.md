@@ -1,5 +1,29 @@
 # Decision Log
 
+2026-10-24 UTC — **Milestone 3 execution160 FAIL; T03 NOT QUALIFIED.** The newly
+authorized single attempt used approved signed `8848ba8`, the exact retained
+service/HTTP binaries and their separate original compiler provenance. Dispatch
+ended at `04:52:56.417046Z` after 6.062 seconds. Both native sockets published;
+the Rust HTTP child then refused `apply_runtime_confinement_for_accounts` before
+READY, BrowserApp, HTTP requests or password submission. The observed fixed code
+is `native_confinement`; its internal syscall/errno remains UNKNOWN. Child exit
+101 and guardian exit 1 were both reaped. The Issue 79 pipeline preserved COMPLETE,
+readback-verified diagnostics before runtime cleanup. This does not establish
+execution158's historical cause.
+
+Independent review confirms both initial/final full17 row digests identical,
+both epochs active/0 with null changed-at and no pending or used intents; no
+credential change occurred. A fresh observer confirms all 33 runtime paths,
+fixture rows, SQL principal and disposable roles absent; public Dovecot
+configuration/master, SQL configuration, two original absences and cache size 0
+are preserved. Protected backend/frontend staging directories and sanitized
+diagnostics remain retained because the existing exact-leaf cleanup excludes
+diagnostic leaves; no new cleanup wrapper or deletion exception was introduced.
+All login/TOTP, browser-session, password-change and Bob mail-path checks remain
+NOT RUN for this attempt. The authorization is consumed; no retry or rollback
+occurred. Milestones 1/2 retain their earlier separate PASS; installed readiness,
+slice completion and UAT remain open. See [execution160 evidence](../maint/ux/s04_02_startup_candidate/milestone3_execution160_evidence.json).
+
 2026-10-24 UTC — Issue 79 diagnostic correction. Retain existing Rust behavior
 and recognize its existing fixed diagnostic messages through continuously
 serviced, bounded private stdout/stderr collectors. Preserve the earliest
