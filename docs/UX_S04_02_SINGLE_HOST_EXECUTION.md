@@ -1,5 +1,53 @@
 # S04.02 single-host execution correction
 
+## 2026-10-24 UTC — native02 PASS: sealed helper and genuine read-only admission
+
+Action `S04-02-R1R2-native-02` ran once on obsd1, with exact signed assessed
+source `b4b1d3c7716efaaf1479960666c823434e0f7a37`. The matching executable
+SHA256 is `8b6d8a3b48c5764198b386ecea2fcfccfdfab097ccc46d06be7d39e8b9239e92`.
+The one-job offline opt0/debug0 build passed; assertions/overflow checks and
+compiler-only DATA3GiB remained. No package-profile optimization or runtime
+limit adjustment was necessary.
+
+- R1 PASS: actual helper ParentPrepare, ParentSeal/activation and operational
+  accept/request path, demonstrated by the genuine authenticated client exchange
+  after those source-owned lifecycle steps. Helper named test1PASS/0FAIL/0ignored.
+- R2 PASS: actual configured nonroot client constructs with checked key/socket/
+  executable custody, authenticates epoch0 admission and gets exactly Refused for
+  future/noncurrent1. Client named test1PASS/0FAIL/0ignored,3.27seconds.
+- Helper test45.03seconds includes its scheduled native guard stop. Guard124 is
+  accepted only with the complete Rust lifecycle/client results and preserved
+  state; it alone never means PASS. Whole action192seconds coarse wall.
+- Root archive SHA256 `23bd6cec8b802eba7cc2d5d83c73b075aaa25e11e2c5fa65bc9327b15cdd21c6`
+  matches the received archive. Capture26/export15/root14 member hashes pass;
+  all27 unique flat regular members and local stream hashes were checked.
+- Retained-content verification and before/after file/parent identities pass;
+  new socket leaves and uncertainty markers are absent. Private build/root/client
+  stages02 remain retained. Original165/160 resources are never disposed.
+
+The restrictive test latch permits epoch reads and rejects every Authenticate/
+mutation before native profile construction. Real startup, confinement and
+admission code execute, but this does not qualify ordinary full-capability
+service dispatch, current-password freshness, SQL/hash effects, mutation/session
+transaction, Serve confinement, HTTP READY, installed/UAT, T03 or S04-02 closure.
+No password/SQL/public mail-service operation or production contact ran.
+
+Native01 FAIL/Unknown, its separate client-launch failure and failed original
+exports remain preserved. Reviewed one-connection recovery established actual
+root su identity switching and unchanged retained state. The changed source
+removes demonstrated duplicate cold graph verification while preserving every
+capture/warm/waiter/module/custody check and the original five-second deadline.
+Native02 PASS validates the corrected composition; native01's unique initiating
+cause remains unobserved. The failure loop analysed, corrected, reviewed and
+executed a changed action rather than replaying the failed workflow.
+
+Private evidence is under the stable sprint root, subdirectory
+`postfixadmin-reconstruction-20261024/helper-admission-r1-r2/native02`.
+Independent result reconciliation is clear; receipt SHA256
+`558d264bee205060f2a9683e11ad94d383e3f4598913a5744244dd2818376d3b`.
+The existing execution ledger binds result/review hashes and exact recipes.
+Earlier sections below retain their original results/proposals as history.
+
 ## 2026-10-24 UTC — native01 FAIL; reconciled state and changed correction
 
 Actual signed70611ff native01 built in145.19seconds but helper ParentPrepare

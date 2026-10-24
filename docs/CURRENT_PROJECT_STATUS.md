@@ -1,5 +1,42 @@
 # Current Project Status
 
+2026-10-24 UTC — **Current result: native read-only helper startup and admission PASS.**
+The next focus is complete on obsd1 using signed Rust source
+`b4b1d3c7716efaaf1479960666c823434e0f7a37`: the real helper completes
+ParentPrepare, ParentSeal/activation and operational request handling. The actual
+nonroot Rust client passes custody construction, authenticated epoch0 admission
+and exact Refused for future/noncurrent1. Two selected native tests passed,
+zero failures/ignores. Helper45.03seconds includes its scheduled owned stop;
+client3.27seconds. The whole changed action measured192seconds coarse wall.
+
+The source correction removes only the cold initializer's duplicate complete
+graph verification. All capture/warm/waiter checks, modules, custody, caps and
+five-second startup deadline remain. Actual StartupTrace carries bounded parent
+subphases. Native02 needed no further source, profile, permission or deadline
+change. Its first attempt remains FAIL with an unknown exact initiating cause;
+this later PASS does not rewrite historical evidence.
+
+The received evidence archive matches the root producer's SHA; all capture,
+export, root and local stream registries pass. Existing file content/identities
+and parent identities compare unchanged; born socket leaves are absent. New
+private stages are retained. Probe165's original cleanup UNCERTAIN and historical
+resources remain untouched. No password authentication, SQL/credential mutation,
+public mail-service/configuration operation or production contact occurred.
+
+Assessed source is published at b4b1; signed178acb0 is a documentation/test-only
+follow-up correcting an existing float-precision gate assertion. Normal delivery
+passed1913 local Rust library tests,0fail/62intentional ignores and push hooks.
+Independent result reconciliation is clear. The active ledger retains native01,
+reconciliation and native02 separately.
+
+R1/R2 is qualified only for the restricted read-only test path. Ordinary current-
+password verification/cache freshness, SQL/hash effects, credential/epoch/session
+transaction, Serve confinement, HTTP READY, installed journey, T03 and operator
+UAT remain unqualified. No qualification flag or acceptance status changes.
+S04-02 remains open. Next prove credential correctness, then its actual helper/
+epoch/session composition and browser journey. Earlier same-day entries below
+are chronological history, not the current R1/R2 state.
+
 2026-10-24 UTC — **First helper/admission attempt failed; analysed corrections prepared.**
 Signed70611ff built natively, but its real helper stopped at ParentPrepare after
 5.00seconds with Unknown/Unavailable and an unobserved lower-level cause. It

@@ -1,5 +1,44 @@
 # Decision Log
 
+2026-10-24 UTC — **The corrected helper now performs real sealed read-only admission on obsd1.**
+Native02 assessed signed source `b4b1d3c7716efaaf1479960666c823434e0f7a37`.
+The actual helper completed ParentPrepare, ParentSeal/activation and the operational
+accept path. Its named Rust lifecycle test passed; the independently launched
+nonroot client constructed with actual custody and obtained authenticated epoch0
+admission followed by exact Refused for future/noncurrent1. Both selected tests
+passed (helper45.03s including scheduled stop; client3.27s), zero failures/ignores.
+The owned helper guard124 is the planned stop, accepted only alongside complete
+helper/client results and preservation. Socket publication alone was not proof.
+
+The changed action keeps opt0/debug0/assertions/overflow, all dependency modules,
+protected custody and the original five-second startup budget. No larger runtime
+allowance or build-profile experiment was needed. The confirmed duplicate cold
+verification is removed, and actual native startup now succeeds. This does not
+identify native01's unique initiating cause: its Unknown/Unavailable failure and
+the separate doas launch/collection failures remain unchanged history.
+
+One root-produced archive matched its received SHA; capture/export/root member
+registries and local streams were readback verified. Retained file content and
+file/parent identities match before/after; newly born socket leaves are absent.
+New stages remain private and retained;165 cleanup remains originally UNCERTAIN.
+No password Authenticate, SQL operation, credential change, public mail-service
+change, production contact or historical-resource disposal occurred.
+
+The failure-analysis loop has produced a changed functional PASS: retain failure,
+reconcile evidence, identify actual defects, make minimum corrections, review and
+execute a distinct bounded action. Keep that loop in the existing work order;
+never add blind retries or substitute diagnostics for product results. Normal
+source delivery passed1913 local Rust tests/0fail/62ignored and all push hooks;
+178acb0 adds only the reviewed timing-assertion precision repair and an earlier
+decision-log note. Independent result reconciliation is clear for read-only R1/R2.
+
+R1/R2 PASS applies to the explicit read-only test path. It does not enable any
+qualification flag or prove ordinary password authentication/mutation, live cache
+freshness, SQL/hash effects, epoch/session transaction, Serve confinement, HTTP,
+installed acceptance, T03 or S04-02 completion. The next functional boundary is
+current-credential freshness and the narrow credential transaction, followed by
+matching helper/epoch/session composition before browser activation.
+
 2026-10-24 UTC — **Repair a delivery-test precision failure without changing execution machinery.**
 The normal push of signed b4b1d3c refused at an existing timing assertion:
 floating subtraction produced330.00000000001455 for an intended330-second
