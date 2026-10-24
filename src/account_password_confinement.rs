@@ -109,8 +109,24 @@ impl ParentPlan {
             custody, seal: None, legacy_metadata: true,
         })
     }
+    #[allow(dead_code)] // Preserve the existing caller interface without an emitted trace.
     pub(crate) fn prepare_stock(deadline: Instant) -> Result<Self, Unavailable> {
-        if !crate::openbsd::password_native_authority() || Instant::now() >= deadline {
+        let mut trace = crate::account_password_fstat::StartupTrace::new(
+            crate::account_password_fstat::StartupOperation::ParentPrepare,
+        );
+        Self::prepare_stock_with_trace(deadline, &mut trace)
+    }
+    pub(crate) fn prepare_stock_with_trace(
+        deadline: Instant,
+        trace: &mut crate::account_password_fstat::StartupTrace,
+    ) -> Result<Self, Unavailable> {
+        if !crate::openbsd::password_native_authority() {
+            trace.category(crate::account_password_fstat::StartupCategory::Invalid);
+            return Err(Unavailable);
+        }
+        if Instant::now() >= deadline {
+            trace.metadata("metadata_parent_graph_deadline");
+            trace.metadata_error(crate::account_admission::Error::Unavailable);
             return Err(Unavailable);
         }
         let mut rules = BTreeMap::<String, String>::new();
@@ -123,7 +139,8 @@ impl ParentPlan {
             }
         };
         for (path, access) in
-            crate::account_password_native::stock_parent_rules(deadline).map_err(|_| Unavailable)?
+            crate::account_password_native::stock_parent_rules_with_trace(deadline, trace)
+                .map_err(|_| Unavailable)?
         {
             add(&path, access);
         }
@@ -147,8 +164,12 @@ impl ParentPlan {
         }
         add("/etc/osmap/account-runtime", "");
         add("/usr/local/libexec/osmap/account-passwd", "r");
-        for path in crate::account_password_peer::stock_configuration_paths(deadline)
-            .map_err(|_| Unavailable)?
+        for path in
+            crate::account_password_peer::stock_configuration_paths(deadline).map_err(|_| {
+                trace.metadata("metadata_parent_configuration_unknown");
+                trace.metadata_error(crate::account_admission::Error::Unavailable);
+                Unavailable
+            })?
         {
             add(path, "r");
         }
@@ -160,7 +181,10 @@ impl ParentPlan {
         add("/usr/local/libexec/dovecot/imap", "r");
         add("/etc/dovecot/conf.d", "r");
         let paths = rules.keys().map(String::as_str).collect::<Vec<_>>();
-        let custody = Custody::capture(&paths, deadline)?;
+        let custody = Custody::capture(&paths, deadline).inspect_err(|_| {
+            trace.metadata("metadata_parent_custody_unknown");
+            trace.metadata_error(crate::account_admission::Error::Unavailable);
+        })?;
         let rules = rules
             .into_iter()
             .map(|(path, access)| {

@@ -1,5 +1,30 @@
 # Current Project Status
 
+2026-10-24 UTC — **First helper/admission attempt failed; analysed corrections prepared.**
+Signed70611ff built natively, but its real helper stopped at ParentPrepare after
+5.00seconds with Unknown/Unavailable and an unobserved lower-level cause. It
+never established ParentSeal/accept-loop readiness. The selected admission client
+body did not run: nested doas refused root's switch to _osmap. R1 remains FAIL;
+R2 remains NOT RUN. Their separate streams do not establish global error order.
+
+Four evidence exports also suffered SSH banner timeouts. One reviewed bounded
+reconciliation recovered the existing files into a separate archive, verified
+its remote/local hash and original manifests, and confirmed retained contents/
+identities unchanged, born sockets absent and no uncertainty marker. Original
+failed exports remain. Identity-only native su confirmed the correct nonroot
+UID/GID/groups without changing doas policy. This is recovery/preservation PASS,
+not a functional or165 cleanup PASS.
+
+Source inspection found a complete cold graph verification immediately repeated
+by its caller. The reviewed correction skips only that initializer's duplicate;
+capture verification, every warm/waiter recheck, modules, custody, caps and the
+original five-second deadline remain. Existing StartupTrace now retains fixed
+SQL/hash/capture/recheck/custody details under ParentPrepare35. Opaque causes
+stay Unknown; only observed deadline branches are classified Deadline. Five
+focused cache/trace/real-file controls pass. Initial local private-test-interface
+compile errors were preserved and corrected; no new Python framework is added.
+Native02 must measure the changed source; native01's exact cause remains unknown.
+
 2026-10-24 UTC — **Next focus: real helper startup and authenticated epoch admission.**
 The operator resumed R1/R2 with an analyze/correct/review/retest loop. Current
 read-only obsd1 inspection confirms controlled Alice/Bob configuration, existing

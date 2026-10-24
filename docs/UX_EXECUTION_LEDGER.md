@@ -10533,7 +10533,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "status": "PENDING",
     "reference": "Only minimal well-defined own-password usability after all agent-owned development/matching deployed QA/independent audit PASS. No operator password is changed by agent qualification; use controlled disposable Alice and preserve Bob/operator state. NOT RUN."
   },
-  "next_action": "Signedreviewedsourcepreservation thenmatchingofflineboundednativeartifactbuild andread-onlyhelperR1/R2check; preserveandanalyserealfailuresbeforechangedretest. No password/SQL/credentialjourney.",
+  "next_action": "Signeddeliveryofreviewedcoldgraph/tracecorrection; preparedistinctnative02withdocumented+identity-testedrootSuclientdrop, singlearchivecollection andpreservationcheckonallfailurepaths; executeonlyafterexactreviewedsource/recipebinding.",
   "accountability": {
     "functional_exit": "Working own-account Settings password change through the selected single-host obsd1 local account service and authoritative local backend, fresh password/TOTP step-up, one conditional SQL update, durable OSMAP epoch and all-browser revocation, actual source-bound cache handling, old-password refusal/new-login success and Bob preservation. Existing third-party SMTP/IMAP sessions may remain authenticated. Matching installed QA, independent audit and minimal owner usability remain required. Toronto is later separate production installation.",
     "owner": "/root",
@@ -21750,7 +21750,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "stop_rules": "No unchangedblindretry; no guessederrno/permissions/UID/deadline/allowlistrelaxation; twofailuresatsameboundary requirecombinedindependentreassessment beforechangednativeaction; noautomaticcapincrease orambiguouscredentialretry. Usefulindependentsourceanalysiscontinues.",
         "bounds": "Eachdiscovery<=30s; perbuild<=600s; helper/clientlifecycle<=60s plusbounded30sownedstop/readback; wholenativeaction<=900s. ActualwholeelapsedmeasuredorUNKNOWN; no inventedoperatorclockexpiry."
       },
-      "state": "SOURCE_REVIEW_CLEAR; CURRENT_READONLY_PREREQUISITES_PASS; NATIVE_R1_R2_NOT_RUN",
+      "state": "NATIVE01_FAIL_RECONCILED; REVIEWED_CHANGED_SOURCE_READY_NATIVE02_NOT_RUN",
       "forecast_seconds": 1800,
       "forecast_meaning": "Planningforecastonly, notoperatorauthorityexpiry; nativeoperationboundsfixed.",
       "prerequisite_result": {
@@ -21772,6 +21772,49 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         ],
         "local_controls": "Actualusedguardpredicate1PASS/0FAIL; changedclient/entrypointcompiledLinuxonly; rustfmt/diff/CWEguardPASS. No nativeR1/R2executionyet.",
         "generated_evidence": "ExistingV10lineinventoriesrefreshedcountsunchanged9820/9735. InitiallocalmetadataKeyError/wronghashfieldandresultinginventorygateFAILretained; actualrefined_current.inventory_sha256 appliedandunchangedV10gatePASS. No guardrelaxation/Pythonchange."
+      },
+      "native_action": {
+        "attempt_id": "S04-02-R1R2-native-01",
+        "source_commit": "70611ff95bc499fa3c2fbe985ab794f0dfb945d9",
+        "dispatcher_sha256": "b20d57ee103c1eccea8603b70af4f5f699fe92c220d1b1ef517f1b3e0be6d28b",
+        "review_sha256": "bf06f8901f8470b35016006acadad60b632512861ef3f88f1246a430aea1c78e",
+        "new_build_stage": "/home/foo/.osmap-r1-r2-build-20261024-01",
+        "new_root_stage": "/var/tmp/osmap-r1-r2-20261024-01",
+        "new_client_stage": "/var/run/osmap-service-admission-client-6c11ff2026102401",
+        "disposition_scope": "OnlybornsocketleavesremovedbyactualRustinodechecks; allnewprivatestagesretained. Existingfileidentities/contentstable; existingparentnamespace timestampsmaychange. No165lease/disposalauthority."
+      },
+      "native01_result": {
+        "reference": "/home/foo/Downloads/osmap-ux-s04/postfixadmin-reconstruction-20261024/helper-admission-r1-r2/native01-result.json",
+        "sha256": "5d298212e7454770237257b6ca809bdff41049cf61eeabc7ec7c8135e49d5f73",
+        "independent_review": "/home/foo/Downloads/osmap-ux-s04/postfixadmin-reconstruction-20261024/helper-admission-r1-r2/native01-result-review.json",
+        "independent_review_sha256": "14e38f40a3b80026c29cb0756d7d2445513686d514b346c4a02af7d4471bbd0a",
+        "summary": "BuildPASS145.19; helperParentPrepareUnknownUnavailable5.00s/101; clientbodyNOTRUNrootdoasrefused; R1/R2FAIL; globalfailureorderunknown. Fourprivateexportsbanner-timeout/localreadbackFAIL; afterstatechecksNOTRUN; singleSSHrecoverypending.",
+        "elapsed_seconds_coarse": 196
+      },
+      "current_correction_scope": [
+        "src/account_password_native.rs",
+        "src/account_password_native_tests.rs",
+        "src/account_password_confinement.rs",
+        "src/account_password_server.rs",
+        "src/account_password_process.rs"
+      ],
+      "current_correction_constraints": "Skiponlyduplicatecoldwinnergraphverification; retaincompletecapture/warm/waiter/finaldeadlinechecks andallplugins/files/permissions. PreserveParentPrepare35+fixedobservedsubphase; no posthocDeadlineinference. RootOSsuidentitydrop/policyunchanged. Singleconnectionevidencerecovery; neveroverwriteoriginalfailurefiles.",
+      "reconcile01": {
+        "result": "PASS_RECOVERY_AND_READ_USE_PRESERVATION_ONLY",
+        "reference": "/home/foo/Downloads/osmap-ux-s04/postfixadmin-reconstruction-20261024/helper-admission-r1-r2/reconcile01-result.json",
+        "sha256": "44043218367dfd4d2ea02bfd8d28bc4a1393883dce5290e802a7657050e105eb",
+        "independent_review": "/home/foo/Downloads/osmap-ux-s04/postfixadmin-reconstruction-20261024/helper-admission-r1-r2/reconcile01-result-review.json",
+        "independent_review_sha256": "d844680ccfe4857a209412a8d929e938cc160f0eb68a00e97932d866b91343ae",
+        "actual": "One archive86c6284f...matchedrootSHA; all18flatregularmemberschecked; originalexportregistrybytesunchanged; recovered12original+4postcheckhashesverified; retainedcontent/file+parentidentitiesmatchbefore, bornsockets/uncertaintymarkersabsent. Original4zero-bytefailedexports+errorspreservedseparately. Suidentity-onlydropPASS1001:1001/group1003. No policy/auth/SQL/service/disposaloperation.",
+        "limits": "Native01R1FAIL/R2NOTRUN and165cleanupUNCERTAIN unchanged. FullreconciliationelapsedUNKNOWN; no subsecondelapsedclaimfrommissingretainedtimestamps."
+      },
+      "parent_graph_correction": {
+        "result": "SOURCE_ONLY_CORRECTION_REVIEW_CLEAR",
+        "review": "/home/foo/Downloads/osmap-ux-s04/postfixadmin-reconstruction-20261024/helper-admission-r1-r2/parent-graph-source-review.json",
+        "review_sha256": "2c8c6ed1299d368b7173107bd18dc1923d2b19d3959bf9e5943e439f5f8e2779",
+        "change": "Onlycoldinitializerwinner skipsduplicateouterfullgraphrecheck; capturekeepsfullfinalverification; everywarm/waiterconsumerchecks; failedcapturestaysfailed; before/after/waitdeadlinechecksretain5s. Allmodules/closure/caps/pins/roles/promisesunchanged. ExistingtraceParentPrepare35 receivesfixedrole/subphasedetail; directdeadlinebranchonlyDeadline, opaqueunitcausesUnknown.",
+        "tests": "3cachecontrols+1tracecontrol+existingrealLinuxfilesystem/hashrefusalPASS; formatting/CWE/V10PASS. Initial4E0061oldprivate-testinterfacecompilefailurepreserved thencompatwrappercorrected. No nativeeffectclaimed.",
+        "cause": "Native01exactrejectionUNOBSERVED; duplicateworkisconfirmedsourceinefficiency, notretroactiveunique-causeproof."
       }
     }
   },
@@ -32954,6 +32997,96 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
             }
           }
         ]
+      },
+      {
+        "id": "readonly-helper-admission-native",
+        "kind": "NATIVE",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "single-host-readiness"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "docs/UX_EXECUTION_LEDGER.md"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/bin/sh",
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/postfixadmin-reconstruction-20261024/helper-admission-r1-r2/dispatch.sh"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "One offline matchingRustlibtestbuild and actualread-onlyhelper startup/ParentPrepare/Seal/acceptloop plusauthenticatedepoch0 andnoncurrent1Refusedexchanges. Compiler600/rootlifecycle80/helper45+5/client35within40/whole900seconds; intentionalnativeguard124onlywithactualhelper+client1PASS andownedcleanup/unchangedfiles. NoAuth/SQL/credential/publicmail/prod/retaineddisposal.",
+        "prerequisites": [
+          {
+            "id": "signed-reviewed-source-delivery-freshparity",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/postfixadmin-reconstruction-20261024/helper-admission-r1-r2/source-delivery.json",
+              "sha256": "034062887195a7b9f0b768eb9ac3cd0464679b1c263e492f72164c080b35fd7c"
+            }
+          },
+          {
+            "id": "current-readonly-protected-config-store-collision-contract",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/postfixadmin-reconstruction-20261024/helper-admission-r1-r2/prerequisites-result.json",
+              "sha256": "63fc0f07c4938546d38ef17d8bc315745403d83158cbc46f0e708f9ddc382ae1"
+            }
+          },
+          {
+            "id": "independent-exact-native-chain-and-producer-consumer",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/postfixadmin-reconstruction-20261024/helper-admission-r1-r2/native-review.json",
+              "sha256": "bf06f8901f8470b35016006acadad60b632512861ef3f88f1246a430aea1c78e"
+            }
+          }
+        ]
+      },
+      {
+        "id": "readonly-native01-evidence-reconciliation",
+        "kind": "DISCOVERY",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "single-host-readiness"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "docs/UX_EXECUTION_LEDGER.md"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/bin/sh",
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/postfixadmin-reconstruction-20261024/helper-admission-r1-r2/reconcile01.sh"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "OneSSH30s read-usepreservation/socketabsence andoriginalexportrecovery; writesonlyfreshnoclobberprivateevidenceinownnative01stage. RootOSsuidentitydropidonly test, no producttest/auth/SQL/configchange/disposal. ComparearchiveSHAandoriginalmanifestsbeforePASS.",
+        "prerequisites": [
+          {
+            "id": "independent-fixed-reconciliation-review",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/postfixadmin-reconstruction-20261024/helper-admission-r1-r2/reconcile01-review.json",
+              "sha256": "a7670ae23f8cb520e386c491ddc604644a61ed3e2d0e10e01e436e4dd7991d4c"
+            }
+          }
+        ]
       }
     ],
     "budget": {
@@ -32967,9 +33100,9 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     },
     "planned_action": null
   },
-  "blocker": "No currentconfiguration/constructoradmission blocker. NativeR1/R2underread-onlyfixtureNOTRUN. Existingrootconfig/storemaybereadonlyusedunderlatestauthoritywithoutdisposaloftheir165history. Loadedcachefreshness/SQLhashgrants/credential/session/HTTP/installed/UAT/T03remainunqualified.",
-  "independent_next_action": "Verifyfinalsource/docs/V10pinsandordinarysigneddelivery; reviewfixednativebuild/execution/diagnostic/ownedstoprecipe beforeactualnewaction. Preserveall20obligationsandpublicmail/retainedresources.",
-  "updated_at": "2026-10-24T16:10:58Z"
+  "blocker": "R1native01failedParentPrepareUnknown5s; R2bodydidnotrunduetonesteddoasrefusal. Freshreconciliationconfirmsretainedfiles/parentspreservedandbornsocketsabsent; clientSuidentitydropworkswithoutpolicychange. Changedsourcecache/diagnosticfixreviewedbutnative02NOTRUN. Password/cache/SQL/session/HTTP/installed/UAT/T03remainunqualified.",
+  "independent_next_action": "Reviewfinalchangedsource/docs/derivedpins andnative02delta; retainnative01failures+originalbadexports+recoveryseparately. No blindretry/newframework/deadlinerelaxation.",
+  "updated_at": "2026-10-24T17:01:30Z"
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->

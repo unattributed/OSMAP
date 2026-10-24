@@ -1,5 +1,31 @@
 # Decision Log
 
+2026-10-24 UTC — **Apply the failure loop to the actual ParentPrepare and client-launch failures.**
+Native01 on signed70611ff compiled successfully, then helper preparation failed
+at5.00seconds before sealing. The original metadata detail was unobserved;
+there was no resolver-failure line after the emitted program/module observations.
+This does not prove a unique deadline, file or custody cause. Independently,
+nested doas refused the nonroot client launch, so no selected R2 exchange ran.
+Keep both failures and their unknown global ordering, not a synthetic PASS.
+
+Recover the four SSH-failed evidence leaves through one connection and verify
+them against the original export registry. Actual recovery succeeds and leaves
+all original failed local files intact. Current retained content/identities and
+parent identities match the original before-state; new sockets are absent.
+No historical resource is removed and165 cleanup remains UNCERTAIN. The native
+root su identity-only check demonstrates the supported launch correction with
+UID1001/GID1001/socket-group1003; do not edit doas or account policy.
+
+Correct demonstrated duplicate cold dependency verification only. The caller
+whose initializer actually ran may reuse capture's complete final check; warm
+and concurrent waiting callers must still verify. Preserve every required
+Dovecot module: reference source loads modules before pw dispatch. No closure,
+role, permission, cap or five-second deadline is relaxed. Propagate the existing
+StartupTrace through parent preparation with closed source-owned subphase tags.
+Observe actual deadline branches; never infer errno/deadline from opaque failure.
+The five focused controls pass, with the initial compatibility compile failure
+retained. A changed native attempt still supplies the necessary functional proof.
+
 2026-10-24 UTC — **Advance through the real read-only helper exchange; analyse failures in flight.**
 Use the existing Rust service lifecycle and native epoch-admission client for
 R1/R2. A valid signed reply can establish parent preparation/sealing and actual

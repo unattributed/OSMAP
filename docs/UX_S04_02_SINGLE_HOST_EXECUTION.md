@@ -1,5 +1,35 @@
 # S04.02 single-host execution correction
 
+## 2026-10-24 UTC — native01 FAIL; reconciled state and changed correction
+
+Actual signed70611ff native01 built in145.19seconds but helper ParentPrepare
+failed at5.00seconds, Unknown/Unavailable, metadata unobserved. ParentSeal/R1
+readiness were not reached. Client doas launch refused before the Rust body;
+R2 NOT RUN. No first-error ordering across the separate streams is claimed.
+Four SSH banner-timeout export failures remain distinct from native outcomes.
+
+The independently reviewed single-connection reconciliation archive hashes to
+`86c6284f9688425e16f2261f0ff7ad3233c506a70c924c7ac7b144faf36ed676`, matching
+the root producer. All original and postcheck member hashes pass; original bad
+exports remain, with recovery in a separate directory. Retained-file contents,
+file/parent identities match before, born socket leaves/uncertainty markers are
+absent. Actual root su identity-only drop passes1001:1001/group1003. No policy,
+SQL/password/service action or165/160 disposal occurred. New private stages stay.
+
+Changed Rust source removes only the cold initialization winner's duplicate
+outer graph recheck, retaining capture verification and every warm/waiter check.
+Required programs/modules/closure/caps/custody/deadlines stay unchanged. Existing
+ParentPrepare35 trace now carries bounded fixed graph/custody subphases; generic
+unit failures remain Unknown and actual deadline branches alone get Deadline.
+Local cache/trace/real-file controls pass. Native effect is NOT RUN.
+
+Next distinct native02 will use newly signed matching source, fresh owned build/
+root/client stages, documented root su launch, and one private archive collection
+rather than repeated SSH reads. Preservation checks must also run after functional
+failure. The same existing work-order loop requires analysis, minimum changed
+proof and independent review before execution; no automatic unchanged retry.
+All password/cache/SQL/session/HTTP/installed/UAT/T03 limits below remain.
+
 ## 2026-10-24 UTC — next authorized boundary: restricted real helper R1/R2
 
 The operator explicitly resumes actual helper startup and authenticated

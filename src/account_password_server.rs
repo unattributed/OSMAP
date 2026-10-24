@@ -344,8 +344,11 @@ fn serve(
         );
         trace.set(Op::ParentPrepare);
         let mut parent_plan =
-            crate::account_password_confinement::ParentPlan::prepare_stock(startup_deadline)
-                .map_err(unavailable)?;
+            crate::account_password_confinement::ParentPlan::prepare_stock_with_trace(
+                startup_deadline,
+                trace,
+            )
+            .map_err(unavailable)?;
         trace.set(Op::ParentSeal);
         let seal = crate::openbsd::seal_password_parent(&parent_plan).map_err(unavailable)?;
         parent_plan.activate(seal).map_err(unavailable)?;

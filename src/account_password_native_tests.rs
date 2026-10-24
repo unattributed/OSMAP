@@ -1,6 +1,203 @@
 use super::*;
 
 #[test]
+fn installed_cache_admission_skips_only_cold_callers_duplicate_verification() {
+    let cache = std::sync::OnceLock::new();
+    let stage = Cell::new("metadata_parent_graph_unknown");
+    let deadline = Instant::now() + Duration::from_secs(5);
+    let captured = Cell::new(0);
+    let rechecked = Cell::new(0);
+    let first = cached_graph(
+        &cache,
+        deadline,
+        &stage,
+        || {
+            captured.set(captured.get() + 1);
+            Ok(7u8)
+        },
+        |_, _| {
+            rechecked.set(rechecked.get() + 1);
+            Ok(())
+        },
+    )
+    .unwrap();
+    assert_eq!(*first, 7);
+    assert_eq!(captured.get(), 1);
+    assert_eq!(rechecked.get(), 0);
+    let second = cached_graph(
+        &cache,
+        deadline,
+        &stage,
+        || panic!("admitted cache must not be captured again"),
+        |value, inherited| {
+            assert_eq!(*value, 7);
+            assert_eq!(inherited, deadline);
+            rechecked.set(rechecked.get() + 1);
+            Ok(())
+        },
+    )
+    .unwrap();
+    assert!(std::ptr::eq(first, second));
+    assert_eq!(rechecked.get(), 1);
+    assert!(cached_graph(
+        &cache,
+        deadline,
+        &stage,
+        || panic!("changed cache must not be recaptured"),
+        |_, _| Err(Unavailable),
+    )
+    .is_err());
+}
+
+#[test]
+fn installed_cache_admission_concurrent_consumer_rechecks_after_initializer() {
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    let cache = std::sync::OnceLock::new();
+    let rechecks = AtomicUsize::new(0);
+    let (entered_tx, entered_rx) = std::sync::mpsc::sync_channel(0);
+    let (release_tx, release_rx) = std::sync::mpsc::sync_channel(0);
+    let (consumer_tx, consumer_rx) = std::sync::mpsc::sync_channel(0);
+    std::thread::scope(|scope| {
+        let cache = &cache;
+        let first = scope.spawn(move || {
+            cached_graph(
+                cache,
+                Instant::now() + Duration::from_secs(5),
+                &Cell::new("metadata_parent_graph_unknown"),
+                || {
+                    entered_tx.send(()).unwrap();
+                    release_rx.recv_timeout(Duration::from_secs(2)).unwrap();
+                    Ok(7u8)
+                },
+                |_, _| panic!("initializing caller already verified in capture"),
+            )
+            .copied()
+        });
+        entered_rx.recv_timeout(Duration::from_secs(2)).unwrap();
+        let count = &rechecks;
+        let consumer = scope.spawn(move || {
+            consumer_tx.send(()).unwrap();
+            cached_graph(
+                cache,
+                Instant::now() + Duration::from_secs(5),
+                &Cell::new("metadata_parent_graph_unknown"),
+                || panic!("other initializer owns the capture"),
+                |value, _| {
+                    assert_eq!(*value, 7);
+                    count.fetch_add(1, Ordering::SeqCst);
+                    Ok(())
+                },
+            )
+            .copied()
+        });
+        consumer_rx.recv_timeout(Duration::from_secs(2)).unwrap();
+        release_tx.send(()).unwrap();
+        assert_eq!(first.join().unwrap(), Ok(7));
+        assert_eq!(consumer.join().unwrap(), Ok(7));
+    });
+    assert_eq!(rechecks.load(Ordering::SeqCst), 1);
+}
+
+#[test]
+fn installed_cache_admission_preserves_failed_capture_and_deadline_refusal() {
+    let failed = std::sync::OnceLock::new();
+    let deadline = Instant::now() + Duration::from_secs(5);
+    let stage = Cell::new("metadata_parent_graph_unknown");
+    assert!(cached_graph(
+        &failed,
+        deadline,
+        &stage,
+        || Err::<u8, _>(Unavailable),
+        |_, _| panic!("failed graph must never be rechecked or used"),
+    )
+    .is_err());
+    assert!(cached_graph(
+        &failed,
+        deadline,
+        &stage,
+        || panic!("failed capture must not be silently retried"),
+        |_, _| panic!("failed graph must never be used"),
+    )
+    .is_err());
+    let empty: std::sync::OnceLock<Result<u8, Unavailable>> = std::sync::OnceLock::new();
+    assert!(cached_graph(
+        &empty,
+        Instant::now(),
+        &stage,
+        || panic!("expired deadline must precede capture"),
+        |_, _| panic!("expired deadline must precede recheck"),
+    )
+    .is_err());
+    assert!(empty.get().is_none());
+    assert_eq!(stage.get(), "metadata_parent_graph_deadline");
+    let finished_late = std::sync::OnceLock::new();
+    let deadline = Instant::now() + Duration::from_millis(1);
+    assert!(cached_graph(
+        &finished_late,
+        deadline,
+        &stage,
+        || {
+            while Instant::now() < deadline {
+                std::thread::yield_now();
+            }
+            Ok(7u8)
+        },
+        |_, _| panic!("late cold caller must not add a renewed verification"),
+    )
+    .is_err());
+}
+
+#[test]
+fn parent_graph_trace_retains_parent_identity_fixed_phase_and_actual_deadline() {
+    use crate::account_password_fstat::{StartupOperation as Op, StartupTrace};
+    let mut trace = StartupTrace::new(Op::ParentPrepare);
+    assert_eq!(Op::ParentPrepare as u8, 35);
+    assert!(stock_parent_rules_with_trace(Instant::now(), &mut trace).is_err());
+    assert_eq!(trace.tag(), "primary_fstat_parent_prepare_deadline");
+    assert_eq!(
+        trace.metadata_detail(),
+        Some("metadata_parent_graph_deadline")
+    );
+    for program in [
+        crate::account_password_backend::SQL_PROGRAM,
+        crate::account_password_backend::HASH_PROGRAM,
+    ] {
+        for phase in [
+            GraphPhase::Sources,
+            GraphPhase::Resolve,
+            GraphPhase::Closure,
+            GraphPhase::Files,
+            GraphPhase::Directories,
+        ] {
+            let stage = Cell::new("metadata_parent_graph_unknown");
+            graph_stage(program, phase, &stage);
+            assert_eq!(
+                crate::account_password_process::metadata_failure_tag(stage.get()),
+                Some(stage.get())
+            );
+            let mut unknown = StartupTrace::new(Op::ParentPrepare);
+            unknown.metadata(stage.get());
+            unknown.metadata_error(crate::account_admission::Error::Unavailable);
+            unknown.metadata("metadata_parent_graph_deadline");
+            unknown.cleanup_failed();
+            let mut bytes = Vec::new();
+            unknown
+                .write_diagnostic(
+                    &mut bytes,
+                    &crate::account_admission::Error::CleanupUnconfirmed,
+                    true,
+                )
+                .unwrap();
+            let text = String::from_utf8(bytes).unwrap();
+            assert!(text.contains("stage=primary_fstat_parent_prepare_unknown"));
+            assert!(text.contains(stage.get()));
+            assert!(text.contains("error=Unavailable cleanup=unconfirmed"));
+            assert_eq!(unknown.metadata_detail(), Some(stage.get()));
+        }
+    }
+}
+
+#[test]
 fn selected_parent_resolves_sql_hash_only_and_legacy_keeps_fstat() {
     use crate::account_password_backend::{HASH_PROGRAM, SQL_PROGRAM};
     for (selection, expected) in [

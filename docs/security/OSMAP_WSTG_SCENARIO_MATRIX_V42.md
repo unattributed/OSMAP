@@ -1,5 +1,15 @@
 # OSMAP WSTG v4.2 Scenario Matrix
 
+2026-10-24 helper/admission native01: buildPASS, ParentPrepareUnknown failure
+at5.00s beforeR1seal/readiness; clientdoasrefusal/bodyNOTRUN, soR2unqualified.
+OriginalSSHcollectionfailures retained; reviewed singlearchive recovery matches
+originalhashes and confirms retainedcontent/identity preservation and bornsocket
+absence. This does not promote functionality or165cleanup. Changedsource skips
+onlyduplicate coldwinner verification; completecapture/warm/waiter/closure/custody
+and5sdeadline remain. ParentPrepare35 now retains fixedsubphase details, with
+unknown causes preserved. Fivefocusedcontrols pass; changednative02NOTRUN. No
+qualificationflag, Pythonframework, credential/publicmail/production/disposalaction.
+
 2026-10-24 R1/R2 source preparation: a cfg(test)-only irreversible helper latch
 rejects mutation/Authenticate before native backend construction while retaining
 actual startup, parent seal, accept loop and authenticated Admit composition.

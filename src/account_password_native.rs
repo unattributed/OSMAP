@@ -3,6 +3,7 @@
 //! stable for this helper lifetime. No historical OS/package bytes are required.
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
+use std::cell::Cell;
 use std::ffi::{CStr, CString};
 use std::fs::{self, OpenOptions};
 use std::io::Read;
@@ -380,36 +381,122 @@ fn installed_graph(
     program: &'static str,
     deadline: Instant,
 ) -> Result<&'static InstalledGraph, Unavailable> {
+    installed_graph_with_stage(
+        program,
+        deadline,
+        &Cell::new("metadata_parent_graph_unknown"),
+    )
+}
+#[derive(Clone, Copy)]
+#[repr(usize)]
+enum GraphPhase {
+    Sources,
+    Resolve,
+    Closure,
+    Files,
+    Directories,
+}
+fn graph_stage(program: &str, phase: GraphPhase, stage: &Cell<&'static str>) {
+    let tags = match program {
+        crate::account_password_backend::SQL_PROGRAM => [
+            "metadata_parent_sql_sources_unknown",
+            "metadata_parent_sql_resolve_unknown",
+            "metadata_parent_sql_closure_unknown",
+            "metadata_parent_sql_files_unknown",
+            "metadata_parent_sql_directories_unknown",
+        ],
+        crate::account_password_backend::HASH_PROGRAM => [
+            "metadata_parent_hash_sources_unknown",
+            "metadata_parent_hash_resolve_unknown",
+            "metadata_parent_hash_closure_unknown",
+            "metadata_parent_hash_files_unknown",
+            "metadata_parent_hash_directories_unknown",
+        ],
+        _ => ["metadata_parent_graph_unknown"; 5],
+    };
+    stage.set(tags[phase as usize]);
+}
+fn graph_before(deadline: Instant, stage: &Cell<&'static str>) -> Result<(), Unavailable> {
+    before(deadline).inspect_err(|_| stage.set("metadata_parent_graph_deadline"))
+}
+// Only the caller whose initializer actually ran may reuse capture's complete
+// final verification. Warm callers and callers waiting for another initializer
+// still verify the admitted value against current files before using it.
+fn cached_graph<'a, T>(
+    cache: &'a std::sync::OnceLock<Result<T, Unavailable>>,
+    deadline: Instant,
+    stage: &Cell<&'static str>,
+    capture: impl FnOnce() -> Result<T, Unavailable>,
+    recheck: impl FnOnce(&T, Instant) -> Result<(), Unavailable>,
+) -> Result<&'a T, Unavailable> {
+    graph_before(deadline, stage)?;
+    let initialized = Cell::new(false);
+    let value = cache
+        .get_or_init(|| {
+            initialized.set(true);
+            capture()
+        })
+        .as_ref()
+        .map_err(|_| Unavailable)?;
+    if !initialized.get() {
+        graph_before(deadline, stage)?;
+        recheck(value, deadline)?;
+    }
+    graph_before(deadline, stage)?;
+    Ok(value)
+}
+fn installed_graph_with_stage(
+    program: &'static str,
+    deadline: Instant,
+    stage: &Cell<&'static str>,
+) -> Result<&'static InstalledGraph, Unavailable> {
     let cache = match program {
         crate::account_password_backend::SQL_PROGRAM => &SQL_GRAPH,
         crate::account_password_backend::HASH_PROGRAM => &HASH_GRAPH,
         "/usr/bin/fstat" => &FSTAT_GRAPH,
         _ => return Err(Unavailable),
     };
-    let value = cache
-        .get_or_init(|| capture_graph(program, deadline))
-        .as_ref()
-        .map_err(|_| Unavailable)?;
-    value.recheck(deadline)?;
-    Ok(value)
+    cached_graph(
+        cache,
+        deadline,
+        stage,
+        || capture_graph(program, deadline, stage),
+        |value, inherited| value.recheck_with_stage(program, inherited, stage),
+    )
 }
 impl InstalledGraph {
+    #[cfg(test)]
     fn recheck(&self, deadline: Instant) -> Result<(), Unavailable> {
+        self.recheck_with_stage("", deadline, &Cell::new("metadata_parent_graph_unknown"))
+    }
+    fn recheck_with_stage(
+        &self,
+        program: &str,
+        deadline: Instant,
+        stage: &Cell<&'static str>,
+    ) -> Result<(), Unavailable> {
+        graph_stage(program, GraphPhase::Files, stage);
         for (path, identity, digest) in &self.files {
             let (now, hash, _) = public_file(path, false, FILE_CAP, deadline)?;
             if &now != identity || &hash != digest {
                 return Err(Unavailable);
             }
         }
+        graph_stage(program, GraphPhase::Directories, stage);
         for old in &self.directories {
             if directory_snapshot(&old.0, deadline)? != *old {
                 return Err(Unavailable);
             }
         }
-        before(deadline)
+        graph_before(deadline, stage)
     }
 }
-fn capture_graph(program: &'static str, deadline: Instant) -> Result<InstalledGraph, Unavailable> {
+fn capture_graph(
+    program: &'static str,
+    deadline: Instant,
+    stage: &Cell<&'static str>,
+) -> Result<InstalledGraph, Unavailable> {
+    graph_stage(program, GraphPhase::Sources, stage);
     let mut paths = std::collections::BTreeSet::new();
     paths.extend([
         program.to_owned(),
@@ -433,7 +520,7 @@ fn capture_graph(program: &'static str, deadline: Instant) -> Result<InstalledGr
                 continue;
             }
             for entry in fs::read_dir(dir).map_err(unavailable)? {
-                before(deadline)?;
+                graph_before(deadline, stage)?;
                 let path = entry.map_err(unavailable)?.path();
                 let name = path
                     .file_name()
@@ -452,12 +539,17 @@ fn capture_graph(program: &'static str, deadline: Instant) -> Result<InstalledGr
         }
     }
     for source in sources {
-        before(deadline)?;
+        graph_before(deadline, stage)?;
+        graph_stage(program, GraphPhase::Sources, stage);
         let (initial_identity, initial_hash, _) = public_file(&source, false, FILE_CAP, deadline)?;
         #[cfg(test)]
         eprintln!("DEPENDENCY_RESOLUTION_SOURCE={source}");
+        graph_stage(program, GraphPhase::Resolve, stage);
         for path in crate::openbsd::installed_library_paths_before(Path::new(&source), deadline)
             .map_err(|error| {
+                if error == "dependency resolution deadline" {
+                    stage.set("metadata_parent_graph_deadline");
+                }
                 #[cfg(test)]
                 eprintln!("DEPENDENCY_RESOLUTION_FAILURE={error}");
                 unavailable(error)
@@ -465,6 +557,7 @@ fn capture_graph(program: &'static str, deadline: Instant) -> Result<InstalledGr
         {
             paths.insert(path.to_str().ok_or(Unavailable)?.to_owned());
         }
+        graph_stage(program, GraphPhase::Sources, stage);
         let (final_identity, final_hash, _) = public_file(&source, false, FILE_CAP, deadline)?;
         if initial_identity != final_identity || initial_hash != final_hash || paths.len() > 256 {
             return Err(Unavailable);
@@ -473,6 +566,7 @@ fn capture_graph(program: &'static str, deadline: Instant) -> Result<InstalledGr
     }
     let mut files = Vec::new();
     let mut total = 0u64;
+    graph_stage(program, GraphPhase::Closure, stage);
     for path in paths {
         let (identity, digest, _) = public_file(&path, false, FILE_CAP, deadline)?;
         total = total.checked_add(identity[6]).ok_or(Unavailable)?;
@@ -486,7 +580,7 @@ fn capture_graph(program: &'static str, deadline: Instant) -> Result<InstalledGr
         files.push((path, identity, digest));
     }
     let graph = InstalledGraph { files, directories };
-    graph.recheck(deadline)?;
+    graph.recheck_with_stage(program, deadline, stage)?;
     Ok(graph)
 }
 fn fixed_parent_rules() -> Vec<(String, &'static str)> {
@@ -1274,10 +1368,33 @@ fn observe_stock(
     observed.endpoints = vec![endpoint];
     Ok(observed)
 }
+#[allow(dead_code)] // Preserve the existing trace-free caller interface.
 pub(crate) fn stock_parent_rules(
     deadline: Instant,
 ) -> Result<Vec<(String, &'static str)>, Unavailable> {
     parent_rules_with(ParentGraphs::Stock, deadline, installed_parent_graph_rules)
+}
+pub(crate) fn stock_parent_rules_with_trace(
+    deadline: Instant,
+    trace: &mut crate::account_password_fstat::StartupTrace,
+) -> Result<Vec<(String, &'static str)>, Unavailable> {
+    let stage = Cell::new("metadata_parent_graph_unknown");
+    let result = graph_before(deadline, &stage).and_then(|()| {
+        parent_rules_with(ParentGraphs::Stock, deadline, |program, inherited| {
+            Ok(installed_graph_with_stage(program, inherited, &stage)?
+                .files
+                .iter()
+                .map(|(path, _, _)| (path.clone(), if path == program { "rx" } else { "r" }))
+                .collect())
+        })
+    });
+    result.inspect_err(|_| {
+        // Unit Unavailable cannot expose the underlying file invariant or I/O
+        // errno. Retain the observed role/subphase as unknown; only a directly
+        // observed deadline check/resolver deadline gets a Deadline category.
+        trace.metadata(stage.get());
+        trace.metadata_error(crate::account_admission::Error::Unavailable);
+    })
 }
 
 #[cfg(test)]
