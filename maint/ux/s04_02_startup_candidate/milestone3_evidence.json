@@ -1,7 +1,19 @@
 {
+  "actual_http_terminal_report": null,
+  "approved_delivery_head": "dc9e791f202a1398af678e83f1cebd93bb18ef67",
+  "attempt_id": "S04-02-milestone3-controlled-change158",
+  "authorization_consumed": true,
+  "bob_session_and_completed_mail_path_witness": "NOT_RUN",
   "browser_sessions_created": 0,
-  "caller_sha256": "660ba2466a163762943c1045c6df1d5dc20317d90d1b3022a02d73fa876b30f7",
+  "caller_sha256": "213f40e73fb6d6a8c9116950892faf711946d7c1b3fc0e27e80d449a0f7ed550",
   "case": "S04-02-T03",
+  "compiler_provenance": {
+    "compiler_receipt_sha256": "e5ff314ae456d9988df7a324165c60ff0b0fcdce9e70e2dd1d8a705e0db075cf",
+    "compiler_source_manifest_sha256": "c06f963f924c94f8652834eef58d9a90c4892a870864cba8f61b88b9a5c9c2ef",
+    "helper_compiler_receipt_sha256": "8199a698536b6d0f5c78f0901cc33c693e146df4643ede712ca9a68974071896",
+    "helper_compiler_source_manifest_sha256": "2c73b7b76d09e9b59aa34241fb57b28220c013bf7f6d69852171ef92d99c3471",
+    "helper_source_commit": "77f63794d3f60e4003db157eada39f4bd4222b6a"
+  },
   "completed_post_change_cache_witness": "NOT_RUN",
   "current_password_fresh_totp_authority": "NOT_RUN",
   "disposition": "CONFIRMED_PRE_SUBMISSION_NO_WRITE_AND_EXACT_OWNED_CLEANUP",
@@ -22,26 +34,30 @@
     }
   },
   "evidence_sha256": {
-    "cleanup-result.json": "fdc8bd2f2c6cc93245d55f290c323b4b66ccfd14eb9ca610a696a613e45ae1ac",
-    "cleanup-review.json": "08b6a3606315d28da0eb7c646cf2a09be1eb0741b6a75491edf4c52286a410a6",
-    "focused-timing.log": "6185a840a0bc4d0ba81b3d2a59fb6465a0b0282916e695792002a7cf9565fa0c",
-    "independent_absence.json": "2d279eda3cd4819f38d1ba1238420e37d1f94c1438518726f065c66116b29107",
-    "recovery_observed.json": "56fa3a8afc66ace968497a18e9944386d0d609c505bb82ae70b4b55008982de6",
-    "stage_absence.json": "fc19f98614ca6aef180432659f8a9d08c754bb43093123ba0062d52bb50c25f4",
-    "startup-independent-review.json": "22dbe112cd65d48eee79c44814408dbd80237dba43ce0200ce731c5cd282f2ad",
-    "startup-result.json": "c0f4f189a9588be1e17ec229447e468c8b64d574171f2ecb2208fd3548e5f9cd"
+    "RUN_SOURCE_SHA256.json": "e69e610b3d2ef79c30a299406337a0993e242c3ea78fb1cb6a834fce00df56c4",
+    "cleanup-result.json": "c56299f1feaaf38c3efbfdfcb9d1989b0fcc5ea78eb5630a68b48786c1e56eaa",
+    "cleanup-review.json": "18d78907db7df0a039b3a67276ab6669c3192c34f280b36bedc057509de02189",
+    "host-identity-preflight.txt": "d8901011d587acfa6f1813cf1d6ba2299d506ff89b2a07cfbf0fb7488988d8f5",
+    "independent-outcome-review.json": "76c20b77d4d68ea09e8009158b521ff245b029674f5b11f76934aa566a0615e7",
+    "independent_absence.json": "cedd00594d1c910b0af97489ead5c1a51abfbb684913be47a467119d25a26db4",
+    "operator-authorization.json": "d990467cd510d82bc8302ab6c3192e1b303d7c30df7bde96cb68b74a30ab44a7",
+    "recovery_observed.json": "0c8be9e3f80464d3c0e017594947077378169dc4de44e37eabe56b6886df7f6a",
+    "stage_absence.json": "90b8563ddfff543f72e213901f8a3b7d32d8b374df3dee8ae627b3158f5bb3e3",
+    "startup-independent-review.json": "e0100425ec0f53105870f3fa70678aed201672ed18da77c127fb3f7803f6ec88",
+    "startup-result.json": "2552bc8262f69a6031f7f333b770aec83a9c1c2a21ed80561e608532136426c1"
   },
-  "failure_reason": "stock_bob_nonce_home",
-  "failure_stage": "read-only Bob userdb projection before frontend setup",
+  "execution_ended_at": "2026-10-24T02:48:30.867327+00:00",
+  "failure_reason": "control_eof",
+  "failure_stage": "native HTTP READY exchange after guardian/native-child custody, before FrontDriver construction or G start",
   "final_authority_before_disposal": {
     "alice@osmap-password.invalid": {
       "account": "alice@osmap-password.invalid",
       "changed_at": null,
       "epoch": 0,
-      "noncredential_sha256": "f6792a54c00385fae5900eb09f8b043286966fba1c5dabc72898b8975bfd4165",
-      "password_sha256": "4fbed9aae26c1c44bdf83bec8eb96b5b97da00ed728d262a1f43a652ee618049",
+      "noncredential_sha256": "70f2cd08ad398d7bef6b95fd789e188196e7d83f89c908412c8bbec6f86395ca",
+      "password_sha256": "f0ec8c372564d98d5368b38087eeda980325908fc5fa600b31f62b98be428751",
       "row_count": 1,
-      "row_sha256": "ea9f91d1c91fdccbd48d2c09e875ac0d28f30edb588879fccd54680a59d21230",
+      "row_sha256": "64378ecee67368036e0054d66aea56282eb178178ba3a79958295b22f7b496bb",
       "sql_changed_at": "20000101000000",
       "state": "active"
     },
@@ -49,17 +65,29 @@
       "account": "bob@osmap-password.invalid",
       "changed_at": null,
       "epoch": 0,
-      "noncredential_sha256": "bd4e40386d0e5b6a01cda51506136a714a27511cabd78737d2a191f5d8373994",
-      "password_sha256": "6501d2f5f043ea04c3c801c12501052dfb1859bacbc2acd9ef2f0e157099e17e",
+      "noncredential_sha256": "14b1943dbf8edbcd5976082da51e11f0842aaea1194bde93fc7777d6b2a38bac",
+      "password_sha256": "f5508a12abd82f76c52da2089c2d0ffd1c28b1385d8c1a025ae633daf90913e3",
       "row_count": 1,
-      "row_sha256": "fbd695fd1a3f7129879aa5a89a866c633e720d690f36b56bfa046af24d18fda4",
+      "row_sha256": "e13badede83e95655901007aef8f8cc12decef4837021b1b25fbbf775f38b71b",
       "sql_changed_at": "20000101000000",
       "state": "active"
     }
   },
+  "frontend_cleanup": {
+    "disposed": true,
+    "requests_stopped": true
+  },
+  "http_requests_sent_by_driver": 0,
+  "independent_outcome": "FAIL_BEFORE_READY_NO_WRITE_CLEANUP_CONFIRMED",
+  "independent_runtime_absent_path_count": 33,
+  "initial_authority_full17_digests": {
+    "alice@osmap-password.invalid": "64378ecee67368036e0054d66aea56282eb178178ba3a79958295b22f7b496bb",
+    "bob@osmap-password.invalid": "e13badede83e95655901007aef8f8cc12decef4837021b1b25fbbf775f38b71b"
+  },
   "installed_qualified": false,
   "old_new_password_behaviour": "NOT_RUN",
   "operation_attempts": 1,
+  "original_not_after_utc": 1792810706,
   "password_changes": 0,
   "password_submissions": 0,
   "preservation": {
@@ -72,12 +100,14 @@
     "rebuild": false,
     "workflow_retry": false
   },
-  "private_evidence_root": "/home/foo/Downloads/osmap-ux-s04/milestone3-authoritative-change-20261023/execution155",
+  "previous_execution155_evidence_sha256": "7646a7028682a291217bee888793a21f2220ab48b233e77b3449bbab2a5f2047",
+  "private_evidence_root": "/home/foo/Downloads/osmap-ux-s04/milestone3-execution-20261023/execution158",
+  "proven_before_submission_no_write": true,
   "public_cache_disabled": true,
   "raw_carrier_status": {
-    "failure": "transport_or_cleanup",
-    "native_result": "UNKNOWN",
-    "remote_disposition": "UNCERTAIN"
+    "native_result": "FAIL",
+    "remote_disposition": "CONFIRMED",
+    "ssh_exit": 1
   },
   "result": "FAIL",
   "runtime_cleanup": {
@@ -90,9 +120,10 @@
   },
   "schema": "osmap-s04-02-milestone3-evidence-v1",
   "service_sha256": "8f1ed891c8349863db59a95ba1e3d4908bc62ba7d583ea8634d3259262ab3559",
+  "service_source_commit": "77f63794d3f60e4003db157eada39f4bd4222b6a",
   "session_revocations": "NOT_RUN",
   "slice_complete": false,
-  "source_commit": "77f63794d3f60e4003db157eada39f4bd4222b6a",
+  "source_commit": "213b2f3b9ee878fcbaf37e27acb45743a3782434",
   "stage_cleanup": {
     "directories_removed": 2,
     "files_removed": 21,
@@ -103,17 +134,20 @@
   "technical_bounds_seconds": {
     "action": 690,
     "carrier": 600,
-    "http_sequence": 90,
+    "guardian": 330,
+    "http_sequence": 300,
     "password_operation": 60,
     "reserved_cleanup": 150,
     "transport": 650
   },
   "timings_seconds": {
-    "dispatch": 5.109,
-    "remote_actor": 3.291,
-    "runtime_cleanup": 1.051379,
-    "service_socket_publication": 0.597657,
-    "stage_cleanup": 0.687
+    "dispatch": 6.258,
+    "independent_runtime_observation": 0.126817,
+    "remote_actor": 3.592,
+    "remote_wrapper": 3.831,
+    "runtime_cleanup": 0.871284,
+    "service_socket_publication": 0.597726,
+    "stage_cleanup": 0.681
   },
-  "unique_failed_conjunct": "UNKNOWN: actual home output not exported"
+  "unique_native_startup_cause": "UNKNOWN: guardian/native diagnostic is not retained in final result"
 }

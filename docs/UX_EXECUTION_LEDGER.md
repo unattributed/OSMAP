@@ -10469,7 +10469,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "status": "PENDING",
     "reference": "Only minimal well-defined own-password usability after all agent-owned development/matching deployed QA/independent audit PASS. No operator password is changed by agent qualification; use controlled disposable Alice and preserve Bob/operator state. NOT RUN."
   },
-  "next_action": "T03 timing obstruction corrected and independent review CLEAR: Rust/frontend300s, guardian330s, witness originalWORK, actor600/cleanup150 preserved, passwordoperation60 unchanged. One native libtest-only compile157 PASS with separate disposition, qualifiedhelper reused. Portable68/currentartifact10/Rustoriginaldeadline12+expiredoperation1 PASS. Deliver through normal signed commit/push hooks. Milestone3 remains NOT QUALIFIED; prior mutation authorization consumed. No startup or password operation occurred. Next native journey requires separate explicit single-operation authorization; no action planned.",
+  "next_action": "Execution158 FAIL control_eof before READY/HTTP/submission; independently confirmed no-write and runtime/stage cleanup159. Authorization consumed. Preserve evidence and signed delivery; further native execution requires new explicit authorization. T03 remains NOT QUALIFIED.",
   "accountability": {
     "functional_exit": "Working own-account Settings password change through the selected single-host obsd1 local account service and authoritative local backend, fresh password/TOTP step-up, one conditional SQL update, durable OSMAP epoch and all-browser revocation, actual source-bound cache handling, old-password refusal/new-login success and Bob preservation. Existing third-party SMTP/IMAP sessions may remain authenticated. Matching installed QA, independent audit and minimal owner usability remain required. Toronto is later separate production installation.",
     "owner": "/root",
@@ -19719,6 +19719,52 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "elapsed_seconds": 146.407,
         "reference": "/home/foo/Downloads/osmap-ux-s04/timing-reconciliation-20261023/build/result.json SHA256 e5ff314ae456d9988df7a324165c60ff0b0fcdce9e70e2dd1d8a705e0db075cf",
         "reason": "One affected libtest-only nativecompile PASS,144.479s compiler/145.429s remote/146.407s full action. New web SHA256213f40e73fb6d6a8c9116950892faf711946d7c1b3fc0e27e80d449a0f7ed550. Existinghelper unchanged; no helperbuild, tests/application/startup/account/public-service operations. Separate readonly observation confirmed compiler scratch/group absent and both artifact identities."
+      },
+      {
+        "id": "S04-02-milestone3-controlled-change158",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "source_revision": "c17398457f3ee49beb641e28bbef23d4637932d9e88887761caf54c970cd6e41",
+        "change_reference": "Fresh explicit operator authorization for ONE execution approved delivery dc9e791, separate service77f637/web213b2 compiler provenance, reviewed timing300/330 actor600 cleanup150 and unchanged product60. Prior155 consumed; no retry of this158 authorization.",
+        "success_chain_review": {
+          "reviewer": "/root/python_runtime_review",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/milestone3-execution-20261023/execution158/startup-independent-review.json SHA256 e0100425ec0f53105870f3fa70678aed201672ed18da77c127fb3f7803f6ec88",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "FAIL",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 6.258,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/milestone3-execution-20261023/execution158/startup-result.json",
+        "reason": "control_eof before READY/FrontDriver; zero HTTP/password submissions, final full17 equal initial, epoch0/nullchangedat/no intents. Runtime exact-owned disposal independently confirmed. Authorization consumed; no retry."
+      },
+      {
+        "id": "S04-02-milestone3-stage-cleanup159",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "dd252ee3647603d8f0e01e666617eb2df581dcb9a0ba5f97d5ee93a0a44ade6a",
+        "change_reference": "Exact inert158 stage cleanup after independently confirmed pre-submission no-write/runtime absence; reuse156 cleanup implementation with current receipt identities only. No workflow retry.",
+        "success_chain_review": {
+          "reviewer": "/root/python_runtime_review",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/milestone3-execution-20261023/execution158/cleanup-review.json",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 0.681,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/milestone3-execution-20261023/execution158/cleanup-result.json",
+        "reason": "21 exact-owned staging leaves/two directories removed after independently proven pre-submission no-write and runtime absence; fresh separate host observer confirms both stage paths absent. Recovery preserved locally."
       }
     ],
     "prior_investigations": [
@@ -31567,6 +31613,113 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
             }
           }
         ]
+      },
+      {
+        "id": "milestone3-controlled-change158",
+        "kind": "NATIVE",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "single-host-readiness"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "docs/UX_EXECUTION_LEDGER.md"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/usr/bin/python3",
+            "arguments": [
+              "/home/foo/Workspace/OSMAP/maint/ux/s04_02_startup_candidate/dispatch_startup.py",
+              "--build-receipt",
+              "/home/foo/Downloads/osmap-ux-s04/timing-reconciliation-20261023/build/result.json",
+              "--source-manifest",
+              "/home/foo/Downloads/osmap-ux-s04/timing-reconciliation-20261023/build/manifest.json",
+              "--run-dir",
+              "/home/foo/Downloads/osmap-ux-s04/milestone3-execution-20261023/execution158",
+              "--attempt-id",
+              "S04-02-milestone3-controlled-change158",
+              "--recipe",
+              "milestone3-controlled-change158",
+              "--operation",
+              "password-change",
+              "--helper-build-receipt",
+              "/home/foo/Downloads/osmap-ux-s04/current-source-milestone1-20261023/build/result.json",
+              "--helper-source-manifest",
+              "/home/foo/Downloads/osmap-ux-s04/current-source-milestone1-20261023/build/manifest.json"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "One real Rust-authoritative Alice change: full SQL/epoch/time/old-new/session/Bob/cache proof and independent exact-owned disposition. Incomplete mutation retained; no retry or rollback.",
+        "prerequisites": [
+          {
+            "id": "direct-one-operation-authority",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/milestone3-execution-20261023/execution158/operator-authorization.json",
+              "sha256": "d990467cd510d82bc8302ab6c3192e1b303d7c30df7bde96cb68b74a30ab44a7"
+            }
+          },
+          {
+            "id": "current-artifacts-and-timing-producer-consumer",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/milestone3-execution-20261023/execution158/startup-independent-review.json",
+              "sha256": "e0100425ec0f53105870f3fa70678aed201672ed18da77c127fb3f7803f6ec88"
+            }
+          },
+          {
+            "id": "native-artifact-identity",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/milestone3-execution-20261023/execution158/host-identity-preflight.txt",
+              "sha256": "d8901011d587acfa6f1813cf1d6ba2299d506ff89b2a07cfbf0fb7488988d8f5"
+            }
+          }
+        ]
+      },
+      {
+        "id": "milestone3-stage-cleanup159",
+        "kind": "NATIVE",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "single-host-readiness"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "docs/UX_EXECUTION_LEDGER.md"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/usr/bin/python3",
+            "arguments": [
+              "-B",
+              "/home/foo/Downloads/osmap-ux-s04/milestone3-execution-20261023/execution158/execute_cleanup.py"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "Remove only exact-owned inert158 stage leaves/two directories after independent pre-submission no-write/runtime absence; preserve recovery locally. No password, account, service operation or historical PID signalling.",
+        "prerequisites": [
+          {
+            "id": "independent-no-write-disposition",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/milestone3-execution-20261023/execution158/independent_absence.json",
+              "sha256": "cedd00594d1c910b0af97489ead5c1a51abfbb684913be47a467119d25a26db4"
+            }
+          }
+        ]
       }
     ],
     "budget": {
@@ -31581,8 +31734,8 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "planned_action": null
   },
   "blocker": null,
-  "independent_next_action": "Independent review confirms FAIL_NO_WRITE and exact-owned disposal; retain native result UNKNOWN/UNCERTAIN carrier fields as raw history. Complete normal source preservation only. T03 and installed/UAT remain unqualified.",
-  "updated_at": "2026-10-23T17:46:13Z"
+  "independent_next_action": "Independent outcome and signed-delivery review of158/159 only; no retry, password rollback or new native dispatch.",
+  "updated_at": "2026-10-24T02:52:06Z"
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->
