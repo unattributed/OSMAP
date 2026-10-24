@@ -21659,6 +21659,17 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "decision": "CLEAR_SOURCE_ONLY",
         "reference": "/home/foo/Downloads/osmap-ux-s04/postfixadmin-reconstruction-20261024/minimum-c-source-review.json",
         "limit": "No native/installed/credentialqualification or dispatchauthority supplied. Leadrecordsactualreview; source/bodyunchangedafterreview."
+      },
+      "delivery_refusal": {
+        "signed_commit": "5a8ab20d6655ecbb2fe4989335dcdb5540e405c4",
+        "signature": "GOOD_SHOPKEEPER",
+        "normal_commit_hook": "PASS",
+        "normal_push_hook": "FAIL_CWE89_TEST_LITERAL_SCOPE",
+        "reference": "/home/foo/Downloads/osmap-ux-s04/postfixadmin-reconstruction-20261024/minimum-c-push.log",
+        "rust_library_result": "1908PASS/0FAIL/61ignored/29.70s testbody; fullpushwallUNKNOWN",
+        "reason": "UnchangedCWEguardrecognizesconventionalcfg(test)modtests; newuppercaseSQLfixturein stock_authority_testswasnotexcluded. Priorreviewmisseddeliveryconsumerconstraint. NoGitHubpushor guardbypass occurred.",
+        "correction": "Moveexactregressioninto private stock_sql conventional cfg(test)modtests. Productionparser/bodyandallotherselectorsunchanged. ExactmovedRusttest1PASS; unchangedCWEguardPASS; normaldeliveryagainrequired.",
+        "history": "Originalsignedcommit, logs, archive and review preserved. Noamend/rewrite/qualificationchange/host/Pythonaction."
       }
     }
   },
@@ -32721,7 +32732,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
   },
   "blocker": "Native selected-constructor/child-seal/helper/authentication/cache/epoch/session integration remains unqualified. SQLreason utility failed beforepredicateobservation; no further alternateprojectionretry. Await exactnativecomponentauthorization only aftersource delivery; no livecredentialauthority supplied.",
   "independent_next_action": "Reviewbaselinepreservationregression andexactnonmutatingbackendfactinspection. Preserveexistingno-downgradecontrols; noexistingcomponentPASSupgraded.",
-  "updated_at": "2026-10-24T13:27:33Z"
+  "updated_at": "2026-10-24T13:38:50Z"
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->

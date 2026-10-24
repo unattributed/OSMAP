@@ -1,5 +1,18 @@
 # Decision Log
 
+2026-10-24 UTC — **Normal minimum-C delivery refusal preserved; test scope corrected.**
+Signed `5a8ab20` passed its commit check and full Rust library run1908/0fail
+with61ignored, then ordinary push refused at the unchanged CWE-89 source guard.
+The new uppercase SQL regression was in `stock_authority_tests`, while that
+consumer excludes only conventional `#[cfg(test)] mod tests`. Independent
+source review had missed this delivery-consumer constraint. No push or bypass
+occurred. Move the same regression into the private SQL parser's conventional
+test module; actual production parser/body and other selectors are unchanged.
+The moved exact test and unchanged CWE guard pass. Preserve the signed first
+commit/logs/review/archive and deliver the correction as a new signed commit;
+never amend or rewrite history. Python source, guard rules and native status
+remain unchanged. The unexecuted5a8 native package is superseded by final delivery.
+
 2026-10-24 UTC — **Minimum Rust backend reconstruction implemented; native remains unqualified.**
 The operator resumed execution after the team handoff. The selected StockPeer
 keeps its public API but replaces process/worker argv inventory with protected

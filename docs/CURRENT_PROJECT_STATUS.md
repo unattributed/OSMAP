@@ -1,5 +1,15 @@
 # Current Project Status
 
+2026-10-24 UTC — **Minimum-C source delivery correction; native still pending.**
+The first signed source commit5a8ab20 passed1908 Rust library tests/0fail with
+61ignored, but its normal push refused a test-only SQL literal outside the
+CWE guard's recognized test-module scope. The regression now sits in the actual
+private SQL parser's conventional test module; its exact test and unchanged
+CWE guard pass. No production parser change, guard bypass, Python modification
+or host action follows. The first commit/failure remain preserved; normal
+corrective signed delivery and fresh remote parity are required before handoff.
+Native construction, live freshness, helper readiness and S04-02 remain open.
+
 2026-10-24 UTC — **Selected Rust authority simplified; native boundary not yet run.**
 Source now replaces selected StockPeer process/worker-argv checks with protected
 current configuration/runtime-link and fixed socket/kernel-peer continuity.

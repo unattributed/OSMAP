@@ -2619,6 +2619,33 @@ mod stock_sql {
             _ => Err(Unavailable),
         }
     }
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+
+        #[test]
+        fn sql_password_query_preserves_identifiers_placeholders_and_literals() {
+            let source = |query: &str| {
+                format!(
+                    "driver = mysql\nconnect = host=/var/run/mysql/mysql.sock dbname=postfixadmin user=fixture password=fixture\npassword_query = {query}\n"
+                )
+            };
+            let query = "SELECT username AS user, password, 'after' AS osmap_epoch_phase FROM mailbox WHERE username = '%u' AND active = '1'";
+            assert!(validate(source(query).as_bytes()).is_ok());
+            for changed in [
+                query.replace("'%u'", "'%U'"),
+                query.replace("'%u'", "'%Lu'"),
+                query.replace("'after'", "'AFTER'"),
+                query.replace("'after'", "'before'"),
+                query.replace("FROM mailbox", "FROM MAILBOX"),
+                query.replace("username", "USERNAME"),
+                query.replace("osmap_epoch_phase", "OSMAP_EPOCH_PHASE"),
+            ] {
+                assert!(validate(source(&changed).as_bytes()).is_err());
+            }
+        }
+    }
 }
 
 #[cfg(test)]
@@ -2713,28 +2740,6 @@ mod stock_authority_tests {
                 .into_bytes()
         )
         .is_err());
-    }
-
-    #[test]
-    fn sql_password_query_preserves_identifiers_placeholders_and_literals() {
-        let source = |query: &str| {
-            format!(
-                "driver = mysql\nconnect = host=/var/run/mysql/mysql.sock dbname=postfixadmin user=fixture password=fixture\npassword_query = {query}\n"
-            )
-        };
-        let query = "SELECT username AS user, password, 'after' AS osmap_epoch_phase FROM mailbox WHERE username = '%u' AND active = '1'";
-        assert!(stock_sql::validate(source(query).as_bytes()).is_ok());
-        for changed in [
-            query.replace("'%u'", "'%U'"),
-            query.replace("'%u'", "'%Lu'"),
-            query.replace("'after'", "'AFTER'"),
-            query.replace("'after'", "'before'"),
-            query.replace("FROM mailbox", "FROM MAILBOX"),
-            query.replace("username", "USERNAME"),
-            query.replace("osmap_epoch_phase", "OSMAP_EPOCH_PHASE"),
-        ] {
-            assert!(stock_sql::validate(source(&changed).as_bytes()).is_err());
-        }
     }
 
     #[test]
