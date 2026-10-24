@@ -1,7 +1,7 @@
 """Fixed foo transport keeper for a hash-admitted root staging/journey actor."""
 import base64,hashlib,json,os,re,selectors,signal,socket,stat,subprocess,sys,time
 from pathlib import Path
-ROOT_SOURCE_SHA256 = '3a66061686748de737b11a7396c23e1e249ebde60d653bcbc72794e9ae2569b5'
+ROOT_SOURCE_SHA256 = 'f3c1f4be121020a0159f35d80f9de8370dcbcace34f23d237179036306ff6f4c'
 STOPS={signal.SIGALRM,signal.SIGHUP,signal.SIGTERM,signal.SIGINT}
 START=time.monotonic();END=START+630
 PYTHON=Path('/usr/local/bin/python3')
@@ -70,7 +70,8 @@ def parse_actor_frames(raw,frames):
         require(type(item)is dict and item.get('schema')in(
             'osmap-single-host-stage-birth-v1','osmap-single-host-stage-ready-v1',
             'osmap-single-host-stage-refusal-v1','osmap-single-host-startup-v1',
-            'osmap-single-host-admission-v1','osmap-single-host-controlled-journey-v1'),'actor_frame_schema')
+            'osmap-single-host-admission-v1','osmap-single-host-controlled-journey-v1',
+            'osmap-single-host-confinement-probe-v1'),'actor_frame_schema')
         frames.append(item)
 
 def main():

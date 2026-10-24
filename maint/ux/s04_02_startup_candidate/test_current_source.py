@@ -332,7 +332,7 @@ class LibtestBuildBindingTests(unittest.TestCase):
             'identity':{'hostname':'obsd1.blackbagsecurity.com','system':'OpenBSD','machine':'amd64',
                 **{key:1000 for key in('uid','euid','gid','egid')}},'scratch_gone':True,
             'cleanup_uncertain':False,'result':'PASS','rust':dict(phase),'source_count':count,
-            'source_before':True,'source_after':True,'helper_built':kind=='pair',
+            'source_before':True,'source_after':True,'helper_built':kind!='libtest-only',
             'parent_limits_unchanged':True,'compiler_data_soft_bytes':4294967296,
             'compiler_build_jobs':1,'full_action_seconds':100,
             'build_programs':{name:{'resolved':name,'uid':0,'mode':0o755,'sha256':'d'*64}
@@ -341,56 +341,75 @@ class LibtestBuildBindingTests(unittest.TestCase):
                 for name in('/usr/local/bin/cargo','/usr/local/bin/rustc')},
             'artifact_stage':{'path':'/home/foo/.osmap-s04-02-artifacts-local','uid':1000,'mode':0o700},
             'native_test_binary':artifact(True)}
-        if kind=='pair':build.update(helper=dict(phase),native_helper_binary=artifact(False))
+        if kind!='libtest-only':build.update(helper=dict(phase),native_helper_binary=artifact(False))
+        if kind=='helper-only':
+            del build['rust'];del build['native_test_binary']
         return {'native_result':'PASS','remote_disposition':'CONFIRMED','signed_base_commit':commit,
             'source_manifest_sha256':digest,'ssh_code':0,'local_transport_reaped':True,
             'local_transport_group_gone':True,'result':build}
 
-    def test_remote_libtest_selection_never_invokes_or_claims_helper_build(self):
+    def test_remote_selected_phases_feed_real_receipt_consumer(self):
+        # Execute the actual remote selection/capture statements. Compiler calls
+        # and binary custody are doubles; receipt validation is the real consumer.
+        compiler=load('build_current')
         tree=ast.parse((ROOT/'build_remote.py').read_text())
         main=next(node for node in tree.body if isinstance(node,ast.Try))
         selection=[node for node in main.body if isinstance(node,ast.If)
             and isinstance(node.test,ast.Compare)and isinstance(node.test.left,ast.Name)
             and node.test.left.id=='BUILD_KIND']
-        rust=next(node for node in main.body if isinstance(node,ast.Assign)
-            and ast.unparse(node.targets[0])=="report['rust']")
         capture_block=next(node for node in main.body if isinstance(node,ast.If)
             and any(isinstance(child,ast.FunctionDef)and child.name=='capture'for child in node.body))
-        final=[node for node in capture_block.body if isinstance(node,ast.If)
-            or (isinstance(node,ast.Assign)and ast.unparse(node.targets[0])=="report['native_test_binary']")]
-        for kind in('pair','libtest-only'):
+        final=[node for node in capture_block.body if isinstance(node,ast.If)]
+        for kind in('pair','libtest-only','helper-only'):
             with self.subTest(kind=kind):
+                receipt=self.receipt('a'*40,b'{"Cargo.toml":"a"}',kind)
+                observed=receipt['result']
+                artifacts={name:observed.pop(name)for name in('native_helper_binary','native_test_binary')if name in observed}
+                for phase in('helper','rust'):observed.pop(phase,None)
+                observed['helper_built']=False
                 command=Mock(return_value={'code':0,'failure':None,'group_gone':True})
-                capture=Mock(side_effect=lambda name,test:{'target':name,'test':test})
-                context={'BUILD_KIND':kind,'report':{'helper_built':False},'command':command,
+                capture=Mock(side_effect=lambda name,test:artifacts['native_test_binary'if test else'native_helper_binary'])
+                context={'BUILD_KIND':kind,'report':observed,'command':command,
                     'capture':capture,'retain_phase':Mock(),'uncertain':False,'require':binder.require}
-                exec(compile(ast.Module(body=[*selection,rust,*final],type_ignores=[]),
+                exec(compile(ast.Module(body=[*selection,*final],type_ignores=[]),
                     '<actual-native-build-selection>','exec'),context)
-                expected=[['/usr/local/bin/cargo','test','--offline','--locked','--lib','--no-run','--message-format=json']]
-                if kind=='pair':expected.insert(0,['/usr/local/bin/cargo','build','--release','--offline','--locked','--bin','account-passwd','--message-format=json'])
+                expected=[]
+                if kind!='libtest-only':expected.append(['/usr/local/bin/cargo','build','--release','--offline','--locked','--bin','account-passwd','--message-format=json'])
+                if kind!='helper-only':expected.append(['/usr/local/bin/cargo','test','--offline','--locked','--lib','--no-run','--message-format=json'])
                 self.assertEqual([call.args[0]for call in command.call_args_list],expected)
-                self.assertIs(context['report']['helper_built'],kind=='pair')
-                self.assertEqual('native_helper_binary'in context['report'],kind=='pair')
-                self.assertEqual(capture.call_args_list[-1].args,('osmap',True))
+                binding={'signed_base_commit':'a'*40,'build_kind':kind,'source_count':1,
+                    'hashes':{'manifest.json':receipt['source_manifest_sha256'],'source.tar.gz':'c'*64}}
+                self.assertEqual(compiler.inspect_receipt(json.loads(json.dumps(observed)),0,binding),('PASS','CONFIRMED'))
+                bad=copy.deepcopy(observed);bad['cleanup_uncertain']=True
+                with self.assertRaisesRegex(RuntimeError,'compiler_completion'):
+                    compiler.inspect_receipt(bad,0,binding)
+                bad['result']='FAIL'
+                self.assertEqual(compiler.inspect_receipt(bad,1,binding),('FAIL','UNCERTAIN'))
 
-    def test_prepare_freezes_explicit_signed_source_and_libtest_selection(self):
+    def test_prepare_freezes_explicit_signed_source_and_selection(self):
         compiler=load('build_current');commit='b'*40
-        with tempfile.TemporaryDirectory()as name,patch.object(compiler,'signed_source')as signed,\
-                patch.object(compiler,'source_closure',return_value=({'Cargo.toml':b'local input'},[]))as closure:
-            root=Path(name)/'prepared'
-            binding=compiler.prepare(root,commit,libtest_only=True)
-            signed.assert_called_once_with(commit);closure.assert_called_once_with(commit)
-            self.assertEqual(binding['signed_base_commit'],commit)
-            self.assertEqual(binding['build_kind'],'libtest-only')
-            tree=ast.parse((root/'remote.py').read_text())
-            constants={node.targets[0].id:node.value.value for node in tree.body
-                if isinstance(node,ast.Assign)and isinstance(node.targets[0],ast.Name)
-                and isinstance(node.value,ast.Constant)}
-            self.assertEqual(constants['BASE'],commit)
-            self.assertEqual(constants['BUILD_KIND'],'libtest-only')
-            self.assertFalse(binding['native_dispatched'])
-            self.assertFalse((root/'attempt-started.json').exists())
-            self.assertEqual(json.loads((root/'packet.json').read_text())['signed_base_commit'],commit)
+        for kind in('pair','libtest-only','helper-only'):
+            with self.subTest(kind=kind),tempfile.TemporaryDirectory()as name,patch.object(compiler,'signed_source')as signed,\
+                    patch.object(compiler,'source_closure',return_value=({'Cargo.toml':b'local input'},[]))as closure:
+                root=Path(name)/'prepared'
+                binding=compiler.prepare(root,commit,libtest_only=kind=='libtest-only',
+                    helper_only=kind=='helper-only',attempt_id='S04-02-helper-build-test',recipe_id='helper-build-test')
+                signed.assert_called_once_with(commit);closure.assert_called_once_with(commit)
+                self.assertEqual(binding['signed_base_commit'],commit)
+                self.assertEqual(binding['build_kind'],kind)
+                tree=ast.parse((root/'remote.py').read_text())
+                constants={node.targets[0].id:node.value.value for node in tree.body
+                    if isinstance(node,ast.Assign)and isinstance(node.targets[0],ast.Name)
+                    and isinstance(node.value,ast.Constant)}
+                self.assertEqual(constants['BASE'],commit)
+                self.assertEqual(constants['BUILD_KIND'],kind)
+                self.assertFalse(binding['native_dispatched'])
+                self.assertFalse((root/'attempt-started.json').exists())
+                self.assertEqual(json.loads((root/'packet.json').read_text())['signed_base_commit'],commit)
+        with self.assertRaisesRegex(RuntimeError,'helper_build_action_required'):
+            compiler.build_action({'build_kind':'helper-only'})
+        with self.assertRaisesRegex(RuntimeError,'build_selection'):
+            compiler.prepare(Path('/unused'),commit,libtest_only=True,helper_only=True)
 
     def test_fresh_compile_action_is_frozen_and_historical_defaults_are_preserved(self):
         compiler=load('build_current')
@@ -422,6 +441,61 @@ class LibtestBuildBindingTests(unittest.TestCase):
                 ('native_helper_binary',observed['native_test_binary']),('build_kind','pair')):
             bad=copy.deepcopy(observed);bad[key]=value
             with self.subTest(key=key),self.assertRaises(RuntimeError):compiler.inspect_receipt(bad,0,binding)
+
+    def test_helper_receipt_rejects_test_effect_or_wrong_mode(self):
+        compiler=load('build_current');raw=b'{"Cargo.toml":"a"}\n'
+        receipt=self.receipt('a'*40,raw,'helper-only');observed=receipt['result']
+        binding={'signed_base_commit':'a'*40,'build_kind':'helper-only','source_count':1,
+            'hashes':{'manifest.json':receipt['source_manifest_sha256'],'source.tar.gz':'c'*64}}
+        self.assertEqual(compiler.inspect_receipt(observed,0,binding),('PASS','CONFIRMED'))
+        for key,value in(('helper_built',False),('rust',observed['helper']),
+                ('native_test_binary',observed['native_helper_binary']),('build_kind','pair')):
+            bad=copy.deepcopy(observed);bad[key]=value
+            with self.subTest(key=key),self.assertRaises(RuntimeError):compiler.inspect_receipt(bad,0,binding)
+
+    def test_independent_signed_helper_accepts_exact_inputs_across_checkpoints(self):
+        files={'Cargo.toml':b'[package]\n','Cargo.lock':b'lock\n',
+            'src/openbsd.rs':b'current production confinement\n',
+            'src/http/password_tests.rs':b'current tests\n'}
+        for helper_commit,drift in (('a'*40,None),('b'*40,None),
+                ('b'*40,'src/openbsd.rs'),('b'*40,'src/http/password_tests.rs')):
+            with self.subTest(helper_commit=helper_commit,drift=drift),tempfile.TemporaryDirectory()as name:
+                root=Path(name);helper_files=dict(files)
+                if drift:helper_files[drift]+=b'other compiled input\n'
+                trees={'a'*40:files,helper_commit:helper_files}
+                def git(argv,**kwargs):
+                    if argv[1]=='ls-tree':return ('\n'.join(trees[argv[4]])+'\n').encode()
+                    if argv[1]=='show':
+                        commit,path=argv[2].split(':',1);return trees[commit][path]
+                    raise AssertionError(argv)
+                paths=[]
+                for prefix,commit,inputs,kind in(('web','a'*40,files,'libtest-only'),
+                        ('helper',helper_commit,helper_files,'helper-only')):
+                    raw=(json.dumps({key:hashlib.sha256(value).hexdigest()for key,value in inputs.items()},sort_keys=True)+'\n').encode()
+                    manifest=root/(prefix+'-manifest.json');manifest.write_bytes(raw);manifest.chmod(0o600)
+                    receipt=self.receipt(commit,raw,kind)
+                    if kind=='helper-only':receipt['result']['native_helper_binary']['sha256']='f'*64
+                    path=root/(prefix+'-receipt.json');path.write_text(json.dumps(receipt));path.chmod(0o600)
+                    paths.append((path,manifest))
+                for path,raw in files.items():
+                    destination=root/path;destination.parent.mkdir(parents=True,exist_ok=True)
+                    destination.write_bytes(raw);destination.chmod(0o600)
+                verified=SimpleNamespace(returncode=0,stderr=('[GNUPG:] VALIDSIG '+binder.SIGNER+' ').encode())
+                with patch.object(binder,'REPO',root),patch.object(binder.subprocess,'run',return_value=verified),\
+                        patch.object(binder.subprocess,'check_output',side_effect=git),\
+                        patch.object(binder,'source_packet',return_value={}):
+                    call=lambda:binder.packet(*paths[0],helper_receipt_path=paths[1][0],helper_manifest_path=paths[1][1])
+                    if drift:
+                        with self.assertRaisesRegex(RuntimeError,'qualified_helper_selection'):call()
+                    else:
+                        result=call()
+                        self.assertEqual(result['helper_source_commit'],helper_commit)
+                        self.assertEqual(result['source_commit'],'a'*40)
+                        self.assertEqual(result['helper']['sha256'],'f'*64)
+                        self.assertEqual(result['compiler_source_manifest_sha256'],result['helper_compiler_source_manifest_sha256'])
+                        self.assertNotEqual(result['compiler_receipt_sha256'],result['helper_compiler_receipt_sha256'])
+                        with self.assertRaisesRegex(RuntimeError,'web_compiler_selection'):
+                            binder.packet(*paths[1])
 
     def test_separate_signed_service_binding_accepts_only_test_file_difference(self):
         old_commit=binder.BUILD_SOURCE_COMMIT;new_commit='a'*40

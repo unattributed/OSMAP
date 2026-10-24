@@ -394,7 +394,7 @@ class PasswordJourneyTests(unittest.TestCase):
                         namespace['require'](False, diagnostic)
                     diagnostic.assert_called_once_with()
 
-    def test_frontend_setup_does_not_inherit_guardian_helpers_import_clock(self):
+    def test_frontend_setup_does_not_inherit_guardian_helpers_import_clock(self,confinement_probe=False):
         keeper = load('password_journey_clock', '../backend/local_frontend.py')
         now = time.monotonic()
         custody = {'schema':'osmap-http-web-custody-v1','web_uid':keeper.UID,
@@ -419,12 +419,21 @@ class PasswordJourneyTests(unittest.TestCase):
                 patch.object(keeper.socket,'socketpair',return_value=(object(),child)), \
                 patch.object(keeper.signal,'pthread_sigmask',return_value=set()), \
                 patch.object(keeper.subprocess,'Popen',return_value=SimpleNamespace(pid=12345)):
-            node.setup(boot)
+            node.setup(boot,confinement_probe=confinement_probe)
         guard.Capture.assert_called_once_with(node.guardian)
         self.assertEqual(guard.END,now+600)
-        self.assertGreaterEqual(node.sequence_end,now+300)
-        self.assertLessEqual(node.sequence_end,time.monotonic()+300)
-        node.http_module.FrontDriver.assert_called_once_with(node,boot)
+        if confinement_probe:
+            node.http_module.FrontDriver.assert_not_called()
+            self.assertEqual(node.startup_stage,'READY_VALIDATED')
+            self.assertEqual(control.write.call_count,2)
+            self.assertTrue(all(call.args[0]!=b'G'for call in control.write.call_args_list))
+        else:
+            self.assertGreaterEqual(node.sequence_end,now+300)
+            self.assertLessEqual(node.sequence_end,time.monotonic()+300)
+            node.http_module.FrontDriver.assert_called_once_with(node,boot)
+
+    def test_real_frontend_probe_stops_before_driver_construction(self):
+        self.test_frontend_setup_does_not_inherit_guardian_helpers_import_clock(confinement_probe=True)
 
     def test_real_totp_wait_uses_existing_window_and_original_deadline(self):
         for deadline, succeeds in ((40, True), (10, False)):

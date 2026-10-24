@@ -56,8 +56,8 @@ def check_action(order,args,pins):
     arguments=[str(ROOT/'dispatch_startup.py'),'--build-receipt',args.build_receipt,
         '--source-manifest',args.source_manifest,'--run-dir',str(RUN),
         '--attempt-id',args.attempt_id,'--recipe',args.recipe]
-    if getattr(args,'operation','admission')=='password-change':
-        arguments+=['--operation','password-change']
+    if getattr(args,'operation','admission')!='admission':
+        arguments+=['--operation',args.operation]
     if getattr(args,'helper_build_receipt',None) is not None:
         arguments+=['--helper-build-receipt',args.helper_build_receipt,
             '--helper-source-manifest',args.helper_source_manifest]
@@ -74,7 +74,7 @@ def main():
     global RUN
     parser=argparse.ArgumentParser()
     for name in('build-receipt','source-manifest','run-dir','attempt-id','recipe'):parser.add_argument('--'+name,required=True)
-    parser.add_argument('--operation',choices=('admission','password-change'),default='admission')
+    parser.add_argument('--operation',choices=('admission','password-change','confinement-probe'),default='admission')
     parser.add_argument('--helper-build-receipt')
     parser.add_argument('--helper-source-manifest')
     args=parser.parse_args();RUN=Path(args.run_dir).resolve()
@@ -105,7 +105,7 @@ def main():
                 and not stat_mode(info)&0o002 and not path.is_symlink()and path.is_file()and sha(path.read_bytes())==pin,'source_custody')
         packet=module('bind_startup').packet(args.build_receipt,args.source_manifest,
             helper_receipt_path=args.helper_build_receipt,helper_manifest_path=args.helper_source_manifest)
-        if args.operation=='password-change':packet['operation']='password-change'
+        if args.operation!='admission':packet['operation']=args.operation
         ledger=(REPO/'docs/UX_EXECUTION_LEDGER.md').read_text();block=ledger.split('<!-- OSMAP_ACTIVE_WORK_ORDER -->')[1].split('<!-- /OSMAP_ACTIVE_WORK_ORDER -->')[0].strip();order=json.loads(block[8:-4])
         check_action(order,args,pins)
         require(sha((REPO/'maint/ux/validate_acceptance.py').read_bytes())==VALIDATOR_SHA256,'validator_source_changed')

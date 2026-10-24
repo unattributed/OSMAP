@@ -27,12 +27,24 @@ def inspect(value,code,expiry,packet):
         and ready['helper_sha256']==packet['helper']['sha256']
         and ready['web_sha256']==packet['web']['sha256']
         and ready['packet_sha256']==hashlib.sha256(json.dumps(packet,sort_keys=True,separators=(',',':')).encode()).hexdigest(),'current_build_binding')
-    require((packet.get('operation')=='password-change')==(actor.get('schema')=='osmap-single-host-controlled-journey-v1'),
+    probe=packet.get('operation')=='confinement-probe'
+    require(probe==(actor.get('schema')=='osmap-single-host-confinement-probe-v1')
+        and (packet.get('operation')=='password-change')==(actor.get('schema')=='osmap-single-host-controlled-journey-v1'),
         'operation_actor_binding')
-    if actor.get('schema')=='osmap-single-host-controlled-journey-v1':
+    if actor.get('schema')in('osmap-single-host-controlled-journey-v1','osmap-single-host-confinement-probe-v1'):
         if actor.get('native_diagnostic_evidence')is not None:
             require(actor['native_diagnostic_evidence']['record']['execution_admission_sha256']==
                 ready.get('admission_sha256'),'native_diagnostic_execution_binding')
+        if probe:
+            require(code==1 and actor.get('result')=='FAIL'
+                and actor.get('start_message_sent')is False
+                and type(actor.get('observed_http_requests'))is int and actor['observed_http_requests']==0
+                and actor.get('ready_only_qualified')is False
+                and type(actor.get('ready_observed'))is bool,'confinement_probe_scope')
+            accepted=inspect_mutation_failure(actor,packet)
+            accepted.update(operation='confinement-probe',ready_observed=actor['ready_observed'],
+                ready_only_qualified=False,observed_http_requests=0,start_message_sent=False)
+            return accepted
         if code==1 and actor.get('result')=='FAIL':return inspect_mutation_failure(actor,packet)
         require(code==0,'actor_exit_consistency')
         return inspect_mutation(actor,packet)

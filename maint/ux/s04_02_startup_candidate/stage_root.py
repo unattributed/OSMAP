@@ -8,11 +8,11 @@ import base64,hashlib,json,math,os,re,resource,secrets,signal,socket,stat,sys,ti
 from pathlib import Path
 
 START=time.monotonic();END=START+600
-BASE='213b2f3b9ee878fcbaf37e27acb45743a3782434'
+BASE='4668a5122e1bf1f4870be7dde022a15065eb0265'
 PYTHON=Path('/usr/local/bin/python3')
 PYTHON_TARGET=re.compile(r'python3\.[0-9]{1,2}\Z')
 HELPER_BINDING={'helper_source_commit','helper_compiler_source_manifest_sha256','helper_compiler_receipt_sha256'}
-SOURCE_PINS = {'backend/custody.py': '6b456a16ea381afa78e534ecc425ef3c5455e6996a40a4e86d9f04bc8b312cd4', 'backend/install_account_password.py': '1679be56c3c5b756988c34c8008e0176a70cefc9829212d23faa3d1ddd9d4929', 'backend/local_frontend.py': 'c3326ac0a1c2c9e246bbb4cb95c77ba0c3c42ae0ab10a6bf50bf61d111e71289', 'backend/local_journey.py': '8b8beb7dac5f7be7ef4dc964b4115dbcdda0bf1748550be158bd5c5618f8dd61', 'backend/rust_http_driver.py': 'd2517d31c5799c40fc4aeed4df412e4ab457f5bc0a94547f263e59c7dc098e5b', 'backend/startup_only.py': '8c37ea042e7aacc0774b10251fc224489895d8d83acabf422eb193d43604c911', 'backend/stock_mail_witness.py': '08435b695f79e4c08a9d08484847c29458d967c8f34dd7b02af6f15b213574a7', 'backend/stock_qualification.py': '736cf8d60f59c31acce0b7cd224ee9d96a4f3a800407c6f54a14f79c30be27a3', 'backend/stock_schema.py': '51861add9908ac12efd4d648857d31f2fed852f1fcfb1bb46019995cc5a9cb90', 'frontend/native_http_front_driver.py': 'eebdbe26269e35bffe43beb83ef84b08712fc67676663b66110cbd32876a7ec3', 'frontend/native_http_password_driver.py': 'd2517d31c5799c40fc4aeed4df412e4ab457f5bc0a94547f263e59c7dc098e5b', 'frontend/native_http_web_guardian.py': 'e4bdf3878bb722ee23e075f321d10e702f7cec306e8613093d4fbd89cd60d95f'}
+SOURCE_PINS = {'backend/custody.py': '6b456a16ea381afa78e534ecc425ef3c5455e6996a40a4e86d9f04bc8b312cd4', 'backend/install_account_password.py': '1679be56c3c5b756988c34c8008e0176a70cefc9829212d23faa3d1ddd9d4929', 'backend/local_frontend.py': '90dec2b535b8efb0b22cd4b7d23636205d153a80fbfcf31d059fca1c4ec076bc', 'backend/local_journey.py': '4b4fc987bb2ee686b2755dfaad1a748719b7dc631f81e7b7b5f1f76b463ac04d', 'backend/rust_http_driver.py': 'd2517d31c5799c40fc4aeed4df412e4ab457f5bc0a94547f263e59c7dc098e5b', 'backend/startup_only.py': '8c37ea042e7aacc0774b10251fc224489895d8d83acabf422eb193d43604c911', 'backend/stock_mail_witness.py': '08435b695f79e4c08a9d08484847c29458d967c8f34dd7b02af6f15b213574a7', 'backend/stock_qualification.py': '736cf8d60f59c31acce0b7cd224ee9d96a4f3a800407c6f54a14f79c30be27a3', 'backend/stock_schema.py': '51861add9908ac12efd4d648857d31f2fed852f1fcfb1bb46019995cc5a9cb90', 'frontend/native_http_front_driver.py': 'eebdbe26269e35bffe43beb83ef84b08712fc67676663b66110cbd32876a7ec3', 'frontend/native_http_password_driver.py': 'd2517d31c5799c40fc4aeed4df412e4ab457f5bc0a94547f263e59c7dc098e5b', 'frontend/native_http_web_guardian.py': 'e4bdf3878bb722ee23e075f321d10e702f7cec306e8613093d4fbd89cd60d95f'}
 CONFIG_PATHS=('/etc/dovecot/dovecot.conf', '/etc/dovecot/conf.d/10-auth.conf', '/etc/dovecot/conf.d/10-director.conf', '/etc/dovecot/conf.d/10-logging.conf', '/etc/dovecot/conf.d/10-mail.conf', '/etc/dovecot/conf.d/10-master.conf', '/etc/dovecot/conf.d/10-metrics.conf', '/etc/dovecot/conf.d/10-ssl.conf', '/etc/dovecot/conf.d/15-lda.conf', '/etc/dovecot/conf.d/15-mailboxes.conf', '/etc/dovecot/conf.d/20-imap.conf', '/etc/dovecot/conf.d/20-lmtp.conf', '/etc/dovecot/conf.d/20-managesieve.conf', '/etc/dovecot/conf.d/20-pop3.conf', '/etc/dovecot/conf.d/20-submission.conf', '/etc/dovecot/conf.d/90-acl.conf', '/etc/dovecot/conf.d/90-plugin.conf', '/etc/dovecot/conf.d/90-quota.conf', '/etc/dovecot/conf.d/90-sieve-extprograms.conf', '/etc/dovecot/conf.d/90-sieve.conf', '/etc/dovecot/conf.d/99-bbs-imaps-only.conf', '/etc/dovecot/conf.d/99-bbs-managesieve-policy.conf', '/etc/dovecot/conf.d/99-rspamd-warning-labels.conf', '/etc/dovecot/local.conf', '/etc/dovecot/conf.d/auth-sql.conf.ext')
 OPTIONAL=('/etc/dovecot/conf.d/99-bbs-imaps-only.conf','/etc/dovecot/conf.d/99-bbs-managesieve-policy.conf')
 class Refused(Exception):pass
@@ -133,7 +133,7 @@ def admit_packet(p):
     require(not(HELPER_BINDING&set(p))or HELPER_BINDING<=set(p),'helper_binding_fields')
     if HELPER_BINDING<=set(p):
         require(re.fullmatch('[a-f0-9]{40}',p['helper_source_commit'])and all(re.fullmatch('[a-f0-9]{64}',p[k])for k in HELPER_BINDING-{'helper_source_commit'}),'helper_binding_scalars')
-    require(p.get('operation','admission') in ('admission','password-change'),'packet_operation')
+    require(p.get('operation','admission') in ('admission','password-change','confinement-probe'),'packet_operation')
     require(p['version']==1 and p['source_commit']==BASE and type(p['not_after_utc'])is int and 150<p['not_after_utc']-time.time()<=600,'original_lease')
     for k in('compiler_source_manifest_sha256','compiler_receipt_sha256','prerequisite_sha256','public_sql_sha256'):require(type(p[k])is str and re.fullmatch('[a-f0-9]{64}',p[k]),'receipt_scalar')
     require(set(p['sources'])==set(SOURCE_PINS),'source_set');sources={}
@@ -170,6 +170,7 @@ def produce_stage(p,sources,backend,frontend,raw,interpreter,emit):
     files[str(frontend/'http-build.json')]=publish(frontend/'http-build.json',build,0o400)
     admission={'version':1,'not_after_utc':p['not_after_utc'],'source_commit':BASE,'compiler_source_manifest_sha256':p['compiler_source_manifest_sha256'],'helper_sha256':p['helper']['sha256'],'web_sha256':p['web']['sha256'],'web_bytes':p['web']['size'],'backend_sources':back,'frontend_sources':front,'frontend_stage':str(frontend),'frontend_stage_lease':identity(frontend.lstat())[:6],'frontend_files':{name:identity((frontend/name).lstat())for name in(*front,'source-input-manifest.json','http-build.json','qualified-openbsd-libtest')},'config_map_sha256':sha(config),'public_sql_sha256':p['public_sql_sha256'],'prerequisite_sha256':p['prerequisite_sha256']}
     admission.update({k:p[k]for k in HELPER_BINDING if k in p})
+    if p.get('operation')=='confinement-probe':admission['operation']='confinement-probe'
     admission_raw=encode(admission);files[str(backend/'local-admission.json')]=publish(backend/'local-admission.json',admission_raw,0o400)
     stage['admission_sha256']=sha(admission_raw);publish(stage_path,encode(stage),0o600)
     emit({'schema':'osmap-single-host-stage-ready-v1','backend':str(backend),'frontend':str(frontend),'stage_receipt':str(stage_path),'stage_receipt_sha256':sha(encode(stage)),'admission_sha256':sha(admission_raw),'not_after_utc':p['not_after_utc'],'interpreter':interpreter,'source_commit':p['source_commit'],'compiler_receipt_sha256':p['compiler_receipt_sha256'],'compiler_source_manifest_sha256':p['compiler_source_manifest_sha256'],'helper_sha256':p['helper']['sha256'],'web_sha256':p['web']['sha256'],'packet_sha256':sha(raw)})
@@ -204,7 +205,7 @@ def main():
     backend=Path('/var/run')/('osmap-service-admission-root-'+secrets.token_hex(8));frontend=Path('/tmp')/('osmap-pxp-stage-'+secrets.token_hex(8))
     admission_sha=produce_stage(p,sources,backend,frontend,raw,interpreter,lambda frame:print(json.dumps(frame),flush=True))
     deadline();require(select_python()==interpreter,'python_selection_changed')
-    actor='local_journey.py' if p.get('operation')=='password-change' else 'startup_only.py'
+    actor='local_journey.py' if p.get('operation')in('password-change','confinement-probe') else 'startup_only.py'
     os.execve('/usr/local/bin/python3',['/usr/local/bin/python3','-I','-B',str(backend/actor),admission_sha],{'PATH':'/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin','HOME':'/root','LC_ALL':'C'})
 if __name__=='__main__':
     try:main()

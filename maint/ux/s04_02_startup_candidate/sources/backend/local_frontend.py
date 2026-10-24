@@ -30,7 +30,7 @@ DIAGNOSTIC_CODES = frozenset(('control_eof','cancelled','original_deadline','fra
     'original_frontend_setup_deadline','fixed_front_bootstrap','control_changed','root_control_peer',
     'unnamed_control','node_frame_cap','node_frame_object','duplicate_node_field',
     'nonfinite_node_number','STARTUP_INTERRUPTED','PROCESS_LAUNCH_FAILED','CONTROL_IO_FAILED',
-    'UNEXPECTED_SANITIZED','FRONTEND_CLEANUP_FAILED'))
+    'UNEXPECTED_SANITIZED','FRONTEND_CLEANUP_FAILED','confinement_probe_ready_observed'))
 
 
 def diagnostic_code(error):
@@ -299,15 +299,15 @@ class Frontend:
     def checkpoint_diagnostic(self):
         self.native_diagnostic()
         if self.ownership_callback is not None:self.ownership_callback('WEB_DIAGNOSTIC_PRESERVED')
-    def setup(self,boot):
-        try:return self._setup(boot)
+    def setup(self,boot,*,confinement_probe=False):
+        try:return self._setup(boot,confinement_probe=confinement_probe)
         except BaseException as error:
             self.preserve_failure(error)
             raise
-    def _setup(self,boot):
+    def _setup(self,boot,*,confinement_probe=False):
         # Refuse before frontend birth if setup and the full journey cannot fit
         # before the actor's protected cleanup reserve. Never shorten it silently.
-        require(WORK-time.monotonic() >= 30+self.http_module.JOURNEY_SECONDS,
+        require(WORK-time.monotonic() >= 30+(0 if confinement_probe else self.http_module.JOURNEY_SECONDS),
             'insufficient_original_journey_budget')
         setup=min(WORK,time.monotonic()+20)
         require(set(boot)=={'version','alice_password','bob_password','new_password','admission_key','mutation_key','session_proof_key'}
@@ -360,6 +360,9 @@ class Frontend:
             and type(self.ready['port'])is int and 0<self.ready['port']<=65535
             and abs(self.ready['totp_counter']-int(time.time())//30)<=1,'actual_native_ready')
         self.startup_stage='READY_VALIDATED'
+        # The authenticated actor selects this fixed diagnostic before setup.
+        # Returning here cannot construct an HTTP driver or send the start frame.
+        if confinement_probe:return
         require(WORK-time.monotonic() >= 10+self.http_module.JOURNEY_SECONDS,
             'insufficient_original_journey_budget')
         self.sequence_end=time.monotonic()+self.http_module.JOURNEY_SECONDS

@@ -36,7 +36,7 @@ def process_frontend(root,case):
             with patch.object(front,'module',return_value=SimpleNamespace()):super().__init__(None)
             self.guard=guardian
             self.stage=root/'diagnostic-stage';self.stage.mkdir(mode=0o700)
-        def setup(self,boot):
+        def setup(self,boot,*,confinement_probe=False):
             try:self.start()
             except BaseException as error:
                 self.preserve_failure(error)
@@ -81,11 +81,11 @@ def process_frontend(root,case):
 
 
 class NativeFrontendTests(unittest.TestCase):
-    def exercise(self,case,cleanup_failure=False):
+    def exercise(self,case,cleanup_failure=False,operation="password-change"):
         with tempfile.TemporaryDirectory()as name:
             root=Path(name)
             helper=hashlib.sha256(b'local disposable fixture').hexdigest()
-            packet={'operation':'password-change','source_commit':'2'*40,
+            packet={'operation':operation,'source_commit':'2'*40,
                 'compiler_receipt_sha256':'1'*64,'compiler_source_manifest_sha256':'1'*64,
                 'helper':{'sha256':helper},'web':{'sha256':helper}}
             peer,states,phases,report,transport,packet=integration.MutationIntegration().run_actor(
@@ -104,6 +104,21 @@ class NativeFrontendTests(unittest.TestCase):
             self.assertTrue(states['receipt'].path.exists())
             self.assertEqual((root/'diagnostic-stage').exists(),cleanup_failure)
             return result,diagnostic
+
+    def test_confinement_probe_actual_guardian_failure_through_consumer(self):
+        detail={'schema':'osmap-serve-confinement-v1','stage':'initial_pledge',
+            'reason':'syscall_failed','syscall':'pledge','errno':22,'rule_ordinal':None}
+        case='confinement:normal:'+json.dumps(detail,separators=(',',':'))
+        result,diagnostic=self.exercise(case,operation='confinement-probe')
+        self.assertEqual(result['operation'],'confinement-probe')
+        self.assertEqual(result['confinement_detail'],detail)
+        self.assertEqual(result['observed_http_requests'],0)
+        self.assertFalse(result['start_message_sent']or result['ready_observed'])
+        self.assertEqual(result['authoritative_state_certainty'],'CONFIRMED_NO_WRITE')
+        self.assertTrue(result['cleanup_confirmed'])
+        failed,_=self.exercise(case,cleanup_failure=True,operation='confinement-probe')
+        self.assertEqual(failed['confinement_detail'],detail)
+        self.assertFalse(failed['cleanup_confirmed'])
 
     def test_panic_survives_complete_actor_consumer_and_cleanup(self):
         result,diagnostic=self.exercise('panic')

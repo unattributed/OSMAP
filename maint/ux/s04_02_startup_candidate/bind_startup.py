@@ -131,6 +131,7 @@ def test_only_helper_reuse(current,previous):
 
 def current_build(receipt_path,manifest_path,*,helper_receipt_path=None,helper_manifest_path=None):
     receipt,build,manifest,manifest_sha,receipt_sha=checked_build(receipt_path,manifest_path)
+    require(build.get('build_kind','pair')in('pair','libtest-only'),'web_compiler_selection')
     split=build.get('build_kind','pair')=='libtest-only'
     require((helper_receipt_path is not None)==(helper_manifest_path is not None),
         'helper_receipt_pair_required')
@@ -139,11 +140,16 @@ def current_build(receipt_path,manifest_path,*,helper_receipt_path=None,helper_m
     if split:
         old_receipt,helper,old_manifest,old_manifest_sha,old_receipt_sha=checked_build(
             helper_receipt_path,helper_manifest_path,working=False)
-        require(old_receipt['signed_base_commit']==BUILD_SOURCE_COMMIT
-            and helper.get('build_kind','pair')=='pair'
-            and helper['native_helper_binary']['sha256']==REUSED_HELPER_SHA256,
-            'qualified_helper_selection')
-        test_only_helper_reuse(manifest,old_manifest)
+        require(helper.get('build_kind','pair')in('pair','helper-only'),'helper_compiler_selection')
+        if manifest!=old_manifest:
+            # The only unequal-input reuse remains the previously qualified
+            # timing fixture exception. Equal manifests instead prove that both
+            # independently signed builds used every current compiler input.
+            require(old_receipt['signed_base_commit']==BUILD_SOURCE_COMMIT
+                and helper.get('build_kind','pair')=='pair'
+                and helper['native_helper_binary']['sha256']==REUSED_HELPER_SHA256,
+                'qualified_helper_selection')
+            test_only_helper_reuse(manifest,old_manifest)
     fields={'path','sha256','size','dev','ino','uid','gid','mode','nlink','cargo_profile',
         'cargo_target_kind','profile_test','source_count','tests_executed','application_executed'}
     pins={}

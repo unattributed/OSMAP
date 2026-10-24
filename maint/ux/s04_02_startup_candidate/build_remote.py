@@ -112,7 +112,7 @@ def command(argv, phase, client_profile=False):
                 signal.pthread_sigmask(signal.SIG_SETMASK, cleanup_mask)
     return {'code': code, 'failure': failure, 'group_gone': not uncertain, 'elapsed_seconds': round(time.monotonic() - began, 3), 'phase_cap_seconds': phase, 'stdout': bytes(buffers[0]).decode('utf8', 'replace'), 'stderr': bytes(buffers[1]).decode('utf8', 'replace')}
 try:
-    require(BUILD_KIND in ('pair', 'libtest-only'), 'build_selection')
+    require(BUILD_KIND in ('pair', 'libtest-only', 'helper-only'), 'build_selection')
     report['stage'] = 'identity'
     require(socket.gethostname() == 'obsd1.blackbagsecurity.com' and os.getuid() == os.geteuid() == 1000 and (os.getgid() == os.getegid() == 1000), 'build_contract_line_77')
     uname = os.uname()
@@ -219,20 +219,21 @@ try:
                 f.flush()
                 os.fsync(f.fileno())
         report.setdefault('retained_compiler_logs', {})[name] = {'stdout_sha256': hashlib.sha256(phase['stdout'].encode()).hexdigest(), 'stderr_sha256': hashlib.sha256(phase['stderr'].encode()).hexdigest()}
-    if BUILD_KIND == 'pair':
+    if BUILD_KIND != 'libtest-only':
         report['stage'] = 'compile_helper'
         report['helper'] = command(['/usr/local/bin/cargo', 'build', '--release', '--offline', '--locked', '--bin', 'account-passwd', '--message-format=json'], 300)
         retain_phase('helper', report['helper'])
         require(report['helper']['code'] == 0 and report['helper']['failure'] is None and report['helper']['group_gone'] and (not uncertain), 'build_contract_line_135')
         report['helper_built'] = True
-    report['stage'] = 'compile_frontend'
-    report['rust'] = command(['/usr/local/bin/cargo', 'test', '--offline', '--locked', '--lib', '--no-run', '--message-format=json'], 300, client_profile=True)
-    retain_phase('rust', report['rust'])
-    report['client_profile_scope'] = 'CURRENT_CONTROLLED_HTTP_CALLER_ONLY_NOT_ORDINARY_RUNTIME_TIMING'
-    require(report['rust']['code'] == 0 and report['rust']['failure'] is None and report['rust']['group_gone'] and (not uncertain), 'build_contract_line_141')
+    if BUILD_KIND != 'helper-only':
+        report['stage'] = 'compile_frontend'
+        report['rust'] = command(['/usr/local/bin/cargo', 'test', '--offline', '--locked', '--lib', '--no-run', '--message-format=json'], 300, client_profile=True)
+        retain_phase('rust', report['rust'])
+        report['client_profile_scope'] = 'CURRENT_CONTROLLED_HTTP_CALLER_ONLY_NOT_ORDINARY_RUNTIME_TIMING'
+        require(report['rust']['code'] == 0 and report['rust']['failure'] is None and report['rust']['group_gone'] and (not uncertain), 'build_contract_line_141')
     report['stage'] = 'source_after'
     report['source_after'] = parity()
-    if report['rust']['code'] == 0 and report['rust']['failure'] is None and report['rust']['group_gone'] and report['source_after'] and (not uncertain):
+    if report['source_after'] and not uncertain:
         records = [json.loads(line) for name in ('helper', 'rust') if name in report for line in report[name]['stdout'].splitlines() if line.startswith('{')]
 
         def capture(target, test):
@@ -292,9 +293,10 @@ try:
             require(cm.st_uid == 1000 and cm.st_nlink == 1 and (stat.S_IMODE(cm.st_mode) == 448) and (cm.st_size == before.st_size), 'build_contract_line_186')
             return {'path': str(copied), 'compiler_path': str(executable), 'compiler_metadata': list(binary_identity(before)), 'gid': cm.st_gid, 'sha256': digest.hexdigest(), 'size': before.st_size, 'dev': cm.st_dev, 'ino': cm.st_ino, 'uid': cm.st_uid, 'mode': stat.S_IMODE(cm.st_mode), 'nlink': cm.st_nlink, 'source_count': len(pins), 'fresh': artifacts[0]['fresh'], 'profile_test': test, 'cargo_profile': profile, 'cargo_target_kind': artifacts[0]['target']['kind'], 'tests_executed': False, 'application_executed': False}
         report['stage'] = 'capture_artifact'
-        if BUILD_KIND == 'pair':
+        if BUILD_KIND != 'libtest-only':
             report['native_helper_binary'] = capture('account-passwd', False)
-        report['native_test_binary'] = capture('osmap', True)
+        if BUILD_KIND != 'helper-only':
+            report['native_test_binary'] = capture('osmap', True)
         report['result'] = 'PASS'
 except Exception as error:
     report['failure_class'] = type(error).__name__

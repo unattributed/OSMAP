@@ -35,6 +35,7 @@ class MutationIntegration(unittest.TestCase):
             'frontend_stage':'local','frontend_files':{},'frontend_sources':{},
             'web_sha256':packet['web']['sha256']if packet is not None else pin,
             'compiler_source_manifest_sha256':packet['compiler_source_manifest_sha256']if packet is not None else pin}
+        if packet is not None and packet.get('operation')=='confinement-probe':p['operation']='confinement-probe'
         class Qualification:
             def __init__(self):
                 states['backend']=self;self.recovery=None;self.helper=None;self.helper_stopped=False
@@ -97,7 +98,11 @@ class MutationIntegration(unittest.TestCase):
                     self.diagnostic_controller=controller.Frontend(None)
             def native_diagnostic(self):return self.diagnostic_controller.native_diagnostic()
             def preserve_failure(self,error):self.diagnostic_controller.preserve_failure(error)
-            def setup(self,boot):self.driver=front.FrontDriver(self,boot)
+            def setup(self,boot,*,confinement_probe=False):
+                if confinement_probe:
+                    self.diagnostic_controller.startup_stage='READY_VALIDATED'
+                    return
+                self.driver=front.FrontDriver(self,boot)
             def exchange(self,tag,end):return self.local_exchange(tag,end)
             def capture_replay_directory(self):pass
             def capture_generated_directories(self):pass
@@ -140,6 +145,33 @@ class MutationIntegration(unittest.TestCase):
             'born_child_reaped':True,'born_group_gone':True,'root_exit':0 if successful else 1,
             'stderr_bytes':0,'failure':None,'frames':parsed}
         return peer,states,phases,report,transport,packet
+
+    def test_confinement_probe_unexpected_ready_never_starts_journey(self):
+        packet={'operation':'confinement-probe','source_commit':'2'*40,
+            'compiler_receipt_sha256':'1'*64,'compiler_source_manifest_sha256':'1'*64,
+            'helper':{'sha256':'1'*64},'web':{'sha256':'1'*64}}
+        with tempfile.TemporaryDirectory()as name:
+            peer,states,phases,report,value,packet=self.run_actor(Path(name),packet=packet)
+            self.assertEqual(peer.requests,[])
+            self.assertEqual(peer.writes,0)
+            self.assertFalse(hasattr(states['frontend'],'driver'))
+            self.assertFalse(any(phase=='MUTATION_SUBMISSION_INTENT'for phase,_ in phases))
+            accepted=consumer.inspect(value,1,123,packet)
+            self.assertEqual(accepted['operation'],'confinement-probe')
+            self.assertTrue(accepted['ready_observed'])
+            self.assertFalse(accepted['ready_only_qualified'])
+            self.assertEqual(accepted['authoritative_state_certainty'],'CONFIRMED_NO_WRITE')
+            self.assertTrue(accepted['cleanup_confirmed'])
+            for key,bad_value in(('start_message_sent',True),('observed_http_requests',1),
+                    ('ready_only_qualified',True),('result','PASS')):
+                bad=copy.deepcopy(value);bad['frames'][-1][key]=bad_value
+                with self.assertRaisesRegex(RuntimeError,'confinement_probe_scope'):
+                    consumer.inspect(bad,1,123,packet)
+            wrong=copy.deepcopy(packet);wrong['operation']='password-change'
+            bad=copy.deepcopy(value)
+            bad['frames'][2]['packet_sha256']=hashlib.sha256(json.dumps(wrong,sort_keys=True,separators=(',',':')).encode()).hexdigest()
+            with self.assertRaisesRegex(RuntimeError,'operation_actor_binding'):
+                consumer.inspect(bad,1,123,wrong)
 
     def test_success_runs_real_caller_actor_frame_parser_and_consumer(self):
         with tempfile.TemporaryDirectory()as name:

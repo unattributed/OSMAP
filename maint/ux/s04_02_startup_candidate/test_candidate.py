@@ -147,6 +147,11 @@ class CarrierClosureTests(unittest.TestCase):
             'recipes':[recipe],'environment':[{'id':'obsd1','host':'obsd1.blackbagsecurity.com',
                 'address':'192.168.1.44','status':'PASS'}]}}
         dispatch.check_action(order,args,pins)
+        probe=copy.deepcopy(order);args.operation='confinement-probe'
+        probe['execution_contract']['recipes'][0]['operations'][0]['arguments']+=['--operation','confinement-probe']
+        dispatch.check_action(probe,args,pins)
+        with self.assertRaisesRegex(RuntimeError,'planned_operation'):dispatch.check_action(order,args,pins)
+        args.operation='admission'
         paired=copy.deepcopy(order)
         args.helper_build_receipt='/private/helper/result.json'
         args.helper_source_manifest='/private/helper/manifest.json'

@@ -95,15 +95,18 @@ def build_action(binding):
                 and re.fullmatch(r'S04-02-[a-z0-9-]{1,96}', attempt)
                 and re.fullmatch(r'[a-z0-9-]{1,96}', recipe), 'build_action_identity')
         return attempt, recipe
+    require(binding.get('build_kind', 'pair') != 'helper-only', 'helper_build_action_required')
     return (('S04-02-timing-libtest-build157', 'timing-libtest-build157')
             if binding.get('build_kind', 'pair') == 'libtest-only' else (ATTEMPT, RECIPE))
 
 
-def prepare(root, source_commit=BASE, libtest_only=False, *, attempt_id=None, recipe_id=None):
-    require(type(libtest_only) is bool, 'build_selection')
+def prepare(root, source_commit=BASE, libtest_only=False, *, helper_only=False, attempt_id=None, recipe_id=None):
+    require(type(libtest_only) is bool and type(helper_only) is bool
+            and not (libtest_only and helper_only), 'build_selection')
     require((attempt_id is None) == (recipe_id is None), 'build_action_pair')
     action = {} if attempt_id is None else {'attempt_id': attempt_id, 'recipe_id': recipe_id}
-    build_action(action)
+    build_kind = 'helper-only' if helper_only else ('libtest-only' if libtest_only else 'pair')
+    build_action({'build_kind': build_kind, **action})
     signed_source(source_commit)
     root.mkdir(mode=0o700, parents=True, exist_ok=True)
     require(not tuple(root.iterdir()), 'build_directory_not_empty')
@@ -119,7 +122,6 @@ def prepare(root, source_commit=BASE, libtest_only=False, *, attempt_id=None, re
             writer.addfile(member, io.BytesIO(raw))
     archive = gzip.compress(buffer.getvalue(), mtime=0)
     remote = (Path(__file__).with_name('build_remote.py')).read_text()
-    build_kind = 'libtest-only' if libtest_only else 'pair'
     for old, new in [('__SIGNED_BASE__', source_commit), ('__BUILD_KIND__', build_kind), ('__MANIFEST_SHA__', sha(manifest_raw)),
                      ('__ARCHIVE_SHA__', sha(archive)), ('__SOURCE_COUNT__', str(len(manifest)))]:
         remote = remote.replace(old, new)
@@ -146,7 +148,7 @@ def prepare(root, source_commit=BASE, libtest_only=False, *, attempt_id=None, re
 def inspect_receipt(observed, code, binding):
     pins = binding['hashes']
     build_kind = binding.get('build_kind', 'pair')
-    require(build_kind in ('pair', 'libtest-only') and observed.get('build_kind', 'pair') == build_kind,
+    require(build_kind in ('pair', 'libtest-only', 'helper-only') and observed.get('build_kind', 'pair') == build_kind,
             'compiler_build_selection')
     require(observed['schema'] == 'osmap-controlled-native-build-current-v1'
             and observed['signed_base_commit'] == binding['signed_base_commit']
@@ -164,12 +166,14 @@ def inspect_receipt(observed, code, binding):
                                 and all(observed[key]['group_gone'] is True for key in phases)) else 'UNCERTAIN'
     if observed['result'] != 'PASS':
         return 'FAIL', disposition
-    expected_phases = ['rust'] if build_kind == 'libtest-only' else ['helper', 'rust']
+    expected_phases = {'pair': ['helper', 'rust'], 'libtest-only': ['rust'], 'helper-only': ['helper']}[build_kind]
     require(code == 0 and disposition == 'CONFIRMED' and phases == expected_phases, 'compiler_completion')
     require(observed['source_count'] == binding['source_count'] and observed['source_before'] is True
-            and observed['source_after'] is True and observed['helper_built'] is (build_kind == 'pair'), 'compiler_source_parity')
+            and observed['source_after'] is True and observed['helper_built'] is (build_kind != 'libtest-only'), 'compiler_source_parity')
     if build_kind == 'libtest-only':
         require('native_helper_binary' not in observed, 'unexpected_helper_artifact')
+    if build_kind == 'helper-only':
+        require('native_test_binary' not in observed, 'unexpected_test_artifact')
     require(observed['parent_limits_unchanged'] is True and observed['compiler_data_soft_bytes'] == 4294967296
             and observed['compiler_build_jobs'] == 1 and 0 < observed['full_action_seconds'] <= 650, 'compiler_recipe')
     for program in ('/usr/local/bin/cargo', '/usr/local/bin/rustc'):
@@ -183,8 +187,8 @@ def inspect_receipt(observed, code, binding):
     stagepath = Path(stage['path'])
     require(stagepath.parent == Path('/home/foo') and stagepath.name.startswith('.osmap-s04-02-artifacts-')
             and stage['uid'] == 1000 and stage['mode'] == 0o700, 'artifact_stage')
-    artifacts = [('native_test_binary', True, 'osmap-libtest')]
-    if build_kind == 'pair':
+    artifacts = [] if build_kind == 'helper-only' else [('native_test_binary', True, 'osmap-libtest')]
+    if build_kind != 'libtest-only':
         artifacts.insert(0, ('native_helper_binary', False, 'account-passwd'))
     for key, test, name in artifacts:
         artifact = observed[key]
@@ -216,7 +220,6 @@ def execute(root):
     frozen = {name: private(root / name) for name in binding['hashes']}
     require(all(sha(raw) == binding['hashes'][name] for name, raw in frozen.items()), 'build_input_hash')
     source_commit = binding['signed_base_commit']
-    libtest_only = binding.get('build_kind', 'pair') == 'libtest-only'
     attempt, recipe_id = build_action(binding)
     signed_source(source_commit)
     data, _ = source_closure(source_commit)
@@ -323,16 +326,20 @@ def main():
     parser.add_argument('--root', type=Path, default=DEFAULT_ROOT)
     parser.add_argument('--source-commit', default=BASE,
                         help='Exact signed compiler source commit (prepare only)')
-    parser.add_argument('--libtest-only', action='store_true',
+    selection = parser.add_mutually_exclusive_group()
+    selection.add_argument('--libtest-only', action='store_true',
                         help='Build only the affected libtest artifact (prepare only)')
+    selection.add_argument('--helper-only', action='store_true',
+                        help='Build only account-passwd; requires fresh action IDs (prepare only)')
     parser.add_argument('--attempt-id', help='Fresh exact compiler action ID (prepare only)')
     parser.add_argument('--recipe-id', help='Fresh exact compiler recipe ID (prepare only)')
     args = parser.parse_args()
     os.umask(0o077)
     if args.action == 'execute':
-        require(not args.libtest_only and args.source_commit == BASE
+        require(not args.libtest_only and not args.helper_only and args.source_commit == BASE
                 and args.attempt_id is None and args.recipe_id is None, 'execute_uses_frozen_binding')
     result = prepare(args.root, args.source_commit, args.libtest_only,
+                     helper_only=args.helper_only,
                      attempt_id=args.attempt_id, recipe_id=args.recipe_id) if args.action == 'prepare' else execute(args.root)
     print(json.dumps({key: value for key, value in result.items() if key != 'result'}, sort_keys=True))
     return 0 if args.action == 'prepare' or (result['native_result'] == 'PASS' and result['remote_disposition'] == 'CONFIRMED') else 1

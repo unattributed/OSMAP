@@ -19,7 +19,7 @@ BACKEND_SOURCE_NAMES={'custody.py','stock_qualification.py','stock_schema.py',
 FRONTEND_SOURCE_NAMES={'native_http_front_driver.py','native_http_password_driver.py',
     'native_http_web_guardian.py'}
 HELPER_BINDING={'helper_source_commit','helper_compiler_source_manifest_sha256','helper_compiler_receipt_sha256'}
-SAFE_FAILURE_CODES=frozenset(('UNEXPECTED_SANITIZED', 'actor_birth', 'actor_interrupted', 'actual_http_stopped', 'admission_fields', 'admission_pin', 'authority_changed_before_disposal', 'backend_stage', 'backend_stage_custody', 'complete_event_set', 'control_eof', 'controlled_journey_failed', 'diagnostic_bound', 'diagnostic_evidence_unavailable', 'diagnostic_not_preserved', 'diagnostic_readback', 'duplicate_field', 'fresh_original_expiry', 'frontend_disposal', 'frontend_files', 'frontend_original_lease', 'frontend_stage', 'frontend_stage_custody', 'helper_binding_fields', 'helper_binding_scalars', 'input_continuity', 'input_custody', 'input_deadline', 'input_hash', 'input_mode', 'input_open', 'mail_witness', 'native_local_selector', 'native_startup_failed', 'nonfinite', 'one_admission_hash', 'ordered_local_event', 'original_http_deadline', 'original_local_deadline', 'owned_cleanup', 'producer_stop_required', 'purpose_key_shape', 'receipt_bound', 'receipt_scalar', 'recovery_changed', 'recovery_collision', 'recovery_readback', 'root_target', 'single_durable_mutation_intent', 'source_commit', 'source_sets', 'stock_bob_nonce_home', 'web_build_binding', 'web_source_map'))
+SAFE_FAILURE_CODES=frozenset(('UNEXPECTED_SANITIZED', 'confinement_probe_ready_observed', 'admission_operation', 'actor_birth', 'actor_interrupted', 'actual_http_stopped', 'admission_fields', 'admission_pin', 'authority_changed_before_disposal', 'backend_stage', 'backend_stage_custody', 'complete_event_set', 'control_eof', 'controlled_journey_failed', 'diagnostic_bound', 'diagnostic_evidence_unavailable', 'diagnostic_not_preserved', 'diagnostic_readback', 'duplicate_field', 'fresh_original_expiry', 'frontend_disposal', 'frontend_files', 'frontend_original_lease', 'frontend_stage', 'frontend_stage_custody', 'helper_binding_fields', 'helper_binding_scalars', 'input_continuity', 'input_custody', 'input_deadline', 'input_hash', 'input_mode', 'input_open', 'mail_witness', 'native_local_selector', 'native_startup_failed', 'nonfinite', 'one_admission_hash', 'ordered_local_event', 'original_http_deadline', 'original_local_deadline', 'owned_cleanup', 'producer_stop_required', 'purpose_key_shape', 'receipt_bound', 'receipt_scalar', 'recovery_changed', 'recovery_collision', 'recovery_readback', 'root_target', 'single_durable_mutation_intent', 'source_commit', 'source_sets', 'stock_bob_nonce_home', 'web_build_binding', 'web_source_map'))
 class Refused(Exception):pass
 def require(ok,reason):
     if not ok:raise Refused(reason)
@@ -65,7 +65,8 @@ def admission(expected):
     require(re.fullmatch('[a-f0-9]{64}',expected),'admission_pin')
     END=START+600;WORK=END-150
     p=decode(read(STAGE/'local-admission.json',65536,expected,0o400))
-    require(set(p)-HELPER_BINDING=={'version','not_after_utc','source_commit','compiler_source_manifest_sha256','helper_sha256','web_sha256','web_bytes','backend_sources','frontend_sources','frontend_stage','frontend_stage_lease','frontend_files','config_map_sha256','public_sql_sha256','prerequisite_sha256'},'admission_fields')
+    require(set(p)-HELPER_BINDING-{'operation'}=={'version','not_after_utc','source_commit','compiler_source_manifest_sha256','helper_sha256','web_sha256','web_bytes','backend_sources','frontend_sources','frontend_stage','frontend_stage_lease','frontend_files','config_map_sha256','public_sql_sha256','prerequisite_sha256'},'admission_fields')
+    require(p.get('operation','password-change')in('password-change','confinement-probe'),'admission_operation')
     require(not(HELPER_BINDING&set(p))or HELPER_BINDING<=set(p),'helper_binding_fields')
     if HELPER_BINDING<=set(p):
         require(re.fullmatch('[a-f0-9]{40}',p['helper_source_commit'])and all(re.fullmatch('[a-f0-9]{64}',p[k])for k in HELPER_BINDING-{'helper_source_commit'}),'helper_binding_scalars')
@@ -128,6 +129,10 @@ class Receipt:
 
 
 def run(p,report):
+    probe=p.get('operation')=='confinement-probe'
+    if probe:
+        report.update(schema='osmap-single-host-confinement-probe-v1',
+            observed_http_requests=0,start_message_sent=False,ready_observed=False,ready_only_qualified=False)
     q=load('stock_qualification.py');http=load('rust_http_driver.py');installer=load('install_account_password.py');w=load('stock_mail_witness.py');front=load('local_frontend.py')
     q.HELPER_SHA256=p['helper_sha256'];q.SIGNED_SOURCE_COMMIT=p.get('helper_source_commit',p['source_commit']);q.CONFIG_MAP_SHA256=p['config_map_sha256'];q.PUBLIC_SQL_SHA256=p['public_sql_sha256'];q.CUSTODY_SHA256=p['backend_sources']['custody.py']
     class LocalQualification(http.RustAuthoritativeCustodian,q.Qualification):
@@ -184,7 +189,15 @@ def run(p,report):
                 'bob_home_absent':value['bob_home_absent'],'bob_mail_absent':value['bob_mail_absent'],
                 'public_cache_zero':value['public_cache_zero']}
             return {'phase':tag,'result':value}
-        web.local_exchange=exchange;web.setup(boot)
+        web.local_exchange=exchange
+        if probe:
+            # The only diagnostic route exits through existing preservation and
+            # no-write cleanup, even when confinement unexpectedly reaches READY.
+            web.setup(boot,confinement_probe=True)
+            require(web.custody['selector']==SELECTOR,'native_local_selector')
+            report['ready_observed']=True
+            raise Refused('confinement_probe_ready_observed')
+        web.setup(boot)
         def mutation_submission_checkpoint():
             owner.mutation_submission_started=True;owner.checkpoint('MUTATION_SUBMISSION_INTENT')
         web.driver.mutation_submission_checkpoint=mutation_submission_checkpoint
