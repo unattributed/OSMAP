@@ -1,5 +1,16 @@
 # Current Project Status
 
+2026-10-24 UTC — **StockWorkerArgv source correction; R1/R2 and T03 remain unqualified.**
+Rust now preserves the exact existing metadata failure detail and first query
+error separately from child/endpoint cleanup uncertainty. The fixed ps command,
+root cwd requirement, worker identity, original deadlines and confinement are
+unchanged. Probe165's exact denied subphase/errno remains UNKNOWN. The default
+helper keeps legacy output; a fixed explicit Rust diagnostic invocation and
+ignored epoch-only authenticated client test are prepared for a future one-shot
+R1/R2 operation. Neither has run on OpenBSD in this work order. No Python source,
+host state, password, public service or retained-resource change occurred.
+See [the bounded findings and proposal](UX_S04_02_STOCK_WORKER_ARGV_20261024.md).
+
 2026-10-24 UTC — **Focused native R1/R2 validation completed once; diagnostics validated, startup FAIL and T03 NOT QUALIFIED.** Current signed463-input helper/libtest pair build164 passed in374.521s. Diagnostic continuity and exact-owned retained163 cleanup passed before fresh prerequisites matched. Probe165 ran once in4.443s: R1 now preserves `socket_validation / canonicalize / absent`; R2 propagates `StockWorkerArgv / Denied / Unavailable` from `StockRuntime::new` backend revalidation, replacing the misleading MutationBind/Unknown attribution. The denied operation is the auth-worker argv metadata query; its precise builder/spawn/child-I/O subphase and errno remain unobserved. No permission, ownership, deadline or confinement correction is inferred.
 
 READY, G, HTTP and password submission were not reached. The original actor retains UNCERTAIN cleanup after helper exit1; independent reads separately confirm both full17 rows unchanged, epoch0/active/null and no intents.33recorded runtime paths,2fixture rows,1SQLprincipal,2locked users/groups and new protected stages remain retained; helper/web/guardian processes are absent. Historical160/163 stages, public configuration/master/cache and the installed OSMAP service baseline are preserved. No automatic retry or StageB/C execution occurred. Evidence: `/home/foo/Downloads/osmap-ux-s04/r1-r2-native-20261024/delivery-result.json`.

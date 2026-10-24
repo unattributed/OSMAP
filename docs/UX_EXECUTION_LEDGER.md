@@ -1,5 +1,21 @@
 # OSMAP UX execution ledger
 
+2026-10-24 UTC — **P0 StockWorkerArgv Rust source correction, no native dispatch.**
+Fixed metadata detail/first-error retention, ErrorKind-only classification and
+separate child/endpoint cleanup disposition are implemented. The command policy,
+worker identity, root cwd and deadlines remain; exact165 native cause/errno is
+UNKNOWN. Focused checks: process8 PASS, later exact builder1 PASS, fstat11 PASS,
+peer14 PASS, endpoint-cleanup trace1 PASS and first-trace1 PASS; bin check PASS.
+Two initial compile-only failures (generic cleanup output type; two old argv-test
+callers) are retained, corrected before these passes; neither ran native code.
+The last tiny cleanup-only observer change is included in the final delivery gate.
+Independent final review and signed-delivery hooks are recorded by the delivery
+receipt, without treating source checks as R1/R2 or T03 qualification.
+The exact next R1/R2 operation is prepared only in
+`docs/UX_S04_02_STOCK_WORKER_ARGV_20261024.md`; the ignored Rust client entry has
+not run natively. Python and probe165 retained state are unchanged. Evidence:
+`/home/foo/Downloads/osmap-ux-s04/stock-worker-argv-20261024/`.
+
 2026-10-24 UTC — **Focused native R1/R2 validation completed once; diagnostics validated, startup FAIL and T03 NOT QUALIFIED.** Current signed463-input helper/libtest pair build164 passed in374.521s. Diagnostic continuity and exact-owned retained163 cleanup passed before fresh prerequisites matched. Probe165 ran once in4.443s: R1 now preserves `socket_validation / canonicalize / absent`; R2 propagates `StockWorkerArgv / Denied / Unavailable` from `StockRuntime::new` backend revalidation, replacing the misleading MutationBind/Unknown attribution. The denied operation is the auth-worker argv metadata query; its precise builder/spawn/child-I/O subphase and errno remain unobserved. No permission, ownership, deadline or confinement correction is inferred.
 
 READY, G, HTTP and password submission were not reached. The original actor retains UNCERTAIN cleanup after helper exit1; independent reads separately confirm both full17 rows unchanged, epoch0/active/null and no intents.33recorded runtime paths,2fixture rows,1SQLprincipal,2locked users/groups and new protected stages remain retained; helper/web/guardian processes are absent. Historical160/163 stages, public configuration/master/cache and the installed OSMAP service baseline are preserved. No automatic retry or StageB/C execution occurred. Evidence: `/home/foo/Downloads/osmap-ux-s04/r1-r2-native-20261024/delivery-result.json`.
@@ -10356,7 +10372,8 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "docs/UX_S04_02_CONFINEMENT_LOCALIZATION_20261024.md",
     "maint/ux/s04_02_startup_candidate/confinement_probe163_evidence.json",
     "src/openpgp_inventory_custody.rs",
-    "src/openpgp_inventory_runtime.rs"
+    "src/openpgp_inventory_runtime.rs",
+    "docs/UX_S04_02_STOCK_WORKER_ARGV_20261024.md"
   ],
   "outcomes": [
     {
@@ -10516,7 +10533,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "status": "PENDING",
     "reference": "Only minimal well-defined own-password usability after all agent-owned development/matching deployed QA/independent audit PASS. No operator password is changed by agent qualification; use controlled disposable Alice and preserve Bob/operator state. NOT RUN."
   },
-  "next_action": "One focused native R1/R2 validation complete; functional startup remains FAIL/NOT_QUALIFIED. Preserve probe165 retained state; localize denied worker-argv metadata subphase before selecting correction. Any further native probe requires fresh explicit authority.",
+  "next_action": "Complete Rust StockWorkerArgv source correction/focused tests/independent review/signed preservation. Prepare next R1/R2 only; no native or disposal authority.",
   "accountability": {
     "functional_exit": "Working own-account Settings password change through the selected single-host obsd1 local account service and authoritative local backend, fresh password/TOTP step-up, one conditional SQL update, durable OSMAP epoch and all-browser revocation, actual source-bound cache handling, old-password refusal/new-login success and Bob preservation. Existing third-party SMTP/IMAP sessions may remain authenticated. Matching installed QA, independent audit and minimal owner usability remain required. Toronto is later separate production installation.",
     "owner": "/root",
@@ -21446,6 +21463,35 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "independent_no_write": true,
         "cleanup": "OriginalUNCERTAIN/newfixture retained",
         "further_native_action": "NOT_AUTHORIZED"
+      }
+    },
+    "stock_worker_argv_rust_20261024": {
+      "operator_request": "P0 Rust engineering directive: resolve StockWorkerArgv/Denied metadata provenance; source investigation/corrections, local Rust tests, independent review and signed Git delivery only.",
+      "owner": "/root",
+      "independent_reviewer": "/root/delivery_controller",
+      "source_baseline": "a7ad3116a58fb37682a51742caf5f2a9e30ed1fd",
+      "observable_outcome": "Preserve exact closed Rust metadata subphase and first error at stable StockWorkerArgv57, separately from cleanup; establish only demonstrated source corrections and prepare one-shot actual R1/R2 operation without dispatch.",
+      "scope": "Existing Rust StartupTrace, metadata runner/query, fixed service diagnostic invocation and focused existing tests; update current decisions/ledger and one bounded native proposal. Python infrastructure unchanged.",
+      "prerequisites": "Signed a7ad3116 baseline verified, frozen plan manifest verified, probe165 retained evidence read-only. No host prerequisite is assumed from local tests.",
+      "essential_checks": "Real fixed ps builder acceptance/root cwd; labeled real runner positive/spawn refusal; actual drain I/O refusal; existing query exit/output/deadline; first detail/operation57/error plus independent cleanup; legacy default formatter; independent security review; normal delivery gates/signature/push/fresh remote parity.",
+      "expected_result": "SOURCE_CORRECTION only. Probe165 exact native subphase/errno remains UNKNOWN until fresh authorized measurement. No R1/R2/Serve/HTTP/T03 PASS.",
+      "engineering_allowance": "Focused source work and mandatory delivery only; measured elapsed retained under sprint root. Historical clocks do not expire direct source authority. No automatic native attempt or ambiguous credential retry.",
+      "stop_rule": "No native dispatch, provisioning, password mutation, public-service operation, retained-resource disposal or qualification-flag change. Any proposed identity/policy/deadline change requires demonstrated contract evidence; otherwise preserve UNKNOWN.",
+      "preserved": "Original probe165 FAIL/UNCERTAIN and no-write reconciliation remain separate; exact165 effects and historical160 stages retained; production mail host out of scope.",
+      "next_native": "Prepared only: explicit one-shot R1 operational helper startup through StockPeer/ParentPrepare/ParentSeal/accept loop, R2 valid-custody authenticated nonmutating admission exchange, fixed richer Rust diagnostics. Fresh explicit authorization required.",
+      "local_results": {
+        "process_tests": "8 PASS/0fail",
+        "builder_changed_test": "1 PASS/0fail",
+        "fstat_tests": "11 PASS/0fail",
+        "peer_tests": "14 PASS/0fail",
+        "endpoint_cleanup_trace": "1 PASS/0fail",
+        "first_trace": "1 PASS/0fail",
+        "service_bin_check": "PASS",
+        "native": "NOT_RUN",
+        "compile_failures": "E0308 cleanup output type; E0061 two old argv testcallers; retained and corrected",
+        "review": "Final independent source review pending at record creation",
+        "delivery": "Normal hooks/signature/push parity pending at record creation",
+        "evidence_root": "/home/foo/Downloads/osmap-ux-s04/stock-worker-argv-20261024/"
       }
     }
   },
@@ -32395,10 +32441,11 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     },
     "planned_action": null
   },
-  "blocker": "Probe163 failed earlier at admission-client construction; helper trace cannot distinguish mutation endpoint bind from following StockRuntime construction/StockPeer recheck. Serve stage/syscall/errno unobserved. One-shot authorization consumed.",
-  "independent_next_action": "Independent outcome review of immutable original failure plus fresh no-write and exact retained-resource inventory. Any further native probe requires fresh explicit operator authority; no READY/T03 PASS.",
-  "updated_at": "2026-10-24T07:55:35.340239+00:00"
+  "blocker": "Probe165 reaches StockWorkerArgv57/Denied/Unavailable during StockRuntime revalidation before ParentPrepare/ParentSeal/accept-loop. Exact metadata builder/spawn/child-I/O subphase and errno remain UNKNOWN because historical trace discarded them. Original cleanupUNCERTAIN; later no-write evidence separate. No fresh native or disposal authority.",
+  "independent_next_action": "Independently review focused Rust metadata/trace corrections and retained165 exact-owned inventory, complete normal signed preservation, and prepare only one-shot R1/R2. Fresh explicit authorization and current custody/capture-consumer bindings required before native execution; no permission/confinement/deadline relaxation, Python change or disposal.",
+  "updated_at": "2026-10-24T08:47:45.657736+00:00"
 }
+
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->
 

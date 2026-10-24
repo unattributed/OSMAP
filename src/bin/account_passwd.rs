@@ -1,13 +1,22 @@
 //! Fixed Rust account-service entry. No config or credential arguments.
 fn main() -> std::process::ExitCode {
-    let result = if std::env::args_os().len() == 1 {
+    let metadata_diagnostic = std::env::args_os().len() == 2
+        && std::env::args_os().nth(1).as_deref()
+            == Some(std::ffi::OsStr::new("--startup-metadata-diagnostic"));
+    let result = if std::env::args_os().len() == 1 || metadata_diagnostic {
         osmap::openbsd::AccountAdmissionSignals::install()
             .map_err(|error| {
                 osmap::account_password_fstat::report_signal_setup_failure(&error);
                 osmap::account_admission::Error::Unavailable
             })
             .and_then(|signals| {
-                osmap::account_password_server::run_operator_service(signals.stop_flag())
+                if metadata_diagnostic {
+                    osmap::account_password_server::run_operator_service_with_metadata_diagnostics(
+                        signals.stop_flag(),
+                    )
+                } else {
+                    osmap::account_password_server::run_operator_service(signals.stop_flag())
+                }
             })
     } else if std::env::args_os().len() == 2
         && std::env::args_os().nth(1).as_deref()

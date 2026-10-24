@@ -553,6 +553,12 @@ fn sealed_recheck_diagnostic_query_discriminates_only_fixed_failed_guard() {
             )
             .unwrap()
         );
+        let mut trace = StartupTrace::new(Op::StockWorkerArgv);
+        assert_eq!(
+            stock_query(&reply, PS, &ps_args(10), deadline(), &mut trace),
+            Err(Error::Unavailable)
+        );
+        assert_eq!(trace.metadata_detail(), Some(expected));
     }
     reply.failure = Some("metadata_ps_row_denied".into());
     assert!(stock_query(&reply, PS, &ps_args(10), deadline(), &mut trace).is_err());
@@ -565,10 +571,57 @@ fn sealed_recheck_diagnostic_query_discriminates_only_fixed_failed_guard() {
     assert!(query_with_stage(&reply, PS, &ps_args(10), deadline(), &mut stage).is_err());
     assert_eq!(stage, "primary_startup_own_row_denied");
     reply.failure = Some("untrusted private text".into());
-    trace.set(Op::StockMasterRow);
+    let mut trace = StartupTrace::new(Op::StockMasterRow);
     assert!(stock_query(&reply, PS, &ps_args(10), deadline(), &mut trace).is_err());
     assert_eq!(trace.tag(), "primary_fstat_stock_master_row_unknown");
     stage = "primary_startup_master_fstat";
     assert!(query_with_stage(&reply, FSTAT, &fstat_args(10), deadline(), &mut stage).is_err());
     assert_eq!(stage, "primary_startup_master_fstat");
+
+    for detail in [
+        "metadata_builder_denied",
+        "metadata_spawn_denied",
+        "metadata_child_io_denied",
+        "metadata_child_deadline",
+        "metadata_child_cleanup",
+    ] {
+        reply.failure = Some(detail.into());
+        let mut trace = StartupTrace::new(Op::StockWorkerArgv);
+        assert_eq!(
+            stock_query(&reply, PS, &ps_args(10), deadline(), &mut trace),
+            Err(Error::Unavailable)
+        );
+        assert_eq!(trace.metadata_detail(), Some(detail));
+    }
+    let mut trace = StartupTrace::new(Op::StockWorkerArgv);
+    assert_eq!(
+        stock_query(&reply, PS, &ps_args(10), Instant::now(), &mut trace),
+        Err(Error::Expired)
+    );
+    assert_eq!(trace.metadata_detail(), Some("metadata_query_deadline"));
+}
+
+#[test]
+fn stock_worker_argv_validation_preserves_identity_and_classifies_value_refusal() {
+    use crate::account_password_fstat::{StartupOperation as Op, StartupTrace};
+    for raw in [
+        "auth\n",
+        "dovecot/auth\n",
+        "/usr/local/libexec/dovecot/auth\n",
+    ] {
+        let mut trace = StartupTrace::new(Op::StockWorkerArgv);
+        assert!(stock_auth_argv(raw, &mut trace).is_ok());
+        assert_eq!(trace.metadata_detail(), None);
+    }
+    for raw in [
+        "",
+        "auth --arbitrary-option\n",
+        "auth\nauth\n",
+        "untrusted-auth\n",
+    ] {
+        let mut trace = StartupTrace::new(Op::StockWorkerArgv);
+        assert_eq!(stock_auth_argv(raw, &mut trace), Err(Error::Refused));
+        assert_eq!(trace.tag(), "primary_fstat_stock_worker_argv_invalid");
+        assert_eq!(trace.metadata_detail(), None);
+    }
 }

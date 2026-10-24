@@ -897,7 +897,12 @@ fn query_with_stage<E: CommandExecutor + ?Sized>(
     let left = deadline
         .checked_duration_since(Instant::now())
         .filter(|v| !v.is_zero())
-        .ok_or(Error::Expired)?
+        .ok_or_else(|| {
+            if *stage == "stock_metadata_query" {
+                *stage = "metadata_query_deadline";
+            }
+            Error::Expired
+        })?
         .min(Duration::from_millis(500));
     let query_deadline = deadline.min(Instant::now() + left);
     let limit = if program == crate::account_password_mail::PROGRAM {
@@ -2022,8 +2027,16 @@ fn stock_query<E: CommandExecutor + ?Sized>(
     trace: &mut crate::account_password_fstat::StartupTrace,
 ) -> Result<String, Error> {
     let mut site = "stock_metadata_query";
-    query_with_stage(executor, program, args, deadline, &mut site).inspect_err(|_| {
+    query_with_stage(executor, program, args, deadline, &mut site).inspect_err(|error| {
         trace.metadata(site);
+        trace.metadata_error(match error {
+            Error::Refused => crate::account_admission::Error::Refused,
+            Error::Unavailable => crate::account_admission::Error::Unavailable,
+            Error::Expired => crate::account_admission::Error::Expired,
+        });
+        if crate::account_password_process::metadata_cleanup_uncertain() {
+            trace.cleanup_failed();
+        }
     })
 }
 #[derive(PartialEq, Eq)]
@@ -2033,12 +2046,16 @@ struct StockSocketSnapshot {
     worker: Row,
     argv: String,
 }
-fn stock_auth_argv(raw: &str) -> Result<(), Error> {
+fn stock_auth_argv(
+    raw: &str,
+    trace: &mut crate::account_password_fstat::StartupTrace,
+) -> Result<(), Error> {
     let words = raw.split_whitespace().collect::<Vec<_>>();
     if raw.lines().count() != 1
         || words.len() != 1
         || !matches!(words[0], "auth" | "dovecot/auth" | PRIMARY_AUTH)
     {
+        trace.category(crate::account_password_fstat::StartupCategory::Invalid);
         return Err(Error::Refused);
     }
     Ok(())
@@ -2130,7 +2147,7 @@ fn stock_socket_probe(
                 end,
                 trace,
             )?;
-            stock_auth_argv(&argv)?;
+            stock_auth_argv(&argv, trace)?;
             trace.set(crate::account_password_fstat::StartupOperation::StockWorkerBirth);
             if row(&stock_query(executor, PS, &ps_args(pid), end, trace)?, pid)? != candidate {
                 return Err(Error::Refused);
@@ -2875,7 +2892,10 @@ mod stock_authority_tests {
             "dovecot/auth\n",
             "/usr/local/libexec/dovecot/auth\n",
         ] {
-            assert_eq!(stock_auth_argv(good), Ok(()));
+            let mut trace = crate::account_password_fstat::StartupTrace::new(
+                crate::account_password_fstat::StartupOperation::StockWorkerArgv,
+            );
+            assert_eq!(stock_auth_argv(good, &mut trace), Ok(()));
         }
         for wrong in [
             "auth -w\n",
@@ -2886,7 +2906,10 @@ mod stock_authority_tests {
             "/tmp/auth\n",
             "",
         ] {
-            assert!(stock_auth_argv(wrong).is_err());
+            let mut trace = crate::account_password_fstat::StartupTrace::new(
+                crate::account_password_fstat::StartupOperation::StockWorkerArgv,
+            );
+            assert!(stock_auth_argv(wrong, &mut trace).is_err());
         }
     }
 }

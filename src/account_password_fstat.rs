@@ -260,6 +260,8 @@ pub(crate) struct StartupTrace {
     worker: bool,
     cleanup_unknown: bool,
     enabled: bool,
+    metadata_detail: Option<&'static str>,
+    metadata_error: Option<crate::account_admission::Error>,
 }
 impl StartupTrace {
     pub(crate) fn new(operation: StartupOperation) -> Self {
@@ -269,14 +271,21 @@ impl StartupTrace {
             worker: false,
             cleanup_unknown: false,
             enabled: true,
+            metadata_detail: None,
+            metadata_error: None,
         }
     }
     pub(crate) fn set(&mut self, operation: StartupOperation) {
+        if self.metadata_detail.is_some() {
+            return;
+        }
         self.operation = operation;
         self.category = StartupCategory::Unknown;
     }
     pub(crate) fn category(&mut self, category: StartupCategory) {
-        self.category = category;
+        if self.metadata_detail.is_none() {
+            self.category = category;
+        }
     }
     pub(crate) fn category_if_unknown(&mut self, category: StartupCategory) {
         if self.category == StartupCategory::Unknown {
@@ -284,6 +293,9 @@ impl StartupTrace {
         }
     }
     pub(crate) fn io(&mut self, error: &std::io::Error) {
+        if self.metadata_detail.is_some() {
+            return;
+        }
         use std::io::ErrorKind;
         self.category = match crate::account_password_process::metadata_errno_tag("builder", error)
         {
@@ -305,6 +317,12 @@ impl StartupTrace {
         };
     }
     pub(crate) fn metadata(&mut self, tag: &str) {
+        if self.metadata_detail.is_some() {
+            return;
+        }
+        let tag = crate::account_password_process::metadata_failure_tag(tag)
+            .unwrap_or("metadata_ps_unknown");
+        self.metadata_detail = Some(tag);
         self.category = match tag.rsplit('_').next() {
             Some("denied") => StartupCategory::Denied,
             Some("invalid") => StartupCategory::Invalid,
@@ -320,7 +338,22 @@ impl StartupTrace {
             _ => StartupCategory::Unknown,
         };
     }
+    pub(crate) fn metadata_error(&mut self, error: crate::account_admission::Error) {
+        if self.metadata_error.is_none() {
+            self.metadata_error = Some(error);
+        }
+    }
+    #[cfg(test)]
+    pub(crate) fn metadata_detail(&self) -> Option<&'static str> {
+        self.metadata_detail
+    }
     fn failure(&mut self, failure: Failure) {
+        if self.metadata_detail.is_some() {
+            if matches!(failure, Failure::Cleanup) {
+                self.cleanup_unknown = true;
+            }
+            return;
+        }
         self.category = match failure {
             Failure::Deadline => StartupCategory::Deadline,
             Failure::Output => StartupCategory::Output,
@@ -348,19 +381,50 @@ impl StartupTrace {
         self.enabled = false;
     }
     pub(crate) fn emit(&self, error: &crate::account_admission::Error) {
+        let _ = self.write_diagnostic(&mut std::io::stderr().lock(), error, false);
+    }
+    pub(crate) fn emit_metadata(&self, error: &crate::account_admission::Error) {
+        let _ = self.write_diagnostic(&mut std::io::stderr().lock(), error, true);
+    }
+    pub(crate) fn write_diagnostic(
+        &self,
+        output: &mut impl std::io::Write,
+        error: &crate::account_admission::Error,
+        metadata: bool,
+    ) -> std::io::Result<()> {
         if self.enabled {
-            if self.cleanup_unknown {
-                eprintln!(
+            let cleanup_unknown = self.cleanup_unknown
+                || *error == crate::account_admission::Error::CleanupUnconfirmed;
+            if cleanup_unknown {
+                writeln!(
+                    output,
                     "account_password_service stage={} error=CleanupUnconfirmed",
                     self.tag()
-                );
+                )?;
             } else {
-                eprintln!(
+                writeln!(
+                    output,
                     "account_password_service stage={} error={error:?}",
                     self.tag()
-                );
+                )?;
+            }
+            // Explicit operator diagnostics use the same closed trace channel.
+            // Default service output remains byte-exact for legacy consumers.
+            if metadata {
+                writeln!(
+                    output,
+                    "account_password_service metadata={} error={:?} cleanup={}",
+                    self.metadata_detail.unwrap_or("unobserved"),
+                    self.metadata_error.as_ref().unwrap_or(error),
+                    if cleanup_unknown {
+                        "unconfirmed"
+                    } else {
+                        "not_reported_uncertain"
+                    }
+                )?;
             }
         }
+        Ok(())
     }
     fn after_stop(&mut self, exited: bool, clean: &Result<i32, Failure>) {
         if self.operation == StartupOperation::HelloEof && exited {
@@ -1217,7 +1281,7 @@ mod tests {
         trace.category_if_unknown(StartupCategory::Invalid);
         assert_eq!(trace.tag(), "primary_fstat_stock_master_row_deadline");
         trace.set(StartupOperation::ParentPrepare);
-        assert_eq!(trace.category, StartupCategory::Unknown);
+        assert_eq!(trace.category, StartupCategory::Deadline);
         trace.finish();
         assert!(!trace.enabled);
         for tags in STARTUP_TAGS.into_iter().chain(WORKER_STARTUP_TAGS) {
@@ -1263,14 +1327,62 @@ mod tests {
             trace.metadata("metadata_builder_denied");
             assert!(trace.tag().ends_with("_denied"));
             trace.metadata("metadata_child_deadline");
-            assert!(trace.tag().ends_with("_deadline"));
+            assert!(trace.tag().ends_with("_denied"));
             trace.metadata("unrecognized");
-            assert!(trace.tag().ends_with("_unknown"));
+            assert!(trace.tag().ends_with("_denied"));
             // Stock sites cannot manufacture a legacy worker-bootstrap frame.
             let mut parent = StartupTrace::new(StartupOperation::Hello);
             assert!(parent.accept_bootstrap(&trace.bootstrap_frame()).is_err());
         }
         assert_eq!(tags.len(), 24);
+    }
+    #[test]
+    fn stock_metadata_trace_retains_first_detail_and_separate_cleanup_with_legacy_output() {
+        use crate::account_admission::Error;
+        assert_eq!(StartupOperation::StockWorkerArgv as u8, 57);
+        for detail in [
+            "metadata_builder_denied",
+            "metadata_spawn_denied",
+            "metadata_child_io_denied",
+            "metadata_query_exit",
+            "metadata_query_output",
+            "metadata_child_deadline",
+        ] {
+            let mut trace = StartupTrace::new(StartupOperation::StockWorkerArgv);
+            trace.metadata(detail);
+            trace.metadata_error(Error::Unavailable);
+            let original = trace.tag();
+            let mut legacy = Vec::new();
+            trace
+                .write_diagnostic(&mut legacy, &Error::Unavailable, false)
+                .unwrap();
+            assert_eq!(
+                String::from_utf8(legacy).unwrap(),
+                format!("account_password_service stage={original} error=Unavailable\n")
+            );
+            trace.cleanup_failed();
+            trace.set(StartupOperation::ParentPrepare);
+            trace.category(StartupCategory::Invalid);
+            trace.io(&std::io::Error::from_raw_os_error(libc::ENOENT));
+            trace.metadata("metadata_child_cleanup");
+            trace.metadata_error(Error::CleanupUnconfirmed);
+            assert_eq!(trace.operation, StartupOperation::StockWorkerArgv);
+            assert_eq!(trace.tag(), original);
+            let mut rich = Vec::new();
+            trace
+                .write_diagnostic(&mut rich, &Error::CleanupUnconfirmed, true)
+                .unwrap();
+            assert_eq!(String::from_utf8(rich).unwrap(), format!(
+                "account_password_service stage={original} error=CleanupUnconfirmed\naccount_password_service metadata={detail} error=Unavailable cleanup=unconfirmed\n"));
+        }
+        let mut trace = StartupTrace::new(StartupOperation::StockWorkerArgv);
+        trace.metadata("metadata_spawn_denied private-token/path");
+        assert_eq!(trace.metadata_detail(), Some("metadata_ps_unknown"));
+        let mut rich = Vec::new();
+        trace
+            .write_diagnostic(&mut rich, &Error::Unavailable, true)
+            .unwrap();
+        assert!(!String::from_utf8(rich).unwrap().contains("private-token"));
     }
     #[test]
     fn startup_released_command_peer_exposes_actual_child_exit_as_eof() {

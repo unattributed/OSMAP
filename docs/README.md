@@ -145,6 +145,7 @@ Current public documentation map:
 - `UX_SLICE_S04_02.md` — current own-password design, planned verification and expected outcomes under the epic-wide slice delivery SOP; functional acceptance remains open
 - `UX_S04_02_SINGLE_HOST_EXECUTION.md` — single-host account-service execution correction; native qualification, installed QA and UAT remain open
 - `UX_S04_02_TIMING_RECONCILIATION_20261023.md` — bounded native journey timing, unchanged password deadline and separately bound test/service artifacts
+- `UX_S04_02_STOCK_WORKER_ARGV_20261024.md` — Rust metadata denial findings, first-failure preservation and prepared, unauthorized one-shot R1/R2 validation
 - `UX_S04_PYTHON_REVIEW_20261023.md` — full Sprint S04 Python review, corrected execution/test defects and local validation; no new native attempt or T03 qualification
 - `UX_FUNCTIONAL_BASELINE.md` — approved preservation and installed ordinary-mail verification work order; results and repairs remain in the execution ledger
 - `UX_MAIL_DELIVERY_REFOCUS_20261006.md` — operator-approved ordinary and protected Send recovery priority

@@ -115,6 +115,14 @@ pub(crate) fn execution_quarantined() -> bool {
             .lock()
             .map_or(true, |children| !children.is_empty())
 }
+/// A deliberately stopped executor is quarantined even after confirmed cleanup.
+/// Diagnostic disposition must not confuse that stop with retained resources.
+pub(crate) fn metadata_cleanup_uncertain() -> bool {
+    UNCERTAIN.load(Ordering::SeqCst)
+        || OWNED_UNREAPED
+            .lock()
+            .map_or(true, |children| !children.is_empty())
+}
 pub(crate) fn metadata_stopped() {
     METADATA_STOPPED.store(true, Ordering::SeqCst);
 }
@@ -305,11 +313,18 @@ impl CommandExecutor for MetadataExecutor {
                 .map_err(|_| unavailable())?;
             run_with_cap(command, b"", deadline, cap)
         } else {
-            let command = crate::auth::password_metadata_command(program, args)
-                .map_err(|error| metadata_failure(metadata_errno_tag("builder", &error), true))?;
+            let command = metadata_command(program, args)?;
             run_with_cap_labeled(command, b"", deadline, cap, true)
         }
     }
+}
+
+pub(crate) fn metadata_command(
+    program: &str,
+    args: &[String],
+) -> Result<Command, CommandExecutionError> {
+    crate::auth::password_metadata_command(program, args)
+        .map_err(|error| metadata_failure(metadata_errno_tag("builder", &error), true))
 }
 
 const META_PS_ROW: [&str; 6] = [
@@ -401,7 +416,14 @@ pub(crate) fn metadata_errno_tag(operation: &str, error: &std::io::Error) -> &'s
         Some(libc::ENOENT | libc::ESRCH) => 2,
         Some(libc::EBUSY | libc::EAGAIN) => 3,
         Some(libc::ENOMEM | libc::E2BIG | libc::ENOBUFS) => 4,
-        _ => 5,
+        _ => match error.kind() {
+            ErrorKind::PermissionDenied => 0,
+            ErrorKind::InvalidInput | ErrorKind::InvalidData | ErrorKind::NotADirectory => 1,
+            ErrorKind::NotFound => 2,
+            ErrorKind::WouldBlock => 3,
+            ErrorKind::OutOfMemory => 4,
+            _ => 5,
+        },
     };
     match operation {
         "ps_row" => META_PS_ROW[class],
@@ -846,7 +868,12 @@ fn drain_labeled(
             Err(e) if e.kind() == ErrorKind::WouldBlock => return Ok(false),
             Err(e) if e.kind() == ErrorKind::Interrupted => continue,
             Ok(_) => return Err(metadata_failure("metadata_child_output", labeled)),
-            Err(_) => return Err(metadata_failure("metadata_child_read", labeled)),
+            Err(error) => {
+                return Err(metadata_failure(
+                    metadata_errno_tag("child_io", &error),
+                    labeled,
+                ))
+            }
         }
     }
     Ok(false)
@@ -886,8 +913,7 @@ pub(crate) fn run_fstat_in_worker(
     {
         return Err(metadata_failure("metadata_fstat_protocol", true));
     }
-    let command = crate::auth::password_metadata_command(crate::account_password_peer::FSTAT, args)
-        .map_err(|e| metadata_failure(metadata_errno_tag("builder", &e), true))?;
+    let command = metadata_command(crate::account_password_peer::FSTAT, args)?;
     run_with_group(command, b"", deadline, cap, true, Some(seal))
 }
 fn run_with_group(
@@ -1048,7 +1074,19 @@ fn run_with_group(
     if let Ok(mut children) = OWNED_UNREAPED.lock() {
         children.push(child);
     }
-    Err(metadata_failure("metadata_child_cleanup", labeled))
+    metadata_cleanup_result(result, labeled)
+}
+
+// Cleanup uncertainty is latched independently above. Never replace the first
+// observed metadata failure with its later disposition failure.
+fn metadata_cleanup_result<T>(
+    result: Result<T, CommandExecutionError>,
+    labeled: bool,
+) -> Result<CommandExecution, CommandExecutionError> {
+    match result {
+        Err(error) => Err(error),
+        Ok(_) => Err(metadata_failure("metadata_child_cleanup", labeled)),
+    }
 }
 
 #[cfg(test)]

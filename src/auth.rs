@@ -148,7 +148,7 @@ pub(crate) fn password_command_shape_fixture() -> io::Result<Command> {
 }
 
 #[cfg(all(unix, test))]
-pub(crate) use tests::password_process_fixture_command;
+pub(crate) use tests::{password_metadata_spawn_denied_fixture, password_process_fixture_command};
 
 /// Construct only the operator-mapped public inventory worker invocation.
 /// Its caller validates both paths; browser requests cannot supply either path.
@@ -1791,6 +1791,19 @@ pub(crate) fn mutation_real_worker_fixture_command(witness: &std::path::Path) ->
 
 #[cfg(test)]
 mod tests {
+    /// Fixed test-only spawn refusal through the actual Unix command boundary.
+    #[cfg(unix)]
+    pub(crate) fn password_metadata_spawn_denied_fixture() -> Command {
+        use std::os::unix::process::CommandExt;
+        let mut command = password_fstat_echo_fixture();
+        // SAFETY: the child callback only returns a fixed errno before exec. It
+        // performs no allocation, I/O, locking or caller-supplied operation.
+        unsafe {
+            command.pre_exec(|| Err(io::Error::from_raw_os_error(libc::EACCES)));
+        }
+        command
+    }
+
     #[cfg(unix)]
     pub(crate) fn password_process_fixture_command(mode: &str) -> Command {
         let script = match mode {

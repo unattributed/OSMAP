@@ -1376,6 +1376,73 @@ fn native_rust_private_primary_admission() -> Result<(), &'static str> {
     Ok(())
 }
 
+/// One real authenticated epoch read; requires separately authorized native
+/// fixture custody. No password, mutation, HTTP or readiness flags are supplied.
+#[cfg(unix)]
+#[test]
+#[ignore = "requires explicit one-shot OpenBSD R1/R2 authority and fresh exact-owned fixture"]
+fn native_rust_stock_epoch_admission() -> Result<(), &'static str> {
+    use std::io::Read;
+    use std::os::unix::fs::MetadataExt;
+    #[derive(serde::Deserialize)]
+    #[serde(deny_unknown_fields)]
+    struct Bootstrap {
+        version: u8,
+        client_root: PathBuf,
+    }
+    if !cfg!(target_os = "openbsd") || crate::openbsd::effective_uid() == 0 {
+        return Err("fixed nonroot OpenBSD client required");
+    }
+    crate::openbsd::disable_core_dumps().map_err(|_| "client core limit refused")?;
+    let deadline = Instant::now() + Duration::from_secs(35);
+    let mut bytes = Vec::new();
+    std::io::stdin()
+        .take(4097)
+        .read_to_end(&mut bytes)
+        .map_err(|_| "private bootstrap read refused")?;
+    if bytes.len() > 4096 {
+        return Err("private bootstrap bound refused");
+    }
+    let boot: Bootstrap =
+        serde_json::from_slice(&bytes).map_err(|_| "private bootstrap shape refused")?;
+    let root = &boot.client_root;
+    if boot.version != 1
+        || root.parent() != Some(Path::new("/var/run"))
+        || !root
+            .file_name()
+            .and_then(|x| x.to_str())
+            .is_some_and(|name| {
+                name.strip_prefix("osmap-service-admission-client-")
+                    .is_some_and(|suffix| {
+                        suffix.len() == 16
+                            && suffix
+                                .bytes()
+                                .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+                    })
+            })
+    {
+        return Err("private bootstrap authority refused");
+    }
+    let directory = std::fs::symlink_metadata(root).map_err(|_| "client directory unavailable")?;
+    if !directory.is_dir() || directory.uid() != 0 || directory.mode() & 0o7777 != 0o750 {
+        return Err("client directory custody refused");
+    }
+    let client = Client::paired_fixture_files(
+        Path::new("/var/run/osmap-account-admission/admission.sock"),
+        &root.join("admission.key"),
+        0,
+    )
+    .map_err(|_| "existing Rust client custody refused")?;
+    client
+        .admit_before("alice@osmap-password.invalid", 0, deadline)
+        .map_err(|_| "authenticated epoch exchange refused")?;
+    if Instant::now() >= deadline {
+        return Err("original client deadline expired");
+    }
+    println!("native_stock_epoch_admission result=PASS authenticated_exchange=true epoch=0 credential_write=false full_workflow_qualified=false");
+    Ok(())
+}
+
 /// Exercise the real constructor against local filesystem objects. Diagnostics
 /// discriminate the rejected invariant without disclosing the object or key.
 #[test]

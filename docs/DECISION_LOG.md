@@ -1,5 +1,31 @@
 # Decision Log
 
+2026-10-24 UTC — **StockWorkerArgv Rust metadata provenance corrected; native cause remains UNKNOWN.**
+The fixed `ps -p PID -o args=` policy already accepts the intended command and
+the helper establishes `/` before initial StockPeer observation. Probe165's
+generic Denied does not identify builder, spawn or child-I/O failure and does not
+justify changing permissions, UID, confinement, argv validation or deadlines.
+The demonstrated source defects were discarded metadata subphase, ErrorKind-only
+denial misclassification and replacement of an earlier failure by cleanup failure.
+The correction retains the existing closed metadata tag, first operation57 and
+query error, while keeping actual child/endpoint cleanup uncertainty separate
+from intentional executor stop. Successful argv reads rejected by the unchanged
+identity rule now receive the existing Invalid category.
+
+Default helper stderr retains its legacy format. The explicit fixed Rust
+`--startup-metadata-diagnostic` invocation runs the same service lifecycle and
+adds only closed detail/error/cleanup fields. The unchanged Python consumer
+cannot consume that opt-in record; no diagnostic continuity or native PASS is
+claimed through it. An ignored Rust epoch-only client entry prepares one genuine
+authenticated non-mutating exchange for a separately authorized R1/R2 operation.
+No Python change, host access, fixture provision/disposal, password submission,
+qualification flag or public-service change occurs in this source work order.
+See [the source findings and exact native proposal](UX_S04_02_STOCK_WORKER_ARGV_20261024.md).
+Probe165 FAIL/UNCERTAIN and its later independent no-write evidence remain
+separate; all owned resources and historical evidence stages remain retained.
+Local results/review and delivery records belong to the current execution ledger
+and `/home/foo/Downloads/osmap-ux-s04/stock-worker-argv-20261024/`.
+
 2026-10-24 UTC — **Rust admission/startup diagnostic correction source PASS; native T03 remains NOT QUALIFIED.** Admission construction emits bounded operation/check/category codes; helper runtime/backend-recheck failure preserves its actual existing trace instead of stale MutationBind. Existing ownership, permissions, custody checks, deadlines and confinement policy are preserved. Focused Rust checks PASS52 with four explicit native ignores; independent source/security review CLEAR; V10/V11 and work-order consistency PASS. Normal signed commit/push delivery remains pending. The new admission stderr schema is not promoted by unchanged Python result consumers. No Python source change, host execution, native retry or retained-resource disposal occurred. Historical160/163 causes remain UNKNOWN.
 
 

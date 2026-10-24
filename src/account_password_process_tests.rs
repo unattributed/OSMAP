@@ -2,7 +2,18 @@ use super::*;
 
 #[test]
 fn fixed_commands_have_hash_only_isolation_and_no_caller_program() {
+    let ps_args = ["-p", "123", "-o", "args="].map(str::to_owned).to_vec();
     if std::env::current_dir().unwrap() != std::path::Path::new("/") {
+        assert_eq!(
+            metadata_command("/bin/ps", &ps_args).unwrap_err().reason,
+            "metadata_builder_denied"
+        );
+        assert_eq!(
+            crate::auth::password_metadata_command("/bin/ps", &ps_args)
+                .unwrap_err()
+                .kind(),
+            std::io::ErrorKind::PermissionDenied
+        );
         let result = run(
             crate::auth::password_command_shape_fixture().unwrap(),
             b"",
@@ -15,6 +26,19 @@ fn fixed_commands_have_hash_only_isolation_and_no_caller_program() {
     }
     use crate::account_password_backend::{HASH_ARGS, HASH_PROGRAM, SQL_ARGS, SQL_PROGRAM};
     let strings = |args: &[&str]| args.iter().map(|s| (*s).into()).collect::<Vec<String>>();
+    let metadata = metadata_command("/bin/ps", &ps_args).unwrap();
+    assert_eq!(metadata.get_program(), std::ffi::OsStr::new("/bin/ps"));
+    assert_eq!(
+        metadata.get_args().collect::<Vec<_>>(),
+        ps_args.iter().map(std::ffi::OsStr::new).collect::<Vec<_>>()
+    );
+    assert!(metadata.get_current_dir().is_none());
+    assert_eq!(
+        metadata_command("/bin/ps", &strings(&["-p", "123", "-o", "env="]))
+            .unwrap_err()
+            .reason,
+        "metadata_builder_denied"
+    );
     assert!(fixed_metadata_args(
         "/bin/ps",
         &strings(&["-p", "123", "-o", "args="])
@@ -122,6 +146,19 @@ fn sealed_recheck_diagnostic_errno_classes_are_closed_and_payload_free() {
             assert_eq!(metadata_failure(tag, true).reason, tag);
         }
     }
+    let denied = std::io::Error::new(
+        std::io::ErrorKind::PermissionDenied,
+        "private reader token=0123456789abcdef0123456789abcdef",
+    );
+    for (operation, expected) in [
+        ("ps_row", "metadata_ps_row_denied"),
+        ("ps_argv", "metadata_ps_argv_denied"),
+        ("builder", "metadata_builder_denied"),
+        ("spawn", "metadata_spawn_denied"),
+        ("child_io", "metadata_child_io_denied"),
+    ] {
+        assert_eq!(metadata_errno_tag(operation, &denied), expected);
+    }
     for bad in [
         "metadata_ps_row_denied password=secret",
         "/private/path",
@@ -129,6 +166,78 @@ fn sealed_recheck_diagnostic_errno_classes_are_closed_and_payload_free() {
         "metadata_ps_row_denied\n",
     ] {
         assert!(metadata_failure_tag(bad).is_none());
+    }
+}
+
+#[test]
+fn metadata_actual_runner_preserves_echo_and_fixed_spawn_denial() {
+    let output = run_with_cap_labeled(
+        crate::auth::password_fstat_echo_fixture(),
+        b"public-metadata-fixture\n",
+        Instant::now() + Duration::from_secs(2),
+        4096,
+        true,
+    )
+    .unwrap();
+    assert_eq!(output.status_code, 0);
+    assert_eq!(output.stdout, "public-metadata-fixture\n");
+    assert!(output.stderr.is_empty());
+
+    for (labeled, expected) in [
+        (true, "metadata_spawn_denied"),
+        (false, "password utility unavailable"),
+    ] {
+        let error = run_with_cap_labeled(
+            crate::auth::password_metadata_spawn_denied_fixture(),
+            b"",
+            Instant::now() + Duration::from_secs(2),
+            4096,
+            labeled,
+        )
+        .unwrap_err();
+        assert_eq!(error.reason, expected);
+    }
+    assert!(!execution_quarantined());
+}
+
+#[test]
+fn metadata_actual_drain_denial_excludes_private_error_payload() {
+    struct DeniedReader;
+    impl std::io::Read for DeniedReader {
+        fn read(&mut self, _: &mut [u8]) -> std::io::Result<usize> {
+            Err(std::io::Error::new(
+                std::io::ErrorKind::PermissionDenied,
+                "private reader token=0123456789abcdef0123456789abcdef",
+            ))
+        }
+    }
+    for (labeled, expected) in [
+        (true, "metadata_child_io_denied"),
+        (false, "password utility unavailable"),
+    ] {
+        let mut bytes = Vec::new();
+        let error = drain_labeled(&mut DeniedReader, &mut bytes, 4096, labeled).unwrap_err();
+        assert_eq!(error.reason, expected);
+        assert!(bytes.is_empty());
+    }
+}
+
+#[test]
+fn metadata_cleanup_failure_preserves_the_original_error() {
+    for labeled in [true, false] {
+        let original = metadata_failure("metadata_child_io_denied", labeled);
+        let expected = original.reason.clone();
+        let error = metadata_cleanup_result::<()>(Err(original), labeled).unwrap_err();
+        assert_eq!(error.reason, expected);
+        let cleanup = metadata_cleanup_result(Ok(()), labeled).unwrap_err();
+        assert_eq!(
+            cleanup.reason,
+            if labeled {
+                "metadata_child_cleanup"
+            } else {
+                "password utility unavailable"
+            }
+        );
     }
 }
 

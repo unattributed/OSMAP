@@ -201,12 +201,24 @@ impl OperatorFiles {
 /// Fixed operator entry: no caller-selected account/config/utility paths or
 /// namespace/sealing success flags. Native authority is observed, not toggled.
 pub fn run_operator_service(stop: &AtomicBool) -> Result<(), Error> {
+    run_operator_service_diagnostic(stop, false)
+}
+/// Explicit operator-only diagnostic invocation of the identical service path.
+/// The extra fixed trace line is not accepted by legacy strict stderr consumers.
+pub fn run_operator_service_with_metadata_diagnostics(stop: &AtomicBool) -> Result<(), Error> {
+    run_operator_service_diagnostic(stop, true)
+}
+fn run_operator_service_diagnostic(stop: &AtomicBool, metadata: bool) -> Result<(), Error> {
     let mut trace = crate::account_password_fstat::StartupTrace::new(
         crate::account_password_fstat::StartupOperation::ServiceNative,
     );
     let result = run_operator_service_with_trace(stop, &mut trace);
     if let Err(error) = &result {
-        trace.emit(error);
+        if metadata {
+            trace.emit_metadata(error);
+        } else {
+            trace.emit(error);
+        }
     }
     result
 }
@@ -552,6 +564,25 @@ fn first_endpoint_failure(reported: &AtomicBool) -> bool {
 #[cfg(test)]
 mod diagnostic_tests {
     use super::*;
+    #[test]
+    fn endpoint_cleanup_failure_retains_original_metadata_in_rich_trace() {
+        use crate::account_password_fstat::{StartupOperation as Op, StartupTrace};
+        let mut trace = StartupTrace::new(Op::StockWorkerArgv);
+        trace.metadata("metadata_spawn_denied");
+        trace.metadata_error(Error::Unavailable);
+        let result = finish_service_with_cleanup(
+            Err(Error::Unavailable),
+            || Err(Error::Unavailable),
+            || Ok(()),
+        );
+        assert_eq!(result, Err(Error::CleanupUnconfirmed));
+        let mut output = Vec::new();
+        trace
+            .write_diagnostic(&mut output, &result.unwrap_err(), true)
+            .unwrap();
+        assert_eq!(String::from_utf8(output).unwrap(),
+            "account_password_service stage=primary_fstat_stock_worker_argv_denied error=CleanupUnconfirmed\naccount_password_service metadata=metadata_spawn_denied error=Unavailable cleanup=unconfirmed\n");
+    }
     /// Own process only: root has provisioned the existing fixed configuration,
     /// keys and fresh Alice/Bob accounts. Public mail stays untouched.
     #[test]
