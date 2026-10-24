@@ -1,5 +1,13 @@
 # S04-02-T03: StockWorkerArgv metadata denial
 
+**Superseded execution proposal — operator direction, 2026-10-24.** The operator
+rejected ps-based worker attestation and approved PostfixAdmin-method
+reconstruction that preserves working login and reuses the existing TOTP verifier.
+The R1/R2 proposal below is retained as history and must not be dispatched as the
+next reconstruction step. Its source diagnostic findings and original165 failure
+remain valid historical records. See the current slice specification and ledger;
+no native or retained-resource disposal authority follows from this document.
+
 Source work from signed `a7ad3116a58fb37682a51742caf5f2a9e30ed1fd`.
 Target for a separately authorized native operation: obsd1 only. Production
 `mail.blackbagsecurity.com` is out of scope. No host action is authorized or

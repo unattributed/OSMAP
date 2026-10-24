@@ -1,5 +1,63 @@
 # Decision Log
 
+2026-10-24 UTC — **Operator-approved PostfixAdmin-method reconstruction.**
+Preserve successful ordinary login, reuse the existing file-backed TOTP verifier
+and replay store, implement the narrow credential-change operation following
+PostfixAdmin, then prove helper/epoch/session integration before routing working
+functionality through it. Existing step-up, race and session code is not presumed
+qualified in that reconstruction. Freeze Python harness development; preserve all
+20 obligations, nine scenarios, historical evidence and normal delivery hooks.
+
+The reference sequence is authenticated account/CSRF/policy, stored-credential
+verification, compatible replacement hash, named-row update/readback and actual
+required post-write effects. The supplied PostfixAdmin Login/hash source capture
+is historical Toronto evidence, not current obsd1 configuration. A configured
+post-password hook can fail after the database write; uncertain results must not
+be retried or described as no-write. The method is the reference, without copying
+its shell/logging or private-material exposure into OSMAP.
+
+The ps-dependent StockPeer startup proposal is superseded. The approved first
+source outcome is a real Runtime login/TOTP/session preservation regression with
+password mutation disabled, using existing Rust fixtures. Explicitly configured
+unavailable admission must retain its no-downgrade behavior. Necessary read-only
+obsd1 schema/hash-capability observations precede dependent implementation; no
+new application startup, authentication, password mutation, provisioning or
+retained165 disposition is authorized by this first phase.
+
+The first regression now passes through the real Runtime with the existing
+file-backed TOTP/replay/session services and an accepting primary-auth fixture.
+Unavailable password change creates no mutation state and preserves the session;
+reusing the consumed TOTP code is refused. Four adjacent refusal/replay controls
+also pass. These are local composition results, not installed authentication.
+
+One bounded read-only observation on obsd1 completed: ARGON2ID and BLF-CRYPT are
+available; the mailbox uses InnoDB with the required credential/status columns
+and a unique username primary key. All four fixed PostfixAdmin source/config
+paths exist. No account values or configuration bodies were read, so effective
+hash/hook/cache policy remains UNKNOWN. No authentication, credential write,
+service operation or retained-resource disposal occurred.
+
+Independent design reassessment rejects an invented requirement for a second
+private hash verifier: the existing authoritative Dovecot credential check can
+be reused if canonical identity, passdb and cache freshness are established.
+Source inspection identifies a narrower race defect: Service authenticates
+before reading its SQL comparison snapshot. An external update between those
+steps can therefore become the snapshot later overwritten. Capture the snapshot
+first, verify through Dovecot, then retain the same snapshot for the existing
+conditional update/readback. The account lock serializes OSMAP writers; the SQL
+predicate must still refuse external changes. No new cryptographic dependency
+or second TOTP implementation is justified by this correction. The reconstructed
+helper, freshness and session composition still require their own evidence.
+
+The Rust ordering correction now passes all six focused service controls. The
+new race discriminator exercises the real Service and Backend with an external
+credential replacement during successful authentication: the original snapshot
+produces a zero-row update, preserves the external row and Bob, consumes the
+intent, leaves epoch unchanged and performs no post-write effects. The positive
+unchanged-row path, wrong-password/replay and containment controls also pass.
+Independent source review and normal signed delivery remain separate gates; no
+native password-change or installed qualification follows from these tests.
+
 2026-10-24 UTC — **Normal delivery refusal preserved and test fixture corrected.**
 The signed StockWorkerArgv checkpoint `015084569d8f6f610e82f0adefa3cd0cb4b62c21`
 passed its normal commit check. Its ordinary push refused after138.589s at the

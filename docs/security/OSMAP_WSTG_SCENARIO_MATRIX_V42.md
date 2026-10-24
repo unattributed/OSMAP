@@ -1398,3 +1398,25 @@ case10 and the instrumented older-source worker observation remain failed. Exact
 owned fixture recovery and diagnostic process cleanup passed in their enumerated
 scopes. No WSTG authentication, password-change, installed or release scenario is
 upgraded by this source update; matching complete workflow evidence is pending.
+
+
+### S04-02 reconstruction baseline and credential ordering — 2026-10-24
+
+The approved reconstruction preserves ordinary login and reuses the existing
+TOTP verifier. A local test through the real Runtime, file-backed TOTP/replay and
+session services with an accepting primary-auth fixture confirms session
+issuance/validation while password mutation is disabled, refusal without mutation
+state, and consumed-code replay refusal. Four adjacent refusal/replay controls
+pass. This does not qualify installed Dovecot authentication or the reconstructed
+password-change journey.
+
+Source analysis identified authentication before SQL snapshot capture as an
+external-writer race: a changed credential could be adopted as the later CAS
+comparison. The changed boundary captures that snapshot first and retains it
+through existing conditional update/readback. Authoritative canonical Dovecot
+verification and fresh cache semantics remain required; no second TOTP or
+cryptographic implementation, command-policy bypass or qualification flag follows.
+Matching source tests and independent review are recorded in the active ledger.
+Native helper/epoch/session integration, complete WSTG journey and S04-02
+acceptance remain unqualified. Historical failures and retained165 resources
+remain preserved.

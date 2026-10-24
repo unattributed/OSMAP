@@ -1,5 +1,39 @@
 # S04-02 delivery specification — authoritative own-password change
 
+## Approved reconstruction direction, 2026-10-24
+
+The operator approved preserving successful login, reusing the existing TOTP
+verifier, implementing the credential-change operation using PostfixAdmin's
+method, and proving helper/epoch/session integration before routing working
+functionality through it. This supersedes the ps-based worker-attestation
+engineering route. It does not waive the four outcomes,20 obligations or T01–T09.
+Existing implementation and local/historical passes do not establish working
+step-up, race or session behavior in the reconstructed path.
+
+Start by proving ordinary Runtime primary authentication, real file-backed TOTP
+and session issuance with password mutation disabled. Preserve explicit admission
+no-downgrade and stale-epoch refusal; unavailable mutation is a different capability
+from explicitly configured unavailable admission. Reuse the same TOTP secret and
+replay store. No second TOTP implementation is required.
+
+The next credential boundary is a private account snapshot read, authoritative
+Dovecot current-password verification, compatible hash generation, existing
+conditional update/readback and truthful result. Capture the comparison snapshot
+before authentication and retain it through the CAS. Establish exact canonical
+identity, the authoritative passdb and cache freshness; do not invent a second
+cryptographic implementation merely to mirror PostfixAdmin internals.
+Separately prove real old-password rejection/new-password acceptance, required
+epoch/session effects and the final browser journey. Every such milestone remains
+unqualified until its matching functional evidence exists.
+
+Before dependent implementation establish the current backend's actual schema,
+hash policy/capabilities and applicable hook/cache contract. Historical Toronto
+PostfixAdmin source is a method reference only. No new dependencies, unsafe
+stored-hash exposure, public-service changes, automatic retry or qualification
+flag changes follow from this direction. Python harness development is frozen;
+use existing Rust fixtures and minimum changed-boundary checks plus normal
+mandatory delivery hooks. The existing ledger records the concrete next action.
+
 ## Current topology correction, 2026-10-21
 
 The operator confirms that development and production target a single-host

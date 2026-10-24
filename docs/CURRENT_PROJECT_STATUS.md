@@ -1,5 +1,23 @@
 # Current Project Status
 
+2026-10-24 UTC — **Approved reconstruction; working login is the preservation baseline.**
+The operator approved the PostfixAdmin credential-method sequence while preserving
+ordinary login and reusing the existing TOTP verifier. The ps-dependent startup
+route is superseded. First source work proves actual Runtime login/TOTP/session
+behavior with mutation disabled: the local real Runtime/TOTP/session regression
+and four adjacent refusal/replay controls pass. One read-only obsd1 inspection
+confirms required schema/unique-key and hash-algorithm capabilities. Effective
+hash/hook/cache policy remains UNKNOWN; no account values/configuration bodies
+were read. Rust now captures the SQL snapshot before existing Dovecot current-
+password verification, retaining the existing conditional update to refuse
+intervening external changes. All six focused service controls pass, including
+the external-change discriminator and positive unchanged-row path. No new
+crypto dependency is required.
+Current step-up/race/session integration remains unqualified. No new startup,
+authentication/password operation, fixture provision/disposal or production host
+action is supplied by this first phase. Existing165 retained resources/history
+and all20 obligations remain; see the active ledger for actual checks and gaps.
+
 2026-10-24 UTC — **StockWorkerArgv source correction; R1/R2 and T03 remain unqualified.**
 Rust now preserves the exact existing metadata failure detail and first query
 error separately from child/endpoint cleanup uncertainty. The fixed ps command,

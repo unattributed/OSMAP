@@ -150,6 +150,15 @@ impl<'a, E: CommandExecutor, D: Dependencies, C: TimeProvider> Service<'a, E, D,
         let prepare = (|| {
             self.fresh(request, deadline, sampled)
                 .map_err(|_| DependencyError::Unavailable)?;
+            // Keep the comparison row from before authoritative authentication.
+            // A concurrent external credential change must conflict with this
+            // snapshot at the existing CAS, rather than become its new baseline.
+            let snapshot = self
+                .backend
+                .read(request.account(), deadline)
+                .map_err(|_| DependencyError::Refused)?;
+            self.fresh(request, deadline, sampled)
+                .map_err(|_| DependencyError::Unavailable)?;
             match self
                 .dependencies
                 .authenticate(request.account(), request.current(), deadline)?
@@ -157,12 +166,6 @@ impl<'a, E: CommandExecutor, D: Dependencies, C: TimeProvider> Service<'a, E, D,
                 true => {}
                 false => return Err(DependencyError::Refused),
             }
-            self.fresh(request, deadline, sampled)
-                .map_err(|_| DependencyError::Unavailable)?;
-            let snapshot = self
-                .backend
-                .read(request.account(), deadline)
-                .map_err(|_| DependencyError::Refused)?;
             self.fresh(request, deadline, sampled)
                 .map_err(|_| DependencyError::Unavailable)?;
             self.dependencies.preflight(request, deadline)?;

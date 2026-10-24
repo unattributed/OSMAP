@@ -10533,7 +10533,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "status": "PENDING",
     "reference": "Only minimal well-defined own-password usability after all agent-owned development/matching deployed QA/independent audit PASS. No operator password is changed by agent qualification; use controlled disposable Alice and preserve Bob/operator state. NOT RUN."
   },
-  "next_action": "Complete Rust StockWorkerArgv source correction/focused tests/independent review/signed preservation. Prepare next R1/R2 only; no native or disposal authority.",
+  "next_action": "Deliver reviewed login preservation and Service snapshot/authentication-order correction through normal signed hooks; then reconstruct minimum helper command/endpoint authority around existing SQL/hash/Dovecot clients without worker-argv attestation. Establish actual passdb/cache freshness and helper/epoch/session integration before activation.",
   "accountability": {
     "functional_exit": "Working own-account Settings password change through the selected single-host obsd1 local account service and authoritative local backend, fresh password/TOTP step-up, one conditional SQL update, durable OSMAP epoch and all-browser revocation, actual source-bound cache handling, old-password refusal/new-login success and Bob preservation. Existing third-party SMTP/IMAP sessions may remain authenticated. Matching installed QA, independent audit and minimal owner usability remain required. Toronto is later separate production installation.",
     "owner": "/root",
@@ -20983,7 +20983,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "slice": "S04-02",
     "specification": {
       "path": "docs/UX_SLICE_S04_02.md",
-      "sha256": "9a201d052625c627a080c509a9c60459770b5fa29a194b92e5396e38c342af8e"
+      "sha256": "f22873ca5c74ba9d2f46898cd20924b9ce6b0c6298a5c744fb37cb43fd42b431"
     },
     "design": {
       "journey": "Security or Authentication & Recovery \u2192 GET/POST /settings/password \u2192 own-account current password+fresh TOTP \u2192 confirmed authoritative change and current-session revocation, or explicit refusal/contained incomplete result. Navigation/Cancel submit no mutation.",
@@ -21493,6 +21493,61 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "delivery": "Signed015084569d8f6f610e82f0adefa3cd0cb4b62c21 verified. Ordinarypush exit1/138.589s at unchanged legacy unsafe-source scanner auth.rs testfixture; no publication/bypass. LocalRust1900PASS/0fail/61ignored and accountPython634PASS before overallgate refusal. Separate corrective signed checkpoint/ordinarypush pending.",
         "evidence_root": "/home/foo/Downloads/osmap-ux-s04/stock-worker-argv-20261024/",
         "corrective_fixture": "Fixed cfg(test) non-executable directory Command replaces unsafe/pre_exec; actual real-runner denial regression1PASS/0fail/6.595s. Productionguards unchanged; originalpush andreview retained."
+      }
+    },
+    "postfixadmin_reconstruction_20261024": {
+      "operator_approval": "Approved four-point reconstruction: preserve successful login, reuseexistingTOTP, narrowcredentialchangefollowingPostfixAdmin, provehelper/epoch/sessionintegrationbefore routingworkingfunctionalitythroughit.",
+      "owner": "/root",
+      "developer": "/root/password_engineer",
+      "baseline_regression_owner": "/root/guardrails_engineer",
+      "independent_reviewer": "/root/delivery_controller",
+      "source_baseline": "1c33de8d3f5b4a6e1e6302fbb919197bf05275d9",
+      "first_outcome": "Demonstrate normal Runtime login with realexistingfile-backedTOTP/session while passwordmutationdisabled; passwordoperation refuseswithoutstatecreation andloginremainsvalid. Establishactualsupportedcredentialverification contract beforedependentimplementation.",
+      "implementation_order": [
+        "Preserve workingloginselector/rollout andsameTOTPsecret+replaystore; do not addfallbackfor explicitlyconfiguredunavailableadmission.",
+        "Reconstruct Backend snapshot-read -> existing authoritative Dovecot current-password verification -> hash -> same-snapshot CAS/readback. Prove canonical identity/passdb/cache freshness; preserve no-write refusal and uncertain-write semantics.",
+        "ReplaceStockPeer/psdependentcompositionwith narrowverifiedcredential/endpoint/commandcustody; proveactualhelper andStore/sessionintegration beforeactivation.",
+        "Qualifyrequirednativepositive/negativeandinstalledjourney; humanacceptancelast."
+      ],
+      "required_results": "All20obligations/fouroutcomes/T01-T09retained. Existingcode/localtests/historicalfixturePASSdo not qualifyreconstructedstepup/race/sessionpath.",
+      "known_gaps": [
+        "Resolved locally: real Runtime login/file-backed TOTP/session preservation and no password side effects while mutation disabled; not installed/native qualification.",
+        "Service snapshot-before-authentication race correction and exact CAS regression PASS locally. Existing authoritative Dovecot canonical/passdb/cache freshness composition still requires actual integration proof; no new verifier/dependency selected.",
+        "Current obsd1 SQL schema/hash algorithms observed read-only. Historical Toronto source remains method reference; effective hash/hook/cache override policy still UNKNOWN.",
+        "Independent reassessment selected existing Dovecot verification with snapshot-before-authentication/CAS; do not introduce crypto dependency. Helper/endpoint/command custody and cache freshness remain unqualified."
+      ],
+      "authorized_now": "Source/localtests/review/sign+push and necessarynarrowread-onlyobsd1contractdiscovery. No appstartup/auth/password/provisioning/disposal authority suppliedbythissourcephase.",
+      "excluded": "NewPythoncarrier/framework, productionhostcontact, publicmailcontrols/configwrites, operatorcredentials, retained165adoption/deletion, qualificationflagchange, newdependencyuntilapproved, agentclockexpiry.",
+      "essential_checks": "NewactualRuntimebaseline regression plus unchanged relevant no-downgrade/TOTPreplay controls; mandatorynormaldeliveryhooks. No unchangedbroadsuitebetweenmilestones.",
+      "effort": "Oneboundedbaseline source task; retainmeasuredactualactionsandUNKNOWNhistory. No inventedoperatorcalendarwindow.",
+      "failure_stop": "Onunsupportedverification/configcontract blockdependentimplementation; preserveexactcode/failureandcontinueindependentsourcepreservation. No ambiguouscredentialretry.",
+      "former_native_proposal": "Oldps-dependent StockWorkerArgv R1/R2proposal superseded; diagnostics/historyretained; do not dispatchasnextreconstructionstep.",
+      "baseline_result": {
+        "status": "LOCAL_RUST_PASS",
+        "test": "http::http_gateway::http_gateway_auth::tests::disabled_password_runtime_preserves_ordinary_login_totp_and_session",
+        "additional_controls_passed": 4,
+        "native_product_qualification": false,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/postfixadmin-reconstruction-20261024/runtime-disabled-baseline.log"
+      },
+      "read_only_contract_result": {
+        "status": "COMPLETE_RECONCILED",
+        "attempt_id": "S04-02-reconstruction-contract-readonly",
+        "source_revision": "e38ca8ce82f13cddfa9dbff5728e6eaa9f7c1b61e6982308d933491cf4f7154a",
+        "reference": "/home/foo/Downloads/osmap-ux-s04/postfixadmin-reconstruction-20261024/readonly-reconciled.json",
+        "sha256": "42c00a8031737aef280393f58882481cbfa7d091e2b6a7aff25c6e3c21a03b32",
+        "elapsed_seconds": 0.354598,
+        "observed": "ARGON2ID/BLF-CRYPT available; InnoDB mailbox exact required columns and unique username PRIMARY. Four fixed PostfixAdmin files present. No account values or effective configuration read. No authentication, credential write, services or disposal.",
+        "remaining": "Effective hash/hook/cache policy UNKNOWN. New credential/helper/epoch/session composition NOT_QUALIFIED."
+      },
+      "service_order_result": {
+        "status": "LOCAL_RUST_PASS",
+        "source_sha256": "57288a836dbbc763cc08f5499782e65c32f8e58dcaf3b0847f747ef8ff12890f",
+        "focused_tests_passed": 6,
+        "failed": 0,
+        "elapsed_seconds": 9.125,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/reconstruction-service-cas-20261024T105508Z/focused.log",
+        "sha256": "77201e50fd6a98962930e8914d35ed4508ae9c7a0824beee05b966712eb74b6c",
+        "finding": "External credential change during successful authentication conflicts with captured original snapshot: zero affected rows, preserved external row, consumed intent, unchanged epoch and Bob, no cache/mail effects. Positive unchanged row, wrong-current/replay, postwrite and containment controls pass. Native DB/Dovecot composition NOT_QUALIFIED."
       }
     }
   },
@@ -32429,6 +32484,43 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
             }
           }
         ]
+      },
+      {
+        "id": "reconstruction-contract-readonly",
+        "kind": "DISCOVERY",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "single-host-readiness"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "docs/UX_EXECUTION_LEDGER.md"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/bin/sh",
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/postfixadmin-reconstruction-20261024/dispatch-readonly.sh"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "One nonmutating identity/hash-capability/schema/reference-presence observation; no account values, PHP evaluation, application authentication, service controls or retained-resource disposal. Nonzero disposition UNKNOWN; no retry. Product acceptance remains NOT_QUALIFIED.",
+        "prerequisites": [
+          {
+            "id": "independent-fixed-readonly-chain",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/postfixadmin-reconstruction-20261024/readonly-review.json",
+              "sha256": "919db4e76cf58f38ace23bd2d1ab48acf1c4356de67625e99022e020ac8a4f10"
+            }
+          }
+        ]
       }
     ],
     "budget": {
@@ -32442,11 +32534,10 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     },
     "planned_action": null
   },
-  "blocker": "Probe165 reaches StockWorkerArgv57/Denied/Unavailable during StockRuntime revalidation before ParentPrepare/ParentSeal/accept-loop. Exact metadata builder/spawn/child-I/O subphase and errno remain UNKNOWN because historical trace discarded them. Original cleanupUNCERTAIN; later no-write evidence separate. No fresh native or disposal authority.",
-  "independent_next_action": "Independently review focused Rust metadata/trace corrections and retained165 exact-owned inventory, complete normal signed preservation, and prepare only one-shot R1/R2. Fresh explicit authorization and current custody/capture-consumer bindings required before native execution; no permission/confinement/deadline relaxation, Python change or disposal.",
-  "updated_at": "2026-10-24T08:57:35.963476+00:00"
+  "blocker": "Native helper composition, effective credential/cache policy and new epoch/session integration remain unqualified; no new native startup/authentication/password operation is authorized by this source phase.",
+  "independent_next_action": "Reviewbaselinepreservationregression andexactnonmutatingbackendfactinspection. Preserveexistingno-downgradecontrols; noexistingcomponentPASSupgraded.",
+  "updated_at": "2026-10-24T10:53:15Z"
 }
-
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->
 

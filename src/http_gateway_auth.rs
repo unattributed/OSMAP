@@ -708,6 +708,198 @@ mod tests {
     use super::*;
 
     #[cfg(unix)]
+    fn accepted_legacy_primary_fixture(
+        root: &std::path::Path,
+        submitted: &str,
+        canonical: &str,
+    ) -> PathBuf {
+        use std::os::unix::fs::PermissionsExt;
+        let marker = root.join("accepted-primary");
+        let executable = root.join("doveadm");
+        let interpreter = if cfg!(target_os = "openbsd") {
+            "/usr/local/bin/python3"
+        } else {
+            "/usr/bin/python3"
+        };
+        let marker_literal = serde_json::to_string(&marker).unwrap();
+        std::fs::write(
+            &executable,
+            format!(
+                "#!{interpreter}\nimport sys\nfrom pathlib import Path\nsys.stdin.read()\nPath({marker_literal}).write_bytes(b'called\\n')\nprint('passdb: {submitted} auth succeeded')\nprint('extra fields:')\nprint('  user={canonical}')\n"
+            ),
+        )
+        .unwrap();
+        std::fs::set_permissions(&executable, std::fs::Permissions::from_mode(0o700)).unwrap();
+        executable
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn disabled_password_runtime_preserves_ordinary_login_totp_and_session() {
+        use crate::totp::TimeProvider;
+        use hmac::{Hmac, Mac};
+        use std::os::unix::fs::PermissionsExt;
+
+        // Compare all owned paths and file bytes without rendering session tokens
+        // in assertion output. This detects password-side state creation as well
+        // as mutation of the existing session or factor/replay files.
+        fn snapshot(
+            root: &std::path::Path,
+        ) -> std::collections::BTreeMap<PathBuf, Option<Vec<u8>>> {
+            let mut entries = std::collections::BTreeMap::new();
+            for entry in std::fs::read_dir(root).unwrap() {
+                let path = entry.unwrap().path();
+                if path.is_dir() {
+                    entries.insert(path.clone(), None);
+                    entries.extend(snapshot(&path));
+                } else {
+                    entries.insert(path.clone(), Some(std::fs::read(&path).unwrap()));
+                }
+            }
+            entries
+        }
+
+        let root = std::env::temp_dir().join(format!(
+            "osmap-disabled-password-login-{}",
+            crate::draft::generate_draft_id().unwrap()
+        ));
+        std::fs::create_dir(&root).unwrap();
+        std::fs::set_permissions(&root, std::fs::Permissions::from_mode(0o700)).unwrap();
+        let executable =
+            accepted_legacy_primary_fixture(&root, "alice@example.test", "alice@example.test");
+        let mut env = std::collections::BTreeMap::new();
+        env.insert("OSMAP_STATE_DIR".into(), root.to_str().unwrap().into());
+        let config = AppConfig::from_env_map(&env).unwrap();
+        assert!(config.account_runtime.is_none());
+        let mut gateway = RuntimeBrowserGateway::from_config(&config);
+        assert!(matches!(
+            gateway.account_runtime,
+            AccountRuntimeCapability::Disabled
+        ));
+        assert!(gateway.account_rollout.is_none());
+        gateway.doveadm_path = executable;
+
+        // The same public RFC6238 vector and real file-backed verifier used by
+        // the paired-runtime regression; no accepting factor stub is involved.
+        std::fs::create_dir_all(&gateway.totp_secret_dir).unwrap();
+        std::fs::set_permissions(
+            &gateway.totp_secret_dir,
+            std::fs::Permissions::from_mode(0o700),
+        )
+        .unwrap();
+        let factor = FileTotpSecretStore::new(&gateway.totp_secret_dir)
+            .secret_path_for_username("alice@example.test");
+        std::fs::write(&factor, "secret=GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ\n").unwrap();
+        std::fs::set_permissions(&factor, std::fs::Permissions::from_mode(0o600)).unwrap();
+        let counter = SystemTimeProvider.unix_timestamp() / 30;
+        let mut mac = Hmac::<sha1::Sha1>::new_from_slice(b"12345678901234567890").unwrap();
+        mac.update(&counter.to_be_bytes());
+        let digest = mac.finalize().into_bytes();
+        let offset = usize::from(digest[19] & 15);
+        let number =
+            u32::from_be_bytes(digest[offset..offset + 4].try_into().unwrap()) & 0x7fff_ffff;
+        let code = format!("{:06}", number % 1_000_000);
+        let context = AuthenticationContext {
+            request_id: "disabled-password-login".into(),
+            remote_addr: "127.0.0.1".into(),
+            user_agent: "public fixture".into(),
+        };
+        let outcome = gateway.login(
+            &context,
+            "alice@example.test",
+            "public synthetic credential",
+            &code,
+        );
+        let BrowserLoginDecision::Authenticated {
+            canonical_username,
+            session_token,
+            ..
+        } = outcome.decision
+        else {
+            panic!("ordinary Runtime login refused with password mutation disabled");
+        };
+        assert_eq!(canonical_username, "alice@example.test");
+        assert!(root.join("accepted-primary").exists());
+        let BrowserSessionDecision::Valid { validated_session } = gateway
+            .validate_session(&context, session_token.as_str())
+            .decision
+        else {
+            panic!("ordinary Runtime session refused");
+        };
+        assert_eq!(validated_session.record.account_epoch, None);
+        assert!(!gateway.password_change_available(&validated_session));
+        let before = snapshot(&root);
+        let request = crate::password_change::Request::new(
+            "public synthetic credential",
+            "New-public-passphrase",
+            "New-public-passphrase",
+            &code,
+        )
+        .unwrap();
+        let password = gateway.change_own_password(
+            &context,
+            &validated_session,
+            &session_token,
+            request,
+            std::time::Instant::now() + std::time::Duration::from_secs(5),
+        );
+        assert_eq!(
+            password.decision,
+            BrowserPasswordDecision::PrewriteRefused(crate::password_change::Error::Unavailable)
+        );
+        assert!(password.changed_at.is_none());
+        assert!(
+            snapshot(&root) == before,
+            "unavailable password operation changed owned state"
+        );
+        assert!(!gateway.settings_dir.join("password-stepup-rate").exists());
+        assert!(matches!(
+            gateway
+                .validate_session(&context, session_token.as_str())
+                .decision,
+            BrowserSessionDecision::Valid { .. }
+        ));
+
+        // Reconstructing the real verifier must retain the login's consumed
+        // counter, including after the unavailable password action.
+        let replay = gateway.build_factor_service().verify(
+            &context,
+            "alice@example.test",
+            RequiredSecondFactor::Totp,
+            &code,
+        );
+        assert!(matches!(
+            replay.decision,
+            AuthenticationDecision::Denied {
+                public_reason: PublicFailureReason::InvalidSecondFactor
+            }
+        ));
+        let sessions_before = std::fs::read_dir(&gateway.session_dir).unwrap().count();
+        assert!(matches!(
+            gateway
+                .login(
+                    &context,
+                    "alice@example.test",
+                    "public synthetic credential",
+                    &code
+                )
+                .decision,
+            BrowserLoginDecision::Denied { .. }
+        ));
+        assert_eq!(
+            std::fs::read_dir(&gateway.session_dir).unwrap().count(),
+            sessions_before
+        );
+        assert!(matches!(
+            gateway
+                .validate_session(&context, session_token.as_str())
+                .decision,
+            BrowserSessionDecision::Valid { .. }
+        ));
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[cfg(unix)]
     #[test]
     fn configured_account_failure_never_uses_accepted_legacy_doveadm() {
         use std::os::unix::fs::PermissionsExt;
@@ -760,21 +952,7 @@ mod tests {
             std::fs::create_dir(&root).unwrap();
             std::fs::set_permissions(&root, std::fs::Permissions::from_mode(0o700)).unwrap();
             let marker = root.join("accepted-primary");
-            let executable = root.join("doveadm");
-            let interpreter = if cfg!(target_os = "openbsd") {
-                "/usr/local/bin/python3"
-            } else {
-                "/usr/bin/python3"
-            };
-            let marker_literal = serde_json::to_string(&marker).unwrap();
-            std::fs::write(
-                &executable,
-                format!(
-                    "#!{interpreter}\nimport sys\nfrom pathlib import Path\nsys.stdin.read()\nPath({marker_literal}).write_bytes(b'called\\n')\nprint('passdb: {submitted} auth succeeded')\nprint('extra fields:')\nprint('  user={canonical}')\n"
-                ),
-            )
-            .unwrap();
-            std::fs::set_permissions(&executable, std::fs::Permissions::from_mode(0o700)).unwrap();
+            let executable = accepted_legacy_primary_fixture(&root, submitted, canonical);
             let mut env = std::collections::BTreeMap::new();
             env.insert("OSMAP_STATE_DIR".into(), root.to_str().unwrap().into());
             if configured {

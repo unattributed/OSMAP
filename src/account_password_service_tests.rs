@@ -62,6 +62,7 @@ struct Trace {
     events: Vec<&'static str>,
     written: bool,
     sql_writes: usize,
+    stored_row: Option<(String, String)>,
 }
 struct Executor {
     trace: Rc<RefCell<Trace>>,
@@ -102,18 +103,42 @@ impl CommandExecutor for Executor {
         } else if input.starts_with(b"START TRANSACTION;") {
             trace.events.push("write");
             trace.sql_writes += 1;
-            trace.written = !self.zero_rows;
+            let (stored_hash, modified) = trace.stored_row.clone().unwrap_or_else(|| {
+                (
+                    format!("{{BLF-CRYPT}}$2y$05${}", "A".repeat(53)),
+                    "20261017120000".into(),
+                )
+            });
+            let query = std::str::from_utf8(input).unwrap();
+            let matches_snapshot = query.contains(&format!(
+                "AND BINARY password=BINARY CONVERT(0x{} USING utf8mb4) AND modified=STR_TO_DATE('{}','%Y%m%d%H%i%s')",
+                hex(&stored_hash), modified
+            ));
+            trace.written = !self.zero_rows && matches_snapshot;
+            if trace.written {
+                trace.stored_row = Some((hash(), STAMP.into()));
+            }
             if self.malformed_receipt {
                 "1\nunknown\n".into()
             } else {
-                format!("{}\n{}\t{STAMP}\n", u8::from(!self.zero_rows), hex(&hash()))
+                let (stored_hash, modified) =
+                    trace.stored_row.clone().unwrap_or((stored_hash, modified));
+                format!(
+                    "{}\n{}\t{}\n",
+                    u8::from(trace.written),
+                    hex(&stored_hash),
+                    modified
+                )
             }
         } else {
             trace.events.push("read");
-            format!(
-                "{}\t20261017120000\t1\t1\n",
-                hex(&format!("{{BLF-CRYPT}}$2y$05${}", "A".repeat(53)))
-            )
+            let (stored_hash, modified) = trace.stored_row.clone().unwrap_or_else(|| {
+                (
+                    format!("{{BLF-CRYPT}}$2y$05${}", "A".repeat(53)),
+                    "20261017120000".into(),
+                )
+            });
+            format!("{}\t{}\t1\t1\n", hex(&stored_hash), modified)
         };
         Ok(CommandExecution {
             status_code: 0,
@@ -167,6 +192,12 @@ impl Dependencies for Deps {
             "new"
         };
         self.event(name)?;
+        if self.failure == Some("external-change") && !written {
+            self.trace.borrow_mut().stored_row = Some((
+                format!("{{BLF-CRYPT}}$2y$05${}", "C".repeat(53)),
+                "20261018115959".into(),
+            ));
+        }
         if self.failure == Some("wrong-current") && !written {
             return Ok(false);
         }
@@ -234,8 +265,8 @@ fn transaction_orders_real_store_pending_write_auth_mail_and_epoch() {
         trace.borrow().events,
         [
             "authorize",
-            "current",
             "read",
+            "current",
             "preflight",
             "pending",
             "hash",
@@ -257,6 +288,49 @@ fn transaction_orders_real_store_pending_write_auth_mail_and_epoch() {
     for secret in [CURRENT, NEW, &hash()] {
         assert!(!record.contains(secret));
     }
+}
+
+#[test]
+fn external_credential_change_during_authentication_conflicts_with_original_snapshot() {
+    let scratch = Scratch::new();
+    scratch.provision(ACCOUNT, "active");
+    scratch.provision(BOB, "active");
+    let bob = fs::read(scratch.record(BOB)).unwrap();
+    let store = Store::open(&scratch.0, crate::openbsd::effective_uid()).unwrap();
+    let trace = Rc::new(RefCell::new(Trace::default()));
+    let backend = Backend::new(Executor {
+        trace: trace.clone(),
+        zero_rows: false,
+        malformed_receipt: false,
+    });
+    let deps = Deps {
+        trace: trace.clone(),
+        failure: Some("external-change"),
+        record: scratch.record(ACCOUNT),
+    };
+    let mut service = Service::new(&store, &backend, &deps, &Clock, KEY);
+    assert_eq!(
+        service.execute(&frame(), deadline()).unwrap().1,
+        Outcome::KnownRefused
+    );
+    let trace = trace.borrow();
+    assert_eq!(trace.sql_writes, 1);
+    assert!(!trace.written);
+    assert_eq!(
+        trace.stored_row,
+        Some((
+            format!("{{BLF-CRYPT}}$2y$05${}", "C".repeat(53)),
+            "20261018115959".into()
+        ))
+    );
+    assert!(!trace.events.contains(&"flush"));
+    assert!(!trace.events.contains(&"finish"));
+    let status = scratch.status();
+    assert_eq!(status["state"], "active");
+    assert_eq!(status["epoch"], 3);
+    assert_eq!(status["changed_at"], serde_json::Value::Null);
+    assert_eq!(status["used_intents"].as_array().unwrap().len(), 1);
+    assert_eq!(fs::read(scratch.record(BOB)).unwrap(), bob);
 }
 
 #[test]
