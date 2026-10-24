@@ -1,5 +1,39 @@
 # Decision Log
 
+2026-10-24 UTC — **Prove current-credential freshness through the real verifier.**
+Continue the existing failure-analysis loop from native read-only R1/R2 PASS.
+The transaction already snapshots SQL before authentication and uses that original
+snapshot in its conditional update. A stale authentication result could still
+mis-authorize that update; post-write old/new checks cannot repair pre-write
+current-password authorization. Preserve this as the next functional boundary.
+
+Actual read-only obsd1 inspection confirms current mailbox schema/InnoDB and the
+fresh reserved test identity absent. The installed cache-status operation exits64
+and lists flush/login/lookup/test, so active-cache state remains UNKNOWN. File
+settings report cache0, TTL1hour and password-debug knobs disabled; these are
+configuration observations. Master socket root0600 is distinct from the current
+primary socket's nonroot-owner0600 contract. No fallback flush or permission
+change is justified by unavailable status. No authentication or SQL write ran.
+
+Existing165 random plaintexts were not retained. Do not guess or reset those
+accounts to manufacture a positive test. Prepare one separate disposable virtual
+identity and a controlled A-to-B authoritative difference, with secrets in RAM
+and private pipes only. Warm A, change only that fresh row once, then require
+obsolete A refusal FIRST and current B acceptance. Testing B first could refresh
+cache and conceal stale A acceptance. Retain all failures and uncertain effects.
+
+A small cfg(test) seam now admits Authenticate only for the one source-owned
+fresh identity while refusing every mutation before backend construction. It
+projects that identity into both in-memory account sets only after the original
+protected files/sets/keys validate. Original accounts and production authority
+remain. The real Store lock, native primary profile, service seal, client/MAC and
+35-second deadline execute; no replacement verifier, Python or public config is
+introduced. A private one-byte stop can only stop the test service. Two focused
+controls and production compilation pass; independent source review is clear.
+The prospective external update is test stimulus, not product Service/CAS proof.
+Native authentication/freshness and all subsequent transaction/session/browser
+qualification remain NOT RUN; exact bounded fixture review precedes dispatch.
+
 2026-10-24 UTC — **The corrected helper now performs real sealed read-only admission on obsd1.**
 Native02 assessed signed source `b4b1d3c7716efaaf1479960666c823434e0f7a37`.
 The actual helper completed ParentPrepare, ParentSeal/activation and the operational

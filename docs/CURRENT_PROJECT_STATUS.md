@@ -1,5 +1,28 @@
 # Current Project Status
 
+2026-10-24 UTC — **Next focus active: current authoritative credential verification.**
+Read-only helper R1/R2 remains qualified at its recorded source/test scope. The
+next proof is actual password verification while the real epoch lock is held,
+including refusal of an obsolete credential after a controlled authoritative
+change. SQL snapshot-before-authentication/CAS ordering is already corrected.
+
+Current obsd1 read-only discovery completed without authentication or SQL writes.
+Cache-status is unsupported(exit64); file cache0/TTL1hour does not establish live
+cache state. The current schema/InnoDB and absent fresh reserved identity are
+observed. Existing165 passwords are not recoverable from retained metadata, and
+those resources remain untouched. A new isolated identity is necessary for a
+known-current control; it does not require a new SQL principal or OS user.
+
+The existing Rust native helper/client now has a reviewed test-only authentication
+mode for that single fixed identity. It keeps all mutation dispatch refused,
+original account authority, native custody, five-second startup and35-second
+client deadlines. Two focused controls and production compilation pass; no new
+Python scaffolding or verifier. Native authentication/freshness has NOT RUN.
+The planned discriminator warms A, changes only the new row to B once, then checks
+obsolete A BEFORE B. Independently reviewed bounded execution and actual results
+are required. This does not qualify the product credential transaction, epoch/
+session changes, Serve/HTTP, T03, installed readiness or UAT.
+
 2026-10-24 UTC — **Current result: native read-only helper startup and admission PASS.**
 The next focus is complete on obsd1 using signed Rust source
 `b4b1d3c7716efaaf1479960666c823434e0f7a37`: the real helper completes

@@ -19,6 +19,59 @@ fn service(uid: u32) -> Service {
     }
 }
 #[test]
+fn freshness_fixture_projects_only_fixed_account_and_preserves_service_authority() {
+    let original = service(51);
+    let original_accounts = original.password_accounts();
+    let projected = original.with_freshness_fixture_account().unwrap();
+    let mut expected = original_accounts;
+    expected.insert(crate::account_password_server::FRESHNESS_FIXTURE_ACCOUNT.into());
+    assert_eq!(projected.password_accounts(), expected);
+    assert_eq!(projected.config.version, 1);
+    assert_eq!(projected.config.socket, Path::new("/tmp/unused"));
+    assert_eq!(projected.password_peer_uid(), 51);
+    assert_eq!(projected.password_key(), &[29; 32]);
+    assert!(projected.engine.is_none());
+    assert!(projected.active.lock().unwrap().is_empty());
+    assert!(!projected.cleanup_unconfirmed.load(Ordering::SeqCst));
+    let at = now().unwrap();
+    for account in [
+        "alice@example.test",
+        crate::account_password_server::FRESHNESS_FIXTURE_ACCOUNT,
+    ] {
+        let request =
+            Request::issue(account, Operation::Admit { epoch: 0 }, at, &projected.key).unwrap();
+        assert!(projected
+            .process(&request.bytes().unwrap(), at, |observed| {
+                assert_eq!(observed.account(), account);
+                Ok(Some(0))
+            })
+            .is_ok());
+    }
+    let foreign = Request::issue(
+        "unrelated@example.test",
+        Operation::Admit { epoch: 0 },
+        at,
+        &projected.key,
+    )
+    .unwrap();
+    assert_eq!(
+        projected.process(&foreign.bytes().unwrap(), at, |_| {
+            panic!("unconfigured account reached dispatch")
+        }),
+        Err(Error::Refused)
+    );
+    assert!(matches!(
+        projected.with_freshness_fixture_account(),
+        Err(Error::Invalid)
+    ));
+    let mut full = service(51);
+    full.config.accounts = (0..64).map(|i| format!("user{i}@example.test")).collect();
+    assert!(matches!(
+        full.with_freshness_fixture_account(),
+        Err(Error::Invalid)
+    ));
+}
+#[test]
 fn unqualified_production_never_constructs_or_dispatches() {
     const {
         assert!(!NATIVE_CONFINEMENT_QUALIFIED);
@@ -1275,6 +1328,20 @@ fn full_factory_admission_fixture(trusted_web_uid: u32, descriptor_variable: &st
 #[test]
 #[ignore = "requires reviewed OpenBSD actual Rust service and fresh owned private-primary fixture"]
 fn native_rust_private_primary_admission() -> Result<(), &'static str> {
+    native_rust_private_primary_admission_for("alice@osmap-password.invalid")
+}
+
+#[cfg(unix)]
+#[test]
+#[ignore = "requires reviewed OpenBSD authentication-readonly service and fresh fixed account"]
+fn native_rust_freshness_primary_admission() -> Result<(), &'static str> {
+    native_rust_private_primary_admission_for(
+        crate::account_password_server::FRESHNESS_FIXTURE_ACCOUNT,
+    )
+}
+
+#[cfg(unix)]
+fn native_rust_private_primary_admission_for(account: &'static str) -> Result<(), &'static str> {
     use std::io::{Read, Write};
     use std::os::unix::fs::MetadataExt;
     #[derive(serde::Deserialize)]
@@ -1339,21 +1406,13 @@ fn native_rust_private_primary_admission() -> Result<(), &'static str> {
     )
     .map_err(|_| "existing Rust client custody refused")?;
     let wrong = client
-        .authenticate_before(
-            "alice@osmap-password.invalid",
-            &boot.wrong_password,
-            deadline,
-        )
+        .authenticate_before(account, &boot.wrong_password, deadline)
         .map_err(|_| "wrong password reply unavailable")?;
     if wrong.is_some() {
         return Err("wrong password admitted");
     }
     let good = client
-        .authenticate_before(
-            "alice@osmap-password.invalid",
-            &boot.alice_password,
-            deadline,
-        )
+        .authenticate_before(account, &boot.alice_password, deadline)
         .map_err(|error| {
             // Error contains only the existing eight payload-free variants.
             let _ = writeln!(
@@ -1363,7 +1422,7 @@ fn native_rust_private_primary_admission() -> Result<(), &'static str> {
             "correct password reply unavailable"
         })?
         .ok_or("correct password refused")?;
-    if good.account != "alice@osmap-password.invalid" || good.epoch != 0 {
+    if good.account != account || good.epoch != 0 {
         return Err("signed epoch binding mismatch");
     }
     client

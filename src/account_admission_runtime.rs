@@ -349,6 +349,19 @@ impl Service {
     pub(crate) fn password_accounts(&self) -> BTreeSet<String> {
         self.config.accounts.iter().cloned().collect()
     }
+    /// Test-only in-memory projection after the password server has validated
+    /// both original protected account sets. No caller-selected account or
+    /// operator file is accepted or rewritten here.
+    #[cfg(test)]
+    pub(crate) fn with_freshness_fixture_account(mut self) -> Result<Self, Error> {
+        let account = crate::account_password_server::FRESHNESS_FIXTURE_ACCOUNT;
+        crate::account_admission::valid_account(account)?;
+        if self.config.accounts.len() >= 64 || self.config.accounts.iter().any(|a| a == account) {
+            return Err(Error::Invalid);
+        }
+        self.config.accounts.push(account.into());
+        Ok(self)
+    }
     pub(crate) fn password_key(&self) -> &[u8] {
         &self.key
     }

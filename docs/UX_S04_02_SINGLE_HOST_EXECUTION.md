@@ -1,5 +1,44 @@
 # S04.02 single-host execution correction
 
+## 2026-10-24 UTC — credential-freshness preparation; native authentication NOT RUN
+
+Reuse the existing restricted R1/R2 PASS. Read-only action
+`S04-02-CREDENTIAL-discovery01` completed against obsd1 with no authentication,
+SQL write, cache flush, service change or retained-resource operation. Actual
+cache-status exits64/unsupported; current live cache state remains UNKNOWN.
+The file cache0/TTL1hour/logging settings are configuration observations. Actual
+schema/defaults and InnoDB were read, with the reserved fresh account absent.
+
+New ignored Rust service selector:
+`account_password_server::diagnostic_tests::native_stock_authentication_readonly_service_entrypoint`.
+It preserves actual protected-file validation and original account equality,
+then adds only `s04-02-freshness-20261024-01@osmap-password.invalid` to both
+in-memory account sets. Authenticate is permitted only for that identity; every
+mutation still refuses before a native profile/backend. Original epoch reads,
+StockPeer, Store, parent seal, request deadlines and production gates remain.
+A root-only inherited stdin byte S requests stop; invalid/EOF is a fixed failure,
+and the earliest service failure remains separate. The launcher must send S
+before waiting on every outcome and retain an external owned timeout.
+
+New ignored real-client selector:
+`account_admission_runtime::tests::native_rust_freshness_primary_admission`.
+It reuses the existing actual client implementation/private-stdin bootstrap:
+wrong credential FIRST, current credential next, exact account/epoch binding and
+epoch revalidation, all within the original35-second deadline. The earlier Alice
+selector remains unchanged in meaning. Two focused source controls pass; these
+new native selectors have not executed and enable no installed qualification.
+
+The minimum prospective discriminator requires a separate exact-owned virtual
+mailbox, no165 reset and no new SQL principal/OS user. Fresh A/B credentials stay
+in RAM/private streams, never argv/environment/regular evidence. Verify A against
+the live backend, make one external conditional change of that fresh row to B,
+then require A refusal BEFORE B acceptance, with no intervening cache flush.
+Preserve old accounts/config/epoch state and prove the fresh epoch/intents remain
+unchanged. No product mutation request is allowed. The external fixture change
+is not proof of product Backend/Service CAS, write recovery, epoch/session or HTTP.
+Source/recipe review, bounded dispatch and native reconciliation remain required;
+no credential write is dispatched merely by this preparation record.
+
 ## 2026-10-24 UTC — native02 PASS: sealed helper and genuine read-only admission
 
 Action `S04-02-R1R2-native-02` ran once on obsd1, with exact signed assessed

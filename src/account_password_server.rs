@@ -38,6 +38,11 @@ type Identity = (u64, u64, u32, u32, u32, u64, u64, i64, i64, i64, i64);
 // process. Production has no flag or argument that changes these decisions.
 #[cfg(test)]
 static READONLY_ADMISSION_FIXTURE: AtomicBool = AtomicBool::new(false);
+#[cfg(test)]
+static AUTHENTICATION_READONLY_FIXTURE: AtomicBool = AtomicBool::new(false);
+#[cfg(test)]
+pub(crate) const FRESHNESS_FIXTURE_ACCOUNT: &str =
+    "s04-02-freshness-20261024-01@osmap-password.invalid";
 fn readonly_admission_fixture() -> bool {
     #[cfg(test)]
     {
@@ -48,11 +53,39 @@ fn readonly_admission_fixture() -> bool {
         false
     }
 }
+fn authentication_readonly_fixture() -> bool {
+    #[cfg(test)]
+    {
+        readonly_admission_fixture() && AUTHENTICATION_READONLY_FIXTURE.load(Ordering::SeqCst)
+    }
+    #[cfg(not(test))]
+    {
+        false
+    }
+}
 fn admission_operation_allowed(
     readonly: bool,
+    authentication_readonly: bool,
+    account: &str,
     operation: &crate::account_admission::Operation,
 ) -> bool {
-    !readonly || matches!(operation, crate::account_admission::Operation::Admit { .. })
+    if !readonly {
+        return true;
+    }
+    match operation {
+        crate::account_admission::Operation::Admit { .. } => true,
+        crate::account_admission::Operation::Authenticate { .. } => {
+            #[cfg(test)]
+            {
+                authentication_readonly && account == FRESHNESS_FIXTURE_ACCOUNT
+            }
+            #[cfg(not(test))]
+            {
+                let _ = (authentication_readonly, account);
+                false
+            }
+        }
+    }
 }
 fn mutation_operation_allowed(readonly: bool) -> bool {
     !readonly
@@ -281,6 +314,24 @@ fn run_operator_service_with_trace(
         trace.category(Cat::Invalid);
         return Err(Error::Unavailable);
     }
+    // Only the isolated native authentication test projects its one fresh
+    // account. Original protected files, keys and account equality were checked
+    // above; both runtime account sets retain every originally configured entry.
+    #[cfg(test)]
+    let (files, admission) = if authentication_readonly_fixture() {
+        let mut files = files;
+        let admission = admission.with_freshness_fixture_account()?;
+        if files.accounts.len() >= 64
+            || !files.accounts.insert(FRESHNESS_FIXTURE_ACCOUNT.into())
+            || admission.password_accounts() != files.accounts
+        {
+            trace.category(Cat::Invalid);
+            return Err(Error::Invalid);
+        }
+        (files, admission)
+    } else {
+        (files, admission)
+    };
     if files.master_pid != stock.master_pid() {
         return Err(Error::Unavailable);
     }
@@ -495,7 +546,12 @@ fn stock_admission(
     }
     admission.password_connection(&mut stream, deadline, |request, inherited| {
         let deadline = deadline.min(inherited);
-        if !admission_operation_allowed(readonly_admission_fixture(), request.operation()) {
+        if !admission_operation_allowed(
+            readonly_admission_fixture(),
+            authentication_readonly_fixture(),
+            request.account(),
+            request.operation(),
+        ) {
             return Err(Error::Refused);
         }
         match request.operation() {
@@ -604,12 +660,48 @@ mod diagnostic_tests {
         let authenticate = Operation::Authenticate {
             password: "fixed nonsecret test credential".into(),
         };
-        assert!(admission_operation_allowed(false, &admit));
-        assert!(admission_operation_allowed(false, &authenticate));
+        let original = "alice@osmap-password.invalid";
+        assert!(admission_operation_allowed(false, false, original, &admit));
+        assert!(admission_operation_allowed(
+            false,
+            false,
+            original,
+            &authenticate
+        ));
         assert!(mutation_operation_allowed(false));
-        assert!(admission_operation_allowed(true, &admit));
-        assert!(!admission_operation_allowed(true, &authenticate));
-        assert!(!mutation_operation_allowed(true));
+        for authentication_readonly in [false, true] {
+            assert!(!mutation_operation_allowed(true));
+            assert!(admission_operation_allowed(
+                true,
+                authentication_readonly,
+                original,
+                &admit
+            ));
+            assert!(admission_operation_allowed(
+                true,
+                authentication_readonly,
+                FRESHNESS_FIXTURE_ACCOUNT,
+                &admit
+            ));
+            assert!(!admission_operation_allowed(
+                true,
+                authentication_readonly,
+                original,
+                &authenticate
+            ));
+        }
+        assert!(!admission_operation_allowed(
+            true,
+            false,
+            FRESHNESS_FIXTURE_ACCOUNT,
+            &authenticate
+        ));
+        assert!(admission_operation_allowed(
+            true,
+            true,
+            FRESHNESS_FIXTURE_ACCOUNT,
+            &authenticate
+        ));
     }
 
     /// The normal startup, seal and accept loop run against the current fixed
@@ -629,6 +721,53 @@ mod diagnostic_tests {
         })?;
         run_operator_service_with_metadata_diagnostics(signals.stop_flag())
             .map_err(|_| "readonly stock service lifecycle unavailable")
+    }
+
+    /// The same native service admits primary authentication only for the
+    /// source-owned fresh account; all credential mutation remains refused.
+    #[test]
+    #[ignore = "operator-run root-only stock helper and independent fresh-account primary client"]
+    fn native_stock_authentication_readonly_service_entrypoint() -> Result<(), &'static str> {
+        if !crate::openbsd::password_native_authority() {
+            return Err("root OpenBSD authority required");
+        }
+        READONLY_ADMISSION_FIXTURE
+            .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
+            .map_err(|_| "readonly fixture already armed")?;
+        AUTHENTICATION_READONLY_FIXTURE
+            .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
+            .map_err(|_| "authentication readonly fixture already armed")?;
+        let signals = crate::openbsd::AccountAdmissionSignals::install().map_err(|error| {
+            crate::account_password_fstat::report_signal_setup_failure(&error);
+            "readonly fixture signal setup unavailable"
+        })?;
+        let stop = signals.stop_flag();
+        std::thread::scope(|scope| {
+            let control = std::thread::Builder::new()
+                .spawn_scoped(scope, move || {
+                    let mut byte = [0u8; 1];
+                    let result = match std::io::stdin().read_exact(&mut byte) {
+                        Ok(()) if byte == [b'S'] => Ok(()),
+                        Ok(()) => Err("readonly fixture stop byte invalid"),
+                        Err(_) => Err("readonly fixture stop input unavailable"),
+                    };
+                    stop.store(true, Ordering::SeqCst);
+                    result
+                })
+                .map_err(|_| "readonly fixture control thread unavailable")?;
+            let service = run_operator_service_with_metadata_diagnostics(stop)
+                .map_err(|_| "readonly stock service lifecycle unavailable");
+            let control = control
+                .join()
+                .map_err(|_| "readonly fixture control thread failed")
+                .and_then(|value| value);
+            if control.is_err() {
+                eprintln!("account_password_service fixture_stop_control=refused");
+            }
+            // The service diagnostic is emitted before joining; a secondary
+            // control failure never replaces the original service failure.
+            service.and(control)
+        })
     }
 
     #[test]
