@@ -25,7 +25,7 @@ installer=load('evidence_installer','sources/backend/install_account_password.py
 frontend=load('evidence_frontend','sources/backend/local_frontend.py')
 
 
-def captured_guardian_frame(guardian,report):
+def captured_guardian_frame(guardian,report,objects=False):
     """Replay a real sanitized guardian frame through actual pipe collection."""
     process=subprocess.Popen([sys.executable,'-c',
         'import os,sys;os.write(2,sys.stdin.buffer.read());sys.exit(1)'],
@@ -36,7 +36,7 @@ def captured_guardian_frame(guardian,report):
         process.stdin.close();process.wait(timeout=3)
         value=capture.finish(time.monotonic()+2)
         if capture.guardian_diagnostic()!=report:raise RuntimeError('replayed_guardian_frame_changed')
-        return value,process.pid
+        return (capture,process) if objects else (value,process.pid)
     finally:
         if process.returncode is None:process.kill();process.wait(timeout=2)
         process.stdout.close();process.stderr.close()
@@ -65,6 +65,102 @@ def local_owner(root):
 
 
 class NativeEvidence(unittest.TestCase):
+    def confinement_result(self, producer, value, mode='normal'):
+        actual=producer.exercise(producer.confinement_case(value,mode))['report']
+        capture,process=captured_guardian_frame(producer.GUARDIAN,actual,objects=True)
+        with tempfile.TemporaryDirectory()as name:
+            root=Path(name)
+            with self.local_policy(root),patch.object(actor,'STAGE',root), \
+                    patch.object(actor,'END',time.monotonic()+10), \
+                    patch.object(installer.os,'fchown',side_effect=lambda fd,u,g:None):
+                owner,web,p=local_owner(root)
+                p['web_sha256']=actual['source']['binary_sha256']
+                web.guardian=process;web.guardian_capture=capture
+                if mode=='cleanup_failure':
+                    web.cleanup_status='UNCERTAIN';web.cleanup_code='FRONTEND_CLEANUP_FAILED'
+                owner.checkpoint('DIAGNOSTIC_CAPTURED')
+                self.assertEqual(json.loads(owner.path.read_bytes())['native_diagnostic_evidence']['record'],
+                    owner.diagnostic_evidence['record'])
+                packet={**p,'helper':{'sha256':p['helper_sha256']},'web':{'sha256':p['web_sha256']}}
+                result=consumer.inspect_mutation_failure({'native_diagnostic_evidence':owner.diagnostic_evidence},packet)
+                return result,owner.diagnostic_evidence,packet
+
+    def test_each_confinement_variant_through_process_frontend_recovery_and_final_consumer(self):
+        producer=load('confinement_evidence_producer','test_native_diagnostics.py')
+        for value in producer.CONFINEMENT_VARIANTS:
+            with self.subTest(stage=value['stage'],reason=value['reason']):
+                result,_,_=self.confinement_result(producer,value)
+                self.assertEqual(result['confinement_detail'],value)
+                self.assertEqual(result['confinement_code'],'native_confinement_'+value['stage'])
+                self.assertEqual(result['original_failure']['cause'],'native_confinement')
+                self.assertEqual(result['confinement_status'],'AVAILABLE')
+                self.assertEqual(result['diagnostic_completeness'],'COMPLETE')
+                self.assertEqual(result['diagnostic_preservation'],'READBACK_VERIFIED')
+                self.assertEqual(result['functional_result'],'FAIL')
+                self.assertFalse(result['cleanup_confirmed'])
+
+    @unittest.skipUnless(os.environ.get('OSMAP_TEST_CONFINEMENT_EMITTER_BINARY'),
+        'focused Rust libtest emitter artifact not supplied')
+    def test_actual_rust_confinement_variants_reach_final_consumer(self):
+        producer=load('rust_confinement_producer','test_native_diagnostics.py')
+        for value in producer.CONFINEMENT_VARIANTS:
+            with self.subTest(stage=value['stage'],reason=value['reason']):
+                result,_,_=self.confinement_result(producer,value,'rust')
+                self.assertEqual(result['confinement_detail'],value)
+                self.assertEqual(result['confinement_status'],'AVAILABLE')
+                self.assertEqual(result['diagnostic_completeness'],'COMPLETE')
+                self.assertEqual(result['original_failure']['cause'],'native_confinement')
+
+    def test_confinement_uncertainty_survives_final_consumer_without_losing_original(self):
+        producer=load('confinement_uncertain_producer','test_native_diagnostics.py')
+        for mode,status in (('partial','INCOMPLETE'),('interrupted','INCOMPLETE'),
+                ('partial_marker','INCOMPLETE'),
+                ('duplicate','DUPLICATE'),('conflicting','DUPLICATE'),
+                ('oversized','MALFORMED'),('earlier_failure','CONFLICTING'),
+                ('cleanup_failure','AVAILABLE')):
+            with self.subTest(mode=mode):
+                result,_,_=self.confinement_result(producer,producer.CONFINEMENT_VARIANTS[6],mode)
+                self.assertEqual(result['confinement_status'],status)
+                self.assertEqual(result['functional_result'],'FAIL')
+                self.assertEqual(result['disposition'],'UNCERTAIN')
+                if status!='AVAILABLE':
+                    self.assertIsNone(result['confinement_detail'])
+                    self.assertIsNone(result['confinement_code'])
+                    self.assertEqual(result['diagnostic_completeness'],'INCOMPLETE')
+                    self.assertEqual(result['diagnostic_deficiency'],'CONFINEMENT_DETAIL_'+status)
+                if mode=='earlier_failure':
+                    self.assertEqual(result['original_failure']['cause'],'native_admission_client')
+                if mode=='cleanup_failure':
+                    self.assertEqual(result['original_failure']['cause'],'native_confinement')
+                    diagnostic=result['native_diagnostic_evidence']['record']['native_diagnostic']
+                    self.assertEqual(diagnostic['guardian_diagnostic']['cleanup']['status'],'UNKNOWN')
+
+    def test_consumer_rejects_rehashed_confinement_secrets_and_semantic_conflicts(self):
+        producer=load('confinement_tamper_producer','test_native_diagnostics.py')
+        _,original,packet=self.confinement_result(producer,producer.CONFINEMENT_VARIANTS[6])
+        for mutate in (
+                lambda c:c['confinement_detail'].update(path='/private/SyntheticPasswordABC123'),
+                lambda c:c['confinement_detail'].update(errno=True),
+                lambda c:c.update(native_code='native_admission_client'),
+                lambda c:c.update(confinement_status='NOT_EMITTED'),
+                lambda c:c['confinement_detail'].update(syscall='pledge')):
+            evidence=copy.deepcopy(original)
+            mutate(evidence['record']['native_diagnostic']['guardian_diagnostic']['capture'])
+            evidence['sha256']=hashlib.sha256(json.dumps(evidence['record'],sort_keys=True,separators=(',',':')).encode()).hexdigest()
+            with self.assertRaises(Exception):
+                consumer.inspect_native_diagnostic({'native_diagnostic_evidence':evidence},packet)
+        # Historical v1 evidence / v2 guardian records have neither optional
+        # field. They remain valid without inventing a historical detail.
+        evidence=copy.deepcopy(original)
+        native=evidence['record']['native_diagnostic']
+        for capture in (native['guardian_capture'],native['guardian_diagnostic']['capture']):
+            del capture['confinement_detail'];del capture['confinement_status']
+        evidence['sha256']=hashlib.sha256(json.dumps(evidence['record'],sort_keys=True,separators=(',',':')).encode()).hexdigest()
+        result=consumer.inspect_mutation_failure({'native_diagnostic_evidence':evidence},packet)
+        self.assertEqual(result['confinement_status'],'NOT_EMITTED')
+        self.assertIsNone(result['confinement_detail'])
+        self.assertEqual(result['original_failure']['cause'],'native_confinement')
+
     def local_policy(self,root):
         def parents(path):
             self.assertEqual(path.parent,root)

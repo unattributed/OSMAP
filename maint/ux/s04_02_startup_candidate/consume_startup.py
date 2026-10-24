@@ -203,6 +203,7 @@ def inspect_mutation_failure(actor,packet):
     original_failure={'component':'native_actor','code':reason}
     deficiency='NO_PRESERVED_NATIVE_DIAGNOSTIC'
     completeness='UNAVAILABLE';unknown_cause_reason='NATIVE_CAPTURE_UNAVAILABLE'
+    confinement_detail=None;confinement_status='NOT_EMITTED';confinement_code=None
     if diagnostic is not None:
         native=diagnostic['record']['native_diagnostic']
         guardian=native['guardian_diagnostic'];first=native['first_failure']
@@ -229,6 +230,14 @@ def inspect_mutation_failure(actor,packet):
             if capture is not None and (capture['capture_error']is not None or
                     not(capture['stdout_eof']and capture['stderr_eof'])):
                 deficiency='CAPTURE_INCOMPLETE'
+        if guardian is not None and guardian['capture'] is not None:
+            capture=guardian['capture']
+            confinement_status=capture.get('confinement_status','NOT_EMITTED')
+            confinement_detail=capture.get('confinement_detail')
+            if confinement_status=='AVAILABLE':
+                confinement_code='native_confinement_'+confinement_detail['stage']
+            elif confinement_status!='NOT_EMITTED':
+                deficiency='CONFINEMENT_DETAIL_'+confinement_status
         completeness='COMPLETE'if deficiency is None else'INCOMPLETE'
     accounts={'alice@osmap-password.invalid','bob@osmap-password.invalid'}
     baseline=actor.get('initial_authority_digests',{});final=actor.get('final_authority',{})
@@ -266,6 +275,8 @@ def inspect_mutation_failure(actor,packet):
         'original_failure':original_failure,'native_diagnostic_evidence':diagnostic,
         'diagnostic_completeness':completeness,'diagnostic_deficiency':deficiency,
         'unknown_cause_reason':unknown_cause_reason,
+        'confinement_code':confinement_code,'confinement_detail':confinement_detail,
+        'confinement_status':confinement_status,
         'diagnostic_preservation':'READBACK_VERIFIED'if diagnostic is not None else'UNAVAILABLE',
         'cleanup_failures':cleanup_failures,
         'credential_mutation_submission_state':'NOT_SUBMITTED'if no_write else'UNKNOWN_OR_SUBMITTED',

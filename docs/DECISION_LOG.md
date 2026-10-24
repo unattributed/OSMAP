@@ -1,5 +1,8 @@
 # Decision Log
 
+2026-10-24 UTC — **Serve confinement source diagnostics differentiated; native T03 remains NOT QUALIFIED.** The eight requested boundaries now preserve typed, sanitized identity through the existing Issue 79 capture/recovery/consumer pipeline. Independent review CLEAR and focused local regressions PASS. Execution160 syscall/errno remains UNKNOWN. Only an affected libtest compile is planned under operator item8; no native application/probe/password operation or retained-stage deletion is authorized. See [the localization record](UX_S04_02_CONFINEMENT_LOCALIZATION_20261024.md) for the schema, tests, retained evidence and admission limitation.
+
+
 2026-10-24 UTC — **Milestone 3 execution160 FAIL; T03 NOT QUALIFIED.** The newly
 authorized single attempt used approved signed `8848ba8`, the exact retained
 service/HTTP binaries and their separate original compiler provenance. Dispatch

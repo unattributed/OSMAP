@@ -1276,12 +1276,15 @@ mod genuine_http_pilot {
             crate::config::LogFormat::Text,
             crate::config::LogLevel::Error,
         );
-        let seal = crate::openbsd::apply_runtime_confinement_for_accounts(
+        let seal = crate::openbsd::apply_runtime_confinement_for_accounts_detailed(
             &config,
             &logger,
             gateway.account_runtime.confinement_clients(),
         )
-        .expect("HTTP fixture actual Serve confinement refused");
+        .unwrap_or_else(|failure| {
+            failure.emit_native_fixture_diagnostic();
+            panic!("HTTP fixture actual Serve confinement refused");
+        });
         assert!(seal.is_some());
         gateway.account_runtime = gateway
             .account_runtime

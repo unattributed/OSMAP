@@ -85,8 +85,25 @@ def source_closure(source_commit=BASE):
     return data, closure
 
 
-def prepare(root, source_commit=BASE, libtest_only=False):
+def build_action(binding):
+    """Use frozen action identifiers; never recycle a consumed compiler action."""
+    explicit = ('attempt_id' in binding, 'recipe_id' in binding)
+    require(explicit[0] == explicit[1], 'build_action_pair')
+    if explicit[0]:
+        attempt, recipe = binding['attempt_id'], binding['recipe_id']
+        require(type(attempt) is str and type(recipe) is str
+                and re.fullmatch(r'S04-02-[a-z0-9-]{1,96}', attempt)
+                and re.fullmatch(r'[a-z0-9-]{1,96}', recipe), 'build_action_identity')
+        return attempt, recipe
+    return (('S04-02-timing-libtest-build157', 'timing-libtest-build157')
+            if binding.get('build_kind', 'pair') == 'libtest-only' else (ATTEMPT, RECIPE))
+
+
+def prepare(root, source_commit=BASE, libtest_only=False, *, attempt_id=None, recipe_id=None):
     require(type(libtest_only) is bool, 'build_selection')
+    require((attempt_id is None) == (recipe_id is None), 'build_action_pair')
+    action = {} if attempt_id is None else {'attempt_id': attempt_id, 'recipe_id': recipe_id}
+    build_action(action)
     signed_source(source_commit)
     root.mkdir(mode=0o700, parents=True, exist_ok=True)
     require(not tuple(root.iterdir()), 'build_directory_not_empty')
@@ -119,6 +136,7 @@ def prepare(root, source_commit=BASE, libtest_only=False):
                'dispatcher_sha256': sha(Path(__file__).read_bytes()),
                'hashes': {name: sha(raw) for name, raw in outputs.items()},
                'created_at_utc': datetime.datetime.now(datetime.timezone.utc).isoformat()}
+    binding.update(action)
     for name, raw in outputs.items():
         save(root, name, raw)
     save(root, 'BINDING.json', encoded(binding))
@@ -199,8 +217,7 @@ def execute(root):
     require(all(sha(raw) == binding['hashes'][name] for name, raw in frozen.items()), 'build_input_hash')
     source_commit = binding['signed_base_commit']
     libtest_only = binding.get('build_kind', 'pair') == 'libtest-only'
-    attempt = 'S04-02-timing-libtest-build157' if libtest_only else ATTEMPT
-    recipe_id = 'timing-libtest-build157' if libtest_only else RECIPE
+    attempt, recipe_id = build_action(binding)
     signed_source(source_commit)
     data, _ = source_closure(source_commit)
     require({name: sha(raw) for name, raw in data.items()} == json.loads(frozen['manifest.json']), 'build_source_changed')
@@ -308,11 +325,15 @@ def main():
                         help='Exact signed compiler source commit (prepare only)')
     parser.add_argument('--libtest-only', action='store_true',
                         help='Build only the affected libtest artifact (prepare only)')
+    parser.add_argument('--attempt-id', help='Fresh exact compiler action ID (prepare only)')
+    parser.add_argument('--recipe-id', help='Fresh exact compiler recipe ID (prepare only)')
     args = parser.parse_args()
     os.umask(0o077)
     if args.action == 'execute':
-        require(not args.libtest_only and args.source_commit == BASE, 'execute_uses_frozen_binding')
-    result = prepare(args.root, args.source_commit, args.libtest_only) if args.action == 'prepare' else execute(args.root)
+        require(not args.libtest_only and args.source_commit == BASE
+                and args.attempt_id is None and args.recipe_id is None, 'execute_uses_frozen_binding')
+    result = prepare(args.root, args.source_commit, args.libtest_only,
+                     attempt_id=args.attempt_id, recipe_id=args.recipe_id) if args.action == 'prepare' else execute(args.root)
     print(json.dumps({key: value for key, value in result.items() if key != 'result'}, sort_keys=True))
     return 0 if args.action == 'prepare' or (result['native_result'] == 'PASS' and result['remote_disposition'] == 'CONFIRMED') else 1
 

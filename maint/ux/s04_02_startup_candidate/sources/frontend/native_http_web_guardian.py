@@ -323,6 +323,35 @@ def launch(binary, control_fd, proof_fd, guardian, group):
 # Raw output remains private in these bounded in-memory prefixes. Only fixed
 # source-owned observations and stream accounting cross the evidence boundary.
 OUTPUT_LIMIT = 16384
+CONFINEMENT_MARKER = b'OSMAP_SERVE_CONFINEMENT_V1'
+CONFINEMENT_FIELDS = {'schema', 'stage', 'reason', 'syscall', 'errno', 'rule_ordinal'}
+
+
+def validate_confinement(value):
+    """Closed source-owned detail; paths and unrestricted error text cannot pass."""
+    require(type(value) is dict and set(value) == CONFINEMENT_FIELDS, 'diagnostic_schema')
+    require(value['schema'] == 'osmap-serve-confinement-v1'
+        and type(value['stage']) is str and type(value['reason']) is str,
+        'diagnostic_schema')
+    stage, reason = value['stage'], value['reason']
+    syscall = {'initial_pledge': 'pledge', 'final_pledge': 'pledge',
+               'unveil_rule': 'unveil', 'unveil_lock': 'unveil'}.get(stage)
+    require((stage == 'unveil_rule' and type(value['rule_ordinal']) is int
+             and 1 <= value['rule_ordinal'] <= 2**32-1)
+            or stage != 'unveil_rule' and value['rule_ordinal'] is None, 'diagnostic_schema')
+    if reason == 'syscall_failed':
+        require(syscall is not None and value['syscall'] == syscall
+            and type(value['errno']) is int and 1 <= value['errno'] <= 4095, 'diagnostic_schema')
+    else:
+        require(value['syscall'] is None and value['errno'] is None, 'diagnostic_schema')
+        require((reason == 'invalid_argument' and stage in
+                 ('initial_pledge', 'final_pledge', 'unveil_rule'))
+                or (reason == 'boundary_refused' and stage in ('dependency_plan',
+                    'purpose_separation', 'admission_preflight', 'mutation_preflight',
+                    'unsupported_platform')), 'diagnostic_schema')
+    return value
+
+
 NATIVE_MESSAGES = {
     b'HTTP fixture core limit refused': 'native_core_limit',
     b'HTTP fixture descriptor required': 'native_descriptor_required',
@@ -398,7 +427,11 @@ class Capture:
         self.error = None
         self.native_code = 'CAUSE_UNKNOWN'
         self.panic_seen = False
+        self.confinement_detail = None
+        self.confinement_status = 'NOT_EMITTED'
+        self.confinement_markers = 0
         self.lines = {name: bytearray() for name in ('stdout', 'stderr')}
+        self.line_overflow = {name: False for name in ('stdout', 'stderr')}
         self.streams = {}
         for name in ('stdout', 'stderr'):
             stream = getattr(child, name)
@@ -447,7 +480,28 @@ class Capture:
         line = self.lines[name]
         parts = raw.split(b'\n')
         for index, part in enumerate(parts):
+            self.line_overflow[name] |= len(line)+len(part) > 512
             line.extend(part[:max(0, 512-len(line))])
+            if (name == 'stderr' and index < len(parts)-1
+                    and line.startswith(CONFINEMENT_MARKER)):
+                self.confinement_markers += 1
+                if self.confinement_markers > 1:
+                    self.confinement_status = 'DUPLICATE'
+                    self.confinement_detail = None
+                else:
+                    try:
+                        require(not self.line_overflow[name]
+                            and line.startswith(CONFINEMENT_MARKER+b' '), 'diagnostic_schema')
+                        value = validate_confinement(json_value(bytes(line[len(CONFINEMENT_MARKER)+1:])))
+                        self.confinement_detail = value
+                        self.confinement_status = 'AVAILABLE'
+                        if self.native_code in ('CAUSE_UNKNOWN', 'native_panic'):
+                            self.native_code = 'native_confinement'
+                        elif self.native_code != 'native_confinement':
+                            self.confinement_detail = None
+                            self.confinement_status = 'CONFLICTING'
+                    except (Refused, ValueError, TypeError, UnicodeError):
+                        self.confinement_status = 'MALFORMED'
             if (name == 'stdout' and index < len(parts)-1 and line == b'running 0 tests'
                     and self.native_code == 'CAUSE_UNKNOWN'):
                 self.native_code = 'native_entrypoint_not_selected'
@@ -462,10 +516,18 @@ class Capture:
                         break
             if index < len(parts)-1:
                 line.clear()
+                self.line_overflow[name] = False
 
     def snapshot(self):
         with self.lock:
             result = {'native_code': self.native_code, 'capture_error': self.error}
+            status, detail = self.confinement_status, self.confinement_detail
+            pending = self.lines['stderr']
+            if pending and (pending.startswith(CONFINEMENT_MARKER)
+                    or CONFINEMENT_MARKER.startswith(pending)):
+                status = 'DUPLICATE' if self.confinement_markers else 'INCOMPLETE'
+                detail = None
+            result.update(confinement_status=status, confinement_detail=detail)
             for name, item in self.streams.items():
                 result.update({name+'_bytes': item['count'],
                     name+'_sha256': item['hash'].hexdigest(),
@@ -515,9 +577,21 @@ def validate_capture(capture):
 
 def _validate_capture(capture):
     if capture is not None:
-        require(type(capture) is dict and set(capture) == {'native_code', 'capture_error'} |
-            {name+'_'+field for name in ('stdout','stderr') for field in
-             ('bytes','sha256','stored_bytes','truncated','eof')}, 'diagnostic_schema')
+        fields = {'native_code', 'capture_error'} | {name+'_'+field
+            for name in ('stdout','stderr') for field in
+            ('bytes','sha256','stored_bytes','truncated','eof')}
+        require(type(capture) is dict and set(capture) in
+            (fields, fields | {'confinement_status', 'confinement_detail'}), 'diagnostic_schema')
+        if 'confinement_status' in capture:
+            require(capture['confinement_status'] in ('NOT_EMITTED', 'AVAILABLE',
+                'MALFORMED', 'DUPLICATE', 'INCOMPLETE', 'CONFLICTING'), 'diagnostic_schema')
+            require((capture['confinement_detail'] is not None) ==
+                (capture['confinement_status'] == 'AVAILABLE'), 'diagnostic_schema')
+            if capture['confinement_detail'] is not None:
+                validate_confinement(capture['confinement_detail'])
+                require(capture['native_code'] == 'native_confinement', 'diagnostic_schema')
+            require(capture['confinement_status'] == 'NOT_EMITTED'
+                or capture['stderr_bytes'] > 0, 'diagnostic_schema')
         require(capture['native_code'] in NATIVE_CODES and capture['capture_error'] in
                 (None, 'capture_io', 'capture_deadline'), 'diagnostic_schema')
         for name in ('stdout', 'stderr'):

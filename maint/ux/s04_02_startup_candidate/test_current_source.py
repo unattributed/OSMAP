@@ -392,6 +392,26 @@ class LibtestBuildBindingTests(unittest.TestCase):
             self.assertFalse((root/'attempt-started.json').exists())
             self.assertEqual(json.loads((root/'packet.json').read_text())['signed_base_commit'],commit)
 
+    def test_fresh_compile_action_is_frozen_and_historical_defaults_are_preserved(self):
+        compiler=load('build_current')
+        with tempfile.TemporaryDirectory()as name,patch.object(compiler,'signed_source'),\
+                patch.object(compiler,'source_closure',return_value=({'Cargo.toml':b'local input'},[])):
+            root=Path(name)/'prepared'
+            binding=compiler.prepare(root,'b'*40,libtest_only=True,
+                attempt_id='S04-02-confinement-libtest-build161',recipe_id='confinement-libtest-build161')
+            persisted=json.loads((root/'BINDING.json').read_bytes())
+            self.assertEqual(binding,persisted)
+            self.assertEqual(compiler.build_action(persisted),
+                ('S04-02-confinement-libtest-build161','confinement-libtest-build161'))
+            self.assertEqual(compiler.build_action({'build_kind':'libtest-only'}),
+                ('S04-02-timing-libtest-build157','timing-libtest-build157'))
+            self.assertEqual(compiler.build_action({}),(compiler.ATTEMPT,compiler.RECIPE))
+        for bad in ({'attempt_id':'S04-02-new'}, {'recipe_id':'new'},
+                    {'attempt_id':'S04-02-new\n','recipe_id':'new'},
+                    {'attempt_id':'S04-02-new','recipe_id':'../new'},
+                    {'attempt_id':True,'recipe_id':'new'}):
+            with self.subTest(bad=bad),self.assertRaises(RuntimeError):compiler.build_action(bad)
+
     def test_libtest_receipt_rejects_helper_effect_or_wrong_mode(self):
         compiler=load('build_current');raw=b'{"Cargo.toml":"a"}\n'
         receipt=self.receipt('a'*40,raw);observed=receipt['result']

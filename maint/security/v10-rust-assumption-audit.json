@@ -27813,8 +27813,8 @@
       "disposition": "accepted_test_or_fixture_assumption",
       "fail_closed_relevance": "low",
       "file": "src/http/password_tests.rs",
-      "kind": "expect_call",
-      "line": 1284
+      "kind": "panic_macro",
+      "line": 1286
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -27822,14 +27822,6 @@
       "fail_closed_relevance": "low",
       "file": "src/http/password_tests.rs",
       "kind": "unwrap_call",
-      "line": 1294
-    },
-    {
-      "classification": "test_or_fixture_assumption",
-      "disposition": "accepted_test_or_fixture_assumption",
-      "fail_closed_relevance": "low",
-      "file": "src/http/password_tests.rs",
-      "kind": "expect_call",
       "line": 1297
     },
     {
@@ -27837,8 +27829,16 @@
       "disposition": "accepted_test_or_fixture_assumption",
       "fail_closed_relevance": "low",
       "file": "src/http/password_tests.rs",
+      "kind": "expect_call",
+      "line": 1300
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/http/password_tests.rs",
       "kind": "panic_macro",
-      "line": 1331
+      "line": 1334
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -27846,7 +27846,7 @@
       "fail_closed_relevance": "low",
       "file": "src/http/password_tests.rs",
       "kind": "expect_call",
-      "line": 1351
+      "line": 1354
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -27854,7 +27854,7 @@
       "fail_closed_relevance": "low",
       "file": "src/http/password_tests.rs",
       "kind": "expect_call",
-      "line": 1356
+      "line": 1359
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -27862,7 +27862,7 @@
       "fail_closed_relevance": "low",
       "file": "src/http/password_tests.rs",
       "kind": "expect_call",
-      "line": 1360
+      "line": 1363
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -27870,7 +27870,7 @@
       "fail_closed_relevance": "low",
       "file": "src/http/password_tests.rs",
       "kind": "expect_call",
-      "line": 1369
+      "line": 1372
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -27878,7 +27878,7 @@
       "fail_closed_relevance": "low",
       "file": "src/http/password_tests.rs",
       "kind": "unwrap_call",
-      "line": 1376
+      "line": 1379
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -27886,7 +27886,7 @@
       "fail_closed_relevance": "low",
       "file": "src/http/password_tests.rs",
       "kind": "expect_call",
-      "line": 1379
+      "line": 1382
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -61837,8 +61837,8 @@
       "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
-      "kind": "unwrap_call",
-      "line": 2433
+      "kind": "expect_call",
+      "line": 1456
     },
     {
       "classification": "production_adjacent_assumption",
@@ -61846,7 +61846,15 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "unwrap_call",
-      "line": 2447
+      "line": 2642
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/openbsd.rs",
+      "kind": "unwrap_call",
+      "line": 2656
     },
     {
       "classification": "startup_or_global_invariant",
@@ -61854,7 +61862,7 @@
       "fail_closed_relevance": "medium",
       "file": "src/openbsd.rs",
       "kind": "unwrap_call",
-      "line": 2464
+      "line": 2673
     },
     {
       "classification": "production_adjacent_assumption",
@@ -61862,7 +61870,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "unwrap_call",
-      "line": 2470
+      "line": 2679
     },
     {
       "classification": "production_adjacent_assumption",
@@ -61870,7 +61878,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "unwrap_call",
-      "line": 2485
+      "line": 2694
     },
     {
       "classification": "production_adjacent_assumption",
@@ -61878,7 +61886,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "unwrap_call",
-      "line": 2491
+      "line": 2700
     },
     {
       "classification": "startup_or_global_invariant",
@@ -61886,7 +61894,7 @@
       "fail_closed_relevance": "medium",
       "file": "src/openbsd.rs",
       "kind": "unwrap_call",
-      "line": 2500
+      "line": 2709
     },
     {
       "classification": "production_adjacent_assumption",
@@ -61894,7 +61902,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "unwrap_call",
-      "line": 2510
+      "line": 2719
     },
     {
       "classification": "production_adjacent_assumption",
@@ -61902,7 +61910,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "expect_call",
-      "line": 2548
+      "line": 2757
     },
     {
       "classification": "production_adjacent_assumption",
@@ -61910,7 +61918,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "unwrap_call",
-      "line": 2658
+      "line": 2867
     },
     {
       "classification": "production_adjacent_assumption",
@@ -61918,7 +61926,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "unwrap_call",
-      "line": 2680
+      "line": 2889
     },
     {
       "classification": "production_adjacent_assumption",
@@ -61926,7 +61934,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "unwrap_call",
-      "line": 2829
+      "line": 3038
     },
     {
       "classification": "production_adjacent_assumption",
@@ -61934,7 +61942,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "unwrap_call",
-      "line": 2845
+      "line": 3054
     },
     {
       "classification": "production_adjacent_assumption",
@@ -61942,7 +61950,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "unwrap_call",
-      "line": 2911
+      "line": 3120
     },
     {
       "classification": "production_adjacent_assumption",
@@ -61950,7 +61958,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "unwrap_call",
-      "line": 2914
+      "line": 3123
     },
     {
       "classification": "production_adjacent_assumption",
@@ -61958,7 +61966,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "unwrap_call",
-      "line": 3039
+      "line": 3248
     },
     {
       "classification": "production_adjacent_assumption",
@@ -61966,7 +61974,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "unwrap_call",
-      "line": 3056
+      "line": 3265
     },
     {
       "classification": "panic_path_assumption",
@@ -61974,7 +61982,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "panic_macro",
-      "line": 3129
+      "line": 3338
     },
     {
       "classification": "production_adjacent_assumption",
@@ -61982,7 +61990,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "expect_call",
-      "line": 3145
+      "line": 3354
     },
     {
       "classification": "production_adjacent_assumption",
@@ -61990,7 +61998,263 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "expect_call",
-      "line": 3151
+      "line": 3360
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openbsd/confinement_tests.rs",
+      "kind": "unwrap_call",
+      "line": 57
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openbsd/confinement_tests.rs",
+      "kind": "unwrap_call",
+      "line": 59
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openbsd/confinement_tests.rs",
+      "kind": "unwrap_call",
+      "line": 62
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openbsd/confinement_tests.rs",
+      "kind": "unwrap_call",
+      "line": 85
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openbsd/confinement_tests.rs",
+      "kind": "unwrap_call",
+      "line": 205
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openbsd/confinement_tests.rs",
+      "kind": "unreachable_macro",
+      "line": 223
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openbsd/confinement_tests.rs",
+      "kind": "unwrap_call",
+      "line": 240
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openbsd/confinement_tests.rs",
+      "kind": "unwrap_call",
+      "line": 250
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openbsd/confinement_tests.rs",
+      "kind": "unwrap_call",
+      "line": 257
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openbsd/confinement_tests.rs",
+      "kind": "unwrap_call",
+      "line": 262
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openbsd/confinement_tests.rs",
+      "kind": "unwrap_call",
+      "line": 272
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openbsd/confinement_tests.rs",
+      "kind": "unwrap_call",
+      "line": 274
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openbsd/confinement_tests.rs",
+      "kind": "unwrap_call",
+      "line": 276
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openbsd/confinement_tests.rs",
+      "kind": "unwrap_call",
+      "line": 277
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openbsd/confinement_tests.rs",
+      "kind": "unwrap_call",
+      "line": 294
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openbsd/confinement_tests.rs",
+      "kind": "unwrap_call",
+      "line": 295
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openbsd/confinement_tests.rs",
+      "kind": "unwrap_call",
+      "line": 298
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openbsd/confinement_tests.rs",
+      "kind": "unwrap_call",
+      "line": 299
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openbsd/confinement_tests.rs",
+      "kind": "unwrap_call",
+      "line": 307
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openbsd/confinement_tests.rs",
+      "kind": "unwrap_call",
+      "line": 314
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openbsd/confinement_tests.rs",
+      "kind": "unwrap_call",
+      "line": 315
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openbsd/confinement_tests.rs",
+      "kind": "unwrap_call",
+      "line": 337
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openbsd/confinement_tests.rs",
+      "kind": "unwrap_call",
+      "line": 349
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openbsd/confinement_tests.rs",
+      "kind": "unwrap_call",
+      "line": 359
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openbsd/confinement_tests.rs",
+      "kind": "unwrap_call",
+      "line": 360
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openbsd/confinement_tests.rs",
+      "kind": "unwrap_call",
+      "line": 369
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openbsd/confinement_tests.rs",
+      "kind": "unwrap_call",
+      "line": 371
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openbsd/confinement_tests.rs",
+      "kind": "expect_call",
+      "line": 379
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openbsd/confinement_tests.rs",
+      "kind": "unreachable_macro",
+      "line": 410
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openbsd/confinement_tests.rs",
+      "kind": "unreachable_macro",
+      "line": 429
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openbsd/confinement_tests.rs",
+      "kind": "panic_macro",
+      "line": 433
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openbsd/confinement_tests.rs",
+      "kind": "panic_macro",
+      "line": 436
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -77345,7 +77609,7 @@
       "line": 521
     }
   ],
-  "generated_at_utc": "2026-10-23T19:32:34Z",
+  "generated_at_utc": "2026-10-24T05:17:50Z",
   "non_claims": [
     "This audit does not claim that all Rust assumptions are safe.",
     "This audit does not claim that production request paths are panic-free.",
@@ -77385,27 +77649,27 @@
     "by_classification": {
       "control_flow_invariant": 7,
       "panic_path_assumption": 86,
-      "production_adjacent_assumption": 2395,
+      "production_adjacent_assumption": 2396,
       "startup_or_global_invariant": 10,
-      "test_or_fixture_assumption": 7170
+      "test_or_fixture_assumption": 7202
     },
     "by_fail_closed_relevance": {
-      "high": 2481,
-      "low": 7170,
+      "high": 2482,
+      "low": 7202,
       "medium": 17
     },
     "by_kind": {
-      "expect_call": 1109,
-      "panic_macro": 287,
-      "unreachable_macro": 24,
-      "unwrap_call": 8248
+      "expect_call": 1110,
+      "panic_macro": 290,
+      "unreachable_macro": 27,
+      "unwrap_call": 8274
     },
     "classification_complete": true,
-    "inventory_sha256": "7d60b8d02a8809fbbe7aafa557e44a0d087a6f21652a5db711ad3d94b47aff9f",
+    "inventory_sha256": "f3b263dc471ed27bb49ab76c9c6012d9af1d540ea3ee2c765e5d0c47672400de",
     "live_host_state_changed": false,
     "product_behavior_changed": false,
     "production_state_changed": false,
     "slice0_carried_forward_rust_assumption_count": 712,
-    "total_count": 9668
+    "total_count": 9701
   }
 }

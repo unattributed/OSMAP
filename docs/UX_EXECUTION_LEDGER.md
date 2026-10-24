@@ -1,5 +1,8 @@
 # OSMAP UX execution ledger
 
+2026-10-24 UTC — **Serve confinement source diagnostics differentiated; native T03 remains NOT QUALIFIED.** The eight requested boundaries now preserve typed, sanitized identity through the existing Issue 79 capture/recovery/consumer pipeline. Independent review CLEAR and focused local regressions PASS. Execution160 syscall/errno remains UNKNOWN. Only an affected libtest compile is planned under operator item8; no native application/probe/password operation or retained-stage deletion is authorized. See [the localization record](UX_S04_02_CONFINEMENT_LOCALIZATION_20261024.md) for the schema, tests, retained evidence and admission limitation.
+
+
 2026-10-24 UTC — **Milestone 3 execution160 FAIL; T03 NOT QUALIFIED.** The newly
 authorized single attempt used approved signed `8848ba8`, the exact retained
 service/HTTP binaries and their separate original compiler provenance. Dispatch
@@ -10339,7 +10342,9 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "maint/ux/session_workflows.py",
     "maint/ux/signature_workflows.py",
     "docs/UX_S04_02_TIMING_RECONCILIATION_20261023.md",
-    "maint/ux/s04_02_startup_candidate/milestone3_execution160_evidence.json"
+    "maint/ux/s04_02_startup_candidate/milestone3_execution160_evidence.json",
+    "src/openbsd/confinement_tests.rs",
+    "docs/UX_S04_02_CONFINEMENT_LOCALIZATION_20261024.md"
   ],
   "outcomes": [
     {
@@ -10499,7 +10504,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "status": "PENDING",
     "reference": "Only minimal well-defined own-password usability after all agent-owned development/matching deployed QA/independent audit PASS. No operator password is changed by agent qualification; use controlled disposable Alice and preserve Bob/operator state. NOT RUN."
   },
-  "next_action": "Attempt160 FAIL native_confinement before READY; internal subcause UNKNOWN. Diagnostic capture COMPLETE, confirmed no-write, runtime cleanup independently PASS, protected stages retained. No further native execution authorized. M3 FAIL/T03 NOT QUALIFIED; installed/UAT/slice remain open.",
+  "next_action": "Source/local diagnostic localization of native_confinement: distinguish dependency plan, purpose separation, admission/mutation preflight, initial/final pledge, exact unveil ordinal and unveil lock with immediate errno. Preserve failure, gates, deadlines and Issue79 capture. No native journey/probe, password mutation or retained-stage deletion authorized.",
   "accountability": {
     "functional_exit": "Working own-account Settings password change through the selected single-host obsd1 local account service and authoritative local backend, fresh password/TOTP step-up, one conditional SQL update, durable OSMAP epoch and all-browser revocation, actual source-bound cache handling, old-password refusal/new-login success and Bob preservation. Existing third-party SMTP/IMAP sessions may remain authenticated. Matching installed QA, independent audit and minimal owner usability remain required. Toronto is later separate production installation.",
     "owner": "/root",
@@ -31856,8 +31861,8 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "planned_action": null
   },
   "blocker": null,
-  "independent_next_action": "Independent execution160 outcome and public-safe signed-preservation review; no further native dispatch. Runtime cleanup PASS and retained protected diagnostic stages remain separate.",
-  "updated_at": "2026-10-24T04:55:48Z"
+  "independent_next_action": "Independent review of typed confinement diagnostics and focused executable producer-to-consumer tests, then normal signed delivery. Historical160 remains FAIL, no historical errno inference.",
+  "updated_at": "2026-10-24T05:11:50Z"
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->

@@ -25,6 +25,30 @@ SPEC = importlib.util.spec_from_file_location('diagnostic_guardian', SOURCE)
 GUARDIAN = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(GUARDIAN)
 
+CONFINEMENT_VARIANTS = [
+    {'schema':'osmap-serve-confinement-v1','stage':stage,'reason':reason,
+     'syscall':syscall,'errno':errno,'rule_ordinal':ordinal}
+    for stage,reason,syscall,errno,ordinal in (
+        ('dependency_plan','boundary_refused',None,None,None),
+        ('purpose_separation','boundary_refused',None,None,None),
+        ('admission_preflight','boundary_refused',None,None,None),
+        ('mutation_preflight','boundary_refused',None,None,None),
+        ('initial_pledge','syscall_failed','pledge',1,None),
+        ('initial_pledge','invalid_argument',None,None,None),
+        ('unveil_rule','syscall_failed','unveil',2,1),
+        ('unveil_rule','invalid_argument',None,None,1),
+        ('unveil_rule','syscall_failed','unveil',2,2),
+        ('unveil_rule','invalid_argument',None,None,2),
+        ('unveil_lock','syscall_failed','unveil',22,None),
+        ('final_pledge','syscall_failed','pledge',1,None),
+        ('final_pledge','invalid_argument',None,None,None),
+        ('unsupported_platform','boundary_refused',None,None,None),
+    )]
+
+
+def confinement_case(value, mode='normal'):
+    return 'confinement:'+mode+':'+json.dumps(value,separators=(',',':'))
+
 CHILD = r'''
 import json,os,signal,socket,sys,time
 s=socket.socket(fileno=int(os.environ['CHILD_CONTROL_FD']))
@@ -42,6 +66,34 @@ def write(value):
     s.sendall(len(raw).to_bytes(4,'big')+raw)
 read()
 case=sys.argv[1]
+if case.startswith('confinement:'):
+    _,mode,payload=case.split(':',2)
+    if mode=='rust':
+        value=json.loads(payload)
+        variant=value['stage']+':'+value['reason']
+        if value['rule_ordinal'] is not None:variant+=':'+str(value['rule_ordinal'])
+        os.environ['OSMAP_TEST_CONFINEMENT_VARIANT']=variant
+        binary=os.environ['OSMAP_TEST_CONFINEMENT_EMITTER_BINARY']
+        os.execv(binary,[binary,'--exact',
+            'openbsd::confinement_tests::serve_confinement_diagnostic_emitter','--ignored','--nocapture'])
+    raw=b'OSMAP_SERVE_CONFINEMENT_V1 '+payload.encode()+b'\n'
+    if mode=='earlier_failure':
+        raw=b"thread 'http-test' panicked at src/http/password_tests.rs:1:1:\nHTTP fixture admission custody refused\n"+raw
+    if mode=='duplicate':raw+=raw
+    if mode=='conflicting':
+        second=json.loads(payload);second['stage']='purpose_separation'
+        raw+=b'OSMAP_SERVE_CONFINEMENT_V1 '+json.dumps(second).encode()+b'\n'
+    if mode=='partial':raw=raw[:-1]
+    if mode=='partial_marker':raw=b'OSMAP_SERVE_CONFINEMENT_'
+    if mode=='oversized':raw=raw[:-1]+b' '*600+b'\n'
+    if mode=='interrupted':
+        os.write(2,raw[:-1]);time.sleep(20)
+    if mode=='fragmented':
+        for byte in raw:os.write(2,bytes([byte]))
+    else:os.write(2,raw)
+    if mode not in ('partial','partial_marker'):
+        os.write(2,b"thread 'http-test' panicked at src/http/password_tests.rs:1:1:\nHTTP fixture actual Serve confinement refused\n")
+    sys.exit(101)
 if case in ('panic','partial','flood'):
     raw=b"thread 'http-test' panicked at src/http/password_tests.rs:1247:10:\nHTTP fixture admission custody refused: SYNTHETIC_PASSWORD=secret-token\n"
     if case=='flood':
@@ -109,7 +161,7 @@ def run_guardian(case, stage):
             stack.enter_context(mock.patch.object(module,'guardian_identity',side_effect=module.Refused('root_born_guardian')))
         if case=='identity_failure':
             stack.enter_context(mock.patch.object(module,'drop_receipt',side_effect=module.Refused('drop_proof')))
-        if case=='cleanup_failure':
+        if case=='cleanup_failure' or case.startswith('confinement:cleanup_failure:'):
             original=module.DiagnosticFile.write
             calls=[0]
             def failed_final(self,report):
@@ -149,11 +201,12 @@ def exercise(case):
             custody=recv()
             if custody is not None:
                 send(json.dumps({'version':1,'root':str(stage/'http/http-state')}).encode())
-            if case=='interrupted':
+            interrupted=case=='interrupted' or case.startswith('confinement:interrupted:')
+            if interrupted:
                 time.sleep(.1)
                 process.send_signal(signal.SIGTERM)
                 left.shutdown(socket.SHUT_RDWR)
-            ready=recv() if case!='interrupted' else None
+            ready=recv() if not interrupted else None
             if ready is not None:
                 send(b'G')
                 recv()
@@ -173,6 +226,51 @@ def exercise(case):
 
 
 class NativeDiagnosticTests(unittest.TestCase):
+    def test_confinement_fixed_schema_fragmentation_and_closed_rejection(self):
+        value=CONFINEMENT_VARIANTS[6]
+        for mode,status in (('normal','AVAILABLE'),('fragmented','AVAILABLE'),
+                ('duplicate','DUPLICATE'),('conflicting','DUPLICATE'),
+                ('partial','INCOMPLETE'),('oversized','MALFORMED'),
+                ('partial_marker','INCOMPLETE'),
+                ('interrupted','INCOMPLETE'),('earlier_failure','CONFLICTING')):
+            with self.subTest(mode=mode):
+                report=exercise(confinement_case(value,mode))['report']
+                capture=report['capture']
+                self.assertEqual(capture['confinement_status'],status)
+                self.assertEqual(capture['confinement_detail'],value if status=='AVAILABLE' else None)
+                self.assertTrue(report['web_reaped'])
+                self.assertEqual(report['cleanup']['status'],'PASS')
+
+    def test_confinement_rejects_wrong_types_bounds_fields_and_stage_relations(self):
+        value=CONFINEMENT_VARIANTS[6]
+        bad_values=[dict(value,**changes) for changes in (
+            {'path':'/private/SyntheticPasswordABC123'}, {'errno':True}, {'errno':0},
+            {'errno':4096}, {'errno':'2'}, {'rule_ordinal':0}, {'rule_ordinal':2**32},
+            {'rule_ordinal':True}, {'syscall':'pledge'}, {'stage':['unveil_rule']},
+            {'reason':'SyntheticPasswordABC123'}, {'stage':'dependency_plan'},
+            {'schema':'untrusted-v1'}, {'rule_ordinal':None})]
+        bad_values.extend((None,[],{'schema':'osmap-serve-confinement-v1'}))
+        for bad in bad_values:
+            with self.subTest(bad=bad):
+                capture=exercise(confinement_case(bad))['report']['capture']
+                self.assertEqual(capture['confinement_status'],'MALFORMED')
+                self.assertIsNone(capture['confinement_detail'])
+                self.assertNotIn('SyntheticPasswordABC123',json.dumps(capture))
+
+    def test_confinement_duplicate_json_keys_and_extra_text_are_rejected(self):
+        valid=json.dumps(CONFINEMENT_VARIANTS[6],separators=(',',':'))
+        # The retained 512-byte prefix alone is valid JSON plus whitespace.
+        # Malformed secret text beyond that cap must still invalidate the line.
+        padded_overflow=valid+' '*(512-len(GUARDIAN.CONFINEMENT_MARKER)-1-len(valid)) \
+            +'SyntheticPasswordABC123'
+        for raw in (valid[:-1]+',"errno":2}', valid+' SyntheticPasswordABC123',
+                    valid[:-1]+',"path":"/private/SyntheticPasswordABC123"}', padded_overflow):
+            with self.subTest(raw=raw):
+                capture=exercise('confinement:normal:'+raw)['report']['capture']
+                self.assertEqual(capture['confinement_status'],'MALFORMED')
+                self.assertIsNone(capture['confinement_detail'])
+                self.assertNotIn('SyntheticPasswordABC123',json.dumps(capture))
+
     def test_initialization_launch_and_identity_failure_boundaries(self):
         for case,stage,operation,code in (
             ('initialization_failure','initializing','initialize','root_born_guardian'),

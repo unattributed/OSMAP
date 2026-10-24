@@ -1359,6 +1359,141 @@ impl ServeAccountSeal {
     }
 }
 
+// The original private error remains available only to the existing String
+// wrapper. Debug and the native fixture export only source-owned categories.
+#[derive(Clone, Copy, Debug, serde::Serialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+#[cfg_attr(not(any(target_os = "openbsd", test)), allow(dead_code))]
+enum ConfinementStage {
+    DependencyPlan,
+    PurposeSeparation,
+    AdmissionPreflight,
+    MutationPreflight,
+    InitialPledge,
+    UnveilRule,
+    UnveilLock,
+    FinalPledge,
+    UnsupportedPlatform,
+}
+#[derive(Clone, Copy, Debug, serde::Serialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+#[cfg_attr(not(any(target_os = "openbsd", test)), allow(dead_code))]
+enum ConfinementReason {
+    BoundaryRefused,
+    InvalidArgument,
+    SyscallFailed,
+}
+#[derive(Clone, Copy, Debug, serde::Serialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+#[cfg_attr(not(any(target_os = "openbsd", test)), allow(dead_code))]
+enum ConfinementSyscall {
+    Pledge,
+    Unveil,
+}
+#[derive(Debug, serde::Serialize)]
+struct ConfinementDiagnostic {
+    schema: &'static str,
+    stage: ConfinementStage,
+    reason: ConfinementReason,
+    syscall: Option<ConfinementSyscall>,
+    errno: Option<i32>,
+    rule_ordinal: Option<u32>,
+}
+pub(crate) struct ConfinementFailure {
+    diagnostic: ConfinementDiagnostic,
+    original: String,
+}
+impl std::fmt::Debug for ConfinementFailure {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.diagnostic.fmt(formatter)
+    }
+}
+impl ConfinementFailure {
+    fn boundary(stage: ConfinementStage, original: String) -> Self {
+        Self {
+            diagnostic: ConfinementDiagnostic {
+                schema: "osmap-serve-confinement-v1",
+                stage,
+                reason: ConfinementReason::BoundaryRefused,
+                syscall: None,
+                errno: None,
+                rule_ordinal: None,
+            },
+            original,
+        }
+    }
+    fn into_original(self) -> String {
+        self.original
+    }
+    #[cfg(any(target_os = "openbsd", test))]
+    fn invalid(stage: ConfinementStage, ordinal: Option<u32>, original: String) -> Self {
+        let mut failure = Self::boundary(stage, original);
+        failure.diagnostic.reason = ConfinementReason::InvalidArgument;
+        failure.diagnostic.rule_ordinal = ordinal;
+        failure
+    }
+    #[cfg(any(target_os = "openbsd", test))]
+    fn syscall(
+        stage: ConfinementStage,
+        syscall: ConfinementSyscall,
+        ordinal: Option<u32>,
+        error: &io::Error,
+        original: String,
+    ) -> Self {
+        let mut failure = Self::boundary(stage, original);
+        failure.diagnostic.reason = ConfinementReason::SyscallFailed;
+        failure.diagnostic.syscall = Some(syscall);
+        // Preserve only an actual bounded errno; absent/out-of-range values
+        // remain unknown and must never be reconstructed from error text.
+        failure.diagnostic.errno = error.raw_os_error().filter(|n| (1..=4095).contains(n));
+        failure.diagnostic.rule_ordinal = ordinal;
+        failure
+    }
+    #[cfg(test)]
+    fn diagnostic_line(&self) -> String {
+        format!(
+            "OSMAP_SERVE_CONFINEMENT_V1 {}\n",
+            serde_json::to_string(&self.diagnostic).expect("fixed confinement schema")
+        )
+    }
+    #[cfg(test)]
+    pub(crate) fn emit_native_fixture_diagnostic(&self) {
+        use std::io::Write as _;
+        // Best effort only: a broken diagnostic stream cannot replace the
+        // original confinement refusal or make the fixture continue.
+        let _ = std::io::stderr()
+            .lock()
+            .write_all(self.diagnostic_line().as_bytes());
+    }
+}
+
+fn check_account_preflight(
+    separated: bool,
+    admission: impl FnOnce() -> Result<(), ()>,
+    mutation: impl FnOnce() -> Result<(), ()>,
+) -> Result<(), ConfinementFailure> {
+    let refused =
+        |stage| ConfinementFailure::boundary(stage, "account Serve custody unavailable".into());
+    if !separated {
+        return Err(refused(ConfinementStage::PurposeSeparation));
+    }
+    admission().map_err(|()| refused(ConfinementStage::AdmissionPreflight))?;
+    mutation().map_err(|()| refused(ConfinementStage::MutationPreflight))?;
+    Ok(())
+}
+
+fn preflight_concrete_account_clients(
+    account: &crate::config::AccountRuntimeConfig,
+    admission: &crate::account_admission_runtime::Client,
+    mutation: &crate::account_mutation_client::Client,
+) -> Result<(), ConfinementFailure> {
+    check_account_preflight(
+        mutation.purpose_separated_from(admission),
+        || admission.preflight_serve(account).map_err(|_| ()),
+        || mutation.preflight_serve(account).map_err(|_| ()),
+    )
+}
+
 pub(crate) fn apply_runtime_confinement_for_accounts(
     config: &AppConfig,
     logger: &Logger,
@@ -1367,6 +1502,18 @@ pub(crate) fn apply_runtime_confinement_for_accounts(
         &crate::account_mutation_client::Client,
     )>,
 ) -> Result<Option<std::sync::Arc<ServeAccountSeal>>, String> {
+    apply_runtime_confinement_for_accounts_detailed(config, logger, clients)
+        .map_err(ConfinementFailure::into_original)
+}
+
+pub(crate) fn apply_runtime_confinement_for_accounts_detailed(
+    config: &AppConfig,
+    logger: &Logger,
+    clients: Option<(
+        &crate::account_admission_runtime::Client,
+        &crate::account_mutation_client::Client,
+    )>,
+) -> Result<Option<std::sync::Arc<ServeAccountSeal>>, ConfinementFailure> {
     match config.openbsd_confinement_mode {
         OpenbsdConfinementMode::Disabled => Ok(None),
         OpenbsdConfinementMode::LogOnly => {
@@ -1377,7 +1524,10 @@ pub(crate) fn apply_runtime_confinement_for_accounts(
         OpenbsdConfinementMode::Enforce => {
             let plan = OpenbsdConfinementPlan::from_config(config);
             if let Some(error) = &plan.dependency_error {
-                return Err(error.clone());
+                return Err(ConfinementFailure::boundary(
+                    ConfinementStage::DependencyPlan,
+                    error.clone(),
+                ));
             }
             logger.emit(&build_plan_event(config, &plan, "plan_enforcing"));
             // Concrete paired preflight immediately precedes actual apply.
@@ -1385,15 +1535,7 @@ pub(crate) fn apply_runtime_confinement_for_accounts(
             let prepared_account = if config.run_mode == crate::config::AppRunMode::Serve {
                 match (config.account_runtime.as_ref(), clients) {
                     (Some(account), Some((admission, mutation))) => {
-                        if !mutation.purpose_separated_from(admission) {
-                            return Err("account Serve custody unavailable".into());
-                        }
-                        admission
-                            .preflight_serve(account)
-                            .map_err(|_| "account Serve custody unavailable")?;
-                        mutation
-                            .preflight_serve(account)
-                            .map_err(|_| "account Serve custody unavailable")?;
+                        preflight_concrete_account_clients(account, admission, mutation)?;
                         Some(account.clone())
                     }
                     _ => None,
@@ -1404,7 +1546,7 @@ pub(crate) fn apply_runtime_confinement_for_accounts(
 
             #[cfg(target_os = "openbsd")]
             {
-                imp::apply_plan(&plan)?;
+                imp::apply_plan_detailed(&plan)?;
                 logger.emit(
                     &LogEvent::new(
                         LogLevel::Info,
@@ -1426,10 +1568,11 @@ pub(crate) fn apply_runtime_confinement_for_accounts(
             #[cfg(not(target_os = "openbsd"))]
             {
                 let _ = prepared_account;
-                Err(
+                Err(ConfinementFailure::boundary(
+                    ConfinementStage::UnsupportedPlatform,
                     "OpenBSD confinement enforcement was requested on a non-OpenBSD platform"
                         .to_string(),
-                )
+                ))
             }
         }
     }
@@ -2091,13 +2234,115 @@ fn build_plan_event(
     .with_field("unveiled_paths", unveiled_paths)
 }
 
+// One private sequence is used by the native adapter and injected unit tests.
+// No runtime flag, test adapter, or caller capability can bypass native sealing.
+#[cfg(any(target_os = "openbsd", test))]
+trait ConfinementSyscalls {
+    fn pledge(&mut self, promises: &std::ffi::CStr) -> io::Result<()>;
+    fn unveil(&mut self, rule: Option<(&std::ffi::CStr, &std::ffi::CStr)>) -> io::Result<()>;
+}
+#[cfg(any(target_os = "openbsd", test))]
+fn apply_plan_with_syscalls(
+    plan: &OpenbsdConfinementPlan,
+    syscalls: &mut impl ConfinementSyscalls,
+) -> Result<(), ConfinementFailure> {
+    use std::ffi::CString;
+    if let Some(error) = &plan.dependency_error {
+        return Err(ConfinementFailure::boundary(
+            ConfinementStage::DependencyPlan,
+            error.clone(),
+        ));
+    }
+    let pledge = |syscalls: &mut _, promises: &str, stage| {
+        let promises = CString::new(promises).map_err(|_| {
+            ConfinementFailure::invalid(
+                stage,
+                None,
+                "pledge promise string contained interior NUL".into(),
+            )
+        })?;
+        ConfinementSyscalls::pledge(syscalls, &promises).map_err(|error| {
+            ConfinementFailure::syscall(
+                stage,
+                ConfinementSyscall::Pledge,
+                None,
+                &error,
+                format!("pledge failed: {}", error),
+            )
+        })
+    };
+    pledge(
+        syscalls,
+        plan.promises_before_lock,
+        ConfinementStage::InitialPledge,
+    )?;
+    for (index, rule) in plan.unveil_rules.iter().enumerate() {
+        // This source-owned plan is far smaller than u32::MAX. Refuse before
+        // the rule if its ordinal cannot be represented; never wrap identity.
+        let ordinal = u32::try_from(index + 1).map_err(|_| {
+            ConfinementFailure::boundary(
+                ConfinementStage::DependencyPlan,
+                "unveil rule count exceeds diagnostic bound".into(),
+            )
+        })?;
+        let path = CString::new(rule.path.as_os_str().as_encoded_bytes()).map_err(|_| {
+            ConfinementFailure::invalid(
+                ConfinementStage::UnveilRule,
+                Some(ordinal),
+                format!("unveil path {:?} contained interior NUL", rule.path),
+            )
+        })?;
+        let permissions = CString::new(rule.permissions.as_str()).map_err(|_| {
+            ConfinementFailure::invalid(
+                ConfinementStage::UnveilRule,
+                Some(ordinal),
+                "unveil permission string contained interior NUL".into(),
+            )
+        })?;
+        syscalls
+            .unveil(Some((&path, &permissions)))
+            .map_err(|error| {
+                ConfinementFailure::syscall(
+                    ConfinementStage::UnveilRule,
+                    ConfinementSyscall::Unveil,
+                    Some(ordinal),
+                    &error,
+                    format!(
+                        "unveil failed for {} with permissions {}: {}",
+                        rule.path.display(),
+                        rule.permissions,
+                        error
+                    ),
+                )
+            })?;
+    }
+    syscalls.unveil(None).map_err(|error| {
+        ConfinementFailure::syscall(
+            ConfinementStage::UnveilLock,
+            ConfinementSyscall::Unveil,
+            None,
+            &error,
+            format!("unveil lock failed: {}", error),
+        )
+    })?;
+    pledge(
+        syscalls,
+        plan.promises_after_lock,
+        ConfinementStage::FinalPledge,
+    )?;
+    Ok(())
+}
+
+#[cfg(test)]
+#[path = "openbsd/confinement_tests.rs"]
+mod confinement_tests;
+
 #[cfg(target_os = "openbsd")]
 mod imp {
-    use std::ffi::CString;
     use std::io;
     use std::os::raw::{c_char, c_int};
 
-    use super::{OpenbsdConfinementPlan, OpenbsdUnveilRule};
+    use super::OpenbsdConfinementPlan;
 
     unsafe extern "C" {
         fn pledge(promises: *const c_char, execpromises: *const c_char) -> c_int;
@@ -2185,69 +2430,33 @@ mod imp {
         Ok(())
     }
 
-    /// Applies the current plan by reducing promises, unveiling paths, locking
-    /// the view, and then dropping the `unveil` promise.
+    /// Production adapter captures errno immediately after the failing call.
+    struct NativeSyscalls;
+    impl super::ConfinementSyscalls for NativeSyscalls {
+        fn pledge(&mut self, promises: &std::ffi::CStr) -> io::Result<()> {
+            if unsafe { pledge(promises.as_ptr(), std::ptr::null()) } == -1 {
+                return Err(io::Error::last_os_error());
+            }
+            Ok(())
+        }
+        fn unveil(&mut self, rule: Option<(&std::ffi::CStr, &std::ffi::CStr)>) -> io::Result<()> {
+            let (path, permissions) = rule
+                .map_or((std::ptr::null(), std::ptr::null()), |(p, a)| {
+                    (p.as_ptr(), a.as_ptr())
+                });
+            if unsafe { unveil(path, permissions) } == -1 {
+                return Err(io::Error::last_os_error());
+            }
+            Ok(())
+        }
+    }
     pub fn apply_plan(plan: &OpenbsdConfinementPlan) -> Result<(), String> {
-        if let Some(error) = &plan.dependency_error {
-            return Err(error.clone());
-        }
-        pledge_raw(plan.promises_before_lock)?;
-
-        for rule in &plan.unveil_rules {
-            unveil_rule(rule)?;
-        }
-
-        lock_unveil()?;
-        pledge_raw(plan.promises_after_lock)?;
-        Ok(())
+        apply_plan_detailed(plan).map_err(super::ConfinementFailure::into_original)
     }
-
-    /// Calls pledge with the supplied promise string and no execpromises so
-    /// helper processes can start unpledged after `execve(2)`.
-    fn pledge_raw(promises: &str) -> Result<(), String> {
-        let promises = CString::new(promises)
-            .map_err(|_| "pledge promise string contained interior NUL".to_string())?;
-        let result = unsafe { pledge(promises.as_ptr(), std::ptr::null()) };
-        if result == -1 {
-            return Err(format!("pledge failed: {}", io::Error::last_os_error()));
-        }
-
-        Ok(())
-    }
-
-    /// Applies one unveil rule using the exact path and permission set chosen
-    /// by the current confinement plan.
-    fn unveil_rule(rule: &OpenbsdUnveilRule) -> Result<(), String> {
-        let path = CString::new(rule.path.as_os_str().as_encoded_bytes().to_vec())
-            .map_err(|_| format!("unveil path {:?} contained interior NUL", rule.path))?;
-        let permissions = CString::new(rule.permissions.clone())
-            .map_err(|_| "unveil permission string contained interior NUL".to_string())?;
-
-        let result = unsafe { unveil(path.as_ptr(), permissions.as_ptr()) };
-        if result == -1 {
-            return Err(format!(
-                "unveil failed for {} with permissions {}: {}",
-                rule.path.display(),
-                rule.permissions,
-                io::Error::last_os_error(),
-            ));
-        }
-
-        Ok(())
-    }
-
-    /// Locks the current unveil table so later code cannot widen filesystem
-    /// visibility accidentally.
-    fn lock_unveil() -> Result<(), String> {
-        let result = unsafe { unveil(std::ptr::null(), std::ptr::null()) };
-        if result == -1 {
-            return Err(format!(
-                "unveil lock failed: {}",
-                io::Error::last_os_error()
-            ));
-        }
-
-        Ok(())
+    pub(super) fn apply_plan_detailed(
+        plan: &OpenbsdConfinementPlan,
+    ) -> Result<(), super::ConfinementFailure> {
+        super::apply_plan_with_syscalls(plan, &mut NativeSyscalls)
     }
 }
 

@@ -1,5 +1,7 @@
 # Documentation
 
+- [S04-02 Serve confinement localization](UX_S04_02_CONFINEMENT_LOCALIZATION_20261024.md) — differentiated source diagnostics; historical cause unknown; native qualification pending.
+
 ## S04-01 complete (R4 narrowed scope) — 2026-10-17
 
 Operator explicitly reported `S04_01_UAT=PASS` after agent-owned engineering,
