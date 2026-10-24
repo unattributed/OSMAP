@@ -1,4 +1,5 @@
 use super::*;
+use crate::openpgp_inventory_runtime::validate_socket;
 use std::os::unix::fs::PermissionsExt;
 use std::os::unix::net::UnixListener;
 use std::sync::atomic::{AtomicUsize, Ordering};

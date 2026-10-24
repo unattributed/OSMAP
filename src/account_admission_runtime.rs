@@ -3,9 +3,7 @@ use crate::account_admission::{
     valid_epoch, Admission, EpochAuthority, Error, Operation, Request, Verifier, MAX_FRAME,
 };
 use crate::openpgp_inventory_runtime::custody::{self, Check, Failure as CustodyFailure};
-use crate::openpgp_inventory_runtime::{
-    file, now, private_dir, read_frame, secret, validate_socket, write_frame,
-};
+use crate::openpgp_inventory_runtime::{file, now, private_dir, read_frame, secret, write_frame};
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
 use std::collections::BTreeSet;

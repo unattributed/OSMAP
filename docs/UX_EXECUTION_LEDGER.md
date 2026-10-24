@@ -36564,3 +36564,15 @@ permissions/ownership/deadline/confinement policy change or Python source edit
 occurred. Native160/163 cause, READY and T03 qualification remain unresolved.
 Prior elapsed/cumulative history is retained; aggregate current authoring/token/
 monetary cost is UNKNOWN. Full delivery timings belong to the final receipt.
+
+
+## 2026-10-24 — diagnostic source checkpoint and warning cleanup
+
+Signed source checkpoint `dd660a094ec35902505fe6857667b7110f5150a2` passed
+the ordinary pre-commit gate. Its warning-only unused socket-validation import
+and test-only legacy exact-path wrapper are corrected in a follow-up: the import
+is scoped to tests and the wrapper is compiled only for tests. Production custody
+still uses the shared detailed implementation. Independent delta review CLEAR;
+all-target Clippy with warnings denied PASS (18.18s). Normal signed follow-up
+and push gates remain required. No
+history amendment, host action or diagnostic/security behavior change is involved.

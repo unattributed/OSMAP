@@ -31,6 +31,7 @@ pub(crate) fn remaining(deadline: Instant) -> Result<Duration, Error> {
 }
 #[path = "openpgp_inventory_custody.rs"]
 pub(crate) mod custody;
+#[cfg(test)]
 pub(crate) fn exact_path(path: &Path, owner: u32) -> Result<(), Error> {
     custody::exact_path(path, owner).map_err(custody::Failure::into_original)
 }
