@@ -1,5 +1,7 @@
 """Strict consumer for one startup-only native result."""
-import hashlib,json,re,math
+import base64,hashlib,importlib.util,json,re,math
+from pathlib import Path
+from functools import lru_cache
 
 
 def require(value,code):
@@ -28,6 +30,9 @@ def inspect(value,code,expiry,packet):
     require((packet.get('operation')=='password-change')==(actor.get('schema')=='osmap-single-host-controlled-journey-v1'),
         'operation_actor_binding')
     if actor.get('schema')=='osmap-single-host-controlled-journey-v1':
+        if actor.get('native_diagnostic_evidence')is not None:
+            require(actor['native_diagnostic_evidence']['record']['execution_admission_sha256']==
+                ready.get('admission_sha256'),'native_diagnostic_execution_binding')
         if code==1 and actor.get('result')=='FAIL':return inspect_mutation_failure(actor,packet)
         require(code==0,'actor_exit_consistency')
         return inspect_mutation(actor,packet)
@@ -115,15 +120,116 @@ def inspect_admission(actor,packet):
         'password_mutation':False,'cleanup_confirmed':True}
 
 
+@lru_cache(maxsize=1)
+def diagnostic_validators():
+    # Source-owned paths only: never import code or select paths from a result.
+    root=Path(__file__).resolve().parent
+    modules=[]
+    for name,leaf in (('diagnostic_actor','sources/backend/local_journey.py'),
+            ('diagnostic_frontend','sources/backend/local_frontend.py'),
+            ('diagnostic_guardian','sources/frontend/native_http_web_guardian.py')):
+        spec=importlib.util.spec_from_file_location(name,root/leaf)
+        module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+        modules.append(module)
+    return tuple(modules)
+
+
+def inspect_native_diagnostic(actor,packet):
+    """Only fixed source-owned diagnostics cross the final result boundary."""
+    evidence=actor.get('native_diagnostic_evidence')
+    if evidence is None:return None
+    require(type(evidence)is dict and set(evidence)=={'record','sha256',
+        'readback_verified','recovery_sha256'},'native_diagnostic_evidence_fields')
+    require(evidence['readback_verified']is True,'native_diagnostic_readback')
+    record=evidence['record']
+    require(type(record)is dict and set(record)=={'schema','execution_admission_sha256',
+        'source_commit','compiler_source_manifest_sha256','helper_sha256','web_sha256',
+        'native_diagnostic'}and record['schema']=='osmap-native-diagnostic-evidence-v1',
+        'native_diagnostic_record_fields')
+    for value in (evidence['sha256'],evidence['recovery_sha256'],record['execution_admission_sha256']):
+        require(type(value)is str and re.fullmatch('[a-f0-9]{64}',value)is not None,
+            'native_diagnostic_digest')
+    require(record['source_commit']==packet['source_commit']
+        and record['compiler_source_manifest_sha256']==packet['compiler_source_manifest_sha256']
+        and record['helper_sha256']==packet['helper']['sha256']
+        and record['web_sha256']==packet['web']['sha256'],'native_diagnostic_source_binding')
+    raw=json.dumps(record,sort_keys=True,separators=(',',':')).encode()
+    require(len(raw)<=32768 and hashlib.sha256(raw).hexdigest()==evidence['sha256'],
+        'native_diagnostic_integrity')
+    _,frontend,guardian=diagnostic_validators()
+    frontend.validate_native_diagnostic(record['native_diagnostic'],guardian.validate_diagnostic,guardian.validate_capture)
+    observation=record['native_diagnostic']['guardian_diagnostic']
+    if observation is not None:
+        source=observation['source']
+        require(source['binary_sha256']is None or source['binary_sha256']==packet['web']['sha256'],
+            'native_diagnostic_binary_binding')
+        if 'sources'in packet:
+            sources={Path(name).name:hashlib.sha256(base64.b64decode(raw,validate=True)).hexdigest()
+                for name,raw in packet['sources'].items()if name.startswith('frontend/')}
+            require(source['guardian_sha256']is None or source['guardian_sha256']==
+                sources.get('native_http_web_guardian.py'),'native_diagnostic_guardian_binding')
+            expected=hashlib.sha256((json.dumps(sources,sort_keys=True,separators=(',',':'))+'\n').encode()).hexdigest()
+            require(source['source_manifest_sha256']is None or source['source_manifest_sha256']==expected,
+                'native_diagnostic_manifest_binding')
+    return evidence
+
+
+def inspect_cleanup_failures(actor):
+    values=actor.get('cleanup_failures',[])
+    require(type(values)is list and len(values)<=8,'cleanup_failure_bound')
+    actor_module,_,_=diagnostic_validators()
+    for value in values:
+        require(type(value)is dict and set(value)=={'phase','category','reason'}
+            and value['phase']in {'frontend_stop','witness_close','helper_stop',
+                'final_authority','owned_disposal','diagnostic_preservation'}
+            and value['category']in {'Refused','RuntimeError','OSError','ValueError','TimeoutError',
+                'InterruptedError','KeyboardInterrupt','SystemExit','FileNotFoundError','PermissionError','Exception'}
+            and value['reason']in actor_module.SAFE_FAILURE_CODES,'cleanup_failure_schema')
+    return values
+
+
 def inspect_mutation_failure(actor,packet):
     """Preserve a bound native failure; confirmation needs independent row proof.
 
     This reports evidence only. It grants no cleanup or retry authority.
     Missing evidence remains unknown even if the actor claimed clean disposal.
     """
+    actor_module,_,_=diagnostic_validators()
     reason=actor.get('failure_reason')
-    if type(reason)is not str or re.fullmatch('[A-Za-z0-9_]{1,128}',reason)is None:
+    if type(reason)is not str or reason not in actor_module.SAFE_FAILURE_CODES:
         reason='controlled_journey_failed'
+    diagnostic=inspect_native_diagnostic(actor,packet)
+    cleanup_failures=inspect_cleanup_failures(actor)
+    original_failure={'component':'native_actor','code':reason}
+    deficiency='NO_PRESERVED_NATIVE_DIAGNOSTIC'
+    completeness='UNAVAILABLE';unknown_cause_reason='NATIVE_CAPTURE_UNAVAILABLE'
+    if diagnostic is not None:
+        native=diagnostic['record']['native_diagnostic']
+        guardian=native['guardian_diagnostic'];first=native['first_failure']
+        if first is not None:original_failure=first
+        # A guardian cancellation observed during shutdown is secondary to an
+        # already demonstrated parent READY validation failure. Only replace a
+        # closure symptom with its attributable child/guardian failure.
+        if (guardian is not None and (first is None or first['code']in
+                ('control_eof','CONTROL_IO_FAILED')) and guardian['code']not in
+                ('cancelled','guardian_interrupted','UNEXPECTED_SANITIZED')):
+            original_failure={key:guardian[key]for key in ('component','stage','operation','code','cause')}
+        if original_failure.get('cause')not in (None,'CAUSE_UNKNOWN'):
+            unknown_cause_reason=None
+        elif guardian is not None and guardian['capture']is not None:
+            capture=guardian['capture']
+            unknown_cause_reason=('NATIVE_CAPTURE_UNAVAILABLE'if capture['capture_error']is not None
+                or not(capture['stdout_eof']and capture['stderr_eof'])else
+                'NO_NATIVE_OUTPUT'if capture['stdout_bytes']==capture['stderr_bytes']==0 else
+                'NO_ALLOWLISTED_NATIVE_DIAGNOSTIC')
+        reason=original_failure.get('cause')if original_failure.get('cause')not in(None,'CAUSE_UNKNOWN')else original_failure['code']
+        status=native['guardian_diagnostic_status']
+        deficiency=None if status in ('AVAILABLE','NOT_CREATED')else status
+        for capture in (native['guardian_capture'],None if guardian is None else guardian['capture']):
+            if capture is not None and (capture['capture_error']is not None or
+                    not(capture['stdout_eof']and capture['stderr_eof'])):
+                deficiency='CAPTURE_INCOMPLETE'
+        completeness='COMPLETE'if deficiency is None else'INCOMPLETE'
     accounts={'alice@osmap-password.invalid','bob@osmap-password.invalid'}
     baseline=actor.get('initial_authority_digests',{});final=actor.get('final_authority',{})
     intents=actor.get('durable_intents',{});owned=actor.get('owned_effects_report',{})
@@ -156,7 +262,14 @@ def inspect_mutation_failure(actor,packet):
         and type(helper)is dict and helper.get('helper_reaped')is True
         and type(helper.get('helper_exit_code'))is int and helper['helper_exit_code']==0
         and helper.get('helper_signaled')is False)
-    return {'result':'FAIL','failure_reason':reason,
+    return {'result':'FAIL','functional_result':'FAIL','failure_reason':reason,
+        'original_failure':original_failure,'native_diagnostic_evidence':diagnostic,
+        'diagnostic_completeness':completeness,'diagnostic_deficiency':deficiency,
+        'unknown_cause_reason':unknown_cause_reason,
+        'diagnostic_preservation':'READBACK_VERIFIED'if diagnostic is not None else'UNAVAILABLE',
+        'cleanup_failures':cleanup_failures,
+        'credential_mutation_submission_state':'NOT_SUBMITTED'if no_write else'UNKNOWN_OR_SUBMITTED',
+        'authoritative_state_certainty':'CONFIRMED_NO_WRITE'if no_write else'UNKNOWN',
         'disposition':'CONFIRMED'if cleanup else'UNCERTAIN',
         'reported_disposition':actor.get('disposition'),'cleanup_confirmed':bool(cleanup),
         'password_mutation':False if no_write else None,
@@ -175,6 +288,8 @@ def inspect_mutation(actor,packet):
     """Consume root observations plus the guarded HTTP journey after disposal."""
     require(actor['result']=='PASS' and actor['functional_result']=='PASS'
         and actor['disposition']=='CONFIRMED','mutation_result')
+    diagnostic=inspect_native_diagnostic(actor,packet)
+    require(diagnostic is not None,'mutation_diagnostic_missing')
     require(all(actor[k] is False for k in ('installed_qualification','slice_complete',
         'public_service_controls','public_config_writes','relay_operations','credential_values_retained')),
         'mutation_scope')
@@ -247,6 +362,7 @@ def inspect_mutation(actor,packet):
         for k in ('authentication_seconds','totp_wait_seconds','mutation_seconds',
             'authoritative_verification_seconds','cleanup_seconds')),'mutation_timings')
     return {'result':'PASS','disposition':'CONFIRMED','password_mutation':True,
+        'native_diagnostic_evidence':diagnostic,
         'mutation_requests':1,'authoritative_snapshots':snapshots,'mutation_evidence':proof,
         'mail_witness':mail,'timings':timings,'cleanup_confirmed':True,
         'source_commit':packet['source_commit'],'service_binary_sha256':packet['helper']['sha256'],

@@ -35,6 +35,13 @@ def load(name, leaf):
     return module
 
 
+def frontend_node(keeper):
+    # Instantiate all real controller state; only pinned host module loading is
+    # replaced in these narrow clock/cleanup unit regressions.
+    with patch.object(keeper,'module',return_value=SimpleNamespace()):
+        return keeper.Frontend(None)
+
+
 front = load('password_journey_front', 'native_http_front_driver.py')
 password = load('password_journey_password', 'native_http_password_driver.py')
 
@@ -397,8 +404,8 @@ class PasswordJourneyTests(unittest.TestCase):
             'totp_counter':int(time.time())//30}
         control = SimpleNamespace(write=Mock(), read=Mock(side_effect=[
             json.dumps(custody).encode(),json.dumps(ready).encode()]))
-        guard = SimpleNamespace(END=now+1,Control=Mock(return_value=control))
-        node = keeper.Frontend.__new__(keeper.Frontend)
+        guard = SimpleNamespace(END=now+1,Control=Mock(return_value=control),Capture=Mock(return_value=None))
+        node = frontend_node(keeper)
         node.directory = node.file = node.capture_guardian_code = node.group = Mock()
         node.ownership_callback = None
         node.http_module = SimpleNamespace(FrontDriver=Mock(),JOURNEY_SECONDS=front.JOURNEY_SECONDS)
@@ -413,6 +420,7 @@ class PasswordJourneyTests(unittest.TestCase):
                 patch.object(keeper.signal,'pthread_sigmask',return_value=set()), \
                 patch.object(keeper.subprocess,'Popen',return_value=SimpleNamespace(pid=12345)):
             node.setup(boot)
+        guard.Capture.assert_called_once_with(node.guardian)
         self.assertEqual(guard.END,now+600)
         self.assertGreaterEqual(node.sequence_end,now+300)
         self.assertLessEqual(node.sequence_end,time.monotonic()+300)
@@ -509,7 +517,7 @@ class PasswordJourneyTests(unittest.TestCase):
         report['elapsed_millis']=300001
         with self.assertRaisesRegex(guardian.Refused,'rust_report'):
             guardian.rust_report(json.dumps(report).encode())
-        node=keeper.Frontend.__new__(keeper.Frontend);node.http_module=front
+        node=frontend_node(keeper);node.http_module=front
         with patch.object(keeper,'WORK',329),patch.object(time,'monotonic',return_value=0), \
                 patch.object(keeper.subprocess,'Popen') as spawn:
             with self.assertRaisesRegex(RuntimeError,'insufficient_original_journey_budget'):
@@ -518,7 +526,7 @@ class PasswordJourneyTests(unittest.TestCase):
 
     def test_interrupted_frontend_cleanup_keeps_original_actor_end(self):
         keeper=load('timing_cleanup_keeper','../backend/local_frontend.py')
-        node=keeper.Frontend.__new__(keeper.Frontend)
+        node=frontend_node(keeper)
         node.cancelled=threading.Event();node.socket_lock=threading.Lock()
         node.http_stream=None;node.guardian=None;node.process_uncertain=False
         node.worker=SimpleNamespace(join=Mock(),is_alive=lambda:False)
@@ -538,7 +546,7 @@ class PasswordJourneyTests(unittest.TestCase):
         keeper = load('password_journey_keeper', '../backend/local_frontend.py')
         for absent in (True, False):
             with self.subTest(absent=absent):
-                node = keeper.Frontend.__new__(keeper.Frontend)
+                node = frontend_node(keeper)
                 node.cancelled = threading.Event()
                 node.socket_lock = threading.Lock()
                 node.http_stream = node.control = node.worker = None
@@ -564,7 +572,7 @@ class PasswordJourneyTests(unittest.TestCase):
         keeper = load('password_journey_program', '../backend/local_frontend.py')
         for reap_fails in (False, True):
             with self.subTest(reap_fails=reap_fails):
-                node = keeper.Frontend.__new__(keeper.Frontend)
+                node = frontend_node(keeper)
                 node.program_lock = threading.Lock()
                 node.children = []
                 node.report = {'groups': []}

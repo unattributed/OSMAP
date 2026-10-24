@@ -22,16 +22,19 @@ def load(name,leaf):
 actor=load('mutation_actor','sources/backend/local_journey.py')
 consumer=load('mutation_consumer','consume_startup.py')
 wrapper=load('mutation_wrapper','remote_wrapper.py')
+controller=load('mutation_controller','sources/backend/local_frontend.py')
 fixture=load('mutation_fixture','test_password_journey.py')
 front,password=fixture.front,fixture.password
 
 class MutationIntegration(unittest.TestCase):
-    def run_actor(self,root,fault=None,cleanup_failure=False,packet=None):
+    def run_actor(self,root,fault=None,cleanup_failure=False,packet=None,frontend_factory=None,receipt_factory=None):
         peer=fixture.ControlledPeer(root,fault);states={};phases=[]
         pin=packet['helper']['sha256']if packet is not None else'1'*64
         p={'helper_sha256':pin,'source_commit':packet['source_commit']if packet is not None else'2'*40,'config_map_sha256':pin,
             'public_sql_sha256':pin,'backend_sources':{'custody.py':pin},
-            'frontend_stage':'local','frontend_files':{},'frontend_sources':{}}
+            'frontend_stage':'local','frontend_files':{},'frontend_sources':{},
+            'web_sha256':packet['web']['sha256']if packet is not None else pin,
+            'compiler_source_manifest_sha256':packet['compiler_source_manifest_sha256']if packet is not None else pin}
         class Qualification:
             def __init__(self):
                 states['backend']=self;self.recovery=None;self.helper=None;self.helper_stopped=False
@@ -67,7 +70,17 @@ class MutationIntegration(unittest.TestCase):
             def __init__(self,f,installer,p):
                 states['receipt']=self;self.setup_complete=False;self.requests_stopped=False
                 self.mutation_submission_started=False;self.snapshots={};self.path=root/'receipt'
-            def checkpoint(self,phase):phases.append((phase,self.mutation_submission_started))
+                self.web=None;self.diagnostic_evidence=None
+            def checkpoint(self,phase):
+                phases.append((phase,self.mutation_submission_started))
+                if self.web is not None:
+                    record=actor.diagnostic_record(p,self.web.native_diagnostic())
+                    raw=json.dumps(record,sort_keys=True,separators=(',',':')).encode()
+                    self.path.write_bytes(raw)
+                    if self.path.read_bytes()!=raw:raise RuntimeError('diagnostic_readback')
+                    pin=hashlib.sha256(raw).hexdigest()
+                    self.diagnostic_evidence={'record':record,'sha256':pin,
+                        'readback_verified':True,'recovery_sha256':pin}
         class Witness:
             def __init__(self,*args):pass
             def begin(self):pass
@@ -80,6 +93,10 @@ class MutationIntegration(unittest.TestCase):
                 self.http_root=root;self.ready={'port':1};self.sequence_end=time.monotonic()+front.JOURNEY_SECONDS
                 self.custody={'selector':actor.SELECTOR};self.control=SimpleNamespace(write=lambda *args:None)
                 self.journey_module=password
+                with patch.object(controller,'module',return_value=SimpleNamespace()):
+                    self.diagnostic_controller=controller.Frontend(None)
+            def native_diagnostic(self):return self.diagnostic_controller.native_diagnostic()
+            def preserve_failure(self,error):self.diagnostic_controller.preserve_failure(error)
             def setup(self,boot):self.driver=front.FrontDriver(self,boot)
             def exchange(self,tag,end):return self.local_exchange(tag,end)
             def capture_replay_directory(self):pass
@@ -96,11 +113,11 @@ class MutationIntegration(unittest.TestCase):
         modules={'stock_qualification.py':SimpleNamespace(Qualification=Qualification),
             'rust_http_driver.py':http,'install_account_password.py':SimpleNamespace(),
             'stock_mail_witness.py':SimpleNamespace(StockMailWitness=Witness),
-            'local_frontend.py':SimpleNamespace(Frontend=Frontend)}
+            'local_frontend.py':SimpleNamespace(Frontend=frontend_factory or Frontend)}
         report={'schema':'osmap-single-host-controlled-journey-v1',**{key:False for key in
             ('installed_qualification','slice_complete','public_service_controls','public_config_writes',
              'relay_operations','credential_values_retained')}}
-        with patch.object(actor,'load',side_effect=modules.__getitem__),patch.object(actor,'Receipt',Receipt), \
+        with patch.object(actor,'load',side_effect=modules.__getitem__),patch.object(actor,'Receipt',receipt_factory or Receipt), \
                 patch.object(actor,'END',time.monotonic()+600),patch.object(actor,'WORK',time.monotonic()+450), \
                 patch.object(front,'WEB_UID',os.getuid()),patch.object(front,'WEB_GID',os.getgid()), \
                 patch.object(front.socket,'create_connection',side_effect=lambda *a,**k:fixture.ControlledSocket(peer)), \
@@ -113,6 +130,7 @@ class MutationIntegration(unittest.TestCase):
         ready={**common,'frontend':'local-frontend','schema':'osmap-single-host-stage-ready-v1',
             **{key:packet[key]for key in('source_commit','compiler_receipt_sha256','compiler_source_manifest_sha256')},
             'helper_sha256':packet['helper']['sha256'],'web_sha256':packet['web']['sha256'],
+            'admission_sha256':hashlib.sha256((json.dumps(p,sort_keys=True,separators=(',',':'))+'\n').encode()).hexdigest(),
             'packet_sha256':hashlib.sha256(json.dumps(packet,sort_keys=True,separators=(',',':')).encode()).hexdigest()}
         frames=[{**common,'schema':'osmap-single-host-stage-birth-v1','frontend':None},
             {**common,'schema':'osmap-single-host-stage-birth-v1','frontend':'local-frontend'},ready,report]
@@ -187,7 +205,7 @@ class MutationIntegration(unittest.TestCase):
                 self.assertEqual(accepted['reported_disposition'],'RETAINED_REQUIRES_REVIEW')
                 self.assertIsNone(accepted['password_mutation'])
                 self.assertFalse(accepted['cleanup_confirmed'])
-                self.assertEqual(accepted['failure_reason'],report['failure_reason'])
+                self.assertEqual(accepted['failure_reason'],report['native_diagnostic_evidence']['record']['native_diagnostic']['first_failure']['code'])
 
     def test_proven_prewrite_refusal_disposes_without_mutation(self):
         with tempfile.TemporaryDirectory()as name:
@@ -219,13 +237,56 @@ class MutationIntegration(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError,'transport_or_cleanup'):
                 consumer.inspect(value,0,123,packet)
 
+    def test_durable_submission_intent_survives_missing_driver(self):
+        created=[]
+        class InterruptedFrontend(controller.Frontend):
+            def __init__(self,*args):
+                with patch.object(controller,'module',return_value=SimpleNamespace()):super().__init__(None)
+                created.append(self)
+            def setup(self,boot):
+                self.ownership_callback.__self__.mutation_submission_started=True
+                self.ownership_callback('MUTATION_SUBMISSION_INTENT')
+                raise RuntimeError('actor_interrupted')
+        with tempfile.TemporaryDirectory()as name:
+            peer,states,_,report,value,packet=self.run_actor(Path(name),frontend_factory=InterruptedFrontend)
+            self.assertFalse(hasattr(created[0],'driver'))
+            self.assertEqual(peer.writes,0)
+            self.assertTrue(report['mutation_submission_started'])
+            self.assertFalse(report['proven_before_submission_no_write'])
+            self.assertEqual(report['disposition'],'RETAINED_REQUIRES_REVIEW')
+            self.assertFalse(states['backend'].disposed or created[0].disposed)
+            result=consumer.inspect(value,1,123,packet)
+            self.assertIsNone(result['password_mutation'])
+            self.assertEqual(result['authoritative_state_certainty'],'UNKNOWN')
+
+    def test_evidence_write_failure_still_stops_producers_but_retains_resources(self):
+        class FailedReceipt:
+            def __init__(self,f,installer,p):
+                self.setup_complete=False;self.requests_stopped=False;self.snapshots={}
+                self.mutation_submission_started=False;self.path=Path('/local-test-no-receipt')
+                self.diagnostic_evidence=None;self.web=None
+            def checkpoint(self,phase):
+                if phase=='DIAGNOSTIC_BEFORE_STOP':raise OSError('SyntheticSecretWriteFailure')
+        with tempfile.TemporaryDirectory()as name:
+            peer,states,_,report,value,packet=self.run_actor(Path(name),'expired',receipt_factory=FailedReceipt)
+            self.assertEqual(peer.writes,0)
+            self.assertEqual(report['result'],'FAIL')
+            self.assertTrue(states['frontend'].requests_stopped and states['backend'].helper_stopped)
+            self.assertFalse(states['frontend'].disposed or states['backend'].disposed)
+            self.assertEqual(report['disposition'],'RETAINED_REQUIRES_REVIEW')
+            self.assertEqual(report['cleanup_failures'][0]['phase'],'diagnostic_preservation')
+            self.assertNotIn('SyntheticSecretWriteFailure',json.dumps(report))
+            result=consumer.inspect(value,1,123,packet)
+            self.assertEqual(result['disposition'],'UNCERTAIN')
+            self.assertEqual(result['diagnostic_completeness'],'UNAVAILABLE')
+
     def test_cleanup_failure_cannot_emit_milestone_pass_or_dispose_sessions(self):
         with tempfile.TemporaryDirectory()as name:
             peer,states,phases,report,value,packet=self.run_actor(Path(name),cleanup_failure=True)
             self.assertEqual(report['result'],'FAIL')
             self.assertEqual(report['milestones']['milestone3']['result'],'NOT_QUALIFIED')
             self.assertFalse(states['frontend'].disposed)
-            self.assertEqual(report['cleanup_failures'][0]['reason'],'local_cleanup_failure')
+            self.assertEqual(report['cleanup_failures'][0]['reason'],'UNEXPECTED_SANITIZED')
             self.assertTrue((Path(name)/'http-state/sessions').exists())
             accepted=consumer.inspect(value,1,123,packet)
             self.assertEqual((accepted['result'],accepted['disposition']),('FAIL','UNCERTAIN'))

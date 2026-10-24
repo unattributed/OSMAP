@@ -19,12 +19,17 @@ BACKEND_SOURCE_NAMES={'custody.py','stock_qualification.py','stock_schema.py',
 FRONTEND_SOURCE_NAMES={'native_http_front_driver.py','native_http_password_driver.py',
     'native_http_web_guardian.py'}
 HELPER_BINDING={'helper_source_commit','helper_compiler_source_manifest_sha256','helper_compiler_receipt_sha256'}
+SAFE_FAILURE_CODES=frozenset(('UNEXPECTED_SANITIZED', 'actor_birth', 'actor_interrupted', 'actual_http_stopped', 'admission_fields', 'admission_pin', 'authority_changed_before_disposal', 'backend_stage', 'backend_stage_custody', 'complete_event_set', 'control_eof', 'controlled_journey_failed', 'diagnostic_bound', 'diagnostic_evidence_unavailable', 'diagnostic_not_preserved', 'diagnostic_readback', 'duplicate_field', 'fresh_original_expiry', 'frontend_disposal', 'frontend_files', 'frontend_original_lease', 'frontend_stage', 'frontend_stage_custody', 'helper_binding_fields', 'helper_binding_scalars', 'input_continuity', 'input_custody', 'input_deadline', 'input_hash', 'input_mode', 'input_open', 'mail_witness', 'native_local_selector', 'native_startup_failed', 'nonfinite', 'one_admission_hash', 'ordered_local_event', 'original_http_deadline', 'original_local_deadline', 'owned_cleanup', 'producer_stop_required', 'purpose_key_shape', 'receipt_bound', 'receipt_scalar', 'recovery_changed', 'recovery_collision', 'recovery_readback', 'root_target', 'single_durable_mutation_intent', 'source_commit', 'source_sets', 'stock_bob_nonce_home', 'web_build_binding', 'web_source_map'))
 class Refused(Exception):pass
 def require(ok,reason):
     if not ok:raise Refused(reason)
 def failure_reason(error):
     reason=getattr(error,'code',None) or str(error)
-    return reason if type(reason)is str and re.fullmatch(r'[A-Za-z0-9_.:-]{1,96}',reason)else'UNEXPECTED_SANITIZED'
+    return reason if type(reason)is str and reason in SAFE_FAILURE_CODES else'UNEXPECTED_SANITIZED'
+def failure_category(error):
+    name=type(error).__name__
+    return name if name in {'Refused','RuntimeError','OSError','ValueError','TimeoutError',
+        'InterruptedError','KeyboardInterrupt','SystemExit','FileNotFoundError','PermissionError'}else'Exception'
 def unique(pairs):
     out={}
     for key,value in pairs:require(key not in out,'duplicate_field');out[key]=value
@@ -81,9 +86,18 @@ def admission(expected):
     require(decode(read(root/'source-input-manifest.json',65536))==p['frontend_sources'],'web_source_map')
     return p
 
+def diagnostic_record(p,diagnostic):
+    return {'schema':'osmap-native-diagnostic-evidence-v1',
+        'execution_admission_sha256':sha((json.dumps(p,sort_keys=True,separators=(',',':'))+'\n').encode()),
+        'source_commit':p['source_commit'],
+        'compiler_source_manifest_sha256':p['compiler_source_manifest_sha256'],
+        'helper_sha256':p['helper_sha256'],'web_sha256':p['web_sha256'],
+        'native_diagnostic':diagnostic}
+
 class Receipt:
     def __init__(self,f,installer,p):
         self.f,self.installer,self.p=f,installer,p;self.path=STAGE/'local-owned-recovery.json';self.previous=None
+        self.diagnostic_evidence=None
         self.setup_complete=False;self.requests_stopped=False;self.restoration_attempted=False;self.mutation_submission_started=False;self.sequence=0;self.snapshots={};self.web=None
         self.actor=f.run(('/bin/ps','-p',str(os.getpid()),'-o','pid=,ppid=,uid=,lstart=,comm='),'local_actor_birth',cap=2048).decode('ascii')
         row=self.actor.split();require(len(row)==9 and row[0]==str(os.getpid())and row[2]=='0','actor_birth')
@@ -96,12 +110,21 @@ class Receipt:
         state['helper_sha256']=self.p['helper_sha256'];state['web_sha256']=self.p['web_sha256']
         state.update({k:self.p[k]for k in HELPER_BINDING if k in self.p})
         state['mutation_submission_started']=self.mutation_submission_started
+        if web is not None:
+            diagnostic=web.native_diagnostic()
+            record=diagnostic_record(self.p,diagnostic)
+            raw_record=json.dumps(record,sort_keys=True,separators=(',',':')).encode()
+            require(len(raw_record)<=32768,'diagnostic_bound')
+            state['native_diagnostic_evidence']={'record':record,'sha256':sha(raw_record)}
         raw=json.dumps(state,sort_keys=True,separators=(',',':')).encode();require(len(raw)<=131072,'receipt_bound')
         if self.previous is None:require(not os.path.lexists(self.path),'recovery_collision')
         else:
             old,m=self.installer.read_regular(self.path,131072,END);require((sha(old),m)==self.previous,'recovery_changed')
         self.installer.publish(self.path,raw,0o600,0,0,END,{},readback_cap=131072)
         stored,m=self.installer.read_regular(self.path,131072,END);require(stored==raw,'recovery_readback');self.previous=(sha(raw),m)
+        if 'native_diagnostic_evidence'in state:
+            self.diagnostic_evidence={**state['native_diagnostic_evidence'],
+                'readback_verified':True,'recovery_sha256':sha(raw)}
 
 
 def run(p,report):
@@ -116,7 +139,7 @@ def run(p,report):
             try:return super().directory(path,mode)
             finally:
                 if self.recovery is not None:self.recovery.checkpoint('DIRECTORY_BIRTH')
-    f=LocalQualification();owner=None;web=None;witness=None;complete=False;events=[];snapshots={};failure=False
+    f=LocalQualification();owner=None;web=None;witness=None;complete=False;events=[];snapshots={};failure=False;preservation_failure=None
     milestones={};journey_started=None;admission_finished=None;mutation_finished=None
     report['milestones']=milestones;report['authoritative_snapshots']=snapshots
     try:
@@ -174,14 +197,22 @@ def run(p,report):
         complete=True
     except BaseException as error:
         failure=True;report['functional_result']='FAIL'
-        report['failure_category']=type(error).__name__
+        report['failure_category']=failure_category(error)
         report['failure_reason']=failure_reason(error)
+        if web is not None and hasattr(web,'preserve_failure'):
+            try:web.preserve_failure(error)
+            except BaseException as secondary:preservation_failure=secondary
     finally:
         cleanup_started=time.monotonic();cleanup_ok=True
         def cleanup_error(phase,error):
             report.setdefault('cleanup_failures',[]).append({'phase':phase,
-                'category':type(error).__name__,'reason':failure_reason(error)})
-        submitted=web is not None and getattr(getattr(web,'driver',None),'mutation_submission_started',False)
+                'category':failure_category(error),'reason':failure_reason(error)})
+        if preservation_failure is not None:
+            cleanup_ok=False;cleanup_error('diagnostic_preservation',preservation_failure)
+        # A durable intent is authoritative even if driver construction/dispatch
+        # is interrupted; never reset it from a missing driver attribute.
+        submitted=bool((owner is not None and owner.mutation_submission_started)or
+            (web is not None and getattr(getattr(web,'driver',None),'mutation_submission_started',False)))
         report['mutation_submission_started']=submitted
         report['mutation_requests']=getattr(getattr(web,'driver',None),'mutation_requests',0)
         if owner is not None:owner.mutation_submission_started=submitted
@@ -190,6 +221,11 @@ def run(p,report):
             if web.driver.actual_http_report is not None:
                 report['actual_http_report']=web.driver.actual_http_report
             if failure:report['http_failure_scalars']=web.driver.failure_scalars()
+        try:
+            if owner is not None and web is not None:
+                owner.checkpoint('DIAGNOSTIC_BEFORE_STOP')
+        except BaseException as error:
+            cleanup_ok=False;cleanup_error('diagnostic_preservation',error)
         try:
             if web is not None:
                 if not web.requests_stopped:web.stop_requests()
@@ -206,6 +242,20 @@ def run(p,report):
             if owner is not None:owner.checkpoint('HELPER_STOPPED')
         except BaseException as error:
             cleanup_ok=False;cleanup_error('helper_stop',error)
+        # Freeze the final capture in the existing protected recovery receipt
+        # before owned directories, session state or native evidence are removed.
+        diagnostic_preserved=web is None
+        try:
+            if owner is not None and web is not None:
+                owner.checkpoint('DIAGNOSTIC_CAPTURED')
+                evidence=getattr(owner,'diagnostic_evidence',None)
+                if evidence is not None:
+                    report['native_diagnostic_evidence']=evidence
+                    diagnostic_preserved=evidence['readback_verified']is True
+                else:raise Refused('diagnostic_not_preserved')
+        except BaseException as error:
+            cleanup_ok=False;cleanup_error('diagnostic_preservation',error)
+        report['diagnostic_preservation']='READBACK_VERIFIED'if report.get('native_diagnostic_evidence')else'UNAVAILABLE'
         no_write=False
         try:
             if cleanup_ok and owner is not None and owner.setup_complete:
@@ -232,8 +282,9 @@ def run(p,report):
             cleanup_ok=False;cleanup_error('final_authority',error)
             if complete:report['functional_result']='FAIL';complete=False
         report['proven_before_submission_no_write']=no_write
+        report['authoritative_state_certainty']='CONFIRMED_NO_WRITE'if no_write else('CONFIRMED_CHANGE'if complete and cleanup_ok else'UNKNOWN')
         try:
-            if cleanup_ok and (complete or no_write) and owner is not None and owner.setup_complete and owner.requests_stopped and (f.helper is None or f.helper_stopped) and all(not getattr(f,k)for k in('sql_uncertain','process_uncertain','identity_uncertain','creation_uncertain')):
+            if cleanup_ok and diagnostic_preserved and (complete or no_write) and owner is not None and owner.setup_complete and owner.requests_stopped and (f.helper is None or f.helper_stopped) and all(not getattr(f,k)for k in('sql_uncertain','process_uncertain','identity_uncertain','creation_uncertain')):
                 owner.checkpoint('DISPOSITION_INTENT')
                 # Full verified success or independently proven pre-submission no-write only.
                 # Keep session files until backend disposal has succeeded.
@@ -255,6 +306,8 @@ def run(p,report):
             for key in('milestone3','milestone4'):
                 if key in milestones:milestones[key]['result']='NOT_QUALIFIED'
         report['recovery_receipt']=None if owner is None else str(owner.path)
+        if owner is not None and getattr(owner,'diagnostic_evidence',None)is not None:
+            report['native_diagnostic_evidence']=owner.diagnostic_evidence
 
 
 def main():
@@ -266,7 +319,7 @@ def main():
         require(len(sys.argv)==2,'one_admission_hash');p=admission(sys.argv[1]);signal.alarm(max(1,math.ceil(END-time.monotonic())));run(p,report)
     except BaseException as error:
         report['result']='FAIL';report['admission_or_actor_failure']=True
-        report['failure_category']=type(error).__name__;report['failure_reason']=failure_reason(error)
+        report.setdefault('failure_category',failure_category(error));report.setdefault('failure_reason',failure_reason(error))
     finally:signal.alarm(0)
     report['elapsed_millis']=int((time.monotonic()-START)*1000);print(json.dumps(report,sort_keys=True));return 0 if report['result']=='PASS'else 1
 if __name__=='__main__':raise SystemExit(main())

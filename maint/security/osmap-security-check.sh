@@ -59,6 +59,9 @@ python3 -B -m unittest \
 	maint.ux.s04_02_startup_candidate.test_current_source.LibtestBuildBindingTests \
 	maint.ux.s04_02_startup_candidate.test_mail_witness \
 	maint.ux.s04_02_startup_candidate.test_mutation_result \
+	maint.ux.s04_02_startup_candidate.test_native_diagnostics \
+	maint.ux.s04_02_startup_candidate.test_native_evidence \
+	maint.ux.s04_02_startup_candidate.test_native_frontend \
 	maint.ux.s04_02_startup_candidate.test_password_journey \
 	maint.ux.s04_02_startup_candidate.test_startup_probe_cleanup
 python3 -B maint/ux/s04_02_startup_candidate/test_interpreter_selection.py

@@ -21,6 +21,67 @@ STOPS = {signal.SIGTERM, signal.SIGINT, signal.SIGHUP, signal.SIGALRM}
 ALICE, BOB = 'alice@osmap-password.invalid', 'bob@osmap-password.invalid'
 UID, GID = 1001, 1001
 EVENTS = ('SNAPSHOT_B0','SNAPSHOT_A0','SNAPSHOT_A1','SNAPSHOT_B1','MAIL_WITNESS')
+DIAGNOSTIC_STAGES = ('INITIAL','RUNTIME_PREPARED','GUARDIAN_BORN','CUSTODY_RECEIVED',
+    'BOOTSTRAP_SENT','READY_RECEIVED','READY_VALIDATED','DRIVER_CONSTRUCTED')
+DIAGNOSTIC_OPERATIONS = ('setup','guardian_launch','custody_read','custody_validation',
+    'bootstrap_write','ready_read','ready_validation','driver_construction','journey','stop_requests')
+DIAGNOSTIC_CODES = frozenset(('control_eof','cancelled','original_deadline','frame_bound',
+    'actual_guardian_custody','actual_native_ready','insufficient_original_journey_budget',
+    'original_frontend_setup_deadline','fixed_front_bootstrap','control_changed','root_control_peer',
+    'unnamed_control','node_frame_cap','node_frame_object','duplicate_node_field',
+    'nonfinite_node_number','STARTUP_INTERRUPTED','PROCESS_LAUNCH_FAILED','CONTROL_IO_FAILED',
+    'UNEXPECTED_SANITIZED','FRONTEND_CLEANUP_FAILED'))
+
+
+def diagnostic_code(error):
+    # Shape-based redaction cannot distinguish a token-shaped secret from a code.
+    if type(error) is RuntimeError and error.args and type(error.args[0])is str and error.args[0] in DIAGNOSTIC_CODES:
+        return error.args[0]
+    if isinstance(error,(KeyboardInterrupt,SystemExit)):return 'STARTUP_INTERRUPTED'
+    if isinstance(error,subprocess.SubprocessError):return 'PROCESS_LAUNCH_FAILED'
+    if isinstance(error,OSError):return 'CONTROL_IO_FAILED'
+    # The pinned guardian Refused type carries fixed codes; no arbitrary text.
+    if type(error).__name__=='Refused' and error.args and type(error.args[0])is str and error.args[0] in DIAGNOSTIC_CODES:
+        return error.args[0]
+    return 'UNEXPECTED_SANITIZED'
+
+
+def validate_native_diagnostic(value,guardian_validator,capture_validator):
+    require(type(value)is dict and set(value)=={'schema','first_failure','guardian_created',
+        'guardian_pid','guardian_terminal','guardian_reaped','guardian_capture',
+        'guardian_diagnostic','guardian_diagnostic_status','control_status','cleanup_status',
+        'cleanup_code'},'native_diagnostic_schema')
+    require(value['schema']=='osmap-native-startup-diagnostic-v1','native_diagnostic_schema')
+    failure=value['first_failure']
+    require(failure is None or(type(failure)is dict and set(failure)=={'component','stage','operation','code'}
+        and failure['component']=='frontend_controller'and failure['stage']in DIAGNOSTIC_STAGES
+        and failure['operation']in DIAGNOSTIC_OPERATIONS and failure['code']in DIAGNOSTIC_CODES),
+        'native_diagnostic_failure')
+    require(type(value['guardian_created'])is bool and type(value['guardian_reaped'])is bool
+        and(value['guardian_terminal']is None or(type(value['guardian_terminal'])is int
+            and -128<=value['guardian_terminal']<=255)),'native_diagnostic_process')
+    require((type(value['guardian_pid'])is int and value['guardian_pid']>0)
+        if value['guardian_created']else value['guardian_pid']is None,'native_diagnostic_pid')
+    require(value['guardian_reaped']==(value['guardian_terminal']is not None)
+        and(not value['guardian_reaped']or value['guardian_created']),
+        'native_diagnostic_reap')
+    require(value['guardian_diagnostic_status']in('AVAILABLE','NOT_EMITTED','MALFORMED',
+        'CAPTURE_INCOMPLETE','NOT_CREATED')and value['control_status']in('OPEN','EOF','CLOSED','UNKNOWN')
+        and value['cleanup_status']in('NOT_RUN','CONFIRMED','UNCERTAIN')
+        and value['cleanup_code']in(None,'FRONTEND_CLEANUP_FAILED'),'native_diagnostic_disposition')
+    native=value['guardian_diagnostic']
+    require((native is not None)==(value['guardian_diagnostic_status']=='AVAILABLE'),'native_diagnostic_availability')
+    require(native is None or(value['guardian_created']and value['guardian_capture']is not None),
+        'native_diagnostic_producer')
+    require(value['guardian_created']or(value['guardian_capture']is None
+        and value['guardian_diagnostic_status']=='NOT_CREATED'),'native_diagnostic_birth')
+    if native is not None:guardian_validator(native)
+    # The guardian validator owns the stream schema; use its source-owned
+    # validator for the same capture shape without accepting arbitrary keys.
+    capture=value['guardian_capture']
+    if capture is not None:
+        capture_validator(capture)
+    return value
 
 
 def require(value,code='fixed_frontend_node_refused'):
@@ -80,6 +141,9 @@ class Frontend:
         self.report={'groups':[]};self.ready=None;self.requests_stopped=False;self.disposed=False
         self.generated_dirs={};self.stage_id=0;self.failure=None
         self.http_root=None
+        self.guardian_capture=None;self.guardian_observation=None
+        self.startup_stage='INITIAL';self.startup_operation='setup'
+        self.control_status='UNKNOWN';self.cleanup_status='NOT_RUN';self.cleanup_code=None
         self.http_module=module('fixed_front_http','native_http_front_driver.py')
         self.journey_module=module('fixed_front_journey','native_http_password_driver.py')
     def remaining(self,cleanup=False):
@@ -205,7 +269,42 @@ class Frontend:
             if self.ownership_callback is not None:self.ownership_callback('WEB_OWNERSHIP')
     def capture_replay_directory(self):
         self.capture_generated_directories(require_replay=True)
+    def preserve_failure(self,error):
+        if self.failure is None:
+            self.failure={'component':'frontend_controller','stage':self.startup_stage,
+                'operation':self.startup_operation,'code':diagnostic_code(error)}
+            if self.failure['code']=='control_eof':self.control_status='EOF'
+        return self.native_diagnostic()
+    def native_diagnostic(self):
+        capture=self.guardian_capture
+        native=None;status='NOT_CREATED'if self.guardian is None else'NOT_EMITTED'
+        if capture is not None:
+            self.guardian_observation=capture.snapshot()
+            try:
+                native=capture.guardian_diagnostic()
+                if native is not None:status='AVAILABLE'
+                elif self.guardian_observation['capture_error'] is not None or not all(
+                    self.guardian_observation[name+'_eof'] for name in ('stdout','stderr')):
+                    status='CAPTURE_INCOMPLETE'
+            except Exception:status='MALFORMED'
+        value={'schema':'osmap-native-startup-diagnostic-v1','first_failure':self.failure,
+            'guardian_created':self.guardian is not None,
+            'guardian_pid':None if self.guardian is None else self.guardian.pid,
+            'guardian_terminal':None if self.guardian is None else self.guardian.returncode,
+            'guardian_reaped':self.guardian is not None and self.guardian.returncode is not None,
+            'guardian_capture':self.guardian_observation,'guardian_diagnostic':native,
+            'guardian_diagnostic_status':status,'control_status':self.control_status,
+            'cleanup_status':self.cleanup_status,'cleanup_code':self.cleanup_code}
+        return value
+    def checkpoint_diagnostic(self):
+        self.native_diagnostic()
+        if self.ownership_callback is not None:self.ownership_callback('WEB_DIAGNOSTIC_PRESERVED')
     def setup(self,boot):
+        try:return self._setup(boot)
+        except BaseException as error:
+            self.preserve_failure(error)
+            raise
+    def _setup(self,boot):
         # Refuse before frontend birth if setup and the full journey cannot fit
         # before the actor's protected cleanup reserve. Never shorten it silently.
         require(WORK-time.monotonic() >= 30+self.http_module.JOURNEY_SECONDS,
@@ -227,6 +326,7 @@ class Frontend:
         for key,name in(('admission_key','admission.key'),('mutation_key','mutation.key'),('session_proof_key','session-proof.key')):
             self.file(root/'keys'/name,boot[key].encode('ascii'),UID,GID,0o600)
         parent,child=socket.socketpair();self.control=self.guard.Control(parent)
+        self.control_status='OPEN';self.startup_stage='RUNTIME_PREPARED';self.startup_operation='guardian_launch'
         require(time.monotonic()<setup,'original_frontend_setup_deadline')
         previous=signal.pthread_sigmask(signal.SIG_BLOCK,STOPS)
         try:
@@ -235,26 +335,37 @@ class Frontend:
                 close_fds=True,pass_fds=(child.fileno(),),env={'PATH':'/usr/bin:/bin:/usr/local/bin','LC_ALL':'C','TZ':'UTC',
                     'OSMAP_TEST_HTTP_GUARDIAN_FD':str(child.fileno())},
                 preexec_fn=lambda:signal.pthread_sigmask(signal.SIG_SETMASK,previous))
+            self.guardian_capture=self.guard.Capture(self.guardian)
+            self.startup_stage='GUARDIAN_BORN'
             if self.ownership_callback is not None:self.ownership_callback('GUARDIAN_BIRTH')
         finally:signal.pthread_sigmask(signal.SIG_SETMASK,previous);child.close()
         self.control.write(json.dumps({'version':1,'http_root':str(self.http_root)}).encode(),setup)
+        self.startup_operation='custody_read'
         self.custody=decoded(self.control.read(2048,setup))
+        self.startup_operation='custody_validation'
         require(set(self.custody)=={'schema','web_uid','web_gid','binary_sha256','selector','web_pid','guardian_pid','guardian_group'}
             and self.custody['schema']=='osmap-http-web-custody-v1'and self.custody['web_uid']==UID
             and self.custody['web_gid']==GID and self.custody['guardian_pid']==self.guardian.pid
             and self.custody['guardian_group']==self.guardian.pid,'actual_guardian_custody')
+        self.startup_stage='CUSTODY_RECEIVED'
         self.capture_guardian_code()
         self.group(allow_web=True)
+        self.startup_operation='bootstrap_write'
         self.control.write(json.dumps({'version':1,'root':str(root)}).encode(),setup)
+        self.startup_stage='BOOTSTRAP_SENT';self.startup_operation='ready_read'
         self.ready=decoded(self.control.read(2048,setup))
+        self.startup_stage='READY_RECEIVED';self.startup_operation='ready_validation'
         require(set(self.ready)=={'schema','port','connections','totp_counter'}
             and self.ready['schema']=='osmap-http-password-ready-v1'and self.ready['connections']==18
             and type(self.ready['port'])is int and 0<self.ready['port']<=65535
             and abs(self.ready['totp_counter']-int(time.time())//30)<=1,'actual_native_ready')
+        self.startup_stage='READY_VALIDATED'
         require(WORK-time.monotonic() >= 10+self.http_module.JOURNEY_SECONDS,
             'insufficient_original_journey_budget')
         self.sequence_end=time.monotonic()+self.http_module.JOURNEY_SECONDS
+        self.startup_operation='driver_construction'
         self.driver=self.http_module.FrontDriver(self,boot)
+        self.startup_stage='DRIVER_CONSTRUCTED';self.startup_operation='journey'
     def group(self,allow_web=False,absolute=None):
         raw=self.run(('/bin/ps','-ax','-o','pid=,ppid=,pgid=,uid=,comm='),'actual_front_guardian_group',cap=65536,cleanup=True,absolute=min(END-3,absolute or END))
         rows=[]
@@ -273,7 +384,7 @@ class Frontend:
         self.group(absolute=end);self.control.write(b'GROUP_ONLY_GUARDIAN',end)
         require(self.control.read(64,end)==b'WEB_REAPED_GROUP_GONE','actual_web_code_disposition')
         self.guardian.wait(timeout=max(.001,end-time.monotonic()))
-        capture=self.guard.drain(self.guardian,end)
+        capture=self.guardian_capture.finish(end)
         require(self.guardian.returncode==0 and capture['stderr_bytes']==0,'actual_guardian_terminal')
         try:os.killpg(self.guardian.pid,0)
         except ProcessLookupError:pass
@@ -284,6 +395,28 @@ class Frontend:
         require(not self.cancelled.is_set() and self.local_exchange is not None,'local_backend_event_unavailable')
         return self.local_exchange(tag,end)
     def stop_requests(self):
+        error=None
+        try:
+            self.checkpoint_diagnostic()
+        except BaseException as failure:
+            # A failed evidence write forbids resource disposal, but cannot
+            # leave an active request producer running without bounded stop.
+            error=failure
+        try:
+            self._stop_requests()
+        except BaseException as failure:
+            if error is None:error=failure
+        self.cleanup_status='CONFIRMED'if error is None else'UNCERTAIN'
+        self.cleanup_code=None if error is None else'FRONTEND_CLEANUP_FAILED'
+        try:
+            if self.guardian_capture is not None:
+                self.guardian_observation=self.guardian_capture.snapshot()
+            self.checkpoint_diagnostic()
+        except BaseException as failure:
+            self.cleanup_status='UNCERTAIN';self.cleanup_code='FRONTEND_CLEANUP_FAILED'
+            if error is None:error=failure
+        if error is not None:raise error
+    def _stop_requests(self):
         self.cancelled.set()
         with self.socket_lock:
             if self.http_stream is not None:
@@ -291,21 +424,36 @@ class Frontend:
                 except OSError:pass
                 self.http_stream.close();self.http_stream=None
         if self.guardian is not None and not self.requests_stopped:
-            if self.control is not None:self.control.stream.close()
+            if self.control is not None:
+                self.control.stream.close()
+                if self.control_status!='EOF':self.control_status='CLOSED'
+            if self.guardian.returncode is None and self.control_status=='EOF':
+                # EOF may precede normal interpreter exit by a few scheduling
+                # turns. Observe the direct child's original status before
+                # signalling, within the existing cleanup budget.
+                try:self.guardian.wait(timeout=max(.001,min(.1,END-10-time.monotonic())))
+                except subprocess.TimeoutExpired:pass
             if self.guardian.returncode is None:
-                self.group(allow_web=True)
-                # The direct guardian has not been reaped; this exact born group
-                # contains only the verified guardian and its fixed native child.
-                try:os.killpg(self.guardian.pid,signal.SIGTERM)
+                custody=getattr(self,'custody',None)
+                # Before custody arrives only the still-unreaped direct handle
+                # grants signalling authority. The trusted guardian owns its
+                # child; an unknown group is never adopted for cleanup.
+                if custody is not None:self.group(allow_web=True)
+                try:
+                    if custody is not None:os.killpg(self.guardian.pid,signal.SIGTERM)
+                    else:os.kill(self.guardian.pid,signal.SIGTERM)
                 except ProcessLookupError:pass
                 stop_end=min(END-10,time.monotonic()+5)
                 while time.monotonic()<stop_end:
                     status=os.waitid(os.P_PID,self.guardian.pid,os.WEXITED|os.WNOHANG|os.WNOWAIT)
                     if status is not None:break
                     time.sleep(.02)
-                else:os.killpg(self.guardian.pid,signal.SIGKILL)
+                else:
+                    if custody is not None:os.killpg(self.guardian.pid,signal.SIGKILL)
+                    else:os.kill(self.guardian.pid,signal.SIGKILL)
                 self.guardian.wait(timeout=max(.001,END-10-time.monotonic()))
-                self.guard.drain(self.guardian,END-10)
+            if self.guardian_capture is not None:
+                self.guardian_observation=self.guardian_capture.finish(END-10)
             # finish_http may have reaped the direct child before a terminal
             # validation/drain failure. Its historical PID no longer grants
             # signalling authority or requires a live guardian inventory.

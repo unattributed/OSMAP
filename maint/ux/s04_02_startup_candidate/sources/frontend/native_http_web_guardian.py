@@ -22,6 +22,7 @@ import struct
 import subprocess
 import sys
 import time
+import threading
 
 sys.dont_write_bytecode = True
 STAGE = Path(__file__).resolve().parent
@@ -155,8 +156,11 @@ class Control:
         def exact(size):
             result = bytearray()
             while len(result) < size:
-                self.stream.settimeout(remaining(deadline))
-                raw = self.stream.recv(size - len(result))
+                self.stream.settimeout(min(.1, remaining(deadline)))
+                try:
+                    raw = self.stream.recv(size - len(result))
+                except socket.timeout:
+                    continue
                 require(raw, 'control_eof')
                 result.extend(raw)
             return bytes(result)
@@ -316,35 +320,314 @@ def launch(binary, control_fd, proof_fd, guardian, group):
         cwd='/', env=env, preexec_fn=lambda: drop(proof_fd, guardian, group))
 
 
-def drain(child, deadline):
-    out = bytearray()
-    err = bytearray()
+# Raw output remains private in these bounded in-memory prefixes. Only fixed
+# source-owned observations and stream accounting cross the evidence boundary.
+OUTPUT_LIMIT = 16384
+NATIVE_MESSAGES = {
+    b'HTTP fixture core limit refused': 'native_core_limit',
+    b'HTTP fixture descriptor required': 'native_descriptor_required',
+    b'HTTP fixture descriptor refused': 'native_descriptor',
+    b'HTTP fixture fixed role/root peer refused': 'native_role_peer',
+    b'HTTP fixture bootstrap refused': 'native_bootstrap',
+    b'HTTP fixture namespace refused': 'native_namespace',
+    b'HTTP fixture state refused': 'native_state',
+    b'HTTP fixture account config required': 'native_account_config',
+    b'HTTP fixture admission custody refused': 'native_admission_client',
+    b'HTTP fixture mutation custody refused': 'native_mutation_client',
+    b'HTTP fixture listener refused': 'native_listener',
+    b'HTTP fixture listener mode refused': 'native_listener_mode',
+    b'HTTP fixture listener identity refused': 'native_listener_identity',
+    b'HTTP fixture actual Serve confinement refused': 'native_confinement',
+    b'HTTP fixture ready refused': 'native_ready_transmission',
+    b'HTTP fixture start refused': 'native_start',
+    b'HTTP fixture report refused': 'native_report',
+}
+NATIVE_CODES = frozenset(NATIVE_MESSAGES.values()) | {'native_panic', 'native_entrypoint_not_selected', 'CAUSE_UNKNOWN'}
+FAILURE_CODES = frozenset("""cancelled original_deadline fixed_directory fixed_input
+opened_input input_changed duplicate_field namespace_schema namespace_name
+unnamed_control root_control_peer control_changed control_eof frame_bound
+fixed_web_role matching_build source_manifest guardian_pin source_binary
+source_binary_changed binary_bound copy_write matching_binary_hash copied_binary
+copied_binary_changed copied_binary_bound copied_binary_hash irreversible_fixed_drop
+drop_proof_write drop_proof_timeout drop_proof_eof drop_proof code_removal_custody
+code_directory_changed rust_report root_born_guardian root_stage_name root_control_fd
+HTTP_namespace_changed fixed_rust_bootstrap rust_ready fixed_start web_terminal
+driver_group_observation capture_io capture_deadline diagnostic_schema
+diagnostic_write diagnostic_integrity exception_os exception_timeout exception_value
+exception_subprocess exception_interrupted exception_unknown exception_file_not_found
+exception_permission""".split())
+STAGES = frozenset('initializing initialized namespace_validated binary_verified child_born '
+                   'identity_confirmed custody_sent bootstrap_sent ready_validated ready_sent '
+                   'start_sent report_received child_reaped group_confirmed code_removed'.split())
+OPERATIONS = frozenset('initialize namespace build launch identity custody bootstrap '
+                       'ready_read ready_validate ready_send start_read start_send report '
+                       'reap capture group_observation preserve remove_code'.split())
+
+
+def failure_code(error):
+    if type(error) is Refused and str(error) in FAILURE_CODES:
+        return str(error)
+    if isinstance(error, (TimeoutError, subprocess.TimeoutExpired)):
+        return 'exception_timeout'
+    if isinstance(error, FileNotFoundError):
+        return 'exception_file_not_found'
+    if isinstance(error, PermissionError):
+        return 'exception_permission'
+    if isinstance(error, OSError):
+        return 'exception_os'
+    if isinstance(error, (ValueError, UnicodeError)):
+        return 'exception_value'
+    if isinstance(error, subprocess.SubprocessError):
+        return 'exception_subprocess'
+    if isinstance(error, (KeyboardInterrupt, SystemExit)):
+        return 'exception_interrupted'
+    return 'exception_unknown'
+
+
+class Capture:
+    """Continuously service both child pipes, including every startup wait.
+
+    Each selector turn reads one chunk per ready stream. Hashes/counts cover
+    all consumed bytes; a bounded prefix is used only for fixed-code parsing.
+    The worker starts after Popen/preexec has returned, never before fork.
+    """
+    def __init__(self, child):
+        self.child = child
+        self.lock = threading.Lock()
+        self.stop = threading.Event()
+        self.error = None
+        self.native_code = 'CAUSE_UNKNOWN'
+        self.panic_seen = False
+        self.lines = {name: bytearray() for name in ('stdout', 'stderr')}
+        self.streams = {}
+        for name in ('stdout', 'stderr'):
+            stream = getattr(child, name)
+            os.set_blocking(stream.fileno(), False)
+            self.streams[name] = {'stream': stream, 'prefix': bytearray(),
+                                  'count': 0, 'hash': hashlib.sha256(), 'eof': False}
+        self.worker = threading.Thread(target=self._run, daemon=True)
+        self.worker.start()
+
+    def _run(self):
+        try:
+            with selectors.DefaultSelector() as selector:
+                for name, item in self.streams.items():
+                    selector.register(item['stream'], selectors.EVENT_READ, name)
+                while selector.get_map():
+                    if self.stop.is_set() or time.monotonic() >= END:
+                        with self.lock:
+                            self.error = 'capture_deadline'
+                        break
+                    for key, _ in selector.select(.05):
+                        try:
+                            raw = os.read(key.fd, 65536)
+                        except (BlockingIOError, InterruptedError):
+                            continue
+                        with self.lock:
+                            item = self.streams[key.data]
+                            if not raw:
+                                item['eof'] = True
+                                selector.unregister(key.fileobj)
+                            else:
+                                item['count'] += len(raw)
+                                item['hash'].update(raw)
+                                self._native_observation(raw, key.data)
+                                item['prefix'].extend(raw[:max(0, OUTPUT_LIMIT-len(item['prefix']))])
+        except Exception:
+            with self.lock:
+                self.error = 'capture_io'
+        finally:
+            for item in self.streams.values():
+                item['stream'].close()
+
+    def _native_observation(self, raw, name):
+        # Every byte is serviced, including after prefix truncation. A fixed
+        # 512-byte line prefix suffices for source-owned panic/expect markers;
+        # arbitrary trailing Debug/error values are never retained for export.
+        line = self.lines[name]
+        parts = raw.split(b'\n')
+        for index, part in enumerate(parts):
+            line.extend(part[:max(0, 512-len(line))])
+            if (name == 'stdout' and index < len(parts)-1 and line == b'running 0 tests'
+                    and self.native_code == 'CAUSE_UNKNOWN'):
+                self.native_code = 'native_entrypoint_not_selected'
+            if name == 'stderr' and b'panicked at ' in line:
+                self.panic_seen = True
+                if self.native_code == 'CAUSE_UNKNOWN':
+                    self.native_code = 'native_panic'
+            if self.panic_seen and self.native_code in ('CAUSE_UNKNOWN', 'native_panic'):
+                for message, code in NATIVE_MESSAGES.items():
+                    if line.startswith(message+b':') or (index < len(parts)-1 and line == message):
+                        self.native_code = code
+                        break
+            if index < len(parts)-1:
+                line.clear()
+
+    def snapshot(self):
+        with self.lock:
+            result = {'native_code': self.native_code, 'capture_error': self.error}
+            for name, item in self.streams.items():
+                result.update({name+'_bytes': item['count'],
+                    name+'_sha256': item['hash'].hexdigest(),
+                    name+'_stored_bytes': len(item['prefix']),
+                    name+'_truncated': item['count'] > OUTPUT_LIMIT,
+                    name+'_eof': item['eof']})
+            return result
+
+    def guardian_diagnostic(self):
+        # This is for a trusted guardian producer only. Do not return any raw
+        # text to callers; unsupported/partial output is explicitly unavailable.
+        with self.lock:
+            raw = bytes(self.streams['stderr']['prefix'])
+        found = None
+        for line in raw.splitlines():
+            try:
+                value = json_value(line)
+                found = validate_diagnostic(value)
+            except (Refused, ValueError, UnicodeError):
+                if b'osmap-http-web-guardian-failure-' in line:
+                    raise Refused('diagnostic_schema')
+                continue
+        return found
+
+    def finish(self, deadline):
+        left = max(0, min(deadline, END)-time.monotonic())
+        self.worker.join(timeout=left)
+        if self.worker.is_alive():
+            with self.lock:
+                if self.error is None:
+                    self.error = 'capture_deadline'
+            self.stop.set()
+            # Never extend the original bound to wait for the collector.
+            self.worker.join(timeout=max(0, min(.1, min(deadline, END)-time.monotonic())))
+        result = self.snapshot()
+        if self.worker.is_alive():
+            result['capture_error'] = 'capture_deadline'
+        return result
+
+
+def validate_capture(capture):
     try:
-        with selectors.DefaultSelector() as selector:
-            for stream, target in ((child.stdout, out), (child.stderr, err)):
-                os.set_blocking(stream.fileno(), False)
-                selector.register(stream, selectors.EVENT_READ, target)
-            while selector.get_map():
-                for key, _ in selector.select(min(.05, remaining(deadline, cleanup=True))):
-                    try:
-                        data = os.read(key.fd, 4096)
-                    except BlockingIOError:
-                        continue
-                    if not data:
-                        selector.unregister(key.fileobj)
-                        key.fileobj.close()
-                        continue
-                    key.data.extend(data)
-                    require(len(out) <= 4096 and len(err) <= 4096, 'web_capture_bound')
-        return {'stdout_bytes': len(out), 'stderr_bytes': len(err),
-                'stdout_sha256': hashlib.sha256(out).hexdigest(),
-                'stderr_sha256': hashlib.sha256(err).hexdigest()}
-    finally:
-        out.clear()
-        err.clear()
-        for stream in (child.stdin, child.stdout, child.stderr):
-            if stream is not None and not stream.closed:
-                stream.close()
+        return _validate_capture(capture)
+    except (KeyError, TypeError, ValueError):
+        raise Refused('diagnostic_schema') from None
+
+
+def _validate_capture(capture):
+    if capture is not None:
+        require(type(capture) is dict and set(capture) == {'native_code', 'capture_error'} |
+            {name+'_'+field for name in ('stdout','stderr') for field in
+             ('bytes','sha256','stored_bytes','truncated','eof')}, 'diagnostic_schema')
+        require(capture['native_code'] in NATIVE_CODES and capture['capture_error'] in
+                (None, 'capture_io', 'capture_deadline'), 'diagnostic_schema')
+        for name in ('stdout', 'stderr'):
+            require(type(capture[name+'_bytes']) is int and 0 <= capture[name+'_bytes'] < 2**63
+                and type(capture[name+'_stored_bytes']) is int
+                and capture[name+'_stored_bytes'] == min(capture[name+'_bytes'], OUTPUT_LIMIT)
+                and type(capture[name+'_truncated']) is bool
+                and capture[name+'_truncated'] == (capture[name+'_bytes'] > OUTPUT_LIMIT)
+                and type(capture[name+'_eof']) is bool
+                and type(capture[name+'_sha256']) is str
+                and re.fullmatch('[a-f0-9]{64}', capture[name+'_sha256']), 'diagnostic_schema')
+    return capture
+
+
+def validate_diagnostic(value):
+    try:
+        return _validate_diagnostic(value)
+    except (KeyError, TypeError, ValueError):
+        raise Refused('diagnostic_schema') from None
+
+
+def _validate_diagnostic(value):
+    require(type(value) is dict and set(value) == {
+        'schema', 'code', 'component', 'stage', 'operation', 'cause', 'web_terminal',
+        'web_reaped', 'control_status', 'capture', 'cleanup', 'source'}, 'diagnostic_schema')
+    require(value['schema'] == 'osmap-http-web-guardian-failure-v2'
+        and value['code'] in FAILURE_CODES
+        and value['component'] in ('guardian', 'native_http_child')
+        and value['stage'] in STAGES and value['operation'] in OPERATIONS
+        and value['cause'] in NATIVE_CODES
+        and value['control_status'] in ('unavailable', 'open', 'eof', 'interrupted')
+        and (value['web_terminal'] is None or type(value['web_terminal']) is int
+             and -255 <= value['web_terminal'] <= 255)
+        and type(value['web_reaped']) is bool
+        and value['web_reaped'] == (value['web_terminal'] is not None), 'diagnostic_schema')
+    validate_capture(value['capture'])
+    capture = value['capture']
+    require((capture is None and value['cause'] == 'CAUSE_UNKNOWN')
+        or capture is not None and value['cause'] == capture['native_code']
+        and (value['cause'] == 'CAUSE_UNKNOWN'
+             or value['cause'] == 'native_entrypoint_not_selected' and capture['stdout_bytes'] > 0
+             or value['cause'] != 'native_entrypoint_not_selected' and capture['stderr_bytes'] > 0),
+        'diagnostic_schema')
+    cleanup = value['cleanup']
+    require(type(cleanup) is dict and set(cleanup) == {'status','code','kill_sent'}
+        and cleanup['status'] in ('NOT_STARTED','PASS','UNKNOWN')
+        and (cleanup['code'] is None or cleanup['code'] in FAILURE_CODES)
+        and type(cleanup['kill_sent']) is bool, 'diagnostic_schema')
+    source = value['source']
+    require(type(source) is dict and set(source) == {'guardian_sha256','binary_sha256',
+            'source_manifest_sha256'} and all(v is None or type(v) is str
+            and re.fullmatch('[a-f0-9]{64}', v) for v in source.values()), 'diagnostic_schema')
+    return value
+
+
+class DiagnosticFile:
+    """One root-owned stage artifact, held across pre-stop/final observations."""
+    def __init__(self):
+        self.fd = None
+        self.path = None
+        self.writes = 0
+
+    def write(self, report):
+        validate_diagnostic(report)
+        raw = json.dumps(report, sort_keys=True, separators=(',', ':')).encode('ascii')+b'\n'
+        require(len(raw) <= 8192, 'diagnostic_write')
+        # Never rewrite the sole pre-stop evidence. A failed final write must
+        # leave the verified first observation readable and unchanged.
+        require(self.writes < 2, 'diagnostic_write')
+        if self.fd is not None:
+            os.close(self.fd)
+            self.fd = None
+        self.path = STAGE / ('native-http-diagnostic-before-stop.json' if self.writes == 0
+                             else 'native-http-diagnostic.json')
+        self.writes += 1
+        self.fd = os.open(self.path, os.O_RDWR | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
+        info = os.fstat(self.fd)
+        require(stat.S_ISREG(info.st_mode) and info.st_nlink == 1
+            and info.st_uid == os.geteuid() and stat.S_IMODE(info.st_mode) == 0o600
+            and identity(self.path.lstat()) == identity(info), 'diagnostic_integrity')
+        os.lseek(self.fd, 0, os.SEEK_SET)
+        offset = 0
+        while offset < len(raw):
+            n = os.write(self.fd, raw[offset:])
+            require(n > 0, 'diagnostic_write')
+            offset += n
+        os.ftruncate(self.fd, len(raw))
+        os.fsync(self.fd)
+        os.lseek(self.fd, 0, os.SEEK_SET)
+        require(os.read(self.fd, 8193) == raw
+            and identity(self.path.lstat()) == identity(os.fstat(self.fd)), 'diagnostic_integrity')
+        directory = os.open(STAGE, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+        try:
+            os.fsync(directory)
+        finally:
+            os.close(directory)
+        return hashlib.sha256(raw).hexdigest()
+
+    def close(self):
+        if self.fd is not None:
+            os.close(self.fd)
+            self.fd = None
+
+
+def drain(child, deadline):
+    capture = getattr(child, '_osmap_capture', None)
+    if capture is None:
+        capture = Capture(child)
+        child._osmap_capture = capture
+    return capture.finish(deadline)
 
 
 def remove_code(code, binary, directory_lease, binary_lease):
@@ -371,113 +654,219 @@ def rust_report(raw):
 
 
 
-def main():
-    for number in STOPS:
-        signal.signal(number, cancel)
+def guardian_identity():
     require(sys.platform.startswith('openbsd') and socket.gethostname() == 'obsd1.blackbagsecurity.com'
             and os.getuid() == os.geteuid() == 0
             and os.getpid() == os.getpgrp() == os.getsid(0)
             and not signal.pthread_sigmask(signal.SIG_BLOCK, set()).intersection(STOPS), 'root_born_guardian')
-    resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
-    os.umask(0o077)
-    require(STAGE.parent == Path('/tmp') and re.fullmatch('osmap-pxp-stage-[a-f0-9]{16}', STAGE.name), 'root_stage_name')
-    exact_directory(STAGE, 0, 0, 0o700)
-    value = os.environ.get('OSMAP_TEST_HTTP_GUARDIAN_FD', '')
-    require(re.fullmatch('[0-9]{1,4}', value) and 3 <= int(value) <= 1024, 'root_control_fd')
-    parent = Control(socket.socket(fileno=int(value)))
+
+
+def main():
     child = None
     peer = None
+    parent = None
     proof_read = None
     proof_write = None
     web_end = None
     code_lease = None
     capture = None
+    collector = None
+    build = None
+    stage = 'initializing'
+    stage_custody = False
+    operation = 'initialize'
+    evidence = DiagnosticFile()
     try:
+        for number in STOPS:
+            signal.signal(number, cancel)
+        guardian_identity()
+        resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
+        os.umask(0o077)
+        require(STAGE.parent == Path('/tmp') and re.fullmatch('osmap-pxp-stage-[a-f0-9]{16}', STAGE.name), 'root_stage_name')
+        exact_directory(STAGE, 0, 0, 0o700)
+        stage_custody = True
+        value = os.environ.get('OSMAP_TEST_HTTP_GUARDIAN_FD', '')
+        require(re.fullmatch('[0-9]{1,4}', value) and 3 <= int(value) <= 1024, 'root_control_fd')
+        parent = Control(socket.socket(fileno=int(value)))
+        stage = 'initialized'
+        operation = 'namespace'
         http = namespace(parent.read(2048, SETUP))
         original_http = exact_directory(http, 0, GID, 0o750)
         role()
+        stage = 'namespace_validated'
+        operation = 'build'
         build = build_record()
         code_lease = copy_binary(http, build)
         code, binary, directory_lease, binary_lease = code_lease
+        stage = 'binary_verified'
         root_end, web_end = socket.socketpair()
         peer = Control(root_end)
         proof_read, proof_write = os.pipe2(os.O_CLOEXEC)
         guardian = os.getpid()
         group = os.getpgrp()
+        operation = 'launch'
         child = launch(binary, web_end.fileno(), proof_write, guardian, group)
+        stage = 'child_born'
+        operation = 'capture'
+        collector = Capture(child)
+        child._osmap_capture = collector
         web_end.close()
         web_end = None
         os.close(proof_write)
         proof_write = None
+        operation = 'identity'
         drop_receipt(proof_read, child, group)
+        stage = 'identity_confirmed'
         os.close(proof_read)
         proof_read = None
         require(identity(http.lstat())[:5] == original_http[:5], 'HTTP_namespace_changed')
         custody = {'schema': 'osmap-http-web-custody-v1', 'web_uid': UID, 'web_gid': GID,
                    'binary_sha256': build['binary_sha256'], 'selector': SELECTOR,
                    'web_pid': child.pid, 'guardian_pid': guardian, 'guardian_group': group}
+        operation = 'custody'
         parent.write(json.dumps(custody, separators=(',', ':')).encode('ascii'), SETUP)
+        stage = 'custody_sent'
+        operation = 'bootstrap'
         raw = parent.read(2048, SETUP)
         boot = json_value(raw)
         require(type(boot) is dict and set(boot) == {'version', 'root'}
                 and type(boot['version']) is int and boot['version'] == 1
                 and boot['root'] == str(http / 'http-state'), 'fixed_rust_bootstrap')
         peer.write(raw, SETUP)
+        stage = 'bootstrap_sent'
+        operation = 'ready_read'
         raw = peer.read(1024, SETUP)
+        operation = 'ready_validate'
         ready = json_value(raw)
         require(type(ready) is dict and set(ready) == {'schema', 'port', 'connections', 'totp_counter'}
                 and ready['schema'] == 'osmap-http-password-ready-v1'
                 and type(ready['port']) is int and 1 <= ready['port'] <= 65535
                 and type(ready['connections']) is int and ready['connections'] == 18
                 and type(ready['totp_counter']) is int and ready['totp_counter'] >= 0, 'rust_ready')
+        stage = 'ready_validated'
+        operation = 'ready_send'
         parent.write(raw, SETUP)
+        stage = 'ready_sent'
+        operation = 'start_read'
         raw = parent.read(1, SETUP)
         require(raw == b'G', 'fixed_start')
         sequence = min(END - 10, time.monotonic() + JOURNEY_SECONDS)
+        operation = 'start_send'
         peer.write(raw, sequence)
+        stage = 'start_sent'
+        operation = 'report'
         raw = peer.read(1024, sequence)
         rust_report(raw)
         parent.write(raw, sequence)
+        stage = 'report_received'
+        operation = 'reap'
         child.wait(timeout=remaining(sequence))
+        stage = 'child_reaped'
+        operation = 'capture'
         capture = drain(child, sequence)
         require(child.returncode == 0 and capture['stderr_bytes'] == 0, 'web_terminal')
         # Custody-only acknowledgment from the trusted root driver, which owns
         # the actual fresh external group inventory. It grants no seal, login
         # or mutation authority. Guardian performs no transient same-group ps.
+        operation = 'group_observation'
         parent.write(b'WEB_DIRECT_REAPED', sequence)
         require(parent.read(64, sequence) == b'GROUP_ONLY_GUARDIAN', 'driver_group_observation')
+        stage = 'group_confirmed'
+        operation = 'remove_code'
         remove_code(*code_lease)
+        stage = 'code_removed'
         code_lease = None
         parent.write(b'WEB_REAPED_GROUP_GONE', sequence)
         return 0
-    except Exception as error:
-        code = str(error) if type(error) is Refused else type(error).__name__
-        # Only source-fixed refusal identifiers/classes and bounded scalar
-        # capture metadata, never original exception/native stderr/frames.
-        require(re.fullmatch('[A-Za-z_]{1,64}', code), 'closed_failure_code')
-        report = {'schema': 'osmap-http-web-guardian-failure-v1', 'code': code,
-                  'web_terminal': None if child is None else child.returncode, 'capture': capture}
-        sys.stderr.write(json.dumps(report, separators=(',', ':')) + '\n')
+    except BaseException as error:
+        # Freeze the original failing boundary before any cleanup. A later
+        # kill/wait/file failure cannot overwrite this code or stage.
+        code = failure_code(error)
+        cleanup = {'status': 'NOT_STARTED', 'code': None, 'kill_sent': False}
+        source = {'guardian_sha256': None, 'binary_sha256': None,
+                  'source_manifest_sha256': None}
+        try:
+            source['guardian_sha256'] = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+        except OSError:
+            pass
+        if build is not None:
+            source.update({key: build[key] for key in ('binary_sha256','source_manifest_sha256')})
+        report = {'schema': 'osmap-http-web-guardian-failure-v2', 'code': code,
+            'component': 'guardian', 'stage': stage, 'operation': operation,
+            'cause': 'CAUSE_UNKNOWN', 'web_terminal': None, 'web_reaped': False,
+            'control_status': ('eof' if code == 'control_eof' else
+                'interrupted' if code in ('cancelled','exception_interrupted') else
+                'unavailable' if parent is None else 'open'),
+            'capture': None, 'cleanup': cleanup, 'source': source}
+
+        def observe():
+            if collector is not None:
+                report['capture'] = collector.snapshot()
+                report['cause'] = report['capture']['native_code']
+                if report['cause'] != 'CAUSE_UNKNOWN' or (code == 'control_eof'
+                    and operation in ('ready_read', 'report', 'start_send')):
+                    report['component'] = 'native_http_child'
+            if child is not None:
+                report['web_terminal'] = child.returncode
+                report['web_reaped'] = child.returncode is not None
+
+        observe()
+        preserved = False
+        try:
+            # Verified pre-stop custody precedes killing the direct child.
+            require(stage_custody, 'diagnostic_integrity')
+            evidence.write(report)
+            preserved = True
+        except Exception as preserve_error:
+            cleanup.update(status='UNKNOWN', code=failure_code(preserve_error))
+        if child is not None and preserved:
+            try:
+                if child.returncode is None:
+                    # A bounded wait records an already-exited child's original
+                    # status. wait timeout leaves the exact handle unreaped.
+                    try:
+                        child.wait(timeout=min(.01, remaining(END, cleanup=True)))
+                    except subprocess.TimeoutExpired:
+                        child.kill()
+                        cleanup['kill_sent'] = True
+                        child.wait(timeout=remaining(END, cleanup=True))
+                if collector is not None:
+                    capture = collector.finish(END)
+                if cleanup['code'] is None:
+                    cleanup['status'] = 'PASS'
+            except BaseException as cleanup_error:
+                cleanup.update(status='UNKNOWN', code=failure_code(cleanup_error))
+        elif cleanup['code'] is None:
+            cleanup['status'] = 'PASS'
+        observe()
+        if capture is not None:
+            report['capture'] = capture
+        try:
+            require(stage_custody, 'diagnostic_integrity')
+            evidence.write(report)
+        except Exception as preserve_error:
+            cleanup.update(status='UNKNOWN', code=failure_code(preserve_error))
+        # Stdout/stderr carry only the closed schema, never raw native text or
+        # exception strings. Parent retains this before exact stage removal.
+        sys.stderr.write(json.dumps(validate_diagnostic(report), separators=(',', ':'))+'\n')
+        sys.stderr.flush()
         return 1
     finally:
-        if child is not None and child.returncode is None:
-            try:
-                child.kill()  # Exact newly born, still-unreaped direct handle.
-                child.wait(timeout=remaining(END, cleanup=True))
-                drain(child, END)
-            except BaseException:
-                # Outer trusted driver still owns the held guardian group.
-                pass
+        evidence.close()
         for fd in (proof_read, proof_write):
             if fd is not None:
-                os.close(fd)
+                try:
+                    os.close(fd)
+                except OSError:
+                    pass
         if peer is not None:
             peer.stream.close()
         if web_end is not None:
             web_end.close()
-        parent.stream.close()
-        # Failed code namespaces remain retained; only acknowledged direct
-        # reap/group-only success permits the exact source-owned unlink above.
+        if parent is not None:
+            parent.stream.close()
+        # Failed code namespaces and the diagnostic remain retained. The outer
+        # trusted driver owns the held group and exact cleanup authorization.
 
 
 if __name__ == '__main__':

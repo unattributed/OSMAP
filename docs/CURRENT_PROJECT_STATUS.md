@@ -1,5 +1,19 @@
 # Current Project Status
 
+2026-10-24 UTC — **Issue 79 native startup diagnostics corrected and independently
+reviewed CLEAR at source level.** Continuous bounded native/guardian capture,
+fixed safe failure codes, process outcomes and verified protected recovery
+evidence now survive pre-READY failure and result consumption. The focused
+review covers 33 unique methods (four positive, 29 negative), including real
+local subprocesses through guardian/frontend/actor/final consumer and separate
+successful READY/report compatibility. Normal final delivery gate results are
+recorded in the execution ledger. See [sanitized executable evidence](../maint/ux/s04_02_startup_candidate/diagnostic_evidence.json)
+and [independent review](../maint/ux/s04_02_startup_candidate/diagnostic_review.json).
+This correction does not explain execution158's unknown native cause. No new
+native operation, host fixture, password change or Rust rebuild occurred;
+Milestone 3/T03, installed readiness and UAT remain NOT QUALIFIED/open. Fresh
+operator authorization is required for the next native password-change attempt.
+
 2026-10-24 UTC — **S04-02 Milestone 3 execution158 FAIL; T03 remains NOT QUALIFIED.** The operator's one fresh execution on obsd1 was dispatched using approved signed delivery `dc9e791f202a1398af678e83f1cebd93bb18ef67`, the unchanged service `8f1ed891…` and corrected HTTP artifact `213f40e7…`, with their separate compiler provenance. The native HTTP child was created, but the control channel closed while awaiting READY, before the HTTP driver started. Actual result: `control_eof`, zero HTTP requests from the driver, zero password submissions, zero password changes and no browser sessions. The underlying native startup cause is unknown; the failure occurred well before the carrier expiry, the 300-second journey never started, and no retry occurred.
 
 Independent review and fresh observations establish pre-submission no-write: Alice and Bob's complete 17-column row digests were unchanged before disposal, both durable epochs remained active/0 with null changed-at and no pending or used intent. Exact-owned runtime cleanup and staging cleanup159 are confirmed; all 33 recorded runtime paths and both staging directories are absent. Public configuration/master and cache-disabled policy were preserved. The authorization is consumed. Login/TOTP, old/new password behaviour, session revocation and completed Bob/mail/cache witnesses were not reached. See [execution158 report](UX_S04_02_SINGLE_HOST_EXECUTION.md#2026-10-24-utc--authorized-milestone-3-execution158) and [sanitized evidence](../maint/ux/s04_02_startup_candidate/milestone3_evidence.json). Earlier Milestones 1 and 2 remain separately qualified; installed readiness, S04-02 completion and UAT remain open.

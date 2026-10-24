@@ -1,5 +1,19 @@
 # Decision Log
 
+2026-10-24 UTC — Issue 79 diagnostic correction. Retain existing Rust behavior
+and recognize its existing fixed diagnostic messages through continuously
+serviced, bounded private stdout/stderr collectors. Preserve the earliest
+failing boundary, process exit/reap and capture accounting in the existing
+guardian/frontend/actor/recovery/consumer path; only allowlisted schema values
+may leave that path. Separate functional failure, diagnostic completeness,
+submission uncertainty, authoritative certainty and cleanup. Verify protected
+evidence before resource disposal, retain unknown stage leaves under existing
+custody rules, and report missing observations explicitly. Independent local
+executable review is CLEAR; delivery gates and signed synchronization are
+recorded separately. Execution158 remains immutable and its native cause is
+UNKNOWN. This source correction grants no new native execution authority and
+introduces no product change, new framework or technical deadline increase.
+
 2026-10-24 UTC — S04-02 one-shot execution158 consumed. Execute the explicitly authorized native journey once with approved delivery dc9e791 and unchanged split-provenance artifacts. Actual native child custody succeeded, then `control_eof` occurred waiting for READY before any HTTP request or password submission. Keep FAIL and T03 NOT QUALIFIED; do not infer a timeout, credential failure or unique native cause from the generic channel closure. Independently reconcile full17 unchanged Alice/Bob rows, active epoch0/null changed-at/no intents and runtime absence before exact inert-stage cleanup159. Both staging paths are independently absent; retain sanitized recovery and original failure evidence. No retry, rollback, rebuild, product deadline change, public-service change or qualification-flag change. This task ends with independent outcome review and ordinary signed GitHub evidence delivery; another native operation requires new authorization.
 
 2026-10-22 — S04-02 current MariaDB loader contract. Actual read-only dependency129 isolates a parser refusal at MariaDB; fixed130 capture shows required /usr/lib/libc++.so.12.0 and /usr/lib/libc++abi.so.9.0 rows rejected by the library alphabet. Add only plus to that basename alphabet, keep the same protected directories/row types/file custody/executable-module admission and all operation/resource limits. One actual-row regression passes with foreign/traversal/other-punctuation/module-execution refusal controls. Preserve125 ParentPrepare FAIL,127 observation FAIL and exact128 owned cleanup PASS; no unique125 cause or native/installed acceptance is claimed. Reuse the existing compile/qualification pipeline and normal signed delivery; no public mail or qualification-flag changes.

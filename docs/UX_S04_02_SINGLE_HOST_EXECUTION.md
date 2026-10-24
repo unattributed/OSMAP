@@ -1,5 +1,56 @@
 # S04.02 single-host execution correction
 
+## 2026-10-24 UTC — Issue 79 diagnostic preservation contract
+
+Every OSMAP execution failure must preserve an actionable, bounded, sanitized
+diagnostic before cleanup. When its underlying cause cannot be observed, retain
+the missing observation and why it was unavailable. Future sprint machinery
+uses the existing process custody, protected recovery receipt and result
+consumer; this rule adds no separate logging framework or execution authority.
+
+The native HTTP guardian now begins servicing both output pipes immediately
+after process creation, including during READY waits. Each stream retains at
+most 16,384 private prefix bytes; all consumed bytes are counted and SHA-256
+hashed. A bounded 512-byte line parser recognizes only existing fixed Rust
+panic/expect messages and the libtest zero-test result. Bytes beyond the prefix
+remain drained, and fixed diagnostics later in the stream remain observable.
+Raw prefixes, exception text, panic payloads and credentials are never exported.
+Unrecognized output remains `CAUSE_UNKNOWN`; its bytes/hash/EOF/truncation
+observations are retained without guessing a cause.
+
+Failure capture flows through guardian fixed-schema output, frontend capture,
+actor recovery checkpoints and the strict final consumer. Separate records keep
+the earliest failure, process termination/reap, capture completeness, submission
+state, authoritative certainty and cleanup disposition. A pre-submission FAIL
+can have independently confirmed no-write and cleanup PASS; functional failure
+remains FAIL. Evidence write/readback failure prevents destructive disposition;
+bounded producer stopping remains necessary and cannot grant resource deletion.
+Recovery records bind the exact admission digest, source and compiler manifests,
+helper/web binaries, sanitized diagnostic digest and verified recovery digest.
+
+Guardian pre-stop and terminal diagnostic artifacts remain protected in its
+owned staging namespace. The existing inert-stage exact-leaf check deliberately
+refuses unexpected diagnostic leaves: a future authorized stage disposition must
+first export/read back and reconcile their custody. It must never remove the
+only explanation of a failure. Execution158 and previous artifacts are unchanged.
+
+| Startup boundary | Retained observation |
+| --- | --- |
+| Guardian creation/initialization | Frontend operation and launch refusal or actual guardian exit; guardian initialization fixed code when it can emit |
+| Child launch, privilege drop, identity, exec | Last guardian stage, source-owned launch/drop refusal and direct child exit/reap where a handle exists |
+| Rust test selection | Fixed libtest zero-tests observation; otherwise no claim the selected body ran |
+| Native config/account/admission/mutation clients | Existing fixed Rust expect-message code; unobserved completed stages remain unclaimed |
+| Listener and confinement startup | Existing listener/confinement refusal code, process outcome and bounded output accounting |
+| READY serialization/transmission/validation | Actual guardian read/validate/send stage, fixed native READY refusal where emitted, or first frontend READY-validation refusal |
+| Control EOF/interruption or exit before start | Directional failing operation, original failure, available native diagnostic, separate cleanup and actual child/guardian outcomes |
+
+Local disposable process regressions exercise these producers, output floods,
+partial lines, secret exclusion, actor preservation and final consumption.
+They are diagnostic-machine evidence; no new OpenBSD native execution, fixture,
+password change, Rust rebuild or product qualification is implied. Execution158's
+unique native cause remains UNKNOWN and its one-operation authority is consumed.
+Product60/journey300/guardian330/actor600/cleanup150 limits remain unchanged.
+
 ## 2026-10-24 UTC — authorized Milestone 3 execution158
 
 **Actual execution: FAIL before submission. T03: NOT QUALIFIED.** One fresh

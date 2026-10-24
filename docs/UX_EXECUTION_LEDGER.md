@@ -10289,6 +10289,11 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "maint/ux/s04_02_startup_candidate/milestone3_evidence.json",
     "maint/ux/s04_02_startup_candidate/test_password_journey.py",
     "maint/ux/s04_02_startup_candidate/test_mutation_result.py",
+    "maint/ux/s04_02_startup_candidate/test_native_diagnostics.py",
+    "maint/ux/s04_02_startup_candidate/test_native_evidence.py",
+    "maint/ux/s04_02_startup_candidate/test_native_frontend.py",
+    "maint/ux/s04_02_startup_candidate/diagnostic_evidence.json",
+    "maint/ux/s04_02_startup_candidate/diagnostic_review.json",
     "maint/ux/s04_02_startup_candidate/test_mail_witness.py",
     "docs/UX_S04_PYTHON_REVIEW_20261023.md",
     "maint/account-runtime/test_account_epoch.py",
@@ -35989,3 +35994,78 @@ attempt or action is scheduled.
 Operator-requested correction from signed2512a243 is complete at source/artifact level. See `docs/UX_S04_02_TIMING_RECONCILIATION_20261023.md` for the60-second maximum TOTP waiting derivation,300-second operating envelope, unchanged product60 and actor600/cleanup150, positive/timeout/cleanup regressions and actual compiler identities. Signed compiler source213b2f3b9ee878fcbaf37e27acb45743a3782434 produced libtest SHA256213f40e73fb6d6a8c9116950892faf711946d7c1b3fc0e27e80d449a0f7ed550 once; qualified service8f1ed891 remains unchanged. Actual compiler144.479s, remote145.429s, full146.407s. Separate read-only observation confirms scratch/group absence and both artifact identities; native artifacts intentionally retained. Independent timing/compiler/integration reviews CLEAR; current-artifact producer/consumer/exact-cleanup10 tests PASS independently repeated. No new obsd1 startup, nativeapplication test or password operation. Previous operation authority remains consumed; M3 NOT QUALIFIED. Normal signed delivery hooks remain required.
 
 The first ordinary delivery push stopped after103.557687s at the V11 inventory check: two added Rust comment lines shifted seven existing test assertion locations. Existing inventory generators refreshed only those positions, generated timestamps and inventory hashes; counts, classifications and product qualification flags are unchanged. Focused inventory/V11 checks PASS. The failed push and complete log are retained; no remote branch update, additional native build, startup or password attempt occurred. The ordinary push hook must pass before final delivery.
+
+## Issue 79 P0 diagnostic correction work order — 2026-10-24
+
+Operator directive begins at signed source `3a2d8e09e242096bc678dbfa74a981a48373a5d9`
+on `feat/ux-completion-20260929`. The observable outcome is bounded, sanitized,
+readback-verified native startup failure evidence surviving process shutdown,
+actor recovery, result consumption and exact-owned cleanup. Root owns frontend,
+integration and signed delivery; guardian_engineer owns the existing guardian;
+actor_consumer_engineer owns actor/result preservation; delivery_reviewer owns
+independent executable review. Existing machinery only; no new logging framework.
+
+Local disposable subprocess fault injection covers early exit/panic/quiet exit,
+pre-READY output, flood/partial output/EOF, guardian launch/death, interruption,
+cleanup failure, submission uncertainty, confirmed no-write, synthetic-secret
+exclusion and the normal READY/report journey. Focused regressions precede normal
+security/acceptance and signed delivery gates. Linux subprocess tests qualify
+the diagnostic pipeline, not OpenBSD confinement or the password journey.
+Prerequisites are the current source/custody protocol and local Python process
+APIs; no development-host fixture or live account prerequisite is required.
+At this entry the new tests and independent review are NOT RUN. Preserve failed
+test logs, stop unchanged retries after two failures for independent reassessment,
+and retain uncertain effects. Actual elapsed is recorded at closeout; token and
+monetary costs are UNKNOWN. Historical evidence remains immutable.
+
+Execution158's native startup cause remains UNKNOWN. Its consumed operation
+authorization is not renewed. No native password change, host provisioning,
+public mail controls, product semantic change, confinement relaxation, native
+rebuild or qualification-flag change is authorized or planned here. Product60,
+journey300, guardian330, actor600 and cleanup150 technical limits are unchanged.
+
+### Issue 79 implementation, executable review and delivery gates
+
+Implemented continuous guardian/native capture, fixed source-owned diagnostic
+projection, first-failure preservation, bounded frontend stop/capture, protected
+actor recovery/readback and strict final consumption. Current source bindings
+are refreshed in the existing stage producer/wrapper; Rust sources, compiler
+inputs, production behavior and historical milestone evidence are unchanged.
+The standing failure-preservation convention is now in AGENTS and the existing
+single-host execution document. See `diagnostic_evidence.json` and
+`diagnostic_review.json` under `maint/ux/s04_02_startup_candidate/`.
+
+Independent review CLEAR: 33 unique focused methods (four positive controls,
+29 negative), 17 fixed-message subprocess subcases, four early-boundary
+subcases, and 20 existing journey compatibility tests. The independently
+inspected failing full chain retains native_admission_client at
+bootstrap_sent/ready_read, child exit101/reaped, guardian exit1/reaped,
+139stderr bytes/full hash/EOF, functional FAIL, confirmed no-write and separate
+cleanup PASS. Local fixtures provide this evidence; it does not explain158.
+
+Normal `make acceptance-check` completed its full `security-check`: 96 carrier
+tests, 634 account-runtime tests, 1,880 Rust tests PASS, zero failures and
+58 explicitly ignored native tests. It then refused V10's two stale inventory
+references inherited from timing commit dc9e791. The existing committed audit
+and remediation registers and all counts/classifications were already current.
+Independent review approved changing only those two claim hashes; no audit,
+scanner, Rust code or qualification flag was changed. The remaining
+`make v10-check v11-check v12-check v13-check` completed successfully. Reuse the
+matching full security PASS; ordinary commit/push hooks remain mandatory.
+
+Preserved local failures include the initial guardian EOF/exit scheduling test,
+the Linux initialization-reset fixture case, stale constructor-bypassing test
+objects, stricter-schema fixture envelopes and the V10 reference refusal.
+Each was corrected at its demonstrated boundary and the affected tests passed;
+original logs were retained, not overwritten or relabelled.
+
+Protected evidence root is
+`/home/foo/Downloads/osmap-ux-s04/issue79-diagnostics-20261024/`.
+The combined first acceptance log SHA256 is
+`53d9decd87d9930d9ee77e340dc4a58223d9eef35a7f63648d3ddd102f70e1a7`;
+remaining gate log SHA256 is
+`163521b1c3b9ce6c65f9aac016380fb28ea605f623e043b5c4a94c25afdb00c0`.
+Test durations and failure history are retained in those logs and review;
+aggregate worker/token/monetary cost is UNKNOWN. Signed commit, ordinary push,
+fresh remote equality and clean-worktree observations belong to the final
+delivery receipt. No new native action is scheduled or authorized.

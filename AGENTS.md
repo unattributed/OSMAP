@@ -1,5 +1,20 @@
 # OSMAP Agent Notes
 
+## Execution failure diagnostics — operator direction, 2026-10-24
+
+Every OSMAP execution failure must preserve an actionable, bounded, sanitized
+diagnostic before cleanup. When the underlying cause cannot be observed, the
+retained record must explicitly identify the missing observation and why it was
+unavailable. Apply this through the existing execution machinery, recovery
+receipts and result consumers; do not create a separate logging framework.
+Preserve the earliest failure separately from cleanup, submission state and
+authoritative-state certainty. Arbitrary native output and exception text are
+private, including token-shaped strings: export only fixed source-owned codes,
+process outcomes and bounded stream accounting. Verify durable evidence by
+readback and hash before removing its sources; retain uncertain resources under
+the existing exact-owned recovery rules. Cleanup PASS never implies functional
+PASS, and local diagnostic regressions never imply native product qualification.
+
 ## Operator ruling — simplify test machinery and test product contracts, 2026-10-23
 
 Codex-created test and execution machinery must not become a substitute product
