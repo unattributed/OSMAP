@@ -278,6 +278,11 @@ impl StartupTrace {
     pub(crate) fn category(&mut self, category: StartupCategory) {
         self.category = category;
     }
+    pub(crate) fn category_if_unknown(&mut self, category: StartupCategory) {
+        if self.category == StartupCategory::Unknown {
+            self.category(category);
+        }
+    }
     pub(crate) fn io(&mut self, error: &std::io::Error) {
         use std::io::ErrorKind;
         self.category = match crate::account_password_process::metadata_errno_tag("builder", error)
@@ -329,7 +334,7 @@ impl StartupTrace {
             _ => StartupCategory::Unknown,
         };
     }
-    fn tag(&self) -> &'static str {
+    pub(crate) fn tag(&self) -> &'static str {
         if self.worker {
             WORKER_STARTUP_TAGS[self.operation as usize][self.category as usize]
         } else {
@@ -1196,6 +1201,32 @@ fn worker() -> Result<(), Failure> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn runtime_recheck_trace_preserves_existing_ids_and_precise_failure() {
+        assert_eq!(StartupOperation::ServiceStartup as u8, 6);
+        assert_eq!(StartupOperation::BeforeRecheck as u8, 9);
+        assert_eq!(StartupOperation::MutationBind as u8, 29);
+        assert_eq!(StartupOperation::StockRecheckSnapshot as u8, 63);
+        assert_eq!(STARTUP_TAGS.len(), 64);
+        let mut trace = StartupTrace::new(StartupOperation::MutationBind);
+        trace.set(StartupOperation::ServiceStartup);
+        trace.category_if_unknown(StartupCategory::Invalid);
+        assert_eq!(trace.tag(), "primary_fstat_service_startup_invalid");
+        trace.set(StartupOperation::StockMasterRow);
+        trace.metadata("metadata_child_deadline");
+        trace.category_if_unknown(StartupCategory::Invalid);
+        assert_eq!(trace.tag(), "primary_fstat_stock_master_row_deadline");
+        trace.set(StartupOperation::ParentPrepare);
+        assert_eq!(trace.category, StartupCategory::Unknown);
+        trace.finish();
+        assert!(!trace.enabled);
+        for tags in STARTUP_TAGS.into_iter().chain(WORKER_STARTUP_TAGS) {
+            for tag in tags {
+                assert!(tag.len() <= 96);
+                assert!(tag.bytes().all(|b| b.is_ascii_lowercase() || b == b'_'));
+            }
+        }
+    }
     #[test]
     fn stock_startup_fixed_sites_preserve_historical_ids_and_error_categories() {
         assert_eq!(StartupOperation::ServiceSignals as u8, 39);

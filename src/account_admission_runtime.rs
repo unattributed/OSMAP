@@ -2,6 +2,7 @@
 use crate::account_admission::{
     valid_epoch, Admission, EpochAuthority, Error, Operation, Request, Verifier, MAX_FRAME,
 };
+use crate::openpgp_inventory_runtime::custody::{self, Check, Failure as CustodyFailure};
 use crate::openpgp_inventory_runtime::{
     file, now, private_dir, read_frame, secret, validate_socket, write_frame,
 };
@@ -965,25 +966,43 @@ impl AccountClientPaths {
         helper_uid: u32,
         keys: &[(&Path, &[u8])],
     ) -> Result<Self, Error> {
-        validate_socket(socket, helper_uid).map_err(unavailable)?;
-        let socket_identity =
-            AdmissionEndpoint::identity(&fs::symlink_metadata(socket).map_err(unavailable)?);
+        Self::observe_detailed(socket, helper_uid, keys).map_err(unavailable)
+    }
+    fn observe_detailed(
+        socket: &Path,
+        helper_uid: u32,
+        keys: &[(&Path, &[u8])],
+    ) -> Result<Self, CustodyFailure> {
+        custody::validate_socket(socket, helper_uid)?;
+        let socket_identity = AdmissionEndpoint::identity(
+            &fs::symlink_metadata(socket)
+                .map_err(|e| CustodyFailure::io(Check::SocketMetadata, e))?,
+        );
         if socket_identity.5 != 1 {
-            return Err(Error::Unavailable);
+            return Err(CustodyFailure::invariant(Check::SocketLinks));
         }
-        let parent_path = socket.parent().ok_or(Error::Invalid)?;
-        let parent_identity =
-            Self::parent_identity(&fs::symlink_metadata(parent_path).map_err(unavailable)?);
+        let parent_path = socket
+            .parent()
+            .ok_or_else(|| CustodyFailure::invariant(Check::ParentPath))?;
+        let parent_identity = Self::parent_identity(
+            &fs::symlink_metadata(parent_path)
+                .map_err(|e| CustodyFailure::io(Check::ParentMetadata, e))?,
+        );
         let mut retained_keys = Vec::new();
         for (path, bytes) in keys {
-            let handle =
-                file(path, crate::openbsd::effective_uid(), false, 1024).map_err(unavailable)?;
-            let identity = AdmissionEndpoint::identity(&handle.metadata().map_err(unavailable)?);
-            if identity.5 != 1
-                || !crate::openbsd::descriptor_is_cloexec(handle.as_raw_fd())
-                    .map_err(unavailable)?
+            let handle = custody::file(path, crate::openbsd::effective_uid(), false, 1024)?;
+            let identity = AdmissionEndpoint::identity(
+                &handle
+                    .metadata()
+                    .map_err(|e| CustodyFailure::io(Check::KeyMetadata, e))?,
+            );
+            if identity.5 != 1 {
+                return Err(CustodyFailure::invariant(Check::KeyLinks));
+            }
+            if !crate::openbsd::descriptor_is_cloexec(handle.as_raw_fd())
+                .map_err(|e| CustodyFailure::io(Check::DescriptorFlags, e))?
             {
-                return Err(Error::Unavailable);
+                return Err(CustodyFailure::invariant(Check::CloseOnExec));
             }
             retained_keys.push(((*path).into(), handle, identity, bytes.to_vec()));
         }
@@ -995,7 +1014,7 @@ impl AccountClientPaths {
             keys: retained_keys,
             seal: std::sync::OnceLock::new(),
         };
-        value.recheck()?;
+        value.recheck_detailed()?;
         Ok(value)
     }
     pub(crate) fn finalize(
@@ -1017,56 +1036,76 @@ impl AccountClientPaths {
         Ok(())
     }
     pub(crate) fn recheck(&self) -> Result<(), Error> {
+        self.recheck_detailed().map_err(unavailable)
+    }
+    fn recheck_detailed(&self) -> Result<(), CustodyFailure> {
         if self.seal.get().is_none() {
-            validate_socket(&self.socket, self.helper_uid).map_err(unavailable)?;
+            custody::validate_socket(&self.socket, self.helper_uid)?;
+            let parent = self
+                .socket
+                .parent()
+                .ok_or_else(|| CustodyFailure::invariant(Check::ParentPath))?;
             if Self::parent_identity(
-                &fs::symlink_metadata(self.socket.parent().ok_or(Error::Invalid)?)
-                    .map_err(unavailable)?,
+                &fs::symlink_metadata(parent)
+                    .map_err(|e| CustodyFailure::io(Check::ParentMetadata, e))?,
             ) != self.parent_identity
             {
-                return Err(Error::Unavailable);
+                return Err(CustodyFailure::invariant(Check::ParentIdentity));
             }
             for (path, _, _, _) in &self.keys {
-                crate::openpgp_inventory_runtime::exact_path(path, crate::openbsd::effective_uid())
-                    .map_err(unavailable)?;
+                custody::exact_path(path, crate::openbsd::effective_uid())?;
             }
         }
-        self.recheck_leaves()
+        self.recheck_leaves_detailed()
     }
     fn recheck_leaves(&self) -> Result<(), Error> {
-        if AdmissionEndpoint::identity(&fs::symlink_metadata(&self.socket).map_err(unavailable)?)
-            != self.socket_identity
+        self.recheck_leaves_detailed().map_err(unavailable)
+    }
+    fn recheck_leaves_detailed(&self) -> Result<(), CustodyFailure> {
+        if AdmissionEndpoint::identity(
+            &fs::symlink_metadata(&self.socket)
+                .map_err(|e| CustodyFailure::io(Check::SocketMetadata, e))?,
+        ) != self.socket_identity
         {
-            return Err(Error::Unavailable);
+            return Err(CustodyFailure::invariant(Check::SocketIdentity));
         }
         for (path, handle, identity, expected) in &self.keys {
-            if AdmissionEndpoint::identity(&handle.metadata().map_err(unavailable)?) != *identity
-                || AdmissionEndpoint::identity(&fs::symlink_metadata(path).map_err(unavailable)?)
-                    != *identity
-            {
-                return Err(Error::Unavailable);
-            }
-            // Positioned reads preserve the retained descriptor's shared
-            // offset across concurrent clients; a changed key is never adopted.
+            let check_identity = || -> Result<(), CustodyFailure> {
+                if AdmissionEndpoint::identity(
+                    &handle
+                        .metadata()
+                        .map_err(|e| CustodyFailure::io(Check::KeyMetadata, e))?,
+                ) != *identity
+                {
+                    return Err(CustodyFailure::invariant(Check::KeyDescriptorIdentity));
+                }
+                if AdmissionEndpoint::identity(
+                    &fs::symlink_metadata(path)
+                        .map_err(|e| CustodyFailure::io(Check::KeyMetadata, e))?,
+                ) != *identity
+                {
+                    return Err(CustodyFailure::invariant(Check::KeyPathIdentity));
+                }
+                Ok(())
+            };
+            check_identity()?;
+            // Positioned reads preserve shared descriptor offsets. Recheck
+            // identities after reading; never adopt changed key material.
             let mut bytes = [0; 1025];
             let mut length = 0;
             while length < bytes.len() {
                 let count = handle
                     .read_at(&mut bytes[length..], length as u64)
-                    .map_err(unavailable)?;
+                    .map_err(|e| CustodyFailure::io(Check::KeyRead, e))?;
                 if count == 0 {
                     break;
                 }
                 length += count;
             }
-            if &bytes[..length] != expected
-                || AdmissionEndpoint::identity(&handle.metadata().map_err(unavailable)?)
-                    != *identity
-                || AdmissionEndpoint::identity(&fs::symlink_metadata(path).map_err(unavailable)?)
-                    != *identity
-            {
-                return Err(Error::Unavailable);
+            if &bytes[..length] != expected {
+                return Err(CustodyFailure::invariant(Check::KeyContent));
             }
+            check_identity()?;
         }
         Ok(())
     }
@@ -1089,6 +1128,41 @@ impl AccountClientPaths {
             return Err(Error::Unavailable);
         }
         self.recheck()
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize)]
+#[serde(rename_all = "snake_case")]
+pub(crate) enum ConstructionOperation {
+    CoreDumps,
+    SocketValidation,
+    KeyLoad,
+    CustodyCapture,
+}
+/// Contains only finite source-owned codes, never paths, key bytes or I/O text.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize)]
+pub(crate) struct ConstructionFailure {
+    operation: ConstructionOperation,
+    #[serde(flatten)]
+    failure: crate::openpgp_inventory_runtime::custody::Failure,
+}
+impl ConstructionFailure {
+    fn at(operation: ConstructionOperation, failure: custody::Failure) -> Self {
+        Self { operation, failure }
+    }
+    fn write_diagnostic(&self, output: &mut impl std::io::Write) -> std::io::Result<()> {
+        // Serialization is bounded entirely by the enum vocabulary. A failed
+        // diagnostic write never replaces the original construction refusal.
+        writeln!(
+            output,
+            "OSMAP_ACCOUNT_CONSTRUCTION_V1 {}",
+            serde_json::json!({
+                "schema": "osmap-account-construction-v1",
+                "operation": self.operation,
+                "check": self.failure.check,
+                "category": self.failure.category,
+            })
+        )
     }
 }
 
@@ -1147,10 +1221,25 @@ impl Client {
         Self::qualified_files(socket, key, helper_uid)
     }
     fn qualified_files(socket: &Path, key: &Path, helper_uid: u32) -> Result<Self, Error> {
-        crate::openbsd::disable_core_dumps().map_err(unavailable)?;
-        validate_socket(socket, helper_uid).map_err(unavailable)?;
-        let bytes = secret(key).map_err(unavailable)?;
-        let paths = AccountClientPaths::observe(socket, helper_uid, &[(key, &bytes)])?;
+        Self::qualified_files_detailed(socket, key, helper_uid).map_err(|failure| {
+            let _ = failure.write_diagnostic(&mut std::io::stderr().lock());
+            Error::Unavailable
+        })
+    }
+    fn qualified_files_detailed(
+        socket: &Path,
+        key: &Path,
+        helper_uid: u32,
+    ) -> Result<Self, ConstructionFailure> {
+        use ConstructionOperation as Op;
+        crate::openbsd::disable_core_dumps().map_err(|e| {
+            ConstructionFailure::at(Op::CoreDumps, CustodyFailure::io(Check::CoreDumpLimit, e))
+        })?;
+        custody::validate_socket(socket, helper_uid)
+            .map_err(|e| ConstructionFailure::at(Op::SocketValidation, e))?;
+        let bytes = custody::secret(key).map_err(|e| ConstructionFailure::at(Op::KeyLoad, e))?;
+        let paths = AccountClientPaths::observe_detailed(socket, helper_uid, &[(key, &bytes)])
+            .map_err(|e| ConstructionFailure::at(Op::CustodyCapture, e))?;
         Ok(Self(Arc::new(ClientState {
             socket: socket.into(),
             key_file: key.into(),

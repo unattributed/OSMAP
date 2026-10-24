@@ -288,15 +288,21 @@ fn serve(
     let outcome = (|| {
         // All actual stock mail authority is established before accepting requests.
         // There is no policy listener, publication endpoint, Generation or activation.
+        trace.set(Op::ServiceStartup);
+        let keys = Keys::new(&files.mutation, &files.session).map_err(|error| {
+            trace.category(crate::account_password_fstat::StartupCategory::Invalid);
+            unavailable(error)
+        })?;
         let runtime = Arc::new(
             StockRuntime::new(
                 store,
                 files.accounts.clone(),
-                Keys::new(&files.mutation, &files.session).map_err(unavailable)?,
+                keys,
                 admission.password_key(),
                 files.relay_uid,
                 stock.clone(),
                 startup_deadline,
+                trace,
             )
             .map_err(unavailable)?,
         );

@@ -1374,3 +1374,160 @@ fn native_rust_private_primary_admission() -> Result<(), &'static str> {
     println!("\nnative_private_primary_admission result=PASS wrong_password_rejected=true correct_password_admitted=true signed_epoch=0 epoch_revalidated=true credential_write=false full_workflow_qualified=false");
     Ok(())
 }
+
+/// Exercise the real constructor against local filesystem objects. Diagnostics
+/// discriminate the rejected invariant without disclosing the object or key.
+#[test]
+fn admission_construction_reports_precise_custody_failure() {
+    use custody::Category;
+    use ConstructionOperation as Op;
+    let root = fs::canonicalize(listener_root()).unwrap();
+    let socket = root.join("socket");
+    let key = root.join("private-key-name");
+    let uid = crate::openbsd::effective_uid();
+    let check = |operation, invariant, category| {
+        let failure = Client::qualified_files_detailed(&socket, &key, uid).unwrap_err();
+        assert_eq!(failure.operation, operation);
+        assert_eq!(failure.failure.check, invariant);
+        assert_eq!(failure.failure.category, category);
+        let mut output = Vec::new();
+        failure.write_diagnostic(&mut output).unwrap();
+        let line = String::from_utf8(output).unwrap();
+        assert!(line.len() < 256);
+        assert!(!line.contains(root.to_str().unwrap()));
+        assert!(!line.contains("private-key-name"));
+        assert!(!line.contains("SECRET_CUSTODY_TEST_MATERIAL"));
+        let json: serde_json::Value = serde_json::from_str(
+            line.strip_prefix("OSMAP_ACCOUNT_CONSTRUCTION_V1 ")
+                .unwrap()
+                .trim_end(),
+        )
+        .unwrap();
+        assert_eq!(json.as_object().unwrap().len(), 4);
+        assert_eq!(json["schema"], "osmap-account-construction-v1");
+    };
+    check(Op::SocketValidation, Check::Canonicalize, Category::Absent);
+    fs::write(&socket, b"not a socket").unwrap();
+    check(Op::SocketValidation, Check::SocketType, Category::Invariant);
+    fs::remove_file(&socket).unwrap();
+    let listener = UnixListener::bind(&socket).unwrap();
+    fs::set_permissions(&socket, fs::Permissions::from_mode(0o666)).unwrap();
+    check(
+        Op::SocketValidation,
+        Check::SocketPermissions,
+        Category::Invariant,
+    );
+    fs::set_permissions(&socket, fs::Permissions::from_mode(0o660)).unwrap();
+    check(Op::KeyLoad, Check::Canonicalize, Category::Absent);
+    fs::write(&key, b"short").unwrap();
+    fs::set_permissions(&key, fs::Permissions::from_mode(0o600)).unwrap();
+    check(Op::KeyLoad, Check::KeyLength, Category::Invariant);
+    fs::write(&key, b"SECRET_CUSTODY_TEST_MATERIAL_123456789").unwrap();
+    fs::set_permissions(&key, fs::Permissions::from_mode(0o640)).unwrap();
+    check(Op::KeyLoad, Check::FilePermissions, Category::Invariant);
+    fs::set_permissions(&key, fs::Permissions::from_mode(0o600)).unwrap();
+    fs::hard_link(&key, root.join("linked")).unwrap();
+    check(Op::CustodyCapture, Check::KeyLinks, Category::Invariant);
+    fs::remove_file(root.join("linked")).unwrap();
+    let client = Client::qualified_files_detailed(&socket, &key, uid).unwrap();
+    assert_eq!(client.0.paths.recheck(), Ok(()));
+    drop(client);
+    drop(listener);
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn admission_custody_recheck_preserves_identity_and_content_reason() {
+    let root = fs::canonicalize(listener_root()).unwrap();
+    let socket = root.join("socket");
+    let key = root.join("key");
+    let listener = UnixListener::bind(&socket).unwrap();
+    fs::set_permissions(&socket, fs::Permissions::from_mode(0o660)).unwrap();
+    fs::write(&key, [29; 32]).unwrap();
+    fs::set_permissions(&key, fs::Permissions::from_mode(0o600)).unwrap();
+    let client =
+        Client::qualified_files_detailed(&socket, &key, crate::openbsd::effective_uid()).unwrap();
+    fs::write(&key, [30; 32]).unwrap();
+    assert_eq!(
+        client.0.paths.recheck_detailed().unwrap_err().check,
+        Check::KeyContent
+    );
+    fs::write(&key, [29; 32]).unwrap();
+    let replacement = root.join("replacement");
+    fs::write(&replacement, [29; 32]).unwrap();
+    fs::set_permissions(&replacement, fs::Permissions::from_mode(0o600)).unwrap();
+    fs::rename(&replacement, &key).unwrap();
+    assert_eq!(
+        client.0.paths.recheck_detailed().unwrap_err().check,
+        Check::KeyDescriptorIdentity
+    );
+    drop(client);
+    drop(listener);
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn admission_diagnostic_sanitizes_io_errors_and_tolerates_broken_output() {
+    use custody::Category;
+    use std::io::{Error as IoError, ErrorKind};
+    for (kind, category) in [
+        (ErrorKind::NotFound, Category::Absent),
+        (ErrorKind::PermissionDenied, Category::Denied),
+        (ErrorKind::InvalidInput, Category::Invalid),
+        (ErrorKind::TimedOut, Category::Deadline),
+        (ErrorKind::Interrupted, Category::Interrupted),
+        (ErrorKind::Other, Category::OtherIo),
+    ] {
+        let failure = ConstructionFailure::at(
+            ConstructionOperation::KeyLoad,
+            CustodyFailure::io(
+                Check::FileOpen,
+                IoError::new(kind, "/private/SECRET_IO_PAYLOAD"),
+            ),
+        );
+        assert_eq!(failure.failure.category, category);
+        assert!(!format!("{failure:?}").contains("SECRET_IO_PAYLOAD"));
+        let mut output = Vec::new();
+        failure.write_diagnostic(&mut output).unwrap();
+        assert!(!String::from_utf8(output)
+            .unwrap()
+            .contains("SECRET_IO_PAYLOAD"));
+        let mut full = &mut [][..];
+        assert!(failure.write_diagnostic(&mut full).is_err());
+        assert_eq!(failure.failure.category, category);
+    }
+}
+
+#[test]
+fn detailed_custody_preserves_legacy_inventory_errors_and_owner_rules() {
+    let root = fs::canonicalize(listener_root()).unwrap();
+    let key = root.join("key");
+    fs::write(&key, b"short").unwrap();
+    fs::set_permissions(&key, fs::Permissions::from_mode(0o600)).unwrap();
+    let uid = crate::openbsd::effective_uid();
+    assert_eq!(secret(&key), Err(crate::openpgp_inventory::Error::Invalid));
+    let error = custody::file(&key, uid.wrapping_add(1), false, 1024).unwrap_err();
+    assert_eq!(
+        error.check,
+        if uid == 0 {
+            Check::FileOwner
+        } else {
+            Check::AncestorOwner
+        }
+    );
+    assert_eq!(
+        error.into_original(),
+        crate::openpgp_inventory::Error::Unavailable
+    );
+    let alias = root.join("alias");
+    std::os::unix::fs::symlink(&key, &alias).unwrap();
+    assert_eq!(
+        custody::exact_path(&alias, uid).unwrap_err().check,
+        Check::CanonicalPath
+    );
+    assert_eq!(
+        crate::openpgp_inventory_runtime::exact_path(&alias, uid),
+        Err(crate::openpgp_inventory::Error::Invalid)
+    );
+    fs::remove_dir_all(root).unwrap();
+}

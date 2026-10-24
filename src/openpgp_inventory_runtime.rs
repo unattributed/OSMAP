@@ -29,71 +29,19 @@ pub(crate) fn remaining(deadline: Instant) -> Result<Duration, Error> {
         .filter(|d| !d.is_zero())
         .ok_or(Error::Expired)
 }
-fn protected_ancestors(path: &Path, owner: u32) -> Result<(), Error> {
-    for ancestor in path.ancestors().skip(1) {
-        // The filesystem root is an OS-owned trust anchor. Under OpenBSD
-        // unveil, specific descendants remain visible but metadata for `/`
-        // itself is hidden; requiring its stat would disable every client.
-        if ancestor == Path::new("/") {
-            break;
-        }
-        let m = fs::symlink_metadata(ancestor).map_err(|_| Error::Unavailable)?;
-        let sticky_root = m.uid() == 0 && m.mode() & 0o1000 != 0;
-        if !m.is_dir()
-            || (m.uid() != 0 && m.uid() != owner)
-            || (m.mode() & 0o022 != 0 && !sticky_root)
-        {
-            return Err(Error::Unavailable);
-        }
-    }
-    Ok(())
-}
+#[path = "openpgp_inventory_custody.rs"]
+pub(crate) mod custody;
 pub(crate) fn exact_path(path: &Path, owner: u32) -> Result<(), Error> {
-    protected_ancestors(path, owner)?;
-    if !path.is_absolute()
-        || path.as_os_str().len() > 4096
-        || fs::canonicalize(path).map_err(|_| Error::Unavailable)? != path
-    {
-        return Err(Error::Invalid);
-    }
-    Ok(())
+    custody::exact_path(path, owner).map_err(custody::Failure::into_original)
 }
 pub(crate) fn private_dir(path: &Path, owner: u32, shared: bool) -> Result<(), Error> {
-    exact_path(path, owner)?;
-    let m = fs::symlink_metadata(path).map_err(|_| Error::Unavailable)?;
-    if !m.is_dir() || m.uid() != owner || m.mode() & (if shared { 0o027 } else { 0o077 }) != 0 {
-        return Err(Error::Unavailable);
-    }
-    Ok(())
+    custody::private_dir(path, owner, shared).map_err(custody::Failure::into_original)
 }
 pub(crate) fn file(path: &Path, owner: u32, executable: bool, max: u64) -> Result<File, Error> {
-    exact_path(path, owner)?;
-    let f = OpenOptions::new()
-        .read(true)
-        .custom_flags(libc::O_NOFOLLOW | libc::O_NONBLOCK)
-        .open(path)
-        .map_err(|_| Error::Unavailable)?;
-    let m = f.metadata().map_err(|_| Error::Unavailable)?;
-    if !m.is_file()
-        || m.uid() != owner
-        || m.len() > max
-        || m.mode() & (if executable { 0o022 } else { 0o077 }) != 0
-        || (executable && m.mode() & 0o111 == 0)
-    {
-        return Err(Error::Unavailable);
-    }
-    Ok(f)
+    custody::file(path, owner, executable, max).map_err(custody::Failure::into_original)
 }
 pub(crate) fn secret(path: &Path) -> Result<Vec<u8>, Error> {
-    let mut b = Vec::new();
-    file(path, crate::openbsd::effective_uid(), false, 1024)?
-        .take(1025)
-        .read_to_end(&mut b)
-        .map_err(|_| Error::Unavailable)?;
-    if !(32..=1024).contains(&b.len()) {
-        return Err(Error::Invalid);
-    }
-    Ok(b)
+    custody::secret(path).map_err(custody::Failure::into_original)
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -350,13 +298,7 @@ impl Client {
     }
 }
 pub(crate) fn validate_socket(path: &Path, owner: u32) -> Result<(), Error> {
-    exact_path(path, owner)?;
-    private_dir(path.parent().ok_or(Error::Invalid)?, owner, true)?;
-    let m = fs::symlink_metadata(path).map_err(|_| Error::Unavailable)?;
-    if !m.file_type().is_socket() || m.uid() != owner || m.mode() & 0o117 != 0 {
-        return Err(Error::Unavailable);
-    }
-    Ok(())
+    custody::validate_socket(path, owner).map_err(custody::Failure::into_original)
 }
 fn read_exact(
     stream: &mut UnixStream,

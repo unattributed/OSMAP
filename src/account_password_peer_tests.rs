@@ -144,6 +144,97 @@ impl CommandExecutor for Never {
     }
 }
 #[test]
+fn stock_runtime_constructor_retains_runtime_and_nested_recheck_failures() {
+    use crate::account_password_connection::Keys;
+    use crate::account_password_fstat::{StartupOperation as Op, StartupTrace};
+    use crate::account_password_runtime::{StockRuntime, Unavailable};
+    use crate::account_password_state::Store;
+    use std::os::unix::fs::PermissionsExt;
+    use std::sync::Arc;
+
+    // Deliberately incapable of native observation: both exercised guards must
+    // refuse before any command, backend configuration or socket is accessed.
+    let peer = Arc::new(StockPeer {
+        executor: Arc::new(Never),
+        startup: StockStartup {
+            master: process(10, 1, 0, "dovecot"),
+            own: process(0, 1, 0, "account-passwd"),
+            pins: Vec::new(),
+        },
+        auth: pin(),
+        files: Vec::new(),
+        server_uid: 518,
+        server_gid: 518,
+        selection: MainConfigurationSelection {
+            argv: String::new(),
+            link: [0; 11],
+        },
+        auth_snapshot: StockSocketSnapshot {
+            endpoint: [0; 11],
+            binder: (10, 0, 0),
+            worker: process(20, 10, 518, "auth"),
+            argv: String::new(),
+        },
+    });
+    let root = std::env::temp_dir().join(format!(
+        "osmap-runtime-trace-{}",
+        crate::draft::generate_draft_id().unwrap()
+    ));
+    fs::create_dir(&root).unwrap();
+    fs::set_permissions(&root, fs::Permissions::from_mode(0o700)).unwrap();
+    let root = root.canonicalize().unwrap();
+    let store = Arc::new(Store::open(&root, crate::openbsd::effective_uid()).unwrap());
+    let valid_accounts = BTreeSet::from([ACCOUNT.to_owned()]);
+    for (accounts, admission, connector) in [
+        (valid_accounts.clone(), vec![b'a'; 31], 518),
+        (valid_accounts.clone(), vec![b'a'; 32], 0),
+        (valid_accounts.clone(), vec![b'a'; 32], u32::MAX),
+        (BTreeSet::new(), vec![b'a'; 32], 518),
+        (BTreeSet::from(["invalid".into()]), vec![b'a'; 32], 518),
+    ] {
+        let mut trace = StartupTrace::new(Op::MutationBind);
+        assert!(matches!(
+            StockRuntime::new(
+                store.clone(),
+                accounts,
+                Keys::new([b'm'; 32], [b's'; 32]).unwrap(),
+                &admission,
+                connector,
+                peer.clone(),
+                Instant::now(),
+                &mut trace,
+            ),
+            Err(Unavailable)
+        ));
+        assert_eq!(trace.tag(), "primary_fstat_service_startup_invalid");
+    }
+    for (deadline, expected) in [
+        (Instant::now(), "primary_fstat_before_recheck_deadline"),
+        (
+            Instant::now() + Duration::from_secs(5),
+            "primary_fstat_before_recheck_invalid",
+        ),
+    ] {
+        let mut trace = StartupTrace::new(Op::MutationBind);
+        assert!(matches!(
+            StockRuntime::new(
+                store.clone(),
+                valid_accounts.clone(),
+                Keys::new([b'm'; 32], [b's'; 32]).unwrap(),
+                &[b'a'; 32],
+                518,
+                peer.clone(),
+                deadline,
+                &mut trace,
+            ),
+            Err(Unavailable)
+        ));
+        assert_eq!(trace.tag(), expected);
+    }
+    drop(store);
+    fs::remove_dir(root).unwrap();
+}
+#[test]
 fn unknown_native_authority_never_creates_peer_or_dispatches_metadata() {
     if !crate::openbsd::password_native_authority() {
         assert!(Startup::native(&Never, 10, Instant::now() + Duration::from_millis(500)).is_err());
@@ -431,6 +522,15 @@ fn sealed_recheck_diagnostic_query_discriminates_only_fixed_failed_guard() {
     let deadline = || Instant::now() + Duration::from_millis(500);
     assert!(query_with_stage(&reply, FSTAT, &fstat_args(10), deadline(), &mut stage).is_ok());
     assert_eq!(stage, "primary_startup_master_fstat");
+    use crate::account_password_fstat::{
+        StartupCategory as Cat, StartupOperation as Op, StartupTrace,
+    };
+    let mut trace = StartupTrace::new(Op::StockMasterRow);
+    assert_eq!(
+        stock_query(&reply, PS, &ps_args(10), deadline(), &mut trace).unwrap(),
+        reply.out
+    );
+    assert_eq!(trace.tag(), "primary_fstat_stock_master_row_unknown");
     for (code, out, err, expected) in [
         (1, "fixed\n", "", "metadata_query_exit"),
         (0, "fixed\n", "not retained", "metadata_query_stderr"),
@@ -455,6 +555,9 @@ fn sealed_recheck_diagnostic_query_discriminates_only_fixed_failed_guard() {
         );
     }
     reply.failure = Some("metadata_ps_row_denied".into());
+    assert!(stock_query(&reply, PS, &ps_args(10), deadline(), &mut trace).is_err());
+    trace.category_if_unknown(Cat::Invalid);
+    assert_eq!(trace.tag(), "primary_fstat_stock_master_row_denied");
     stage = "primary_startup_master_row";
     assert!(query_with_stage(&reply, PS, &ps_args(10), deadline(), &mut stage).is_err());
     assert_eq!(stage, "primary_startup_master_row_denied");
@@ -462,6 +565,9 @@ fn sealed_recheck_diagnostic_query_discriminates_only_fixed_failed_guard() {
     assert!(query_with_stage(&reply, PS, &ps_args(10), deadline(), &mut stage).is_err());
     assert_eq!(stage, "primary_startup_own_row_denied");
     reply.failure = Some("untrusted private text".into());
+    trace.set(Op::StockMasterRow);
+    assert!(stock_query(&reply, PS, &ps_args(10), deadline(), &mut trace).is_err());
+    assert_eq!(trace.tag(), "primary_fstat_stock_master_row_unknown");
     stage = "primary_startup_master_fstat";
     assert!(query_with_stage(&reply, FSTAT, &fstat_args(10), deadline(), &mut stage).is_err());
     assert_eq!(stage, "primary_startup_master_fstat");

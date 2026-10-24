@@ -1975,15 +1975,20 @@ impl StockStartup {
         deadline: Instant,
         trace: &mut crate::account_password_fstat::StartupTrace,
     ) -> Result<(), Error> {
-        if !crate::openbsd::password_native_authority()
-            || std::process::id() != self.own.pid
-            || Instant::now() >= deadline
-        {
+        use crate::account_password_fstat::{StartupCategory as Cat, StartupOperation as Op};
+        trace.set(Op::BeforeRecheck);
+        if Instant::now() >= deadline {
+            trace.category(Cat::Deadline);
+            return Err(Error::Refused);
+        }
+        if !crate::openbsd::password_native_authority() || std::process::id() != self.own.pid {
+            trace.category(Cat::Invalid);
             return Err(Error::Refused);
         }
         trace.set(crate::account_password_fstat::StartupOperation::StockProgramPins);
         for pin in &self.pins {
             if file_pin(pin.path)? != *pin {
+                trace.category(Cat::Invalid);
                 return Err(Error::Refused);
             }
         }
@@ -1998,10 +2003,12 @@ impl StockStartup {
                 expected.pid,
             )? != *expected
             {
+                trace.category(Cat::Invalid);
                 return Err(Error::Refused);
             }
         }
         if Instant::now() >= deadline {
+            trace.category(Cat::Deadline);
             return Err(Error::Expired);
         }
         Ok(())
@@ -2367,7 +2374,24 @@ impl StockPeer {
         );
         self.recheck_with_trace(deadline, &mut trace)
     }
-    fn recheck_with_trace(
+    pub(crate) fn recheck_with_trace(
+        &self,
+        deadline: Instant,
+        trace: &mut crate::account_password_fstat::StartupTrace,
+    ) -> Result<(), Error> {
+        // Startup supplies the outer trace; do not discard a nested failure or
+        // overwrite a more precise command/I/O category with the generic error.
+        self.recheck_observed(deadline, trace).inspect_err(|error| {
+            use crate::account_password_fstat::StartupCategory as Cat;
+            trace.category_if_unknown(match error {
+                Error::Expired => Cat::Deadline,
+                // Legacy Refused also covers combined deadline predicates;
+                // only the actual rejected check can identify an invariant.
+                Error::Refused | Error::Unavailable => Cat::Unknown,
+            });
+        })
+    }
+    fn recheck_observed(
         &self,
         deadline: Instant,
         trace: &mut crate::account_password_fstat::StartupTrace,
@@ -2375,13 +2399,17 @@ impl StockPeer {
         self.startup
             .recheck(self.executor.as_ref(), deadline, trace)?;
         trace.set(crate::account_password_fstat::StartupOperation::StockMainSelection);
+        let mut selection_stage = "primary_main_selection";
         if main_configuration_selection_bound(
             self.executor.as_ref(),
             &self.startup.master,
             deadline,
-            &mut "primary_main_selection",
-        )? != self.selection
+            &mut selection_stage,
+        )
+        .inspect_err(|_| trace.metadata(selection_stage))?
+            != self.selection
         {
+            trace.category(crate::account_password_fstat::StartupCategory::Invalid);
             return Err(Error::Refused);
         }
         trace.set(crate::account_password_fstat::StartupOperation::StockConfigIncludes);
@@ -2390,6 +2418,7 @@ impl StockPeer {
         for old in &self.files {
             let new = primary_file(old.path, deadline)?;
             if old.identity != new.identity || old.digest != new.digest {
+                trace.category(crate::account_password_fstat::StartupCategory::Invalid);
                 return Err(Error::Refused);
             }
         }
@@ -2404,6 +2433,7 @@ impl StockPeer {
         )?;
         trace.set(crate::account_password_fstat::StartupOperation::StockRecheckSnapshot);
         if observed != self.auth_snapshot {
+            trace.category(crate::account_password_fstat::StartupCategory::Invalid);
             return Err(Error::Refused);
         }
         Ok(())

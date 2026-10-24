@@ -1,5 +1,8 @@
 # Decision Log
 
+2026-10-24 UTC — **Rust admission/startup diagnostic correction source PASS; native T03 remains NOT QUALIFIED.** Admission construction emits bounded operation/check/category codes; helper runtime/backend-recheck failure preserves its actual existing trace instead of stale MutationBind. Existing ownership, permissions, custody checks, deadlines and confinement policy are preserved. Focused Rust checks PASS52 with four explicit native ignores; independent source/security review CLEAR; V10/V11 and work-order consistency PASS. Normal signed commit/push delivery remains pending. The new admission stderr schema is not promoted by unchanged Python result consumers. No Python source change, host execution, native retry or retained-resource disposal occurred. Historical160/163 causes remain UNKNOWN.
+
+
 2026-10-24 UTC — **Serve confinement source diagnostics differentiated; native T03 remains NOT QUALIFIED.** The eight requested boundaries now preserve typed, sanitized identity through the existing Issue 79 capture/recovery/consumer pipeline. Independent review CLEAR and focused local regressions PASS. Execution160 syscall/errno remains UNKNOWN. The one affected libtest-only build161 passed under operator item8 (new artifact90ea5a20, signed source4668a512); no native application/probe/password operation or retained-stage deletion occurred or is authorized. See [the localization record](UX_S04_02_CONFINEMENT_LOCALIZATION_20261024.md) for the schema, tests, retained evidence and admission limitation.
 
 

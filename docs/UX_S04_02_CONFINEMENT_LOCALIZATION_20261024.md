@@ -171,3 +171,51 @@ A complete ordinary push-hook rerun remains required, without bypass.
 2026-10-24 UTC — **Confinement-only probe163 FAIL before Serve; independent no-write confirmed.** The one authorized attempt stopped at `native_admission_client` before detailed confinement, READY or G. Helper/HTTP child/guardian exited1/101/1 and were reaped. The helper trace spans mutation endpoint binding and subsequent StockRuntime construction; the unique cause and confinement syscall/errno remain unobserved. The original carrier retained resources with UNCERTAIN disposition. Subsequent independent read-only evidence confirms Alice/Bob full17 rows unchanged, both epochs0 with no pending/used intents, and public configuration/master/cache preservation. All33 runtime paths, two fixture rows, one SQL principal, two locked OS users/groups and two new protected stages remain retained. Historical execution160 stages are unchanged. No retry, Stage B or Stage C ran. Exact-signed-input artifact pairing now passes the real producer/consumer interfaces, but native runtime pairing and T03 remain NOT QUALIFIED. See [probe163 evidence](../maint/ux/s04_02_startup_candidate/confinement_probe163_evidence.json).
 
 The original execution160 outcome remains unchanged. The current service was compiled separately from the same complete signed source inputs as the retained instrumented libtest; the previous unequal-input reuse predicate was not relaxed. No actual Serve defect was measured by diagnostic163, so no speculative confinement correction was applied. Further native testing requires fresh operator authorization and disposition of the new fixture namespace before reuse.
+
+
+## Rust-only admission and helper-trace correction
+
+The operator subsequently authorized the two Rust review findings to be fixed.
+Admission construction must preserve a bounded operation, rejected invariant
+and sanitized filesystem category without exporting paths, key bytes or raw
+error strings. Existing shared custody checks are retained, with compatible
+legacy error wrappers for existing callers. The helper must distinguish socket
+binding from runtime construction and backend revalidation, and carry nested
+operation/category observations to its existing startup diagnostic. Historical
+trace identities and closed diagnostic vocabularies must remain compatible.
+
+Focused Rust checks will cover successful custody, distinguishing refusals,
+secret/path exclusion, legacy-error compatibility and nested failure propagation.
+Tests and independent source/security review are pending at this planning entry.
+This correction leaves permission/ownership predicates, five-second startup
+deadline, confinement behavior and qualification flags unchanged. Python testing
+code is outside this implementation scope. No host action or native readiness
+claim follows from a local diagnostic test. The actual160/163 causes remain
+unobserved until a separately authorized native observation supplies evidence.
+
+Admission failures emit `OSMAP_ACCOUNT_CONSTRUCTION_V1` with schema
+`osmap-account-construction-v1` and source-owned `operation`, `check` and
+`category` values. The original constructor still refuses with its existing
+`Unavailable` result; an output-write failure cannot replace that refusal.
+This is a Rust stderr diagnostic. The unchanged Python capture/result consumers
+do not promote the new schema into their public structured result, so this
+source change does not establish end-to-end diagnostic delivery by those tools.
+
+Independent Rust source/security review is CLEAR for the correction. The shared
+custody refactor preserves original check order, open flags, owner/mode/size
+requirements and legacy error results. Runtime construction uses the existing
+`ServiceStartup` trace operation (ID6); nested revalidation enters
+`BeforeRecheck` (ID9), then retains its actual `Stock*` operation. No trace IDs
+or tag vocabulary were added. Specific observed categories survive propagation;
+ambiguous legacy refusals remain `Unknown` instead of being guessed as invalid.
+Focused tests and normal delivery gates remain pending until recorded below.
+
+Local Rust qualification of the changed diagnostic boundary is PASS: admission
+runtime33passed/3explicit native ignores, inventory runtime5passed/1explicit
+native ignore, password peer13passed, trace compatibility1passed; zero failures.
+The peer suite executes actual runtime construction to distinguish static-input
+refusal from nested deadline/authority refusal. Existing metadata tests verify
+that observed categories survive propagation. Work-order consistency and V10/V11
+pass with regenerated source inventories. Two integration-time compiler errors
+were corrected before these passes; they were not native failures. Normal signed
+commit/push hooks and fresh remote parity remain pending at this source record.

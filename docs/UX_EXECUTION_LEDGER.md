@@ -10345,7 +10345,9 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "maint/ux/s04_02_startup_candidate/milestone3_execution160_evidence.json",
     "src/openbsd/confinement_tests.rs",
     "docs/UX_S04_02_CONFINEMENT_LOCALIZATION_20261024.md",
-    "maint/ux/s04_02_startup_candidate/confinement_probe163_evidence.json"
+    "maint/ux/s04_02_startup_candidate/confinement_probe163_evidence.json",
+    "src/openpgp_inventory_custody.rs",
+    "src/openpgp_inventory_runtime.rs"
   ],
   "outcomes": [
     {
@@ -21309,6 +21311,37 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
       "actual_change": "Observer identity, actual integer exit, bounded validated structured output, reported failure and cleanup are preserved. Nonzero/malformed/missing/unexpected/unsafe/unconfirmed cleanup refuses explicitly without assert and cannot reach downstream work. 16KiB inner cap remains within existing49152 dispatcher envelope.",
       "limits": "Local source/test evidence only. Underlying prior host refusal remains UNKNOWN; no OpenBSD observation, Rust build, fixture, password operation or T03 result. Normal Rust-rebuilding pre-commit gate not run because operator explicitly prohibited rebuilding Rust to test this Python correction. Files remain uncommitted; no push/deploy.",
       "authority_required": "One new consolidated finite authorization must cover corrected read-only observation, exact current-source build, exactly one disposable T03 journey, independent verification and bounded recovery. No automatic extension/retry."
+    },
+    "rust_diagnostic_correction_20261024": {
+      "operator_request": "Implement the two reviewed Rust diagnostic corrections: preserve precise admission-construction failure and propagate helper runtime/recheck trace.",
+      "source_baseline": "6d1af10eaa4dbfd66fc65094c991e3334e7379a6",
+      "owner": "/root",
+      "developers": [
+        "/root",
+        "/root/helper_trace_fix"
+      ],
+      "independent_reviewer": "/root/rust_review",
+      "technical_writer": "/root/rust_review",
+      "outcome": "A rejected admission-construction invariant has a bounded source-owned operation/reason/sanitized filesystem category; helper runtime construction and backend revalidation retain their actual failing trace rather than MutationBind.",
+      "prerequisites": "Current Rust source and retained163 evidence identify diagnostic loss; local toolchain and existing test entry points only. Installed host prerequisites are not applicable to this source-only correction.",
+      "preserved": "All existing permissions, owners, path/custody predicates, five-second startup deadline, confinement semantics, false qualification gates, historical failures and retained resources.",
+      "excluded": "Python source/test machinery changes, new diagnostic framework, native host builds or execution, deployment/account actions, native retries, guessed permission/deadline/confinement fixes and native qualification claims.",
+      "planned_checks": "Focused Rust constructor refusal/success and sanitized diagnostics regressions; distinguishing helper runtime/recheck trace propagation and stable historical tags; independent source/security review; existing normal commit/push hooks, signature verification and fresh origin equality.",
+      "test_status": "PASS_LOCAL_RUST_BOUNDARY",
+      "technical_bound": "Each focused local test invocation bounded300s; existing normal delivery gates retain their configured bounds. No native execution allowance is created.",
+      "elapsed_history": "Prior measured and UNKNOWN effort/failures retained; current elapsed work recorded on completion, no inferred token or monetary cost.",
+      "stop_rule": "Stop and inspect a demonstrated test/review failure before a changed local action; no unchanged native retry, gate bypass or speculative security-policy modification.",
+      "actual_checks": {
+        "admission_runtime": "33PASS/0failed/3explicitnativeignores, test0.52s",
+        "inventory_runtime": "5PASS/0failed/1explicitnativeignore, test0.06s",
+        "password_peer": "13PASS/0failed, test0.01s; includes actual StockRuntime constructor failure propagation",
+        "trace_compatibility": "1PASS/0failed, test0.00s",
+        "declarations_and_inventories": "work-order consistency, V10/V11 and diff whitespace PASS",
+        "independent_source_review": "CLEAR /root/rust_review; all9Rustsource/test hashes match reviewed snapshot",
+        "normal_delivery": "PENDING normal commit/push hooks, signature and freshorigin equality"
+      },
+      "evidence": "Local tool outputs and /tmp/osmap-admission-tests-verified.log, /tmp/osmap-inventory-custody-tests.log, /tmp/osmap-rust-diagnostic-governance.log; final retained delivery evidence owned by root.",
+      "failure_history": "Two initial compile failures during integration (private method visibility and accidental helper trace insertion into unrelated scope) corrected before focused PASS; no host execution or retry."
     }
   },
   "execution_contract": {
@@ -36487,3 +36520,47 @@ copied from completed build161's reassessment into new162/163 declarations. The
 duplicate fields were removed: build161 retains its complete158/160 reassessment,
 and162/163 retain their actual independent reviews/results. No historical failure
 was erased or dispatch authority created; pre-action checks already passed.
+
+
+## 2026-10-24 — Rust diagnostic correction authorized, source only
+
+The operator requested the two source-review corrections after diagnostic163:
+preserve the exact bounded admission-construction failure, and propagate helper
+runtime/backend-recheck failures through the existing startup trace. Root owns
+admission/custody integration and Git delivery; helper_trace_fix owns helper
+trace changes; rust_review independently reviews source/security and maintains
+these records. The existing active work order records the expected result,
+unchanged security predicates, local checks and failure stop.
+
+Focused Rust tests and independent implementation review are NOT RUN at this
+planning entry. Normal signed commit and push gates remain required. No Python
+source change, native action, resource disposal or policy relaxation is included.
+Execution160's confinement cause and163's precise rejected condition remain
+UNKNOWN; this source correction cannot retrospectively identify either cause.
+
+
+## 2026-10-24 — Rust diagnostic correction source review and focused checks PASS
+
+The exact reviewed source now preserves enum-only admission construction
+operation/check/category and shares the outer helper trace through runtime
+construction and backend revalidation. Existing startup IDs/tags are unchanged;
+ambiguous legacy failures retain Unknown. Admission stderr diagnostics do not
+yet become structured fields in unchanged Python result consumers.
+
+Focused Rust evidence: admission runtime33PASS/3explicit native ignores (0.52s),
+inventory runtime5PASS/1explicit native ignore (0.06s), password peer13PASS
+(0.01s), and startup-trace compatibility1PASS (0.00s), with zero test failures.
+Two initial compile failures during source integration (private method visibility
+and an accidental helper trace insertion into unrelated scope) were corrected
+before the passing runs; their tool evidence remains historical. Work-order
+consistency, V10/V11 and whitespace checks PASS. Existing inventory generators
+record49additional test/fixture assumptions and changed source positions, with
+production relevance counts unchanged. Independent source/security review by
+/root/rust_review is CLEAR. Root must still complete normal signed commit/push
+hooks, verify the signature and prove fresh origin equality.
+
+These are local Rust diagnostic results. No native execution, fixture disposal,
+permissions/ownership/deadline/confinement policy change or Python source edit
+occurred. Native160/163 cause, READY and T03 qualification remain unresolved.
+Prior elapsed/cumulative history is retained; aggregate current authoring/token/
+monetary cost is UNKNOWN. Full delivery timings belong to the final receipt.

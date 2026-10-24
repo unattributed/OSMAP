@@ -278,6 +278,7 @@ pub(crate) struct StockRuntime {
     peer: Arc<crate::account_password_peer::StockPeer>,
 }
 impl StockRuntime {
+    #[allow(clippy::too_many_arguments)] // Original authority inputs plus shared startup provenance.
     pub(crate) fn new(
         store: Arc<Store>,
         accounts: BTreeSet<String>,
@@ -286,7 +287,9 @@ impl StockRuntime {
         connector_uid: u32,
         peer: Arc<crate::account_password_peer::StockPeer>,
         deadline: Instant,
+        trace: &mut crate::account_password_fstat::StartupTrace,
     ) -> Result<Self, Unavailable> {
+        trace.set(crate::account_password_fstat::StartupOperation::ServiceStartup);
         if !(32..=1024).contains(&admission_key.len())
             || connector_uid == 0
             || connector_uid == u32::MAX
@@ -296,9 +299,11 @@ impl StockRuntime {
                 .iter()
                 .any(|a| crate::account_admission::valid_account(a).is_err())
         {
+            trace.category(crate::account_password_fstat::StartupCategory::Invalid);
             return Err(Unavailable);
         }
-        peer.recheck(deadline).map_err(|_| Unavailable)?;
+        peer.recheck_with_trace(deadline, trace)
+            .map_err(|_| Unavailable)?;
         Ok(Self {
             store,
             accounts,
