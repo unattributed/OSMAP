@@ -158,3 +158,10 @@ for historical failures158/160. Root and the independent controller explicitly
 reconciled those unchanged failures and attached the completed review reference;
 the refusal log is preserved. This metadata correction neither changes the
 already-passed actual dispatch pre-action gate nor supplies native retry authority.
+
+The first ordinary push hook passed the Rust suite (1,888passed, zero failed,
+59explicit ignores), Clippy and the preceding checks, then refused documentation
+governance because the new report index used a Markdown link without the required
+literal filename in backticks. The exact filename entry was corrected; the
+failed hook log is retained as normal-push.log. No branch update occurred.
+A complete ordinary push-hook rerun remains required, without bypass.
