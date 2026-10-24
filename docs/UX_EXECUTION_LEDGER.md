@@ -1,6 +1,6 @@
 # OSMAP UX execution ledger
 
-2026-10-24 UTC — **Serve confinement source diagnostics differentiated; native T03 remains NOT QUALIFIED.** The eight requested boundaries now preserve typed, sanitized identity through the existing Issue 79 capture/recovery/consumer pipeline. Independent review CLEAR and focused local regressions PASS. Execution160 syscall/errno remains UNKNOWN. Only an affected libtest compile is planned under operator item8; no native application/probe/password operation or retained-stage deletion is authorized. See [the localization record](UX_S04_02_CONFINEMENT_LOCALIZATION_20261024.md) for the schema, tests, retained evidence and admission limitation.
+2026-10-24 UTC — **Serve confinement source diagnostics differentiated; native T03 remains NOT QUALIFIED.** The eight requested boundaries now preserve typed, sanitized identity through the existing Issue 79 capture/recovery/consumer pipeline. Independent review CLEAR and focused local regressions PASS. Execution160 syscall/errno remains UNKNOWN. The one affected libtest-only build161 passed under operator item8 (new artifact90ea5a20, signed source4668a512); no native application/probe/password operation or retained-stage deletion occurred or is authorized. See [the localization record](UX_S04_02_CONFINEMENT_LOCALIZATION_20261024.md) for the schema, tests, retained evidence and admission limitation.
 
 
 2026-10-24 UTC — **Milestone 3 execution160 FAIL; T03 NOT QUALIFIED.** The newly
@@ -10504,7 +10504,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "status": "PENDING",
     "reference": "Only minimal well-defined own-password usability after all agent-owned development/matching deployed QA/independent audit PASS. No operator password is changed by agent qualification; use controlled disposable Alice and preserve Bob/operator state. NOT RUN."
   },
-  "next_action": "Source/local diagnostic localization of native_confinement: distinguish dependency plan, purpose separation, admission/mutation preflight, initial/final pledge, exact unveil ordinal and unveil lock with immediate errno. Preserve failure, gates, deadlines and Issue79 capture. No native journey/probe, password mutation or retained-stage deletion authorized.",
+  "next_action": "Complete normal signed source delivery. A separately authorized narrow confinement-only native validation is required; no new full password journey or retained-stage disposal is authorized. T03 NOT QUALIFIED.",
   "accountability": {
     "functional_exit": "Working own-account Settings password change through the selected single-host obsd1 local account service and authoritative local backend, fresh password/TOTP step-up, one conditional SQL update, durable OSMAP epoch and all-browser revocation, actual source-bound cache handling, old-password refusal/new-login success and Bob preservation. Existing third-party SMTP/IMAP sessions may remain authenticated. Matching installed QA, independent audit and minimal owner usability remain required. Toronto is later separate production installation.",
     "owner": "/root",
@@ -19823,6 +19823,41 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "elapsed_seconds": 6.062,
         "reference": "/home/foo/Downloads/osmap-ux-s04/milestone3-execution-20261024/execution160/startup-result.json",
         "reason": "native_confinement at actual Serve seal before READY or HTTP. Child101/guardian1 reaped; diagnostic COMPLETE/READBACK_VERIFIED; no submission, full17 rows unchanged, epochs0/null/no intents. Independent33-path runtime absence PASS; protected diagnostic stages retained under Issue79. One-operation authority consumed; no retry."
+      },
+      {
+        "id": "S04-02-confinement-libtest-build161",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "2b6c579e54c53b01e7cc4aaf337e7503889bd1bc581f91342f7066f23537bda0",
+        "change_reference": "Operator item8 authorizes affected libtest-only compile. Signed4668a512; dispatcher SHA256 bab8317039bae38223a18124ef2724e16a487d183630e00eb7b6dc4be6a04de7 remote SHA256 d36e83515c75dee2dfecb1ef5de965a2d9e279f447f63eeca63a5a44276b7d20",
+        "success_chain_review": {
+          "reviewer": "/root/delivery_controller",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/serve-confinement-localization-20261024/build/independent-review.json SHA256 7920e05639037564b422bc6af36b986a94963ebe7fd0ab833a2b340939b88cb6",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 146.43,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/serve-confinement-localization-20261024/build/result.json SHA256 4e737681410a1e28c10b9dfee910cb48db9d18d85b77ef1572caaa059fe96779",
+        "reason": "One affected native libtest-only compile PASS; compiler144.52s remote145.495s full146.43s. Binary90ea5a20f95a7465938511d9b1e02ab8ce8a07c79c144d5a69317f21f604bedf. Source462 before/after match; compiler group/scratch absent per receipt, local transport reaped/group gone. No helper build or native test/application/probe/account/public-service operation. Retained original stages untouched. No journey-ready pair or T03 qualification.",
+        "reassessment": {
+          "reviewers": [
+            "/root",
+            "/root/delivery_controller"
+          ],
+          "failed_attempt_ids": [
+            "S04-02-milestone3-controlled-change158",
+            "S04-02-milestone3-controlled-change160"
+          ],
+          "reference": "Combined root/controller actual source/outcome review: /home/foo/Downloads/osmap-ux-s04/serve-confinement-localization-20261024/independent-source-review-final.json SHA2566200d6107bffb5cb888c0d70d1e32148a046ed846adebe69d948045c88f0bc42 and build/outcome-review.json SHA256bf9d430102ef0c4f9ec1dc9441c344c0560cb80a6bb7d6cacb56c07256c3e116. Prior158/160 remain FAIL, no new native diagnosis, authority or qualification. Post-result declaration missing combined-reference refusal preserved separately; actual dispatch preaction PASS unchanged.",
+          "next_action": "Source/evidence and normal signed Git preservation only. Future confinement-only native validation requires separate authorization; no full journey or retained-stage disposal."
+        }
       }
     ],
     "prior_investigations": [
@@ -31844,6 +31879,46 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
             "evidence": {
               "path": "/home/foo/Downloads/osmap-ux-s04/milestone3-execution-20261024/execution160/host-identity-preflight.txt",
               "sha256": "16e90b199d1390d8a6d93fe2228b7a25b3b94cb8e0a3fd634dcf626553acfe10"
+            }
+          }
+        ]
+      },
+      {
+        "id": "confinement-libtest-build161",
+        "kind": "NATIVE",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "single-host-readiness"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "docs/UX_EXECUTION_LEDGER.md"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/usr/bin/python3",
+            "arguments": [
+              "/home/foo/Workspace/OSMAP/maint/ux/s04_02_startup_candidate/build_current.py",
+              "execute",
+              "--root",
+              "/home/foo/Downloads/osmap-ux-s04/serve-confinement-localization-20261024/build"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "Exactly one compile-only libtest build from signed4668a512 for typed confinement diagnostics. No helper build, application/test execution, confinement probe, password operation or retained-stage deletion. Stop on compiler failure or uncertainty; no retry.",
+        "prerequisites": [
+          {
+            "id": "independent-confinement-build",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/serve-confinement-localization-20261024/build/independent-review.json",
+              "sha256": "7920e05639037564b422bc6af36b986a94963ebe7fd0ab833a2b340939b88cb6"
             }
           }
         ]

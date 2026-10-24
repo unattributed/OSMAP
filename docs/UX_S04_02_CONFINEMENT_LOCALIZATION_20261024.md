@@ -78,9 +78,12 @@ Execution160's verified private manifest covers35 readable matching leaves;
 manifest SHA256 is
 `286d3d0e640ac417b35b141cf5a2a8c6f8f3a6df44894077dbb30197006bbffb`.
 No retained evidence establishes the historical internal syscall, errno or rule.
-The protected root staging directories remain retained. Their recorded ownership,
-diagnostic/recovery leaves and original source/binary identities are reconciled
-in the private evidence disposition; no disposal is authorized or performed.
+The protected root staging directories remain retained. The private disposition
+reconciles22 exact historically observed leaves, ownership/modes, diagnostic and
+recovery copies, and original source/binary identities. The retained records lack
+an exhaustive backend listing and an exact identity/presence observation for
+the source-expected stage-birth.json. They therefore cannot establish a complete
+current inventory. No disposal is authorized or performed.
 The independent execution160 runtime-cleanup observation is historical evidence,
 not a fresh claim that retained stages have no current open references/processes.
 A future disposition requires fresh independent ownership/reference/process
@@ -108,3 +111,50 @@ cannot establish native confinement or production/UAT qualification.
 
 Protected task evidence is retained under
 `/home/foo/Downloads/osmap-ux-s04/serve-confinement-localization-20261024/`.
+
+## Reviewed source checkpoint
+
+Source checkpoint `4668a5122e1bf1f4870be7dde022a15065eb0265` is Shopkeeper signed
+and signature-verified. Its normal commit hook passed32 acceptance-validator
+tests, library check and staged whitespace checks. Independent final source
+review SHA256 is
+`6200d6107bffb5cb888c0d70d1e32148a046ed846adebe69d948045c88f0bc42`.
+The final actual-Rust14-variant pipeline rerun passed in1.367s, binding current
+local libtest SHA256
+`7c909c0633429c5b42d3156d4ccc47f01658b2787355c15ad91ff3f8538b9c26`
+and all three current Rust sources; binding receipt SHA256 is
+`70f7d84667b0da5481ad602ba8ec140381b2e1856ae498f86e1a3f4051c43fc2`.
+The retained-evidence disposition SHA256 is
+`678e6d61a40949711a41edc8ba55630a1dd419cd741569ed1e361d5812878165`.
+Existing V10, V11, V12 and V13 gates passed; the ordinary pre-push security gate
+remains required at delivery.
+
+## Actual compile-only artifact161
+
+One native compile completed PASS: compiler144.520s, remote145.495s, full
+dispatch146.430s. Receipt SHA256 is
+`4e737681410a1e28c10b9dfee910cb48db9d18d85b77ef1572caaa059fe96779`.
+The462-input signed-source manifest SHA256 is
+`2b6c579e54c53b01e7cc4aaf337e7503889bd1bc581f91342f7066f23537bda0`;
+source-before and source-after match. The new native libtest SHA256 is
+`90ea5a20f95a7465938511d9b1e02ab8ce8a07c79c144d5a69317f21f604bedf`,
+69,495,032bytes, retained privately at
+`/home/foo/.osmap-s04-02-artifacts-3qg779l7/osmap-libtest` on obsd1.
+The profile is test, opt-level0, debuginfo0, debug assertions and overflow checks
+enabled. It was compiled, not executed. The service and plugin were not rebuilt.
+
+The compiler receipt confirms source parity, compiler group absence and scratch
+removal; local transport was reaped with its group absent. No native test,
+application, confinement probe, account or public-service operation ran. These
+observations concern compiler-owned scratch and do not dispose of execution160's
+retained protected stages. The new artifact remains separate and unqualified for
+the unchanged retained-helper journey admission predicate. No next native action
+is scheduled.
+
+Independent actual artifact outcome review is CLEAR/PASS_COMPILE_ONLY, SHA256
+`bf9d430102ef0c4f9ec1dc9441c344c0560cb80a6bb7d6cacb56c07256c3e116`.
+The first post-result full ledger check refused missing combined-review metadata
+for historical failures158/160. Root and the independent controller explicitly
+reconciled those unchanged failures and attached the completed review reference;
+the refusal log is preserved. This metadata correction neither changes the
+already-passed actual dispatch pre-action gate nor supplies native retry authority.
