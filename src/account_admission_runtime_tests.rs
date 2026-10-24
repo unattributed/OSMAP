@@ -1436,10 +1436,13 @@ fn native_rust_stock_epoch_admission() -> Result<(), &'static str> {
     client
         .admit_before("alice@osmap-password.invalid", 0, deadline)
         .map_err(|_| "authenticated epoch exchange refused")?;
+    if client.admit_before("alice@osmap-password.invalid", 1, deadline) != Err(Error::Refused) {
+        return Err("noncurrent epoch refusal mismatch");
+    }
     if Instant::now() >= deadline {
         return Err("original client deadline expired");
     }
-    println!("native_stock_epoch_admission result=PASS authenticated_exchange=true epoch=0 credential_write=false full_workflow_qualified=false");
+    println!("native_stock_epoch_admission result=PASS authenticated_exchange=true epoch=0 noncurrent_epoch_refused=true credential_write=false full_workflow_qualified=false");
     Ok(())
 }
 

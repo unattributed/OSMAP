@@ -34,6 +34,30 @@ const FILES: [&str; 3] = ["config.json", "mutation.key", "session-proof.key"];
 const MAX_ACTIVE_WORKERS: usize = 4;
 type Identity = (u64, u64, u32, u32, u32, u64, u64, i64, i64, i64, i64);
 
+// This ignored native fixture can only remove dispatch authority in its own
+// process. Production has no flag or argument that changes these decisions.
+#[cfg(test)]
+static READONLY_ADMISSION_FIXTURE: AtomicBool = AtomicBool::new(false);
+fn readonly_admission_fixture() -> bool {
+    #[cfg(test)]
+    {
+        READONLY_ADMISSION_FIXTURE.load(Ordering::SeqCst)
+    }
+    #[cfg(not(test))]
+    {
+        false
+    }
+}
+fn admission_operation_allowed(
+    readonly: bool,
+    operation: &crate::account_admission::Operation,
+) -> bool {
+    !readonly || matches!(operation, crate::account_admission::Operation::Admit { .. })
+}
+fn mutation_operation_allowed(readonly: bool) -> bool {
+    !readonly
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum EndpointKind {
     Admission,
@@ -468,6 +492,9 @@ fn stock_admission(
     }
     admission.password_connection(&mut stream, deadline, |request, inherited| {
         let deadline = deadline.min(inherited);
+        if !admission_operation_allowed(readonly_admission_fixture(), request.operation()) {
+            return Err(Error::Refused);
+        }
         match request.operation() {
             crate::account_admission::Operation::Admit { .. } => {
                 // Epoch/status admission performs no primary command. Keep the
@@ -492,6 +519,9 @@ fn stock_operation(
     relay_uid: u32,
     stock: Arc<StockPeer>,
 ) -> Result<(), StockOperationError> {
+    if !mutation_operation_allowed(readonly_admission_fixture()) {
+        return Err(StockOperationError::Service(Error::Refused));
+    }
     let deadline = accepted + Duration::from_secs(60);
     if crate::openbsd::unix_stream_peer_uid(&stream)
         .map_err(|error| StockOperationError::Service(unavailable(error)))?
@@ -564,6 +594,40 @@ fn first_endpoint_failure(reported: &AtomicBool) -> bool {
 #[cfg(test)]
 mod diagnostic_tests {
     use super::*;
+    #[test]
+    fn readonly_fixture_restricts_authenticate_and_mutation_dispatch() {
+        use crate::account_admission::Operation;
+        let admit = Operation::Admit { epoch: 0 };
+        let authenticate = Operation::Authenticate {
+            password: "fixed nonsecret test credential".into(),
+        };
+        assert!(admission_operation_allowed(false, &admit));
+        assert!(admission_operation_allowed(false, &authenticate));
+        assert!(mutation_operation_allowed(false));
+        assert!(admission_operation_allowed(true, &admit));
+        assert!(!admission_operation_allowed(true, &authenticate));
+        assert!(!mutation_operation_allowed(true));
+    }
+
+    /// The normal startup, seal and accept loop run against the current fixed
+    /// protected configuration. Only authenticated epoch reads may dispatch.
+    #[test]
+    #[ignore = "operator-run root-only stock helper and independent nonroot epoch client"]
+    fn native_stock_readonly_admission_service_entrypoint() -> Result<(), &'static str> {
+        if !crate::openbsd::password_native_authority() {
+            return Err("root OpenBSD authority required");
+        }
+        READONLY_ADMISSION_FIXTURE
+            .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
+            .map_err(|_| "readonly fixture already armed")?;
+        let signals = crate::openbsd::AccountAdmissionSignals::install().map_err(|error| {
+            crate::account_password_fstat::report_signal_setup_failure(&error);
+            "readonly fixture signal setup unavailable"
+        })?;
+        run_operator_service_with_metadata_diagnostics(signals.stop_flag())
+            .map_err(|_| "readonly stock service lifecycle unavailable")
+    }
+
     #[test]
     fn endpoint_cleanup_failure_retains_original_metadata_in_rich_trace() {
         use crate::account_password_fstat::{StartupOperation as Op, StartupTrace};

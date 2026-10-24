@@ -258,8 +258,8 @@ fn native_stock_constructor_and_recheck_use_no_process_metadata() -> Result<(), 
             trace.emit_metadata(&admission_error(error));
             "stock recheck unavailable"
         })?;
-    if peer.recheck(Instant::now()).is_ok() {
-        return Err("expired recheck admitted");
+    if !matches!(peer.recheck(Instant::now()), Err(Error::Expired)) {
+        return Err("expired recheck category refused");
     }
     Ok(())
 }

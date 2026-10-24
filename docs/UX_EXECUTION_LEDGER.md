@@ -10533,7 +10533,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "status": "PENDING",
     "reference": "Only minimal well-defined own-password usability after all agent-owned development/matching deployed QA/independent audit PASS. No operator password is changed by agent qualification; use controlled disposable Alice and preserve Bob/operator state. NOT RUN."
   },
-  "next_action": "Selected native constructor gap now PASS. Prepare smallest actual helper ParentPrepare/ParentSeal/accept-loop and non-mutating admission composition under current task boundaries; do not infer R1/R2/T03 from constructor. Finish signed normal GitHub preservation of actual result.",
+  "next_action": "Signedreviewedsourcepreservation thenmatchingofflineboundednativeartifactbuild andread-onlyhelperR1/R2check; preserveandanalyserealfailuresbeforechangedretest. No password/SQL/credentialjourney.",
   "accountability": {
     "functional_exit": "Working own-account Settings password change through the selected single-host obsd1 local account service and authoritative local backend, fresh password/TOTP step-up, one conditional SQL update, durable OSMAP epoch and all-browser revocation, actual source-bound cache handling, old-password refusal/new-login success and Bob preservation. Existing third-party SMTP/IMAP sessions may remain authenticated. Matching installed QA, independent audit and minimal owner usability remain required. Toronto is later separate production installation.",
     "owner": "/root",
@@ -21719,6 +21719,60 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
           "sha256": "50fc147c030a2590d9a142dcd99427d88999eecc4f9f7cd7ec4776695961e180"
         }
       }
+    },
+    "helper_admission_r1_r2_20261024": {
+      "operator_direction": "Continue nextfocus actualworkinghelperstartup andauthenticatednonmutatingadmission; analyzeanyfailureinflight, tryjustifiedchangedapproach andfindsolution. Standingfullautonomy/no routinepermissionpause continues.",
+      "source_baseline": "afe7175ca7d47b11c1c6691ee370b2fe01bd48ad",
+      "owner": "/root",
+      "engineer": "/root/r1_r2_engineer",
+      "independent_reviewer": "/root/delivery_controller",
+      "observable_outcome": "SameactualRusthelper completesStockPeer/StockRuntime/ParentPrepare/ParentSeal/acceptloop; existingrealnonrootclient obtainsauthenticatedAdmit controlledAliceepoch0 andsignednoncurrentepoch1refusal. No passwordAuthenticate/SQL/credentialeffects.",
+      "authorized": "Source/minimumfocusedRustcontrols/review/signedGitHubdelivery; narrowreadonlyobsd1prerequisites; boundednewroothelper andnonrootclient fromsignedmatchingartifact. NecessaryfreshprivateOSMAPclient/buildstage only. Read-useofvalidatedexistingrootconfiguration/state isrecordednewauthority, notrenewalof165 ordisposalauthority.",
+      "excluded": "Passwordframes/SQLexecution/credentialchange/browserjourney/publicmailserviceorconfigurationchanges/productioncontact/newSQLprincipalorOSusers/retained165or160disposal/rename/overwrite/newPythonfiles/harnessexpansion/qualificationflags.",
+      "audit_limits": "SO_PEERCRED establisheshistoricalrootbinder notworkerattestation; diskcachezero notloadedstate; helpercheckdoesnotqualifypasswordfreshness/mutation/session/HTTP/T03. ExactExpiredtestassertionwillbeimproved.",
+      "implementation_scope": [
+        "src/account_password_server.rs",
+        "src/account_admission_runtime_tests.rs",
+        "src/account_password_peer_tests.rs"
+      ],
+      "required_prerequisites": "Freshfixedendpointleafabsence, protectedexistingconfig/keyandStorecustody, exactcontrolledaccountscope/trustednonrootUID/currentactiveepoch0/no pending/intent/uncertainty; samecontent/retainedfileidentitiesbeforeafter; rootnewartifacthash/custody/core0; rootreadonlydispatchrestrictionbeforeanyPrimary/Backendcreation.",
+      "tests": "FocusedactualdispatchguardAdmitpositive/Authenticateandmutationrefusal; exactExpiredassertion; existingRustR2clientpositive0 andnoncurrentepoch1 authenticatedrefusal. Actualnativeexchange isacceptance; no syntheticpromotion.",
+      "owners_and_preservation": "Rootcanonicalhost/Git/ledger; engineerownsserver+admissiontest; rootownspeerassertion+docs. All20obligations/ninescenarios andexistingconstructor01FAIL/02PASS/probe165FAILUNCERTAIN remain.",
+      "loop": {
+        "sequence": [
+          "Dispatchoneboundedexactreviewedaction",
+          "Retain/readback/hashfirstfailureseparatelyfromcleanup andrequest/statecertainty",
+          "InspectactualfailedRust/OSboundary; namewhatunobserved",
+          "Makeonlydemonstratedcorrectionordistinctjustifiedapproach",
+          "Runminimumchangedcontractpositive/negativecheck andindependentreview",
+          "Registernewaction/source/recipe andexecutechangedtest; repeatuntildefinedoutcomeorsubstantivestop"
+        ],
+        "stop_rules": "No unchangedblindretry; no guessederrno/permissions/UID/deadline/allowlistrelaxation; twofailuresatsameboundary requirecombinedindependentreassessment beforechangednativeaction; noautomaticcapincrease orambiguouscredentialretry. Usefulindependentsourceanalysiscontinues.",
+        "bounds": "Eachdiscovery<=30s; perbuild<=600s; helper/clientlifecycle<=60s plusbounded30sownedstop/readback; wholenativeaction<=900s. ActualwholeelapsedmeasuredorUNKNOWN; no inventedoperatorclockexpiry."
+      },
+      "state": "SOURCE_REVIEW_CLEAR; CURRENT_READONLY_PREREQUISITES_PASS; NATIVE_R1_R2_NOT_RUN",
+      "forecast_seconds": 1800,
+      "forecast_meaning": "Planningforecastonly, notoperatorauthorityexpiry; nativeoperationboundsfixed.",
+      "prerequisite_result": {
+        "attempt_id": "S04-02-R1R2-prerequisites-01",
+        "result": "READONLY_PREREQUISITES_PASS",
+        "reference": "/home/foo/Downloads/osmap-ux-s04/postfixadmin-reconstruction-20261024/helper-admission-r1-r2/prerequisites-result.json",
+        "sha256": "63fc0f07c4938546d38ef17d8bc315745403d83158cbc46f0e708f9ddc382ae1",
+        "raw_sha256": "a4ac7b97d523a75eca1f3c5a2b6afedf806acc9234c531bd391bde5cbbf1a563",
+        "actual": "Current_osmap1001:1001; exactcontrolledAlice/Bobconfig andbothtrustedUID1001; rootprivate64Bdistinctpurposekeys; fixedsocketleavesabsent; bothrecordsactive0/intentNone/used[]/changed_atNone; uncertaintymarkersabsent. No hostwrites/auth/SQL/services/disposal.",
+        "independent_reviewer": "/root/delivery_controller",
+        "transport_seconds": 0.407284783,
+        "full_inspection_accounting": "UNKNOWN; transporttimeisnotfullsource/reviewelapsed"
+      },
+      "source_preparation": {
+        "change": "cfg(test)readonlylatcharmsbeforeidenticalactualhelperstartup/seal/acceptloop; mutationandAuthenticate rejectbeforeNativeProfile/Backend/PrimaryExecutor. Productionreadonlyaccessorliteralfalse; noCLI/config/qualificationflagchange. Existingnativeclientgood0 andexactRefusednoncurrent1same35s; expiredpeercontrolrequiresExpired.",
+        "source_reviewers": [
+          "/root/independent_rust_audit",
+          "/root/delivery_controller"
+        ],
+        "local_controls": "Actualusedguardpredicate1PASS/0FAIL; changedclient/entrypointcompiledLinuxonly; rustfmt/diff/CWEguardPASS. No nativeR1/R2executionyet.",
+        "generated_evidence": "ExistingV10lineinventoriesrefreshedcountsunchanged9820/9735. InitiallocalmetadataKeyError/wronghashfieldandresultinginventorygateFAILretained; actualrefined_current.inventory_sha256 appliedandunchangedV10gatePASS. No guardrelaxation/Pythonchange."
+      }
     }
   },
   "execution_contract": {
@@ -32863,6 +32917,43 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
             }
           }
         ]
+      },
+      {
+        "id": "helper-admission-prerequisites",
+        "kind": "DISCOVERY",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "single-host-readiness"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "docs/UX_EXECUTION_LEDGER.md"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/bin/sh",
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/postfixadmin-reconstruction-20261024/helper-admission-r1-r2/inspect-prerequisites.sh"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "One boundedreadonlycurrentmetadata/config/controlledepoch/key-separation observation. PrivateboundedJSON, keyvaluesneveroutput, no host writes/auth/SQL/services/disposal. Process/transportuncertaintyretained.",
+        "prerequisites": [
+          {
+            "id": "independent-fixed-readonly-source",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/postfixadmin-reconstruction-20261024/helper-admission-r1-r2/prerequisites-review.json",
+              "sha256": "14464acef7e21a514f37bb8c76b410db05805febb5857916f1cc9843ce78629e"
+            }
+          }
+        ]
       }
     ],
     "budget": {
@@ -32876,9 +32967,9 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     },
     "planned_action": null
   },
-  "blocker": "Selected native StockPeer constructor/configuration/rechecks now PASS for signed0e08 on obsd1. Remaining product gaps: ParentPrepare/ParentSeal/operational helper R1; authenticated non-mutating admission R2; actual live credential-cache freshness, SQL grants/hash generation, credential/epoch/session/HTTP/installed/T03/UAT. Retained probe165 cleanup remains UNCERTAIN and separate; no constructor authorization wait remains.",
-  "independent_next_action": "Independently inspect the smallest actual helper startup and non-mutating admission composition/prerequisites; preserve constructor01 buildFAIL and02 componentPASS, all20 obligations and retained-resource limits. No constructor PASS promotion to R1/R2/T03 or unchanged retry. Complete normal signed GitHub preservation of these reviewed results.",
-  "updated_at": "2026-10-24T15:13:59Z"
+  "blocker": "No currentconfiguration/constructoradmission blocker. NativeR1/R2underread-onlyfixtureNOTRUN. Existingrootconfig/storemaybereadonlyusedunderlatestauthoritywithoutdisposaloftheir165history. Loadedcachefreshness/SQLhashgrants/credential/session/HTTP/installed/UAT/T03remainunqualified.",
+  "independent_next_action": "Verifyfinalsource/docs/V10pinsandordinarysigneddelivery; reviewfixednativebuild/execution/diagnostic/ownedstoprecipe beforeactualnewaction. Preserveall20obligationsandpublicmail/retainedresources.",
+  "updated_at": "2026-10-24T16:10:58Z"
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->

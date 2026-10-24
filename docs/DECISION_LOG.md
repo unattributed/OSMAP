@@ -1,5 +1,37 @@
 # Decision Log
 
+2026-10-24 UTC — **Advance through the real read-only helper exchange; analyse failures in flight.**
+Use the existing Rust service lifecycle and native epoch-admission client for
+R1/R2. A valid signed reply can establish parent preparation/sealing and actual
+request handling; socket publication alone cannot. The current fixed operator
+configuration/state may be read after fresh custody/state inspection under the
+new operator authority. This does not renew165's execution or dispose of its
+retained resources. Current readonly inspection passes; no new SQL principal,
+OS user, password, SQL operation or mail configuration is required.
+
+Because the real helper publishes mutation as well as admission, selecting an
+Admit-only client alone cannot exclude an existing keyholder's other operation.
+Use a private cfg(test) irreversible read-only latch in a new ignored service
+entrypoint. It invokes identical startup/parent seal/acceptloop code and refuses
+mutation/Authenticate before constructing any native backend. Ordinary product
+behaviour/qualification flags are unchanged. The client requires good epoch0
+and exactly Refused for future/noncurrent1 under one original deadline; do not
+mislabel that negative as a stale-lower-epoch proof. Tighten the constructor's
+expired negative to exactly Expired, following the independent audit.
+
+Keep the operator's failure-analysis loop in the existing work order, not a new
+framework: retain first error and cleanup certainty, diagnose, make the smallest
+justified change, run focused proof, independently review, register changed
+execution and repeat until the defined outcome or substantive stop. Preserve
+all attempts; two same-boundary failures require combined reassessment. Never
+blindly replay credentials, relax custody/deadlines or hide an unknown cause.
+
+Native R1/R2 still require matching signed source/build and actual exchange.
+The read-only fixture cannot qualify password freshness, SQL/hash effects,
+credential/session/browser completion or ordinary full-capability dispatch.
+No new Python source or existing Python harness change is introduced. Fixed
+shell execution recipes and their deltas are recorded explicitly.
+
 2026-10-24 UTC — **Use the actual Rust boundary; native constructor now works.**
 The operator granted full autonomy for the described component operation and
 explicitly directed analysis, adjustment and retesting on errors. Keep the

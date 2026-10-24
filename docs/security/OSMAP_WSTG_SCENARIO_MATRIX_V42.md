@@ -1,5 +1,17 @@
 # OSMAP WSTG v4.2 Scenario Matrix
 
+2026-10-24 R1/R2 source preparation: a cfg(test)-only irreversible helper latch
+rejects mutation/Authenticate before native backend construction while retaining
+actual startup, parent seal, accept loop and authenticated Admit composition.
+Existing client requires signed epoch0 success and exact Refused for future
+noncurrent1 under its original35-second bound; peer expiry now requires Expired.
+Current readonly config/Store/socket prerequisites pass and source guard review
+is clear; native R1/R2 remain NOT RUN. Existing165 configuration is read-use only,
+with no replacement/disposal; born socket effects are tracked separately. No
+Python harness, public mail/configuration, credential or qualification flag change.
+Audit limits (binder versus worker, disk versus loaded cache) remain. No WSTG,
+T03, installed or UAT result is promoted by this source preparation.
+
 2026-10-24 native S04-02 constructor component: signed0e08 now passes exactly
 one actual OpenBSD Rust constructor/recheck test on obsd1 with PS/FSTAT forbidden,
 protected configuration/SQL-source and fixed socket/kernel-root-peer observation,

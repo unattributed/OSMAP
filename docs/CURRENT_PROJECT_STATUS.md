@@ -1,5 +1,31 @@
 # Current Project Status
 
+2026-10-24 UTC — **Next focus: real helper startup and authenticated epoch admission.**
+The operator resumed R1/R2 with an analyze/correct/review/retest loop. Current
+read-only obsd1 inspection confirms controlled Alice/Bob configuration, existing
+_osmap1001 identity, distinct protected purpose keys, active epoch0 records with
+no intents/uncertainty, and both fixed socket leaves absent. Existing retained
+configuration is validated for read-use; no165 file is replaced or disposed.
+
+A small Rust test-only latch now limits the native helper check to epoch reads:
+mutation and password Authenticate refuse before native backend construction.
+The actual startup, five-second budget, parent preparation/seal and accept loop
+remain unchanged. Production has no new selector or qualification flag. Existing
+Rust client now requires signed epoch0 success and exact Refused for noncurrent
+future epoch1 within its original35-second bound. The peer negative now requires
+exact Expired. Focused guard/CWE/V10 checks pass; independent Rust review is clear.
+Native R1/R2 remain NOT RUN until the signed matching artifact executes.
+
+The existing work order records a finite engineering loop: preserve/readback the
+first failure, examine its actual boundary, make a demonstrated correction, run
+the minimum distinguishing check, independently review and register a changed
+attempt. Two failures at one boundary require combined reassessment. No blind
+retries, new Python scaffolding, public mail changes or credential operation.
+Socket bind/remove affects only newly born leaves; existing parent directory
+namespace timestamps may change. Existing file contents/inodes must be preserved.
+Cache freshness, ordinary authentication/mutation, session/HTTP/installed/UAT
+and T03 remain unqualified. Earlier native constructor PASS remains unchanged.
+
 2026-10-24 UTC — **Actual native StockPeer constructor/recheck PASS; S04-02 open.**
 Signed source `0e08f483cdf1ebbea3239834b7d14796faf5d2f2` now passes the
 real OpenBSD-only constructor/recheck on obsd1: exactly one selected test passed,

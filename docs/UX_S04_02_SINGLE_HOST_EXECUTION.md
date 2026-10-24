@@ -1,5 +1,49 @@
 # S04.02 single-host execution correction
 
+## 2026-10-24 UTC — next authorized boundary: restricted real helper R1/R2
+
+The operator explicitly resumes actual helper startup and authenticated
+non-mutating admission, with analysis and changed retesting on errors. The
+existing ledger records the bounded loop and exact actions; no new Python
+framework or elapsed-clock approval window is introduced.
+
+Current read-only inspection passes for existing root configuration/purpose keys,
+controlled Alice/Bob active epoch0 records, _osmap1001 identity and absent fixed
+socket leaves. Read-use is newly authorized; original165 FAIL/UNCERTAIN and all
+retained bytes/history remain. New binds/removals may change existing socket
+parent timestamps; preserve their inodes/ownership and pre-existing leaves.
+
+Native service selector (prepared source, NOT RUN):
+`account_password_server::diagnostic_tests::native_stock_readonly_admission_service_entrypoint`.
+It arms only a restrictive cfg(test) latch, then uses the identical real service
+startup, metadata diagnostics, five-second startup bound, ParentPrepare,
+ParentSeal and accept loop. Every mutation/Authenticate is refused before its
+native profile/backend can be constructed, including other valid keyholders.
+No public selector or qualification flag changes.
+
+Native client selector (existing test strengthened, NOT RUN):
+`account_admission_runtime::tests::native_rust_stock_epoch_admission`.
+Run as actual configured _osmap UID1001, using a fresh root0750/group1001
+`/var/run/osmap-service-admission-client-<16hex>` with client-owned0600 private
+key copy and matched executable. Bootstrap contains only version/client path.
+Require genuine authenticated epoch0 acceptance and exact Refused for future
+noncurrent1 within the same35-second client deadline. No password request/SQL.
+
+Use a matching signed library-test artifact, offline one-job unoptimized/debug0
+build with existing tested compiler-child DATA3GiB, assertions/overflow checks
+retained. Native bounds: build600seconds, helper/client lifecycle60seconds,
+owned stop/readback30seconds, whole action900seconds. Preserve source/binary
+pins, fixed first-error diagnostics, bounded private streams and root core0.
+Compare retained config/epoch identities/content before/after; remove only
+newly born sockets through the product's inode checks. Retain new private stages
+on uncertainty; no historical PID signalling or165/160 disposal.
+
+A real signed response from this invocation supplies R1/R2 only under the
+explicit read-only dispatch restriction. It does not qualify live cache state,
+ordinary authentication/mutation, password/epoch/session/HTTP, installed/UAT
+or T03. The fixed native dispatcher still requires independent review and an
+exact recorded action before execution. Source/local checks are preparation.
+
 ## 2026-10-24 UTC — authorized native constructor result: PASS component only
 
 The operator authorized the described operation with full autonomy, then
