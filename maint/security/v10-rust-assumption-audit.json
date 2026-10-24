@@ -10686,7 +10686,7 @@
       "fail_closed_relevance": "high",
       "file": "src/auth.rs",
       "kind": "panic_macro",
-      "line": 1813
+      "line": 1808
     },
     {
       "classification": "production_adjacent_assumption",
@@ -10694,7 +10694,7 @@
       "fail_closed_relevance": "high",
       "file": "src/auth.rs",
       "kind": "expect_call",
-      "line": 1935
+      "line": 1930
     },
     {
       "classification": "production_adjacent_assumption",
@@ -10702,7 +10702,7 @@
       "fail_closed_relevance": "high",
       "file": "src/auth.rs",
       "kind": "expect_call",
-      "line": 1960
+      "line": 1955
     },
     {
       "classification": "production_adjacent_assumption",
@@ -10710,7 +10710,7 @@
       "fail_closed_relevance": "high",
       "file": "src/auth.rs",
       "kind": "expect_call",
-      "line": 1970
+      "line": 1965
     },
     {
       "classification": "production_adjacent_assumption",
@@ -10718,7 +10718,7 @@
       "fail_closed_relevance": "high",
       "file": "src/auth.rs",
       "kind": "unwrap_call",
-      "line": 1980
+      "line": 1975
     },
     {
       "classification": "production_adjacent_assumption",
@@ -10726,7 +10726,7 @@
       "fail_closed_relevance": "high",
       "file": "src/auth.rs",
       "kind": "expect_call",
-      "line": 2160
+      "line": 2155
     },
     {
       "classification": "production_adjacent_assumption",
@@ -10734,7 +10734,7 @@
       "fail_closed_relevance": "high",
       "file": "src/auth.rs",
       "kind": "expect_call",
-      "line": 2177
+      "line": 2172
     },
     {
       "classification": "production_adjacent_assumption",
@@ -10742,7 +10742,7 @@
       "fail_closed_relevance": "high",
       "file": "src/auth.rs",
       "kind": "expect_call",
-      "line": 2220
+      "line": 2215
     },
     {
       "classification": "production_adjacent_assumption",
@@ -10750,7 +10750,7 @@
       "fail_closed_relevance": "high",
       "file": "src/auth.rs",
       "kind": "expect_call",
-      "line": 2291
+      "line": 2286
     },
     {
       "classification": "production_adjacent_assumption",
@@ -10758,7 +10758,7 @@
       "fail_closed_relevance": "high",
       "file": "src/auth.rs",
       "kind": "expect_call",
-      "line": 2414
+      "line": 2409
     },
     {
       "classification": "production_adjacent_assumption",
@@ -10766,7 +10766,7 @@
       "fail_closed_relevance": "high",
       "file": "src/auth.rs",
       "kind": "expect_call",
-      "line": 2418
+      "line": 2413
     },
     {
       "classification": "production_adjacent_assumption",
@@ -78105,7 +78105,7 @@
       "line": 521
     }
   ],
-  "generated_at_utc": "2026-10-24T08:47:45Z",
+  "generated_at_utc": "2026-10-24T08:57:36Z",
   "non_claims": [
     "This audit does not claim that all Rust assumptions are safe.",
     "This audit does not claim that production request paths are panic-free.",
@@ -78161,7 +78161,7 @@
       "unwrap_call": 8335
     },
     "classification_complete": true,
-    "inventory_sha256": "2ea2d860e8732b1bed91f0563b150a3e9a3500a8a3e5994a5320e2b9d97298a1",
+    "inventory_sha256": "ffe63109c5f46c517cb84b2cdfabd324961b259ee4454b71b17c8d15f4f9400c",
     "live_host_state_changed": false,
     "product_behavior_changed": false,
     "production_state_changed": false,

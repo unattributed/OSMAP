@@ -1791,16 +1791,11 @@ pub(crate) fn mutation_real_worker_fixture_command(witness: &std::path::Path) ->
 
 #[cfg(test)]
 mod tests {
-    /// Fixed test-only spawn refusal through the actual Unix command boundary.
+    /// Fixed directory target refuses through the actual Unix spawn boundary.
     #[cfg(unix)]
     pub(crate) fn password_metadata_spawn_denied_fixture() -> Command {
-        use std::os::unix::process::CommandExt;
-        let mut command = password_fstat_echo_fixture();
-        // SAFETY: the child callback only returns a fixed errno before exec. It
-        // performs no allocation, I/O, locking or caller-supplied operation.
-        unsafe {
-            command.pre_exec(|| Err(io::Error::from_raw_os_error(libc::EACCES)));
-        }
+        let mut command = Command::new("/");
+        command.env_clear().env("LC_ALL", "C");
         command
     }
 

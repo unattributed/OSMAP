@@ -21489,9 +21489,10 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "service_bin_check": "PASS",
         "native": "NOT_RUN",
         "compile_failures": "E0308 cleanup output type; E0061 two old argv testcallers; retained and corrected",
-        "review": "Final independent source review pending at record creation",
-        "delivery": "Normal hooks/signature/push parity pending at record creation",
-        "evidence_root": "/home/foo/Downloads/osmap-ux-s04/stock-worker-argv-20261024/"
+        "review": "CLEAR_SOURCE_ONLY, /root/delivery_controller, source-review.json SHAe60a4a36f58be53bb31fd93bb6b43ad98c3312c3b05b38f5916b54b85c27437a; later legacy unsafe guard finding retained with corrective review.",
+        "delivery": "Signed015084569d8f6f610e82f0adefa3cd0cb4b62c21 verified. Ordinarypush exit1/138.589s at unchanged legacy unsafe-source scanner auth.rs testfixture; no publication/bypass. LocalRust1900PASS/0fail/61ignored and accountPython634PASS before overallgate refusal. Separate corrective signed checkpoint/ordinarypush pending.",
+        "evidence_root": "/home/foo/Downloads/osmap-ux-s04/stock-worker-argv-20261024/",
+        "corrective_fixture": "Fixed cfg(test) non-executable directory Command replaces unsafe/pre_exec; actual real-runner denial regression1PASS/0fail/6.595s. Productionguards unchanged; originalpush andreview retained."
       }
     }
   },
@@ -32443,7 +32444,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
   },
   "blocker": "Probe165 reaches StockWorkerArgv57/Denied/Unavailable during StockRuntime revalidation before ParentPrepare/ParentSeal/accept-loop. Exact metadata builder/spawn/child-I/O subphase and errno remain UNKNOWN because historical trace discarded them. Original cleanupUNCERTAIN; later no-write evidence separate. No fresh native or disposal authority.",
   "independent_next_action": "Independently review focused Rust metadata/trace corrections and retained165 exact-owned inventory, complete normal signed preservation, and prepare only one-shot R1/R2. Fresh explicit authorization and current custody/capture-consumer bindings required before native execution; no permission/confinement/deadline relaxation, Python change or disposal.",
-  "updated_at": "2026-10-24T08:47:45.657736+00:00"
+  "updated_at": "2026-10-24T08:57:35.963476+00:00"
 }
 
 ```

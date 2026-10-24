@@ -1,5 +1,18 @@
 # Decision Log
 
+2026-10-24 UTC — **Normal delivery refusal preserved and test fixture corrected.**
+The signed StockWorkerArgv checkpoint `015084569d8f6f610e82f0adefa3cd0cb4b62c21`
+passed its normal commit check. Its ordinary push refused after138.589s at the
+unchanged legacy unsafe-source guard: the test-only spawn-denial fixture used
+`pre_exec` outside the permitted FFI file, despite the separate CWE test-module
+scanner accepting it. No publication or guard bypass occurred. The fixture now
+uses a fixed non-executable directory to exercise a real spawn denial without
+unsafe code; its exact runner regression passes. The correction proceeds as a
+separate signed commit and ordinary push, preserving the first commit/failure.
+No product command policy, Python infrastructure, native operation or resource
+disposition changes. Independent corrective review and final synchronization
+results remain in the sprint delivery receipts.
+
 2026-10-24 UTC — **StockWorkerArgv Rust metadata provenance corrected; native cause remains UNKNOWN.**
 The fixed `ps -p PID -o args=` policy already accepts the intended command and
 the helper establishes `/` before initial StockPeer observation. Probe165's
