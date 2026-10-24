@@ -1,5 +1,16 @@
 # Current Project Status
 
+2026-10-24 UTC — **Team execution specification added; functional status unchanged.**
+Development, PM and independent QA now have a self-contained current handoff at
+[the front of the S04-02 specification](UX_SLICE_S04_02.md#current-team-execution-specification--2026-10-24):
+known facts/gaps, exact contracts, scoped Rust work packages, required test
+oracles,20-control traceability, prior-error prevention and closure rules.
+The operator prohibits new Python scaffolding or expansion of the existing
+harness; existing Rust fixtures and unchanged mandatory checks are reused.
+This is documentation only. No new product/native/installed PASS, host action,
+fixture adoption/disposal, deployment or live-operation authority is implied.
+The current ledger remains the progress/evidence register; S04-02 is open.
+
 2026-10-24 UTC — **Approved reconstruction; working login is the preservation baseline.**
 The operator approved the PostfixAdmin credential-method sequence while preserving
 ordinary login and reusing the existing TOTP verifier. The ps-dependent startup

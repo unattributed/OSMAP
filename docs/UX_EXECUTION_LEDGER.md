@@ -20983,7 +20983,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "slice": "S04-02",
     "specification": {
       "path": "docs/UX_SLICE_S04_02.md",
-      "sha256": "f22873ca5c74ba9d2f46898cd20924b9ce6b0c6298a5c744fb37cb43fd42b431"
+      "sha256": "9c63ac47d7ade3d018812118966cec0619f0cb3a5b7c2433231fd156ad44a18b"
     },
     "design": {
       "journey": "Security or Authentication & Recovery \u2192 GET/POST /settings/password \u2192 own-account current password+fresh TOTP \u2192 confirmed authoritative change and current-session revocation, or explicit refusal/contained incomplete result. Navigation/Cancel submit no mutation.",
@@ -21549,6 +21549,52 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "sha256": "77201e50fd6a98962930e8914d35ed4508ae9c7a0824beee05b966712eb74b6c",
         "finding": "External credential change during successful authentication conflicts with captured original snapshot: zero affected rows, preserved external row, consumed intent, unchanged epoch and Bob, no cache/mail effects. Positive unchanged row, wrong-current/replay, postwrite and containment controls pass. Native DB/Dovecot composition NOT_QUALIFIED."
       }
+    },
+    "team_handoff_documentation_20261024": {
+      "owner": "/root",
+      "independent_reviewer": "/root/delivery_controller",
+      "outcome": "A self-contained canonical team execution specification for PM, development and QA, preserving all20requirements/T01-T09, explicitknownunknowns, code/interfaceownership, progressivefunctionalexits and preventionofobservedmistakes.",
+      "source_baseline": "a8aff9a83871bee795dfacb6c9fad3592413cad4",
+      "scope": "Documentation only: existing slice specification, its ledger reference, current status and decision record. No product/testframework/dependency changes, host use, native startup/authentication, provisioning/mutation/disposal, deployment or qualificationflag changes.",
+      "minimum_checks": "Original20ID/control andT01-T09traceability, D04exactpolicy, source-map paths/functions, mutable spec hash/work-order consistency, frozenplan preservation, independentdoc/securityreview, normalmandatorysigneddeliveryhooks.",
+      "expected": "Reviewable tasks withowner/dependency/input/output/exit, testoracles andone-shot/failurehandling; status remainsledgerowned andnativeproductNOT_QUALIFIED.",
+      "effort": "One bounded documentation/review/delivery unit; retain actual measured checks and UNKNOWN total authoring effort, no invented deadline or reset of history.",
+      "failure_stop": "Correct concrete inconsistency before delivery; missingruntimefacts remain explicit implementation gaps, never invented answers or productPASS.",
+      "operator_no_python_scaffolding": "Explicit latest direction: no new Python files/generatedcarriers/fixture/provisioning/cleanup/result-consumer scaffolding or expansion of existing harness. Existing unchanged mandatory Python checks may run; product/focusedregression work remains existingRust.",
+      "document": "docs/UX_SLICE_S04_02.md#current-team-execution-specification--2026-10-24",
+      "requirements_retained": [
+        "UX11-002",
+        "UX11-003",
+        "R2-10-005",
+        "R2-10-009",
+        "R2-20-001",
+        "R2-20-002",
+        "R2-22-001",
+        "R2-22-002",
+        "R2-22-003",
+        "R2-22-004",
+        "R2-22-005",
+        "R2-22-006",
+        "R2-22-007",
+        "R2-22-008",
+        "R2-22-009",
+        "R2-22-010",
+        "R2-22-011",
+        "R2-22-012",
+        "R2-22-013",
+        "R2-22-014"
+      ],
+      "scenarios_retained": [
+        "S04-02-T01",
+        "S04-02-T02",
+        "S04-02-T03",
+        "S04-02-T04",
+        "S04-02-T05",
+        "S04-02-T06",
+        "S04-02-T07",
+        "S04-02-T08",
+        "S04-02-T09"
+      ]
     }
   },
   "execution_contract": {
@@ -32536,7 +32582,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
   },
   "blocker": "Native helper composition, effective credential/cache policy and new epoch/session integration remain unqualified; no new native startup/authentication/password operation is authorized by this source phase.",
   "independent_next_action": "Reviewbaselinepreservationregression andexactnonmutatingbackendfactinspection. Preserveexistingno-downgradecontrols; noexistingcomponentPASSupgraded.",
-  "updated_at": "2026-10-24T10:53:15Z"
+  "updated_at": "2026-10-24T12:22:03Z"
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->

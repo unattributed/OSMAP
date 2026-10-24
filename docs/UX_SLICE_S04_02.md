@@ -1,5 +1,358 @@
 # S04-02 delivery specification — authoritative own-password change
 
+## Current team execution specification — 2026-10-24
+
+**Purpose:** give a development lead, project manager and independent QA team
+one executable handoff for completing S04-02. This section specifies work and
+acceptance; it does not declare that unexecuted work passes. Progress, assignments,
+action authorization and results remain in `UX_EXECUTION_LEDGER.md`.
+
+**Authority:** preserve the accepted R2 plan anchor
+`6b3ce8fff27ca3dabf87039d54098bd9967a2e42`, signed R3 supplement, D04 and
+all 20 requirements below. Latest direct operator instructions take precedence.
+This is a refinement of execution within the existing slice, not a product-scope
+amendment. Earlier method/authority notes below are historical wherever superseded
+by this section or the current operator rulings in `../AGENTS.md`.
+
+**Delivery objective:** an authenticated user can change their own authoritative
+mail password using their current password and fresh TOTP. The installed OSMAP
+journey verifies the update and its required authentication/session effects,
+preserves other users and public mail, and reports refusal or incomplete results
+truthfully. A disabled form, source review, build or SQL write alone is not this
+outcome. Documentation cannot guarantee success; the executed acceptance results
+below determine it.
+
+### 1. Starting point, facts and unresolved questions
+
+Repository `unattributed/OSMAP`; approved branch `feat/ux-completion-20260929`.
+The source baseline for this handoff is signed checkpoint
+`a8aff9a83871bee795dfacb6c9fad3592413cad4`. Reconcile current source and evidence
+before work; the baseline is a reference, not a permanent source pin for builds.
+Use obsd1 `192.168.1.44`, expected hostname `obsd1.blackbagsecurity.com`, for
+authorized native qualification. Production `mail.blackbagsecurity.com` is out
+of scope. The selected topology is one host with OSMAP and the existing backend.
+
+| Boundary | Established at the handoff baseline | What is not established |
+| --- | --- | --- |
+| Ordinary login | The operator reports successful installed password/TOTP login. A new local real-Runtime/file-TOTP/replay/session regression passes with mutation disabled and an accepting primary-auth fixture. | That fixture is not live Dovecot evidence, and does not qualify the reconstructed admission or password path. Preserve working login; do not assume either path is interchangeable. |
+| Credential ordering | `Service::change` now reads its comparison snapshot before current-password authentication. Six focused tests cover the positive path, external-writer conflict, wrong current password/replay and containment. | Native Dovecot/SQL composition and authentication freshness remain unqualified. A conditional update does not by itself prove the authentication response refers to the same authoritative account/credential. |
+| Backend metadata | Read-only obsd1 capture confirmed required mailbox columns, InnoDB, unique username key, and ARGON2ID/BLF-CRYPT availability. | Algorithm availability is not selected policy. Effective passdb mapping, hash compatibility and live cache behaviour remain unresolved. Inspect only settings consumed by the selected adapter; do not invent optional PostfixAdmin hooks as prerequisites. |
+| Native helper | Earlier source-specific startup/admission milestones exist. Latest probe165 failed at `StockWorkerArgv / Denied / Unavailable`, before operational readiness. | Its precise native denied subphase/errno is unknown. Earlier milestones do not qualify the replacement helper or explain probe165. |
+| Installed journey | T01/T02 are recorded PASS at their defined source scope; historical fixture results remain available with limits. | Current T03 and deployed T07 remain FAIL; T04/T05/T06/T08/T09 remain NOT_RUN in the ledger. No reconstructed helper, full session integration or S04-02 acceptance is claimed. |
+
+PostfixAdmin supplies the reference method: authorized own-account request,
+current-credential verification, compatible hash, account update and required
+post-write handling. It does not establish OSMAP's additional step-up, replay,
+epoch or session guarantees. The retained PostfixAdmin source capture comes
+from historical Toronto evidence; it is not current obsd1 configuration proof.
+
+### 2. Scope and non-negotiable product contracts
+
+The browser remains a client of the local account service. The web process must
+not receive SQL credentials, unrestricted SQL, caller-selected commands, doas
+capability or private backend configuration. Use existing typed, authenticated
+admission/mutation interfaces and fixed Rust-owned backend operations.
+
+**Explicit operator constraint — no new Python scaffolding:** do not add Python
+files, generated Python execution carriers, fixture/provisioning layers, cleanup
+frameworks or replacement result consumers, and do not expand the existing
+Python harness to support this reconstruction. Product changes and focused
+regressions use the existing Rust modules, Rust tests and fixed backend utilities.
+Existing mandatory checks may run their unchanged Python tests. If an execution
+interface is incompatible, identify the exact gap and resolve the smallest
+existing Rust/command interface; do not respond by building another harness.
+
+Retain these exact contracts:
+
+- **Authorization:** own account only; valid session, origin/Host and CSRF;
+  current password plus fresh TOTP using the existing verifier/replay store.
+  A single-use permit binds request, account, session, source, action and epoch.
+  Recheck authority at consumption. At age 300 seconds it is expired; age 299
+  is eligible only if all other checks pass. Preserve original product deadlines.
+- **Abuse controls:** independent durable limits of five failures/account and
+  ten/source within 15 minutes, with 15-minute cooldown. Success and restart must
+  not erase an active window. Test account/source limits independently.
+- **Password policy:** 15–128 Unicode characters and at most 512 UTF-8 bytes;
+  no controls, silent truncation or mandatory composition rules. Support paste;
+  reject unchanged input and unequal confirmation. Use an authoritative supported
+  salted hash, not a second OSMAP password database or custom hash.
+- **Concurrency:** all OSMAP authentication/session issuance and mutation share
+  the account lock/epoch. Capture the SQL snapshot before authoritative credential
+  verification and retain that snapshot for the conditional update. External
+  credential/status changes must conflict rather than become a new comparison
+  baseline. Zero affected rows is refusal, not success or permission to retry.
+- **Write/result:** durable pending/intent handling precedes credential dispatch.
+  Perform one conditional update for one authorized action; validate readback.
+  Verify required authentication-cache effects, old-password rejection and
+  new-password acceptance. Cache disabled is one possible verified mechanism,
+  not a universal new product requirement.
+- **Sessions and status:** confirmed completion includes revoking every affected
+  OSMAP browser session, including the current session, and a verified authoritative
+  changed-at timestamp. A general mailbox `modified` value alone is not password
+  history. A verified write with incomplete effects retains its verified time
+  and explicit incomplete/contained state. Absent historical timing stays Unknown.
+- **Isolation and mail impact:** Bob's credential, epoch, browser sessions and
+  mail/connections remain unaffected. Existing third-party SMTP/IMAP sessions may
+  outlive the password change; disclose this limit and do not claim termination.
+- **Secrets:** never place passwords, TOTP material, cookies, keys, tokens, raw
+  private output or stored hashes in argv, environment, URLs, logs, browser
+  storage or public evidence. Use bounded existing private transport/memory and
+  the existing secret-handling rules for backend work.
+
+Keep required locks, authorization, pending state and uncertainty protection in
+the first native credential test. Decomposing the proof does not authorize a bare
+SQL mutation, bypass endpoint, replacement runner or test-only success path.
+
+Excluded: recovery-contact management, TOTP enrolment/rotation, other slices,
+new dependencies, another TOTP/crypto implementation, Python harness development,
+global mail-login epoch hooks, new SMTP proxies/PF redirection, forced termination
+of all third-party mail connections, public Dovecot/Postfix/MariaDB service or
+configuration changes, and production-host contact. OSMAP service operation is
+subject to the exact current action authority; no mail downtime follows from it.
+
+### 3. Responsibilities and working arrangement
+
+The project manager records actual named assignees in the existing work order
+before their assignment starts. Roles below define responsibilities, not a new
+role-roster admission gate. One person may cover compatible roles; an author
+cannot independently approve their own changed security boundary.
+
+| Role | Accountable work and handoff |
+| --- | --- |
+| Project manager | Maintain the single S04-02 objective, ordered work packages, dependencies, named owners, effort forecast/actuals and blockers in the existing ledger. Prevent infrastructure tasks from replacing the functional exit. Obtain only operator decisions/actions actually required. |
+| Technical/integration lead | Own the canonical source, host and Git queue; approve bounded designs; integrate changes; verify the exact executed path and prerequisites; own readiness/closure claims. Do not delegate enforcement responsibility to QA or the operator. |
+| Backend developer | Establish the actual adapter contract; implement minimum Rust composition changes; preserve command/resource custody and transaction guarantees; supply source tests and exact interfaces for independent testing. |
+| Frontend/session developer | Preserve working login; prove real Runtime delegation, step-up, epoch/session integration, accessible form behaviour and truthful persistent status. Coordinate shared files with the lead. |
+| Independent QA lead | Prepare positive/negative tests and independent result oracles before native dispatch; execute or witness the authorized test; reconcile account/session/mail state and evidence; report PASS/FAIL/NOT_RUN/UNKNOWN by scenario. |
+| Independent security reviewer | Review changed source, successful/refusal paths, authorization, custody/confinement, secret handling, cleanup and real producer/consumer compatibility. Resolve findings before delivery/activation. |
+| Operator/product owner | Supply explicit live-action authority where required and final T09 usability acceptance after engineering/QA/review pass. The operator is not assigned unfinished engineering diagnosis. |
+
+Parallel source tasks need explicit non-overlapping file ownership. Only the
+lead dispatches native operations or integrates/pushes the canonical branch.
+Historical agent names in the ledger are provenance, not proof of active owners.
+
+### 4. Code map and permitted design freedom
+
+These are current entry points to inspect, not a requirement to rewrite every
+file. Verify the actual reachable producer, execution path and consumer.
+
+| Boundary | Existing code to reuse or narrowly correct |
+| --- | --- |
+| Browser route/form | `src/http/routes_password.rs`, `src/settings_password_ui.rs`, `src/http/password_local.js`, `src/http/password_tests.rs` |
+| Runtime and existing TOTP/login | `src/http_gateway_auth.rs`, `src/http_gateway_password.rs`, `src/account_admission_runtime.rs`, `src/password_change.rs`, `src/password_change_rate.rs` |
+| Guarded request/step-up/session composition | `src/session_action.rs`, `src/account_mutation_client.rs`, `src/account_password_connection.rs`, `src/session_password_cleanup.rs` and existing runtime/session tests |
+| Credential transaction | `src/account_password_service.rs`, `src/account_password_backend.rs`, `src/account_password_mail.rs` and their existing tests |
+| Native construction/execution | `src/account_password_server.rs`, `src/account_password_runtime.rs`, `src/account_password_native.rs`, `src/account_password_peer.rs`, `src/account_password_confinement.rs`, custody/process/metadata modules |
+| Durable authority | `src/account_password_state.rs`, `src/account_password_admission.rs`, existing shared lock/epoch and replay stores |
+
+`StockPeer` is coupled into startup, runtime admission/effects, native profile
+construction/preparation and parent confinement. Removing the initial failing
+check alone is incomplete. Replace only the selected process-argv dependency
+necessary for the credential operation, using actual fixed endpoint/backend
+authority. Retain protected endpoint/ancestor and appropriate kernel-peer checks,
+fixed commands/arguments, executable/library custody, separated child roles,
+confinement, original deadlines, bounded I/O and cleanup. Do not weaken an
+invariant merely to get startup PASS or fabricate a successful no-op.
+
+In particular, `StockEffects::invalidate_cache` currently relies on StockPeer's
+cache-zero contract. Removing that proof cannot leave an unjustified successful
+no-op. Establish equivalent actual freshness/effects or the existing bounded
+account-specific cache operation. Configuration text alone does not prove the
+running daemon loaded it. Distinguish authentication refusal from unavailable
+infrastructure and preserve existing fail-closed public errors.
+
+The developer chooses the smallest supported design and documents its reason,
+changed boundaries and distinguishing tests. A new architecture or generic
+framework is not the default response to a refusal. Keep legacy login untouched
+until the new composition is proved; do not turn explicitly configured unavailable
+admission into a silent legacy fallback or upgrade an epoch-less session into
+mutation authority.
+
+### 5. Ordered work packages and measurable exits
+
+These packages decompose the existing scenarios; they add no acceptance scenarios
+or automatic live authority. Backend-only observations are partial evidence for
+T03, never complete T03 or S04-02 PASS. Reuse matching evidence between packages.
+
+| Package / lead | Dependencies and concrete task | Observable exit / independent check |
+| --- | --- | --- |
+| **A — Baseline; integration + QA** | Reconcile current source, accepted plan, ledger and operator boundaries. Preserve the recorded real-Runtime login/TOTP/session regression and no-downgrade/replay controls. Identify which evidence remains applicable. | Working baseline and its limitations are explicit; changed code cannot silently break login or create mutation state while disabled. No need to repeat unchanged broad suites. |
+| **B — Backend contract; backend + QA** | Resolve exact canonical account/passdb mapping, actual SQL schema/grants/config consumed, supported generated hash and current-credential/cache semantics. Reuse the metadata capture; privately inspect missing facts through narrow authorized observations. Optional PostfixAdmin hooks matter only if the selected contract requires them. | QA can explain how this Dovecot check verifies this authoritative account and how stale acceptance is prevented. Unsupported/missing facts stop dependent implementation; availability/version/default text is not proof. |
+| **C — Minimum adapter; backend + security review** | After B, change only the helper construction/execution required to run snapshot -> authoritative current-password check -> compatible hash -> original-snapshot conditional update/readback. Preserve existing authorization/lock/pending safeguards. Reuse the passing source race correction. | Actual changed functions pass focused positive/refusal/uncertainty tests; all affected construction and execution call sites use the reviewed authority. Independent review identifies no missing invariant. This is source readiness only. |
+| **D — One native credential operation; lead + QA** | After reviewed C and exact live-action authorization, bind signed source/current matching artifacts, target, disposable account, control account, expected effects, runtime bounds and owned cleanup. Qualify minimum helper readiness/non-mutating exchange before the sole credential dispatch within the authorized recipe; stop if a prerequisite fails. | Actual Rust helper/client operation observes conditional write/readback and real old-password rejection/new-password acceptance. QA independently reconciles the exact account, control account, write certainty and required effects. Preserve incomplete outcomes; a direct SQL command, mocked auth, EOF or actor exit zero is insufficient. |
+| **E — Step-up/epoch/session integration; frontend/session + QA** | Use the same qualified adapter through existing authenticated clients and real Runtime/TOTP/session stores. Preserve action binding and prove pending/ACK, replay, expiry, durable rate limits, concurrent issuance/mutation and failure containment. | Full T03 and required T04/T05 observations match actual installed semantics. At least two pre-change Alice browser sessions, including the submitting session, become unusable; Bob remains valid. No new native action inherits authority merely from D. |
+| **F — Installed journey/status; frontend + QA** | After preceding native proof, use the matching configured Runtime/helper pair on obsd1. Reconcile T01/T02 and execute T06–T08, including both settings destinations and reload. A matching controlled journey may supply several observations. | Real form -> Runtime -> helper -> backend -> status/session result; accessible controls and safe cancellation; authoritative changed-at, truthful incomplete states, isolation and secret exclusion. No qualification-flag-only activation. |
+| **G — Closeout; PM + independent review + operator** | Reconcile all 20 obligations and T01–T09 evidence, source/artifact/config applicability, findings, recovery and retained resources. Deliver signed source and matching installed QA. | Engineering definition of done satisfied first; then concise T09 usability acceptance. PM closes only S04-02, not other slices or the epic. |
+
+Before each package, the lead records only the actual prerequisite, named owner,
+expected observation, minimum test, expected preserved state and stop condition
+in the existing work order. PM records an honest effort forecast and actuals;
+unknown historical costs remain UNKNOWN. No invented calendar expiry, role
+ceremony or renewed allowance is a substitute for technical progress. Existing
+product deadlines and any explicit operator limits still apply.
+
+### 6. QA execution specification and independent oracles
+
+Alice is the disposable account being changed; Bob is the unaffected control.
+Names denote roles, not authorization to adopt a retained fixture or guessed
+resource. The exact identities, ownership, private credentials and initial state
+must be established for each approved operation. Never use an operator's real
+password/account or external provider delivery as the engineering test.
+
+QA uses the existing scenario IDs and records prerequisites, action, expected
+result, preserved state, actual result and evidence in the existing ledger.
+Do not reset historical FAIL to NOT_RUN. The new candidate's unrun status is
+recorded separately from historical outcomes.
+
+| Scenario | Concrete actions and expected observations |
+| --- | --- |
+| **T01 — Form** | On the matching source/UI, test current/new/confirmation Show/Hide independently, keyboard/focus/accessible state, paste, both entry links, breadcrumb and Cancel. Only the selected field changes masking. These controls/navigation issue no password mutation and retain no secret. Reuse unchanged matching PASS. |
+| **T02 — Refusals** | Wrong origin/CSRF/session/account, malformed or over-limit form, confirmation mismatch, unchanged password and exact D04 Unicode/byte/control boundaries. Observe refusal before credential/session mutation and no invented changed-at. Use local controls for exhaustive policy inputs, not repeated live writes. |
+| **T03 — Native composed success** | Establish at least two stored Alice sessions and a valid Bob session/control state. Use current password and a fresh unused TOTP through actual trusted admission/guarded mutation, one conditional credential update, readback, required epoch/cache/browser revocation and verified changed-at. Observe old credential rejection, new admission, both old Alice sessions refused and Bob preserved. Use a fresh permitted verification context; a reused consumed TOTP cannot prove an old-password refusal. Independently reconcile authoritative state, not only the actor's success field. |
+| **T04 — Pre-write/replay/races** | Exercise 299/300-second boundary, consumed TOTP/permit, wrong account/session/source/action/epoch binding/current password, account/source limits independently across restart/success, stale epoch and held mutation versus concurrent session issuance. Actual production lock/epoch paths must refuse unauthorized/stale issuance and second credential dispatch. Local deterministic controls plus matching native integration supply the required evidence; do not change host time or add public mail-login hooks. |
+| **T05 — Post-write incomplete/uncertain** | Through the existing controlled failure seam, interrupt a required effect/response after an authorized write. Distinguish a verified write from unknown write state; retain verified timing where available. Observe contained/incomplete state, old-cookie rejection, no automatic second write/rollback, and authoritative reconciliation plus reviewed owned cleanup or retention. An uncertain operation ends further credential attempts. |
+| **T06 — Installed journey** | Use actual installed matched services and BrowserGateway Runtime delegation; observe form -> authorization -> helper -> backend -> returned UI. Verify navigation/visibility/Cancel before the authorized change and persist/reload the result. A concrete helper test alone cannot pass this scenario. |
+| **T07 — Status** | Inspect Security and Authentication & Recovery before/after confirmed, refused and incomplete outcomes, including reload. A new confirmed change needs verified authoritative changed-at. A verified write with incomplete effects retains its actual verified time and incomplete status. Missing historical data stays Unknown; a generic mailbox timestamp/transport receipt cannot fabricate password history. |
+| **T08 — Isolation/secrets** | Reconcile Alice/Bob credential/epoch/session projections and existing control mail/connections; exercise cross-account/stale/CSRF refusal. Inspect safe diagnostics plus private outputs through approved handling for leakage to argv/environment/logs/URLs/browser storage/evidence. Bob remains unaffected and no public-service action occurs. No MAIL/RCPT/DATA/BDAT or provider message is needed. |
+| **T09 — Operator usability** | Only after required engineering/QA/independent review passes, give the operator a short script covering navigation, independent visibility, cancellation and the meaning of confirmed/incomplete effects on the matched installation. Do not assign debugging, duplicate engineering QA or unnecessary real-account mutation to the operator. |
+
+Independent oracles are the authoritative account result, durable epoch/pending/
+intent state, actual authentication result, validation of stored sessions, actual
+cache-effect mechanism, and unaffected control state. Reuse existing protected
+readers and reconciliation. If the architecture makes an observation unavailable,
+name the missing observation and resolve or report the gap; do not invent PASS.
+
+### 7. Requirement traceability — all 20 retained obligations
+
+The following table maps the existing acceptance catalogue, not new requirements.
+Detailed positive/negative cases remain in `../maint/ux/acceptance.json` and the
+active ledger. Test evidence must cover each obligation even when one journey
+supplies several observations.
+
+| Requirement | Required behaviour | Principal scenarios |
+| --- | --- | --- |
+| UX11-002 | Authoritative last-changed information | T03/T07 |
+| UX11-003 | Working own-account Change password | T01/T02/T03/T06 |
+| R2-10-005 | Security password status and changed time | T07 |
+| R2-10-009 | Security Change password entry | T01/T06 |
+| R2-20-001 | Authentication & Recovery changed-at status | T07 |
+| R2-20-002 | Authentication & Recovery Change password entry | T01/T06 |
+| R2-22-001 | Breadcrumb navigates without submitting | T01/T06 |
+| R2-22-002 | Current password handled only for authorized verification | T02/T03/T04/T08 |
+| R2-22-003 | Independent current-password Show/Hide | T01/T06 |
+| R2-22-004 | Valid new password under D04 policy | T02/T03/T06 |
+| R2-22-005 | Independent new-password Show/Hide | T01/T06 |
+| R2-22-006 | Exact new-password confirmation | T02/T06 |
+| R2-22-007 | Independent confirmation Show/Hide | T01/T06 |
+| R2-22-008 | Fresh action-bound reauthentication/TOTP | T03/T04/T06 |
+| R2-22-009 | Cancel without mutation or secret persistence | T01/T06/T08 |
+| R2-22-010 | Authorized Change password submission | T02/T03/T06 |
+| R2-22-011 | All affected OSMAP browser sessions revoked | T03/T04/T05/T08 |
+| R2-22-012 | Actual backend old rejection/new admission and truthful mail impact | T03/T06/T08 |
+| R2-22-013 | Explicit partial-failure reconciliation | T05/T07 |
+| R2-22-014 | No password logging or retained secret evidence | T02/T03/T05/T08 |
+
+### 8. Prevent recurrence of observed engineering mistakes
+
+| Earlier mistake or demonstrated limitation | Required prevention in this execution |
+| --- | --- |
+| Advancing a long integration chain before its smallest native operation works | C/D deliver one real Rust/backend credential result before expanding epoch/session/browser qualification. Bound helper work by that result. |
+| Treating architecture as a product requirement: worker argv, global mail hooks, two hosts, shutdown, fixed free-RAM or exact release predicates | Retain required security outcomes, justify selected mechanisms against actual contracts, use one host, semantic capabilities and no public downtime. Do not reintroduce retired prerequisites under another name. |
+| A known unsupported Dovecot configuration was lost between readiness and execution | Carry unresolved consumed configuration/passdb facts into B and dependent tasks. Lead and QA inspect the actual fact and executed path; declarations do not prove it. |
+| Synthetic/fixture/SQL/cleanup PASS promoted to product readiness | Label source, build, native credential, integrated native, installed, cleanup and human results separately. Only matching whole-scenario observations pass that scenario. |
+| Concrete backend passed but Runtime inherited a default or selected another path | Prove a distinguishing call through the actual BrowserGateway/Runtime delegation and configured clients in E/F. |
+| A stale TOTP was reused for a password-negative check | Use an unused permitted factor/context so old-password rejection is attributed to the credential, not replay refusal. |
+| Consumer/schema/source-pin mismatch, or assuming a subprocess/cleanup contract from a fake | Exercise actual producer output through actual consumer, including failure/cleanup, before host use. Verify changed OS command/API semantics first; no replacement QA framework. |
+| Child signal-mask/cleanup errors or uncertain process ownership | Review the changed launch/child chain and existing custody rules. Preserve earliest failure separately; do not signal historical PIDs, guess ownership or infer absence from one PID/session query. |
+| Native Denied collapsed to a generic category; evidence removed during cleanup | Preserve fixed source-owned metadata detail, bounded real errno where legitimately observed, phase/outcome and stream accounting. Read back/hash durable evidence before removing its sources; retain unknown cause as unknown. |
+| Wrong library alphabet or exact installed-library pins rejected legitimate updated host dependencies | Verify actual required loader/custody semantics; correct demonstrated predicates narrowly. Do not disable OS protections, weaken ownership checks, roll back stable updates or repeat broad builds to diagnose unrelated failures. |
+| Authenticate before snapshot adopted an external credential change | Retain the corrected snapshot-before-authentication order and distinguishing real Service/Backend regression; prove freshness/mapping separately. |
+| Local work left uncommitted/ahead of GitHub; clocks/renamed attempts reset history | Complete signed normal delivery and fresh parity proof. Preserve cumulative failure/cost history. Agent-created elapsed-clock fields do not expire direct authority; explicit operator expiry and technical bounds still bind. |
+
+### 9. Execution authority, evidence, stop rules and retention
+
+This documentation task dispatches no host operation. Source work/local tests and
+normal signed preservation are distinct from live execution. Before any new
+native startup/authentication/provisioning or credential operation, identify the
+exact current authority. Fresh credential/native qualification authority must be
+explicit and operation-specific; this specification is not that authorization.
+An authorization is consumed by its stated action, not reusable for another try.
+Do not ask for renewal solely because an agent-created accounting clock advanced.
+
+The lead binds actual source/artifacts, target, fixed recipe, prerequisites,
+runtime/I/O/cleanup limits and exact action ID using the existing dispatcher and
+`maint/ux/validate_acceptance.py --work-order-only --pre-action --attempt-id ...`.
+The validator is a consistency check, not evidence truth or an authority oracle.
+No new carrier/approval layer is required merely because a milestone advanced.
+
+For each authorized action retain one concise existing dispatch/result record:
+source/artifact identity, operation/stage reached, actual elapsed time, result,
+credential submission/write certainty, independent state checks, control account
+preservation, earliest sanitized failure, cleanup disposition and retained-resource
+reference. Preserve bounded private streams only under existing private handling;
+public evidence contains fixed codes and safe projections, never arbitrary native
+output or exception text. Verify durable evidence by readback/hash before source
+cleanup. Cleanup PASS is not functional PASS.
+
+Stop on prerequisite mismatch, wrong target, unexpected account/service effects,
+uncertain credential submission/write or lost required custody. No blind retry,
+automatic old-password restore, weakened confinement, extended product deadline
+or qualification Boolean is an accepted correction. Two failures at the same
+functional boundary stop further workflow retries for combined independent
+reassessment of the failed assumption, smallest changed action and distinguishing
+test. Renaming packaging/review does not reset failure or effort history.
+
+Probe165 retained two disposable SQL account rows, one SQL principal, two locked
+OS users/groups, 33 runtime paths and new protected diagnostic/recovery stages.
+Original cleanup remains UNCERTAIN; later independent no-write evidence does not
+authorize deletion. Preserve historical execution160 stages. Prepare exact-owned
+inventory and independent disposition separately; no wildcard deletion, guessed
+identity, historical PID signalling or new Python cleanup framework. Any required
+safe retained-state disposition remains a real open closure item, with its own
+authority; it is not a reason to stop independent source work.
+
+Store retained sprint artifacts under `/home/foo/Downloads/osmap-ux-s04/` using
+private permissions as appropriate. Existing evidence roots and receipts in the
+ledger remain authoritative references. Reuse them; do not create a parallel
+status system. PM tracks measured actuals and UNKNOWN costs honestly, without
+inventing a finish date or replenishing an exhausted explicit allowance.
+
+### 10. Source delivery and completion decision
+
+For each completed source unit, independently review the actual changed boundary,
+run minimum affected tests and normal mandatory commit/push hooks, inventory all
+tracked/untracked work and include eligible public-safe changes. Sign with
+Shopkeeper `F55E404E91A0753701F91B01A7228D3FB5084B34`, verify the signature,
+push normally to the approved branch, fetch origin and prove exact local/remote
+SHA equality with zero ahead/behind. Preserve unrelated work and excluded secrets;
+do not bypass hooks, force, amend or rewrite history. Do not run unchanged broad
+suites between every small milestone; normal delivery gates remain required.
+
+The lead and QA may declare **engineering complete** only when all four outcomes,
+all 20 mapped obligations and required T01–T08 scenarios have matching applicable
+passing evidence; installed Runtime/helper integration and authoritative timing
+are verified; no required independent finding is unresolved; and owned recovery/
+cleanup or expressly accepted safe retention is established. A FAIL, required
+NOT_RUN or unresolved UNKNOWN keeps the slice open. Required release evidence
+must match any release claim; this handoff does not claim full release readiness.
+
+The operator then performs T09 usability acceptance. Only its recorded PASS after
+engineering completion permits **S04-02 ACCEPTED**. Final delivery identifies the
+signed commit/remote parity, installed artifact/config scope, T01–T09 results,
+authoritative credential/epoch/session/cache/control-account observations,
+remaining retained resources and their accepted disposition, and actual limits.
+
+**Immediate next engineering assignment:** package B's missing current-backend
+mapping/freshness/hash facts, followed by C's minimum Rust composition correction
+and its concrete D native recipe. Do not substitute another generic readiness
+proposal for those deliverables, and do not dispatch D without its exact authority.
+
+## Retained specification and execution history
+
+The sections below preserve earlier specification and execution context. Read
+their method/authority statements with the supersession rules above; they do not
+renew an action, reverse an operator ruling or change current ledger results.
+
 ## Approved reconstruction direction, 2026-10-24
 
 The operator approved preserving successful login, reusing the existing TOTP

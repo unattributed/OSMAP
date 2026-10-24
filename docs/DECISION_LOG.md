@@ -1,5 +1,24 @@
 # Decision Log
 
+2026-10-24 UTC — **Team execution handoff specified; no new Python scaffolding.**
+The operator requested an executable S04-02 specification for development,
+project management and independent QA, with sufficient context and prevention
+of repeated mistakes. The current team section at the front of
+`UX_SLICE_S04_02.md` now states baseline facts and unresolved contracts, exact
+D04 invariants, role/accountability boundaries, existing Rust code map, ordered
+work packages with observable exits, all20 control mappings, T01–T09 independent
+oracles, failure/retention rules and signed-delivery/closure requirements.
+Earlier execution notes are explicitly retained as history where superseded;
+progress and action authority remain in the existing ledger.
+
+The operator explicitly rejects new Python scaffolding. Do not add Python files,
+generated execution carriers, fixture/provisioning or cleanup frameworks,
+replacement result consumers, or expand the existing Python harness. Use the
+existing Rust modules/tests and fixed backend utilities; unchanged mandatory
+checks remain. This documentation delivery changes no product code, dependency,
+Python source, host state, native authority or qualification result. It does not
+guarantee a technical outcome: actual required functional evidence decides PASS.
+
 2026-10-24 UTC — **Operator-approved PostfixAdmin-method reconstruction.**
 Preserve successful ordinary login, reuse the existing file-backed TOTP verifier
 and replay store, implement the narrow credential-change operation following
