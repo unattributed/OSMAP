@@ -216,6 +216,7 @@ def inspect_mutation_failure(actor,packet):
     deficiency='NO_PRESERVED_NATIVE_DIAGNOSTIC'
     completeness='UNAVAILABLE';unknown_cause_reason='NATIVE_CAPTURE_UNAVAILABLE'
     confinement_detail=None;confinement_status='NOT_EMITTED';confinement_code=None
+    construction_detail=None;construction_status='NOT_EMITTED'
     if diagnostic is not None:
         native=diagnostic['record']['native_diagnostic']
         guardian=native['guardian_diagnostic'];first=native['first_failure']
@@ -250,6 +251,10 @@ def inspect_mutation_failure(actor,packet):
                 confinement_code='native_confinement_'+confinement_detail['stage']
             elif confinement_status!='NOT_EMITTED':
                 deficiency='CONFINEMENT_DETAIL_'+confinement_status
+            construction_status=capture.get('construction_status','NOT_EMITTED')
+            construction_detail=capture.get('construction_detail')
+            if construction_status not in ('AVAILABLE','NOT_EMITTED'):
+                deficiency='CONSTRUCTION_DETAIL_'+construction_status
         completeness='COMPLETE'if deficiency is None else'INCOMPLETE'
     accounts={'alice@osmap-password.invalid','bob@osmap-password.invalid'}
     baseline=actor.get('initial_authority_digests',{});final=actor.get('final_authority',{})
@@ -289,6 +294,7 @@ def inspect_mutation_failure(actor,packet):
         'unknown_cause_reason':unknown_cause_reason,
         'confinement_code':confinement_code,'confinement_detail':confinement_detail,
         'confinement_status':confinement_status,
+        'construction_status':construction_status,'construction_detail':construction_detail,
         'diagnostic_preservation':'READBACK_VERIFIED'if diagnostic is not None else'UNAVAILABLE',
         'cleanup_failures':cleanup_failures,
         'credential_mutation_submission_state':'NOT_SUBMITTED'if no_write else'UNKNOWN_OR_SUBMITTED',

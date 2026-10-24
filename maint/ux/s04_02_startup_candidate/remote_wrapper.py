@@ -1,7 +1,7 @@
 """Fixed foo transport keeper for a hash-admitted root staging/journey actor."""
 import base64,hashlib,json,os,re,selectors,signal,socket,stat,subprocess,sys,time
 from pathlib import Path
-ROOT_SOURCE_SHA256 = 'f3c1f4be121020a0159f35d80f9de8370dcbcace34f23d237179036306ff6f4c'
+ROOT_SOURCE_SHA256 = '7b6a471260858d349e3e729b20ae274207b6ba38755111c3450c86c343b5d01a'
 STOPS={signal.SIGALRM,signal.SIGHUP,signal.SIGTERM,signal.SIGINT}
 START=time.monotonic();END=START+630
 PYTHON=Path('/usr/local/bin/python3')

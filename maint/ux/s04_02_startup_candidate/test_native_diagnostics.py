@@ -66,6 +66,31 @@ def write(value):
     s.sendall(len(raw).to_bytes(4,'big')+raw)
 read()
 case=sys.argv[1]
+if case.startswith('construction:'):
+    _,mode,payload=case.split(':',2)
+    if mode=='rust':
+        binary=os.environ['OSMAP_TEST_CONSTRUCTION_EMITTER_BINARY']
+        os.execv(binary,[binary,'--exact',
+            'account_admission_runtime::tests::account_construction_diagnostic_emitter','--ignored','--nocapture'])
+    raw=b'OSMAP_ACCOUNT_CONSTRUCTION_V1 '+payload.encode()+b'\n'
+    if mode=='earlier_failure':
+        raw=b"thread 'http-test' panicked at src/http/password_tests.rs:1:1:\nHTTP fixture descriptor refused\n"+raw
+    if mode=='earlier_admission':
+        raw=b"thread 'http-test' panicked at src/http/password_tests.rs:1:1:\nHTTP fixture admission custody refused\n"+raw
+    if mode=='duplicate':raw+=raw
+    if mode=='partial':raw=raw[:-1]
+    if mode=='partial_marker':raw=b'OSMAP_ACCOUNT_CONSTRUCTION_'
+    if mode=='oversized':raw=raw[:-1]+b' '*600+b'\n'
+    if mode=='interrupted':
+        os.write(2,raw[:-1]);time.sleep(20)
+    if mode=='flood':
+        os.write(2,b'E'*65536+b'\n')
+    if mode=='fragmented':
+        for byte in raw:os.write(2,bytes([byte]))
+    else:os.write(2,raw)
+    if mode not in ('partial','partial_marker'):
+        os.write(2,b"thread 'http-test' panicked at src/http/password_tests.rs:1:1:\nHTTP fixture admission custody refused\n")
+    sys.exit(101)
 if case.startswith('confinement:'):
     _,mode,payload=case.split(':',2)
     if mode=='rust':
@@ -161,7 +186,7 @@ def run_guardian(case, stage):
             stack.enter_context(mock.patch.object(module,'guardian_identity',side_effect=module.Refused('root_born_guardian')))
         if case=='identity_failure':
             stack.enter_context(mock.patch.object(module,'drop_receipt',side_effect=module.Refused('drop_proof')))
-        if case=='cleanup_failure' or case.startswith('confinement:cleanup_failure:'):
+        if case=='cleanup_failure' or case.startswith(('confinement:cleanup_failure:','construction:cleanup_failure:')):
             original=module.DiagnosticFile.write
             calls=[0]
             def failed_final(self,report):
@@ -201,7 +226,7 @@ def exercise(case):
             custody=recv()
             if custody is not None:
                 send(json.dumps({'version':1,'root':str(stage/'http/http-state')}).encode())
-            interrupted=case=='interrupted' or case.startswith('confinement:interrupted:')
+            interrupted=case=='interrupted' or case.startswith(('confinement:interrupted:','construction:interrupted:'))
             if interrupted:
                 time.sleep(.1)
                 process.send_signal(signal.SIGTERM)
@@ -226,6 +251,49 @@ def exercise(case):
 
 
 class NativeDiagnosticTests(unittest.TestCase):
+    def test_construction_detail_closed_schema_and_bounded_streams(self):
+        value={'schema':'osmap-account-construction-v1','operation':'socket_validation',
+            'check':'canonicalize','category':'absent'}
+        for mode,status in (('normal','AVAILABLE'),('fragmented','AVAILABLE'),
+                ('earlier_admission','AVAILABLE'),('flood','AVAILABLE'),('duplicate','DUPLICATE'),
+                ('partial','INCOMPLETE'),('partial_marker','INCOMPLETE'),('interrupted','INCOMPLETE'),
+                ('oversized','MALFORMED'),('earlier_failure','CONFLICTING')):
+            with self.subTest(mode=mode):
+                result=exercise('construction:'+mode+':'+json.dumps(value))
+                report=result['report'];capture=report['capture']
+                self.assertEqual(capture['construction_status'],status)
+                self.assertEqual(capture['construction_detail'],value if status=='AVAILABLE' else None)
+                if status=='AVAILABLE':self.assertEqual(report['cause'],'native_admission_client')
+                if mode=='earlier_failure':self.assertEqual(report['cause'],'native_descriptor')
+                self.assertEqual(result['retained']['capture']['construction_detail'],capture['construction_detail'])
+                self.assertTrue(report['web_reaped'])
+
+    def test_construction_enum_parity_and_invalid_payloads_are_closed(self):
+        import re
+        repo=HERE.parents[2]
+        for source,name,observed in ((repo/'src/account_admission_runtime.rs','ConstructionOperation',GUARDIAN.CONSTRUCTION_OPERATIONS),
+                (repo/'src/openpgp_inventory_custody.rs','Check',GUARDIAN.CONSTRUCTION_CHECKS),
+                (repo/'src/openpgp_inventory_custody.rs','Category',GUARDIAN.CONSTRUCTION_CATEGORIES)):
+            body=re.search(r'enum '+name+r'\s*\{([^}]+)\}',source.read_text()).group(1)
+            variants={re.sub(r'(?<!^)(?=[A-Z])','_',v.strip()).lower()for v in body.split(',')if v.strip()}
+            self.assertEqual(variants,observed)
+        value={'schema':'osmap-account-construction-v1','operation':'socket_validation',
+            'check':'canonicalize','category':'absent'}
+        bad=[None,[],dict(value,path='/private/SyntheticSecret123')]
+        for key in value:
+            bad.extend((dict(value,**{key:'SyntheticSecret123'}),dict(value,**{key:True}),
+                dict(value,**{key:[value[key]]})))
+        payloads=[json.dumps(v)for v in bad]
+        valid=json.dumps(value)
+        payloads.extend((valid[:-1]+',"check":"canonicalize"}',valid+' SyntheticSecret123',
+            valid+' '*600+'SyntheticSecret123'))
+        for payload in payloads:
+            with self.subTest(payload=payload):
+                capture=exercise('construction:normal:'+payload)['report']['capture']
+                self.assertEqual(capture['construction_status'],'MALFORMED')
+                self.assertIsNone(capture['construction_detail'])
+                self.assertNotIn('SyntheticSecret123',json.dumps(capture))
+
     def test_confinement_fixed_schema_fragmentation_and_closed_rejection(self):
         value=CONFINEMENT_VARIANTS[6]
         for mode,status in (('normal','AVAILABLE'),('fragmented','AVAILABLE'),

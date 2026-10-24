@@ -85,6 +85,43 @@ class NativeEvidence(unittest.TestCase):
                 result=consumer.inspect_mutation_failure({'native_diagnostic_evidence':owner.diagnostic_evidence},packet)
                 return result,owner.diagnostic_evidence,packet
 
+    def construction_result(self,mode='normal'):
+        producer=load('construction_evidence_producer','test_native_diagnostics.py')
+        detail={'schema':'osmap-account-construction-v1','operation':'socket_validation',
+            'check':'canonicalize','category':'absent'}
+        adapter=SimpleNamespace(exercise=producer.exercise,GUARDIAN=producer.GUARDIAN,
+            confinement_case=lambda value,selected:'construction:'+selected+':'+json.dumps(value))
+        return self.confinement_result(adapter,detail,mode)
+
+    def test_construction_survives_actual_atomic_receipt_and_rejects_rehashed_tamper(self):
+        result,original,packet=self.construction_result()
+        self.assertEqual(result['construction_status'],'AVAILABLE')
+        self.assertEqual(result['construction_detail']['operation'],'socket_validation')
+        self.assertEqual(result['original_failure']['cause'],'native_admission_client')
+        self.assertEqual(result['diagnostic_preservation'],'READBACK_VERIFIED')
+        for mutate in (
+                lambda c:c['construction_detail'].update(path='/private/SyntheticSecret123'),
+                lambda c:c['construction_detail'].update(category='SyntheticSecret123'),
+                lambda c:c['construction_detail'].update(check=True),
+                lambda c:c.update(construction_status='NOT_EMITTED'),
+                lambda c:c.update(native_code='native_confinement')):
+            evidence=copy.deepcopy(original)
+            mutate(evidence['record']['native_diagnostic']['guardian_diagnostic']['capture'])
+            evidence['sha256']=hashlib.sha256(json.dumps(evidence['record'],sort_keys=True,separators=(',',':')).encode()).hexdigest()
+            with self.assertRaises(Exception):
+                consumer.inspect_native_diagnostic({'native_diagnostic_evidence':evidence},packet)
+
+    @unittest.skipUnless(os.environ.get('OSMAP_TEST_CONSTRUCTION_EMITTER_BINARY'),
+        'focused Rust construction emitter artifact not supplied')
+    def test_actual_rust_construction_through_atomic_receipt_and_final_consumer(self):
+        result,_,_=self.construction_result('rust')
+        self.assertEqual(result['construction_detail'],{'schema':'osmap-account-construction-v1',
+            'operation':'socket_validation','check':'canonicalize','category':'absent'})
+        self.assertEqual(result['construction_status'],'AVAILABLE')
+        self.assertEqual(result['original_failure']['cause'],'native_admission_client')
+        self.assertEqual(result['diagnostic_preservation'],'READBACK_VERIFIED')
+        self.assertEqual(result['diagnostic_completeness'],'COMPLETE')
+
     def test_each_confinement_variant_through_process_frontend_recovery_and_final_consumer(self):
         producer=load('confinement_evidence_producer','test_native_diagnostics.py')
         for value in producer.CONFINEMENT_VARIANTS:
@@ -154,7 +191,8 @@ class NativeEvidence(unittest.TestCase):
         evidence=copy.deepcopy(original)
         native=evidence['record']['native_diagnostic']
         for capture in (native['guardian_capture'],native['guardian_diagnostic']['capture']):
-            del capture['confinement_detail'];del capture['confinement_status']
+            for key in ('confinement_detail','confinement_status','construction_detail','construction_status'):
+                capture.pop(key,None)
         evidence['sha256']=hashlib.sha256(json.dumps(evidence['record'],sort_keys=True,separators=(',',':')).encode()).hexdigest()
         result=consumer.inspect_mutation_failure({'native_diagnostic_evidence':evidence},packet)
         self.assertEqual(result['confinement_status'],'NOT_EMITTED')

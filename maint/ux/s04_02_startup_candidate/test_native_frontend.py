@@ -105,6 +105,40 @@ class NativeFrontendTests(unittest.TestCase):
             self.assertEqual((root/'diagnostic-stage').exists(),cleanup_failure)
             return result,diagnostic
 
+    def test_construction_detail_survives_actor_recovery_and_final_consumer(self):
+        detail={'schema':'osmap-account-construction-v1','operation':'socket_validation',
+            'check':'canonicalize','category':'absent'}
+        for mode,status in (('normal','AVAILABLE'),('fragmented','AVAILABLE'),
+                ('duplicate','DUPLICATE'),('partial','INCOMPLETE'),('oversized','MALFORMED'),
+                ('earlier_failure','CONFLICTING')):
+            with self.subTest(mode=mode):
+                result,diagnostic=self.exercise('construction:'+mode+':'+json.dumps(detail),
+                    operation='confinement-probe')
+                self.assertEqual(result['construction_status'],status)
+                self.assertEqual(result['construction_detail'],detail if status=='AVAILABLE'else None)
+                self.assertEqual(result['diagnostic_preservation'],'READBACK_VERIFIED')
+                self.assertEqual(result['authoritative_state_certainty'],'CONFIRMED_NO_WRITE')
+                if status=='AVAILABLE':
+                    self.assertEqual(result['original_failure']['cause'],'native_admission_client')
+                else:self.assertEqual(result['diagnostic_deficiency'],'CONSTRUCTION_DETAIL_'+status)
+        failed,_=self.exercise('construction:normal:'+json.dumps(detail),cleanup_failure=True,
+            operation='confinement-probe')
+        self.assertEqual(failed['construction_detail'],detail)
+        self.assertFalse(failed['cleanup_confirmed'])
+
+    @unittest.skipUnless(os.environ.get('OSMAP_TEST_CONSTRUCTION_EMITTER_BINARY'),
+        'focused Rust construction emitter artifact not supplied')
+    def test_actual_rust_construction_failure_reaches_final_consumer(self):
+        result,diagnostic=self.exercise('construction:rust:{}',operation='confinement-probe')
+        self.assertEqual(result['construction_detail'],{'schema':'osmap-account-construction-v1',
+            'operation':'socket_validation','check':'canonicalize','category':'absent'})
+        self.assertEqual(result['construction_status'],'AVAILABLE')
+        self.assertEqual(result['original_failure']['cause'],'native_admission_client')
+        self.assertEqual(result['diagnostic_preservation'],'READBACK_VERIFIED')
+        self.assertEqual(result['authoritative_state_certainty'],'CONFIRMED_NO_WRITE')
+        self.assertTrue(result['cleanup_confirmed'])
+        self.assertEqual(diagnostic['guardian_diagnostic']['web_terminal'],101)
+
     def test_confinement_probe_actual_guardian_failure_through_consumer(self):
         detail={'schema':'osmap-serve-confinement-v1','stage':'initial_pledge',
             'reason':'syscall_failed','syscall':'pledge','errno':22,'rule_ordinal':None}

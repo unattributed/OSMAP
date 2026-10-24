@@ -9993,7 +9993,8 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "scrum_lead": [
       "/root/password_delivery_review",
       "/root/s04_02_independent_review",
-      "/root/delivery_controller"
+      "/root/delivery_controller",
+      "/root/rust_review"
     ],
     "developers": [
       "/root/bin_preparation_engineer",
@@ -10017,7 +10018,9 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
       "/root/dependency_confinement",
       "/root/integration",
       "/root/evidence",
-      "/root/python_backend_review"
+      "/root/python_backend_review",
+      "/root/helper_trace_fix",
+      "/root/probe_review"
     ],
     "qa": [
       "/root",
@@ -10036,7 +10039,8 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
       "/root/schema",
       "/root/admission_review",
       "/root/python_runtime_review",
-      "/root/python_journey_review"
+      "/root/python_journey_review",
+      "/root/rust_review"
     ],
     "security_review": [
       "/root/scrum_security_review",
@@ -10053,7 +10057,8 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
       "/root/password_prototype_review",
       "/root/dependency_python",
       "/root/dependency_native",
-      "/root/admission_review"
+      "/root/admission_review",
+      "/root/rust_review"
     ],
     "technical_writer": [
       "/root",
@@ -19907,6 +19912,29 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "elapsed_seconds": 4.956,
         "reference": "/home/foo/Downloads/osmap-ux-s04/confinement-probe-20261024/startup-result.json",
         "reason": "One authorized confinement-only probe consumed. Earlier native_admission_client before Serve; no G/HTTP/submission. Child101/guardian1/helper1 reaped. Original disposition UNCERTAIN retained. Subsequent independent full17/epoch/no-intent reads confirm no-write; 33 runtime paths,2fixture rows,1SQLprincipal,2locked users/groups and2new stages retained. No retry or inferred confinement correction."
+      },
+      {
+        "id": "S04-02-r1-r2-build164",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "source_revision": "425c436ccd14c44251ea66e9618c83714a102fd173e4e08b9c6ca39e67d2d51c",
+        "change_reference": "Current user authorized focused R1/R2 preparation. Compile-only pair from signed 4e4fa31fe693347dbad7de27cb99a2e5ec2cf15c; dispatcher SHA256 8e33605eb890a3e7b880a567bfaa1b565daf613f419535c6f0b0f53a9d58f356 remote SHA256 b5d54c1723a2271d51ab292461fdd6fec89f0307397191bbd45af5ced7b121d6. No application or test execution.",
+        "success_chain_review": {
+          "reviewer": "/root/rust_review",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/r1-r2-native-20261024/build/independent-review.json SHA256 97b40479c46151714fd9bb18c232c55f442ba22ab64fd50d750125cf0c1bf604",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 374.521,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/r1-r2-native-20261024/build/result.json",
+        "reason": "Current signed463-input native helper/libtest pair compile PASS; source before/after identical, owned scratch/process cleanup confirmed, no test or application execution."
       }
     ],
     "prior_investigations": [
@@ -32129,6 +32157,46 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
             }
           }
         ]
+      },
+      {
+        "id": "r1-r2-build164",
+        "kind": "NATIVE",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "single-host-readiness"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "docs/UX_EXECUTION_LEDGER.md"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/usr/bin/python3",
+            "arguments": [
+              "/home/foo/Workspace/OSMAP/maint/ux/s04_02_startup_candidate/build_current.py",
+              "execute",
+              "--root",
+              "/home/foo/Downloads/osmap-ux-s04/r1-r2-native-20261024/build"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "Compile current helper/libtest pair only; exact signed inputs, measured phases and owned scratch cleanup. Stop on failure or uncertainty. No runtime installation, fixtures or public-service operations.",
+        "prerequisites": [
+          {
+            "id": "independent-current-pair-review",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/r1-r2-native-20261024/build/independent-review.json",
+              "sha256": "97b40479c46151714fd9bb18c232c55f442ba22ab64fd50d750125cf0c1bf604"
+            }
+          }
+        ]
       }
     ],
     "budget": {
@@ -32144,7 +32212,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
   },
   "blocker": "Probe163 failed earlier at admission-client construction; helper trace cannot distinguish mutation endpoint bind from following StockRuntime construction/StockPeer recheck. Serve stage/syscall/errno unobserved. One-shot authorization consumed.",
   "independent_next_action": "Independent outcome review of immutable original failure plus fresh no-write and exact retained-resource inventory. Any further native probe requires fresh explicit operator authority; no READY/T03 PASS.",
-  "updated_at": "2026-10-24T06:17:33Z"
+  "updated_at": "2026-10-24T07:55:35.340239+00:00"
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->

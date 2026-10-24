@@ -325,6 +325,30 @@ def launch(binary, control_fd, proof_fd, guardian, group):
 OUTPUT_LIMIT = 16384
 CONFINEMENT_MARKER = b'OSMAP_SERVE_CONFINEMENT_V1'
 CONFINEMENT_FIELDS = {'schema', 'stage', 'reason', 'syscall', 'errno', 'rule_ordinal'}
+CONSTRUCTION_MARKER = b'OSMAP_ACCOUNT_CONSTRUCTION_V1'
+CONSTRUCTION_FIELDS = {'schema', 'operation', 'check', 'category'}
+CONSTRUCTION_OPERATIONS = frozenset(('core_dumps','socket_validation','key_load','custody_capture'))
+CONSTRUCTION_CHECKS = frozenset(('ancestor_metadata','ancestor_directory','ancestor_owner',
+    'ancestor_permissions','absolute_path','path_length','canonicalize','canonical_path',
+    'parent_path','directory_metadata','directory_type','directory_owner','directory_permissions',
+    'file_open','file_metadata','file_type','file_owner','file_size','file_permissions','executable',
+    'key_read','key_length','socket_metadata','socket_type','socket_owner','socket_permissions',
+    'socket_links','parent_metadata','key_metadata','key_links','descriptor_flags','close_on_exec',
+    'parent_identity','socket_identity','key_descriptor_identity','key_path_identity','key_content',
+    'core_dump_limit'))
+CONSTRUCTION_CATEGORIES = frozenset(('invariant','absent','denied','invalid','busy','capacity',
+    'deadline','interrupted','unsupported','other_io'))
+
+
+def validate_construction(value):
+    """Only the Rust construction/custody enums cross the diagnostic boundary."""
+    require(type(value) is dict and set(value) == CONSTRUCTION_FIELDS, 'diagnostic_schema')
+    require(value['schema'] == 'osmap-account-construction-v1'
+        and type(value['operation']) is str and value['operation'] in CONSTRUCTION_OPERATIONS
+        and type(value['check']) is str and value['check'] in CONSTRUCTION_CHECKS
+        and type(value['category']) is str and value['category'] in CONSTRUCTION_CATEGORIES,
+        'diagnostic_schema')
+    return value
 
 
 def validate_confinement(value):
@@ -430,6 +454,9 @@ class Capture:
         self.confinement_detail = None
         self.confinement_status = 'NOT_EMITTED'
         self.confinement_markers = 0
+        self.construction_detail = None
+        self.construction_status = 'NOT_EMITTED'
+        self.construction_markers = 0
         self.lines = {name: bytearray() for name in ('stdout', 'stderr')}
         self.line_overflow = {name: False for name in ('stdout', 'stderr')}
         self.streams = {}
@@ -502,6 +529,25 @@ class Capture:
                             self.confinement_status = 'CONFLICTING'
                     except (Refused, ValueError, TypeError, UnicodeError):
                         self.confinement_status = 'MALFORMED'
+            if (name == 'stderr' and index < len(parts)-1
+                    and line.startswith(CONSTRUCTION_MARKER)):
+                self.construction_markers += 1
+                if self.construction_markers > 1:
+                    self.construction_status = 'DUPLICATE'
+                    self.construction_detail = None
+                else:
+                    try:
+                        require(not self.line_overflow[name]
+                            and line.startswith(CONSTRUCTION_MARKER+b' '), 'diagnostic_schema')
+                        value = validate_construction(json_value(bytes(line[len(CONSTRUCTION_MARKER)+1:])))
+                        if self.native_code in ('CAUSE_UNKNOWN', 'native_panic', 'native_admission_client'):
+                            self.construction_detail = value
+                            self.construction_status = 'AVAILABLE'
+                            self.native_code = 'native_admission_client'
+                        else:
+                            self.construction_status = 'CONFLICTING'
+                    except (Refused, ValueError, TypeError, UnicodeError):
+                        self.construction_status = 'MALFORMED'
             if (name == 'stdout' and index < len(parts)-1 and line == b'running 0 tests'
                     and self.native_code == 'CAUSE_UNKNOWN'):
                 self.native_code = 'native_entrypoint_not_selected'
@@ -528,6 +574,12 @@ class Capture:
                 status = 'DUPLICATE' if self.confinement_markers else 'INCOMPLETE'
                 detail = None
             result.update(confinement_status=status, confinement_detail=detail)
+            status, detail = self.construction_status, self.construction_detail
+            if pending and (pending.startswith(CONSTRUCTION_MARKER)
+                    or CONSTRUCTION_MARKER.startswith(pending)):
+                status = 'DUPLICATE' if self.construction_markers else 'INCOMPLETE'
+                detail = None
+            result.update(construction_status=status, construction_detail=detail)
             for name, item in self.streams.items():
                 result.update({name+'_bytes': item['count'],
                     name+'_sha256': item['hash'].hexdigest(),
@@ -581,7 +633,9 @@ def _validate_capture(capture):
             for name in ('stdout','stderr') for field in
             ('bytes','sha256','stored_bytes','truncated','eof')}
         require(type(capture) is dict and set(capture) in
-            (fields, fields | {'confinement_status', 'confinement_detail'}), 'diagnostic_schema')
+            (fields, fields | {'confinement_status', 'confinement_detail'},
+             fields | {'confinement_status', 'confinement_detail', 'construction_status', 'construction_detail'}),
+            'diagnostic_schema')
         if 'confinement_status' in capture:
             require(capture['confinement_status'] in ('NOT_EMITTED', 'AVAILABLE',
                 'MALFORMED', 'DUPLICATE', 'INCOMPLETE', 'CONFLICTING'), 'diagnostic_schema')
@@ -591,6 +645,16 @@ def _validate_capture(capture):
                 validate_confinement(capture['confinement_detail'])
                 require(capture['native_code'] == 'native_confinement', 'diagnostic_schema')
             require(capture['confinement_status'] == 'NOT_EMITTED'
+                or capture['stderr_bytes'] > 0, 'diagnostic_schema')
+        if 'construction_status' in capture:
+            require(capture['construction_status'] in ('NOT_EMITTED', 'AVAILABLE',
+                'MALFORMED', 'DUPLICATE', 'INCOMPLETE', 'CONFLICTING'), 'diagnostic_schema')
+            require((capture['construction_detail'] is not None) ==
+                (capture['construction_status'] == 'AVAILABLE'), 'diagnostic_schema')
+            if capture['construction_detail'] is not None:
+                validate_construction(capture['construction_detail'])
+                require(capture['native_code'] == 'native_admission_client', 'diagnostic_schema')
+            require(capture['construction_status'] == 'NOT_EMITTED'
                 or capture['stderr_bytes'] > 0, 'diagnostic_schema')
         require(capture['native_code'] in NATIVE_CODES and capture['capture_error'] in
                 (None, 'capture_io', 'capture_deadline'), 'diagnostic_schema')
