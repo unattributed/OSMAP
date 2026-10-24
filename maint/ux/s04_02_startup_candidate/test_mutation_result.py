@@ -27,7 +27,7 @@ fixture=load('mutation_fixture','test_password_journey.py')
 front,password=fixture.front,fixture.password
 
 class MutationIntegration(unittest.TestCase):
-    def run_actor(self,root,fault=None,cleanup_failure=False,packet=None,frontend_factory=None,receipt_factory=None):
+    def run_actor(self,root,fault=None,cleanup_failure=False,packet=None,frontend_factory=None,receipt_factory=None,admission=None):
         peer=fixture.ControlledPeer(root,fault);states={};phases=[]
         pin=packet['helper']['sha256']if packet is not None else'1'*64
         p={'helper_sha256':pin,'source_commit':packet['source_commit']if packet is not None else'2'*40,'config_map_sha256':pin,
@@ -36,6 +36,7 @@ class MutationIntegration(unittest.TestCase):
             'web_sha256':packet['web']['sha256']if packet is not None else pin,
             'compiler_source_manifest_sha256':packet['compiler_source_manifest_sha256']if packet is not None else pin}
         if packet is not None and packet.get('operation')=='confinement-probe':p['operation']='confinement-probe'
+        if admission is not None:p=copy.deepcopy(admission)
         class Qualification:
             def __init__(self):
                 states['backend']=self;self.recovery=None;self.helper=None;self.helper_stopped=False

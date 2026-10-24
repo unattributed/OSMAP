@@ -13298,3 +13298,20 @@ Implementation commit `6c12a45a2e415b82bf0bc43f7df92b4af481275a` has a verified 
 The consolidated operator bundle covers all five finding families from the tracked-source review. Local archive/member/hash, script syntax, public-service refusal, atomic replacement/restoration and pre-action registration simulation checks passed. OpenBSD build/install/native admission and the actual password workflow have NOT run in this delivery. The bundle will report those separately and retain rollback/cleanup evidence. No host or public-service action occurred during preparation.
 
 The operator now explicitly requests all outstanding work be committed and synchronized to the appropriate GitHub UX branch. The four pending documentation records are preserved in full and admitted together; previous source and observed failure history are not rewritten. Target branch: `feat/ux-completion-20260929`; no main promotion. The bundle is refreshed to the final synchronized revision before delivery. S04-02 remains OPEN.
+
+## 2026-10-24 — preserve earlier probe failure and exact artifact compatibility
+
+Admit independently compiled service/libtest only with identical verified complete
+signed compiler-input manifests, retaining the historical timing-only exception
+unchanged. Build only the affected service; reuse the instrumented libtest.
+The fixed confinement-probe operation exits before HTTP-driver construction/G
+and uses the existing diagnostic/no-write/disposition chain. Unexpected READY
+would remain an observation, never successful READY-only termination.
+
+Actual diagnostic163 failed earlier at admission-client construction. Preserve
+helper/child/guardian exits1/101/1, original UNCERTAIN disposition and the later
+independent no-write evidence as separate facts. The helper's MutationBind trace
+also covers StockRuntime construction; do not claim a definitive socket-bind or
+Serve defect. Stop after the consumed observation, retain exact-owned resources,
+and require new explicit authority for another native attempt. No speculative
+confinement change, retry, READY/T03 PASS or production access.

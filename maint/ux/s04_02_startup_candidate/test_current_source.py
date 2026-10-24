@@ -259,7 +259,7 @@ class CurrentSourceIntegration(unittest.TestCase):
                 back,front,frames=self.stage_fixture(root)
                 runtime=root/'runtime';runtime.mkdir()
                 peer,states,phases,report,transport,packet=mutation.MutationIntegration().run_actor(
-                    runtime,fault,packet=self.p)
+                    runtime,fault,packet=self.p,admission=json.loads((back/'local-admission.json').read_bytes()))
                 wire=b''.join(json.dumps(v).encode()+b'\n'for v in frames+[report])
                 parsed=[];wrapper.parse_actor_frames(wire,parsed);transport['frames']=parsed
                 if fault is None:
@@ -278,6 +278,37 @@ class CurrentSourceIntegration(unittest.TestCase):
                 # Local regression fixture only: native retained effects are never
                 # passed to this inert stage-only cleanup on an uncertain write.
                 self.dispose(back,front,frames)
+
+    def test_probe_current_artifacts_admission_actor_consumer_and_cleanup(self):
+        mutation=load('test_mutation_result')
+        self.p['operation']='confinement-probe'
+        with tempfile.TemporaryDirectory()as directory:
+            root=Path(directory)
+            back,front,frames=self.stage_fixture(root)
+            admission=json.loads((back/'local-admission.json').read_bytes())
+            runtime=root/'runtime';runtime.mkdir()
+            peer,states,phases,report,transport,packet=mutation.MutationIntegration().run_actor(
+                runtime,packet=self.p,admission=admission)
+            wire=b''.join(json.dumps(v).encode()+b'\n'for v in frames+[report])
+            parsed=[];wrapper.parse_actor_frames(wire,parsed);transport['frames']=parsed
+            accepted=consumer.inspect(transport,1,self.p['not_after_utc'],self.p)
+            self.assertEqual(accepted['operation'],'confinement-probe')
+            self.assertTrue(accepted['ready_observed'])
+            self.assertFalse(accepted['ready_only_qualified'])
+            self.assertEqual(accepted['authoritative_state_certainty'],'CONFIRMED_NO_WRITE')
+            self.assertTrue(accepted['cleanup_confirmed'])
+            self.assertEqual(peer.requests,[]);self.assertEqual(peer.writes,0)
+            self.assertFalse(hasattr(states['frontend'],'driver'))
+            self.assertFalse(any(phase=='MUTATION_SUBMISSION_INTENT'for phase,_ in phases))
+            self.assertEqual(report['native_diagnostic_evidence']['record']['execution_admission_sha256'],
+                stage.sha((back/'local-admission.json').read_bytes()))
+            # The same published admission must bind the diagnostic; replacing
+            # it with a fixture identity is refused by the real consumer.
+            bad=copy.deepcopy(transport)
+            bad['frames'][2]['admission_sha256']='0'*64
+            with self.assertRaisesRegex(RuntimeError,'native_diagnostic_execution_binding'):
+                consumer.inspect(bad,1,self.p['not_after_utc'],self.p)
+            self.dispose(back,front,frames)
 
 
 class BuildTransportCleanupTests(unittest.TestCase):

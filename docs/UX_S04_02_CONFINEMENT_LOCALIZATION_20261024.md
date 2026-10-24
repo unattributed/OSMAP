@@ -165,3 +165,9 @@ governance because the new report index used a Markdown link without the require
 literal filename in backticks. The exact filename entry was corrected; the
 failed hook log is retained as normal-push.log. No branch update occurred.
 A complete ordinary push-hook rerun remains required, without bypass.
+
+## Later authorized diagnostic163 — earlier boundary failed
+
+2026-10-24 UTC — **Confinement-only probe163 FAIL before Serve; independent no-write confirmed.** The one authorized attempt stopped at `native_admission_client` before detailed confinement, READY or G. Helper/HTTP child/guardian exited1/101/1 and were reaped. The helper trace spans mutation endpoint binding and subsequent StockRuntime construction; the unique cause and confinement syscall/errno remain unobserved. The original carrier retained resources with UNCERTAIN disposition. Subsequent independent read-only evidence confirms Alice/Bob full17 rows unchanged, both epochs0 with no pending/used intents, and public configuration/master/cache preservation. All33 runtime paths, two fixture rows, one SQL principal, two locked OS users/groups and two new protected stages remain retained. Historical execution160 stages are unchanged. No retry, Stage B or Stage C ran. Exact-signed-input artifact pairing now passes the real producer/consumer interfaces, but native runtime pairing and T03 remain NOT QUALIFIED. See [probe163 evidence](../maint/ux/s04_02_startup_candidate/confinement_probe163_evidence.json).
+
+The original execution160 outcome remains unchanged. The current service was compiled separately from the same complete signed source inputs as the retained instrumented libtest; the previous unequal-input reuse predicate was not relaxed. No actual Serve defect was measured by diagnostic163, so no speculative confinement correction was applied. Further native testing requires fresh operator authorization and disposition of the new fixture namespace before reuse.
