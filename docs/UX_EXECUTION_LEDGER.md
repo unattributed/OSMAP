@@ -21342,6 +21342,24 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
       },
       "evidence": "Local tool outputs and /tmp/osmap-admission-tests-verified.log, /tmp/osmap-inventory-custody-tests.log, /tmp/osmap-rust-diagnostic-governance.log; final retained delivery evidence owned by root.",
       "failure_history": "Two initial compile failures during integration (private method visibility and accidental helper trace insertion into unrelated scope) corrected before focused PASS; no host execution or retry."
+    },
+    "rust_diagnostic_native_validation_20261024": {
+      "operator_request": "One focused native R1/R2 validation after current artifacts, diagnostic continuity and isolation are established.",
+      "owner": "/root",
+      "independent_reviewer": "/root/rust_review",
+      "source_baseline": "87bb2d76c80e473769e98779337f977fdf3cee3e",
+      "objective": "Observe the first actual native boundary once and retain precise R1 admission-construction or R2 helper runtime/recheck provenance through the existing durable diagnostic result; unexpected READY is an observation followed by pre-G stop.",
+      "prerequisite_source_work": "Extend existing bounded diagnostic capture/recovery/consumer to preserve the Rust admission schema; no second logging framework. Freeze reviewed current source and prove actual emitter-to-consumer continuity locally, including refusal and cleanup.",
+      "prerequisite_artifacts": "Existing native pair build164, maximum720seconds, current signed complete compiler-input closure including the new custody module; actual helper/libtest receipts and hashes verified. Old4668 artifacts do not qualify current Rust.",
+      "prerequisite_isolation": "Fresh read-only reconciliation of exact163 runtime/recovery/diagnostic identities, references, dedicated principals/processes and full17/epoch state; independently reviewed exact-owned runtime/SQL fixture disposition if needed, then prove fixed fixture namespace collision-free. No adoption of retained state.",
+      "planned_native_probe": "Probe165 only after prerequisite evidence passes, using existing confinement-probe route, one fresh run directory and one-shot guard. Maximum690seconds; actor600/work450/cleanup150, guardian330 and transport650 preserved.",
+      "planned_action_status": "NOT_DISPATCHABLE until root records exact fresh source hashes, receipts, recipe and independently reviewed prerequisites in the existing planned_action.",
+      "essential_checks": "Actual Rust producer through guardian/capture, durable recovery hash/readback and consumer locally; missing/invalid/duplicate/conflicting details refuse. Native actual first failure/READY observation, no G/HTTP/password submission, original no-write authority and public configuration/master preserved; cleanup outcome separate.",
+      "preserved": "All160/163 evidence and historical160 protected stages remain. No public Dovecot/Postfix/MariaDB lifecycle/configuration change, operator account operation, timeout or custody-policy relaxation, forced push or native qualification flag change.",
+      "excluded": "Historical160 stage deletion, G, HTTP requests, password changes, StageB/StageC execution, retry of consumed165 or automatic resource adoption. No administrative authority expiry invented.",
+      "stop_rule": "Any missing diagnostic continuity, stale build/source, unproven ownership or namespace collision blocks165. After one native observation stop; retain uncertain resources and earliest failure separately from cleanup/authority. A missing untriggered failure path stays NOT_OBSERVED.",
+      "cost_accounting": "Prior cumulative measured and UNKNOWN time/failures retained; record actual per-action elapsed time. Build720/probe690 are technical operation bounds, not calendar expiry or a reset of history.",
+      "results": "Source continuity, build164, fresh reconciliation, necessary exact-owned disposition and probe165 NOT_RUN at this planning entry."
     }
   },
   "execution_contract": {
@@ -36576,3 +36594,29 @@ still uses the shared detailed implementation. Independent delta review CLEAR;
 all-target Clippy with warnings denied PASS (18.18s). Normal signed follow-up
 and push gates remain required. No
 history amendment, host action or diagnostic/security behavior change is involved.
+
+
+## 2026-10-24 — one native R1/R2 observation authorized after prerequisites
+
+The operator authorizes one focused native validation of the Rust admission
+construction diagnostic (R1) and helper runtime/recheck trace (R2). Root owns
+the sole Git/host queue; rust_review independently reviews prerequisite evidence
+and the resulting observation. Existing bounded capture/recovery/consumer must
+first preserve the new Rust admission detail through actual local execution.
+Current signed helper/libtest artifacts require existing pair build164 (720s);
+old4668 binaries cannot represent the changed Rust source.
+
+Fresh read-only reconciliation must establish the exact163 runtime ownership,
+process/reference state, full17/epoch preservation and public configuration. Any
+necessary exact-owned163 runtime/SQL fixture disposition precedes a collision-free
+preflight; retained state is never adopted. Historical160 protected stages and
+all durable diagnostics remain untouched. Root supplies exact hashes/receipts,
+recipe and independent review before scheduling probe165 (690s). Existing
+actor600/cleanup150/guardian330 bounds remain; no calendar expiry is introduced.
+
+Probe165 uses the existing confinement-probe branch and is consumed once. No G,
+HTTP request, password submission, StageB/StageC or public mail-service operation
+is included. Capture the actual first failure or unexpected READY, then stop.
+A successful local emitter test or untriggered native failure cannot become a
+native diagnostic or T03 PASS. No new native action has run at this planning
+entry. Prior failures, retained resources and measured/UNKNOWN costs remain.

@@ -1379,6 +1379,21 @@ fn native_rust_private_primary_admission() -> Result<(), &'static str> {
 /// Exercise the real constructor against local filesystem objects. Diagnostics
 /// discriminate the rejected invariant without disclosing the object or key.
 #[test]
+#[ignore = "explicit subprocess fixture for actual constructor diagnostic and fixed HTTP panic"]
+fn account_construction_diagnostic_emitter() {
+    let root = fs::canonicalize(listener_root()).unwrap();
+    let result = Client::qualified_files(
+        &root.join("missing.sock"),
+        &root.join("unused.key"),
+        crate::openbsd::effective_uid(),
+    );
+    // Dispose of this empty, uniquely created directory before the deliberate
+    // caller panic; no backend socket or credential file was created or read.
+    fs::remove_dir(root).unwrap();
+    result.expect("HTTP fixture admission custody refused");
+}
+
+#[test]
 fn admission_construction_reports_precise_custody_failure() {
     use custody::Category;
     use ConstructionOperation as Op;
