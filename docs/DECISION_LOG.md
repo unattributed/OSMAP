@@ -1,5 +1,17 @@
 # Decision Log
 
+2026-10-25 UTC — **Reuse the passed installed transaction and advance to failure consistency.**
+The ordinary installed Runtime/file-TOTP/helper journey passed exactly one real
+credential mutation, twenty HTTP observations, authoritative epoch/session
+readbacks and independent control-account HTTP/IMAP preservation. Its separate
+post-transaction browser timeout is not a reason to repeat that mutation. T04
+concurrency/replay and T05 post-write containment are the next native boundaries;
+remaining browser controls use genuine login-returned cookies and a separately
+scoped result capability. A stored session ID is a one-way reference, not a bearer;
+the rejected read-only cookie attempts and corrected actual consumer proof are
+retained. Source tests, native failure outcomes and human T09 acceptance remain
+separate. Routine host patching changes neither the assignment nor authorization.
+
 2026-10-25 UTC — **Native credential transaction and epoch/session consistency PASS.**
 The ordinary Rust helper completed the guarded conditional password change.
 Actual client1 PASS26.67s: authoritative current credential/TOTP preparation,

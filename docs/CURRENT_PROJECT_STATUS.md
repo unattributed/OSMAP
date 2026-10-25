@@ -1,5 +1,30 @@
 # Current Project Status
 
+2026-10-25 UTC — **Ordinary installed credential journey PASS; remaining S04-02 checks active.**
+The normal Web Runtime, file-backed TOTP, production helper, SQL transaction and
+stored-session machinery completed one controlled installed password change on
+obsd1. All twenty HTTP observations passed: obsolete password refused first,
+replacement login accepted, both old sessions denied and revoked, one new epoch-1
+session issued, and result/reload plus both Settings history views matched the
+authoritative write time, 2026-10-25 11:40:39 UTC. The control account's SQL row,
+epoch, HTTP session and established TLS-authenticated IMAP connection survived.
+
+The post-transaction browser controller missed its broker window; this does not
+erase or repeat the completed transaction. Initial cleanup was uncertain; a
+separate exact-identity recovery later confirmed all five owned processes absent,
+both fixed sockets absent and the original helper restored. Historical uncertainty
+remains recorded. Two subsequent read-only browser attempts incorrectly used a
+stored one-way session identifier as a cookie; the product correctly refused it.
+The actual SessionService producer/consumer now confirms that only the raw token
+returned by login is a bearer. No credential retry or session renewal followed.
+
+T04 concurrency/replay, T05 native post-write containment and remaining installed
+browser checks are in progress. Two focused post-write effect tests pass locally;
+these are not native failure-case results. T09 is not ready for human acceptance.
+Daily/ad-hoc host updates do not suspend this work; concrete capabilities and
+current artifact identity determine compatibility. See the
+[installed transaction evidence](UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md).
+
 2026-10-25 UTC — **Ordinary installed Web reaches dependency planning; focused correction prepared.**
 The signed Runtime/result source compiled as the normal osmap binary. Startup01
 stopped at a launch-format error before Serve; Text-only configuration corrected

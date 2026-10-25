@@ -415,7 +415,10 @@ fn native_mutation_gate_before_write_fixture(
     account: &str,
     original: Instant,
 ) -> Result<(), DependencyError> {
-    if account != "alice@osmap-password.invalid" {
+    if !matches!(
+        account,
+        "alice@osmap-password.invalid" | "s04-02-concurrent-20261025-01@osmap-password.invalid"
+    ) {
         return Ok(());
     }
     let mut slot = NATIVE_MUTATION_GATE
@@ -471,7 +474,10 @@ impl<E: Effects> Effects for PostwriteRefusalEffects<'_, E> {
     }
     fn invalidate_cache(&self, a: &str, d: Instant) -> Result<(), DependencyError> {
         // Service calls this only after real SQL readback and durable timing.
-        if a == "alice@osmap-password.invalid" {
+        if matches!(
+            a,
+            "alice@osmap-password.invalid" | "s04-02-incomplete-20261025-01@osmap-password.invalid"
+        ) {
             return Err(DependencyError::Unavailable);
         }
         self.0.invalidate_cache(a, d)
@@ -646,5 +652,33 @@ mod postwrite_fixture_tests {
                 "finish_mail"
             ]
         );
+    }
+
+    #[test]
+    fn fresh_postwrite_fixture_refuses_required_effect_and_preserves_control() {
+        let probe = Probe(RefCell::new(Vec::new()));
+        let fault = PostwriteRefusalEffects(&probe);
+        let deadline = Instant::now() + std::time::Duration::from_secs(1);
+        assert_eq!(
+            fault.invalidate_cache(
+                "s04-02-incomplete-20261025-01@osmap-password.invalid",
+                deadline,
+            ),
+            Err(DependencyError::Unavailable)
+        );
+        assert!(probe.0.borrow().is_empty());
+        fault
+            .invalidate_cache(
+                "s04-02-incomplete-control-20261025-01@osmap-password.invalid",
+                deadline,
+            )
+            .unwrap();
+        fault
+            .finish_mail(
+                "s04-02-incomplete-control-20261025-01@osmap-password.invalid",
+                deadline,
+            )
+            .unwrap();
+        assert_eq!(&*probe.0.borrow(), &["invalidate_cache", "finish_mail"]);
     }
 }

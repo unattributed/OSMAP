@@ -2594,3 +2594,37 @@ mod tests {
         );
     }
 }
+
+/// Fixed T04 actors only; the reviewed native boundary preserves the control
+/// descriptor and applies the observed nonroot identity without a shell.
+#[cfg(all(test, unix))]
+pub(crate) fn native_t04_fixture_command(role: u8) -> Result<Command, &'static str> {
+    let selector = match role {
+        0 => "account_password_server::diagnostic_tests::native_stock_installed_concurrent_mutation_service_entrypoint",
+        1 => "http::tests::password_tests::genuine_http_pilot::native_installed_concurrent_issuance_entrypoint",
+        2 => "account_password_server::transaction_tests::native_installed_concurrent_replay_transaction",
+        _ => return Err("T04_FIXED_ACTOR_ROLE"),
+    };
+    let mut command = Command::new("/var/run/osmap-installed-t04-web-20261025-01/native-service");
+    command
+        .args([
+            "--exact",
+            selector,
+            "--ignored",
+            "--nocapture",
+            "--test-threads=1",
+        ])
+        .env_clear()
+        .env("PATH", "/usr/bin:/bin:/usr/local/bin")
+        .env("LC_ALL", "C")
+        .env("TZ", "UTC")
+        .current_dir("/");
+    if role == 0 {
+        command.env("OSMAP_TEST_NATIVE_MUTATION_GATE_FD", "3");
+    }
+    if role == 1 {
+        command.env("OSMAP_TEST_HTTP_PILOT_FD", "3");
+    }
+    crate::openbsd::fixture_t04_child_profile(&mut command, role);
+    Ok(command)
+}

@@ -1050,10 +1050,6 @@ mod genuine_http_pilot {
     #[test]
     #[ignore = "requires root-owned P/G mutation rendezvous and actual native service"]
     fn native_single_host_concurrent_issuance_entrypoint() {
-        use crate::account_admission::EpochAuthority;
-        use crate::session::{FileSessionStore, SessionService, SystemRandomSource};
-        use crate::totp::SystemTimeProvider;
-        use std::sync::Arc;
         assert_eq!(std::env::consts::OS, "openbsd");
         crate::openbsd::disable_core_dumps().unwrap();
         let fd: i32 = std::env::var("OSMAP_TEST_HTTP_PILOT_FD")
@@ -1088,6 +1084,65 @@ mod genuine_http_pilot {
             0,
         )
         .unwrap();
+        native_concurrent_issuance_probe(
+            control,
+            client,
+            config.state_layout.runtime_dir.join("t04-issuer-sessions"),
+            "alice@osmap-password.invalid",
+            "bob@osmap-password.invalid",
+            deadline,
+        );
+    }
+
+    /// Fixed fresh pair only; ordinary native-local constructor, real primary
+    /// authentication and actual FileSessionStore/SessionService issuance gate.
+    /// The normal Web/curl journey separately supplies genuine MFA coverage.
+    #[test]
+    #[ignore = "requires fresh installed T04 runtime and root-owned inherited control"]
+    fn native_installed_concurrent_issuance_entrypoint() {
+        assert_eq!(std::env::consts::OS, "openbsd");
+        crate::openbsd::disable_core_dumps().unwrap();
+        let fd: i32 = std::env::var("OSMAP_TEST_HTTP_PILOT_FD")
+            .unwrap()
+            .parse()
+            .unwrap();
+        assert!((3..=1024).contains(&fd));
+        let control = Control::owned(
+            crate::openbsd::fixture_current_rust_owned_http_pilot_control(fd).unwrap(),
+        )
+        .unwrap();
+        let root = Path::new("/var/run/osmap-installed-t04-web-20261025-01");
+        directory(root, 0, 0o750).unwrap();
+        directory(&root.join("keys"), WEB_UID, 0o700).unwrap();
+        directory(&root.join("state/run"), WEB_UID, 0o700).unwrap();
+        let client = crate::account_admission_runtime::Client::from_native_local_operator_files(
+            &root.join("keys/admission.key"),
+        )
+        .unwrap();
+        // This actor has no Serve seal; its ordinary client keeps full protected
+        // path/key/peer custody checks on every exchange. No fixture constructor.
+        native_concurrent_issuance_probe(
+            control,
+            client,
+            root.join("state/run/t04-issuer-sessions"),
+            "s04-02-concurrent-20261025-01@osmap-password.invalid",
+            "s04-02-concurrent-control-20261025-01@osmap-password.invalid",
+            Instant::now() + Duration::from_secs(300),
+        );
+    }
+
+    fn native_concurrent_issuance_probe(
+        mut control: Control,
+        client: crate::account_admission_runtime::Client,
+        session_root: PathBuf,
+        alice: &str,
+        bob: &str,
+        deadline: Instant,
+    ) {
+        use crate::account_admission::EpochAuthority;
+        use crate::session::{FileSessionStore, SessionService, SystemRandomSource};
+        use crate::totp::SystemTimeProvider;
+        use std::sync::Arc;
         #[derive(serde::Deserialize)]
         #[serde(deny_unknown_fields)]
         struct Primary {
@@ -1103,17 +1158,12 @@ mod genuine_http_pilot {
                     .all(|b| b.is_ascii_hexdigit())
         );
         let captured = client
-            .authenticate_before(
-                "alice@osmap-password.invalid",
-                &primary.alice_password,
-                deadline,
-            )
+            .authenticate_before(alice, &primary.alice_password, deadline)
             .unwrap()
             .unwrap();
-        assert_eq!(captured.account, "alice@osmap-password.invalid");
+        assert_eq!(captured.account, alice);
         assert_eq!(captured.epoch, 0);
         drop(primary);
-        let session_root = config.state_layout.runtime_dir.join("t04-issuer-sessions");
         fs::create_dir(&session_root).unwrap();
         fs::set_permissions(
             &session_root,
@@ -1194,10 +1244,44 @@ mod genuine_http_pilot {
             Err(crate::account_admission::Error::Refused)
         ));
         client.admit_before(&captured.account, 1, deadline).unwrap();
-        client
-            .admit_before("bob@osmap-password.invalid", 0, deadline)
-            .unwrap();
+        client.admit_before(bob, 0, deadline).unwrap();
         control.write(b"{\"schema\":\"osmap-native-issuance-race-v1\",\"issuance_denied\":true,\"new_sessions\":0,\"stale_epoch_refused\":true,\"current_epoch\":1,\"bob_epoch\":0}", deadline).unwrap();
+    }
+
+    /// Fixed T05 read-only authority discriminator. No credential or session
+    /// issuance is attempted after the verified-write/cache refusal.
+    #[test]
+    #[ignore = "requires held fresh T05 helper, protected keys and contained account"]
+    fn native_installed_postwrite_contained_admission_entrypoint() {
+        assert_eq!(std::env::consts::OS, "openbsd");
+        assert_eq!(crate::openbsd::effective_uid(), WEB_UID);
+        crate::openbsd::disable_core_dumps().unwrap();
+        let root = Path::new("/var/run/osmap-installed-full05-web-20261025-01");
+        directory(root, 0, 0o750).unwrap();
+        directory(&root.join("keys"), WEB_UID, 0o700).unwrap();
+        let client = crate::account_admission_runtime::Client::from_native_local_operator_files(
+            &root.join("keys/admission.key"),
+        )
+        .unwrap();
+        let deadline = Instant::now() + Duration::from_secs(5);
+        for epoch in [0, 1] {
+            assert!(matches!(
+                client.admit_before(
+                    "s04-02-incomplete-20261025-01@osmap-password.invalid",
+                    epoch,
+                    deadline
+                ),
+                Err(crate::account_admission::Error::Refused)
+            ));
+        }
+        client
+            .admit_before(
+                "s04-02-incomplete-control-20261025-01@osmap-password.invalid",
+                0,
+                deadline,
+            )
+            .unwrap();
+        println!("\nT05_NATIVE_AUTHORITY_REFUSAL_PASS epoch0_refused=true epoch1_refused=true control_epoch0_admitted=true primary_auth=false session_issuance=false");
     }
 
     fn native_http_password_runtime(topology: Topology) {

@@ -91,3 +91,56 @@ refused the documentation index because its existing inventory guard requires
 the report filename in code ticks as well as its link. The index now includes
 that exact filename; the guard passes. This documentation-only correction
 changes no compiled input and requires no repeat credential operation.
+
+## Ordinary installed Runtime and file-TOTP journey
+
+The subsequent positive05 run used the normal Web Runtime, protected file-backed
+TOTP, actual FileSessionStore and ordinary production helper on obsd1. Exactly one
+password POST completed. All twenty HTTP observations passed, including initial
+unknown history, result page and reload, result-capability isolation, refusal of
+both old cookies, obsolete-password-first refusal, replacement-password login,
+four Settings history views/reloads and the preserved control session.
+
+Independent root SQL and Store witnesses established one credential transition,
+active epoch 1 and authoritative write time `20261025114039` (2026-10-25 11:40:39
+UTC), exactly two revoked old session records, one new epoch-1 session, unchanged
+other account fields and preservation of all prior rows. The control account's
+full row, epoch and session remained unchanged. Its existing TLS-verified IMAP
+connection remained authenticated across the transaction and completed NOOP and
+LOGOUT without message selection or delivery operations.
+
+The normal Web artifact is
+`f48d04463a868180cd49d1a3d6a085e023280343db9da6fccda773ce36a1353f`,
+compiled from signed source `16d7bf4d0126e2f3186390234ffcf26ab14ad3a4`,
+source manifest
+`d3090ca59da501214d3c89b7de3ce0ca5bdb2b982d19217f8cfcbcef81ac20c6`.
+The unchanged ordinary helper remains the native04 artifact identified above.
+Both use the functional development profile; production performance remains
+unqualified. Actual archive SHA256:
+`9fa7fc9a0cfe95ef83efd683950f9d339ff5267cad899b83db1e85aa9e368804`.
+Independent review verified 58 unique flat regular members and all 57 member
+hashes; review receipt SHA256:
+`663664cc23632534d0a8ea3c72d9ce3200366395d35f663f1861538ae3d3aeec`.
+
+The browser controller did not request the post-transaction broker within its
+window. Credential completion was already durable before that separate UI phase;
+no repeat mutation is needed. The initial cleanup receipt remains uncertain.
+Subsequent exact-identity reconciliation confirmed the five owned process IDs
+absent, both fixed sockets absent, no helper references, the captured published
+helper inode/digest and successful restoration of the original helper. This is
+current recovery evidence and does not rewrite the initial uncertainty.
+
+Two later read-only UI attempts used a persisted session identifier as a cookie.
+This was an engineering error in the controller: SessionService stores
+`SHA256("session-id:" + raw_token)`, and the raw login token is not persisted.
+Actual issued-token/Store/validation composition proved the real cookie valid,
+the persisted identifier equal to that domain-separated hash, no raw token in the
+Store and the identifier-as-cookie refused. Correction receipt SHA256:
+`f4130974e21352655d12c393674737346ff2ea3908ca6b493099f22c93225174`.
+Earlier legitimate-cookie claims for those read-only attempts are withdrawn.
+Their zero-POST and exact cleanup results remain valid. No session forging,
+renewal, password reset or replay followed.
+
+T04 native concurrency/replay, T05 native post-write containment and remaining
+browser controls remain open. The passed installed transaction is reused; neither
+its success nor the local fault tests imply complete S04-02 or human T09 acceptance.

@@ -292,7 +292,11 @@ impl Client {
         if !cfg!(target_os = "openbsd")
             || self.0.helper_uid != 0
             || self.0.socket != Path::new(crate::config::LOCAL_ACCOUNT_MUTATION_SOCKET)
-            || dispatch.account() != "alice@osmap-password.invalid"
+            || !matches!(
+                dispatch.account(),
+                "alice@osmap-password.invalid"
+                    | "s04-02-concurrent-20261025-01@osmap-password.invalid"
+            )
         {
             return Err(Error::Invalid);
         }

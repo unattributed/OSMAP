@@ -812,6 +812,29 @@ mod diagnostic_tests {
             .expect("native postwrite service lifecycle refused");
     }
 
+    /// Fixed fresh T05 pair only. The ordinary web/Runtime remains unchanged;
+    /// this ignored helper selects the existing post-write refusal seam.
+    #[test]
+    #[ignore = "requires reviewed fresh installed T05 pair and independent authoritative witnesses"]
+    fn native_stock_installed_postwrite_refusal_service_entrypoint() {
+        assert!(crate::openbsd::password_native_authority());
+        let files = OperatorFiles::read(Instant::now() + Duration::from_secs(5)).unwrap();
+        assert_eq!(
+            files.accounts,
+            BTreeSet::from([
+                "s04-02-incomplete-20261025-01@osmap-password.invalid".to_owned(),
+                "s04-02-incomplete-control-20261025-01@osmap-password.invalid".to_owned(),
+            ])
+        );
+        assert!(
+            !crate::account_password_runtime::STOCK_POSTWRITE_REFUSAL.swap(true, Ordering::SeqCst)
+        );
+        let signals = crate::openbsd::AccountAdmissionSignals::install()
+            .expect("native postwrite signal handlers refused");
+        run_operator_service(signals.stop_flag())
+            .expect("native postwrite service lifecycle refused");
+    }
+
     #[test]
     #[ignore = "requires root-reviewed before-write rendezvous and independent admission actor"]
     fn native_stock_concurrent_mutation_service_entrypoint() {
@@ -835,6 +858,31 @@ mod diagnostic_tests {
             .expect("native concurrent signal handlers refused");
         run_operator_service(signals.stop_flag())
             .expect("native concurrent service lifecycle refused");
+    }
+
+    #[test]
+    #[ignore = "requires fresh T04 pair, root-owned P/G rendezvous and actual independent issuer"]
+    fn native_stock_installed_concurrent_mutation_service_entrypoint() {
+        assert!(crate::openbsd::password_native_authority());
+        let files = OperatorFiles::read(Instant::now() + Duration::from_secs(5)).unwrap();
+        assert_eq!(
+            files.accounts,
+            BTreeSet::from([
+                "s04-02-concurrent-20261025-01@osmap-password.invalid".to_owned(),
+                "s04-02-concurrent-control-20261025-01@osmap-password.invalid".to_owned(),
+            ])
+        );
+        let fd: i32 = std::env::var("OSMAP_TEST_NATIVE_MUTATION_GATE_FD")
+            .unwrap()
+            .parse()
+            .unwrap();
+        assert!((3..=1024).contains(&fd));
+        let control = crate::openbsd::fixture_owned_unix_stream(fd).unwrap();
+        crate::account_password_runtime::arm_native_mutation_gate_fixture(control).unwrap();
+        let signals = crate::openbsd::AccountAdmissionSignals::install()
+            .expect("installed concurrent signal handlers refused");
+        run_operator_service(signals.stop_flag())
+            .expect("installed concurrent service lifecycle refused");
     }
 
     #[test]
