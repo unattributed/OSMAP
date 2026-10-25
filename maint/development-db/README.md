@@ -52,7 +52,7 @@ options before initializing. The dedicated `_osmapdbrepl` OS principal keeps the
 replica separate from the original server's `_mysql` identity.
 Use socket-authenticated root administration on the new socket; do not reuse the
 original instance's credentials/system tables. Inspect resulting accounts/grants
-and refuse unexpected anonymous access before exposing its listener.
+and refuse unexpected unauthenticated SQL principals before exposing its listener.
 See [mariadb-install-db](https://mariadb.com/docs/server/clients-and-utilities/deployment-tools/mariadb-install-db).
 
 The [replica RC script](rc.d/osmap_db_replica) uses a root-owned symlink in a
