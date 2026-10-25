@@ -49,6 +49,16 @@
       ]
     },
     {
+      "method": "GET",
+      "path": "/settings/password/result",
+      "query_fields": [],
+      "form_fields": [],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004"
+      ]
+    },
+    {
       "method": "POST",
       "path": "/settings/password",
       "query_fields": [],
@@ -1195,119 +1205,245 @@
       "path": "/settings/folders/rename/check",
       "query_fields": [],
       "form_fields": [],
-      "wstg_test_ids": ["OSMAP-WSTG-ATHZ-001", "OSMAP-WSTG-SESS-004", "OSMAP-WSTG-BUSL-005"]
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-BUSL-005"
+      ]
     },
     {
       "method": "POST",
       "path": "/settings/folders/rename/check",
       "query_fields": [],
-      "form_fields": ["csrf_token", "confirm"],
-      "wstg_test_ids": ["OSMAP-WSTG-ATHZ-001", "OSMAP-WSTG-SESS-004", "OSMAP-WSTG-INPV-003", "OSMAP-WSTG-BUSL-005"]
+      "form_fields": [
+        "csrf_token",
+        "confirm"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-BUSL-005"
+      ]
     },
     {
       "method": "GET",
       "path": "/settings/folders/rename/recover",
       "query_fields": [],
       "form_fields": [],
-      "wstg_test_ids": ["OSMAP-WSTG-ATHZ-001", "OSMAP-WSTG-SESS-004", "OSMAP-WSTG-BUSL-005"]
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-BUSL-005"
+      ]
     },
     {
       "method": "POST",
       "path": "/settings/folders/rename/recover",
       "query_fields": [],
-      "form_fields": ["csrf_token", "confirm", "recovery_nonce"],
-      "wstg_test_ids": ["OSMAP-WSTG-ATHZ-001", "OSMAP-WSTG-SESS-004", "OSMAP-WSTG-INPV-003", "OSMAP-WSTG-BUSL-005"]
+      "form_fields": [
+        "csrf_token",
+        "confirm",
+        "recovery_nonce"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-BUSL-005"
+      ]
     },
     {
       "method": "GET",
       "path": "/settings/folders/move",
-      "query_fields": ["source"],
+      "query_fields": [
+        "source"
+      ],
       "form_fields": [],
-      "wstg_test_ids": ["OSMAP-WSTG-ATHZ-001", "OSMAP-WSTG-SESS-004", "OSMAP-WSTG-INPV-003", "OSMAP-WSTG-BUSL-005"]
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-BUSL-005"
+      ]
     },
     {
       "method": "POST",
       "path": "/settings/folders/move",
       "query_fields": [],
-      "form_fields": ["csrf_token", "source", "source_guid", "parent_guid", "leaf", "action", "confirm", "destination_parent", "source_parent_guid", "descendants"],
-      "wstg_test_ids": ["OSMAP-WSTG-ATHZ-001", "OSMAP-WSTG-SESS-004", "OSMAP-WSTG-INPV-003", "OSMAP-WSTG-BUSL-005"]
+      "form_fields": [
+        "csrf_token",
+        "source",
+        "source_guid",
+        "parent_guid",
+        "leaf",
+        "action",
+        "confirm",
+        "destination_parent",
+        "source_parent_guid",
+        "descendants"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-BUSL-005"
+      ]
     },
     {
       "method": "GET",
       "path": "/folders/deleted",
       "query_fields": [],
       "form_fields": [],
-      "wstg_test_ids": ["OSMAP-WSTG-ATHZ-001", "OSMAP-WSTG-SESS-004", "OSMAP-WSTG-BUSL-005"]
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-BUSL-005"
+      ]
     },
     {
       "method": "GET",
       "path": "/settings/folders/delete",
-      "query_fields": ["source"],
+      "query_fields": [
+        "source"
+      ],
       "form_fields": [],
-      "wstg_test_ids": ["OSMAP-WSTG-ATHZ-001", "OSMAP-WSTG-SESS-004", "OSMAP-WSTG-INPV-003", "OSMAP-WSTG-BUSL-005"]
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-BUSL-005"
+      ]
     },
     {
       "method": "POST",
       "path": "/settings/folders/delete",
       "query_fields": [],
-      "form_fields": ["csrf_token", "source", "source_guid", "parent_guid", "confirm"],
-      "wstg_test_ids": ["OSMAP-WSTG-ATHZ-001", "OSMAP-WSTG-SESS-004", "OSMAP-WSTG-INPV-003", "OSMAP-WSTG-BUSL-005"]
+      "form_fields": [
+        "csrf_token",
+        "source",
+        "source_guid",
+        "parent_guid",
+        "confirm"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-BUSL-005"
+      ]
     },
     {
       "method": "GET",
       "path": "/settings/folders/delete/check",
       "query_fields": [],
       "form_fields": [],
-      "wstg_test_ids": ["OSMAP-WSTG-ATHZ-001", "OSMAP-WSTG-SESS-004", "OSMAP-WSTG-BUSL-005"]
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-BUSL-005"
+      ]
     },
     {
       "method": "POST",
       "path": "/settings/folders/delete/check",
       "query_fields": [],
-      "form_fields": ["csrf_token", "confirm"],
-      "wstg_test_ids": ["OSMAP-WSTG-ATHZ-001", "OSMAP-WSTG-SESS-004", "OSMAP-WSTG-INPV-003", "OSMAP-WSTG-BUSL-005"]
+      "form_fields": [
+        "csrf_token",
+        "confirm"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-BUSL-005"
+      ]
     },
     {
       "method": "GET",
       "path": "/settings/folders/bin",
-      "query_fields": ["source"],
+      "query_fields": [
+        "source"
+      ],
       "form_fields": [],
-      "wstg_test_ids": ["OSMAP-WSTG-ATHZ-001", "OSMAP-WSTG-SESS-004", "OSMAP-WSTG-INPV-003", "OSMAP-WSTG-BUSL-005"]
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-BUSL-005"
+      ]
     },
     {
       "method": "POST",
       "path": "/settings/folders/bin",
       "query_fields": [],
-      "form_fields": ["csrf_token", "expected_request", "confirm"],
-      "wstg_test_ids": ["OSMAP-WSTG-ATHZ-001", "OSMAP-WSTG-SESS-004", "OSMAP-WSTG-INPV-003", "OSMAP-WSTG-BUSL-005"]
+      "form_fields": [
+        "csrf_token",
+        "expected_request",
+        "confirm"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-BUSL-005"
+      ]
     },
     {
       "method": "GET",
       "path": "/settings/folders/restore",
-      "query_fields": ["id"],
+      "query_fields": [
+        "id"
+      ],
       "form_fields": [],
-      "wstg_test_ids": ["OSMAP-WSTG-ATHZ-001", "OSMAP-WSTG-SESS-004", "OSMAP-WSTG-INPV-003", "OSMAP-WSTG-BUSL-005"]
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-BUSL-005"
+      ]
     },
     {
       "method": "POST",
       "path": "/settings/folders/restore",
       "query_fields": [],
-      "form_fields": ["csrf_token", "expected_request", "confirm"],
-      "wstg_test_ids": ["OSMAP-WSTG-ATHZ-001", "OSMAP-WSTG-SESS-004", "OSMAP-WSTG-INPV-003", "OSMAP-WSTG-BUSL-005"]
+      "form_fields": [
+        "csrf_token",
+        "expected_request",
+        "confirm"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-BUSL-005"
+      ]
     },
     {
       "method": "GET",
       "path": "/settings/folders/disposition/check",
       "query_fields": [],
       "form_fields": [],
-      "wstg_test_ids": ["OSMAP-WSTG-ATHZ-001", "OSMAP-WSTG-SESS-004", "OSMAP-WSTG-BUSL-005"]
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-BUSL-005"
+      ]
     },
     {
       "method": "POST",
       "path": "/settings/folders/disposition/check",
       "query_fields": [],
-      "form_fields": ["csrf_token", "confirm"],
-      "wstg_test_ids": ["OSMAP-WSTG-ATHZ-001", "OSMAP-WSTG-SESS-004", "OSMAP-WSTG-INPV-003", "OSMAP-WSTG-BUSL-005"]
+      "form_fields": [
+        "csrf_token",
+        "confirm"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-BUSL-005"
+      ]
     },
     {
       "method": "GET",
