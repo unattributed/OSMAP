@@ -39201,3 +39201,13 @@ is included. Capture the actual first failure or unexpected READY, then stop.
 A successful local emitter test or untriggered native failure cannot become a
 native diagnostic or T03 PASS. No new native action has run at this planning
 entry. Prior failures, retained resources and measured/UNKNOWN costs remain.
+
+### 2026-10-25 delivery index correction
+
+The ordinary push for the signed source-pin follow-up passed the carrier and
+Rust/security regressions, then stopped at the existing documentation inventory
+guard. The new report link lacked the literal code-ticked filename required by
+that guard. The index now includes it and the focused guard passes. Native
+transaction and exact fixture retirement remain PASS; no compiled source, live
+action, frozen plan or acceptance scope changes. Normal signed delivery and
+fresh remote parity remain the final source synchronization check.

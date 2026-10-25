@@ -85,3 +85,9 @@ custody and qualification hashes and the coupled root-stage hash were refreshed,
 without changing the native product or weakening source admission. The two
 matching closure tests pass. The failed gate is retained; a normal signed
 follow-up and ordinary push preserve both checkpoints.
+
+The next ordinary push passed the carrier, Rust and security regressions, then
+refused the documentation index because its existing inventory guard requires
+the report filename in code ticks as well as its link. The index now includes
+that exact filename; the guard passes. This documentation-only correction
+changes no compiled input and requires no repeat credential operation.
