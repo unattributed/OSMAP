@@ -1,5 +1,22 @@
 # Decision Log
 
+2026-10-25 UTC — **Qualify the local application independently from the reference replica.**
+Keep the source replica in its separate read-only MariaDB instance. The OSMAP
+application uses the original writable local database and only synthetic native
+account enrollment. The ordinary HTTPS development profile now passed a genuine
+MFA login, local Inbox, both password entry points, visibility and Cancel, with
+no new password-change dispatch. Deliver the private development onboarding file
+and request only T09 usability acceptance. Reuse unchanged controlled native
+transaction/epoch/session evidence; preserve the failed real-account case.
+
+Retain the initial root-to-Web `doas` failure and use the observed native `su`
+launch contract for its residue-only recovery. Do not rerun provisioning or
+change a credential to repair service access. Root diagnostic-log custody was
+actually refused for an owned symlink and both inherited descriptors were
+verified after ordinary helper startup. A read-only environment observer first
+matched a comment; its corrected assignment-only parser passed, with the original
+failure retained. No application relaxation was needed for that observation.
+
 2026-10-25 UTC — **Correct the authority mistake and keep UX development local.**
 The operator's failed real-account journey supersedes the public readiness claim.
 The original remote auth/mailbox environment did not constrain global native

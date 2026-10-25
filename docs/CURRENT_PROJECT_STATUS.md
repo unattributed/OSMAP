@@ -1,5 +1,38 @@
 # Current Project Status
 
+2026-10-25 UTC — **Fully local obsd1 UX development is installed; T09 owner review is ready.**
+The normal HTTPS address <https://obsd1.blackbagsecurity.com/login> now uses the
+local writable development database, native credential/epoch service, file TOTP
+and local mailbox helper. One fresh synthetic development account completed its
+ordinary password-plus-TOTP browser login at 19:06:36 UTC and loaded the local
+synthetic Inbox. Security and Authentication & Recovery both opened the enabled,
+empty password form; all three visibility controls and Cancel passed. No password
+change was submitted in this onboarding/browser check. Separate protected
+onboarding material supplies the development login; keep it separate from the
+Toronto production entry in the password manager.
+
+Ordinary Web `2678b730…` is the source-bound native build06 from signed `8f3ce62`;
+the qualified native helper remains `0f95a68b…`. The new helper RC `766c175c…`
+refused an owned unsafe diagnostic sink, then started with private stdout and
+stderr descriptors verified against the root-only log inode. The first cutover
+stopped because root-to-Web `doas` needed authentication; a residue-only native
+`su` correction completed startup, without repeating account provisioning.
+Both loopback HTTP and certificate-verified public HTTPS returned 200 on the
+matching installed Web PID 59501.
+
+The separate read-only reference replica has both threads running, no recorded
+IO/SQL errors and zero lag. All 17 source/replica table checksums matched, owned
+transport-loss recovery and replica-only stop/start passed, and boot ordering
+was verified; no system reboot was performed. All prior development mailbox rows
+and 51 protected files passed preservation. The new account remains active at
+epoch 0, with an ordinary consumed TOTP counter and no uncertainty marker.
+The original real-account authority-split failure remains a failed historical
+case. Controlled T03–T05 credential/epoch/session evidence is reused at its
+existing local scope; it is not a Toronto password-change result.
+**Human T09 is pending and S04-02 is not ACCEPTED.** See the
+[local-development report](UX_S04_02_LOCAL_DEVELOPMENT_20261025.md) and
+[short owner review](UX_S04_02_T09_ACCEPTANCE_20261025.md).
+
 2026-10-25 UTC — **Real-account readiness withdrawn; fully local UX development migration active.**
 The operator's public password-change request was unconfirmed, and the latest
 Toronto/PostfixAdmin credential failed while the old local credential worked.

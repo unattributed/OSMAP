@@ -7,9 +7,11 @@ public readiness is withdrawn. Global native configuration had selected stale
 local credentials while the normal mail authority remained Toronto. The operator
 subsequently selected fully local obsd1 UX development, a separate read-only
 database reference replica and isolated writable test data. See the
-[current migration report](UX_S04_02_LOCAL_DEVELOPMENT_20261025.md). The controlled
+[current local-development report](UX_S04_02_LOCAL_DEVELOPMENT_20261025.md). The controlled
 transaction evidence below remains valid for its stated local scope; no real-user
-or new-development-profile acceptance follows from it.
+acceptance follows from it. The new local profile has since passed separate
+ordinary HTTPS MFA, local Inbox and password-page checks; see that report.
+Human T09 for the local profile remains pending.
 
 **Historical controlled-local closeout: all four outcomes, all 20 retained
 obligations and T01–T08 PASS; independent audit CLEAR at that checkpoint.**

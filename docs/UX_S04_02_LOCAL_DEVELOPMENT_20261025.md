@@ -2,12 +2,13 @@
 
 ## Current result and boundary
 
-**The authority split is confirmed and an isolated read-only reference replica is
-running. Fully local OSMAP development onboarding and human acceptance remain
-pending. This is not production password-change readiness or a production S04
-PASS.** Earlier controlled obsd1 transaction/session results retain their original
-scope; they did not establish that a real mailbox used Toronto's credential
-authority.
+**Fully local obsd1 OSMAP UX development is installed and ready for the owner's
+T09 usability review.** The read-only reference replica, transport recovery and
+instance restart checks passed. The new synthetic account completed ordinary
+HTTPS MFA login, local Inbox and password-page navigation/control checks.
+Human acceptance remains pending. This does not qualify production Toronto
+password changes. Earlier controlled native transaction/session results retain
+their stated local scope; they did not prove the failed real mailbox journey.
 
 The operator selected obsd1 for all OSMAP UX development, with local authentication,
 mailbox access and controlled development accounts. Toronto remains the live mail
@@ -37,8 +38,9 @@ the development application's database.
    paths. The correction refuses either exact known bridge path before startup,
    including rollout configurations. Local native and relay-only controls pass;
    unfamiliar Unix paths are not classified by assumption. RED, GREEN and normal
-   compilation evidence are retained. **The corrected source guard is not yet a
-   newly built/deployed native runtime claim.**
+   compilation evidence are retained. Ordinary native Web build06 subsequently
+   completed from signed source `8f3ce62`; its matching image is now installed
+   and separately qualified by the ordinary local application observations below.
 5. A shared-instance schema rewrite was reviewed, then superseded because
    qualified DDL could address development data. The selected correction uses a
    separate local MariaDB instance with a separate OS principal and datadir,
@@ -90,37 +92,65 @@ Wrapper shutdown reaped its child and removed the listener; stop/start then
 resumed the replication channel without SQL reset. This qualifies the observed
 failure/recovery sequence, not every future network outage or update condition.
 
+The replica applied an authorized source log rotation to
+`osmap-source-bin.000002`, position 400. Its own stop/start then automatically
+resumed both replication threads while the original development database process
+remained unchanged. Both replica services were enabled and their configured boot
+order places the tunnel before the replica. **No system reboot was performed;**
+configured boot persistence is distinct from an observed reboot recovery.
+
 Backups, earlier bootstrap refusals, the source socket-readiness failure and all
 superseded review records remain private evidence. No failure is relabelled as
 PASS, and no unobserved historical process signal is assigned a cause. Replica
 health does not authorize modifying an uncertain credential transaction.
 
-## Remaining local application work
+## Installed local application result
 
-The public [development environment example](../maint/openbsd/osmap-serve-development.env.example)
-specifies the existing obsd1 HTTPS edge, production runtime safeguards, enforced
-confinement, fixed local native sockets and isolated qualified state. The local
-mailbox helper was observed as vmail UID 2000 with the local userdb/maildir mapping;
-its exact grant needs the protected Web-readable copy described in the private
-setup plan. Example/source review is complete; installation/onboarding is not.
+The [development environment](../maint/openbsd/osmap-serve-development.env.example)
+is installed behind the existing HTTPS edge with production runtime safeguards,
+enforced confinement, local native account sockets and local Dovecot/mailbox
+helper. The Web grant copy matches the existing local helper's bytes, and its
+observed peer is vmail UID 2000. The application does not select the read-only
+replica or Toronto bridge endpoints.
 
-Before local UX readiness:
+Only the four incident-added real identities were removed from both native
+allowlists. Their rows, epochs, factors and other evidence were retained. The
+five controlled identities remain, with one fresh synthetic development account
+added, giving identical six-account policies. One initial local mailbox-row
+birth provisioned a random password, independent random TOTP seed and local
+synthetic Maildir. The owner receives these in a 0600 onboarding file under the
+private sprint directory. No production hash or mail content was imported, and
+no external message was sent.
 
-- Bind both actual native allowlists, remove only the four incident-added real
-  mailbox identities from those policy arrays, retain the exact five controlled
-  identities, and add one fresh synthetic `@osmap-password.invalid` account.
-  Preserve all old real and controlled SQL, epochs, locks, markers, factors,
-  replay counters and sessions as evidence.
-- Provision only that fresh local account, random password, independent random
-  TOTP secret and local maildir. Deliver onboarding through an operator-owned
-  0600 file under a private directory; never publish credentials or substitute
-  production hashes. No production message import, external delivery or real-user
-  OpenPGP operation is part of this setup.
-- Install the source-bound ordinary local profile and perform the actual normal
-  MFA login, local mailbox navigation and required password/epoch/session journey
-  on the development dataset. Preserve the one-operation/no-ambiguous-retry rule.
-- Reconcile installed evidence and only then conduct the separate human T09
-  review. Earlier controlled QA and a healthy reference replica do not replace it.
+The first cutover stopped at Web bootstrap because root-to-Web `doas` required
+authentication. Native `su` under root was observed to select UID 1001; a guarded
+residue-only recovery then completed bootstrap and the main Web start. It did
+not replay the SQL insert, configuration publication or unsafe-log fixture.
+The matching loaded Web PID 59501 returned HTTP 200 and certificate-verified
+canonical HTTPS 200. Root helper PID 31435 uses the unchanged qualified `0f95…`
+service binary and new `766c…` RC. The owned unsafe-log symlink was refused with
+no helper birth and an unchanged canary; ordinary startup then held descriptors
+1 and 2 on the protected root-0600 log inode.
+
+A normal browser password-plus-TOTP login succeeded at 19:06:36 UTC. The local
+Inbox showed the synthetic message. Both Security and Authentication & Recovery
+opened the enabled empty password form, all three visibility controls toggled
+independently, and Cancel returned to Security. The unchanged account correctly
+showed Last change unknown. This onboarding check submitted zero password-change
+POSTs. Existing controlled T03–T05 mutation, epoch/session and containment results
+are reused because their product paths/helper are unchanged; no further mutation
+was needed to repair access or repeat those successful tests.
+
+Readback preserved all prior local mailbox rows and 51 protected files. The
+fresh row is unchanged after login, epoch 0 is active, the uncertainty marker is
+absent, and the ordinary login created its TOTP replay counter. Both replica
+threads still run with zero errors and zero lag. The first read-only environment
+observer matched the bridge name in a comment; its assignment-only correction
+passed without changing the installed application. Both observations are retained.
+
+Human T09 remains pending. Use the [short owner review](UX_S04_02_T09_ACCEPTANCE_20261025.md)
+with the separate development credentials. S04-02 is not ACCEPTED until the owner
+records that usability result.
 
 ## Evidence references
 
@@ -141,3 +171,23 @@ administrative screenshots, credentials, hashes of individual passwords or keys.
 | Source and replica 17-table checksum files — matching file digests | `186f3f2b75d9b358a8b26944b89fbfc353ab658e2984a967851d8669f854043f` |
 | `replica-readonly-qualification02.actual.log` | `83884ba57a1babb5301308e488b077b20b2779d3cc15f365c58b2958418ee3fc` |
 | `replica-transport-recovery-test01.actual.log` | `5b2741b8c4655bca62808b6383092ff9a2c6a7d6c74e22a5f3f3105577dac7eb` |
+| `replica-persistence-and-boot01.actual.log` | `aaa188288dff2fb6acb565a7db9e0db719427e6c69015e6c54f2013b5ba0d3e7` |
+
+Native build06 evidence is retained in the sibling `build06/` directory.
+`native-build.log` has SHA256
+`f1f52ec16a00cc19768ef8a55129cda5bd7516e568d4787cb485ee65b842992b`;
+the ordinary Web image has SHA256
+`2678b7308fdc4231bef42e0bfe8df1c49c04eee545ffa89d10eeaace7c26bcd5`.
+The build uses the unoptimized development profile and does not rebuild the
+ordinary helper or supply an installed journey result.
+
+Final installed local-development evidence is retained in the sibling
+`local-development01/` directory. Its independent actual review is
+`actual-final-independent-review.json`, SHA256
+`c22836d797c8917cfaf4c85d5bca851d43727de0b0bf0b700ef4cd768178676c`,
+pinning 20 current artifacts. This is the current profile's readiness review,
+separate from the earlier controlled 20-requirement acceptance mapping and from
+human T09. The original initial-cutover failure, residue-only recovery, corrected
+read-only observation and private resource backups are retained independently.
+The matching `reconciliation.corrected.actual.json` has SHA256
+`18a34ad83182ec48d162d677f9ba30e9037baeb74bec6b6f0ec4eeab3d9f4a7c`.
