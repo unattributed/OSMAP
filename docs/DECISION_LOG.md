@@ -13814,3 +13814,11 @@ and alternate-interpreter cases refuse before execution. All other ldd routes,
 resource/stream checks and before/after custody remain unchanged. No Postdrop
 mail main, mail message, account or credential operation is authorized by this
 inspection interface. Matching normal Web startup remains the next product gate.
+
+The normal push hook refused the new malformed-input fixture because its literal
+shell shebang/command text matches the existing source command guard, including
+test modules. Replace that fixture with a non-ELF marker shebang and retain the
+same pre-execution refusal assertion; do not exempt tests or weaken the guard.
+The native normal Web build f48d0446 remains bound to signed16d7bf4. This follow-up
+changes only the cfg(test) input plus derived maps and records; production source
+used by that ordinary binary is identical and no new native build is required.

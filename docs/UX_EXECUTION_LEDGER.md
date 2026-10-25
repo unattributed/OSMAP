@@ -20417,6 +20417,28 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "reference": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/loader04/native-observation.log: same_osmap fixedTRACE exit0/out1068/err0; protectedhash/statunchanged; actualRustparser11leavesPASS; archived7regularunique dca6b606. No main/app/auth/SQL.",
         "elapsed_status": "UNKNOWN",
         "elapsed_seconds": null
+      },
+      {
+        "id": "S04-02-INSTALLED-build04",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "source_revision": "16d7bf4d0126e2f3186390234ffcf26ab14ad3a4",
+        "change_reference": "ActuallddwrapperPostdroprefusal ->boundednativeTRACE/PARSERpass ->reviewedOpenBSDdynamicELFguard, focused3+factory1+custody6 andproductionPASS. NormalWebrebuildonly.",
+        "success_chain_review": {
+          "reviewer": "/root/transaction_review",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/postdrop-final-source-independent-review.json",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "reference": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/build04/native-build.log: normalWebf48d04463a868180cd49d1a3d6a085e023280343db9da6fccda773ce36a1353f;24964232bytes;source16d7bf4, manifestd3090ca5. Compileonly.",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 44.0
       }
     ],
     "prior_investigations": [
@@ -35399,6 +35421,44 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
             "evidence": {
               "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/loader03/postdrop-interpreter-bytes.txt",
               "sha256": "eaf20c9c1294c067a82ddba1e0991565ab59ae127579abdf7b01c1196635869e"
+            }
+          }
+        ]
+      },
+      {
+        "id": "ordinary-installed-web-build04",
+        "kind": "NATIVE",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "single-host-readiness"
+        ],
+        "test_ids": [
+          "S04-02-T03",
+          "S04-02-T06"
+        ],
+        "allowed_paths": [
+          "docs/UX_EXECUTION_LEDGER.md"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/bin/sh",
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/build04/build.sh"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "Build only normalWeb signed16d7bf4 guardedOpenBSDPostdropTRACE; source/receiptbeforeafter, scopedownpackageclean/cache reuse/newbinaryrequired, noapp/helper/auth/SQL.",
+        "prerequisites": [
+          {
+            "id": "reviewed-final-8path-source",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/postdrop-final-source-independent-review.json",
+              "sha256": "00889b682d972f1555d19309604edf042de061a8eac50ef28e053fa6abe0ca73"
             }
           }
         ]

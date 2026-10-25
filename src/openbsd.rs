@@ -3621,7 +3621,7 @@ mod tests {
         let mut executable = valid.clone();
         put(&mut executable, 16, 2, 2);
         assert!(postdrop_trace_elf_prefix(&executable));
-        assert!(!postdrop_trace_elf_prefix(b"#!/bin/sh\nexit 0\n"));
+        assert!(!postdrop_trace_elf_prefix(b"#!not-an-elf\n"));
         assert!(!postdrop_trace_elf_prefix(&valid[..16]));
         assert!(!postdrop_trace_elf_prefix(
             &valid[..interp_header + phsize - 1]
