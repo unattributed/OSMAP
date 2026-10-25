@@ -13746,3 +13746,19 @@ regression failed before the correction and passes afterward. This preserves
 uncertainty rather than inventing completion. Expiry and absent/foreign/unsafe
 records refuse. Source tests and independent review are complete; actual
 installed validation remains the next functional boundary.
+
+## 2026-10-25 — native Web dependency inspection uses module loader context
+
+Preserve startup01's concrete launch rejection and startup02's subsequent generic
+loader refusal. A bounded read-only native comparison under the same _osmap UID,
+cleared environment and working directory reproduced exit1 for an admitted
+standalone Dovecot library. The sole fixed LD_LIBRARY_PATH=/usr/local/lib/dovecot
+addition produced exit0 with no stderr and exact protected selected libraries.
+
+Use that fixed search context only when the admitted target is a module in one
+of the two protected Dovecot directories. Keep every fixed executable command's
+environment unchanged and retain all existing trusted ancestry/leaf, exact trace,
+nonzero/stderr and resource checks. No directory unveil grant or public loader
+configuration changes. Rebuild only the affected normal Web artifact; retain the
+proven helper's separate source/binary identity. This comparison does not assign
+a unique unrecorded historical child to startup02 or declare installed PASS.

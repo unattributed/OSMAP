@@ -185,6 +185,15 @@ pub(crate) fn installed_dependencies_command(
         .env("LC_ALL", "C")
         .env("PATH", SAFE_COMMAND_PATH)
         .current_dir("/");
+    // Standalone modules lack the executable's Dovecot search context. Keep
+    // this fixed protected directory scoped to admitted module traces only;
+    // executable inspection retains its original environment.
+    if matches!(
+        program.parent().and_then(std::path::Path::to_str),
+        Some("/usr/local/lib/dovecot" | "/usr/local/lib/dovecot/doveadm")
+    ) {
+        command.env("LD_LIBRARY_PATH", "/usr/local/lib/dovecot");
+    }
     Ok(command)
 }
 
@@ -1822,6 +1831,68 @@ mod tests {
     use crate::config::LogFormat;
     use crate::logging::Logger;
     use std::rc::Rc;
+
+    #[cfg(unix)]
+    #[test]
+    fn installed_dependency_factory_scopes_fixed_dovecot_module_context() {
+        use std::collections::BTreeMap;
+        use std::ffi::OsString;
+        use std::path::Path;
+
+        let base: BTreeMap<OsString, Option<OsString>> = BTreeMap::from([
+            ("LC_ALL".into(), Some("C".into())),
+            ("PATH".into(), Some(SAFE_COMMAND_PATH.into())),
+        ]);
+        for (program, module) in [
+            ("/usr/bin/fstat", false),
+            ("/usr/local/bin/doveadm", false),
+            ("/usr/local/bin/doveconf", false),
+            ("/usr/local/bin/mariadb", false),
+            ("/usr/sbin/sendmail", false),
+            ("/usr/sbin/mailwrapper", false),
+            ("/usr/local/sbin/sendmail", false),
+            ("/usr/local/sbin/postdrop", false),
+            ("/usr/local/lib/dovecot/libdovecot-sieve.so.4.0", true),
+            ("/usr/local/lib/dovecot/doveadm/lib10_quota_plugin.so", true),
+        ] {
+            let command = installed_dependencies_command(Path::new(program)).unwrap();
+            assert_eq!(command.get_program(), "/usr/bin/ldd");
+            assert_eq!(
+                command.get_args().collect::<Vec<_>>(),
+                vec![Path::new(program)]
+            );
+            assert_eq!(command.get_current_dir(), Some(Path::new("/")));
+            let mut expected = base.clone();
+            if module {
+                expected.insert(
+                    "LD_LIBRARY_PATH".into(),
+                    Some("/usr/local/lib/dovecot".into()),
+                );
+            }
+            let actual = command
+                .get_envs()
+                .map(|(name, value)| (name.to_os_string(), value.map(OsString::from)))
+                .collect::<BTreeMap<_, _>>();
+            assert_eq!(actual, expected, "{program}");
+        }
+        for program in [
+            "/tmp/libdovecot-sieve.so.4.0",
+            "/usr/local/lib/libdovecot-sieve.so.4.0",
+            "/usr/local/lib/dovecot/private/libevil.so",
+            "/usr/local/lib/dovecot/../libevil.so",
+            "/usr/local/lib/dovecot/libevil.so.bad",
+            "/usr/local/lib/dovecot/libevil;name.so",
+            "/usr/local/lib/dovecot/doveadm/libevil.so.1.bad",
+        ] {
+            assert_eq!(
+                installed_dependencies_command(Path::new(program))
+                    .unwrap_err()
+                    .kind(),
+                std::io::ErrorKind::PermissionDenied,
+                "{program}"
+            );
+        }
+    }
 
     struct AcceptingBackend;
 

@@ -1,5 +1,26 @@
 # Current Project Status
 
+2026-10-25 UTC — **Ordinary installed Web reaches dependency planning; focused correction prepared.**
+The signed Runtime/result source compiled as the normal osmap binary. Startup01
+stopped at a launch-format error before Serve; Text-only configuration corrected
+that observed error without rebuilding. Startup02 then reached actual ordinary
+Serve dependency planning and stopped at its generic resolver refusal. Both
+owned process stops, original helper restorations and protected readbacks passed;
+six exact copied keys remain retained across the two isolated startup trees.
+No HTTP, authentication, TOTP or credential operation ran.
+
+A same-UID, clean-environment read-only reproduction found an allowed standalone
+Dovecot library that failed loader inspection. Adding only the fixed protected
+Dovecot core search path changed that actual result from exit1/stderr62 to
+exit0/stderr0. The factory now supplies that context only for the two admitted
+Dovecot module directories; eight fixed executable environments, exact resolved
+leaf custody, parser, refusal and confinement grants remain unchanged. Focused
+factory test PASS1 and independent rerun/security review CLEAR. The historical
+startup02 child target remains unrecorded; the next matching Web build/startup
+must qualify the integrated correction. Native04 remains separately PASS; T03-T08
+installed acceptance and T09 readiness remain pending.
+
+
 2026-10-25 UTC — **Installed Runtime integration source advanced; native installed QA pending.**
 The ordinary configured native-local account client route now selects only the
 fixed socket pair/root helper principals and retains full custody, peer, purpose
