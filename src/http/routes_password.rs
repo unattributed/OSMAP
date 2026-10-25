@@ -1,6 +1,44 @@
 //! One own-account request, one original deadline; no automatic mutation retry.
 use super::*;
 
+const PASSWORD_RESULT_COOKIE: &str = "osmap_password_result";
+const PASSWORD_RESULT_PATH: &str = "/settings/password/result";
+fn result_cookie(capability: &str, secure: bool) -> String {
+    format!("{PASSWORD_RESULT_COOKIE}={capability}; Path=/settings/password; Max-Age=900; HttpOnly; SameSite=Strict{}", if secure { "; Secure" } else { "" })
+}
+fn write_timing(stamp: Option<&str>, confirmed: bool) -> String {
+    stamp
+        .filter(|v| crate::account_mutation::changed_at_valid(v))
+        .map(|v| {
+            let state = if confirmed {
+                "Password change and required OSMAP session cleanup were confirmed."
+            } else {
+                "Required containment remains incomplete; this is not a completed password change."
+            };
+            format!(
+                "<p>The credential write was verified at {}-{}-{} {}:{}:{} UTC. {state}</p>",
+                &v[0..4],
+                &v[4..6],
+                &v[6..8],
+                &v[8..10],
+                &v[10..12],
+                &v[12..14]
+            )
+        })
+        .unwrap_or_default()
+}
+fn result_response(result: BrowserPasswordResult) -> HttpResponse {
+    let message = if result.confirmed {
+        "Your password was changed and your existing browser sessions were revoked. Sign in again with your new password. Mail clients already authenticated through IMAP or SMTP may remain connected."
+    } else {
+        "A completed password change has not been confirmed. If you submitted a change, do not repeat it; contact support to reconcile the account state. This result does not grant access to your account."
+    };
+    let timing = write_timing(result.changed_at.as_deref(), result.confirmed);
+    html_response(200, "OK", "Password Change", TrustedHtml::from_template(format!(
+        "<main id=\"main-content\" class=\"page-shell\"><section class=\"panel\"><h1>Password change</h1><p role=\"status\">{message}</p>{timing}<a href=\"/login\">Sign in</a></section></main>"
+    )))
+}
+
 const PASSWORD_SCRIPT: &str = include_str!("password_local.js");
 const PASSWORD_SCRIPT_HASH: &str = "sha256-yy1xyn6PfDKkPhGgl2wE49oKPcIjrGhGJYi3trYVTPI=";
 
@@ -30,6 +68,25 @@ fn password_response(
 }
 
 impl<G: BrowserGateway> BrowserApp<G> {
+    /// This capability discloses only this request's bounded result. It never
+    /// validates an old browser session or enters authenticated Settings.
+    pub(super) fn handle_password_result(&self, request: &HttpRequest) -> HandledHttpResponse {
+        let result = request
+            .query_params
+            .is_empty()
+            .then(|| {
+                session_cookie_value(request, PASSWORD_RESULT_COOKIE)
+                    .and_then(|capability| self.gateway.password_result(&capability))
+            })
+            .flatten();
+        HandledHttpResponse {
+            response: result.map(result_response).unwrap_or_else(|| html_response(
+                404, "Not Found", "Password result unavailable",
+                TrustedHtml::from_template("<main id=\"main-content\"><h1>Password result unavailable</h1><p>This result is unavailable or has expired. Sign in if your account is available, or contact support. Do not repeat an unconfirmed password change.</p><a href=\"/login\">Sign in</a></main>".into()),
+            )),
+            audit_events: Vec::new(),
+        }
+    }
     pub(super) fn handle_password_change(
         &self,
         request: &HttpRequest,
@@ -57,19 +114,49 @@ impl<G: BrowserGateway> BrowserApp<G> {
             };
         }
         if request.method == HttpMethod::Get {
-            return HandledHttpResponse {
-                response: password_response(
-                    if available { 200 } else { 503 },
-                    if available {
-                        "OK"
-                    } else {
-                        "Service Unavailable"
+            let capability = if available {
+                match self.gateway.begin_password_result(
+                    &session,
+                    session_cookie_value(request, PASSWORD_RESULT_COOKIE).as_deref(),
+                ) {
+                    Ok(value) => value,
+                    Err(_) => return HandledHttpResponse {
+                        response: password_response(
+                            503,
+                            "Service Unavailable",
+                            account,
+                            csrf,
+                            false,
+                            Some(
+                                "Password result storage is unavailable. No change was submitted.",
+                            ),
+                        ),
+                        audit_events,
                     },
-                    account,
-                    csrf,
-                    available,
-                    None,
-                ),
+                }
+            } else {
+                None
+            };
+            let mut response = password_response(
+                if available { 200 } else { 503 },
+                if available {
+                    "OK"
+                } else {
+                    "Service Unavailable"
+                },
+                account,
+                csrf,
+                available,
+                None,
+            );
+            if let Some(capability) = capability {
+                response = response.with_header(
+                    "Set-Cookie",
+                    result_cookie(&capability, self.policy.secure_session_cookie),
+                );
+            }
+            return HandledHttpResponse {
+                response,
                 audit_events,
             };
         }
@@ -149,6 +236,25 @@ impl<G: BrowserGateway> BrowserApp<G> {
                 }
             }
         };
+        let result_capability = match self.gateway.begin_password_result(
+            &session,
+            session_cookie_value(request, PASSWORD_RESULT_COOKIE).as_deref(),
+        ) {
+            Ok(value) => value,
+            Err(_) => {
+                return HandledHttpResponse {
+                    response: password_response(
+                        503,
+                        "Service Unavailable",
+                        account,
+                        csrf,
+                        false,
+                        Some("Password result storage is unavailable. No change was submitted."),
+                    ),
+                    audit_events,
+                }
+            }
+        };
         let (guard, acquired) = match self.acquire_auth_budget(context) {
             Ok(value) => value,
             Err(response) => return response,
@@ -165,6 +271,10 @@ impl<G: BrowserGateway> BrowserApp<G> {
         {
             outcome.decision = BrowserPasswordDecision::Unconfirmed;
         }
+        let saved_result = result_capability.as_deref().filter(|capability| {
+            self.gateway
+                .finish_password_result(&session, capability, &outcome)
+        });
         audit_events.extend(outcome.audit_events);
         audit_events.push(self.release_auth_budget(guard, context));
         audit_events.push(
@@ -196,19 +306,24 @@ impl<G: BrowserGateway> BrowserApp<G> {
             },
         };
         // Completed/uncertain results do not expose a second submission form.
-        let timing = outcome.changed_at.as_deref()
-            .filter(|v| crate::account_mutation::changed_at_valid(v))
-            .map(|v| {
-                let state = if outcome.decision == BrowserPasswordDecision::Changed {
-                    "Password change and required OSMAP session cleanup were confirmed."
-                } else {
-                    "Required containment remains incomplete; this is not a completed password change."
-                };
-                format!("<p>The credential write was verified at {}-{}-{} {}:{}:{} UTC. {state}</p>",
-                    &v[0..4], &v[4..6], &v[6..8], &v[8..10], &v[10..12], &v[12..14])
-            })
-            .unwrap_or_default();
-        let response = if clear {
+        let timing = write_timing(
+            outcome.changed_at.as_deref(),
+            outcome.decision == BrowserPasswordDecision::Changed,
+        );
+        let response = if let (true, Some(capability)) = (clear, saved_result) {
+            redirect_response(303, "See Other", PASSWORD_RESULT_PATH)
+                .with_header(
+                    "Set-Cookie",
+                    clear_session_cookie(
+                        self.policy.session_cookie_name,
+                        self.policy.secure_session_cookie,
+                    ),
+                )
+                .with_header(
+                    "Set-Cookie",
+                    result_cookie(capability, self.policy.secure_session_cookie),
+                )
+        } else if clear {
             html_response(status, reason, "Password Change", TrustedHtml::from_template(format!("<main id=\"main-content\" class=\"page-shell\"><section class=\"panel\"><h1>Password change</h1><p role=\"status\">{message}</p>{timing}<a href=\"/login\">Sign in</a></section></main>")))
                 .with_header("Set-Cookie", clear_session_cookie(self.policy.session_cookie_name, self.policy.secure_session_cookie))
         } else {

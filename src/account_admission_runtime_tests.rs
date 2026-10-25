@@ -1676,3 +1676,18 @@ fn detailed_custody_preserves_legacy_inventory_errors_and_owner_rules() {
     );
     fs::remove_dir_all(root).unwrap();
 }
+
+#[test]
+fn native_local_client_refuses_unsupported_or_root_context_before_materials() {
+    if cfg!(target_os = "openbsd") && crate::openbsd::effective_uid() != 0 {
+        // The native nonroot positive is the ordinary configured HTTP journey.
+        return;
+    }
+    assert_eq!(
+        Client::from_native_local_operator_files(Path::new("/nonexistent/native-local.key")),
+        Err(Error::Unavailable)
+    );
+    const {
+        assert!(!NATIVE_CONFINEMENT_QUALIFIED);
+    }
+}

@@ -80,6 +80,58 @@ fn exact_source_threshold_across_accounts_and_equivalent_ipv6_representation() {
     ));
     assert!(store.admit("different@example.test", "::2", 101).is_ok());
 }
+
+#[test]
+fn source_limit_survives_success_restart_and_exact_cooldown_independently_of_account() {
+    let t = Scratch::new();
+    let directory = t.0.join("rate");
+    let source = "127.0.0.1";
+    let store = Store::new(directory.clone());
+    // Each account contributes only one failure: the tenth refusal must be
+    // caused by the shared source bucket, independently of the account limit.
+    for i in 0..9 {
+        assert!(!store
+            .admit(&format!("person{i}@example.test"), source, 100 + i)
+            .unwrap()
+            .failed(100 + i)
+            .unwrap());
+    }
+    store
+        .admit("successful@example.test", source, 109)
+        .unwrap()
+        .confirm()
+        .unwrap();
+    drop(store);
+
+    let restarted = Store::new(directory.clone());
+    assert!(restarted
+        .admit("tenth@example.test", source, 110)
+        .unwrap()
+        .failed(110)
+        .unwrap());
+    // The original account is still usable from an independent source; the
+    // shared source refuses even an account with no previous failures.
+    restarted
+        .admit("person0@example.test", "127.0.0.2", 111)
+        .unwrap()
+        .confirm()
+        .unwrap();
+    drop(restarted);
+
+    let reloaded = Store::new(directory);
+    for now in [111, 1009] {
+        assert!(matches!(
+            reloaded.admit("untouched@example.test", source, now),
+            Err(Error::Throttled)
+        ));
+    }
+    reloaded
+        .admit("untouched@example.test", source, 1010)
+        .unwrap()
+        .confirm()
+        .unwrap();
+}
+
 #[test]
 fn rate_clock_rollback_corrupt_and_unsafe_source_refuse_without_reset() {
     let t = Scratch::new();

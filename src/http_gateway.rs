@@ -1086,6 +1086,24 @@ impl BrowserGateway for RuntimeBrowserGateway {
                 .is_some_and(crate::account_admission::valid_epoch)
     }
 
+    fn begin_password_result(
+        &self,
+        session: &ValidatedSession,
+        existing: Option<&str>,
+    ) -> Result<Option<String>, BrowserPasswordResultError> {
+        self.begin_password_result_record(session, existing)
+    }
+    fn finish_password_result(
+        &self,
+        session: &ValidatedSession,
+        capability: &str,
+        outcome: &BrowserPasswordOutcome,
+    ) -> bool {
+        self.finish_password_result_record(session, capability, outcome)
+    }
+    fn password_result(&self, capability: &str) -> Option<BrowserPasswordResult> {
+        self.read_password_result_record(capability)
+    }
     fn password_changed_at(&self, session: &ValidatedSession) -> Option<String> {
         let ready = self.ready_account_runtime(&session.record.canonical_username)?;
         let epoch = session.record.account_epoch?;

@@ -604,3 +604,21 @@ fn actual_budget_socket_carries_original_deadline_and_returns_matching_sealed_re
     assert_eq!(receipt.outcome(), &Outcome::KnownRefused);
     server.join().unwrap();
 }
+
+#[test]
+fn native_local_client_refuses_unsupported_or_root_context_before_materials() {
+    if cfg!(target_os = "openbsd") && crate::openbsd::effective_uid() != 0 {
+        return;
+    }
+    assert_eq!(
+        Client::from_native_local_operator_files(
+            Path::new("/nonexistent/native-local-mutation.key"),
+            Path::new("/nonexistent/native-local-proof.key"),
+        )
+        .unwrap_err(),
+        Error::Unavailable
+    );
+    const {
+        assert!(!NATIVE_CONFINEMENT_QUALIFIED);
+    }
+}

@@ -1,4 +1,5 @@
-//! Single-attempt private mutation transport; native production remains off.
+//! Single-attempt private mutation transport. Native-local Runtime clients use
+//! the fixed Rust service; retained legacy constructors remain gated.
 //!
 //! A caller supplies the same absolute monotonic workflow deadline used by its
 //! authentication and later browser cleanup. This module never renews it. Only
@@ -18,6 +19,8 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
+/// Retained arbitrary-endpoint constructors stay closed. The ordinary
+/// native-local route fixes its endpoint and root peer independently.
 pub const NATIVE_CONFINEMENT_QUALIFIED: bool = false;
 const MAXIMUM: Duration = Duration::from_secs(60);
 const MAX_QUARANTINE: usize = 128;
@@ -89,6 +92,23 @@ impl Client {
                 && !admission.has_purpose_key(&self.0.key)
                 && !admission.has_purpose_key(proof)
         })
+    }
+    /// Native-local ordinary Runtime route with no caller-selected endpoint
+    /// or helper principal. It retains the same purpose-key separation,
+    /// protected custody, stored-session lease and one-attempt transport.
+    pub(crate) fn from_native_local_operator_files(
+        key: &Path,
+        proof_key: &Path,
+    ) -> Result<Self, Error> {
+        if !cfg!(target_os = "openbsd") || matches!(crate::openbsd::effective_uid(), 0 | u32::MAX) {
+            return Err(Error::Unavailable);
+        }
+        Self::qualified_files_with_proof(
+            Path::new(crate::config::LOCAL_ACCOUNT_MUTATION_SOCKET),
+            key,
+            Some(proof_key),
+            0,
+        )
     }
     pub fn from_operator_files(socket: &Path, key: &Path, helper_uid: u32) -> Result<Self, Error> {
         if !NATIVE_CONFINEMENT_QUALIFIED {

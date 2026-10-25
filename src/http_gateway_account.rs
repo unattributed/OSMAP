@@ -1,5 +1,6 @@
 //! Paired account runtime authority; configured failure never means legacy mode.
 use super::*;
+use std::path::Path;
 use std::sync::Arc;
 
 #[derive(Clone)]
@@ -81,27 +82,47 @@ impl AccountRuntimeCapability {
         let Some(config) = config else {
             return Self::Disabled;
         };
-        // Each constructor refuses before private material access while its
-        // independent native qualification remains closed. Errors never erase
-        // configured intent or fall back to legacy authentication/session mode.
-        let Ok(admission) = crate::account_admission_runtime::Client::from_operator_files(
-            &config.admission_socket,
-            &config.admission_key_file,
-            config.admission_helper_uid,
-        ) else {
+        // A native-local pair selects only the fixed root-owned Rust service.
+        // Partial/foreign pairs retain the independently closed legacy route;
+        // any constructor refusal preserves configured intent with no fallback.
+        let native_local = Self::native_local_pair(config);
+        let admission = if native_local {
+            crate::account_admission_runtime::Client::from_native_local_operator_files(
+                &config.admission_key_file,
+            )
+        } else {
+            crate::account_admission_runtime::Client::from_operator_files(
+                &config.admission_socket,
+                &config.admission_key_file,
+                config.admission_helper_uid,
+            )
+        };
+        let Ok(admission) = admission else {
             return Self::ConfiguredUnavailable;
         };
-        let Ok(mutation) =
+        let mutation = if native_local {
+            crate::account_mutation_client::Client::from_native_local_operator_files(
+                &config.mutation_key_file,
+                &config.session_proof_key_file,
+            )
+        } else {
             crate::account_mutation_client::Client::from_operator_files_with_session_proof(
                 &config.mutation_socket,
                 &config.mutation_key_file,
                 &config.session_proof_key_file,
                 config.mutation_helper_uid,
             )
-        else {
+        };
+        let Ok(mutation) = mutation else {
             return Self::ConfiguredUnavailable;
         };
         Self::paired(admission, mutation)
+    }
+    fn native_local_pair(config: &crate::config::AccountRuntimeConfig) -> bool {
+        config.admission_socket == Path::new(crate::config::LOCAL_ACCOUNT_ADMISSION_SOCKET)
+            && config.mutation_socket == Path::new(crate::config::LOCAL_ACCOUNT_MUTATION_SOCKET)
+            && config.admission_helper_uid == 0
+            && config.mutation_helper_uid == 0
     }
     pub(super) fn ready(&self) -> Option<&ReadyAccountRuntime> {
         match self {
@@ -734,5 +755,45 @@ mod tests {
         // Exact keys are read-only under Serve: no test-only path broadening.
         assert!(std::fs::write(fixture.root.join("proof.key"), [20; 32]).is_err());
         println!("serve_account_hidden_ancestry_typed_exchange_stopped_refusal=PASS");
+    }
+    #[test]
+    fn native_local_runtime_route_requires_entire_fixed_pair_and_root_helpers() {
+        let base = crate::config::AccountRuntimeConfig {
+            rollout_account: None,
+            admission_socket: crate::config::LOCAL_ACCOUNT_ADMISSION_SOCKET.into(),
+            admission_key_file: "/nonexistent/native-admission.key".into(),
+            admission_helper_uid: 0,
+            mutation_socket: crate::config::LOCAL_ACCOUNT_MUTATION_SOCKET.into(),
+            mutation_key_file: "/nonexistent/native-mutation.key".into(),
+            session_proof_key_file: "/nonexistent/native-session-proof.key".into(),
+            mutation_helper_uid: 0,
+        };
+        assert!(AccountRuntimeCapability::native_local_pair(&base));
+        for case in 0..6 {
+            let mut config = base.clone();
+            match case {
+                0 => config.admission_socket = "/private/foreign-admission.sock".into(),
+                1 => config.mutation_socket = "/private/foreign-mutation.sock".into(),
+                2 => config.admission_helper_uid = 1003,
+                3 => config.mutation_helper_uid = 1004,
+                4 => config.admission_helper_uid = u32::MAX,
+                _ => config.mutation_socket = config.admission_socket.clone(),
+            }
+            assert!(!AccountRuntimeCapability::native_local_pair(&config));
+            assert_eq!(
+                AccountRuntimeCapability::from_config(Some(&config)),
+                AccountRuntimeCapability::ConfiguredUnavailable
+            );
+        }
+        // Eligible metadata does not bypass native context or key custody, and
+        // refusal retains configured intent instead of falling back to legacy.
+        assert_eq!(
+            AccountRuntimeCapability::from_config(Some(&base)),
+            AccountRuntimeCapability::ConfiguredUnavailable
+        );
+        assert_eq!(
+            AccountRuntimeCapability::from_config(None),
+            AccountRuntimeCapability::Disabled
+        );
     }
 }

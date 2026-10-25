@@ -1,5 +1,24 @@
 # Current Project Status
 
+2026-10-25 UTC — **Installed Runtime integration source advanced; native installed QA pending.**
+The ordinary configured native-local account client route now selects only the
+fixed socket pair/root helper principals and retains full custody, peer, purpose
+separation and actual Serve sealing. Legacy service qualification flags stay
+closed. Source route selection/refusals PASS3; independent review CLEAR.
+
+Independent T07 review identified a real reload gap: incomplete password results
+cleared the session and were lost on reload while contained Settings correctly
+refused access. A dedicated result-only capability now preserves a bounded
+outcome/time in existing private settings storage before dispatch, without
+session/account/mail authority. An actual failing regression exposed later
+unknown publication erasing verified time; immutable verified publication fixes
+it. Real FileSessionStore/reopen/result/ordinary-route denial tests PASS2;
+independent rerun CLEAR. Password boundary suite PASS218/14 explicit ignores.
+A missing independent durable source-rate success/restart/cooldown test PASS8.
+These are source/local results; ordinary installed Web/TOTP/native integration,
+T03-T08 closure and T09 readiness are still pending. Prior native04 proof is reused.
+
+
 2026-10-25 UTC — **Native credential transaction and epoch/session consistency PASS.**
 The ordinary Rust helper completed the guarded conditional password change.
 Actual client1 PASS26.67s: authoritative current credential/TOTP preparation,

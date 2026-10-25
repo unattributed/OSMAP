@@ -26,6 +26,26 @@ pub trait BrowserGateway {
     fn password_changed_at(&self, _session: &ValidatedSession) -> Option<String> {
         None
     }
+    /// A separate result-only capability is prepared before a credential dispatch.
+    /// It never admits a session or authorizes account operations.
+    fn begin_password_result(
+        &self,
+        _session: &ValidatedSession,
+        _existing: Option<&str>,
+    ) -> Result<Option<String>, BrowserPasswordResultError> {
+        Ok(None)
+    }
+    fn finish_password_result(
+        &self,
+        _session: &ValidatedSession,
+        _capability: &str,
+        _outcome: &BrowserPasswordOutcome,
+    ) -> bool {
+        false
+    }
+    fn password_result(&self, _capability: &str) -> Option<BrowserPasswordResult> {
+        None
+    }
     fn change_own_password(
         &self,
         _context: &AuthenticationContext,
@@ -1048,6 +1068,17 @@ pub struct BrowserSendRequest<'a> {
     pub body_format: crate::compose_format::BodyFormat,
     pub attachments: &'a [UploadedAttachment],
     pub reply_thread: Option<&'a crate::reply_thread::ReplyThread>,
+}
+
+/// Minimal result view; contains no account identity or session authority.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BrowserPasswordResult {
+    pub confirmed: bool,
+    pub changed_at: Option<String>,
+}
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BrowserPasswordResultError {
+    Unavailable,
 }
 
 /// The result of a browser login attempt.

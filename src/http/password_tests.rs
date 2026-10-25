@@ -1036,7 +1036,7 @@ mod genuine_http_pilot {
             client.admit_before(a, 0, deadline).unwrap();
         }
         assert!(Instant::now() < deadline);
-        control.write(b"{\"schema\":\"osmap-native-rate-restart-v1\",\"account_limit\":5,\"source_limit\":10,\"success_preserved_failures\":true,\"restart_refused\":true,\"concurrent_issuance_refused\":true,\"alice_epoch\":0,\"bob_epoch\":0,\"credential_write\":false}", deadline).unwrap();
+        control.write(b"{\"schema\":\"osmap-native-rate-restart-v1\",\"account_limit\":5,\"source_limit\":10,\"success_preserved_failures\":true,\"restart_refused\":true,\"concurrent_rate_admission_refused\":true,\"alice_epoch\":0,\"bob_epoch\":0,\"credential_write\":false}", deadline).unwrap();
     }
 
     #[test]

@@ -13727,3 +13727,22 @@ also covers StockRuntime construction; do not claim a definitive socket-bind or
 Serve defect. Stop after the consumed observation, retain exact-owned resources,
 and require new explicit authority for another native attempt. No speculative
 confinement change, retry, READY/T03 PASS or production access.
+
+## 2026-10-25 — ordinary native-local Runtime and persistent restricted password result
+
+The next demonstrated integration gap was production client construction: generic
+legacy qualification flags kept the configured Runtime unavailable despite the
+proven native Rust helper. Add an exact native-local client route with fixed
+socket/root-peer identity, existing complete custody, proof-purpose separation
+and actual Serve seal. Keep unrelated legacy service/endpoint gates closed.
+
+T07 incomplete result reload requires retaining the verified outcome without
+readmitting a contained session. Reuse PrivateAccountFile for one bounded record
+per session and a purpose-separated opaque HttpOnly result cookie prepared
+before dispatch. The dedicated read-only result endpoint exposes only fixed
+outcome wording and optional verified write time; normal Settings remains denied.
+Publication is monotonic after verified time: the independent late-unknown
+regression failed before the correction and passes afterward. This preserves
+uncertainty rather than inventing completion. Expiry and absent/foreign/unsafe
+records refuse. Source tests and independent review are complete; actual
+installed validation remains the next functional boundary.

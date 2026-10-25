@@ -1,5 +1,6 @@
 use super::*;
 use crate::password_change::{self, Attempt, EpochPrimaryBackend, Outcome, Request, Services};
+use crate::totp::TimeProvider as _;
 
 pub(crate) type PasswordCompletion = (crate::session::BrowserRevocation, Option<String>);
 
@@ -44,7 +45,188 @@ impl EpochPrimaryBackend for crate::account_admission_runtime::CredentialBackend
         Ok(verdict)
     }
 }
+const PASSWORD_RESULT_TTL: u64 = 900;
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+struct PasswordResultRecord {
+    version: u8,
+    account: String,
+    session: String,
+    created: u64,
+    expires: u64,
+    confirmed: bool,
+    changed_at: Option<String>,
+}
+fn valid_result_capability(value: &str) -> bool {
+    value.len() == 64
+        && value
+            .bytes()
+            .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+}
+impl PasswordResultRecord {
+    fn valid(&self, now: u64) -> bool {
+        self.version == 1
+            && !self.account.is_empty()
+            && !self.session.is_empty()
+            && self.expires.checked_sub(self.created) == Some(PASSWORD_RESULT_TTL)
+            && self.created <= now
+            && now < self.expires
+            && self
+                .changed_at
+                .as_deref()
+                .is_none_or(crate::account_mutation::changed_at_valid)
+            && (!self.confirmed || self.changed_at.is_some())
+    }
+    fn matches(&self, session: &ValidatedSession) -> bool {
+        self.account == session.record.canonical_username
+            && self.session == session.record.session_id
+    }
+}
+
 impl RuntimeBrowserGateway {
+    fn password_result_store(&self) -> crate::private_account_file::PrivateAccountFile {
+        crate::private_account_file::PrivateAccountFile::new(
+            self.settings_dir.join("password-results"),
+            "osmap-password-result-v1",
+            2048,
+        )
+    }
+    pub(super) fn begin_password_result_record(
+        &self,
+        session: &ValidatedSession,
+        existing: Option<&str>,
+    ) -> Result<Option<String>, BrowserPasswordResultError> {
+        let now = SystemTimeProvider.unix_timestamp();
+        let store = self.password_result_store();
+        if let Some(capability) = existing.filter(|v| valid_result_capability(v)) {
+            let prior = store
+                .read(capability)
+                .ok()
+                .flatten()
+                .and_then(|b| serde_json::from_slice::<PasswordResultRecord>(&b).ok());
+            if prior.is_some_and(|record| record.valid(now) && record.matches(session)) {
+                return Ok(Some(capability.into()));
+            }
+        }
+        // One purpose-separated result capability per existing session. Repeated
+        // form loads cannot allocate unbounded records. The CSRF secret never
+        // enters the record, URL, logs or the result body.
+        use hmac::{Hmac, Mac as _};
+        let mut mac = Hmac::<sha2::Sha256>::new_from_slice(session.record.csrf_token.as_bytes())
+            .map_err(|_| BrowserPasswordResultError::Unavailable)?;
+        mac.update(b"osmap-password-result-v1\0");
+        mac.update(session.record.canonical_username.as_bytes());
+        mac.update(b"\0");
+        mac.update(session.record.session_id.as_bytes());
+        let capability: String = mac
+            .finalize()
+            .into_bytes()
+            .iter()
+            .map(|b| format!("{b:02x}"))
+            .collect();
+        let record = PasswordResultRecord {
+            version: 1,
+            account: session.record.canonical_username.clone(),
+            session: session.record.session_id.clone(),
+            created: now,
+            expires: now
+                .checked_add(PASSWORD_RESULT_TTL)
+                .ok_or(BrowserPasswordResultError::Unavailable)?,
+            confirmed: false,
+            changed_at: None,
+        };
+        let locked = store
+            .lock(&capability)
+            .map_err(|_| BrowserPasswordResultError::Unavailable)?;
+        if let Some(bytes) = locked
+            .read()
+            .map_err(|_| BrowserPasswordResultError::Unavailable)?
+        {
+            let prior: PasswordResultRecord = serde_json::from_slice(&bytes)
+                .map_err(|_| BrowserPasswordResultError::Unavailable)?;
+            if !prior.matches(session) {
+                return Err(BrowserPasswordResultError::Unavailable);
+            }
+            if prior.valid(now) {
+                return Ok(Some(capability));
+            }
+            if prior.expires > now {
+                return Err(BrowserPasswordResultError::Unavailable);
+            }
+        }
+        let bytes =
+            serde_json::to_vec(&record).map_err(|_| BrowserPasswordResultError::Unavailable)?;
+        locked
+            .write(&bytes)
+            .map_err(|_| BrowserPasswordResultError::Unavailable)?;
+        Ok(Some(capability))
+    }
+    pub(super) fn finish_password_result_record(
+        &self,
+        session: &ValidatedSession,
+        capability: &str,
+        outcome: &BrowserPasswordOutcome,
+    ) -> bool {
+        if !valid_result_capability(capability)
+            || !matches!(
+                outcome.decision,
+                BrowserPasswordDecision::Changed | BrowserPasswordDecision::Unconfirmed
+            )
+        {
+            return false;
+        }
+        let store = self.password_result_store();
+        let Ok(locked) = store.lock(capability) else {
+            return false;
+        };
+        let Some(mut record) = locked
+            .read()
+            .ok()
+            .flatten()
+            .and_then(|b| serde_json::from_slice::<PasswordResultRecord>(&b).ok())
+        else {
+            return false;
+        };
+        if !record.valid(SystemTimeProvider.unix_timestamp()) || !record.matches(session) {
+            return false;
+        }
+        // One credential operation can complete for this session epoch. A late
+        // uncertain response from another in-flight request cannot erase or
+        // downgrade already verified timing/effects for that operation.
+        if let Some(known) = &record.changed_at {
+            return outcome
+                .changed_at
+                .as_ref()
+                .is_none_or(|later| later == known);
+        }
+        record.changed_at = outcome
+            .changed_at
+            .as_deref()
+            .filter(|v| crate::account_mutation::changed_at_valid(v))
+            .map(str::to_owned);
+        record.confirmed =
+            outcome.decision == BrowserPasswordDecision::Changed && record.changed_at.is_some();
+        serde_json::to_vec(&record)
+            .ok()
+            .is_some_and(|bytes| locked.write(&bytes).is_ok())
+    }
+    pub(super) fn read_password_result_record(
+        &self,
+        capability: &str,
+    ) -> Option<BrowserPasswordResult> {
+        if !valid_result_capability(capability) {
+            return None;
+        }
+        let bytes = self.password_result_store().read(capability).ok()??;
+        let record: PasswordResultRecord = serde_json::from_slice(&bytes).ok()?;
+        record
+            .valid(SystemTimeProvider.unix_timestamp())
+            .then_some(BrowserPasswordResult {
+                confirmed: record.confirmed,
+                changed_at: record.changed_at,
+            })
+    }
+
     pub(super) fn change_own_password_impl(
         &self,
         context: &AuthenticationContext,
@@ -615,5 +797,227 @@ impl CompletionBinding {
             && receipt.source() == self.source
             && receipt.issued() == self.issued
             && receipt.expires() == self.expires
+    }
+}
+
+#[cfg(test)]
+mod password_result_tests {
+    use super::*;
+    use std::fs;
+    use std::os::unix::fs::PermissionsExt as _;
+    struct Fixture {
+        root: std::path::PathBuf,
+        gateway: RuntimeBrowserGateway,
+        session: ValidatedSession,
+        token: SessionToken,
+    }
+    impl Fixture {
+        fn new() -> Self {
+            let root = std::env::temp_dir().join(format!(
+                "osmap-password-result-{}",
+                crate::draft::generate_draft_id().unwrap()
+            ));
+            fs::create_dir(&root).unwrap();
+            fs::set_permissions(&root, fs::Permissions::from_mode(0o700)).unwrap();
+            let gateway = RuntimeBrowserGateway::for_test(&root);
+            let context = AuthenticationContext::new(
+                AuthenticationPolicy::default(),
+                "result-test",
+                "127.0.0.1",
+                "ResultTest",
+            )
+            .unwrap();
+            let issued = gateway
+                .build_session_service()
+                .issue(
+                    &context,
+                    "alice@example.test",
+                    crate::auth::RequiredSecondFactor::Totp,
+                )
+                .unwrap();
+            Self {
+                root,
+                gateway,
+                token: issued.token,
+                session: ValidatedSession {
+                    record: issued.record,
+                    audit_event: issued.audit_event,
+                },
+            }
+        }
+        fn outcome(confirmed: bool, stamp: Option<&str>) -> BrowserPasswordOutcome {
+            BrowserPasswordOutcome {
+                decision: if confirmed {
+                    BrowserPasswordDecision::Changed
+                } else {
+                    BrowserPasswordDecision::Unconfirmed
+                },
+                changed_at: stamp.map(str::to_owned),
+                audit_events: vec![],
+            }
+        }
+    }
+    impl Drop for Fixture {
+        fn drop(&mut self) {
+            let _ = fs::remove_dir_all(&self.root);
+        }
+    }
+
+    #[test]
+    fn verified_password_result_survives_late_unknown_publication() {
+        for confirmed in [true, false] {
+            let f = Fixture::new();
+            let cap = f
+                .gateway
+                .begin_password_result_record(&f.session, None)
+                .unwrap()
+                .unwrap();
+            assert!(f.gateway.finish_password_result_record(
+                &f.session,
+                &cap,
+                &Fixture::outcome(confirmed, Some("20261025062139"))
+            ));
+            assert!(f.gateway.finish_password_result_record(
+                &f.session,
+                &cap,
+                &Fixture::outcome(false, None)
+            ));
+            assert_eq!(
+                f.gateway.read_password_result_record(&cap),
+                Some(BrowserPasswordResult {
+                    confirmed,
+                    changed_at: Some("20261025062139".into())
+                })
+            );
+        }
+    }
+
+    #[test]
+    fn password_result_reopen_retains_time_without_admitting_revoked_session() {
+        let f = Fixture::new();
+        let cap = f
+            .gateway
+            .begin_password_result_record(&f.session, None)
+            .unwrap()
+            .unwrap();
+        // Repeated form loads, with or without the cookie, reuse one record.
+        assert_eq!(
+            f.gateway
+                .begin_password_result_record(&f.session, None)
+                .unwrap(),
+            Some(cap.clone())
+        );
+        assert_eq!(
+            f.gateway
+                .begin_password_result_record(&f.session, Some(&cap))
+                .unwrap(),
+            Some(cap.clone())
+        );
+        assert!(f.gateway.finish_password_result_record(
+            &f.session,
+            &cap,
+            &Fixture::outcome(false, Some("20261025062139"))
+        ));
+        let context = AuthenticationContext::new(
+            AuthenticationPolicy::default(),
+            "result-reopen",
+            "127.0.0.1",
+            "ResultTest",
+        )
+        .unwrap();
+        assert!(
+            f.gateway
+                .build_session_service()
+                .revoke_by_token(&context, &f.token)
+                .unwrap()
+                .newly_revoked
+        );
+        let gateway = RuntimeBrowserGateway::for_test(&f.root);
+        assert!(gateway
+            .build_session_service()
+            .validate(&context, &f.token)
+            .is_err());
+        assert_eq!(
+            gateway.read_password_result_record(&cap),
+            Some(BrowserPasswordResult {
+                confirmed: false,
+                changed_at: Some("20261025062139".into())
+            })
+        );
+        let mut bob = f.session.clone();
+        bob.record.canonical_username = "bob@example.test".into();
+        assert!(!gateway.finish_password_result_record(
+            &bob,
+            &cap,
+            &Fixture::outcome(true, Some("20261025062139"))
+        ));
+        let bob_cap = gateway
+            .begin_password_result_record(&bob, Some(&cap))
+            .unwrap()
+            .unwrap();
+        assert_ne!(bob_cap, cap);
+        assert_eq!(
+            gateway.read_password_result_record(&bob_cap),
+            Some(BrowserPasswordResult {
+                confirmed: false,
+                changed_at: None
+            })
+        );
+        assert!(gateway
+            .read_password_result_record(&"f".repeat(64))
+            .is_none());
+        for invalid in ["", "../record", "000", "ABCDEFGHIJKLMNOPQRSTUVWXYZ"] {
+            assert!(gateway.read_password_result_record(invalid).is_none());
+        }
+        let app = BrowserApp::new(HttpPolicy::default(), gateway.clone());
+        let get = |path: &str, cookie: &str| {
+            let bytes =
+                format!("GET {path} HTTP/1.1\r\nHost: localhost\r\nCookie: {cookie}\r\n\r\n");
+            let request = crate::http_parse::parse_http_request_bytes(
+                bytes.as_bytes(),
+                &HttpPolicy::default(),
+            )
+            .unwrap();
+            app.handle_request(&request, "127.0.0.1")
+        };
+        for section in ["security", "authentication"] {
+            let denied = get(
+                &format!("/settings?section={section}"),
+                &format!("osmap_session={}", f.token.as_str()),
+            );
+            assert_eq!(denied.response.status_code, 303);
+            assert!(
+                !String::from_utf8_lossy(&denied.response.body).contains("2026-10-25 06:21:39 UTC")
+            );
+        }
+        let view = get(
+            "/settings/password/result",
+            &format!("osmap_password_result={cap}"),
+        );
+        assert_eq!(view.response.status_code, 200);
+        let html = String::from_utf8_lossy(&view.response.body);
+        assert!(html.contains("2026-10-25 06:21:39 UTC"));
+        assert!(html.contains("Required containment remains incomplete"));
+        assert!(!html.contains("alice@example.test"));
+        assert!(!html.contains("csrf_token"));
+        assert!(!html.contains("password-change-form"));
+        for cookie in [
+            String::new(),
+            format!("osmap_password_result={}", "f".repeat(64)),
+        ] {
+            let missing = get("/settings/password/result", &cookie);
+            assert_eq!(missing.response.status_code, 404);
+            assert!(!String::from_utf8_lossy(&missing.response.body)
+                .contains("2026-10-25 06:21:39 UTC"));
+        }
+        assert!(view.audit_events.is_empty());
+        let store = gateway.password_result_store();
+        let locked = store.lock(&cap).unwrap();
+        let mut record: PasswordResultRecord =
+            serde_json::from_slice(&locked.read().unwrap().unwrap()).unwrap();
+        record.created = 1;
+        record.expires = 1 + PASSWORD_RESULT_TTL;
+        locked.write(&serde_json::to_vec(&record).unwrap()).unwrap();
+        assert!(gateway.read_password_result_record(&cap).is_none());
     }
 }

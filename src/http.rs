@@ -839,13 +839,14 @@ pub use self::http_browser::{
     BrowserMessageFlagOutcome, BrowserMessageListDecision, BrowserMessageListOutcome,
     BrowserMessageMoveDecision, BrowserMessageMoveOutcome, BrowserMessageSearchDecision,
     BrowserMessageSearchOutcome, BrowserMessageViewDecision, BrowserMessageViewOutcome,
-    BrowserPasswordDecision, BrowserPasswordOutcome, BrowserPublicInventoryOutcome,
-    BrowserSendDecision, BrowserSendOutcome, BrowserSendRecoveryDecision,
-    BrowserSendRecoverySnapshot, BrowserSendRequest, BrowserSessionDecision,
-    BrowserSessionListDecision, BrowserSessionListOutcome, BrowserSessionRevokeDecision,
-    BrowserSessionRevokeOutcome, BrowserSessionRevokeScope, BrowserSessionValidationOutcome,
-    BrowserSettingsDecision, BrowserSettingsOutcome, BrowserSettingsUpdateDecision,
-    BrowserSettingsUpdateOutcome, BrowserVisibleSession, BrowserVisibleSettings,
+    BrowserPasswordDecision, BrowserPasswordOutcome, BrowserPasswordResult,
+    BrowserPasswordResultError, BrowserPublicInventoryOutcome, BrowserSendDecision,
+    BrowserSendOutcome, BrowserSendRecoveryDecision, BrowserSendRecoverySnapshot,
+    BrowserSendRequest, BrowserSessionDecision, BrowserSessionListDecision,
+    BrowserSessionListOutcome, BrowserSessionRevokeDecision, BrowserSessionRevokeOutcome,
+    BrowserSessionRevokeScope, BrowserSessionValidationOutcome, BrowserSettingsDecision,
+    BrowserSettingsOutcome, BrowserSettingsUpdateDecision, BrowserSettingsUpdateOutcome,
+    BrowserVisibleSession, BrowserVisibleSettings,
 };
 pub use self::http_gateway::RuntimeBrowserGateway;
 pub use self::http_runtime::run_http_server;

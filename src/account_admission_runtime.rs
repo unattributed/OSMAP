@@ -1,4 +1,5 @@
-//! Peer-authenticated private account-helper transport; production remains off.
+//! Peer-authenticated account transport. Native-local clients and the retained
+//! legacy worker service have separate admission paths.
 use crate::account_admission::{
     valid_epoch, Admission, EpochAuthority, Error, Operation, Request, Verifier, MAX_FRAME,
 };
@@ -17,7 +18,8 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
-/// Source construction cannot opt out of actual native/helper confinement qualification.
+/// Retained legacy worker/service qualification. Native-local clients use the
+/// fixed root-owned Rust service path and preserve their full custody checks.
 pub const NATIVE_CONFINEMENT_QUALIFIED: bool = false;
 const WORKER: &str = "/usr/local/libexec/osmap/account-runtime/account_admission_worker.py";
 // Closed sibling source closure of the private worker, including the material
@@ -1224,6 +1226,20 @@ impl Client {
     #[cfg(test)]
     pub(crate) fn paired_fixture_files(socket: &Path, key: &Path, uid: u32) -> Result<Self, Error> {
         Self::qualified_files(socket, key, uid)
+    }
+    /// Ordinary native-local Runtime client. The fixed Rust service endpoints
+    /// were qualified independently of the retained legacy worker service.
+    /// Startup still captures full custody; Serve supplies the actual seal and
+    /// every exchange checks the root kernel peer and authenticated response.
+    pub(crate) fn from_native_local_operator_files(key: &Path) -> Result<Self, Error> {
+        if !cfg!(target_os = "openbsd") || matches!(crate::openbsd::effective_uid(), 0 | u32::MAX) {
+            return Err(Error::Unavailable);
+        }
+        Self::qualified_files(
+            Path::new(crate::config::LOCAL_ACCOUNT_ADMISSION_SOCKET),
+            key,
+            0,
+        )
     }
     pub fn from_operator_files(socket: &Path, key: &Path, helper_uid: u32) -> Result<Self, Error> {
         if !NATIVE_CONFINEMENT_QUALIFIED {
