@@ -1,0 +1,16 @@
+#!/bin/ksh
+# Parallel ordinary OSMAP QA frontend; original osmap_serve stays unchanged.
+daemon="/usr/local/libexec/osmap/osmap-serve-run.ksh"
+daemon_user="_osmap"
+daemon_flags="serve"
+rc_bg=YES
+rc_reload=NO
+. /etc/rc.d/rc.subr
+pexp="^/usr/local/libexec/osmap/s04-02/osmap serve\$"
+rc_configtest() {
+ rc_exec "env OSMAP_BIN=/usr/local/libexec/osmap/s04-02/osmap OSMAP_ENV_FILE=/etc/osmap/osmap-s04-02-serve.env ${daemon} bootstrap"
+}
+rc_start() {
+ rc_exec "env OSMAP_BIN=/usr/local/libexec/osmap/s04-02/osmap OSMAP_ENV_FILE=/etc/osmap/osmap-s04-02-serve.env ${daemon} serve"
+}
+rc_cmd "$1"

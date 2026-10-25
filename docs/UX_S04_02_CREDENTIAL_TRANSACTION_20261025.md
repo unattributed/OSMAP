@@ -144,3 +144,82 @@ renewal, password reset or replay followed.
 T04 native concurrency/replay, T05 native post-write containment and remaining
 browser controls remain open. The passed installed transaction is reused; neither
 its success nor the local fault tests imply complete S04-02 or human T09 acceptance.
+
+## Native concurrency and replay
+
+T04 completed on the fresh concurrent/control pair with the actual native service,
+ordinary native clients and real stored-session machinery. The controller warmed
+the genuine primary-authentication/epoch issuer before holding the existing
+five-second mutation gate. During that hold, its bounded two-second admission
+attempt refused session issuance and created zero issuer records. The guarded
+transaction then completed, and the exact consumed signed frame received
+`SIGNED_KNOWN_REFUSED` on replay.
+
+Independent readback found active epoch 1, one used intent, no uncertainty marker,
+verified time 2026-10-25 14:18:43 UTC, two revoked old session records, one live new
+epoch-1 record and an unchanged control record. The other target columns and all
+prior rows were preserved. This does not independently count SQL child invocations
+or isolate consumed-intent refusal from stale-epoch refusal. The signed refusal
+and final SQL/epoch/intent witnesses establish the bounded no-second-write claim.
+
+Archive SHA256:
+`d3ed619b60e2451ee1a4fbf596c8c898ad829d25e94f56502fe25da45de60dc3`.
+Independent audit checked 46 unique regular members, all 45 member hashes and 23
+additional bindings/readbacks. Review SHA256:
+`c22f3e4993d858f77a74255ae095208acc1b82d0129642893d17bdc7cca36970`.
+Owned cleanup, helper/configuration restoration and copied-key custody passed;
+six copied keys and controlled fixture state remain deliberately retained.
+
+## Native post-write containment and actual browser controls
+
+T05 used the ordinary Web Runtime/file-TOTP path and a fixed test-only service
+effect refusal after the real conditional SQL write and verified timestamp had
+been persisted. It did not inject disk failure or execute a second target
+authentication. The outcome was explicitly incomplete: epoch 0 remained
+contained with one consumed intent and its bound uncertainty marker. The ordinary
+native admission client refused both epoch 0 and epoch 1 for that target while
+admitting the control account. Both old target records were revoked and their
+HTTP cookies denied. The fourteen-request HTTP case, authoritative before/after/
+final witnesses and existing TLS-authenticated IMAP control all passed. No target
+password retry, rollback or post-fault primary authentication occurred.
+
+The result page and reload retained the verified write time, 2026-10-25 14:25:10
+UTC, with explicit incomplete wording and no completed-change claim. The separate
+result capability did not grant account Settings authority. The control account's
+row, epoch and existing session remained unchanged, as did the T04 pair's captured
+epoch/lock objects and all prior rows. IMAP completed 19 NOOPs, final LOGOUT and
+TLS process exit 0 without message selection or delivery.
+
+Archive SHA256:
+`c2728549f4c345b2719b1a3360854669df5b0cf497cb10cd28531029a301f07e`.
+Independent audit verified 59 unique flat regular members and all 58 member
+hashes; review SHA256:
+`6c936f06b882307e81d1424962f8ed95444f08ad7b829d460ecd05fa24c752e8`.
+Owned process cleanup, helper/configuration restoration, protected readback and
+the three retained copied keys' custody passed.
+
+Actual browser inspection used the genuine control cookie returned by normal
+login and the actual target result capability. Incomplete wording, matching time
+and reload passed before opening the control account's form. All three independent
+visibility controls, public-dummy current-field paste, keyboard focus/activation,
+Cancel, both Settings entry points, breadcrumb, Unknown history and empty final
+fields passed. The first complete-network predicate was false; its cause was not
+retained and remains unknown. A fresh repeated controls window observed exactly
+five GETs, zero POSTs and no truncated or remaining events. The public controller
+ACK arrived after its 120-second deadline: protocol failure remains recorded
+separately from the observed product results and core containment PASS. It does
+not justify another credential transaction.
+
+The native test artifact is
+`fab3bc8025adce166a2aa68b4ce77d2887a34f7ccfc579d25c483d3a6c387229`,
+compiled from signed `0c9f699793d3911aa8472694462b14ade992cda9`, source manifest
+`a4527ed43b5eb8c84f040d5127517b7fef7ab50e499f99abc60de8d1c510f1c6`.
+The subsequent signed lint-only helper relocation/Boolean simplification is
+independently equivalent; the artifact is not relabelled as rebuilt from that
+follow-up. Normal push checks passed 1,932 Rust tests with 72 explicit native
+ignores and 634 account Python tests. Existing matching deterministic freshness,
+binding and durable rate controls are reused alongside the new native cases.
+
+Persistent ordinary application access is the remaining installation step before
+the [minimal owner T09 review](UX_S04_02_T09_ACCEPTANCE_20261025.md). Temporary
+actor cleanup alone does not establish that access or human acceptance.

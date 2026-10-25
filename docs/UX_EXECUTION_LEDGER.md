@@ -10085,7 +10085,8 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
       "/root/python_runtime_review",
       "/root/python_journey_review",
       "/root/rust_review",
-      "/root/transaction_review"
+      "/root/transaction_review",
+      "/root/epoch_failure_engineer"
     ],
     "security_review": [
       "/root/scrum_security_review",
@@ -10403,7 +10404,10 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "src/account_password_transaction_tests.rs",
     "docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md",
     "src/private_account_file.rs",
-    "src/password_change_rate_tests.rs"
+    "src/password_change_rate_tests.rs",
+    "maint/openbsd/rc.d/osmap_s04_serve",
+    "maint/openbsd/osmap-s04-02-serve.env.example",
+    "docs/UX_S04_02_T09_ACCEPTANCE_20261025.md"
   ],
   "outcomes": [
     {
@@ -10571,7 +10575,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "status": "PENDING",
     "reference": "Only minimal well-defined own-password usability after all agent-owned development/matching deployed QA/independent audit PASS. No operator password is changed by agent qualification; use controlled disposable Alice and preserve Bob/operator state. NOT RUN."
   },
-  "next_action": "Complete native T04 concurrency/replay and T05 post-write containment using fresh controlled pairs and one matching libtest build; capture genuine Bob login cookie and Alice incomplete-result capability for immediate post-core browser checks. Reuse positive05 ordinary Runtime/file-TOTP/transaction PASS without repeating credential operation.",
+  "next_action": "Make matching ordinary f48 Web/0f helper available on persistentloopback-onlyparallelOSMAPservice for minimalhumanT09; preserveexistingpublicWeb63306/8080/env/mail/edge. ReuseexactquiescentT05state+genuineBobcookie; no credentialwrite/sessioninjection/reset. Finishindependentaudit/normalGitdelivery thenT09readiness, humanPASSseparate.",
   "accountability": {
     "functional_exit": "Working own-account Settings password change through the selected single-host obsd1 local account service and authoritative local backend, fresh password/TOTP step-up, one conditional SQL update, durable OSMAP epoch and all-browser revocation, actual source-bound cache handling, old-password refusal/new-login success and Bob preservation. Existing third-party SMTP/IMAP sessions may remain authenticated. Matching installed QA, independent audit and minimal owner usability remain required. Toronto is later separate production installation.",
     "owner": "/root",
@@ -20650,7 +20654,63 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "result": "PASS",
         "reference": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/build05/actual-result-independent-review.json SHA25632ee1bf5d5a84742b5a358a499005cc98e1e46460354eb96e4aca5c6379fa634. Actualbuild/compilecompleteexit0, libtestfab3bc8025adce166a2aa68b4ce77d2887a34f7ccfc579d25c483d3a6c38722971223272B, all6selectors/nativefocusedpostwrite2PASS. No credential/app/SQLoperation.",
         "elapsed_status": "MEASURED",
-        "elapsed_seconds": 106.0
+        "elapsed_seconds": 106.0,
+        "reassessment": {
+          "reviewers": [
+            "/root",
+            "/root/transaction_review"
+          ],
+          "failed_attempt_ids": [
+            "S04-02-INSTALLED-readonly-ui01",
+            "S04-02-INSTALLED-readonly-ui02"
+          ],
+          "reference": "Actual joint readonly01-02-combined-reassessment.json SHA25640bf4a52e7408748549975ba9a5f5723c41d685ac13fbd4582ce8aabaee9e77d and actual compiled token-consumer f4130974e21352655d12c393674737346ff2ea3908ca6b493099f22c93225174. Metadata reconciled post-result; no retroactive historical predispatch PASS asserted.",
+          "next_action": "No further invalid StoreID-cookie read-only retries or credential replay. Build matching fixed T04/T05 tests, then actual fresh native cases and genuine HTTP-issued token/resultcap browser consumption."
+        }
+      },
+      {
+        "id": "S04-02-INSTALLED-t04-native01",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "source_revision": "0c9f699793d3911aa8472694462b14ade992cda9",
+        "change_reference": "Advancepassedpositive05T03tofixedfreshnativeT04concurrency/replay; actualmatchingfab3build/compiledsource0c9, reviewedequivalentlintfollowupb63pushednormalwithfreshparity0/0. No successfulauthrefinement/oldfixturepasswordretry.",
+        "success_chain_review": {
+          "reviewer": "/root/epoch_failure_engineer",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/t04-native01/dispatch-independent-review.json",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "reference": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/t04-native01/actual-result-independent-review.json SHA256c22f3e4993d858f77a74255ae095208acc1b82d0129642893d17bdc7cca36970. Actualheldissuance0, signedconsumedreplayrefusal, epoch1/oneintent/time20261025141843/2oldrevoked/fresh1/control0/issuer0. Cleanup/helperrestore/keycustody/protectedreadbackPASS;6copiesretained.",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 36.0
+      },
+      {
+        "id": "S04-02-INSTALLED-full05",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "source_revision": "0c9f699793d3911aa8472694462b14ade992cda9",
+        "change_reference": "AdvanceactualT04PASS+positive05T03PASStofreshfixedT05postwritecontainment; no oldcredentialretry/rollback; actualnativeepoch0/1probe. GenuineBobrawcookie/AliceResultcap andpreparedresult-firstCUA/immediatewatcher; noanalysisafterREADY.",
+        "success_chain_review": {
+          "reviewer": "/root/transaction_review",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/full05/dispatch-independent-review.json",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "FAIL",
+        "reference": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/full05/result-independent-review.json SHA2566c936f06b882307e81d1424962f8ed95444f08ad7b829d460ecd05fa24c752e8. NATIVE_T05_SAFE_INCOMPLETE_PASS:14HTTP/1write/verified20261025142510/contained0/marker+intent/native0and1refused/2oldrevoked/BobHTTP+19IMAPNOOP/preservedT04history. ActualbrowserresultUTC/reload/allcontrolsPASS; fresh5GET/0POST; initialzeroPostobservercauseUNKNOWN. LateACK120sFAIL+rootWIRE_EOF retained, no retry. Cleanup/helperrestore/keycustody/protectedreadbackPASS;3keysretained.",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 216.0
       }
     ],
     "prior_investigations": [
@@ -21732,8 +21792,10 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "preserved": "Bob, credential and session state, rate-limit evidence and original policy/deadline; no skew/replay reset.",
         "owner": "/root",
         "reviewer": "/root/guardrails_engineer",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "PASS",
+        "evidence": [
+          "ActualnativeT04independentreviewc22f3e4993d858f77a74255ae095208acc1b82d0129642893d17bdc7cca36970 andd6d19ab92045b69eaf6597dffed04359e7133e4dcca42345fad7a396b058d20d. Heldrealissuance0, signedconsumedframeKnownRefused, epoch1/oneintent/oldsessionrevocation/controlSQL+session+allpriorrows unchanged, cleanupPASS. Existing deterministicage299/300/binding/current/TOTP/ratecontrols reusedmatchingnormalpush1932RustPASS/72nativeignores+634accountPythonPASS; no successfulauthrefinement or blanketnative rerun."
+        ]
       },
       {
         "id": "S04-02-T05",
@@ -21751,8 +21813,10 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "preserved": "Measured authoritative credential/epoch and Bob/operator mail/services; historical uncertain result retained.",
         "owner": "/root",
         "reviewer": "/root/guardrails_engineer",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "PASS",
+        "evidence": [
+          "Actual ordinaryWebRuntime/fileTOTP nativefaultcase result6c936f06b882307e81d1424962f8ed95444f08ad7b829d460ecd05fa24c752e8/coreSAFE_INCOMPLETEPASS. Knownwrite20261025142510, containedepoch0+oneintent+boundmarker, native0/1refused, 2oldrecordrevocation/HTTPdenial, no postfaulttargetauth/retry/rollback, BobHTTP/SQL/epoch/session/TLSIMAP preserved. Archivec2728549f4c345b2719b1a3360854669df5b0cf497cb10cd28531029a301f07e59members/58hashes. ExactcleanupPASS. ProtocolACKFAIL retained separately; notpasswordworkflow retry."
+        ]
       },
       {
         "id": "S04-02-T06",
@@ -23052,7 +23116,9 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
           "S04-02-T03",
           "S04-02-T06",
           "S04-02-T07",
-          "S04-02-T08"
+          "S04-02-T08",
+          "S04-02-T04",
+          "S04-02-T05"
         ],
         "allowed_paths": [
           "src/openbsd.rs",
@@ -23066,7 +23132,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
           "maint/ux/test_s04_02_observe_current.py",
           "maint/ux/s04_02_observer_review.json"
         ],
-        "reference": "Signed single-host correction and current source review: production-only native hostname, legacy relay HTTP mode, current installed obsd1 prerequisites unverified. Preserve106 compile spawnFAIL.; Actual112 finds exactlytwo missing historicalsite-specificconfigpaths. Source inspection account_password_peer.rsStockPeer::observe and confinementParentPlan::prepare_stock stillrequire both, so fixtureabsencealone cannotstarthelper. Beforedependentbuild, permitonlyclosedtwo-name currentpresence admission, protectedancestors/presentfilecustody and exactincludeclosure/lifetimerechecks. No publicfilecreation/config/servicechanges. Accounting correction: ordinary installed recipes already explicitly exercised persistent status/result reload and session/control isolation, so existing T07/T08 belong to this same demonstrated installed gap; no new functional requirement or dispatch permission inferred."
+        "reference": "Signed single-host correction and current source review: production-only native hostname, legacy relay HTTP mode, current installed obsd1 prerequisites unverified. Preserve106 compile spawnFAIL.; Actual112 finds exactlytwo missing historicalsite-specificconfigpaths. Source inspection account_password_peer.rsStockPeer::observe and confinementParentPlan::prepare_stock stillrequire both, so fixtureabsencealone cannotstarthelper. Beforedependentbuild, permitonlyclosedtwo-name currentpresence admission, protectedancestors/presentfilecustody and exactincludeclosure/lifetimerechecks. No publicfilecreation/config/servicechanges. Accounting correction: ordinary installed recipes already explicitly exercised persistent status/result reload and session/control isolation, so existing T07/T08 belong to this same demonstrated installed gap; no new functional requirement or dispatch permission inferred. Existing native concurrency/replay and post-write containment T04/T05 are matching single-host readiness obligations, using reviewed fixed fresh cases; no new requirements or authority introduced."
       },
       {
         "id": "source-delivery123",
@@ -36220,6 +36286,131 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
             }
           }
         ]
+      },
+      {
+        "id": "native-installed-concurrency-replay-t04-01",
+        "kind": "NATIVE",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "single-host-readiness"
+        ],
+        "test_ids": [
+          "S04-02-T04"
+        ],
+        "allowed_paths": [
+          "docs/UX_EXECUTION_LEDGER.md"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/bin/bash",
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/t04-native01/dispatch.sh"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "One freshfixedconcurrent/controlpair: sourceownedrootcontroller prewarmsactualprimary/epoch0issuer, holdsrealmutationpendingStoreP/G5s, one2s boundednativeadmission issuanceattempt deniedwith0records, releasesoneguardedrealtransaction, capturedsignedwire replayno secondSQLwrite, stale0refused/current1/control0admitted. Independentsingleintent/epoch1/verifiedtime/SQLrow15+alloldrows/4clientrecords+zeroissuersessions. NoWeb/browser/publicmailserviceoperations. OriginalCLI/configrestore/protectedreadback/sixkeysretained withexactcustody. Sourcecontroller120+cleanup5/outercontroller150/rootactor600/transport700; no retry/rollback onuncertainty.",
+        "prerequisites": [
+          {
+            "id": "actual-source-and-lint-equivalence",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/t04-controller-lint-equivalence-review.json",
+              "sha256": "de85f5e0ccc91d2f5d8e11af3ad153c024badeec56f8ef62d9e54482619353c9"
+            }
+          },
+          {
+            "id": "actual-native-build",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/build05/actual-result-independent-review.json",
+              "sha256": "32ee1bf5d5a84742b5a358a499005cc98e1e46460354eb96e4aca5c6379fa634"
+            }
+          },
+          {
+            "id": "independent-outer-semantic-review",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/t04-native01/independent-review.json",
+              "sha256": "be9902f4ff379f83547f9af64e5538fe5605b89969498861b40647f46135ea62"
+            }
+          },
+          {
+            "id": "final-mechanical-bindings",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/t04-native01/dispatch-independent-review.json",
+              "sha256": "9298ae73856a52783f24f88f4cf1f73664b05f1e0bf71b6a32499f8cdcc8ec86"
+            }
+          }
+        ]
+      },
+      {
+        "id": "native-installed-postwrite-containment-t05",
+        "kind": "INSTALL",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "single-host-readiness"
+        ],
+        "test_ids": [
+          "S04-02-T05",
+          "S04-02-T06",
+          "S04-02-T07",
+          "S04-02-T08"
+        ],
+        "allowed_paths": [
+          "docs/UX_EXECUTION_LEDGER.md"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/bin/bash",
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/full05/dispatch.sh"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "One freshincomplete01/control01 ordinaryRuntime/fileTOTP realSQLwrite, fixedcfgtesthelper postwritecacheeffectrefusal. Verifiedtime+containedepoch0/marker/singleintent; actualnativeepoch0AND1refused; botholdcookiesdenied; no targetauth/replay/rollback. BobSQL/epoch/session+TLSIMAPpreserved. Actualbefore/after/final+14HTTP/coreSAFE_INCOMPLETE durableBEFOREseparate120sreadonlybrowser: genuineBobrawcookie+Aliceactualresultcap RAMonly; inspectincomplete/matchingUTC/reloadFIRST thenBobcontrols/unknownhistory/zeroPOST. Original30/300/600bounds, ownedcleanup/config/helperrestore/protectedreadback/3keysretained, T04historypreserved.",
+        "prerequisites": [
+          {
+            "id": "full05-paired-capability-independent-review.json",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/full05/paired-capability-independent-review.json",
+              "sha256": "fc419939c40607bc8d6678833a6cb06ea26c0cddca6fc13fdf84d7dde59121d7"
+            }
+          },
+          {
+            "id": "full05-dispatch-independent-review.json",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/full05/dispatch-independent-review.json",
+              "sha256": "7a3f77321aff4faa478eaf005f4bf53cee15e8c3acecc770364ff0f73a039f62"
+            }
+          },
+          {
+            "id": "build05-actual-result-independent-review.json",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/build05/actual-result-independent-review.json",
+              "sha256": "32ee1bf5d5a84742b5a358a499005cc98e1e46460354eb96e4aca5c6379fa634"
+            }
+          },
+          {
+            "id": "t04-native01-actual-result-independent-review.json",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/t04-native01/actual-result-independent-review.json",
+              "sha256": "c22f3e4993d858f77a74255ae095208acc1b82d0129642893d17bdc7cca36970"
+            }
+          }
+        ]
       }
     ],
     "budget": {
@@ -36235,7 +36426,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
   },
   "blocker": null,
   "independent_next_action": "Actual assigned Runtime, T04/T05, and status/security reviewers identify next concrete boundary; root owns integration, native/browser, Git and delivery.",
-  "updated_at": "2026-10-25T14:05:14Z"
+  "updated_at": "2026-10-25T14:43:48Z"
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->
