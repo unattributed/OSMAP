@@ -1,0 +1,19 @@
+# Separate obsd1 baseline instance: /etc/osmap-db-replica.cnf, root:_osmapdbrepl 0640.
+# Do not merge this into the original instance's configuration.
+[mysqld]
+user=_osmapdbrepl
+datadir=/var/mysql-osmap-replica
+socket=/var/run/mysql-osmap-replica/mysql.sock
+bind_address=127.0.0.1
+port=3307
+pid_file=/var/mysql-osmap-replica/mariadbd.pid
+log_error=/var/mysql-osmap-replica/mariadbd.err
+relay_log=/var/mysql-osmap-replica/toronto-relay
+server_id=44
+read_only=ON
+replicate_do_db=postfixadmin
+
+# Root administrative clients using this file also select the replica socket.
+[client]
+protocol=SOCKET
+socket=/var/run/mysql-osmap-replica/mysql.sock

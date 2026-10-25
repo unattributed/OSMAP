@@ -1,5 +1,33 @@
 # Current Project Status
 
+2026-10-25 UTC — **Real-account readiness withdrawn; fully local UX development migration active.**
+The operator's public password-change request was unconfirmed, and the latest
+Toronto/PostfixAdmin credential failed while the old local credential worked.
+Investigation confirmed independent databases: enabling global native account
+handling replaced the original Toronto authentication relay with obsd1's local
+Dovecot/SQL. Preserving the old environment strings had not preserved authority.
+The exact original environment was restored without changing credentials,
+factors, epochs or sessions. The earlier public real-account readiness claim is
+withdrawn; controlled local successes remain evidence for their actual scope.
+
+The operator now explicitly requires the complete OSMAP UX development stack on
+obsd1. A separate, read-only MariaDB baseline instance on obsd1 mirrors Toronto;
+the existing writable local `postfixadmin` remains isolated and unchanged.
+Replication threads, lag/error checks, all 17 table checksums and restricted
+read-only access passed. One planned source MariaDB restart enabled ROW logging;
+the operator's credential row and Dovecot userdb lookup passed preservation.
+Postfix and Dovecot were not restarted. A startup SQL observation raced socket
+publication; the same process subsequently passed readiness without a second
+restart. Transport child-loss recovery and stop/reap/restart checks also passed.
+
+The configuration guard now refuses the observed mixed-authority production
+layout; actual RED/GREEN source tests and independent review pass. Private helper
+diagnostics and local-development configuration are prepared. New synthetic
+account onboarding, matching installed profile/application checks and final
+replica lifecycle validation remain in progress. **Do not repeat real-account
+password changes for this development review.** Human T09 has not passed.
+See [the incident and local-development report](UX_S04_02_LOCAL_DEVELOPMENT_20261025.md).
+
 2026-10-25 UTC — **S04-02 deployed to the normal obsd1 HTTPS login.**
 The operator requested the completed code at
 <https://obsd1.blackbagsecurity.com/login>. The ordinary `/usr/local/bin/osmap`

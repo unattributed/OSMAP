@@ -2,10 +2,19 @@
 
 ## Outcome
 
-**Current closeout: all four outcomes, all 20 retained obligations and T01–T08
-PASS; independent audit CLEAR.** The ordinary persistent validation instance and
-genuine UAT session are available for the separate human T09 review. Human
-acceptance has not been recorded. The following native04 result is the first
+**Superseding incident:** the operator's real-account public journey failed and
+public readiness is withdrawn. Global native configuration had selected stale
+local credentials while the normal mail authority remained Toronto. The operator
+subsequently selected fully local obsd1 UX development, a separate read-only
+database reference replica and isolated writable test data. See the
+[current migration report](UX_S04_02_LOCAL_DEVELOPMENT_20261025.md). The controlled
+transaction evidence below remains valid for its stated local scope; no real-user
+or new-development-profile acceptance follows from it.
+
+**Historical controlled-local closeout: all four outcomes, all 20 retained
+obligations and T01–T08 PASS; independent audit CLEAR at that checkpoint.**
+The ordinary persistent validation instance and a genuine UAT session were
+available for that separate human T09 review. Human acceptance was not recorded. The following native04 result is the first
 transaction checkpoint; subsequent sections retain the integration, failure and
 installation evidence that completed engineering qualification.
 

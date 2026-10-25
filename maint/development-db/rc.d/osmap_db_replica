@@ -1,0 +1,26 @@
+#!/bin/ksh
+# Separate read-only baseline instance; original mysqld service is unchanged.
+# This root-owned symlink targets /usr/local/libexec/mariadbd. Its distinct argv
+# path keeps the original service's vendor-path pgrep from matching this daemon.
+# rc.subr consumes the daemon/rc/pexp variables.
+# shellcheck disable=SC2034
+daemon="/usr/local/libexec/osmap-db-replica/mariadbd"
+daemon_user="_osmapdbrepl"
+daemon_flags="--defaults-file=/etc/osmap-db-replica.cnf"
+rc_bg=YES
+rc_reload=NO
+# shellcheck source=/dev/null
+. /etc/rc.d/rc.subr
+pexp="/usr/local/libexec/osmap-db-replica/mariadbd --defaults-file=/etc/osmap-db-replica\\.cnf"
+rc_pre() {
+ [ -L "${daemon}" ] &&
+  [ "$(/usr/bin/readlink "${daemon}")" = /usr/local/libexec/mariadbd ] || return 1
+ [ -d /var/mysql-osmap-replica ] && [ ! -L /var/mysql-osmap-replica ] || return 1
+ if [ ! -e /var/run/mysql-osmap-replica ] && [ ! -L /var/run/mysql-osmap-replica ]; then
+  /bin/mkdir -m 700 /var/run/mysql-osmap-replica || return 1
+  /usr/sbin/chown _osmapdbrepl:_osmapdbrepl /var/run/mysql-osmap-replica || return 1
+ fi
+ [ ! -L /var/run/mysql-osmap-replica ] &&
+  [ "$(/usr/bin/stat -f '%u:%g:%Lp' /var/run/mysql-osmap-replica)" = "$(/usr/bin/id -u _osmapdbrepl):$(/usr/bin/id -g _osmapdbrepl):700" ]
+}
+rc_cmd "$1"

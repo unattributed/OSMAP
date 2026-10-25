@@ -1,5 +1,28 @@
 # Decision Log
 
+2026-10-25 UTC — **Correct the authority mistake and keep UX development local.**
+The operator's failed real-account journey supersedes the public readiness claim.
+The original remote auth/mailbox environment did not constrain global native
+account selection: the new configuration selected local SQL/Dovecot against stale
+credentials. Restore the exact previous relay configuration without copying or
+resetting passwords. Preserve the unconfirmed result and unknown first native
+failure cause; a generic result page is not a write receipt.
+
+The operator then explicitly selected a fully local obsd1 development stack and
+a mail-to-obsd1 replica. Stop the proposed remote password provider before any
+implementation. Mirror production into a separate, read-only local database
+instance, using a dedicated principal/datadir/socket, while retaining the writable
+development database and every controlled-account witness. Do not bulk-refresh
+production users or credentials into development. A separate instance avoids
+qualified-DDL hazards from database-name rewriting on a shared server.
+
+Use fresh synthetic credentials and local mailbox/MFA state for UX review. Remove
+only the four incident-added real names from native enrollment, preserving their
+data as evidence. Add a configuration refusal for the observed mixed layout and
+capture helper diagnostics privately from process birth. Reuse passing local
+transaction/epoch/session evidence; qualify the changed installed profile before
+requesting a new owner T09 result. This is not production password-change readiness.
+
 2026-10-25 UTC — **Deploy the qualified S04-02 code to the operator's normal HTTPS login.**
 The operator explicitly requested the code at obsd1.blackbagsecurity.com. Replace
 only the ordinary frontend binary with the already qualified f48 artifact,

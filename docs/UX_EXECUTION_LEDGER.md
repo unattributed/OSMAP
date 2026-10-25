@@ -10026,7 +10026,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
   "slice": "S04-02",
   "original_requirement": "Page 22 own-account password change, authoritative backend and step-up; independent accessible Show/Hide on current/new/confirmation",
   "source_baseline": "b4bc371bd645ea009e4d257b269c73bd7294c8e9",
-  "state": "UAT_READY",
+  "state": "IN_PROGRESS",
   "integration_owner": "/root",
   "roles": {
     "project_manager": [
@@ -10408,7 +10408,15 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "src/password_change_rate_tests.rs",
     "maint/openbsd/rc.d/osmap_s04_serve",
     "maint/openbsd/osmap-s04-02-serve.env.example",
-    "docs/UX_S04_02_T09_ACCEPTANCE_20261025.md"
+    "docs/UX_S04_02_T09_ACCEPTANCE_20261025.md",
+    "docs/UX_S04_02_LOCAL_DEVELOPMENT_20261025.md",
+    "maint/openbsd/osmap-serve-development.env.example",
+    "maint/development-db/README.md",
+    "maint/development-db/source-mysqld.cnf.example",
+    "maint/development-db/replica-mysqld.cnf.example",
+    "maint/development-db/rc.d/osmap_db_replica",
+    "maint/development-db/rc.d/osmap_db_replica_tunnel",
+    "maint/development-db/libexec/osmap-db-replica-tunnel-run.ksh"
   ],
   "outcomes": [
     {
@@ -10426,9 +10434,9 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "implementation": "PASS",
         "source_tests": "PASS",
         "native_tests": "PASS",
-        "deployed_qa": "PASS",
-        "independent_review": "PASS",
-        "recovery": "PASS"
+        "deployed_qa": "PENDING",
+        "independent_review": "PENDING",
+        "recovery": "PENDING"
       },
       "evidence": [
         {
@@ -10488,7 +10496,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
           "reference": "Actualnormalservice/accessdisposition21437ea856d1a6ef3ab56d2718b3c5b05bd91bf9d8d04dc61505b10390d80a76, 04actual01b7, exact2stalesocketretirement03f51eb5c4ad6dd21166b9c967bc4f79ebb1da539c32385bb43926f0c9fb71f5ac, T05actual6c936 containment+marker/oldsessiondenial preserved. Controlledresources/liveQAservices intentionallyretained, original8080/mail protected; historicalUNKNOWN/FAIL notrelabeled."
         }
       ],
-      "next_action": "Owner normalHTTPSlogin then minimalT09usability at https://obsd1.blackbagsecurity.com/login; no passwordchange/debugging. Existingcredentials/TOTPpreserved; actualowneracceptance pending. Publicdeploymentc3f91review, priorall20audit48cc retained."
+      "next_action": "Finish operator-directed fullylocalobsd1 developmentprofile/newsyntheticaccount and matchingnative/browser qualification. RetaincontrolledlocalT01-T08evidence; no realTorontocredentialtests or remoteaccountwriteprovider."
     },
     {
       "id": "fresh-stepup-and-session-containment",
@@ -10504,9 +10512,9 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "implementation": "PASS",
         "source_tests": "PASS",
         "native_tests": "PASS",
-        "deployed_qa": "PASS",
-        "independent_review": "PASS",
-        "recovery": "PASS"
+        "deployed_qa": "PENDING",
+        "independent_review": "PENDING",
+        "recovery": "PENDING"
       },
       "evidence": [
         {
@@ -10546,7 +10554,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
           "reference": "Actualnormalservice/accessdisposition21437ea856d1a6ef3ab56d2718b3c5b05bd91bf9d8d04dc61505b10390d80a76, 04actual01b7, exact2stalesocketretirement03f51eb5c4ad6dd21166b9c967bc4f79ebb1da539c32385bb43926f0c9fb71f5ac, T05actual6c936 containment+marker/oldsessiondenial preserved. Controlledresources/liveQAservices intentionallyretained, original8080/mail protected; historicalUNKNOWN/FAIL notrelabeled."
         }
       ],
-      "next_action": "Owner normalHTTPSlogin then minimalT09usability at https://obsd1.blackbagsecurity.com/login; no passwordchange/debugging. Existingcredentials/TOTPpreserved; actualowneracceptance pending. Publicdeploymentc3f91review, priorall20audit48cc retained."
+      "next_action": "Finish operator-directed fullylocalobsd1 developmentprofile/newsyntheticaccount and matchingnative/browser qualification. RetaincontrolledlocalT01-T08evidence; no realTorontocredentialtests or remoteaccountwriteprovider."
     },
     {
       "id": "password-form-and-navigation",
@@ -10572,9 +10580,9 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "implementation": "PASS",
         "source_tests": "PASS",
         "native_tests": "PASS",
-        "deployed_qa": "PASS",
-        "independent_review": "PASS",
-        "recovery": "PASS"
+        "deployed_qa": "PENDING",
+        "independent_review": "PENDING",
+        "recovery": "PENDING"
       },
       "evidence": [
         {
@@ -10614,7 +10622,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
           "reference": "Actualnormalservice/accessdisposition21437ea856d1a6ef3ab56d2718b3c5b05bd91bf9d8d04dc61505b10390d80a76, 04actual01b7, exact2stalesocketretirement03f51eb5c4ad6dd21166b9c967bc4f79ebb1da539c32385bb43926f0c9fb71f5ac, T05actual6c936 containment+marker/oldsessiondenial preserved. Controlledresources/liveQAservices intentionallyretained, original8080/mail protected; historicalUNKNOWN/FAIL notrelabeled."
         }
       ],
-      "next_action": "Owner normalHTTPSlogin then minimalT09usability at https://obsd1.blackbagsecurity.com/login; no passwordchange/debugging. Existingcredentials/TOTPpreserved; actualowneracceptance pending. Publicdeploymentc3f91review, priorall20audit48cc retained."
+      "next_action": "Finish operator-directed fullylocalobsd1 developmentprofile/newsyntheticaccount and matchingnative/browser qualification. RetaincontrolledlocalT01-T08evidence; no realTorontocredentialtests or remoteaccountwriteprovider."
     },
     {
       "id": "actual-password-status",
@@ -10631,9 +10639,9 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "implementation": "PASS",
         "source_tests": "PASS",
         "native_tests": "PASS",
-        "deployed_qa": "PASS",
-        "independent_review": "PASS",
-        "recovery": "PASS"
+        "deployed_qa": "PENDING",
+        "independent_review": "PENDING",
+        "recovery": "PENDING"
       },
       "evidence": [
         {
@@ -10681,14 +10689,14 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
           "reference": "Actualnormalservice/accessdisposition21437ea856d1a6ef3ab56d2718b3c5b05bd91bf9d8d04dc61505b10390d80a76, 04actual01b7, exact2stalesocketretirement03f51eb5c4ad6dd21166b9c967bc4f79ebb1da539c32385bb43926f0c9fb71f5ac, T05actual6c936 containment+marker/oldsessiondenial preserved. Controlledresources/liveQAservices intentionallyretained, original8080/mail protected; historicalUNKNOWN/FAIL notrelabeled."
         }
       ],
-      "next_action": "Owner normalHTTPSlogin then minimalT09usability at https://obsd1.blackbagsecurity.com/login; no passwordchange/debugging. Existingcredentials/TOTPpreserved; actualowneracceptance pending. Publicdeploymentc3f91review, priorall20audit48cc retained."
+      "next_action": "Finish operator-directed fullylocalobsd1 developmentprofile/newsyntheticaccount and matchingnative/browser qualification. RetaincontrolledlocalT01-T08evidence; no realTorontocredentialtests or remoteaccountwriteprovider."
     }
   ],
   "human_acceptance": {
-    "status": "PENDING",
-    "reference": "T01-T08/all20engineering PASS per48cc; ordinarypubliccutover PASS per c3f91b6e1ca501260df0435c1cc52f5494dcad1d9fea7ad83f7b04236e2ae2e9. Owner normalHTTPSlogin at https://obsd1.blackbagsecurity.com/login with existingpassword/currentTOTP, then minimalnavigation/visibility/Cancel/wording review in docs/UX_S04_02_T09_ACCEPTANCE_20261025.md. Actualownerlogin/T09NOT_RUN; S04notACCEPTED."
+    "status": "FAIL",
+    "reference": "2026-10-25 directoperator real-accountpublicjourney: OSMAPrequestunconfirmed, latestTorontoPostfixAdminresetnotacceptedwhileoldlocalcredentialworked. Userreport/screenshotdigestsretainedprivately. Authoritysplitconfirmed; real-accountreadinesswithdrawn. Operator subsequentlydirected fullylocalobsd1 UXdevelopment withonewayread-onlyTorontodatabasebaseline and isolatedwritablelocaltestaccounts. NewdevelopmentT09notrun."
   },
-  "next_action": "Owner login and minimal T09 usability review on the normal public HTTPS installation. All agentengineering and public deployment passed; source records preserved with normal signed delivery. No password change or debugging required.",
+  "next_action": "Complete localdevelopmentprofile/syntheticonboarding and native/browserchecks, replica position/reconnect/preservation checks, then independentlyreconcileall20/T01-T08/currentdevtarget before newownerT09. PreserveallhistoricalFAIL/UNKNOWN anddo notcopyproductioncredentialrowsintowritabletestdata.",
   "accountability": {
     "functional_exit": "Working own-account Settings password change through the selected single-host obsd1 local account service and authoritative local backend, fresh password/TOTP step-up, one conditional SQL update, durable OSMAP epoch and all-browser revocation, actual source-bound cache handling, old-password refusal/new-login success and Bob preservation. Existing third-party SMTP/IMAP sessions may remain authenticated. Matching installed QA, independent audit and minimal owner usability remain required. Toronto is later separate production installation.",
     "owner": "/root",
@@ -23225,6 +23233,20 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "human_T09": "NOT_RUN",
         "S04_02_ACCEPTED": false
       }
+    },
+    "operator_authority_incident_20261025": {
+      "status": "CONFIRMED_AUTHORITY_SPLIT",
+      "real_account_readiness": "WITHDRAWN",
+      "evidence_root": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/operator-login-incident01",
+      "root_cause": "Globalnative-accountconfiguration silentlyreplaced originalToronto authrelay withobsd1 localSQL/Dovecot. BothDBsindependentinitially, differentcredentialdigests; neitherwasreplica. UnconfirmedPOSTfirstnativecause notuniquelyobserved; no successclaimed.",
+      "recovery": "Exactoriginal92aenv restored, samef48code/PID11899HTTP200; no password/SQLrow/factor/epoch/sessionrewrite. Userproductionresetpreserved.",
+      "source_fix": "config.rs knownremoteauth/mailbox+native-localproductionmixrefusedbeforestartup; actualRED101 thenGREEN2 +independent1. Historicalunknownnotretroproved.",
+      "operator_direction": "KeepToronto productionauthoritative; thenexplicitly select allLOCALobsd1UXdevelopment andmail-to-obsd1replica; remoteaccountproviderplanstoppedbeforeedits.",
+      "database_layout": "Originalwritablelocalpostfixadmin at3306/defaultsocket untouched; separate_osmapdbrepl baseline44/read_onlyON at3307/newdatadir/socket; schema postfixadmin no rewrite.",
+      "actual_replica": "Positional seed000001:757; boththreadsYes/lag0/errors0; all17extendedtablechecksumsmatch; SELECT-onlywrite denied/noappSQLusersimported. DedicatedSSHkey/principal;pinnedsourcehostnameverifiedthroughSQLtunnel.",
+      "source_maintenance": "OneplannedMariaDBrestart18:03UTCenabledROWbinlog7d/sync1; operatorrowunchanged/DovecotuserdbPASS/PostfixDovecotnotrestarted. InitialprocesscheckbeatUDSpublication ERR2002 preserved; sameprocess85126laterready/no2ndrestart.",
+      "transport": "ActualownSSHchildlossautorecovery, explicitwrapperstop/reap/listenerabsence andstop/startchannelresumePASS; nocredentialtransaction/channelreset.",
+      "pending": "Localdevnewsyntheticaccount+localmailbox/publicprofile; signedsourceguardartifactbuild/deploy; replica rotate/boot/persistence finalproof; currenttargethumanT09."
     }
   },
   "execution_contract": {
@@ -36994,7 +37016,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
   },
   "blocker": "None",
   "independent_next_action": "Actual assigned Runtime, T04/T05, and status/security reviewers identify next concrete boundary; root owns integration, native/browser, Git and delivery.",
-  "updated_at": "2026-10-25T17:05:17Z"
+  "updated_at": "2026-10-25T18:41:31Z"
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->

@@ -1,0 +1,7 @@
+# Merge into the source's existing [mysqld] options after reviewing its config.
+# Enabling log_bin requires a controlled MariaDB startup/restart.
+# Relative log names use the existing datadir; preserve all other settings.
+[mysqld]
+server_id=1
+log_bin=osmap-source-bin
+binlog_format=ROW

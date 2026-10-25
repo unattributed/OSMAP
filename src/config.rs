@@ -281,6 +281,8 @@ impl std::fmt::Debug for AccountRuntimeConfig {
 fn validate_single_host_account_runtime(
     environment: RuntimeEnvironment,
     account_runtime: Option<&AccountRuntimeConfig>,
+    auth_socket: Option<&Path>,
+    mailbox_socket: Option<&Path>,
 ) -> Result<(), BootstrapError> {
     if environment != RuntimeEnvironment::Production {
         return Ok(());
@@ -288,6 +290,30 @@ fn validate_single_host_account_runtime(
     let Some(config) = account_runtime else {
         return Ok(());
     };
+    // These exact installed bridge endpoints reach the remote mail authority.
+    // Native account authentication/writes use this host's Dovecot and SQL;
+    // retaining bridge paths in the environment does not preserve that route.
+    // Other Unix pathnames alone establish no local/remote authority claim.
+    for (field, actual, remote_bridge) in [
+        (
+            "OSMAP_DOVEADM_AUTH_SOCKET_PATH",
+            auth_socket,
+            "/var/lib/osmap-bridge/run/auth.sock",
+        ),
+        (
+            "OSMAP_MAILBOX_HELPER_SOCKET_PATH",
+            mailbox_socket,
+            "/var/lib/osmap-bridge/run/mailbox.sock",
+        ),
+    ] {
+        if actual == Some(Path::new(remote_bridge)) {
+            return Err(BootstrapError::InvalidConfig {
+                field,
+                reason: "remote mail bridge cannot be combined with native local account authority"
+                    .into(),
+            });
+        }
+    }
     for (field, actual, expected) in [
         (
             "OSMAP_ACCOUNT_ADMISSION_SOCKET",
@@ -907,7 +933,12 @@ impl AppConfig {
         )?;
 
         let account_runtime = parse_account_runtime(env_map)?;
-        validate_single_host_account_runtime(environment, account_runtime.as_ref())?;
+        validate_single_host_account_runtime(
+            environment,
+            account_runtime.as_ref(),
+            doveadm_auth_socket_path.as_deref(),
+            mailbox_helper_socket_path.as_deref(),
+        )?;
         Ok(Self {
             account_runtime,
             openpgp_inventory: parse_openpgp_inventory(env_map)?,
@@ -1246,6 +1277,107 @@ fn is_loopback_listener(listen_addr: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn production_native_account_runtime_refuses_known_remote_mail_bridges() {
+        let local = BTreeMap::<String, String>::from([
+            ("OSMAP_ENV".into(), "production".into()),
+            ("OSMAP_RUN_MODE".into(), "serve".into()),
+            (
+                "OSMAP_DOVEADM_AUTH_SOCKET_PATH".into(),
+                "/var/run/osmap-auth".into(),
+            ),
+            (
+                "OSMAP_MAILBOX_HELPER_SOCKET_PATH".into(),
+                "/var/lib/osmap/run/mailbox-helper.sock".into(),
+            ),
+            (
+                "OSMAP_MAILBOX_HELPER_GRANT_KEY_PATH".into(),
+                "/var/lib/osmap/secrets/mailbox-helper-grant.key".into(),
+            ),
+            (
+                "OSMAP_ACCOUNT_ADMISSION_SOCKET".into(),
+                LOCAL_ACCOUNT_ADMISSION_SOCKET.into(),
+            ),
+            (
+                "OSMAP_ACCOUNT_ADMISSION_KEY_FILE".into(),
+                "/private/admission.key".into(),
+            ),
+            ("OSMAP_ACCOUNT_ADMISSION_HELPER_UID".into(), "0".into()),
+            (
+                "OSMAP_ACCOUNT_MUTATION_SOCKET".into(),
+                LOCAL_ACCOUNT_MUTATION_SOCKET.into(),
+            ),
+            (
+                "OSMAP_ACCOUNT_MUTATION_KEY_FILE".into(),
+                "/private/mutation.key".into(),
+            ),
+            (
+                "OSMAP_ACCOUNT_MUTATION_SESSION_PROOF_KEY_FILE".into(),
+                "/private/session-proof.key".into(),
+            ),
+            ("OSMAP_ACCOUNT_MUTATION_HELPER_UID".into(), "0".into()),
+        ]);
+        assert!(AppConfig::from_env_map(&local).is_ok());
+        let mut staging = local.clone();
+        staging.insert("OSMAP_ENV".into(), "staging".into());
+        assert!(AppConfig::from_env_map(&staging).is_ok());
+        // An unfamiliar Unix pathname is not itself evidence of a relay.
+        let mut unfamiliar = local.clone();
+        unfamiliar.insert(
+            "OSMAP_DOVEADM_AUTH_SOCKET_PATH".into(),
+            "/private/other-auth.sock".into(),
+        );
+        assert!(AppConfig::from_env_map(&unfamiliar).is_ok());
+        let remote = [
+            (
+                "OSMAP_DOVEADM_AUTH_SOCKET_PATH",
+                "/var/lib/osmap-bridge/run/auth.sock",
+            ),
+            (
+                "OSMAP_MAILBOX_HELPER_SOCKET_PATH",
+                "/var/lib/osmap-bridge/run/mailbox.sock",
+            ),
+        ];
+        // Each known bridge is enough to expose the mixed authority. Reject
+        // both startup modes, including an account-scoped native rollout.
+        for mode in ["bootstrap", "serve"] {
+            for (field, path) in remote {
+                for rollout in [None, Some("alice@example.test")] {
+                    let mut mixed = local.clone();
+                    mixed.insert("OSMAP_RUN_MODE".into(), mode.into());
+                    mixed.insert(field.into(), path.into());
+                    if let Some(account) = rollout {
+                        mixed.insert("OSMAP_ACCOUNT_ROLLOUT_ACCOUNT".into(), account.into());
+                    }
+                    assert_eq!(
+                        AppConfig::from_env_map(&mixed).unwrap_err(),
+                        BootstrapError::InvalidConfig {
+                            field,
+                            reason: "remote mail bridge cannot be combined with native local account authority".into(),
+                        }
+                    );
+                }
+            }
+        }
+        let mut bridged = local;
+        for (field, path) in remote {
+            bridged.insert(field.into(), path.into());
+        }
+        assert!(AppConfig::from_env_map(&bridged).is_err());
+        // The preserved ordinary remote-auth/mailbox profile remains valid.
+        bridged.retain(|field, _| !field.starts_with("OSMAP_ACCOUNT_"));
+        let config = AppConfig::from_env_map(&bridged).unwrap();
+        assert!(config.account_runtime.is_none());
+        assert_eq!(
+            config.doveadm_auth_socket_path.as_deref(),
+            Some(Path::new(remote[0].1))
+        );
+        assert_eq!(
+            config.mailbox_helper_socket_path.as_deref(),
+            Some(Path::new(remote[1].1))
+        );
+    }
+
     #[test]
     fn production_account_runtime_requires_native_single_host_endpoints() {
         let mut env = BTreeMap::<String, String>::from([
