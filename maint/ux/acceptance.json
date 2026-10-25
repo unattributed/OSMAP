@@ -10078,9 +10078,35 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "QA_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/uat-login01/browser-actual-result.json",
+            "scope": "2026-10-25 S04-02 R2-10-005: Security password status and changed time. Scenarios T07; exact reviewed evidence current_browser, SHA256 0e1dfa3bb3db2beebcdfa2387e0d2f8f192d59e825e99d50c4a10776c8f4e283. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/full05/result-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-10-005: Security password status and changed time. Scenarios T07; exact reviewed evidence native_T05, SHA256 6c936f06b882307e81d1424962f8ed95444f08ad7b829d460ecd05fa24c752e8. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/persistent-qa/recovery02/source-push.log",
+            "scope": "2026-10-25 S04-02 R2-10-005: Security password status and changed time. Scenarios T07; exact reviewed evidence normal_delivery_tests, SHA256 603903a5f56489876e819be4c019e90caafec3f6891c8e618ef265a2a31d2c47. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/full05-positive/result-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-10-005: Security password status and changed time. Scenarios T07; exact reviewed evidence ordinary_T03, SHA256 663664cc23632534d0a8ea3c72d9ce3200366395d35f663f1861538ae3d3aeec. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/result-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-10-005: Security password status and changed time. Scenarios T07; exact reviewed evidence source_result_status, SHA256 13e835479c11e26f9dde13d91ff87c9c2a42f655b0610e063b32e704008ee617. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          }
+        ]
       }
     },
     {
@@ -10226,9 +10252,40 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "QA_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/uat-login01/browser-actual-result.json",
+            "scope": "2026-10-25 S04-02 R2-10-009: Security Change password entry. Scenarios T01, T06; exact reviewed evidence current_browser, SHA256 0e1dfa3bb3db2beebcdfa2387e0d2f8f192d59e825e99d50c4a10776c8f4e283. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/uat-login01/uat-password-controls.png",
+            "scope": "2026-10-25 S04-02 R2-10-009: Security Change password entry. Scenarios T01, T06; exact reviewed evidence current_screenshot, SHA256 0d0be5552ce3a7ffba30e7d08c5d65b7e32c6af1671e0677f0af7a387735a066. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/uat-login01/actual-result-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-10-009: Security Change password entry. Scenarios T01, T06; exact reviewed evidence fresh_UAT_actual, SHA256 d0bec18ef0baa171786e16112b72d820678f929adf920d353921ad2424808f03. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/full05/result-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-10-009: Security Change password entry. Scenarios T01, T06; exact reviewed evidence native_T05, SHA256 6c936f06b882307e81d1424962f8ed95444f08ad7b829d460ecd05fa24c752e8. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/persistent-qa/recovery02/source-push.log",
+            "scope": "2026-10-25 S04-02 R2-10-009: Security Change password entry. Scenarios T01, T06; exact reviewed evidence normal_delivery_tests, SHA256 603903a5f56489876e819be4c019e90caafec3f6891c8e618ef265a2a31d2c47. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/full05-positive/result-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-10-009: Security Change password entry. Scenarios T01, T06; exact reviewed evidence ordinary_T03, SHA256 663664cc23632534d0a8ea3c72d9ce3200366395d35f663f1861538ae3d3aeec. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          }
+        ]
       }
     },
     {
@@ -17293,9 +17350,35 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "QA_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/uat-login01/browser-actual-result.json",
+            "scope": "2026-10-25 S04-02 R2-20-001: Authentication & Recovery changed-at status. Scenarios T07; exact reviewed evidence current_browser, SHA256 0e1dfa3bb3db2beebcdfa2387e0d2f8f192d59e825e99d50c4a10776c8f4e283. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/full05/result-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-20-001: Authentication & Recovery changed-at status. Scenarios T07; exact reviewed evidence native_T05, SHA256 6c936f06b882307e81d1424962f8ed95444f08ad7b829d460ecd05fa24c752e8. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/persistent-qa/recovery02/source-push.log",
+            "scope": "2026-10-25 S04-02 R2-20-001: Authentication & Recovery changed-at status. Scenarios T07; exact reviewed evidence normal_delivery_tests, SHA256 603903a5f56489876e819be4c019e90caafec3f6891c8e618ef265a2a31d2c47. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/full05-positive/result-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-20-001: Authentication & Recovery changed-at status. Scenarios T07; exact reviewed evidence ordinary_T03, SHA256 663664cc23632534d0a8ea3c72d9ce3200366395d35f663f1861538ae3d3aeec. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/result-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-20-001: Authentication & Recovery changed-at status. Scenarios T07; exact reviewed evidence source_result_status, SHA256 13e835479c11e26f9dde13d91ff87c9c2a42f655b0610e063b32e704008ee617. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          }
+        ]
       }
     },
     {
@@ -17330,9 +17413,40 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "QA_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/uat-login01/browser-actual-result.json",
+            "scope": "2026-10-25 S04-02 R2-20-002: Authentication & Recovery Change password entry. Scenarios T01, T06; exact reviewed evidence current_browser, SHA256 0e1dfa3bb3db2beebcdfa2387e0d2f8f192d59e825e99d50c4a10776c8f4e283. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/uat-login01/uat-password-controls.png",
+            "scope": "2026-10-25 S04-02 R2-20-002: Authentication & Recovery Change password entry. Scenarios T01, T06; exact reviewed evidence current_screenshot, SHA256 0d0be5552ce3a7ffba30e7d08c5d65b7e32c6af1671e0677f0af7a387735a066. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/uat-login01/actual-result-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-20-002: Authentication & Recovery Change password entry. Scenarios T01, T06; exact reviewed evidence fresh_UAT_actual, SHA256 d0bec18ef0baa171786e16112b72d820678f929adf920d353921ad2424808f03. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/full05/result-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-20-002: Authentication & Recovery Change password entry. Scenarios T01, T06; exact reviewed evidence native_T05, SHA256 6c936f06b882307e81d1424962f8ed95444f08ad7b829d460ecd05fa24c752e8. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/persistent-qa/recovery02/source-push.log",
+            "scope": "2026-10-25 S04-02 R2-20-002: Authentication & Recovery Change password entry. Scenarios T01, T06; exact reviewed evidence normal_delivery_tests, SHA256 603903a5f56489876e819be4c019e90caafec3f6891c8e618ef265a2a31d2c47. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/full05-positive/result-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-20-002: Authentication & Recovery Change password entry. Scenarios T01, T06; exact reviewed evidence ordinary_T03, SHA256 663664cc23632534d0a8ea3c72d9ce3200366395d35f663f1861538ae3d3aeec. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          }
+        ]
       }
     },
     {
@@ -18487,9 +18601,40 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "QA_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/uat-login01/browser-actual-result.json",
+            "scope": "2026-10-25 S04-02 R2-22-001: Breadcrumb navigates without submitting. Scenarios T01, T06; exact reviewed evidence current_browser, SHA256 0e1dfa3bb3db2beebcdfa2387e0d2f8f192d59e825e99d50c4a10776c8f4e283. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/uat-login01/uat-password-controls.png",
+            "scope": "2026-10-25 S04-02 R2-22-001: Breadcrumb navigates without submitting. Scenarios T01, T06; exact reviewed evidence current_screenshot, SHA256 0d0be5552ce3a7ffba30e7d08c5d65b7e32c6af1671e0677f0af7a387735a066. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/uat-login01/actual-result-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-22-001: Breadcrumb navigates without submitting. Scenarios T01, T06; exact reviewed evidence fresh_UAT_actual, SHA256 d0bec18ef0baa171786e16112b72d820678f929adf920d353921ad2424808f03. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/full05/result-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-22-001: Breadcrumb navigates without submitting. Scenarios T01, T06; exact reviewed evidence native_T05, SHA256 6c936f06b882307e81d1424962f8ed95444f08ad7b829d460ecd05fa24c752e8. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/persistent-qa/recovery02/source-push.log",
+            "scope": "2026-10-25 S04-02 R2-22-001: Breadcrumb navigates without submitting. Scenarios T01, T06; exact reviewed evidence normal_delivery_tests, SHA256 603903a5f56489876e819be4c019e90caafec3f6891c8e618ef265a2a31d2c47. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/full05-positive/result-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-22-001: Breadcrumb navigates without submitting. Scenarios T01, T06; exact reviewed evidence ordinary_T03, SHA256 663664cc23632534d0a8ea3c72d9ce3200366395d35f663f1861538ae3d3aeec. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          }
+        ]
       }
     },
     {
@@ -18524,9 +18669,55 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "QA_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/uat-login01/actual-result-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-22-002: Current password handled only for authorized verification. Scenarios T02, T03, T04, T08; exact reviewed evidence fresh_UAT_actual, SHA256 d0bec18ef0baa171786e16112b72d820678f929adf920d353921ad2424808f03. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/t04-native01/actual-result-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-22-002: Current password handled only for authorized verification. Scenarios T02, T03, T04, T08; exact reviewed evidence native_T04, SHA256 c22f3e4993d858f77a74255ae095208acc1b82d0129642893d17bdc7cca36970. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/full05/result-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-22-002: Current password handled only for authorized verification. Scenarios T02, T03, T04, T08; exact reviewed evidence native_T05, SHA256 6c936f06b882307e81d1424962f8ed95444f08ad7b829d460ecd05fa24c752e8. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/persistent-qa/recovery02/source-push.log",
+            "scope": "2026-10-25 S04-02 R2-22-002: Current password handled only for authorized verification. Scenarios T02, T03, T04, T08; exact reviewed evidence normal_delivery_tests, SHA256 603903a5f56489876e819be4c019e90caafec3f6891c8e618ef265a2a31d2c47. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/full05-positive/result-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-22-002: Current password handled only for authorized verification. Scenarios T02, T03, T04, T08; exact reviewed evidence ordinary_T03, SHA256 663664cc23632534d0a8ea3c72d9ce3200366395d35f663f1861538ae3d3aeec. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/readonly-ui02/result-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-22-002: Current password handled only for authorized verification. Scenarios T02, T03, T04, T08; exact reviewed evidence positive_cleanup_reconciliation, SHA256 87fbf28c065da336147c49e8373a3fdee6f3e40be14d392f89ebd68172e0a77d. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/uat-login01/handoff-disposition-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-22-002: Current password handled only for authorized verification. Scenarios T02, T03, T04, T08; exact reviewed evidence service_access_retention, SHA256 21437ea856d1a6ef3ab56d2718b3c5b05bd91bf9d8d04dc61505b10390d80a76. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/final-source-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-22-002: Current password handled only for authorized verification. Scenarios T02, T03, T04, T08; exact reviewed evidence source_native_runtime_review, SHA256 ce29c71af91cbb8003f5573aa54d5136c6deb888d5d07dbc7ea3c10bffe96006. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/session-token-oracle-correction.json",
+            "scope": "2026-10-25 S04-02 R2-22-002: Current password handled only for authorized verification. Scenarios T02, T03, T04, T08; exact reviewed evidence token_oracle_correction, SHA256 f4130974e21352655d12c393674737346ff2ea3908ca6b493099f22c93225174. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          }
+        ]
       }
     },
     {
@@ -18561,9 +18752,40 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "QA_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/uat-login01/browser-actual-result.json",
+            "scope": "2026-10-25 S04-02 R2-22-003: Independent current-password Show/Hide. Scenarios T01, T06; exact reviewed evidence current_browser, SHA256 0e1dfa3bb3db2beebcdfa2387e0d2f8f192d59e825e99d50c4a10776c8f4e283. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/uat-login01/uat-password-controls.png",
+            "scope": "2026-10-25 S04-02 R2-22-003: Independent current-password Show/Hide. Scenarios T01, T06; exact reviewed evidence current_screenshot, SHA256 0d0be5552ce3a7ffba30e7d08c5d65b7e32c6af1671e0677f0af7a387735a066. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/uat-login01/actual-result-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-22-003: Independent current-password Show/Hide. Scenarios T01, T06; exact reviewed evidence fresh_UAT_actual, SHA256 d0bec18ef0baa171786e16112b72d820678f929adf920d353921ad2424808f03. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/full05/result-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-22-003: Independent current-password Show/Hide. Scenarios T01, T06; exact reviewed evidence native_T05, SHA256 6c936f06b882307e81d1424962f8ed95444f08ad7b829d460ecd05fa24c752e8. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/persistent-qa/recovery02/source-push.log",
+            "scope": "2026-10-25 S04-02 R2-22-003: Independent current-password Show/Hide. Scenarios T01, T06; exact reviewed evidence normal_delivery_tests, SHA256 603903a5f56489876e819be4c019e90caafec3f6891c8e618ef265a2a31d2c47. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/full05-positive/result-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-22-003: Independent current-password Show/Hide. Scenarios T01, T06; exact reviewed evidence ordinary_T03, SHA256 663664cc23632534d0a8ea3c72d9ce3200366395d35f663f1861538ae3d3aeec. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          }
+        ]
       }
     },
     {
@@ -18598,9 +18820,45 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "QA_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/uat-login01/browser-actual-result.json",
+            "scope": "2026-10-25 S04-02 R2-22-004: Valid new password under D04 policy. Scenarios T02, T03, T06; exact reviewed evidence current_browser, SHA256 0e1dfa3bb3db2beebcdfa2387e0d2f8f192d59e825e99d50c4a10776c8f4e283. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/uat-login01/actual-result-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-22-004: Valid new password under D04 policy. Scenarios T02, T03, T06; exact reviewed evidence fresh_UAT_actual, SHA256 d0bec18ef0baa171786e16112b72d820678f929adf920d353921ad2424808f03. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/full05/result-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-22-004: Valid new password under D04 policy. Scenarios T02, T03, T06; exact reviewed evidence native_T05, SHA256 6c936f06b882307e81d1424962f8ed95444f08ad7b829d460ecd05fa24c752e8. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/persistent-qa/recovery02/source-push.log",
+            "scope": "2026-10-25 S04-02 R2-22-004: Valid new password under D04 policy. Scenarios T02, T03, T06; exact reviewed evidence normal_delivery_tests, SHA256 603903a5f56489876e819be4c019e90caafec3f6891c8e618ef265a2a31d2c47. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/full05-positive/result-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-22-004: Valid new password under D04 policy. Scenarios T02, T03, T06; exact reviewed evidence ordinary_T03, SHA256 663664cc23632534d0a8ea3c72d9ce3200366395d35f663f1861538ae3d3aeec. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/readonly-ui02/result-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-22-004: Valid new password under D04 policy. Scenarios T02, T03, T06; exact reviewed evidence positive_cleanup_reconciliation, SHA256 87fbf28c065da336147c49e8373a3fdee6f3e40be14d392f89ebd68172e0a77d. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/final-source-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-22-004: Valid new password under D04 policy. Scenarios T02, T03, T06; exact reviewed evidence source_native_runtime_review, SHA256 ce29c71af91cbb8003f5573aa54d5136c6deb888d5d07dbc7ea3c10bffe96006. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          }
+        ]
       }
     },
     {
@@ -18635,9 +18893,40 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "QA_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/uat-login01/browser-actual-result.json",
+            "scope": "2026-10-25 S04-02 R2-22-005: Independent new-password Show/Hide. Scenarios T01, T06; exact reviewed evidence current_browser, SHA256 0e1dfa3bb3db2beebcdfa2387e0d2f8f192d59e825e99d50c4a10776c8f4e283. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/uat-login01/uat-password-controls.png",
+            "scope": "2026-10-25 S04-02 R2-22-005: Independent new-password Show/Hide. Scenarios T01, T06; exact reviewed evidence current_screenshot, SHA256 0d0be5552ce3a7ffba30e7d08c5d65b7e32c6af1671e0677f0af7a387735a066. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/uat-login01/actual-result-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-22-005: Independent new-password Show/Hide. Scenarios T01, T06; exact reviewed evidence fresh_UAT_actual, SHA256 d0bec18ef0baa171786e16112b72d820678f929adf920d353921ad2424808f03. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/full05/result-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-22-005: Independent new-password Show/Hide. Scenarios T01, T06; exact reviewed evidence native_T05, SHA256 6c936f06b882307e81d1424962f8ed95444f08ad7b829d460ecd05fa24c752e8. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/persistent-qa/recovery02/source-push.log",
+            "scope": "2026-10-25 S04-02 R2-22-005: Independent new-password Show/Hide. Scenarios T01, T06; exact reviewed evidence normal_delivery_tests, SHA256 603903a5f56489876e819be4c019e90caafec3f6891c8e618ef265a2a31d2c47. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/full05-positive/result-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-22-005: Independent new-password Show/Hide. Scenarios T01, T06; exact reviewed evidence ordinary_T03, SHA256 663664cc23632534d0a8ea3c72d9ce3200366395d35f663f1861538ae3d3aeec. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          }
+        ]
       }
     },
     {
@@ -18672,9 +18961,40 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "QA_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/uat-login01/browser-actual-result.json",
+            "scope": "2026-10-25 S04-02 R2-22-006: Exact new-password confirmation. Scenarios T02, T06; exact reviewed evidence current_browser, SHA256 0e1dfa3bb3db2beebcdfa2387e0d2f8f192d59e825e99d50c4a10776c8f4e283. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/uat-login01/actual-result-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-22-006: Exact new-password confirmation. Scenarios T02, T06; exact reviewed evidence fresh_UAT_actual, SHA256 d0bec18ef0baa171786e16112b72d820678f929adf920d353921ad2424808f03. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/full05/result-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-22-006: Exact new-password confirmation. Scenarios T02, T06; exact reviewed evidence native_T05, SHA256 6c936f06b882307e81d1424962f8ed95444f08ad7b829d460ecd05fa24c752e8. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/persistent-qa/recovery02/source-push.log",
+            "scope": "2026-10-25 S04-02 R2-22-006: Exact new-password confirmation. Scenarios T02, T06; exact reviewed evidence normal_delivery_tests, SHA256 603903a5f56489876e819be4c019e90caafec3f6891c8e618ef265a2a31d2c47. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/full05-positive/result-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-22-006: Exact new-password confirmation. Scenarios T02, T06; exact reviewed evidence ordinary_T03, SHA256 663664cc23632534d0a8ea3c72d9ce3200366395d35f663f1861538ae3d3aeec. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/final-source-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-22-006: Exact new-password confirmation. Scenarios T02, T06; exact reviewed evidence source_native_runtime_review, SHA256 ce29c71af91cbb8003f5573aa54d5136c6deb888d5d07dbc7ea3c10bffe96006. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          }
+        ]
       }
     },
     {
@@ -18709,9 +19029,40 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "QA_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/uat-login01/browser-actual-result.json",
+            "scope": "2026-10-25 S04-02 R2-22-007: Independent confirmation Show/Hide. Scenarios T01, T06; exact reviewed evidence current_browser, SHA256 0e1dfa3bb3db2beebcdfa2387e0d2f8f192d59e825e99d50c4a10776c8f4e283. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/uat-login01/uat-password-controls.png",
+            "scope": "2026-10-25 S04-02 R2-22-007: Independent confirmation Show/Hide. Scenarios T01, T06; exact reviewed evidence current_screenshot, SHA256 0d0be5552ce3a7ffba30e7d08c5d65b7e32c6af1671e0677f0af7a387735a066. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/uat-login01/actual-result-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-22-007: Independent confirmation Show/Hide. Scenarios T01, T06; exact reviewed evidence fresh_UAT_actual, SHA256 d0bec18ef0baa171786e16112b72d820678f929adf920d353921ad2424808f03. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/full05/result-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-22-007: Independent confirmation Show/Hide. Scenarios T01, T06; exact reviewed evidence native_T05, SHA256 6c936f06b882307e81d1424962f8ed95444f08ad7b829d460ecd05fa24c752e8. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/persistent-qa/recovery02/source-push.log",
+            "scope": "2026-10-25 S04-02 R2-22-007: Independent confirmation Show/Hide. Scenarios T01, T06; exact reviewed evidence normal_delivery_tests, SHA256 603903a5f56489876e819be4c019e90caafec3f6891c8e618ef265a2a31d2c47. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/full05-positive/result-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-22-007: Independent confirmation Show/Hide. Scenarios T01, T06; exact reviewed evidence ordinary_T03, SHA256 663664cc23632534d0a8ea3c72d9ce3200366395d35f663f1861538ae3d3aeec. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          }
+        ]
       }
     },
     {
@@ -18746,9 +19097,45 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "QA_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/uat-login01/browser-actual-result.json",
+            "scope": "2026-10-25 S04-02 R2-22-008: Fresh action-bound reauthentication/TOTP. Scenarios T03, T04, T06; exact reviewed evidence current_browser, SHA256 0e1dfa3bb3db2beebcdfa2387e0d2f8f192d59e825e99d50c4a10776c8f4e283. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/uat-login01/actual-result-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-22-008: Fresh action-bound reauthentication/TOTP. Scenarios T03, T04, T06; exact reviewed evidence fresh_UAT_actual, SHA256 d0bec18ef0baa171786e16112b72d820678f929adf920d353921ad2424808f03. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/t04-native01/actual-result-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-22-008: Fresh action-bound reauthentication/TOTP. Scenarios T03, T04, T06; exact reviewed evidence native_T04, SHA256 c22f3e4993d858f77a74255ae095208acc1b82d0129642893d17bdc7cca36970. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/full05/result-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-22-008: Fresh action-bound reauthentication/TOTP. Scenarios T03, T04, T06; exact reviewed evidence native_T05, SHA256 6c936f06b882307e81d1424962f8ed95444f08ad7b829d460ecd05fa24c752e8. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/persistent-qa/recovery02/source-push.log",
+            "scope": "2026-10-25 S04-02 R2-22-008: Fresh action-bound reauthentication/TOTP. Scenarios T03, T04, T06; exact reviewed evidence normal_delivery_tests, SHA256 603903a5f56489876e819be4c019e90caafec3f6891c8e618ef265a2a31d2c47. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/full05-positive/result-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-22-008: Fresh action-bound reauthentication/TOTP. Scenarios T03, T04, T06; exact reviewed evidence ordinary_T03, SHA256 663664cc23632534d0a8ea3c72d9ce3200366395d35f663f1861538ae3d3aeec. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/readonly-ui02/result-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-22-008: Fresh action-bound reauthentication/TOTP. Scenarios T03, T04, T06; exact reviewed evidence positive_cleanup_reconciliation, SHA256 87fbf28c065da336147c49e8373a3fdee6f3e40be14d392f89ebd68172e0a77d. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          }
+        ]
       }
     },
     {
@@ -18783,9 +19170,55 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "QA_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/uat-login01/browser-actual-result.json",
+            "scope": "2026-10-25 S04-02 R2-22-009: Cancel without mutation or secret persistence. Scenarios T01, T06, T08; exact reviewed evidence current_browser, SHA256 0e1dfa3bb3db2beebcdfa2387e0d2f8f192d59e825e99d50c4a10776c8f4e283. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/uat-login01/uat-password-controls.png",
+            "scope": "2026-10-25 S04-02 R2-22-009: Cancel without mutation or secret persistence. Scenarios T01, T06, T08; exact reviewed evidence current_screenshot, SHA256 0d0be5552ce3a7ffba30e7d08c5d65b7e32c6af1671e0677f0af7a387735a066. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/uat-login01/actual-result-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-22-009: Cancel without mutation or secret persistence. Scenarios T01, T06, T08; exact reviewed evidence fresh_UAT_actual, SHA256 d0bec18ef0baa171786e16112b72d820678f929adf920d353921ad2424808f03. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/t04-native01/actual-result-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-22-009: Cancel without mutation or secret persistence. Scenarios T01, T06, T08; exact reviewed evidence native_T04, SHA256 c22f3e4993d858f77a74255ae095208acc1b82d0129642893d17bdc7cca36970. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/full05/result-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-22-009: Cancel without mutation or secret persistence. Scenarios T01, T06, T08; exact reviewed evidence native_T05, SHA256 6c936f06b882307e81d1424962f8ed95444f08ad7b829d460ecd05fa24c752e8. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/persistent-qa/recovery02/source-push.log",
+            "scope": "2026-10-25 S04-02 R2-22-009: Cancel without mutation or secret persistence. Scenarios T01, T06, T08; exact reviewed evidence normal_delivery_tests, SHA256 603903a5f56489876e819be4c019e90caafec3f6891c8e618ef265a2a31d2c47. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/full05-positive/result-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-22-009: Cancel without mutation or secret persistence. Scenarios T01, T06, T08; exact reviewed evidence ordinary_T03, SHA256 663664cc23632534d0a8ea3c72d9ce3200366395d35f663f1861538ae3d3aeec. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/uat-login01/handoff-disposition-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-22-009: Cancel without mutation or secret persistence. Scenarios T01, T06, T08; exact reviewed evidence service_access_retention, SHA256 21437ea856d1a6ef3ab56d2718b3c5b05bd91bf9d8d04dc61505b10390d80a76. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/session-token-oracle-correction.json",
+            "scope": "2026-10-25 S04-02 R2-22-009: Cancel without mutation or secret persistence. Scenarios T01, T06, T08; exact reviewed evidence token_oracle_correction, SHA256 f4130974e21352655d12c393674737346ff2ea3908ca6b493099f22c93225174. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          }
+        ]
       }
     },
     {
@@ -18820,9 +19253,45 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "QA_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/uat-login01/browser-actual-result.json",
+            "scope": "2026-10-25 S04-02 R2-22-010: Authorized Change password submission. Scenarios T02, T03, T06; exact reviewed evidence current_browser, SHA256 0e1dfa3bb3db2beebcdfa2387e0d2f8f192d59e825e99d50c4a10776c8f4e283. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/uat-login01/actual-result-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-22-010: Authorized Change password submission. Scenarios T02, T03, T06; exact reviewed evidence fresh_UAT_actual, SHA256 d0bec18ef0baa171786e16112b72d820678f929adf920d353921ad2424808f03. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/full05/result-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-22-010: Authorized Change password submission. Scenarios T02, T03, T06; exact reviewed evidence native_T05, SHA256 6c936f06b882307e81d1424962f8ed95444f08ad7b829d460ecd05fa24c752e8. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/persistent-qa/recovery02/source-push.log",
+            "scope": "2026-10-25 S04-02 R2-22-010: Authorized Change password submission. Scenarios T02, T03, T06; exact reviewed evidence normal_delivery_tests, SHA256 603903a5f56489876e819be4c019e90caafec3f6891c8e618ef265a2a31d2c47. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/full05-positive/result-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-22-010: Authorized Change password submission. Scenarios T02, T03, T06; exact reviewed evidence ordinary_T03, SHA256 663664cc23632534d0a8ea3c72d9ce3200366395d35f663f1861538ae3d3aeec. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/readonly-ui02/result-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-22-010: Authorized Change password submission. Scenarios T02, T03, T06; exact reviewed evidence positive_cleanup_reconciliation, SHA256 87fbf28c065da336147c49e8373a3fdee6f3e40be14d392f89ebd68172e0a77d. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/final-source-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-22-010: Authorized Change password submission. Scenarios T02, T03, T06; exact reviewed evidence source_native_runtime_review, SHA256 ce29c71af91cbb8003f5573aa54d5136c6deb888d5d07dbc7ea3c10bffe96006. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          }
+        ]
       }
     },
     {
@@ -18857,9 +19326,55 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "QA_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/uat-login01/actual-result-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-22-011: All affected OSMAP browser sessions revoked. Scenarios T03, T04, T05, T08; exact reviewed evidence fresh_UAT_actual, SHA256 d0bec18ef0baa171786e16112b72d820678f929adf920d353921ad2424808f03. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/t04-native01/actual-result-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-22-011: All affected OSMAP browser sessions revoked. Scenarios T03, T04, T05, T08; exact reviewed evidence native_T04, SHA256 c22f3e4993d858f77a74255ae095208acc1b82d0129642893d17bdc7cca36970. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/full05/result-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-22-011: All affected OSMAP browser sessions revoked. Scenarios T03, T04, T05, T08; exact reviewed evidence native_T05, SHA256 6c936f06b882307e81d1424962f8ed95444f08ad7b829d460ecd05fa24c752e8. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/persistent-qa/recovery02/source-push.log",
+            "scope": "2026-10-25 S04-02 R2-22-011: All affected OSMAP browser sessions revoked. Scenarios T03, T04, T05, T08; exact reviewed evidence normal_delivery_tests, SHA256 603903a5f56489876e819be4c019e90caafec3f6891c8e618ef265a2a31d2c47. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/full05-positive/result-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-22-011: All affected OSMAP browser sessions revoked. Scenarios T03, T04, T05, T08; exact reviewed evidence ordinary_T03, SHA256 663664cc23632534d0a8ea3c72d9ce3200366395d35f663f1861538ae3d3aeec. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/readonly-ui02/result-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-22-011: All affected OSMAP browser sessions revoked. Scenarios T03, T04, T05, T08; exact reviewed evidence positive_cleanup_reconciliation, SHA256 87fbf28c065da336147c49e8373a3fdee6f3e40be14d392f89ebd68172e0a77d. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/uat-login01/handoff-disposition-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-22-011: All affected OSMAP browser sessions revoked. Scenarios T03, T04, T05, T08; exact reviewed evidence service_access_retention, SHA256 21437ea856d1a6ef3ab56d2718b3c5b05bd91bf9d8d04dc61505b10390d80a76. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/result-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-22-011: All affected OSMAP browser sessions revoked. Scenarios T03, T04, T05, T08; exact reviewed evidence source_result_status, SHA256 13e835479c11e26f9dde13d91ff87c9c2a42f655b0610e063b32e704008ee617. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/session-token-oracle-correction.json",
+            "scope": "2026-10-25 S04-02 R2-22-011: All affected OSMAP browser sessions revoked. Scenarios T03, T04, T05, T08; exact reviewed evidence token_oracle_correction, SHA256 f4130974e21352655d12c393674737346ff2ea3908ca6b493099f22c93225174. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          }
+        ]
       }
     },
     {
@@ -18894,9 +19409,55 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "QA_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/uat-login01/browser-actual-result.json",
+            "scope": "2026-10-25 S04-02 R2-22-012: Actual backend old rejection/new admission and truthful mail impact. Scenarios T03, T06, T08; exact reviewed evidence current_browser, SHA256 0e1dfa3bb3db2beebcdfa2387e0d2f8f192d59e825e99d50c4a10776c8f4e283. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/uat-login01/actual-result-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-22-012: Actual backend old rejection/new admission and truthful mail impact. Scenarios T03, T06, T08; exact reviewed evidence fresh_UAT_actual, SHA256 d0bec18ef0baa171786e16112b72d820678f929adf920d353921ad2424808f03. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/t04-native01/actual-result-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-22-012: Actual backend old rejection/new admission and truthful mail impact. Scenarios T03, T06, T08; exact reviewed evidence native_T04, SHA256 c22f3e4993d858f77a74255ae095208acc1b82d0129642893d17bdc7cca36970. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/full05/result-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-22-012: Actual backend old rejection/new admission and truthful mail impact. Scenarios T03, T06, T08; exact reviewed evidence native_T05, SHA256 6c936f06b882307e81d1424962f8ed95444f08ad7b829d460ecd05fa24c752e8. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/persistent-qa/recovery02/source-push.log",
+            "scope": "2026-10-25 S04-02 R2-22-012: Actual backend old rejection/new admission and truthful mail impact. Scenarios T03, T06, T08; exact reviewed evidence normal_delivery_tests, SHA256 603903a5f56489876e819be4c019e90caafec3f6891c8e618ef265a2a31d2c47. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/full05-positive/result-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-22-012: Actual backend old rejection/new admission and truthful mail impact. Scenarios T03, T06, T08; exact reviewed evidence ordinary_T03, SHA256 663664cc23632534d0a8ea3c72d9ce3200366395d35f663f1861538ae3d3aeec. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/readonly-ui02/result-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-22-012: Actual backend old rejection/new admission and truthful mail impact. Scenarios T03, T06, T08; exact reviewed evidence positive_cleanup_reconciliation, SHA256 87fbf28c065da336147c49e8373a3fdee6f3e40be14d392f89ebd68172e0a77d. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/uat-login01/handoff-disposition-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-22-012: Actual backend old rejection/new admission and truthful mail impact. Scenarios T03, T06, T08; exact reviewed evidence service_access_retention, SHA256 21437ea856d1a6ef3ab56d2718b3c5b05bd91bf9d8d04dc61505b10390d80a76. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/session-token-oracle-correction.json",
+            "scope": "2026-10-25 S04-02 R2-22-012: Actual backend old rejection/new admission and truthful mail impact. Scenarios T03, T06, T08; exact reviewed evidence token_oracle_correction, SHA256 f4130974e21352655d12c393674737346ff2ea3908ca6b493099f22c93225174. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          }
+        ]
       }
     },
     {
@@ -18931,9 +19492,35 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "QA_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/uat-login01/browser-actual-result.json",
+            "scope": "2026-10-25 S04-02 R2-22-013: Explicit partial-failure reconciliation. Scenarios T05, T07; exact reviewed evidence current_browser, SHA256 0e1dfa3bb3db2beebcdfa2387e0d2f8f192d59e825e99d50c4a10776c8f4e283. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/full05/result-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-22-013: Explicit partial-failure reconciliation. Scenarios T05, T07; exact reviewed evidence native_T05, SHA256 6c936f06b882307e81d1424962f8ed95444f08ad7b829d460ecd05fa24c752e8. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/persistent-qa/recovery02/source-push.log",
+            "scope": "2026-10-25 S04-02 R2-22-013: Explicit partial-failure reconciliation. Scenarios T05, T07; exact reviewed evidence normal_delivery_tests, SHA256 603903a5f56489876e819be4c019e90caafec3f6891c8e618ef265a2a31d2c47. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/full05-positive/result-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-22-013: Explicit partial-failure reconciliation. Scenarios T05, T07; exact reviewed evidence ordinary_T03, SHA256 663664cc23632534d0a8ea3c72d9ce3200366395d35f663f1861538ae3d3aeec. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/result-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-22-013: Explicit partial-failure reconciliation. Scenarios T05, T07; exact reviewed evidence source_result_status, SHA256 13e835479c11e26f9dde13d91ff87c9c2a42f655b0610e063b32e704008ee617. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          }
+        ]
       }
     },
     {
@@ -18968,9 +19555,60 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "QA_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/uat-login01/actual-result-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-22-014: No password logging or retained secret evidence. Scenarios T02, T03, T05, T08; exact reviewed evidence fresh_UAT_actual, SHA256 d0bec18ef0baa171786e16112b72d820678f929adf920d353921ad2424808f03. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/t04-native01/actual-result-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-22-014: No password logging or retained secret evidence. Scenarios T02, T03, T05, T08; exact reviewed evidence native_T04, SHA256 c22f3e4993d858f77a74255ae095208acc1b82d0129642893d17bdc7cca36970. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/full05/result-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-22-014: No password logging or retained secret evidence. Scenarios T02, T03, T05, T08; exact reviewed evidence native_T05, SHA256 6c936f06b882307e81d1424962f8ed95444f08ad7b829d460ecd05fa24c752e8. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/persistent-qa/recovery02/source-push.log",
+            "scope": "2026-10-25 S04-02 R2-22-014: No password logging or retained secret evidence. Scenarios T02, T03, T05, T08; exact reviewed evidence normal_delivery_tests, SHA256 603903a5f56489876e819be4c019e90caafec3f6891c8e618ef265a2a31d2c47. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/full05-positive/result-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-22-014: No password logging or retained secret evidence. Scenarios T02, T03, T05, T08; exact reviewed evidence ordinary_T03, SHA256 663664cc23632534d0a8ea3c72d9ce3200366395d35f663f1861538ae3d3aeec. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/readonly-ui02/result-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-22-014: No password logging or retained secret evidence. Scenarios T02, T03, T05, T08; exact reviewed evidence positive_cleanup_reconciliation, SHA256 87fbf28c065da336147c49e8373a3fdee6f3e40be14d392f89ebd68172e0a77d. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/uat-login01/handoff-disposition-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-22-014: No password logging or retained secret evidence. Scenarios T02, T03, T05, T08; exact reviewed evidence service_access_retention, SHA256 21437ea856d1a6ef3ab56d2718b3c5b05bd91bf9d8d04dc61505b10390d80a76. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/final-source-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-22-014: No password logging or retained secret evidence. Scenarios T02, T03, T05, T08; exact reviewed evidence source_native_runtime_review, SHA256 ce29c71af91cbb8003f5573aa54d5136c6deb888d5d07dbc7ea3c10bffe96006. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/result-independent-review.json",
+            "scope": "2026-10-25 S04-02 R2-22-014: No password logging or retained secret evidence. Scenarios T02, T03, T05, T08; exact reviewed evidence source_result_status, SHA256 13e835479c11e26f9dde13d91ff87c9c2a42f655b0610e063b32e704008ee617. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/session-token-oracle-correction.json",
+            "scope": "2026-10-25 S04-02 R2-22-014: No password logging or retained secret evidence. Scenarios T02, T03, T05, T08; exact reviewed evidence token_oracle_correction, SHA256 f4130974e21352655d12c393674737346ff2ea3908ca6b493099f22c93225174. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          }
+        ]
       }
     },
     {

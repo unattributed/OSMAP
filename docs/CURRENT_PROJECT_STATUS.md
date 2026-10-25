@@ -1,5 +1,32 @@
 # Current Project Status
 
+2026-10-25 UTC — **S04-02 agent engineering complete; T09 owner review ready.**
+All four outcomes, exact 20 retained obligations and T01–T08 have applicable
+passing evidence. Independent final audit is CLEAR. T03 ordinary Runtime/file-TOTP
+credential transition, T04 native concurrency/replay and T05 native post-write
+containment passed. Matching installed browser controls, navigation, status,
+reload and a fresh five-GET/zero-POST window passed.
+
+The ordinary persistent QA installation is running on obsd1 loopback port 18127,
+with normal Web `f48d0446…`, root helper `0f95a68b…` and corrected rc `097825fd…`.
+Actual readiness progressed from 000 to 200 on the same loaded Web process before
+listener qualification. A fresh disposable UAT account then completed one normal
+MFA login and authenticated form GET; no further password-change POST occurred.
+The browser received that actual raw token and displays enabled, empty controls.
+The original Web PID 63306/port 8080, environment, protected keys, mail configuration
+and T05 containment state passed preservation checks. The new QA services are not
+enabled at boot; normal session expiry remains enforced.
+
+Historical broker/ACK, cookie-oracle, rc, native loop-guard and premature-listener
+observations remain retained separately from successful functional results. No
+credential transaction was replayed to repair UI access. Controlled state,
+purpose-key copies, backups and evidence are deliberately retained for acceptance.
+Final independent readiness receipt SHA256:
+`48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154`.
+Human T09 is NOT RUN and S04-02 is not ACCEPTED. Use the
+[minimal owner review](UX_S04_02_T09_ACCEPTANCE_20261025.md); no debugging or
+password change is required.
+
 2026-10-25 UTC — **Ordinary installed credential journey PASS; remaining S04-02 checks active.**
 The normal Web Runtime, file-backed TOTP, production helper, SQL transaction and
 stored-session machinery completed one controlled installed password change on

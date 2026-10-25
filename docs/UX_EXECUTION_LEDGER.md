@@ -10026,7 +10026,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
   "slice": "S04-02",
   "original_requirement": "Page 22 own-account password change, authoritative backend and step-up; independent accessible Show/Hide on current/new/confirmation",
   "source_baseline": "b4bc371bd645ea009e4d257b269c73bd7294c8e9",
-  "state": "IN_PROGRESS",
+  "state": "UAT_READY",
   "integration_owner": "/root",
   "roles": {
     "project_manager": [
@@ -10423,12 +10423,12 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
       "dependencies": [],
       "essential_qa": "One controlled installed Alice change with currentpassword/freshTOTP, oneSQLCAS/epoch, allOSMAPbrowser sessions revoked, actualaccountcachehandling and oldreject/newadmit; Bob/mail preserved. Reuse matching prior source evidence; only changed replay/uncertainty/security checks. Existingthirdpartymailconnections mayremain, disclose limit. No publicservice/config cutover.",
       "stages": {
-        "implementation": "PENDING",
-        "source_tests": "PENDING",
-        "native_tests": "FAIL",
-        "deployed_qa": "PENDING",
-        "independent_review": "PENDING",
-        "recovery": "PENDING"
+        "implementation": "PASS",
+        "source_tests": "PASS",
+        "native_tests": "PASS",
+        "deployed_qa": "PASS",
+        "independent_review": "PASS",
+        "recovery": "PASS"
       },
       "evidence": [
         {
@@ -10458,9 +10458,37 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         {
           "stage": "native_tests",
           "reference": "Scopedordinarycredential/epoch/sessioncomponentPASS native04 reviewa2ca67dd/archive6079539b; client26.67+negative0.04. InstalledHTTP/fullT03outcomestageremainsunqualified, notpromoted."
+        },
+        {
+          "stage": "independent_review",
+          "reference": "Final independent engineering-readiness-independent-review.json SHA25648ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 maps exact20IDs/fouroutcomes/T01-T08. Actualpersistent04 HTTP/PID/text/listener01b7f39d9e583986a11dffd8f547a57ff00df79d4cf77edebc5c0b5d6640124f; actualUATd0bec18ef0baa171786e16112b72d820678f929adf920d353921ad2424808f03 + service/access21437ea856d1a6ef3ab56d2718b3c5b05bd91bf9d8d04dc61505b10390d80a76; actualbrowser0e1dfa3bb3db2beebcdfa2387e0d2f8f192d59e825e99d50c4a10776c8f4e283 andPNG0d0be5552ce3a7ffba30e7d08c5d65b7e32c6af1671e0677f0af7a387735a066. No required engineeringfinding remains. Allhistoricalfailures/unknowns/elapsedretained; no globalrelease/performance/bootenable/humanPASS claim."
+        },
+        {
+          "stage": "implementation",
+          "reference": "Finalimplementedordinarynative-localRuntime/result/StockBackend/epoch/session/form paths; source16d7Web+native040fhelper/c0bmanifest and0c9nativecase sources, signednormalRC3491421. Independentcurrentall20audit48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 maps exactobligationimplementation."
+        },
+        {
+          "stage": "source_tests",
+          "reference": "Actualnormalpush349 source1932RustPASS/72explicitnativeignores+634accountPythonPASS; sixinstallercontrolsPASS andmatchingunchangedboundary/binding/rate/CSRF/privacycontrols reused perindependent48cc audit. No ignored/native test count promoted."
+        },
+        {
+          "stage": "native_tests",
+          "reference": "Actualordinarypositive05review663664cc23632534d0a8ea3c72d9ce3200366395d35f663f1861538ae3d3aeec; nativeT04c22f3e4993d858f77a74255ae095208acc1b82d0129642893d17bdc7cca36970; actualT05safeincomplete6c936f06b882307e81d1424962f8ed95444f08ad7b829d460ecd05fa24c752e8. Exactnative/sourcecontexts mapped by48cc."
+        },
+        {
+          "stage": "deployed_qa",
+          "reference": "Ordinarypersistent04HTTPready01b7f39d9e583986a11dffd8f547a57ff00df79d4cf77edebc5c0b5d6640124f +actualnormalMFAUATd0bec18ef0baa171786e16112b72d820678f929adf920d353921ad2424808f03. CurrentCUAbrowser0e1dfa3bb3db2beebcdfa2387e0d2f8f192d59e825e99d50c4a10776c8f4e283 independentlyaudited48cc; f48/0f/normalRC, no fixture/live testservice."
+        },
+        {
+          "stage": "independent_review",
+          "reference": "Finalengineering-readiness-independent-review.json SHA25648ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154: exact20/fouroutcomes/T01-T08 PASS; no unresolvedrequiredengineeringfinding. HumanT09NOT_RUN."
+        },
+        {
+          "stage": "recovery",
+          "reference": "Actualnormalservice/accessdisposition21437ea856d1a6ef3ab56d2718b3c5b05bd91bf9d8d04dc61505b10390d80a76, 04actual01b7, exact2stalesocketretirement03f51eb5c4ad6dd21166b9c967bc4f79ebb1da539c32385bb43926f0c9fb71f5ac, T05actual6c936 containment+marker/oldsessiondenial preserved. Controlledresources/liveQAservices intentionallyretained, original8080/mail protected; historicalUNKNOWN/FAIL notrelabeled."
         }
       ],
-      "next_action": "Prove currentauthoritativecredentialfreshness + narrowconditionalcredentialoperation, thenactualhelper/epoch/sessioncomposition andinstalledbrowserjourney; reuse actualreadonlyR1/R2PASS. No qualificationflag shortcut or publicmail/configoperation."
+      "next_action": "HumanT09minimalusabilityonlyviaalreadyauthenticatednormalpersistentOSMAPtab: visibility/navigation/Cancel/clarity; no passwordchange/debugging. Preserveownedinstanceforacceptance. HumanPENDING/S04ACCEPTEDfalse; normal signedfinaldelivery recordedseparately."
     },
     {
       "id": "fresh-stepup-and-session-containment",
@@ -10473,12 +10501,12 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
       "dependencies": [],
       "essential_qa": "One controlled installed Alice change with currentpassword/freshTOTP, oneSQLCAS/epoch, allOSMAPbrowser sessions revoked, actualaccountcachehandling and oldreject/newadmit; Bob/mail preserved. Reuse matching prior source evidence; only changed replay/uncertainty/security checks. Existingthirdpartymailconnections mayremain, disclose limit. No publicservice/config cutover.",
       "stages": {
-        "implementation": "PENDING",
-        "source_tests": "PENDING",
-        "native_tests": "PENDING",
-        "deployed_qa": "PENDING",
-        "independent_review": "PENDING",
-        "recovery": "PENDING"
+        "implementation": "PASS",
+        "source_tests": "PASS",
+        "native_tests": "PASS",
+        "deployed_qa": "PASS",
+        "independent_review": "PASS",
+        "recovery": "PASS"
       },
       "evidence": [
         {
@@ -10488,9 +10516,37 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         {
           "stage": "implementation",
           "reference": "2026-10-19 source-only methodcorrection /home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/safe-existing-backend-path33/independent-requirement-path-assessment.json SHA256 a0411a20c5c6e5c66b4fa4494b7a495b9ff41a2bf668d608d23980605e74832e; /home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/no-public-lifecycle-method33/QUALIFICATION-METHOD.md SHA256 93e6cf1302a11287aad6e9c305194b8a2708bfa5d67c9461e43dbe5602dceed7; no actualPASS/native/deployed stage promotion."
+        },
+        {
+          "stage": "independent_review",
+          "reference": "Final independent engineering-readiness-independent-review.json SHA25648ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 maps exact20IDs/fouroutcomes/T01-T08. Actualpersistent04 HTTP/PID/text/listener01b7f39d9e583986a11dffd8f547a57ff00df79d4cf77edebc5c0b5d6640124f; actualUATd0bec18ef0baa171786e16112b72d820678f929adf920d353921ad2424808f03 + service/access21437ea856d1a6ef3ab56d2718b3c5b05bd91bf9d8d04dc61505b10390d80a76; actualbrowser0e1dfa3bb3db2beebcdfa2387e0d2f8f192d59e825e99d50c4a10776c8f4e283 andPNG0d0be5552ce3a7ffba30e7d08c5d65b7e32c6af1671e0677f0af7a387735a066. No required engineeringfinding remains. Allhistoricalfailures/unknowns/elapsedretained; no globalrelease/performance/bootenable/humanPASS claim."
+        },
+        {
+          "stage": "implementation",
+          "reference": "Finalimplementedordinarynative-localRuntime/result/StockBackend/epoch/session/form paths; source16d7Web+native040fhelper/c0bmanifest and0c9nativecase sources, signednormalRC3491421. Independentcurrentall20audit48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 maps exactobligationimplementation."
+        },
+        {
+          "stage": "source_tests",
+          "reference": "Actualnormalpush349 source1932RustPASS/72explicitnativeignores+634accountPythonPASS; sixinstallercontrolsPASS andmatchingunchangedboundary/binding/rate/CSRF/privacycontrols reused perindependent48cc audit. No ignored/native test count promoted."
+        },
+        {
+          "stage": "native_tests",
+          "reference": "Actualordinarypositive05review663664cc23632534d0a8ea3c72d9ce3200366395d35f663f1861538ae3d3aeec; nativeT04c22f3e4993d858f77a74255ae095208acc1b82d0129642893d17bdc7cca36970; actualT05safeincomplete6c936f06b882307e81d1424962f8ed95444f08ad7b829d460ecd05fa24c752e8. Exactnative/sourcecontexts mapped by48cc."
+        },
+        {
+          "stage": "deployed_qa",
+          "reference": "Ordinarypersistent04HTTPready01b7f39d9e583986a11dffd8f547a57ff00df79d4cf77edebc5c0b5d6640124f +actualnormalMFAUATd0bec18ef0baa171786e16112b72d820678f929adf920d353921ad2424808f03. CurrentCUAbrowser0e1dfa3bb3db2beebcdfa2387e0d2f8f192d59e825e99d50c4a10776c8f4e283 independentlyaudited48cc; f48/0f/normalRC, no fixture/live testservice."
+        },
+        {
+          "stage": "independent_review",
+          "reference": "Finalengineering-readiness-independent-review.json SHA25648ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154: exact20/fouroutcomes/T01-T08 PASS; no unresolvedrequiredengineeringfinding. HumanT09NOT_RUN."
+        },
+        {
+          "stage": "recovery",
+          "reference": "Actualnormalservice/accessdisposition21437ea856d1a6ef3ab56d2718b3c5b05bd91bf9d8d04dc61505b10390d80a76, 04actual01b7, exact2stalesocketretirement03f51eb5c4ad6dd21166b9c967bc4f79ebb1da539c32385bb43926f0c9fb71f5ac, T05actual6c936 containment+marker/oldsessiondenial preserved. Controlledresources/liveQAservices intentionallyretained, original8080/mail protected; historicalUNKNOWN/FAIL notrelabeled."
         }
       ],
-      "next_action": "Complete smallest existing-backend adapter/Runtime integration and truthful mail-impact disclosure, independently review exactsource and essential controlled installed journey. No qualificationflag shortcut or retired globalingress fixture."
+      "next_action": "HumanT09minimalusabilityonlyviaalreadyauthenticatednormalpersistentOSMAPtab: visibility/navigation/Cancel/clarity; no passwordchange/debugging. Preserveownedinstanceforacceptance. HumanPENDING/S04ACCEPTEDfalse; normal signedfinaldelivery recordedseparately."
     },
     {
       "id": "password-form-and-navigation",
@@ -10513,12 +10569,12 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
       "dependencies": [],
       "essential_qa": "One controlled installed Alice change with currentpassword/freshTOTP, oneSQLCAS/epoch, allOSMAPbrowser sessions revoked, actualaccountcachehandling and oldreject/newadmit; Bob/mail preserved. Reuse matching prior source evidence; only changed replay/uncertainty/security checks. Existingthirdpartymailconnections mayremain, disclose limit. No publicservice/config cutover.",
       "stages": {
-        "implementation": "PENDING",
-        "source_tests": "PENDING",
-        "native_tests": "PENDING",
-        "deployed_qa": "PENDING",
-        "independent_review": "PENDING",
-        "recovery": "PENDING"
+        "implementation": "PASS",
+        "source_tests": "PASS",
+        "native_tests": "PASS",
+        "deployed_qa": "PASS",
+        "independent_review": "PASS",
+        "recovery": "PASS"
       },
       "evidence": [
         {
@@ -10528,9 +10584,37 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         {
           "stage": "implementation",
           "reference": "2026-10-19 source-only methodcorrection /home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/safe-existing-backend-path33/independent-requirement-path-assessment.json SHA256 a0411a20c5c6e5c66b4fa4494b7a495b9ff41a2bf668d608d23980605e74832e; /home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/no-public-lifecycle-method33/QUALIFICATION-METHOD.md SHA256 93e6cf1302a11287aad6e9c305194b8a2708bfa5d67c9461e43dbe5602dceed7; no actualPASS/native/deployed stage promotion."
+        },
+        {
+          "stage": "independent_review",
+          "reference": "Final independent engineering-readiness-independent-review.json SHA25648ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 maps exact20IDs/fouroutcomes/T01-T08. Actualpersistent04 HTTP/PID/text/listener01b7f39d9e583986a11dffd8f547a57ff00df79d4cf77edebc5c0b5d6640124f; actualUATd0bec18ef0baa171786e16112b72d820678f929adf920d353921ad2424808f03 + service/access21437ea856d1a6ef3ab56d2718b3c5b05bd91bf9d8d04dc61505b10390d80a76; actualbrowser0e1dfa3bb3db2beebcdfa2387e0d2f8f192d59e825e99d50c4a10776c8f4e283 andPNG0d0be5552ce3a7ffba30e7d08c5d65b7e32c6af1671e0677f0af7a387735a066. No required engineeringfinding remains. Allhistoricalfailures/unknowns/elapsedretained; no globalrelease/performance/bootenable/humanPASS claim."
+        },
+        {
+          "stage": "implementation",
+          "reference": "Finalimplementedordinarynative-localRuntime/result/StockBackend/epoch/session/form paths; source16d7Web+native040fhelper/c0bmanifest and0c9nativecase sources, signednormalRC3491421. Independentcurrentall20audit48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 maps exactobligationimplementation."
+        },
+        {
+          "stage": "source_tests",
+          "reference": "Actualnormalpush349 source1932RustPASS/72explicitnativeignores+634accountPythonPASS; sixinstallercontrolsPASS andmatchingunchangedboundary/binding/rate/CSRF/privacycontrols reused perindependent48cc audit. No ignored/native test count promoted."
+        },
+        {
+          "stage": "native_tests",
+          "reference": "Actualordinarypositive05review663664cc23632534d0a8ea3c72d9ce3200366395d35f663f1861538ae3d3aeec; nativeT04c22f3e4993d858f77a74255ae095208acc1b82d0129642893d17bdc7cca36970; actualT05safeincomplete6c936f06b882307e81d1424962f8ed95444f08ad7b829d460ecd05fa24c752e8. Exactnative/sourcecontexts mapped by48cc."
+        },
+        {
+          "stage": "deployed_qa",
+          "reference": "Ordinarypersistent04HTTPready01b7f39d9e583986a11dffd8f547a57ff00df79d4cf77edebc5c0b5d6640124f +actualnormalMFAUATd0bec18ef0baa171786e16112b72d820678f929adf920d353921ad2424808f03. CurrentCUAbrowser0e1dfa3bb3db2beebcdfa2387e0d2f8f192d59e825e99d50c4a10776c8f4e283 independentlyaudited48cc; f48/0f/normalRC, no fixture/live testservice."
+        },
+        {
+          "stage": "independent_review",
+          "reference": "Finalengineering-readiness-independent-review.json SHA25648ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154: exact20/fouroutcomes/T01-T08 PASS; no unresolvedrequiredengineeringfinding. HumanT09NOT_RUN."
+        },
+        {
+          "stage": "recovery",
+          "reference": "Actualnormalservice/accessdisposition21437ea856d1a6ef3ab56d2718b3c5b05bd91bf9d8d04dc61505b10390d80a76, 04actual01b7, exact2stalesocketretirement03f51eb5c4ad6dd21166b9c967bc4f79ebb1da539c32385bb43926f0c9fb71f5ac, T05actual6c936 containment+marker/oldsessiondenial preserved. Controlledresources/liveQAservices intentionallyretained, original8080/mail protected; historicalUNKNOWN/FAIL notrelabeled."
         }
       ],
-      "next_action": "Complete smallest existing-backend adapter/Runtime integration and truthful mail-impact disclosure, independently review exactsource and essential controlled installed journey. No qualificationflag shortcut or retired globalingress fixture."
+      "next_action": "HumanT09minimalusabilityonlyviaalreadyauthenticatednormalpersistentOSMAPtab: visibility/navigation/Cancel/clarity; no passwordchange/debugging. Preserveownedinstanceforacceptance. HumanPENDING/S04ACCEPTEDfalse; normal signedfinaldelivery recordedseparately."
     },
     {
       "id": "actual-password-status",
@@ -10544,12 +10628,12 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
       "dependencies": [],
       "essential_qa": "One controlled installed Alice change with currentpassword/freshTOTP, oneSQLCAS/epoch, allOSMAPbrowser sessions revoked, actualaccountcachehandling and oldreject/newadmit; Bob/mail preserved. Reuse matching prior source evidence; only changed replay/uncertainty/security checks. Existingthirdpartymailconnections mayremain, disclose limit. No publicservice/config cutover.",
       "stages": {
-        "implementation": "PENDING",
+        "implementation": "PASS",
         "source_tests": "PASS",
-        "native_tests": "FAIL",
-        "deployed_qa": "PENDING",
-        "independent_review": "PENDING",
-        "recovery": "PENDING"
+        "native_tests": "PASS",
+        "deployed_qa": "PASS",
+        "independent_review": "PASS",
+        "recovery": "PASS"
       },
       "evidence": [
         {
@@ -10567,16 +10651,44 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         {
           "stage": "implementation",
           "reference": "2026-10-19 source-only methodcorrection /home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/safe-existing-backend-path33/independent-requirement-path-assessment.json SHA256 a0411a20c5c6e5c66b4fa4494b7a495b9ff41a2bf668d608d23980605e74832e; /home/foo/Downloads/osmap-ux-s04/revalidation-20261018/password-change-rust/regimented-resumption-20261019/no-public-lifecycle-method33/QUALIFICATION-METHOD.md SHA256 93e6cf1302a11287aad6e9c305194b8a2708bfa5d67c9461e43dbe5602dceed7; no actualPASS/native/deployed stage promotion."
+        },
+        {
+          "stage": "independent_review",
+          "reference": "Final independent engineering-readiness-independent-review.json SHA25648ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 maps exact20IDs/fouroutcomes/T01-T08. Actualpersistent04 HTTP/PID/text/listener01b7f39d9e583986a11dffd8f547a57ff00df79d4cf77edebc5c0b5d6640124f; actualUATd0bec18ef0baa171786e16112b72d820678f929adf920d353921ad2424808f03 + service/access21437ea856d1a6ef3ab56d2718b3c5b05bd91bf9d8d04dc61505b10390d80a76; actualbrowser0e1dfa3bb3db2beebcdfa2387e0d2f8f192d59e825e99d50c4a10776c8f4e283 andPNG0d0be5552ce3a7ffba30e7d08c5d65b7e32c6af1671e0677f0af7a387735a066. No required engineeringfinding remains. Allhistoricalfailures/unknowns/elapsedretained; no globalrelease/performance/bootenable/humanPASS claim."
+        },
+        {
+          "stage": "implementation",
+          "reference": "Finalimplementedordinarynative-localRuntime/result/StockBackend/epoch/session/form paths; source16d7Web+native040fhelper/c0bmanifest and0c9nativecase sources, signednormalRC3491421. Independentcurrentall20audit48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 maps exactobligationimplementation."
+        },
+        {
+          "stage": "source_tests",
+          "reference": "Actualnormalpush349 source1932RustPASS/72explicitnativeignores+634accountPythonPASS; sixinstallercontrolsPASS andmatchingunchangedboundary/binding/rate/CSRF/privacycontrols reused perindependent48cc audit. No ignored/native test count promoted."
+        },
+        {
+          "stage": "native_tests",
+          "reference": "Actualordinarypositive05review663664cc23632534d0a8ea3c72d9ce3200366395d35f663f1861538ae3d3aeec; nativeT04c22f3e4993d858f77a74255ae095208acc1b82d0129642893d17bdc7cca36970; actualT05safeincomplete6c936f06b882307e81d1424962f8ed95444f08ad7b829d460ecd05fa24c752e8. Exactnative/sourcecontexts mapped by48cc."
+        },
+        {
+          "stage": "deployed_qa",
+          "reference": "Ordinarypersistent04HTTPready01b7f39d9e583986a11dffd8f547a57ff00df79d4cf77edebc5c0b5d6640124f +actualnormalMFAUATd0bec18ef0baa171786e16112b72d820678f929adf920d353921ad2424808f03. CurrentCUAbrowser0e1dfa3bb3db2beebcdfa2387e0d2f8f192d59e825e99d50c4a10776c8f4e283 independentlyaudited48cc; f48/0f/normalRC, no fixture/live testservice."
+        },
+        {
+          "stage": "independent_review",
+          "reference": "Finalengineering-readiness-independent-review.json SHA25648ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154: exact20/fouroutcomes/T01-T08 PASS; no unresolvedrequiredengineeringfinding. HumanT09NOT_RUN."
+        },
+        {
+          "stage": "recovery",
+          "reference": "Actualnormalservice/accessdisposition21437ea856d1a6ef3ab56d2718b3c5b05bd91bf9d8d04dc61505b10390d80a76, 04actual01b7, exact2stalesocketretirement03f51eb5c4ad6dd21166b9c967bc4f79ebb1da539c32385bb43926f0c9fb71f5ac, T05actual6c936 containment+marker/oldsessiondenial preserved. Controlledresources/liveQAservices intentionallyretained, original8080/mail protected; historicalUNKNOWN/FAIL notrelabeled."
         }
       ],
-      "next_action": "Complete smallest existing-backend adapter/Runtime integration and truthful mail-impact disclosure, independently review exactsource and essential controlled installed journey. No qualificationflag shortcut or retired globalingress fixture."
+      "next_action": "HumanT09minimalusabilityonlyviaalreadyauthenticatednormalpersistentOSMAPtab: visibility/navigation/Cancel/clarity; no passwordchange/debugging. Preserveownedinstanceforacceptance. HumanPENDING/S04ACCEPTEDfalse; normal signedfinaldelivery recordedseparately."
     }
   ],
   "human_acceptance": {
     "status": "PENDING",
-    "reference": "Only minimal well-defined own-password usability after all agent-owned development/matching deployed QA/independent audit PASS. No operator password is changed by agent qualification; use controlled disposable Alice and preserve Bob/operator state. NOT RUN."
+    "reference": "Agentengineering/all20/T01-T08/audit/recovery PASS per48cc. MinimalownerT09script docs/UX_S04_02_T09_ACCEPTANCE_20261025.md andactualgenuineauthenticatedpersistentinstancehttp://localhost:18127/settings/password. HumanNOT_RUN, no operatorpasswordchange/debuggingrequired; finalsignednormalGitdelivery/freshparityrecordedinprivatefinalreceipt. S04-02notACCEPTED."
   },
-  "next_action": "Make matching ordinary f48 Web/0f helper available on persistentloopback-onlyparallelOSMAPservice for minimalhumanT09; preserveexistingpublicWeb63306/8080/env/mail/edge. ReuseexactquiescentT05state+genuineBobcookie; no credentialwrite/sessioninjection/reset. Finishindependentaudit/normalGitdelivery thenT09readiness, humanPASSseparate.",
+  "next_action": "Complete normal signed final documentation delivery and fresh origin parity, then owner T09 minimal usability review through the already authenticated ordinary installed tab. All20 engineering obligations/fouroutcomes/T01-T08 independently PASS; human PENDING, no credential mutation or troubleshooting required. Preserve running QA instance and controlled evidence.",
   "accountability": {
     "functional_exit": "Working own-account Settings password change through the selected single-host obsd1 local account service and authoritative local backend, fresh password/TOTP step-up, one conditional SQL update, durable OSMAP epoch and all-browser revocation, actual source-bound cache handling, old-password refusal/new-login success and Bob preservation. Existing third-party SMTP/IMAP sessions may remain authenticated. Matching installed QA, independent audit and minimal owner usability remain required. Toronto is later separate production installation.",
     "owner": "/root",
@@ -20734,6 +20846,117 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "reference": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/persistent-qa/actor-public.stdout ActualHELPER_CHECKafterstart, originalprotectedPASS/cleanupPASS/helper+configrestored/parallelprofilecoldcopyretained. ArchiveSHA2569254cbb97971ac5e7033e3bbff6eeb850d690b7f04c199525ec9cf11695f610f. Nativecurrentrc.subr monitoredchildALRMcontract incompatible withcustomhelperrc_start explicitexec; initialhelperterminalsignalnotcaptured/UNKNOWN. One-wordnonexecsourcecorrection/installer6testsPASS; sameownedprofile recovery planned, no repeatcredential or coldcopy.",
         "elapsed_status": "MEASURED",
         "elapsed_seconds": 4.0
+      },
+      {
+        "id": "S04-02-INSTALLED-persistent-qa02",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "source_revision": "3491421c88356adfa3d71bf473b5ec6ca80b554d",
+        "change_reference": "One-wordnormalRCforegroundmonitorcompatibilityfix afteractualHELPER_CHECK; sixexistinginstallercontrolsPASS/source98c. Sameownedprofile/coldstate retained; no authentication/passwordmutation/sessionadoption/copyagain. Actualchangedserviceproofneeded, initialterminalsignalUNKNOWN.",
+        "success_chain_review": {
+          "reviewer": "/root/epoch_failure_engineer",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/persistent-qa/recovery-source-independent-review.json",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "reassessment": {
+          "reviewers": [
+            "/root",
+            "/root/epoch_failure_engineer"
+          ],
+          "failed_attempt_ids": [
+            "S04-02-INSTALLED-full05",
+            "S04-02-INSTALLED-persistent-qa01"
+          ],
+          "reference": "Jointactualanalysis: T05coreSAFE_INCOMPLETEPASS+lateUIACKFAIL6c936f06b882307e81d1424962f8ed95444f08ad7b829d460ecd05fa24c752e8; persistent01HELPER_CHECK/restore/protectedPASS retainedactor/archive. Nativecurrentrc.subr primarysource directsALRMtochildstartupmonitors; explicitexechelperrc violatesmonitoredforegroundshape; source98c093931b5377b88ac6afc6de33a36b5d945c1b4839447867f44d396acfc630 independentlyreviewssmallchangedrecovery. InitialterminalsignalUNKNOWN; no retrospectivecredentialfailure or renewedallowance inferred.",
+          "next_action": "Runonlychangednormalserviceactivationagainstexactownedretainedstate; independent actualrccheck/readback, thenfreshlegitimateUATloginifoldsessionnaturallyexpired. No credentialtransactionretry or sessiontimerreset."
+        },
+        "result": "FAIL",
+        "reference": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/persistent-qa/recovery02/actual-result-independent-review.json SHA256359f1fc211563828dea4f9111b7e822fe920deacc9e0c6c1a6861c5a14a23cfe. ActualfirstPARTIAL_SOCKET_PRESENT yethelper-startfailed/phaseordinary_start; no Web/HTTPreadiness. Native2iterationAND/ORforloopreturn1controlcontinues/exit0, explicitexit1stops/preflight1. Currentfixedsocketphysical/kernel/processreconciledseparately. ReportedcleanupPASSwasnarrowprocess/config/helper/protected, NOTsocketabsence. No credential/auth/SQLwrite; keepallhistory.",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 2.0
+      },
+      {
+        "id": "S04-02-INSTALLED-persistent-qa03",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "source_revision": "3491421c88356adfa3d71bf473b5ec6ca80b554d",
+        "change_reference": "Combinedactual01/02reassessment: exactcurrentstalesocketmetadata+nolivekernel/processrefs, explicitexit1provennativevsreturn1, one-wordnormalrcmonitorcorrectionretained; source35202 independentlyCLEAR. Onechanged03sameprofile, no credentialretry, oldresources/costs/unknownsignaloriginpreserved.",
+        "success_chain_review": {
+          "reviewer": "/root/epoch_failure_engineer",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/persistent-qa/recovery03/source-independent-review.json",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "reassessment": {
+          "reviewers": [
+            "/root",
+            "/root/epoch_failure_engineer"
+          ],
+          "failed_attempt_ids": [
+            "S04-02-INSTALLED-persistent-qa02"
+          ],
+          "reference": "Jointsource35202d3bd3db22824c3d62f1d527bdcae3d21e91a99fb606f165c96ea4e13a4a + actual02review359f andretained01source98c/currentphysicalnative-loop-guard-control.json. Includesboth01/02facts;01wasalreadyreconciledin02declaration. Historicalterminalsignal/socketoriginUNKNOWN; no erasedfailure/cost or newallowance.",
+          "next_action": "Onlychangedexplicitexit1/exactstaleleafreconciliation thennormalserviceproof; independentreadback. FreshlegitimateUATloginseparate, no expiredsessionreset/forging/credentialchange."
+        },
+        "result": "FAIL",
+        "reference": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/persistent-qa/recovery03/actual-result-independent-review.json SHAf51eb5c4ad6dd21166b9c967bc4f79ebb1da539c32385bb43926f0c9fb71f5ac. Exact2stalesocketretirementPASS/correctedhelperstart+checkPASS/Webprocessstart+check+loadedf48textPASS. Immediatefstatshowedkeys/metadataPipes butNO TCP, soWEB_LISTENER beforeanyGET. Not eventualstartupFAIL/PASS. CleanupPASSfixedsocketsABSENT, old63306/8080/retainedstore/protectedpreserved; noauth/SQL. Source04correctsreadinesssamplerwithinexistingbound.",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 6.0
+      },
+      {
+        "id": "S04-02-INSTALLED-persistent-qa04",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "source_revision": "3491421c88356adfa3d71bf473b5ec6ca80b554d",
+        "change_reference": "AdvanceactualnormalhelperlivenessPASS toactualfrontendHTTPreadyusingbounded20sGETbarrierbeforerawTCPsample; sameuniqueprocessguard/native120bound/artifacts/profile. No auth/SQL/policyrefinement/oldfixturecredentialretry. Priorfailedinstant-observer andallhistoricalunknownsignals retained.",
+        "success_chain_review": {
+          "reviewer": "/root/epoch_failure_engineer",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/persistent-qa/recovery04-source-independent-review.json",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "reference": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/persistent-qa/recovery04/actual-result-independent-review.json SHA25601b7f39d9e583986a11dffd8f547a57ff00df79d4cf77edebc5c0b5d6640124f. ActualsamePID56917 HTTP000\u2192200/loadedf48inode1088649/TCP18127/rootnormal0fhelper+RCh097checksPASS. Original63306/8080/retainedstore/T05markerprotectedPASS. Services/socketINTENTIONALLYRUNNING, noauthSQL. Earlierfailedsamplers/unknownsignals retained.",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 5.0
+      },
+      {
+        "id": "S04-02-INSTALLED-uat-login01",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "source_revision": "3491421c88356adfa3d71bf473b5ec6ca80b554d",
+        "change_reference": "PersistentnormalserviceREADY; previousBobrawcookieexpirednaturally(DEFAULT1800), no rewriting/derivation/reset. NecessaryfreshdisposableUATcontrolbirth+oneordinaryMFAloginforhumanaccess, notauthenticationdevelopmentrefinement or password-change retry. Actualroot/bridge3predicate+consumer5oraclecontrols/source55e/parent94e reviewed, preparedimmediatebrokerwatcher/CUA.",
+        "success_chain_review": {
+          "reviewer": "/root/epoch_failure_engineer",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/uat-login01/dispatch-independent-review.json",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "reference": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/uat-login01/actual-result-independent-review.json SHAd0bec18ef0baa171786e16112b72d820678f929adf920d353921ad2424808f03. Onefreshinitialbirth/oneordinaryMFAlogin/200303200genuineformGET/no passwordchangePOST; row17/epoch0/factor/alloldrows/protectedPASS; trueopaqueSetCookiebroker200/exit0. ActualCUArealpersistentcontrolsallPASS/fresh5GET0POST/emptyfinal+PNG. Disposition21437/Finalall20audit48ccCLEAR. Normalservices+forwardretained, no expiredBobrecordreset.",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 50.0
       }
     ],
     "prior_investigations": [
@@ -21857,8 +22080,11 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "preserved": "Operator accounts/keys/policies/mail, Bob and unrelated services/configuration; no provider Send.",
         "owner": "/root",
         "reviewer": "/root/guardrails_engineer",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "PASS",
+        "evidence": [
+          "Final independent engineering-readiness-independent-review.json SHA25648ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 maps exact20IDs/fouroutcomes/T01-T08. Actualpersistent04 HTTP/PID/text/listener01b7f39d9e583986a11dffd8f547a57ff00df79d4cf77edebc5c0b5d6640124f; actualUATd0bec18ef0baa171786e16112b72d820678f929adf920d353921ad2424808f03 + service/access21437ea856d1a6ef3ab56d2718b3c5b05bd91bf9d8d04dc61505b10390d80a76; actualbrowser0e1dfa3bb3db2beebcdfa2387e0d2f8f192d59e825e99d50c4a10776c8f4e283 andPNG0d0be5552ce3a7ffba30e7d08c5d65b7e32c6af1671e0677f0af7a387735a066. No required engineeringfinding remains. Allhistoricalfailures/unknowns/elapsedretained; no globalrelease/performance/bootenable/humanPASS claim.",
+          "NormalWebf48/source16d7/helper0f actualpositive05Runtime+fileTOTPonecredentialchange provesfullbackend path; actualpersistentnormalRC04+freshgenuineUATsession/currentbrowser3visibility/pastecurrentdummy/keyboard/Cancel/breadcrumb/bothentries/emptyfinal5GET0POST completesmatchingUI. No passwordoperationneededforT09."
+        ]
       },
       {
         "id": "S04-02-T07",
@@ -21873,12 +22099,14 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "preserved": "No credential/session changes from read-only status/navigation; correct other-account isolation.",
         "owner": "/root",
         "reviewer": "/root/guardrails_engineer",
-        "status": "FAIL",
+        "status": "PASS",
         "evidence": [
           "Latest controlled current HTTP15 c7dd4844/independent5d6f9a29: authenticated verified write+incomplete timestamp/503 observed, required complete positive workflow/both reloaded settings views not achieved. Prior evidence retained; negative partial proof does not close positive scenario.",
           "Actual18 a05f00fd/independent279c9581: authenticated backend Changed(epoch1/verifiedtime) after grammar repair, browser503 and whole positive workflow FAIL. Exact compiled cfg(test) epoch-only adapters deterministically discard required changed_at; two-call status adapter fix needs matching rebuild. No installed/human qualification.",
           "Actual HTTP21 result64942c81 fullFAIL/18responses15rows/guardianreportpresent; actual22result071a1273 fullFAIL/18responses15rows/guardianreportPASS, BobSMTPexpected250 observed421/53B/hashc66ac4cb exactsource-derivedPostfix3.11.6 timeoutreply. Originalfixture8s vs49.286s idlejourney supports22fixturetimeout; no21retrocause. Scopedcleanupconfirmed/rootnamespacesstagescarrierretained/sourceafterUNKNOWN. No installedactivation or operatorchange. Diagnosticcatch sourcef896242d/combinedcarrierf3cdb0cd; nextkeepalivecandidateNOTRUN, allbounds/strictBobpostconditionunchanged.",
-          "native-t07-qualifier1/native-http-attempt24/result.json SHAbbd9e9e47177248040ec9a1f7e95cfe4c424a80a926ee0a3b1d892a0fa07cb3d; actualordinaryfixturePASS18HTTP17rows/report/authoritativechanged_at+reloadbothviews/oldDeniednewAdmitted/Alicecontainment/BobSQL17sessionMail/cacheflush1. Bob23NOOP/noerror/joined;32SQLreaped/3roles+drivergroupgone; sourcebeforeafterparityTRUE; allfreshrootnamespacesstagesHTTPcarrierremoved. Ownedgroupstop_sentTRUE retained; no no-stop claim. IndependentactualscopePASSae5f1e23/controlledfixtureonly; heldthirdAUTHrace/publicsharedcache/productionfactory/installedpair remainunqualified, no formactivation/operator/provider. Priorfailures23/22/21retained; this does not upgrade deployed T07 or fullnative T03."
+          "native-t07-qualifier1/native-http-attempt24/result.json SHAbbd9e9e47177248040ec9a1f7e95cfe4c424a80a926ee0a3b1d892a0fa07cb3d; actualordinaryfixturePASS18HTTP17rows/report/authoritativechanged_at+reloadbothviews/oldDeniednewAdmitted/Alicecontainment/BobSQL17sessionMail/cacheflush1. Bob23NOOP/noerror/joined;32SQLreaped/3roles+drivergroupgone; sourcebeforeafterparityTRUE; allfreshrootnamespacesstagesHTTPcarrierremoved. Ownedgroupstop_sentTRUE retained; no no-stop claim. IndependentactualscopePASSae5f1e23/controlledfixtureonly; heldthirdAUTHrace/publicsharedcache/productionfactory/installedpair remainunqualified, no formactivation/operator/provider. Priorfailures23/22/21retained; this does not upgrade deployed T07 or fullnative T03.",
+          "Final independent engineering-readiness-independent-review.json SHA25648ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 maps exact20IDs/fouroutcomes/T01-T08. Actualpersistent04 HTTP/PID/text/listener01b7f39d9e583986a11dffd8f547a57ff00df79d4cf77edebc5c0b5d6640124f; actualUATd0bec18ef0baa171786e16112b72d820678f929adf920d353921ad2424808f03 + service/access21437ea856d1a6ef3ab56d2718b3c5b05bd91bf9d8d04dc61505b10390d80a76; actualbrowser0e1dfa3bb3db2beebcdfa2387e0d2f8f192d59e825e99d50c4a10776c8f4e283 andPNG0d0be5552ce3a7ffba30e7d08c5d65b7e32c6af1671e0677f0af7a387735a066. No required engineeringfinding remains. Allhistoricalfailures/unknowns/elapsedretained; no globalrelease/performance/bootenable/humanPASS claim.",
+          "Confirmedordinarypositive05authoritative20261025114039/resultreload/bothSettings4views; T05verifiedwrite20261025142510safeincompleteresult+reload inactualbrowser, containedtargetSettingsdenialpreservesauthority. FreshunchangedUATbothSettingsLastchangeunknown. Matchingrefusal/statuscontrols reused; see48ccscenario/obligationmapping."
         ]
       },
       {
@@ -21897,8 +22125,11 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "preserved": "Operator/Bob credentials, connections/mail/services and all historical failures; no new unsafe cleanup.",
         "owner": "/root",
         "reviewer": "/root/guardrails_engineer",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "PASS",
+        "evidence": [
+          "Final independent engineering-readiness-independent-review.json SHA25648ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 maps exact20IDs/fouroutcomes/T01-T08. Actualpersistent04 HTTP/PID/text/listener01b7f39d9e583986a11dffd8f547a57ff00df79d4cf77edebc5c0b5d6640124f; actualUATd0bec18ef0baa171786e16112b72d820678f929adf920d353921ad2424808f03 + service/access21437ea856d1a6ef3ab56d2718b3c5b05bd91bf9d8d04dc61505b10390d80a76; actualbrowser0e1dfa3bb3db2beebcdfa2387e0d2f8f192d59e825e99d50c4a10776c8f4e283 andPNG0d0be5552ce3a7ffba30e7d08c5d65b7e32c6af1671e0677f0af7a387735a066. No required engineeringfinding remains. Allhistoricalfailures/unknowns/elapsedretained; no globalrelease/performance/bootenable/humanPASS claim.",
+          "Matchingnegativebinding/CSRF/privacy sourcecontrols plusactualnativeheldissuance/stale/replay, old2sessiondenial/revocation/controlSQLepochsession+TLSIMAPpreservation, actualresultcapisolation andnormal5GET0POSTbrowsersecret-exclusion/emptyfields. GenuineHTTPcookie only, one-wayStoreIDs never adopted; rawpassword/cookie neverGit/URL/argv/env/log/artifact; normalprivateproductfactor/session storage remainsexpected. Independentall20audit48cc acceptslevel-boundcombinedproof."
+        ]
       },
       {
         "id": "S04-02-T09",
@@ -22955,7 +23186,22 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "independent_equivalence": "t04-controller-lint-equivalence-review.json SHA256de85f5e0ccc91d2f5d8e11af3ad153c024badeec56f8ef62d9e54482619353c9",
         "native_reuse": "Actualfab3artifactremainsboundtosigned0c9f699793d3911aa8472694462b14ade992cda9; norebuildclaimedfromlintfollowup."
       },
-      "persistent_rc_correction": "Actualnative rc.subr startupwaiter signals directchildrenALRM; defaultforegroundrc_start keepsmonitorshell, customexplicitexec replacesitwithRust. Removeexec only; strictroot/main-onlyprocessmatching and stopguards unchanged. EarliestactualhelperterminalsignalUNKNOWN; nativechangedserviceproof stillrequired.6existinginstallercontrolsPASS/kshsyntaxPASS. OldBob30minnaturalexpiryrespected,no timerreset/storeIDadoption; freshlegitimateUATlogin maybenecessary."
+      "persistent_rc_correction": "Actualnative rc.subr startupwaiter signals directchildrenALRM; defaultforegroundrc_start keepsmonitorshell, customexplicitexec replacesitwithRust. Removeexec only; strictroot/main-onlyprocessmatching and stopguards unchanged. EarliestactualhelperterminalsignalUNKNOWN; nativechangedserviceproof stillrequired.6existinginstallercontrolsPASS/kshsyntaxPASS. OldBob30minnaturalexpiryrespected,no timerreset/storeIDadoption; freshlegitimateUATlogin maybenecessary.",
+      "final_engineering_readiness": {
+        "result": "PASS",
+        "all_four_outcomes": true,
+        "retained_obligations": 20,
+        "engineering_scenarios": "T01-T08 PASS",
+        "human_T09": "NOT_RUN",
+        "S04_02_accepted": false,
+        "independent_receipt_sha256": "48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154",
+        "installation": "ordinaryf48Webversionedpath/normal0froothelper/correctedRCh097/loopback18127/persistentprivateState, no libtest/fixture runtime; oldpublic63306/8080/env/mail/keys/T05containedepoch preserved",
+        "auth": "OnefreshinitialUATaccount+normalfileTOTPHTTPlogin; genuinecookieonly; expiredBobsessionnotreset; default1800idle enforced",
+        "availability": "normalservicesandSSHforwardintentionallyrunningforT09; no bootenable/publicproductionrollout/performanceclaim",
+        "disposition": "controlledstate/purposekeycopies/backups/earlierfixtures/privateevidenceretaineddeliberately; no uncertaincleanupassertedcomplete",
+        "method": "Failure\u2192Analyse\u2192Correct\u2192Retest usedactualboundaries; reusedsuccessfulcredentialproofs, no credentialreplayforUI. HistoricalwrongSIDcookieoracle/lateACK/RC/loopguard/earlyTCPsample/unknownsignalsandcosts preserved.",
+        "matrix_reconciliation": "18 approved-control rows QA_VERIFIED using exact requirement-scoped hashed actual evidence from independent48cc; immutable110 legacy cases including UX11-002/003 untouched, those two engineering results mapped by active outcomes/audit. HumanT09NOT_RUN/ACCEPTEDfalse."
+      }
     }
   },
   "execution_contract": {
@@ -36490,6 +36736,226 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
             }
           }
         ]
+      },
+      {
+        "id": "persistent-ordinary-osmap-qa02-recovery",
+        "kind": "INSTALL",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "single-host-readiness"
+        ],
+        "test_ids": [
+          "S04-02-T06",
+          "S04-02-T07",
+          "S04-02-T08"
+        ],
+        "allowed_paths": [
+          "docs/UX_EXECUTION_LEDGER.md"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/bin/bash",
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/persistent-qa/recovery02/dispatch.sh"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "Changednormalrcactivation on SAMEretainedpersistentprofile, notnamespace/coldcopy/credentialretry. Correct ONLYhelperrc explicitexec\u2192nonexec tohonoractualnativeforegroundmonitorprotocol; preservemain-onlyrootpid/stopguards. Requireold01restoration/currentd331/noactivepartialexec/socket/openrefs, exactoriginalWeb63306/8080/env, retainedstate/keys/session+secretsbytes/T05containedmarker. Republishsame4accountconfigs+normal0f, startordinaryhelper+parallelf48service andproveactualrcstatus/textinode/listener/loginGET200/protectedreadback. No auth/SQL/statecopy/sessiontimerchange. PASSleavesOSMAPservicesrunningfornextlegitimateUATsession; naturalexpiredBobrecordnotreset. Native120+cleanup60, no publicmailactions.",
+        "prerequisites": [
+          {
+            "id": "independent-changed-source-review",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/persistent-qa/recovery-source-independent-review.json",
+              "sha256": "98c093931b5377b88ac6afc6de33a36b5d945c1b4839447867f44d396acfc630"
+            }
+          },
+          {
+            "id": "actual-retained-first-install-outcome",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/persistent-qa/actor-public.stdout",
+              "sha256": "c9224d9d1356881193d6dc0d08c765ca4d7e66b922aae4f3698906b5f9a168a4"
+            }
+          },
+          {
+            "id": "final-dispatch-bindings",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/persistent-qa/recovery02/dispatch-independent-review.json",
+              "sha256": "52a68d635374318da0124e7609cb73cdaa0c759a5b6fc1e3f9023562edc5dc13"
+            }
+          }
+        ]
+      },
+      {
+        "id": "persistent-ordinary-osmap-qa03-reconciliation",
+        "kind": "INSTALL",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "single-host-readiness"
+        ],
+        "test_ids": [
+          "S04-02-T06",
+          "S04-02-T07",
+          "S04-02-T08"
+        ],
+        "allowed_paths": [
+          "docs/UX_EXECUTION_LEDGER.md"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/bin/bash",
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/persistent-qa/recovery03/dispatch.sh"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "Sameownedordinaryprofilechangedrecovery: explicitexit1fail-stops evennativeAND/ORloop; retireONLYtwofixedroot-ownedstaleUnixsocketleaves withboundphysicaldev/inode/uid/gid/type/nlinkreceipt, protectedparents, no namedhelper/Web/exerefs and kernel/fstatpathrefs, immediatekernel+inode recheck and exactunlink/absence. No historicalPIDsignals/blindunlink/recopy/auth/SQL. Preserveoriginal63306/8080/config/T05marker/coldstatekeys. CorrectednonexecrootRC+normal0f/f48 startup thenactualrccheck/loadedtext/listener/loginGET200. Failurepreservesearliestcause/restoration andsocketretentionUNCERTAIN separately; PASSintentionallykeepsordinaryservicesforlegitfreshUATlogin (oldBobrecordnaturallyexpired,nottimerreset).120+60bounds, no mailactions.",
+        "prerequisites": [
+          {
+            "id": "combined-source-and-native-loop-reassessment",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/persistent-qa/recovery03/source-independent-review.json",
+              "sha256": "35202d3bd3db22824c3d62f1d527bdcae3d21e91a99fb606f165c96ea4e13a4a"
+            }
+          },
+          {
+            "id": "actual-previous-outcome",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/persistent-qa/recovery02/actual-result-independent-review.json",
+              "sha256": "359f1fc211563828dea4f9111b7e822fe920deacc9e0c6c1a6861c5a14a23cfe"
+            }
+          },
+          {
+            "id": "final-dispatch-bindings",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/persistent-qa/recovery03/dispatch-independent-review.json",
+              "sha256": "39d3b7d24c7104d0dbb2148e387fb911e11b823328bfde4139f23b2cdc7746c0"
+            }
+          }
+        ]
+      },
+      {
+        "id": "persistent-ordinary-osmap-qa04-readiness",
+        "kind": "INSTALL",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "single-host-readiness"
+        ],
+        "test_ids": [
+          "S04-02-T06",
+          "S04-02-T07",
+          "S04-02-T08"
+        ],
+        "allowed_paths": [
+          "docs/UX_EXECUTION_LEDGER.md"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/bin/bash",
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/persistent-qa/recovery04/dispatch.sh"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "Sameownedpersistentordinaryprofile: requirecurrent03-clean fixedsocketABSENCE, explicitexit1allguardrefusals; no staleunlink/recopy/auth/SQL. Correctednonexecnormal0fhelper+f48parallelWeb startup; waitwithin20s foranonymousGET/login200 withsameuniqueUID1001versionedPID+kill0 eachiteration and1sboundedcurl, fixedattempt/statusmetadataonly; THENexistingloadedtext/PIDownedTCP18127/listener/finalGET checks. No change toproductdeadlines/binaries/sessionpolicy. Original63306/8080/env/T05epoch+marker/retainedcoldstatekeys preserved; properfirstfailure+cleanup/socketretention. Native120+cleanup60, PASSkeepsservicesforfreshlegitimateUATlogin, oldBobexpirednottimerreset.",
+        "prerequisites": [
+          {
+            "id": "independent-small-readiness-source-delta",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/persistent-qa/recovery04-source-independent-review.json",
+              "sha256": "6034215d69cc7591abca162e3fd735a7a65549b5ee86f9314167171804050a40"
+            }
+          },
+          {
+            "id": "actual-process-before-listener-observation",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/persistent-qa/recovery03/actual-result-independent-review.json",
+              "sha256": "f51eb5c4ad6dd21166b9c967bc4f79ebb1da539c32385bb43926f0c9fb71f5ac"
+            }
+          },
+          {
+            "id": "final-dispatch-bindings",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/persistent-qa/recovery04/dispatch-independent-review.json",
+              "sha256": "b3bb4aa231d667cd11b7b2ca8725dcf7a5b50bbd11a6990a134b1bcab7751de4"
+            }
+          }
+        ]
+      },
+      {
+        "id": "fresh-uat-normal-login01",
+        "kind": "INSTALL",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "single-host-readiness"
+        ],
+        "test_ids": [
+          "S04-02-T06",
+          "S04-02-T07",
+          "S04-02-T08"
+        ],
+        "allowed_paths": [
+          "docs/UX_EXECUTION_LEDGER.md"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/bin/bash",
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/uat-login01/dispatch.sh"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "AfteractualpersistentordinaryHTTPREADY, onefreshfixedUATinitialaccountbirth(1INSERT, notpasswordUPDATE) withschema/absence/fulloldrowguards, randominitialpasswordRAMonly/doveadmstdin, epoch0/lock/canonicalpublicRFCfileTOTP. Preserveallcurrent4allowlistedaccounts andextendONLYexactfreshuat01; controlledOSMAPhelper+parallelWebrestart/readiness200+samePID/text/listener. ConsumerEXACT3HTTP: loginGET/oneMFAloginPOST/genuineissuedcookieformGETenabled200; NO/settings/passwordPOST/nooldaccountreset/sessionexpiryextension. RawgenuinecookieprivateFIFO\u2192onekernelUID-verifiedloopbackbroker200, noUIACKgate. Rootrow17/epoch0/factor/alloldrows/protectedreadback/corePASSdurableBEFOREoptionalbrowserhandoff. Passworddropped,no plaintext/cookiefiles/args/env/URLs/logs. OrdinaryservicesretainedforhumanT09; root300+60/client120/broker120/request60 bounded.",
+        "prerequisites": [
+          {
+            "id": "actual-persistent-http-ready",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/persistent-qa/recovery04/actual-result-independent-review.json",
+              "sha256": "01b7f39d9e583986a11dffd8f547a57ff00df79d4cf77edebc5c0b5d6640124f"
+            }
+          },
+          {
+            "id": "independent-root-emitter-consumer-broker-source",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/uat-login01/source-independent-review.json",
+              "sha256": "55e10fa0fe88e45da0712338c98a5b4b1899cf6bb8dab9dc15707dbf0f04271b"
+            }
+          },
+          {
+            "id": "independent-final-dispatch-bindings",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/uat-login01/dispatch-independent-review.json",
+              "sha256": "94e4116dd31becd3fcc44a981cc3c0013a84ba9ac1e4a6c083473af1574cea16"
+            }
+          }
+        ]
       }
     ],
     "budget": {
@@ -36503,9 +36969,9 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     },
     "planned_action": null
   },
-  "blocker": null,
+  "blocker": "None",
   "independent_next_action": "Actual assigned Runtime, T04/T05, and status/security reviewers identify next concrete boundary; root owns integration, native/browser, Git and delivery.",
-  "updated_at": "2026-10-25T15:14:29Z"
+  "updated_at": "2026-10-25T16:32:21Z"
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->

@@ -2,6 +2,13 @@
 
 ## Outcome
 
+**Current closeout: all four outcomes, all 20 retained obligations and T01–T08
+PASS; independent audit CLEAR.** The ordinary persistent validation instance and
+genuine UAT session are available for the separate human T09 review. Human
+acceptance has not been recorded. The following native04 result is the first
+transaction checkpoint; subsequent sections retain the integration, failure and
+installation evidence that completed engineering qualification.
+
 **PASS: one complete native OSMAP credential transaction and epoch/session transition.** Native04 ran the ordinary production account-passwd service on obsd1 with a genuine guarded nonroot client. The complete client passed in 26.67 seconds. The native SQL-policy negative test passed in 0.04 seconds: Internet socket creation and file creation both remained denied with ENOSYS, both children were reaped and no forbidden file was created.
 
 | Required observation | Actual result |
@@ -15,7 +22,7 @@
 | Preserve another account | Bob's stored bytes and authority, five prior full mailbox rows and protected state were preserved |
 | Restore the fixture environment | Original OSMAP configuration/helper restored, helper exited 0, current three copied keys removed after ownership/readback checks |
 
-The requested credential/epoch/session boundary is complete. Prior successful credential-freshness evidence was reused. This ordinary helper and real session-API proof uses test-only client constructors that bypass only the qualification flag; actual transport, keys, kernel peers, guarded lease, pending ACK, SQL, epoch and session machinery execute. TOTP uses the actual verifier with a RAM-only fixture seed. Installed TOTP-file custody and the HTTP/browser journey remain separate acceptance work. Full S04-02/T03 and operator UAT remain open.
+The requested credential/epoch/session boundary is complete. Prior successful credential-freshness evidence was reused. This ordinary helper and real session-API proof uses test-only client constructors that bypass only the qualification flag; actual transport, keys, kernel peers, guarded lease, pending ACK, SQL, epoch and session machinery execute. TOTP uses the actual verifier with a RAM-only fixture seed. At the native04 checkpoint, installed TOTP-file custody and the HTTP/browser journey remained separate acceptance work. Subsequent sections record that qualification. Human T09 acceptance remains open.
 
 ## Failure → analysis → correction → retest
 
@@ -235,3 +242,64 @@ helper's terminal signal was not captured and is not retrospectively asserted.
 Six existing installer tests and shell syntax pass; matching changed native
 activation is the next proof. Session expiry remains enforced normally; no stored
 identifier is adopted as a cookie and no session timestamp is reset.
+
+## Persistent ordinary availability and final engineering closeout
+
+The changed activation established ordinary helper liveness. Reconciliation then
+found two inactive root-owned socket leaves with no matching helper, kernel
+listener or file reference. Recovery02 also exposed a native two-iteration AND/OR
+loop guard that could return failure without stopping the script. A paired native
+control reproduced continuation with `return 1` and immediate refusal with
+`exit 1`. The changed actor uses explicit exit, current physical identity and
+fresh kernel/file-reference checks before each exact unlink. No historical PID
+was signalled. Both socket leaves were retired; their historical origin and the
+initial helper's terminal signal remain unknown.
+
+Recovery03 proved helper/Web process liveness but sampled the Web before a TCP
+listener existed. Recovery04 added a bounded anonymous HTTP-readiness wait, with
+the same unique process checked throughout. The same PID progressed from status
+000 to 200, then passed loaded-executable and owned-listener checks. This changed
+observation qualified the ordinary service; it did not change application
+deadlines, flags or binaries. Independent actual activation receipt SHA256:
+`01b7f39d9e583986a11dffd8f547a57ff00df79d4cf77edebc5c0b5d6640124f`.
+
+The final installation uses ordinary Web `f48d0446…` at
+`/usr/local/libexec/osmap/s04-02/osmap`, ordinary root helper `0f95a68b…` at
+`/usr/local/libexec/osmap/account-passwd`, the corrected normal helper rc script
+`097825fd…`, and separate persistent state at `/var/lib/osmap-s04-02`. The Web
+listens only on 127.0.0.1:18127. The original PID 63306/port 8080, original binary
+and environment, protected keys, mail configuration and T05 containment state
+passed their readbacks. Normal services are intentionally running, without a
+fixture/libtest service or timeout actor. They have not been enabled at boot.
+
+The earlier control session expired normally during installation work. One fresh
+disposable UAT account was created with an initial credential, followed by one
+genuine normal file-TOTP login. The three-request sequence returned 200/303/200
+and an enabled authenticated form. It made no password-change POST and changed
+no existing credential. Root confirmed the initial row, epoch 0 and factor were
+unchanged by login, with all prior rows and protected state preserved. Only the
+actual returned raw cookie crossed the private RAM/FIFO broker into the browser.
+Independent actual UAT receipt SHA256:
+`d0bec18ef0baa171786e16112b72d820678f929adf920d353921ad2424808f03`.
+
+The browser then passed all three independent visibility controls, public-dummy
+current-field paste, keyboard focus/activation, Cancel, breadcrumb, both Settings
+entry points, truthful Unknown history and empty final fields. Its fresh network
+window contained five GETs, zero POSTs and no truncated/remaining events. Actual
+browser record SHA256:
+`0e1dfa3bb3db2beebcdfa2387e0d2f8f192d59e825e99d50c4a10776c8f4e283`.
+An actual screenshot is retained privately. Service/access disposition review
+SHA256:
+`21437ea856d1a6ef3ab56d2718b3c5b05bd91bf9d8d04dc61505b10390d80a76`.
+
+The final independent audit maps the exact 20 obligations, four outcomes and
+T01–T08 to applicable passing source/native/installed/browser evidence. No required
+engineering finding remains unresolved. Readiness receipt SHA256:
+`48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154`.
+Failed controller attempts, their elapsed history and unknown historical causes
+remain preserved. Controlled fixtures, copied purpose keys, backups and evidence
+are deliberately retained for acceptance; current availability does not assert
+boot persistence, production performance, public rollout or human acceptance.
+The [owner T09 script](UX_S04_02_T09_ACCEPTANCE_20261025.md) requires no debugging
+or additional password change. S04-02 remains unaccepted until the owner records
+that usability result.

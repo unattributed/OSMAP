@@ -537,4 +537,4 @@ V7 production availability was previously reopened pending real-login, real-mail
 - `V14_SLICE_9_NO_JAVASCRIPT_LOW_SBOM_GATES.md`
 
 - [S04-02 credential transaction and epoch/session consistency, 2026-10-25](UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md) (`UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md`) — ordinary-service failure loop and scoped consistency evidence.
-- [S04-02 T09 usability acceptance](UX_S04_02_T09_ACCEPTANCE_20261025.md) (`UX_S04_02_T09_ACCEPTANCE_20261025.md`) — concise owner review and observed confirmed/incomplete wording; persistent access preparation and human acceptance remain distinct.
+- [S04-02 T09 usability acceptance](UX_S04_02_T09_ACCEPTANCE_20261025.md) (`UX_S04_02_T09_ACCEPTANCE_20261025.md`) — T01–T08/all-20 engineering closeout, current ordinary installation and concise owner review; human acceptance remains separate.

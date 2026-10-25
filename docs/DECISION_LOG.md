@@ -1,5 +1,23 @@
 # Decision Log
 
+2026-10-25 UTC — **Close agent engineering on actual product evidence; hand off only T09.**
+Independent review maps all four outcomes, exact 20 obligations and T01–T08 to
+passing source/native/ordinary installed/browser evidence. Retain failed carriers
+and unknown historical causes without treating them as failed product transactions.
+The T05 late ACK remains a protocol failure alongside the independently passed
+containment and actual browser observations; no credential replay followed.
+
+Persistent availability required one normal rc monitor-shell correction, exact
+reconciliation of two inactive socket leaves after physical/kernel/reference
+checks, explicit native fail-stop guards and a real HTTP-readiness barrier before
+listener qualification. The resulting normal service remains available on a
+separate loopback instance, preserving the original frontend and mail services.
+A new initial UAT account and one genuine normal MFA login replaced an expired
+review session without changing an existing password or resetting session clocks.
+No boot enable or production-performance qualification is asserted. Preserve the
+current instance for the concise owner usability review; T09/human ACCEPTED remain
+pending and distinct from engineering completion and signed synchronization.
+
 2026-10-25 UTC — **Reuse the passed installed transaction and advance to failure consistency.**
 The ordinary installed Runtime/file-TOTP/helper journey passed exactly one real
 credential mutation, twenty HTTP observations, authoritative epoch/session
