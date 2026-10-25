@@ -95,7 +95,27 @@ impl<G: BrowserGateway> BrowserApp<G> {
         let deadline = std::time::Instant::now() + std::time::Duration::from_secs(60);
         let (session, mut audit_events) = match self.require_validated_session(request, context) {
             Ok(value) => value,
-            Err(response) => return response,
+            Err(mut response) => {
+                // A lost terminal HTTP reply can leave the old session cookie
+                // in the browser after its authority was revoked. The separate
+                // pre-dispatch capability reveals only the fixed result view;
+                // it never restores this session or reaches form submission.
+                if request.query_params.is_empty()
+                    && session_cookie_value(request, PASSWORD_RESULT_COOKIE)
+                        .and_then(|capability| self.gateway.password_result(&capability))
+                        .is_some()
+                {
+                    response.response = redirect_response(303, "See Other", PASSWORD_RESULT_PATH)
+                        .with_header(
+                            "Set-Cookie",
+                            clear_session_cookie(
+                                self.policy.session_cookie_name,
+                                self.policy.secure_session_cookie,
+                            ),
+                        );
+                }
+                return response;
+            }
         };
         let account = &session.record.canonical_username;
         let csrf = &session.record.csrf_token;

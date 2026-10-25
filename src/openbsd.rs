@@ -2057,6 +2057,106 @@ fn dependency_identity(path: &Path) -> Result<[u64; 10], String> {
     ])
 }
 
+/// The installed MariaDB package exposes its library through one relative
+/// SONAME alias. Admit that layout without admitting other library symlinks,
+/// arbitrary mysql paths in loader output, or symlinked programs.
+fn dependency_library_alias_target(alias: &Path, link: &Path) -> Result<PathBuf, String> {
+    let name = alias
+        .file_name()
+        .and_then(|name| name.to_str())
+        .ok_or("dependency library alias refused")?;
+    let version = name
+        .strip_prefix("libmariadb.so.")
+        .ok_or("dependency library alias refused")?;
+    if alias.parent() != Some(Path::new("/usr/local/lib"))
+        || version.is_empty()
+        || !version
+            .split('.')
+            .all(|part| !part.is_empty() && part.bytes().all(|byte| byte.is_ascii_digit()))
+        || link.as_os_str() != Path::new("mysql").join(name).as_os_str()
+    {
+        return Err("dependency library alias refused".into());
+    }
+    Ok(Path::new("/usr/local/lib/mysql").join(name))
+}
+
+#[cfg(unix)]
+struct DependencyLibraryCustody {
+    selected: PathBuf,
+    link: Option<PathBuf>,
+    identities: Vec<(PathBuf, [u64; 10])>,
+}
+
+#[cfg(unix)]
+impl DependencyLibraryCustody {
+    fn new(selected: &Path) -> Result<Self, String> {
+        let identity = dependency_identity(selected)?;
+        let mut value = Self {
+            selected: selected.to_path_buf(),
+            link: None,
+            identities: vec![(selected.to_path_buf(), identity)],
+        };
+        if identity[2] & 0o170000 == 0o120000 {
+            // Symlink mode bits do not protect its contents. The owner and
+            // parent protect the link; the regular target has the usual guard.
+            trusted_dependency_directory(
+                selected.parent().ok_or("dependency parent unavailable")?,
+            )?;
+            if identity[3] != 0 {
+                return Err("dependency library alias owner refused".into());
+            }
+            let link =
+                fs::read_link(selected).map_err(|_| "dependency library alias unavailable")?;
+            let target = dependency_library_alias_target(selected, &link)?;
+            let target_identity = dependency_identity(&target)?;
+            value.identities.push((target, target_identity));
+            value.link = Some(link);
+        }
+        value.recheck()?;
+        Ok(value)
+    }
+
+    fn recheck(&self) -> Result<(), String> {
+        // Check both the alias and object before and after their guards. A
+        // changed target never becomes a new accepted baseline during admission.
+        for (path, before) in &self.identities {
+            if dependency_identity(path)? != *before {
+                return Err("dependency library changed during resolution".into());
+            }
+        }
+        if let Some(link) = &self.link {
+            trusted_dependency_directory(
+                self.selected
+                    .parent()
+                    .ok_or("dependency parent unavailable")?,
+            )?;
+            if fs::read_link(&self.selected).map_err(|_| "dependency library alias unavailable")?
+                != *link
+            {
+                return Err("dependency library changed during resolution".into());
+            }
+        }
+        for (path, _) in &self.identities {
+            if self.link.is_none() || path != &self.selected {
+                trusted_dependency_file(path)?;
+            }
+        }
+        for (path, before) in &self.identities {
+            if dependency_identity(path)? != *before {
+                return Err("dependency library changed during resolution".into());
+            }
+        }
+        if let Some(link) = &self.link {
+            if fs::read_link(&self.selected).map_err(|_| "dependency library alias unavailable")?
+                != *link
+            {
+                return Err("dependency library changed during resolution".into());
+            }
+        }
+        Ok(())
+    }
+}
+
 /// Resolve only protected installed programs before confinement. The result is
 /// fresh for this admission; callers hold/recheck their existing operation pins.
 #[cfg(unix)]
@@ -2166,9 +2266,10 @@ pub(crate) fn installed_library_paths_before(
         }
         let output = std::str::from_utf8(&out).map_err(|_| "dependency output encoding")?;
         let libraries = parse_installed_libraries(output, program)?;
-        for library in &libraries {
-            trusted_dependency_file(library)?;
-        }
+        let library_custody = libraries
+            .iter()
+            .map(|library| DependencyLibraryCustody::new(library))
+            .collect::<Result<Vec<_>, _>>()?;
         trusted_dependency_program(program)?;
         let after = custody_paths
             .iter()
@@ -2177,7 +2278,12 @@ pub(crate) fn installed_library_paths_before(
         if before != after {
             return Err("dependency changed during resolution".into());
         }
-        Ok(libraries)
+        let mut paths = std::collections::BTreeSet::new();
+        for library in &library_custody {
+            library.recheck()?;
+            paths.extend(library.identities.iter().map(|(path, _)| path.clone()));
+        }
+        Ok(paths.into_iter().collect())
     })();
     if result.is_err() && status.is_none() {
         unsafe {
@@ -3322,6 +3428,124 @@ mod tests {
             "/usr/local/lib/dovecot/../evil.so"
         )));
     }
+
+    #[test]
+    fn dependency_library_alias_accepts_only_numeric_mariadb_soname_and_exact_package_target() {
+        for name in ["libmariadb.so.31.0", "libmariadb.so.32.1.2"] {
+            let alias = Path::new("/usr/local/lib").join(name);
+            let link = Path::new("mysql").join(name);
+            let target = Path::new("/usr/local/lib/mysql").join(name);
+            assert_eq!(
+                dependency_library_alias_target(&alias, &link),
+                Ok(target.clone())
+            );
+            assert!(dependency_library_allowed(&alias));
+            // Only the selected alias authorizes its exact package target.
+            assert!(!dependency_library_allowed(&target));
+            assert!(!dependency_program_allowed(&alias));
+        }
+        let alias = Path::new("/usr/local/lib/libmariadb.so.31.0");
+        for link in [
+            "libmariadb.so.31.0",
+            "/usr/local/lib/mysql/libmariadb.so.31.0",
+            "mysql/../mysql/libmariadb.so.31.0",
+            "mysql/./libmariadb.so.31.0",
+            "mysql/libmariadb.so.31.1",
+            "mysql/libmariadb.so.31.0/child",
+            "../libmariadb.so.31.0",
+        ] {
+            assert!(dependency_library_alias_target(alias, Path::new(link)).is_err());
+        }
+        for alias in [
+            "/usr/lib/libmariadb.so.31.0",
+            "/usr/local/lib/dovecot/libmariadb.so.31.0",
+            "/usr/local/lib/libmariadb.so.",
+            "/usr/local/lib/libmariadb.so.31..0",
+            "/usr/local/lib/libmariadb.so.31.0.bad",
+            "/usr/local/lib/libevil.so.31.0",
+        ] {
+            let path = Path::new(alias);
+            let link = Path::new("mysql").join(path.file_name().unwrap());
+            assert!(dependency_library_alias_target(path, &link).is_err());
+        }
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn dependency_library_custody_refuses_replaced_alias_and_selected_target() {
+        use std::os::unix::fs::{symlink, PermissionsExt};
+        let root = std::env::temp_dir().join(format!(
+            "osmap-library-custody-{}-{}",
+            std::process::id(),
+            crate::draft::generate_draft_id().unwrap()
+        ));
+        fs::create_dir(&root).unwrap();
+        fs::set_permissions(&root, fs::Permissions::from_mode(0o700)).unwrap();
+        let alias = root.join("libmariadb.so.31.0");
+        let target = root.join("target");
+        fs::write(&target, b"original object").unwrap();
+        symlink("target", &alias).unwrap();
+        let custody = || DependencyLibraryCustody {
+            selected: alias.clone(),
+            link: Some(PathBuf::from("target")),
+            identities: vec![
+                (alias.clone(), dependency_identity(&alias).unwrap()),
+                (target.clone(), dependency_identity(&target).unwrap()),
+            ],
+        };
+        // Capturing the identities alone never admits this user-owned fixture.
+        assert!(DependencyLibraryCustody::new(&alias).is_err());
+        let before = custody();
+        let replacement = root.join("replacement");
+        fs::write(&replacement, b"different object").unwrap();
+        fs::rename(&replacement, &target).unwrap();
+        assert_eq!(
+            before.recheck(),
+            Err("dependency library changed during resolution".into())
+        );
+        let before = custody();
+        symlink("target", &replacement).unwrap();
+        fs::rename(&replacement, &alias).unwrap();
+        assert_eq!(
+            before.recheck(),
+            Err("dependency library changed during resolution".into())
+        );
+        fs::remove_file(&alias).unwrap();
+        fs::remove_file(&target).unwrap();
+        fs::remove_dir(&root).unwrap();
+    }
+
+    #[cfg(target_os = "openbsd")]
+    #[test]
+    #[ignore = "requires installed Dovecot mysql module; read-only loader trace"]
+    fn installed_dependency_native_mysql_module_alias_custody() {
+        let libraries = installed_library_paths_before(
+            Path::new("/usr/local/lib/dovecot/libdriver_mysql.so"),
+            std::time::Instant::now() + std::time::Duration::from_secs(5),
+        )
+        .expect("installed mysql module dependencies and package alias custody");
+        let mut aliases = 0;
+        for alias in &libraries {
+            if alias.parent() == Some(Path::new("/usr/local/lib"))
+                && alias
+                    .file_name()
+                    .and_then(|name| name.to_str())
+                    .is_some_and(|name| name.starts_with("libmariadb.so."))
+                && fs::symlink_metadata(alias)
+                    .unwrap()
+                    .file_type()
+                    .is_symlink()
+            {
+                let link = fs::read_link(alias).unwrap();
+                let target = dependency_library_alias_target(alias, &link).unwrap();
+                assert!(libraries.contains(&target));
+                aliases += 1;
+            }
+        }
+        assert_eq!(aliases, 1);
+        println!("DEPENDENCIES_MYSQL_ALIAS_PASS aliases=1 alias_and_target_retained=true");
+    }
+
     #[cfg(target_os = "openbsd")]
     #[test]
     #[ignore = "requires installed OpenBSD mail dependencies; read-only loader trace"]
@@ -3341,9 +3565,16 @@ mod tests {
             )
             .unwrap_or_else(|error| panic!("{program}: {error}"));
             assert!(!libraries.is_empty());
-            assert!(libraries
-                .iter()
-                .all(|path| dependency_library_allowed(path)));
+            assert!(libraries.iter().all(|path| {
+                dependency_library_allowed(path)
+                    || libraries.iter().any(|alias| {
+                        fs::read_link(alias)
+                            .ok()
+                            .and_then(|link| dependency_library_alias_target(alias, &link).ok())
+                            .as_deref()
+                            == Some(path.as_path())
+                    })
+            }));
             println!(
                 "DEPENDENCIES_PASS program={program} count={}",
                 libraries.len()

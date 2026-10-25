@@ -13762,3 +13762,30 @@ nonzero/stderr and resource checks. No directory unveil grant or public loader
 configuration changes. Rebuild only the affected normal Web artifact; retain the
 proven helper's separate source/binary identity. This comparison does not assign
 a unique unrecorded historical child to startup02 or declare installed PASS.
+
+## 2026-10-25 — restricted result discovery and exact package alias observation
+
+A revoked-session visit to the password page sent the browser to Login even
+when its independently scoped result capability remained valid. The real
+Runtime/FileSessionStore regression failed, then passed after a password-route
+only redirect to the fixed result endpoint. The route validates the existing
+result capability before redirecting, clears the old session cookie and returns
+before form parsing or mutation. Ordinary Settings and account authority remain
+unavailable to that capability. Independent rerun: two passes.
+
+Native startup03 used the matching rebuilt normal Web binary and passed initial
+bootstrap, then refused a protected-dependency leaf before Serve readiness. The
+source-matching read-only loader02 observation identified its first current
+refusal: libdriver_mysql selected /usr/local/lib/libmariadb.so.31.0, a root-owned
+package symlink to mysql/libmariadb.so.31.0. The target and ancestry are protected.
+Preserve the original failure and support only the observed package alias
+contract with separate alias/target custody; do not relax generic program or
+module guards. No credential request or SQL operation occurred in these probes.
+
+The selected-library correction now accepts only a root-owned numeric MariaDB
+SONAME alias at /usr/local/lib pointing to the byte-exact relative mysql/same-name
+package target. It independently guards protected ancestry and the regular
+root-owned target, rechecks both identities and link bytes, and returns both
+exact leaves for unveil. Direct mysql trace paths, other library aliases and
+program/module symlinks retain their refusal. Six focused dependency cases and
+production library compilation pass; matching native Web execution is pending.

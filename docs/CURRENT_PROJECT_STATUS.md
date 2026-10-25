@@ -3074,3 +3074,20 @@ Implementation commit `6c12a45a2e415b82bf0bc43f7df92b4af481275a` has a verified 
 The consolidated operator bundle covers all five finding families from the tracked-source review. Local archive/member/hash, script syntax, public-service refusal, atomic replacement/restoration and pre-action registration simulation checks passed. OpenBSD build/install/native admission and the actual password workflow have NOT run in this delivery. The bundle will report those separately and retain rollback/cleanup evidence. No host or public-service action occurred during preparation.
 
 The operator now explicitly requests all outstanding work be committed and synchronized to the appropriate GitHub UX branch. The four pending documentation records are preserved in full and admitted together; previous source and observed failure history are not rewritten. Target branch: `feat/ux-completion-20260929`; no main promotion. The bundle is refreshed to the final synchronized revision before delivery. S04-02 remains OPEN.
+
+## 2026-10-25 — installed Web boundary advances to exact library custody
+
+The rebuilt normal Web artifact eec58a13 reached native bootstrap and then
+refused dependency-file custody before Serve readiness. A bounded read-only
+source-matching observation identified the actual selected MariaDB package
+symlink and its protected regular target. Owned process stop, original helper
+restoration and protected readback passed independently of functional failure.
+No authentication, credential request or SQL action occurred. Three copied
+purpose keys from each of the three startup probes remain explicitly retained.
+
+The lost-response result-discovery regression is corrected and independently
+passes two actual Runtime/store cases. A valid separate result capability may
+recover its fixed outcome view after the normal session becomes invalid; it
+cannot authorize Settings or another password request. These are source and
+local evidence. Installed T03-T08 and T09 readiness remain open until the matching
+normal Runtime/file-TOTP/browser path and required failures are observed.

@@ -20239,7 +20239,19 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "result": "FAIL",
         "reference": "startup02/evidence.tar.gz SHA426ae10bc4926987fc00abfcd7728db8e74ed11ab3bd6ee6b89388ab7160af50; textbootstrapPASS then dependencyresolutionfailed; failedlddtarget/status/stderrUNKNOWN. NoServe/HTTP/auth/SQL; ownedprocess/helperrestore/protectedPASS;3keysretained.",
         "elapsed_status": "UNKNOWN",
-        "elapsed_seconds": null
+        "elapsed_seconds": null,
+        "reassessment": {
+          "reviewers": [
+            "/root",
+            "/root/transaction_review"
+          ],
+          "reference": "Historicalwindowaccounting: native03SQLcandidatefailure was resolved by actualnative04PASS independentlyreviewed native04/native-result-review.json; startup01launchfailure separatelyreviewed startup02/independent-review.json. This structuredreconciliationisaddedafterfullworkordercheck; itdoesnotclaimanunobservedpre-actionwhole-historyPASS.",
+          "next_action": "UseonlyactualobservedText-onlylaunchcorrection andsameartifactstartup02; donotreopenpassedcredentialfreshness or retryambiguouswrites.",
+          "failed_attempt_ids": [
+            "S04-02-TRANSACTION-native03",
+            "S04-02-INSTALLED-startup01"
+          ]
+        }
       },
       {
         "id": "S04-02-INSTALLED-loader01",
@@ -20260,6 +20272,83 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         },
         "result": "PASS",
         "reference": "loader01/actual-results.txt: currentfirstobservedmodulelibdovecot-sieve exit1/out77/err62 after11pass; fixed-context-results.txt sameUID/module plusfixedDovecotcoreLDpath exit0/out506/err0. Readonlyquestionanswered, noapp/auth/SQL; historicalstartup02childidentityuncaptured.",
+        "elapsed_status": "UNKNOWN",
+        "elapsed_seconds": null,
+        "reassessment": {
+          "reviewers": [
+            "/root",
+            "/root/transaction_review"
+          ],
+          "reference": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/startup02/result-independent-review.json SHA9b220643cf7380942eb5bca52127722a02f3906f6a22845efc6b8c1c8da3c670; actualroot/sourceanalysis and independentjoint01/02review beforeexactreadonlyloaderquery. Structuredpointeraddedafterfullworkordercheckidentifiedomission; no retrospectivewholepre-actionPASSclaim.",
+          "next_action": "Exactreadonlyfixedloaderobservation undercurrentUID/env/cwd beforeanotherworkflow; preservehistoricalunknownchildidentity, noauthenticationretry.",
+          "failed_attempt_ids": [
+            "S04-02-INSTALLED-startup02"
+          ]
+        }
+      },
+      {
+        "id": "S04-02-INSTALLED-build02",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "source_revision": "8b27d33a25d9de01f8973bdcd615e40e65b33cc6",
+        "change_reference": "Actualfixedcontextresolvesknownmodulebaselinefailure; reviewedauthfactoryd1e0eff4; normalWebbuildonly, source/modulecontextdeliveryreviewCLEAR.",
+        "success_chain_review": {
+          "reviewer": "/root/transaction_review",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/module-context-independent-review.json",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "reference": "build02/build-result.txt EXIT0; normalWebeec58a1399acf27ce0d795ea039312e895c6d03adbc6ea347b65ff5e978c9264/24887192bytes; signed8b27d33/5d3a2a86source manifest/sourcebeforeafterPASS, no app/auth/SQL.",
+        "elapsed_status": "UNKNOWN",
+        "elapsed_seconds": null
+      },
+      {
+        "id": "S04-02-INSTALLED-startup03",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "source_revision": "703e3c601773e652c12407d971c838d06bf84b9b7780e36f5323bb58aa3a4e9f",
+        "change_reference": "Joint01/02failureanalysiscomplete; actualmoduleemptyenv1/fixedcontext0; frozenauthmodule-onlycorrection d1e0eff4 independentlyCLEAR; actualnewbuild02eec58. No unchangedworkfloworcredentialretry.",
+        "success_chain_review": {
+          "reviewer": "/root/transaction_review",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/module-context-independent-review.json",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "FAIL",
+        "reference": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/startup03/result-independent-review.json",
+        "elapsed_status": "UNKNOWN",
+        "elapsed_seconds": null
+      },
+      {
+        "id": "S04-02-INSTALLED-loader02",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "source_revision": "8b27d33a25d9de01f8973bdcd615e40e65b33cc6",
+        "change_reference": "Startup03 fails protected-file predicate before Serve; inspect actual selected leaves and hidden module entries once without weakening custody. Existing positive credential proof reused.",
+        "success_chain_review": {
+          "reviewer": "/root/transaction_review",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/loader02/independent-review.json",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "reference": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/loader02/native-observation.log: readonly question answered; ordinal45 libdriver_mysql selected /usr/local/lib/libmariadb.so.31.0 is a root-owned package symlink to mysql/libmariadb.so.31.0. No application/auth/SQL dispatch. Archive5ea74c99 with275 regular unique members verified.",
         "elapsed_status": "UNKNOWN",
         "elapsed_seconds": null
       }
@@ -35003,6 +35092,136 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
             }
           }
         ]
+      },
+      {
+        "id": "ordinary-installed-web-build02",
+        "kind": "NATIVE",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "single-host-readiness"
+        ],
+        "test_ids": [
+          "S04-02-T03",
+          "S04-02-T06"
+        ],
+        "allowed_paths": [
+          "docs/UX_EXECUTION_LEDGER.md"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/bin/sh",
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/build02/build.sh"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "RebuildonlyaffectednormalWebbinaryfromsigned8b27d33/module-onlyloadercontextfix; ownpackageclean/trusteddependenciesreuse/sourcebeforeafter/hashdifferentfromold937e; noapp/auth/SQLactions. Reuseimmutablehelper0f95 separately.",
+        "prerequisites": [
+          {
+            "id": "actual-module-context-independent-review",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/module-context-independent-review.json",
+              "sha256": "fd0135e77c426f7cdc5122e62cf9435d884270b8f8f18ef08b7b3ae222295794"
+            }
+          }
+        ]
+      },
+      {
+        "id": "ordinary-installed-web-startup03",
+        "kind": "INSTALL",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "single-host-readiness"
+        ],
+        "test_ids": [
+          "S04-02-T03",
+          "S04-02-T06"
+        ],
+        "allowed_paths": [
+          "docs/UX_EXECUTION_LEDGER.md"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/bin/bash",
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/startup03/dispatch.sh"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "ActualmatchingnewnormalWeb8b27d33/eec58 module-contextcorrection+existingTextlaunch in fresh03state; samehelper0f95; actualenforcedServeReady+oneGET/login200, zeroauth/SQL/POST; exactownedstop/helperrestore/protectedreadback andthreecopiedkeysretainedwithcustody.",
+        "prerequisites": [
+          {
+            "id": "independent-minimal-module-source-and-observation",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/module-context-independent-review.json",
+              "sha256": "fd0135e77c426f7cdc5122e62cf9435d884270b8f8f18ef08b7b3ae222295794"
+            }
+          },
+          {
+            "id": "actual-matching-native-build02",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/build02/build-result.txt",
+              "sha256": "b8cd3e9b3b455ef7702a9cea00c37c29307033920d7e14db60c348f3a0eff2a2"
+            }
+          },
+          {
+            "id": "reviewed-text-launch-and-same-process-chain",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/startup02/independent-review.json",
+              "sha256": "fc0d46a64e9012141ec4eff916f8f0d8e986ae16dcf4e88af825a186b9e982b1"
+            }
+          }
+        ]
+      },
+      {
+        "id": "ordinary-installed-loader02",
+        "kind": "DISCOVERY",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "single-host-readiness"
+        ],
+        "test_ids": [
+          "S04-02-T03",
+          "S04-02-T06"
+        ],
+        "allowed_paths": [
+          "docs/UX_EXECUTION_LEDGER.md"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/bin/sh",
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/loader02/observe.sh"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "Read-only same-UID loader observation identifies first source custody predicate failure with exact selected leaf; no app/auth/SQL/service controls or dependency mutations. Only exclusive private evidence directory.",
+        "prerequisites": [
+          {
+            "id": "reviewed-source-matching-observer",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/loader02/independent-review.json",
+              "sha256": "0c3041fcd925babfd3d11fb0d196dffdd070c0fa28fecc1927b12bc7d503b689"
+            }
+          }
+        ]
       }
     ],
     "budget": {
@@ -35018,7 +35237,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
   },
   "blocker": null,
   "independent_next_action": "Actual assigned Runtime, T04/T05, and status/security reviewers identify next concrete boundary; root owns integration, native/browser, Git and delivery.",
-  "updated_at": "2026-10-25T09:11:04.548054+00:00"
+  "updated_at": "2026-10-25T09:19:13.299485+00:00"
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->

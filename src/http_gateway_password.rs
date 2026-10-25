@@ -990,6 +990,72 @@ mod password_result_tests {
                 !String::from_utf8_lossy(&denied.response.body).contains("2026-10-25 06:21:39 UTC")
             );
         }
+        // A lost POST reply leaves the already-issued result cookie available.
+        // Returning to the form must discover that result without readmitting
+        // the revoked normal session or asking for another credential attempt.
+        let rediscovered = get(
+            "/settings/password",
+            &format!(
+                "osmap_session={}; osmap_password_result={cap}",
+                f.token.as_str()
+            ),
+        );
+        assert_eq!(rediscovered.response.status_code, 303);
+        assert!(rediscovered
+            .response
+            .headers
+            .iter()
+            .any(|(name, value)| name == "Location" && value == "/settings/password/result"));
+        assert_eq!(
+            rediscovered
+                .response
+                .headers
+                .iter()
+                .filter(|(name, _)| name == "Location")
+                .count(),
+            1
+        );
+        assert!(rediscovered
+            .response
+            .headers
+            .iter()
+            .any(|(name, value)| name == "Set-Cookie" && value.contains("Max-Age=0")));
+        let mut repeated = crate::http_parse::parse_http_request_bytes(
+            format!("POST /settings/password HTTP/1.1\r\nHost: localhost\r\nCookie: osmap_password_result={cap}\r\nContent-Length: 0\r\n\r\n").as_bytes(),
+            &HttpPolicy::default(),
+        ).unwrap();
+        repeated.body = b"unparsed-form-must-not-be-submitted".to_vec();
+        let repeated = app.handle_request(&repeated, "127.0.0.1");
+        assert_eq!(repeated.response.status_code, 303);
+        assert!(repeated
+            .response
+            .headers
+            .iter()
+            .any(|(name, value)| name == "Location" && value == "/settings/password/result"));
+        for section in ["security", "authentication"] {
+            let denied = get(
+                &format!("/settings?section={section}"),
+                &format!("osmap_password_result={cap}"),
+            );
+            assert_eq!(denied.response.status_code, 303);
+            assert!(denied
+                .response
+                .headers
+                .iter()
+                .any(|(name, value)| name == "Location" && value == "/login"));
+        }
+        for cookie in [
+            String::new(),
+            format!("osmap_password_result={}", "f".repeat(64)),
+        ] {
+            let denied = get("/settings/password", &cookie);
+            assert_eq!(denied.response.status_code, 303);
+            assert!(denied
+                .response
+                .headers
+                .iter()
+                .any(|(name, value)| name == "Location" && value == "/login"));
+        }
         let view = get(
             "/settings/password/result",
             &format!("osmap_password_result={cap}"),
