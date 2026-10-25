@@ -1,5 +1,17 @@
 # Decision Log
 
+2026-10-25 UTC — **Close the raw-bcrypt defect against the ordinary installed transaction.**
+The fresh stock-format target completed the updated native service's single
+conditional change to Argon2id. Independent SQL/Store witnesses and the existing
+20-request HTTP driver agree on epoch, write time, obsolete/new credential,
+old-session revocation and control preservation. Restore the exact seven prior
+policy names and keep the corrected helper installed. Rebind the unchanged Web
+after each helper socket replacement; anonymous readiness alone is insufficient.
+Preserve all old failure evidence and leave the owner's original operation
+unrepeated. A fresh owner attempt uses their unchanged current password, a fresh
+TOTP and a newly chosen replacement; human acceptance is not inferred from the
+controlled transaction.
+
 2026-10-25 UTC — **Accept the stock bcrypt snapshot representation without normalization.**
 The owner's successful login followed by a known no-write password-change refusal
 exposed a format mismatch: Dovecot accepts the stored unprefixed bcrypt, while the

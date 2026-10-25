@@ -2,13 +2,12 @@
 
 ## Current result and boundary
 
-**Owner-confirmed Duncan login and password-page access passed. A subsequent
-stock-format password-change refusal is under correction; owner retry readiness
-is pending native qualification.** The one-time local hash synchronization used
-the unchanged mail hash, restored original TOTP enrollment and enrolled Duncan in
-the local native policies. The account remains local development authority.
-The read-only reference replica and prior controlled results retain their scope;
-human T09 acceptance is pending.
+**The stock-bcrypt compatibility defect is corrected and native-qualified.**
+The updated ordinary helper completed one real controlled stock-format password
+change through the normal HTTPS application. Owner retry is ready; Duncan's
+current password and TOTP remain unchanged by qualification. Owner login and
+page access are confirmed; the earlier owner's refused change remains a known
+no-write result, and human T09 acceptance is pending.
 
 The operator selected obsd1 for all OSMAP UX development, with local authentication,
 mailbox access and controlled development accounts. Toronto remains the live mail
@@ -209,3 +208,45 @@ and new hashes remain Argon2id-only. Public-fixture RED/GREEN regressions cover
 read, exact CAS, zero-row conflict, malformed encodings and replacement-output
 refusal. Matching ordinary helper installation and controlled native qualification
 are the next checks; the owner's candidate password is neither retained nor replayed.
+
+## Installed stock-format qualification
+
+Signed source `67148da77971da244618d5f6f89a717af7b322c4` produced ordinary helper
+`be7c6b40b25e5fe88d3a39dbb49e1881a7a2d76a2bef415b063b5ac51396029c`.
+The original helper is backed up. The Web image remains `2678b730…`; its process
+was restarted after the helper published both fixed socket leaves so that native
+client custody captures their new identities. Configuration and protected account
+state passed upgrade preservation. No credential write was part of installation.
+
+The existing twenty-request ordinary HTTP driver was reused with only fixed
+fresh account names and canonical HTTPS URL/Host/Origin changes. A fresh controlled
+target began with a real unprefixed bcrypt hash; its control began with Argon2id.
+One password POST completed at 2026-10-25 21:01:10 UTC. Independent SQL and Store
+readbacks verified replacement Argon2id, active epoch 1, two old sessions revoked,
+new session valid, unchanged control and exact rendered authoritative time. The
+old password was refused before the replacement was accepted. Result capability
+isolation, reload and four Security/Authentication history views passed.
+
+The policy scope was temporarily seven to nine, then restored byte-exactly to
+seven. The updated helper, both bound sockets, normal Web and HTTPS200 passed
+restoration. All prior SQL rows and account-state/marker/factor/replay/key and
+session-authority invariants passed preservation, including Duncan and retained
+containment evidence. Fixture data is retained and its two accounts removed from
+native enrollment. No real-user password-change request was dispatched during this qualification.
+
+Private evidence is in `bare-bcrypt-compatibility-20261025-01/ordinary01/` beneath
+the existing integration artifact root. `actual-result.json` SHA256 is
+`3d1ce50b6be398e890379af81fbc3ee9e3e6c21707b7e8c7c22138efe0f03e3f`.
+Local protocol preflight exposed a Python module-name collision before any host
+credential operation. The private procedure was renamed and the actual checks
+were rerun from the real working directory. The old script and first failure are
+retained. This test-runner correction is separate from the product hash parser.
+
+Owner retry uses the unchanged current credential and fresh TOTP in a newly
+loaded form. Saving a new local password belongs in the separate obsd1 development
+entry; Toronto remains the production authority. Human T09 is still pending.
+
+The independent actual qualification review is `ordinary01/actual-independent-review.json`,
+SHA256 `0408ff37e1c44c10efd0c522b0052c7f94f3eddf14fea5a2437fa2cb2cea6f38`.
+It confirms native functional PASS separately from restoration PASS, with 62
+protected files and six preexisting session-authority invariants preserved.

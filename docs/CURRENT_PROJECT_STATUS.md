@@ -1,5 +1,26 @@
 # Current Project Status
 
+2026-10-25 UTC — **Stock bcrypt compatibility corrected and qualified on the installed application; owner retry is ready.**
+The ordinary native helper is now `be7c6b40…`, built from signed source `67148da…`;
+the unchanged Web remains `2678b730…` with refreshed socket custody. One fresh
+controlled account starting with the same unprefixed bcrypt representation
+completed exactly one ordinary HTTPS password-change POST. The full twenty-request
+journey passed: raw snapshot accepted, conditional write to Argon2id, verified
+write time 21:01:10 UTC, active epoch 1, two old stored sessions revoked/denied,
+obsolete password refused before replacement login, result reload and four
+settings views consistent, and a separate control account preserved.
+
+Both native policy files were restored exactly to their seven-account baseline,
+with the updated helper and ordinary Web running. Prior SQL, epoch, uncertainty,
+factor/replay/key and session-authority witnesses passed preservation. The
+controlled fixture remains retained outside policy enrollment. Duncan's current
+password and TOTP were not changed or replayed in qualification. The previous
+owner refusal remains a known no-write historical result; the operator's login
+and password-page access are confirmed, while their new change and human T09
+acceptance remain pending. Source tests, native artifact, functional transaction,
+restoration and owner acceptance remain separate evidence. See the
+[compatibility record](UX_S04_02_LOCAL_DEVELOPMENT_20261025.md).
+
 2026-10-25 UTC — **Duncan login is owner-confirmed; stock bcrypt password-change compatibility is being corrected.**
 At the operator's request the writable local Duncan row received the current mail
 password hash once, with byte-exact source/target readback, epoch 1, one old
