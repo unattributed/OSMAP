@@ -1,5 +1,26 @@
 # Decision Log
 
+2026-10-25 UTC — **Deploy the qualified S04-02 code to the operator's normal HTTPS login.**
+The operator explicitly requested the code at obsd1.blackbagsecurity.com. Replace
+only the ordinary frontend binary with the already qualified f48 artifact,
+preserve the production environment and existing user state, and add the exact
+native-local account configuration. Do not redirect the operator to the separate
+QA instance as the final deployment.
+
+Source review found that global native admission with only the controlled helper
+scope would refuse normal mailbox identities. Reconcile existing TOTP enrolments
+against active mailboxes, append the four matching identities to both protected
+helper scopes, and create only their missing initial epoch/lock records. Preserve
+all prior epochs, password rows and factor bytes. The ordinary service cutover
+then passed actual same-PID HTTP readiness, loaded-text/listener checks, external
+HTTPS and browser inspection. Retain the old executable/configuration backup.
+
+Enable the ordinary account helper at boot and order the frontend after mail,
+account and OpenPGP dependencies. Preserve other services' relative startup
+order; no mail/proxy restart or reboot test is part of this deployment. Existing
+unbound browser sessions may require a fresh login. Public login-page availability
+does not claim the operator has authenticated or accepted T09.
+
 2026-10-25 UTC — **Close agent engineering on actual product evidence; hand off only T09.**
 Independent review maps all four outcomes, exact 20 obligations and T01–T08 to
 passing source/native/ordinary installed/browser evidence. Retain failed carriers

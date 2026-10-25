@@ -303,3 +303,40 @@ boot persistence, production performance, public rollout or human acceptance.
 The [owner T09 script](UX_S04_02_T09_ACCEPTANCE_20261025.md) requires no debugging
 or additional password change. S04-02 remains unaccepted until the owner records
 that usability result.
+
+## Ordinary public frontend deployment
+
+The operator subsequently requested the completed code at the normal
+<https://obsd1.blackbagsecurity.com/login>. The already qualified Web f48 artifact
+was installed at `/usr/local/bin/osmap`, preserving the original production
+environment and all existing state, TOTP, mailbox and OpenPGP paths. Seven
+native-local account variables were appended, with protected purpose-key copies
+owned by the actual Web UID. The HTTPS proxy remains on the existing 8080 backend.
+
+Independent preflight identified that the old helper scope contained only the
+five controlled accounts. Four existing TOTP-enrolled identities matched active
+mailbox rows. Both protected scopes were extended by exactly those four; their
+previously absent epoch/lock records were created as active epoch zero, with
+unknown changed-at. No password, SQL row or factor secret was changed. All
+pre-existing epoch files and factor/configuration readbacks passed after cutover.
+Existing unbound browser sessions may require a fresh normal login.
+
+The ordinary frontend PID 91121 remained the same across HTTP 000 to 200 readiness,
+then passed loaded executable inode and actual 127.0.0.1:8080 ownership checks.
+The public HTTPS login returned 200 with certificate verification result zero;
+the actual browser displayed the username/password/TOTP form. The ordinary
+helper, QA frontend, Dovecot, Postfix and MariaDB checks passed. Only OSMAP services
+were restarted. The native backup preserves the previous frontend and configuration.
+
+The account helper was enabled at boot; startup order now places the frontend
+after mail, account and OpenPGP dependencies while preserving all other relative
+ordering. The first boot-order command stopped before configuration changes
+because `/bin/print` does not exist; the native ksh builtin `print` corrected that
+observed error, and the guarded continuation verified the unchanged configuration
+before applying the order. Both attempt records remain private. No reboot was
+performed or qualified.
+
+Independent actual public-cutover receipt SHA256:
+`c3f91b6e1ca501260df0435c1cc52f5494dcad1d9fea7ad83f7b04236e2ae2e9`.
+This establishes normal public login-page availability and deployment provenance.
+The operator's successful account authentication and T09 acceptance remain separate.

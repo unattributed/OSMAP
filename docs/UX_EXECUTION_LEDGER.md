@@ -10488,7 +10488,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
           "reference": "Actualnormalservice/accessdisposition21437ea856d1a6ef3ab56d2718b3c5b05bd91bf9d8d04dc61505b10390d80a76, 04actual01b7, exact2stalesocketretirement03f51eb5c4ad6dd21166b9c967bc4f79ebb1da539c32385bb43926f0c9fb71f5ac, T05actual6c936 containment+marker/oldsessiondenial preserved. Controlledresources/liveQAservices intentionallyretained, original8080/mail protected; historicalUNKNOWN/FAIL notrelabeled."
         }
       ],
-      "next_action": "HumanT09minimalusabilityonlyviaalreadyauthenticatednormalpersistentOSMAPtab: visibility/navigation/Cancel/clarity; no passwordchange/debugging. Preserveownedinstanceforacceptance. HumanPENDING/S04ACCEPTEDfalse; normal signedfinaldelivery recordedseparately."
+      "next_action": "Owner normalHTTPSlogin then minimalT09usability at https://obsd1.blackbagsecurity.com/login; no passwordchange/debugging. Existingcredentials/TOTPpreserved; actualowneracceptance pending. Publicdeploymentc3f91review, priorall20audit48cc retained."
     },
     {
       "id": "fresh-stepup-and-session-containment",
@@ -10546,7 +10546,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
           "reference": "Actualnormalservice/accessdisposition21437ea856d1a6ef3ab56d2718b3c5b05bd91bf9d8d04dc61505b10390d80a76, 04actual01b7, exact2stalesocketretirement03f51eb5c4ad6dd21166b9c967bc4f79ebb1da539c32385bb43926f0c9fb71f5ac, T05actual6c936 containment+marker/oldsessiondenial preserved. Controlledresources/liveQAservices intentionallyretained, original8080/mail protected; historicalUNKNOWN/FAIL notrelabeled."
         }
       ],
-      "next_action": "HumanT09minimalusabilityonlyviaalreadyauthenticatednormalpersistentOSMAPtab: visibility/navigation/Cancel/clarity; no passwordchange/debugging. Preserveownedinstanceforacceptance. HumanPENDING/S04ACCEPTEDfalse; normal signedfinaldelivery recordedseparately."
+      "next_action": "Owner normalHTTPSlogin then minimalT09usability at https://obsd1.blackbagsecurity.com/login; no passwordchange/debugging. Existingcredentials/TOTPpreserved; actualowneracceptance pending. Publicdeploymentc3f91review, priorall20audit48cc retained."
     },
     {
       "id": "password-form-and-navigation",
@@ -10614,7 +10614,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
           "reference": "Actualnormalservice/accessdisposition21437ea856d1a6ef3ab56d2718b3c5b05bd91bf9d8d04dc61505b10390d80a76, 04actual01b7, exact2stalesocketretirement03f51eb5c4ad6dd21166b9c967bc4f79ebb1da539c32385bb43926f0c9fb71f5ac, T05actual6c936 containment+marker/oldsessiondenial preserved. Controlledresources/liveQAservices intentionallyretained, original8080/mail protected; historicalUNKNOWN/FAIL notrelabeled."
         }
       ],
-      "next_action": "HumanT09minimalusabilityonlyviaalreadyauthenticatednormalpersistentOSMAPtab: visibility/navigation/Cancel/clarity; no passwordchange/debugging. Preserveownedinstanceforacceptance. HumanPENDING/S04ACCEPTEDfalse; normal signedfinaldelivery recordedseparately."
+      "next_action": "Owner normalHTTPSlogin then minimalT09usability at https://obsd1.blackbagsecurity.com/login; no passwordchange/debugging. Existingcredentials/TOTPpreserved; actualowneracceptance pending. Publicdeploymentc3f91review, priorall20audit48cc retained."
     },
     {
       "id": "actual-password-status",
@@ -10681,14 +10681,14 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
           "reference": "Actualnormalservice/accessdisposition21437ea856d1a6ef3ab56d2718b3c5b05bd91bf9d8d04dc61505b10390d80a76, 04actual01b7, exact2stalesocketretirement03f51eb5c4ad6dd21166b9c967bc4f79ebb1da539c32385bb43926f0c9fb71f5ac, T05actual6c936 containment+marker/oldsessiondenial preserved. Controlledresources/liveQAservices intentionallyretained, original8080/mail protected; historicalUNKNOWN/FAIL notrelabeled."
         }
       ],
-      "next_action": "HumanT09minimalusabilityonlyviaalreadyauthenticatednormalpersistentOSMAPtab: visibility/navigation/Cancel/clarity; no passwordchange/debugging. Preserveownedinstanceforacceptance. HumanPENDING/S04ACCEPTEDfalse; normal signedfinaldelivery recordedseparately."
+      "next_action": "Owner normalHTTPSlogin then minimalT09usability at https://obsd1.blackbagsecurity.com/login; no passwordchange/debugging. Existingcredentials/TOTPpreserved; actualowneracceptance pending. Publicdeploymentc3f91review, priorall20audit48cc retained."
     }
   ],
   "human_acceptance": {
     "status": "PENDING",
-    "reference": "Agentengineering/all20/T01-T08/audit/recovery PASS per48cc. MinimalownerT09script docs/UX_S04_02_T09_ACCEPTANCE_20261025.md andactualgenuineauthenticatedpersistentinstancehttp://localhost:18127/settings/password. HumanNOT_RUN, no operatorpasswordchange/debuggingrequired; finalsignednormalGitdelivery/freshparityrecordedinprivatefinalreceipt. S04-02notACCEPTED."
+    "reference": "T01-T08/all20engineering PASS per48cc; ordinarypubliccutover PASS per c3f91b6e1ca501260df0435c1cc52f5494dcad1d9fea7ad83f7b04236e2ae2e9. Owner normalHTTPSlogin at https://obsd1.blackbagsecurity.com/login with existingpassword/currentTOTP, then minimalnavigation/visibility/Cancel/wording review in docs/UX_S04_02_T09_ACCEPTANCE_20261025.md. Actualownerlogin/T09NOT_RUN; S04notACCEPTED."
   },
-  "next_action": "Complete normal signed final documentation delivery and fresh origin parity, then owner T09 minimal usability review through the already authenticated ordinary installed tab. All20 engineering obligations/fouroutcomes/T01-T08 independently PASS; human PENDING, no credential mutation or troubleshooting required. Preserve running QA instance and controlled evidence.",
+  "next_action": "Owner login and minimal T09 usability review on the normal public HTTPS installation. All agentengineering and public deployment passed; source records preserved with normal signed delivery. No password change or debugging required.",
   "accountability": {
     "functional_exit": "Working own-account Settings password change through the selected single-host obsd1 local account service and authoritative local backend, fresh password/TOTP step-up, one conditional SQL update, durable OSMAP epoch and all-browser revocation, actual source-bound cache handling, old-password refusal/new-login success and Bob preservation. Existing third-party SMTP/IMAP sessions may remain authenticated. Matching installed QA, independent audit and minimal owner usability remain required. Toronto is later separate production installation.",
     "owner": "/root",
@@ -23201,6 +23201,29 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "disposition": "controlledstate/purposekeycopies/backups/earlierfixtures/privateevidenceretaineddeliberately; no uncertaincleanupassertedcomplete",
         "method": "Failure\u2192Analyse\u2192Correct\u2192Retest usedactualboundaries; reusedsuccessfulcredentialproofs, no credentialreplayforUI. HistoricalwrongSIDcookieoracle/lateACK/RC/loopguard/earlyTCPsample/unknownsignalsandcosts preserved.",
         "matrix_reconciliation": "18 approved-control rows QA_VERIFIED using exact requirement-scoped hashed actual evidence from independent48cc; immutable110 legacy cases including UX11-002/003 untouched, those two engineering results mapped by active outcomes/audit. HumanT09NOT_RUN/ACCEPTEDfalse."
+      },
+      "public_frontend_deployment_20261025": {
+        "operator_request": "I want this code on obsd1.blackbagsecurity.com that I can login to it. Explicit normal frontend deployment authority.",
+        "status": "PASS_PUBLIC_HTTPS_LOGIN_PAGE",
+        "source_checkpoint": "703ed2eed8ccd1d74db084f1b7ee86ad5837683c",
+        "ordinary_web_sha256": "f48d04463a868180cd49d1a3d6a085e023280343db9da6fccda773ce36a1353f",
+        "installed_path": "/usr/local/bin/osmap",
+        "ordinary_pid": 91121,
+        "loaded_text_inode": 129966,
+        "listen": "127.0.0.1:8080",
+        "public_url": "https://obsd1.blackbagsecurity.com/login",
+        "actual_readiness": "samePID000to200, actualtextinode/listenerPASS; externalHTTPS200/certverify0 andactualCUAloginform",
+        "native_scope": "Preservedexisting5controlledaccounts, appendexact4existingactiveTOTP-enrolledmailboxes tobothrootpolicies; onlymissingactiveepoch0/unknownchanged_at/lockinitialrecords. NoSQL/password/TOTPsecretchanges.",
+        "configuration": "Preservedallproductionenv/state/mailbox/OpenPGP/authrelay/TOTP/session paths; appended7fixednativeaccountvars; sameexactpurposekeybytes copiedUID1001/0600. Existingunbound sessionsfreshlogin, notrewritten.",
+        "preservation": "Existingepoch/TOTP/mail/proxy/RCreadbacksPASS; ordinaryhelper+QA+Dovecot/Postfix/MariaDBchecksok. No mail/proxyrestart.",
+        "backup": "/var/backups/osmap-s04-02-public-20261025-01 onobsd1, priorfrontend/configs retained",
+        "boot": "Accounthelperenabled; frontendaftermail/account/OpenPGPdependencies, allotherrelativeorderpreserved; no reboot performed/qualified. Firstattempt/bin/printnotfoundbeforebootmutations retained, guardedactualconfigunchangedthenkshbuiltinprintcorrected.",
+        "source_recipe_review_sha256": "789776f5a8cc3162fe94f38d213dec465e5d745a1e654001d9c6d8b4e9738105",
+        "actual_cutover_review_sha256": "c3f91b6e1ca501260df0435c1cc52f5494dcad1d9fea7ad83f7b04236e2ae2e9",
+        "private_evidence_root": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025",
+        "real_owner_authentication": "NOT_OBSERVED; owner uses normal password/currentTOTP atpublicURL",
+        "human_T09": "NOT_RUN",
+        "S04_02_ACCEPTED": false
       }
     }
   },
@@ -36971,7 +36994,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
   },
   "blocker": "None",
   "independent_next_action": "Actual assigned Runtime, T04/T05, and status/security reviewers identify next concrete boundary; root owns integration, native/browser, Git and delivery.",
-  "updated_at": "2026-10-25T16:32:21Z"
+  "updated_at": "2026-10-25T17:05:17Z"
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->

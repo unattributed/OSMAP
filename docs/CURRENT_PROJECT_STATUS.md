@@ -1,5 +1,35 @@
 # Current Project Status
 
+2026-10-25 UTC — **S04-02 deployed to the normal obsd1 HTTPS login.**
+The operator requested the completed code at
+<https://obsd1.blackbagsecurity.com/login>. The ordinary `/usr/local/bin/osmap`
+now matches the qualified Web `f48d0446…`; PID 91121 loaded the matching executable
+and owns the existing loopback 8080 listener behind the unchanged HTTPS proxy.
+Actual readiness progressed from 000 to 200 on that same PID; public HTTPS and
+the actual browser sign-in page passed, with certificate verification enabled.
+
+The existing production environment, state, TOTP, mailbox and OpenPGP paths were
+preserved, with the seven native-local account settings added. The two helper
+allowlists preserve the five controlled accounts and now also admit the four
+existing active, TOTP-enrolled mailbox identities. Their new authoritative epoch
+records start active at zero with unknown changed-at; no password, SQL row or
+MFA secret was changed. Existing epoch/TOTP/proxy/mail readbacks passed. Older
+unbound sessions require a fresh ordinary login; they were not rewritten.
+
+The ordinary account service is now boot-enabled and ordered after mail
+dependencies, with the frontend after its account and OpenPGP services. Other
+services retain their relative order. No reboot was performed or qualified.
+Only OSMAP services were restarted; public mail and proxy services remained up.
+The prior frontend/configuration backup is retained at
+`/var/backups/osmap-s04-02-public-20261025-01` on obsd1.
+
+Independent actual public-cutover review is CLEAR, SHA256
+`c3f91b6e1ca501260df0435c1cc52f5494dcad1d9fea7ad83f7b04236e2ae2e9`.
+This proves the installed public login page and preserved configuration; the
+operator's successful account login and T09 usability result remain human
+observations. All prior T01–T08 engineering evidence remains applicable. Use the
+[public-login T09 script](UX_S04_02_T09_ACCEPTANCE_20261025.md).
+
 2026-10-25 UTC — **S04-02 agent engineering complete; T09 owner review ready.**
 All four outcomes, exact 20 retained obligations and T01–T08 have applicable
 passing evidence. Independent final audit is CLEAR. T03 ordinary Runtime/file-TOTP
