@@ -557,6 +557,7 @@ pub(crate) fn install_password_child_profile(
     if std::time::Instant::now() >= plan.deadline()
         || plan.rules().is_empty()
         || plan.promises().to_bytes().is_empty()
+        || plan.exec_promises().to_bytes().is_empty()
     {
         return Err(io::ErrorKind::InvalidInput.into());
     }
@@ -828,7 +829,10 @@ impl PasswordParentSeal {
 pub(crate) fn seal_password_parent(
     plan: &crate::account_password_confinement::ParentPlan,
 ) -> io::Result<PasswordParentSeal> {
-    if plan.rules().is_empty() || plan.promises().to_bytes().is_empty() {
+    if plan.rules().is_empty()
+        || plan.promises().to_bytes().is_empty()
+        || plan.exec_promises().to_bytes().is_empty()
+    {
         return Err(io::ErrorKind::InvalidInput.into());
     }
     #[cfg(target_os = "openbsd")]
@@ -2358,7 +2362,7 @@ mod imp {
             }
         }
         if unsafe { unveil(std::ptr::null(), std::ptr::null()) } != 0
-            || unsafe { pledge(plan.promises().as_ptr(), plan.promises().as_ptr()) } != 0
+            || unsafe { pledge(plan.promises().as_ptr(), plan.exec_promises().as_ptr()) } != 0
         {
             return Err(io::Error::last_os_error());
         }
@@ -2418,7 +2422,7 @@ mod imp {
                 // fork inherits the parent's already locked closed filesystem view.
                 // Re-unveiling would fail EPERM. Role-specific UID/GID/DAC and
                 // narrower pledge/execpromises reduce that inherited authority.
-                if pledge(plan.promises().as_ptr(), plan.promises().as_ptr()) != 0 {
+                if pledge(plan.promises().as_ptr(), plan.exec_promises().as_ptr()) != 0 {
                     return Err(io::Error::last_os_error());
                 }
                 if std::time::Instant::now() >= plan.deadline() {
@@ -3359,5 +3363,131 @@ mod tests {
             .is_some_and(|p| p.starts_with("python3.")));
         trusted_dependency_file(&python).expect("protected Python executable");
         println!("PYTHON_SELECTION_PASS program={}", python.display());
+    }
+}
+
+#[cfg(all(test, target_os = "openbsd"))]
+/// The two isolated children apply the exact PreparedChild SQL exec policy.
+/// They perform no connect/send, database operation or credential action.
+/// Capability denial is tested independently of the ordinary product journey.
+pub(crate) fn sql_exec_denial_policy_fixture(
+    promises: &std::ffi::CStr,
+) -> Result<(), &'static str> {
+    #[cfg(not(target_os = "openbsd"))]
+    {
+        let _ = promises;
+        Err("native SQL policy denial test requires OpenBSD")
+    }
+    #[cfg(target_os = "openbsd")]
+    {
+        use std::os::unix::fs::{MetadataExt, PermissionsExt};
+        use std::time::{Duration, Instant};
+        unsafe extern "C" {
+            fn pledge(
+                promises: *const libc::c_char,
+                execpromises: *const libc::c_char,
+            ) -> libc::c_int;
+        }
+        if !password_native_authority() {
+            return Err("native SQL policy authority refused");
+        }
+        disable_core_dumps().map_err(|_| "native SQL policy core limit refused")?;
+        let root = std::path::Path::new("/var/tmp/osmap-sql-exec-denial-20261025-01");
+        std::fs::create_dir(root).map_err(|_| "exclusive policy scratch creation refused")?;
+        std::fs::set_permissions(root, std::fs::Permissions::from_mode(0o700))
+            .map_err(|_| "policy scratch mode refused")?;
+        let info =
+            std::fs::symlink_metadata(root).map_err(|_| "policy scratch metadata refused")?;
+        if !info.is_dir() || info.uid() != 0 || info.mode() & 0o7777 != 0o700 {
+            return Err("policy scratch custody refused");
+        }
+        let path = root.join("forbidden-create");
+        if std::fs::symlink_metadata(&path).is_ok() {
+            return Err("policy forbidden leaf already exists");
+        }
+        // Prepare every pointer and value before fork. The child executes only
+        // fixed libc calls and _exit; no allocation, Rust I/O or destructor.
+        let forbidden = std::ffi::CString::new(path.as_os_str().as_encoded_bytes())
+            .map_err(|_| "fixed policy path encoding refused")?;
+        let original = Instant::now() + Duration::from_secs(5);
+        let mut all_denied = true;
+        for case in [0u8, 1u8] {
+            let pid = unsafe { libc::fork() };
+            if pid < 0 {
+                return Err("policy child fork refused");
+            }
+            if pid == 0 {
+                unsafe {
+                    if pledge(promises.as_ptr(), std::ptr::null()) != 0 {
+                        libc::_exit(2);
+                    }
+                    let fd = if case == 0 {
+                        libc::socket(libc::AF_INET, libc::SOCK_STREAM, 0)
+                    } else {
+                        libc::open(
+                            forbidden.as_ptr(),
+                            libc::O_WRONLY | libc::O_CREAT | libc::O_EXCL | libc::O_NOFOLLOW,
+                            0o600,
+                        )
+                    };
+                    let denied = fd == -1 && *libc::__errno() == libc::ENOSYS;
+                    if fd >= 0 {
+                        libc::close(fd);
+                    }
+                    libc::_exit(if denied { 0 } else { 1 });
+                }
+            }
+            let mut status = 0;
+            let mut reaped = false;
+            while Instant::now() < original {
+                let observed = unsafe { libc::waitpid(pid, &mut status, libc::WNOHANG) };
+                if observed == pid {
+                    reaped = true;
+                    break;
+                }
+                if observed < 0 {
+                    if std::io::Error::last_os_error().raw_os_error() == Some(libc::EINTR) {
+                        continue;
+                    }
+                    return Err(
+                        "policy child ownership observation refused; disposition unconfirmed",
+                    );
+                }
+                std::thread::sleep(Duration::from_millis(1));
+            }
+            if !reaped {
+                eprintln!("native_sql_exec_policy_denial stage=child_deadline cleanup=pending");
+                // The direct child remains unreaped, retaining its PID lease.
+                let killed = unsafe { libc::kill(pid, libc::SIGKILL) } == 0;
+                let cleanup_deadline = Instant::now() + Duration::from_millis(500);
+                while Instant::now() < cleanup_deadline {
+                    let observed = unsafe { libc::waitpid(pid, &mut status, libc::WNOHANG) };
+                    if observed == pid {
+                        reaped = true;
+                        break;
+                    }
+                    if observed < 0
+                        && std::io::Error::last_os_error().raw_os_error() != Some(libc::EINTR)
+                    {
+                        break;
+                    }
+                    std::thread::sleep(Duration::from_millis(1));
+                }
+                eprintln!("native_sql_exec_policy_denial stage=child_deadline stop_sent={} reaped={} disposition={}",
+                    killed, reaped, if reaped { "confirmed" } else { "uncertain_retained" });
+                return Err("policy child deadline expired");
+            }
+            let denied = libc::WIFEXITED(status) && libc::WEXITSTATUS(status) == 0;
+            all_denied &= denied;
+            println!("\nnative_sql_exec_policy_denial case={} result={} child_pid={} reaped=true outbound_dispatch=false",
+                if case == 0 { "inet_socket" } else { "file_create" },
+                if denied { "DENIED_ENOSYS" } else { "FAIL" }, pid);
+        }
+        let absent = matches!(std::fs::symlink_metadata(&path), Err(error) if error.kind() == std::io::ErrorKind::NotFound);
+        if !all_denied || !absent {
+            return Err("SQL policy denial or no-file postcondition failed");
+        }
+        println!("\nnative_sql_exec_policy_denial result=PASS cases=2 denied_enosys=2 all_children_reaped=true forbidden_file_absent=true scratch=RETAINED product_qualified=false");
+        Ok(())
     }
 }

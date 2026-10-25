@@ -1,5 +1,27 @@
 # OSMAP UX execution ledger
 
+2026-10-25 UTC — **Native credential transaction and epoch/session consistency PASS.**
+The ordinary Rust helper completed the guarded conditional password change.
+Actual client1 PASS26.67s: authoritative current credential/TOTP preparation,
+pending ACK, OSMAP hash/CAS/readback, active epoch1, obsolete password refused
+first/new accepted, two old stored tokens denied before revocation, exactly two
+revoked, new epoch session valid and Bob preserved. Native policy negative1
+PASS0.04s: AF_INET socket and file creation deniedENOSYS, both children reaped,
+no forbidden file. Five prior full rows/protected state were preserved; the
+original OSMAP configuration/helper were restored, helper wait0, and current
+three copied keys removed after durable ownership/readback checks.
+
+Failure analysis identified an optional IP socket option on an established
+Unix SQL connection. Strict current/future-exec policies now preserve denial as
+ENOSYS in the executed SQL utility without added network capability. Earlier
+failures, the insufficient inet candidate and rejected stale Cargo artifacts
+remain retained. Local Store/session fault checks cover epoch publication and
+lost terminal reception with scripted SQL effects. Native positive, local
+injected failures and installed browser acceptance remain distinct.
+See [the transaction record](UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md).
+Installed HTTP/TOTP-file qualification, full T03/S04-02 and UAT remain open.
+
+
 2026-10-24 UTC — **P0 StockWorkerArgv Rust source correction, no native dispatch.**
 Fixed metadata detail/first-error retention, ErrorKind-only classification and
 separate child/endpoint cleanup disposition are implemented. The command policy,
@@ -10040,7 +10062,9 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
       "/root/evidence",
       "/root/python_backend_review",
       "/root/helper_trace_fix",
-      "/root/probe_review"
+      "/root/probe_review",
+      "/root/native_transaction_client",
+      "/root/epoch_failure_engineer"
     ],
     "qa": [
       "/root",
@@ -10060,7 +10084,8 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
       "/root/admission_review",
       "/root/python_runtime_review",
       "/root/python_journey_review",
-      "/root/rust_review"
+      "/root/rust_review",
+      "/root/transaction_review"
     ],
     "security_review": [
       "/root/scrum_security_review",
@@ -10078,7 +10103,8 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
       "/root/dependency_python",
       "/root/dependency_native",
       "/root/admission_review",
-      "/root/rust_review"
+      "/root/rust_review",
+      "/root/transaction_review"
     ],
     "technical_writer": [
       "/root",
@@ -10373,7 +10399,9 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "maint/ux/s04_02_startup_candidate/confinement_probe163_evidence.json",
     "src/openpgp_inventory_custody.rs",
     "src/openpgp_inventory_runtime.rs",
-    "docs/UX_S04_02_STOCK_WORKER_ARGV_20261024.md"
+    "docs/UX_S04_02_STOCK_WORKER_ARGV_20261024.md",
+    "src/account_password_transaction_tests.rs",
+    "docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md"
   ],
   "outcomes": [
     {
@@ -10419,6 +10447,10 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         {
           "stage": "native_tests",
           "reference": "Componentonly native02 restrictedR1/R2 PASS on signedb4b1; actualhelperParentPrepare/ParentSeal/operationaladmission andnonrootgood0/noncurrent1Refused. /home/foo/Downloads/osmap-ux-s04/postfixadmin-reconstruction-20261024/helper-admission-r1-r2/native02/native02-result-review.json SHA256 558d264bee205060f2a9683e11ad94d383e3f4598913a5744244dd2818376d3b. Fullauthoritativepasswordworkflow native stage remainsFAIL/unqualified; noT03promotion."
+        },
+        {
+          "stage": "native_tests",
+          "reference": "Scopedordinarycredential/epoch/sessioncomponentPASS native04 reviewa2ca67dd/archive6079539b; client26.67+negative0.04. InstalledHTTP/fullT03outcomestageremainsunqualified, notpromoted."
         }
       ],
       "next_action": "Prove currentauthoritativecredentialfreshness + narrowconditionalcredentialoperation, thenactualhelper/epoch/sessioncomposition andinstalledbrowserjourney; reuse actualreadonlyR1/R2PASS. No qualificationflag shortcut or publicmail/configoperation."
@@ -10537,7 +10569,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "status": "PENDING",
     "reference": "Only minimal well-defined own-password usability after all agent-owned development/matching deployed QA/independent audit PASS. No operator password is changed by agent qualification; use controlled disposable Alice and preserve Bob/operator state. NOT RUN."
   },
-  "next_action": "Use proven liveverifier inexistingServiceBackend transaction, then genuinependingACK/storedsession/epoch/revocation composition beforebrowser. Native03plaintextsRAMonlynowlost; prepareseparatefreshfixture, noresetofNative03or165rows. Currentfourrecordsindependentreviewthenmandatorysigneddelivery; nofurthernativeactionregistered.",
+  "next_action": "Requestednativecredential/epoch/sessionboundaryPASSandfournewfixturesretired. Complete normalreviewed signedGitpreservation; installedHTTP/TOTPfile/fullS04-02acceptance separate.",
   "accountability": {
     "functional_exit": "Working own-account Settings password change through the selected single-host obsd1 local account service and authoritative local backend, fresh password/TOTP step-up, one conditional SQL update, durable OSMAP epoch and all-browser revocation, actual source-bound cache handling, old-password refusal/new-login success and Bob preservation. Existing third-party SMTP/IMAP sessions may remain authenticated. Matching installed QA, independent audit and minimal owner usability remain required. Toronto is later separate production installation.",
     "owner": "/root",
@@ -20006,6 +20038,140 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "elapsed_seconds": 4.443,
         "reference": "/home/foo/Downloads/osmap-ux-s04/r1-r2-native-20261024/probe/startup-result.json",
         "reason": "One native R1/R2 probe consumed. R1 socket_validation/canonicalize/absent preserved COMPLETE/readbackverified. R2 StockWorkerArgv57/Denied1/Unavailable propagated after binding through StockRuntime backend recheck. NoREADY/G/HTTP/submission. Original cleanupUNCERTAIN retained; independent full17/epochs/no-intents confirms no-write.33recordedpaths2rows1SQLprincipal2roles and newstages retained; no retry or speculative permissions/confinement change."
+      },
+      {
+        "id": "S04-02-TRANSACTION-native01",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "source_revision": "d217ba713ed39ff2dcddb92f54a0aee1667c93375528277d2dcca27b3b5a943e",
+        "change_reference": "Fresh operator-directed ordinaryservice client, not readonlyverifier replay; source manifest7cb15121+actual ordinaryhelper098cf665.",
+        "success_chain_review": {
+          "reviewer": "/root/transaction_review",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/credential-transaction-20261025/native-transaction-chain-review.json",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "reassessment": {
+          "reviewers": [
+            "/root",
+            "/root/transaction_review"
+          ],
+          "reference": "/home/foo/Downloads/osmap-ux-s04/credential-transaction-20261025/combined-historical-failure-reassessment.json SHA256e796b4dc69b526351e51c0898b66f50256334a8641e4b7100123fcf3a17ec1f1",
+          "next_action": "New ordinary transaction once; preserve historical163/165 exact causeUNKNOWN and reuse actualnative03 verifierPASS; no old consumed action renewal or ambiguous credential retry.",
+          "failed_attempt_ids": [
+            "S04-02-confinement-probe163",
+            "S04-02-r1-r2-probe165"
+          ]
+        },
+        "result": "FAIL",
+        "reference": "/home/foo/Downloads/osmap-ux-s04/credential-transaction-20261025/native01-result-review.json SHA256d4c2f42779614449006e252d3b6e3320189af5cde14086bbdc0c3b24441bd850; signedKnownRefused9.64s; fullrowunchanged/epoch0active used1/no marker; restore/preservationPASS. ExactbranchUNKNOWN.",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 13.0
+      },
+      {
+        "id": "S04-02-TRANSACTION-native02",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "source_revision": "8d8eb45bd8d7016f83284bc7e5b4c6289578241953740b42cac954998692be8a",
+        "change_reference": "Changed diagnosticsource anddistinctfresh02 fixture after native01settlednochange; nooriginalcredentialretry.",
+        "success_chain_review": {
+          "reviewer": "/root/transaction_review",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/credential-transaction-20261025/native02/native-transaction-chain-review.json",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "FAIL",
+        "reference": "/home/foo/Downloads/osmap-ux-s04/credential-transaction-20261025/native02/native-result-review.json SHAd3942669e33bf49978d4133c2b35895174a9e890bfa0c9d89c80a4bf287e0216; snapshotchildabnormalterminal/status-1, rowunchanged/epoch0active used1markerabsent; restorepreservationPASS.",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 13.0
+      },
+      {
+        "id": "S04-02-TRANSACTION-native03",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "source_revision": "2c2dfa45a06473ec6c5f1318f88e013022534b2aa8d63d21a7d995a3f875af38",
+        "change_reference": "ActualfirstSQLpledgefailure; freshinetcandidateandfresh03; actualcandidateinsufficient.",
+        "success_chain_review": {
+          "reviewer": "/root/transaction_review",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/credential-transaction-20261025/native03/live-semantic-review.json",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "reassessment": {
+          "reviewers": [
+            "/root",
+            "/root/transaction_review"
+          ],
+          "reference": "/home/foo/Downloads/osmap-ux-s04/credential-transaction-20261025/native02/combined-native01-native02-reassessment.json SHAb674de25369c460b6b7505304f1fd669c827d52db85f6770a51f98e287cf1513",
+          "next_action": "Read-only native SQLboundary; no credentialretryuntil demonstratedcause+changedcorrection.",
+          "failed_attempt_ids": [
+            "S04-02-TRANSACTION-native01",
+            "S04-02-TRANSACTION-native02"
+          ]
+        },
+        "result": "FAIL",
+        "reference": "/home/foo/Downloads/osmap-ux-s04/credential-transaction-20261025/native03/native-result-review.json SHA8ae487010386c355ebaaf72fa3cbc2217594697e76e6e3423bd2543a44767a01",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 12.0
+      },
+      {
+        "id": "S04-02-TRANSACTION-native04",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "source_revision": "c13fe5ac2f1d82cb24a2c9b3cd629079e88154257286061b22d664c18c0d4139",
+        "change_reference": "ExactfinegrainedAF_UNIXIPoptionfailure observed; restoreoriginalrights/SQLexecERRORdenysemantics, emittedfreshbuild+role/configPASS; actualnegative+completefresh04oneactor.",
+        "success_chain_review": {
+          "reviewer": "/root/transaction_review",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/credential-transaction-20261025/native04/native-chain-review.json",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "reference": "/home/foo/Downloads/osmap-ux-s04/credential-transaction-20261025/native04/native-result-review.json SHAa2ca67dd26ccb81a1d07a2c3e7862b5c86779f6fda72832bcdab7b516973e04a; ordinary1PASS26.67s+negative1PASS0.04s; wholecoarsewallseparate.",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 30.0
+      },
+      {
+        "id": "S04-02-TRANSACTION-retire01",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "source_revision": "964e75f64914c703215baf1ed4da9cdd5ab35009517a01205cb9864e9b0b4b39",
+        "change_reference": "Nativepositivecomplete/evidencedurable; exact4purposefixturesretiredbyfreshcurrentproof, notcredentialretry/rollback.",
+        "success_chain_review": {
+          "reviewer": "/root/transaction_review",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/credential-transaction-20261025/cleanup/independent-review.json",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "reference": "/home/foo/Downloads/osmap-ux-s04/credential-transaction-20261025/cleanup/evidence/result.json; archive98c52111d8886d90ac3c001ad215e69efb40ddebebc4654f815b4645f47e166a; CAS4deleted0remain/keys9+epochs8unlinked/12protectedpreserved/39events17unlinks.",
+        "elapsed_status": "UNKNOWN",
+        "elapsed_seconds": null
       }
     ],
     "prior_investigations": [
@@ -22043,6 +22209,133 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         },
         "review_consumer_corrections": "Independent local review initially assumed scalar disposition lines then a canonical trailing newline. Actual producer formatting was retained; consumer corrected to real two-field disposition and actual epoch bytes. These review-only refusals are separate, no native rerun or evidence rewrite."
       }
+    },
+    "credential_transaction_20261025": {
+      "operator_direction": "Complete credential transaction, followed by epoch and session consistency; use failure-analysis loop. Reuse successful verifier evidence.",
+      "objective": "One ordinary Rust helper conditional credential write for a fresh disposable account, old-first transition proof, epoch and real stored-session refusal; focused post-SQL persistence and lost terminal checks.",
+      "owners": {
+        "integration_host_git": "/root",
+        "native_client": "/root/native_transaction_client",
+        "partial_failure": "/root/epoch_failure_engineer",
+        "independent_review": "/root/transaction_review"
+      },
+      "prerequisites": "Fresh obsd1 identity/schema/OSMAP socket absence and config custody; exact protected OSMAP config backups, fixture absence and full unrelated row preservation; unchanged public mail services/config.",
+      "minimum_checks": "Changed composed persistence/session checks locally; real nonroot guarded transaction through ordinary root helper, exactly one SQL CAS, authoritative readback, old refused before new accepted, epoch advanced, prior sessions denied and Bob preserved.",
+      "stop": "No ambiguous credential retry or rollback. Preserve bounded diagnostic before cleanup; two failures at same boundary require independent combined reassessment.",
+      "runtime_bounds": {
+        "local_source_review_seconds": 1800,
+        "native_build_seconds": 720,
+        "native_transaction_seconds": 180,
+        "disposition_seconds": 120
+      },
+      "status": "NATIVE_CREDENTIAL_EPOCH_SESSION_PASS",
+      "native_result": "PASS",
+      "prior_history": "All historical budgets, failures and UNKNOWN work retained; this fresh operator task does not reuse an old consumed action.",
+      "source_checks": {
+        "persistence": "7 service tests PASS; actual Store/FileSessionStore with scripted SQL and exact inode-custody failure; failure not disk fsync simulation.",
+        "lost_terminal": "2 connection tests PASS; deterministic read-half shutdown after pending ACK; real Store authority refuses old stored session with committed epoch4.",
+        "native_client": "Linux compilation and bootstrap/RFC6238 discriminator PASS1, ignored native body not yet executed.",
+        "review": "/home/foo/Downloads/osmap-ux-s04/credential-transaction-20261025/epoch-source-review-final.json",
+        "production_change": "None; no defect demonstrated by source checks."
+      },
+      "native_build": {
+        "result": "PASS",
+        "source_manifest": "7cb151210fdc9ad2a7aa943af317708f522633e638c5d9f150cfab17e4bce104",
+        "libtest": "b338d4c413fb3c2a230c679f7e4bb44937e546b607f950ed05cb7977cabbd880",
+        "ordinary_helper": "098cf665be05c939c9c84b34013362f32369c9f8a5e12bec27e8fa35612e4069",
+        "profile": "dev unoptimized functional candidate; not production performance qualification"
+      },
+      "native01": {
+        "result": "FAIL",
+        "terminal": "KnownRefused",
+        "client_seconds": 9.64,
+        "row": "fullROW17andotherROW15unchangedatfinalobservation",
+        "helper": "wait0",
+        "restoration": "config+binaryPASS",
+        "preservation": "PASS",
+        "archive": "eb66ca61b2cfc0c88cc456d1099e977b1a3711c025095d02261a1cb03988c912",
+        "branch": "UNKNOWN untilreconciliation",
+        "retry": "No repeated credential submission",
+        "retention": "Freshrow/epoch/clientkeys/stagesretained; exact scope inventory pending."
+      },
+      "diagnostic_correction": {
+        "purpose": "Actual01KnownRefused could not identify stage; add fixed18transactionphases and reuse existing scalar parser/process observations, resetperrequest and preserve unknowns.",
+        "checks": "Independent affectedService9+Process9 and ordinaryproductioncompilePASS.",
+        "source_manifest": "37b3803aa0f624e0c06a745eca87101b4dd4e949a32e4fae56f73ae593563a1b",
+        "native_qualification": "NOT_RUN",
+        "ordinary_refusal_cause": "UNKNOWN",
+        "consumer": "Existingclosedcustody/helper_trace_scalars/finalconsumer extended; actualRustemitterthroughactualconsumerPASS. Diagnostics21PASS, evidence10PASS2explicitconstruction/confinementemitterSKIP; malformed/duplicate/truncated/mixedprefix refuse. No qualificationpromotion."
+      },
+      "native02": {
+        "result": "FAIL",
+        "terminal": "KnownRefused",
+        "client_seconds": 9.48,
+        "first_observation": "snapshot_read/process_stage9/status-1/stdout0/stderr0/parser4; terminating signalnotcaptured",
+        "row_epoch": "fullrowunchanged/epoch0activeused1/markerabsent",
+        "restore_preservation": "PASS",
+        "archive": "27e7a48dfe4317b9aa7a512f0172aa23ea781bc1e5e58998863f4e45daf6be0a",
+        "workflow_retry": "STOP twofailures pendingcombinedreassessment; readonlyobservation only"
+      },
+      "snapshot01": {
+        "result": "READ_FAIL_DIAGNOSTIC_PASS",
+        "cause": "Exactsourceownedchild56796 PLDGsetsockoptineterrno1 ->SIGABRT6; currentreadonlyreproduction only",
+        "review": "snapshot01/native-result-review.json SHA40e0b231f43a247d91fba15ff7d14acef4bff67c66e82e21cd441332db9d7e7b",
+        "archive": "8bda5dda05ad876951e2a04601f8995e98b4877d138d494a80dc39f5af2e5012",
+        "state": "all4rows/epochs/protectedpreserved/helperrestored",
+        "historical_causes": "Native01/02missingsignal/PIDnotretroassigned"
+      },
+      "correction": {
+        "source": "SQLrole+actualstockparentinetonly; allfixedSOCKET/Unixpeer/UID/DAC/unveil/otherrolenarrownessunchanged",
+        "checks": "ActualoldREDthenmodule16PASS, independentexactrole1+strictconfig1+ordinarycompilePASS",
+        "retetest": "Userfullauthorityandavoidovergovernance/read-onlytrap: buildonce thenactualfresh03completecredentialtransaction; noextraSQLreadonlyprerequisite",
+        "timing": "Prioroperatoridle/interruptedintervalnotcompute; allfailedresults/costsretained, unknownaggregateauthoringcostremainsUNKNOWN"
+      },
+      "warm_cache_failure": {
+        "actual": "Compilerreturned0butemittedcopied03binariesidenticaltooldsnapshot0275/ee00; nohostcredentialdispatch. Sourcehashesverifiedbutartifactfreshnessfailed.",
+        "correction": "Scopedcargo clean-p osmap, rebuildsamefixedsource, requirebothnewhashesdifferandactualchangedsecuritychecks1+1pass.",
+        "history": "OriginalclaimedPASSreceipt/copiedstalebinariesretained; actualartifactbindingfailure recordedseparately."
+      },
+      "native03": {
+        "result": "FAIL",
+        "terminal": "KnownRefused9.42s/snapshotread child37006SIGABRT6PLDGsetsockoptinet",
+        "candidate": "ActualSQL+parentinetaddition insufficient; no widerpermissionselectedblindly",
+        "row_epoch": "unchanged/active0used1markerabsent",
+        "restoration_preservation": "PASS",
+        "archive": "3b0dcedeb2ba7011355d0a40bbebc3d2d3e9ff7481e9331d477060e40ce627f4",
+        "next": "Identifyactualfamily/level/option usingalreadycompiledreadonlyqualifier beforeAPIcompatibilityfix"
+      },
+      "superseding_correction": {
+        "measured_cause": "Snapshot02owned557 AF_UNIXconnectfixedsocket succeeded; optionalsetsockoptlevel0opt3 violatedpledge evenwithinetsourcecandidate. Actualquery/authnotreached.",
+        "source": "Restoreoriginalactivecapabilities; separatecurrent/execCStrings; onlySQLpreparedexecgetsERRORdenialENOSYS; parentfutureexecceilingssupportit, currentparentsstrict; otherpreparedrolesunchanged.",
+        "checks": "Independent16sourcePASS/productioncheck1.74s/source/securityCLEAR; nativepolicydenial+wholefresh04journeynext.",
+        "no_extra_gate": "Nativepolicynegativebeforecredentialsandpositivejourneyoneactor/samebuild; noadditionalreadonlyqualifierprerequisite"
+      },
+      "native04": {
+        "result": "PASS",
+        "client_seconds": 26.67,
+        "policy_negative_seconds": 0.04,
+        "epoch": "active1/verifiedtime20261025062139/intentnull/markerabsent",
+        "sessions": "twooldtokensauthorityrefusedBEFORErecordrevocation; revoked2; fresh1valid; Bobpreserved",
+        "credential": "actualServiceBackendhash/CAS1/readback; obsoleteFIRSTrefused/replacementaccepted",
+        "preservation": "fivepriorfullrows/files/parentidentitiesPASS",
+        "restore": "originalOSMAPconfig/helperPASS/helperwait0",
+        "keys": "currentexact3copiesremovedafterdurableownership/readback",
+        "archive": "6079539bfd551455d2e121f50bb23277d9a3313602e35971502eea3f2f214bca",
+        "review": "native04/native-result-review.json SHAa2ca67dd26ccb81a1d07a2c3e7862b5c86779f6fda72832bcdab7b516973e04a",
+        "limits": "realTOTPalgorithmRAMseed; fixtureclientconstructorsqualificationbypassonly; realAPI/sessionpositive, installedHTTP/TOTPfile/T03/UATseparate"
+      },
+      "source_preservation": "Mandatorynormalhooks/signature/push/freshoriginparitynext; privatefinaldeliveryreceiptwillrecordactual.",
+      "guard_registration": "ReviewedSQLadapterdigestrenewed18523bd5 forboundeddiagnostic-onlydelta; exactcfgtesttransactionmodule registration, production/missingmarkerrefusals retained; guardandexistingregressionsPASS.",
+      "cleanup": {
+        "result": "PASS",
+        "rows": "4exactfullrowdigestCASdeleted/0remaining",
+        "key_copies": "all12retired(current04three+retirementnine)",
+        "epoch_leaves": "8removedwithfreshidentity/hash/noopenrefs/durablebeforeevents+parentfsync",
+        "protected_files": "12preserved",
+        "events": "39/17confirmedunlinks/COMPLETE",
+        "archive": "98c52111d8886d90ac3c001ad215e69efb40ddebebc4654f815b4645f47e166a",
+        "retained": "session/build/privatediagnosticdirs/oldhistoricalresources; no recursive/PID/publicserviceaction"
+      }
     }
   },
   "execution_contract": {
@@ -22269,6 +22562,32 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
           "src/http/password_tests.rs"
         ],
         "reference": "/home/foo/Downloads/osmap-ux-s04/functional-completion-20261022T041520Z/source123/SOURCE_DELIVERY_REVIEW.json SHA256 a34bc6352945542705df431187bcba2bc03358bdf60afa6fc32db53eabc1fc2c; actualreviewedhelperliteralfix/nativecfgtestprobes+honestexistingrecords/derivedrefresh."
+      },
+      {
+        "id": "credential-transaction-consistency",
+        "outcome_ids": [
+          "authoritative-native-password-workflow",
+          "fresh-stepup-and-session-containment"
+        ],
+        "test_ids": [
+          "S04-02-T03",
+          "S04-02-T04",
+          "S04-02-T07"
+        ],
+        "allowed_paths": [
+          "docs/UX_EXECUTION_LEDGER.md",
+          "src/account_password_transaction_tests.rs",
+          "src/account_password_service_tests.rs",
+          "src/account_password_connection_tests.rs",
+          "src/account_password_service.rs",
+          "src/account_password_backend.rs",
+          "src/account_password_process.rs",
+          "src/account_password_process_tests.rs",
+          "src/account_password_native.rs",
+          "src/account_password_native_tests.rs",
+          "src/account_password_confinement.rs"
+        ],
+        "reference": "Explicitoperator20261025 credentialtransactionthenepoch/session; native01signedKnownRefused/unchangedfreshrow, exactbranchUNKNOWN; localpartialfailurechecksPASS."
       }
     ],
     "recipes": [
@@ -33616,6 +33935,775 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
             }
           }
         ]
+      },
+      {
+        "id": "credential-transaction-contract-readonly",
+        "kind": "DISCOVERY",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "single-host-readiness"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "docs/UX_EXECUTION_LEDGER.md"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/bin/sh",
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/credential-transaction-20261025/inspect-contract.sh"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "Fresh fixed target/schema/configured OSMAP accounts/identity and socket absence; zero authentication, write or public service action. Bounded45s SSH, private durable sanitized evidence.",
+        "prerequisites": [
+          {
+            "id": "independent-discovery-review",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/credential-transaction-20261025/discovery-review.json",
+              "sha256": "aa7dfa0e99b643a25cfe1b2cdbceeb41ad321d67b5b397a3ee1bb7da327c929f"
+            }
+          }
+        ]
+      },
+      {
+        "id": "credential-transaction-native-build",
+        "kind": "NATIVE",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "credential-transaction-consistency"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "docs/UX_EXECUTION_LEDGER.md",
+          "src/account_password_transaction_tests.rs"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/bin/sh",
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/credential-transaction-20261025/build-native.sh"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "One bounded offline compile of ordinary account-passwd and libtest from candidate1364 source manifest7cb15121; no root publication or credential operation. Sources before/after match, actual hashes and selector list.",
+        "prerequisites": [
+          {
+            "id": "independent-exact-build-chain",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/credential-transaction-20261025/native-build-review.json",
+              "sha256": "91214f556f2a5720109449e3ee0078a51aa871ede185faf205ef9f42a5a31dc7"
+            }
+          }
+        ]
+      },
+      {
+        "id": "ordinary-native-credential-transaction",
+        "kind": "NATIVE",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "credential-transaction-consistency"
+        ],
+        "test_ids": [
+          "S04-02-T03",
+          "S04-02-T04",
+          "S04-02-T07"
+        ],
+        "allowed_paths": [
+          "docs/UX_EXECUTION_LEDGER.md",
+          "src/account_password_transaction_tests.rs"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/bin/sh",
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/credential-transaction-20261025/dispatch-transaction.sh"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "One actual ordinary root account-passwd helper and nonroot stored guard transaction. Fresh row only; real snapshot/auth/hash/CAS/readback, durable pendingACK, epoch1,2prior sessions denied/revoked, oldfirst/newaccepted, Bob preserved. Original protectedOSMAP config/helper restored after own helper stop; only exact3keycopies disposed after evidence readback. Root240/SSH270/client60 bounds; no public mail operation or ambiguous retry.",
+        "prerequisites": [
+          {
+            "id": "actual-observed-contract",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/credential-transaction-20261025/discovery-private.log",
+              "sha256": "39c03a9783cb0736f9a7460d14f186bff9a598d890204c60e7b1731e9f218d9c"
+            }
+          },
+          {
+            "id": "native-build",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/credential-transaction-20261025/build-native.log",
+              "sha256": "b5e78e591cb2e43580bb5fa27f16ad280b006c783ac6a3aecfaab0360cd8691c"
+            }
+          },
+          {
+            "id": "whole-chain-review",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/credential-transaction-20261025/native-transaction-chain-review.json",
+              "sha256": "66de139de46f18d2370142bc88ffb4cf1f897cd1749ed7c52503dbc2a15f17d0"
+            }
+          },
+          {
+            "id": "client-source-review",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/credential-transaction-20261025/native-client-source-review.json",
+              "sha256": "e1bbc1e0396a4d1a0a15c234f25b298dd5fa99dff60ecce46940e5de2eec459f"
+            }
+          },
+          {
+            "id": "epoch-source-review",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/credential-transaction-20261025/epoch-source-review-final.json",
+              "sha256": "8c615916a4955bd03bbd48bcc961f324c2d1784ccf98cf043638cadecc9bc8fd"
+            }
+          }
+        ]
+      },
+      {
+        "id": "credential-transaction-refusal-reconciliation",
+        "kind": "DISCOVERY",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "single-host-readiness"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "docs/UX_EXECUTION_LEDGER.md"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/bin/sh",
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/credential-transaction-20261025/reconcile01/inspect-refusal.sh"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "Read-only exact current row shape/epoch/intent/marker and configured SQL column-read contract after signedKnownRefused; rootOS probe doesnotqualify native child. No credentialretry.",
+        "prerequisites": [
+          {
+            "id": "independent-exact-readonly-chain",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/credential-transaction-20261025/reconcile01/independent-review.json",
+              "sha256": "b36696f99cbe49b4eef9513dcf6592a70004141e2bb17412fe4e6c71a1acd98e"
+            }
+          }
+        ]
+      },
+      {
+        "id": "credential-transaction-diagnostic-native-build02",
+        "kind": "NATIVE",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "credential-transaction-consistency"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "docs/UX_EXECUTION_LEDGER.md",
+          "src/account_password_transaction_tests.rs"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/bin/sh",
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/credential-transaction-20261025/native02/build-native.sh"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "One native compile of changed production fixedtransactionphase/scalar diagnostics and fresh02client; no auth/write/rootpublication. Preserve actual01KnownRefused/unchangedrow, diagnosticchange notproductrepair.",
+        "prerequisites": [
+          {
+            "id": "independent-exact-build02",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/credential-transaction-20261025/native02/native-build-review.json",
+              "sha256": "1b394504afb67f111c4e4a5d315d599677cc817d506d87e593232523f4f23b67"
+            }
+          }
+        ]
+      },
+      {
+        "id": "ordinary-native-credential-diagnostic02",
+        "kind": "NATIVE",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "credential-transaction-consistency"
+        ],
+        "test_ids": [
+          "S04-02-T03",
+          "S04-02-T04",
+          "S04-02-T07"
+        ],
+        "allowed_paths": [
+          "docs/UX_EXECUTION_LEDGER.md",
+          "src/account_password_transaction_tests.rs"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/bin/sh",
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/credential-transaction-20261025/native02/dispatch-transaction.sh"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "One changed ordinaryservice diagnostictransaction for distinctfresh02 account; same liveSQL/hash/auth/Store and storedpendingACK. Preserve prior01row+epoch; recordfirstactualfixedphase/scalars ifrefused. Diagnose notassume repair; no repeated01credential or ambiguityretry. Root240/SSH270/client60; restoreexactOSMAP configs/helper; no publicservicechanges.",
+        "prerequisites": [
+          {
+            "id": "exact-chain",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/credential-transaction-20261025/native02/native-transaction-chain-review.json",
+              "sha256": "587cff53f0a63ca73662690489e8fc139fbbb720e1a3755f331fe7c24e00cea0"
+            }
+          },
+          {
+            "id": "actual-build",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/credential-transaction-20261025/native02/build-native.log",
+              "sha256": "8660722a82256ef53d014759ba3fd4c9a0ffb84aa25af32caae7ec126f37817a"
+            }
+          },
+          {
+            "id": "actual-readonly-reconciliation",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/credential-transaction-20261025/reconcile01/result-review.json",
+              "sha256": "4d2e2bff97f9ab23b310a3fe33472aba1c90a76cfc59f33e028064e9b8903b1b"
+            }
+          },
+          {
+            "id": "closed-diagnostic-consumer",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/credential-transaction-20261025/transaction-diagnostic-consumer-review.json",
+              "sha256": "89aad56e276e88bdce531d517e9cf128798c08270efa4898cb66a985d57f9ae8"
+            }
+          }
+        ]
+      },
+      {
+        "id": "readonly-sql-child-kernel-observation",
+        "kind": "DISCOVERY",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "single-host-readiness"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "docs/UX_EXECUTION_LEDGER.md"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/bin/sh",
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/credential-transaction-20261025/kernel01/inspect-kernel.sh"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "One boundedprivate kernelread/checkedstatus/tail80; noSQL/auth/service/write. ExistingfailedSQLchildPIDsnotrecorded, so no retrospectivelyuniqueattribution.",
+        "prerequisites": [
+          {
+            "id": "independent-kernel-observation",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/credential-transaction-20261025/kernel01/independent-review.json",
+              "sha256": "1cfc217177699057f248c222989a6bb59a70d54b978d1c3b9154336aff00571b"
+            }
+          }
+        ]
+      },
+      {
+        "id": "readonly-sql-child-syslog-observation",
+        "kind": "DISCOVERY",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "single-host-readiness"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "docs/UX_EXECUTION_LEDGER.md"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/bin/sh",
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/credential-transaction-20261025/kernel02/inspect-kernel.sh"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "Checkedtail300 ofprivateexisting/var/log/messages with onlymariadb pledge/unveil filter; distinguishgrep1None fromerrors. NoSQLauth/servicewrites; historicalchildPIDnotcaptured, matchinghistoricallinesnotuniqueattribution.",
+        "prerequisites": [
+          {
+            "id": "independent-exact-readonly-syslog",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/credential-transaction-20261025/kernel02/independent-review.json",
+              "sha256": "0488647509395fc291ad7b6170df5136dd8ae93c47c7f365d33b3b0ec92c6112"
+            }
+          }
+        ]
+      },
+      {
+        "id": "sealed-sql-readonly-qualifier-build",
+        "kind": "NATIVE",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "credential-transaction-consistency"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "docs/UX_EXECUTION_LEDGER.md",
+          "src/account_password_transaction_tests.rs"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/bin/sh",
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/credential-transaction-20261025/snapshot01/build-native.sh"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "Compile actualPID/signalobservability + fixedretained02 READONLYsnapshotqualifier; noStore/auth/hash/write. Ordinaryhelperbuildformatchingmetadataworker; nohostpublication inbuild. Notanothercredentialattempt.",
+        "prerequisites": [
+          {
+            "id": "independent-exact-readonly-build",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/credential-transaction-20261025/snapshot01/native-build-review.json",
+              "sha256": "1460a547bb6341c74d46e241b79fd7bdc11c976530ad574e5e701a4345fe948a"
+            }
+          }
+        ]
+      },
+      {
+        "id": "sealed-sql-readonly-child-trace",
+        "kind": "NATIVE",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "credential-transaction-consistency"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "docs/UX_EXECUTION_LEDGER.md",
+          "src/account_password_transaction_tests.rs"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/bin/sh",
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/credential-transaction-20261025/snapshot01/dispatch-snapshot.sh"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "One SELECT ofretained02 throughactualsealednativeSQLchild, sourcebornPID/signal plusrootktracepsS andexactPIDkdump. NoStore/auth/hash/CAS/write/listener/configchange. Tempmatchinghelperrestore; fourrows/all4epoch+protectedpreservation. Root90/outer120, qualifier30. RetainSQLreadFAIL evenifdiagnosticcapturePASS.",
+        "prerequisites": [
+          {
+            "id": "exact-whole-chain",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/credential-transaction-20261025/snapshot01/snapshot-chain-review.json",
+              "sha256": "a41aa48631b48d4f5acebcff60dd06609ba32bc32e79feb0b083eb44d6c57d81"
+            }
+          },
+          {
+            "id": "actual-matching-build",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/credential-transaction-20261025/snapshot01/build-native.log",
+              "sha256": "1bb9f7237df1f54c4f9e94bcbd8e3fddfd9617f4950f35e633362890cc50a8b3"
+            }
+          },
+          {
+            "id": "newlegacy-consumer",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/credential-transaction-20261025/child-signal-consumer-review.json",
+              "sha256": "784aad48f727b81c38c513f24358d34c4bd5fbed0bf2d6dbebf0a1dfdd52795a"
+            }
+          }
+        ]
+      },
+      {
+        "id": "corrected-sql-native-build03",
+        "kind": "NATIVE",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "credential-transaction-consistency"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "docs/UX_EXECUTION_LEDGER.md",
+          "src/account_password_transaction_tests.rs"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/bin/sh",
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/credential-transaction-20261025/native03/build-native.sh"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "BuildactualSQLinet+stockparentceiling correction withfresh03client; offline trustedownedCargo cache reuse, copynewartifacts tofreshstage, sourcebeforeafter+actualartifacthashes. Noauth/SQLwrite/rootpublication incompile. Priorrootbinaries/evidence unchanged.",
+        "prerequisites": [
+          {
+            "id": "actual-independent-changed-role-QA",
+            "status": "PASS",
+            "evidence": {
+              "path": "/tmp/osmap-epoch-consistency-review-20261025/sql-inet-role-boundary-tests.log",
+              "sha256": "10576c1e0936db1c4cee392cb98c7e214e7b80c37cc67df93dc55381bd7033a0"
+            }
+          }
+        ]
+      },
+      {
+        "id": "corrected-sql-own-package-rebuild03",
+        "kind": "NATIVE",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "credential-transaction-consistency"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "docs/UX_EXECUTION_LEDGER.md",
+          "src/account_password_transaction_tests.rs"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/bin/sh",
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/credential-transaction-20261025/native03/rebuild01/execute.sh"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "Scopedcargo clean-p osmap thenrebuildsamefrozen03source; keepdependenciescache/priorrootartifacts/stale03copies. Actualnewhashesmustdifferfromold0275/ee00, executeexactchangedrole/configtests onemittedlibtest. Noauth/credential/rootpublication.",
+        "prerequisites": [
+          {
+            "id": "actual-reviewed-source-QA",
+            "status": "PASS",
+            "evidence": {
+              "path": "/tmp/osmap-epoch-consistency-review-20261025/sql-inet-role-boundary-tests.log",
+              "sha256": "10576c1e0936db1c4cee392cb98c7e214e7b80c37cc67df93dc55381bd7033a0"
+            }
+          }
+        ]
+      },
+      {
+        "id": "ordinary-corrected-sql-credential-native03",
+        "kind": "NATIVE",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "credential-transaction-consistency"
+        ],
+        "test_ids": [
+          "S04-02-T03",
+          "S04-02-T04",
+          "S04-02-T07"
+        ],
+        "allowed_paths": [
+          "docs/UX_EXECUTION_LEDGER.md",
+          "src/account_password_transaction_tests.rs"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/bin/sh",
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/credential-transaction-20261025/native03/dispatch-transaction.sh"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "Onecompleteordinaryfresh03 guardedcredentialtransaction withactualcorrectedSQLrole+stockparent. Actualcurrentauth/TOTP/storedACK/hash/CAS/readback/epoch1/oldsessionrefusal+revocation/oldfirstnewauth/Bobpreservation. Root240/outer270/client60; actualhelperktracepsSonly forfirstfailure; exactconfig/helperrestore, prior4rows/epochs preserved, copiedkeydisposalonlyafterevidencereadback. NoextraSQLreadonlygate andnoambiguityretry.",
+        "prerequisites": [
+          {
+            "id": "independent-source-QA",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/credential-transaction-20261025/native03/sql-capability-source-review.json",
+              "sha256": "cce4151b3992be9a754690c2fdacde0e983c3635e62ade6a0c19fd8e328985eb"
+            }
+          },
+          {
+            "id": "reviewed-live-semantics",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/credential-transaction-20261025/native03/live-semantic-review.json",
+              "sha256": "cb3da4c2ae459ba08d11b0cdc894c5bafbb556ac827580ef32746c78a4432c69"
+            }
+          },
+          {
+            "id": "actual-fresh-emitted-build",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/credential-transaction-20261025/native03/rebuild01/rebuild.log",
+              "sha256": "926ada6e65c49575c3a670bc51f8bf34a3b9b15102faa92f359bef8bbb74934a"
+            }
+          },
+          {
+            "id": "mechanical-artifact-binding",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/credential-transaction-20261025/native03/final-artifact-binding.json",
+              "sha256": "c7da5902b49af945378768c2f2de96f34e4c6f1eee6b523bdfd4b83727f43cc0"
+            }
+          }
+        ]
+      },
+      {
+        "id": "sealed-sql-readonly-socket-option-trace",
+        "kind": "NATIVE",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "credential-transaction-consistency"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "docs/UX_EXECUTION_LEDGER.md",
+          "src/account_password_transaction_tests.rs"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/bin/sh",
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/credential-transaction-20261025/snapshot02/dispatch-snapshot.sh"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "SameemittedcurrentSQLsnapshotqualifier once/noStore/auth/hash/CAS/write, no newcompile. Exactsource-ownedPIDkdumpcnpsS (syscall/namei/pledge/signal/pinsyscalls ONLY; noIOargvENV) to identifyactualsocketfamily/option. Fivepriorrows/epochs/protectedpreserved; helperrestore; root90/outer120.",
+        "prerequisites": [
+          {
+            "id": "reviewed-whole-readonly-method",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/credential-transaction-20261025/snapshot01/snapshot-chain-review.json",
+              "sha256": "a41aa48631b48d4f5acebcff60dd06609ba32bc32e79feb0b083eb44d6c57d81"
+            }
+          },
+          {
+            "id": "actual-current-emitted-source",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/credential-transaction-20261025/native03/rebuild01/rebuild.log",
+              "sha256": "926ada6e65c49575c3a670bc51f8bf34a3b9b15102faa92f359bef8bbb74934a"
+            }
+          }
+        ]
+      },
+      {
+        "id": "sql-exec-error-native-build04",
+        "kind": "NATIVE",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "credential-transaction-consistency"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "docs/UX_EXECUTION_LEDGER.md",
+          "src/account_password_transaction_tests.rs"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/bin/sh",
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/credential-transaction-20261025/native04/build-native.sh"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "Buildactualsource-separatedstrictcurrent/SQLEXECerroronly, noaddedinet; scopedownpackagecleanretainstale/history/cachedeps, actualnewhashes andemittedrole/config1+1. IncludeOpenBSDnativepolicydenialfixture+fresh04fullclient inoneartifact. Noauth/SQLwrite/rootpublication duringcompile.",
+        "prerequisites": [
+          {
+            "id": "independent-exact-exec-policy-source",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/credential-transaction-20261025/native04/exec-policy-source-review.json",
+              "sha256": "2970ce127676811e41fb3fa7cd96c36f32ca98fbceb8b16a5d75cee2d264a9f6"
+            }
+          }
+        ]
+      },
+      {
+        "id": "ordinary-sql-exec-error-credential-native04",
+        "kind": "NATIVE",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "credential-transaction-consistency"
+        ],
+        "test_ids": [
+          "S04-02-T03",
+          "S04-02-T04",
+          "S04-02-T07"
+        ],
+        "allowed_paths": [
+          "docs/UX_EXECUTION_LEDGER.md",
+          "src/account_password_transaction_tests.rs"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/bin/sh",
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/credential-transaction-20261025/native04/dispatch-transaction.sh"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "Oneactor/samecurrentbuild: actualSQLexecpolicyDENIALnegative2beforeentropy/INSERT thencompletefresh04 guardedcredentialtransaction. Strictcurrent/originalrights; SQLexecdeniedoptionalIPsockopt ENOSYS. Actualcurrentauth/TOTP/ACK/hash/CAS/epoch1/twooldsessionsauthorityrefused+revoked/newcredentialsession/Bobpreserved. Preserve5priorrows/epochs, exactOSMAPconfig/helperrestore, psStraceprivate, copiedkeysdisposedonlyafterevidence. Noextraprerequisite/noambiguousretry.",
+        "prerequisites": [
+          {
+            "id": "reviewed-source-and-whole-actualchain",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/credential-transaction-20261025/native04/native-chain-review.json",
+              "sha256": "4862cb469c165d08c25caa11874976790e4dfb83a8c5e7f6b0bf996066238b98"
+            }
+          },
+          {
+            "id": "actual-current-emitted-build",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/credential-transaction-20261025/native04/build-native.log",
+              "sha256": "9dbe8fef7a3721ddfea11e57b02568cbcc5ccdc775fc8f0c04bb12ecab38ca43"
+            }
+          },
+          {
+            "id": "reviewed-exec-policy",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/credential-transaction-20261025/native04/exec-policy-source-review.json",
+              "sha256": "2970ce127676811e41fb3fa7cd96c36f32ca98fbceb8b16a5d75cee2d264a9f6"
+            }
+          }
+        ]
+      },
+      {
+        "id": "exact-new-transaction-fixture-retirement",
+        "kind": "NATIVE",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "credential-transaction-consistency"
+        ],
+        "test_ids": [
+          "S04-02-T03"
+        ],
+        "allowed_paths": [
+          "docs/UX_EXECUTION_LEDGER.md"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/bin/sh",
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/credential-transaction-20261025/cleanup/execute.sh"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "Only4newfixturefullrowdigestCAS/noFKtrigger/InnoDBrowlocks/skipreconnectonce; ACK4removed0remain before17exactkey/epochleaves withfreshidentity/hash/noopenrefs/durablebefore-unlinkevents+parentfsync. Protectedoriginals/AliceBobepochs preserved; no service/PID/recursive/old165resource operation. Unknownstopsnoretry; root90/outer120; diagnosticscollectionafterfailure.",
+        "prerequisites": [
+          {
+            "id": "independent-exact-cleanup-chain",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/credential-transaction-20261025/cleanup/independent-review.json",
+              "sha256": "408bdb9fb22b342fd9de1c5298773832b74941e13afa711ea904698a918d8ebf"
+            }
+          }
+        ]
       }
     ],
     "budget": {
@@ -33630,8 +34718,8 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "planned_action": null
   },
   "blocker": null,
-  "independent_next_action": "Review exactfourpublicrecords for signedcheckpoint; actualNative03result/source-order andpreservationindependentlyreconciled clear. AllproductMutation/epochadvance/session/HTTP/installed/T03/UAT remainopen.",
-  "updated_at": "2026-10-24T19:57:44Z"
+  "independent_next_action": "Native04actualresultCLEAR; finalpublicsource/recordsandmandatorydeliveryreview. Noadditionalauthenticationrefinement.",
+  "updated_at": "2026-10-25T06:28:11Z"
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->

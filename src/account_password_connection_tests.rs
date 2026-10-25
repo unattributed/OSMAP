@@ -20,6 +20,20 @@ const STAMP: &str = "20261018120000";
 const KEY: [u8; 64] = [b'a'; 64];
 const SESSION_KEY: [u8; 64] = [b'b'; 64];
 struct Auth;
+struct StoredEpochAuthority(PathBuf);
+impl EpochAuthority for StoredEpochAuthority {
+    fn admit(&self, account: &str, epoch: u64) -> Result<(), crate::account_admission::Error> {
+        let store = Store::open(&self.0, crate::openbsd::effective_uid())
+            .map_err(|_| crate::account_admission::Error::Unavailable)?;
+        let guard = store
+            .lock_before(account, Instant::now() + Duration::from_secs(2))
+            .map_err(|_| crate::account_admission::Error::Unavailable)?;
+        guard
+            .admission(Some(epoch))
+            .map(|_| ())
+            .map_err(|_| crate::account_admission::Error::Refused)
+    }
+}
 impl EpochAuthority for Auth {
     fn admit(&self, account: &str, epoch: u64) -> Result<(), crate::account_admission::Error> {
         if account == ACCOUNT && epoch == 3 {
@@ -148,7 +162,7 @@ impl CommandExecutor for Executor {
         })
     }
 }
-struct FixedEffects(Arc<Mutex<Trace>>);
+struct FixedEffects(Arc<Mutex<Trace>>, Option<std::sync::mpsc::Receiver<()>>);
 impl Effects for FixedEffects {
     fn authenticate(
         &self,
@@ -175,6 +189,11 @@ impl Effects for FixedEffects {
         Ok(())
     }
     fn finish_mail(&self, _: &str, _: Instant) -> Result<(), DependencyError> {
+        if let Some(closed) = &self.1 {
+            closed
+                .recv_timeout(Duration::from_secs(1))
+                .map_err(|_| DependencyError::Unavailable)?;
+        }
         self.0.lock().unwrap().finished = true;
         Ok(())
     }
@@ -184,7 +203,7 @@ impl Effects for FixedEffects {
 fn actual_guarded_socket_exchange_requires_pending_ack_eof_before_one_write() {
     // Real socket transport, file-session lease, epoch store and both MACs.
     // SQL and mail effects are explicitly scripted source-test dependencies.
-    for mode in ["complete", "trailing", "missing"] {
+    for mode in ["complete", "trailing", "missing", "lost-terminal"] {
         let scratch = Scratch::new();
         let session_root = scratch.root.join("sessions");
         fs::create_dir(&session_root).unwrap();
@@ -203,7 +222,7 @@ fn actual_guarded_socket_exchange_requires_pending_ack_eof_before_one_write() {
             600,
             300,
         )
-        .with_epoch_authority(Arc::new(Auth));
+        .with_epoch_authority(Arc::new(StoredEpochAuthority(scratch.epoch.clone())));
         let issued = sessions
             .issue_with_epoch(&context, ACCOUNT, RequiredSecondFactor::Totp, Some(3))
             .unwrap();
@@ -242,13 +261,17 @@ fn actual_guarded_socket_exchange_requires_pending_ack_eof_before_one_write() {
         let (mut client, server) = UnixStream::pair().unwrap();
         let keys = Keys::new(KEY, SESSION_KEY).unwrap();
         let deadline = Instant::now() + Duration::from_secs(3);
+        let (read_closed, observe_read_closed) = std::sync::mpsc::sync_channel(1);
         std::thread::scope(|scope| {
             let trace_server = trace.clone();
             let epoch = &scratch.epoch;
             let task = scope.spawn(move || {
                 let store = Store::open(epoch, crate::openbsd::effective_uid()).unwrap();
                 let backend = Backend::new(Executor(trace_server.clone()));
-                let effects = FixedEffects(trace_server);
+                let effects = FixedEffects(
+                    trace_server,
+                    (mode == "lost-terminal").then_some(observe_read_closed),
+                );
                 serve_once(
                     server,
                     crate::openbsd::effective_uid(),
@@ -307,22 +330,40 @@ fn actual_guarded_socket_exchange_requires_pending_ack_eof_before_one_write() {
                             }
                         }
                         client.shutdown(Shutdown::Write).unwrap();
+                        if mode == "lost-terminal" {
+                            // The issuer ACK has been sent, but the peer cannot
+                            // receive the terminal receipt. This must not roll
+                            // back the committed credential or epoch, or issue
+                            // a second SQL write to recover an acknowledgement.
+                            client.shutdown(Shutdown::Read).unwrap();
+                            read_closed.send(()).unwrap();
+                            return None;
+                        }
                         let reply =
                             read_frame(&mut client, crate::account_mutation::MAX_FRAME, deadline)
                                 .unwrap();
                         require_eof(&mut client, deadline).unwrap();
-                        crate::account_mutation::Verifier::default()
-                            .terminal_response(
-                                request,
-                                &reply,
-                                &KEY,
-                                SystemTimeProvider.unix_timestamp(),
-                            )
-                            .unwrap()
+                        Some(
+                            crate::account_mutation::Verifier::default()
+                                .terminal_response(
+                                    request,
+                                    &reply,
+                                    &KEY,
+                                    SystemTimeProvider.unix_timestamp(),
+                                )
+                                .unwrap(),
+                        )
                     })
                 })
                 .unwrap();
-            assert_eq!(task.join().unwrap(), Ok(()));
+            let served = task.join().unwrap();
+            if mode == "lost-terminal" {
+                assert_eq!(served, Err(Error::Transport));
+                assert!(outcome.is_none());
+                return;
+            }
+            assert_eq!(served, Ok(()));
+            let outcome = outcome.unwrap();
             if mode == "complete" {
                 assert!(matches!(
                     outcome.outcome(),
@@ -336,17 +377,26 @@ fn actual_guarded_socket_exchange_requires_pending_ack_eof_before_one_write() {
             }
         });
         let t = trace.lock().unwrap();
-        assert_eq!(t.sql, usize::from(mode == "complete"));
-        assert_eq!(t.finished, mode == "complete");
+        let committed = matches!(mode, "complete" | "lost-terminal");
+        assert_eq!(t.sql, usize::from(committed));
+        assert_eq!(t.finished, committed);
         let value: serde_json::Value =
             serde_json::from_slice(&fs::read(&scratch.record).unwrap()).unwrap();
         assert_eq!(
             value["state"],
-            if mode == "complete" {
-                "active"
-            } else {
-                "contained"
-            }
+            if committed { "active" } else { "contained" }
+        );
+        assert_eq!(value["epoch"], if committed { 4 } else { 3 });
+        // Session authority is re-read from the real on-disk Store after the
+        // connection has ended. A lost terminal receipt cannot preserve the
+        // previous session's authority or prevent fresh epoch4 admission once
+        // the credential and epoch really committed.
+        assert!(sessions.validate(&context, &issued.token).is_err());
+        assert_eq!(
+            sessions
+                .issue_with_epoch(&context, ACCOUNT, RequiredSecondFactor::Totp, Some(4))
+                .is_ok(),
+            committed
         );
     }
 }
@@ -358,7 +408,7 @@ fn wrong_kernel_peer_closes_without_read_or_state_change() {
     let store = Store::open(&scratch.epoch, crate::openbsd::effective_uid()).unwrap();
     let trace = Arc::new(Mutex::new(Trace::default()));
     let backend = Backend::new(Executor(trace.clone()));
-    let effects = FixedEffects(trace.clone());
+    let effects = FixedEffects(trace.clone(), None);
     let (mut client, server) = UnixStream::pair().unwrap();
     let result = serve_once(
         server,

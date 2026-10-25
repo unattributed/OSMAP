@@ -1,6 +1,53 @@
 use super::*;
 
 #[test]
+fn ordinary_process_diagnostics_reset_and_isolate_private_payloads_between_threads() {
+    reset_native_sql_read_diagnostic();
+    native_trace::stage(6);
+    native_trace::errno(&std::io::Error::new(
+        std::io::ErrorKind::PermissionDenied,
+        "private token=0123456789abcdef0123456789abcdef",
+    ));
+    native_trace::born(2345);
+    native_trace::status(Some(1));
+    native_trace::signal(None);
+    assert_eq!(native_sql_child_diagnostic(), [2345, 0]);
+    native_trace::status(None);
+    native_trace::signal(Some(libc::SIGABRT));
+    let stdout = b"private credential material";
+    let stderr = b"ERROR 1045 private account and SQL text";
+    native_trace::output(stdout, stderr);
+    let failed = native_sql_read_diagnostic();
+    assert_eq!(
+        failed,
+        [6, -1, -1, stdout.len() as i64, stderr.len() as i64, 1045]
+    );
+    assert_eq!(
+        native_sql_child_diagnostic(),
+        [2345, i64::from(libc::SIGABRT)]
+    );
+    std::thread::spawn(|| {
+        // Ordinary service workers must not inherit another request's result.
+        assert_eq!(native_sql_read_diagnostic(), [0, -1, -1, -1, -1, 0]);
+        assert_eq!(native_sql_child_diagnostic(), [0, -1]);
+        reset_native_sql_read_diagnostic();
+        native_trace::output(b"", b"ERROR abcd private error");
+        assert_eq!(native_sql_read_diagnostic(), [1, -1, -1, 0, 24, 0]);
+        assert_eq!(native_sql_child_diagnostic(), [0, -1]);
+    })
+    .join()
+    .unwrap();
+    assert_eq!(native_sql_read_diagnostic(), failed);
+    assert_eq!(
+        native_sql_child_diagnostic(),
+        [2345, i64::from(libc::SIGABRT)]
+    );
+    reset_native_sql_read_diagnostic();
+    assert_eq!(native_sql_read_diagnostic(), [1, -1, -1, -1, -1, 0]);
+    assert_eq!(native_sql_child_diagnostic(), [0, -1]);
+}
+
+#[test]
 fn fixed_commands_have_hash_only_isolation_and_no_caller_program() {
     let ps_args = ["-p", "123", "-o", "args="].map(str::to_owned).to_vec();
     if std::env::current_dir().unwrap() != std::path::Path::new("/") {
@@ -106,6 +153,9 @@ fn actual_duplex_retains_natural_exit_status_and_bounds_owned_cleanup() {
     assert_eq!(result.status_code, 7);
     assert_eq!(result.stdout, "fixed-result\n");
     assert_eq!(result.stderr, "fixed-error\n");
+    let [result_pid, result_signal] = native_sql_child_diagnostic();
+    assert!(result_pid > 1);
+    assert_eq!(result_signal, 0);
     let early = run(
         crate::auth::password_process_fixture_command("early_eof"),
         b"",
@@ -113,6 +163,9 @@ fn actual_duplex_retains_natural_exit_status_and_bounds_owned_cleanup() {
     )
     .unwrap();
     assert_eq!(early.status_code, 7);
+    let [early_pid, early_signal] = native_sql_child_diagnostic();
+    assert!(early_pid > 1);
+    assert_eq!(early_signal, 0);
     let started = Instant::now();
     assert!(run(
         crate::auth::password_process_fixture_command("blocked"),
@@ -121,6 +174,11 @@ fn actual_duplex_retains_natural_exit_status_and_bounds_owned_cleanup() {
     )
     .is_err());
     assert!(started.elapsed() < Duration::from_millis(700));
+    // This observed SIGKILL is the test's known cleanup action, rather than a
+    // reconstructed initiating failure. Both observations must remain distinct.
+    let [blocked_pid, blocked_signal] = native_sql_child_diagnostic();
+    assert!(blocked_pid > 1);
+    assert_eq!(blocked_signal, i64::from(libc::SIGKILL));
     // Deadline refusal with measured group cleanup does not latch uncertainty.
     assert!(!UNCERTAIN.load(Ordering::SeqCst));
 }

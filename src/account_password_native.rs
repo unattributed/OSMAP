@@ -91,6 +91,7 @@ struct Observation {
 pub(crate) struct PreparedChild {
     rules: Vec<(CString, CString)>,
     promises: CString,
+    exec_promises: CString,
     #[cfg(any(test, target_os = "openbsd"))]
     ids: (u32, u32),
     deadline: Instant,
@@ -101,6 +102,9 @@ impl PreparedChild {
     }
     pub(crate) fn promises(&self) -> &CStr {
         &self.promises
+    }
+    pub(crate) fn exec_promises(&self) -> &CStr {
+        &self.exec_promises
     }
     #[cfg(any(test, target_os = "openbsd"))]
     pub(crate) fn ids(&self) -> (u32, u32) {
@@ -819,6 +823,15 @@ fn prepared_paths(
             })
             .collect::<Result<_, Unavailable>>()?,
         promises: CString::new(promises).map_err(unavailable)?,
+        // The unmodified SQL client attempts an optional IP_TOS operation on
+        // its Unix socket. Deny that operation with ENOSYS after exec, while
+        // preserving strict pre-exec policy and the original capability set.
+        exec_promises: CString::new(if role == Role::Sql {
+            format!("{promises} error")
+        } else {
+            promises.to_owned()
+        })
+        .map_err(unavailable)?,
         #[cfg(any(test, target_os = "openbsd"))]
         ids: _ids,
         deadline,

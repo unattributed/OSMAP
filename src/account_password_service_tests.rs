@@ -165,6 +165,16 @@ impl Deps {
             }
         );
         self.trace.borrow_mut().events.push(name);
+        if self.failure == Some("epoch-persistence") && name == "finish" {
+            // Replace only this fixture's pending record after the SQL receipt
+            // and mail effects. The held guard must reject the changed inode
+            // before publishing an active epoch, while fresh readers still see
+            // the durable pending barrier and uncertainty marker.
+            let replacement = self.record.with_extension("replacement");
+            fs::write(&replacement, fs::read(&self.record).unwrap()).unwrap();
+            fs::set_permissions(&replacement, fs::Permissions::from_mode(0o600)).unwrap();
+            fs::rename(replacement, &self.record).unwrap();
+        }
         if self.failure == Some(name) {
             Err(DependencyError::Unavailable)
         } else {
@@ -404,6 +414,141 @@ fn failed_postwrite_effects_preserve_exact_time_and_never_reopen_account() {
     }
 }
 
+struct StoredEpochAuthority(PathBuf);
+impl crate::account_admission::EpochAuthority for StoredEpochAuthority {
+    fn admit(&self, account: &str, epoch: u64) -> Result<(), crate::account_admission::Error> {
+        let store = Store::open(&self.0, crate::openbsd::effective_uid())
+            .map_err(|_| crate::account_admission::Error::Unavailable)?;
+        let guard = store
+            .lock_before(account, deadline())
+            .map_err(|_| crate::account_admission::Error::Unavailable)?;
+        guard
+            .admission(Some(epoch))
+            .map(|_| ())
+            .map_err(|_| crate::account_admission::Error::Refused)
+    }
+}
+
+#[test]
+fn committed_write_with_failed_epoch_persistence_refuses_real_stored_sessions_after_restart() {
+    use crate::auth::{AuthenticationContext, RequiredSecondFactor};
+    use crate::session::{FileSessionStore, SessionService, SystemRandomSource};
+    use std::sync::Arc;
+
+    for failure in [None, Some("epoch-persistence")] {
+        let scratch = Scratch::new();
+        scratch.provision(ACCOUNT, "active");
+        scratch.provision(BOB, "active");
+        let bob_record = fs::read(scratch.record(BOB)).unwrap();
+        let sessions_root = scratch.0.join("sessions");
+        fs::create_dir(&sessions_root).unwrap();
+        fs::set_permissions(&sessions_root, fs::Permissions::from_mode(0o700)).unwrap();
+        let context = AuthenticationContext {
+            request_id: "password-epoch-persistence".into(),
+            remote_addr: "127.0.0.1".into(),
+            user_agent: "synthetic".into(),
+        };
+        let sessions = SessionService::new(
+            FileSessionStore::new(&sessions_root),
+            Clock,
+            SystemRandomSource,
+            3600,
+            1800,
+        )
+        .with_epoch_authority(Arc::new(StoredEpochAuthority(scratch.0.clone())));
+        let alice = sessions
+            .issue_with_epoch(&context, ACCOUNT, RequiredSecondFactor::Totp, Some(3))
+            .unwrap();
+        let bob = sessions
+            .issue_with_epoch(&context, BOB, RequiredSecondFactor::Totp, Some(3))
+            .unwrap();
+        assert!(sessions.validate(&context, &alice.token).is_ok());
+        assert!(sessions.validate(&context, &bob.token).is_ok());
+
+        let store = Store::open(&scratch.0, crate::openbsd::effective_uid()).unwrap();
+        let trace = Rc::new(RefCell::new(Trace::default()));
+        let backend = Backend::new(Executor {
+            trace: trace.clone(),
+            zero_rows: false,
+            malformed_receipt: false,
+        });
+        let deps = Deps {
+            trace: trace.clone(),
+            failure,
+            record: scratch.record(ACCOUNT),
+        };
+        let bytes = frame();
+        let mut service = Service::new(&store, &backend, &deps, &Clock, KEY);
+        let outcome = service.execute(&bytes, deadline()).unwrap().1;
+        assert_eq!(trace.borrow().sql_writes, 1);
+        assert!(trace.borrow().written);
+        assert_eq!(trace.borrow().stored_row, Some((hash(), STAMP.into())));
+        assert_eq!(trace.borrow().events.last(), Some(&"finish"));
+        let state = scratch.status();
+        assert_eq!(state["changed_at"], STAMP);
+        if failure.is_some() {
+            assert_eq!(
+                outcome,
+                Outcome::ChangedIncomplete {
+                    changed_at: STAMP.into()
+                }
+            );
+            assert_eq!(state["epoch"], 3);
+            assert_eq!(state["state"], "pending");
+            assert!(scratch
+                .0
+                .join(format!("{}.uncertain", Scratch::stem(ACCOUNT)))
+                .is_file());
+        } else {
+            assert_eq!(
+                outcome,
+                Outcome::Changed {
+                    epoch: 4,
+                    changed_at: STAMP.into()
+                }
+            );
+            assert_eq!(state["epoch"], 4);
+            assert_eq!(state["state"], "active");
+        }
+        drop(service);
+        drop(store);
+
+        let restarted_sessions = SessionService::new(
+            FileSessionStore::new(&sessions_root),
+            Clock,
+            SystemRandomSource,
+            3600,
+            1800,
+        )
+        .with_epoch_authority(Arc::new(StoredEpochAuthority(scratch.0.clone())));
+        assert!(restarted_sessions.validate(&context, &alice.token).is_err());
+        assert!(restarted_sessions.validate(&context, &bob.token).is_ok());
+        assert_eq!(fs::read(scratch.record(BOB)).unwrap(), bob_record);
+        assert!(restarted_sessions
+            .issue_with_epoch(&context, ACCOUNT, RequiredSecondFactor::Totp, Some(3))
+            .is_err());
+        let replacement = restarted_sessions.issue_with_epoch(
+            &context,
+            ACCOUNT,
+            RequiredSecondFactor::Totp,
+            Some(4),
+        );
+        assert_eq!(replacement.is_ok(), failure.is_none());
+        let restarted_store = Store::open(&scratch.0, crate::openbsd::effective_uid()).unwrap();
+        let mut restarted = Service::new(&restarted_store, &backend, &deps, &Clock, KEY);
+        assert_eq!(
+            restarted.execute(&bytes, deadline()).unwrap().1,
+            if failure.is_some() {
+                Outcome::Contained
+            } else {
+                Outcome::KnownRefused
+            }
+        );
+        assert_eq!(trace.borrow().sql_writes, 1);
+        assert_eq!(trace.borrow().stored_row, Some((hash(), STAMP.into())));
+    }
+}
+
 #[test]
 fn uncertain_prewrite_or_unknown_receipt_stays_contained() {
     for (failure, malformed, count) in [
@@ -472,5 +617,158 @@ fn invalid_hmac_expiry_and_preexisting_safety_state_never_dispatch() {
         }
         assert!(trace.borrow().events.is_empty());
         assert_eq!(fs::read(scratch.record(ACCOUNT)).unwrap(), before);
+    }
+}
+
+#[test]
+fn transaction_diagnostic_retains_failed_phase_through_settlement_without_private_fields() {
+    for (failure, zero_rows, malformed, phase, outcome) in [
+        (
+            Some("wrong-current"),
+            false,
+            false,
+            TransactionPhase::Authenticate,
+            "known_refused",
+        ),
+        (None, true, false, TransactionPhase::Cas, "known_refused"),
+        (
+            Some("preflight"),
+            false,
+            false,
+            TransactionPhase::Preflight,
+            "contained",
+        ),
+        (
+            Some("pending"),
+            false,
+            false,
+            TransactionPhase::PendingAck,
+            "contained",
+        ),
+        (
+            Some("before-write"),
+            false,
+            false,
+            TransactionPhase::BeforeWrite,
+            "contained",
+        ),
+        (None, false, true, TransactionPhase::Cas, "contained"),
+        (
+            Some("flush"),
+            false,
+            false,
+            TransactionPhase::Cache,
+            "changed_incomplete",
+        ),
+        (
+            Some("epoch-persistence"),
+            false,
+            false,
+            TransactionPhase::EpochComplete,
+            "changed_incomplete",
+        ),
+    ] {
+        let scratch = Scratch::new();
+        scratch.provision(ACCOUNT, "active");
+        let store = Store::open(&scratch.0, crate::openbsd::effective_uid()).unwrap();
+        let trace = Rc::new(RefCell::new(Trace::default()));
+        let backend = Backend::new(Executor {
+            trace: trace.clone(),
+            zero_rows,
+            malformed_receipt: malformed,
+        });
+        let deps = Deps {
+            trace,
+            failure,
+            record: scratch.record(ACCOUNT),
+        };
+        let mut service = Service::new(&store, &backend, &deps, &Clock, KEY);
+        let result = service.execute(&frame(), deadline());
+        assert_eq!(service.diagnostic_phase.get(), phase);
+        let mut bytes = Vec::new();
+        write_transaction_diagnostic(&mut bytes, phase, &result).unwrap();
+        let text = String::from_utf8(bytes).unwrap();
+        assert_eq!(text.lines().count(), 1);
+        assert!(text.starts_with(&format!(
+            "account_password_service stage=transaction_{} outcome={} ",
+            phase.tag(),
+            outcome
+        )));
+        for private in [ACCOUNT, CURRENT, NEW, STAMP] {
+            assert!(!text.contains(private));
+        }
+        assert!(text.len() < 300);
+    }
+}
+
+#[test]
+fn snapshot_and_hash_refusal_report_distinct_first_phases_without_executor_payload() {
+    struct RefusingExecutor {
+        inner: Executor,
+        refuse_hash: bool,
+    }
+    impl CommandExecutor for RefusingExecutor {
+        fn run_with_stdin_bytes(
+            &self,
+            _: &str,
+            _: &[String],
+            _: &[u8],
+        ) -> Result<CommandExecution, CommandExecutionError> {
+            panic!("bounded method required")
+        }
+        fn run_with_stdin_bytes_timeout_and_output_limit(
+            &self,
+            program: &str,
+            args: &[String],
+            input: &[u8],
+            timeout: Duration,
+            limit: usize,
+        ) -> Result<CommandExecution, CommandExecutionError> {
+            if (program == crate::account_password_backend::HASH_PROGRAM) == self.refuse_hash {
+                return Err(CommandExecutionError {
+                    reason: "private-executor-payload".into(),
+                });
+            }
+            self.inner
+                .run_with_stdin_bytes_timeout_and_output_limit(program, args, input, timeout, limit)
+        }
+    }
+    for refuse_hash in [false, true] {
+        let scratch = Scratch::new();
+        scratch.provision(ACCOUNT, "active");
+        let store = Store::open(&scratch.0, crate::openbsd::effective_uid()).unwrap();
+        let trace = Rc::new(RefCell::new(Trace::default()));
+        let backend = Backend::new(RefusingExecutor {
+            inner: Executor {
+                trace: trace.clone(),
+                zero_rows: false,
+                malformed_receipt: false,
+            },
+            refuse_hash,
+        });
+        let deps = Deps {
+            trace: trace.clone(),
+            failure: None,
+            record: scratch.record(ACCOUNT),
+        };
+        let mut service = Service::new(&store, &backend, &deps, &Clock, KEY);
+        let result = service.execute(&frame(), deadline());
+        assert!(matches!(result, Ok((_, Outcome::KnownRefused))));
+        let phase = if refuse_hash {
+            TransactionPhase::Hash
+        } else {
+            TransactionPhase::SnapshotRead
+        };
+        assert_eq!(service.diagnostic_phase.get(), phase);
+        let mut bytes = Vec::new();
+        write_transaction_diagnostic(&mut bytes, phase, &result).unwrap();
+        let text = String::from_utf8(bytes).unwrap();
+        assert!(text.contains(&format!(
+            "stage=transaction_{} outcome=known_refused",
+            phase.tag()
+        )));
+        assert!(!text.contains("private-executor-payload"));
+        assert_eq!(trace.borrow().sql_writes, 0);
+        assert_eq!(scratch.status()["state"], "active");
     }
 }

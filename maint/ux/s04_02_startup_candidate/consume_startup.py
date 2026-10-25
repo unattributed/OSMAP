@@ -146,6 +146,21 @@ def diagnostic_validators():
     return tuple(modules)
 
 
+@lru_cache(maxsize=1)
+def helper_diagnostic_validator():
+    path=Path(__file__).resolve().parent/'sources/backend/custody.py'
+    spec=importlib.util.spec_from_file_location('transaction_diagnostic_custody',path)
+    module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+    return module.valid_transaction_diagnostic
+
+
+def inspect_helper_transaction(helper):
+    value=helper.get('helper_transaction_diagnostic')if type(helper)is dict else None
+    if value is None or value=='UNKNOWN':return value
+    require(helper_diagnostic_validator()(value),'helper_transaction_diagnostic')
+    return dict(value)
+
+
 def inspect_native_diagnostic(actor,packet):
     """Only fixed source-owned diagnostics cross the final result boundary."""
     evidence=actor.get('native_diagnostic_evidence')
@@ -260,6 +275,7 @@ def inspect_mutation_failure(actor,packet):
     baseline=actor.get('initial_authority_digests',{});final=actor.get('final_authority',{})
     intents=actor.get('durable_intents',{});owned=actor.get('owned_effects_report',{})
     helper=actor.get('helper_diagnostic',{})
+    transaction=inspect_helper_transaction(helper)
     no_write=(actor.get('mutation_submission_started')is False
         and type(actor.get('mutation_requests'))is int and actor['mutation_requests']==0
         and actor.get('proven_before_submission_no_write')is True
@@ -306,6 +322,7 @@ def inspect_mutation_failure(actor,packet):
         'mutation_requests':actor.get('mutation_requests'),
         'final_authority':final,'durable_intents':intents,
         'http_failure_scalars':actor.get('http_failure_scalars'),
+        'helper_transaction_diagnostic':transaction,
         'actual_http_report':actor.get('actual_http_report'),'timings':actor.get('timings'),
         'source_commit':packet['source_commit'],
         'service_binary_sha256':packet['helper']['sha256'],
@@ -381,6 +398,7 @@ def inspect_mutation(actor,packet):
     require(ready['parent_prepare']is True and ready['parent_seal']is True
         and ready['service_binary_sha256']==packet['helper']['sha256'],'native_service')
     owned=actor['owned_effects_report'];helper=actor['helper_diagnostic']
+    transaction=inspect_helper_transaction(helper)
     require(all(owned[k]is True for k in ('cleanup_confirmed','public_original25_preserved',
         'public_master_preserved','owned_sql_hash_uids_absent'))
         and actor['frontend_cleanup']=={'requests_stopped':True,'disposed':True}
@@ -392,6 +410,7 @@ def inspect_mutation(actor,packet):
             'authoritative_verification_seconds','cleanup_seconds')),'mutation_timings')
     return {'result':'PASS','disposition':'CONFIRMED','password_mutation':True,
         'native_diagnostic_evidence':diagnostic,
+        'helper_transaction_diagnostic':transaction,
         'mutation_requests':1,'authoritative_snapshots':snapshots,'mutation_evidence':proof,
         'mail_witness':mail,'timings':timings,'cleanup_confirmed':True,
         'source_commit':packet['source_commit'],'service_binary_sha256':packet['helper']['sha256'],

@@ -41,6 +41,109 @@ pub(crate) enum Error {
     Unavailable,
 }
 
+// Fixed per-request phases share the existing service stderr channel. No
+// request field, exception text or native stream is formatted into this record.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum TransactionPhase {
+    Input,
+    Freshness,
+    Admission,
+    Authorize,
+    Begin,
+    SnapshotRead,
+    Authenticate,
+    Preflight,
+    PendingAck,
+    Hash,
+    BeforeWrite,
+    Cas,
+    WriteTime,
+    Cache,
+    OldVerifier,
+    NewVerifier,
+    Mail,
+    EpochComplete,
+}
+impl TransactionPhase {
+    fn tag(self) -> &'static str {
+        match self {
+            Self::Input => "input",
+            Self::Freshness => "freshness",
+            Self::Admission => "admission",
+            Self::Authorize => "authorize",
+            Self::Begin => "begin",
+            Self::SnapshotRead => "snapshot_read",
+            Self::Authenticate => "authenticate",
+            Self::Preflight => "preflight",
+            Self::PendingAck => "pending_ack",
+            Self::Hash => "hash",
+            Self::BeforeWrite => "before_write",
+            Self::Cas => "cas",
+            Self::WriteTime => "write_time",
+            Self::Cache => "cache",
+            Self::OldVerifier => "old_verifier",
+            Self::NewVerifier => "new_verifier",
+            Self::Mail => "mail",
+            Self::EpochComplete => "epoch_complete",
+        }
+    }
+    fn backend(self) -> bool {
+        matches!(
+            self,
+            Self::SnapshotRead | Self::Hash | Self::BeforeWrite | Self::Cas
+        )
+    }
+}
+fn write_transaction_diagnostic(
+    output: &mut impl std::io::Write,
+    phase: TransactionPhase,
+    result: &Result<(Request, Outcome), Error>,
+) -> std::io::Result<()> {
+    let outcome = match result {
+        Ok((_, Outcome::Changed { .. })) => return Ok(()),
+        Ok((_, Outcome::KnownRefused)) => "known_refused",
+        Ok((_, Outcome::Contained)) => "contained",
+        Ok((_, Outcome::ChangedIncomplete { .. })) => "changed_incomplete",
+        Err(Error::Authentication) => "authentication",
+        Err(Error::Expired) => "expired",
+        Err(Error::Unavailable) => "unavailable",
+    };
+    // The old native scalars are progress observations, not inferred causes.
+    // Omit irrelevant/stale command observations on non-backend phases.
+    let [stage, errno, status, stdout, stderr, sql_code] = if phase.backend() {
+        crate::account_password_process::native_sql_read_diagnostic()
+    } else {
+        [0, -1, -1, -1, -1, 0]
+    };
+    let [child_pid, term_signal] = if phase.backend() {
+        crate::account_password_process::native_sql_child_diagnostic()
+    } else {
+        [0, -1]
+    };
+    let bounded = |value, low, high, unknown| {
+        if (low..=high).contains(&value) {
+            value
+        } else {
+            unknown
+        }
+    };
+    let parser = if phase == TransactionPhase::SnapshotRead {
+        let value = crate::account_password_backend::native_read_diagnostic();
+        if value <= 11 {
+            value
+        } else {
+            0
+        }
+    } else {
+        0
+    };
+    writeln!(output,
+        "account_password_service stage=transaction_{} outcome={} process_stage={} errno={} status={} stdout_bytes={} stderr_bytes={} sql_code={} parser_phase={} child_pid={} term_signal={}",
+        phase.tag(), outcome, bounded(stage,0,9,0), bounded(errno,0,4095,-1),
+        bounded(status,0,255,-1), bounded(stdout,0,65537,-1), bounded(stderr,0,65537,-1),
+        bounded(sql_code,1000,9999,0), parser, bounded(child_pid,2,i64::from(i32::MAX),0), bounded(term_signal,0,127,-1))
+}
+
 pub(crate) struct Service<'a, E, D, C> {
     store: &'a Store,
     backend: &'a Backend<E>,
@@ -48,6 +151,7 @@ pub(crate) struct Service<'a, E, D, C> {
     clock: &'a C,
     key: Vec<u8>,
     verifier: Verifier,
+    diagnostic_phase: Cell<TransactionPhase>,
 }
 impl<'a, E: CommandExecutor, D: Dependencies, C: TimeProvider> Service<'a, E, D, C> {
     pub(crate) fn new(
@@ -68,12 +172,31 @@ impl<'a, E: CommandExecutor, D: Dependencies, C: TimeProvider> Service<'a, E, D,
                 Vec::new()
             },
             verifier: Verifier::default(),
+            diagnostic_phase: Cell::new(TransactionPhase::Input),
         }
     }
 
     /// Returns the authenticated consumed request solely so the fixed server
     /// can issue its matching signed response. An error has no success meaning.
     pub(crate) fn execute(
+        &mut self,
+        frame: &[u8],
+        deadline: Instant,
+    ) -> Result<(Request, Outcome), Error> {
+        self.diagnostic_phase.set(TransactionPhase::Input);
+        crate::account_password_backend::reset_native_read_diagnostic();
+        crate::account_password_process::reset_native_sql_read_diagnostic();
+        let result = self.execute_inner(frame, deadline);
+        // Exactly one diagnostic precedes the terminal reply. Settlement and
+        // containment never overwrite the phase of the first failed operation.
+        let _ = write_transaction_diagnostic(
+            &mut std::io::stderr().lock(),
+            self.diagnostic_phase.get(),
+            &result,
+        );
+        result
+    }
+    fn execute_inner(
         &mut self,
         frame: &[u8],
         deadline: Instant,
@@ -94,6 +217,7 @@ impl<'a, E: CommandExecutor, D: Dependencies, C: TimeProvider> Service<'a, E, D,
                     _ => Error::Authentication,
                 })?;
         let mut sampled = now;
+        self.diagnostic_phase.set(TransactionPhase::Freshness);
         self.fresh(&request, deadline, &mut sampled)?;
         let outcome = self.change(&request, deadline, &mut sampled)?;
         Ok((request, outcome))
@@ -106,6 +230,7 @@ impl<'a, E: CommandExecutor, D: Dependencies, C: TimeProvider> Service<'a, E, D,
             || now < request.issued()
             || now >= request.expires()
         {
+            self.diagnostic_phase.set(TransactionPhase::Freshness);
             return Err(Error::Expired);
         }
         *sampled = now;
@@ -118,6 +243,7 @@ impl<'a, E: CommandExecutor, D: Dependencies, C: TimeProvider> Service<'a, E, D,
         deadline: Instant,
         sampled: &mut u64,
     ) -> Result<Outcome, Error> {
+        self.diagnostic_phase.set(TransactionPhase::Admission);
         let mut guard = self
             .store
             .lock_before(request.account(), deadline)
@@ -129,6 +255,7 @@ impl<'a, E: CommandExecutor, D: Dependencies, C: TimeProvider> Service<'a, E, D,
             };
         }
         self.fresh(request, deadline, sampled)?;
+        self.diagnostic_phase.set(TransactionPhase::Authorize);
         match self.dependencies.authorize(request, deadline) {
             Ok(()) => {}
             Err(DependencyError::Refused) => return Ok(Outcome::KnownRefused),
@@ -138,6 +265,7 @@ impl<'a, E: CommandExecutor, D: Dependencies, C: TimeProvider> Service<'a, E, D,
         // No separate journal is necessary: this durable pending transition
         // consumes the action before any primary/read/preflight dispatch. A
         // settled no-write refusal restores active while retaining the intent.
+        self.diagnostic_phase.set(TransactionPhase::Begin);
         if guard
             .begin(request.epoch(), request.intent_reference(), *sampled)
             .is_err()
@@ -153,12 +281,14 @@ impl<'a, E: CommandExecutor, D: Dependencies, C: TimeProvider> Service<'a, E, D,
             // Keep the comparison row from before authoritative authentication.
             // A concurrent external credential change must conflict with this
             // snapshot at the existing CAS, rather than become its new baseline.
+            self.diagnostic_phase.set(TransactionPhase::SnapshotRead);
             let snapshot = self
                 .backend
                 .read(request.account(), deadline)
                 .map_err(|_| DependencyError::Refused)?;
             self.fresh(request, deadline, sampled)
                 .map_err(|_| DependencyError::Unavailable)?;
+            self.diagnostic_phase.set(TransactionPhase::Authenticate);
             match self
                 .dependencies
                 .authenticate(request.account(), request.current(), deadline)?
@@ -168,6 +298,7 @@ impl<'a, E: CommandExecutor, D: Dependencies, C: TimeProvider> Service<'a, E, D,
             }
             self.fresh(request, deadline, sampled)
                 .map_err(|_| DependencyError::Unavailable)?;
+            self.diagnostic_phase.set(TransactionPhase::Preflight);
             self.dependencies.preflight(request, deadline)?;
             self.fresh(request, deadline, sampled)
                 .map_err(|_| DependencyError::Unavailable)?;
@@ -180,6 +311,7 @@ impl<'a, E: CommandExecutor, D: Dependencies, C: TimeProvider> Service<'a, E, D,
         };
         // Losing the pending/issuer handshake never reopens the old authority,
         // even though the credential SQL has not yet been dispatched.
+        self.diagnostic_phase.set(TransactionPhase::PendingAck);
         if self
             .dependencies
             .confirm_pending(request, deadline)
@@ -189,7 +321,9 @@ impl<'a, E: CommandExecutor, D: Dependencies, C: TimeProvider> Service<'a, E, D,
             return Ok(contained(&mut guard, None));
         }
         let callback_uncertain = Cell::new(false);
+        self.diagnostic_phase.set(TransactionPhase::Hash);
         let replaced = self.backend.replace(snapshot, request, deadline, || {
+            self.diagnostic_phase.set(TransactionPhase::BeforeWrite);
             if self.fresh(request, deadline, sampled).is_err() {
                 callback_uncertain.set(true);
                 return Err(BackendError::Refused);
@@ -205,6 +339,7 @@ impl<'a, E: CommandExecutor, D: Dependencies, C: TimeProvider> Service<'a, E, D,
                 callback_uncertain.set(true);
                 return Err(BackendError::Refused);
             }
+            self.diagnostic_phase.set(TransactionPhase::Cas);
             Ok(())
         });
         let receipt = match replaced {
@@ -222,15 +357,18 @@ impl<'a, E: CommandExecutor, D: Dependencies, C: TimeProvider> Service<'a, E, D,
         };
         let stamp = receipt.changed_at().to_owned();
         // Persist verified write timing BEFORE cache/auth/mail operations.
+        self.diagnostic_phase.set(TransactionPhase::WriteTime);
         if guard.record_verified_write(&stamp).is_err() {
             return Ok(contained(&mut guard, Some(stamp)));
         }
         let finish = (|| {
             self.fresh(request, deadline, sampled)?;
+            self.diagnostic_phase.set(TransactionPhase::Cache);
             self.dependencies
                 .invalidate_cache(request.account(), deadline)
                 .map_err(|_| Error::Unavailable)?;
             self.fresh(request, deadline, sampled)?;
+            self.diagnostic_phase.set(TransactionPhase::OldVerifier);
             if self
                 .dependencies
                 .authenticate(request.account(), request.current(), deadline)
@@ -239,6 +377,7 @@ impl<'a, E: CommandExecutor, D: Dependencies, C: TimeProvider> Service<'a, E, D,
                 return Err(Error::Unavailable);
             }
             self.fresh(request, deadline, sampled)?;
+            self.diagnostic_phase.set(TransactionPhase::NewVerifier);
             if !self
                 .dependencies
                 .authenticate(request.account(), request.new_password(), deadline)
@@ -247,10 +386,12 @@ impl<'a, E: CommandExecutor, D: Dependencies, C: TimeProvider> Service<'a, E, D,
                 return Err(Error::Unavailable);
             }
             self.fresh(request, deadline, sampled)?;
+            self.diagnostic_phase.set(TransactionPhase::Mail);
             self.dependencies
                 .finish_mail(request.account(), deadline)
                 .map_err(|_| Error::Unavailable)?;
             self.fresh(request, deadline, sampled)?;
+            self.diagnostic_phase.set(TransactionPhase::EpochComplete);
             let status = guard.complete().map_err(|_| Error::Unavailable)?;
             if status.state != State::Active
                 || status.epoch != request.epoch() + 1

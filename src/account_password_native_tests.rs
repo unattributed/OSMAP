@@ -412,6 +412,66 @@ fn native_roles_keep_exact_separate_commands_and_existing_permission_boundaries(
     )
     .unwrap();
     assert_eq!(sql.ids(), (1008, 1008));
+    let sql_promises: std::collections::BTreeSet<_> = sql
+        .promises()
+        .to_str()
+        .unwrap()
+        .split_whitespace()
+        .collect();
+    let sql_exec: std::collections::BTreeSet<_> = sql
+        .exec_promises()
+        .to_str()
+        .unwrap()
+        .split_whitespace()
+        .collect();
+    let parent: std::collections::BTreeSet<_> =
+        crate::account_password_confinement::STOCK_PARENT_PROMISES
+            .split_whitespace()
+            .collect();
+    let parent_exec: std::collections::BTreeSet<_> =
+        crate::account_password_confinement::STOCK_PARENT_EXEC_PROMISES
+            .split_whitespace()
+            .collect();
+    assert_eq!(
+        sql_promises,
+        std::collections::BTreeSet::from(["stdio", "rpath", "unix", "prot_exec", "exec", "tty"])
+    );
+    assert_eq!(
+        sql_exec
+            .difference(&sql_promises)
+            .copied()
+            .collect::<Vec<_>>(),
+        ["error"]
+    );
+    assert!(sql_promises.is_subset(&sql_exec));
+    assert!(sql_promises.is_subset(&parent));
+    assert!(sql_exec.is_subset(&parent_exec));
+    assert!(!parent.contains("inet"));
+    assert!(!parent.contains("error"));
+    assert_eq!(
+        parent,
+        std::collections::BTreeSet::from([
+            "stdio",
+            "rpath",
+            "wpath",
+            "cpath",
+            "fattr",
+            "flock",
+            "unix",
+            "proc",
+            "exec",
+            "prot_exec",
+            "id",
+            "getpw",
+            "ps",
+            "tty"
+        ])
+    );
+    assert!(parent.is_subset(&parent_exec));
+    assert_eq!(
+        parent_exec.difference(&parent).copied().collect::<Vec<_>>(),
+        ["error"]
+    );
     assert!(!sql.promises().to_bytes().windows(5).any(|v| v == b"wpath"));
     for (path, access) in sql.rules() {
         if access.to_bytes().contains(&b'w') {
@@ -419,7 +479,7 @@ fn native_roles_keep_exact_separate_commands_and_existing_permission_boundaries(
         }
         assert!(!access.to_bytes().contains(&b'c'));
     }
-    for role in [Role::Hash, Role::Primary, Role::Control] {
+    for role in [Role::Hash, Role::Primary, Role::StockPrimary, Role::Control] {
         let plan = prepared_paths(
             role,
             (1005, 1005),
@@ -427,6 +487,13 @@ fn native_roles_keep_exact_separate_commands_and_existing_permission_boundaries(
             &[HASH_PROGRAM, "/usr/lib/libc.so.current"],
         )
         .unwrap();
+        assert_eq!(plan.promises(), plan.exec_promises());
+        assert!(!plan
+            .promises()
+            .to_str()
+            .unwrap()
+            .split_whitespace()
+            .any(|promise| matches!(promise, "inet" | "error")));
         for (path, access) in plan.rules() {
             if access.to_bytes().contains(&b'c') {
                 assert_eq!(path.to_bytes(), b"/dev/null");
@@ -620,4 +687,23 @@ fn named_private_role_uses_unique_current_identity_without_historical_uid() {
         let shared = passwd.replace("_dovecot:*:519:519", &format!("_dovecot:*:{uid}:519"));
         assert!(selected(shared.as_bytes(), group.as_bytes(), b"_osmapprimary").is_err());
     }
+}
+
+#[cfg(target_os = "openbsd")]
+/// Denial disposition only. The ordinary complete transaction separately
+/// qualifies actual SQL exec, credentials, write, epoch and browser sessions.
+#[test]
+#[ignore = "requires reviewed root OpenBSD fork policy test and absent exact private scratch"]
+fn native_sql_exec_policy_denies_network_and_file_creation() -> Result<(), &'static str> {
+    if !crate::openbsd::password_native_authority() {
+        return Err("root OpenBSD SQL policy authority required");
+    }
+    let plan = prepared_paths(
+        Role::Sql,
+        (0, 0), // IDs are not applied: a root process must also obey this policy.
+        Instant::now() + Duration::from_secs(5),
+        &[crate::account_password_backend::SQL_PROGRAM],
+    )
+    .map_err(|_| "source-owned SQL exec policy unavailable")?;
+    crate::openbsd::sql_exec_denial_policy_fixture(plan.exec_promises())
 }

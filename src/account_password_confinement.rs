@@ -6,9 +6,17 @@ use std::ffi::{CStr, CString};
 use std::sync::Arc;
 use std::time::Instant;
 
+// Current parent policy remains strict. Only a future SQL exec selects errno
+// disposition; other child roles retain strict current and exec policies.
+pub(crate) const STOCK_PARENT_PROMISES: &str =
+    "stdio rpath wpath cpath fattr flock unix proc exec prot_exec id getpw ps tty";
+pub(crate) const STOCK_PARENT_EXEC_PROMISES: &str =
+    "stdio rpath wpath cpath fattr flock unix proc exec prot_exec id getpw ps tty error";
+
 pub(crate) struct ParentPlan {
     rules: Vec<(CString, CString)>,
     promises: CString,
+    exec_promises: CString,
     custody: Arc<Custody>,
     seal: Option<crate::openbsd::PasswordParentSeal>,
     legacy_metadata: bool,
@@ -106,6 +114,7 @@ impl ParentPlan {
             // setpw/id needed by fixed child role drops; recvfd only for exact
             // IMAP descriptor registration. Children install narrower plans.
             promises: CString::new("stdio rpath wpath cpath fattr flock unix inet recvfd proc exec prot_exec id getpw ps pf tty").map_err(|_| Unavailable)?,
+            exec_promises: CString::new("stdio rpath wpath cpath fattr flock unix inet recvfd proc exec prot_exec id getpw ps pf tty error").map_err(|_| Unavailable)?,
             custody, seal: None, legacy_metadata: true,
         })
     }
@@ -196,10 +205,8 @@ impl ParentPlan {
             .collect::<Result<_, Unavailable>>()?;
         Ok(Self {
             rules,
-            promises: CString::new(
-                "stdio rpath wpath cpath fattr flock unix proc exec prot_exec id getpw ps tty",
-            )
-            .map_err(|_| Unavailable)?,
+            promises: CString::new(STOCK_PARENT_PROMISES).map_err(|_| Unavailable)?,
+            exec_promises: CString::new(STOCK_PARENT_EXEC_PROMISES).map_err(|_| Unavailable)?,
             custody,
             seal: None,
             legacy_metadata: false,
@@ -210,6 +217,9 @@ impl ParentPlan {
     }
     pub(crate) fn promises(&self) -> &CStr {
         &self.promises
+    }
+    pub(crate) fn exec_promises(&self) -> &CStr {
+        &self.exec_promises
     }
     pub(crate) fn recheck(&self, deadline: Instant) -> Result<(), Unavailable> {
         if self

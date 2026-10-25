@@ -5,6 +5,7 @@ host/privilege/copy seams replaced. Control sockets, pipes, collection, protocol
 persistence, direct-child signaling and reap execute unchanged on this host.
 """
 import contextlib
+import ast
 import hashlib
 import importlib.util
 import json
@@ -251,6 +252,98 @@ def exercise(case):
 
 
 class NativeDiagnosticTests(unittest.TestCase):
+    def transaction_modules(self):
+        def load(name, leaf):
+            spec=importlib.util.spec_from_file_location(name,HERE/leaf)
+            module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+            return module
+        custody=load('transaction_diagnostic_custody_test','sources/backend/custody.py')
+        consumer=load('transaction_diagnostic_consumer_test','consume_startup.py')
+        # Importing stock_qualification intentionally requires protected native
+        # custody. Execute its actual pure parser with the unchanged base module.
+        path=HERE/'sources/backend/stock_qualification.py'
+        tree=ast.parse(path.read_text())
+        nodes=[node for node in tree.body if
+            isinstance(node,ast.FunctionDef)and node.name=='helper_trace_scalars'
+            or isinstance(node,ast.Assign)and any(isinstance(target,ast.Name)
+                and target.id.startswith('HELPER_TRACE_')or isinstance(target,ast.Name)
+                and target.id=='HELPER_WORKER_TRACE_PREFIXES'for target in node.targets)]
+        namespace={'base':custody}
+        exec(compile(ast.Module(body=nodes,type_ignores=[]),str(path),'exec'),namespace)
+        return custody,consumer,namespace['helper_trace_scalars']
+
+    def consume_transaction(self, consumer, projection):
+        packet={'source_commit':'1'*40,'helper':{'sha256':'2'*64},'web':{'sha256':'3'*64}}
+        result=consumer.inspect_mutation_failure({'helper_diagnostic':projection},packet)
+        self.assertEqual(result['functional_result'],'FAIL')
+        self.assertEqual(result['authoritative_state_certainty'],'UNKNOWN')
+        self.assertFalse(result['cleanup_confirmed'])
+        return result['helper_transaction_diagnostic']
+
+    def test_transaction_helper_parser_and_final_consumer_reject_payload_and_partial_records(self):
+        custody,consumer,parse=self.transaction_modules()
+        line=(b'account_password_service stage=transaction_snapshot_read outcome=known_refused '
+            b'process_stage=9 errno=-1 status=1 stdout_bytes=0 stderr_bytes=52 sql_code=1045 parser_phase=4\n')
+        value=self.consume_transaction(consumer,parse(b'',line))
+        self.assertEqual(value['phase'],'snapshot_read')
+        self.assertEqual(value['sql_code'],1045)
+        for malformed in (line[:-1],line+line,b'account_password_service stage=trans\n',
+                b'other helper line\naccount_password_service stage=trans',
+                b'other helper line\naccount_password_service stage=trans\n',
+                line+b'account_password_service stage=trans',
+                line+b'account_password_service stage=trans\n',line.replace(b'errno=-1',b'errno=5000'),
+                line.replace(b'parser_phase=4',b'parser_phase=True'),
+                line.replace(b'known_refused',b'private_secret'),
+                line[:-1]+b' private=secret\n',b'prefix '+line):
+            self.assertEqual(self.consume_transaction(consumer,parse(b'',malformed)),'UNKNOWN')
+        self.assertEqual(self.consume_transaction(consumer,parse(b'private',line)),'UNKNOWN')
+        for bad in ({**value,'password':'secret'},{**value,'phase':'private'},
+                {**value,'status':True},{**value,'stdout_bytes':65538}):
+            with self.assertRaisesRegex(RuntimeError,'helper_transaction_diagnostic'):
+                self.consume_transaction(consumer,{'helper_transaction_diagnostic':bad})
+        self.assertIsNone(self.consume_transaction(consumer,parse(b'',b'')))
+        self.assertFalse(custody.valid_transaction_diagnostic({'private':'secret'}))
+
+    def test_transaction_child_pid_and_signal_pair_preserves_legacy_and_rejects_partial_shape(self):
+        _,consumer,parse=self.transaction_modules()
+        legacy=(b'account_password_service stage=transaction_snapshot_read outcome=known_refused '
+            b'process_stage=9 errno=-1 status=-1 stdout_bytes=0 stderr_bytes=0 sql_code=0 parser_phase=4')
+        old=self.consume_transaction(consumer,parse(b'',legacy+b'\n'))
+        self.assertNotIn('child_pid',old)
+        for pid,signal in ((0,-1),(2345,0),(2345,6),(2147483647,127)):
+            line=legacy+f' child_pid={pid} term_signal={signal}\n'.encode()
+            value=self.consume_transaction(consumer,parse(b'',line))
+            self.assertEqual((value['child_pid'],value['term_signal']),(pid,signal))
+            self.assertEqual(self.consume_transaction(consumer,parse(b'',line[:-1])),'UNKNOWN')
+        for suffix in (b' child_pid=2345',b' term_signal=6',b' child_pid=1 term_signal=6',
+                b' child_pid=-1 term_signal=6',b' child_pid=2147483648 term_signal=6',
+                b' child_pid=2345 term_signal=-2',b' child_pid=2345 term_signal=128',
+                b' child_pid=2345 term_signal=True',b' child_pid=02345 term_signal=6',
+                b' term_signal=6 child_pid=2345',b' child_pid=2345 term_signal=6 token=private'):
+            self.assertEqual(self.consume_transaction(consumer,parse(b'',legacy+suffix+b'\n')),'UNKNOWN')
+        for bad in ({**old,'child_pid':2345},{**old,'term_signal':6},
+                {**old,'child_pid':True,'term_signal':6},
+                {**old,'child_pid':2345,'term_signal':128}):
+            with self.assertRaisesRegex(RuntimeError,'helper_transaction_diagnostic'):
+                self.consume_transaction(consumer,{'helper_transaction_diagnostic':bad})
+
+    @unittest.skipUnless(os.environ.get('OSMAP_TEST_TRANSACTION_EMITTER_BINARY'),
+        'focused Rust transaction emitter artifact not supplied')
+    def test_actual_rust_transaction_line_through_helper_parser_and_final_consumer(self):
+        _,consumer,parse=self.transaction_modules()
+        process=subprocess.run([os.environ['OSMAP_TEST_TRANSACTION_EMITTER_BINARY'],'--exact',
+            'account_password_service::tests::external_credential_change_during_authentication_conflicts_with_original_snapshot',
+            '--nocapture'],stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=10,check=True)
+        self.assertIn(b'1 passed; 0 failed',process.stdout)
+        # Libtest framing is separate stdout; stderr is the actual ordinary
+        # Service diagnostic channel passed unchanged through both consumers.
+        value=self.consume_transaction(consumer,parse(b'',process.stderr))
+        self.assertIsInstance(value,dict)
+        self.assertEqual((value['phase'],value['outcome']),('cas','known_refused'))
+        self.assertEqual((value['child_pid'],value['term_signal']),(0,-1))
+        self.assertEqual(self.consume_transaction(consumer,parse(b'',process.stderr[:-1])),'UNKNOWN')
+        self.assertEqual(self.consume_transaction(consumer,parse(b'',process.stderr+process.stderr)),'UNKNOWN')
+
     def test_construction_detail_closed_schema_and_bounded_streams(self):
         value={'schema':'osmap-account-construction-v1','operation':'socket_validation',
             'check':'canonicalize','category':'absent'}

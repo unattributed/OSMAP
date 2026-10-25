@@ -69,7 +69,8 @@ HELPER_TRACE_ERRORS = ('Invalid', 'Refused', 'Unavailable', 'Authentication', 'R
 
 def helper_trace_scalars(stdout,stderr):
     result={'helper_trace_known':False,'helper_trace_worker':False,
-        'helper_trace_operation_id':0,'helper_trace_category_id':0,'helper_trace_error_id':0}
+        'helper_trace_operation_id':0,'helper_trace_category_id':0,'helper_trace_error_id':0,
+        'helper_transaction_diagnostic':base.parse_transaction_diagnostic(stdout,stderr)}
     if stdout or len(stderr)>4096 or not stderr.isascii():return result
     for stage,operation in (('stock_operation',65),('stock_admission',66)):
         for error,name in enumerate(HELPER_TRACE_ERRORS):

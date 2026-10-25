@@ -1,5 +1,37 @@
 # Current Project Status
 
+2026-10-25 UTC — **Native credential transaction and epoch/session consistency PASS.**
+The ordinary Rust helper completed the guarded conditional password change.
+Actual client1 PASS26.67s: authoritative current credential/TOTP preparation,
+pending ACK, OSMAP hash/CAS/readback, active epoch1, obsolete password refused
+first/new accepted, two old stored tokens denied before revocation, exactly two
+revoked, new epoch session valid and Bob preserved. Native policy negative1
+PASS0.04s: AF_INET socket and file creation deniedENOSYS, both children reaped,
+no forbidden file. Five prior full rows/protected state were preserved; the
+original OSMAP configuration/helper were restored, helper wait0, and current
+three copied keys removed after durable ownership/readback checks.
+
+Failure analysis identified an optional IP socket option on an established
+Unix SQL connection. Strict current/future-exec policies now preserve denial as
+ENOSYS in the executed SQL utility without added network capability. Earlier
+failures, the insufficient inet candidate and rejected stale Cargo artifacts
+remain retained. Local Store/session fault checks cover epoch publication and
+lost terminal reception with scripted SQL effects. Native positive, local
+injected failures and installed browser acceptance remain distinct.
+See [the transaction record](UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md).
+Installed HTTP/TOTP-file qualification, full T03/S04-02 and UAT remain open.
+
+The four new disposable transaction mailbox rows were subsequently retired
+by exact full-row-digest conditional deletion with four removals/zero remaining
+acknowledged. All twelve copied client keys (three in native04, nine in the
+retirement action) and the eight fixture epoch/lock leaves were removed after
+fresh ownership/hash/open-reference checks and durable evidence. Twelve protected
+files were preserved. Private build/session/diagnostic directories and historical
+resources outside this exact footprint remain retained. Cleanup is independent
+of the already verified native functional PASS.
+
+
+
 2026-10-24 UTC — **Live current-credential verification PASS on obsd1.**
 Signed Rust source `8f09b48844bc3668f7531e3dba0f2c977307e9aa` now has actual
 native evidence at the next functional boundary. The real sealed helper and

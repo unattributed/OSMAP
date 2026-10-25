@@ -954,3 +954,7 @@ mod diagnostic_tests {
         assert_eq!(EndpointKind::Mutation.stage(), "stock_mutation");
     }
 }
+
+#[cfg(test)]
+#[path = "account_password_transaction_tests.rs"]
+mod transaction_tests;

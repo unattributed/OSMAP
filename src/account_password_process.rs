@@ -4,7 +4,7 @@
 use crate::auth::{CommandExecution, CommandExecutionError, CommandExecutor};
 use std::io::{ErrorKind, Read, Write};
 use std::os::fd::AsRawFd;
-use std::os::unix::process::CommandExt;
+use std::os::unix::process::{CommandExt, ExitStatusExt};
 use std::process::{Child, Command, Stdio};
 use std::sync::{
     atomic::{AtomicBool, Ordering},
@@ -19,14 +19,13 @@ const LIMIT: usize = 4096;
 const INPUT_LIMIT: usize = 16384;
 const RESERVE: Duration = Duration::from_millis(100);
 
-// Scalars for the existing ignored native SQL read failure only. No raw
-// utility, SQL, password or verifier bytes leave this test-only observation.
-#[cfg(test)]
+// Existing bounded scalar execution observations. No raw utility, SQL,
+// password or verifier bytes enter a service diagnostic.
 mod native_trace {
     use std::cell::Cell;
-    std::thread_local! { static VALUE: Cell<[i64; 6]> = const { Cell::new([0,-1,-1,-1,-1,0]) }; }
+    std::thread_local! { static VALUE: Cell<[i64; 8]> = const { Cell::new([0,-1,-1,-1,-1,0,0,-1]) }; }
     pub(super) fn reset() {
-        VALUE.with(|value| value.set([1, -1, -1, -1, -1, 0]));
+        VALUE.with(|value| value.set([1, -1, -1, -1, -1, 0, 0, -1]));
     }
     pub(super) fn stage(stage: u8) {
         VALUE.with(|value| {
@@ -39,6 +38,20 @@ mod native_trace {
         VALUE.with(|value| {
             let mut row = value.get();
             row[1] = error.raw_os_error().map_or(-1, i64::from);
+            value.set(row);
+        });
+    }
+    pub(super) fn born(pid: u32) {
+        VALUE.with(|value| {
+            let mut row = value.get();
+            row[6] = i64::from(pid);
+            value.set(row);
+        });
+    }
+    pub(super) fn signal(signal: Option<i32>) {
+        VALUE.with(|value| {
+            let mut row = value.get();
+            row[7] = signal.map_or(0, i64::from);
             value.set(row);
         });
     }
@@ -69,14 +82,27 @@ mod native_trace {
             value.set(row);
         });
     }
-    #[cfg(target_os = "openbsd")]
     pub(super) fn snapshot() -> [i64; 6] {
-        VALUE.with(Cell::get)
+        VALUE.with(|value| {
+            let row = value.get();
+            [row[0], row[1], row[2], row[3], row[4], row[5]]
+        })
+    }
+    pub(super) fn child() -> [i64; 2] {
+        VALUE.with(|value| {
+            let row = value.get();
+            [row[6], row[7]]
+        })
     }
 }
-#[cfg(all(test, target_os = "openbsd"))]
+pub(crate) fn reset_native_sql_read_diagnostic() {
+    native_trace::reset();
+}
 pub(crate) fn native_sql_read_diagnostic() -> [i64; 6] {
     native_trace::snapshot()
+}
+pub(crate) fn native_sql_child_diagnostic() -> [i64; 2] {
+    native_trace::child()
 }
 
 /// Original operation deadline is held by the trusted helper, not renewed per
@@ -812,7 +838,6 @@ impl CommandExecutor for FixedExecutor<'_> {
         timeout: Duration,
         limit: usize,
     ) -> Result<CommandExecution, CommandExecutionError> {
-        #[cfg(test)]
         native_trace::reset();
         let primary = args.len() == crate::account_password_mail::PRIMARY.len() + 1
             && args
@@ -835,30 +860,26 @@ impl CommandExecutor for FixedExecutor<'_> {
         } else {
             self.hash
         };
-        #[cfg(test)]
         native_trace::stage(2);
         let actual_args = profile.command_args(args).map_err(|_| unavailable())?;
         let args = actual_args.as_slice();
-        let plan = profile
-            .prepare(program, args, deadline)
-            .map_err(|_| unavailable())?;
-        #[cfg(test)]
+        let plan = profile.prepare(program, args, deadline).map_err(|_| {
+            native_trace::reset();
+            native_trace::stage(2);
+            unavailable()
+        })?;
         native_trace::stage(3);
         let mut command =
             crate::auth::password_backend_command(program, args).map_err(|_error| {
-                #[cfg(test)]
                 native_trace::errno(&_error);
                 unavailable()
             })?;
-        #[cfg(test)]
         native_trace::stage(4);
         crate::openbsd::install_password_child_profile(&mut command, plan).map_err(|_error| {
-            #[cfg(test)]
             native_trace::errno(&_error);
             unavailable()
         })?;
         let result = run(command, input, deadline);
-        #[cfg(test)]
         if result.is_ok() {
             native_trace::stage(9);
         }
@@ -952,18 +973,16 @@ fn run_with_group(
     if fstat_seal.is_none() {
         command.process_group(0);
     }
-    #[cfg(test)]
     native_trace::stage(5);
     let mut child = command.spawn().map_err(|_error| {
-        #[cfg(test)]
         native_trace::errno(&_error);
         metadata_failure(metadata_errno_tag("spawn", &_error), labeled)
     })?;
-    #[cfg(test)]
     native_trace::stage(6);
     // Keep the born leader unreaped until signalling its exclusively owned
     // group. No historical/reusable PID is used as cleanup authority.
     let pid = child.id();
+    native_trace::born(pid);
     let result = (|| {
         let mut input_pipe = Some(
             child
@@ -1039,8 +1058,9 @@ fn run_with_group(
     })();
     // Kill while this unreaped Popen leader still leases the PGID; then reap
     // and prove absence. Descendants holding pipes cannot prolong a reader join.
-    #[cfg(test)]
-    native_trace::stage(7);
+    if result.is_ok() {
+        native_trace::stage(7);
+    }
     // The fixed no-fork fstat retains its purpose worker's PGID. Its direct
     // unreaped Child is cleaned here; the parent owns the whole worker group.
     // All ordinary password roles preserve their existing separate groups.
@@ -1058,13 +1078,14 @@ fn run_with_group(
             let gone = fstat_seal.is_some()
                 || crate::openbsd::process_group_exists(pid).is_ok_and(|exists| !exists);
             if gone && Instant::now() < deadline {
-                #[cfg(test)]
                 {
                     native_trace::status(status.code());
-                    native_trace::stage(8);
+                    native_trace::signal(status.signal());
+                    if result.is_ok() {
+                        native_trace::stage(8);
+                    }
                 }
                 let (stdout, stderr) = result?;
-                #[cfg(test)]
                 {
                     native_trace::output(&stdout, &stderr);
                 }

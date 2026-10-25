@@ -5,14 +5,15 @@ use crate::account_mutation::Request;
 use crate::auth::CommandExecutor;
 use std::time::{Duration, Instant};
 
-#[cfg(test)]
+// Existing bounded scalar diagnostics are also retained by ordinary requests.
 std::thread_local! { static NATIVE_READ_PHASE: std::cell::Cell<u8> = const { std::cell::Cell::new(0) }; }
-#[cfg(test)]
 fn native_read_phase(phase: u8) {
     NATIVE_READ_PHASE.with(|value| value.set(phase));
 }
-#[cfg(all(test, target_os = "openbsd"))]
-fn native_read_diagnostic() -> u8 {
+pub(crate) fn reset_native_read_diagnostic() {
+    native_read_phase(0);
+}
+pub(crate) fn native_read_diagnostic() -> u8 {
     NATIVE_READ_PHASE.with(std::cell::Cell::get)
 }
 
@@ -70,42 +71,34 @@ impl<E: CommandExecutor> Backend<E> {
     }
 
     pub fn read(&self, account: &str, deadline: Instant) -> Result<Snapshot, Error> {
-        #[cfg(test)]
         native_read_phase(1);
         crate::account_admission::valid_account(account).map_err(|_| Error::Refused)?;
         let query = format!(
             "SELECT HEX(password),DATE_FORMAT(modified,'%Y%m%d%H%i%s'),active,smtp_active FROM mailbox WHERE BINARY username=BINARY {} LIMIT 2;\n",
             sql_hex(account)
         );
-        #[cfg(test)]
         native_read_phase(2);
         let text = self.run(SQL_PROGRAM, SQL_ARGS, query.as_bytes(), deadline, false)?;
-        #[cfg(test)]
         native_read_phase(6);
         let lines: Vec<_> = text.lines().collect();
         if lines.len() != 1 {
             return Err(Error::Refused);
         }
-        #[cfg(test)]
         native_read_phase(7);
         let fields: Vec<_> = lines[0].split('\t').collect();
         if fields.len() != 4 || fields[2] != "1" || !matches!(fields[3], "0" | "1") {
             return Err(Error::Refused);
         }
-        #[cfg(test)]
         native_read_phase(8);
         let password_hash = decode_hash(fields[0]).ok_or(Error::Refused)?;
-        #[cfg(test)]
         native_read_phase(9);
         if !supported_hash(&password_hash) {
             return Err(Error::Refused);
         }
-        #[cfg(test)]
         native_read_phase(10);
         if !crate::account_mutation::changed_at_valid(fields[1]) {
             return Err(Error::Refused);
         }
-        #[cfg(test)]
         native_read_phase(11);
         Ok(Snapshot {
             account: account.into(),
@@ -217,7 +210,6 @@ impl<E: CommandExecutor> Backend<E> {
             return Err(Error::Refused);
         }
         let args: Vec<_> = args.iter().map(|value| (*value).into()).collect();
-        #[cfg(test)]
         if !dispatched_write {
             native_read_phase(3);
         }
@@ -231,7 +223,6 @@ impl<E: CommandExecutor> Backend<E> {
                 OUTPUT_LIMIT,
             )
             .map_err(|_| failure(dispatched_write))?;
-        #[cfg(test)]
         if !dispatched_write {
             native_read_phase(4);
         }
@@ -245,7 +236,6 @@ impl<E: CommandExecutor> Backend<E> {
         // A valid write receipt may preserve its exact time after deadline;
         // its caller parses before classifying expiry as Unconfirmed.
         if !dispatched_write {
-            #[cfg(test)]
             native_read_phase(5);
             check_deadline(deadline)?;
         }

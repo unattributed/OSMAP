@@ -56,6 +56,62 @@ GRANTS = {('username', 'SELECT'), ('password', 'SELECT'), ('modified', 'SELECT')
 
 
 DIAGNOSTIC_FIELDS = ('stage', 'errno', 'status', 'stdout_len', 'stderr_len', 'sql_code', 'parser')
+TRANSACTION_PHASES = frozenset('input freshness admission authorize begin snapshot_read authenticate preflight pending_ack hash before_write cas write_time cache old_verifier new_verifier mail epoch_complete'.split())
+TRANSACTION_OUTCOMES = frozenset('known_refused contained changed_incomplete authentication expired unavailable'.split())
+TRANSACTION_SCALARS = ('process_stage', 'errno', 'status', 'stdout_bytes', 'stderr_bytes', 'sql_code', 'parser_phase')
+TRANSACTION_CHILD_SCALARS = ('child_pid', 'term_signal')
+TRANSACTION_MARKER = b'account_password_service stage=transaction_'
+
+
+def valid_transaction_diagnostic(value):
+    original = {'phase', 'outcome'} | set(TRANSACTION_SCALARS)
+    if type(value) is not dict or set(value) not in (original, original | set(TRANSACTION_CHILD_SCALARS)):
+        return False
+    if type(value['phase']) is not str or value['phase'] not in TRANSACTION_PHASES \
+            or type(value['outcome']) is not str or value['outcome'] not in TRANSACTION_OUTCOMES \
+            or not all(type(value[key]) is int for key in TRANSACTION_SCALARS):
+        return False
+    if 'child_pid' in value and not (all(type(value[key]) is int for key in TRANSACTION_CHILD_SCALARS)
+            and (value['child_pid'] == 0 or 2 <= value['child_pid'] <= 2147483647)
+            and -1 <= value['term_signal'] <= 127):
+        return False
+    return (0 <= value['process_stage'] <= 9
+            and -1 <= value['errno'] <= 4095 and -1 <= value['status'] <= 255
+            and -1 <= value['stdout_bytes'] <= 65537 and -1 <= value['stderr_bytes'] <= 65537
+            and (value['sql_code'] == 0 or 1000 <= value['sql_code'] <= 9999)
+            and 0 <= value['parser_phase'] <= 11)
+
+
+def parse_transaction_diagnostic(stdout, stderr):
+    # Preserve only one complete closed record. Duplicates, partial markers and
+    # arbitrary suffixes retain UNKNOWN; no native output enters the result.
+    if type(stdout) is not bytes or type(stderr) is not bytes:
+        return 'UNKNOWN'
+    marker = b'account_password_service stage=transaction'
+    physical = stderr.split(b'\n')
+    if not any(marker in line or (line and marker.startswith(line))for line in physical):
+        return None
+    if stdout or len(stderr) > 4096 or not stderr.isascii():
+        return 'UNKNOWN'
+    if marker in physical[-1] or (physical[-1] and marker.startswith(physical[-1])):
+        return 'UNKNOWN'
+    lines = [line for line in physical[:-1] if marker in line or (line and marker.startswith(line))]
+    if len(lines) != 1:
+        return 'UNKNOWN'
+    scalar = rb'(0|-1|[1-9][0-9]{0,4})'
+    pattern = TRANSACTION_MARKER + rb'([a-z_]+) outcome=([a-z_]+) ' + b' '.join(
+        key.encode('ascii') + b'=' + scalar for key in TRANSACTION_SCALARS)
+    pattern += rb'(?: child_pid=(0|[1-9][0-9]{0,9}) term_signal=(0|-1|[1-9][0-9]{0,2}))?'
+    match = re.fullmatch(pattern, lines[0])
+    if match is None:
+        return 'UNKNOWN'
+    phase, outcome, *numbers = match.groups()
+    numbers, child = numbers[:len(TRANSACTION_SCALARS)], numbers[len(TRANSACTION_SCALARS):]
+    value = {'phase': phase.decode('ascii'), 'outcome': outcome.decode('ascii'),
+        **dict(zip(TRANSACTION_SCALARS, map(int, numbers)))}
+    if child[0] is not None:
+        value.update(zip(TRANSACTION_CHILD_SCALARS, map(int, child)))
+    return value if valid_transaction_diagnostic(value) else 'UNKNOWN'
 
 
 def valid_read_diagnostic(value):
