@@ -20351,6 +20351,72 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "reference": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/loader02/native-observation.log: readonly question answered; ordinal45 libdriver_mysql selected /usr/local/lib/libmariadb.so.31.0 is a root-owned package symlink to mysql/libmariadb.so.31.0. No application/auth/SQL dispatch. Archive5ea74c99 with275 regular unique members verified.",
         "elapsed_status": "UNKNOWN",
         "elapsed_seconds": null
+      },
+      {
+        "id": "S04-02-INSTALLED-build03",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "source_revision": "769784bd64d9414b57addd30a687c09ae782f2f3",
+        "change_reference": "Observed native package alias custody failure; source reviewed focused6PASS and resultdiscovery2PASS. Only affected normalWeb rebuild.",
+        "success_chain_review": {
+          "reviewer": "/root/transaction_review",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/alias-final-source-independent-review.json",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "reference": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/build03/native-build.log: normalWeb f2356800fcac6b8fbd329bd04fb1b0d359e78c101c67d22a26bfa156b53754d7;24943368bytes; source769784b. compileonly; no app/auth/SQL.",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 45.0
+      },
+      {
+        "id": "S04-02-INSTALLED-loader03",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "source_revision": "769784bd64d9414b57addd30a687c09ae782f2f3",
+        "change_reference": "Allremainingselectedleafpreflight with exactobservedpackagealias exception afteractualsourcecorrection/build; avoidblindfullstartup/fixtureaccumulation.",
+        "success_chain_review": {
+          "reviewer": "/root/transaction_review",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/loader02/independent-review.json",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "reference": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/loader03/native-observation.log: questionanswered58targetsPASS thenfixedpostdrop lddEACCES; readonlyonly, noapp/auth/SQL. Archiveb1d70052/358regularuniquefiles.",
+        "elapsed_status": "UNKNOWN",
+        "elapsed_seconds": null
+      },
+      {
+        "id": "S04-02-INSTALLED-loader04",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "source_revision": "769784bd64d9414b57addd30a687c09ae782f2f3",
+        "change_reference": "Exactpostdropwrapperexecpromisesincompatibility; comparevalidatedfixedloaderTRACE withoutwrapper usingactualELF/interpreterproof. Excludeearlieremptyddpipeline.",
+        "success_chain_review": {
+          "reviewer": "/root/transaction_review",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/loader03/postdrop-interpreter-bytes.txt",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "reference": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/loader04/native-observation.log: same_osmap fixedTRACE exit0/out1068/err0; protectedhash/statunchanged; actualRustparser11leavesPASS; archived7regularunique dca6b606. No main/app/auth/SQL.",
+        "elapsed_status": "UNKNOWN",
+        "elapsed_seconds": null
       }
     ],
     "prior_investigations": [
@@ -35219,6 +35285,120 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
             "evidence": {
               "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/loader02/independent-review.json",
               "sha256": "0c3041fcd925babfd3d11fb0d196dffdd070c0fa28fecc1927b12bc7d503b689"
+            }
+          }
+        ]
+      },
+      {
+        "id": "ordinary-installed-web-build03",
+        "kind": "NATIVE",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "single-host-readiness"
+        ],
+        "test_ids": [
+          "S04-02-T03",
+          "S04-02-T06"
+        ],
+        "allowed_paths": [
+          "docs/UX_EXECUTION_LEDGER.md"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/bin/sh",
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/build03/build.sh"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "Build only normal Web at signed769784b with exact protected MariaDB library alias and lost-response result discovery; scoped own-packageclean, dependencycachereuse, nativebeforeaftermanifest and newbinaryrequired. No app/helper/auth/SQL.",
+        "prerequisites": [
+          {
+            "id": "independently-reviewed-current-source",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/alias-final-source-independent-review.json",
+              "sha256": "6a46167ad0a72e4dac4195f8df3d61bdd1c8b76b5aa9f5761f9a252e412e2e16"
+            }
+          }
+        ]
+      },
+      {
+        "id": "ordinary-installed-loader03",
+        "kind": "DISCOVERY",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "single-host-readiness"
+        ],
+        "test_ids": [
+          "S04-02-T03",
+          "S04-02-T06"
+        ],
+        "allowed_paths": [
+          "docs/UX_EXECUTION_LEDGER.md"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/bin/sh",
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/loader03/observe.sh"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "Read-only all remaining exact loader/leaf preflight with only observed rootMariaDBalias31→exactmysqltarget exception. Root and epoch_failure_engineer independentlyreviewed final2fc73363 delta, transaction_review CLEAR. No app/helper/auth/SQL/dependencypermissions actions.",
+        "prerequisites": [
+          {
+            "id": "reviewed-base-observer",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/loader02/independent-review.json",
+              "sha256": "0c3041fcd925babfd3d11fb0d196dffdd070c0fa28fecc1927b12bc7d503b689"
+            }
+          }
+        ]
+      },
+      {
+        "id": "ordinary-installed-postdrop-direct-trace",
+        "kind": "DISCOVERY",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "single-host-readiness"
+        ],
+        "test_ids": [
+          "S04-02-T03",
+          "S04-02-T06"
+        ],
+        "allowed_paths": [
+          "docs/UX_EXECUTION_LEDGER.md"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/bin/sh",
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/loader04/observe.sh"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "Fixed protected readable dynamicPostdrop exactnativePT_INTERP +validatedloaderTRACEexitcontract, same_osmap cleanenv directLD_TRACE noargs/nullstdin/5sec; actualbeforeafterhash+stat. Timeoutoutsideenv. Independenttransaction_review CLEAR actual19B+officialloaderbranch; noMailmain/app/auth/SQL/config actions.",
+        "prerequisites": [
+          {
+            "id": "exact-native-interpreter-byte-proof",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/loader03/postdrop-interpreter-bytes.txt",
+              "sha256": "eaf20c9c1294c067a82ddba1e0991565ab59ae127579abdf7b01c1196635869e"
             }
           }
         ]

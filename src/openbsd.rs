@@ -2041,9 +2041,14 @@ fn parse_installed_libraries(output: &str, program: &Path) -> Result<Vec<PathBuf
 
 #[cfg(unix)]
 fn dependency_identity(path: &Path) -> Result<[u64; 10], String> {
-    use std::os::unix::fs::MetadataExt;
     let m = fs::symlink_metadata(path).map_err(|_| "dependency identity unavailable")?;
-    Ok([
+    Ok(dependency_metadata_identity(&m))
+}
+
+#[cfg(unix)]
+fn dependency_metadata_identity(m: &fs::Metadata) -> [u64; 10] {
+    use std::os::unix::fs::MetadataExt;
+    [
         m.dev(),
         m.ino(),
         m.mode() as u64,
@@ -2054,7 +2059,144 @@ fn dependency_identity(path: &Path) -> Result<[u64; 10], String> {
         m.mtime_nsec() as u64,
         m.ctime() as u64,
         m.ctime_nsec() as u64,
-    ])
+    ]
+}
+
+fn native_elf_machine() -> Option<u64> {
+    match std::env::consts::ARCH {
+        "x86" => Some(3),
+        "x86_64" => Some(62),
+        "arm" => Some(40),
+        "aarch64" => Some(183),
+        "mips" | "mips64" => Some(8),
+        "powerpc" => Some(20),
+        "powerpc64" => Some(21),
+        "riscv64" => Some(243),
+        "sparc64" => Some(43),
+        _ => None,
+    }
+}
+
+/// Inspect only the bounded ELF prefix needed to prove that the fixed trace
+/// variable reaches the native loader. No script/static/alternate interpreter
+/// may enter the direct postdrop trace route.
+fn postdrop_trace_elf_prefix(bytes: &[u8]) -> bool {
+    (|| -> Option<()> {
+        let class = if cfg!(target_pointer_width = "64") {
+            2
+        } else {
+            1
+        };
+        let endian = if cfg!(target_endian = "little") { 1 } else { 2 };
+        if bytes.get(..4)? != b"\x7fELF"
+            || *bytes.get(4)? != class
+            || *bytes.get(5)? != endian
+            || *bytes.get(6)? != 1
+            || bytes.len() > 65536
+        {
+            return None;
+        }
+        let read = |offset: usize, width: usize| -> Option<u64> {
+            let mut value = 0;
+            for (index, byte) in bytes
+                .get(offset..offset.checked_add(width)?)?
+                .iter()
+                .enumerate()
+            {
+                let shift = if endian == 1 {
+                    index
+                } else {
+                    width - index - 1
+                };
+                value |= u64::from(*byte) << (shift * 8);
+            }
+            Some(value)
+        };
+        let (ehsize, phsize, phoff_at, size_at, offset_at, filesz_at, flags_at) = if class == 2 {
+            (64, 56, 32, 52, 8, 32, 4)
+        } else {
+            (52, 32, 28, 40, 4, 16, 24)
+        };
+        if !matches!(read(16, 2)?, 2 | 3)
+            || read(18, 2)? != native_elf_machine()?
+            || read(20, 4)? != 1
+            || read(size_at, 2)? != ehsize as u64
+            || read(size_at + 2, 2)? != phsize as u64
+        {
+            return None;
+        }
+        let offset_width = if class == 2 { 8 } else { 4 };
+        let phoff = usize::try_from(read(phoff_at, offset_width)?).ok()?;
+        let phnum = usize::try_from(read(size_at + 4, 2)?).ok()?;
+        if phoff < ehsize || phnum == 0 || phnum == 0xffff {
+            return None;
+        }
+        bytes.get(phoff..phoff.checked_add(phnum.checked_mul(phsize)?)?)?;
+        let mut interpreter = 0;
+        let mut dynamic = 0;
+        let mut executable_load = false;
+        for index in 0..phnum {
+            let at = phoff + index * phsize;
+            match read(at, 4)? {
+                1 => executable_load |= read(at + flags_at, 4)? & 1 != 0,
+                2 => dynamic += 1,
+                3 => {
+                    interpreter += 1;
+                    let start = usize::try_from(read(at + offset_at, offset_width)?).ok()?;
+                    let size = usize::try_from(read(at + filesz_at, offset_width)?).ok()?;
+                    if bytes.get(start..start.checked_add(size)?)? != b"/usr/libexec/ld.so\0" {
+                        return None;
+                    }
+                }
+                _ => {}
+            }
+        }
+        (interpreter == 1 && dynamic == 1 && executable_load).then_some(())
+    })()
+    .is_some()
+}
+
+#[cfg(unix)]
+pub(crate) fn validate_postdrop_trace_program() -> io::Result<()> {
+    use std::io::Read;
+    use std::os::unix::fs::OpenOptionsExt;
+    if !cfg!(target_os = "openbsd") {
+        return Err(io::Error::new(
+            io::ErrorKind::Unsupported,
+            "postdrop loader trace requires OpenBSD",
+        ));
+    }
+    let check = || -> Result<(), String> {
+        let path = Path::new("/usr/local/sbin/postdrop");
+        trusted_dependency_program(path)?;
+        let before = dependency_identity(path)?;
+        let file = fs::OpenOptions::new()
+            .read(true)
+            .custom_flags(libc::O_NOFOLLOW | libc::O_CLOEXEC)
+            .open(path)
+            .map_err(|_| "postdrop trace object unavailable")?;
+        if dependency_metadata_identity(
+            &file
+                .metadata()
+                .map_err(|_| "postdrop trace object unavailable")?,
+        ) != before
+        {
+            return Err("postdrop trace object changed".into());
+        }
+        let mut prefix = Vec::new();
+        file.take(65536)
+            .read_to_end(&mut prefix)
+            .map_err(|_| "postdrop trace header unavailable")?;
+        if !postdrop_trace_elf_prefix(&prefix) {
+            return Err("postdrop trace interpreter refused".into());
+        }
+        trusted_dependency_program(path)?;
+        if dependency_identity(path)? != before {
+            return Err("postdrop trace object changed".into());
+        }
+        Ok(())
+    };
+    check().map_err(|reason| io::Error::new(io::ErrorKind::PermissionDenied, reason))
 }
 
 /// The installed MariaDB package exposes its library through one relative
@@ -2198,8 +2340,14 @@ pub(crate) fn installed_library_paths_before(
         .iter()
         .map(|p| dependency_identity(p))
         .collect::<Result<Vec<_>, _>>()?;
-    let mut command = crate::auth::installed_dependencies_command(program)
-        .map_err(|_| "dependency command refused")?;
+    let mut command = crate::auth::installed_dependencies_command(program).map_err(|error| {
+        if program == Path::new("/usr/local/sbin/postdrop") {
+            // The preparation guard emits only fixed source-owned reasons.
+            format!("postdrop trace preparation refused: {error}")
+        } else {
+            "dependency command refused".into()
+        }
+    })?;
     command
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
@@ -3427,6 +3575,125 @@ mod tests {
         assert!(!dependency_program_allowed(Path::new(
             "/usr/local/lib/dovecot/../evil.so"
         )));
+    }
+
+    #[test]
+    fn postdrop_trace_elf_requires_native_dynamic_object_and_exact_loader_before_exec() {
+        let class = if cfg!(target_pointer_width = "64") {
+            2
+        } else {
+            1
+        };
+        let little = cfg!(target_endian = "little");
+        let (ehsize, phsize, phoff_at, size_at, offset_at, filesz_at, flags_at) = if class == 2 {
+            (64, 56, 32, 52, 8, 32, 4)
+        } else {
+            (52, 32, 28, 40, 4, 16, 24)
+        };
+        let width = if class == 2 { 8 } else { 4 };
+        let put = |bytes: &mut [u8], at: usize, width: usize, value: u64| {
+            for index in 0..width {
+                let shift = if little { index } else { width - index - 1 };
+                bytes[at + index] = (value >> (shift * 8)) as u8;
+            }
+        };
+        let mut valid = vec![0; 1024];
+        valid[..4].copy_from_slice(b"\x7fELF");
+        valid[4] = class;
+        valid[5] = if little { 1 } else { 2 };
+        valid[6] = 1;
+        put(&mut valid, 16, 2, 3);
+        put(&mut valid, 18, 2, native_elf_machine().unwrap());
+        put(&mut valid, 20, 4, 1);
+        put(&mut valid, phoff_at, width, ehsize as u64);
+        put(&mut valid, size_at, 2, ehsize as u64);
+        put(&mut valid, size_at + 2, 2, phsize as u64);
+        put(&mut valid, size_at + 4, 2, 3);
+        put(&mut valid, ehsize, 4, 1); // executable PT_LOAD
+        put(&mut valid, ehsize + flags_at, 4, 1);
+        put(&mut valid, ehsize + phsize, 4, 2); // PT_DYNAMIC
+        let interp_header = ehsize + phsize * 2;
+        put(&mut valid, interp_header, 4, 3);
+        put(&mut valid, interp_header + offset_at, width, 0x350);
+        put(&mut valid, interp_header + filesz_at, width, 19);
+        valid[0x350..0x363].copy_from_slice(b"/usr/libexec/ld.so\0");
+        assert!(postdrop_trace_elf_prefix(&valid));
+        let mut executable = valid.clone();
+        put(&mut executable, 16, 2, 2);
+        assert!(postdrop_trace_elf_prefix(&executable));
+        assert!(!postdrop_trace_elf_prefix(b"#!/bin/sh\nexit 0\n"));
+        assert!(!postdrop_trace_elf_prefix(&valid[..16]));
+        assert!(!postdrop_trace_elf_prefix(
+            &valid[..interp_header + phsize - 1]
+        ));
+        for (label, at, width, value) in [
+            ("foreign class", 4, 1, if class == 2 { 1 } else { 2 }),
+            ("foreign byte order", 5, 1, if little { 2 } else { 1 }),
+            ("ident version", 6, 1, 0),
+            ("relocatable type", 16, 2, 1),
+            ("foreign machine", 18, 2, 0),
+            ("ELF version", 20, 4, 0),
+            ("header size", size_at, 2, 0),
+            ("program header size", size_at + 2, 2, 0),
+            ("missing headers", size_at + 4, 2, 0),
+            ("extended headers", size_at + 4, 2, 0xffff),
+            ("overflow header offset", phoff_at, width, u64::MAX),
+            ("overlapping headers", phoff_at, width, 0),
+            ("static executable", interp_header, 4, 4),
+            ("missing dynamic table", ehsize + phsize, 4, 4),
+            ("nonexecutable loads", ehsize + flags_at, 4, 0),
+            (
+                "unterminated interpreter",
+                interp_header + filesz_at,
+                width,
+                18,
+            ),
+            (
+                "overflow interpreter",
+                interp_header + offset_at,
+                width,
+                u64::MAX,
+            ),
+        ] {
+            let mut bad = valid.clone();
+            put(&mut bad, at, width, value);
+            assert!(!postdrop_trace_elf_prefix(&bad), "{label}");
+        }
+        let mut wrong_loader = valid.clone();
+        wrong_loader[0x351] = b'x';
+        assert!(!postdrop_trace_elf_prefix(&wrong_loader));
+        let mut duplicate = valid.clone();
+        put(&mut duplicate, size_at + 4, 2, 4);
+        duplicate.copy_within(
+            interp_header..interp_header + phsize,
+            interp_header + phsize,
+        );
+        assert!(!postdrop_trace_elf_prefix(&duplicate));
+    }
+
+    #[cfg(target_os = "openbsd")]
+    #[test]
+    #[ignore = "requires installed readable dynamic setgid postdrop; trace exits before main"]
+    fn installed_dependency_native_setgid_postdrop_trace() {
+        use std::os::unix::fs::MetadataExt;
+        assert_ne!(
+            unsafe { libc::geteuid() },
+            0,
+            "trace qualifier requires a nonroot actor"
+        );
+        let target = Path::new("/usr/local/sbin/postdrop");
+        assert_ne!(fs::symlink_metadata(target).unwrap().mode() & 0o2000, 0);
+        validate_postdrop_trace_program().expect("protected native dynamic postdrop");
+        let command = crate::auth::installed_dependencies_command(target).unwrap();
+        assert_eq!(command.get_program(), target);
+        assert_eq!(command.get_args().len(), 0);
+        let libraries = installed_library_paths_before(
+            target,
+            std::time::Instant::now() + std::time::Duration::from_secs(5),
+        )
+        .expect("setgid postdrop loader trace without program initialization");
+        assert!(!libraries.is_empty());
+        println!("DEPENDENCIES_POSTDROP_TRACE_PASS target_mode=setgid loader_only=true");
     }
 
     #[test]

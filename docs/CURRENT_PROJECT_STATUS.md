@@ -3091,3 +3091,19 @@ recover its fixed outcome view after the normal session becomes invalid; it
 cannot authorize Settings or another password request. These are source and
 local evidence. Installed T03-T08 and T09 readiness remain open until the matching
 normal Runtime/file-TOTP/browser path and required failures are observed.
+
+## 2026-10-25 — Postdrop dependency wrapper corrected; full journey still gated
+
+Signed769784b passed normal hooks and fresh remote parity. Its source-bound normal
+Web build f2356800 passed on OpenBSD; build evidence remains separate from startup.
+The follow-up loader inventory passed58 targets before a concrete Postdrop ldd
+Permission denied. A fixed direct loader inspection passed with no stderr and
+protected state unchanged. Native output passed the actual Rust row consumer.
+The narrow production correction adds a native dynamic-ELF/interpreter guard
+before that fixed trace command; generic program and library custody remain.
+
+The normal Runtime/file-TOTP/HTTP journey is prepared with real SQL/epoch/session
+witnesses and a TLS-verified control IMAP connection. Provisioning waits for actual
+server readiness, login-page200 and preauthentication capability. No fresh pair,
+password request or SQL write has yet occurred in this installed continuation.
+T03-T08/T09 remain open pending matching executed evidence and independent review.

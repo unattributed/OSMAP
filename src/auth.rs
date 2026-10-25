@@ -178,6 +178,13 @@ pub(crate) fn installed_dependencies_command(
     if !crate::openbsd::dependency_program_allowed(program) {
         return Err(std::io::ErrorKind::PermissionDenied.into());
     }
+    if program == std::path::Path::new("/usr/local/sbin/postdrop") {
+        // ldd versions which set execpromises cannot exec a setgid target.
+        // Validate the actual native dynamic-loader entry before selecting
+        // its trace-only interface; a static binary must never reach exec.
+        crate::openbsd::validate_postdrop_trace_program()?;
+        return Ok(fixed_postdrop_trace_command());
+    }
     let mut command = Command::new("/usr/bin/ldd");
     command
         .arg(program)
@@ -195,6 +202,18 @@ pub(crate) fn installed_dependencies_command(
         command.env("LD_LIBRARY_PATH", "/usr/local/lib/dovecot");
     }
     Ok(command)
+}
+
+#[cfg(unix)]
+fn fixed_postdrop_trace_command() -> Command {
+    let mut command = Command::new("/usr/local/sbin/postdrop");
+    command
+        .env_clear()
+        .env("LC_ALL", "C")
+        .env("PATH", SAFE_COMMAND_PATH)
+        .env("LD_TRACE_LOADED_OBJECTS", "true")
+        .current_dir("/");
+    command
 }
 
 /// Fixed account-admission worker; no browser field becomes argv/environment.
@@ -1851,7 +1870,6 @@ mod tests {
             ("/usr/sbin/sendmail", false),
             ("/usr/sbin/mailwrapper", false),
             ("/usr/local/sbin/sendmail", false),
-            ("/usr/local/sbin/postdrop", false),
             ("/usr/local/lib/dovecot/libdovecot-sieve.so.4.0", true),
             ("/usr/local/lib/dovecot/doveadm/lib10_quota_plugin.so", true),
         ] {
@@ -1892,6 +1910,40 @@ mod tests {
                 "{program}"
             );
         }
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn installed_postdrop_trace_factory_has_no_operands_or_inherited_search_paths() {
+        use std::collections::BTreeMap;
+        use std::ffi::OsString;
+        use std::path::Path;
+        let command = fixed_postdrop_trace_command();
+        assert_eq!(command.get_program(), "/usr/local/sbin/postdrop");
+        assert_eq!(command.get_args().len(), 0);
+        assert_eq!(command.get_current_dir(), Some(Path::new("/")));
+        assert_eq!(
+            command
+                .get_envs()
+                .map(|(key, value)| (key.to_os_string(), value.map(OsString::from)))
+                .collect::<BTreeMap<_, _>>(),
+            BTreeMap::from([
+                ("LC_ALL".into(), Some("C".into())),
+                ("PATH".into(), Some(SAFE_COMMAND_PATH.into())),
+                ("LD_TRACE_LOADED_OBJECTS".into(), Some("true".into())),
+            ])
+        );
+    }
+
+    #[cfg(all(unix, not(target_os = "openbsd")))]
+    #[test]
+    fn installed_postdrop_trace_refuses_other_unix_before_reading_target() {
+        assert_eq!(
+            installed_dependencies_command(std::path::Path::new("/usr/local/sbin/postdrop"))
+                .unwrap_err()
+                .kind(),
+            std::io::ErrorKind::Unsupported
+        );
     }
 
     struct AcceptingBackend;

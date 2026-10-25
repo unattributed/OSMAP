@@ -13789,3 +13789,28 @@ root-owned target, rechecks both identities and link bytes, and returns both
 exact leaves for unveil. Direct mysql trace paths, other library aliases and
 program/module symlinks retain their refusal. Six focused dependency cases and
 production library compilation pass; matching native Web execution is pending.
+
+## 2026-10-25 — fixed native loader trace for protected Postdrop
+
+After the MariaDB alias correction, a read-only same-UID inventory passed the
+first 58 dependency targets and reached an exact ldd Permission denied on the
+readable setgid Postdrop executable. OpenBSD source explains this wrapper's
+non-null execpromises/setid incompatibility; current upstream has since changed
+that wrapper call, so its current revision alone is not installed-byte proof.
+
+A separate bounded same-UID direct loader trace passed: exit0, 1068 stdout bytes,
+no stderr, exact protected object/loader hash and stat preservation. The actual
+output passed the actual Rust dependency-row parser with eleven selected leaves.
+The loader's readable-setgid trace branch exits before target relocation, init
+or main. The retained exact native ELF and 19-byte interpreter proof bind that
+observation. An earlier empty dd pipeline used the wrong fixed utility path and
+is excluded; the direct checked od observation supplies the actual byte proof.
+
+Use a fixed Postdrop-only direct trace command with cleared environment, no
+operands and the loader trace variable. Before constructing it, require the
+existing protected/readable file guard and a bounded native dynamic-ELF prefix
+with exactly the expected native loader interpreter. Static, script, malformed
+and alternate-interpreter cases refuse before execution. All other ldd routes,
+resource/stream checks and before/after custody remain unchanged. No Postdrop
+mail main, mail message, account or credential operation is authorized by this
+inspection interface. Matching normal Web startup remains the next product gate.
