@@ -22324,7 +22324,13 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "review": "native04/native-result-review.json SHAa2ca67dd26ccb81a1d07a2c3e7862b5c86779f6fda72832bcdab7b516973e04a",
         "limits": "realTOTPalgorithmRAMseed; fixtureclientconstructorsqualificationbypassonly; realAPI/sessionpositive, installedHTTP/TOTPfile/T03/UATseparate"
       },
-      "source_preservation": "Mandatorynormalhooks/signature/push/freshoriginparitynext; privatefinaldeliveryreceiptwillrecordactual.",
+      "source_preservation": {
+        "functional_signed_checkpoint": "efb8c754e36351424a3f94441f4b317ef7e7edb0",
+        "normal_commit_hook": "PASS32policy+cargocheck+whitespace; GoodShopkeepersignature",
+        "first_push_hook": "FAIL118carrier/2oldsourcepinclosurefailures/4skips; no remotetransport. Originalfailureretaineddelivery/push.log.",
+        "correction": "Actualcustody+stockqualificationhashes refreshedinSOURCE_PINS, coupledROOT_SOURCE_SHA256updated; exact2closuretestsPASS0.002s; no product/testassertionrelaxation.",
+        "next": "Normal signedfollowup/hook/push/freshremoteparity; bothcommitsretained, noamend/nobypass."
+      },
       "guard_registration": "ReviewedSQLadapterdigestrenewed18523bd5 forboundeddiagnostic-onlydelta; exactcfgtesttransactionmodule registration, production/missingmarkerrefusals retained; guardandexistingregressionsPASS.",
       "cleanup": {
         "result": "PASS",

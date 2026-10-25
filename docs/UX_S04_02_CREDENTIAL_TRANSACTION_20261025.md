@@ -75,3 +75,13 @@ removal, historical PID action or public-service operation occurred. Cleanup
 archive SHA256: 98c52111d8886d90ac3c001ad215e69efb40ddebebc4654f815b4645f47e166a.
 The native credential and epoch evidence describes the verified state before
 this explicit retirement.
+
+## Delivery source closure
+
+The first signed functional checkpoint passed its normal commit hook. Its normal
+push hook then refused two existing carrier-closure assertions because the source
+map still contained the previous custody/parser hashes. The actual current
+custody and qualification hashes and the coupled root-stage hash were refreshed,
+without changing the native product or weakening source admission. The two
+matching closure tests pass. The failed gate is retained; a normal signed
+follow-up and ordinary push preserve both checkpoints.
