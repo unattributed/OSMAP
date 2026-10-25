@@ -1,5 +1,16 @@
 # Decision Log
 
+2026-10-25 (America/Toronto) — **Close S04-02 against the owner's successful real journey.**
+The direct report of successful login, password change and replacement-password
+login supplies the remaining T09 acceptance for the selected local obsd1
+development scope. Reuse matching independent engineering and installed evidence;
+do not repeat credential mutations or assign more troubleshooting to the owner.
+Record ACCEPTED in the existing ledger and scoped matrix, preserve earlier
+failures and recovery evidence, and deliver through normal signed Git hooks and
+remote parity. Separate owner Show/Hide/Cancel observations and new authoritative
+measurements are not inferred. This decision does not close the whole S04 sprint
+or qualify a production mail deployment.
+
 2026-10-25 UTC — **Close the raw-bcrypt defect against the ordinary installed transaction.**
 The fresh stock-format target completed the updated native service's single
 conditional change to Argon2id. Independent SQL/Store witnesses and the existing

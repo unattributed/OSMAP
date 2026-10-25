@@ -10078,7 +10078,7 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "QA_VERIFIED",
+        "status": "ACCEPTED",
         "executed": true,
         "evidence": [
           {
@@ -10105,6 +10105,11 @@
             "kind": "source_execution",
             "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/result-independent-review.json",
             "scope": "2026-10-25 S04-02 R2-10-005: Security password status and changed time. Scenarios T07; exact reviewed evidence source_result_status, SHA256 13e835479c11e26f9dde13d91ff87c9c2a42f655b0610e063b32e704008ee617. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "human_uat",
+            "path": "docs/UX_S04_02_T09_ACCEPTANCE_20261025.md",
+            "scope": "2026-10-25 owner report: \"login successful / password change successful / login successful with new password\" on obsd1. This directly confirms the real own-account happy path after local recovery. Existing independent engineering evidence covers the remaining controls; no separate owner Show/Hide or Cancel observation, new epoch/timestamp measurement, production-mail change or whole-S04 acceptance is inferred. Slice-level acceptance of this control reuses its retained control-specific engineering evidence; independent scope review SHA256 f22ef91038be71e13b1fec0f1837c7fca755904780cc3c09d4d8748472bdd6ad."
           }
         ]
       }
@@ -10252,7 +10257,7 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "QA_VERIFIED",
+        "status": "ACCEPTED",
         "executed": true,
         "evidence": [
           {
@@ -10284,6 +10289,11 @@
             "kind": "native_execution",
             "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/full05-positive/result-independent-review.json",
             "scope": "2026-10-25 S04-02 R2-10-009: Security Change password entry. Scenarios T01, T06; exact reviewed evidence ordinary_T03, SHA256 663664cc23632534d0a8ea3c72d9ce3200366395d35f663f1861538ae3d3aeec. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "human_uat",
+            "path": "docs/UX_S04_02_T09_ACCEPTANCE_20261025.md",
+            "scope": "2026-10-25 owner report: \"login successful / password change successful / login successful with new password\" on obsd1. This directly confirms the real own-account happy path after local recovery. Existing independent engineering evidence covers the remaining controls; no separate owner Show/Hide or Cancel observation, new epoch/timestamp measurement, production-mail change or whole-S04 acceptance is inferred. Slice-level acceptance of this control reuses its retained control-specific engineering evidence; independent scope review SHA256 f22ef91038be71e13b1fec0f1837c7fca755904780cc3c09d4d8748472bdd6ad."
           }
         ]
       }
@@ -17350,7 +17360,7 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "QA_VERIFIED",
+        "status": "ACCEPTED",
         "executed": true,
         "evidence": [
           {
@@ -17377,6 +17387,11 @@
             "kind": "source_execution",
             "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/result-independent-review.json",
             "scope": "2026-10-25 S04-02 R2-20-001: Authentication & Recovery changed-at status. Scenarios T07; exact reviewed evidence source_result_status, SHA256 13e835479c11e26f9dde13d91ff87c9c2a42f655b0610e063b32e704008ee617. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "human_uat",
+            "path": "docs/UX_S04_02_T09_ACCEPTANCE_20261025.md",
+            "scope": "2026-10-25 owner report: \"login successful / password change successful / login successful with new password\" on obsd1. This directly confirms the real own-account happy path after local recovery. Existing independent engineering evidence covers the remaining controls; no separate owner Show/Hide or Cancel observation, new epoch/timestamp measurement, production-mail change or whole-S04 acceptance is inferred. Slice-level acceptance of this control reuses its retained control-specific engineering evidence; independent scope review SHA256 f22ef91038be71e13b1fec0f1837c7fca755904780cc3c09d4d8748472bdd6ad."
           }
         ]
       }
@@ -17413,7 +17428,7 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "QA_VERIFIED",
+        "status": "ACCEPTED",
         "executed": true,
         "evidence": [
           {
@@ -17445,6 +17460,11 @@
             "kind": "native_execution",
             "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/full05-positive/result-independent-review.json",
             "scope": "2026-10-25 S04-02 R2-20-002: Authentication & Recovery Change password entry. Scenarios T01, T06; exact reviewed evidence ordinary_T03, SHA256 663664cc23632534d0a8ea3c72d9ce3200366395d35f663f1861538ae3d3aeec. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "human_uat",
+            "path": "docs/UX_S04_02_T09_ACCEPTANCE_20261025.md",
+            "scope": "2026-10-25 owner report: \"login successful / password change successful / login successful with new password\" on obsd1. This directly confirms the real own-account happy path after local recovery. Existing independent engineering evidence covers the remaining controls; no separate owner Show/Hide or Cancel observation, new epoch/timestamp measurement, production-mail change or whole-S04 acceptance is inferred. Slice-level acceptance of this control reuses its retained control-specific engineering evidence; independent scope review SHA256 f22ef91038be71e13b1fec0f1837c7fca755904780cc3c09d4d8748472bdd6ad."
           }
         ]
       }
@@ -18601,7 +18621,7 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "QA_VERIFIED",
+        "status": "ACCEPTED",
         "executed": true,
         "evidence": [
           {
@@ -18633,6 +18653,11 @@
             "kind": "native_execution",
             "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/full05-positive/result-independent-review.json",
             "scope": "2026-10-25 S04-02 R2-22-001: Breadcrumb navigates without submitting. Scenarios T01, T06; exact reviewed evidence ordinary_T03, SHA256 663664cc23632534d0a8ea3c72d9ce3200366395d35f663f1861538ae3d3aeec. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "human_uat",
+            "path": "docs/UX_S04_02_T09_ACCEPTANCE_20261025.md",
+            "scope": "2026-10-25 owner report: \"login successful / password change successful / login successful with new password\" on obsd1. This directly confirms the real own-account happy path after local recovery. Existing independent engineering evidence covers the remaining controls; no separate owner Show/Hide or Cancel observation, new epoch/timestamp measurement, production-mail change or whole-S04 acceptance is inferred. Slice-level acceptance of this control reuses its retained control-specific engineering evidence; independent scope review SHA256 f22ef91038be71e13b1fec0f1837c7fca755904780cc3c09d4d8748472bdd6ad."
           }
         ]
       }
@@ -18669,7 +18694,7 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "QA_VERIFIED",
+        "status": "ACCEPTED",
         "executed": true,
         "evidence": [
           {
@@ -18716,6 +18741,11 @@
             "kind": "qa_execution",
             "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/session-token-oracle-correction.json",
             "scope": "2026-10-25 S04-02 R2-22-002: Current password handled only for authorized verification. Scenarios T02, T03, T04, T08; exact reviewed evidence token_oracle_correction, SHA256 f4130974e21352655d12c393674737346ff2ea3908ca6b493099f22c93225174. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "human_uat",
+            "path": "docs/UX_S04_02_T09_ACCEPTANCE_20261025.md",
+            "scope": "2026-10-25 owner report: \"login successful / password change successful / login successful with new password\" on obsd1. This directly confirms the real own-account happy path after local recovery. Existing independent engineering evidence covers the remaining controls; no separate owner Show/Hide or Cancel observation, new epoch/timestamp measurement, production-mail change or whole-S04 acceptance is inferred. Slice-level acceptance of this control reuses its retained control-specific engineering evidence; independent scope review SHA256 f22ef91038be71e13b1fec0f1837c7fca755904780cc3c09d4d8748472bdd6ad."
           }
         ]
       }
@@ -18752,7 +18782,7 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "QA_VERIFIED",
+        "status": "ACCEPTED",
         "executed": true,
         "evidence": [
           {
@@ -18784,6 +18814,11 @@
             "kind": "native_execution",
             "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/full05-positive/result-independent-review.json",
             "scope": "2026-10-25 S04-02 R2-22-003: Independent current-password Show/Hide. Scenarios T01, T06; exact reviewed evidence ordinary_T03, SHA256 663664cc23632534d0a8ea3c72d9ce3200366395d35f663f1861538ae3d3aeec. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "human_uat",
+            "path": "docs/UX_S04_02_T09_ACCEPTANCE_20261025.md",
+            "scope": "2026-10-25 owner report: \"login successful / password change successful / login successful with new password\" on obsd1. This directly confirms the real own-account happy path after local recovery. Existing independent engineering evidence covers the remaining controls; no separate owner Show/Hide or Cancel observation, new epoch/timestamp measurement, production-mail change or whole-S04 acceptance is inferred. Slice-level acceptance of this control reuses its retained control-specific engineering evidence; independent scope review SHA256 f22ef91038be71e13b1fec0f1837c7fca755904780cc3c09d4d8748472bdd6ad."
           }
         ]
       }
@@ -18820,7 +18855,7 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "QA_VERIFIED",
+        "status": "ACCEPTED",
         "executed": true,
         "evidence": [
           {
@@ -18857,6 +18892,11 @@
             "kind": "source_execution",
             "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/final-source-independent-review.json",
             "scope": "2026-10-25 S04-02 R2-22-004: Valid new password under D04 policy. Scenarios T02, T03, T06; exact reviewed evidence source_native_runtime_review, SHA256 ce29c71af91cbb8003f5573aa54d5136c6deb888d5d07dbc7ea3c10bffe96006. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "human_uat",
+            "path": "docs/UX_S04_02_T09_ACCEPTANCE_20261025.md",
+            "scope": "2026-10-25 owner report: \"login successful / password change successful / login successful with new password\" on obsd1. This directly confirms the real own-account happy path after local recovery. Existing independent engineering evidence covers the remaining controls; no separate owner Show/Hide or Cancel observation, new epoch/timestamp measurement, production-mail change or whole-S04 acceptance is inferred. Slice-level acceptance of this control reuses its retained control-specific engineering evidence; independent scope review SHA256 f22ef91038be71e13b1fec0f1837c7fca755904780cc3c09d4d8748472bdd6ad."
           }
         ]
       }
@@ -18893,7 +18933,7 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "QA_VERIFIED",
+        "status": "ACCEPTED",
         "executed": true,
         "evidence": [
           {
@@ -18925,6 +18965,11 @@
             "kind": "native_execution",
             "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/full05-positive/result-independent-review.json",
             "scope": "2026-10-25 S04-02 R2-22-005: Independent new-password Show/Hide. Scenarios T01, T06; exact reviewed evidence ordinary_T03, SHA256 663664cc23632534d0a8ea3c72d9ce3200366395d35f663f1861538ae3d3aeec. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "human_uat",
+            "path": "docs/UX_S04_02_T09_ACCEPTANCE_20261025.md",
+            "scope": "2026-10-25 owner report: \"login successful / password change successful / login successful with new password\" on obsd1. This directly confirms the real own-account happy path after local recovery. Existing independent engineering evidence covers the remaining controls; no separate owner Show/Hide or Cancel observation, new epoch/timestamp measurement, production-mail change or whole-S04 acceptance is inferred. Slice-level acceptance of this control reuses its retained control-specific engineering evidence; independent scope review SHA256 f22ef91038be71e13b1fec0f1837c7fca755904780cc3c09d4d8748472bdd6ad."
           }
         ]
       }
@@ -18961,7 +19006,7 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "QA_VERIFIED",
+        "status": "ACCEPTED",
         "executed": true,
         "evidence": [
           {
@@ -18993,6 +19038,11 @@
             "kind": "source_execution",
             "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/final-source-independent-review.json",
             "scope": "2026-10-25 S04-02 R2-22-006: Exact new-password confirmation. Scenarios T02, T06; exact reviewed evidence source_native_runtime_review, SHA256 ce29c71af91cbb8003f5573aa54d5136c6deb888d5d07dbc7ea3c10bffe96006. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "human_uat",
+            "path": "docs/UX_S04_02_T09_ACCEPTANCE_20261025.md",
+            "scope": "2026-10-25 owner report: \"login successful / password change successful / login successful with new password\" on obsd1. This directly confirms the real own-account happy path after local recovery. Existing independent engineering evidence covers the remaining controls; no separate owner Show/Hide or Cancel observation, new epoch/timestamp measurement, production-mail change or whole-S04 acceptance is inferred. Slice-level acceptance of this control reuses its retained control-specific engineering evidence; independent scope review SHA256 f22ef91038be71e13b1fec0f1837c7fca755904780cc3c09d4d8748472bdd6ad."
           }
         ]
       }
@@ -19029,7 +19079,7 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "QA_VERIFIED",
+        "status": "ACCEPTED",
         "executed": true,
         "evidence": [
           {
@@ -19061,6 +19111,11 @@
             "kind": "native_execution",
             "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/full05-positive/result-independent-review.json",
             "scope": "2026-10-25 S04-02 R2-22-007: Independent confirmation Show/Hide. Scenarios T01, T06; exact reviewed evidence ordinary_T03, SHA256 663664cc23632534d0a8ea3c72d9ce3200366395d35f663f1861538ae3d3aeec. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "human_uat",
+            "path": "docs/UX_S04_02_T09_ACCEPTANCE_20261025.md",
+            "scope": "2026-10-25 owner report: \"login successful / password change successful / login successful with new password\" on obsd1. This directly confirms the real own-account happy path after local recovery. Existing independent engineering evidence covers the remaining controls; no separate owner Show/Hide or Cancel observation, new epoch/timestamp measurement, production-mail change or whole-S04 acceptance is inferred. Slice-level acceptance of this control reuses its retained control-specific engineering evidence; independent scope review SHA256 f22ef91038be71e13b1fec0f1837c7fca755904780cc3c09d4d8748472bdd6ad."
           }
         ]
       }
@@ -19097,7 +19152,7 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "QA_VERIFIED",
+        "status": "ACCEPTED",
         "executed": true,
         "evidence": [
           {
@@ -19134,6 +19189,11 @@
             "kind": "qa_execution",
             "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/readonly-ui02/result-independent-review.json",
             "scope": "2026-10-25 S04-02 R2-22-008: Fresh action-bound reauthentication/TOTP. Scenarios T03, T04, T06; exact reviewed evidence positive_cleanup_reconciliation, SHA256 87fbf28c065da336147c49e8373a3fdee6f3e40be14d392f89ebd68172e0a77d. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "human_uat",
+            "path": "docs/UX_S04_02_T09_ACCEPTANCE_20261025.md",
+            "scope": "2026-10-25 owner report: \"login successful / password change successful / login successful with new password\" on obsd1. This directly confirms the real own-account happy path after local recovery. Existing independent engineering evidence covers the remaining controls; no separate owner Show/Hide or Cancel observation, new epoch/timestamp measurement, production-mail change or whole-S04 acceptance is inferred. Slice-level acceptance of this control reuses its retained control-specific engineering evidence; independent scope review SHA256 f22ef91038be71e13b1fec0f1837c7fca755904780cc3c09d4d8748472bdd6ad."
           }
         ]
       }
@@ -19170,7 +19230,7 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "QA_VERIFIED",
+        "status": "ACCEPTED",
         "executed": true,
         "evidence": [
           {
@@ -19217,6 +19277,11 @@
             "kind": "qa_execution",
             "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/session-token-oracle-correction.json",
             "scope": "2026-10-25 S04-02 R2-22-009: Cancel without mutation or secret persistence. Scenarios T01, T06, T08; exact reviewed evidence token_oracle_correction, SHA256 f4130974e21352655d12c393674737346ff2ea3908ca6b493099f22c93225174. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "human_uat",
+            "path": "docs/UX_S04_02_T09_ACCEPTANCE_20261025.md",
+            "scope": "2026-10-25 owner report: \"login successful / password change successful / login successful with new password\" on obsd1. This directly confirms the real own-account happy path after local recovery. Existing independent engineering evidence covers the remaining controls; no separate owner Show/Hide or Cancel observation, new epoch/timestamp measurement, production-mail change or whole-S04 acceptance is inferred. Slice-level acceptance of this control reuses its retained control-specific engineering evidence; independent scope review SHA256 f22ef91038be71e13b1fec0f1837c7fca755904780cc3c09d4d8748472bdd6ad."
           }
         ]
       }
@@ -19253,7 +19318,7 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "QA_VERIFIED",
+        "status": "ACCEPTED",
         "executed": true,
         "evidence": [
           {
@@ -19290,6 +19355,11 @@
             "kind": "source_execution",
             "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/final-source-independent-review.json",
             "scope": "2026-10-25 S04-02 R2-22-010: Authorized Change password submission. Scenarios T02, T03, T06; exact reviewed evidence source_native_runtime_review, SHA256 ce29c71af91cbb8003f5573aa54d5136c6deb888d5d07dbc7ea3c10bffe96006. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "human_uat",
+            "path": "docs/UX_S04_02_T09_ACCEPTANCE_20261025.md",
+            "scope": "2026-10-25 owner report: \"login successful / password change successful / login successful with new password\" on obsd1. This directly confirms the real own-account happy path after local recovery. Existing independent engineering evidence covers the remaining controls; no separate owner Show/Hide or Cancel observation, new epoch/timestamp measurement, production-mail change or whole-S04 acceptance is inferred. Slice-level acceptance of this control reuses its retained control-specific engineering evidence; independent scope review SHA256 f22ef91038be71e13b1fec0f1837c7fca755904780cc3c09d4d8748472bdd6ad."
           }
         ]
       }
@@ -19326,7 +19396,7 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "QA_VERIFIED",
+        "status": "ACCEPTED",
         "executed": true,
         "evidence": [
           {
@@ -19373,6 +19443,11 @@
             "kind": "qa_execution",
             "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/session-token-oracle-correction.json",
             "scope": "2026-10-25 S04-02 R2-22-011: All affected OSMAP browser sessions revoked. Scenarios T03, T04, T05, T08; exact reviewed evidence token_oracle_correction, SHA256 f4130974e21352655d12c393674737346ff2ea3908ca6b493099f22c93225174. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "human_uat",
+            "path": "docs/UX_S04_02_T09_ACCEPTANCE_20261025.md",
+            "scope": "2026-10-25 owner report: \"login successful / password change successful / login successful with new password\" on obsd1. This directly confirms the real own-account happy path after local recovery. Existing independent engineering evidence covers the remaining controls; no separate owner Show/Hide or Cancel observation, new epoch/timestamp measurement, production-mail change or whole-S04 acceptance is inferred. Slice-level acceptance of this control reuses its retained control-specific engineering evidence; independent scope review SHA256 f22ef91038be71e13b1fec0f1837c7fca755904780cc3c09d4d8748472bdd6ad."
           }
         ]
       }
@@ -19409,7 +19484,7 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "QA_VERIFIED",
+        "status": "ACCEPTED",
         "executed": true,
         "evidence": [
           {
@@ -19456,6 +19531,11 @@
             "kind": "qa_execution",
             "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/session-token-oracle-correction.json",
             "scope": "2026-10-25 S04-02 R2-22-012: Actual backend old rejection/new admission and truthful mail impact. Scenarios T03, T06, T08; exact reviewed evidence token_oracle_correction, SHA256 f4130974e21352655d12c393674737346ff2ea3908ca6b493099f22c93225174. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "human_uat",
+            "path": "docs/UX_S04_02_T09_ACCEPTANCE_20261025.md",
+            "scope": "2026-10-25 owner report: \"login successful / password change successful / login successful with new password\" on obsd1. This directly confirms the real own-account happy path after local recovery. Existing independent engineering evidence covers the remaining controls; no separate owner Show/Hide or Cancel observation, new epoch/timestamp measurement, production-mail change or whole-S04 acceptance is inferred. Slice-level acceptance of this control reuses its retained control-specific engineering evidence; independent scope review SHA256 f22ef91038be71e13b1fec0f1837c7fca755904780cc3c09d4d8748472bdd6ad."
           }
         ]
       }
@@ -19492,7 +19572,7 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "QA_VERIFIED",
+        "status": "ACCEPTED",
         "executed": true,
         "evidence": [
           {
@@ -19519,6 +19599,11 @@
             "kind": "source_execution",
             "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/result-independent-review.json",
             "scope": "2026-10-25 S04-02 R2-22-013: Explicit partial-failure reconciliation. Scenarios T05, T07; exact reviewed evidence source_result_status, SHA256 13e835479c11e26f9dde13d91ff87c9c2a42f655b0610e063b32e704008ee617. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "human_uat",
+            "path": "docs/UX_S04_02_T09_ACCEPTANCE_20261025.md",
+            "scope": "2026-10-25 owner report: \"login successful / password change successful / login successful with new password\" on obsd1. This directly confirms the real own-account happy path after local recovery. Existing independent engineering evidence covers the remaining controls; no separate owner Show/Hide or Cancel observation, new epoch/timestamp measurement, production-mail change or whole-S04 acceptance is inferred. Slice-level acceptance of this control reuses its retained control-specific engineering evidence; independent scope review SHA256 f22ef91038be71e13b1fec0f1837c7fca755904780cc3c09d4d8748472bdd6ad."
           }
         ]
       }
@@ -19555,7 +19640,7 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "QA_VERIFIED",
+        "status": "ACCEPTED",
         "executed": true,
         "evidence": [
           {
@@ -19607,6 +19692,11 @@
             "kind": "qa_execution",
             "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/session-token-oracle-correction.json",
             "scope": "2026-10-25 S04-02 R2-22-014: No password logging or retained secret evidence. Scenarios T02, T03, T05, T08; exact reviewed evidence token_oracle_correction, SHA256 f4130974e21352655d12c393674737346ff2ea3908ca6b493099f22c93225174. Engineering PASS; human T09 pending. Scope and limits mapped in independent review SHA256 48ccdf858073b1d3205214d9a419f49f5315d2b62870fba5d3728aea79292154 and docs/UX_S04_02_CREDENTIAL_TRANSACTION_20261025.md."
+          },
+          {
+            "kind": "human_uat",
+            "path": "docs/UX_S04_02_T09_ACCEPTANCE_20261025.md",
+            "scope": "2026-10-25 owner report: \"login successful / password change successful / login successful with new password\" on obsd1. This directly confirms the real own-account happy path after local recovery. Existing independent engineering evidence covers the remaining controls; no separate owner Show/Hide or Cancel observation, new epoch/timestamp measurement, production-mail change or whole-S04 acceptance is inferred. Slice-level acceptance of this control reuses its retained control-specific engineering evidence; independent scope review SHA256 f22ef91038be71e13b1fec0f1837c7fca755904780cc3c09d4d8748472bdd6ad."
           }
         ]
       }

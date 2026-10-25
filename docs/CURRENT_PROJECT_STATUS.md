@@ -1,5 +1,16 @@
 # Current Project Status
 
+2026-10-25 (America/Toronto) — **S04-02 ACCEPTED for local obsd1 UX development.**
+The owner confirmed successful login, successful password change and successful
+login with the replacement password after the installed compatibility correction
+and explicitly authorized local account recovery. All four engineering outcomes
+and T01–T08 remain PASS; the owner result closes T09. The ledger and exact scoped
+control results now record acceptance. No further S04-02 owner retry remains.
+See [the acceptance record](UX_S04_02_T09_ACCEPTANCE_20261025.md) for evidence and
+scope. This closes the slice, with the remaining S04 slices, whole epic and
+production mail qualification still separate. Earlier checkpoints below retain
+their historical pending/failure wording.
+
 2026-10-25 UTC — **Stock bcrypt compatibility corrected and qualified on the installed application; owner retry is ready.**
 The ordinary native helper is now `be7c6b40…`, built from signed source `67148da…`;
 the unchanged Web remains `2678b730…` with refreshed socket custody. One fresh

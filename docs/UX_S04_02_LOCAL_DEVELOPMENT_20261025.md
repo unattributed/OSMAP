@@ -2,6 +2,19 @@
 
 ## Current result and boundary
 
+**S04-02 is ACCEPTED for local obsd1 UX development.** After an explicitly
+authorized local-only account reset and verified normal MFA recovery, the owner
+confirmed successful login, successful password change and successful login with
+the replacement password. This completes the remaining T09 functional acceptance.
+The existing authenticator enrollment and rate limits were preserved; production
+mail credentials were unchanged. The development account's writable password may
+now differ from the production mailbox and its read-only reference replica.
+See [the acceptance record](UX_S04_02_T09_ACCEPTANCE_20261025.md). This does not
+accept the remaining S04 slices or a production mail deployment.
+
+The following compatibility checkpoint predates that owner result; its pending
+wording is retained as history and superseded by the acceptance above.
+
 **The stock-bcrypt compatibility defect is corrected and native-qualified.**
 The updated ordinary helper completed one real controlled stock-format password
 change through the normal HTTPS application. Owner retry is ready; Duncan's
