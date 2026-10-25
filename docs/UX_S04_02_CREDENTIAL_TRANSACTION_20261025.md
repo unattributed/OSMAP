@@ -223,3 +223,15 @@ binding and durable rate controls are reused alongside the new native cases.
 Persistent ordinary application access is the remaining installation step before
 the [minimal owner T09 review](UX_S04_02_T09_ACCEPTANCE_20261025.md). Temporary
 actor cleanup alone does not establish that access or human acceptance.
+
+The first persistent activation stopped at the post-start helper check. It
+preserved the original frontend and protected state, stopped its new services
+and restored the previous helper and account configuration. Its copied private
+state remains retained. Inspection of the host's actual `rc.subr` found that the
+startup waiter signals direct children with ALRM; the custom helper `rc_start`
+used `exec`, replacing the monitor shell with the Rust process. The correction
+removes only that `exec` and retains exact root/main-process matching. The initial
+helper's terminal signal was not captured and is not retrospectively asserted.
+Six existing installer tests and shell syntax pass; matching changed native
+activation is the next proof. Session expiry remains enforced normally; no stored
+identifier is adopted as a cookie and no session timestamp is reset.

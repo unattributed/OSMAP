@@ -10086,7 +10086,8 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
       "/root/python_journey_review",
       "/root/rust_review",
       "/root/transaction_review",
-      "/root/epoch_failure_engineer"
+      "/root/epoch_failure_engineer",
+      "/root/native_transaction_client"
     ],
     "security_review": [
       "/root/scrum_security_review",
@@ -20711,6 +20712,28 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "reference": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/full05/result-independent-review.json SHA2566c936f06b882307e81d1424962f8ed95444f08ad7b829d460ecd05fa24c752e8. NATIVE_T05_SAFE_INCOMPLETE_PASS:14HTTP/1write/verified20261025142510/contained0/marker+intent/native0and1refused/2oldrevoked/BobHTTP+19IMAPNOOP/preservedT04history. ActualbrowserresultUTC/reload/allcontrolsPASS; fresh5GET/0POST; initialzeroPostobservercauseUNKNOWN. LateACK120sFAIL+rootWIRE_EOF retained, no retry. Cleanup/helperrestore/keycustody/protectedreadbackPASS;3keysretained.",
         "elapsed_status": "MEASURED",
         "elapsed_seconds": 216.0
+      },
+      {
+        "id": "S04-02-INSTALLED-persistent-qa01",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "source_revision": "cadf442418e6ae09a10ceb481a5e4986188bf389",
+        "change_reference": "AdvancecompletednativeT03/T04/T05andactualinstalledbrowsercontrols tolastingnormalOSMAPavailabilityforhumanT09; separateparallelprofilepreservesold8080frontend/mail; actualcoldstatecopy/genuinecookieonly. No credentialoperation/retry/rollback/sessionrenewal/injection; ordinaryserviceactivationdistinctfromexpired600sfixture.",
+        "success_chain_review": {
+          "reviewer": "/root/epoch_failure_engineer",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/persistent-qa/source-independent-review.json",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "FAIL",
+        "reference": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/persistent-qa/actor-public.stdout ActualHELPER_CHECKafterstart, originalprotectedPASS/cleanupPASS/helper+configrestored/parallelprofilecoldcopyretained. ArchiveSHA2569254cbb97971ac5e7033e3bbff6eeb850d690b7f04c199525ec9cf11695f610f. Nativecurrentrc.subr monitoredchildALRMcontract incompatible withcustomhelperrc_start explicitexec; initialhelperterminalsignalnotcaptured/UNKNOWN. One-wordnonexecsourcecorrection/installer6testsPASS; sameownedprofile recovery planned, no repeatcredential or coldcopy.",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 4.0
       }
     ],
     "prior_investigations": [
@@ -22931,7 +22954,8 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "observed": "Normalpushclippy refused2itemsaftertestmodule+1collapsibleif; historicalfailedpush retained. Only helperrelocation/equivalentBooleancondition corrected, noallow/guardbypass. ActualclippyalltargetsPASS11.65s.",
         "independent_equivalence": "t04-controller-lint-equivalence-review.json SHA256de85f5e0ccc91d2f5d8e11af3ad153c024badeec56f8ef62d9e54482619353c9",
         "native_reuse": "Actualfab3artifactremainsboundtosigned0c9f699793d3911aa8472694462b14ade992cda9; norebuildclaimedfromlintfollowup."
-      }
+      },
+      "persistent_rc_correction": "Actualnative rc.subr startupwaiter signals directchildrenALRM; defaultforegroundrc_start keepsmonitorshell, customexplicitexec replacesitwithRust. Removeexec only; strictroot/main-onlyprocessmatching and stopguards unchanged. EarliestactualhelperterminalsignalUNKNOWN; nativechangedserviceproof stillrequired.6existinginstallercontrolsPASS/kshsyntaxPASS. OldBob30minnaturalexpiryrespected,no timerreset/storeIDadoption; freshlegitimateUATlogin maybenecessary."
     }
   },
   "execution_contract": {
@@ -36411,6 +36435,61 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
             }
           }
         ]
+      },
+      {
+        "id": "persistent-ordinary-osmap-qa01",
+        "kind": "INSTALL",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "single-host-readiness"
+        ],
+        "test_ids": [
+          "S04-02-T06",
+          "S04-02-T07",
+          "S04-02-T08"
+        ],
+        "allowed_paths": [
+          "docs/UX_EXECUTION_LEDGER.md"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/bin/bash",
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/persistent-qa/dispatch.sh"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "InstallpersistentparallelORDINARY f48Web/0froothelper usingnormalOpenBSDrc,loopback18127,separateprotectedversionedbinary/state/log/env. ColdcopyexactownedquiescentT05state+3keyswithsourceanddestinationbyte/metadatareadback; actualgenuineBobHTTPcookie mayvalidatenormally,no SID/token reconstruction/reset/newauth/SQLwrite. PreserveoriginalWeb63306/8080/binary/env/launcher/mail/edge/T05containedepoch+marker; addONLYexactT05pairtoexistinghelper2accountallowlists. StartonlynewOSMAPservices,normalhelpernotlibtest/fixture;actualrcstatus/loadedtextinode/listener/loginGET200. PASSintentionallyretainsnormalservicesuntilhumanUAT; failureownsstop/restorationguards/earliestfailure+cleanupseparate. Nativeactor120+cleanup60,nomailconfig/serviceoperation. ActualauthenticatedbrowserGETafterinstall stillrequired; humanT09PASSseparate.",
+        "prerequisites": [
+          {
+            "id": "independent-source-lifecycle-review",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/persistent-qa/source-independent-review.json",
+              "sha256": "a205cf092ed80ecce35e7b91b070876733172838b456947376779086acdb69b5"
+            }
+          },
+          {
+            "id": "actual-t05-core-and-quiescent-recovery",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/full05/result-independent-review.json",
+              "sha256": "6c936f06b882307e81d1424962f8ed95444f08ad7b829d460ecd05fa24c752e8"
+            }
+          },
+          {
+            "id": "final-dispatch-bindings",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/persistent-qa/dispatch-independent-review.json",
+              "sha256": "f6ddcd0b8d9b126ab982fc705fac6cceb7d6f02fb3f6dd31803477e9ab6b91ff"
+            }
+          }
+        ]
       }
     ],
     "budget": {
@@ -36426,7 +36505,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
   },
   "blocker": null,
   "independent_next_action": "Actual assigned Runtime, T04/T05, and status/security reviewers identify next concrete boundary; root owns integration, native/browser, Git and delivery.",
-  "updated_at": "2026-10-25T14:43:48Z"
+  "updated_at": "2026-10-25T15:14:29Z"
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->
