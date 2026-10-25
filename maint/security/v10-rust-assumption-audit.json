@@ -11574,7 +11574,7 @@
       "fail_closed_relevance": "high",
       "file": "src/auth.rs",
       "kind": "panic_macro",
-      "line": 1836
+      "line": 1870
     },
     {
       "classification": "production_adjacent_assumption",
@@ -11582,7 +11582,7 @@
       "fail_closed_relevance": "high",
       "file": "src/auth.rs",
       "kind": "unwrap_call",
-      "line": 1876
+      "line": 1910
     },
     {
       "classification": "production_adjacent_assumption",
@@ -11590,7 +11590,7 @@
       "fail_closed_relevance": "high",
       "file": "src/auth.rs",
       "kind": "expect_call",
-      "line": 2053
+      "line": 2087
     },
     {
       "classification": "production_adjacent_assumption",
@@ -11598,7 +11598,7 @@
       "fail_closed_relevance": "high",
       "file": "src/auth.rs",
       "kind": "expect_call",
-      "line": 2078
+      "line": 2112
     },
     {
       "classification": "production_adjacent_assumption",
@@ -11606,7 +11606,7 @@
       "fail_closed_relevance": "high",
       "file": "src/auth.rs",
       "kind": "expect_call",
-      "line": 2088
+      "line": 2122
     },
     {
       "classification": "production_adjacent_assumption",
@@ -11614,7 +11614,7 @@
       "fail_closed_relevance": "high",
       "file": "src/auth.rs",
       "kind": "unwrap_call",
-      "line": 2098
+      "line": 2132
     },
     {
       "classification": "production_adjacent_assumption",
@@ -11622,7 +11622,7 @@
       "fail_closed_relevance": "high",
       "file": "src/auth.rs",
       "kind": "expect_call",
-      "line": 2278
+      "line": 2312
     },
     {
       "classification": "production_adjacent_assumption",
@@ -11630,7 +11630,7 @@
       "fail_closed_relevance": "high",
       "file": "src/auth.rs",
       "kind": "expect_call",
-      "line": 2295
+      "line": 2329
     },
     {
       "classification": "production_adjacent_assumption",
@@ -11638,7 +11638,7 @@
       "fail_closed_relevance": "high",
       "file": "src/auth.rs",
       "kind": "expect_call",
-      "line": 2338
+      "line": 2372
     },
     {
       "classification": "production_adjacent_assumption",
@@ -11646,7 +11646,7 @@
       "fail_closed_relevance": "high",
       "file": "src/auth.rs",
       "kind": "expect_call",
-      "line": 2409
+      "line": 2443
     },
     {
       "classification": "production_adjacent_assumption",
@@ -11654,7 +11654,7 @@
       "fail_closed_relevance": "high",
       "file": "src/auth.rs",
       "kind": "expect_call",
-      "line": 2532
+      "line": 2566
     },
     {
       "classification": "production_adjacent_assumption",
@@ -11662,7 +11662,7 @@
       "fail_closed_relevance": "high",
       "file": "src/auth.rs",
       "kind": "expect_call",
-      "line": 2536
+      "line": 2570
     },
     {
       "classification": "production_adjacent_assumption",
@@ -63670,55 +63670,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "unwrap_call",
-      "line": 2900
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/openbsd.rs",
-      "kind": "unwrap_call",
-      "line": 2914
-    },
-    {
-      "classification": "startup_or_global_invariant",
-      "disposition": "document_or_convert_to_explicit_startup_error",
-      "fail_closed_relevance": "medium",
-      "file": "src/openbsd.rs",
-      "kind": "unwrap_call",
-      "line": 2931
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/openbsd.rs",
-      "kind": "unwrap_call",
-      "line": 2937
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/openbsd.rs",
-      "kind": "unwrap_call",
-      "line": 2952
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/openbsd.rs",
-      "kind": "unwrap_call",
-      "line": 2958
-    },
-    {
-      "classification": "startup_or_global_invariant",
-      "disposition": "document_or_convert_to_explicit_startup_error",
-      "fail_closed_relevance": "medium",
-      "file": "src/openbsd.rs",
-      "kind": "unwrap_call",
-      "line": 2967
+      "line": 2963
     },
     {
       "classification": "production_adjacent_assumption",
@@ -63729,11 +63681,27 @@
       "line": 2977
     },
     {
+      "classification": "startup_or_global_invariant",
+      "disposition": "document_or_convert_to_explicit_startup_error",
+      "fail_closed_relevance": "medium",
+      "file": "src/openbsd.rs",
+      "kind": "unwrap_call",
+      "line": 2994
+    },
+    {
       "classification": "production_adjacent_assumption",
       "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
-      "kind": "expect_call",
+      "kind": "unwrap_call",
+      "line": 3000
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/openbsd.rs",
+      "kind": "unwrap_call",
       "line": 3015
     },
     {
@@ -63742,7 +63710,15 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "unwrap_call",
-      "line": 3125
+      "line": 3021
+    },
+    {
+      "classification": "startup_or_global_invariant",
+      "disposition": "document_or_convert_to_explicit_startup_error",
+      "fail_closed_relevance": "medium",
+      "file": "src/openbsd.rs",
+      "kind": "unwrap_call",
+      "line": 3030
     },
     {
       "classification": "production_adjacent_assumption",
@@ -63750,71 +63726,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "unwrap_call",
-      "line": 3147
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/openbsd.rs",
-      "kind": "unwrap_call",
-      "line": 3296
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/openbsd.rs",
-      "kind": "unwrap_call",
-      "line": 3312
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/openbsd.rs",
-      "kind": "unwrap_call",
-      "line": 3378
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/openbsd.rs",
-      "kind": "unwrap_call",
-      "line": 3381
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/openbsd.rs",
-      "kind": "unwrap_call",
-      "line": 3506
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/openbsd.rs",
-      "kind": "unwrap_call",
-      "line": 3523
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/openbsd.rs",
-      "kind": "unwrap_call",
-      "line": 3606
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/openbsd.rs",
-      "kind": "unwrap_call",
-      "line": 3685
+      "line": 3040
     },
     {
       "classification": "production_adjacent_assumption",
@@ -63822,7 +63734,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "expect_call",
-      "line": 3686
+      "line": 3078
     },
     {
       "classification": "production_adjacent_assumption",
@@ -63830,7 +63742,79 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "unwrap_call",
-      "line": 3687
+      "line": 3188
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/openbsd.rs",
+      "kind": "unwrap_call",
+      "line": 3210
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/openbsd.rs",
+      "kind": "unwrap_call",
+      "line": 3359
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/openbsd.rs",
+      "kind": "unwrap_call",
+      "line": 3375
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/openbsd.rs",
+      "kind": "unwrap_call",
+      "line": 3441
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/openbsd.rs",
+      "kind": "unwrap_call",
+      "line": 3444
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/openbsd.rs",
+      "kind": "unwrap_call",
+      "line": 3569
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/openbsd.rs",
+      "kind": "unwrap_call",
+      "line": 3586
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/openbsd.rs",
+      "kind": "unwrap_call",
+      "line": 3669
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/openbsd.rs",
+      "kind": "unwrap_call",
+      "line": 3748
     },
     {
       "classification": "production_adjacent_assumption",
@@ -63838,30 +63822,6 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "expect_call",
-      "line": 3694
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/openbsd.rs",
-      "kind": "unwrap_call",
-      "line": 3735
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/openbsd.rs",
-      "kind": "unwrap_call",
-      "line": 3747
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/openbsd.rs",
-      "kind": "unwrap_call",
       "line": 3749
     },
     {
@@ -63877,96 +63837,8 @@
       "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
-      "kind": "unwrap_call",
-      "line": 3753
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/openbsd.rs",
-      "kind": "unwrap_call",
-      "line": 3754
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/openbsd.rs",
-      "kind": "unwrap_call",
-      "line": 3759
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/openbsd.rs",
-      "kind": "unwrap_call",
-      "line": 3760
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/openbsd.rs",
-      "kind": "unwrap_call",
-      "line": 3767
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/openbsd.rs",
-      "kind": "unwrap_call",
-      "line": 3768
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/openbsd.rs",
-      "kind": "unwrap_call",
-      "line": 3774
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/openbsd.rs",
-      "kind": "unwrap_call",
-      "line": 3775
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/openbsd.rs",
-      "kind": "unwrap_call",
-      "line": 3780
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/openbsd.rs",
-      "kind": "unwrap_call",
-      "line": 3781
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/openbsd.rs",
-      "kind": "unwrap_call",
-      "line": 3782
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/openbsd.rs",
       "kind": "expect_call",
-      "line": 3793
+      "line": 3757
     },
     {
       "classification": "production_adjacent_assumption",
@@ -63974,7 +63846,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "unwrap_call",
-      "line": 3802
+      "line": 3798
     },
     {
       "classification": "production_adjacent_assumption",
@@ -63982,7 +63854,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "unwrap_call",
-      "line": 3806
+      "line": 3810
     },
     {
       "classification": "production_adjacent_assumption",
@@ -63990,15 +63862,103 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "unwrap_call",
-      "line": 3807
+      "line": 3812
     },
     {
-      "classification": "panic_path_assumption",
-      "disposition": "requires_path_review_before_broader_release_claims",
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
-      "kind": "panic_macro",
-      "line": 3833
+      "kind": "unwrap_call",
+      "line": 3813
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/openbsd.rs",
+      "kind": "unwrap_call",
+      "line": 3816
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/openbsd.rs",
+      "kind": "unwrap_call",
+      "line": 3817
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/openbsd.rs",
+      "kind": "unwrap_call",
+      "line": 3822
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/openbsd.rs",
+      "kind": "unwrap_call",
+      "line": 3823
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/openbsd.rs",
+      "kind": "unwrap_call",
+      "line": 3830
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/openbsd.rs",
+      "kind": "unwrap_call",
+      "line": 3831
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/openbsd.rs",
+      "kind": "unwrap_call",
+      "line": 3837
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/openbsd.rs",
+      "kind": "unwrap_call",
+      "line": 3838
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/openbsd.rs",
+      "kind": "unwrap_call",
+      "line": 3843
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/openbsd.rs",
+      "kind": "unwrap_call",
+      "line": 3844
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/openbsd.rs",
+      "kind": "unwrap_call",
+      "line": 3845
     },
     {
       "classification": "production_adjacent_assumption",
@@ -64013,8 +63973,48 @@
       "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
+      "kind": "unwrap_call",
+      "line": 3865
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/openbsd.rs",
+      "kind": "unwrap_call",
+      "line": 3869
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/openbsd.rs",
+      "kind": "unwrap_call",
+      "line": 3870
+    },
+    {
+      "classification": "panic_path_assumption",
+      "disposition": "requires_path_review_before_broader_release_claims",
+      "fail_closed_relevance": "high",
+      "file": "src/openbsd.rs",
+      "kind": "panic_macro",
+      "line": 3896
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/openbsd.rs",
       "kind": "expect_call",
-      "line": 3862
+      "line": 3919
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/openbsd.rs",
+      "kind": "expect_call",
+      "line": 3925
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -79705,7 +79705,7 @@
       "line": 521
     }
   ],
-  "generated_at_utc": "2026-10-25T12:47:50Z",
+  "generated_at_utc": "2026-10-25T14:05:13Z",
   "non_claims": [
     "This audit does not claim that all Rust assumptions are safe.",
     "This audit does not claim that production request paths are panic-free.",
@@ -79761,7 +79761,7 @@
       "unwrap_call": 8513
     },
     "classification_complete": true,
-    "inventory_sha256": "7a389dfa0f20107ac8efb45eb0302bce68a38f317b47a19df29caf15db6566cd",
+    "inventory_sha256": "04476be932793f2aaee26cfddb1316deb17075215df7e8393a3e612505c53bda",
     "live_host_state_changed": false,
     "product_behavior_changed": false,
     "production_state_changed": false,

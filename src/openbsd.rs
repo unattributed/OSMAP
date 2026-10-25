@@ -2793,6 +2793,69 @@ pub(crate) fn fixture_current_rust_owned_http_pilot_control(
     Ok(stream)
 }
 
+/// Fixed test actors preserve only their stdin control at FD3 and the observed
+/// _osmap identity. Production builds contain no such test launcher.
+#[cfg(all(test, unix))]
+pub(crate) fn fixture_t04_child_profile(command: &mut std::process::Command, role: u8) {
+    use std::os::unix::process::CommandExt;
+    // SAFETY: all IDs/descriptors are fixed; only async-signal-safe syscalls run.
+    unsafe {
+        command.pre_exec(move || {
+            if role > 2 || libc::geteuid() != 0 {
+                return Err(io::ErrorKind::PermissionDenied.into());
+            }
+            let mut stops: libc::sigset_t = std::mem::zeroed();
+            if libc::sigemptyset(&mut stops) != 0
+                || libc::sigaddset(&mut stops, libc::SIGTERM) != 0
+                || libc::sigaddset(&mut stops, libc::SIGINT) != 0
+                || libc::sigaddset(&mut stops, libc::SIGHUP) != 0
+                || libc::sigprocmask(libc::SIG_UNBLOCK, &stops, std::ptr::null_mut()) != 0
+            {
+                return Err(io::Error::last_os_error());
+            }
+            if role < 2
+                && (libc::dup2(libc::STDIN_FILENO, 3) != 3 || libc::fcntl(3, libc::F_SETFD, 0) != 0)
+            {
+                return Err(io::Error::last_os_error());
+            }
+            if role != 0 {
+                let groups: [libc::gid_t; 3] = [1001, 1002, 1003];
+                if libc::setgroups(groups.len() as _, groups.as_ptr()) != 0
+                    || libc::setresgid(1001, 1001, 1001) != 0
+                    || libc::setresuid(1001, 1001, 1001) != 0
+                {
+                    return Err(io::Error::last_os_error());
+                }
+                let (mut ruid, mut euid, mut suid, mut rgid, mut egid, mut sgid) =
+                    (0, 0, 0, 0, 0, 0);
+                if libc::getresuid(&mut ruid, &mut euid, &mut suid) != 0
+                    || libc::getresgid(&mut rgid, &mut egid, &mut sgid) != 0
+                    || (ruid, euid, suid) != (1001, 1001, 1001)
+                    || (rgid, egid, sgid) != (1001, 1001, 1001)
+                    || !fixture_current_rust_http_groups_exact()
+                {
+                    return Err(io::ErrorKind::PermissionDenied.into());
+                }
+            }
+            Ok(())
+        });
+    }
+}
+/// The direct child remains unreaped, retaining its PID/PGID lease.
+#[cfg(all(test, unix))]
+pub(crate) fn fixture_t04_terminate_owned_group(pid: u32) -> io::Result<()> {
+    owned_child_exited_without_reap(pid)?;
+    let pid = i32::try_from(pid).map_err(|_| io::ErrorKind::InvalidInput)?;
+    if pid <= 1 {
+        return Err(io::ErrorKind::InvalidInput.into());
+    }
+    // SAFETY: successful waitid proves direct unreaped ownership before signal.
+    if unsafe { libc::kill(-pid, libc::SIGTERM) } != 0 {
+        return Err(io::Error::last_os_error());
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     #[test]
@@ -3988,67 +4051,4 @@ pub(crate) fn sql_exec_denial_policy_fixture(
         println!("\nnative_sql_exec_policy_denial result=PASS cases=2 denied_enosys=2 all_children_reaped=true forbidden_file_absent=true scratch=RETAINED product_qualified=false");
         Ok(())
     }
-}
-
-/// Fixed test actors preserve only their stdin control at FD3 and the observed
-/// _osmap identity. Production builds contain no such test launcher.
-#[cfg(all(test, unix))]
-pub(crate) fn fixture_t04_child_profile(command: &mut std::process::Command, role: u8) {
-    use std::os::unix::process::CommandExt;
-    // SAFETY: all IDs/descriptors are fixed; only async-signal-safe syscalls run.
-    unsafe {
-        command.pre_exec(move || {
-            if role > 2 || libc::geteuid() != 0 {
-                return Err(io::ErrorKind::PermissionDenied.into());
-            }
-            let mut stops: libc::sigset_t = std::mem::zeroed();
-            if libc::sigemptyset(&mut stops) != 0
-                || libc::sigaddset(&mut stops, libc::SIGTERM) != 0
-                || libc::sigaddset(&mut stops, libc::SIGINT) != 0
-                || libc::sigaddset(&mut stops, libc::SIGHUP) != 0
-                || libc::sigprocmask(libc::SIG_UNBLOCK, &stops, std::ptr::null_mut()) != 0
-            {
-                return Err(io::Error::last_os_error());
-            }
-            if role < 2 {
-                if libc::dup2(libc::STDIN_FILENO, 3) != 3 || libc::fcntl(3, libc::F_SETFD, 0) != 0 {
-                    return Err(io::Error::last_os_error());
-                }
-            }
-            if role != 0 {
-                let groups: [libc::gid_t; 3] = [1001, 1002, 1003];
-                if libc::setgroups(groups.len() as _, groups.as_ptr()) != 0
-                    || libc::setresgid(1001, 1001, 1001) != 0
-                    || libc::setresuid(1001, 1001, 1001) != 0
-                {
-                    return Err(io::Error::last_os_error());
-                }
-                let (mut ruid, mut euid, mut suid, mut rgid, mut egid, mut sgid) =
-                    (0, 0, 0, 0, 0, 0);
-                if libc::getresuid(&mut ruid, &mut euid, &mut suid) != 0
-                    || libc::getresgid(&mut rgid, &mut egid, &mut sgid) != 0
-                    || (ruid, euid, suid) != (1001, 1001, 1001)
-                    || (rgid, egid, sgid) != (1001, 1001, 1001)
-                    || !fixture_current_rust_http_groups_exact()
-                {
-                    return Err(io::ErrorKind::PermissionDenied.into());
-                }
-            }
-            Ok(())
-        });
-    }
-}
-/// The direct child remains unreaped, retaining its PID/PGID lease.
-#[cfg(all(test, unix))]
-pub(crate) fn fixture_t04_terminate_owned_group(pid: u32) -> io::Result<()> {
-    owned_child_exited_without_reap(pid)?;
-    let pid = i32::try_from(pid).map_err(|_| io::ErrorKind::InvalidInput)?;
-    if pid <= 1 {
-        return Err(io::ErrorKind::InvalidInput.into());
-    }
-    // SAFETY: successful waitid proves direct unreaped ownership before signal.
-    if unsafe { libc::kill(-pid, libc::SIGTERM) } != 0 {
-        return Err(io::Error::last_os_error());
-    }
-    Ok(())
 }

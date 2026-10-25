@@ -20492,7 +20492,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
             "S04-02-INSTALLED-startup03",
             "S04-02-INSTALLED-full01"
           ],
-          "reference": "POST-RESULT accounting reconciliation only: root read retained independent actual result reviews for S04-02-INSTALLED-startup03, S04-02-INSTALLED-full01 and S04-02-INSTALLED-full02 under /home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/. Native observed outcomes, initial unknown causes, separate cleanup and unchanged elapsed remain retained. This records completed analysis and does not assert a historical pre-dispatch reassessment PASS. Current combined correction is readonly01-02-combined-reassessment.json SHA25640bf4a52e7408748549975ba9a5f5723c41d685ac13fbd4582ce8aabaee9e77d.",
+          "reference": "POST-RESULT accounting reconciliation only: root read retained independent actual result reviews for S04-02-INSTALLED-startup03, S04-02-INSTALLED-full01 and S04-02-INSTALLED-full02 under /home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/. Native observed outcomes, initial unknown causes, separate cleanup and unchanged elapsed remain retained. This records completed analysis and does not assert a historical pre-dispatch reassessment PASS. Current combined correction is readonly01-02-combined-reassessment.json SHA25640bf4a52e7408748549975ba9a5f5723c41d685ac13fbd4582ce8aabaee9e77d. Actual joint post-result receipt historical-failed-chains-post-result-reassessment.json SHA2562ca3b78c14af2a9f085368d1a647fcc7c67ccdf24b684fcf277018c004544fa1 binds12retainedreview/recoveryhashes.",
           "next_action": "Reuse passed positive05 Runtime/credential result; no credential replay for browser. Correct genuine raw-token consumer and complete distinct fresh native concurrency/containment cases plus post-core browser controls. No old authority/allowance/deadline reset."
         }
       },
@@ -20548,7 +20548,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
             "S04-02-INSTALLED-full02",
             "S04-02-INSTALLED-full03"
           ],
-          "reference": "POST-RESULT accounting reconciliation only: root read retained independent actual result reviews for S04-02-INSTALLED-full02, S04-02-INSTALLED-full03 and S04-02-INSTALLED-full04 under /home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/. Native observed outcomes, initial unknown causes, separate cleanup and unchanged elapsed remain retained. This records completed analysis and does not assert a historical pre-dispatch reassessment PASS. Current combined correction is readonly01-02-combined-reassessment.json SHA25640bf4a52e7408748549975ba9a5f5723c41d685ac13fbd4582ce8aabaee9e77d.",
+          "reference": "POST-RESULT accounting reconciliation only: root read retained independent actual result reviews for S04-02-INSTALLED-full02, S04-02-INSTALLED-full03 and S04-02-INSTALLED-full04 under /home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/. Native observed outcomes, initial unknown causes, separate cleanup and unchanged elapsed remain retained. This records completed analysis and does not assert a historical pre-dispatch reassessment PASS. Current combined correction is readonly01-02-combined-reassessment.json SHA25640bf4a52e7408748549975ba9a5f5723c41d685ac13fbd4582ce8aabaee9e77d. Actual joint post-result receipt historical-failed-chains-post-result-reassessment.json SHA2562ca3b78c14af2a9f085368d1a647fcc7c67ccdf24b684fcf277018c004544fa1 binds12retainedreview/recoveryhashes.",
           "next_action": "Reuse passed positive05 Runtime/credential result; no credential replay for browser. Correct genuine raw-token consumer and complete distinct fresh native concurrency/containment cases plus post-core browser controls. No old authority/allowance/deadline reset."
         }
       },
@@ -20604,7 +20604,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
             "S04-02-INSTALLED-full04",
             "S04-02-INSTALLED-full05-positive"
           ],
-          "reference": "POST-RESULT accounting reconciliation only: root read retained independent actual result reviews for S04-02-INSTALLED-full04, S04-02-INSTALLED-full05-positive and S04-02-INSTALLED-readonly-ui01 under /home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/. Native observed outcomes, initial unknown causes, separate cleanup and unchanged elapsed remain retained. This records completed analysis and does not assert a historical pre-dispatch reassessment PASS. Current combined correction is readonly01-02-combined-reassessment.json SHA25640bf4a52e7408748549975ba9a5f5723c41d685ac13fbd4582ce8aabaee9e77d.",
+          "reference": "POST-RESULT accounting reconciliation only: root read retained independent actual result reviews for S04-02-INSTALLED-full04, S04-02-INSTALLED-full05-positive and S04-02-INSTALLED-readonly-ui01 under /home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/. Native observed outcomes, initial unknown causes, separate cleanup and unchanged elapsed remain retained. This records completed analysis and does not assert a historical pre-dispatch reassessment PASS. Current combined correction is readonly01-02-combined-reassessment.json SHA25640bf4a52e7408748549975ba9a5f5723c41d685ac13fbd4582ce8aabaee9e77d. Actual joint post-result receipt historical-failed-chains-post-result-reassessment.json SHA2562ca3b78c14af2a9f085368d1a647fcc7c67ccdf24b684fcf277018c004544fa1 binds12retainedreview/recoveryhashes.",
           "next_action": "Reuse passed positive05 Runtime/credential result; no credential replay for browser. Correct genuine raw-token consumer and complete distinct fresh native concurrency/containment cases plus post-core browser controls. No old authority/allowance/deadline reset."
         }
       },
@@ -20629,6 +20629,28 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "reference": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/readonly-ui02/result-independent-review.json: actual wrong stored-ID cookie refused by normal SessionService; zero POST/credential operations. Owned processes/helper restore/key custody/protected readback PASS. Actual raw-token producer/consumer correction f4130974e21352655d12c393674737346ff2ea3908ca6b493099f22c93225174 supersedes inherited valid-cookie premise.",
         "elapsed_status": "MEASURED",
         "elapsed_seconds": 127.0
+      },
+      {
+        "id": "S04-02-INSTALLED-build05",
+        "boundary": "authoritative-native-password-workflow",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "source_revision": "0c9f699793d3911aa8472694462b14ade992cda9",
+        "change_reference": "One matchinglibtestbuild for newly reviewed fixed T04/T05 testsource, not repeatedproductionWeb/helperbuild or credential operation. Actualsource/typecheck/sourceguardpassed.",
+        "success_chain_review": {
+          "reviewer": "/root/transaction_review",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/build05/independent-review.json",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "reference": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/build05/actual-result-independent-review.json SHA25632ee1bf5d5a84742b5a358a499005cc98e1e46460354eb96e4aca5c6379fa634. Actualbuild/compilecompleteexit0, libtestfab3bc8025adce166a2aa68b4ce77d2887a34f7ccfc579d25c483d3a6c38722971223272B, all6selectors/nativefocusedpostwrite2PASS. No credential/app/SQLoperation.",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 106.0
       }
     ],
     "prior_investigations": [
@@ -22840,7 +22862,12 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "actual_review": "t04-t05-applied-source-independent-review.json SHA2562e6bdaef8fb2c9d5d635394848afa1d2a3165de70609d477d09970ac82fbaeb2; actual applied5source diff CLEAR; no-run compilePASS11.98s; postwrite_fixture_ focused2PASS0failed. Fixed T04 controller draft still in preparation.",
         "controller_source_result": "Actual final independent source CLEAR ffedad1558778ea3f4055a831c05bcd50e380dfba6bf8d7571a7d56626849a9a; local no-runPASS4.73s/Unixbodiestypechecked, CWEguardPASS, V10total9963/test9878/high0. Production unchanged; native tests not yet run."
       },
-      "current_functional_outcome": "positive05 ordinary Runtime/fileTOTP20HTTP/1passwordPOST PASS, activeepoch1/authoritative20261025114039/two old sessions revoked/new epoch1/controlSQL+HTTP+IMAP preserved. Browser incomplete; initialcleanup uncertain retained, separate exacthelperrecovery PASS. Readonly01/02 cookie premise corrected: StoreID cannot reconstruct bearer. T04/T05 native and T09 pending."
+      "current_functional_outcome": "positive05 ordinary Runtime/fileTOTP20HTTP/1passwordPOST PASS, activeepoch1/authoritative20261025114039/two old sessions revoked/new epoch1/controlSQL+HTTP+IMAP preserved. Browser incomplete; initialcleanup uncertain retained, separate exacthelperrecovery PASS. Readonly01/02 cookie premise corrected: StoreID cannot reconstruct bearer. T04/T05 native and T09 pending.",
+      "lint_followup": {
+        "observed": "Normalpushclippy refused2itemsaftertestmodule+1collapsibleif; historicalfailedpush retained. Only helperrelocation/equivalentBooleancondition corrected, noallow/guardbypass. ActualclippyalltargetsPASS11.65s.",
+        "independent_equivalence": "t04-controller-lint-equivalence-review.json SHA256de85f5e0ccc91d2f5d8e11af3ad153c024badeec56f8ef62d9e54482619353c9",
+        "native_reuse": "Actualfab3artifactremainsboundtosigned0c9f699793d3911aa8472694462b14ade992cda9; norebuildclaimedfromlintfollowup."
+      }
     }
   },
   "execution_contract": {
@@ -36139,6 +36166,60 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
             }
           }
         ]
+      },
+      {
+        "id": "ordinary-installed-failure-libtest-build05",
+        "kind": "NATIVE",
+        "environment_ids": [
+          "obsd1"
+        ],
+        "gap_ids": [
+          "single-host-readiness"
+        ],
+        "test_ids": [
+          "S04-02-T04",
+          "S04-02-T05"
+        ],
+        "allowed_paths": [
+          "docs/UX_EXECUTION_LEDGER.md"
+        ],
+        "operations": [
+          {
+            "target_id": "local",
+            "program": "/bin/sh",
+            "arguments": [
+              "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/build05/build.sh"
+            ],
+            "privilege": "user"
+          }
+        ],
+        "expected": "Compile only signed current fixed T04/T05 libtest, sourcebefore/after manifest, scoped ownpackageclean/trusteddependencycache, one matchingnewtestartifact/sixactualselectors, two focusednativepostwritefixturetests. No app/auth/SQL/credential/serviceoperation. OrdinaryWebf48d/helper0f95 reusedunchanged. Carrier660s/compiler600s; functionaldevelopmentprofile only.",
+        "prerequisites": [
+          {
+            "id": "actual-final-source-review",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/t04-controller-final-source-independent-review.json",
+              "sha256": "ffedad1558778ea3f4055a831c05bcd50e380dfba6bf8d7571a7d56626849a9a"
+            }
+          },
+          {
+            "id": "actual-fixed-compiler-review",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/build05/independent-review.json",
+              "sha256": "aeb38c30e1a43a6e8bc64a9ad709bb0ee019cb25d864e750dbab17133ea81f1a"
+            }
+          },
+          {
+            "id": "signed-source-input-receipt",
+            "status": "PASS",
+            "evidence": {
+              "path": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/build05/source-receipt.json",
+              "sha256": "fadfe5347c083e63c366137afc507ecc7a69db7f255ed717f2b124c03328f07b"
+            }
+          }
+        ]
       }
     ],
     "budget": {
@@ -36154,7 +36235,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
   },
   "blocker": null,
   "independent_next_action": "Actual assigned Runtime, T04/T05, and status/security reviewers identify next concrete boundary; root owns integration, native/browser, Git and delivery.",
-  "updated_at": "2026-10-25T12:50:40Z"
+  "updated_at": "2026-10-25T14:05:14Z"
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->
