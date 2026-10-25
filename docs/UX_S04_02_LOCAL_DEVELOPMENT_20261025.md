@@ -2,13 +2,13 @@
 
 ## Current result and boundary
 
-**Fully local obsd1 OSMAP UX development is installed and ready for the owner's
-T09 usability review.** The read-only reference replica, transport recovery and
-instance restart checks passed. The new synthetic account completed ordinary
-HTTPS MFA login, local Inbox and password-page navigation/control checks.
-Human acceptance remains pending. This does not qualify production Toronto
-password changes. Earlier controlled native transaction/session results retain
-their stated local scope; they did not prove the failed real mailbox journey.
+**Owner-confirmed Duncan login and password-page access passed. A subsequent
+stock-format password-change refusal is under correction; owner retry readiness
+is pending native qualification.** The one-time local hash synchronization used
+the unchanged mail hash, restored original TOTP enrollment and enrolled Duncan in
+the local native policies. The account remains local development authority.
+The read-only reference replica and prior controlled results retain their scope;
+human T09 acceptance is pending.
 
 The operator selected obsd1 for all OSMAP UX development, with local authentication,
 mailbox access and controlled development accounts. Toronto remains the live mail
@@ -191,3 +191,21 @@ human T09. The original initial-cutover failure, residue-only recovery, correcte
 read-only observation and private resource backups are retained independently.
 The matching `reconciliation.corrected.actual.json` has SHA256
 `18a34ad83182ec48d162d677f9ba30e9037baeb74bec6b6f0ec4eeab3d9f4a7c`.
+
+## Stock bcrypt compatibility failure and correction
+
+The operator confirmed normal login and password-page access after the requested
+local credential synchronization. Their following password-change attempt was a
+known no-write refusal. The helper's bounded snapshot-read diagnostic records SQL
+status 0, 140 stdout bytes, zero stderr bytes and parser phase 9. That phase checks
+the stored hash language: the imported valid 60-byte bcrypt lacked the BLF scheme
+prefix required by the reader. The current row remained unchanged at epoch 1,
+active with no uncertainty marker. The operator made no new PostfixAdmin change.
+
+The source correction recognizes the stock raw bcrypt representation for reads
+and exact conditional comparisons, without adding a prefix or changing original
+bytes. Native credential authentication still governs password interpretation,
+and new hashes remain Argon2id-only. Public-fixture RED/GREEN regressions cover
+read, exact CAS, zero-row conflict, malformed encodings and replacement-output
+refusal. Matching ordinary helper installation and controlled native qualification
+are the next checks; the owner's candidate password is neither retained nor replayed.

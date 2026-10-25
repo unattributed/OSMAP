@@ -1,5 +1,28 @@
 # Current Project Status
 
+2026-10-25 UTC — **Duncan login is owner-confirmed; stock bcrypt password-change compatibility is being corrected.**
+At the operator's request the writable local Duncan row received the current mail
+password hash once, with byte-exact source/target readback, epoch 1, one old
+browser session revoked, other accounts preserved and original TOTP enrollment
+restored to the active local profile. The operator then confirmed successful
+password/TOTP login and access to the password page. These are human observations.
+
+The subsequent local password-change attempt returned KnownRefused. The ordinary
+helper diagnostic identifies snapshot_read, successful bounded SQL output and
+parser phase 9. Its password reader required a BLF scheme prefix, while the
+stock PostfixAdmin/Dovecot row stores a valid unprefixed 60-byte bcrypt value.
+The authoritative hash/time and active epoch 1 remained unchanged, with no
+uncertainty marker. This is a compatibility defect before replacement hashing
+or SQL UPDATE, not a password-length refusal. No candidate credential is retained
+in public source or evidence, and the operation is not repeated against Duncan.
+
+The Rust backend and Python compatibility mirror now recognize bounded raw
+bcrypt syntax while preserving exact original bytes for CAS. Actual Dovecot
+authentication remains mandatory before a write, and replacement hash generation
+remains Argon2id-only. Focused RED/GREEN regressions pass; native installation and
+matching stock-format qualification remain pending. **Owner retry readiness is
+withdrawn until that installed correction is verified.** Human T09 is pending.
+
 2026-10-25 UTC — **Fully local obsd1 UX development is installed; T09 owner review is ready.**
 The normal HTTPS address <https://obsd1.blackbagsecurity.com/login> now uses the
 local writable development database, native credential/epoch service, file TOTP

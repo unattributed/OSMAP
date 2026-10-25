@@ -1,5 +1,17 @@
 # Decision Log
 
+2026-10-25 UTC — **Accept the stock bcrypt snapshot representation without normalization.**
+The owner's successful login followed by a known no-write password-change refusal
+exposed a format mismatch: Dovecot accepts the stored unprefixed bcrypt, while the
+credential transaction reader accepts only the scheme-prefixed form. Retained
+native parser-phase 9 diagnostics and RED regressions establish the boundary.
+Accept only well-formed raw bcrypt versions a/b/y with supported work factors;
+leave the actual stored bytes unchanged in the snapshot and CAS predicate.
+Keep mandatory native authentication, containment and Argon2id replacement policy.
+Qualify the updated ordinary helper against a fresh controlled stock-format
+account. Preserve Duncan's current hash, factor, epoch and sessions throughout;
+do not replay the owner's request or treat source tests as installed completion.
+
 2026-10-25 UTC — **Qualify the local application independently from the reference replica.**
 Keep the source replica in its separate read-only MariaDB instance. The OSMAP
 application uses the original writable local database and only synthetic native

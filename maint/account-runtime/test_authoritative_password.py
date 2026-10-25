@@ -14,7 +14,7 @@ class Executor:
         value=self.responses.pop(0)
         if isinstance(value, Exception): raise value
         return value
-    def row(self): return (0,(OLD.encode().hex().upper()+'\t'+STAMP+'\t1\t1\n').encode(),b'')
+    def row(self, password_hash=OLD): return (0,(password_hash.encode().hex().upper()+'\t'+STAMP+'\t1\t1\n').encode(),b'')
     def receipt(self): return (0,('1\n'+NEW.encode().hex().upper()+'\t20261004170001\n').encode(),b'')
 
 class PasswordTests(unittest.TestCase):
@@ -49,6 +49,42 @@ class PasswordTests(unittest.TestCase):
         for term in ['START TRANSACTION','AND active=1','AND BINARY password=BINARY','AND modified=STR_TO_DATE','SELECT ROW_COUNT()','COMMIT']:
             self.assertIn(term,query)
         self.assertNotIn(OLD,query);self.assertNotIn(NEW,query);self.assertNotIn(ACCOUNT,query)
+    def test_raw_bcrypt_read_and_cas_preserve_exact_stored_bytes(self):
+        for version in ('a', 'b', 'y'):
+            raw='$2'+version+'$05$'+'A'*53
+            executor=Executor();adapter=Adapter(executor)
+            executor.responses=[executor.row(raw)]
+            row=adapter.read(ACCOUNT)
+            self.assertEqual(row.password_hash,raw)
+            executor.responses=[(0,(NEW+'\n').encode(),b''),executor.receipt()]
+            receipt=adapter.replace(row,ACCOUNT,'previous',PASSPHRASE,PASSPHRASE)
+            self.assertTrue(receipt.credential_written)
+            self.assertFalse(receipt.sessions_revoked)
+            self.assertEqual(executor.calls[-2][1],Adapter.HASH_ARGS)
+            query=executor.calls[-1][2].decode()
+            self.assertIn('AND BINARY password=BINARY '+Adapter._hex(raw),query)
+            self.assertNotIn(Adapter._hex('{BLF-CRYPT}'+raw),query)
+            self.assertEqual(len(executor.calls),3)
+    def test_raw_bcrypt_cost_bounds_and_malformed_shapes(self):
+        for cost in ('04','31'):
+            raw='$2b$'+cost+'$'+'A'*53
+            self.executor.responses=[self.executor.row(raw)]
+            self.assertEqual(self.adapter.read(ACCOUNT).password_hash,raw)
+        raw='$2b$05$'+'A'*53
+        invalid=['$2b$'+cost+'$'+'A'*53 for cost in ('00','03','32','99','0x')]
+        invalid.extend([raw.replace('$2b$','$2x$'),raw[:-1],raw+'A',raw[:-1]+'+',raw+'\n'])
+        from authoritative_password import Snapshot
+        for value in invalid:
+            with self.subTest(shape=value[:7],length=len(value)):
+                executor=Executor();adapter=Adapter(executor)
+                executor.responses=[executor.row(value)]
+                with self.assertRaises(Refused):adapter.read(ACCOUNT)
+                self.assertEqual(len(executor.calls),1)
+                executor.calls=[]
+                with self.assertRaises(Refused):
+                    adapter.replace(Snapshot(ACCOUNT,value,STAMP,True),ACCOUNT,
+                                    'previous',PASSPHRASE,PASSPHRASE)
+                self.assertEqual(executor.calls,[])
     def test_foreign_target_and_invalid_password_never_dispatch_writer(self):
         row=self.snapshot();before=len(self.executor.calls)
         with self.assertRaises(Refused):self.adapter.replace(row,'bob@example.test','previous',PASSPHRASE,PASSPHRASE)
@@ -146,10 +182,11 @@ print('fresh_epoch0_and_epoch1_history_calendar_closed=PASS')
         with self.assertRaises(Refused):adapter.replace(row,ACCOUNT,'old',PASSPHRASE,PASSPHRASE)
         self.assertEqual(len(executor.calls),0)
     def test_old_bcrypt_output_is_not_accepted_for_new_password(self):
-        executor=Executor();adapter=Adapter(executor);executor.responses=[executor.row()]
-        row=adapter.read(ACCOUNT);executor.responses=[(0,(OLD+'\n').encode(),b'')]
-        with self.assertRaises(Refused):adapter.replace(row,ACCOUNT,'old',PASSPHRASE,PASSPHRASE)
-        self.assertEqual(len(executor.calls),2)
+        for value in (OLD,OLD.removeprefix('{BLF-CRYPT}')):
+            executor=Executor();adapter=Adapter(executor);executor.responses=[executor.row()]
+            row=adapter.read(ACCOUNT);executor.responses=[(0,(value+'\n').encode(),b'')]
+            with self.assertRaises(Refused):adapter.replace(row,ACCOUNT,'old',PASSPHRASE,PASSPHRASE)
+            self.assertEqual(len(executor.calls),2)
     def test_native_executor_disallows_extra_commands_and_bounds(self):
         from native_transport_test_support import PublicFixtureExecutor as NativeExecutor
         executor=NativeExecutor()

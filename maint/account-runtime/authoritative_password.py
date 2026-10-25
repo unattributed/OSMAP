@@ -55,6 +55,7 @@ class AuthoritativePasswordAdapter:
 
     ARGON2_PATTERN = r'\{ARGON2ID\}\$argon2id\$v=19\$m=65536,t=3,p=1\$[A-Za-z0-9+/]{22}\$[A-Za-z0-9+/]{43}'
     BLF_PATTERN = r'\{BLF-CRYPT\}\$2[aby]\$\d{2}\$[./A-Za-z0-9]{53}'
+    RAW_BLF_PATTERN = r'\$2[aby]\$(?:0[4-9]|[12][0-9]|3[01])\$[./A-Za-z0-9]{53}'
 
     def __init__(self, executor, *, before_write=None):
         if before_write is not None and not callable(before_write):
@@ -76,6 +77,14 @@ class AuthoritativePasswordAdapter:
     @staticmethod
     def _hex(value):
         return 'CONVERT(0x' + value.encode('utf-8').hex() + ' USING utf8mb4)'
+
+    @classmethod
+    def _supported_hash(cls, value):
+        # Stock BLF-CRYPT passdb rows can omit the scheme prefix. Recognize
+        # their encoding without adding a prefix: Snapshot and CAS keep the
+        # exact stored bytes. Replacement output remains ARGON2ID-only below.
+        return isinstance(value, str) and any(re.fullmatch(pattern, value) for pattern in
+            (cls.BLF_PATTERN, cls.RAW_BLF_PATTERN, cls.ARGON2_PATTERN))
 
     @staticmethod
     def _stamp(value):
@@ -144,8 +153,7 @@ class AuthoritativePasswordAdapter:
             password_hash = bytes.fromhex(encoded).decode('ascii')
         except (ValueError, UnicodeError):
             raise Refused('authoritative password scheme unavailable') from None
-        if not (re.fullmatch(self.BLF_PATTERN, password_hash) or
-                re.fullmatch(self.ARGON2_PATTERN, password_hash)):
+        if not self._supported_hash(password_hash):
             raise Refused('authoritative password scheme unavailable')
         return Snapshot(account, password_hash, self._stamp(fields[1]), fields[3] == '1')
 
@@ -155,9 +163,7 @@ class AuthoritativePasswordAdapter:
             raise Refused('account authority mismatch')
         self.validate_new(current, new, confirmation)
         self._stamp(snapshot.modified)
-        if (not isinstance(snapshot.password_hash,str) or
-                not (re.fullmatch(self.BLF_PATTERN,snapshot.password_hash) or
-                     re.fullmatch(self.ARGON2_PATTERN,snapshot.password_hash)) or
+        if (not self._supported_hash(snapshot.password_hash) or
                 not isinstance(snapshot.smtp_active,bool)):
             raise Refused('authoritative snapshot refused')
         # Qualified native ARGON2ID processes every allowed UTF-8 byte. Existing

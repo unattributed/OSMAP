@@ -301,7 +301,15 @@ fn supported_hash(value: &str) -> bool {
     if argon_hash(value) {
         return true;
     }
-    let Some(rest) = value.strip_prefix("{BLF-CRYPT}$2") else {
+    // Stock Dovecot BLF passdbs may store the self-identifying 60-byte bcrypt
+    // form without a scheme prefix. This is snapshot syntax only: the caller
+    // still authenticates through the qualified passdb before any write. Never
+    // normalize these bytes; the CAS must compare the actual stored value.
+    let (bcrypt, bare) = match value.strip_prefix("{BLF-CRYPT}") {
+        Some(bcrypt) => (bcrypt, false),
+        None => (value, true),
+    };
+    let Some(rest) = bcrypt.strip_prefix("$2") else {
         return false;
     };
     let bytes = rest.as_bytes();
@@ -313,6 +321,9 @@ fn supported_hash(value: &str) -> bool {
         && bytes[5..]
             .iter()
             .all(|b| b.is_ascii_alphanumeric() || matches!(b, b'.' | b'/'))
+        // Keep the existing prefixed language unchanged; newly admitted bare
+        // bcrypt must also carry a supported decimal work factor,04 through31.
+        && (!bare || (4..=31).contains(&((bytes[2] - b'0') * 10 + bytes[3] - b'0')))
 }
 
 #[cfg(test)]

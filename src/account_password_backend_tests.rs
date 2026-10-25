@@ -158,6 +158,69 @@ fn fixed_read_hash_and_conditional_write_return_only_database_time() {
 }
 
 #[test]
+fn bare_stock_bcrypt_snapshot_reaches_exact_cas_without_normalization() {
+    for (version, cost) in [("a", "04"), ("b", "05"), ("y", "31")] {
+        let raw = format!("$2{version}${cost}${}", "A".repeat(53));
+        assert_eq!(raw.len(), 60);
+        for count in ["1", "0"] {
+            let backend = Backend::new(Executor::new(vec![
+                ok(format!("{}\t{STAMP}\t1\t1\n", upper_hex(raw.as_bytes()))),
+                hash(),
+                receipt(count),
+            ]));
+            let snapshot = backend.read(ACCOUNT, deadline()).unwrap();
+            assert_eq!(snapshot.password_hash, raw);
+            let result = backend.replace(snapshot, &request(PASSWORD), deadline(), || Ok(()));
+            if count == "1" {
+                assert_eq!(result.unwrap().changed_at(), NEXT);
+            } else {
+                assert!(matches!(result, Err(Error::Refused)));
+            }
+            let calls = backend.executor.calls.borrow();
+            assert_eq!(calls.len(), 3);
+            assert_eq!(calls[1].program, HASH_PROGRAM);
+            assert_eq!(calls[1].args, HASH_ARGS);
+            let query = std::str::from_utf8(&calls[2].input).unwrap();
+            assert!(query.contains(&format!("AND BINARY password=BINARY {}", sql_hex(&raw))));
+            assert!(!query.contains(&sql_hex(&format!("{{BLF-CRYPT}}{raw}"))));
+            assert!(query.contains(&format!("SET password={}", sql_hex(&new_hash()))));
+            assert_eq!(query.matches("UPDATE mailbox ").count(), 1);
+        }
+    }
+}
+
+#[test]
+fn malformed_bare_bcrypt_snapshot_refuses_before_hash_or_cas() {
+    let valid = format!("$2b$05${}", "A".repeat(53));
+    let mut invalid = vec![
+        valid[..59].into(),
+        format!("{valid}A"),
+        format!(" {valid}"),
+        format!("{valid}\n"),
+        valid.replacen("$2b$", "$2x$", 1),
+        valid.replacen("$05$", "$q5$", 1),
+        valid.replacen("$05$", "$5$", 1),
+        valid.replacen('A', "=", 1),
+        valid.replacen('A', "é", 1),
+        format!("{{UNKNOWN}}{valid}"),
+    ];
+    for cost in ["00", "03", "32", "99"] {
+        invalid.push(valid.replacen("$05$", &format!("${cost}$"), 1));
+    }
+    for raw in invalid {
+        let backend = Backend::new(Executor::new(vec![ok(format!(
+            "{}\t{STAMP}\t1\t1\n",
+            upper_hex(raw.as_bytes())
+        ))]));
+        assert!(matches!(
+            backend.read(ACCOUNT, deadline()),
+            Err(Error::Refused)
+        ));
+        assert_eq!(backend.executor.calls.borrow().len(), 1);
+    }
+}
+
+#[test]
 fn account_snapshot_and_fresh_before_write_are_required() {
     let backend = Backend::new(Executor::new(vec![row()]));
     let snapshot = backend.read("bob@example.test", deadline()).unwrap();
@@ -247,6 +310,7 @@ fn shell_shaped_accounts_and_expired_requests_never_dispatch() {
 fn unsupported_or_multiline_generated_hash_never_dispatches_sql() {
     for text in [
         old_hash(),
+        old_hash().strip_prefix("{BLF-CRYPT}").unwrap().into(),
         "unknown".into(),
         format!("{}\n\n", new_hash()),
         new_hash().replace("m=65536", "m=8192"),

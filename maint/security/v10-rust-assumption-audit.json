@@ -6606,7 +6606,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_password_backend_tests.rs",
       "kind": "unwrap_call",
-      "line": 163
+      "line": 171
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -6614,7 +6614,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_password_backend_tests.rs",
       "kind": "unwrap_call",
-      "line": 170
+      "line": 175
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -6622,7 +6622,23 @@
       "fail_closed_relevance": "low",
       "file": "src/account_password_backend_tests.rs",
       "kind": "unwrap_call",
-      "line": 193
+      "line": 183
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/account_password_backend_tests.rs",
+      "kind": "unwrap_call",
+      "line": 226
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/account_password_backend_tests.rs",
+      "kind": "unwrap_call",
+      "line": 233
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -6638,7 +6654,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_password_backend_tests.rs",
       "kind": "unwrap_call",
-      "line": 305
+      "line": 313
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -6646,7 +6662,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_password_backend_tests.rs",
       "kind": "unwrap_call",
-      "line": 323
+      "line": 320
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -6654,7 +6670,7 @@
       "fail_closed_relevance": "low",
       "file": "src/account_password_backend_tests.rs",
       "kind": "unwrap_call",
-      "line": 326
+      "line": 369
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -6662,7 +6678,23 @@
       "fail_closed_relevance": "low",
       "file": "src/account_password_backend_tests.rs",
       "kind": "unwrap_call",
-      "line": 340
+      "line": 387
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/account_password_backend_tests.rs",
+      "kind": "unwrap_call",
+      "line": 390
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/account_password_backend_tests.rs",
+      "kind": "unwrap_call",
+      "line": 404
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -79713,7 +79745,7 @@
       "line": 521
     }
   ],
-  "generated_at_utc": "2026-10-25T18:31:51Z",
+  "generated_at_utc": "2026-10-25T20:38:34Z",
   "non_claims": [
     "This audit does not claim that all Rust assumptions are safe.",
     "This audit does not claim that production request paths are panic-free.",
@@ -79755,25 +79787,25 @@
       "panic_path_assumption": 88,
       "production_adjacent_assumption": 2480,
       "startup_or_global_invariant": 10,
-      "test_or_fixture_assumption": 7379
+      "test_or_fixture_assumption": 7383
     },
     "by_fail_closed_relevance": {
       "high": 2568,
-      "low": 7379,
+      "low": 7383,
       "medium": 17
     },
     "by_kind": {
       "expect_call": 1118,
       "panic_macro": 305,
       "unreachable_macro": 27,
-      "unwrap_call": 8514
+      "unwrap_call": 8518
     },
     "classification_complete": true,
-    "inventory_sha256": "43260e688003a6d6dacc584c1a8ad0921f9d9e01eede937f6c951eee885291b3",
+    "inventory_sha256": "2e6b49248aec5aaf414a45e1ca3d1cd42d35a8a5c08b21f79a328f066601cd37",
     "live_host_state_changed": false,
     "product_behavior_changed": false,
     "production_state_changed": false,
     "slice0_carried_forward_rust_assumption_count": 712,
-    "total_count": 9964
+    "total_count": 9968
   }
 }

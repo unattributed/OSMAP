@@ -1,5 +1,17 @@
 # OSMAP UX execution ledger
 
+2026-10-25 UTC — **S04-02 IN_PROGRESS: owner credential change refused on raw bcrypt compatibility.**
+Owner login and password-page access passed, but the required password change
+returned KnownRefused at snapshot parser phase 9 before conditional SQL dispatch.
+The existing epoch 1 is unchanged and no uncertainty marker is present. Valid
+stock raw bcrypt is now recognized in Rust source and the Python compatibility
+mirror, preserving exact stored bytes/CAS and Argon2-only new hashes. Actual
+RED/GREEN checks pass; helper-only native build07 and installed qualification
+remain pending. Login/page access is not human T09 acceptance. The earlier
+controlled passes and real-account failures remain preserved at their scope;
+current UAT readiness is withdrawn. No credential retry or native build is
+claimed by this source/ledger update.
+
 2026-10-25 UTC — **Fully local development installation UAT_READY; owner T09 PENDING.**
 The current ordinary Web2678 build, helper0f and private-diagnostic RC766 run the
 local synthetic dataset on obsd1. Actual normal password/TOTP login, local Inbox,
@@ -10040,7 +10052,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
   "slice": "S04-02",
   "original_requirement": "Page 22 own-account password change, authoritative backend and step-up; independent accessible Show/Hide on current/new/confirmation",
   "source_baseline": "b4bc371bd645ea009e4d257b269c73bd7294c8e9",
-  "state": "UAT_READY",
+  "state": "IN_PROGRESS",
   "integration_owner": "/root",
   "roles": {
     "project_manager": [
@@ -10442,14 +10454,21 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
       ],
       "owner": "/root",
       "frontend_backend_outcome": "Actual guarded own-account coordinator verifies currentpassword/freshTOTP, executes one restrictedSQLCAS and authoritativeepoch/time, handles accountauthcache, revokes allOSMAPbrowser sessions and verifies oldreject/newadmit. Postwrite uncertainty remainscontained/no replay. ExistingthirdpartySMTP/IMAP connections notclaimedterminated.",
-      "dependencies": [],
+      "dependencies": [
+        {
+          "owner": "/root",
+          "condition": "Source-bound native helper must accept stock raw bcrypt snapshots without altering stored bytes, while preserving conditional SQL and Argon-only replacement invariants.",
+          "status": "PENDING",
+          "next_action": "Build07 helper-only source checkpoint/660-second recipe, then matching native/installed compatibility qualification; no build or credential dispatch is claimed by this ledger update."
+        }
+      ],
       "essential_qa": "One controlled installed Alice change with currentpassword/freshTOTP, oneSQLCAS/epoch, allOSMAPbrowser sessions revoked, actualaccountcachehandling and oldreject/newadmit; Bob/mail preserved. Reuse matching prior source evidence; only changed replay/uncertainty/security checks. Existingthirdpartymailconnections mayremain, disclose limit. No publicservice/config cutover.",
       "stages": {
         "implementation": "PASS",
         "source_tests": "PASS",
-        "native_tests": "PASS",
-        "deployed_qa": "PASS",
-        "independent_review": "PASS",
+        "native_tests": "PENDING",
+        "deployed_qa": "FAIL",
+        "independent_review": "PENDING",
         "recovery": "PASS"
       },
       "evidence": [
@@ -10524,9 +10543,17 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         {
           "stage": "independent_review",
           "reference": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/local-development01/actual-final-independent-review.json SHA256 c22836d797c8917cfaf4c85d5bca851d43727de0b0bf0b700ef4cd768178676c CLEAR currentlocalnative/MFA/mailbox/browser/preservation andscopedengineeringreuse. Exact20/fouroutcomes: currentinstalledlocalproof combinedwithunchangedcontrolledT03/T04/T05source/nativeproof at originalscope; no newcredentialmutation, no Torontoqualification, humanT09PENDING."
+        },
+        {
+          "stage": "deployed_qa",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/bare-bcrypt-compatibility-20261025-01/helper.private.log SHA256 1faea303e66475818c01fd02faf81c9f61c9aa98be4ab9cee72dc6386a42a504; raw log remains private; two same-phase diagnostic lines retained without inventing a unique earlier cause. Current owner required change FAIL/KnownRefused before conditional UPDATE; login/page PASS retained; epoch1 unchanged/no marker. This later result reopens the workflow and supersedes current UAT_READY without relabelling historical controlled proofs."
+        },
+        {
+          "stage": "source_tests",
+          "reference": "Actual baseline RED exit101 at Backend snapshot read; GREEN whole backend11PASS/0fail/0ignore in0.07s after compile6.84s; production checklibPASS1.54s; fmt/diff checks PASS. Evidence bare-bcrypt-compatibility/{red,green,production-check}.log SHA256 39cd630c70bce17098302d02b25769e02d4e8bd9509fe550ad9d4950beeddc01 / d49903d3aae5fcad1c29f2c7cb1cf534680d99c20d1476e4344e41b923e0d40d / 0c50e91d6d56686d4fc2dea88ec3f4048bc7f027abbf705ddb52422d3e00b047 Python mirror20PASS is source consistency only, not the native product fix."
         }
       ],
-      "next_action": "Owner T09 minimal usability on current fullylocal synthetic development installation. Independentcurrentactualreviewc228CLEAR and retainedexact20/fouroutcomeslocalproof apply; no passwordchange, Torontocredentialuse or debugging required. Root completes signeddelivery/parity."
+      "next_action": "Complete signed source checkpoint and helper-only native build07 with a 660-second technical bound using the maintained build06 derivative, then qualify the corrected snapshot compatibility on the selected local authority. No extra successful-authentication test refinement, no blind/ambiguous credential retry, and no Toronto credential write. Build07 action/recipe/source manifest will be registered by root after checkpoint SHA is known; no native dispatch is claimed here."
     },
     {
       "id": "fresh-stepup-and-session-containment",
@@ -10600,7 +10627,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
           "reference": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/local-development01/actual-final-independent-review.json SHA256 c22836d797c8917cfaf4c85d5bca851d43727de0b0bf0b700ef4cd768178676c CLEAR currentlocalnative/MFA/mailbox/browser/preservation andscopedengineeringreuse. Exact20/fouroutcomes: currentinstalledlocalproof combinedwithunchangedcontrolledT03/T04/T05source/nativeproof at originalscope; no newcredentialmutation, no Torontoqualification, humanT09PENDING."
         }
       ],
-      "next_action": "Owner T09 minimal usability on current fullylocal synthetic development installation. Independentcurrentactualreviewc228CLEAR and retainedexact20/fouroutcomeslocalproof apply; no passwordchange, Torontocredentialuse or debugging required. Root completes signeddelivery/parity."
+      "next_action": "Retain matching scoped passing controls and owner login/page-access observations while the authoritative workflow compatibility gap is repaired. No owner T09 readiness or slice acceptance until the required current change path is qualified; no redundant successful-authentication refinements."
     },
     {
       "id": "password-form-and-navigation",
@@ -10684,7 +10711,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
           "reference": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/local-development01/actual-final-independent-review.json SHA256 c22836d797c8917cfaf4c85d5bca851d43727de0b0bf0b700ef4cd768178676c CLEAR currentlocalnative/MFA/mailbox/browser/preservation andscopedengineeringreuse. Exact20/fouroutcomes: currentinstalledlocalproof combinedwithunchangedcontrolledT03/T04/T05source/nativeproof at originalscope; no newcredentialmutation, no Torontoqualification, humanT09PENDING."
         }
       ],
-      "next_action": "Owner T09 minimal usability on current fullylocal synthetic development installation. Independentcurrentactualreviewc228CLEAR and retainedexact20/fouroutcomeslocalproof apply; no passwordchange, Torontocredentialuse or debugging required. Root completes signeddelivery/parity."
+      "next_action": "Retain matching scoped passing controls and owner login/page-access observations while the authoritative workflow compatibility gap is repaired. No owner T09 readiness or slice acceptance until the required current change path is qualified; no redundant successful-authentication refinements."
     },
     {
       "id": "actual-password-status",
@@ -10767,14 +10794,14 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
           "reference": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/local-development01/actual-final-independent-review.json SHA256 c22836d797c8917cfaf4c85d5bca851d43727de0b0bf0b700ef4cd768178676c CLEAR currentlocalnative/MFA/mailbox/browser/preservation andscopedengineeringreuse. Exact20/fouroutcomes: currentinstalledlocalproof combinedwithunchangedcontrolledT03/T04/T05source/nativeproof at originalscope; no newcredentialmutation, no Torontoqualification, humanT09PENDING."
         }
       ],
-      "next_action": "Owner T09 minimal usability on current fullylocal synthetic development installation. Independentcurrentactualreviewc228CLEAR and retainedexact20/fouroutcomeslocalproof apply; no passwordchange, Torontocredentialuse or debugging required. Root completes signeddelivery/parity."
+      "next_action": "Retain matching scoped passing controls and owner login/page-access observations while the authoritative workflow compatibility gap is repaired. No owner T09 readiness or slice acceptance until the required current change path is qualified; no redundant successful-authentication refinements."
     }
   ],
   "human_acceptance": {
     "status": "PENDING",
-    "reference": "Currenttarget: fullylocalobsd1 syntheticdevelopmentprofile actualnormalMFA/Inbox/Security/Auth/passwordemptythreecontrols+CancelPASS19:06:36UTC; ownerT09NOT_RUN andS04notACCEPTED. Priorreal-accountFAIL explicitlyretained in execution_scope_control.local_development_20261025.prior_human_acceptance; realTorontopasswordreadiness withdrawn. Operator imports privatelydelivered developmentaccount/MFA material; no passwordchange required."
+    "reference": "Current owner login and password-page access PASS retained. Owner credential-change KnownRefused reveals a required raw-bcrypt compatibility defect; current T09 readiness withdrawn and S04-02 not ACCEPTED. Prior controlled native proofs and the earlier authority-split failure remain historical evidence at their original scope."
   },
-  "next_action": "Owner T09 minimal usability only on current fullylocal synthetic development installation. Currentactualindependentreviewc228CLEAR; existingcontrollednativeproof reusedscoped; humanPENDING/S04notACCEPTED. Root completes signedsource delivery/freshoriginparity; no passwordmutation or real-account test.",
+  "next_action": "Complete signed source checkpoint and helper-only native build07 with a 660-second technical bound using the maintained build06 derivative, then qualify the corrected snapshot compatibility on the selected local authority. No extra successful-authentication test refinement, no blind/ambiguous credential retry, and no Toronto credential write. Build07 action/recipe/source manifest will be registered by root after checkpoint SHA is known; no native dispatch is claimed here.",
   "accountability": {
     "functional_exit": "Working own-account Settings password change through the selected single-host obsd1 local account service and authoritative local backend, fresh password/TOTP step-up, one conditional SQL update, durable OSMAP epoch and all-browser revocation, actual source-bound cache handling, old-password refusal/new-login success and Bob preservation. Existing third-party SMTP/IMAP sessions may remain authenticated. Matching installed QA, independent audit and minimal owner usability remain required. Toronto is later separate production installation.",
     "owner": "/root",
@@ -22330,7 +22357,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "new_check_rule": "Before execution identify the exact missing S04-02 obligation or newly observed failure, why retained evidence is insufficient, the single discriminating action and its original finite budget. Otherwise do not run it.",
     "cost_accounting": "Report actual full-action wall-clock; monetary/token compute cost remains UNKNOWN unless measured. No implied budget reset from a new package, investigation window or agent.",
     "preserved": "All20 accepted control IDs and nine scenario IDs retained. R2-22-011 allBROWSERsessions revoked; R2-22-012 actualoldreject/newadmit. D04 allows existing thirdparty SMTP/IMAPconnection lifetimes; disclose explicitly. OSMAPepoch/login locks, stepup, CAS, durable limits, timestamp, Bob, uncertainty and secrets preserved. Later stronger architectural tests are superseded method, not oldFAILtoPASS.",
-    "current_named_gap": "Only owner T09 usability and final signedsource delivery/parity remain for fullylocal synthetic development target. Currentactualreviewc228CLEAR. Realproductionpassword readiness remainswithdrawn; no remoteprovider/credentialreplay.",
+    "current_named_gap": "Stock unprefixed 60-byte bcrypt from the local default BLF-CRYPT passdb is accepted by authentication but refused by password-change snapshot parsing. Exact raw snapshot/CAS compatibility is now implemented in source; native build/install and a matching qualified product result remain pending.",
     "local_source_preservation": {
       "operator_request": "assign a subagent to fix this (interrupted mandatorycommitgate)",
       "owner": "/root",
@@ -23401,7 +23428,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
       "pending": "Localdevnewsyntheticaccount+localmailbox/publicprofile; signedsourceguardartifactbuild/deploy; replica rotate/boot/persistence finalproof; currenttargethumanT09."
     },
     "local_development_20261025": {
-      "status": "UAT_READY_LOCAL_SYNTHETIC_SCOPE",
+      "status": "IN_PROGRESS_RAW_BCRYPT_COMPATIBILITY",
       "source_checkpoint": "8f3ce62a0ed14eb0351b6e9813d0f71fff7d0763",
       "web_sha256": "2678b7308fdc4231bef42e0bfe8df1c49c04eee545ffa89d10eeaace7c26bcd5",
       "helper_sha256": "0f95a68b624b4ffddb98ce4be3d82be980f394396a03e5248bfbc8ffd10438cd",
@@ -23420,7 +23447,26 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
       "engineering_reuse": "Existingcontrolledlocalordinaryhelper/nativeT03/T04/T05/cache/session/Bob evidence retained at originalscope; no newpasswordmutation neededforconfig/profileactivation.",
       "human_T09": "PENDING",
       "accepted": false,
-      "final_actual_review": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/local-development01/actual-final-independent-review.json SHA256 c22836d797c8917cfaf4c85d5bca851d43727de0b0bf0b700ef4cd768178676c CLEAR currentlocalnative/MFA/mailbox/browser/preservation andscopedengineeringreuse. Exact20/fouroutcomes: currentinstalledlocalproof combinedwithunchangedcontrolledT03/T04/T05source/nativeproof at originalscope; no newcredentialmutation, no Torontoqualification, humanT09PENDING."
+      "final_actual_review": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/local-development01/actual-final-independent-review.json SHA256 c22836d797c8917cfaf4c85d5bca851d43727de0b0bf0b700ef4cd768178676c CLEAR currentlocalnative/MFA/mailbox/browser/preservation andscopedengineeringreuse. Exact20/fouroutcomes: currentinstalledlocalproof combinedwithunchangedcontrolledT03/T04/T05source/nativeproof at originalscope; no newcredentialmutation, no Torontoqualification, humanT09PENDING.",
+      "prior_ready_checkpoint": {
+        "status": "UAT_READY_LOCAL_SYNTHETIC_SCOPE",
+        "final_actual_review": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/local-development01/actual-final-independent-review.json SHA256 c22836d797c8917cfaf4c85d5bca851d43727de0b0bf0b700ef4cd768178676c CLEAR currentlocalnative/MFA/mailbox/browser/preservation andscopedengineeringreuse. Exact20/fouroutcomes: currentinstalledlocalproof combinedwithunchangedcontrolledT03/T04/T05source/nativeproof at originalscope; no newcredentialmutation, no Torontoqualification, humanT09PENDING.",
+        "scope": "Historical onboarding/MFA/Inbox/password-controls readiness; does not supersede the later owner credential-change failure."
+      }
+    },
+    "raw_bcrypt_compatibility_20261025": {
+      "status": "SOURCE_CORRECTED_NATIVE_HELPER_PENDING",
+      "owner_observation": "Ordinary owner login and password-page access PASS; actual password-change KnownRefused, no conditional SQL write dispatched. Epoch1 remains active/unchanged and no uncertainty marker is present. No owner usability acceptance is inferred.",
+      "native_diagnostic": "transaction_snapshot_read / known_refused; process_stage9, status0, sql_code0, parser_phase9, stderr_bytes0, normal child term_signal0. The SQL snapshot read succeeded; supported-hash parsing refused before hashing/conditional UPDATE.",
+      "diagnostic_evidence": "/home/foo/Downloads/osmap-ux-s04/installed-integration-20261025/bare-bcrypt-compatibility-20261025-01/helper.private.log SHA256 1faea303e66475818c01fd02faf81c9f61c9aa98be4ab9cee72dc6386a42a504; raw log remains private; two same-phase diagnostic lines retained without inventing a unique earlier cause.",
+      "cause": "The local passdb stores a raw 60-byte bcrypt encoding while the authoritative snapshot reader recognized scheme-prefixed bcrypt only. The old stored hash must be recognized without adding a prefix or changing its bytes.",
+      "correction": "Recognize only raw $2a/$2b/$2y bcrypt with cost04..31 and53 ASCII bcrypt-alphabet characters; preserve raw Snapshot and exact conditional SQL comparison. Existing prefixed grammar is unchanged and all newly generated replacements remain ARGON2ID-only.",
+      "rust_source": "src/account_password_backend.rs SHA256 5424f0703d702816928b9eada964dfb5de8818a19b9c13189966339216b8cfae; src/account_password_backend_tests.rs SHA256 c1cbb30e104d3f563326d79f757d0534a4dac38077f0708239fde992e57f191f",
+      "rust_checks": "Actual baseline RED exit101 at Backend snapshot read; GREEN whole backend11PASS/0fail/0ignore in0.07s after compile6.84s; production checklibPASS1.54s; fmt/diff checks PASS. Evidence bare-bcrypt-compatibility/{red,green,production-check}.log SHA256 39cd630c70bce17098302d02b25769e02d4e8bd9509fe550ad9d4950beeddc01 / d49903d3aae5fcad1c29f2c7cb1cf534680d99c20d1476e4344e41b923e0d40d / 0c50e91d6d56686d4fc2dea88ec3f4048bc7f027abbf705ddb52422d3e00b047",
+      "python_mirror": "Only maint/account-runtime/authoritative_password.py and test_authoritative_password.py changed; real RED2errors, GREEN20PASS/0fail/0skip0.229s. Exact raw Snapshot/CAS and new-Argon-only coverage. This is source compatibility consistency only; the ordinary installed native helper executes Rust, not this Python adapter.",
+      "independent_source_review": "Root reports all four source files CLEAR review2376be7e; final signed checkpoint and normal delivery hooks remain distinct.",
+      "next_native": "Helper-only build07, prepared build.sh SHA2565af1e885 and compile-helper SHA256071065db prefixes; current source commit/manifest and exact recipe/action registration pending root. Technical outer bound660seconds; ordinary Web unchanged, no helper qualification from compile alone.",
+      "preservation": "No password/hash/SQL update, epoch rewrite, factor reset, marker deletion, rollback or new authentication QA was performed by the ledger/source author. Historical failed owner case and successful controlled cases remain retained."
     }
   },
   "execution_contract": {
@@ -37386,9 +37432,9 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     },
     "planned_action": null
   },
-  "blocker": "None",
-  "independent_next_action": "Actual assigned Runtime, T04/T05, and status/security reviewers identify next concrete boundary; root owns integration, native/browser, Git and delivery.",
-  "updated_at": "2026-10-25T19:11:09Z"
+  "blocker": "Owner actual password change returned KnownRefused before SQL write: stock unprefixed bcrypt was rejected during snapshot parsing (parser_phase9). Source correction is reviewed/tested, but helper-only native build07 and matching installed compatibility qualification remain pending; owner login/page access PASS is not T09 acceptance.",
+  "independent_next_action": "Independent review has cleared Rust/Python raw-bcrypt source changes; review actual source-bound helper build and installed compatibility results separately. Preserve owner LOGIN/PAGEACCESS PASS, required change FAIL, epoch1 unchanged/no marker and earliest parser diagnostic; human T09 remains pending.",
+  "updated_at": "2026-10-25T20:38:16Z"
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->
