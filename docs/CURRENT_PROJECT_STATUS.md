@@ -1,5 +1,16 @@
 # Current Project Status
 
+2026-10-26 (America/Toronto) — **Local-development OpenPGP restored and natively verified.**
+The local credential cutover omitted the three existing OpenPGP helper connections
+and selected a settings root without the original account/recipient binding.
+All three helpers and the original revision 5 binding remain present. The native
+probe reproduced the missing inventory configuration. Selective restoration
+preserved local password/TOTP/session state and restored the exact revision 5
+account/recipient record. Actual authenticated inventory/admin snapshot, recipient
+preflight and native encryption passed without sending mail or changing keys or
+policy. Installed Web and public HTTPS login are healthy; owner browser usability
+remains separate. See [the incident record](UX_OPENPGP_DEVELOPMENT_RESTORATION_20261026.md).
+
 2026-10-26 (America/Toronto) — **S04-03 recovery contact IN_PROGRESS.**
 The owner directly authorized implementation through the failure-analysis loop.
 Discovery found no recovery-contact store or route behind the disabled Settings

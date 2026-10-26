@@ -144,6 +144,7 @@ Current public documentation map:
 - `UX_EXECUTION_LEDGER.md`
 - `UX_SLICE_S04_02.md` — own-password design and verification specification; accepted local-development result is recorded in the S04-02 T09 report
 - [S04-03 recovery contact lifecycle](UX_SLICE_S04_03.md) (`UX_SLICE_S04_03.md`) — current implementation scope, failure-analysis loop and required source/native/browser/owner checks
+- [Local development OpenPGP restoration](UX_OPENPGP_DEVELOPMENT_RESTORATION_20261026.md) (`UX_OPENPGP_DEVELOPMENT_RESTORATION_20261026.md`) — preserved helper connections and account bindings after the local credential cutover; native encryption qualification and delivery limits.
 - `UX_S04_02_SINGLE_HOST_EXECUTION.md` — single-host account-service execution correction; native qualification, installed QA and UAT remain open
 - `UX_S04_02_TIMING_RECONCILIATION_20261023.md` — bounded native journey timing, unchanged password deadline and separately bound test/service artifacts
 - `UX_S04_02_STOCK_WORKER_ARGV_20261024.md` — Rust metadata denial findings, first-failure preservation and prepared, unauthorized one-shot R1/R2 validation

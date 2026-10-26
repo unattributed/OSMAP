@@ -9,12 +9,12 @@ const https = require('node:https');
 const crypto = require('node:crypto');
 const {spawn, spawnSync} = require('node:child_process');
 const DOMAIN = 'obsd1.blackbagsecurity.com';
-const PRIMARY = `s04-03-primary-20261026-01@${DOMAIN}`;
-const A = `s04-03-proof-a-20261026-01@${DOMAIN}`;
-const B = `s04-03-proof-b-20261026-01@${DOMAIN}`;
+const PRIMARY = `s04-03-primary-20261026-02@${DOMAIN}`;
+const A = `s04-03-proof-a-20261026-02@${DOMAIN}`;
+const B = `s04-03-proof-b-20261026-02@${DOMAIN}`;
 const USERS = [PRIMARY, A, B];
-const STAGE = '/var/backups/osmap-recovery-contact-20261026-03';
-const OUT = '/home/foo/Downloads/osmap-ux-s04/recovery-contact-20261026/native03';
+const STAGE = '/var/backups/osmap-recovery-contact-20261026-04';
+const OUT = '/home/foo/Downloads/osmap-ux-s04/recovery-contact-20261026/native04';
 const TOTP_SOURCE = '/home/foo/Workspace/OSMAP/maint/ux/s04_02_startup_candidate/sources/frontend/native_http_front_driver.py';
 const TOTP_SHA = 'eebdbe26269e35bffe43beb83ef84b08712fc67676663b66110cbd32876a7ec3';
 const hash = value => crypto.createHash('sha256').update(value).digest('hex');
@@ -141,7 +141,7 @@ start_services() {
  done
  rm "$stage/services-stopping" || fail LOADED_IDENTITY
 }
-local_route() {
+static_local_route() {
  test "$(/usr/local/sbin/postconf -h mydestination)" = localhost && test "$(/usr/local/sbin/postconf -h virtual_mailbox_domains)" = '${DOMAIN}' && test "$(/usr/local/sbin/postconf -h virtual_transport)" = lmtp:unix:private/dovecot-lmtp || fail MTA_ROUTE
  test "$(/usr/local/sbin/postconf -h virtual_mailbox_maps)" = mysql:/etc/postfix/mysql_virtual_mailbox_maps.cf && test "$(/usr/local/sbin/postconf -h virtual_mailbox_base)" = /var/vmail && test "$(/usr/local/sbin/postconf -h virtual_uid_maps)" = static:2000 && test "$(/usr/local/sbin/postconf -h virtual_gid_maps)" = static:2000 || fail MTA_ROUTE
  for option in virtual_alias_maps virtual_alias_domains; do value=$(/usr/local/sbin/postconf -h "$option") || fail MTA_ALIAS; test -z "$value" || fail MTA_ALIAS; done
@@ -171,7 +171,9 @@ local_route() {
  done
  test "$entries" = 2 || fail MTA_SIEVE
  test "$(sha256 -q /etc/dovecot/sieve-before/10-rspamd-quarantine.sieve)" = fbf04d54c65c5b9c595e9650c852d9c59f71fbd812d0d9f0f5e63b8bf91c138f && test "$(sha256 -q /etc/dovecot/sieve-before/10-rspamd-quarantine.svbin)" = 582170ab145d46c66ede6995ddb3838210ea067957b6225e7984834d5864a571 || fail MTA_SIEVE
- for local in s04-03-primary-20261026-01 s04-03-proof-a-20261026-01 s04-03-proof-b-20261026-01; do
+}
+local_userdb() {
+ for local in s04-03-primary-20261026-02 s04-03-proof-a-20261026-02 s04-03-proof-b-20261026-02; do
   account="$local@${DOMAIN}"; home="/var/vmail/${DOMAIN}/$local/"
   actual_home=$(/usr/local/bin/doveadm user -f home "$account") || fail MTA_ROUTE
   actual_mail=$(/usr/local/bin/doveadm user -f mail "$account") || fail MTA_ROUTE
@@ -208,6 +210,7 @@ ${policyLines}
 case "$action" in
 prepare)
  pending_absent
+ static_local_route
  test ! -e "$stage" && test ! -L "$stage" || fail STAGE_EXISTS
  mkdir -m 700 "$stage" || fail STAGE_CREATE
  cp -p /etc/osmap/account-admission.json "$stage/admission.before"
@@ -222,7 +225,7 @@ prepare)
  query="SELECT COUNT(*) FROM mailbox WHERE BINARY username IN (${exclusions}); SELECT COUNT(*) FROM information_schema.TRIGGERS WHERE EVENT_OBJECT_SCHEMA='postfixadmin' AND EVENT_OBJECT_TABLE='mailbox';"
  test "$(sql)" = '0
 0' || fail FRESH_ROWS_OR_TRIGGER
- for local in s04-03-primary-20261026-01 s04-03-proof-a-20261026-01 s04-03-proof-b-20261026-01; do
+ for local in s04-03-primary-20261026-02 s04-03-proof-a-20261026-02 s04-03-proof-b-20261026-02; do
   test ! -e "/var/vmail/${DOMAIN}/$local" && test ! -L "/var/vmail/${DOMAIN}/$local" || fail FRESH_MAILDIR
  done
  for file in /var/db/osmap-account/epoch/${epoch(PRIMARY)}.json /var/db/osmap-account/epoch/${epoch(PRIMARY)}.lock /var/db/osmap-account/epoch/${epoch(PRIMARY)}.uncertain; do test ! -e "$file" && test ! -L "$file" || fail FRESH_EPOCH; done
@@ -243,14 +246,14 @@ provision)
   case "$h" in ('{ARGON2ID}$argon2id$'*) ;; (*) fail INITIAL_HASH_SCHEME;; esac
   hashes="$hashes $h"
  done
- set -f; set -- $hashes; test "$#" = 3 || fail INITIAL_HASH_COUNT
+ set -f; set -- $hashes; set +f; test "$#" = 3 || fail INITIAL_HASH_COUNT
  : > "$stage/birth-dispatched"
- query="START TRANSACTION; INSERT INTO mailbox (username,password,name,maildir,local_part,domain,created,modified,active,smtp_active) VALUES ('${PRIMARY}','$1','recovery fixture','${DOMAIN}/s04-03-primary-20261026-01/','s04-03-primary-20261026-01','${DOMAIN}',UTC_TIMESTAMP(),UTC_TIMESTAMP(),1,1),('${A}','$2','recovery fixture','${DOMAIN}/s04-03-proof-a-20261026-01/','s04-03-proof-a-20261026-01','${DOMAIN}',UTC_TIMESTAMP(),UTC_TIMESTAMP(),1,1),('${B}','$3','recovery fixture','${DOMAIN}/s04-03-proof-b-20261026-01/','s04-03-proof-b-20261026-01','${DOMAIN}',UTC_TIMESTAMP(),UTC_TIMESTAMP(),1,1); SELECT ROW_COUNT(); COMMIT;"
+ query="START TRANSACTION; INSERT INTO mailbox (username,password,name,maildir,local_part,domain,created,modified,active,smtp_active) VALUES ('${PRIMARY}','$1','recovery fixture','${DOMAIN}/s04-03-primary-20261026-02/','s04-03-primary-20261026-02','${DOMAIN}',UTC_TIMESTAMP(),UTC_TIMESTAMP(),1,1),('${A}','$2','recovery fixture','${DOMAIN}/s04-03-proof-a-20261026-02/','s04-03-proof-a-20261026-02','${DOMAIN}',UTC_TIMESTAMP(),UTC_TIMESTAMP(),1,1),('${B}','$3','recovery fixture','${DOMAIN}/s04-03-proof-b-20261026-02/','s04-03-proof-b-20261026-02','${DOMAIN}',UTC_TIMESTAMP(),UTC_TIMESTAMP(),1,1); SELECT ROW_COUNT(); COMMIT;"
  test "$(sql)" = 3 || fail INITIAL_ROWS_UNCONFIRMED
  test -d /var/vmail && test ! -L /var/vmail || fail MAIL_ROOT
  if test ! -e /var/vmail/${DOMAIN}; then mkdir -m 700 /var/vmail/${DOMAIN}; chown 2000:2000 /var/vmail/${DOMAIN}; fi
  test -d /var/vmail/${DOMAIN} && test ! -L /var/vmail/${DOMAIN} || fail MAIL_DOMAIN
- for local in s04-03-primary-20261026-01 s04-03-proof-a-20261026-01 s04-03-proof-b-20261026-01; do
+ for local in s04-03-primary-20261026-02 s04-03-proof-a-20261026-02 s04-03-proof-b-20261026-02; do
   d="/var/vmail/${DOMAIN}/$local"; mkdir -m 700 "$d" || fail MAILDIR_EXISTS
   mkdir -m 700 "$d/cur" "$d/new" "$d/tmp"
   chown 2000:2000 "$d/cur" "$d/new" "$d/tmp"; chown 2000:2000 "$d"
@@ -263,7 +266,7 @@ provision)
  cp -p "$stage/admission.published" /etc/osmap/account-admission.json
  cp -p "$stage/mutation.published" /etc/osmap/account-runtime/config.json
  start_services
- local_route
+ local_userdb
  print PROVISIONED
  ;;
 clock)
@@ -276,7 +279,7 @@ state)
  cat "$file"
  ;;
 proof-a|proof-b|notice-a|notice-b)
- case "$action" in (proof-a|notice-a) local=s04-03-proof-a-20261026-01;; (*) local=s04-03-proof-b-20261026-01;; esac
+ case "$action" in (proof-a|notice-a) local=s04-03-proof-a-20261026-02;; (*) local=s04-03-proof-b-20261026-02;; esac
  case "$action" in (proof-*) subject='Verify your OSMAP recovery contact';; (notice-a) subject='OSMAP recovery contact replaced';; (*) subject='OSMAP recovery contact removed';; esac
  count=0; scanned=0; digests=''
  for directory in /var/vmail/${DOMAIN}/"$local" /var/vmail/${DOMAIN}/"$local"/new /var/vmail/${DOMAIN}/"$local"/cur /var/vmail/${DOMAIN}/"$local"/.Junk /var/vmail/${DOMAIN}/"$local"/.Junk/new /var/vmail/${DOMAIN}/"$local"/.Junk/cur; do test ! -L "$directory" || fail MAIL_SYMLINK; done
@@ -355,13 +358,13 @@ async function mail(kind, expectedDigest, expectedExpiry, expectedCount = 1) {
   let observation;
   const end=Math.min(bodyEnd,performance.now()+20000);
   while(performance.now()<end) {
-    const wire=String(await root(kind));
+    const wire=String(await root(kind,'','',end));
     const lines=wire.trim().split('\n');
-    const metadata=lines.pop()?.match(/^OBSERVATION ([0-9]{1,2}) ([0-9]) ([a-f0-9]{64})$/);requireThat(metadata && Number(metadata[1])<=16 && Number(metadata[2])===lines.length,'MAIL_OBSERVATION');
+    const metadata=lines.pop()?.match(/^OBSERVATION ([0-9]{1,2}) ([0-9]) ([a-f0-9]{64})$/);requireThat(metadata && Number(metadata[1])<=16 && Number(metadata[1])>=Number(metadata[2]) && Number(metadata[2])===lines.length,'MAIL_OBSERVATION');
     observation={candidate_files:Number(metadata[1]),subject_matches:Number(metadata[2]),mailbox_sha256:metadata[3]};
     if(lines.length) {
       const recipient=(kind.endsWith('a')?A:B);
-      const frames=lines;requireThat(frames.length===expectedCount,'MAIL_COUNT');
+      const frames=lines;requireThat(frames.length<=expectedCount,'MAIL_COUNT');
       let selected=[];
       for(const frame of frames) {
         const encoded=frame.match(/^MESSAGE ([A-Za-z0-9+/=]+)$/);requireThat(encoded,'MAIL_FRAME');
@@ -373,9 +376,13 @@ async function mail(kind, expectedDigest, expectedExpiry, expectedCount = 1) {
           if(hash(Buffer.from('osmap-recovery-contact-proof-v1\0'+PRIMARY+'\0'+match[1]))===expectedDigest){requireThat(match[2]===String(expectedExpiry),'MAIL_EXPIRY');selected.push(match[1]);}
         } else {requireThat(!/[a-f0-9]{64}/.test(body) && !body.includes(password),'NOTICE_PRIVATE');selected.push('');}
       }
-      requireThat(selected.length===1,'MAIL_CURRENT_PROOF');return selected[0];
+      requireThat(selected.length<=1,'MAIL_CURRENT_PROOF');
+      if(frames.length===expectedCount) {
+        requireThat(selected.length===1,'MAIL_CURRENT_PROOF');return selected[0];
+      }
     }
-    await pause(Math.min(500,remaining()));
+    const delay=Math.min(500,end-performance.now(),remaining());
+    if(delay>0) await pause(delay);
   }
   emit('MAIL_NOT_OBSERVED',observation || {});throw new Refused('MAIL_DELIVERY_NOT_OBSERVED');
 }

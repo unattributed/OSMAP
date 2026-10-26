@@ -10160,7 +10160,9 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "docs/CURRENT_PROJECT_STATUS.md",
     "docs/DECISION_LOG.md",
     "docs/README.md",
-    "docs/KNOWN_LIMITATIONS.md"
+    "docs/KNOWN_LIMITATIONS.md",
+    "maint/openbsd/osmap-serve-development.env.example",
+    "docs/UX_OPENPGP_DEVELOPMENT_RESTORATION_20261026.md"
   ],
   "outcomes": [
     {
@@ -10219,7 +10221,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "owner": "/root",
     "functional_exit": "Working installed recovery-contact add/prove/replace/remove and truthful delivery/status with negative controls.",
     "elapsed_scope": "wall_clock",
-    "history_reference": "Accepted S04-02 historical workorder preserved below; S04-03 starts from absent lifecycle, not a failed credential retry. Actual core14, Runtime5+domain1, HTTP4 PASS; actualEdge five-state/15viewport-theme browser PASS. Production compile initial missing route import corrected/PASS. First HTTP test assertion matched policy prose instead of pending input, corrected and PASS. Full acceptance attempt1:1959RustPASS/72ignored then CWE guard rejected dynamically formatted shell test sink; static-shell replacement still rejected guard. Productcore unchanged; root+nativeengineer+reviewer select a tiny static Rust sink using existing Rust compiler, no guard waiver/new Python. Full failedlog /home/foo/Downloads/osmap-ux-s04/recovery-contact-acceptance-check-20261026.log retained. Signed sourceeeb748 includes implementation; source3c11641 fixes null-envelope DSN path and automatic-message headers. ActualRuntime5PASS after correction; two normalWeb compile-only artifacts27d(old) and558a(current). Existing exactV14test allowlist extended with production-reference refusals, correctedsubgatePASS; earlier V14wholecommandFAIL retained. Native recipe14c96147 independentlyCLEAR b88b9655 after11actualRust\u2192Nodeconsumer cases; exactlocalMTA/Sieve/userdb/forwarding checks,3proof/2notice messages,420body+180cleanup. No native delivery yet. Normal --work-order-only applies to03; S04-02-specific --pre-action is not claimed or added as new authority. Secondfullacceptance attempt reached1959RustPASS thenfmtcheckFAIL on Refusednoticearm; cargo fmt fixedonlybraces/linebreaks andcurrentfmt/V10PASS. Compilednative source3c11641/Web558a remains exactfunctionalcode; laterUIformatter-onlydiff independentlysemanticallyverified. Actualnative01/02bothretainedfailedbeforeauth/mail; combinedroot+independentreassessment85ece completed and actualnativeencoderproducer/consumerboundarynowverified, not a contact productPASS.",
+    "history_reference": "Accepted S04-02 historical workorder preserved below; S04-03 starts from absent lifecycle, not a failed credential retry. Actual core14, Runtime5+domain1, HTTP4 PASS; actualEdge five-state/15viewport-theme browser PASS. Production compile initial missing route import corrected/PASS. First HTTP test assertion matched policy prose instead of pending input, corrected and PASS. Full acceptance attempt1:1959RustPASS/72ignored then CWE guard rejected dynamically formatted shell test sink; static-shell replacement still rejected guard. Productcore unchanged; root+nativeengineer+reviewer select a tiny static Rust sink using existing Rust compiler, no guard waiver/new Python. Full failedlog /home/foo/Downloads/osmap-ux-s04/recovery-contact-acceptance-check-20261026.log retained. Signed sourceeeb748 includes implementation; source3c11641 fixes null-envelope DSN path and automatic-message headers. ActualRuntime5PASS after correction; two normalWeb compile-only artifacts27d(old) and558a(current). Existing exactV14test allowlist extended with production-reference refusals, correctedsubgatePASS; earlier V14wholecommandFAIL retained. Native recipe14c96147 independentlyCLEAR b88b9655 after11actualRust→Nodeconsumer cases; exactlocalMTA/Sieve/userdb/forwarding checks,3proof/2notice messages,420body+180cleanup. No native delivery yet. Normal --work-order-only applies to03; S04-02-specific --pre-action is not claimed or added as new authority. Secondfullacceptance attempt reached1959RustPASS thenfmtcheckFAIL on Refusednoticearm; cargo fmt fixedonlybraces/linebreaks andcurrentfmt/V10PASS. Compilednative source3c11641/Web558a remains exactfunctionalcode; laterUIformatter-onlydiff independentlysemanticallyverified. Actualnative01/02bothretainedfailedbeforeauth/mail; combinedroot+independentreassessment85ece completed and actualnativeencoderproducer/consumerboundarynowverified, not a contact productPASS. Native03 FAIL8.725s MTA_SIEVE after3fixture births before0driverHTTP; retained03 identities. Exact cause measured set-f glob suppression; minimal set+f/static prebirth correction and 17 real producer-consumer controls now PASS. Separately owner OpenPGP report traced to local-development environment/settings omission; exact9triples+revision5 restored, native inventory/admin/preflight/encryption PASS, no mail/key/policy/password change. Delivery acceptance attempt3 RustPASS but documentation index guard refused new incident document; docs index now corrected.",
     "investigation": {
       "owner": "/root",
       "timebox_seconds": 3600,
@@ -10260,7 +10262,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "change_reference": "Fixed maint/ux/recovery_contact_native.cjs from signed7fa6e67; actualinstalledWeb558a165e (source3c11641) andhelperbe7. Three exactfreshlocalfixture accounts, primarytemporaryenrollment, normalHTTPSMFA, Begin/Resend/Verify/Replace/Verify/Remove;3proof+2notice messages.600s prospective technicalcase=420body+180cleanup, no externalrecipient/provider or password-change operation. Retainfixturedata; restoreexactpolicy/servicebindings independentlyofpreservation.",
         "success_chain_review": {
           "reviewer": "/root/transaction_review",
-          "reference": "/home/foo/Downloads/osmap-ux-s04/recovery-contact-20261026/consumer-check01/independent-review.json SHA256b88b96556b4abb6cb91304182d44e951edcf994a3133c784ad54606b94b1a43b;11actualRust\u2192actualNodeconsumercases+5actualemittedkshtransportcontrols; fullrootproducer/rollback/privateconsumer reviewed, no nativePASS inferred.",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/recovery-contact-20261026/consumer-check01/independent-review.json SHA256b88b96556b4abb6cb91304182d44e951edcf994a3133c784ad54606b94b1a43b;11actualRust→actualNodeconsumercases+5actualemittedkshtransportcontrols; fullrootproducer/rollback/privateconsumer reviewed, no nativePASS inferred.",
           "covers": [
             "producer",
             "cleanup",
@@ -10282,7 +10284,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "change_reference": "Onlyquote literalpipe inactualkshaggregate parser + freshstage/output02, samefixedaccounts becauseauthoritativefreshrowcount0. Native01retainedfailed. SameinstalledWeb558a/helperbe7,420body+180cleanup,3proof+2notice, no productionrecipient/passwordchange. No newapplication/helperbuild or blindcredentialretry.",
         "success_chain_review": {
           "reviewer": "/root/transaction_review",
-          "reference": "/home/foo/Downloads/osmap-ux-s04/recovery-contact-20261026/consumer-check02/independent-review.json SHA2560447849135578a997880a2fd57bfddee76953e15ece043ce47c40bb96e763ca3; independentlyactualemittedksh oldRED/newGREEN0/1/17/38rows +11actualRust\u2192Nodecases PASS, source31b5 tinyfixreviewed.",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/recovery-contact-20261026/consumer-check02/independent-review.json SHA2560447849135578a997880a2fd57bfddee76953e15ece043ce47c40bb96e763ca3; independentlyactualemittedksh oldRED/newGREEN0/1/17/38rows +11actualRust→Nodecases PASS, source31b5 tinyfixreviewed.",
           "covers": [
             "producer",
             "cleanup",
@@ -10293,19 +10295,53 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "elapsed_status": "MEASURED",
         "elapsed_seconds": 0.656,
         "reference": "/home/foo/Downloads/osmap-ux-s04/recovery-contact-20261026/native02/result.json actualACCOUNT_POLICY_FRAME/prepare/0HTTP/0mail. Actualnativebase64commandabsent EXIT1, encoderpipeline maskedexit. No fixturebirth reached; explicitfreshrowCOUNT0, bothpolicycmpEXIT0 and Web/helperhealthy. Native02stage/source/resultretained. trnewlinehypothesis disproved, not changed."
+      },
+      {
+        "id": "S04-03-INSTALLED-recovery03",
+        "boundary": "recovery-contact-lifecycle",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "source_revision": "a43d0f2ef5b55341fc2a3b0dfccffd0d3f875cd5c0ebdb905f5e3d7b078c6c02",
+        "change_reference": "Replace unsupported base64 CLI with actualnativeverified /usr/bin/openssl base64 -A/-d-A, checkedencode/decodeEXIT and bounded successfulchild diagnostics. Actualreadonlynativepolicyencode/decode+5RustMIMEframes→actualNodeconsumers PASS1SSH0HTTP/4873bytes/0stderrEOF and11cases; onlyfresh03stage/out/idscalars thereafter. Same3freshaccountnames01 becauseauthoritativeCOUNT0, sameWeb558a/helperbe7. 420body+180cleanup, no ownercredential/productionrecipient change.",
+        "success_chain_review": {
+          "reviewer": "/root/transaction_review",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/recovery-contact-20261026/combined-native01-native02-final-review.json SHA25685ececcc55dc9652171bbe61577b1103f993bfb784d35621b7e10c3725a2ed30; actualnativeprotocol/log+fullconsumer/control and exact03scalarinverse verified.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "reassessment": {
+          "reviewers": [
+            "/root",
+            "/root/transaction_review"
+          ],
+          "reference": "/home/foo/Downloads/osmap-ux-s04/recovery-contact-20261026/combined-native01-native02-final-review.json plus rootactualreadonlyobservations/native01 andnative02reconciliation; both failures prefixture prep, no password/contact mutation and no invented authority expiry.",
+          "next_action": "One changed sourcebound native03 fixedjourney with actualencodercontract nowqualified; retainoldstages andstop/reconcile uncertainty without retry.",
+          "failed_attempt_ids": [
+            "S04-03-INSTALLED-recovery01",
+            "S04-03-INSTALLED-recovery02"
+          ]
+        },
+        "result": "FAIL",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 8.725,
+        "reference": "native03/result.json: MTA_SIEVE during provision, 0 driver HTTP/contact/login/mail. Root authoritative reconciliation: 3 fresh suffix01 rows/maildirs/factor/epoch were created; retained, not reused or reset. Exact policies restored, old account/file/session preservation PASS. Root actual discriminator: set -f leaves Sieve glob 0 entries, set +f restores 2 and matches plugin/location/source/compiled hashes. Native03 remains failed; fixture state is retained, not absent."
       }
     ],
     "next_attempt": {
-      "id": "S04-03-INSTALLED-recovery03",
+      "id": "S04-03-INSTALLED-recovery04",
       "boundary": "recovery-contact-lifecycle",
       "owner": "/root",
       "scope": "PRODUCT_DELIVERY",
       "adoption": "CURRENT",
-      "source_revision": "a43d0f2ef5b55341fc2a3b0dfccffd0d3f875cd5c0ebdb905f5e3d7b078c6c02",
-      "change_reference": "Replace unsupported base64 CLI with actualnativeverified /usr/bin/openssl base64 -A/-d-A, checkedencode/decodeEXIT and bounded successfulchild diagnostics. Actualreadonlynativepolicyencode/decode+5RustMIMEframes\u2192actualNodeconsumers PASS1SSH0HTTP/4873bytes/0stderrEOF and11cases; onlyfresh03stage/out/idscalars thereafter. Same3freshaccountnames01 becauseauthoritativeCOUNT0, sameWeb558a/helperbe7. 420body+180cleanup, no ownercredential/productionrecipient change.",
+      "source_revision": "a73353f12ec8d8501272de61482bd6ace796c176a09e61bcd01759624788db3d",
+      "change_reference": "Restore globbing immediately after hash split; run static MTA/Sieve guards before fixture birth, dynamic userdb after. Poll validated partial mail frames within original20s; malformed/foreign/extra refuse immediately. New stage04/outputnative04 and wholly fresh three suffix02 identities preserve native03 suffix01. Root actual read-only emitted static guard PASS + fresh02 count0 (655ms). Same installed Web558a/helperbe7,420body+180cleanup. OpenPGP selective env/binding restoration now PASS and must remain preserved.",
       "success_chain_review": {
         "reviewer": "/root/transaction_review",
-        "reference": "/home/foo/Downloads/osmap-ux-s04/recovery-contact-20261026/combined-native01-native02-final-review.json SHA25685ececcc55dc9652171bbe61577b1103f993bfb784d35621b7e10c3725a2ed30; actualnativeprotocol/log+fullconsumer/control and exact03scalarinverse verified.",
+        "reference": "Independent source delta review a73353f; consumer-check04 author-delta9d19c966 (17 actual Rust producer/Node consumer cases) and root static-readonly.actual.log. Final independent receipt pending publication; reviewer source CLEAR in team message.",
         "covers": [
           "producer",
           "cleanup",
@@ -10317,11 +10353,10 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
           "/root",
           "/root/transaction_review"
         ],
-        "reference": "/home/foo/Downloads/osmap-ux-s04/recovery-contact-20261026/combined-native01-native02-final-review.json plus rootactualreadonlyobservations/native01 andnative02reconciliation; both failures prefixture prep, no password/contact mutation and no invented authority expiry.",
-        "next_action": "One changed sourcebound native03 fixedjourney with actualencodercontract nowqualified; retainoldstages andstop/reconcile uncertainty without retry.",
+        "reference": "Preserved native01/02 combined review85ece; native03 measured no-glob cause and source-owned minimal correction, 17-case partial/race/refusal controls, root actual static guard all predicates PASS before new birth. No account credential retry; new suffix02 only.",
+        "next_action": "One changed native04 lifecycle; retain all previous stages/accounts, reconcile result and exact restoration/preservation with no blind retry.",
         "failed_attempt_ids": [
-          "S04-03-INSTALLED-recovery01",
-          "S04-03-INSTALLED-recovery02"
+          "S04-03-INSTALLED-recovery03"
         ]
       }
     }
@@ -10334,7 +10369,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
       "sha256": "23ef125b0ec74a837cdb4d5f6dbf3eb36ec36954880c35fb99f68898dbc072b0"
     },
     "design": {
-      "journey": "Authenticated Settings\u2192Recovery contact\u2192step-up add/change\u2192emailed proof POST\u2192verified status\u2192replacement/removal notices.",
+      "journey": "Authenticated Settings→Recovery contact→step-up add/change→emailed proof POST→verified status→replacement/removal notices.",
       "frontend": "Dedicated Page23 form with empty secret fields, current/pending status, timestamps, navigation and accurate fixed notices.",
       "backend": "PrivateAccountFile serialized lifecycle and native primary/file-TOTP step-up through ordinary Runtime.",
       "interfaces": "Typed actions and metadata snapshots; fixed bounded local mail submission, no SQL or command channel.",
@@ -42787,3 +42822,38 @@ unchanged. Focused source test PASS1 and independent rerun/review CLEAR; matchin
 new normal Web build and integrated startup remain required. No authentication,
 password submission, SQL change or public-service control occurred in these
 observations. Both startup failures and six retained exact key copies remain.
+
+## 2026-10-26 — OpenPGP regression during local development (in progress)
+
+Owner report: the previously approved Proton recipient disappeared from the UI;
+OpenPGP capability/import/policy controls are unavailable. Root owns the host and
+Git queue; transaction_review independently reviews the selective correction.
+The installed profile omitted all three OpenPGP helper triples and changed the
+settings root without the existing account binding. The helpers and original
+revision 5 record remain present. The native read-only probe returned
+INVENTORY_CONFIG, matching the installed omission. One earlier probe launch was
+refused by home-directory traversal permissions before a helper call.
+
+Observable exit: existing account/recipient binding restored byte-exactly,
+authenticated inventory/admin snapshot available, native synthetic-content
+encryption through the installed helpers passes, with no mail submission or
+key/policy/password mutation and all pre-existing development state preserved.
+Scope: restore the exact historical nine environment entries and one existing
+record into an absent private binding directory; restart only OSMAP Web.
+Prerequisites: installed Web 558a165e…, original helper sockets/grants/UIDs,
+healthy services, source ownership/mode, absent destination, unchanged frontend
+environment. Bound: one selective restoration, 120 seconds; stop on mismatch or
+uncertainty and retain backup/evidence. No workflow mutation retry. Actual result
+and elapsed time remain pending. Details: UX_OPENPGP_DEVELOPMENT_RESTORATION_20261026.md.
+S04-03 remains IN_PROGRESS; this report is an installed regression, not acceptance.
+
+OpenPGP incident result: selective restoration PASS. Both binding copies match
+1b524638…; prior development-state checksums PASS and no non-OpenPGP profile bytes
+changed. Actual native inventory (2 keys), administration snapshot, revision 5
+account/recipient binding, encryption preflight and encryption of fixed synthetic
+content PASS; no mail submission/key/policy/password mutation. Installed Web
+81887 loaded 558a165e… with loopback listener, certificate-verified public login
+200, all frontend/helpers/mail/database healthy. Independent actual review
+5953a9d7d2a660011f773f2d2b841ff5648f9a935c02e4bfdd59d015de5793be.
+Whole restoration elapsed UNMEASURED, within the dispatched 120-second bound.
+Owner browser mutation/emailed delivery are not claimed by this incident result.
