@@ -262,7 +262,9 @@ fn recovery_delivery_has_fixed_bounded_sendmail_shape_and_token_only_on_stdin() 
     let calls = notifier.executor.calls.borrow();
     let (program, args, wire, timeout, cap) = &calls[0];
     assert_eq!(program, "/usr/sbin/sendmail");
-    assert_eq!(args, &["-oi", "-f", ACCOUNT, "--", "sink@example.test"]);
+    assert_eq!(args, &["-oi", "-f", "<>", "--", "sink@example.test"]);
+    assert!(String::from_utf8_lossy(wire).contains("Auto-Submitted: auto-generated\r\n"));
+    assert!(String::from_utf8_lossy(wire).contains("X-Auto-Response-Suppress: All\r\n"));
     assert!(args.iter().all(|arg| !arg.contains(&token)));
     assert!(String::from_utf8_lossy(wire).contains(&token));
     assert!(*timeout <= Duration::from_secs(10));
@@ -451,7 +453,7 @@ fn ordinary_runtime_http_contact_roundtrip_uses_real_session_and_private_deliver
 use std::{fs::OpenOptions, io::{Read,Write}, os::unix::fs::OpenOptionsExt};
 fn main() -> std::io::Result<()> {
     let args:Vec<_>=std::env::args().skip(1).collect();
-    if args != ["-oi","-f","recovery@example.test","--","sink@example.test"] {
+    if args != ["-oi","-f","<>","--","sink@example.test"] {
         std::process::exit(1);
     }
     let mut message=Vec::new();

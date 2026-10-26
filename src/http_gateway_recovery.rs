@@ -265,13 +265,16 @@ impl<E: CommandExecutor> RecoveryContactNotifier for SendmailNotifier<'_, E> {
         {
             return RecoveryContactDelivery::Refused;
         }
-        let wire = format!("From: {}\r\nTo: {}\r\nSubject: {subject}\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=utf-8\r\nContent-Transfer-Encoding: 8bit\r\n\r\n{body}", self.sender, recipient);
+        // A development-only recipient must not produce an external DSN that
+        // quotes its secret proof to the account's production mailbox address.
+        // The account remains the visible author, with no envelope return path.
+        let wire = format!("From: {}\r\nTo: {}\r\nSubject: {subject}\r\nAuto-Submitted: auto-generated\r\nX-Auto-Response-Suppress: All\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=utf-8\r\nContent-Transfer-Encoding: 8bit\r\n\r\n{body}", self.sender, recipient);
         let result = self.executor.run_with_stdin_bytes_timeout_and_output_limit(
             self.path.to_string_lossy().as_ref(),
             &[
                 "-oi".into(),
                 "-f".into(),
-                self.sender.into(),
+                "<>".into(),
                 "--".into(),
                 recipient.into(),
             ],
