@@ -1,7 +1,7 @@
 #!/usr/bin/node
 'use strict';
 // One fixed, controlled local-delivery journey. --check-tools makes no requests.
-// Root must first register S04-03-INSTALLED-recovery02 and install the normal
+// Root must first register S04-03-INSTALLED-recovery03 and install the normal
 // source-bound Web with OSMAP_RECOVERY_CONTACT_LOCAL_DOMAIN set to this domain.
 // No password, cookie, factor or proof body is printed or written by this driver.
 const fs = require('node:fs');
@@ -13,8 +13,8 @@ const PRIMARY = `s04-03-primary-20261026-01@${DOMAIN}`;
 const A = `s04-03-proof-a-20261026-01@${DOMAIN}`;
 const B = `s04-03-proof-b-20261026-01@${DOMAIN}`;
 const USERS = [PRIMARY, A, B];
-const STAGE = '/var/backups/osmap-recovery-contact-20261026-02';
-const OUT = '/home/foo/Downloads/osmap-ux-s04/recovery-contact-20261026/native02';
+const STAGE = '/var/backups/osmap-recovery-contact-20261026-03';
+const OUT = '/home/foo/Downloads/osmap-ux-s04/recovery-contact-20261026/native03';
 const TOTP_SOURCE = '/home/foo/Workspace/OSMAP/maint/ux/s04_02_startup_candidate/sources/frontend/native_http_front_driver.py';
 const TOTP_SHA = 'eebdbe26269e35bffe43beb83ef84b08712fc67676663b66110cbd32876a7ec3';
 const hash = value => crypto.createHash('sha256').update(value).digest('hex');
@@ -57,14 +57,14 @@ function child(program, args, input, end, maximum = 1048576) {
     p.on('error', () => { failed=true; });
     p.on('close',(status,signal) => {
       closed=true; clearTimeout(timer); clearTimeout(killer);
+      const errorBytes=Buffer.concat(stderr), wire=errorBytes.toString('utf8');
+      const match=wire.match(/(?:^|\n)RECOVERY_NATIVE_REFUSED:([A-Z_]{1,48})(?:\n|$)/);
+        const known=new Set(['IDENTITY','WEB_BINDING','HELPER_BINDING','OLD_ROWS_READ','OLD_ROWS_SHAPE','OLD_ROWS_BOUND','PENDING_OPERATION','HTTPS_READINESS','WEB_STOP','HELPER_STOP','HELPER_START','HELPER_SOCKETS','WEB_START','STAGE_EXISTS','STAGE_CREATE','PROTECTED_DIRECTORY','FRESH_ROWS_OR_TRIGGER','FRESH_MAILDIR','FRESH_EPOCH','FRESH_FACTOR','FRESH_CONTACT','STAGE_CUSTODY','BIRTH_ALREADY_DISPATCHED','POLICY_DRIFT','INITIAL_HASH','INITIAL_HASH_SCHEME','INITIAL_HASH_COUNT','INITIAL_ROWS_UNCONFIRMED','MAIL_ROOT','MAIL_DOMAIN','MAILDIR_EXISTS','CONTACT_CUSTODY','CONTACT_BOUND','MAIL_SYMLINK','MAIL_BOUND','AMBIGUOUS_MAIL','STAGE_ABSENT','OLD_ROWS_CHANGED','OLD_FILES_CHANGED','POLICY_UNEXPECTED','POLICY_RESTORE','SESSION_BOUND','SESSION_CUSTODY','SESSION_SHAPE','SESSION_CHANGED','MTA_ROUTE','MTA_ALIAS','MTA_BCC','MTA_TRANSPORT','MTA_SIEVE','LOADED_IDENTITY','FRAME_ENCODING','FRAME_DECODING','ACTION']);
+      const code=match&&known.has(match[1])?match[1]:'CHILD_REFUSED';
       if (failed || status !== 0) {
-        const errorBytes=Buffer.concat(stderr), wire=errorBytes.toString('utf8');
-        const match=wire.match(/(?:^|\n)RECOVERY_NATIVE_REFUSED:([A-Z_]{1,48})(?:\n|$)/);
-        const known=new Set(['IDENTITY','WEB_BINDING','HELPER_BINDING','OLD_ROWS_READ','OLD_ROWS_SHAPE','OLD_ROWS_BOUND','PENDING_OPERATION','HTTPS_READINESS','WEB_STOP','HELPER_STOP','HELPER_START','HELPER_SOCKETS','WEB_START','STAGE_EXISTS','STAGE_CREATE','PROTECTED_DIRECTORY','FRESH_ROWS_OR_TRIGGER','FRESH_MAILDIR','FRESH_EPOCH','FRESH_FACTOR','FRESH_CONTACT','STAGE_CUSTODY','BIRTH_ALREADY_DISPATCHED','POLICY_DRIFT','INITIAL_HASH','INITIAL_HASH_SCHEME','INITIAL_HASH_COUNT','INITIAL_ROWS_UNCONFIRMED','MAIL_ROOT','MAIL_DOMAIN','MAILDIR_EXISTS','CONTACT_CUSTODY','CONTACT_BOUND','MAIL_SYMLINK','MAIL_BOUND','AMBIGUOUS_MAIL','STAGE_ABSENT','OLD_ROWS_CHANGED','OLD_FILES_CHANGED','POLICY_UNEXPECTED','POLICY_RESTORE','SESSION_BOUND','SESSION_CUSTODY','SESSION_SHAPE','SESSION_CHANGED','MTA_ROUTE','MTA_ALIAS','MTA_BCC','MTA_TRANSPORT','MTA_SIEVE','LOADED_IDENTITY','ACTION']);
-        const code=match&&known.has(match[1])?match[1]:'CHILD_REFUSED';
         emit('CHILD_REFUSED',{status,signal:signal || null,stdout_bytes:size,stderr_bytes:stderrBytes,stderr_sha256:hash(errorBytes),eof:true,category:code});reject(new Refused(code));
       }
-      else resolve(Buffer.concat(stdout));
+      else {emit('CHILD_COMPLETED',{status,signal:signal||null,stdout_bytes:size,stderr_bytes:stderrBytes,stderr_sha256:hash(errorBytes),eof:true,category:stderrBytes?(code==='CHILD_REFUSED'?'UNRECOGNIZED_CHILD_STDERR':code):'NONE'});resolve(Buffer.concat(stdout));}
     });
     p.stdin.on('error',()=>{}); p.stdin.end(input);
   });
@@ -228,8 +228,10 @@ prepare)
  for file in /var/db/osmap-account/epoch/${epoch(PRIMARY)}.json /var/db/osmap-account/epoch/${epoch(PRIMARY)}.lock /var/db/osmap-account/epoch/${epoch(PRIMARY)}.uncertain; do test ! -e "$file" && test ! -L "$file" || fail FRESH_EPOCH; done
  for file in /var/lib/osmap-s04-02/state/secrets/totp/${Buffer.from(PRIMARY).toString('hex')}.totp /var/lib/osmap-s04-02/state/cache/totp-replay/${Buffer.from(PRIMARY).toString('hex')}.counter; do test ! -e "$file" && test ! -L "$file" || fail FRESH_FACTOR; done
  for file in /var/lib/osmap-s04-02/state/settings/recovery-contact-v1/${contactStem}.json /var/lib/osmap-s04-02/state/settings/recovery-contact-v1/${contactStem}.lock; do test ! -e "$file" && test ! -L "$file" || fail FRESH_CONTACT; done
- printf 'POLICY_A '; base64 < "$stage/admission.before" | tr -d '\\n'; print
- printf 'POLICY_B '; base64 < "$stage/mutation.before" | tr -d '\\n'; print
+ encoded=$(/usr/bin/openssl base64 -A -in "$stage/admission.before") || fail FRAME_ENCODING
+ printf 'POLICY_A %s\\n' "$encoded"
+ encoded=$(/usr/bin/openssl base64 -A -in "$stage/mutation.before") || fail FRAME_ENCODING
+ printf 'POLICY_B %s\\n' "$encoded"
  ;;
 provision)
  test -d "$stage" && test ! -L "$stage" || fail STAGE_CUSTODY
@@ -255,8 +257,8 @@ provision)
  done
  (set -C; printf '%s\\n' '{"epoch":0,"state":"active","changed_at":null,"intent":null,"used_intents":[]}' > /var/db/osmap-account/epoch/${epoch(PRIMARY)}.json; : > /var/db/osmap-account/epoch/${epoch(PRIMARY)}.lock; printf '%s\\n' 'secret=GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ' > /var/lib/osmap-s04-02/state/secrets/totp/${Buffer.from(PRIMARY).toString('hex')}.totp)
  chown 1001:1001 /var/lib/osmap-s04-02/state/secrets/totp/${Buffer.from(PRIMARY).toString('hex')}.totp
- printf '%s' "$policy_a" | base64 -d > "$stage/admission.published"
- printf '%s' "$policy_b" | base64 -d > "$stage/mutation.published"
+ printf '%s' "$policy_a" | /usr/bin/openssl base64 -d -A > "$stage/admission.published" || fail FRAME_DECODING
+ printf '%s' "$policy_b" | /usr/bin/openssl base64 -d -A > "$stage/mutation.published" || fail FRAME_DECODING
  stop_services
  cp -p "$stage/admission.published" /etc/osmap/account-admission.json
  cp -p "$stage/mutation.published" /etc/osmap/account-runtime/config.json
@@ -283,7 +285,7 @@ proof-a|proof-b|notice-a|notice-b)
   test ! -L "$file" || fail MAIL_SYMLINK
   scanned=$((scanned+1)); test "$scanned" -le 16 && test "$(wc -c < "$file")" -le 65536 || fail MAIL_BOUND
   digests="$digests$(sha256 -q "$file")"
-  if grep -Fq "Subject: $subject" "$file"; then count=$((count+1)); test "$(wc -c < "$file")" -le 65536 || fail MAIL_BOUND; printf 'MESSAGE '; base64 < "$file" | tr -d '\\n'; print; fi
+  if grep -Fq "Subject: $subject" "$file"; then count=$((count+1)); test "$(wc -c < "$file")" -le 65536 || fail MAIL_BOUND; encoded=$(/usr/bin/openssl base64 -A -in "$file") || fail FRAME_ENCODING; printf 'MESSAGE %s\\n' "$encoded"; fi
  done
  max=1; test "$action" != proof-a || max=2
  test "$count" -le "$max" || fail AMBIGUOUS_MAIL

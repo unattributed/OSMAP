@@ -10219,7 +10219,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "owner": "/root",
     "functional_exit": "Working installed recovery-contact add/prove/replace/remove and truthful delivery/status with negative controls.",
     "elapsed_scope": "wall_clock",
-    "history_reference": "Accepted S04-02 historical workorder preserved below; S04-03 starts from absent lifecycle, not a failed credential retry. Actual core14, Runtime5+domain1, HTTP4 PASS; actualEdge five-state/15viewport-theme browser PASS. Production compile initial missing route import corrected/PASS. First HTTP test assertion matched policy prose instead of pending input, corrected and PASS. Full acceptance attempt1:1959RustPASS/72ignored then CWE guard rejected dynamically formatted shell test sink; static-shell replacement still rejected guard. Productcore unchanged; root+nativeengineer+reviewer select a tiny static Rust sink using existing Rust compiler, no guard waiver/new Python. Full failedlog /home/foo/Downloads/osmap-ux-s04/recovery-contact-acceptance-check-20261026.log retained. Signed sourceeeb748 includes implementation; source3c11641 fixes null-envelope DSN path and automatic-message headers. ActualRuntime5PASS after correction; two normalWeb compile-only artifacts27d(old) and558a(current). Existing exactV14test allowlist extended with production-reference refusals, correctedsubgatePASS; earlier V14wholecommandFAIL retained. Native recipe14c96147 independentlyCLEAR b88b9655 after11actualRust\u2192Nodeconsumer cases; exactlocalMTA/Sieve/userdb/forwarding checks,3proof/2notice messages,420body+180cleanup. No native delivery yet. Normal --work-order-only applies to03; S04-02-specific --pre-action is not claimed or added as new authority.",
+    "history_reference": "Accepted S04-02 historical workorder preserved below; S04-03 starts from absent lifecycle, not a failed credential retry. Actual core14, Runtime5+domain1, HTTP4 PASS; actualEdge five-state/15viewport-theme browser PASS. Production compile initial missing route import corrected/PASS. First HTTP test assertion matched policy prose instead of pending input, corrected and PASS. Full acceptance attempt1:1959RustPASS/72ignored then CWE guard rejected dynamically formatted shell test sink; static-shell replacement still rejected guard. Productcore unchanged; root+nativeengineer+reviewer select a tiny static Rust sink using existing Rust compiler, no guard waiver/new Python. Full failedlog /home/foo/Downloads/osmap-ux-s04/recovery-contact-acceptance-check-20261026.log retained. Signed sourceeeb748 includes implementation; source3c11641 fixes null-envelope DSN path and automatic-message headers. ActualRuntime5PASS after correction; two normalWeb compile-only artifacts27d(old) and558a(current). Existing exactV14test allowlist extended with production-reference refusals, correctedsubgatePASS; earlier V14wholecommandFAIL retained. Native recipe14c96147 independentlyCLEAR b88b9655 after11actualRust\u2192Nodeconsumer cases; exactlocalMTA/Sieve/userdb/forwarding checks,3proof/2notice messages,420body+180cleanup. No native delivery yet. Normal --work-order-only applies to03; S04-02-specific --pre-action is not claimed or added as new authority. Secondfullacceptance attempt reached1959RustPASS thenfmtcheckFAIL on Refusednoticearm; cargo fmt fixedonlybraces/linebreaks andcurrentfmt/V10PASS. Compilednative source3c11641/Web558a remains exactfunctionalcode; laterUIformatter-onlydiff independentlysemanticallyverified. Actualnative01/02bothretainedfailedbeforeauth/mail; combinedroot+independentreassessment85ece completed and actualnativeencoderproducer/consumerboundarynowverified, not a contact productPASS.",
     "investigation": {
       "owner": "/root",
       "timebox_seconds": 3600,
@@ -10271,23 +10271,57 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "elapsed_status": "MEASURED",
         "elapsed_seconds": 0.463,
         "reference": "/home/foo/Downloads/osmap-ux-s04/recovery-contact-20261026/native01/result.json actualOLD_ROWS_SHAPE/prepare/0HTTP/0mail; readonlyreconciliation freshrows0/exactpolicyunchanged/serviceshealthy. Originalkshunquotedpipe parsedemptycount, actualquotedpipe38rows/2432hex. Rootstage01backups/resultretained; no fixturebirth or credential/contact operation."
+      },
+      {
+        "id": "S04-03-INSTALLED-recovery02",
+        "boundary": "recovery-contact-lifecycle",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "source_revision": "31b5a5787dac2b05fc85c74eef2bc1d165d1c8bec351b9b2e78313d1bf0104de",
+        "change_reference": "Onlyquote literalpipe inactualkshaggregate parser + freshstage/output02, samefixedaccounts becauseauthoritativefreshrowcount0. Native01retainedfailed. SameinstalledWeb558a/helperbe7,420body+180cleanup,3proof+2notice, no productionrecipient/passwordchange. No newapplication/helperbuild or blindcredentialretry.",
+        "success_chain_review": {
+          "reviewer": "/root/transaction_review",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/recovery-contact-20261026/consumer-check02/independent-review.json SHA2560447849135578a997880a2fd57bfddee76953e15ece043ce47c40bb96e763ca3; independentlyactualemittedksh oldRED/newGREEN0/1/17/38rows +11actualRust\u2192Nodecases PASS, source31b5 tinyfixreviewed.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "FAIL",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 0.656,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/recovery-contact-20261026/native02/result.json actualACCOUNT_POLICY_FRAME/prepare/0HTTP/0mail. Actualnativebase64commandabsent EXIT1, encoderpipeline maskedexit. No fixturebirth reached; explicitfreshrowCOUNT0, bothpolicycmpEXIT0 and Web/helperhealthy. Native02stage/source/resultretained. trnewlinehypothesis disproved, not changed."
       }
     ],
     "next_attempt": {
-      "id": "S04-03-INSTALLED-recovery02",
+      "id": "S04-03-INSTALLED-recovery03",
       "boundary": "recovery-contact-lifecycle",
       "owner": "/root",
       "scope": "PRODUCT_DELIVERY",
       "adoption": "CURRENT",
-      "source_revision": "31b5a5787dac2b05fc85c74eef2bc1d165d1c8bec351b9b2e78313d1bf0104de",
-      "change_reference": "Onlyquote literalpipe inactualkshaggregate parser + freshstage/output02, samefixedaccounts becauseauthoritativefreshrowcount0. Native01retainedfailed. SameinstalledWeb558a/helperbe7,420body+180cleanup,3proof+2notice, no productionrecipient/passwordchange. No newapplication/helperbuild or blindcredentialretry.",
+      "source_revision": "a43d0f2ef5b55341fc2a3b0dfccffd0d3f875cd5c0ebdb905f5e3d7b078c6c02",
+      "change_reference": "Replace unsupported base64 CLI with actualnativeverified /usr/bin/openssl base64 -A/-d-A, checkedencode/decodeEXIT and bounded successfulchild diagnostics. Actualreadonlynativepolicyencode/decode+5RustMIMEframes\u2192actualNodeconsumers PASS1SSH0HTTP/4873bytes/0stderrEOF and11cases; onlyfresh03stage/out/idscalars thereafter. Same3freshaccountnames01 becauseauthoritativeCOUNT0, sameWeb558a/helperbe7. 420body+180cleanup, no ownercredential/productionrecipient change.",
       "success_chain_review": {
         "reviewer": "/root/transaction_review",
-        "reference": "/home/foo/Downloads/osmap-ux-s04/recovery-contact-20261026/consumer-check02/independent-review.json SHA2560447849135578a997880a2fd57bfddee76953e15ece043ce47c40bb96e763ca3; independentlyactualemittedksh oldRED/newGREEN0/1/17/38rows +11actualRust\u2192Nodecases PASS, source31b5 tinyfixreviewed.",
+        "reference": "/home/foo/Downloads/osmap-ux-s04/recovery-contact-20261026/combined-native01-native02-final-review.json SHA25685ececcc55dc9652171bbe61577b1103f993bfb784d35621b7e10c3725a2ed30; actualnativeprotocol/log+fullconsumer/control and exact03scalarinverse verified.",
         "covers": [
           "producer",
           "cleanup",
           "consumer"
+        ]
+      },
+      "reassessment": {
+        "reviewers": [
+          "/root",
+          "/root/transaction_review"
+        ],
+        "reference": "/home/foo/Downloads/osmap-ux-s04/recovery-contact-20261026/combined-native01-native02-final-review.json plus rootactualreadonlyobservations/native01 andnative02reconciliation; both failures prefixture prep, no password/contact mutation and no invented authority expiry.",
+        "next_action": "One changed sourcebound native03 fixedjourney with actualencodercontract nowqualified; retainoldstages andstop/reconcile uncertainty without retry.",
+        "failed_attempt_ids": [
+          "S04-03-INSTALLED-recovery01",
+          "S04-03-INSTALLED-recovery02"
         ]
       }
     }
@@ -10441,7 +10475,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "engineering_exit": "All required source/native/deployed and independent reviews PASS on current installed local development profile.",
     "human_exit": "One owner acceptance after engineering readiness; explicit observed result, never inferred."
   },
-  "updated_at": "2026-10-26T05:46:01Z"
+  "updated_at": "2026-10-26T06:10:14Z"
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->

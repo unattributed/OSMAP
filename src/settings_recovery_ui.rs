@@ -47,7 +47,9 @@ fn delivery_label(delivery: RecoveryContactDelivery) -> &'static str {
         RecoveryContactDelivery::Accepted => {
             "Accepted by the mail service; receipt is not confirmed."
         }
-        RecoveryContactDelivery::Refused => "Message submission was refused. No successful delivery is claimed.",
+        RecoveryContactDelivery::Refused => {
+            "Message submission was refused. No successful delivery is claimed."
+        }
         RecoveryContactDelivery::Unconfirmed => {
             "Message submission is unconfirmed. Do not repeat it; contact support to reconcile it."
         }
