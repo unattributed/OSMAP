@@ -67,6 +67,23 @@ async function main() {
           await page.keyboard.press('Tab');
           assert(await page.evaluate(()=>document.activeElement!==document.body));
         }
+        if(mode==='empty') {
+          await page.getByLabel('New email',{exact:true}).fill('public-fixture@example.test');
+          await page.locator('#change-password').fill('Public fixture field value');
+          await page.locator('#change-totp').fill('909090');
+          const [refusal] = await Promise.all([
+            page.waitForResponse(response=>response.request().method()==='POST'&&new URL(response.url()).pathname==='/settings/recovery'),
+            page.getByRole('button',{name:'Send verification',exact:true}).click()
+          ]);
+          assert.equal(refusal.status(),400);
+          assert.equal(await page.getByLabel('New email',{exact:true}).inputValue(),'public-fixture@example.test');
+          assert.equal(await page.locator('#change-password').inputValue(),'');
+          assert.equal(await page.locator('#change-totp').inputValue(),'');
+          await page.screenshot({path:path.join(out,'refused-email-preserved-360-light.png'),fullPage:true});
+          await page.goto(ready.origin+'/settings/recovery');
+          assert.equal(await page.getByLabel('New email',{exact:true}).inputValue(),'');
+          result.refusalEmailPreserved=true;
+        }
         result.states.push({mode,passed:true,emptySecrets:true,responsive:true});
       } finally {
         await context.close(); fs.writeFileSync(path.join(root,'stop'),'');

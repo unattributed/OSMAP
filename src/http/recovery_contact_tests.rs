@@ -78,3 +78,24 @@ fn recovery_contact_unavailable_is_truthful_and_anonymous_cannot_manage() {
     assert_ne!(result.response.status_code, 200);
     assert!(!body_text(&result).contains("backup@example.test"));
 }
+
+#[test]
+fn recovery_contact_refusal_preserves_only_valid_email_and_clears_secrets() {
+    let app = contact_app();
+    let csrf = "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210";
+    let form = |email: &str| format!("csrf_token={csrf}&revision=7&action=begin&email={email}&current_password=do-not-echo-this-secret&totp_code=909090");
+    let result = app.handle_request(&contact_request(&form("backup%2Bcorrection%40example.test")), "127.0.0.1");
+    assert_eq!(result.response.status_code, 400);
+    let html = body_text(&result);
+    assert!(html.contains("value=\"backup+correction@example.test\""));
+    assert!(!html.contains("do-not-echo-this-secret"));
+    assert!(!html.contains("909090"));
+    for email in ["bad%22%3E%3Cscript%3E%40example.test".to_string(), "a".repeat(255)+"%40example.test"] {
+        let result = app.handle_request(&contact_request(&form(&email)), "127.0.0.1");
+        let html = body_text(&result);
+        assert!(!html.contains("<script>"));
+        assert!(html.contains("id=\"recovery-email\" name=\"email\" type=\"email\" autocomplete=\"off\" maxlength=\"254\" value=\"\""));
+    }
+    let result = app.handle_request(&request("GET", "/settings/recovery", &authenticated_same_origin_headers(), ""), "127.0.0.1");
+    assert!(!body_text(&result).contains("backup+correction@example.test"));
+}

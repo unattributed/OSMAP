@@ -13,6 +13,17 @@ fn page(
     state: Option<&crate::recovery_contact::RecoveryContactSnapshot>,
     notice: Option<&str>,
 ) -> HttpResponse {
+    page_with_email(status, reason, session, state, notice, None)
+}
+
+fn page_with_email(
+    status: u16,
+    reason: &'static str,
+    session: &ValidatedSession,
+    state: Option<&crate::recovery_contact::RecoveryContactSnapshot>,
+    notice: Option<&str>,
+    entered_email: Option<&str>,
+) -> HttpResponse {
     html_response(
         status,
         reason,
@@ -22,6 +33,7 @@ fn page(
             &session.record.csrf_token,
             state,
             notice,
+            entered_email,
         ),
     )
 }
@@ -184,7 +196,19 @@ impl<G: BrowserGateway> BrowserApp<G> {
                     },
                 };
                 audit_events.push(LogEvent::new(LogLevel::Info, EventCategory::Auth, "recovery_contact_action", "Recovery contact action recorded; delivery and verification are separate outcomes").with_field("request_id", context.request_id.clone()));
-                page(200, "OK", &session, Some(&result.snapshot), Some(notice))
+                page_with_email(
+                    200,
+                    "OK",
+                    &session,
+                    Some(&result.snapshot),
+                    Some(notice),
+                    (get("action") == "begin"
+                        && matches!(
+                            result.delivery,
+                            Some(Delivery::Refused | Delivery::Unconfirmed)
+                        ))
+                    .then_some(get("email")),
+                )
             }
             Err(error) => {
                 let (status, reason, notice) = match error {
@@ -205,7 +229,14 @@ impl<G: BrowserGateway> BrowserApp<G> {
                     .with_field("request_id", context.request_id.clone()),
                 );
                 let refreshed = self.gateway.recovery_contact(&session).ok();
-                page(status, reason, &session, refreshed.as_ref(), Some(notice))
+                page_with_email(
+                    status,
+                    reason,
+                    &session,
+                    refreshed.as_ref(),
+                    Some(notice),
+                    (get("action") == "begin").then_some(get("email")),
+                )
             }
         };
         HandledHttpResponse {
