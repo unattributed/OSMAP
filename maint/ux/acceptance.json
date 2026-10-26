@@ -10134,21 +10134,47 @@
       },
       "pointers": [
         {
-          "kind": "candidate_source",
-          "path": "src/http_runtime.rs",
-          "scope": "Unresolved control-specific source; dispatcher candidate only; no implementation or absence inferred."
+          "kind": "legacy_evidence",
+          "path": "docs/UX_EXECUTION_LEDGER.md",
+          "scope": "Historical baseline gap retained; current engineering qualification below supersedes implementation/QA gap, while owner acceptance remains pending. 2026-10-14 accounting: control R2-10-006 (Recovery-contact actual status) remains unaccepted. Owner: Assigned implementation agent; root integration owner. Control-specific execution is unreconciled unless result evidence below identifies the exact executed portion. Next action: S04-03: Implement/qualify authoritative recovery-contact proof lifecycle, replay/rate limits, notifications and pending/verified transitions. Required positive/negative criteria and final-reference/human acceptance are unchanged; this assessment does not establish absence of existing implementation."
         },
         {
-          "kind": "gap",
-          "path": "docs/UX_EXECUTION_LEDGER.md",
-          "scope": "2026-10-14 accounting: control R2-10-006 (Recovery-contact actual status) remains unaccepted. Owner: Assigned implementation agent; root integration owner. Control-specific execution is unreconciled unless result evidence below identifies the exact executed portion. Next action: S04-03: Implement/qualify authoritative recovery-contact proof lifecycle, replay/rate limits, notifications and pending/verified transitions. Required positive/negative criteria and final-reference/human acceptance are unchanged; this assessment does not establish absence of existing implementation."
+          "kind": "source",
+          "path": "src/settings_recovery_ui.rs",
+          "scope": "Security actual missing/pending/verified state and UTC timestamp from private proof metadata."
+        },
+        {
+          "kind": "source",
+          "path": "src/http_gateway_recovery.rs",
+          "scope": "Ordinary own-account native admission, session/epoch lease, TOTP replay, private store and bounded local notifier."
+        },
+        {
+          "kind": "test",
+          "path": "src/recovery_contact_tests.rs",
+          "scope": "Executed core positive/negative/recovery cases, complemented by current HTTP/native/browser evidence below."
         }
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "QA_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/recovery-contact-acceptance-check-delivery-20261026.log",
+            "scope": "Security actual missing/pending/verified state and UTC timestamp from private proof metadata. Core14/Runtime5/domain1 passed within1959RustPASS; later aggregate docs-index refusal retained/corrected. Current email-retention HTTP5 additionally PASS in form-retention-green02.log; no wholeaggregate PASS inferred."
+          },
+          {
+            "kind": "native_execution",
+            "path": "docs/UX_SLICE_S04_03.md",
+            "scope": "Local obsd1 only: native04 positive9HTTP/3proof2notice/restart/restoration/preservation PASS (result1c78ce…); native05 sixrequiredcontact denials actually observed, aggregateFAIL retained. Separate exactresidue/readback PASS, independentactuald054ac…. Genericlogout NOT_RUNin05, unchangedacceptedsharedsessionevidence explicitlyreused. CurrentWebc972/helperbe7; owner credentials/contact unchanged."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/recovery-contact-browser-20261026-03/result.json",
+            "scope": "ActualEdge5states/16captures, mobile/light/dark/navigation/Cancel/emptysecrets/validemailretention PASS; synthetic presentation distinctfrominstalledmail. Independent sourcevisual83b5d4…. Human T08 remains pending; no external delivery or S04-04 recovery acceptance."
+          }
+        ]
       }
     },
     {
@@ -10318,21 +10344,47 @@
       },
       "pointers": [
         {
-          "kind": "candidate_source",
-          "path": "src/http_runtime.rs",
-          "scope": "Unresolved control-specific source; dispatcher candidate only; no implementation or absence inferred."
+          "kind": "legacy_evidence",
+          "path": "docs/UX_EXECUTION_LEDGER.md",
+          "scope": "Historical baseline gap retained; current engineering qualification below supersedes implementation/QA gap, while owner acceptance remains pending. 2026-10-14 accounting: control R2-10-010 (Manage recovery contact) remains unaccepted. Owner: Assigned implementation agent; root integration owner. Control-specific execution is unreconciled unless result evidence below identifies the exact executed portion. Next action: S04-03: Implement/qualify authoritative recovery-contact proof lifecycle, replay/rate limits, notifications and pending/verified transitions. Required positive/negative criteria and final-reference/human acceptance are unchanged; this assessment does not establish absence of existing implementation."
         },
         {
-          "kind": "gap",
-          "path": "docs/UX_EXECUTION_LEDGER.md",
-          "scope": "2026-10-14 accounting: control R2-10-010 (Manage recovery contact) remains unaccepted. Owner: Assigned implementation agent; root integration owner. Control-specific execution is unreconciled unless result evidence below identifies the exact executed portion. Next action: S04-03: Implement/qualify authoritative recovery-contact proof lifecycle, replay/rate limits, notifications and pending/verified transitions. Required positive/negative criteria and final-reference/human acceptance are unchanged; this assessment does not establish absence of existing implementation."
+          "kind": "source",
+          "path": "src/settings_recovery_ui.rs",
+          "scope": "Security Manage recovery contact navigates to the own-account form."
+        },
+        {
+          "kind": "source",
+          "path": "src/http_gateway_recovery.rs",
+          "scope": "Ordinary own-account native admission, session/epoch lease, TOTP replay, private store and bounded local notifier."
+        },
+        {
+          "kind": "test",
+          "path": "src/recovery_contact_tests.rs",
+          "scope": "Executed core positive/negative/recovery cases, complemented by current HTTP/native/browser evidence below."
         }
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "QA_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/recovery-contact-acceptance-check-delivery-20261026.log",
+            "scope": "Security Manage recovery contact navigates to the own-account form. Core14/Runtime5/domain1 passed within1959RustPASS; later aggregate docs-index refusal retained/corrected. Current email-retention HTTP5 additionally PASS in form-retention-green02.log; no wholeaggregate PASS inferred."
+          },
+          {
+            "kind": "native_execution",
+            "path": "docs/UX_SLICE_S04_03.md",
+            "scope": "Local obsd1 only: native04 positive9HTTP/3proof2notice/restart/restoration/preservation PASS (result1c78ce…); native05 sixrequiredcontact denials actually observed, aggregateFAIL retained. Separate exactresidue/readback PASS, independentactuald054ac…. Genericlogout NOT_RUNin05, unchangedacceptedsharedsessionevidence explicitlyreused. CurrentWebc972/helperbe7; owner credentials/contact unchanged."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/recovery-contact-browser-20261026-03/result.json",
+            "scope": "ActualEdge5states/16captures, mobile/light/dark/navigation/Cancel/emptysecrets/validemailretention PASS; synthetic presentation distinctfrominstalledmail. Independent sourcevisual83b5d4…. Human T08 remains pending; no external delivery or S04-04 recovery acceptance."
+          }
+        ]
       }
     },
     {
@@ -17699,21 +17751,47 @@
       },
       "pointers": [
         {
-          "kind": "candidate_source",
-          "path": "src/http_runtime.rs",
-          "scope": "Unresolved control-specific source; dispatcher candidate only; no implementation or absence inferred."
+          "kind": "legacy_evidence",
+          "path": "docs/UX_EXECUTION_LEDGER.md",
+          "scope": "Historical baseline gap retained; current engineering qualification below supersedes implementation/QA gap, while owner acceptance remains pending. 2026-10-14 accounting: control R2-20-007 (Recovery-contact status) remains unaccepted. Owner: Assigned implementation agent; root integration owner. Control-specific execution is unreconciled unless result evidence below identifies the exact executed portion. Next action: S04-03: Implement/qualify authoritative recovery-contact proof lifecycle, replay/rate limits, notifications and pending/verified transitions. Required positive/negative criteria and final-reference/human acceptance are unchanged; this assessment does not establish absence of existing implementation."
         },
         {
-          "kind": "gap",
-          "path": "docs/UX_EXECUTION_LEDGER.md",
-          "scope": "2026-10-14 accounting: control R2-20-007 (Recovery-contact status) remains unaccepted. Owner: Assigned implementation agent; root integration owner. Control-specific execution is unreconciled unless result evidence below identifies the exact executed portion. Next action: S04-03: Implement/qualify authoritative recovery-contact proof lifecycle, replay/rate limits, notifications and pending/verified transitions. Required positive/negative criteria and final-reference/human acceptance are unchanged; this assessment does not establish absence of existing implementation."
+          "kind": "source",
+          "path": "src/settings_recovery_ui.rs",
+          "scope": "Authentication & Recovery status uses actual private lifecycle metadata."
+        },
+        {
+          "kind": "source",
+          "path": "src/http_gateway_recovery.rs",
+          "scope": "Ordinary own-account native admission, session/epoch lease, TOTP replay, private store and bounded local notifier."
+        },
+        {
+          "kind": "test",
+          "path": "src/recovery_contact_tests.rs",
+          "scope": "Executed core positive/negative/recovery cases, complemented by current HTTP/native/browser evidence below."
         }
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "QA_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/recovery-contact-acceptance-check-delivery-20261026.log",
+            "scope": "Authentication & Recovery status uses actual private lifecycle metadata. Core14/Runtime5/domain1 passed within1959RustPASS; later aggregate docs-index refusal retained/corrected. Current email-retention HTTP5 additionally PASS in form-retention-green02.log; no wholeaggregate PASS inferred."
+          },
+          {
+            "kind": "native_execution",
+            "path": "docs/UX_SLICE_S04_03.md",
+            "scope": "Local obsd1 only: native04 positive9HTTP/3proof2notice/restart/restoration/preservation PASS (result1c78ce…); native05 sixrequiredcontact denials actually observed, aggregateFAIL retained. Separate exactresidue/readback PASS, independentactuald054ac…. Genericlogout NOT_RUNin05, unchangedacceptedsharedsessionevidence explicitlyreused. CurrentWebc972/helperbe7; owner credentials/contact unchanged."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/recovery-contact-browser-20261026-03/result.json",
+            "scope": "ActualEdge5states/16captures, mobile/light/dark/navigation/Cancel/emptysecrets/validemailretention PASS; synthetic presentation distinctfrominstalledmail. Independent sourcevisual83b5d4…. Human T08 remains pending; no external delivery or S04-04 recovery acceptance."
+          }
+        ]
       }
     },
     {
@@ -17736,21 +17814,47 @@
       },
       "pointers": [
         {
-          "kind": "candidate_source",
-          "path": "src/http_runtime.rs",
-          "scope": "Unresolved control-specific source; dispatcher candidate only; no implementation or absence inferred."
+          "kind": "legacy_evidence",
+          "path": "docs/UX_EXECUTION_LEDGER.md",
+          "scope": "Historical baseline gap retained; current engineering qualification below supersedes implementation/QA gap, while owner acceptance remains pending. 2026-10-14 accounting: control R2-20-008 (Manage contact) remains unaccepted. Owner: Assigned implementation agent; root integration owner. Control-specific execution is unreconciled unless result evidence below identifies the exact executed portion. Next action: S04-03: Implement/qualify authoritative recovery-contact proof lifecycle, replay/rate limits, notifications and pending/verified transitions. Required positive/negative criteria and final-reference/human acceptance are unchanged; this assessment does not establish absence of existing implementation."
         },
         {
-          "kind": "gap",
-          "path": "docs/UX_EXECUTION_LEDGER.md",
-          "scope": "2026-10-14 accounting: control R2-20-008 (Manage contact) remains unaccepted. Owner: Assigned implementation agent; root integration owner. Control-specific execution is unreconciled unless result evidence below identifies the exact executed portion. Next action: S04-03: Implement/qualify authoritative recovery-contact proof lifecycle, replay/rate limits, notifications and pending/verified transitions. Required positive/negative criteria and final-reference/human acceptance are unchanged; this assessment does not establish absence of existing implementation."
+          "kind": "source",
+          "path": "src/settings_recovery_ui.rs",
+          "scope": "Authentication & Recovery Manage contact entry opens own-account management."
+        },
+        {
+          "kind": "source",
+          "path": "src/http_gateway_recovery.rs",
+          "scope": "Ordinary own-account native admission, session/epoch lease, TOTP replay, private store and bounded local notifier."
+        },
+        {
+          "kind": "test",
+          "path": "src/recovery_contact_tests.rs",
+          "scope": "Executed core positive/negative/recovery cases, complemented by current HTTP/native/browser evidence below."
         }
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "QA_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/recovery-contact-acceptance-check-delivery-20261026.log",
+            "scope": "Authentication & Recovery Manage contact entry opens own-account management. Core14/Runtime5/domain1 passed within1959RustPASS; later aggregate docs-index refusal retained/corrected. Current email-retention HTTP5 additionally PASS in form-retention-green02.log; no wholeaggregate PASS inferred."
+          },
+          {
+            "kind": "native_execution",
+            "path": "docs/UX_SLICE_S04_03.md",
+            "scope": "Local obsd1 only: native04 positive9HTTP/3proof2notice/restart/restoration/preservation PASS (result1c78ce…); native05 sixrequiredcontact denials actually observed, aggregateFAIL retained. Separate exactresidue/readback PASS, independentactuald054ac…. Genericlogout NOT_RUNin05, unchangedacceptedsharedsessionevidence explicitlyreused. CurrentWebc972/helperbe7; owner credentials/contact unchanged."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/recovery-contact-browser-20261026-03/result.json",
+            "scope": "ActualEdge5states/16captures, mobile/light/dark/navigation/Cancel/emptysecrets/validemailretention PASS; synthetic presentation distinctfrominstalledmail. Independent sourcevisual83b5d4…. Human T08 remains pending; no external delivery or S04-04 recovery acceptance."
+          }
+        ]
       }
     },
     {
@@ -19721,21 +19825,47 @@
       },
       "pointers": [
         {
-          "kind": "candidate_source",
-          "path": "src/http_runtime.rs",
-          "scope": "Unresolved control-specific source; dispatcher candidate only; no implementation or absence inferred."
+          "kind": "legacy_evidence",
+          "path": "docs/UX_EXECUTION_LEDGER.md",
+          "scope": "Historical baseline gap retained; current engineering qualification below supersedes implementation/QA gap, while owner acceptance remains pending. 2026-10-14 accounting: control R2-23-001 (Current verified/pending/missing contact) remains unaccepted. Owner: Assigned implementation agent; root integration owner. Control-specific execution is unreconciled unless result evidence below identifies the exact executed portion. Next action: S04-03: Implement/qualify authoritative recovery-contact proof lifecycle, replay/rate limits, notifications and pending/verified transitions. Required positive/negative criteria and final-reference/human acceptance are unchanged; this assessment does not establish absence of existing implementation."
         },
         {
-          "kind": "gap",
-          "path": "docs/UX_EXECUTION_LEDGER.md",
-          "scope": "2026-10-14 accounting: control R2-23-001 (Current verified/pending/missing contact) remains unaccepted. Owner: Assigned implementation agent; root integration owner. Control-specific execution is unreconciled unless result evidence below identifies the exact executed portion. Next action: S04-03: Implement/qualify authoritative recovery-contact proof lifecycle, replay/rate limits, notifications and pending/verified transitions. Required positive/negative criteria and final-reference/human acceptance are unchanged; this assessment does not establish absence of existing implementation."
+          "kind": "source",
+          "path": "src/settings_recovery_ui.rs",
+          "scope": "Current verified/pending/missing and unavailable state, old verified retained during replacement."
+        },
+        {
+          "kind": "source",
+          "path": "src/http_gateway_recovery.rs",
+          "scope": "Ordinary own-account native admission, session/epoch lease, TOTP replay, private store and bounded local notifier."
+        },
+        {
+          "kind": "test",
+          "path": "src/recovery_contact_tests.rs",
+          "scope": "Executed core positive/negative/recovery cases, complemented by current HTTP/native/browser evidence below."
         }
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "QA_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/recovery-contact-acceptance-check-delivery-20261026.log",
+            "scope": "Current verified/pending/missing and unavailable state, old verified retained during replacement. Core14/Runtime5/domain1 passed within1959RustPASS; later aggregate docs-index refusal retained/corrected. Current email-retention HTTP5 additionally PASS in form-retention-green02.log; no wholeaggregate PASS inferred."
+          },
+          {
+            "kind": "native_execution",
+            "path": "docs/UX_SLICE_S04_03.md",
+            "scope": "Local obsd1 only: native04 positive9HTTP/3proof2notice/restart/restoration/preservation PASS (result1c78ce…); native05 sixrequiredcontact denials actually observed, aggregateFAIL retained. Separate exactresidue/readback PASS, independentactuald054ac…. Genericlogout NOT_RUNin05, unchangedacceptedsharedsessionevidence explicitlyreused. CurrentWebc972/helperbe7; owner credentials/contact unchanged."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/recovery-contact-browser-20261026-03/result.json",
+            "scope": "ActualEdge5states/16captures, mobile/light/dark/navigation/Cancel/emptysecrets/validemailretention PASS; synthetic presentation distinctfrominstalledmail. Independent sourcevisual83b5d4…. Human T08 remains pending; no external delivery or S04-04 recovery acceptance."
+          }
+        ]
       }
     },
     {
@@ -19758,21 +19888,47 @@
       },
       "pointers": [
         {
-          "kind": "candidate_source",
-          "path": "src/http_runtime.rs",
-          "scope": "Unresolved control-specific source; dispatcher candidate only; no implementation or absence inferred."
+          "kind": "legacy_evidence",
+          "path": "docs/UX_EXECUTION_LEDGER.md",
+          "scope": "Historical baseline gap retained; current engineering qualification below supersedes implementation/QA gap, while owner acceptance remains pending. 2026-10-14 accounting: control R2-23-002 (Verified timestamp) remains unaccepted. Owner: Assigned implementation agent; root integration owner. Control-specific execution is unreconciled unless result evidence below identifies the exact executed portion. Next action: S04-03: Implement/qualify authoritative recovery-contact proof lifecycle, replay/rate limits, notifications and pending/verified transitions. Required positive/negative criteria and final-reference/human acceptance are unchanged; this assessment does not establish absence of existing implementation."
         },
         {
-          "kind": "gap",
-          "path": "docs/UX_EXECUTION_LEDGER.md",
-          "scope": "2026-10-14 accounting: control R2-23-002 (Verified timestamp) remains unaccepted. Owner: Assigned implementation agent; root integration owner. Control-specific execution is unreconciled unless result evidence below identifies the exact executed portion. Next action: S04-03: Implement/qualify authoritative recovery-contact proof lifecycle, replay/rate limits, notifications and pending/verified transitions. Required positive/negative criteria and final-reference/human acceptance are unchanged; this assessment does not establish absence of existing implementation."
+          "kind": "source",
+          "path": "src/settings_recovery_ui.rs",
+          "scope": "Verified timestamp bounded by native host clocks and matches authoritative store/rendered UTC."
+        },
+        {
+          "kind": "source",
+          "path": "src/http_gateway_recovery.rs",
+          "scope": "Ordinary own-account native admission, session/epoch lease, TOTP replay, private store and bounded local notifier."
+        },
+        {
+          "kind": "test",
+          "path": "src/recovery_contact_tests.rs",
+          "scope": "Executed core positive/negative/recovery cases, complemented by current HTTP/native/browser evidence below."
         }
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "QA_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/recovery-contact-acceptance-check-delivery-20261026.log",
+            "scope": "Verified timestamp bounded by native host clocks and matches authoritative store/rendered UTC. Core14/Runtime5/domain1 passed within1959RustPASS; later aggregate docs-index refusal retained/corrected. Current email-retention HTTP5 additionally PASS in form-retention-green02.log; no wholeaggregate PASS inferred."
+          },
+          {
+            "kind": "native_execution",
+            "path": "docs/UX_SLICE_S04_03.md",
+            "scope": "Local obsd1 only: native04 positive9HTTP/3proof2notice/restart/restoration/preservation PASS (result1c78ce…); native05 sixrequiredcontact denials actually observed, aggregateFAIL retained. Separate exactresidue/readback PASS, independentactuald054ac…. Genericlogout NOT_RUNin05, unchangedacceptedsharedsessionevidence explicitlyreused. CurrentWebc972/helperbe7; owner credentials/contact unchanged."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/recovery-contact-browser-20261026-03/result.json",
+            "scope": "ActualEdge5states/16captures, mobile/light/dark/navigation/Cancel/emptysecrets/validemailretention PASS; synthetic presentation distinctfrominstalledmail. Independent sourcevisual83b5d4…. Human T08 remains pending; no external delivery or S04-04 recovery acceptance."
+          }
+        ]
       }
     },
     {
@@ -19795,21 +19951,47 @@
       },
       "pointers": [
         {
-          "kind": "candidate_source",
-          "path": "src/http_runtime.rs",
-          "scope": "Unresolved control-specific source; dispatcher candidate only; no implementation or absence inferred."
+          "kind": "legacy_evidence",
+          "path": "docs/UX_EXECUTION_LEDGER.md",
+          "scope": "Historical baseline gap retained; current engineering qualification below supersedes implementation/QA gap, while owner acceptance remains pending. 2026-10-14 accounting: control R2-23-003 (Change contact) remains unaccepted. Owner: Assigned implementation agent; root integration owner. Control-specific execution is unreconciled unless result evidence below identifies the exact executed portion. Next action: S04-03: Implement/qualify authoritative recovery-contact proof lifecycle, replay/rate limits, notifications and pending/verified transitions. Required positive/negative criteria and final-reference/human acceptance are unchanged; this assessment does not establish absence of existing implementation."
         },
         {
-          "kind": "gap",
-          "path": "docs/UX_EXECUTION_LEDGER.md",
-          "scope": "2026-10-14 accounting: control R2-23-003 (Change contact) remains unaccepted. Owner: Assigned implementation agent; root integration owner. Control-specific execution is unreconciled unless result evidence below identifies the exact executed portion. Next action: S04-03: Implement/qualify authoritative recovery-contact proof lifecycle, replay/rate limits, notifications and pending/verified transitions. Required positive/negative criteria and final-reference/human acceptance are unchanged; this assessment does not establish absence of existing implementation."
+          "kind": "source",
+          "path": "src/settings_recovery_ui.rs",
+          "scope": "Change contact retains old verified until replacement proof; valid entered email retained after trusted refusal, secret fields blank."
+        },
+        {
+          "kind": "source",
+          "path": "src/http_gateway_recovery.rs",
+          "scope": "Ordinary own-account native admission, session/epoch lease, TOTP replay, private store and bounded local notifier."
+        },
+        {
+          "kind": "test",
+          "path": "src/recovery_contact_tests.rs",
+          "scope": "Executed core positive/negative/recovery cases, complemented by current HTTP/native/browser evidence below."
         }
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "QA_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/recovery-contact-acceptance-check-delivery-20261026.log",
+            "scope": "Change contact retains old verified until replacement proof; valid entered email retained after trusted refusal, secret fields blank. Core14/Runtime5/domain1 passed within1959RustPASS; later aggregate docs-index refusal retained/corrected. Current email-retention HTTP5 additionally PASS in form-retention-green02.log; no wholeaggregate PASS inferred."
+          },
+          {
+            "kind": "native_execution",
+            "path": "docs/UX_SLICE_S04_03.md",
+            "scope": "Local obsd1 only: native04 positive9HTTP/3proof2notice/restart/restoration/preservation PASS (result1c78ce…); native05 sixrequiredcontact denials actually observed, aggregateFAIL retained. Separate exactresidue/readback PASS, independentactuald054ac…. Genericlogout NOT_RUNin05, unchangedacceptedsharedsessionevidence explicitlyreused. CurrentWebc972/helperbe7; owner credentials/contact unchanged."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/recovery-contact-browser-20261026-03/result.json",
+            "scope": "ActualEdge5states/16captures, mobile/light/dark/navigation/Cancel/emptysecrets/validemailretention PASS; synthetic presentation distinctfrominstalledmail. Independent sourcevisual83b5d4…. Human T08 remains pending; no external delivery or S04-04 recovery acceptance."
+          }
+        ]
       }
     },
     {
@@ -19832,21 +20014,47 @@
       },
       "pointers": [
         {
-          "kind": "candidate_source",
-          "path": "src/http_runtime.rs",
-          "scope": "Unresolved control-specific source; dispatcher candidate only; no implementation or absence inferred."
+          "kind": "legacy_evidence",
+          "path": "docs/UX_EXECUTION_LEDGER.md",
+          "scope": "Historical baseline gap retained; current engineering qualification below supersedes implementation/QA gap, while owner acceptance remains pending. 2026-10-14 accounting: control R2-23-004 (Remove contact) remains unaccepted. Owner: Assigned implementation agent; root integration owner. Control-specific execution is unreconciled unless result evidence below identifies the exact executed portion. Next action: S04-03: Implement/qualify authoritative recovery-contact proof lifecycle, replay/rate limits, notifications and pending/verified transitions. Required positive/negative criteria and final-reference/human acceptance are unchanged; this assessment does not establish absence of existing implementation."
         },
         {
-          "kind": "gap",
-          "path": "docs/UX_EXECUTION_LEDGER.md",
-          "scope": "2026-10-14 accounting: control R2-23-004 (Remove contact) remains unaccepted. Owner: Assigned implementation agent; root integration owner. Control-specific execution is unreconciled unless result evidence below identifies the exact executed portion. Next action: S04-03: Implement/qualify authoritative recovery-contact proof lifecycle, replay/rate limits, notifications and pending/verified transitions. Required positive/negative criteria and final-reference/human acceptance are unchanged; this assessment does not establish absence of existing implementation."
+          "kind": "source",
+          "path": "src/settings_recovery_ui.rs",
+          "scope": "Remove verified/pending contact and previous-contact notice; CSRF/step-up required."
+        },
+        {
+          "kind": "source",
+          "path": "src/http_gateway_recovery.rs",
+          "scope": "Ordinary own-account native admission, session/epoch lease, TOTP replay, private store and bounded local notifier."
+        },
+        {
+          "kind": "test",
+          "path": "src/recovery_contact_tests.rs",
+          "scope": "Executed core positive/negative/recovery cases, complemented by current HTTP/native/browser evidence below."
         }
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "QA_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/recovery-contact-acceptance-check-delivery-20261026.log",
+            "scope": "Remove verified/pending contact and previous-contact notice; CSRF/step-up required. Core14/Runtime5/domain1 passed within1959RustPASS; later aggregate docs-index refusal retained/corrected. Current email-retention HTTP5 additionally PASS in form-retention-green02.log; no wholeaggregate PASS inferred."
+          },
+          {
+            "kind": "native_execution",
+            "path": "docs/UX_SLICE_S04_03.md",
+            "scope": "Local obsd1 only: native04 positive9HTTP/3proof2notice/restart/restoration/preservation PASS (result1c78ce…); native05 sixrequiredcontact denials actually observed, aggregateFAIL retained. Separate exactresidue/readback PASS, independentactuald054ac…. Genericlogout NOT_RUNin05, unchangedacceptedsharedsessionevidence explicitlyreused. CurrentWebc972/helperbe7; owner credentials/contact unchanged."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/recovery-contact-browser-20261026-03/result.json",
+            "scope": "ActualEdge5states/16captures, mobile/light/dark/navigation/Cancel/emptysecrets/validemailretention PASS; synthetic presentation distinctfrominstalledmail. Independent sourcevisual83b5d4…. Human T08 remains pending; no external delivery or S04-04 recovery acceptance."
+          }
+        ]
       }
     },
     {
@@ -19869,21 +20077,47 @@
       },
       "pointers": [
         {
-          "kind": "candidate_source",
-          "path": "src/http_runtime.rs",
-          "scope": "Unresolved control-specific source; dispatcher candidate only; no implementation or absence inferred."
+          "kind": "legacy_evidence",
+          "path": "docs/UX_EXECUTION_LEDGER.md",
+          "scope": "Historical baseline gap retained; current engineering qualification below supersedes implementation/QA gap, while owner acceptance remains pending. 2026-10-14 accounting: control R2-23-005 (New email) remains unaccepted. Owner: Assigned implementation agent; root integration owner. Control-specific execution is unreconciled unless result evidence below identifies the exact executed portion. Next action: S04-03: Implement/qualify authoritative recovery-contact proof lifecycle, replay/rate limits, notifications and pending/verified transitions. Required positive/negative criteria and final-reference/human acceptance are unchanged; this assessment does not establish absence of existing implementation."
         },
         {
-          "kind": "gap",
-          "path": "docs/UX_EXECUTION_LEDGER.md",
-          "scope": "2026-10-14 accounting: control R2-23-005 (New email) remains unaccepted. Owner: Assigned implementation agent; root integration owner. Control-specific execution is unreconciled unless result evidence below identifies the exact executed portion. Next action: S04-03: Implement/qualify authoritative recovery-contact proof lifecycle, replay/rate limits, notifications and pending/verified transitions. Required positive/negative criteria and final-reference/human acceptance are unchanged; this assessment does not establish absence of existing implementation."
+          "kind": "source",
+          "path": "src/settings_recovery_ui.rs",
+          "scope": "Bounded supported email input, HTML escaping, valid nonsecret input retained only in refusal response; GET/Cancel blank."
+        },
+        {
+          "kind": "source",
+          "path": "src/http_gateway_recovery.rs",
+          "scope": "Ordinary own-account native admission, session/epoch lease, TOTP replay, private store and bounded local notifier."
+        },
+        {
+          "kind": "test",
+          "path": "src/recovery_contact_tests.rs",
+          "scope": "Executed core positive/negative/recovery cases, complemented by current HTTP/native/browser evidence below."
         }
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "QA_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/recovery-contact-acceptance-check-delivery-20261026.log",
+            "scope": "Bounded supported email input, HTML escaping, valid nonsecret input retained only in refusal response; GET/Cancel blank. Core14/Runtime5/domain1 passed within1959RustPASS; later aggregate docs-index refusal retained/corrected. Current email-retention HTTP5 additionally PASS in form-retention-green02.log; no wholeaggregate PASS inferred."
+          },
+          {
+            "kind": "native_execution",
+            "path": "docs/UX_SLICE_S04_03.md",
+            "scope": "Local obsd1 only: native04 positive9HTTP/3proof2notice/restart/restoration/preservation PASS (result1c78ce…); native05 sixrequiredcontact denials actually observed, aggregateFAIL retained. Separate exactresidue/readback PASS, independentactuald054ac…. Genericlogout NOT_RUNin05, unchangedacceptedsharedsessionevidence explicitlyreused. CurrentWebc972/helperbe7; owner credentials/contact unchanged."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/recovery-contact-browser-20261026-03/result.json",
+            "scope": "ActualEdge5states/16captures, mobile/light/dark/navigation/Cancel/emptysecrets/validemailretention PASS; synthetic presentation distinctfrominstalledmail. Independent sourcevisual83b5d4…. Human T08 remains pending; no external delivery or S04-04 recovery acceptance."
+          }
+        ]
       }
     },
     {
@@ -19906,21 +20140,47 @@
       },
       "pointers": [
         {
-          "kind": "candidate_source",
-          "path": "src/http_runtime.rs",
-          "scope": "Unresolved control-specific source; dispatcher candidate only; no implementation or absence inferred."
+          "kind": "legacy_evidence",
+          "path": "docs/UX_EXECUTION_LEDGER.md",
+          "scope": "Historical baseline gap retained; current engineering qualification below supersedes implementation/QA gap, while owner acceptance remains pending. 2026-10-14 accounting: control R2-23-006 (Confirm password and step-up) remains unaccepted. Owner: Assigned implementation agent; root integration owner. Control-specific execution is unreconciled unless result evidence below identifies the exact executed portion. Next action: S04-03: Implement/qualify authoritative recovery-contact proof lifecycle, replay/rate limits, notifications and pending/verified transitions. Required positive/negative criteria and final-reference/human acceptance are unchanged; this assessment does not establish absence of existing implementation."
         },
         {
-          "kind": "gap",
-          "path": "docs/UX_EXECUTION_LEDGER.md",
-          "scope": "2026-10-14 accounting: control R2-23-006 (Confirm password and step-up) remains unaccepted. Owner: Assigned implementation agent; root integration owner. Control-specific execution is unreconciled unless result evidence below identifies the exact executed portion. Next action: S04-03: Implement/qualify authoritative recovery-contact proof lifecycle, replay/rate limits, notifications and pending/verified transitions. Required positive/negative criteria and final-reference/human acceptance are unchanged; this assessment does not establish absence of existing implementation."
+          "kind": "source",
+          "path": "src/settings_recovery_ui.rs",
+          "scope": "Current-password/fresh-TOTP admission and replay/bad-password refusal with no contact effects."
+        },
+        {
+          "kind": "source",
+          "path": "src/http_gateway_recovery.rs",
+          "scope": "Ordinary own-account native admission, session/epoch lease, TOTP replay, private store and bounded local notifier."
+        },
+        {
+          "kind": "test",
+          "path": "src/recovery_contact_tests.rs",
+          "scope": "Executed core positive/negative/recovery cases, complemented by current HTTP/native/browser evidence below."
         }
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "QA_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/recovery-contact-acceptance-check-delivery-20261026.log",
+            "scope": "Current-password/fresh-TOTP admission and replay/bad-password refusal with no contact effects. Core14/Runtime5/domain1 passed within1959RustPASS; later aggregate docs-index refusal retained/corrected. Current email-retention HTTP5 additionally PASS in form-retention-green02.log; no wholeaggregate PASS inferred."
+          },
+          {
+            "kind": "native_execution",
+            "path": "docs/UX_SLICE_S04_03.md",
+            "scope": "Local obsd1 only: native04 positive9HTTP/3proof2notice/restart/restoration/preservation PASS (result1c78ce…); native05 sixrequiredcontact denials actually observed, aggregateFAIL retained. Separate exactresidue/readback PASS, independentactuald054ac…. Genericlogout NOT_RUNin05, unchangedacceptedsharedsessionevidence explicitlyreused. CurrentWebc972/helperbe7; owner credentials/contact unchanged."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/recovery-contact-browser-20261026-03/result.json",
+            "scope": "ActualEdge5states/16captures, mobile/light/dark/navigation/Cancel/emptysecrets/validemailretention PASS; synthetic presentation distinctfrominstalledmail. Independent sourcevisual83b5d4…. Human T08 remains pending; no external delivery or S04-04 recovery acceptance."
+          }
+        ]
       }
     },
     {
@@ -19943,21 +20203,47 @@
       },
       "pointers": [
         {
-          "kind": "candidate_source",
-          "path": "src/http_runtime.rs",
-          "scope": "Unresolved control-specific source; dispatcher candidate only; no implementation or absence inferred."
+          "kind": "legacy_evidence",
+          "path": "docs/UX_EXECUTION_LEDGER.md",
+          "scope": "Historical baseline gap retained; current engineering qualification below supersedes implementation/QA gap, while owner acceptance remains pending. 2026-10-14 accounting: control R2-23-007 (Send verification) remains unaccepted. Owner: Assigned implementation agent; root integration owner. Control-specific execution is unreconciled unless result evidence below identifies the exact executed portion. Next action: S04-03: Implement/qualify authoritative recovery-contact proof lifecycle, replay/rate limits, notifications and pending/verified transitions. Required positive/negative criteria and final-reference/human acceptance are unchanged; this assessment does not establish absence of existing implementation."
         },
         {
-          "kind": "gap",
-          "path": "docs/UX_EXECUTION_LEDGER.md",
-          "scope": "2026-10-14 accounting: control R2-23-007 (Send verification) remains unaccepted. Owner: Assigned implementation agent; root integration owner. Control-specific execution is unreconciled unless result evidence below identifies the exact executed portion. Next action: S04-03: Implement/qualify authoritative recovery-contact proof lifecycle, replay/rate limits, notifications and pending/verified transitions. Required positive/negative criteria and final-reference/human acceptance are unchanged; this assessment does not establish absence of existing implementation."
+          "kind": "source",
+          "path": "src/settings_recovery_ui.rs",
+          "scope": "Actual local proof delivery, digest-only private proof and authenticated single-use POST verification."
+        },
+        {
+          "kind": "source",
+          "path": "src/http_gateway_recovery.rs",
+          "scope": "Ordinary own-account native admission, session/epoch lease, TOTP replay, private store and bounded local notifier."
+        },
+        {
+          "kind": "test",
+          "path": "src/recovery_contact_tests.rs",
+          "scope": "Executed core positive/negative/recovery cases, complemented by current HTTP/native/browser evidence below."
         }
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "QA_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/recovery-contact-acceptance-check-delivery-20261026.log",
+            "scope": "Actual local proof delivery, digest-only private proof and authenticated single-use POST verification. Core14/Runtime5/domain1 passed within1959RustPASS; later aggregate docs-index refusal retained/corrected. Current email-retention HTTP5 additionally PASS in form-retention-green02.log; no wholeaggregate PASS inferred."
+          },
+          {
+            "kind": "native_execution",
+            "path": "docs/UX_SLICE_S04_03.md",
+            "scope": "Local obsd1 only: native04 positive9HTTP/3proof2notice/restart/restoration/preservation PASS (result1c78ce…); native05 sixrequiredcontact denials actually observed, aggregateFAIL retained. Separate exactresidue/readback PASS, independentactuald054ac…. Genericlogout NOT_RUNin05, unchangedacceptedsharedsessionevidence explicitlyreused. CurrentWebc972/helperbe7; owner credentials/contact unchanged."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/recovery-contact-browser-20261026-03/result.json",
+            "scope": "ActualEdge5states/16captures, mobile/light/dark/navigation/Cancel/emptysecrets/validemailretention PASS; synthetic presentation distinctfrominstalledmail. Independent sourcevisual83b5d4…. Human T08 remains pending; no external delivery or S04-04 recovery acceptance."
+          }
+        ]
       }
     },
     {
@@ -19980,21 +20266,47 @@
       },
       "pointers": [
         {
-          "kind": "candidate_source",
-          "path": "src/http_runtime.rs",
-          "scope": "Unresolved control-specific source; dispatcher candidate only; no implementation or absence inferred."
+          "kind": "legacy_evidence",
+          "path": "docs/UX_EXECUTION_LEDGER.md",
+          "scope": "Historical baseline gap retained; current engineering qualification below supersedes implementation/QA gap, while owner acceptance remains pending. 2026-10-14 accounting: control R2-23-008 (One-use expiry explanation) remains unaccepted. Owner: Assigned implementation agent; root integration owner. Control-specific execution is unreconciled unless result evidence below identifies the exact executed portion. Next action: S04-03: Implement/qualify authoritative recovery-contact proof lifecycle, replay/rate limits, notifications and pending/verified transitions. Required positive/negative criteria and final-reference/human acceptance are unchanged; this assessment does not establish absence of existing implementation."
         },
         {
-          "kind": "gap",
-          "path": "docs/UX_EXECUTION_LEDGER.md",
-          "scope": "2026-10-14 accounting: control R2-23-008 (One-use expiry explanation) remains unaccepted. Owner: Assigned implementation agent; root integration owner. Control-specific execution is unreconciled unless result evidence below identifies the exact executed portion. Next action: S04-03: Implement/qualify authoritative recovery-contact proof lifecycle, replay/rate limits, notifications and pending/verified transitions. Required positive/negative criteria and final-reference/human acceptance are unchanged; this assessment does not establish absence of existing implementation."
+          "kind": "source",
+          "path": "src/settings_recovery_ui.rs",
+          "scope": "30-minute single-use proof/24-hour pending and resend-budget explanation, expiry/replay controls; no MFA/reset authority."
+        },
+        {
+          "kind": "source",
+          "path": "src/http_gateway_recovery.rs",
+          "scope": "Ordinary own-account native admission, session/epoch lease, TOTP replay, private store and bounded local notifier."
+        },
+        {
+          "kind": "test",
+          "path": "src/recovery_contact_tests.rs",
+          "scope": "Executed core positive/negative/recovery cases, complemented by current HTTP/native/browser evidence below."
         }
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "QA_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/recovery-contact-acceptance-check-delivery-20261026.log",
+            "scope": "30-minute single-use proof/24-hour pending and resend-budget explanation, expiry/replay controls; no MFA/reset authority. Core14/Runtime5/domain1 passed within1959RustPASS; later aggregate docs-index refusal retained/corrected. Current email-retention HTTP5 additionally PASS in form-retention-green02.log; no wholeaggregate PASS inferred."
+          },
+          {
+            "kind": "native_execution",
+            "path": "docs/UX_SLICE_S04_03.md",
+            "scope": "Local obsd1 only: native04 positive9HTTP/3proof2notice/restart/restoration/preservation PASS (result1c78ce…); native05 sixrequiredcontact denials actually observed, aggregateFAIL retained. Separate exactresidue/readback PASS, independentactuald054ac…. Genericlogout NOT_RUNin05, unchangedacceptedsharedsessionevidence explicitlyreused. CurrentWebc972/helperbe7; owner credentials/contact unchanged."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/recovery-contact-browser-20261026-03/result.json",
+            "scope": "ActualEdge5states/16captures, mobile/light/dark/navigation/Cancel/emptysecrets/validemailretention PASS; synthetic presentation distinctfrominstalledmail. Independent sourcevisual83b5d4…. Human T08 remains pending; no external delivery or S04-04 recovery acceptance."
+          }
+        ]
       }
     },
     {
@@ -20017,21 +20329,47 @@
       },
       "pointers": [
         {
-          "kind": "candidate_source",
-          "path": "src/http_runtime.rs",
-          "scope": "Unresolved control-specific source; dispatcher candidate only; no implementation or absence inferred."
+          "kind": "legacy_evidence",
+          "path": "docs/UX_EXECUTION_LEDGER.md",
+          "scope": "Historical baseline gap retained; current engineering qualification below supersedes implementation/QA gap, while owner acceptance remains pending. 2026-10-14 accounting: control R2-23-009 (Notify previous verified contact) remains unaccepted. Owner: Assigned implementation agent; root integration owner. Control-specific execution is unreconciled unless result evidence below identifies the exact executed portion. Next action: S04-03: Implement/qualify authoritative recovery-contact proof lifecycle, replay/rate limits, notifications and pending/verified transitions. Required positive/negative criteria and final-reference/human acceptance are unchanged; this assessment does not establish absence of existing implementation."
         },
         {
-          "kind": "gap",
-          "path": "docs/UX_EXECUTION_LEDGER.md",
-          "scope": "2026-10-14 accounting: control R2-23-009 (Notify previous verified contact) remains unaccepted. Owner: Assigned implementation agent; root integration owner. Control-specific execution is unreconciled unless result evidence below identifies the exact executed portion. Next action: S04-03: Implement/qualify authoritative recovery-contact proof lifecycle, replay/rate limits, notifications and pending/verified transitions. Required positive/negative criteria and final-reference/human acceptance are unchanged; this assessment does not establish absence of existing implementation."
+          "kind": "source",
+          "path": "src/settings_recovery_ui.rs",
+          "scope": "Actual old verified contact replacement/removal notices, bounded local null-envelope mail and truthful delivery state."
+        },
+        {
+          "kind": "source",
+          "path": "src/http_gateway_recovery.rs",
+          "scope": "Ordinary own-account native admission, session/epoch lease, TOTP replay, private store and bounded local notifier."
+        },
+        {
+          "kind": "test",
+          "path": "src/recovery_contact_tests.rs",
+          "scope": "Executed core positive/negative/recovery cases, complemented by current HTTP/native/browser evidence below."
         }
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "QA_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/recovery-contact-acceptance-check-delivery-20261026.log",
+            "scope": "Actual old verified contact replacement/removal notices, bounded local null-envelope mail and truthful delivery state. Core14/Runtime5/domain1 passed within1959RustPASS; later aggregate docs-index refusal retained/corrected. Current email-retention HTTP5 additionally PASS in form-retention-green02.log; no wholeaggregate PASS inferred."
+          },
+          {
+            "kind": "native_execution",
+            "path": "docs/UX_SLICE_S04_03.md",
+            "scope": "Local obsd1 only: native04 positive9HTTP/3proof2notice/restart/restoration/preservation PASS (result1c78ce…); native05 sixrequiredcontact denials actually observed, aggregateFAIL retained. Separate exactresidue/readback PASS, independentactuald054ac…. Genericlogout NOT_RUNin05, unchangedacceptedsharedsessionevidence explicitlyreused. CurrentWebc972/helperbe7; owner credentials/contact unchanged."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/recovery-contact-browser-20261026-03/result.json",
+            "scope": "ActualEdge5states/16captures, mobile/light/dark/navigation/Cancel/emptysecrets/validemailretention PASS; synthetic presentation distinctfrominstalledmail. Independent sourcevisual83b5d4…. Human T08 remains pending; no external delivery or S04-04 recovery acceptance."
+          }
+        ]
       }
     },
     {

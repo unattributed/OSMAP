@@ -217,7 +217,7 @@ restore_contact_mode() {
  test ! -e "$marker" && test ! -L "$marker" && return 0
  test '${NEGATIVE_CASE}' = true || fail CONTACT_CUSTODY
  test ! -L "$marker" && test -f "$marker" && test "$(stat -f '%u:%p:%l' "$marker")" = 0:100600:1 || fail CONTACT_CUSTODY
- test "$(wc -l < "$marker")" = 1 || fail CONTACT_CUSTODY
+ test "$(wc -l < "$marker")" -eq 1 || fail CONTACT_CUSTODY
  read -r expected_identity expected_hash extra < "$marker" || fail CONTACT_CUSTODY
  test -z "$extra" && test "\${#expected_hash}" = 64 || fail CONTACT_CUSTODY
  case "$expected_identity:$expected_hash" in (*[!0-9a-f:]*|'') fail CONTACT_CUSTODY;; esac

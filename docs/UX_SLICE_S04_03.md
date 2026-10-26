@@ -121,3 +121,60 @@ The remaining installed negative contact-route checks are tracked separately:
 CSRF, incorrect and replayed step-up, stale revision/session, invalid proof and
 unavailable storage. Source and synthetic browser results do not substitute for
 these declared native/deployed checks. Human acceptance remains pending.
+
+## Engineering qualification and owner review — 2026-10-26
+
+The required T01–T07 engineering observations are qualified for local obsd1 UX
+development. T08 owner acceptance remains pending; S04-03 is not ACCEPTED.
+The current installed Web is `c9729671…`, built from signed `6a83828…`; the
+ordinary account helper remains `be7c6b40…`. This Web adds only validated,
+escaped email retention after an authenticated form refusal. Secret fields stay
+empty; GET and Cancel start blank. The focused route regression first failed,
+then all five route tests passed. Current actual Edge QA passed all five states
+and 16 captures, including the refused form on mobile. Source/visual review:
+`83b5d4d7a8e3ff938844246c58fe4e31df217ece5d2a6dd08cfc61a4c3f740ec`.
+
+Native05 supplied the remaining installed contact-specific negative observations:
+invalid CSRF, incorrect password and replayed TOTP each returned 403 without a
+contact record; stale revision returned 409 without changing stored bytes;
+invalid proof returned 400 with revision 2/one failed attempt; unreadable storage
+returned 503 with accurate unavailable text and disabled controls. Valid email
+survived confirmation errors, while secrets and actual proof values were absent
+from the responses. One legitimate proof was observed in the local mailbox.
+
+The **native05 aggregate remains FAIL**: an SSH255 transport interruption after
+those six controls prevented the final logged-out-session check and original
+restoration. The original SSH cause is UNKNOWN because the observer retained
+only bounded stream accounting/hash, not the original transport text. A fresh
+read-only connection succeeded. The first residue-only restoration restored the
+original policies/services, then refused the fixture marker's padded OpenBSD
+`wc -l` representation. The exact marker, inode, owner and byte hash matched.
+Changing that guard to numeric comparison allowed the separate residue-only
+restoration to complete in 436 ms, with restoration and preservation PASS.
+No credential or contact workflow was replayed.
+
+The final readback confirmed the exact 467-byte pending record at revision 2,
+one failed proof attempt, mode 0600, no remaining permission marker, original
+policies, unchanged restored OpenPGP environment/binding and eight healthy
+services. Independent actual review:
+`d054acf6de122367f2a8463dc979f244f2141bc0bddafb9348222ff14ee6cbba`.
+The failed aggregate result is retained as
+`7b8fd228453969085a5c893cce521d21de9b85896738ca7e7e1d9eef49076e85`;
+final readback is
+`f74d329e4ca3e48bf036c2d2f0869b6e412019cd89630aa464f5af95e259ee68`.
+
+The seventh, generic logged-out-session check was NOT RUN in native05. Existing
+accepted S04-02 logout, revocation and session-denial evidence is reused with an
+empty diff from accepted `b94eacb…` for `routes_auth.rs`, `http_gateway_auth.rs`
+and `session.rs`. It is not attributed to native05. Native04 proves the installed
+positive contact workflow; native05's six observed controls and separately
+verified reconciliation prove the contact-specific negative and recovery
+requirements. The aggregate failures remain separate from these observations.
+
+The development profile permits contact delivery only to the explicitly
+configured local obsd1 mail domain. External delivery and S04-04 password/factor
+recovery are not enabled by this slice. Owner review can open Settings →
+Authentication & Recovery → Manage recovery contact, inspect the form and
+status, and verify navigation/Cancel. A full owner mail-proof trial requires an
+owner-controlled eligible local mailbox. No owner credential or factor reset is
+needed for this review.

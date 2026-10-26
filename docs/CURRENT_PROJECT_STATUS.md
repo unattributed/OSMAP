@@ -1,5 +1,21 @@
 # Current Project Status
 
+2026-10-26 (America/Toronto) — **S04-03 engineering qualified locally; UAT_READY.**
+Installed Web `c9729671…` and unchanged account helper `be7c6b40…` support the
+own-account recovery-contact lifecycle. Native04 completed actual local proof,
+replacement/removal notices and restart persistence. Native05 supplied the six
+required installed contact refusals, then an SSH interruption left its aggregate
+failed; separate exact residue restoration, preservation and pending-state
+readback passed. The generic logout control was not run in native05; unchanged
+accepted shared-session evidence is reused explicitly. Current form/browser QA
+also verifies nonsecret email retention on error and empty secret fields.
+All 15 mapped obligations are engineering-qualified; the 13 mutable approved
+controls are QA_VERIFIED. Owner T08 remains pending and S04-03 is not ACCEPTED.
+Contact delivery stays within the configured local development domain; S04-04
+identity/password recovery and external delivery remain separate. Normal signed
+source synchronization and exact parity are checked at final delivery. See
+[the qualified observations and owner review](UX_SLICE_S04_03.md).
+
 2026-10-26 (America/Toronto) — **Local-development OpenPGP restored and natively verified.**
 The local credential cutover omitted the three existing OpenPGP helper connections
 and selected a settings root without the original account/recipient binding.

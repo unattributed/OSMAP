@@ -1,5 +1,24 @@
 # Decision Log
 
+2026-10-26 (America/Toronto) — **Qualify S04-03 by observed requirements and preserve failed attempts.**
+Reuse native04's successful installed lifecycle and unchanged shared-authentication
+evidence. Qualify the six required contact-specific negatives observed in native05
+with its separately verified exact restoration/preservation/readback. Keep the
+interrupted native05 aggregate failed and its final generic logout control NOT_RUN;
+do not repeat a working credential/contact journey to satisfy an observer count.
+Use numeric comparison for the native cleanup marker's line count, preserving
+all object-identity and byte guards. Retain a validated, escaped nonsecret email
+after a trusted form error; never retain credentials or proof. Record local
+engineering readiness separately from owner acceptance and S04-04 recovery.
+
+2026-10-26 (America/Toronto) — **Preserve installed OpenPGP across credential profile changes.**
+Restore the three existing helper triples and the exact original account binding
+after the local-development cutover omitted them. Preserve the working local
+credential/session profile and original key homes; no re-import, trust reset or
+policy change is needed. Native inventory/admin/preflight/encryption evidence
+confirms restoration without sending mail. The development profile now carries
+the helper configuration and explicit binding-preservation requirement.
+
 2026-10-26 (America/Toronto) — **Start S04-03 on existing account and mail boundaries.**
 Implement the absent recovery-contact lifecycle using serialized private settings
 records, native primary authentication, file TOTP replay protection and the fixed

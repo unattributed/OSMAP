@@ -1,5 +1,14 @@
 # Known Limitations
 
+2026-10-26 — S04-03 is engineering-qualified for local obsd1 development; owner
+acceptance remains pending. Recovery-contact delivery is enabled only for the
+configured local mail domain. This slice does not enable external recovery mail,
+identity adjudication, password reset or factor reset (S04-04). Native05's full
+test remains failed after a transport interruption; only its six observed
+contact-specific controls and separate successful recovery/readback are used for
+qualification, with unchanged accepted common-session evidence reused explicitly.
+See [S04-03 qualification](UX_SLICE_S04_03.md).
+
 ## Current S04-02 limits — 2026-10-19
 
 Password change is not ready for installed acceptance or operator UAT. Native
