@@ -1,7 +1,7 @@
 #!/usr/bin/node
 'use strict';
 // One fixed, controlled local-delivery journey. --check-tools makes no requests.
-// Root must first register S04-03-INSTALLED-recovery03 and install the normal
+// Root must first register the exact selected installed case and install the normal
 // source-bound Web with OSMAP_RECOVERY_CONTACT_LOCAL_DOMAIN set to this domain.
 // No password, cookie, factor or proof body is printed or written by this driver.
 const fs = require('node:fs');
@@ -9,12 +9,17 @@ const https = require('node:https');
 const crypto = require('node:crypto');
 const {spawn, spawnSync} = require('node:child_process');
 const DOMAIN = 'obsd1.blackbagsecurity.com';
-const PRIMARY = `s04-03-primary-20261026-02@${DOMAIN}`;
-const A = `s04-03-proof-a-20261026-02@${DOMAIN}`;
-const B = `s04-03-proof-b-20261026-02@${DOMAIN}`;
+const NEGATIVE_CASE = process.argv[2] === '--run-negative';
+const fixtureSuffix = NEGATIVE_CASE ? '03' : '02';
+const PRIMARY_LOCAL = `s04-03-primary-20261026-${fixtureSuffix}`;
+const A_LOCAL = `s04-03-proof-a-20261026-${fixtureSuffix}`;
+const B_LOCAL = `s04-03-proof-b-20261026-${fixtureSuffix}`;
+const PRIMARY = `${PRIMARY_LOCAL}@${DOMAIN}`;
+const A = `${A_LOCAL}@${DOMAIN}`;
+const B = `${B_LOCAL}@${DOMAIN}`;
 const USERS = [PRIMARY, A, B];
-const STAGE = '/var/backups/osmap-recovery-contact-20261026-04';
-const OUT = '/home/foo/Downloads/osmap-ux-s04/recovery-contact-20261026/native04';
+const STAGE = `/var/backups/osmap-recovery-contact-20261026-${NEGATIVE_CASE ? '05' : '04'}`;
+const OUT = `/home/foo/Downloads/osmap-ux-s04/recovery-contact-20261026/native${NEGATIVE_CASE ? '05' : '04'}`;
 const TOTP_SOURCE = '/home/foo/Workspace/OSMAP/maint/ux/s04_02_startup_candidate/sources/frontend/native_http_front_driver.py';
 const TOTP_SHA = 'eebdbe26269e35bffe43beb83ef84b08712fc67676663b66110cbd32876a7ec3';
 const hash = value => crypto.createHash('sha256').update(value).digest('hex');
@@ -28,6 +33,8 @@ let prepared = false, provisioned = false, complete = false;
 let webHash = '', helperHash = '', password = '';
 let began = 0, bodyEnd = 0, totalEnd = 0;
 const observed = [];
+const observedMail = new Set();
+const deniedControls = [];
 function remaining(end = bodyEnd) { const n = end - performance.now(); requireThat(n > 0, 'ORIGINAL_DEADLINE'); return Math.ceil(n); }
 function emit(code, extra = {}) { observed.push({phase, code, ...extra}); process.stdout.write(JSON.stringify({phase, code, ...extra}) + '\n'); }
 
@@ -173,7 +180,7 @@ static_local_route() {
  test "$(sha256 -q /etc/dovecot/sieve-before/10-rspamd-quarantine.sieve)" = fbf04d54c65c5b9c595e9650c852d9c59f71fbd812d0d9f0f5e63b8bf91c138f && test "$(sha256 -q /etc/dovecot/sieve-before/10-rspamd-quarantine.svbin)" = 582170ab145d46c66ede6995ddb3838210ea067957b6225e7984834d5864a571 || fail MTA_SIEVE
 }
 local_userdb() {
- for local in s04-03-primary-20261026-02 s04-03-proof-a-20261026-02 s04-03-proof-b-20261026-02; do
+ for local in ${PRIMARY_LOCAL} ${A_LOCAL} ${B_LOCAL}; do
   account="$local@${DOMAIN}"; home="/var/vmail/${DOMAIN}/$local/"
   actual_home=$(/usr/local/bin/doveadm user -f home "$account") || fail MTA_ROUTE
   actual_mail=$(/usr/local/bin/doveadm user -f mail "$account") || fail MTA_ROUTE
@@ -205,6 +212,24 @@ session_check() {
   test "$(awk '!/^last_seen_at=/' <&8 | sha256 -q)" = "$expected" || return 1
  done < "$stage/session-authority.before"
 }
+restore_contact_mode() {
+ marker="$stage/contact-mode.pending"
+ test ! -e "$marker" && test ! -L "$marker" && return 0
+ test '${NEGATIVE_CASE}' = true || fail CONTACT_CUSTODY
+ test ! -L "$marker" && test -f "$marker" && test "$(stat -f '%u:%p:%l' "$marker")" = 0:100600:1 || fail CONTACT_CUSTODY
+ test "$(wc -l < "$marker")" = 1 || fail CONTACT_CUSTODY
+ read -r expected_identity expected_hash extra < "$marker" || fail CONTACT_CUSTODY
+ test -z "$extra" && test "\${#expected_hash}" = 64 || fail CONTACT_CUSTODY
+ case "$expected_identity:$expected_hash" in (*[!0-9a-f:]*|'') fail CONTACT_CUSTODY;; esac
+ file=/var/lib/osmap-s04-02/state/settings/recovery-contact-v1/${contactStem}.json
+ test ! -L "$file" && test -f "$file" || fail CONTACT_CUSTODY
+ test "$(stat -f '%d:%i:%u:%g:%l:%z' "$file")" = "$expected_identity" && test "$(sha256 -q "$file")" = "$expected_hash" || fail CONTACT_CUSTODY
+ mode=$(stat -f '%p' "$file") || fail CONTACT_CUSTODY
+ test "$mode" = 100000 || test "$mode" = 100600 || fail CONTACT_CUSTODY
+ chmod 600 "$file" || fail CONTACT_CUSTODY
+ test "$(stat -f '%u:%g:%p:%l' "$file")" = 1001:1001:100600:1 && test "$(sha256 -q "$file")" = "$expected_hash" || fail CONTACT_CUSTODY
+ rm "$marker" || fail CONTACT_CUSTODY
+}
 ${secretLines}
 ${policyLines}
 case "$action" in
@@ -225,7 +250,7 @@ prepare)
  query="SELECT COUNT(*) FROM mailbox WHERE BINARY username IN (${exclusions}); SELECT COUNT(*) FROM information_schema.TRIGGERS WHERE EVENT_OBJECT_SCHEMA='postfixadmin' AND EVENT_OBJECT_TABLE='mailbox';"
  test "$(sql)" = '0
 0' || fail FRESH_ROWS_OR_TRIGGER
- for local in s04-03-primary-20261026-02 s04-03-proof-a-20261026-02 s04-03-proof-b-20261026-02; do
+ for local in ${PRIMARY_LOCAL} ${A_LOCAL} ${B_LOCAL}; do
   test ! -e "/var/vmail/${DOMAIN}/$local" && test ! -L "/var/vmail/${DOMAIN}/$local" || fail FRESH_MAILDIR
  done
  for file in /var/db/osmap-account/epoch/${epoch(PRIMARY)}.json /var/db/osmap-account/epoch/${epoch(PRIMARY)}.lock /var/db/osmap-account/epoch/${epoch(PRIMARY)}.uncertain; do test ! -e "$file" && test ! -L "$file" || fail FRESH_EPOCH; done
@@ -248,12 +273,12 @@ provision)
  done
  set -f; set -- $hashes; set +f; test "$#" = 3 || fail INITIAL_HASH_COUNT
  : > "$stage/birth-dispatched"
- query="START TRANSACTION; INSERT INTO mailbox (username,password,name,maildir,local_part,domain,created,modified,active,smtp_active) VALUES ('${PRIMARY}','$1','recovery fixture','${DOMAIN}/s04-03-primary-20261026-02/','s04-03-primary-20261026-02','${DOMAIN}',UTC_TIMESTAMP(),UTC_TIMESTAMP(),1,1),('${A}','$2','recovery fixture','${DOMAIN}/s04-03-proof-a-20261026-02/','s04-03-proof-a-20261026-02','${DOMAIN}',UTC_TIMESTAMP(),UTC_TIMESTAMP(),1,1),('${B}','$3','recovery fixture','${DOMAIN}/s04-03-proof-b-20261026-02/','s04-03-proof-b-20261026-02','${DOMAIN}',UTC_TIMESTAMP(),UTC_TIMESTAMP(),1,1); SELECT ROW_COUNT(); COMMIT;"
+ query="START TRANSACTION; INSERT INTO mailbox (username,password,name,maildir,local_part,domain,created,modified,active,smtp_active) VALUES ('${PRIMARY}','$1','recovery fixture','${DOMAIN}/${PRIMARY_LOCAL}/','${PRIMARY_LOCAL}','${DOMAIN}',UTC_TIMESTAMP(),UTC_TIMESTAMP(),1,1),('${A}','$2','recovery fixture','${DOMAIN}/${A_LOCAL}/','${A_LOCAL}','${DOMAIN}',UTC_TIMESTAMP(),UTC_TIMESTAMP(),1,1),('${B}','$3','recovery fixture','${DOMAIN}/${B_LOCAL}/','${B_LOCAL}','${DOMAIN}',UTC_TIMESTAMP(),UTC_TIMESTAMP(),1,1); SELECT ROW_COUNT(); COMMIT;"
  test "$(sql)" = 3 || fail INITIAL_ROWS_UNCONFIRMED
  test -d /var/vmail && test ! -L /var/vmail || fail MAIL_ROOT
  if test ! -e /var/vmail/${DOMAIN}; then mkdir -m 700 /var/vmail/${DOMAIN}; chown 2000:2000 /var/vmail/${DOMAIN}; fi
  test -d /var/vmail/${DOMAIN} && test ! -L /var/vmail/${DOMAIN} || fail MAIL_DOMAIN
- for local in s04-03-primary-20261026-02 s04-03-proof-a-20261026-02 s04-03-proof-b-20261026-02; do
+ for local in ${PRIMARY_LOCAL} ${A_LOCAL} ${B_LOCAL}; do
   d="/var/vmail/${DOMAIN}/$local"; mkdir -m 700 "$d" || fail MAILDIR_EXISTS
   mkdir -m 700 "$d/cur" "$d/new" "$d/tmp"
   chown 2000:2000 "$d/cur" "$d/new" "$d/tmp"; chown 2000:2000 "$d"
@@ -272,14 +297,34 @@ provision)
 clock)
  date +%s
  ;;
-state)
+state|state-or-absent)
  file=/var/lib/osmap-s04-02/state/settings/recovery-contact-v1/${contactStem}.json
+ if test "$action" = state-or-absent && test ! -e "$file" && test ! -L "$file"; then print ABSENT; exit 0; fi
  test ! -L "$file" && test "$(stat -f '%u:%p:%l' "$file")" = 1001:100600:1 || fail CONTACT_CUSTODY
  test "$(wc -c < "$file")" -le 16384 || fail CONTACT_BOUND
  cat "$file"
  ;;
+contact-unavailable)
+ test '${NEGATIVE_CASE}' = true || fail ACTION
+ file=/var/lib/osmap-s04-02/state/settings/recovery-contact-v1/${contactStem}.json
+ test ! -L "$file" && test -f "$file" && test "$(stat -f '%u:%g:%p:%l' "$file")" = 1001:1001:100600:1 || fail CONTACT_CUSTODY
+ test "$(wc -c < "$file")" -le 16384 || fail CONTACT_BOUND
+ marker="$stage/contact-mode.pending"
+ test ! -e "$marker" && test ! -L "$marker" || fail CONTACT_CUSTODY
+ identity=$(stat -f '%d:%i:%u:%g:%l:%z' "$file") || fail CONTACT_CUSTODY
+ digest=$(sha256 -q "$file") || fail CONTACT_CUSTODY
+ (set -C; printf '%s %s\\n' "$identity" "$digest" > "$marker") || fail CONTACT_CUSTODY
+ chmod 000 "$file" || fail CONTACT_CUSTODY
+ test "$(stat -f '%u:%g:%p:%l' "$file")" = 1001:1001:100000:1 && test "$(sha256 -q "$file")" = "$digest" || fail CONTACT_CUSTODY
+ print CONTACT_UNAVAILABLE
+ ;;
+contact-restore)
+ test '${NEGATIVE_CASE}' = true || fail ACTION
+ restore_contact_mode
+ print CONTACT_MODE_RESTORED
+ ;;
 proof-a|proof-b|notice-a|notice-b)
- case "$action" in (proof-a|notice-a) local=s04-03-proof-a-20261026-02;; (*) local=s04-03-proof-b-20261026-02;; esac
+ case "$action" in (proof-a|notice-a) local=${A_LOCAL};; (*) local=${B_LOCAL};; esac
  case "$action" in (proof-*) subject='Verify your OSMAP recovery contact';; (notice-a) subject='OSMAP recovery contact replaced';; (*) subject='OSMAP recovery contact removed';; esac
  count=0; scanned=0; digests=''
  for directory in /var/vmail/${DOMAIN}/"$local" /var/vmail/${DOMAIN}/"$local"/new /var/vmail/${DOMAIN}/"$local"/cur /var/vmail/${DOMAIN}/"$local"/.Junk /var/vmail/${DOMAIN}/"$local"/.Junk/new /var/vmail/${DOMAIN}/"$local"/.Junk/cur; do test ! -L "$directory" || fail MAIL_SYMLINK; done
@@ -311,6 +356,7 @@ final|restore)
    start_services
   fi
   cmp -s "$stage/admission.before" /etc/osmap/account-admission.json && cmp -s "$stage/mutation.before" /etc/osmap/account-runtime/config.json || fail POLICY_RESTORE
+  if test '${NEGATIVE_CASE}' = true; then restore_contact_mode; fi
   print RESTORATION_PASS
  fi
  preservation=PASS
@@ -365,7 +411,7 @@ async function mail(kind, expectedDigest, expectedExpiry, expectedCount = 1) {
     if(lines.length) {
       const recipient=(kind.endsWith('a')?A:B);
       const frames=lines;requireThat(frames.length<=expectedCount,'MAIL_COUNT');
-      let selected=[];
+      let selected=[],messageHashes=[];
       for(const frame of frames) {
         const encoded=frame.match(/^MESSAGE ([A-Za-z0-9+/=]+)$/);requireThat(encoded,'MAIL_FRAME');
         const message=Buffer.from(encoded[1],'base64').toString('utf8').replaceAll('\r\n','\n');
@@ -375,10 +421,13 @@ async function mail(kind, expectedDigest, expectedExpiry, expectedCount = 1) {
           const match=body.match(/\n\n([a-f0-9]{64})\n\nExpires at Unix time ([0-9]+)\./);requireThat(match,'MAIL_PROOF_SHAPE');
           if(hash(Buffer.from('osmap-recovery-contact-proof-v1\0'+PRIMARY+'\0'+match[1]))===expectedDigest){requireThat(match[2]===String(expectedExpiry),'MAIL_EXPIRY');selected.push(match[1]);}
         } else {requireThat(!/[a-f0-9]{64}/.test(body) && !body.includes(password),'NOTICE_PRIVATE');selected.push('');}
+        messageHashes.push(hash(Buffer.from(message)));
       }
       requireThat(selected.length<=1,'MAIL_CURRENT_PROOF');
       if(frames.length===expectedCount) {
-        requireThat(selected.length===1,'MAIL_CURRENT_PROOF');return selected[0];
+        requireThat(selected.length===1,'MAIL_CURRENT_PROOF');
+        for(const digest of messageHashes) observedMail.add(digest);
+        return selected[0];
       }
     }
     const delay=Math.min(500,end-performance.now(),remaining());
@@ -386,15 +435,80 @@ async function mail(kind, expectedDigest, expectedExpiry, expectedCount = 1) {
   }
   emit('MAIL_NOT_OBSERVED',observation || {});throw new Refused('MAIL_DELIVERY_NOT_OBSERVED');
 }
+async function contactBytes(end=bodyEnd, allowAbsent=false) {
+  const value=String(await root(allowAbsent?'state-or-absent':'state','','',end));
+  if(allowAbsent && value==='ABSENT\n') return null;
+  const record=JSON.parse(value);
+  requireThat(record.version===1&&record.account===PRIMARY,'CONTACT_RECORD');
+  return {record,digest:hash(Buffer.from(value))};
+}
+async function negativeJourney(page, loginCode) {
+  const denied=deniedControls;
+  const mark=control=>{denied.push(control);emit('NEGATIVE_CONTROL_PASS',{control});};
+  const retainedEmail=response=>{
+    const email=response.body.match(/<input\b[^>]*\bname="email"[^>]*>/g)||[];
+    requireThat(email.length===1&&email[0].includes(`value="${A}"`),'VALID_EMAIL_NOT_RETAINED');
+    for(const name of ['current_password','totp_code']) {
+      const inputs=response.body.match(new RegExp(`<input\\b[^>]*\\bname="${name}"[^>]*>`,'g'))||[];
+      requireThat(inputs.length>0&&inputs.every(input=>!(/\bvalue="([^"]*)"/.exec(input)?.[1])),'SECRET_FIELD_RETAINED');
+    }
+  };
+  const submit=(parameters,path='/settings/recovery')=>request('POST',new URLSearchParams(parameters).toString(),path);
+  const absent=async()=>requireThat(await contactBytes(bodyEnd,true)===null,'DENIAL_CREATED_CONTACT');
+  const initial=fields(page.body);
+  const begin={...initial,action:'begin',email:A,current_password:password,totp_code:loginCode};
+  await absent();
+  phase='negative_csrf';
+  const badCsrf=(initial.csrf_token[0]==='0'?'1':'0')+initial.csrf_token.slice(1);
+  requireThat((await submit({...begin,csrf_token:badCsrf})).status===403,'CSRF_NOT_REFUSED');await absent();mark('invalid_csrf');
+  phase='negative_password';
+  const wrongPassword=await submit({...begin,current_password:password+'0'});
+  requireThat(wrongPassword.status===403,'WRONG_PASSWORD_NOT_REFUSED');retainedEmail(wrongPassword);await absent();mark('wrong_password');
+  phase='negative_factor_replay';
+  const replay=await submit(begin);
+  requireThat(replay.status===403,'LOGIN_FACTOR_REPLAY_NOT_REFUSED');retainedEmail(replay);await absent();mark('replayed_login_totp');
+  phase='negative_begin';
+  page=await post(page,'begin',{email:A,current_password:password,totp_code:await freshCode()});
+  const before=await contactBytes();
+  requireThat(before.record.revision===1&&!before.record.verified&&before.record.pending?.email===A&&before.record.pending.attempts===0&&before.record.pending.delivery==='Accepted','NEGATIVE_PENDING');
+  const token=await mail('proof-a',before.record.pending.token_digest,before.record.pending.token_expires_at);
+  requireThat(!page.body.includes(token),'PROOF_ECHO');
+  phase='negative_stale_revision';
+  const stale=await submit({...fields(page.body),revision:'0',action:'verify',token});
+  requireThat(stale.status===409&&!stale.body.includes(token),'STALE_REVISION_NOT_REFUSED');
+  requireThat((await contactBytes()).digest===before.digest,'STALE_REVISION_CHANGED_CONTACT');mark('stale_revision');
+  phase='negative_bad_proof';
+  const badToken=(token[0]==='0'?'1':'0')+token.slice(1);
+  page=await submit({...fields(page.body),action:'verify',token:badToken});
+  requireThat(page.status===400&&!page.body.includes(badToken)&&!page.body.includes(token),'BAD_PROOF_NOT_REFUSED');
+  const pending=await contactBytes();
+  requireThat(pending.record.revision===2&&!pending.record.verified&&pending.record.pending?.email===A&&pending.record.pending.attempts===1&&pending.record.pending.token_digest===before.record.pending.token_digest,'BAD_PROOF_EFFECT');mark('bad_proof');
+  phase='negative_unavailable';
+  requireThat(String(await root('contact-unavailable')).trim()==='CONTACT_UNAVAILABLE','CONTACT_DISABLE');
+  const unavailable=await request('GET');
+  requireThat(unavailable.status===503&&unavailable.body.includes('Recovery-contact storage is unavailable. No change was submitted.')&&unavailable.body.includes('<fieldset disabled>')&&!unavailable.body.includes(token),'UNAVAILABLE_NOT_TRUTHFUL');mark('unavailable_storage');
+  requireThat(String(await root('contact-restore')).trim()==='CONTACT_MODE_RESTORED','CONTACT_MODE_RESTORE');
+  page=await request('GET');requireThat(page.status===200&&page.body.includes(A),'CONTACT_NOT_RESTORED');
+  requireThat((await contactBytes()).digest===pending.digest,'UNAVAILABLE_CHANGED_CONTACT');
+  phase='negative_logout';
+  const current=fields(page.body);
+  const logout=await submit({csrf_token:current.csrf_token},'/logout');
+  requireThat(logout.status===303&&logout.headers.location==='/login','LOGOUT_NOT_CONFIRMED');
+  const staleSession=await submit({...current,action:'begin',email:B,current_password:password,totp_code:loginCode});
+  requireThat((staleSession.status===303&&staleSession.headers.location==='/login')||staleSession.status===401,'STALE_SESSION_NOT_REFUSED');
+  requireThat((await contactBytes()).digest===pending.digest,'STALE_SESSION_CHANGED_CONTACT');mark('logged_out_session');
+  requireThat(denied.length===7&&observedMail.size===1,'NEGATIVE_CONTROLS_INCOMPLETE');
+  return {digest:pending.digest,revision:2,denied};
+}
 async function main() {
   requireThat(hash(fs.readFileSync(TOTP_SOURCE))===TOTP_SHA && fixtureCode(1)==='287082','MAINTAINED_TOTP_BINDING');
   if(process.argv[2]==='--check-tools' && process.argv.length===3) { emit('TOOLS_PASS_NO_TRAFFIC');return; }
-  requireThat(process.argv.length===5 && process.argv[2]==='--run' && /^[a-f0-9]{64}$/.test(process.argv[3]) && /^[a-f0-9]{64}$/.test(process.argv[4]),'PUBLIC_ARTIFACT_ARGUMENTS');
+  requireThat(process.argv.length===5 && ['--run','--run-negative'].includes(process.argv[2]) && /^[a-f0-9]{64}$/.test(process.argv[3]) && /^[a-f0-9]{64}$/.test(process.argv[4]),'PUBLIC_ARTIFACT_ARGUMENTS');
   [webHash,helperHash]=process.argv.slice(3);began=performance.now();bodyEnd=began+420000;totalEnd=began+600000;
   const declaration=JSON.parse(String(await child('/usr/bin/python3',['-B','/home/foo/Workspace/OSMAP/maint/ux/validate_acceptance.py','--repo','/home/foo/Workspace/OSMAP','--work-order-only'],'',bodyEnd,8192)));
   requireThat(declaration.active_slice==='S04-03'&&declaration.state==='IN_PROGRESS','ACTIVE_WORK_ORDER');
   fs.mkdirSync(OUT,{mode:0o700}); // Exclusive: never adopt a previous operation.
-  let cleanup='NOT_STARTED',cleanupFailure='NONE',failure='NONE',preservation='NOT_CONFIRMED',persistence='NOT_CONFIRMED',removedRevision;
+  let cleanup='NOT_STARTED',cleanupFailure='NONE',failure='NONE',preservation='NOT_CONFIRMED',persistence='NOT_CONFIRMED',removedRevision,negative;
   try {
     phase='prepare';const policies=String(await root('prepare'));requireThat(/^POLICY_A [A-Za-z0-9+/=]+\nPOLICY_B [A-Za-z0-9+/=]+\n$/.test(policies),'ACCOUNT_POLICY_FRAME');
     const parse=label=>JSON.parse(Buffer.from(policies.match(new RegExp(`^${label} ([A-Za-z0-9+/=]+)$`,'m'))?.[1]||'','base64').toString('utf8'));
@@ -407,10 +521,16 @@ async function main() {
     const policy=`policy_a='${Buffer.from(JSON.stringify(admission)).toString('base64')}'\npolicy_b='${Buffer.from(JSON.stringify(mutation)).toString('base64')}'`;
     phase='provision';await root('provision',secret,policy);provisioned=true;emit('THREE_FRESH_ROWS_PRIMARY_ENROLLED');
     phase='login';requireThat((await request('GET','','/login')).status===200,'LOGIN_PAGE');
-    const login=await request('POST',new URLSearchParams({username:PRIMARY,password,totp_code:await freshCode()}).toString(),'/login');
+    const loginCode=await freshCode();
+    const login=await request('POST',new URLSearchParams({username:PRIMARY,password,totp_code:loginCode}).toString(),'/login');
     requireThat(login.status===303,'MFA_LOGIN');const cookies=login.headers['set-cookie']||[];const session=cookies.filter(v=>v.startsWith('osmap_session='));
     requireThat(session.length===1 && /;\s*Secure/i.test(session[0]) && /;\s*HttpOnly/i.test(session[0]),'SESSION_COOKIE');cookie=session[0].split(';')[0];
     let page=await request('GET');requireThat(page.status===200 && page.body.includes('No verified recovery contact'),'INITIAL_EMPTY');
+    if(NEGATIVE_CASE) {
+      negative=await negativeJourney(page,loginCode);
+      phase='final';requireThat(String(await root('final')).trim()==='PRESERVATION_PASS','PRESERVATION');preservation='PASS';complete=true;
+      emit('FUNCTIONAL_PASS',{negative_case:true,requests,denied_controls:negative.denied.length,proof_messages:1,old_notices:0});
+    } else {
     phase='begin_a';page=await post(page,'begin',{email:A,current_password:password,totp_code:await freshCode()});let sent=performance.now();
     let state=await stored();requireThat(!state.verified&&state.pending.email===A&&state.pending.delivery==='Accepted','PENDING_A');
     const firstToken=await mail('proof-a',state.pending.token_digest,state.pending.token_expires_at);
@@ -425,12 +545,16 @@ async function main() {
     phase='verify_b';const beforeB=await nativeNow();page=await post(page,'verify',{token:tokenB});const afterB=await nativeNow();requireThat(!page.body.includes(tokenB),'PROOF_ECHO');state=await stored();requireThat(state.verified.email===B&&!state.pending&&state.notice.delivery==='Accepted','VERIFIED_B');verifiedTime(state,page,beforeB,afterB);await mail('notice-a',false);
     phase='remove';page=await post(page,'remove',{current_password:password,totp_code:await freshCode()});state=await stored();requireThat(!state.verified&&!state.pending&&state.notice.kind==='Removed'&&state.notice.delivery==='Accepted','REMOVED');removedRevision=state.revision;await mail('notice-b',false);
     phase='final';requireThat(String(await root('final')).trim()==='PRESERVATION_PASS','PRESERVATION');preservation='PASS';complete=true;emit('FUNCTIONAL_PASS',{requests,proof_messages:3,old_notices:2});
+    }
   } catch(error) { failure=error instanceof Refused?error.code:'UNEXPECTED_REFUSAL';emit('FUNCTIONAL_REFUSED',{failure}); }
   finally {
     password='';cookie='';phase='restore';
     if(prepared) { try { const final=String(await root('restore','','',totalEnd));requireThat(/^(?:RESTORATION_PASS\n)(?:PRESERVATION_PASS|PRESERVATION_FAIL:(?:OLD_ROWS_CHANGED|OLD_FILES_CHANGED|SESSION_CHANGED))\n$/.test(final),'RESTORATION');cleanup='PASS';preservation=final.includes('PRESERVATION_PASS')?'PASS':'FAIL';if(preservation==='FAIL')emit('PRESERVATION_REFUSED',{category:final.match(/PRESERVATION_FAIL:([A-Z_]+)/)[1]}); } catch(error) {cleanup='UNCERTAIN';cleanupFailure=error instanceof Refused?error.code:'UNEXPECTED_REFUSAL';} }
-    if(cleanup==='PASS'&&removedRevision!==undefined){try{const state=await stored(totalEnd);requireThat(state.version===1&&state.account===PRIMARY&&state.revision===removedRevision&&!state.verified&&!state.pending&&state.notice.kind==='Removed'&&state.notice.delivery==='Accepted','PERSISTENCE');persistence='PASS';}catch(error){persistence='FAIL';if(failure==='NONE')failure=error instanceof Refused?error.code:'UNEXPECTED_REFUSAL';emit('PERSISTENCE_REFUSED',{category:failure});}}
-    const result={persistence,functional:complete?'PASS':'NOT_CONFIRMED',restoration:cleanup,preservation,failure,cleanup_failure:cleanupFailure,requests,fixture_rows:provisioned?'RETAINED':'INITIALIZATION_UNCERTAIN',password_changes:0,actual_mail_observations:complete?5:0,requested_external_recipients:0,elapsed_ms:Math.ceil(performance.now()-began),observed};
+    if(cleanup==='PASS'&&(removedRevision!==undefined||negative)){try{const actual=await contactBytes(totalEnd);const state=actual.record;
+      if(NEGATIVE_CASE)requireThat(actual.digest===negative.digest&&state.revision===2&&!state.verified&&state.pending?.email===A&&state.pending.attempts===1,'PERSISTENCE');
+      else requireThat(state.revision===removedRevision&&!state.verified&&!state.pending&&state.notice.kind==='Removed'&&state.notice.delivery==='Accepted','PERSISTENCE');
+      persistence='PASS';}catch(error){persistence='FAIL';if(failure==='NONE')failure=error instanceof Refused?error.code:'UNEXPECTED_REFUSAL';emit('PERSISTENCE_REFUSED',{category:failure});}}
+    const result={negative_case:NEGATIVE_CASE,denied_controls:deniedControls.length,persistence,functional:complete?'PASS':'NOT_CONFIRMED',restoration:cleanup,preservation,failure,cleanup_failure:cleanupFailure,requests,fixture_rows:provisioned?'RETAINED':'INITIALIZATION_UNCERTAIN',password_changes:0,actual_mail_observations:observedMail.size,requested_external_recipients:0,elapsed_ms:Math.ceil(performance.now()-began),observed};
     fs.writeFileSync(`${OUT}/result.json`,JSON.stringify(result,null,2)+'\n',{mode:0o600,flag:'wx'});process.stdout.write(JSON.stringify(result)+'\n');if(!complete||cleanup!=='PASS'||preservation!=='PASS'||persistence!=='PASS')process.exitCode=1;
   }
 }
