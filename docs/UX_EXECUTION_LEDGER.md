@@ -10112,7 +10112,8 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
       "/root/native_transaction_client"
     ],
     "qa": [
-      "/root/transaction_review"
+      "/root/transaction_review",
+      "/root/native_transaction_client"
     ],
     "security_review": [
       "/root/transaction_review"
@@ -10218,7 +10219,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "owner": "/root",
     "functional_exit": "Working installed recovery-contact add/prove/replace/remove and truthful delivery/status with negative controls.",
     "elapsed_scope": "wall_clock",
-    "history_reference": "Accepted S04-02 historical workorder preserved below; S04-03 starts from absent lifecycle, not a failed credential retry. Actual core14, Runtime5+domain1, HTTP4 PASS; actualEdge five-state/15viewport-theme browser PASS. Production compile initial missing route import corrected/PASS. First HTTP test assertion matched policy prose instead of pending input, corrected and PASS. Full acceptance attempt1:1959RustPASS/72ignored then CWE guard rejected dynamically formatted shell test sink; static-shell replacement still rejected guard. Productcore unchanged; root+nativeengineer+reviewer select a tiny static Rust sink using existing Rust compiler, no guard waiver/new Python. Full failedlog /home/foo/Downloads/osmap-ux-s04/recovery-contact-acceptance-check-20261026.log retained.",
+    "history_reference": "Accepted S04-02 historical workorder preserved below; S04-03 starts from absent lifecycle, not a failed credential retry. Actual core14, Runtime5+domain1, HTTP4 PASS; actualEdge five-state/15viewport-theme browser PASS. Production compile initial missing route import corrected/PASS. First HTTP test assertion matched policy prose instead of pending input, corrected and PASS. Full acceptance attempt1:1959RustPASS/72ignored then CWE guard rejected dynamically formatted shell test sink; static-shell replacement still rejected guard. Productcore unchanged; root+nativeengineer+reviewer select a tiny static Rust sink using existing Rust compiler, no guard waiver/new Python. Full failedlog /home/foo/Downloads/osmap-ux-s04/recovery-contact-acceptance-check-20261026.log retained. Signed sourceeeb748 includes implementation; source3c11641 fixes null-envelope DSN path and automatic-message headers. ActualRuntime5PASS after correction; two normalWeb compile-only artifacts27d(old) and558a(current). Existing exactV14test allowlist extended with production-reference refusals, correctedsubgatePASS; earlier V14wholecommandFAIL retained. Native recipe14c96147 independentlyCLEAR b88b9655 after11actualRust\u2192Nodeconsumer cases; exactlocalMTA/Sieve/userdb/forwarding checks,3proof/2notice messages,420body+180cleanup. No native delivery yet. Normal --work-order-only applies to03; S04-02-specific --pre-action is not claimed or added as new authority.",
     "investigation": {
       "owner": "/root",
       "timebox_seconds": 3600,
@@ -10227,7 +10228,24 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
       "elapsed_seconds": null
     },
     "attempts": [],
-    "next_attempt": null
+    "next_attempt": {
+      "id": "S04-03-INSTALL-web01",
+      "boundary": "recovery-contact-lifecycle",
+      "owner": "/root",
+      "scope": "PRODUCT_DELIVERY",
+      "adoption": "CURRENT",
+      "source_revision": "60af9a69093c88823183fe3f817cc84ca38f9f81febb4e2d72ebb1f78edeb9f0",
+      "change_reference": "Signed source3c11641 / nativebuild02 Web558a165e; bootstrap as_osmap, atomic binary/local-domain env, stop/start onlyosmap_serve. No SQL/account/mail-service action. Finite420s outer envelope includes owned rollback, actualtextinode/listener/HTTPSreadback.",
+      "success_chain_review": {
+        "reviewer": "/root/native_transaction_client",
+        "reference": "/home/foo/Downloads/osmap-ux-s04/recovery-contact-20261026/build01/install-independent-review.json SHA2563f2f7ec15793215d9fc35f5220db9e7e3f44619375c9018c12b5777838b0c3e7; exact actor60af9a69 / actual sourceboundbinary558a165e, source+nativeAPI/readback/rollback reviewed.",
+        "covers": [
+          "producer",
+          "cleanup",
+          "consumer"
+        ]
+      }
+    }
   },
   "slice_contract": {
     "version": 1,
@@ -10378,7 +10396,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "engineering_exit": "All required source/native/deployed and independent reviews PASS on current installed local development profile.",
     "human_exit": "One owner acceptance after engineering readiness; explicit observed result, never inferred."
   },
-  "updated_at": "2026-10-26T05:00:21Z"
+  "updated_at": "2026-10-26T05:36:37Z"
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->
