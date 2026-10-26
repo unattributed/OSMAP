@@ -10214,7 +10214,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "status": "PENDING",
     "reference": "Owner acceptance follows complete engineering and installed review."
   },
-  "next_action": "Finish focused Rust sink correction and independent source review, sign source checkpoint, compile/install normalWeb, qualify actual local MTA contact lifecycle and browser/native preservation, complete normal delivery gates and owner handoff.",
+  "next_action": "Execute the single reviewed installed local recovery-contact journey, reconcile actual product/preservation/restoration outcomes without retrying uncertainty, then finish delivery gates and owner readiness.",
   "accountability": {
     "owner": "/root",
     "functional_exit": "Working installed recovery-contact add/prove/replace/remove and truthful delivery/status with negative controls.",
@@ -10227,18 +10227,63 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
       "elapsed_status": "UNMEASURED",
       "elapsed_seconds": null
     },
-    "attempts": [],
+    "attempts": [
+      {
+        "id": "S04-03-INSTALL-web01",
+        "boundary": "recovery-contact-lifecycle",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "source_revision": "60af9a69093c88823183fe3f817cc84ca38f9f81febb4e2d72ebb1f78edeb9f0",
+        "change_reference": "Signed source3c11641 / nativebuild02 Web558a165e; bootstrap as_osmap, atomic binary/local-domain env, stop/start onlyosmap_serve. No SQL/account/mail-service action. Finite420s outer envelope includes owned rollback, actualtextinode/listener/HTTPSreadback.",
+        "success_chain_review": {
+          "reviewer": "/root/native_transaction_client",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/recovery-contact-20261026/build01/install-independent-review.json SHA2563f2f7ec15793215d9fc35f5220db9e7e3f44619375c9018c12b5777838b0c3e7; exact actor60af9a69 / actual sourceboundbinary558a165e, source+nativeAPI/readback/rollback reviewed.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "PASS",
+        "elapsed_status": "UNMEASURED",
+        "elapsed_seconds": null,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/recovery-contact-20261026/build02/install.actual.log: actual Web558a165e loaded PID27202 textinode129966 with samePID127.0.0.1:8080 listener; certificate-verified canonical loginGET200; helperbe7 unchanged; local-domain environment atomicallypublished. No account or publicmail-service action."
+      },
+      {
+        "id": "S04-03-INSTALLED-recovery01",
+        "boundary": "recovery-contact-lifecycle",
+        "owner": "/root",
+        "scope": "PRODUCT_DELIVERY",
+        "adoption": "CURRENT",
+        "source_revision": "14c96147c179e242a0632456c054c77ca0a9967d6881ab4acb4858549c853898",
+        "change_reference": "Fixed maint/ux/recovery_contact_native.cjs from signed7fa6e67; actualinstalledWeb558a165e (source3c11641) andhelperbe7. Three exactfreshlocalfixture accounts, primarytemporaryenrollment, normalHTTPSMFA, Begin/Resend/Verify/Replace/Verify/Remove;3proof+2notice messages.600s prospective technicalcase=420body+180cleanup, no externalrecipient/provider or password-change operation. Retainfixturedata; restoreexactpolicy/servicebindings independentlyofpreservation.",
+        "success_chain_review": {
+          "reviewer": "/root/transaction_review",
+          "reference": "/home/foo/Downloads/osmap-ux-s04/recovery-contact-20261026/consumer-check01/independent-review.json SHA256b88b96556b4abb6cb91304182d44e951edcf994a3133c784ad54606b94b1a43b;11actualRust\u2192actualNodeconsumercases+5actualemittedkshtransportcontrols; fullrootproducer/rollback/privateconsumer reviewed, no nativePASS inferred.",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ]
+        },
+        "result": "FAIL",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 0.463,
+        "reference": "/home/foo/Downloads/osmap-ux-s04/recovery-contact-20261026/native01/result.json actualOLD_ROWS_SHAPE/prepare/0HTTP/0mail; readonlyreconciliation freshrows0/exactpolicyunchanged/serviceshealthy. Originalkshunquotedpipe parsedemptycount, actualquotedpipe38rows/2432hex. Rootstage01backups/resultretained; no fixturebirth or credential/contact operation."
+      }
+    ],
     "next_attempt": {
-      "id": "S04-03-INSTALL-web01",
+      "id": "S04-03-INSTALLED-recovery02",
       "boundary": "recovery-contact-lifecycle",
       "owner": "/root",
       "scope": "PRODUCT_DELIVERY",
       "adoption": "CURRENT",
-      "source_revision": "60af9a69093c88823183fe3f817cc84ca38f9f81febb4e2d72ebb1f78edeb9f0",
-      "change_reference": "Signed source3c11641 / nativebuild02 Web558a165e; bootstrap as_osmap, atomic binary/local-domain env, stop/start onlyosmap_serve. No SQL/account/mail-service action. Finite420s outer envelope includes owned rollback, actualtextinode/listener/HTTPSreadback.",
+      "source_revision": "31b5a5787dac2b05fc85c74eef2bc1d165d1c8bec351b9b2e78313d1bf0104de",
+      "change_reference": "Onlyquote literalpipe inactualkshaggregate parser + freshstage/output02, samefixedaccounts becauseauthoritativefreshrowcount0. Native01retainedfailed. SameinstalledWeb558a/helperbe7,420body+180cleanup,3proof+2notice, no productionrecipient/passwordchange. No newapplication/helperbuild or blindcredentialretry.",
       "success_chain_review": {
-        "reviewer": "/root/native_transaction_client",
-        "reference": "/home/foo/Downloads/osmap-ux-s04/recovery-contact-20261026/build01/install-independent-review.json SHA2563f2f7ec15793215d9fc35f5220db9e7e3f44619375c9018c12b5777838b0c3e7; exact actor60af9a69 / actual sourceboundbinary558a165e, source+nativeAPI/readback/rollback reviewed.",
+        "reviewer": "/root/transaction_review",
+        "reference": "/home/foo/Downloads/osmap-ux-s04/recovery-contact-20261026/consumer-check02/independent-review.json SHA2560447849135578a997880a2fd57bfddee76953e15ece043ce47c40bb96e763ca3; independentlyactualemittedksh oldRED/newGREEN0/1/17/38rows +11actualRust\u2192Nodecases PASS, source31b5 tinyfixreviewed.",
         "covers": [
           "producer",
           "cleanup",
@@ -10396,7 +10441,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "engineering_exit": "All required source/native/deployed and independent reviews PASS on current installed local development profile.",
     "human_exit": "One owner acceptance after engineering readiness; explicit observed result, never inferred."
   },
-  "updated_at": "2026-10-26T05:36:37Z"
+  "updated_at": "2026-10-26T05:46:01Z"
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->

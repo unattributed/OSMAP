@@ -1,7 +1,7 @@
 #!/usr/bin/node
 'use strict';
 // One fixed, controlled local-delivery journey. --check-tools makes no requests.
-// Root must first register S04-03-INSTALLED-recovery01 and install the normal
+// Root must first register S04-03-INSTALLED-recovery02 and install the normal
 // source-bound Web with OSMAP_RECOVERY_CONTACT_LOCAL_DOMAIN set to this domain.
 // No password, cookie, factor or proof body is printed or written by this driver.
 const fs = require('node:fs');
@@ -13,8 +13,8 @@ const PRIMARY = `s04-03-primary-20261026-01@${DOMAIN}`;
 const A = `s04-03-proof-a-20261026-01@${DOMAIN}`;
 const B = `s04-03-proof-b-20261026-01@${DOMAIN}`;
 const USERS = [PRIMARY, A, B];
-const STAGE = '/var/backups/osmap-recovery-contact-20261026-01';
-const OUT = '/home/foo/Downloads/osmap-ux-s04/recovery-contact-20261026/native01';
+const STAGE = '/var/backups/osmap-recovery-contact-20261026-02';
+const OUT = '/home/foo/Downloads/osmap-ux-s04/recovery-contact-20261026/native02';
 const TOTP_SOURCE = '/home/foo/Workspace/OSMAP/maint/ux/s04_02_startup_candidate/sources/frontend/native_http_front_driver.py';
 const TOTP_SHA = 'eebdbe26269e35bffe43beb83ef84b08712fc67676663b66110cbd32876a7ec3';
 const hash = value => crypto.createHash('sha256').update(value).digest('hex');
@@ -91,7 +91,7 @@ sql() { printf '%s\\n' "$query" | /usr/local/bin/mariadb --protocol=SOCKET --soc
 rows() {
  query="SET SESSION group_concat_max_len=65536; SELECT CONCAT(COUNT(*),'|',COALESCE(GROUP_CONCAT(${row} ORDER BY BINARY username SEPARATOR ''),'')) FROM mailbox WHERE BINARY username NOT IN (${exclusions});"
  value=$(sql) || fail OLD_ROWS_READ
- count=\${value%%|*}; digests=\${value#*|}
+ count=\${value%%'|'*}; digests=\${value#*'|'}
  case "$count:$digests" in (*[!0-9a-f:]*|'') fail OLD_ROWS_SHAPE;; esac
  test "$count" -le 128 && test "\${#digests}" -eq "$((count*64))" || fail OLD_ROWS_BOUND
  printf '%s' "$value" | sha256 -q
