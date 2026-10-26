@@ -235,7 +235,7 @@ where
                     200,
                     "OK",
                     "Settings",
-                    crate::http_ui::render_security_page(
+                    crate::http_ui::render_security_page_with_recovery(
                         &validated_session.record.canonical_username,
                         &validated_session.record.csrf_token,
                         &outcome.decision,
@@ -245,6 +245,10 @@ where
                         self.gateway
                             .password_changed_at(&validated_session)
                             .as_deref(),
+                        self.gateway
+                            .recovery_contact(&validated_session)
+                            .ok()
+                            .as_ref(),
                     ),
                 ),
                 audit_events,

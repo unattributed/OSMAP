@@ -232,6 +232,7 @@ fn ux_synthetic_route_baselines() {
         ("bin", "/mailbox?name=Trash", true, 200),
         ("documents-missing", "/documents", true, 503),
         ("settings-security", "/settings?section=security", true, 200),
+        ("settings-recovery-unavailable", "/settings/recovery", true, 503),
         ("settings-identity", "/settings?section=identity", true, 503),
         (
             "settings-composition",
@@ -310,7 +311,7 @@ fn ux_synthetic_route_baselines() {
         ("PAGE-20", &["settings-authentication"], "route_rendered", "Current overview includes disabled password and recovery controls."),
         ("PAGE-21", &["key-management-unavailable", "key-management-inventory"], "route_rendered", "Unavailable and synthetic public inventory; no mutation or cryptography exercised."),
         ("PAGE-22", &["settings-authentication"], "missing_dedicated_page", "Password change is disabled in the current authentication overview; no dedicated screen exists."),
-        ("PAGE-23", &["settings-authentication"], "missing_dedicated_page", "Recovery contact management is disabled in the current authentication overview; no dedicated screen exists."),
+        ("PAGE-23", &["settings-recovery-unavailable"], "unavailable_fixture", "Dedicated recovery-contact route renders unavailable without configured authority; separate opted-in browser fixtures exercise actual Page23 states, without native delivery claims."),
         ("PAGE-24", &["sessions"], "route_rendered", "Current synthetic sessions; revocation not exercised."),
         ("PAGE-25", &["login", "login-error"], "retained_authentication", "Current combined password/TOTP login and generic failure; layout unchanged."),
         ("PAGE-26", &["login", "login-error"], "combined_authentication", "TOTP remains in the current login form; no standalone challenge route exists."),

@@ -33,6 +33,9 @@ pub const DEFAULT_AUTH_BACKEND_TIMEOUT_SECONDS: u64 = 20;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AppConfig {
     pub account_runtime: Option<AccountRuntimeConfig>,
+    /// Explicit development delivery eligibility, not proof of MTA locality.
+    /// Absence keeps recovery-contact management unavailable.
+    pub recovery_contact_local_domain: Option<String>,
     pub openpgp_inventory: Option<OpenPgpInventoryConfig>,
     pub openpgp_crypto: Option<OpenPgpCryptoConfig>,
     pub openpgp_public_admin: Option<OpenPgpAdminConfig>,
@@ -480,6 +483,98 @@ fn parse_openpgp_public_admin(
         _ => Err(error()),
     }
 }
+fn parse_recovery_contact_local_domain(
+    env: &BTreeMap<String, String>,
+) -> Result<Option<String>, BootstrapError> {
+    let Some(value) = env.get("OSMAP_RECOVERY_CONTACT_LOCAL_DOMAIN") else {
+        return Ok(None);
+    };
+    let invalid = || BootstrapError::InvalidConfig {
+        field: "OSMAP_RECOVERY_CONTACT_LOCAL_DOMAIN",
+        reason: "use one bounded DNS hostname without a port, address or path".into(),
+    };
+    if value.len() > 253
+        || !value.is_ascii()
+        || !value.contains('.')
+        || value.parse::<std::net::IpAddr>().is_ok()
+        || value.split('.').any(|label| {
+            label.is_empty()
+                || label.len() > 63
+                || !label.as_bytes()[0].is_ascii_alphanumeric()
+                || !label.as_bytes()[label.len() - 1].is_ascii_alphanumeric()
+                || !label
+                    .bytes()
+                    .all(|b| b.is_ascii_alphanumeric() || b == b'-')
+        })
+    {
+        return Err(invalid());
+    }
+    Ok(Some(value.to_ascii_lowercase()))
+}
+
+#[cfg(test)]
+mod recovery_domain_tests {
+    use super::*;
+
+    #[test]
+    fn recovery_delivery_defaults_off_and_accepts_only_bounded_dns_domain() {
+        assert_eq!(
+            AppConfig::from_env_map(&BTreeMap::new())
+                .unwrap()
+                .recovery_contact_local_domain,
+            None
+        );
+        let map = |value: &str| {
+            BTreeMap::from([("OSMAP_RECOVERY_CONTACT_LOCAL_DOMAIN".into(), value.into())])
+        };
+        assert_eq!(
+            AppConfig::from_env_map(&map("OBSD1.example.test"))
+                .unwrap()
+                .recovery_contact_local_domain
+                .as_deref(),
+            Some("obsd1.example.test")
+        );
+        for invalid in [
+            "",
+            "localhost",
+            "127.0.0.1",
+            "::1",
+            "obsd1.example.test:25",
+            " example.test",
+            "example.test ",
+            "/tmp/example.test",
+            "x..test",
+            "-bad.example",
+            "bad-.example",
+            "*.example.test",
+            "é.example.test",
+            "example.test.",
+            "a@b.test",
+        ] {
+            assert!(
+                matches!(
+                    AppConfig::from_env_map(&map(invalid)),
+                    Err(BootstrapError::InvalidConfig {
+                        field: "OSMAP_RECOVERY_CONTACT_LOCAL_DOMAIN",
+                        ..
+                    })
+                ),
+                "{invalid:?}"
+            );
+        }
+        assert!(
+            parse_recovery_contact_local_domain(&map(&format!("{}.test", "x".repeat(64)))).is_err()
+        );
+        assert!(parse_recovery_contact_local_domain(&map(&format!(
+            "{}.{}.{}.test",
+            "x".repeat(63),
+            "x".repeat(63),
+            "x".repeat(63)
+        )))
+        .is_ok());
+    }
+}
+
 impl AppConfig {
     /// Loads configuration from the current process environment.
     pub fn from_process_env() -> Result<Self, BootstrapError> {
@@ -941,6 +1036,7 @@ impl AppConfig {
         )?;
         Ok(Self {
             account_runtime,
+            recovery_contact_local_domain: parse_recovery_contact_local_domain(env_map)?,
             openpgp_inventory: parse_openpgp_inventory(env_map)?,
             openpgp_crypto: parse_openpgp_crypto(env_map)?,
             openpgp_public_admin: parse_openpgp_public_admin(env_map)?,

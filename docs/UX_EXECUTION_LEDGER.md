@@ -1,5 +1,11 @@
 # OSMAP UX execution ledger
 
+2026-10-26 (America/Toronto) — **S04-03 IN_PROGRESS, directly authorized by the owner.**
+Recovery contact lifecycle is absent at the accepted S04-02 baseline. Existing
+team implements core persistence, Runtime step-up/mail and independent review;
+root owns UI/integration, installed qualification and signed delivery. All tests
+start NOT_RUN. S04-02 acceptance and historical workorder remain unchanged below.
+
 2026-10-25 (America/Toronto) — **S04-02 ACCEPTED: owner end-to-end password journey confirmed.**
 The owner reported successful login, successful password change and successful
 login with the replacement password. This supplies the remaining T09 human
@@ -10085,6 +10091,301 @@ Current 2026-10-18 explicit S04-02 resumption supersedes the historical pause.
 All prior attempts below are retained; S04-01 is accepted under its historical work order.
 
 <!-- OSMAP_ACTIVE_WORK_ORDER -->
+```json
+{
+  "version": 1,
+  "slice": "S04-03",
+  "original_requirement": "Recovery contact add/verify/change/remove with proof lifecycle and notifications",
+  "source_baseline": "b94eacb9a583f0cc1a999504285dbd813763202e",
+  "state": "IN_PROGRESS",
+  "integration_owner": "/root",
+  "roles": {
+    "project_manager": [
+      "/root"
+    ],
+    "scrum_lead": [
+      "/root"
+    ],
+    "developers": [
+      "/root",
+      "/root/epoch_failure_engineer",
+      "/root/native_transaction_client"
+    ],
+    "qa": [
+      "/root/transaction_review"
+    ],
+    "security_review": [
+      "/root/transaction_review"
+    ],
+    "technical_writer": [
+      "/root"
+    ]
+  },
+  "allowed_paths": [
+    "src/recovery_contact.rs",
+    "src/recovery_contact_tests.rs",
+    "src/http_gateway_recovery.rs",
+    "src/http_gateway_recovery_tests.rs",
+    "src/settings_recovery_ui.rs",
+    "src/http/routes_recovery.rs",
+    "src/http/recovery_contact_tests.rs",
+    "src/lib.rs",
+    "src/http.rs",
+    "src/http_ui.rs",
+    "src/http_browser.rs",
+    "src/http_gateway.rs",
+    "src/http_runtime.rs",
+    "src/settings_ui.rs",
+    "src/settings_security_ui.rs",
+    "src/http/routes_settings.rs",
+    "src/http/ux_fixtures.rs",
+    "src/http/security_settings.css",
+    "src/http_support.rs",
+    "src/config.rs",
+    "src/bootstrap.rs",
+    "src/mailbox_helper.rs",
+    "src/openbsd.rs",
+    "src/http/ux_browser_server.rs",
+    "maint/ux/acceptance.json",
+    "maint/ux/recovery_contact_workflows.cjs",
+    "maint/ux/recovery_contact_native.cjs",
+    "maint/wstg-testing-pack/osmap-browser-attack-surface.json",
+    "maint/security/osmap-v14-no-js-low-sbom-gate.sh",
+    "maint/security/v10-rust-assumption-audit.json",
+    "maint/security/v10-fail-closed-remediation.json",
+    "maint/security/v10-claims-boundary.json",
+    "docs/UX_SLICE_S04_03.md",
+    "docs/UX_EXECUTION_LEDGER.md",
+    "docs/CURRENT_PROJECT_STATUS.md",
+    "docs/DECISION_LOG.md",
+    "docs/README.md",
+    "docs/KNOWN_LIMITATIONS.md"
+  ],
+  "outcomes": [
+    {
+      "id": "recovery-contact-lifecycle",
+      "requirement_ids": [
+        "UX12-001",
+        "UX12-002",
+        "R2-10-006",
+        "R2-10-010",
+        "R2-20-007",
+        "R2-20-008",
+        "R2-23-001",
+        "R2-23-002",
+        "R2-23-003",
+        "R2-23-004",
+        "R2-23-005",
+        "R2-23-006",
+        "R2-23-007",
+        "R2-23-008",
+        "R2-23-009"
+      ],
+      "owner": "/root",
+      "frontend_backend_outcome": "Authenticated recovery contact lifecycle and verified local proof/notification through installed ordinary Runtime.",
+      "dependencies": [
+        {
+          "owner": "/root",
+          "condition": "S04-02 accepted at b94eacb with normal delivery parity.",
+          "status": "PASS",
+          "next_action": "Preserve its authentication/password path unchanged."
+        }
+      ],
+      "essential_qa": "All planned source/native/deployed and independent tests in slice contract.",
+      "stages": {
+        "implementation": "PASS",
+        "source_tests": "PENDING",
+        "native_tests": "PENDING",
+        "deployed_qa": "PENDING",
+        "independent_review": "PENDING",
+        "recovery": "PENDING"
+      },
+      "evidence": [
+        {
+          "stage": "implementation",
+          "reference": "Core store, current native-admission/file-TOTP Runtime, CSRF-bound routes and actual Page23/Settings metadata implemented. Independent source/visual review SHA2562411b6d85a019d216fb8517571b270c1df1a3878ac3dc5af487b68fa0a67a2ca CLEAR_SOURCE_CANDIDATE; no installed/native/UAT claim."
+        }
+      ],
+      "next_action": "Implement absent lifecycle/store/route, then test each changed product boundary."
+    }
+  ],
+  "human_acceptance": {
+    "status": "PENDING",
+    "reference": "Owner acceptance follows complete engineering and installed review."
+  },
+  "next_action": "Finish focused Rust sink correction and independent source review, sign source checkpoint, compile/install normalWeb, qualify actual local MTA contact lifecycle and browser/native preservation, complete normal delivery gates and owner handoff.",
+  "accountability": {
+    "owner": "/root",
+    "functional_exit": "Working installed recovery-contact add/prove/replace/remove and truthful delivery/status with negative controls.",
+    "elapsed_scope": "wall_clock",
+    "history_reference": "Accepted S04-02 historical workorder preserved below; S04-03 starts from absent lifecycle, not a failed credential retry. Actual core14, Runtime5+domain1, HTTP4 PASS; actualEdge five-state/15viewport-theme browser PASS. Production compile initial missing route import corrected/PASS. First HTTP test assertion matched policy prose instead of pending input, corrected and PASS. Full acceptance attempt1:1959RustPASS/72ignored then CWE guard rejected dynamically formatted shell test sink; static-shell replacement still rejected guard. Productcore unchanged; root+nativeengineer+reviewer select a tiny static Rust sink using existing Rust compiler, no guard waiver/new Python. Full failedlog /home/foo/Downloads/osmap-ux-s04/recovery-contact-acceptance-check-20261026.log retained.",
+    "investigation": {
+      "owner": "/root",
+      "timebox_seconds": 3600,
+      "started_at": "2026-10-26T04:40:03Z",
+      "elapsed_status": "UNMEASURED",
+      "elapsed_seconds": null
+    },
+    "attempts": [],
+    "next_attempt": null
+  },
+  "slice_contract": {
+    "version": 1,
+    "slice": "S04-03",
+    "specification": {
+      "path": "docs/UX_SLICE_S04_03.md",
+      "sha256": "23ef125b0ec74a837cdb4d5f6dbf3eb36ec36954880c35fb99f68898dbc072b0"
+    },
+    "design": {
+      "journey": "Authenticated Settings\u2192Recovery contact\u2192step-up add/change\u2192emailed proof POST\u2192verified status\u2192replacement/removal notices.",
+      "frontend": "Dedicated Page23 form with empty secret fields, current/pending status, timestamps, navigation and accurate fixed notices.",
+      "backend": "PrivateAccountFile serialized lifecycle and native primary/file-TOTP step-up through ordinary Runtime.",
+      "interfaces": "Typed actions and metadata snapshots; fixed bounded local mail submission, no SQL or command channel.",
+      "persistence": "Versioned bounded account-scoped private records with revision CAS and token digest only.",
+      "security": "CSRF/Host/session/epoch enforcement, fresh TOTP replay prevention, proof/resend limits, no MFA bypass.",
+      "failure_recovery": "Retain conservative delivery uncertainty and interrupted-state evidence; no automatic retry; preserve old verified contact until proof."
+    },
+    "tests": [
+      {
+        "id": "S04-03-T01",
+        "outcome_ids": [
+          "recovery-contact-lifecycle"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Reviewed matching source and owned disposable accounts; local obsd1 authority for native/deployed work; no production recipients.",
+        "action": "Exercise persistent add/prove/replace/remove and Settings status.",
+        "expected": "Correct one verified/one pending lifecycle and notification recipient, accurate timestamps.",
+        "preserved": "Owner credentials/TOTP/mail, accepted S04-02, unrelated accounts/settings and frozen plan.",
+        "owner": "/root",
+        "reviewer": "/root/transaction_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      },
+      {
+        "id": "S04-03-T02",
+        "outcome_ids": [
+          "recovery-contact-lifecycle"
+        ],
+        "kind": "negative",
+        "level": "source",
+        "prerequisites": "Reviewed matching source and owned disposable accounts; local obsd1 authority for native/deployed work; no production recipients.",
+        "action": "Exercise expiry/replay/rates, stale revisions, isolation and concurrent changes.",
+        "expected": "No unauthorized verification or mutation, budgets survive reload and old verified address survives pending replacement.",
+        "preserved": "Owner credentials/TOTP/mail, accepted S04-02, unrelated accounts/settings and frozen plan.",
+        "owner": "/root",
+        "reviewer": "/root/transaction_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      },
+      {
+        "id": "S04-03-T03",
+        "outcome_ids": [
+          "recovery-contact-lifecycle"
+        ],
+        "kind": "recovery",
+        "level": "source",
+        "prerequisites": "Reviewed matching source and owned disposable accounts; local obsd1 authority for native/deployed work; no production recipients.",
+        "action": "Refuse and interrupt delivery/persistence at each effect boundary.",
+        "expected": "Truthful refused/unconfirmed state, no blind resend or false completion.",
+        "preserved": "Owner credentials/TOTP/mail, accepted S04-02, unrelated accounts/settings and frozen plan.",
+        "owner": "/root",
+        "reviewer": "/root/transaction_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      },
+      {
+        "id": "S04-03-T04",
+        "outcome_ids": [
+          "recovery-contact-lifecycle"
+        ],
+        "kind": "positive",
+        "level": "native",
+        "prerequisites": "Reviewed matching source and owned disposable accounts; local obsd1 authority for native/deployed work; no production recipients.",
+        "action": "Exercise ordinary Runtime native step-up and contact store through BrowserApp.",
+        "expected": "Fresh password/TOTP and active session are required and product state persists.",
+        "preserved": "Owner credentials/TOTP/mail, accepted S04-02, unrelated accounts/settings and frozen plan.",
+        "owner": "/root",
+        "reviewer": "/root/transaction_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      },
+      {
+        "id": "S04-03-T05",
+        "outcome_ids": [
+          "recovery-contact-lifecycle"
+        ],
+        "kind": "negative",
+        "level": "native",
+        "prerequisites": "Reviewed matching source and owned disposable accounts; local obsd1 authority for native/deployed work; no production recipients.",
+        "action": "Exercise stale/replayed/incorrect authorization, CSRF and control preservation.",
+        "expected": "No contact effects or bypass from denied authorization; owner and control states preserved.",
+        "preserved": "Owner credentials/TOTP/mail, accepted S04-02, unrelated accounts/settings and frozen plan.",
+        "owner": "/root",
+        "reviewer": "/root/transaction_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      },
+      {
+        "id": "S04-03-T06",
+        "outcome_ids": [
+          "recovery-contact-lifecycle"
+        ],
+        "kind": "positive",
+        "level": "deployed",
+        "prerequisites": "Reviewed matching source and owned disposable accounts; local obsd1 authority for native/deployed work; no production recipients.",
+        "action": "Exercise installed local mail proof and browser contact lifecycle/reload.",
+        "expected": "Actual delivery/proof/notification and approved controls work on matching installed binary.",
+        "preserved": "Owner credentials/TOTP/mail, accepted S04-02, unrelated accounts/settings and frozen plan.",
+        "owner": "/root",
+        "reviewer": "/root/transaction_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      },
+      {
+        "id": "S04-03-T07",
+        "outcome_ids": [
+          "recovery-contact-lifecycle"
+        ],
+        "kind": "negative",
+        "level": "deployed",
+        "prerequisites": "Reviewed matching source and owned disposable accounts; local obsd1 authority for native/deployed work; no production recipients.",
+        "action": "Exercise installed refused proof and unavailable/empty status plus secret exclusion.",
+        "expected": "Truthful accessible refusal, no token/credential exposure or unrelated changes.",
+        "preserved": "Owner credentials/TOTP/mail, accepted S04-02, unrelated accounts/settings and frozen plan.",
+        "owner": "/root",
+        "reviewer": "/root/transaction_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      },
+      {
+        "id": "S04-03-T08",
+        "outcome_ids": [
+          "recovery-contact-lifecycle"
+        ],
+        "kind": "usability",
+        "level": "human",
+        "prerequisites": "Reviewed matching source and owned disposable accounts; local obsd1 authority for native/deployed work; no production recipients.",
+        "action": "Owner reviews prepared installed recovery contact journey after all engineering passes.",
+        "expected": "Owner records acceptance or specific usability issue without troubleshooting unfinished engineering.",
+        "preserved": "Owner credentials/TOTP/mail, accepted S04-02, unrelated accounts/settings and frozen plan.",
+        "owner": "/root",
+        "reviewer": "/root/transaction_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      }
+    ],
+    "engineering_exit": "All required source/native/deployed and independent reviews PASS on current installed local development profile.",
+    "human_exit": "One owner acceptance after engineering readiness; explicit observed result, never inferred."
+  },
+  "updated_at": "2026-10-26T05:00:21Z"
+}
+```
+<!-- /OSMAP_ACTIVE_WORK_ORDER -->
+
+## Accepted S04-02 work order retained unchanged
+
+<!-- OSMAP_S04_02_ACCEPTED_WORK_ORDER_20261025 -->
 ```json
 {
   "version": 1,
@@ -37843,7 +38144,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
   "updated_at": "2026-10-25T22:37:11Z"
 }
 ```
-<!-- /OSMAP_ACTIVE_WORK_ORDER -->
+<!-- /OSMAP_S04_02_ACCEPTED_WORK_ORDER_20261025 -->
 
 ## 2026-10-15 — operator Folders usability results received
 

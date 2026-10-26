@@ -1,5 +1,16 @@
 # Decision Log
 
+2026-10-26 (America/Toronto) — **Start S04-03 on existing account and mail boundaries.**
+Implement the absent recovery-contact lifecycle using serialized private settings
+records, native primary authentication, file TOTP replay protection and the fixed
+bounded mail transport. Do not introduce a parallel password database or reuse a
+password-change permit for contact administration. Verify contact proof through
+authenticated POST entry, keeping raw tokens out of URLs and retained evidence.
+Default delivery is disabled until an administrator selects the local development
+mail domain; prove actual local routing before activation. Test disposable local
+recipients and preserve owner credentials, S04-02 and running mail services.
+Human acceptance and production qualification remain separate from source tests.
+
 2026-10-25 (America/Toronto) — **Close S04-02 against the owner's successful real journey.**
 The direct report of successful login, password change and replacement-password
 login supplies the remaining T09 acceptance for the selected local obsd1

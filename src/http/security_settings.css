@@ -1,7 +1,15 @@
-/* Approved PAGE10 and PAGE20; no authentication or settings mutations. */
+/* Approved PAGE10, PAGE20 and recovery contact PAGE23. */
 .settings-security-page .settings-layout { align-items:start; }
 .settings-security-page .page-intro { margin-bottom:.55rem; }
 .security-content { min-width:0; }
+.recovery-contact-page .security-two-cards { margin:1rem 0; }
+.recovery-contact-page form,.recovery-contact-page fieldset { display:grid; gap:.65rem; min-width:0; }
+.recovery-contact-page fieldset { border:0; padding:.5rem 0; margin:0; }
+.recovery-contact-page input { width:100%; min-width:0; box-sizing:border-box; }
+.recovery-contact-page button,.recovery-contact-page .button-link { justify-self:start; }
+.recovery-contact-page details { margin-top:1rem; }
+.recovery-contact-page summary { cursor:pointer; padding:.5rem 0; font-weight:600; }
+.recovery-contact-page p { overflow-wrap:anywhere; }
 .security-card,.security-tile { border:1px solid var(--line); border-radius:.85rem; background:var(--panel); min-width:0; }
 .security-card { padding:1.2rem; }
 .security-card h2 { margin:.35rem 0 .75rem; font-size:1.35rem; text-transform:none; }

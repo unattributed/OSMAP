@@ -13,10 +13,15 @@ pub(crate) use settings_identity_ui::{
 };
 #[path = "settings_password_ui.rs"]
 mod settings_password_ui;
+#[path = "settings_recovery_ui.rs"]
+mod settings_recovery_ui;
+pub(crate) use settings_recovery_ui::{recovery_contact_summary, render_recovery_contact_page};
 #[path = "settings_security_ui.rs"]
 mod settings_security_ui;
 pub(crate) use settings_password_ui::render_password_page;
+#[cfg(test)]
 pub(crate) use settings_security_ui::render_security_page;
+pub(crate) use settings_security_ui::render_security_page_with_recovery;
 #[path = "settings_privacy_ui.rs"]
 mod settings_privacy_ui;
 pub(crate) use settings_privacy_ui::render_privacy_page;

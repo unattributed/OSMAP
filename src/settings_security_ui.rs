@@ -53,6 +53,7 @@ fn public_account_key_summary(
     ))
 }
 
+#[cfg(test)]
 pub(crate) fn render_security_page(
     account: &str,
     csrf: &str,
@@ -62,6 +63,31 @@ pub(crate) fn render_security_page(
     password_available: bool,
     password_changed_at: Option<&str>,
 ) -> TrustedHtml {
+    render_security_page_with_recovery(
+        account,
+        csrf,
+        decision,
+        keys,
+        authentication,
+        password_available,
+        password_changed_at,
+        None,
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn render_security_page_with_recovery(
+    account: &str,
+    csrf: &str,
+    decision: &BrowserSessionListDecision,
+    keys: Option<&crate::key_management::State>,
+    authentication: bool,
+    password_available: bool,
+    password_changed_at: Option<&str>,
+    recovery: Option<&crate::recovery_contact::RecoveryContactSnapshot>,
+) -> TrustedHtml {
+    let (recovery_status, recovery_detail) = recovery_contact_summary(recovery);
+    let recovery_control = format!("<div class=\"security-control\"><div><strong>Recovery contact</strong><p>{recovery_detail}</p></div><a class=\"button-link secondary\" href=\"/settings/recovery\" aria-label=\"Manage recovery contact\">Manage contact</a></div>");
     let changed_at = password_changed_at.filter(|v| crate::account_mutation::changed_at_valid(v));
     let password_history = changed_at.map_or_else(
         || "Last change unknown".to_owned(),
@@ -156,6 +182,16 @@ pub(crate) fn render_security_page(
             "Password and recovery changes remain unavailable here."
         },
     );
+    let content = if recovery.is_some() {
+        content.replace("<div class=\"security-recovery-contact\"><strong>Recovery contact</strong><span class=\"security-unknown\">Unknown</span><p>Contact and verification status unavailable</p></div><button type=\"button\" class=\"secondary\" disabled>Manage contact</button>", &recovery_control)
+            .replace("Recovery-contact management is unavailable. This session does not establish a recovery contact or permission to bypass authentication.", "Recovery contact management requires fresh confirmation. Contact possession does not bypass authentication.")
+            .replace(&row("Recovery contact", "Contact and verification status unknown", "Manage", false), &recovery_control)
+            .replace("<h3>Recovery Contact</h3><strong>Unknown</strong><p>Contact and verification unavailable</p>", &format!("<h3>Recovery Contact</h3><strong>{recovery_status}</strong><p>{recovery_detail}</p>"))
+            .replace("Recovery changes remain unavailable.", "Manage contact opens your account-bound recovery-contact form.")
+            .replace("Password and recovery changes remain unavailable here.", "Manage contact opens your account-bound recovery-contact form; password capability is reported separately.")
+    } else {
+        content
+    };
     let section = if authentication {
         "authentication"
     } else {

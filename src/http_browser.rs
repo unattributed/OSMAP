@@ -17,6 +17,32 @@ pub enum BrowserSendRecoveryDecision {
 }
 
 pub trait BrowserGateway {
+    fn recovery_contact(
+        &self,
+        _session: &ValidatedSession,
+    ) -> Result<
+        crate::recovery_contact::RecoveryContactSnapshot,
+        crate::recovery_contact::RecoveryContactError,
+    > {
+        Err(crate::recovery_contact::RecoveryContactError::Unavailable)
+    }
+    #[allow(clippy::too_many_arguments)]
+    fn recovery_contact_action(
+        &self,
+        _context: &AuthenticationContext,
+        _session: &ValidatedSession,
+        _token: &SessionToken,
+        _revision: u64,
+        _action: crate::recovery_contact::RecoveryContactAction,
+        _current_password: &str,
+        _totp_code: &str,
+        _deadline: std::time::Instant,
+    ) -> Result<
+        crate::recovery_contact::RecoveryContactResult,
+        crate::recovery_contact::RecoveryContactError,
+    > {
+        Err(crate::recovery_contact::RecoveryContactError::Unavailable)
+    }
     /// Derived from the paired qualified runtime; absence never enables a form.
     fn password_change_available(&self, _session: &ValidatedSession) -> bool {
         false

@@ -42,7 +42,21 @@ fn ux_synthetic_browser_server() {
         ..HttpPolicy::default()
     };
     let password_controls = std::env::var("OSMAP_UX_FIXTURE_PASSWORD_CONTROLS").ok().as_deref() == Some("1");
+    let recovery_fixture = std::env::var("OSMAP_UX_FIXTURE_RECOVERY_CONTACT").ok();
+    let recovery_snapshot = recovery_fixture.as_deref().and_then(|mode| {
+        use crate::recovery_contact::*;
+        if !["empty", "verified", "pending", "uncertain"].contains(&mode) { return None; }
+        let now = crate::totp::TimeProvider::unix_timestamp(&crate::totp::SystemTimeProvider);
+        Some(RecoveryContactSnapshot {
+            revision: 3,
+            verified: (mode != "empty").then(|| VerifiedRecoveryContact { email: "alice.backup@example.test".into(), verified_at: now - 86400 }),
+            pending: (mode == "pending").then(|| PendingRecoveryContact { email: "replacement@example.test".into(), created_at: now, expires_at: now + 86400, token_expires_at: now + 1800, attempts_remaining: 5, delivery: RecoveryContactDelivery::Accepted }),
+            notice: (mode == "uncertain").then_some(RecoveryContactNotice { kind: RecoveryContactNoticeKind::Replaced, attempted_at: now, delivery: RecoveryContactDelivery::Accepted, earlier_unconfirmed: true }),
+            resend_at: (mode == "pending").then_some(now + 60),
+        })
+    });
     let gateway = StubGateway {
+        recovery_snapshot,
         password_result: password_controls.then_some(BrowserPasswordDecision::KnownRefused),
         sent_location_store: (std::env::var("OSMAP_UX_FIXTURE_FOLDER_RENAME").ok().as_deref() == Some("1")).then(|| crate::sent_location::Store::new(root.join("settings"))),
         after_archive_store: Some(crate::after_archive::Store::new(root.join("settings"))),
@@ -98,6 +112,7 @@ fn ux_synthetic_browser_server() {
         "origin": format!("http://{address}"), "synthetic": true, "deadline_seconds": duration_seconds,
         "back_focus_fixture": back_focus_enabled(),
         "password_controls_fixture": password_controls,
+        "recovery_contact_fixture": recovery_fixture,
     })).expect("fixture metadata")).expect("write ready marker");
     let deadline = Instant::now() + Duration::from_secs(duration_seconds);
     let mut connections = 0;

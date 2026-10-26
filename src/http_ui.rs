@@ -38,13 +38,16 @@ use crate::message_metadata::{MessageFlag, MessageMetadata};
 use crate::mime::{AttachmentMetadata, DEFAULT_MIME_PARTS_MAX};
 use crate::rendering::{HtmlDisplayPreference, RenderedMessageView};
 pub(crate) use settings_ui::render_openpgp_settings;
+#[cfg(test)]
+pub(crate) use settings_ui::render_security_page;
 pub(crate) use settings_ui::{
     render_appearance_page, render_composition_page_with_signature, render_copies_page_with_state,
     render_folders_page_with_state, render_general_page_with_mark_read, render_identity_page,
     render_identity_page_with_signature, render_notifications_page, render_password_page,
-    render_privacy_page, render_reading_page_with_state, render_security_page, CopiesPageState,
-    IdentityPageModel, ReadingFoldersState,
+    render_privacy_page, render_reading_page_with_state, CopiesPageState, IdentityPageModel,
+    ReadingFoldersState,
 };
+pub(crate) use settings_ui::{render_recovery_contact_page, render_security_page_with_recovery};
 
 /// Defense-in-depth cap for attachment metadata rows rendered by one route.
 const DEFAULT_RENDERED_ATTACHMENT_METADATA_MAX: usize = DEFAULT_MIME_PARTS_MAX;

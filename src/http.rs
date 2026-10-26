@@ -65,6 +65,8 @@ mod routes_password;
 #[path = "http/routes_people.rs"]
 mod routes_people;
 mod routes_reading_preferences;
+#[path = "http/routes_recovery.rs"]
+mod routes_recovery;
 mod routes_reply;
 #[path = "http/routes_send_receipt.rs"]
 mod routes_send_receipt;
@@ -900,6 +902,9 @@ mod tests {
     mod password_tests {
         include!("http/password_tests.rs");
     }
+    mod recovery_contact_tests {
+        include!("http/recovery_contact_tests.rs");
+    }
     mod snooze_tests {
         include!("http/snooze_tests.rs");
     }
@@ -1072,6 +1077,8 @@ mod tests {
 
     #[derive(Debug, Clone)]
     struct StubGateway {
+        recovery_snapshot: Option<crate::recovery_contact::RecoveryContactSnapshot>,
+        recovery_calls: Arc<Mutex<usize>>,
         password_result: Option<BrowserPasswordDecision>,
         password_changed_at: Option<String>,
         password_calls: Arc<Mutex<Vec<String>>>,
@@ -1146,6 +1153,8 @@ mod tests {
     impl Default for StubGateway {
         fn default() -> Self {
             Self {
+                recovery_snapshot: None,
+                recovery_calls: Default::default(),
                 password_result: None,
                 password_changed_at: None,
                 password_calls: Default::default(),
@@ -1278,6 +1287,34 @@ mod tests {
     }
 
     impl BrowserGateway for StubGateway {
+        fn recovery_contact(
+            &self,
+            _: &ValidatedSession,
+        ) -> Result<
+            crate::recovery_contact::RecoveryContactSnapshot,
+            crate::recovery_contact::RecoveryContactError,
+        > {
+            self.recovery_snapshot
+                .clone()
+                .ok_or(crate::recovery_contact::RecoveryContactError::Unavailable)
+        }
+        fn recovery_contact_action(
+            &self,
+            _: &AuthenticationContext,
+            _: &ValidatedSession,
+            _: &SessionToken,
+            _: u64,
+            _: crate::recovery_contact::RecoveryContactAction,
+            _: &str,
+            _: &str,
+            _: std::time::Instant,
+        ) -> Result<
+            crate::recovery_contact::RecoveryContactResult,
+            crate::recovery_contact::RecoveryContactError,
+        > {
+            *self.recovery_calls.lock().unwrap() += 1;
+            Err(crate::recovery_contact::RecoveryContactError::InvalidToken)
+        }
         fn password_changed_at(&self, _session: &ValidatedSession) -> Option<String> {
             self.password_changed_at.clone()
         }

@@ -23,6 +23,8 @@ mod http_gateway_mail;
 mod http_gateway_password;
 #[path = "http_gateway_protected.rs"]
 pub(super) mod http_gateway_protected;
+#[path = "http_gateway_recovery.rs"]
+mod http_gateway_recovery;
 #[path = "http_gateway_settings.rs"]
 mod http_gateway_settings;
 #[path = "http_mailbox_backends.rs"]
@@ -32,6 +34,7 @@ mod http_mailbox_backends;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RuntimeBrowserGateway {
     pub(crate) account_runtime: AccountRuntimeCapability,
+    recovery_contact_local_domain: Option<String>,
     pub(crate) account_rollout: Option<String>,
     pub(crate) public_inventory_client: Option<crate::openpgp_inventory_runtime::Client>,
     pub(crate) crypto_client: Option<crate::openpgp_crypto_runtime::Client>,
@@ -128,6 +131,7 @@ impl RuntimeBrowserGateway {
     ) -> Self {
         Self {
             account_runtime,
+            recovery_contact_local_domain: config.recovery_contact_local_domain.clone(),
             account_rollout: config
                 .account_runtime
                 .as_ref()
@@ -324,6 +328,7 @@ impl RuntimeBrowserGateway {
     pub(crate) fn for_test(temp_root: &std::path::Path) -> Self {
         Self {
             account_runtime: AccountRuntimeCapability::Disabled,
+            recovery_contact_local_domain: None,
             account_rollout: None,
             public_inventory_client: None,
             crypto_client: None,
@@ -1077,6 +1082,40 @@ impl BrowserGateway for RuntimeBrowserGateway {
         self.login_impl(context, username, password, totp_code)
     }
 
+    fn recovery_contact(
+        &self,
+        session: &ValidatedSession,
+    ) -> Result<
+        crate::recovery_contact::RecoveryContactSnapshot,
+        crate::recovery_contact::RecoveryContactError,
+    > {
+        self.read_recovery_contact(session)
+    }
+    fn recovery_contact_action(
+        &self,
+        context: &AuthenticationContext,
+        session: &ValidatedSession,
+        token: &SessionToken,
+        revision: u64,
+        action: crate::recovery_contact::RecoveryContactAction,
+        current_password: &str,
+        totp_code: &str,
+        deadline: std::time::Instant,
+    ) -> Result<
+        crate::recovery_contact::RecoveryContactResult,
+        crate::recovery_contact::RecoveryContactError,
+    > {
+        self.mutate_recovery_contact(
+            context,
+            session,
+            token,
+            revision,
+            action,
+            current_password,
+            totp_code,
+            deadline,
+        )
+    }
     fn password_change_available(&self, session: &ValidatedSession) -> bool {
         self.ready_account_runtime(&session.record.canonical_username)
             .is_some()

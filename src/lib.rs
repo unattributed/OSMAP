@@ -65,6 +65,7 @@ pub mod password_change_rate;
 mod password_change_tests;
 mod private_account_file;
 pub mod reading_preferences;
+pub mod recovery_contact;
 pub mod rendering;
 pub mod rendering_html;
 pub mod reply_thread;
