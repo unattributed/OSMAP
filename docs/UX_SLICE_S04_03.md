@@ -252,3 +252,35 @@ without an automatic message or contact-state mutation. One authenticated owner
 resend, its new Postfix/Brevo queue correlation, actual Proton receipt and
 single-use code verification remain T08 UAT. No agent will repeat an ambiguous
 submission. S04-03 remains not ACCEPTED.
+
+## Owner T08 acceptance — 2026-10-27
+
+The owner completed the installed external recovery-contact journey and reported
+`works`. Contemporaneous owner evidence shows the expected verification message
+in the owner-controlled Proton mailbox, successful submission of its one-use
+proof, and OSMAP rendering the contact Verified at
+`2026-10-27T07:56:07Z`. The consumed proof is not reproduced or retained.
+The owner then refreshed the page and confirmed the correct address remained
+Verified. **Resend verification** was not expanded or invoked; it was unnecessary
+after successful verification and no resend is claimed by this acceptance.
+
+Independent live reconciliation correlated Postfix queue `7209B3CEA84`: one
+external recipient, authenticated non-null envelope sender, certificate-verified
+TLS 1.3 to the configured Brevo relay, DSN `2.0.0`, `status=sent`, and queue
+removal. The authoritative recovery-contact record is revision 5, has no pending
+state, records the same verified/updated time and has sanitized SHA-256
+`d22d383060b57c104d100541ba8a4f464c63bee79059fe27d854f684bb539a9c`.
+All eight checked services remained healthy; the installed Web and environment
+hashes remained `0f3e3659…` and `eceaa1c2…` respectively.
+
+Relay acceptance and actual mailbox receipt are separate observations and both
+are now evidenced. The older deferred null-sender DSN queue `2A2F13CEA87` remains
+unrelated. The earlier native05 aggregate FAIL and unknown SSH interruption are
+retained; their six observed contact refusals and separately verified exact
+restoration/readback remain the T05 evidence.
+
+T08 is PASS and S04-03 is **ACCEPTED for the local obsd1 development deployment**.
+This supersedes the pending-UAT wording immediately above. It does not accept
+S04-04 identity/password/factor recovery, the whole Sprint S04 or UX epic, or a
+production/global release. The detailed decision is recorded in
+`UX_S04_03_T08_ACCEPTANCE_20261027.md`.

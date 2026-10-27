@@ -10156,7 +10156,7 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "QA_VERIFIED",
+        "status": "ACCEPTED",
         "executed": true,
         "evidence": [
           {
@@ -10173,6 +10173,11 @@
             "kind": "qa_execution",
             "path": "/home/foo/Downloads/osmap-ux-s04/recovery-contact-browser-20261026-03/result.json",
             "scope": "ActualEdge5states/16captures, mobile/light/dark/navigation/Cancel/emptysecrets/validemailretention PASS; synthetic presentation distinctfrominstalledmail. Independent sourcevisual83b5d4…. Human T08 remains pending; no external delivery or S04-04 recovery acceptance."
+          },
+          {
+            "kind": "human_uat",
+            "path": "docs/UX_S04_03_T08_ACCEPTANCE_20261027.md",
+            "scope": "2026-10-27 owner report: works after the externally delivered recovery-contact message was received, its one-use proof was submitted and OSMAP displayed Verified at 2026-10-27T07:56:07Z. Agent live reconciliation separately confirms sanitized queue 7209B3CEA84 accepted by the relay and removed, authoritative revision 5 with pending absent, and healthy services. This closes S04-03 local-development T08 using retained control-specific engineering evidence; S04-04, identity/factor reset, whole-sprint/epic and production release are not inferred."
           }
         ]
       }
@@ -10366,7 +10371,7 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "QA_VERIFIED",
+        "status": "ACCEPTED",
         "executed": true,
         "evidence": [
           {
@@ -10383,6 +10388,11 @@
             "kind": "qa_execution",
             "path": "/home/foo/Downloads/osmap-ux-s04/recovery-contact-browser-20261026-03/result.json",
             "scope": "ActualEdge5states/16captures, mobile/light/dark/navigation/Cancel/emptysecrets/validemailretention PASS; synthetic presentation distinctfrominstalledmail. Independent sourcevisual83b5d4…. Human T08 remains pending; no external delivery or S04-04 recovery acceptance."
+          },
+          {
+            "kind": "human_uat",
+            "path": "docs/UX_S04_03_T08_ACCEPTANCE_20261027.md",
+            "scope": "2026-10-27 owner report: works after the externally delivered recovery-contact message was received, its one-use proof was submitted and OSMAP displayed Verified at 2026-10-27T07:56:07Z. Agent live reconciliation separately confirms sanitized queue 7209B3CEA84 accepted by the relay and removed, authoritative revision 5 with pending absent, and healthy services. This closes S04-03 local-development T08 using retained control-specific engineering evidence; S04-04, identity/factor reset, whole-sprint/epic and production release are not inferred."
           }
         ]
       }
@@ -17773,7 +17783,7 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "QA_VERIFIED",
+        "status": "ACCEPTED",
         "executed": true,
         "evidence": [
           {
@@ -17790,6 +17800,11 @@
             "kind": "qa_execution",
             "path": "/home/foo/Downloads/osmap-ux-s04/recovery-contact-browser-20261026-03/result.json",
             "scope": "ActualEdge5states/16captures, mobile/light/dark/navigation/Cancel/emptysecrets/validemailretention PASS; synthetic presentation distinctfrominstalledmail. Independent sourcevisual83b5d4…. Human T08 remains pending; no external delivery or S04-04 recovery acceptance."
+          },
+          {
+            "kind": "human_uat",
+            "path": "docs/UX_S04_03_T08_ACCEPTANCE_20261027.md",
+            "scope": "2026-10-27 owner report: works after the externally delivered recovery-contact message was received, its one-use proof was submitted and OSMAP displayed Verified at 2026-10-27T07:56:07Z. Agent live reconciliation separately confirms sanitized queue 7209B3CEA84 accepted by the relay and removed, authoritative revision 5 with pending absent, and healthy services. This closes S04-03 local-development T08 using retained control-specific engineering evidence; S04-04, identity/factor reset, whole-sprint/epic and production release are not inferred."
           }
         ]
       }
@@ -17836,7 +17851,7 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "QA_VERIFIED",
+        "status": "ACCEPTED",
         "executed": true,
         "evidence": [
           {
@@ -17853,6 +17868,11 @@
             "kind": "qa_execution",
             "path": "/home/foo/Downloads/osmap-ux-s04/recovery-contact-browser-20261026-03/result.json",
             "scope": "ActualEdge5states/16captures, mobile/light/dark/navigation/Cancel/emptysecrets/validemailretention PASS; synthetic presentation distinctfrominstalledmail. Independent sourcevisual83b5d4…. Human T08 remains pending; no external delivery or S04-04 recovery acceptance."
+          },
+          {
+            "kind": "human_uat",
+            "path": "docs/UX_S04_03_T08_ACCEPTANCE_20261027.md",
+            "scope": "2026-10-27 owner report: works after the externally delivered recovery-contact message was received, its one-use proof was submitted and OSMAP displayed Verified at 2026-10-27T07:56:07Z. Agent live reconciliation separately confirms sanitized queue 7209B3CEA84 accepted by the relay and removed, authoritative revision 5 with pending absent, and healthy services. This closes S04-03 local-development T08 using retained control-specific engineering evidence; S04-04, identity/factor reset, whole-sprint/epic and production release are not inferred."
           }
         ]
       }
@@ -19847,7 +19867,7 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "QA_VERIFIED",
+        "status": "ACCEPTED",
         "executed": true,
         "evidence": [
           {
@@ -19864,6 +19884,11 @@
             "kind": "qa_execution",
             "path": "/home/foo/Downloads/osmap-ux-s04/recovery-contact-browser-20261026-03/result.json",
             "scope": "ActualEdge5states/16captures, mobile/light/dark/navigation/Cancel/emptysecrets/validemailretention PASS; synthetic presentation distinctfrominstalledmail. Independent sourcevisual83b5d4…. Human T08 remains pending; no external delivery or S04-04 recovery acceptance."
+          },
+          {
+            "kind": "human_uat",
+            "path": "docs/UX_S04_03_T08_ACCEPTANCE_20261027.md",
+            "scope": "2026-10-27 owner report: works after the externally delivered recovery-contact message was received, its one-use proof was submitted and OSMAP displayed Verified at 2026-10-27T07:56:07Z. Agent live reconciliation separately confirms sanitized queue 7209B3CEA84 accepted by the relay and removed, authoritative revision 5 with pending absent, and healthy services. This closes S04-03 local-development T08 using retained control-specific engineering evidence; S04-04, identity/factor reset, whole-sprint/epic and production release are not inferred."
           }
         ]
       }
@@ -19910,7 +19935,7 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "QA_VERIFIED",
+        "status": "ACCEPTED",
         "executed": true,
         "evidence": [
           {
@@ -19927,6 +19952,11 @@
             "kind": "qa_execution",
             "path": "/home/foo/Downloads/osmap-ux-s04/recovery-contact-browser-20261026-03/result.json",
             "scope": "ActualEdge5states/16captures, mobile/light/dark/navigation/Cancel/emptysecrets/validemailretention PASS; synthetic presentation distinctfrominstalledmail. Independent sourcevisual83b5d4…. Human T08 remains pending; no external delivery or S04-04 recovery acceptance."
+          },
+          {
+            "kind": "human_uat",
+            "path": "docs/UX_S04_03_T08_ACCEPTANCE_20261027.md",
+            "scope": "2026-10-27 owner report: works after the externally delivered recovery-contact message was received, its one-use proof was submitted and OSMAP displayed Verified at 2026-10-27T07:56:07Z. Agent live reconciliation separately confirms sanitized queue 7209B3CEA84 accepted by the relay and removed, authoritative revision 5 with pending absent, and healthy services. This closes S04-03 local-development T08 using retained control-specific engineering evidence; S04-04, identity/factor reset, whole-sprint/epic and production release are not inferred."
           }
         ]
       }
@@ -19973,7 +20003,7 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "QA_VERIFIED",
+        "status": "ACCEPTED",
         "executed": true,
         "evidence": [
           {
@@ -19990,6 +20020,11 @@
             "kind": "qa_execution",
             "path": "/home/foo/Downloads/osmap-ux-s04/recovery-contact-browser-20261026-03/result.json",
             "scope": "ActualEdge5states/16captures, mobile/light/dark/navigation/Cancel/emptysecrets/validemailretention PASS; synthetic presentation distinctfrominstalledmail. Independent sourcevisual83b5d4…. Human T08 remains pending; no external delivery or S04-04 recovery acceptance."
+          },
+          {
+            "kind": "human_uat",
+            "path": "docs/UX_S04_03_T08_ACCEPTANCE_20261027.md",
+            "scope": "2026-10-27 owner report: works after the externally delivered recovery-contact message was received, its one-use proof was submitted and OSMAP displayed Verified at 2026-10-27T07:56:07Z. Agent live reconciliation separately confirms sanitized queue 7209B3CEA84 accepted by the relay and removed, authoritative revision 5 with pending absent, and healthy services. This closes S04-03 local-development T08 using retained control-specific engineering evidence; S04-04, identity/factor reset, whole-sprint/epic and production release are not inferred."
           }
         ]
       }
@@ -20036,7 +20071,7 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "QA_VERIFIED",
+        "status": "ACCEPTED",
         "executed": true,
         "evidence": [
           {
@@ -20053,6 +20088,11 @@
             "kind": "qa_execution",
             "path": "/home/foo/Downloads/osmap-ux-s04/recovery-contact-browser-20261026-03/result.json",
             "scope": "ActualEdge5states/16captures, mobile/light/dark/navigation/Cancel/emptysecrets/validemailretention PASS; synthetic presentation distinctfrominstalledmail. Independent sourcevisual83b5d4…. Human T08 remains pending; no external delivery or S04-04 recovery acceptance."
+          },
+          {
+            "kind": "human_uat",
+            "path": "docs/UX_S04_03_T08_ACCEPTANCE_20261027.md",
+            "scope": "2026-10-27 owner report: works after the externally delivered recovery-contact message was received, its one-use proof was submitted and OSMAP displayed Verified at 2026-10-27T07:56:07Z. Agent live reconciliation separately confirms sanitized queue 7209B3CEA84 accepted by the relay and removed, authoritative revision 5 with pending absent, and healthy services. This closes S04-03 local-development T08 using retained control-specific engineering evidence; S04-04, identity/factor reset, whole-sprint/epic and production release are not inferred."
           }
         ]
       }
@@ -20099,7 +20139,7 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "QA_VERIFIED",
+        "status": "ACCEPTED",
         "executed": true,
         "evidence": [
           {
@@ -20116,6 +20156,11 @@
             "kind": "qa_execution",
             "path": "/home/foo/Downloads/osmap-ux-s04/recovery-contact-browser-20261026-03/result.json",
             "scope": "ActualEdge5states/16captures, mobile/light/dark/navigation/Cancel/emptysecrets/validemailretention PASS; synthetic presentation distinctfrominstalledmail. Independent sourcevisual83b5d4…. Human T08 remains pending; no external delivery or S04-04 recovery acceptance."
+          },
+          {
+            "kind": "human_uat",
+            "path": "docs/UX_S04_03_T08_ACCEPTANCE_20261027.md",
+            "scope": "2026-10-27 owner report: works after the externally delivered recovery-contact message was received, its one-use proof was submitted and OSMAP displayed Verified at 2026-10-27T07:56:07Z. Agent live reconciliation separately confirms sanitized queue 7209B3CEA84 accepted by the relay and removed, authoritative revision 5 with pending absent, and healthy services. This closes S04-03 local-development T08 using retained control-specific engineering evidence; S04-04, identity/factor reset, whole-sprint/epic and production release are not inferred."
           }
         ]
       }
@@ -20162,7 +20207,7 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "QA_VERIFIED",
+        "status": "ACCEPTED",
         "executed": true,
         "evidence": [
           {
@@ -20179,6 +20224,11 @@
             "kind": "qa_execution",
             "path": "/home/foo/Downloads/osmap-ux-s04/recovery-contact-browser-20261026-03/result.json",
             "scope": "ActualEdge5states/16captures, mobile/light/dark/navigation/Cancel/emptysecrets/validemailretention PASS; synthetic presentation distinctfrominstalledmail. Independent sourcevisual83b5d4…. Human T08 remains pending; no external delivery or S04-04 recovery acceptance."
+          },
+          {
+            "kind": "human_uat",
+            "path": "docs/UX_S04_03_T08_ACCEPTANCE_20261027.md",
+            "scope": "2026-10-27 owner report: works after the externally delivered recovery-contact message was received, its one-use proof was submitted and OSMAP displayed Verified at 2026-10-27T07:56:07Z. Agent live reconciliation separately confirms sanitized queue 7209B3CEA84 accepted by the relay and removed, authoritative revision 5 with pending absent, and healthy services. This closes S04-03 local-development T08 using retained control-specific engineering evidence; S04-04, identity/factor reset, whole-sprint/epic and production release are not inferred."
           }
         ]
       }
@@ -20225,7 +20275,7 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "QA_VERIFIED",
+        "status": "ACCEPTED",
         "executed": true,
         "evidence": [
           {
@@ -20242,6 +20292,11 @@
             "kind": "qa_execution",
             "path": "/home/foo/Downloads/osmap-ux-s04/recovery-contact-browser-20261026-03/result.json",
             "scope": "ActualEdge5states/16captures, mobile/light/dark/navigation/Cancel/emptysecrets/validemailretention PASS; synthetic presentation distinctfrominstalledmail. Independent sourcevisual83b5d4…. Human T08 remains pending; no external delivery or S04-04 recovery acceptance."
+          },
+          {
+            "kind": "human_uat",
+            "path": "docs/UX_S04_03_T08_ACCEPTANCE_20261027.md",
+            "scope": "2026-10-27 owner report: works after the externally delivered recovery-contact message was received, its one-use proof was submitted and OSMAP displayed Verified at 2026-10-27T07:56:07Z. Agent live reconciliation separately confirms sanitized queue 7209B3CEA84 accepted by the relay and removed, authoritative revision 5 with pending absent, and healthy services. This closes S04-03 local-development T08 using retained control-specific engineering evidence; S04-04, identity/factor reset, whole-sprint/epic and production release are not inferred."
           }
         ]
       }
@@ -20288,7 +20343,7 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "QA_VERIFIED",
+        "status": "ACCEPTED",
         "executed": true,
         "evidence": [
           {
@@ -20305,6 +20360,11 @@
             "kind": "qa_execution",
             "path": "/home/foo/Downloads/osmap-ux-s04/recovery-contact-browser-20261026-03/result.json",
             "scope": "ActualEdge5states/16captures, mobile/light/dark/navigation/Cancel/emptysecrets/validemailretention PASS; synthetic presentation distinctfrominstalledmail. Independent sourcevisual83b5d4…. Human T08 remains pending; no external delivery or S04-04 recovery acceptance."
+          },
+          {
+            "kind": "human_uat",
+            "path": "docs/UX_S04_03_T08_ACCEPTANCE_20261027.md",
+            "scope": "2026-10-27 owner report: works after the externally delivered recovery-contact message was received, its one-use proof was submitted and OSMAP displayed Verified at 2026-10-27T07:56:07Z. Agent live reconciliation separately confirms sanitized queue 7209B3CEA84 accepted by the relay and removed, authoritative revision 5 with pending absent, and healthy services. This closes S04-03 local-development T08 using retained control-specific engineering evidence; S04-04, identity/factor reset, whole-sprint/epic and production release are not inferred."
           }
         ]
       }
@@ -20351,7 +20411,7 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "QA_VERIFIED",
+        "status": "ACCEPTED",
         "executed": true,
         "evidence": [
           {
@@ -20368,6 +20428,11 @@
             "kind": "qa_execution",
             "path": "/home/foo/Downloads/osmap-ux-s04/recovery-contact-browser-20261026-03/result.json",
             "scope": "ActualEdge5states/16captures, mobile/light/dark/navigation/Cancel/emptysecrets/validemailretention PASS; synthetic presentation distinctfrominstalledmail. Independent sourcevisual83b5d4…. Human T08 remains pending; no external delivery or S04-04 recovery acceptance."
+          },
+          {
+            "kind": "human_uat",
+            "path": "docs/UX_S04_03_T08_ACCEPTANCE_20261027.md",
+            "scope": "2026-10-27 owner report: works after the externally delivered recovery-contact message was received, its one-use proof was submitted and OSMAP displayed Verified at 2026-10-27T07:56:07Z. Agent live reconciliation separately confirms sanitized queue 7209B3CEA84 accepted by the relay and removed, authoritative revision 5 with pending absent, and healthy services. This closes S04-03 local-development T08 using retained control-specific engineering evidence; S04-04, identity/factor reset, whole-sprint/epic and production release are not inferred."
           }
         ]
       }

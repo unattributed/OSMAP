@@ -143,7 +143,8 @@ Current public documentation map:
 - `UX_AGENT_EXECUTION_CONTRACT.md`
 - `UX_EXECUTION_LEDGER.md`
 - `UX_SLICE_S04_02.md` — own-password design and verification specification; accepted local-development result is recorded in the S04-02 T09 report
-- [S04-03 recovery contact lifecycle](UX_SLICE_S04_03.md) (`UX_SLICE_S04_03.md`) — installed local engineering qualification, preserved failures, required source/native/browser observations and pending owner acceptance
+- [S04-03 recovery contact lifecycle](UX_SLICE_S04_03.md) (`UX_SLICE_S04_03.md`) — accepted local-development lifecycle, with installed engineering qualification, preserved failures and external-delivery UAT
+- [S04-03 T08 owner acceptance](UX_S04_03_T08_ACCEPTANCE_20261027.md) (`UX_S04_03_T08_ACCEPTANCE_20261027.md`) — owner-observed external receipt, consumed one-use verification, authoritative verified state and bounded acceptance decision
 - [Local development OpenPGP restoration](UX_OPENPGP_DEVELOPMENT_RESTORATION_20261026.md) (`UX_OPENPGP_DEVELOPMENT_RESTORATION_20261026.md`) — preserved helper connections and account bindings after the local credential cutover; native encryption qualification and delivery limits.
 - `UX_S04_02_SINGLE_HOST_EXECUTION.md` — single-host account-service execution correction; native qualification, installed QA and UAT remain open
 - `UX_S04_02_TIMING_RECONCILIATION_20261023.md` — bounded native journey timing, unchanged password deadline and separately bound test/service artifacts

@@ -1,21 +1,23 @@
 # Current Project Status
 
-2026-10-27 (America/Toronto) — **S04-03 external delivery installed; owner UAT resend ready.**
-The owner now requires an external recovery address, including Proton Mail.
-Signed source `a198f420…` is at exact fetched remote parity and produced the
-installed OpenBSD Web `0f3e3659…`. The explicit external-delivery setting is
-enabled; the default in source remains local-only. PID 58234 has the matching
-executable loaded, loopback 8080 is listening and certificate-verified public
-`/login` returns 200. The pending recovery records and original OpenPGP binding
-are byte-identical, all eight checked services are healthy and deployment added
-zero bytes to `maillog`; no verification message was sent automatically.
+2026-10-27 (America/Toronto) — **S04-03 ACCEPTED for local obsd1 UX development.**
+The owner reported `works` after the expected verification message arrived in
+the owner-controlled external Proton mailbox, the one-use proof was submitted,
+and OSMAP rendered the recovery contact Verified at `2026-10-27T07:56:07Z`.
+Independent live reconciliation found Postfix queue `7209B3CEA84` accepted by
+the certificate-verified Brevo TLS relay with DSN `2.0.0`, then removed. The
+authoritative revision-5 record has no pending state and records the same
+verification time. The consumed proof is not retained or reproduced.
+The owner refreshed the page and confirmed the correct verified Proton address.
+**Resend verification** was not expanded or invoked because no pending request
+remained; acceptance does not claim a resend.
 
-The earlier `@protonmail.com` refusal remains a truthful pre-Postfix result. The
-recurring Brevo failure for queue `2A2F13CEA87` is an older null-sender DSN to a
-Brevo bounce address and is not evidence for the recovery submission. One
-owner-authenticated **Resend verification** action, Proton receipt and one-use
-code verification remain pending. Relay acceptance will be recorded separately
-from actual Proton delivery; S04-03 is not ACCEPTED until owner UAT completes.
+The installed Web remains `0f3e3659…`, the external-delivery environment remains
+`eceaa1c2…`, and all eight checked services are healthy. The older deferred queue
+`2A2F13CEA87` remains an unrelated null-sender DSN. T01–T08 now PASS and the 13
+mutable approved S04-03 controls are ACCEPTED. S04-04 identity/password/factor
+recovery, the whole sprint/epic and production/global release remain separate.
+See [the T08 acceptance record](UX_S04_03_T08_ACCEPTANCE_20261027.md).
 
 2026-10-26 (America/Toronto) — **S04-03 engineering qualified locally; UAT_READY.**
 Installed Web `c9729671…` and unchanged account helper `be7c6b40…` support the

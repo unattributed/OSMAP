@@ -1,10 +1,12 @@
 # OSMAP UX execution ledger
 
-2026-10-26 (America/Toronto) — **S04-03 IN_PROGRESS, directly authorized by the owner.**
-Recovery contact lifecycle is absent at the accepted S04-02 baseline. Existing
-team implements core persistence, Runtime step-up/mail and independent review;
-root owns UI/integration, installed qualification and signed delivery. All tests
-start NOT_RUN. S04-02 acceptance and historical workorder remain unchanged below.
+2026-10-27 (America/Toronto) — **S04-03 ACCEPTED for local obsd1 UX development.**
+The owner reported `works` after external receipt and one-use verification, then
+refreshed the recovery page and confirmed the correct address remained Verified.
+Resend verification was NOT DONE and NOT NECESSARY. T01–T08 PASS; the 13 mutable
+approved controls are ACCEPTED. S04-04, whole-sprint/epic and production/global
+release remain separate. S04-02 acceptance and all historical evidence below
+remain unchanged.
 
 2026-10-25 (America/Toronto) — **S04-02 ACCEPTED: owner end-to-end password journey confirmed.**
 The owner reported successful login, successful password change and successful
@@ -10097,7 +10099,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
   "slice": "S04-03",
   "original_requirement": "Recovery contact add/verify/change/remove with proof lifecycle and notifications",
   "source_baseline": "b94eacb9a583f0cc1a999504285dbd813763202e",
-  "state": "UAT_READY",
+  "state": "ACCEPTED",
   "integration_owner": "/root",
   "roles": {
     "project_manager": [
@@ -10156,6 +10158,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "maint/security/v10-fail-closed-remediation.json",
     "maint/security/v10-claims-boundary.json",
     "docs/UX_SLICE_S04_03.md",
+    "docs/UX_S04_03_T08_ACCEPTANCE_20261027.md",
     "docs/UX_EXECUTION_LEDGER.md",
     "docs/CURRENT_PROJECT_STATUS.md",
     "docs/DECISION_LOG.md",
@@ -10185,7 +10188,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "R2-23-009"
       ],
       "owner": "/root",
-      "frontend_backend_outcome": "Authenticated recovery contact lifecycle and verified local proof/notification through installed ordinary Runtime.",
+      "frontend_backend_outcome": "Authenticated recovery contact lifecycle and verified external proof delivery through installed ordinary Runtime.",
       "dependencies": [
         {
           "owner": "/root",
@@ -10229,14 +10232,14 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
           "reference": "Native04restart/preservationPASS; native05failedtransportretained, exactpolicy/service restoration, numericalownedmarkerfix residue02PASS436ms, no contact/credential replay; finalpendingbytes467/mode600/PGP/allservicesPASS."
         }
       ],
-      "next_action": "Owner reviews local Settings/Recovery Contact navigation, status and Cancel; full proof trial requires an eligible owner-controlled local mailbox."
+      "next_action": "Preserve the accepted S04-03 result; treat any S04-04 recovery work as a separately authorized slice."
     }
   ],
   "human_acceptance": {
-    "status": "PENDING",
-    "reference": "T08 owner usability acceptance remains pending after qualified local engineering; S04-04/external delivery outside this slice."
+    "status": "PASS",
+    "reference": "2026-10-27 owner report: works after external receipt and one-use verification; refreshed page retained the correct Verified contact. Resend verification was NOT DONE and NOT NECESSARY. See docs/UX_S04_03_T08_ACCEPTANCE_20261027.md."
   },
-  "next_action": "Complete normal signed GitHub preservation and minimal owner T08 acceptance for the installed local recovery-contact page.",
+  "next_action": "Preserve and synchronize the accepted S04-03 checkpoint; do not infer or begin S04-04, sprint/epic or production release work.",
   "accountability": {
     "owner": "/root",
     "functional_exit": "Working installed recovery-contact add/prove/replace/remove and truthful delivery/status with negative controls.",
@@ -10513,13 +10516,13 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "slice": "S04-03",
     "specification": {
       "path": "docs/UX_SLICE_S04_03.md",
-      "sha256": "d9e282084556d333f7b75d6dbaf386414564ab17bfce0917188f6338a7dc1490"
+      "sha256": "eaf9ae9b6376dc8fc86b8a12405460c7a70af008a8ddd1749e11df08955fd4e4"
     },
     "design": {
       "journey": "Authenticated Settings→Recovery contact→step-up add/change→emailed proof POST→verified status→replacement/removal notices.",
       "frontend": "Dedicated Page23 form with empty secret fields, current/pending status, timestamps, navigation and accurate fixed notices.",
       "backend": "PrivateAccountFile serialized lifecycle and native primary/file-TOTP step-up through ordinary Runtime.",
-      "interfaces": "Typed actions and metadata snapshots; fixed bounded local mail submission, no SQL or command channel.",
+      "interfaces": "Typed actions and metadata snapshots; fixed bounded mail submission with explicit external-delivery opt-in, no SQL or shell command channel.",
       "persistence": "Versioned bounded account-scoped private records with revision CAS and token digest only.",
       "security": "CSRF/Host/session/epoch enforcement, fresh TOTP replay prevention, proof/resend limits, no MFA bypass.",
       "failure_recovery": "Retain conservative delivery uncertainty and interrupted-state evidence; no automatic retry; preserve old verified contact until proof."
@@ -10664,14 +10667,16 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "preserved": "Owner credentials/TOTP/mail, accepted S04-02, unrelated accounts/settings and frozen plan.",
         "owner": "/root",
         "reviewer": "/root/transaction_review",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "PASS",
+        "evidence": [
+          "Owner report works; external receipt and consumed one-use proof produced Verified at 2026-10-27T07:56:07Z. Refresh retained the correct Verified contact. Resend verification NOT DONE/NOT NECESSARY. Agent live reconciliation separately confirmed queue7209B3CEA84 relay acceptance/removal and authoritative revision5 pending-absent state."
+        ]
       }
     ],
     "engineering_exit": "All required source/native/deployed and independent reviews PASS on current installed local development profile.",
     "human_exit": "One owner acceptance after engineering readiness; explicit observed result, never inferred."
   },
-  "updated_at": "2026-10-26T06:10:14Z"
+  "updated_at": "2026-10-27T08:01:03Z"
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->
@@ -43134,3 +43139,31 @@ the preflight; binding remains `1b524638…`. Maillog added zero bytes, so
 deployment sent no message. External installed readiness PASS; exactly one
 owner-authenticated resend, relay correlation, Proton receipt and one-use proof
 remain pending. No blind resend or ACCEPTED claim.
+
+## 2026-10-27 — S04-03 T08 owner acceptance
+
+The owner completed the installed external recovery-contact journey and reported
+`works`. Owner evidence shows receipt of the expected verification message in
+the controlled external Proton mailbox, successful submission of its one-use
+proof, and the OSMAP page rendering Verified at `2026-10-27T07:56:07Z`. The
+consumed proof is not copied into the repository.
+The owner subsequently refreshed the page and confirmed the correct address
+remained Verified. Resend verification was NOT DONE and NOT NECESSARY because
+no pending request remained. This result does not claim a resend.
+
+Independent live reconciliation correlated queue `7209B3CEA84`: created for one
+external recipient at 07:55:24Z with the authenticated account as non-null
+envelope sender; certificate-verified TLS 1.3 to the configured Brevo relay;
+DSN 2.0.0/status=sent; removed at 07:55:26Z. The authoritative record is revision
+5, pending absent, verified_at=updated_at=1793087767, sanitized record SHA-256
+`d22d383060b57c104d100541ba8a4f464c63bee79059fe27d854f684bb539a9c`.
+Web `0f3e3659…` and environment `eceaa1c2…` remain loaded; all eight checked
+services are healthy. Relay acceptance and actual mailbox receipt are separate
+and both are evidenced. The old deferred null-sender DSN queue `2A2F13CEA87` is
+unrelated.
+
+T08 PASS closes S04-03 as ACCEPTED for local obsd1 UX development. Earlier
+failed/refused/interrupted outcomes remain retained, including native05 aggregate
+FAIL and UNKNOWN SSH cause. S04-04 identity/password/factor recovery, whole
+Sprint S04/epic and production/global release are not inferred. Detailed record:
+`docs/UX_S04_03_T08_ACCEPTANCE_20261027.md`.
