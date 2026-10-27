@@ -43099,3 +43099,13 @@ this new ledger entry. No host action or message submission occurred. The
 correction removes only that private literal and preserves the queue ID and
 role-level relay observation; normal signed delivery must run again without
 bypass.
+
+The second normal push for signed documentation checkpoint `d9e2fad…` passed
+publication hygiene, then the V10 inventory gate refused the expected two-test
+assumption-count drift introduced by the external-domain notifier coverage.
+No host action or message submission occurred. The repository's existing V10
+generator refreshed only its timestamp, test/fixture counts and derived
+inventory digest: total 10,090→10,092, source-test assumptions
+10,005→10,007 and test/fixture classifications 10,086→10,088. The generated
+register now passes its exact self-check; it will be carried in a separate
+signed checkpoint and delivered through the same normal hook without bypass.
