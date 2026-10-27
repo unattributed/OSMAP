@@ -43082,10 +43082,20 @@ Current failure is diagnosed: request `http-249` at 2026-10-27 06:19:06 UTC
 reached `recovery_contact_action` but the installed domain guard returned
 `Refused` before sendmail, so no new Postfix event was possible. Queue
 `2A2F13CEA87` is an unrelated older null-sender DSN. A prior external submission
-from `duncan@blackbagsecurity.com` to Proton was accepted by the same Brevo relay
-as queue `7D3303CEA84`, establishing the envelope-sender prerequisite without a
-new probe message. Read-only installed inspection also confirms the OpenBSD 8.0
+from the authenticated owner account at the verified domain to Proton was
+accepted by the same Brevo relay as queue `7D3303CEA84`, establishing the
+envelope-sender prerequisite without a new probe message. Read-only installed
+inspection also confirms the OpenBSD 8.0
 mailwrapper selects Postfix 3.11.7 sendmail and its installed `-N never` contract
-requests no delivery-status notifications. Planned checks are NOT RUN at this entry. Stop on build,
-configuration, state-preservation or service mismatch; never repeat an ambiguous
-message submission. Human UAT resumes only after installed agent-owned checks.
+requests no delivery-status notifications. Planned checks are NOT RUN at this
+entry. Stop on build, configuration, state-preservation or service mismatch;
+never repeat an ambiguous message submission. Human UAT resumes only after
+installed agent-owned checks.
+
+The first normal push for signed source `2307fb7…` passed 1,961 Rust tests with
+72 explicit native/fixture ignores, supply-chain checks and the V4–V8 gates,
+then the publication-hygiene guard refused a real primary-mailbox literal in
+this new ledger entry. No host action or message submission occurred. The
+correction removes only that private literal and preserves the queue ID and
+role-level relay observation; normal signed delivery must run again without
+bypass.
