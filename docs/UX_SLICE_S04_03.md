@@ -178,3 +178,36 @@ Authentication & Recovery → Manage recovery contact, inspect the form and
 status, and verify navigation/Cancel. A full owner mail-proof trial requires an
 owner-controlled eligible local mailbox. No owner credential or factor reset is
 needed for this review.
+
+## External-recipient requirement change — 2026-10-27
+
+The owner superseded the local-only delivery boundary and requires an external
+recovery contact, specifically an owner-controlled Proton Mail address. The
+installed `c9729671…` Web truthfully persisted the new pending address but
+returned `Refused` before invoking `/usr/sbin/sendmail`, because the recipient
+domain did not equal `OSMAP_RECOVERY_CONTACT_LOCAL_DOMAIN`. The corresponding
+request was recorded at 2026-10-27 06:19:06 UTC and produced no Postfix queue ID.
+The repeating `2A2F13CEA87` Brevo error is an older null-sender DSN addressed to
+Brevo's bounce service; it is unrelated to this recovery-contact submission.
+Read-only prerequisite inspection confirmed obsd1 OpenBSD 8.0 with Postfix
+3.11.7: `/usr/sbin/sendmail` resolves through mailwrapper to the installed
+Postfix sendmail implementation, whose installed manual defines `-N never` as
+requesting no delivery-status notifications.
+
+Observable exit: an explicitly enabled deployment accepts a supported external
+mailbox address through the ordinary authenticated recovery route, submits it
+once with the authenticated account as the relay-verifiable envelope sender,
+requests no delivery-status notification, preserves proof secrecy, and retains
+all existing step-up, CSRF, revision, resend, expiry, attempt and uncertainty
+controls. The default remains local-only. The change must not alter Postfix,
+Dovecot, MariaDB, OpenPGP helpers, passwords, TOTP factors, or existing contact
+state. Owner verification remains separate from relay acceptance.
+
+Source tests must cover exact opt-in parsing, default local-domain refusal,
+external recipient acceptance, bounded `sendmail -N never -f <account>` argv,
+proof only on standard input, and the complete BrowserApp/Runtime external
+roundtrip. Installed qualification requires an exact-source OpenBSD build,
+configuration-only opt-in, restart of OSMAP Web only, readback of the preserved
+pending record, healthy service checks and one owner-initiated resend. A queue
+acceptance or relay `status=sent` is not proof that Proton delivered the message;
+the owner's receipt and one-use code verification remain the UAT observation.

@@ -1469,6 +1469,7 @@ mod tests {
             .expect("grant key permissions should be restricted");
         let config = AppConfig {
             recovery_contact_local_domain: None,
+            recovery_contact_external_delivery: false,
             account_runtime: None,
             openpgp_inventory: None,
             openpgp_crypto: None,
@@ -1555,6 +1556,7 @@ mod tests {
         let mismatched_uid = actual_uid.saturating_add(1);
         let config = AppConfig {
             recovery_contact_local_domain: None,
+            recovery_contact_external_delivery: false,
             account_runtime: None,
             openpgp_inventory: None,
             openpgp_crypto: None,

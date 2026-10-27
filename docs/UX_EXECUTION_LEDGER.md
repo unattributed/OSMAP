@@ -43059,3 +43059,33 @@ humanacceptancePENDING. UAT_READY is localdevelopmentonly; S04-04 reset/identity
 recovery and externalcontactdelivery remain separate. Mandatorynormal signed
 GitHub synchronization and exactparity are verified at final delivery, after
 the final metadata checkpoint; readiness is not human acceptance.
+## 2026-10-27 — S04-03 external recovery-delivery correction authorized
+
+The owner reopened S04-03 UAT and requires an external recovery address,
+specifically an owner-controlled Proton Mail address. Observable exit: when the
+new explicit external-delivery setting is enabled, the ordinary authenticated
+recovery route accepts a supported external mailbox, submits exactly once using
+the authenticated account as the envelope sender with DSNs suppressed, and
+leaves proof, authentication, replay, revision, resend, expiry, attempt and
+uncertainty controls unchanged. Local-only remains the default.
+
+Root owns source, host and Git integration. Included: the smallest configuration
+and notifier correction, focused producer/consumer tests, exact-source OpenBSD
+build, OSMAP-Web-only configuration/restart, installed readback and relay
+correlation. Excluded: Postfix/Dovecot/MariaDB/OpenPGP configuration or restart,
+password/factor mutation, clearing or rewriting the owner's pending contact,
+blind resend, S04-04 recovery and claims of Proton receipt before owner evidence.
+Preserve the installed c972 Web, environment, pending record and service state
+until the candidate and restoration inputs are exact and independently reviewed.
+
+Current failure is diagnosed: request `http-249` at 2026-10-27 06:19:06 UTC
+reached `recovery_contact_action` but the installed domain guard returned
+`Refused` before sendmail, so no new Postfix event was possible. Queue
+`2A2F13CEA87` is an unrelated older null-sender DSN. A prior external submission
+from `duncan@blackbagsecurity.com` to Proton was accepted by the same Brevo relay
+as queue `7D3303CEA84`, establishing the envelope-sender prerequisite without a
+new probe message. Read-only installed inspection also confirms the OpenBSD 8.0
+mailwrapper selects Postfix 3.11.7 sendmail and its installed `-N never` contract
+requests no delivery-status notifications. Planned checks are NOT RUN at this entry. Stop on build,
+configuration, state-preservation or service mismatch; never repeat an ambiguous
+message submission. Human UAT resumes only after installed agent-owned checks.

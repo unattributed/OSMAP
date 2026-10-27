@@ -3047,6 +3047,7 @@ mod tests {
     fn config_fixture(mode: OpenbsdConfinementMode) -> AppConfig {
         AppConfig {
             recovery_contact_local_domain: None,
+            recovery_contact_external_delivery: false,
             account_runtime: None,
             openpgp_inventory: None,
             openpgp_crypto: None,

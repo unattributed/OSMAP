@@ -36,6 +36,9 @@ pub struct AppConfig {
     /// Explicit development delivery eligibility, not proof of MTA locality.
     /// Absence keeps recovery-contact management unavailable.
     pub recovery_contact_local_domain: Option<String>,
+    /// Explicitly permits recovery-contact delivery beyond the configured
+    /// local domain. The conservative default remains local-only.
+    pub recovery_contact_external_delivery: bool,
     pub openpgp_inventory: Option<OpenPgpInventoryConfig>,
     pub openpgp_crypto: Option<OpenPgpCryptoConfig>,
     pub openpgp_public_admin: Option<OpenPgpAdminConfig>,
@@ -512,6 +515,22 @@ fn parse_recovery_contact_local_domain(
     Ok(Some(value.to_ascii_lowercase()))
 }
 
+fn parse_recovery_contact_external_delivery(
+    env: &BTreeMap<String, String>,
+) -> Result<bool, BootstrapError> {
+    match env
+        .get("OSMAP_RECOVERY_CONTACT_EXTERNAL_DELIVERY")
+        .map(String::as_str)
+    {
+        None | Some("disabled") => Ok(false),
+        Some("enabled") => Ok(true),
+        Some(_) => Err(BootstrapError::InvalidConfig {
+            field: "OSMAP_RECOVERY_CONTACT_EXTERNAL_DELIVERY",
+            reason: "use exactly enabled or disabled".into(),
+        }),
+    }
+}
+
 #[cfg(test)]
 mod recovery_domain_tests {
     use super::*;
@@ -572,6 +591,35 @@ mod recovery_domain_tests {
             "x".repeat(63)
         )))
         .is_ok());
+
+        assert!(
+            !AppConfig::from_env_map(&BTreeMap::new())
+                .unwrap()
+                .recovery_contact_external_delivery
+        );
+        for value in ["enabled", "disabled"] {
+            let config = AppConfig::from_env_map(&BTreeMap::from([(
+                "OSMAP_RECOVERY_CONTACT_EXTERNAL_DELIVERY".into(),
+                value.into(),
+            )]))
+            .unwrap();
+            assert_eq!(
+                config.recovery_contact_external_delivery,
+                value == "enabled"
+            );
+        }
+        for invalid in ["", "true", "false", "ENABLED", " enabled"] {
+            assert!(matches!(
+                AppConfig::from_env_map(&BTreeMap::from([(
+                    "OSMAP_RECOVERY_CONTACT_EXTERNAL_DELIVERY".into(),
+                    invalid.into(),
+                )])),
+                Err(BootstrapError::InvalidConfig {
+                    field: "OSMAP_RECOVERY_CONTACT_EXTERNAL_DELIVERY",
+                    ..
+                })
+            ));
+        }
     }
 }
 
@@ -1037,6 +1085,7 @@ impl AppConfig {
         Ok(Self {
             account_runtime,
             recovery_contact_local_domain: parse_recovery_contact_local_domain(env_map)?,
+            recovery_contact_external_delivery: parse_recovery_contact_external_delivery(env_map)?,
             openpgp_inventory: parse_openpgp_inventory(env_map)?,
             openpgp_crypto: parse_openpgp_crypto(env_map)?,
             openpgp_public_admin: parse_openpgp_public_admin(env_map)?,

@@ -171,6 +171,7 @@ impl RuntimeBrowserGateway {
             path: &self.sendmail_path,
             sender: &session.record.canonical_username,
             local_domain,
+            external_delivery: self.recovery_contact_external_delivery,
         };
         sessions
             .with_guarded_session_lease(context, token, |current, _lease| {
@@ -235,6 +236,7 @@ struct SendmailNotifier<'a, E> {
     path: &'a std::path::Path,
     sender: &'a str,
     local_domain: &'a str,
+    external_delivery: bool,
 }
 
 impl<E: CommandExecutor> RecoveryContactNotifier for SendmailNotifier<'_, E> {
@@ -257,24 +259,38 @@ impl<E: CommandExecutor> RecoveryContactNotifier for SendmailNotifier<'_, E> {
                 "OSMAP recovery contact removed",
                 "Your OSMAP recovery contact was removed. This message contains no account credentials or mail contents.\n".into()),
         };
-        if crate::identity::MailboxIdentity::parse(recipient).is_err()
-            || crate::identity::MailboxIdentity::parse(self.sender).is_err()
-            || !recipient
-                .rsplit_once('@')
-                .is_some_and(|(_, domain)| domain.eq_ignore_ascii_case(self.local_domain))
+        let address_policy = crate::send::ComposePolicy {
+            recipient_max_len: 254,
+            ..Default::default()
+        };
+        if crate::mail_address::validate_address(address_policy, recipient).is_err()
+            || crate::mail_address::validate_address(address_policy, self.sender).is_err()
+            || (!self.external_delivery
+                && !recipient
+                    .rsplit_once('@')
+                    .is_some_and(|(_, domain)| domain.eq_ignore_ascii_case(self.local_domain)))
         {
             return RecoveryContactDelivery::Refused;
         }
-        // A development-only recipient must not produce an external DSN that
-        // quotes its secret proof to the account's production mailbox address.
-        // The account remains the visible author, with no envelope return path.
+        // Local-only delivery retains a null return path. External relays such
+        // as Brevo reject null senders, so explicitly enabled external delivery
+        // uses the authenticated account as the envelope sender and requests no
+        // delivery-status notifications. This keeps proof-bearing bodies out of
+        // automatic DSNs while preserving a relay-verifiable sender domain.
+        let envelope_sender = if self.external_delivery {
+            self.sender
+        } else {
+            "<>"
+        };
         let wire = format!("From: {}\r\nTo: {}\r\nSubject: {subject}\r\nAuto-Submitted: auto-generated\r\nX-Auto-Response-Suppress: All\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=utf-8\r\nContent-Transfer-Encoding: 8bit\r\n\r\n{body}", self.sender, recipient);
         let result = self.executor.run_with_stdin_bytes_timeout_and_output_limit(
             self.path.to_string_lossy().as_ref(),
             &[
                 "-oi".into(),
+                "-N".into(),
+                "never".into(),
                 "-f".into(),
-                "<>".into(),
+                envelope_sender.into(),
                 "--".into(),
                 recipient.into(),
             ],

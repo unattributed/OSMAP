@@ -246,6 +246,7 @@ fn recovery_delivery_has_fixed_bounded_sendmail_shape_and_token_only_on_stdin() 
         path: std::path::Path::new("/usr/sbin/sendmail"),
         sender: ACCOUNT,
         local_domain: "example.test",
+        external_delivery: false,
     };
     let token = "42".repeat(32);
     assert_eq!(
@@ -262,7 +263,10 @@ fn recovery_delivery_has_fixed_bounded_sendmail_shape_and_token_only_on_stdin() 
     let calls = notifier.executor.calls.borrow();
     let (program, args, wire, timeout, cap) = &calls[0];
     assert_eq!(program, "/usr/sbin/sendmail");
-    assert_eq!(args, &["-oi", "-f", "<>", "--", "sink@example.test"]);
+    assert_eq!(
+        args,
+        &["-oi", "-N", "never", "-f", "<>", "--", "sink@example.test"]
+    );
     assert!(String::from_utf8_lossy(wire).contains("Auto-Submitted: auto-generated\r\n"));
     assert!(String::from_utf8_lossy(wire).contains("X-Auto-Response-Suppress: All\r\n"));
     assert!(args.iter().all(|arg| !arg.contains(&token)));
@@ -281,6 +285,7 @@ fn delivery_refuses_headers_before_dispatch_and_preserves_unknown_acceptance() {
         path: std::path::Path::new("/usr/sbin/sendmail"),
         sender: ACCOUNT,
         local_domain: "example.test",
+        external_delivery: false,
     };
     assert_eq!(
         notifier.deliver(
@@ -324,11 +329,69 @@ fn delivery_refuses_headers_before_dispatch_and_preserves_unknown_acceptance() {
     assert_eq!(notifier.executor.calls.borrow().len(), 1);
 }
 
+#[test]
+fn explicitly_enabled_external_delivery_uses_account_envelope_and_suppresses_dsns() {
+    let notifier = SendmailNotifier {
+        executor: Probe::default(),
+        path: std::path::Path::new("/usr/sbin/sendmail"),
+        sender: ACCOUNT,
+        local_domain: "example.test",
+        external_delivery: true,
+    };
+    let token = "42".repeat(32);
+    assert_eq!(
+        notifier.deliver(
+            RecoveryContactMessage::Verification {
+                email: "owner@protonmail.com",
+                token: &token,
+                expires_at: 1859,
+            },
+            Instant::now() + Duration::from_secs(30),
+        ),
+        RecoveryContactDelivery::Accepted
+    );
+    let calls = notifier.executor.calls.borrow();
+    let (_, args, wire, _, _) = &calls[0];
+    assert_eq!(
+        args,
+        &[
+            "-oi",
+            "-N",
+            "never",
+            "-f",
+            ACCOUNT,
+            "--",
+            "owner@protonmail.com",
+        ]
+    );
+    assert!(String::from_utf8_lossy(wire).contains("To: owner@protonmail.com\r\n"));
+    assert!(String::from_utf8_lossy(wire).contains(&token));
+    assert!(args.iter().all(|arg| !arg.contains(&token)));
+
+    let invalid_sender = SendmailNotifier {
+        executor: Probe::default(),
+        path: std::path::Path::new("/usr/sbin/sendmail"),
+        sender: "owner@-example.test",
+        local_domain: "example.test",
+        external_delivery: true,
+    };
+    assert_eq!(
+        invalid_sender.deliver(
+            RecoveryContactMessage::Removed {
+                email: "owner@protonmail.com",
+            },
+            Instant::now() + Duration::from_secs(1),
+        ),
+        RecoveryContactDelivery::Refused
+    );
+    assert!(invalid_sender.executor.calls.borrow().is_empty());
+}
+
 // Exercises the actual BrowserApp -> Runtime gateway -> signed admission
 // client -> private session/TOTP/contact stores -> bounded delivery path.
 // Only the native account helper and the local mail executable are fixtures.
 #[test]
-fn ordinary_runtime_http_contact_roundtrip_uses_real_session_and_private_delivery() {
+fn ordinary_runtime_http_contact_roundtrip_uses_real_session_and_external_delivery() {
     use hmac::{Hmac, Mac as _};
     use std::os::unix::net::UnixListener;
     use std::sync::atomic::{AtomicBool, Ordering};
@@ -440,6 +503,7 @@ fn ordinary_runtime_http_contact_roundtrip_uses_real_session_and_private_deliver
         .unwrap(),
     );
     gateway.recovery_contact_local_domain = Some("example.test".into());
+    gateway.recovery_contact_external_delivery = true;
     for name in ["sessions", "totp", "cache", "cache/totp-replay"] {
         fs::create_dir_all(root.join(name)).unwrap();
         fs::set_permissions(root.join(name), fs::Permissions::from_mode(0o700)).unwrap();
@@ -453,7 +517,7 @@ fn ordinary_runtime_http_contact_roundtrip_uses_real_session_and_private_deliver
 use std::{fs::OpenOptions, io::{Read,Write}, os::unix::fs::OpenOptionsExt};
 fn main() -> std::io::Result<()> {
     let args:Vec<_>=std::env::args().skip(1).collect();
-    if args != ["-oi","-f","<>","--","sink@example.test"] {
+    if args != ["-oi","-N","never","-f","recovery@example.test","--","sink@foreign.test"] {
         std::process::exit(1);
     }
     let mut message=Vec::new();
@@ -535,7 +599,7 @@ fn main() -> std::io::Result<()> {
     };
     let initial = perform("GET", "/settings/recovery", "", &cookie);
     assert_eq!(initial.response.status_code, 200);
-    let begin=format!("csrf_token={csrf}&revision=0&action=begin&email=sink%40example.test&current_password=public+synthetic+passphrase&totp_code={code}");
+    let begin=format!("csrf_token={csrf}&revision=0&action=begin&email=sink%40foreign.test&current_password=public+synthetic+passphrase&totp_code={code}");
     let result = perform("POST", "/settings/recovery", &begin, &cookie);
     assert_eq!(result.response.status_code, 200);
     assert!(guard_observed.load(Ordering::SeqCst));
@@ -573,7 +637,7 @@ fn main() -> std::io::Result<()> {
     );
     let page = perform("GET", "/settings/recovery", "", &cookie);
     assert_eq!(page.response.status_code, 200);
-    assert!(String::from_utf8_lossy(&page.response.body).contains("sink@example.test"));
+    assert!(String::from_utf8_lossy(&page.response.body).contains("sink@foreign.test"));
     assert!(!String::from_utf8_lossy(&page.response.body).contains(&proof));
     let verified_authority = fs::read(&authority).unwrap();
     let verified = app
@@ -631,6 +695,7 @@ fn main() -> std::io::Result<()> {
         )
         .with_fixture_sendmail_path(root.join("owned-sendmail"));
     reopened.recovery_contact_local_domain = Some("example.test".into());
+    reopened.recovery_contact_external_delivery = true;
     let reopened = BrowserApp::new(HttpPolicy::default(), reopened);
     for path in [
         "/settings/recovery",
@@ -640,7 +705,7 @@ fn main() -> std::io::Result<()> {
         let response = reopened.handle_request(&request("GET", path, "", &cookie), "127.0.0.1");
         assert_eq!(response.response.status_code, 200, "{path}");
         let html = String::from_utf8_lossy(&response.response.body);
-        assert!(html.contains("sink@example.test"), "{path}");
+        assert!(html.contains("sink@foreign.test"), "{path}");
         assert!(!html.contains(&proof));
     }
     assert_eq!(fs::read(&authority).unwrap(), verified_authority);

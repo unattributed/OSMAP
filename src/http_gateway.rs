@@ -35,6 +35,7 @@ mod http_mailbox_backends;
 pub struct RuntimeBrowserGateway {
     pub(crate) account_runtime: AccountRuntimeCapability,
     recovery_contact_local_domain: Option<String>,
+    recovery_contact_external_delivery: bool,
     pub(crate) account_rollout: Option<String>,
     pub(crate) public_inventory_client: Option<crate::openpgp_inventory_runtime::Client>,
     pub(crate) crypto_client: Option<crate::openpgp_crypto_runtime::Client>,
@@ -132,6 +133,7 @@ impl RuntimeBrowserGateway {
         Self {
             account_runtime,
             recovery_contact_local_domain: config.recovery_contact_local_domain.clone(),
+            recovery_contact_external_delivery: config.recovery_contact_external_delivery,
             account_rollout: config
                 .account_runtime
                 .as_ref()
@@ -329,6 +331,7 @@ impl RuntimeBrowserGateway {
         Self {
             account_runtime: AccountRuntimeCapability::Disabled,
             recovery_contact_local_domain: None,
+            recovery_contact_external_delivery: false,
             account_rollout: None,
             public_inventory_client: None,
             crypto_client: None,

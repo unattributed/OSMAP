@@ -295,6 +295,7 @@ mod tests {
     fn startup_report_is_operator_readable() {
         let config = AppConfig {
             recovery_contact_local_domain: None,
+            recovery_contact_external_delivery: false,
             account_runtime: None,
             openpgp_inventory: None,
             openpgp_crypto: None,

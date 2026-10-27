@@ -1,5 +1,14 @@
 # Current Project Status
 
+2026-10-27 (America/Toronto) — **S04-03 UAT reopened for external recovery delivery.**
+The owner now requires an external recovery address, including Proton Mail. The
+installed Web still enforces the earlier local-only development boundary and
+therefore refused the owner's `@protonmail.com` submission before Postfix; the
+pending state is truthful, but no verification message was submitted. Source
+correction, installed qualification and a fresh owner resend remain in progress.
+The recurring Brevo failure for queue `2A2F13CEA87` is an older null-sender DSN
+to a Brevo bounce address and is not evidence for the new recovery submission.
+
 2026-10-26 (America/Toronto) — **S04-03 engineering qualified locally; UAT_READY.**
 Installed Web `c9729671…` and unchanged account helper `be7c6b40…` support the
 own-account recovery-contact lifecycle. Native04 completed actual local proof,
