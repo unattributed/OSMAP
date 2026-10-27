@@ -43109,3 +43109,28 @@ inventory digest: total 10,090→10,092, source-test assumptions
 10,005→10,007 and test/fixture classifications 10,086→10,088. The generated
 register now passes its exact self-check; it will be carried in a separate
 signed checkpoint and delivered through the same normal hook without bypass.
+
+The inventory checkpoint `a198f420…` passed the complete normal hook and fresh
+fetch at exact remote parity. Exact-source OpenBSD build attempt1 failed before
+an artifact when LLVM exceeded the SSH user's 1.5 GiB soft DATA limit; Web/state
+were untouched. Attempt2 used the established compiler-only 4 GiB soft limit
+within the unchanged 128 GiB hard limit, offline/locked source, one job and
+release opt3/debuginfo0. It passed in 162 seconds: Web `0f3e3659…`, 9,813,344
+bytes. The first staging validator safely refused a literal-backslash newline
+comparison before creating the new environment; existing rollback copies and
+the staged binary stayed exact. The corrected validator created only the
+current environment plus the enabled external-delivery line.
+
+OSMAP-Web-only activation is installed. Live binary `0f3e3659…` and environment
+`eceaa1c2…` are root-owned with retained pre-change rollback copies
+`c9729671…`/`4d3f55a5…` under
+`/var/backups/osmap-s04-03-external-a198f4207e7a`. The activation command's
+post-start `pgrep -xo` assertion was invalid because the unchanged mailbox
+helper shares the executable name; read-only reconciliation proved activation
+actually completed. Serve PID 58234 has matching inode 129966 loaded, loopback
+8080 listens, public certificate-verified login GET returns 200 and eight
+services pass. All recovery record/lock and OpenPGP binding/lock hashes equal
+the preflight; binding remains `1b524638…`. Maillog added zero bytes, so
+deployment sent no message. External installed readiness PASS; exactly one
+owner-authenticated resend, relay correlation, Proton receipt and one-use proof
+remain pending. No blind resend or ACCEPTED claim.

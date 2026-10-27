@@ -211,3 +211,44 @@ configuration-only opt-in, restart of OSMAP Web only, readback of the preserved
 pending record, healthy service checks and one owner-initiated resend. A queue
 acceptance or relay `status=sent` is not proof that Proton delivered the message;
 the owner's receipt and one-use code verification remain the UAT observation.
+
+## External-delivery installed checkpoint — 2026-10-27
+
+The implementation is delivered at three Shopkeeper-signed commits:
+`2307fb719366a657de81e9a0138292ae3eff8112` (functional correction),
+`d9e2fad286ce26b0b39c82bac61d4502a2d9bdce` (sanitized evidence) and
+`a198f4207e7a167d06dcd55b3faf4909a6d1dbed` (generated Rust assumption
+inventories). The normal push passed 1,961 library tests with 72 explicit
+native/fixture ignores, Clippy, formatting, supply-chain checks, publication
+hygiene and the V4–V15 governance/regression gates. A fresh fetch matched local
+and remote `a198f420…` exactly with a clean worktree.
+
+The first exact-source OpenBSD release compile stopped before producing a
+candidate when LLVM exceeded the SSH user's 1.5 GiB soft DATA limit. The
+resource-bounded retry retained source and release semantics, used locked/offline
+dependencies, one Cargo job, disabled core dumps and raised only the compiler
+subprocess soft DATA limit to 4 GiB within its unchanged 128 GiB hard limit. It
+completed in 162 seconds and produced Web SHA256
+`0f3e36593f443b2067edfc6aa84e1f35f3dbac9943c5dae34ed343230803dddc`,
+9,813,344 bytes. The prior installed Web and configuration were retained as
+root-owned rollback copies under
+`/var/backups/osmap-s04-03-external-a198f4207e7a`.
+
+Only `/usr/local/bin/osmap`, `/etc/osmap/osmap-serve.env` and the `osmap_serve`
+process changed. The environment is SHA256
+`eceaa1c2a8438ee0595defbb00269ec3af59a1d23bd3f81e053bc277d6a96a45`
+and contains exactly one enabled external-delivery entry plus the unchanged
+local-domain entry. PID 58234 has inode 129966 of the matching binary loaded,
+loopback 8080 listens and the certificate-verified public login returns HTTP
+200. OSMAP Web, Dovecot, Postfix, MySQL, Redis, Rspamd, nginx and PHP-FPM all
+pass `rcctl check`.
+
+All six recovery-contact record/lock hashes and both OpenPGP binding/lock hashes
+match their pre-deployment values; the binding record remains
+`1b52463893a01899e692e53dd5773077211ab61e2496f26d138f7df0a219ffdd`.
+The `maillog` inode, size and modification time were unchanged, with zero bytes
+added during deployment. Therefore installed external-delivery readiness passes
+without an automatic message or contact-state mutation. One authenticated owner
+resend, its new Postfix/Brevo queue correlation, actual Proton receipt and
+single-use code verification remain T08 UAT. No agent will repeat an ambiguous
+submission. S04-03 remains not ACCEPTED.

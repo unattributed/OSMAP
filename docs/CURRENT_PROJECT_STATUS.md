@@ -1,13 +1,21 @@
 # Current Project Status
 
-2026-10-27 (America/Toronto) — **S04-03 UAT reopened for external recovery delivery.**
-The owner now requires an external recovery address, including Proton Mail. The
-installed Web still enforces the earlier local-only development boundary and
-therefore refused the owner's `@protonmail.com` submission before Postfix; the
-pending state is truthful, but no verification message was submitted. Source
-correction, installed qualification and a fresh owner resend remain in progress.
-The recurring Brevo failure for queue `2A2F13CEA87` is an older null-sender DSN
-to a Brevo bounce address and is not evidence for the new recovery submission.
+2026-10-27 (America/Toronto) — **S04-03 external delivery installed; owner UAT resend ready.**
+The owner now requires an external recovery address, including Proton Mail.
+Signed source `a198f420…` is at exact fetched remote parity and produced the
+installed OpenBSD Web `0f3e3659…`. The explicit external-delivery setting is
+enabled; the default in source remains local-only. PID 58234 has the matching
+executable loaded, loopback 8080 is listening and certificate-verified public
+`/login` returns 200. The pending recovery records and original OpenPGP binding
+are byte-identical, all eight checked services are healthy and deployment added
+zero bytes to `maillog`; no verification message was sent automatically.
+
+The earlier `@protonmail.com` refusal remains a truthful pre-Postfix result. The
+recurring Brevo failure for queue `2A2F13CEA87` is an older null-sender DSN to a
+Brevo bounce address and is not evidence for the recovery submission. One
+owner-authenticated **Resend verification** action, Proton receipt and one-use
+code verification remain pending. Relay acceptance will be recorded separately
+from actual Proton delivery; S04-03 is not ACCEPTED until owner UAT completes.
 
 2026-10-26 (America/Toronto) — **S04-03 engineering qualified locally; UAT_READY.**
 Installed Web `c9729671…` and unchanged account helper `be7c6b40…` support the
