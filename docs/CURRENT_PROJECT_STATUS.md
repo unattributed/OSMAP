@@ -1,16 +1,22 @@
 # Current Project Status
 
-2026-10-29 (America/Toronto) — **S04-04 source implementation in progress.**
+2026-10-29 (America/Toronto) — **S04-04 implemented and component-tested; configured recovery remains open.**
 The operator authorized bounded subagents and work package -> T0# -> actual
 evidence -> completion. The governed lost-authenticator coordinator now has
 source-tested durable case admission, epoch containment, guarded browser-session
 revocation, one-shot factor tooling composition and explicit reconciliation.
 Settings exposes actual factor metadata, a qualified account TOTP time window
 and an untrusted own-account recovery request; it supplies no operator authority.
-Independent review and focused source results remain separate from required
-native/installed T04/T05/T08 and human T09, which are NOT_RUN. No new live account,
-factor/password or service mutation has occurred. IMAP/SMTP connection termination
-is not claimed. S05-02 remains deferred and its separate local changes untouched.
+Normal signed source delivery passed 2,002 Rust tests / 0 failures / 73 ignored cases and the full
+security hook. Actual current native components passed 41 tests; one unchanged
+root ownership case is explicitly reused. Matching Web/helper executables are
+installed on obsd1, with loaded-image/HTTPS/service readback and 712 protected
+records preserved. Only OSMAP Web restarted; the current environment/profile and
+all account/factor/password state were preserved. Native/installed T04/T05/T08
+and human T09 remain NOT_RUN as complete journeys. The reserved test account has
+an existing SQL row but no factor/epoch record and needs manual custody and
+disposition before controlled preparation. IMAP/SMTP connection termination is
+not claimed. S05-02 remains deferred and its separate local changes untouched.
 See [the slice specification](UX_SLICE_S04_04.md).
 
 2026-10-27 (America/Toronto) — **S04-03 ACCEPTED for local obsd1 UX development.**

@@ -10282,7 +10282,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "slice": "S04-04",
     "specification": {
       "path": "docs/UX_SLICE_S04_04.md",
-      "sha256": "45b0f8cde945cd03a772c12858fc969233944974aa7e0ce1c337b39ab94ebe59"
+      "sha256": "4f2c6efaf66b181da57a39e079ac6f0f39d1258e2ec23f68ca41521843f61b1f"
     },
     "design": {
       "journey": "Operator-assisted lost-authenticator recovery progresses requested, identity reviewed, contained, sessions revoked, factor replacement, reconciled; account Settings reflects actual state.",
@@ -10309,8 +10309,9 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "reviewer": "/root/recovery_policy_review",
         "status": "PASS",
         "evidence": [
-          "Source scope only: /home/foo/Downloads/osmap-ux-s04/s04-04/coordinator-final-focused-pass.log (15 tests), coordinator-adapter-tests-pass.log (14 tests); session source QA 11 tests; BrowserApp/Runtime and metadata 12 observations. Native/installed results are separate NOT_RUN.",
-          "Native component scope only: signed93cbb888 actual39nonroot+1rootPASS independently reviewed; installed scenario remains pending. New frontend-coverage refusal boundary source4PASS; matching native retest pending."
+          "Source scope: focused coordinator/operator, session, authenticator BrowserApp/Runtime, signed-identity adapter and existing password-state controls PASS; affected final operator4PASS in frontend-coverage-source-tests.log.",
+          "Current native03 signed122b0b36:17recovery/operator+11session+12authenticator+1input=41PASS; unchanged root ownership1 explicitly reused from93cbb888. Independent native03 review32a04a69 retained.",
+          "Installed executable readiness and712-record preservation PASS; configured scenario/human identity/complete T08 not inferred."
         ]
       },
       {
@@ -10328,8 +10329,9 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "reviewer": "/root/recovery_policy_review",
         "status": "PASS",
         "evidence": [
-          "Source scope only: /home/foo/Downloads/osmap-ux-s04/s04-04/coordinator-final-focused-pass.log (15 tests), coordinator-adapter-tests-pass.log (14 tests); session source QA 11 tests; BrowserApp/Runtime and metadata 12 observations. Native/installed results are separate NOT_RUN.",
-          "Native component scope only: signed93cbb888 actual39nonroot+1rootPASS independently reviewed; installed scenario remains pending. New frontend-coverage refusal boundary source4PASS; matching native retest pending."
+          "Source scope: focused coordinator/operator, session, authenticator BrowserApp/Runtime, signed-identity adapter and existing password-state controls PASS; affected final operator4PASS in frontend-coverage-source-tests.log.",
+          "Current native03 signed122b0b36:17recovery/operator+11session+12authenticator+1input=41PASS; unchanged root ownership1 explicitly reused from93cbb888. Independent native03 review32a04a69 retained.",
+          "Installed executable readiness and712-record preservation PASS; configured scenario/human identity/complete T08 not inferred."
         ]
       },
       {
@@ -10347,8 +10349,9 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "reviewer": "/root/recovery_policy_review",
         "status": "PASS",
         "evidence": [
-          "Source scope only: /home/foo/Downloads/osmap-ux-s04/s04-04/coordinator-final-focused-pass.log (15 tests), coordinator-adapter-tests-pass.log (14 tests); session source QA 11 tests; BrowserApp/Runtime and metadata 12 observations. Native/installed results are separate NOT_RUN.",
-          "Native component scope only: signed93cbb888 actual39nonroot+1rootPASS independently reviewed; installed scenario remains pending. New frontend-coverage refusal boundary source4PASS; matching native retest pending."
+          "Source scope: focused coordinator/operator, session, authenticator BrowserApp/Runtime, signed-identity adapter and existing password-state controls PASS; affected final operator4PASS in frontend-coverage-source-tests.log.",
+          "Current native03 signed122b0b36:17recovery/operator+11session+12authenticator+1input=41PASS; unchanged root ownership1 explicitly reused from93cbb888. Independent native03 review32a04a69 retained.",
+          "Installed executable readiness and712-record preservation PASS; configured scenario/human identity/complete T08 not inferred."
         ]
       },
       {
@@ -10398,8 +10401,9 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "reviewer": "/root/recovery_policy_review",
         "status": "PASS",
         "evidence": [
-          "Source scope only: /home/foo/Downloads/osmap-ux-s04/s04-04/coordinator-final-focused-pass.log (15 tests), coordinator-adapter-tests-pass.log (14 tests); session source QA 11 tests; BrowserApp/Runtime and metadata 12 observations. Native/installed results are separate NOT_RUN.",
-          "Native component scope only: signed93cbb888 actual39nonroot+1rootPASS independently reviewed; installed scenario remains pending. New frontend-coverage refusal boundary source4PASS; matching native retest pending."
+          "Source scope: focused coordinator/operator, session, authenticator BrowserApp/Runtime, signed-identity adapter and existing password-state controls PASS; affected final operator4PASS in frontend-coverage-source-tests.log.",
+          "Current native03 signed122b0b36:17recovery/operator+11session+12authenticator+1input=41PASS; unchanged root ownership1 explicitly reused from93cbb888. Independent native03 review32a04a69 retained.",
+          "Installed executable readiness and712-record preservation PASS; configured scenario/human identity/complete T08 not inferred."
         ]
       },
       {
@@ -10417,8 +10421,9 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "reviewer": "/root/recovery_policy_review",
         "status": "PASS",
         "evidence": [
-          "Source scope only: /home/foo/Downloads/osmap-ux-s04/s04-04/coordinator-final-focused-pass.log (15 tests), coordinator-adapter-tests-pass.log (14 tests); session source QA 11 tests; BrowserApp/Runtime and metadata 12 observations. Native/installed results are separate NOT_RUN.",
-          "Native component scope only: signed93cbb888 actual39nonroot+1rootPASS independently reviewed; installed scenario remains pending. New frontend-coverage refusal boundary source4PASS; matching native retest pending."
+          "Source scope: focused coordinator/operator, session, authenticator BrowserApp/Runtime, signed-identity adapter and existing password-state controls PASS; affected final operator4PASS in frontend-coverage-source-tests.log.",
+          "Current native03 signed122b0b36:17recovery/operator+11session+12authenticator+1input=41PASS; unchanged root ownership1 explicitly reused from93cbb888. Independent native03 review32a04a69 retained.",
+          "Installed executable readiness and712-record preservation PASS; configured scenario/human identity/complete T08 not inferred."
         ]
       },
       {
@@ -10475,7 +10480,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "S04-04-T02",
         "S04-04-T07"
       ],
-      "evidence": "Source signature/case/replay/ordinary Runtime tests PASS; no real identity approval created. Native02/root40 component observations PASS; configured journey remains pending, new frontend fence native test pending."
+      "evidence": "Source signature/case/replay and actual Runtime tests PASS; current native components PASS including frontend coverage refusal. Real identity and configured journey remain pending."
     },
     {
       "id": "WP03",
@@ -10484,7 +10489,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "S04-04-T03",
         "S04-04-T07"
       ],
-      "evidence": "Actual local epoch/session files and real session tokens PASS; native root ownership branch and installed effects NOT_RUN. Native02/root40 component observations PASS; configured journey remains pending, new frontend fence native test pending."
+      "evidence": "Actual native epoch/session files and reused exactroot cross-owner replacement PASS. Installed helper/Web preserve sessions/state; actual selected-account admission/refusal during configured recovery remains pending."
     },
     {
       "id": "WP04",
@@ -10493,7 +10498,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "S04-04-T04",
         "S04-04-T05"
       ],
-      "evidence": "Actual source coordinator plus existing factor tool composition tested; native T04/T05 NOT_RUN."
+      "evidence": "Source adapter composition and native coordinator file effects PASS; real T04/T05 factor/password journey NOT_RUN, existing reserved SQL row has no factor/epoch and needsmanual custody/disposition."
     },
     {
       "id": "WP05",
@@ -10502,7 +10507,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "S04-04-T06",
         "S04-04-T07"
       ],
-      "evidence": "Before/after dispatch/release uncertainty, exact marker, real codec and failure stops PASS at source scope. Native02/root40 component observations PASS; configured journey remains pending, new frontend fence native test pending."
+      "evidence": "Changed durable case/epoch/session and before/after dispatch/release uncertainty boundaries PASS at source/native component scope. Actual configured integration remains pending."
     },
     {
       "id": "WP06",
@@ -10511,32 +10516,33 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "S04-04-T08",
         "S04-04-T09"
       ],
-      "evidence": "Source Settings/request integration PASS; normal gates, native/installed QA and human acceptance remain required."
+      "evidence": "Normal functional source hookPASS/GitHubparity0/0; native current41PASS+unchangedroot1, installed Web/helper/readiness/712-record preservation PASS. Complete T08 and separate T09 NOT_RUN; no readiness/acceptance claim."
     }
   ],
   "source_delivery": {
-    "security_check": "PASS",
+    "security_check": "PASS_NORMAL_122b0b36_PUSH_2002_RUST_0FAIL_73IGNORED_AND_FULL_SECURITY_HOOK",
     "v10_governance": "PASS_AFTER_METADATA_CORRECTION",
     "acceptance_source08_aggregate": "FAIL_RETAINED",
-    "signature": "PASS_SHOPKEEPER_3f8c2b3664561b1edca8e0cf031a33f815e7fbc5",
-    "github_parity": "PASS_FRESH_HEAD_ORIGIN_EQUAL_0_0",
-    "native_components": "PASS40_NATIVE02_AND_ROOT_UNCHANGED_BOUNDARIES_NEW_FRONTEND_FENCE_NATIVE_PENDING",
-    "installed": "NOT_RUN",
-    "human": "NOT_RUN"
+    "signature": "PASS_SHOPKEEPER_122b0b36c3d51d816e27e012862553743cb2cae7",
+    "github_parity": "PASS_FRESH_HEAD_ORIGIN_122b0b36_EQUAL_0_0_PUBLIC_SAFE_EVIDENCE_DOCS_PENDING",
+    "native_components": "PASS41_CURRENT_NATIVE03_PLUS1_UNCHANGED_ROOT_REUSED",
+    "installed": "PASS_BOUNDED_EXECUTABLE_READINESS_PRESERVATION_COMPLETE_JOURNEY_NOT_RUN",
+    "human": "NOT_RUN",
+    "final_metadata_delivery": "Verify final signed evidence checkpoint and fresh remote equality in private s04-04/final-delivery.json; functional native/source pin remains122b0b36."
   },
   "planned_native_action": {
-    "id": "S04-04-native-components02",
-    "source_commit": "93cbb888595c9d36eec8176087c3d5843b7bb663",
+    "id": "S04-04-native-components-web03",
+    "source_commit": "122b0b36c3d51d816e27e012862553743cb2cae7",
     "target": "obsd1.blackbagsecurity.com",
     "address": "192.168.1.44",
-    "stage": "/home/foo/.osmap-s04-04.GqkYBMUl",
-    "actor_sha256": "fcefd0b4a5fae9ba3fcc5c5767abe1cdd44f036f10a6a9d9b2063192647ffcbc",
-    "archive_sha256": "5a5416f3e4f2a76a35e37d98e35bd598d279adcfc5128d57f4479c7ad4739cb6",
-    "manifest_sha256": "16c0ae010eb3dac6db61015e6f1d50581afc0a5010c45fc9646975800f21ae7b",
+    "stage": "/home/foo/.osmap-s04-04.k2ok7cy4",
+    "actor_sha256": "70943ec632a76da295ed7af4f1e875cf17f2847806c9b3a30698e62e15fff26b",
+    "archive_sha256": "8e97d5f814847966f7bd781a2b59ebcc3e3bf583dd2afd2ba66288eb1fe5c62e",
+    "manifest_sha256": "aa25a7041a385ac0b0f2f65ec76a6d2fbfaf0f099c68fb474bf7eb995a910270",
     "max_seconds": 1500,
     "privilege": "operator_user_only",
-    "expected": "Corrected private fixture ownership plus locked/offline fresh native binary/libtest; actual recovery15 including discriminating deadline, session11, authenticator12 and stdin1 expected. Original native01FAIL retained; no installation/live-account effects.",
-    "prerequisites": "Good Shopkeeper signed93cbb888 test-only candidate over preserved signed/pushed3f8 functional source; independent policyGO for same-binary causal positive and stronger expiry test, exact actorSHA admission; actual host/cache custody in actor. Normal final push hook remains required.",
+    "expected": "Matching native coordinator/operator17/session11/authenticator12/input1 expected plus compile-onlyWeb and helper; reuse unchanged root ownership proof from93cbb888, no installation or liveaccount effects.",
+    "prerequisites": "Good Shopkeeper signed122b0b36 source, exact actor70943ec6 independentGO, source operator4PASS and V10/format/commit hookPASS; host/cache/artifact custody checks in actor.",
     "cleanup": "Retain source/artifacts/logs; remove only exact-owned empty short TMPDIR after durable local evidence readback. Unknown residue is retained.",
     "validator": "Existing --work-order-only for S04-04; S04-02-only --pre-action is not claimed or extended."
   },
@@ -10579,6 +10585,18 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
       "evidence": "s04-04/native02/root-result.json/root-test.log/root-evidence.tar and independent-qa-review.json; archive389bea404408555c386b196304b020974a23230c2ea7edefc4fd6957d5beb46a",
       "root_evidence_stage": "RETAINED_PRIVATE",
       "nonroot_tmp": "native02 synthetic residue retained700; earlier exactowned empty TMPs removed"
+    },
+    {
+      "id": "S04-04-native-components-web03",
+      "source": "122b0b36c3d51d816e27e012862553743cb2cae7",
+      "result": "PASS",
+      "elapsed_seconds": 157,
+      "tests": "17recovery+11session+12authenticator+1input=41 actual current native nonrootPASS; unchanged root ownership1 reused from93cbb888 separately",
+      "binary_sha256": "421077d4b69256b0f00f0d88f281f93bea4df051cf6142a6e4cdf1d3a8edade5",
+      "web_sha256": "a1dd680d09d29b51cd5fe374757e629ad8810e0adc055968cc6d8d35b3b5fba2",
+      "libtest_sha256": "e4327bd5faef553728beaddcebbc9d3a7b2f72de79f995fe9ebf35972bb9db4c",
+      "evidence": "s04-04/native03/result.json and evidence.tar SHA59bc8406b74a00592f7f735072659170a724e3d72711280ab18c5fda6ae4f4ad",
+      "installed": "NOT_INFERRED_FROM_COMPILE"
     }
   ],
   "planned_root_component": {
@@ -10597,9 +10615,73 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
   "frontend_coverage_correction": {
     "cause": "helper allowlist may select account whose frontend bypasses epoch; source supported fail-closed correction",
     "source_tests": "4PASS actual operator group; shared parser visibility-only; independent policyGO",
-    "native": "PENDING matching signed candidate",
+    "native": "PASS actual native03 operator/coordinator17; complete action41nonroot in157s plus matching Web/helper compile-only",
     "installed_preflight": "readonly actual fixed env has no accountfields; reserved target not allowed; accepted Web remains; env drift causeUNKNOWN; no changes",
     "required_next": "identify disposable local account and matching frontend profile, preserve owner environment, human signed identity and private terminal before configured factor journey"
+  },
+  "planned_install_action": {
+    "id": "S04-04-ui-helper-install01",
+    "source_commit": "122b0b36c3d51d816e27e012862553743cb2cae7",
+    "actor_sha256": "339b32f06ccc64adec59a89107234aef3a27d972f892faefa23a9f8b353be358",
+    "target": "obsd1.blackbagsecurity.com",
+    "address": "192.168.1.44",
+    "backup_stage": "/var/backups/osmap-s04-04-install-122b0b36-01",
+    "web_sha256": "a1dd680d09d29b51cd5fe374757e629ad8810e0adc055968cc6d8d35b3b5fba2",
+    "recovery_sha256": "421077d4b69256b0f00f0d88f281f93bea4df051cf6142a6e4cdf1d3a8edade5",
+    "env_sha256_unchanged": "fa988665cf2a688b845509949dfb6867c19cac502de9ae372dbe645d2bcc7ff6",
+    "operation_seconds": 300,
+    "cleanup_kill_reserve_seconds": 210,
+    "expected": "root-private fd/hash/readback custody before public candidate install; helperroot700, Webroot755, onlyosmap_serve restart; exact protected metadata/hash preservation and loadedinode/HTTPS200/servicehealth; no account/profile/factor/case operation",
+    "prerequisites": "Signed122b independently reviewed source/current41native+reusedroot1, normalpushhookPASS andfresh0/0parity; current46envfieldsmatchloadedWeb andzeroaccountfields; finalexactactorindependentGO andactualproducer/consumerfixtureproof beforedispatch",
+    "failure": "retain originalFAIL androotbackup; only knownownedbinaryrestoration/removal with loadedoldWeb+HTTPS+supervisedrole proof; no protectedstate overwrite or blindredo",
+    "cleanup": "retain rootprivate backup/evidence and unknown residue; no liveaccount/factor rollback",
+    "independent_review": "Final policyGO and actual privatecopy6-case/snapshot\u2192cmp/failure QA proof; bodiesunchanged except reviewedfixedroots (stablebusiness/authauthority incldrafts/replay/throttles), noordinaryaudit/cacheequality claim."
+  },
+  "installer_review_history": [
+    {
+      "actor_sha256": "a982091348606065ac5a0e3d111bc1ccead1902c05901d9cb1703a7fd1b5b37f",
+      "result": "NO_GO_PRE_EXECUTION",
+      "cause": "public candidate before copied bytes verified; corrected rootprivate custody before publication; rollback supervisedrole proof added",
+      "executed": false,
+      "evidence": "s04-04/install-review-refusal01.json and preserved original recipe"
+    }
+  ],
+  "installed_observation": {
+    "id": "S04-04-ui-helper-install01",
+    "result": "PASS_BOUNDED_ARTIFACT_READINESS_PRESERVATION",
+    "source_commit": "122b0b36c3d51d816e27e012862553743cb2cae7",
+    "actor_sha256": "339b32f06ccc64adec59a89107234aef3a27d972f892faefa23a9f8b353be358",
+    "elapsed_seconds": 4.234,
+    "loaded_web_pid": 95924,
+    "loaded_web_inode": 129979,
+    "web_sha256": "a1dd680d09d29b51cd5fe374757e629ad8810e0adc055968cc6d8d35b3b5fba2",
+    "helper_sha256": "421077d4b69256b0f00f0d88f281f93bea4df051cf6142a6e4cdf1d3a8edade5",
+    "protected_records": 712,
+    "all_four_snapshots": "BYTE_IDENTICAL",
+    "services_before_after": "17_PASS",
+    "env": "BYTE_IDENTICAL_46_LOADED_FIELDS_MATCH_NO_ACCOUNT_FIELDS",
+    "operations": "only Web/helper install and osmap_serve restart; no account/factor/case/profile/publicmail action",
+    "rollback": "NOT_NEEDED_NOT_QUALIFIED_AS_EXECUTED",
+    "receipt_sha256": "a9aac83483b409ecffdac1301f648d760f977a30ddc372d558beb28711920a06",
+    "evidence_archive_sha256": "d30c8ca1294dc9955478b2f107d4375abc493e428e38df4b0aad0e21461e76cf",
+    "independent_qa": "install01/independent-qa-review.json SHAeb158bf411ca89ff8524788477f0ddb5c67769d3c1efdae94073680de99dd48f",
+    "authenticated_settings": "NOT_RUN; fresh unauthenticated browser entry reached login, no credentials entered"
+  },
+  "remaining_qualification": {
+    "state": "IN_PROGRESS_PENDING_MANUAL_EXISTING_FIXTURE_DISPOSITION",
+    "reserved_account": "osmap-helper-validation@blackbagsecurity.com",
+    "actual": "localSQL row1; configured andlegacy factorabsent; epochabsent; excludedfrombothhelperallowlists; frontendnativeDisabled",
+    "local_instance": "actual obsd1/originalsocket/3306/datadirvarmysql/server1/read_onlyOFF; numeric-only observerFAIL retained andsame-output canonicalOFF correctionPASS",
+    "routing": "actual auth/mailbox Toronto relays retained; no newremote requests; localSQL row is not mailbox-route qualification; metadataquery unavailable toexistingclient, causeUNKNOWN/no widenedgrants",
+    "required_human_input": "Existing-row custody/disposition and currentcredential privatecustody before any controlled baseline enrollment; independent identity signature and private RECOVER/RECONCILE later; T09acceptance separate afterengineering",
+    "next_plan": "private controlled-recovery-journey-proposal01.md SHAde4e9f9b32903b72526af7d788cdca8ea97262e4ad3b59f8a5ec57dada894864",
+    "conditional_actor": "private controlled-baseline-actor01.md SHA1bcfa0df1ae2574be5e756e54664678182740a7a09e396cf1349dcfef451395a; NOT_DISPATCHABLE, no SQLwrites/reset/delete or owner/globalroute substitution",
+    "not_run": [
+      "S04-04-T04",
+      "S04-04-T05",
+      "S04-04-T08",
+      "S04-04-T09"
+    ]
   }
 }
 ```

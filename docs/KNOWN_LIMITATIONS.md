@@ -1,9 +1,13 @@
 # Known Limitations
 
-S04-04 has source-tested governed factor-recovery components, not installed or
-real-user recovery acceptance. Native factor/password-preservation qualification,
-installed browser integration and independent human identity/acceptance remain
-NOT_RUN. The supported source case preserves a known password and replaces an
+S04-04 has source/native-tested governed factor-recovery components and matching
+installed Web/helper executables. Complete configured factor/password-preservation
+qualification, authenticated installed browser integration and independent human
+identity/acceptance remain NOT_RUN. The current frontend profile has no native
+account authority; it was preserved. The reserved test account has one historical
+mailbox row, no factor/epoch record and no helper allowlist admission, so manual
+custody/disposition is required before controlled preparation. The supported
+source case preserves a known password and replaces an
 existing active factor; lost-password, missing-factor and already-partial cases
 require manual review. OSMAP admission/browser-session containment does not prove
 termination of public IMAP/SMTP connections. See `UX_SLICE_S04_04.md`.

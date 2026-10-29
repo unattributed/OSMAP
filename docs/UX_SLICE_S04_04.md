@@ -258,10 +258,10 @@ native-component completion claim. Evidence: `native01/` under the sprint root.
 ### Native02 and installed admission boundary — 2026-10-29
 
 Signed test candidate `93cbb888595c9d36eec8176087c3d5843b7bb663` completed
-the corrected isolated native action in154seconds: coordinator15, session11,
-authenticator12 and bounded input1 PASS. Its matching native libtest then passed
-the exact root-only cross-owner session test in0.175seconds, including explicit
-fixture cleanup. Independent QA verified all40 component observations and the
+the corrected isolated native action in 154 seconds: coordinator 15, session 11,
+authenticator 12 and bounded input 1 PASS. Its matching native libtest then passed
+the exact root-only cross-owner session test in 0.175 seconds, including explicit
+fixture cleanup. Independent QA verified all 40 component observations and the
 source/artifact bindings. The root evidence stage remains intentionally retained.
 The new nonroot TMPDIR contains private synthetic fixture residue and is retained;
 only the two older independently identified empty temporary directories were
@@ -299,3 +299,89 @@ Settings status, restart persistence and cleanup. A human must independently
 authorize/sign the identity decision and perform the private RECOVER and
 RECONCILE confirmations. Do not substitute the owner's account, change global
 rollout or manufacture identity evidence to satisfy this prerequisite.
+
+Signed functional candidate `122b0b36c3d51d816e27e012862553743cb2cae7` then
+passed the matching native03 action in 157 seconds: coordinator/operator 17,
+session 11, authenticator 12 and bounded input 1, totalling 41 current nonroot
+checks. The unchanged root ownership case above is explicitly reused as one
+separate earlier observation. Independent QA verified the actual logs and
+archive against the signed manifest. Native helper SHA-256 is
+`421077d4b69256b0f00f0d88f281f93bea4df051cf6142a6e4cdf1d3a8edade5`;
+Web SHA-256 is
+`a1dd680d09d29b51cd5fe374757e629ad8810e0adc055968cc6d8d35b3b5fba2`.
+These binaries are matching installation candidates; compilation does not
+qualify their loaded runtime or the recovery journey.
+
+### Installed executable boundary — 2026-10-29
+
+Independently reviewed installer SHA-256
+`339b32f06ccc64adec59a89107234aef3a27d972f892faefa23a9f8b353be358`
+completed once in 4.234 seconds with exit 0. The matching native03 Web artifact is
+actually loaded, established by executable inode and loopback listener readback;
+the recovery helper is root-owned, mode 0700, with a single link at its fixed libexec path.
+HTTPS login returned 200 and all 17 checked Web/helper/OpenPGP/mail services were
+healthy. Only `osmap_serve` was stopped/started. The existing password helper
+retained its exact inode/metadata/hash.
+
+All 712 protected metadata/hash records were byte-identical before bootstrap,
+after bootstrap, after Web quiescence and after installation. They cover fixed
+configuration, account epoch/case paths, keys, sessions, factors/revoked factors,
+settings, drafts and the four authentication/throttle cache subtrees. Ordinary
+audit/general-cache activity is outside exact equality. The environment file
+remained byte-identical; independent post-install process inspection matched
+all 46 declared values, with no inherited account-runtime fields. Raw process
+environment and credentials were not retained. No account/factor/case operation
+or account-profile change occurred. The private root backup remains available.
+
+The first installer recipe was rejected before execution because it published
+an unverified privileged copy. Root-private descriptor-bound copying, expected
+hash/readback checks before public installation and explicit supervised-role
+proof on restoration corrected that boundary. Actual copy/refusal and snapshot
+producer-to-comparison exercises passed before the final installer ran. The
+original refused recipe remains preserved as review history.
+
+A fresh browser request for `/settings/authenticator` correctly reached the
+login page. No credentials were entered and authenticated Settings were not
+qualified by that observation. Evidence is under `s04-04/install01/` and the
+private install dispatch/review records. This proves installed executables,
+readiness and the listed preservation checks. T04/T05 configured recovery,
+the complete T08 journey and human T09 remain NOT_RUN; the current disabled
+account-runtime profile and unprepared reserved test account still require the
+bounded controlled preparation and independent human decisions above.
+
+### Concrete controlled-case prerequisite
+
+Read-only local SQL admission confirmed exactly one mailbox row for the reserved
+`osmap-helper-validation@blackbagsecurity.com` account. Metadata-only inspection
+found no factor in either the configured or legacy factor directory and no
+account-epoch record. The helper allowlist excludes the account. Factor contents
+were not read and no credential, factor, mailbox or epoch change was attempted.
+This is an existing partial historical state, not a fresh fixture or the
+supported lost-authenticator case. Its ownership/custody and permitted
+disposition require a human decision before any one-shot fixture preparation.
+Preserve the existing row; do not infer permission to reset/delete it or adopt
+another account under the reserved custody policy.
+
+After that prerequisite, bind one exact controlled setup and its recovery plan:
+local canonical mailbox/password authority, initial active factor and epoch,
+both native helper allowlists, a rollout selector covering only the controlled
+account, and before/after owner/control-account preservation. Preserve the current
+environment fields and unrelated accounts. Independently prove that the loaded
+frontend refuses the controlled account while its epoch is Pending. Then the
+independently signed identity/test-custody decision and private RECOVER/RECONCILE
+steps can qualify the actual factor transition, password preservation and
+installed Settings journey. This participation precedes the separate T09
+acceptance decision; it is not a request for UAT of unfinished engineering.
+
+Further read-only preparation confirmed the original local SQL instance at
+`/var/run/mysql/mysql.sock`, port 3306, datadir `/var/mysql/`, hostname obsd1 and
+server ID 1, with server read-only OFF. This is distinct from the replica/tunnel.
+An observer initially required a numeric boolean; its failure is retained and
+the explicit OFF interpretation uses the same returned data. A separate
+nonsecret mailbox-routing metadata query was unavailable to the existing client;
+its visible column set does not establish the full schema or Maildir route.
+No grants were broadened. Actual loaded auth/mailbox relay processes still use
+the existing Toronto endpoint selected by the current environment. No new remote
+request was issued. A local SQL row therefore does not qualify the installed
+mailbox route. Preserve the owner's current route; establish a reviewed controlled
+route before any journey that could send this fixture to that backend.

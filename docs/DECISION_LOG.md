@@ -1,5 +1,20 @@
 # Decision Log
 
+2026-10-29 — S04-04 native/installation checkpoint: preserve native01's fixture
+ownership failure and strengthen the deadline test against early-refusal false
+passes. Actual current native components: 41 PASS, plus an unchanged earlier root
+ownership case: 1 PASS establish component scope. Helper allowlists do not establish
+frontend epoch coverage; reuse the existing profile parser and refuse mutations
+for disabled/partial/foreign/uncovered frontend profiles before any coordinator
+or publication effect. Preserve read-only reconciliation. The matching signed
+122b0b36 Web/helper installation passed loaded-image, HTTPS, checks of 17 services, and preservation of 712
+protected records with the current environment/profile unchanged. Reject public
+artifact publication before private copied-byte verification; retain the rejected
+recipe and actual producer/consumer tests. Existing reserved SQL-row custody with
+absent factor/epoch is manual reconciliation, not permission to reset a fixture.
+Full configured T04/T05/T08, real identity/private-terminal decisions and T09
+remain open. No broader public-mail containment or password reset is claimed.
+
 2026-10-29 — S04-04 governed recovery source design: preserve D04's independent
 human identity and private-terminal decisions. A distinct identity-only signed
 schema admits the exact account/case/epoch/factor without fabricating pre-existing
