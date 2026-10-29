@@ -602,3 +602,46 @@ replay-admissible obsolete-factor refusal, replacement login/session binding,
 unexpected HTTP200 cookie preservation, persistence readback and private-terminal
 cleanup. These are source/local controls only. Actual Pending, factor replacement,
 post-release authentication and restart observations are still NOT_RUN.
+
+
+### First human recovery attempt: pre-begin refusal and path correction
+
+The human created a fresh detached identity signature, passed the maintained
+verifier/dry-run, verified a replacement candidate privately and entered RECOVER.
+The command then returned UNCONFIRMED before RECONCILE. Its original precise
+exit cause was not retained: only the generic outer command failure survived.
+Independent native readback passed in0.778s: epoch0 Active, native case absent,
+original factor unchanged. No durable native begin/effects were observed; this is consistent with a
+pre-begin stop and does not establish containment or recovery completion. The exposed candidate is excluded from reuse; its
+material was not copied or used and its unretained digest is not reconstructed.
+
+A separate original-source read-only host discriminator failed in1.207s and
+showed legacy factor directories selected instead of the trusted native paths.
+The nested preflight sources the revoke helper, whose initialization previously
+reset those paths. The later revocation has the same sourcing boundary. The
+small source correction carries the selected paths and owner/group into both
+isolated helper initializations. New pre-begin diagnostics retain a fixed phase,
+cause, exit and observation count/hash without exporting raw native output.
+The existing dry-run returns before this physical preflight and could not prove
+that path binding. Two permanent actual sourced-helper regressions failed on
+the old source and passed after correction; independent real-chain tests and
+pre-begin diagnostic/privacy tests passed. The corrected actual read-only host
+snapshot then passed in1.369s: native paths only and the expected original factor
+digest, with no recovery mutation. This qualifies that physical path boundary
+separately; it does not qualify the complete recovery.
+
+Post-refusal preservation passed in1.070s with one existing-cookie protected
+GET200 and zero login/OTP requests. Before/after observations preserved both
+original nonrevoked session authorities, the Requested record, epoch, factor
+metadata, replay and unrelated-session authority; only normal selected-session
+last_seen and monotonic unrelated last_seen are allowed. No expired cookie was
+presented and the immutable original before proof was not overwritten.
+
+The next private user interface displays the QR in a separate local image
+viewer, keeping QR/seed/URI out of terminal transcripts. It retains the existing
+human signature, new-factor verification, RECOVER and paused RECONCILE contract.
+Focused local tests passed actual display-body/maintained-verifier composition,
+private PNG/stdin/argv handling, early-input flush, GUI refusal, signal and exact
+terminal restoration/cleanup. The final failure-only adjustment preserves the
+viewer exit and states why private diagnostic text was not retained. These are
+source/local tests; the actual GUI/human recovery remains NOT_RUN.

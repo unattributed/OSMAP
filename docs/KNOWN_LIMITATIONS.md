@@ -14,7 +14,14 @@ is EXPOSED; the human classified isolated factor exposure with no broader
 suspicion, requiring the existing fresh human-signed recovery path. One live
 cookie passed pre-containment GET200; the other original session had already
 idle-expired. Native containment, actual replacement/refusal/restart, complete
-recovery and independent human acceptance remain unqualified. Manual fixture initialization and
+recovery and independent human acceptance remain unqualified. The first human
+recovery command stopped pre-begin; authoritative Active0/no-case/original-factor
+readback and post-refusal preservation passed. A separately reproduced nested
+helper path-reset defect was corrected; focused source tests and corrected actual
+read-only snapshot passed. Its earlier dry-run did not
+exercise that boundary. The exposed replacement candidate cannot be reused;
+transcript-safe QR display passed focused source/local controls, with actual
+human GUI/recovery still pending. Manual fixture initialization and
 factor enrollment do not qualify product lost-password recovery. Lost-password,
 missing-factor and already-partial cases continue to require manual review.
 OSMAP admission/browser-session containment does not prove termination of public

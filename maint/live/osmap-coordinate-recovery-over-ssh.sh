@@ -61,6 +61,19 @@ coordinator_pending() {
     return 24
 }
 
+coordinator_prebegin_refused() {
+    # Native/SSH text can contain private data. Retain only a fixed cause and
+    # bounded stream accounting; this path has not dispatched native begin.
+    local phase="$1" status="$2" observation="${3:-}"
+    printf '%s' "${observation}" | python3 -c 'import hashlib,json,sys
+phase,status=sys.argv[1:];digest=hashlib.sha256();size=0
+for chunk in iter(lambda:sys.stdin.buffer.read(65536),b""):
+ size+=len(chunk);digest.update(chunk)
+causes={"candidate_material":"CANDIDATE_MATERIAL_REFUSED","candidate_digest":"CANDIDATE_DIGEST_REFUSED","factor_snapshot":"FACTOR_SNAPSHOT_REFUSED","factor_comparison":"CURRENT_FACTOR_CHANGED","identity_recheck":"IDENTITY_RECHECK_REFUSED","identity_comparison":"IDENTITY_DECISION_CHANGED"}
+print(json.dumps(dict(schema="osmap-account-recovery-prebegin-refusal-v1",phase=phase,cause=causes[phase],exit=int(status),observation_bytes=size,observation_sha256=digest.hexdigest(),native_begin_dispatched=False,automatic_mutation_retry=False),separators=(",",":")),file=sys.stderr)' "${phase}" "${status}"
+    return 1
+}
+
 coordinator_result() {
     local verb="$1" account="$2" case_id="$3" epoch="$4" digest="$5"
     python3 -c 'import json,sys
@@ -86,7 +99,7 @@ coordinator_release_authorize() {
 
 coordinator_run() {
     local account="$1" host="$2" hostname="$3" mutation="$4"
-    local status digest epoch native verified case_id current new_digest stamp output secret runtime_paths
+    local status digest epoch native verified case_id current new_digest stamp output secret runtime_paths candidate_rc
     status="$(coordinator_status "${account}" "${host}" "${hostname}")" || return 1
     current="$(python3 -c 'import json,sys,re
 v=json.load(sys.stdin)
@@ -111,17 +124,17 @@ print(" ".join(p))' <<<"${status}")" || return 1
     prepare_enrollment_material "${account}" || return 1
     show_and_verify_enrollment "${account}" || return 1
     coordinator_authorize "${account}" "${hostname}" "${case_id}" || return 1
-    secret="$(<"${SECRET_FILE}")"
-    printf '# %s\nsecret=%s\n' "${account}" "${secret}" > "${WORK_ROOT}/candidate.totp" || return 1
+    secret="$(<"${SECRET_FILE}")" || { coordinator_prebegin_refused candidate_material "$?"; return 1; }
+    printf '# %s\nsecret=%s\n' "${account}" "${secret}" > "${WORK_ROOT}/candidate.totp" || { candidate_rc=$?; unset secret; coordinator_prebegin_refused candidate_material "${candidate_rc}"; return 1; }
     unset secret
-    new_digest="$(sha256sum "${WORK_ROOT}/candidate.totp" | awk '{print $1}')"
-    [[ "${new_digest}" =~ ^[0-9a-f]{64}$ && "${new_digest}" != "${digest}" ]] || return 1
+    new_digest="$(sha256sum "${WORK_ROOT}/candidate.totp" 2>&1 | awk '{print $1}')" || { coordinator_prebegin_refused candidate_digest "$?" "${new_digest}"; return 1; }
+    [[ "${new_digest}" =~ ^[0-9a-f]{64}$ && "${new_digest}" != "${digest}" ]] || { coordinator_prebegin_refused candidate_digest 1; return 1; }
     # Revalidate signature/time/current factor after private interaction. Never
     # invent the legacy tool's external containment/session-attestation booleans.
-    current="$(rotation_snapshot "${account}" "${host}" "${hostname}")" || return 1
-    [[ "${current}" == "${digest}" ]] || return 1
-    verified="$(coordinator_identity "${account}" "${host}" "${hostname}" "${digest}" "${epoch}")" || return 1
-    [[ "${verified}" == "${native}" ]] || return 1
+    current="$(rotation_snapshot "${account}" "${host}" "${hostname}" 2>&1)" || { coordinator_prebegin_refused factor_snapshot "$?" "${current}"; return 1; }
+    [[ "${current}" == "${digest}" ]] || { coordinator_prebegin_refused factor_comparison 1 "${current}"; return 1; }
+    verified="$(coordinator_identity "${account}" "${host}" "${hostname}" "${digest}" "${epoch}" 2>&1)" || { coordinator_prebegin_refused identity_recheck "$?" "${verified}"; return 1; }
+    [[ "${verified}" == "${native}" ]] || { coordinator_prebegin_refused identity_comparison 1 "${verified}"; return 1; }
     if ! output="$(coordinator_native "${host}" begin "${native}")"; then coordinator_pending; return 24; fi
     if ! coordinator_result begin "${account}" "${case_id}" "${epoch}" "${digest}" <<<"${output}"; then
         coordinator_pending; return 24

@@ -182,6 +182,7 @@ coordinator_authorize() { event authorize; [[ "$CASE" != authorization_failed ]]
 coordinator_release_authorize() { event release_authorize; [[ "$CASE" != release_denied ]]; }
 rotation_snapshot() {
     event snapshot
+    [[ "$CASE" != snapshot_failed ]] || { printf '%s\n' 'synthetic-private-native-detail' >&2; return 7; }
     if [[ -f "$CASE_ROOT/installed_digest" ]]; then
         [[ "$CASE" != final_mismatch ]] || { printf '%064d\n' 0; return 0; }
         cat "$CASE_ROOT/installed_digest"
@@ -284,6 +285,23 @@ class CoordinatorWorkflowTests(unittest.TestCase):
                 self.assertIn("ACCOUNT_RECOVERY=INCOMPLETE", result.stdout)
                 self.assertIn("containment_release=UNKNOWN", result.stdout)
                 self.assertNotIn("ACCOUNT_RECOVERY=PASS", result.stdout)
+
+    def test_prebegin_snapshot_refusal_retains_fixed_cause_without_private_text(self):
+        result, events = self.run_case("snapshot_failed")
+        self.assertEqual(result.returncode, 1)
+        self.assertEqual(events[-1], "snapshot")
+        self.assertFalse(any(event.startswith("native:") for event in events))
+        self.assertNotIn("synthetic-private-native-detail", result.stdout + result.stderr)
+        diagnostic = json.loads(result.stderr)
+        self.assertEqual(diagnostic["schema"], "osmap-account-recovery-prebegin-refusal-v1")
+        self.assertEqual(diagnostic["phase"], "factor_snapshot")
+        self.assertEqual(diagnostic["cause"], "FACTOR_SNAPSHOT_REFUSED")
+        self.assertEqual(diagnostic["exit"], 7)
+        self.assertFalse(diagnostic["native_begin_dispatched"])
+        self.assertFalse(diagnostic["automatic_mutation_retry"])
+        self.assertEqual(diagnostic["observation_bytes"], len(b"synthetic-private-native-detail"))
+        self.assertEqual(diagnostic["observation_sha256"],
+                         hashlib.sha256(b"synthetic-private-native-detail").hexdigest())
 
     def test_dry_run_has_no_enrollment_tty_or_native_effect(self):
         result, events = self.run_case(mutation=False)

@@ -10203,7 +10203,9 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "maint/security/v15-dependency-admission.json",
     "maint/wstg-testing-pack/osmap-browser-attack-surface.json",
     "src/openbsd.rs",
-    "src/config.rs"
+    "src/config.rs",
+    "maint/live/osmap-rotate-totp-over-ssh.sh",
+    "maint/security/test-osmap-totp-rotation.py"
   ],
   "outcomes": [
     {
@@ -10260,7 +10262,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "status": "PENDING",
     "reference": ""
   },
-  "next_action": "Complete independently reviewed Pending/post/restart callbacks, then fresh human-only identity signature and one private controlled recovery paused at RECONCILE; preserve exposed-factor classification and all historical uncertainty. No ordinary password POST without its own specific authorization.",
+  "next_action": "Finish normal signed source preservation and fresh remote parity, then human-only launcher02 with new private graphical enrollment, fresh reviewed signature and existing Pending pause. Reuse completed source/native read-only proofs; no automatic recovery retry or ordinary password mutation.",
   "accountability": {
     "owner": "/root",
     "functional_exit": "Working governed factor recovery through actual account/session/factor authority and truthful Settings; human judgment remains separate.",
@@ -10282,7 +10284,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "slice": "S04-04",
     "specification": {
       "path": "docs/UX_SLICE_S04_04.md",
-      "sha256": "d784eabf0ab97504e77a272413e4d96c392d017495d691502e8ba1ab73e9b78d"
+      "sha256": "c6d9bef0a538e972ce48d9130c06b38fb85df7bbc94922790a0ca4b568252ebc"
     },
     "design": {
       "journey": "Operator-assisted lost-authenticator recovery progresses requested, identity reviewed, contained, sessions revoked, factor replacement, reconciled; account Settings reflects actual state.",
@@ -10687,7 +10689,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
   "operator_followup": {
     "custody": "CONFIRMED_DIRECT_HUMAN_RESERVED_DISPOSABLE_FIXTURE",
     "human_private_terminal_availability": "CONFIRMED",
-    "independent_recovery_identity_approval": "NOT_CREATED",
+    "independent_recovery_identity_approval": "HUMAN_CREATED_AND_VERIFIED in controlled-identity.Na1eezl8; original attempt ended pre-begin, no native case. Preserve signed decision; no automatic reuse/renewal.",
     "fixture_credential_init": {
       "actor": "private continuation01/fixture-credential-init01.py",
       "actor_sha256": "b190bc79db08dfe61a8d161c567d3e3e51dedcb87e426a6b7262a00bcf7e926c",
@@ -10868,6 +10870,40 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
       "evidence": "private recovery-modes-qa01/independent-review02.json SHA6cbd032c7900d12eb692926169722861dd8394e7c3f3730812510256da88bf6d; exact source33cf/wrapper8b5; prior review retained, timing wording corrected without retest",
       "scope": "Actual Rust marker producer/consumer, Pending/old-factor refusal, replacement303 session/replay, unexpected200 issued-cookie preservation, persistence consumer and private TTY cleanup. Synthetic controls only; separate parent restart proof required.",
       "native": "NOT_RUN; no identity signature/window or recovery dispatch created by source QA"
+    },
+    "human_recovery_attempt01": {
+      "state": "UNCONFIRMED_ORIGINAL_COMMAND_PREBEGIN_STATE_RECONCILED",
+      "record": "private human-recovery-refusal01/human-result.json and reconciliation.json",
+      "reported_human_steps": "Fresh signed decision/verifier/dry-run, private candidate verification and exact RECOVER; no RECONCILE reached",
+      "original_cause": "NOT_RETAINED: original coordinator lacked phase/stream diagnostic at this boundary",
+      "native_readback": "PASS0.778s Active0/no case/original factor unchanged; no recovery mutation repeated",
+      "candidate": "EXPOSED by pasted transcript; not copied/used/reconstructed, excluded from reuse; local candidate cleanup not independently observed",
+      "same_case": "Existing isolated disposable-fixture classification retained; no broader safety claim",
+      "preservation": "PASS1.070s one existing-cookie GET200, zero login/OTP, exact request/epoch/factor/replay/own authority/foreign authority; normal own last_seen only. private preservation-result01.json"
+    },
+    "prebegin_path_correction": {
+      "state": "PASS_SOURCE_AND_SCOPED_ACTUAL_READONLY_PATH_BOUNDARY",
+      "original_discriminator": "Actual original frozen b416 snapshot FAIL1 in1.207s; remote arguments selected legacy instead of trusted native paths. private original-snapshot-result.json",
+      "cause": "rotation_preflight and rotation_revoke source helper initialization discarded selected native paths in favor of defaults",
+      "correction": "Scoped selected factor/revoked directory and owner/group bindings at BOTH helper sources; fixed prebegin phase/cause/exit+observation hash/count diagnostics",
+      "coordinator_sha256": "d17a8ddfb0e4e4ad905f9acb6ff87ada66a5d439dc7f5180e5cb8b9239e2c017",
+      "rotation_sha256": "adc8c9cbec2a513f3b217bc6e16f6ebd1155822f5ab1f230bb1d8c534af2148c",
+      "planned_operation": "COMPLETED_ONCE: corrected actual rotation_snapshot READ_ONLY, bound55s,18s per SSH guard; no begin/revoke/provision/signature/password/service operation",
+      "dry_run_limit": "Existing coordinator dry-run returns before physical snapshot; PASS did not cover defect",
+      "source_tests": "Two permanent actual sourced-helper regressions oldRED/newGREEN; existing coordinator workflow7PASS with fixed prebegin diagnostic/privacy begin0; independent real-chain and diagnostic GO, plus3 existing refusal controls PASS.",
+      "complete_scenarios": "T04/T05/T08/T09 NOT_RUN; no native recovery PASS",
+      "traceability_refusal": "Existing work-order checker initially refused two newly necessary rotation/test paths. Extended only the active mutable path list for the demonstrated sourced-helper correction; frozen plan/acceptance unchanged.",
+      "independent_review": "private rotation-chain-qa01/independent-review.json SHAebd6de143163793220b7166bea1a9e9b4ed5d856efc97edd0f42d00e49f69559",
+      "actual_readonly_result": "PASS1.369s exit0, native paths only, expected original factor digest, zero noninstrumentation stderr. private human-recovery-refusal01/corrected-snapshot-result.json SHA58296390f4d9c34f15c6757e2edd9d08e29f1e00b76a153234e0da14feb28652"
+    },
+    "transcript_safe_enrollment": {
+      "state": "GO_SOURCE_ONLY_ACTUAL_HUMAN_GUI_AND_RECOVERY_PENDING",
+      "presentation": "QR stdin to600 PNG in exact existing private enrollment root; separate local eom viewer, no QR/seed/URI terminal output or secret argv; existing hidden verification and coordinator calls retained",
+      "authority": "Human-only signature and private RECOVER/RECONCILE; no agent UI/secret access or automatic retry/release",
+      "adapter_sha256": "0cb276c48b5816acfd1a2794f6428e8013694364480234219e3843620501b7be",
+      "launcher02_sha256": "5bd1bce39854d7604c38f6ef86491755204d93d13b20e7d34afe66910fe2281a",
+      "independent_qa": "private gui-adapter-qa04/independent-review.json SHAc7c9a04fe25e4e91d55d3acf90285df7b579fccf76ddec8330fc58f99037549d; three actual-body synthetic controls reused plus one final affected refusal test, maintained verifier/cleanup, no raw material TTY/argv/logs",
+      "composition_review": "private human-launch-qa01/graphical-composition-review04.json SHAd73118835c5de8da3477d068569d851a13512194c3582ac214b94320550421bd; final successor failure-only diagnostics+mechanical adapter pin, source QA covers final exact pair"
     }
   }
 }

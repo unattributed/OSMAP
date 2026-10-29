@@ -28,8 +28,17 @@ EXPOSED after private enrollment material was pasted into chat. The human
 classified isolated factor exposure with no broader suspicion in the same case.
 One live-cookie pre-containment GET200 passed; the other original session is
 already idle-expired and supplies no causal revocation proof. Fresh human-signed
-controlled recovery, Pending/refusal/replacement/persistence observations and
-the separately authorized ordinary password journey remain next.
+controlled recovery was attempted after actual human signing and private
+confirmation, then returned UNCONFIRMED. Readback found no durable native begin
+effects: Active0/no case
+and original factor unchanged. The original exact exit cause was not retained;
+a separate read-only host discriminator reproduced helper path reset to legacy
+directories. A scoped correction covers preflight and revocation. Affected source controls
+and the corrected actual read-only host snapshot passed. Post-refusal record preservation and surviving-cookie
+GET200 passed. The candidate was also exposed in the pasted transcript and is
+excluded from reuse; the next enrollment keeps its QR outside terminal output.
+Pending/refusal/replacement/persistence observations and the separately
+authorized ordinary password journey remain unfinished.
 The bridge profile remains backed up for guarded restoration after the controlled
 journey. IMAP/SMTP connection termination is not claimed. S05-02 remains deferred
 and its separate local changes untouched.
