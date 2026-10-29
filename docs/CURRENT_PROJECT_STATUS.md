@@ -1,5 +1,20 @@
 # Current Project Status
 
+2026-10-29 (America/Toronto) — **S04-04 code running on obsd1; selected owner account configured for local browser UAT.**
+Fresh checks matched installed Web/recovery/password-helper artifacts and actual
+loaded images. All17 roles are healthy, public HTTPS login returns200 and all54
+current environment fields are loaded. Only the native rollout selector changed
+from the retired fixture to the privately selected owner account; other53 fields
+and LOCAL auth/mailbox routing are unchanged. Only OSMAP Web restarted. Returned
+native state stayed owner Active3/original factor/no case and fixture unchanged;
+no credential or session-revocation operation was performed. A fresh normal
+login may be needed under native admission. This is installed/configured
+readiness for a browser walkthrough, not full recovery or Toronto mailbox-sync
+qualification. T04/T05/T08/T09 remain NOT_RUN. The two-terminal fixture procedure
+was withdrawn, its entrypoints disabled and its owned processes stopped. Its
+failures remain preserved; no new fixture procedure is approved. S05-02 remains
+untouched. See [the current slice record](UX_SLICE_S04_04.md).
+
 2026-10-29 (America/Toronto) — **S04-04 implemented and component-tested; configured recovery remains open.**
 The operator authorized bounded subagents and work package -> T0# -> actual
 evidence -> completion. The governed lost-authenticator coordinator now has

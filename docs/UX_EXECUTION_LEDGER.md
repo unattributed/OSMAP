@@ -10262,7 +10262,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "status": "PENDING",
     "reference": ""
   },
-  "next_action": "Finish normal signed source preservation and fresh remote parity, then human-only launcher02 with new private graphical enrollment, fresh reviewed signature and existing Pending pause. Reuse completed source/native read-only proofs; no automatic recovery retry or ordinary password mutation.",
+  "next_action": "Complete normal signed Git preservation and fresh origin parity; use normal browser sign-in for selected-owner local UAT. No retired fixture scripts or owner credential mutation; complete recovery qualification remains open.",
   "accountability": {
     "owner": "/root",
     "functional_exit": "Working governed factor recovery through actual account/session/factor authority and truthful Settings; human judgment remains separate.",
@@ -10284,7 +10284,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "slice": "S04-04",
     "specification": {
       "path": "docs/UX_SLICE_S04_04.md",
-      "sha256": "c6d9bef0a538e972ce48d9130c06b38fb85df7bbc94922790a0ca4b568252ebc"
+      "sha256": "c3990c8f9619150a3505bc3b09176639132ee7e44494dc995deaa4b6ebedd9d9"
     },
     "design": {
       "journey": "Operator-assisted lost-authenticator recovery progresses requested, identity reviewed, contained, sessions revoked, factor replacement, reconciled; account Settings reflects actual state.",
@@ -10670,12 +10670,12 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "authenticated_settings": "NOT_RUN; fresh unauthenticated browser entry reached login, no credentials entered"
   },
   "remaining_qualification": {
-    "state": "IN_PROGRESS_FACTOR_AND_NATIVE_PROFILE_PREPARATION_PASS_HTTP_PENDING",
+    "state": "INSTALLED_RUNTIME_PASS_OWNER_SELECTED_BROWSER_UAT_PENDING",
     "reserved_account": "osmap-helper-validation@blackbagsecurity.com",
-    "actual": "configuredfactorverified; LOCALWebprofile54/54loadedfieldsmatch; reservednativeActiveepoch0 no case; actualHTTPlogin/Settings/recoverynotrun",
+    "actual": "Actual two-logins/Settings/refusals partial baseline preserved; fixture Active0/originalfactor/no case after safe stop. Owner now selected native account, Active3/factor present/no case, unchanged by config deployment; complete recovery NOT_RUN.",
     "local_instance": "actual obsd1/originalsocket/3306/datadirvarmysql/server1/read_onlyOFF; numeric-only observerFAIL retained andsame-output canonicalOFF correctionPASS",
-    "routing": "CURRENT temporarywholeWebLOCALauth/mailboxroute; reservednativeActive0; actualloaded54/54candidatefields and17roleshealthy. OriginalToronto relayservices remainrunning but WebcurrentlyselectsLOCAL; oldprofilebackedupforguardedrestore.",
-    "required_human_input": "Human enrollment complete; retainProtonPassbaseline retry02entry. LaterfreshHTTPcodes andfreshindependentidentity/privateRECOVER/RECONCILE/T09.",
+    "routing": "Current LOCAL auth/mailbox route preserved; only selected native account changed to privately chosen owner. All54 fields loaded,17roleshealthy,HTTPS200. Original bridge and fixture-profile backups retained; no Toronto mail-sync qualification.",
+    "required_human_input": "Normal private browser sign-in and selected-owner Settings walkthrough; no fixture scripts, QR retries or two-terminal procedure. Destructive credential/factor action requires its own explicit reviewed scope.",
     "next_plan": "private controlled-recovery-journey-proposal01.md SHAde4e9f9b32903b72526af7d788cdca8ea97262e4ad3b59f8a5ec57dada894864",
     "conditional_actor": "private controlled-baseline-actor01.md SHA1bcfa0df1ae2574be5e756e54664678182740a7a09e396cf1349dcfef451395a; NOT_DISPATCHABLE, no SQLwrites/reset/delete or owner/globalroute substitution",
     "not_run": [
@@ -10684,7 +10684,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
       "S04-04-T08",
       "S04-04-T09"
     ],
-    "current_next_plan": "NEXT private actualHTTPSbaseline: twohumanfresh-code sessions, Settings/request/refusals andpreservation; freshidentity/privateRECOVER/RECONCILE onlyafteractualbaseline+reviewedpostcaserestore. SETTLEDcredentialinit andenrollment/profilepreparationarecomplete; do notrepeat."
+    "current_next_plan": "Owner browser preview on local obsd1; all complete T04/T05/T08/T09 remain NOT_RUN. Retired fixture launchers/restoration/signing drafts are not owner execution methods."
   },
   "operator_followup": {
     "custody": "CONFIRMED_DIRECT_HUMAN_RESERVED_DISPOSABLE_FIXTURE",
@@ -10904,6 +10904,29 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
       "launcher02_sha256": "5bd1bce39854d7604c38f6ef86491755204d93d13b20e7d34afe66910fe2281a",
       "independent_qa": "private gui-adapter-qa04/independent-review.json SHAc7c9a04fe25e4e91d55d3acf90285df7b579fccf76ddec8330fc58f99037549d; three actual-body synthetic controls reused plus one final affected refusal test, maintained verifier/cleanup, no raw material TTY/argv/logs",
       "composition_review": "private human-launch-qa01/graphical-composition-review04.json SHAd73118835c5de8da3477d068569d851a13512194c3582ac214b94320550421bd; final successor failure-only diagnostics+mechanical adapter pin, source QA covers final exact pair"
+    },
+    "manual_flow_withdrawal": {
+      "state": "WITHDRAWN_USER_REJECTED_OVERCOMPLICATED_PROCEDURE",
+      "entrypoints": "Old launcher01/02 and Pending shell wrapper now no-action retirement notices; exact originals retained privately. No new manual recipe approved.",
+      "actual_pending_failure": "errno2/CARRIER_IO_UNAVAILABLE with zero HTTP before case existed; private recovery-probe-run.JHGuHqLP/old-cookies.jsonl",
+      "safe_stop": "Owned QR viewer/test processes stopped, interactive shell untouched. Fresh native readback Active0/originalfactor/no case. private manual-flow-withdrawal01/process-stop-result.json +native-status-after-stop.json",
+      "guided_candidate": "Additional private guided-wrapper work interrupted; not an admitted owner path",
+      "no_live_retry": true
+    },
+    "real_account_uat_readiness": {
+      "state": "PASS_INSTALLED_AND_SELECTED_ACCOUNT_CONFIGURATION_HUMAN_PREVIEW_PENDING",
+      "owner_selection": "Directly selected real owner UAT account; exact identifier only in private selection record",
+      "source": "Signed8e9045e operator correction; installed Rust122b source identical to HEAD for src/Cargo, no rebuild required",
+      "artifacts": "Actual Weba1dd680d/recovery421077d4/passwordbe7c6b40 protected hashes+modes PASS; loaded Web/account-helper inodes match",
+      "scope": "One exact rollout-selector field only; other53fields byte-identical, LOCALauth/mailboxroute unchanged; only OSMAP Web restart",
+      "actor_sha256": "585c3917b1d6cb0aa1f0a7bd6e43f11a5d86a9f68997d48eff992c26fa17df33",
+      "actual": "PASS1.656s;54newfields loaded/Webinode match; owner Active3/factor commitment/no case and fixture native returned status unchanged",
+      "active_env_sha256": "8edd312fa93a6fbc41960826c1a9c48559bacb7f18de64878c79f6979aa3442e",
+      "backup": "Root-private /var/backups/osmap-s04-04-owner-uat-01; prior fixture/bridge backups retained",
+      "health": "After-switch17roles healthy and public HTTPSlogin200",
+      "evidence": "private continuation01/real-account-readiness01/{installed-runtime,owner-status,selector-deployment,post-switch-health}.json",
+      "effects": "No recovery begin/prepare/reconcile, factor/password write or explicit session-revocation operation. Selector changes native admission; old cookies can require fresh login.",
+      "limits": "Configured local browser walkthrough only; fullT04/T05/T08/T09 notqualified; no Toronto mailbox-sync or real-person identity claim. Fixture-only old actors not applicable to owner."
     }
   }
 }

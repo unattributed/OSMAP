@@ -1,5 +1,14 @@
 # Known Limitations
 
+Current S04-04 boundary: obsd1 runs matching installed code and the selected
+owner account is now enabled by the native rollout selector for local browser
+UAT. This does not complete recovery qualification or authorize changing the
+owner's credentials. Current LOCAL auth/mailbox routing is unchanged and does
+not qualify Toronto mailbox synchronization. The old two-terminal fixture flow
+is withdrawn and disabled; its fixture-specific cleanup/signing actors must not
+be reused for owner state. Full T04/T05/T08/T09 remain NOT_RUN. The historical
+fixture/preparation details below predate the owner-selector change.
+
 S04-04 has source/native-tested governed factor-recovery components and matching
 installed Web/helper executables. The disposable fixture now has a separately
 initialized private password, human-enrolled initial factor and independently

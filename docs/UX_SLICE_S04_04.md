@@ -645,3 +645,40 @@ private PNG/stdin/argv handling, early-input flush, GUI refusal, signal and exac
 terminal restoration/cleanup. The final failure-only adjustment preserves the
 viewer exit and states why private diagnostic text was not retained. These are
 source/local tests; the actual GUI/human recovery remains NOT_RUN.
+
+
+### Manual procedure withdrawn; selected owner-account UAT configuration
+
+The operator rejected the two-terminal fixture procedure. Its public entry
+commands now stop without dispatch, with exact previous sources and failed
+receipts retained privately. The Pending probe ran before a recovery case
+existed and stopped with errno2 and zero HTTP requests. The remaining owned
+QR viewer/test processes were stopped; readback confirmed fixture Active0,
+original factor unchanged and no case. The additional guided-wrapper work was
+interrupted and is not an approved execution path. No further fixture terminal
+procedure is part of owner UAT.
+
+On the operator's request to use the real owner account and ensure obsd1 can run
+S04-04, fresh read-only inspection matched the installed Web/recovery/password
+helper hashes and protected modes, actual loaded Web/account-helper inodes,
+17 healthy roles, all54 loaded environment fields and public HTTPS login200.
+Production Rust/Cargo bytes are unchanged from the signed122b build, so no
+rebuild or binary replacement was needed. The operator-side path correction
+remains in signed8e9045e.
+
+Only OSMAP_ACCOUNT_ROLLOUT_ACCOUNT changed from the retired fixture to the
+privately selected owner UAT account. The other53 environment fields and the
+existing LOCAL auth/mailbox route are byte-identical. A root-private backup
+precedes guarded atomic publication; only OSMAP Web restarted. Actual loaded
+profile readback, HTTPS200 and all17 healthy roles passed afterward. Returned
+native account-state fields before/after match: owner Active3, original factor,
+no recovery case; fixture state also unchanged. No password/factor/recovery or
+session-revocation operation was performed. Existing legacy cookies may need a
+fresh login because selected-account native admission now applies.
+
+This establishes installed/configured readiness for the owner's local browser
+walkthrough. Complete recovery, restart-after-recovery, post-recovery password
+change and human acceptance remain unqualified; T04/T05/T08/T09 stay NOT_RUN.
+Current LOCAL development routing is not Toronto mailbox-sync qualification.
+Old fixture-specific signing, preparation and restoration actors do not apply
+to the owner account or its epoch. The exact owner identifier remains private.
