@@ -1,5 +1,23 @@
 # Decision Log
 
+2026-10-29 — S04-04 initial factor and profile preparation passed: reconcile the
+final human receipt and independent configured-factor header/custody/digest,
+then execute the unchanged reviewed local-profile actor once. Actual activation
+passed in5.097s, creating activeepoch0 and publishing only the reviewed three
+configurations; Web/account-helper restart and17 roles passed. Fresh read-only
+loaded-environment comparison matched54/54 fields. Preserve this as preparation,
+with real HTTPS/Settings/session/recovery still pending. The controlled global
+LOCAL Web route and reserved-only native selector remain explicit; restore the
+bridge profile only under its applicable guarded preparation/post-case path.
+
+2026-10-29 — S04-04 enrollment retry/correction: direct operator instruction
+permits evaluating and correcting the failed boundary. Fresh read-only native
+preflight passed with mailbox present and configured factor absent; the original
+private final outcome remains unknown. Correct the private wrapper's missing
+phase/result evidence, preserving private human enrollment/PROVISION and one
+no-overwrite publication. Do not infer a product defect, repeat the settled
+password initialization, or activate epoch/profile before actual factor readback.
+
 2026-10-29 — S04-04 controlled fixture continuation: the operator confirmed
 disposable custody and human-step availability, with the original password unavailable.
 Execute the explicitly authorized single local credential initialization as manual fixture maintenance;

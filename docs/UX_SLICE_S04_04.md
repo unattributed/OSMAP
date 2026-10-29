@@ -433,3 +433,73 @@ owner credentials/content may differ from Toronto. Preserve public mail services
 and all owner credentials/data, then restore the exact current bridge profile and
 verify its loaded environment, HTTPS and supervised roles. This preparation is
 separate from the later fresh identity signature and private RECOVER/RECONCILE.
+
+
+### Enrollment diagnostic correction — 2026-10-29
+
+The operator directed a retry, evaluation and correction. A fresh read-only
+metadata observation again found the configured factor absent (ENOENT). The
+actual maintained native dry-run then passed in0.491s with no stderr: the local
+mailbox exists, the factor is absent and no-overwrite enrollment is eligible.
+This does not establish the original private command's final outcome or cause;
+that observation remains unavailable. No password initialization was repeated.
+
+The supported change is limited to the private enrollment wrapper's diagnostic
+boundary: retain a fixed phase, nonsecret primary reason, exit status and whether
+factor dispatch was attempted in a private durable receipt. Preserve the existing
+human QR/code and exact PROVISION checks, the maintained no-overwrite publication
+and the stop on uncertain results. A corrected private enrollment attempt still
+requires those human steps; native dry-run PASS is not installed-factor PASS.
+No epoch/profile publication or complete recovery journey is claimed.
+
+The read-only observer correction preserves the original checks and adds only a
+fixed phase and numeric errno. Its two local affected-boundary cases passed.
+Actual obsd1 execution now reports `factor_open`, errno2 and zero stderr in0.331s,
+with no factor material emitted. This qualifies the diagnostic correction only;
+the absent-factor refusal and product recovery remain unchanged.
+
+Affected local wrapper QA preserved an additional failure before any real host
+provisioning: merging stderr's no-newline private input prompt with stdout's
+success marker caused exact-line verification to refuse a correct synthetic
+code. The smallest correction separates private stderr capture from stdout
+markers for enrollment and PROVISION, with both under existing private scratch
+cleanup. The original native attempt's cause remains unknown; this local
+failure does not explain it. The final wrapper retains one no-overwrite dispatch
+and an uncertain-outcome stop.
+
+The final private wrapper SHA-256 is
+`2a186823fb732f84e3ca18fce5efe638a829862670c9f825ad1b548024e2cb1c`.
+Independent QA passed seven affected whole-wrapper cases with the maintained
+primitive and a synthetic private terminal: successful code/PROVISION, bad code,
+denied confirmation, sensitive QR error suppression, uncertain remote response,
+and receipt failures before and after provisioning. The pre-dispatch failure
+made no provisioning call; the post-dispatch failure retained the simulated
+factor and reported UNCONFIRMED without retry. Three real native-producer
+consumer cases also passed, using the actual665-byte preflight response with
+exit status and required-marker refusals. The preserved merged-stream failure
+remains failed. These checks qualify only this execution correction, not the
+installed factor or complete T04/T05/T08/T09. The already-authorized corrected
+private human enrollment command has been provided; actual outcome is pending.
+
+
+### Initial factor and native profile preparation — actual 2026-10-29
+
+The corrected human run finished complete/PASS, remote dispatch recorded and
+exit0. Independent native readback found the exact configured87-byte regular
+factor, UID/GID1001, mode0600, single-link and correct account header. Its SHA-256
+`8c2fc29dd948232cfc81e640799c445c0a77e162a6a9032fd0720e1085c5adab`
+matches the final human receipt; no factor material was emitted. The earlier
+IN_PROGRESS receipt remains history, superseded by the final complete receipt.
+
+The reviewed root-private seven-file input publication passed exact hash/custody
+readback. The unchanged profile actor then passed once in5.097s with zero stderr,
+within its240s primary plus200s restoration bound. Native status is activeepoch0,
+no recovery case and the same factor digest. Only the two OSMAP roles restarted;
+the17-role before/active observations are identical and healthy. A fresh read-only
+comparison of the actual Web process environment matched all54 candidate fields,
+without retaining raw environment output. No additional credential or factor
+write occurred in profile preparation. Full browser/recovery/T09 remain NOT_RUN;
+this checkpoint establishes preparation only. The temporary whole-Web LOCAL
+route remains active pending the controlled journey and guarded bridge restore.
+Private actual receipts are under `continuation01/profile-activation01/` and
+`active-profile-readback01.json`; their scalar observer is `profile-activation01.json`.

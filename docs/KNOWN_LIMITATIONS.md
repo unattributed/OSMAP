@@ -1,22 +1,18 @@
 # Known Limitations
 
 S04-04 has source/native-tested governed factor-recovery components and matching
-installed Web/helper executables. Complete configured factor/password-preservation
-qualification, authenticated installed browser integration and independent human
-identity/acceptance remain NOT_RUN. The current frontend profile has no native
-account authority; it was preserved. The reserved test account has one historical
-mailbox row and no helper allowlist admission or epoch record. Disposable custody
-is human-confirmed. The separately authorized one-shot local fixture password
-initialization settled with independent target/non-target preservation readback.
-Initial factor enrollment was reported completed; independent metadata readback
-found the expected configured factor absent (ENOENT). Runtime preparation is
-blocked pending the private command’s final fixed status; do not repeat enrollment
-or infer an installed factor from the human completion report. This manual setup supplies no product
-lost-password recovery claim. The supported
-source case preserves a known password and replaces an
-existing active factor; lost-password, missing-factor and already-partial cases
-require manual review. OSMAP admission/browser-session containment does not prove
-termination of public IMAP/SMTP connections. See `UX_SLICE_S04_04.md`.
+installed Web/helper executables. The disposable fixture now has a separately
+initialized private password, human-enrolled initial factor and independently
+verified factor custody/digest. Its temporary LOCAL Web profile and reserved-only
+native authority are active with epoch0/active and no recovery case; all54 loaded
+environment fields match and17 roles passed. The whole-Web auth/mailbox route is
+local during this controlled interval; the prior bridge profile is backed up for
+guarded restoration. Actual authenticated HTTPS/session/recovery and independent
+human identity/acceptance remain unqualified. Manual fixture initialization and
+factor enrollment do not qualify product lost-password recovery. Lost-password,
+missing-factor and already-partial cases continue to require manual review.
+OSMAP admission/browser-session containment does not prove termination of public
+IMAP/SMTP connections. See `UX_SLICE_S04_04.md`.
 
 2026-10-26 — S04-03 is engineering-qualified for local obsd1 development; owner
 acceptance remains pending. Recovery-contact delivery is enabled only for the

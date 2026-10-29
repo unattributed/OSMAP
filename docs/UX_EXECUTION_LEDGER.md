@@ -10282,7 +10282,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "slice": "S04-04",
     "specification": {
       "path": "docs/UX_SLICE_S04_04.md",
-      "sha256": "ab66964f4288971793f545e533b49926668aa1bf630c7a203396500bc47197b5"
+      "sha256": "134bd45cbb0c23211700c50f0b04ee5c68651bf3eb470b684d482fcade25ebfe"
     },
     "design": {
       "journey": "Operator-assisted lost-authenticator recovery progresses requested, identity reviewed, contained, sessions revoked, factor replacement, reconciled; account Settings reflects actual state.",
@@ -10668,12 +10668,12 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "authenticated_settings": "NOT_RUN; fresh unauthenticated browser entry reached login, no credentials entered"
   },
   "remaining_qualification": {
-    "state": "IN_PROGRESS_FIXTURE_PASSWORD_SETTLED_EXPECTED_INITIAL_FACTOR_ABSENT",
+    "state": "IN_PROGRESS_FACTOR_AND_NATIVE_PROFILE_PREPARATION_PASS_HTTP_PENDING",
     "reserved_account": "osmap-helper-validation@blackbagsecurity.com",
-    "actual": "localSQLrow1; oneauthorizedpasswordinitializationSETTLED; initialfactorhumanreportedcompletebutactualexpectedpathENOENT; epochabsent; helperallowlists/frontendbridgeunchanged",
+    "actual": "configuredfactorverified; LOCALWebprofile54/54loadedfieldsmatch; reservednativeActiveepoch0 no case; actualHTTPlogin/Settings/recoverynotrun",
     "local_instance": "actual obsd1/originalsocket/3306/datadirvarmysql/server1/read_onlyOFF; numeric-only observerFAIL retained andsame-output canonicalOFF correctionPASS",
     "routing": "actual auth/mailbox Toronto relays retained; no newremote requests; localSQL row is not mailbox-route qualification; metadataquery unavailable toexistingclient, causeUNKNOWN/no widenedgrants",
-    "required_human_input": "Private initial enrollment final fixed status requested without rerun. Independent observer genericfailure preserved; lstat-only discriminator proves expectedfactorabsent. Profile/epoch activationblocked. Fresh identity/privateRECOVER/RECONCILE andT09later.",
+    "required_human_input": "Human enrollment complete; retainProtonPassbaseline retry02entry. LaterfreshHTTPcodes andfreshindependentidentity/privateRECOVER/RECONCILE/T09.",
     "next_plan": "private controlled-recovery-journey-proposal01.md SHAde4e9f9b32903b72526af7d788cdca8ea97262e4ad3b59f8a5ec57dada894864",
     "conditional_actor": "private controlled-baseline-actor01.md SHA1bcfa0df1ae2574be5e756e54664678182740a7a09e396cf1349dcfef451395a; NOT_DISPATCHABLE, no SQLwrites/reset/delete or owner/globalroute substitution",
     "not_run": [
@@ -10712,15 +10712,73 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
       "disposition": "separate follow-up; fixturecredential operation doesnot change service credential"
     },
     "initial_factor_enrollment": {
-      "status": "HUMAN_REPORTED_COMPLETION_EXPECTED_CONFIGURED_FACTOR_ABSENT",
+      "status": "PASS_HUMAN_PROVISION_AND_INDEPENDENT_INSTALLED_FACTOR_READBACK",
       "wrapper_sha256": "6f6b71cfe2e08ba7232b4b1790f3d97d33a4396666e902f9b5bf08a5408da5b8",
       "not_recovery_identity_approval": true,
       "secrets_in_chat": false,
-      "actual_evidence": "private continuation01/initial-factor-readback01.json REFUSED FIXED_READ_BOUNDARY_UNAVAILABLE; factor-path-discriminator01.json PASS readonly targetENOENT errno2 physicalancestors/runtimecorrect; nofactorcontentread",
-      "disposition": "No retry or profile/epochactivation; request finalfixedstatusfromprivatecommand withoutsecrets"
+      "actual_evidence": "private continuation01/enrollment-retry02/user-run.FR8Zb5br/result.json PASS andfactor-installed-readback02.json PASS; UID/GID1001 mode600singlelink87bytes accountheadercorrect; nofactormaterialemitted",
+      "disposition": "Advance reviewedprofilepreparation; no passwordinitrepeat or extra factorprovision",
+      "retry_authorization": "directhuman: retry and if necessary evaluate the issue and retool, and write a correction",
+      "read_only_retry": {
+        "evidence": "private continuation01/enrollment-retry02/factor-path.json + native-dry-run.json/stdout/stderr",
+        "native_dry_run_exit": 0,
+        "native_dry_run_elapsed_seconds": 0.491,
+        "stdout_bytes": 665,
+        "stderr_bytes": 0,
+        "mailbox_exists": true,
+        "factor_exists": false,
+        "factor_mutation_attempted": false
+      },
+      "original_private_final_outcome": "UNKNOWN_FINAL_STATUS_NOT_OBSERVED",
+      "diagnostic_observer_correction": {
+        "artifact": "private continuation01/verify-initial-factor02.py",
+        "sha256": "0f0240ef0f854a5003fe47208e9fa63238ccca7f72ce1340955accc50843d3d8",
+        "preserved_original": true,
+        "actual_native_result": "REFUSED as expected, phasefactor_open errno2 stderr0 0.331s; factorbytesnotemitted; provesdiagnosticcorrectiononly",
+        "local_affected_checks": "missingfile andmalformedprivatefactor fixedfailureoutputPASS; existingreadonlychecksunchanged"
+      },
+      "private_wrapper_correction": {
+        "artifact": "private continuation01/enroll-initial-factor02.sh",
+        "sha256": "2a186823fb732f84e3ca18fce5efe638a829862670c9f825ad1b548024e2cb1c",
+        "maintained_tool_unchanged": "0dcb06071993ee27075d33d28b3affc23e1d29220679d1608ce2064e90a3c762",
+        "effect": "fresh private atomicphase/cause/status/dispatchreceipt; actualprivateTTY; privatehelperstderr; stdoutmarkersseparate; oneatomicnooverwritefactorpublicationonlyafterhumanPROVISION",
+        "local_failure_preserved": "f100mergedstderrreadprompt+stdoutPASSline causedENROLLMENT_VERIFICATION_REFUSED despitefreshgoodsyntheticcode; beforeanyprovision",
+        "smallest_supported_correction": "splitstdoutmarkerandprivate-stderrfiles; sameprivatecleanup; nochangeactualnativepublication",
+        "qa_status": "PASS_7_WHOLE_WRAPPER_AND_3_ACTUAL_NATIVE_PRODUCER_CONSUMER_CASES",
+        "human_native_run": "PASS_ONE_RECORDED_REMOTE_PROVISION_EXIT0",
+        "qa_evidence": "private continuation01/enrollment-qa02/result.json SHA1fe358e301b045d536c92190b90fe1143a04640ab3739f6c5b269ee02ba41370; native-producer-consumer-result.json SHAf9cea7fecf04f31daa95db1450b5aed23b10d49c76a31dd42245cc689ce9b9c2",
+        "review": "independentQA andpolicyGO; rootexacthash/syntax/metadatareadback",
+        "receipt_contract": "private continuation01/enrollment-retry02/user-run.XXXXXXXX/result.json; strictfixedphase/cause/result/dispatch metadata; noseed/code/password/URI"
+      },
+      "actual_factor_sha256": "8c2fc29dd948232cfc81e640799c445c0a77e162a6a9032fd0720e1085c5adab"
     },
     "original_fixture_password_before_init": "UNAVAILABLE",
-    "current_fixture_password": "FRESH_CREDENTIAL_PRESERVED_HOST_ROOT_PRIVATE_ONLY"
+    "current_fixture_password": "FRESH_CREDENTIAL_PRESERVED_HOST_ROOT_PRIVATE_ONLY",
+    "profile_preparation": {
+      "state": "PASS_PREPARATION_SCOPE",
+      "outcome": "temporarywholeWebLOCALroute, reservedonlynativeauthority, initialactiveepoch0, nativeinstalledstatus+roles; completebrowser/recoveryseparate",
+      "owner": "/root",
+      "independent_review": [
+        "/root/recovery_policy_review",
+        "/root/recovery_qa"
+      ],
+      "source": "functional122b0b36; docsbase dca8275051d49960b517a1a6d9a47e1b072c8eca",
+      "driver_sha256": "667e5e235335598c084375ebd2b3f898ca88c385fd17a5f9ea0d303eb71c2d46",
+      "state_helper_sha256": "cde432bf8c9cf79f1260b24181e21e030b27af91a2829345e248ba2a6d2ee9ad",
+      "target": "obsd1.blackbagsecurity.com 192.168.1.44",
+      "bound_seconds": 440,
+      "primary_seconds": 240,
+      "restoration_allowance_seconds": 200,
+      "parent_observer_seconds": 470,
+      "actual_prerequisites": "humanfactorPASS +independentdigest/custody; SETTLEDinit; e706rootprivate7inputpublicationPASS0.358s allhashes/custodyreadback; actorsfreshliveoriginal/epoch/case/driftguard beforewrites",
+      "operation": "activate initialfactorSHA8c2fc29d\u2026 throughrootSSHstdin; stop/startonlyosmap_serve andosmap_account_password; noSQL/factor/mailbox/publicmailservicewrite",
+      "failure_stop": "preservefirstphase/helperdiagnosticbeforeboundedpreparation-onlyrestore; case/uncertain/advancedepoch refusesfenceremoval; noautomaticsecondactivation; exactownedepoch/factorretained",
+      "actual_result": "PASS5.097s exit0stderr0; nativeActive0 no case exactfactor;17roleshealthy; no additionalSQL/factorwrite",
+      "actual_evidence": "private continuation01/profile-activation01.json, profile-activation01/receipts.tar SHAc328d03367d16de5bc50cc4c725e3604e5bea7b8e7e1665cd628f2572a86966d and7membercopiedhashreadback; active-profile-readback01.json PASS54/54loadedenvmatches",
+      "actual_elapsed_seconds": 5.097,
+      "current_profile": "TEMPORARY_WHOLE_WEB_LOCAL_AUTH_MAILBOX_RESERVED_NATIVE_SELECTOR",
+      "restoration": "NOT_NEEDED_ON_ACTIVATION_SUCCESS; bridge restore afterjourneyrequiresappropriateactive/reconciledguard; prep-onlyrestoreforbidsrecoverycase"
+    }
   }
 }
 ```

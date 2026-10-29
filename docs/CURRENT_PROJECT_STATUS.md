@@ -13,16 +13,17 @@ root ownership case is explicitly reused. Matching Web/helper executables are
 installed on obsd1, with loaded-image/HTTPS/service readback and 712 protected
 records preserved. That installation restarted only OSMAP Web and preserved
 the environment/profile and all account/factor/password state. Native/installed T04/T05/T08
-and human T09 remain NOT_RUN as complete journeys. The reserved test account has
-an existing SQL row. The operator confirmed disposable custody and authorized
-exactly one local fixture password initialization: it settled and independent
-readback preserved all46 other rows and the target noncredential fields. The
-fresh password remains private. Initial factor enrollment was reported completed, but independent read-only
-verification found the expected configured factor file absent (ENOENT). Profile
-and epoch preparation are paused pending the private command’s final status. The subsequent
-controlled route temporarily uses the accepted local Web profile and restores
-the current bridge profile afterward. IMAP/SMTP connection termination is
-not claimed. S05-02 remains deferred and its separate local changes untouched.
+and human T09 remain NOT_RUN as complete journeys. The single authorized fixture
+password initialization settled with independent non-target preservation. The
+corrected private enrollment then passed with human PROVISION and matching
+independent installed-factor readback. The reviewed temporary LOCAL Web profile
+and reserved-only native authority are now active: epoch0/active, no recovery
+case, expected factor digest, all54 loaded environment fields matching, and17
+roles healthy. This preparation took5.097s and performed no further SQL or factor
+write. Actual HTTPS login/Settings/session/recovery qualification is next.
+The bridge profile remains backed up for guarded restoration after the controlled
+journey. IMAP/SMTP connection termination is not claimed. S05-02 remains deferred
+and its separate local changes untouched.
 See [the slice specification](UX_SLICE_S04_04.md).
 
 2026-10-27 (America/Toronto) — **S04-03 ACCEPTED for local obsd1 UX development.**
