@@ -36,10 +36,9 @@ fn security_settings_native_routes_are_readonly_and_linked() {
         assert!(body.contains("disabled>Unavailable</button>"));
         assert!(!body.contains("aria-label=\"Change password\""));
         assert!(!body.contains("action=\"/settings/"));
-        assert!(
-            body.contains("Current enrollment unknown")
-                || body.contains("current enrollment unknown")
-        );
+        assert!(body.contains("Authenticator state and last use are unavailable."));
+        assert!(body.contains("href=\"/settings/authenticator\" aria-label=\"Manage TOTP\""));
+        assert!(!body.contains("<strong>Enrolled</strong>"));
         assert!(!body.contains("<script"));
     }
 }

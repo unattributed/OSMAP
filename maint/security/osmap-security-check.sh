@@ -172,6 +172,7 @@ python3 maint/security/test-osmap-totp-rotation.py
 
 echo "==> validating governed TOTP recovery approvals and transitions"
 python3 maint/security/test-osmap-totp-recovery.py
+python3 maint/security/test-osmap-account-recovery-coordinator.py
 
 echo "==> validating native lifecycle qualification boundaries"
 python3 maint/security/test-osmap-totp-native-check.py

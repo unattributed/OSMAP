@@ -1,0 +1,234 @@
+# S04-04 — Governed account recovery
+
+Started 2026-10-29 (America/Toronto) from accepted S04-03 source
+`6c509a542dfc30129e23b838b1faf7cd01608f4e`.
+
+## Observable outcome and authority
+
+Deliver the D04 controlled recovery coordinator: requested -> identity reviewed
+-> contained -> sessions revoked -> factor replacement -> reconciled. The
+operator explicitly authorized subagents, implementation and focused verification
+using work package -> required T0# scenarios -> actual evidence -> completion.
+Preserve accepted S04-02/S04-03, independent human identity/terminal decisions,
+mail availability, existing OpenPGP bindings and unrelated account state.
+
+The initial supported case is a lost authenticator with an existing canonical
+mail account and active factor, without suspected password/account compromise.
+Suspected compromise requires separate account/mail containment and manual
+review. Existing tools require independently signed
+identity authorization and private terminal confirmation. Agent custody of a
+disposable account qualifies rehearsal only. Recovery-contact possession cannot
+authorize recovery or replace identity verification. Missing-factor, already
+partial and lost-password cases remain explicit manual reconciliation until an
+actual reviewed adapter supports them. Do not weaken the current-password rule
+of the accepted own-account password service to implement password recovery.
+
+Source development and nonsecret controlled tests are authorized now, including
+isolated obsd1 compiler/temporary-store tests needed to establish native API
+behaviour. Such tests must not invoke configured live account operations.
+Root owns Git and the single host/native queue. Native credential/factor effects
+require an exact reviewed target/account/action and action-specific operator
+authorization before dispatch; never mutate the owner's credentials on the
+basis of this source-development instruction. Production/Vultr and external
+mail are outside scope. Preserve the existing private-terminal requirement.
+
+## Actual starting state and design
+
+- Legacy SSH TOTP recovery verifies a signed operator attestation and requests
+  private-terminal confirmation, but does not perform or independently verify
+  account containment or session revocation.
+- Its controlled rehearsal requires stopped Web and an older session schema;
+  it is not a current no-downtime qualification path.
+- The Rust account epoch store already enforces durable Pending/Contained
+  admission refusal. Password completion requires a real verified password
+  write; factor recovery must not fabricate one.
+- Current SessionService supports account-scoped session revocation. The new
+  coordinator must compose real operations, preserve a durable case before
+  effects and retain uncertainty after interruption.
+- The web process must gain no SQL credentials, general command channel or
+  operator recovery authority. Use operator-side typed operations and existing
+  private stores/tooling. No new dependency or general QA framework.
+- Settings must show authoritative factor state/last use or explicit unknown,
+  and direct Manage TOTP to the actual supported lifecycle. A help page or
+  disabled control alone does not satisfy the slice.
+
+Persistence uses bounded, account-scoped private records and existing atomic
+locking primitives. Case/account/factor/epoch identity and revision must be
+checked before every consequential transition. Persist an irreversible-attempt
+state before factor effects. Failures before release retain containment; an
+interrupted release has UNKNOWN actual containment until read-only reconciliation.
+Neither condition permits automatic replay or
+old-factor restoration. Export bounded source-owned diagnostics only, never
+credentials, factor material, proof values or raw native output.
+All unsafe OS interfaces stay in the existing reviewed `src/openbsd.rs` boundary;
+recovery modules use its safe descriptor/identity/input wrappers.
+
+## Ordered work packages and measurable exits
+
+| Package | Owner / dependency | Required scenarios and exit |
+| --- | --- | --- |
+| WP01 — Cases and identity policy | root + independent policy reviewer | T01/T02 policy and actual tooling interfaces reviewed; supported and manual cases explicit; no fabricated human attestation. |
+| WP02 — Request and authorization | recovery engineer; WP01 | T01/T02/T07: durable account-bound case admits only valid independent authorization; invalid/stale/replayed/foreign authorization has no recovery effects. |
+| WP03 — Containment and sessions | root + recovery engineer; WP02 | T03/T07: actual admission refusal and account-scoped revocation, independent readback and unrelated-account preservation. |
+| WP04 — Credential/factor integration | recovery engineer + root; WP03 | T04/T05: supported adapter performs actual factor transition with private human decision; no false password-reset claim or automatic restore. |
+| WP05 — Interruption/reconciliation | engineer + independent QA; WP02–04 | T06/T07: interruption at changed effect boundaries has truthful durable state, no blind replay and explicit manual escalation. |
+| WP06 — Installed journey/acceptance | root + independent QA/security; WP01–05 | T08 engineering and normal signed delivery pass before T09 human acceptance; all six original controls remain required. |
+
+## T01–T09 scenario contract
+
+Each scenario records source, native and installed evidence separately. A local
+case/state test cannot make the integrated scenario PASS. Planned tests are
+NOT_RUN. Scoped passing observations may be reused only with unchanged relevant
+source/configuration. Subcases distinguish materially different boundaries.
+
+| ID | Prerequisite and action | Expected and preserved result |
+| --- | --- | --- |
+| T01 | Supported controlled case and independently reviewed identity policy; admit a valid decision and reject absent/insufficient evidence. | Correct case proceeds; refusals leave account/factor/session state unchanged. Controlled custody is not real identity proof. |
+| T02 | Bound account/case/epoch/factor and authorization; exercise foreign, stale and replayed decisions. | Only the exact current case admits; duplicate or mismatched operations do not dispatch. |
+| T03 | Authorized case and actual account/session stores; contain and revoke account sessions. | Admission refuses during recovery, prior sessions are unusable and another account remains valid; incomplete effects stay contained. |
+| T04 | Supported recovery case; verify password authority and the post-recovery password journey. | Factor-only recovery preserves authoritative password state. Existing own-password change remains usable after recovery. Lost-password reset remains unsupported/manual unless separately implemented and qualified. |
+| T05 | Contained case, revoked sessions and human private-terminal decision; replace factor through actual adapter. | Replacement works, obsolete factor refuses and no old factor is automatically restored; password and other accounts remain preserved. |
+| T06 | Changed persistence/effect boundaries; interrupt before and after dispatch and reopen the case. | Durable state distinguishes no dispatch from uncertain effects; no automatic repeat; read-only reconciliation and manual escalation remain explicit. |
+| T07 | Changed coordinator/Settings boundaries; exercise isolation, malformed input, races, authorization and applicable HTTP protections. | No cross-account operation/disclosure or secret persistence/logging; errors are bounded and truthful. |
+| T08 | Matching signed source, native artifact and installed configuration; exercise actual operator/application journey and Settings entries. | Actual factor state/last use or explicit unknown, working lifecycle entry, restart persistence, audit reconciliation and preservation; page assertions alone are insufficient. |
+| T09 | All required engineering and independent review pass; authorized human judges identity and completes concise acceptance. | Exact human observation recorded separately; no agent-generated acceptance or production/general recovery claim. |
+
+Original obligations: R2-10-004, R2-10-008, R2-20-003, R2-20-004,
+R2-20-009 and R2-23-010. D04 coordinator and approved slice native/identity
+requirements apply in addition to those visual-control mappings.
+
+## Failure loop, delivery and effort
+
+Implement -> test -> preserve/analyse failure -> smallest supported correction
+-> affected-boundary retest -> advance. After two failures at one boundary,
+root and independent reviewer reassess the actual cause before another changed
+attempt. Preserve failures separately from cleanup and account-state certainty.
+Use bounded local operations, focused tests and the normal delivery gates once
+at the delivery checkpoint; no repeated unchanged broad suites. Initial source
+integration checkpoint is 90 minutes of measured work, not an authority expiry;
+record actual/UNKNOWN costs and concrete blockers rather than inventing budgets.
+
+Retain sanitized evidence under `/home/foo/Downloads/osmap-ux-s04/`.
+Root owns exact-owned cleanup; uncertain resources are retained. Verify required
+checks, independent review, Shopkeeper signature and fresh remote parity before
+source delivery claims. Native, installed, UAT_READY and ACCEPTED remain separate.
+
+## Current results
+
+WP01 policy/interface discovery is complete at source scope. Independent review
+confirmed D04's existing lost-authenticator case and the separate human identity
+decision. Read-only obsd1 observation confirmed the current account-runtime
+configuration schema and active custom session/factor/settings directories under
+`/var/lib/osmap-s04-02/state`. The adapter now reads literal path assignments
+from the fixed root-owned service environment instead of assuming older defaults.
+The measured environment is0640 root:runtime-group; the reader permits0600 or
+0640 with that exact runtime GID, retains single-link/root ownership checks and
+does not change installed permissions.
+
+WP02–WP05 source implementation now includes a root-only `account-recovery`
+binary, durable case/marker/epoch binding, actual account-scoped session
+revocation and factor archive/replacement readback. `factor_replacement` is
+durable before the irreversible attempt. `release_pending` precedes epoch release;
+after an uncertain release, status reports the actual epoch separately from the
+unfinished case rather than claiming the account must still be contained.
+Factor-only recovery preserves the authoritative password-change timestamp.
+
+The new signed `osmap-account-recovery-identity-v1` decision establishes initial
+identity admission without pretending containment/revocation have already run.
+Legacy recovery approval semantics remain unchanged. The workstation adapter
+verifies the pinned signature, obtains private-terminal consent, invokes actual
+native containment/revocation, prepares exactly once, uses existing guarded
+factor tools, and obtains a separate final RECONCILE decision. It never signs
+an approval. Controlled custody produces a distinct rehearsal result.
+
+Both Settings destinations now link to authenticated authenticator management.
+The ordinary Runtime reads actual factor metadata and the preserved account
+replay counter. The counter is labelled a last accepted account time window
+that may predate the current factor, never an exact verification timestamp.
+An own-account CSRF-bound request writes untrusted Requested state only; native
+publication supplies the actual operator case projection. Those UI records are
+never consumed as recovery authority. Ordinary repeats are idempotent; after
+matching reconciliation an explicit new request advances revision and case ID.
+
+Focused source observations:
+
+- Actual coordinator/epoch/session/factor files: 15 tests PASS, including
+  irreversible/release interruption, foreign state/marker refusal and signed
+  authorization lifetime. Existing password-state regressions: 8 PASS.
+- Guarded real session store and token/epoch behaviour: 11 tests PASS.
+- Actual BrowserApp, private stores, metadata publication and normal Runtime
+  delegation: 12 focused observations PASS after repeat-request and privileged
+  symlink-publication refusal corrections.
+- Identity/signature/operator composition: 14 Python tests PASS, including
+  actual serialized Rust Status through the real shell consumer and altered
+  account/case/epoch/schema/digest refusals. Disposable signing keys only.
+- After the architecture scan refused direct unsafe calls, the corrected FFI
+  composition passed the affected coordinator15/session11/authenticator12 tests,
+  one actual-socket byte/EOF/deadline discriminator, the exact unsafe predicate
+  and warnings-denied Clippy. No scanner or lint exception was introduced.
+
+Evidence resides under `/home/foo/Downloads/osmap-ux-s04/s04-04/` and the existing
+`s04-04-session-source-qa-20261029/` and
+`s04-04-authenticator-source-qa-20261029/` directories. Source tests do not
+establish native or installed results. Earlier test-fixture and concurrent
+integration failures, plus review findings and their corrections, remain
+recorded in the execution ledger/evidence.
+
+T01/T02/T03/T06/T07 have source observations only. Native T04/T05, installed T08
+and human T09 remain NOT_RUN. No new recovery operation, factor/password change,
+deployment or public mail-service mutation has occurred. The current containment
+implementation fences OSMAP admission and browser sessions; it does not terminate
+existing public IMAP/SMTP connections. Those boundaries must remain explicit in
+native/identity-policy qualification; no whole-account mail-containment claim is
+made. Original approved-control acceptance remains unchanged.
+
+## Operator entry and remaining qualification
+
+After the reviewed matching native binary is installed, the operator workflow is
+`maint/live/osmap-coordinate-recovery-over-ssh.sh` with an explicit account,
+`--host 192.168.1.44` and `--expected-hostname obsd1.blackbagsecurity.com`.
+`--status` reads current native state. `--request` emits an unsigned identity
+template, whose request ID can bind the existing browser request. A human must
+independently establish identity and authorize/sign that decision; agent Git
+commit-signing authority cannot supply it. `--dry-run` verifies the signed
+decision without recovery effects. `--recover` requires private enrollment and
+RECOVER confirmation before containment/factor effects, and RECONCILE confirmation
+before release. After uncertainty use read-only status and explicit manual
+reconciliation; never repeat `--recover` as a repair.
+
+Native qualification must use an exact disposable/control account recipe,
+reviewed source/artifact/configuration binding, required action-specific
+authorization, preserved owner/account/key state, bounded operation and cleanup,
+and independent readback. Native compilation, installation, actual old/new-factor
+authentication, browser integration and human identity/acceptance are still
+required; none can be inferred from this source checkpoint.
+
+### Isolated native component recipe
+
+Before any configured-account journey, root may compile the exact reviewed,
+Shopkeeper-signed source in a fresh private obsd1 stage and run only the recovery,
+session and authenticator temporary-store tests plus the bounded-input socket
+discriminator. Fresh read-only checks confirmed
+the expected hostname, installed compiler, and existing private operator-owned
+dependency target cache at
+`/home/foo/.osmap-credential-snapshot-build-20261025-01/target`. Compiler versions
+are observations; required APIs/schema and tests determine compatibility.
+
+Archive Cargo.toml/lock, all src, the five literal maint fixture includes and
+tests/fixtures/mime from the signed tree. Verify archive/input hashes before and
+after compilation. Build offline/locked, one job, debug information disabled,
+with a short private TMPDIR and core dumps disabled. Preserve compiler DATA
+limits as observed; any compiler-only adjustment stays within the existing hard
+limit and does not change services or application policy. Bound each compilation
+to600seconds and each filtered test group to60seconds, with an overall1500-second
+operation/cleanup bound. Keep native binaries/test executables and source hashes
+in the private stage; do not install them.
+
+A separately named ignored root-only session test may exercise cross-owner
+temporary-file revocation using the actual runtime UID/GID. Its reviewed binary
+must be copied/hash-verified into an exact root-owned private stage before root
+execution; it must never select live session/account paths. This qualifies only
+the native ownership boundary. Configured-account recovery still requires its
+exact action-specific authority, human-signed identity decision and private
+terminal. On native failure retain the first cause and exact-owned resources,
+make the smallest supported correction and retest that boundary.

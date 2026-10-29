@@ -388,6 +388,32 @@ impl RuntimeBrowserGateway {
 }
 
 impl BrowserGateway for RuntimeBrowserGateway {
+    fn authenticator(
+        &self,
+        session: &ValidatedSession,
+    ) -> Result<crate::authenticator::Snapshot, crate::authenticator::Error> {
+        self.ready_account_runtime(&session.record.canonical_username)
+            .ok_or(crate::authenticator::Error::Unavailable)?;
+        crate::authenticator::snapshot(
+            &session.record.canonical_username,
+            &self.totp_secret_dir,
+            &self.totp_replay_dir,
+            &crate::authenticator::Store::new(self.settings_dir.join("account-recovery")),
+        )
+    }
+    fn request_account_recovery(
+        &self,
+        session: &ValidatedSession,
+        revision: u64,
+    ) -> Result<crate::authenticator::RequestRecord, crate::authenticator::Error> {
+        self.ready_account_runtime(&session.record.canonical_username)
+            .ok_or(crate::authenticator::Error::Unavailable)?;
+        crate::authenticator::Store::new(self.settings_dir.join("account-recovery")).request(
+            &session.record.canonical_username,
+            revision,
+            crate::totp::TimeProvider::unix_timestamp(&SystemTimeProvider),
+        )
+    }
     fn documents_quota_status(
         &self,
         session: &ValidatedSession,

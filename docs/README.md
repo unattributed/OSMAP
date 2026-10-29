@@ -1,5 +1,8 @@
 # Documentation
 
+- `UX_SLICE_S04_04.md` — [S04-04 governed account recovery](UX_SLICE_S04_04.md): ordered work packages,
+  T01–T09, source implementation/evidence and remaining native/human qualification.
+
 - `UX_S04_02_CONFINEMENT_LOCALIZATION_20261024.md` — [Serve confinement localization](UX_S04_02_CONFINEMENT_LOCALIZATION_20261024.md); differentiated source diagnostics; historical cause unknown; native qualification pending.
 
 ## S04-01 complete (R4 narrowed scope) — 2026-10-17

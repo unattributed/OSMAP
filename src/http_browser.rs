@@ -17,6 +17,19 @@ pub enum BrowserSendRecoveryDecision {
 }
 
 pub trait BrowserGateway {
+    fn authenticator(
+        &self,
+        _session: &ValidatedSession,
+    ) -> Result<crate::authenticator::Snapshot, crate::authenticator::Error> {
+        Err(crate::authenticator::Error::Unavailable)
+    }
+    fn request_account_recovery(
+        &self,
+        _session: &ValidatedSession,
+        _revision: u64,
+    ) -> Result<crate::authenticator::RequestRecord, crate::authenticator::Error> {
+        Err(crate::authenticator::Error::Unavailable)
+    }
     fn recovery_contact(
         &self,
         _session: &ValidatedSession,

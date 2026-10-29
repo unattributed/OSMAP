@@ -19,6 +19,8 @@ pub(crate) use snooze_ui::{render_snooze_page, render_snoozed_page, SnoozePageMo
 mod notifications_ui;
 pub(crate) use notifications_ui::render_notification_inbox;
 
+#[path = "authenticator_ui.rs"]
+mod authenticator_ui;
 #[path = "settings_ui.rs"]
 mod settings_ui;
 use crate::draft::DraftSummary;
@@ -37,6 +39,7 @@ use crate::mailbox::{
 use crate::message_metadata::{MessageFlag, MessageMetadata};
 use crate::mime::{AttachmentMetadata, DEFAULT_MIME_PARTS_MAX};
 use crate::rendering::{HtmlDisplayPreference, RenderedMessageView};
+pub(crate) use authenticator_ui::{authenticator_summary, render_authenticator_page};
 pub(crate) use settings_ui::render_openpgp_settings;
 #[cfg(test)]
 pub(crate) use settings_ui::render_security_page;

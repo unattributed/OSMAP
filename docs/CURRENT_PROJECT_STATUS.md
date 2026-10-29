@@ -1,5 +1,18 @@
 # Current Project Status
 
+2026-10-29 (America/Toronto) — **S04-04 source implementation in progress.**
+The operator authorized bounded subagents and work package -> T0# -> actual
+evidence -> completion. The governed lost-authenticator coordinator now has
+source-tested durable case admission, epoch containment, guarded browser-session
+revocation, one-shot factor tooling composition and explicit reconciliation.
+Settings exposes actual factor metadata, a qualified account TOTP time window
+and an untrusted own-account recovery request; it supplies no operator authority.
+Independent review and focused source results remain separate from required
+native/installed T04/T05/T08 and human T09, which are NOT_RUN. No new live account,
+factor/password or service mutation has occurred. IMAP/SMTP connection termination
+is not claimed. S05-02 remains deferred and its separate local changes untouched.
+See [the slice specification](UX_SLICE_S04_04.md).
+
 2026-10-27 (America/Toronto) — **S04-03 ACCEPTED for local obsd1 UX development.**
 The owner reported `works` after the expected verification message arrived in
 the owner-controlled external Proton mailbox, the one-use proof was submitted,

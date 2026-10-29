@@ -15,11 +15,16 @@ pub(crate) mod account_mutation_budget;
 #[cfg(unix)]
 pub mod account_mutation_client;
 mod account_mutation_continuity;
+#[cfg(unix)]
+pub mod account_recovery;
+#[cfg(unix)]
+pub mod account_recovery_operator;
 pub mod after_archive;
 pub mod appearance;
 pub mod archive_event;
 pub mod attachment;
 pub mod auth;
+pub mod authenticator;
 pub mod autosave;
 pub mod bin_folder;
 pub mod bootstrap;

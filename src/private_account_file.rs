@@ -161,16 +161,17 @@ pub(crate) fn check_directory(path: &Path) -> io::Result<()> {
 }
 
 fn check_file(metadata: &fs::Metadata, max_bytes: usize) -> io::Result<()> {
+    check_file_owner(metadata, max_bytes, crate::openbsd::effective_uid())
+}
+
+fn check_file_owner(metadata: &fs::Metadata, max_bytes: usize, owner: u32) -> io::Result<()> {
     if !metadata.is_file() || metadata.len() > max_bytes as u64 {
         return Err(invalid());
     }
     #[cfg(unix)]
     {
         use std::os::unix::fs::MetadataExt as _;
-        if metadata.uid() != crate::openbsd::effective_uid()
-            || metadata.mode() & 0o777 != 0o600
-            || metadata.nlink() != 1
-        {
+        if metadata.uid() != owner || metadata.mode() & 0o777 != 0o600 || metadata.nlink() != 1 {
             return Err(invalid());
         }
     }
@@ -178,6 +179,17 @@ fn check_file(metadata: &fs::Metadata, max_bytes: usize) -> io::Result<()> {
 }
 
 pub(crate) fn read_record(path: &Path, max_bytes: usize) -> io::Result<Option<Vec<u8>>> {
+    read_record_owned(path, max_bytes, crate::openbsd::effective_uid())
+}
+
+/// The privileged recovery operator preserves the configured runtime's private
+/// records. The expected owner comes from trusted construction, never a web
+/// request. Ordinary account-store readers retain the effective-UID rule.
+pub(crate) fn read_record_owned(
+    path: &Path,
+    max_bytes: usize,
+    owner: u32,
+) -> io::Result<Option<Vec<u8>>> {
     let mut options = OpenOptions::new();
     options.read(true);
     private_options(&mut options);
@@ -186,7 +198,7 @@ pub(crate) fn read_record(path: &Path, max_bytes: usize) -> io::Result<Option<Ve
         Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(None),
         Err(error) => return Err(error),
     };
-    check_file(&file.metadata()?, max_bytes)?;
+    check_file_owner(&file.metadata()?, max_bytes, owner)?;
     let mut bytes = Vec::new();
     file.take(max_bytes as u64 + 1).read_to_end(&mut bytes)?;
     if bytes.len() > max_bytes {

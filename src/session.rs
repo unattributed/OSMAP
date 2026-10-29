@@ -29,6 +29,14 @@ pub use session_action::{GuardedSessionError, GuardedSessionLease};
 #[path = "session_password_cleanup.rs"]
 mod session_password_cleanup;
 pub use session_password_cleanup::BrowserRevocation;
+#[cfg(unix)]
+#[path = "session_recovery.rs"]
+mod session_recovery;
+#[cfg(unix)]
+pub(crate) use session_recovery::{
+    revoke_recovery_sessions, verify_recovery_sessions, RecoveryRevocation,
+    RecoveryRevocationFailure, RecoveryRevocationStage,
+};
 
 /// Conservative token size for opaque browser sessions.
 pub const SESSION_TOKEN_BYTES: usize = 32;

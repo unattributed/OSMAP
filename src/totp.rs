@@ -427,6 +427,11 @@ fn read_secret_file(path: &std::path::Path) -> Result<Option<String>, TotpSecret
     let metadata = file.metadata().map_err(|error| TotpSecretStoreError {
         reason: format!("failed reading TOTP secret metadata {:?}: {error}", path),
     })?;
+    if metadata.len() > 4096 || metadata.nlink() != 1 {
+        return Err(TotpSecretStoreError {
+            reason: "TOTP secret metadata is unsafe or oversized".into(),
+        });
+    }
     validate_secret_file_metadata(
         path,
         metadata.file_type().is_file(),
@@ -436,11 +441,17 @@ fn read_secret_file(path: &std::path::Path) -> Result<Option<String>, TotpSecret
     )?;
 
     let mut content = String::new();
-    file.read_to_string(&mut content)
+    (&mut file)
+        .take(4097)
+        .read_to_string(&mut content)
         .map_err(|error| TotpSecretStoreError {
             reason: format!("failed reading TOTP secret file {:?}: {error}", path),
         })?;
-
+    if content.len() > 4096 {
+        return Err(TotpSecretStoreError {
+            reason: "TOTP secret exceeds its read limit".into(),
+        });
+    }
     Ok(Some(content))
 }
 

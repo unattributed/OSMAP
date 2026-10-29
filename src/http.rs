@@ -54,6 +54,8 @@ mod routes_sent_location;
 mod routes_timezone;
 pub(crate) use folder_tree::FolderTree;
 mod routes_all_search;
+#[path = "http/routes_authenticator.rs"]
+mod routes_authenticator;
 mod routes_bulk_delete;
 mod routes_delete;
 mod routes_folder_create;
@@ -905,6 +907,10 @@ mod tests {
     mod recovery_contact_tests {
         include!("http/recovery_contact_tests.rs");
     }
+    #[cfg(unix)]
+    mod authenticator_tests {
+        include!("http/authenticator_tests.rs");
+    }
     mod snooze_tests {
         include!("http/snooze_tests.rs");
     }
@@ -1077,6 +1083,10 @@ mod tests {
 
     #[derive(Debug, Clone)]
     struct StubGateway {
+        authenticator_snapshot: Option<crate::authenticator::Snapshot>,
+        authenticator_store_root: Option<PathBuf>,
+        authenticator_calls: Arc<Mutex<Vec<(String, u64)>>>,
+        authenticator_reads: Arc<Mutex<Vec<String>>>,
         recovery_snapshot: Option<crate::recovery_contact::RecoveryContactSnapshot>,
         recovery_calls: Arc<Mutex<usize>>,
         password_result: Option<BrowserPasswordDecision>,
@@ -1153,6 +1163,10 @@ mod tests {
     impl Default for StubGateway {
         fn default() -> Self {
             Self {
+                authenticator_snapshot: None,
+                authenticator_store_root: None,
+                authenticator_calls: Default::default(),
+                authenticator_reads: Default::default(),
                 recovery_snapshot: None,
                 recovery_calls: Default::default(),
                 password_result: None,
@@ -1287,6 +1301,43 @@ mod tests {
     }
 
     impl BrowserGateway for StubGateway {
+        fn authenticator(
+            &self,
+            session: &ValidatedSession,
+        ) -> Result<crate::authenticator::Snapshot, crate::authenticator::Error> {
+            let account = &session.record.canonical_username;
+            self.authenticator_reads
+                .lock()
+                .unwrap()
+                .push(account.clone());
+            let mut snapshot = self
+                .authenticator_snapshot
+                .clone()
+                .ok_or(crate::authenticator::Error::Unavailable)?;
+            if let Some(root) = &self.authenticator_store_root {
+                let store = crate::authenticator::Store::new(root);
+                snapshot.request = store.read_request(account)?;
+                snapshot.case = store.read_case(account)?;
+            }
+            Ok(snapshot)
+        }
+        fn request_account_recovery(
+            &self,
+            session: &ValidatedSession,
+            revision: u64,
+        ) -> Result<crate::authenticator::RequestRecord, crate::authenticator::Error> {
+            let account = &session.record.canonical_username;
+            self.authenticator_calls
+                .lock()
+                .unwrap()
+                .push((account.clone(), revision));
+            crate::authenticator::Store::new(
+                self.authenticator_store_root
+                    .as_ref()
+                    .ok_or(crate::authenticator::Error::Unavailable)?,
+            )
+            .request(account, revision, 1_700_000_000)
+        }
         fn recovery_contact(
             &self,
             _: &ValidatedSession,

@@ -72,6 +72,7 @@ pub(crate) fn render_security_page(
         password_available,
         password_changed_at,
         None,
+        None,
     )
 }
 
@@ -85,7 +86,10 @@ pub(crate) fn render_security_page_with_recovery(
     password_available: bool,
     password_changed_at: Option<&str>,
     recovery: Option<&crate::recovery_contact::RecoveryContactSnapshot>,
+    authenticator: Option<&crate::authenticator::Snapshot>,
 ) -> TrustedHtml {
+    let authenticator = authenticator.filter(|v| v.account == account);
+    let (factor_status, factor_last) = authenticator_summary(authenticator);
     let (recovery_status, recovery_detail) = recovery_contact_summary(recovery);
     let recovery_control = format!("<div class=\"security-control\"><div><strong>Recovery contact</strong><p>{recovery_detail}</p></div><a class=\"button-link secondary\" href=\"/settings/recovery\" aria-label=\"Manage recovery contact\">Manage contact</a></div>");
     let changed_at = password_changed_at.filter(|v| crate::account_mutation::changed_at_valid(v));
@@ -131,12 +135,7 @@ pub(crate) fn render_security_page_with_recovery(
             false,
         )
     };
-    let totp = row(
-        "TOTP two-factor",
-        "Used at this sign-in; current enrollment unknown",
-        "Manage",
-        false,
-    );
+    let totp = format!("<div class=\"security-control\"><div><strong>TOTP two-factor</strong><p>{}: {}</p></div><a class=\"button-link secondary\" href=\"/settings/authenticator\" aria-label=\"Manage TOTP\">Manage</a></div>", escape_html(&factor_status), escape_html(&factor_last));
     let active = row("Active sessions", &count, "Manage", true);
     let content = if authentication {
         format!(concat!("<div class=\"security-two-cards authentication-cards\"><section class=\"security-card\"><h2>Authentication</h2>{password}{totp}{active}</section>",
@@ -169,7 +168,7 @@ pub(crate) fn render_security_page_with_recovery(
         } else {
             events.push_str("<li>Retained sign-ins are unavailable.</li>");
         }
-        let tiles = [("OpenPGP", key_status, key_detail.as_str()), ("TOTP", "Used at sign-in", "Current enrollment unknown"), ("Password", "Used at sign-in", password_history.as_str()), ("Recovery Contact", "Unknown", "Contact and verification unavailable")].into_iter().map(|(title, state, note)| format!("<section class=\"security-tile\"><span class=\"security-tile-symbol\" aria-hidden=\"true\">{}</span><div><h3>{title}</h3><strong>{state}</strong><p>{note}</p></div></section>", shell_icon("shield"))).collect::<String>();
+        let tiles = [("OpenPGP", key_status, key_detail.as_str()), ("TOTP", factor_status.as_str(), factor_last.as_str()), ("Password", "Used at sign-in", password_history.as_str()), ("Recovery Contact", "Unknown", "Contact and verification unavailable")].into_iter().map(|(title, state, note)| format!("<section class=\"security-tile\"><span class=\"security-tile-symbol\" aria-hidden=\"true\">{}</span><div><h3>{title}</h3><strong>{state}</strong><p>{note}</p></div></section>", shell_icon("shield"))).collect::<String>();
         format!(concat!("<section class=\"security-card security-heading\"><h2>Security</h2><p>Status and management for account protection. Privacy preferences remain under <a href=\"/settings?section=privacy\">Privacy &amp; Security</a>.</p></section><div class=\"security-tiles\">{tiles}</div>",
             "<div class=\"security-two-cards security-overview-cards\"><section class=\"security-card\"><h2>Security Controls</h2>{keys}{totp}{password}{recovery}{active}</section><section class=\"security-card\"><h2>Recent Security Events</h2><p class=\"security-event-scope\">Sign-ins and revocations from retained browser sessions; other security event history unavailable.</p><ul class=\"security-events\">{events}</ul></section></div>",
             "<section class=\"security-card security-role\"><h3>Security page role</h3><p>These details describe this sign-in, retained sessions and reported public account keys. Manage keys opens account-bound key management; this overview does not establish private-key availability. Password and recovery changes remain unavailable here. <a href=\"/settings?section=privacy\">Review privacy and rendering protections</a>.</p></section>"), password=password, totp=totp, active=active, tiles=tiles, events=events, keys=key_control, recovery=row("Recovery contact", "Contact and verification status unknown", "Manage", false))

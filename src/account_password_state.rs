@@ -53,6 +53,15 @@ pub(crate) struct Status {
     pub changed_at: Option<String>,
 }
 
+/// Durable custody of the marker created for one operator recovery case.
+/// It is never an authentication or completion claim by itself.
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct RecoveryMarker {
+    pub device: u64,
+    pub inode: u64,
+}
+
 type Identity = (u64, u64, u32, u32, u32);
 fn identity(m: &fs::Metadata) -> Identity {
     (m.dev(), m.ino(), m.uid(), m.gid(), m.mode())
@@ -348,6 +357,112 @@ impl Guard<'_> {
             verified_write: false,
         });
         Ok(())
+    }
+    /// Operator-only factor recovery. Unlike a password transaction, this
+    /// preserves the authoritative password-change timestamp. The domain-
+    /// separated marker can be completed only by this exact recovery case.
+    pub(crate) fn begin_recovery(
+        &mut self,
+        expected_epoch: u64,
+        intent: &str,
+        now: u64,
+    ) -> Result<RecoveryMarker, Error> {
+        self.admission(Some(expected_epoch))?;
+        if self.operation.is_some()
+            || self.finished
+            || !reference(intent)
+            || now == 0
+            || expected_epoch >= crate::account_admission::MAX_EPOCH
+        {
+            return Err(Error::Refused);
+        }
+        let expires = now.checked_add(300).ok_or(Error::Refused)?;
+        let mut next = self.record.clone();
+        next.used_intents.retain(|(_, expiry)| *expiry > now);
+        if next.used_intents.iter().any(|(id, _)| id == intent) {
+            return Err(Error::Replay);
+        }
+        if next.used_intents.len() >= 32 {
+            return Err(Error::Capacity);
+        }
+        next.used_intents.push((intent.into(), expires));
+        next.state = State::Pending;
+        next.intent = Some(intent.into());
+        self.check()?;
+        if self.marker_exists()? || self.marker.is_some() {
+            return Err(Error::Refused);
+        }
+        let mut marker = self.store.open_leaf(
+            &self.marker_name,
+            libc::O_WRONLY | libc::O_CREAT | libc::O_EXCL,
+        )?;
+        let owned = identity(&marker.metadata().map_err(available)?);
+        self.marker = Some((marker.try_clone().map_err(available)?, owned));
+        marker
+            .write_all(format!("osmap-recovery-uncertain-v1\n{intent}\n").as_bytes())
+            .map_err(available)?;
+        marker.sync_all().map_err(available)?;
+        self.store.directory.sync_all().map_err(available)?;
+        self.write(next)?;
+        Ok(RecoveryMarker {
+            device: owned.0,
+            inode: owned.1,
+        })
+    }
+    /// Check only the exact case-owned recovery containment. A password marker,
+    /// foreign case, changed epoch or replacement inode can never be adopted.
+    pub(crate) fn check_recovery(
+        &self,
+        expected_epoch: u64,
+        intent: &str,
+        owned: RecoveryMarker,
+    ) -> Result<(), Error> {
+        self.check()?;
+        if !reference(intent)
+            || self.record.epoch != expected_epoch
+            || !matches!(self.record.state, State::Pending | State::Contained)
+            || self.record.intent.as_deref() != Some(intent)
+        {
+            return Err(Error::Refused);
+        }
+        let mut marker = self.store.open_leaf(&self.marker_name, libc::O_RDONLY)?;
+        let metadata = marker.metadata().map_err(available)?;
+        if metadata.dev() != owned.device || metadata.ino() != owned.inode {
+            return Err(Error::Refused);
+        }
+        let mut bytes = Vec::new();
+        marker.read_to_end(&mut bytes).map_err(available)?;
+        if bytes != format!("osmap-recovery-uncertain-v1\n{intent}\n").as_bytes() {
+            return Err(Error::Refused);
+        }
+        Ok(())
+    }
+    /// The operator coordinator calls this only after actual session, factor
+    /// and durable case readbacks pass. No password write is invented. This
+    /// trusted store operation does not itself attest those external effects.
+    pub(crate) fn complete_recovery(
+        &mut self,
+        expected_epoch: u64,
+        intent: &str,
+        owned: RecoveryMarker,
+    ) -> Result<Status, Error> {
+        self.check_recovery(expected_epoch, intent, owned)?;
+        let marker = self.store.open_leaf(&self.marker_name, libc::O_RDONLY)?;
+        let marker_identity = identity(&marker.metadata().map_err(available)?);
+        self.marker = Some((marker, marker_identity));
+        let mut active = self.record.clone();
+        active.epoch = active
+            .epoch
+            .checked_add(1)
+            .filter(|v| crate::account_admission::valid_epoch(*v))
+            .ok_or(Error::Refused)?;
+        active.state = State::Active;
+        active.intent = None;
+        self.write(active)?;
+        self.remove_own_marker()?;
+        self.finished = true;
+        self.operation = None;
+        self.status()
     }
     /// Allowed only for this guard's own independently verified zero-write
     /// refusal. Never use for a transport error or ambiguous dispatch.

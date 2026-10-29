@@ -150,6 +150,83 @@ pub(crate) fn set_descriptor_nonblocking(fd: i32) -> io::Result<()> {
     }
     Ok(())
 }
+/// Fixed operator stdin only: nonblocking, bounded bytes and one original
+/// deadline. This cannot select a pathname, process or arbitrary descriptor.
+#[cfg(unix)]
+pub(crate) fn bounded_operator_stdin(
+    maximum: usize,
+    deadline: std::time::Instant,
+) -> io::Result<Vec<u8>> {
+    bounded_operator_descriptor(libc::STDIN_FILENO, maximum, deadline)
+}
+
+// The production entry selects only stdin. Keeping the internal borrowed-FD
+// reader separate permits a held-socket discriminator without changing the
+// test runner's own process stdin or adding another operator interface.
+#[cfg(unix)]
+fn bounded_operator_descriptor(
+    descriptor: i32,
+    maximum: usize,
+    deadline: std::time::Instant,
+) -> io::Result<Vec<u8>> {
+    let began = std::time::Instant::now();
+    if maximum == 0
+        || maximum > 16384
+        || deadline <= began
+        || deadline > began + std::time::Duration::from_secs(5)
+    {
+        return Err(io::ErrorKind::InvalidInput.into());
+    }
+    set_descriptor_nonblocking(descriptor)?;
+    let mut output = Vec::new();
+    loop {
+        let left = deadline
+            .checked_duration_since(std::time::Instant::now())
+            .ok_or(io::ErrorKind::TimedOut)?;
+        let mut poll = libc::pollfd {
+            fd: descriptor,
+            events: libc::POLLIN,
+            revents: 0,
+        };
+        // SAFETY: poll receives one initialized element for the borrowed
+        // descriptor and a finite remaining timeout; no ownership transfers.
+        let ready = unsafe { libc::poll(&mut poll, 1, left.as_millis().clamp(1, 5000) as i32) };
+        if ready < 0 && io::Error::last_os_error().kind() == io::ErrorKind::Interrupted {
+            continue;
+        }
+        if ready < 0 {
+            return Err(io::Error::last_os_error());
+        }
+        if ready == 0 {
+            return Err(io::ErrorKind::TimedOut.into());
+        }
+        let mut bytes = [0u8; 4096];
+        // SAFETY: bytes is writable for its supplied length. read returns the
+        // initialized prefix; no raw descriptor or buffer escapes this call.
+        let count = unsafe { libc::read(descriptor, bytes.as_mut_ptr().cast(), bytes.len()) };
+        if count < 0 {
+            let error = io::Error::last_os_error();
+            if matches!(
+                error.kind(),
+                io::ErrorKind::Interrupted | io::ErrorKind::WouldBlock
+            ) {
+                continue;
+            }
+            return Err(error);
+        }
+        if count == 0 {
+            break;
+        }
+        output.extend_from_slice(&bytes[..count as usize]);
+        if output.len() > maximum {
+            return Err(io::ErrorKind::InvalidData.into());
+        }
+    }
+    if output.is_empty() {
+        return Err(io::ErrorKind::UnexpectedEof.into());
+    }
+    Ok(output)
+}
 /// Wait for duplex worker pipes without imposing a sleep on ready small pipes.
 /// The outer loop retains its absolute operation and cleanup deadlines.
 #[cfg(unix)]
@@ -502,6 +579,47 @@ pub(crate) fn private_leaf_exists(directory: &fs::File, name: &std::ffi::CStr) -
         Ok(false)
     } else {
         Err(error)
+    }
+}
+
+/// Create one private child directory beneath a held directory descriptor.
+/// Existing entries are inspected by the caller before any ownership change.
+#[cfg(unix)]
+pub(crate) fn private_directory_create(
+    directory: &fs::File,
+    name: &std::ffi::CStr,
+) -> io::Result<bool> {
+    let bytes = name.to_bytes();
+    if bytes.is_empty() || matches!(bytes, b"." | b"..") || bytes.contains(&b'/') {
+        return Err(io::ErrorKind::InvalidInput.into());
+    }
+    // SAFETY: File retains directory ownership and name is a terminated,
+    // single relative component. Creation cannot escape to another pathname.
+    if unsafe { libc::mkdirat(directory.as_raw_fd(), name.as_ptr(), 0o700) } == 0 {
+        Ok(true)
+    } else {
+        let error = io::Error::last_os_error();
+        if error.kind() == io::ErrorKind::AlreadyExists {
+            Ok(false)
+        } else {
+            Err(error)
+        }
+    }
+}
+
+/// Preserve trusted runtime ownership on an already-open private file or
+/// directory. No pathname can be substituted between inspection and fchown.
+#[cfg(unix)]
+pub(crate) fn private_file_set_owner(file: &fs::File, owner: u32, group: u32) -> io::Result<()> {
+    if owner == u32::MAX || group == u32::MAX {
+        return Err(io::ErrorKind::InvalidInput.into());
+    }
+    // SAFETY: File owns this valid descriptor; only its inode's ownership is
+    // changed. The caller supplies the previously verified runtime principal.
+    if unsafe { libc::fchown(file.as_raw_fd(), owner, group) } == 0 {
+        Ok(())
+    } else {
+        Err(io::Error::last_os_error())
     }
 }
 
@@ -1706,6 +1824,64 @@ pub(crate) fn effective_uid() -> u32 {
 }
 
 #[cfg(unix)]
+pub(crate) fn real_uid() -> u32 {
+    // SAFETY: getuid has no pointer or ownership precondition.
+    unsafe { libc::getuid() }
+}
+
+#[cfg(all(unix, test))]
+pub(crate) fn effective_gid() -> u32 {
+    // SAFETY: getegid has no pointer or ownership precondition.
+    unsafe { libc::getegid() }
+}
+
+/// Fixed runtime principal, copied from a reentrant lookup into local bounded
+/// storage. No libc static pointer or caller-selected account is returned.
+#[cfg(unix)]
+pub(crate) fn osmap_runtime_identity() -> io::Result<(u32, u32)> {
+    let mut entry: libc::passwd = unsafe { std::mem::zeroed() };
+    let mut buffer = [0u8; 16384];
+    let mut result = std::ptr::null_mut();
+    // SAFETY: entry and buffer remain live and writable for the supplied
+    // lengths; result is checked before the copied numeric fields are used.
+    let code = unsafe {
+        libc::getpwnam_r(
+            c"_osmap".as_ptr(),
+            &mut entry,
+            buffer.as_mut_ptr().cast(),
+            buffer.len(),
+            &mut result,
+        )
+    };
+    if code != 0 {
+        return Err(io::Error::from_raw_os_error(code));
+    }
+    if result.is_null() {
+        return Err(io::ErrorKind::NotFound.into());
+    }
+    let (uid, gid) = (entry.pw_uid, entry.pw_gid);
+    if uid == 0 || uid == u32::MAX || gid == u32::MAX {
+        return Err(io::ErrorKind::InvalidData.into());
+    }
+    Ok((uid, gid))
+}
+
+/// Compare a bounded kernel hostname without exposing arbitrary native text.
+#[cfg(unix)]
+pub(crate) fn hostname_matches(expected: &[u8]) -> io::Result<bool> {
+    let mut hostname = [0u8; 256];
+    // SAFETY: the fixed zeroed buffer is valid for its complete supplied size.
+    if unsafe { libc::gethostname(hostname.as_mut_ptr().cast(), hostname.len()) } != 0 {
+        return Err(io::Error::last_os_error());
+    }
+    let length = hostname
+        .iter()
+        .position(|v| *v == 0)
+        .ok_or(io::ErrorKind::InvalidData)?;
+    Ok(&hostname[..length] == expected)
+}
+
+#[cfg(unix)]
 fn effective_uid_raw() -> u32 {
     unsafe { libc::geteuid() as u32 }
 }
@@ -2858,6 +3034,69 @@ pub(crate) fn fixture_t04_terminate_owned_group(pid: u32) -> io::Result<()> {
 
 #[cfg(test)]
 mod tests {
+    #[cfg(unix)]
+    #[test]
+    fn operator_input_keeps_original_byte_and_deadline_bounds() {
+        use std::io::Write as _;
+        use std::os::fd::AsRawFd as _;
+        use std::os::unix::net::UnixStream;
+        use std::time::{Duration, Instant};
+        let deadline = || Instant::now() + Duration::from_secs(1);
+        let (reader, mut writer) = UnixStream::pair().unwrap();
+        writer.write_all(b"four").unwrap();
+        writer.shutdown(std::net::Shutdown::Write).unwrap();
+        assert_eq!(
+            super::bounded_operator_descriptor(reader.as_raw_fd(), 4, deadline()).unwrap(),
+            b"four"
+        );
+
+        let (reader, writer) = UnixStream::pair().unwrap();
+        drop(writer);
+        assert_eq!(
+            super::bounded_operator_descriptor(reader.as_raw_fd(), 4, deadline())
+                .unwrap_err()
+                .kind(),
+            std::io::ErrorKind::UnexpectedEof
+        );
+
+        let (reader, mut writer) = UnixStream::pair().unwrap();
+        writer.write_all(b"extra").unwrap();
+        assert_eq!(
+            super::bounded_operator_descriptor(reader.as_raw_fd(), 4, deadline())
+                .unwrap_err()
+                .kind(),
+            std::io::ErrorKind::InvalidData
+        );
+
+        let (reader, mut held_writer) = UnixStream::pair().unwrap();
+        held_writer.write_all(b"part").unwrap();
+        assert_eq!(
+            super::bounded_operator_descriptor(
+                reader.as_raw_fd(),
+                8,
+                Instant::now() + Duration::from_millis(20)
+            )
+            .unwrap_err()
+            .kind(),
+            std::io::ErrorKind::TimedOut
+        );
+        drop(held_writer);
+        for (maximum, bound) in [(0, deadline()), (16385, deadline()), (4, Instant::now())] {
+            assert_eq!(
+                super::bounded_operator_descriptor(reader.as_raw_fd(), maximum, bound)
+                    .unwrap_err()
+                    .kind(),
+                std::io::ErrorKind::InvalidInput
+            );
+        }
+        assert_eq!(
+            super::bounded_operator_descriptor(-1, 4, deadline())
+                .unwrap_err()
+                .kind(),
+            std::io::ErrorKind::InvalidInput
+        );
+    }
+
     #[test]
     fn password_native_hostname_accepts_only_exact_production_and_selected_development() {
         let buffer = |name: &[u8]| {

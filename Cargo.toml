@@ -20,3 +20,7 @@ sha2 = "0.10.9"
 [[bin]]
 name = "account-passwd"
 path = "src/bin/account_passwd.rs"
+
+[[bin]]
+name = "account-recovery"
+path = "src/bin/account_recovery.rs"

@@ -1,5 +1,31 @@
 # OSMAP UX execution ledger
 
+2026-10-29 (America/Toronto) — **S04-04 source checkpoint; native acceptance open.**
+The authorized three-agent team implemented/reviewed the governed lost-authenticator
+path in an isolated checkout, preserving deferred S05-02 work. WP01 source policy
+is complete; WP02–WP05 have focused source evidence, while native T04/T05,
+installed T08 and human T09 remain NOT_RUN. Source observations: coordinator15,
+session11, metadata/BrowserApp12 and signed identity/operator14 PASS; unchanged
+password-state8 PASS reused. Actual Rust Status was consumed by the actual shell
+validator, with altered-response refusals. Independent source review is GO.
+
+Retained corrections include the real runtime path contract, schema/Pending-state
+and response identity binding, explicit final terminal release decision, truthful
+ReleasePending uncertainty, pinned privileged metadata publication, and repeatable
+browser requests after reconciliation. Earlier fixture/parser assumptions and
+concurrent renderer compilation failures remain in private sanitized evidence.
+Normal source01 acceptance failed1998PASS/1FAIL/72ignored because a legacy test
+required superseded Unknown-enrollment wording. Its reviewed test-only correction
+retains read-only/security checks and focused1PASS. Documentation-index and module
+format refusals were corrected before that gate. No failure is relabelled PASS.
+
+The current case preserves a known password and excludes suspected compromise;
+OSMAP admission/browser containment is not public IMAP/SMTP connection termination.
+No new host recovery, credential/factor, service or deployment mutation occurred.
+Normal checks/signing/synchronization and independent native/installed/human
+qualification remain separate. Evidence: `/home/foo/Downloads/osmap-ux-s04/s04-04/`
+and the two scoped source-QA result directories linked in the slice specification.
+
 2026-10-27 (America/Toronto) — **S04-03 ACCEPTED for local obsd1 UX development.**
 The owner reported `works` after external receipt and one-use verification, then
 refreshed the recovery page and confirmed the correct address remained Verified.
@@ -10092,7 +10118,413 @@ discriminator alongside the same binding production repair; no broader QA scope.
 Current 2026-10-18 explicit S04-02 resumption supersedes the historical pause.
 All prior attempts below are retained; S04-01 is accepted under its historical work order.
 
+## S04-04 active delivery — 2026-10-29
+
 <!-- OSMAP_ACTIVE_WORK_ORDER -->
+```json
+{
+  "version": 1,
+  "slice": "S04-04",
+  "original_requirement": "Controlled real-user recovery coordinator joining identity verification, containment, session revocation and TOTP tooling",
+  "source_baseline": "6c509a542dfc30129e23b838b1faf7cd01608f4e",
+  "state": "IN_PROGRESS",
+  "integration_owner": "/root",
+  "roles": {
+    "project_manager": [
+      "/root"
+    ],
+    "scrum_lead": [
+      "/root"
+    ],
+    "developers": [
+      "/root",
+      "/root/recovery_engineer",
+      "/root/recovery_qa"
+    ],
+    "qa": [
+      "/root/recovery_policy_review",
+      "/root/recovery_qa"
+    ],
+    "security_review": [
+      "/root/recovery_policy_review"
+    ],
+    "technical_writer": [
+      "/root"
+    ]
+  },
+  "allowed_paths": [
+    "docs/UX_SLICE_S04_04.md",
+    "docs/UX_EXECUTION_LEDGER.md",
+    "docs/CURRENT_PROJECT_STATUS.md",
+    "docs/KNOWN_LIMITATIONS.md",
+    "docs/DECISION_LOG.md",
+    "docs/README.md",
+    "src/lib.rs",
+    "Cargo.toml",
+    "src/account_recovery.rs",
+    "src/account_recovery_tests.rs",
+    "src/account_recovery_operator.rs",
+    "src/bin/account_recovery.rs",
+    "src/account_password_state.rs",
+    "src/session.rs",
+    "src/session_recovery.rs",
+    "src/session_recovery_tests.rs",
+    "src/settings_security_ui.rs",
+    "src/settings_recovery_ui.rs",
+    "src/http_ui.rs",
+    "src/http.rs",
+    "src/http/routes.rs",
+    "src/http/routes_settings.rs",
+    "src/http/gateway.rs",
+    "src/http/gateway_runtime.rs",
+    "src/http_gateway.rs",
+    "src/http_gateway_runtime.rs",
+    "src/totp.rs",
+    "src/http/account_recovery_tests.rs",
+    "src/account_recovery_status.rs",
+    "maint/live/osmap-recover-totp-over-ssh.sh",
+    "maint/live/osmap-totp-recovery-approval.py",
+    "maint/security/test-osmap-totp-recovery.py",
+    "maint/security/v10-rust-assumption-audit.json",
+    "maint/security/v10-fail-closed-remediation.json",
+    "maint/security/v10-claims-boundary.json",
+    "maint/live/osmap-coordinate-recovery-over-ssh.sh",
+    "maint/security/test-osmap-account-recovery-coordinator.py",
+    "src/authenticator.rs",
+    "src/authenticator_publish.rs",
+    "src/authenticator_ui.rs",
+    "src/http/authenticator_tests.rs",
+    "src/http/routes_authenticator.rs",
+    "maint/security/osmap-security-check.sh",
+    "src/http_browser.rs",
+    "src/http_runtime.rs",
+    "src/private_account_file.rs",
+    "src/http/security_settings_tests.rs",
+    "maint/security/v15-dependency-admission.json",
+    "maint/wstg-testing-pack/osmap-browser-attack-surface.json",
+    "src/openbsd.rs"
+  ],
+  "outcomes": [
+    {
+      "id": "governed-factor-recovery",
+      "requirement_ids": [
+        "R2-10-004",
+        "R2-10-008",
+        "R2-20-003",
+        "R2-20-004",
+        "R2-20-009",
+        "R2-23-010"
+      ],
+      "owner": "/root",
+      "frontend_backend_outcome": "D04 governed recovery coordinator performs actual containment/session effects and guarded factor replacement; Settings exposes accurate factor status/lifecycle without browser administrative authority.",
+      "dependencies": [
+        {
+          "owner": "/root/recovery_policy_review",
+          "condition": "Independent D04 policy/interface review identifies supported lost-authenticator case and required human identity boundary.",
+          "status": "PASS",
+          "next_action": "Preserve independently reviewed lost-authenticator/no-compromise scope; real identity and applicable broader mail controls remain human/native qualification boundaries."
+        }
+      ],
+      "essential_qa": "S04-04-T01 through T09, matching source/native/installed scope and independent review; no test-custody identity claim.",
+      "stages": {
+        "implementation": "PASS",
+        "source_tests": "PASS",
+        "native_tests": "PENDING",
+        "deployed_qa": "PENDING",
+        "independent_review": "PENDING",
+        "recovery": "PENDING"
+      },
+      "evidence": [
+        {
+          "stage": "implementation",
+          "reference": "Native operator/core, additive recovery epoch API, guarded actual session store, signed identity adapter, real Runtime/BrowserApp request/status path; independent source GO."
+        },
+        {
+          "stage": "source_tests",
+          "reference": "Focused core15, session11, metadata/BrowserApp12, identity/adapter14 and existing password-state8 PASS. Normal delivery gates pending."
+        },
+        {
+          "stage": "independent_review",
+          "reference": "/root/recovery_policy_review source GO; actual symlink root/cases refusal regression PASS and release-uncertainty wording corrected. Native and installed review pending."
+        },
+        {
+          "stage": "source_tests",
+          "reference": "Source08 normal security-check complete/PASS including Rust2000PASS/0FAIL/73explicit native-fixture ignores, Clippy/fmt/RustSec/supply-chain/WSTG/TLS/CWE/all mandatory guards; outer acceptance aggregate failed stale coupled V10 count/hash. Corrected metadata-only v10-check PASS, code unchanged. Earlier aggregate remains FAIL. Exact actual-codec Python14PASS includes no skips."
+        }
+      ],
+      "next_action": "Sign and synchronize reviewed source; then reviewed isolated native component recipe, without installation or live credential effects."
+    }
+  ],
+  "human_acceptance": {
+    "status": "PENDING",
+    "reference": ""
+  },
+  "next_action": "Finish reviewed source delivery, prepare the exact bounded native/disposable-account recipe, obtain required human-backed identity/private-terminal decisions before factor effects; no live retry.",
+  "accountability": {
+    "owner": "/root",
+    "functional_exit": "Working governed factor recovery through actual account/session/factor authority and truthful Settings; human judgment remains separate.",
+    "elapsed_scope": "wall_clock",
+    "history_reference": "Starts after accepted S04-03; S05-02 remains deferred and untouched in original checkout. Initial discovery found external-only containment attestations and incompatible stopped-Web rehearsal. Retained source failures: test identity assumption, anonymous GET-body fixture, concurrent renderer compilation; review corrections include schema/state/account response binding, final private release decision, release uncertainty, pinned publication and repeat-request lifecycle. Normal source01 gate1998PASS/1FAIL/72ignored: superseded unknown-enrollment literal; independently reviewed affected test corrected, focused1PASS. No product guard weakened. Source02 fullRust1999PASS/0FAIL/72ignored and assurancePASS, then Clippy manual_clamp refusal. Fixed bounded poll timeout expression to clamp; affected Clippy PASS. Native root ownership discriminator added explicitly ignored until exact privileged temporary-store execution. Source03 Rust1999PASS/0FAIL/73ignored, Clippy rejected cfg constant in ignored native test; semantic OS assertion correction affected ClippyPASS. Publication guard refused new test use of legacy dummy seed; replaced with public RFC test vector, focused coordinator15PASS and actual codec/adapter14PASS repeated, no waiver. Read-only environment640 exact runtimeGID contract correction independentlyGO. Independent combined review GO for source/native compiler recipe. Source04 Rust1999PASS/0FAIL/73ignored, Clippy/fmt/assurancePASS; supply-chain refused Cargo manifest hash for new binary target. Parsed baseline/current dependency/target dependency tables and lock unchanged; updated admission binding with explicit manifest-only target review, no dependency waiver. Source05 unmodified public-admin socket test returnedUnavailable vsStale; exact isolated rerunPASS, causeUNKNOWN retained, no S05 edits. Source06 wholeRust1999PASS/0FAIL/73ignored and supply-chain/V14 passed; WSTG route inventory refused missing GET/POST authenticator rows. Added exact route/form fields and mapped auth/session/input/business checks; no target network assurance inferred. Source07 wholeRust1999PASS/0FAIL/73ignored and WSTG route inventoryPASS; TLS static keyword guard matched account-lookup prose. Reworded to authentication-required without security change; TLSguardPASS. Targeted CWE/architecture scan then identified new unsafe blocks outside mandatory openbsd.rs boundary; root acknowledged integration miss and assigned bounded relocation into existing safe FFI layer without exception. No source/native admission until corrected. FFI correction uses existing descriptor open/rename/unlink and narrow safe runtime/mkdir/chown/input wrappers in openbsd.rs; affected core15/session11/authenticator12 and boundedinput1PASS, native root1ignored. Exact unsafe predicate and ClippyPASS; fixture-only helper scope lint preserved/corrected. QA receipt ffi-isolation-review.json sha33c2ac78e102127f26ebdc2332d28847ad19e094bcca0934a0c89a3cb7797666; independent source GO. Normal source08 pending. Source08 security-check complete/PASS; outer acceptance V10 coupled rust scanner count/hash stale. Metadata-only correction to10360/hash6c7de4\u2026 and affected v10-checkPASS. AggregateFAIL retained, constituent observations separate; no redundant aggregate-only retry. Mandatory normal push hook still required.",
+    "investigation": {
+      "owner": "/root",
+      "timebox_seconds": 5400,
+      "started_at": "2026-10-29T07:21:01Z",
+      "elapsed_status": "MEASURED",
+      "elapsed_seconds": 5188.352,
+      "overrun_reference": "Measured since work-order start; preliminary discovery cost UNKNOWN. Mandatory guard binding/FFI corrections and normal self-tests preserved; independent reviewed continuation stays within direct operator scope. The initial checkpoint clock is not an operator expiry or automatic allowance renewal."
+    },
+    "attempts": [],
+    "next_attempt": null
+  },
+  "slice_contract": {
+    "version": 1,
+    "slice": "S04-04",
+    "specification": {
+      "path": "docs/UX_SLICE_S04_04.md",
+      "sha256": "0fc7e447b72ba0f13291e4b73411b7dc92b8f6ee223313a32b3a87cb9a09d078"
+    },
+    "design": {
+      "journey": "Operator-assisted lost-authenticator recovery progresses requested, identity reviewed, contained, sessions revoked, factor replacement, reconciled; account Settings reflects actual state.",
+      "frontend": "Existing Security and Authentication & Recovery pages show current factor metadata and actual supported lifecycle entry; no browser admin mutation authority.",
+      "backend": "Native typed operator adapter composes actual account epoch/session/factor operations and durably records the recovery case before effects.",
+      "interfaces": "Existing private atomic store, epoch store, guarded session revocation, pinned-signature verifier and private-terminal TOTP tooling.",
+      "persistence": "Bounded account-scoped durable case with revision, exact account/case/epoch/factor bindings and sticky uncertain-attempt state.",
+      "security": "Independent human identity approval; no email-only bypass, agent-signed approval, private output or arbitrary command/SQL channel.",
+      "failure_recovery": "Persist irreversible dispatch before effects; failures before release retain containment. An interrupted release reports actual account state as uncertain until read-only reconciliation; never automatically retry, restore old factor or release by declaration."
+    },
+    "tests": [
+      {
+        "id": "S04-04-T01",
+        "outcome_ids": [
+          "governed-factor-recovery"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Supported case and independent identity decision.",
+        "action": "Admit exact case after signed human decision; compare absent/insufficient decisions.",
+        "expected": "Only valid exact authorization advances; no agent-generated identity attestation.",
+        "preserved": "Accepted password/contact paths, authoritative password, unrelated accounts, OpenPGP bindings and mail availability.",
+        "owner": "/root",
+        "reviewer": "/root/recovery_policy_review",
+        "status": "PASS",
+        "evidence": [
+          "Source scope only: /home/foo/Downloads/osmap-ux-s04/s04-04/coordinator-final-focused-pass.log (15 tests), coordinator-adapter-tests-pass.log (14 tests); session source QA 11 tests; BrowserApp/Runtime and metadata 12 observations. Native/installed results are separate NOT_RUN."
+        ]
+      },
+      {
+        "id": "S04-04-T02",
+        "outcome_ids": [
+          "governed-factor-recovery"
+        ],
+        "kind": "negative",
+        "level": "source",
+        "prerequisites": "Bound current account/case/epoch/factor and serialized state.",
+        "action": "Submit foreign/stale/replayed decisions and repeat after restart.",
+        "expected": "No foreign or repeated effect; durable state remains authoritative.",
+        "preserved": "Accepted password/contact paths, authoritative password, unrelated accounts, OpenPGP bindings and mail availability.",
+        "owner": "/root",
+        "reviewer": "/root/recovery_policy_review",
+        "status": "PASS",
+        "evidence": [
+          "Source scope only: /home/foo/Downloads/osmap-ux-s04/s04-04/coordinator-final-focused-pass.log (15 tests), coordinator-adapter-tests-pass.log (14 tests); session source QA 11 tests; BrowserApp/Runtime and metadata 12 observations. Native/installed results are separate NOT_RUN."
+        ]
+      },
+      {
+        "id": "S04-04-T03",
+        "outcome_ids": [
+          "governed-factor-recovery"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Authorized case with actual private epoch/session records.",
+        "action": "Contain account and revoke exact-account sessions; inspect control account.",
+        "expected": "Admission refuses during recovery; old sessions revoked; other accounts preserved.",
+        "preserved": "Accepted password/contact paths, authoritative password, unrelated accounts, OpenPGP bindings and mail availability.",
+        "owner": "/root",
+        "reviewer": "/root/recovery_policy_review",
+        "status": "PASS",
+        "evidence": [
+          "Source scope only: /home/foo/Downloads/osmap-ux-s04/s04-04/coordinator-final-focused-pass.log (15 tests), coordinator-adapter-tests-pass.log (14 tests); session source QA 11 tests; BrowserApp/Runtime and metadata 12 observations. Native/installed results are separate NOT_RUN."
+        ]
+      },
+      {
+        "id": "S04-04-T04",
+        "outcome_ids": [
+          "governed-factor-recovery"
+        ],
+        "kind": "positive",
+        "level": "native",
+        "prerequisites": "Supported factor-only case and authoritative password baseline.",
+        "action": "Verify password preservation and ordinary authentication after recovery.",
+        "expected": "Password remains unchanged; lost-password cases refuse/escalate without alternate password authority.",
+        "preserved": "Accepted password/contact paths, authoritative password, unrelated accounts, OpenPGP bindings and mail availability.",
+        "owner": "/root",
+        "reviewer": "/root/recovery_policy_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      },
+      {
+        "id": "S04-04-T05",
+        "outcome_ids": [
+          "governed-factor-recovery"
+        ],
+        "kind": "positive",
+        "level": "native",
+        "prerequisites": "Contained case, revocation and human private-terminal decision.",
+        "action": "Use actual guarded factor replacement and verify old/new authentication.",
+        "expected": "New factor works, old factor refuses, no auto restore and unrelated state preserved.",
+        "preserved": "Accepted password/contact paths, authoritative password, unrelated accounts, OpenPGP bindings and mail availability.",
+        "owner": "/root",
+        "reviewer": "/root/recovery_policy_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      },
+      {
+        "id": "S04-04-T06",
+        "outcome_ids": [
+          "governed-factor-recovery"
+        ],
+        "kind": "recovery",
+        "level": "source",
+        "prerequisites": "Actual changed case/state/session effect boundaries.",
+        "action": "Interrupt before/after effect dispatch; reopen and inspect read-only.",
+        "expected": "No blind replay or automatic release. Failures before release retain containment; interrupted release preserves ReleasePending with actual epoch/state separately and requires read-only reconciliation.",
+        "preserved": "Accepted password/contact paths, authoritative password, unrelated accounts, OpenPGP bindings and mail availability.",
+        "owner": "/root",
+        "reviewer": "/root/recovery_policy_review",
+        "status": "PASS",
+        "evidence": [
+          "Source scope only: /home/foo/Downloads/osmap-ux-s04/s04-04/coordinator-final-focused-pass.log (15 tests), coordinator-adapter-tests-pass.log (14 tests); session source QA 11 tests; BrowserApp/Runtime and metadata 12 observations. Native/installed results are separate NOT_RUN."
+        ]
+      },
+      {
+        "id": "S04-04-T07",
+        "outcome_ids": [
+          "governed-factor-recovery"
+        ],
+        "kind": "negative",
+        "level": "source",
+        "prerequisites": "Coordinator/Settings changed interfaces and unavailable/foreign fixtures.",
+        "action": "Exercise isolation, hostile input, races, stale state and applicable request protections.",
+        "expected": "No cross-account disclosure or secret evidence; bounded truthful errors.",
+        "preserved": "Accepted password/contact paths, authoritative password, unrelated accounts, OpenPGP bindings and mail availability.",
+        "owner": "/root",
+        "reviewer": "/root/recovery_policy_review",
+        "status": "PASS",
+        "evidence": [
+          "Source scope only: /home/foo/Downloads/osmap-ux-s04/s04-04/coordinator-final-focused-pass.log (15 tests), coordinator-adapter-tests-pass.log (14 tests); session source QA 11 tests; BrowserApp/Runtime and metadata 12 observations. Native/installed results are separate NOT_RUN."
+        ]
+      },
+      {
+        "id": "S04-04-T08",
+        "outcome_ids": [
+          "governed-factor-recovery"
+        ],
+        "kind": "positive",
+        "level": "deployed",
+        "prerequisites": "Matching signed native source/artifacts and actual configured Runtime.",
+        "action": "Exercise recovery journey and both Settings entries, status and restart.",
+        "expected": "Real lifecycle and truthful factor/last use, independent account/audit/preservation evidence.",
+        "preserved": "Accepted password/contact paths, authoritative password, unrelated accounts, OpenPGP bindings and mail availability.",
+        "owner": "/root",
+        "reviewer": "/root/recovery_policy_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      },
+      {
+        "id": "S04-04-T09",
+        "outcome_ids": [
+          "governed-factor-recovery"
+        ],
+        "kind": "usability",
+        "level": "human",
+        "prerequisites": "Required engineering evidence and independent review pass.",
+        "action": "Authorized human judges identity and completes concise scoped acceptance.",
+        "expected": "Human-only decision recorded separately; no automated acceptance claim.",
+        "preserved": "Accepted password/contact paths, authoritative password, unrelated accounts, OpenPGP bindings and mail availability.",
+        "owner": "/root",
+        "reviewer": "/root/recovery_policy_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      }
+    ],
+    "engineering_exit": "All required source/native/installed scenarios pass with actual effects, independent review and signed synchronized delivery; failed history remains preserved.",
+    "human_exit": "Authorized human independently judges real identity and confirms defined recovery outcome after engineering qualification."
+  },
+  "work_packages": [
+    {
+      "id": "WP01",
+      "status": "COMPLETE_SOURCE_POLICY",
+      "required_tests": [
+        "S04-04-T01",
+        "S04-04-T02"
+      ],
+      "evidence": "Independent D04 source policy GO and read-only actual installed configuration contract; human claimant identity remains separate."
+    },
+    {
+      "id": "WP02",
+      "status": "SOURCE_COMPLETE_NATIVE_PENDING",
+      "required_tests": [
+        "S04-04-T01",
+        "S04-04-T02",
+        "S04-04-T07"
+      ],
+      "evidence": "Source signature/case/replay/ordinary Runtime tests PASS; no real identity approval created."
+    },
+    {
+      "id": "WP03",
+      "status": "SOURCE_COMPLETE_NATIVE_PENDING",
+      "required_tests": [
+        "S04-04-T03",
+        "S04-04-T07"
+      ],
+      "evidence": "Actual local epoch/session files and real session tokens PASS; native root ownership branch and installed effects NOT_RUN."
+    },
+    {
+      "id": "WP04",
+      "status": "SOURCE_COMPLETE_NATIVE_PENDING",
+      "required_tests": [
+        "S04-04-T04",
+        "S04-04-T05"
+      ],
+      "evidence": "Actual source coordinator plus existing factor tool composition tested; native T04/T05 NOT_RUN."
+    },
+    {
+      "id": "WP05",
+      "status": "SOURCE_COMPLETE_NATIVE_PENDING",
+      "required_tests": [
+        "S04-04-T06",
+        "S04-04-T07"
+      ],
+      "evidence": "Before/after dispatch/release uncertainty, exact marker, real codec and failure stops PASS at source scope."
+    },
+    {
+      "id": "WP06",
+      "status": "PENDING",
+      "required_tests": [
+        "S04-04-T08",
+        "S04-04-T09"
+      ],
+      "evidence": "Source Settings/request integration PASS; normal gates, native/installed QA and human acceptance remain required."
+    }
+  ],
+  "source_delivery": {
+    "security_check": "PASS",
+    "v10_governance": "PASS_AFTER_METADATA_CORRECTION",
+    "acceptance_source08_aggregate": "FAIL_RETAINED",
+    "signature": "PENDING",
+    "github_parity": "PENDING",
+    "native_components": "NOT_RUN",
+    "installed": "NOT_RUN",
+    "human": "NOT_RUN"
+  }
+}
+```
+<!-- /OSMAP_ACTIVE_WORK_ORDER -->
+
+## Accepted S04-03 work order preserved
+
+<!-- OSMAP_S04_03_ACCEPTED_WORK_ORDER_20261027 -->
 ```json
 {
   "version": 1,
@@ -10679,7 +11111,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
   "updated_at": "2026-10-27T08:01:03Z"
 }
 ```
-<!-- /OSMAP_ACTIVE_WORK_ORDER -->
+<!-- /OSMAP_S04_03_ACCEPTED_WORK_ORDER_20261027 -->
 
 ## Accepted S04-02 work order retained unchanged
 

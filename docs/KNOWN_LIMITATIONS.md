@@ -1,5 +1,13 @@
 # Known Limitations
 
+S04-04 has source-tested governed factor-recovery components, not installed or
+real-user recovery acceptance. Native factor/password-preservation qualification,
+installed browser integration and independent human identity/acceptance remain
+NOT_RUN. The supported source case preserves a known password and replaces an
+existing active factor; lost-password, missing-factor and already-partial cases
+require manual review. OSMAP admission/browser-session containment does not prove
+termination of public IMAP/SMTP connections. See `UX_SLICE_S04_04.md`.
+
 2026-10-26 — S04-03 is engineering-qualified for local obsd1 development; owner
 acceptance remains pending. Recovery-contact delivery is enabled only for the
 configured local mail domain. This slice does not enable external recovery mail,

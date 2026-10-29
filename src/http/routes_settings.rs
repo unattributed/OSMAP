@@ -249,6 +249,7 @@ where
                             .recovery_contact(&validated_session)
                             .ok()
                             .as_ref(),
+                        self.gateway.authenticator(&validated_session).ok().as_ref(),
                     ),
                 ),
                 audit_events,

@@ -1,5 +1,20 @@
 # Decision Log
 
+2026-10-29 — S04-04 governed recovery source design: preserve D04's independent
+human identity and private-terminal decisions. A distinct identity-only signed
+schema admits the exact account/case/epoch/factor without fabricating pre-existing
+containment/session effects. The typed operator coordinator performs OSMAP epoch
+containment and guarded account browser-session revocation; the browser writes
+only an untrusted request and reads a nonauthoritative status projection.
+Durable FactorReplacement admits one irreversible attempt; ReleasePending records
+release uncertainty and cannot imply retained containment after activation.
+Runtime paths come from the actual root-owned service environment. Account TOTP
+replay counters are labelled qualified time windows and may predate the current
+factor. Lost-password/missing-factor/compromise cases remain manual review. Native,
+installed, applicable broader mail containment and human acceptance remain open.
+See `docs/UX_SLICE_S04_04.md` and the active execution ledger; source review GO
+does not substitute for those results.
+
 2026-10-26 (America/Toronto) — **Qualify S04-03 by observed requirements and preserve failed attempts.**
 Reuse native04's successful installed lifecycle and unchanged shared-authentication
 evidence. Qualify the six required contact-specific negatives observed in native05
