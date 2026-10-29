@@ -1,5 +1,20 @@
 # Decision Log
 
+2026-10-29 — S04-04 controlled fixture continuation: the operator confirmed
+disposable custody and human-step availability, with the original password unavailable.
+Execute the explicitly authorized single local credential initialization as manual fixture maintenance;
+it does not qualify product lost-password recovery. Actual local userdb/Maildir,
+purpose-grant, SQL schema and non-target preservation evidence support the private
+actor. The sole write settled, with independently matched target readback and
+unchanged46 other rows plus target noncredential fields. The user reported initial enrollment complete, but the independent fixed-path
+check found the configured factor absent (ENOENT). Preserve the generic first
+refusal and its read-only path discriminator; reconcile the private final status
+before any enrollment retry or runtime activation. Retain the
+existing native/remote bridge incompatibility guard. Reuse the accepted temporary
+LOCAL Web profile for qualification, making its whole-Web authority impact explicit,
+and restore the original bridge profile afterward. Do not introduce a second
+frontend or weaken production safeguards to bypass the routing contract.
+
 2026-10-29 — S04-04 native/installation checkpoint: preserve native01's fixture
 ownership failure and strengthen the deadline test against early-refusal false
 passes. Actual current native components: 41 PASS, plus an unchanged earlier root

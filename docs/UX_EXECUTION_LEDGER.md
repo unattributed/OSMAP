@@ -10282,7 +10282,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "slice": "S04-04",
     "specification": {
       "path": "docs/UX_SLICE_S04_04.md",
-      "sha256": "4f2c6efaf66b181da57a39e079ac6f0f39d1258e2ec23f68ca41521843f61b1f"
+      "sha256": "ab66964f4288971793f545e533b49926668aa1bf630c7a203396500bc47197b5"
     },
     "design": {
       "journey": "Operator-assisted lost-authenticator recovery progresses requested, identity reviewed, contained, sessions revoked, factor replacement, reconciled; account Settings reflects actual state.",
@@ -10668,12 +10668,12 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "authenticated_settings": "NOT_RUN; fresh unauthenticated browser entry reached login, no credentials entered"
   },
   "remaining_qualification": {
-    "state": "IN_PROGRESS_PENDING_MANUAL_EXISTING_FIXTURE_DISPOSITION",
+    "state": "IN_PROGRESS_FIXTURE_PASSWORD_SETTLED_EXPECTED_INITIAL_FACTOR_ABSENT",
     "reserved_account": "osmap-helper-validation@blackbagsecurity.com",
-    "actual": "localSQL row1; configured andlegacy factorabsent; epochabsent; excludedfrombothhelperallowlists; frontendnativeDisabled",
+    "actual": "localSQLrow1; oneauthorizedpasswordinitializationSETTLED; initialfactorhumanreportedcompletebutactualexpectedpathENOENT; epochabsent; helperallowlists/frontendbridgeunchanged",
     "local_instance": "actual obsd1/originalsocket/3306/datadirvarmysql/server1/read_onlyOFF; numeric-only observerFAIL retained andsame-output canonicalOFF correctionPASS",
     "routing": "actual auth/mailbox Toronto relays retained; no newremote requests; localSQL row is not mailbox-route qualification; metadataquery unavailable toexistingclient, causeUNKNOWN/no widenedgrants",
-    "required_human_input": "Existing-row custody/disposition and currentcredential privatecustody before any controlled baseline enrollment; independent identity signature and private RECOVER/RECONCILE later; T09acceptance separate afterengineering",
+    "required_human_input": "Private initial enrollment final fixed status requested without rerun. Independent observer genericfailure preserved; lstat-only discriminator proves expectedfactorabsent. Profile/epoch activationblocked. Fresh identity/privateRECOVER/RECONCILE andT09later.",
     "next_plan": "private controlled-recovery-journey-proposal01.md SHAde4e9f9b32903b72526af7d788cdca8ea97262e4ad3b59f8a5ec57dada894864",
     "conditional_actor": "private controlled-baseline-actor01.md SHA1bcfa0df1ae2574be5e756e54664678182740a7a09e396cf1349dcfef451395a; NOT_DISPATCHABLE, no SQLwrites/reset/delete or owner/globalroute substitution",
     "not_run": [
@@ -10681,7 +10681,46 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
       "S04-04-T05",
       "S04-04-T08",
       "S04-04-T09"
-    ]
+    ],
+    "current_next_plan": "private continuation01/credential-init-authorization.md (credential-only) and controlled-fixture-init01.md (subsequent baseline/profile scope); old draft digest references are historical, not execution admissions."
+  },
+  "operator_followup": {
+    "custody": "CONFIRMED_DIRECT_HUMAN_RESERVED_DISPOSABLE_FIXTURE",
+    "human_private_terminal_availability": "CONFIRMED",
+    "independent_recovery_identity_approval": "NOT_CREATED",
+    "fixture_credential_init": {
+      "actor": "private continuation01/fixture-credential-init01.py",
+      "actor_sha256": "b190bc79db08dfe61a8d161c567d3e3e51dedcb87e426a6b7262a00bcf7e926c",
+      "authorization_packet": "private continuation01/credential-init-authorization.md SHA4e7831d11cf18fdad473939293523c59ada408e06f1b0a99b6ed2b1be7d665a0",
+      "status": "SETTLED_ONCE_INDEPENDENTLY_READ_BACK",
+      "effect": "one fixedlocalfixture password/modified CAS UPDATE only; no config/factor/epoch/mailbox/service operation",
+      "bound_seconds": 90,
+      "independent_evidence": "8producer/consumer+4custody+7signal/deadlinePASS; actualone-shotSETTLED andindependentSQL/noncredentialpreservationreadbacksPASS",
+      "authorization": "direct human call_d0f7f3bc807a419d99fd92b0f09d96e9: Authorize one local fixture initialization",
+      "actual_evidence": "private continuation01/fixture-init01/result.json + independent-readback.json + target-inventory-after.json + sql-preservation-after.json + independent-qa-review.json; oneUPDATE, unchanged46otherrows andtarget15noncredentialcolumns; noautomaticretry",
+      "actual_elapsed_seconds": 0.665,
+      "actual_changed_at": "20261029142749"
+    },
+    "local_preflight": "actual userdb existinglocalMaildirUID/GID2000 mode700; mailboxgrantpairmatch; originalInnoDB17columns0triggers uniqueusername1 otherautomaticcolumns0;46nontargetrows+targetnoncredentialopaque baseline retained",
+    "controlled_route": "temporary acceptedLOCALdevelopmentprofile on currentWeb, scopednativeaccountselector; wholeWebauth/mailboxauthoritylocal duringwindow; restoreexactcurrentbridge afterward; no publicmail/SQLconfiguration/servicechange",
+    "private_diagnostic_incident": {
+      "reference": "continuation01/diagnostic-incident01.json",
+      "saved_artifact_redacted": true,
+      "tool_response_retractable": false,
+      "replacement_fixed_output_classifier": "independent5casePASS andactualOBSERVED",
+      "service_credential_changed": false,
+      "disposition": "separate follow-up; fixturecredential operation doesnot change service credential"
+    },
+    "initial_factor_enrollment": {
+      "status": "HUMAN_REPORTED_COMPLETION_EXPECTED_CONFIGURED_FACTOR_ABSENT",
+      "wrapper_sha256": "6f6b71cfe2e08ba7232b4b1790f3d97d33a4396666e902f9b5bf08a5408da5b8",
+      "not_recovery_identity_approval": true,
+      "secrets_in_chat": false,
+      "actual_evidence": "private continuation01/initial-factor-readback01.json REFUSED FIXED_READ_BOUNDARY_UNAVAILABLE; factor-path-discriminator01.json PASS readonly targetENOENT errno2 physicalancestors/runtimecorrect; nofactorcontentread",
+      "disposition": "No retry or profile/epochactivation; request finalfixedstatusfromprivatecommand withoutsecrets"
+    },
+    "original_fixture_password_before_init": "UNAVAILABLE",
+    "current_fixture_password": "FRESH_CREDENTIAL_PRESERVED_HOST_ROOT_PRIVATE_ONLY"
   }
 }
 ```

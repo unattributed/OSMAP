@@ -385,3 +385,51 @@ the existing Toronto endpoint selected by the current environment. No new remote
 request was issued. A local SQL row therefore does not qualify the installed
 mailbox route. Preserve the owner's current route; establish a reviewed controlled
 route before any journey that could send this fixture to that backend.
+
+### Operator-controlled fixture continuation — 2026-10-29
+
+The operator confirmed disposable custody of the reserved account and availability
+for the human recovery steps. Before initialization, its password was unavailable. This resolves
+the custody question but does not authorize a credential write or constitute an
+independent recovery identity attestation.
+
+Read-only preparation established the actual local Dovecot SQL/userdb binding,
+an existing local Maildir with UID/GID2000 and mode0700, and matching local mailbox
+grant material without retaining key bytes. Root socket-authenticated metadata
+confirmed the original mailbox table is InnoDB with17 physical columns, no triggers,
+one unique username index and no other automatically updated columns. Private
+opaque baselines cover the46 other rows and the target's noncredential fields.
+The existing SQL principal permits SELECT on the five native account columns and
+UPDATE on password/modified only; no grants were changed.
+
+A concrete private credential-only actor is ready at SHA-256
+`b190bc79db08dfe61a8d161c567d3e3e51dedcb87e426a6b7262a00bcf7e926c`.
+Independent review, eight actual local producer/consumer cases, four custody
+refusals and seven signal/deadline cases passed. A native synthetic hash probe
+also passed without changing an account. The actor preserves a fresh credential
+privately before its sole guarded UPDATE, records dispatch durably, disables
+reconnect, requires a complete post-COMMIT readback and retains uncertainty without
+retry or rollback. The whole operation and forced cleanup are bounded to90seconds.
+The operator subsequently authorized exactly one execution. It settled in0.665s
+with one guarded UPDATE; independent readback matched the new opaque password
+digest and modified timestamp, all46 other complete rows and the target15
+noncredential columns remained byte-identical. The fresh password remains only
+in a root-private host file. This manual fixture setup does not qualify product
+lost-password recovery. The user reported the separately reviewed private initial-factor enrollment
+complete. The independent observer refused with a generic file-boundary error;
+a narrower lstat-only discriminator established that the expected configured
+factor is absent (ENOENT), with correct physical ancestors and runtime identity.
+The first refusal is retained; the private final command status is requested
+without repeating provisioning. No epoch/profile preparation or product recovery
+has occurred at this checkpoint.
+
+For the subsequent journey, the supported route is a temporary return of the
+existing Web to the accepted local-development auth/mailbox profile, with native
+account authority scoped to the reserved account. The current configuration guard
+refuses native authority combined with either known Toronto bridge endpoint;
+adding native fields to the current bridge profile is therefore invalid. During
+the controlled local window, the whole Web mailbox/auth route uses local data and
+owner credentials/content may differ from Toronto. Preserve public mail services
+and all owner credentials/data, then restore the exact current bridge profile and
+verify its loaded environment, HTTPS and supervised roles. This preparation is
+separate from the later fresh identity signature and private RECOVER/RECONCILE.

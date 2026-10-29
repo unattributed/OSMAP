@@ -5,8 +5,14 @@ installed Web/helper executables. Complete configured factor/password-preservati
 qualification, authenticated installed browser integration and independent human
 identity/acceptance remain NOT_RUN. The current frontend profile has no native
 account authority; it was preserved. The reserved test account has one historical
-mailbox row, no factor/epoch record and no helper allowlist admission, so manual
-custody/disposition is required before controlled preparation. The supported
+mailbox row and no helper allowlist admission or epoch record. Disposable custody
+is human-confirmed. The separately authorized one-shot local fixture password
+initialization settled with independent target/non-target preservation readback.
+Initial factor enrollment was reported completed; independent metadata readback
+found the expected configured factor absent (ENOENT). Runtime preparation is
+blocked pending the private command’s final fixed status; do not repeat enrollment
+or infer an installed factor from the human completion report. This manual setup supplies no product
+lost-password recovery claim. The supported
 source case preserves a known password and replaces an
 existing active factor; lost-password, missing-factor and already-partial cases
 require manual review. OSMAP admission/browser-session containment does not prove
