@@ -20,7 +20,16 @@ independent installed-factor readback. The reviewed temporary LOCAL Web profile
 and reserved-only native authority are now active: epoch0/active, no recovery
 case, expected factor digest, all54 loaded environment fields matching, and17
 roles healthy. This preparation took5.097s and performed no further SQL or factor
-write. Actual HTTPS login/Settings/session/recovery qualification is next.
+write. The actual two-login HTTPS baseline passed both logins and nine controls,
+then ended UNCONFIRMED when its final read-only SSH observation failed. A separate
+one-POST current-state idempotency measurement passed with durable byte equality;
+it does not repair the lost historical observation. The fixture factor is now
+EXPOSED after private enrollment material was pasted into chat. The human
+classified isolated factor exposure with no broader suspicion in the same case.
+One live-cookie pre-containment GET200 passed; the other original session is
+already idle-expired and supplies no causal revocation proof. Fresh human-signed
+controlled recovery, Pending/refusal/replacement/persistence observations and
+the separately authorized ordinary password journey remain next.
 The bridge profile remains backed up for guarded restoration after the controlled
 journey. IMAP/SMTP connection termination is not claimed. S05-02 remains deferred
 and its separate local changes untouched.

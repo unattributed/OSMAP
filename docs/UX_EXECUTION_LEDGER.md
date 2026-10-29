@@ -10260,7 +10260,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "status": "PENDING",
     "reference": ""
   },
-  "next_action": "Finish reviewed source delivery, prepare the exact bounded native/disposable-account recipe, obtain required human-backed identity/private-terminal decisions before factor effects; no live retry.",
+  "next_action": "Complete independently reviewed Pending/post/restart callbacks, then fresh human-only identity signature and one private controlled recovery paused at RECONCILE; preserve exposed-factor classification and all historical uncertainty. No ordinary password POST without its own specific authorization.",
   "accountability": {
     "owner": "/root",
     "functional_exit": "Working governed factor recovery through actual account/session/factor authority and truthful Settings; human judgment remains separate.",
@@ -10282,7 +10282,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "slice": "S04-04",
     "specification": {
       "path": "docs/UX_SLICE_S04_04.md",
-      "sha256": "cb40199f911d001b79085abd32da336c6153110f91bb6f89ac007c86dba0659f"
+      "sha256": "d784eabf0ab97504e77a272413e4d96c392d017495d691502e8ba1ab73e9b78d"
     },
     "design": {
       "journey": "Operator-assisted lost-authenticator recovery progresses requested, identity reviewed, contained, sessions revoked, factor replacement, reconciled; account Settings reflects actual state.",
@@ -10489,7 +10489,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "S04-04-T03",
         "S04-04-T07"
       ],
-      "evidence": "Actual native epoch/session files and reused exactroot cross-owner replacement PASS. Installed helper/Web preserve sessions/state; actual selected-account admission/refusal during configured recovery remains pending."
+      "evidence": "Actual native epoch/session files and reused exactroot cross-owner replacement PASS. Installed helper/Web preserve sessions/state; actual selected-account admission/refusal during configured recovery remains pending. Actual retained baseline now has one live protected-cookie GET200 and one already idle-expired original record; both physically nonrevoked. Native governed revocation/Pending admission and positive other-account usability remain pending."
     },
     {
       "id": "WP04",
@@ -10498,7 +10498,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "S04-04-T04",
         "S04-04-T05"
       ],
-      "evidence": "Source adapter composition and native coordinator file effects PASS; real T04/T05 factor/password journey NOT_RUN, existing reserved SQL row has no factor/epoch and needsmanual custody/disposition."
+      "evidence": "Source adapter and native temporary-store components PASS; reserved fixture password/factor/epoch0 manually initialized and independently verified. Factor now EXPOSED with direct human isolated-factor classification; actual governed replacement and post-recovery own-password journey NOT_RUN."
     },
     {
       "id": "WP05",
@@ -10789,7 +10789,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
       "private_selection_record": "private continuation01/uat-account-selection.json"
     },
     "https_baseline": {
-      "state": "READY_READONLY_NATIVE_PASS_PRIVATE_HUMAN_INPUT_PENDING",
+      "state": "PARTIAL_ACTUAL_BASELINE_RECONCILED_SEPARATE_CURRENT_IDEMPOTENCY_PASS",
       "owner": "/root",
       "author": "/root/recovery_engineer",
       "independent_qa": "/root/recovery_qa",
@@ -10802,14 +10802,17 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
       "bound": "eachNodephase180s body +outer190+kill20=210s; nativecarrier12+kill2; atmost24HTTPrequests perconsumer, fixedworkflow2loginPOSTs; humanentrywaitexcluded, distinctcounterwait31-62s",
       "failure_stop": "firstfixedcause retained; validissuedcookieonHTTP200savedandreportedUNCONFIRMED; noautomaticloginresubmission; retainedownedrootstage/session/privatecookieevidence; nofactorseedread/OTPderive",
       "required_scenarios": "T07/T08supportinginstalledboundary; doesnotcompleteT03/T04/T05/T08/T09recovery",
-      "human_execution": "PENDING"
+      "human_execution": "OriginalrunUNCONFIRMED after2actual303logins/9boundarymarks; finalPOST200thenSSH255readbackfailure. RepeatcommandrefusedexistingstateHTTP0.",
+      "actual_evidence": "private https-baseline-run.ZAOeiPN3/{ready,first,second}.jsonl andindependent-partial-review01.json; https-baseline-run.3hMXdlYI/ready.jsonl; http-reconcile01/result.json+independent-review.json",
+      "historical_idempotent_equality": "NOT_OBSERVED_OR_RECOVERABLE; originalframeRAMonly",
+      "reconciliation": "Fresh exactfrozenobservePASS0.342 SSH0stderr0; currentRequested1/twoactiveepoch0sessions/unchangedreplay/foreignsessioncontrols preserved; noHTTP"
     },
     "ordinary_password_followup": {
       "required_scenario": "S04-04-T04 preservespasswordthroughrecoveryANDexistingown-passwordchangeusableafterrecovery",
       "status": "NOT_RUN_ACTION_SPECIFIC_AUTHORIZATION_NOT_REQUESTED",
       "action_packet": "private continuation01/ordinary-password-change-authorization-DRAFT.md SHAc3caae7fd01770f853528ab4dd8e7d99d02e18a3cd0a2994a55cddc479621310; NOT_DISPATCHABLE untilactualrecoveredepoch1/session/form andfinal reviewedimplementation",
       "readonly_native_sql_prerequisite": "private ordinary-sql-native-preflight02/result.json capturePASS0.595s160bytes/noSQLwrite; actual-producer-consumer.json PASS6+4originalinstance/currentinitfingerprint/time; fullpostchangepolicycorrectlyrefusesunchangedcredential",
-      "guard_preparation": "Currentprivate092cad5epoch1 and6ff07e5epoch2 config-onlyguards: diagnostic-onlybootstrapcorrection andmechanicalpinupdate overhistorical8d4c255/0055c16 proofs; functionalpredicatesunchanged. Source-reviewedNOT_ADMITTED/nativeNOT_RUN; role-driverindependentreviewpending. NotproductPASS.",
+      "guard_preparation": "Current private 092cad5 epoch1 and6ff07e5 epoch2 config-only guards, actual bounded original-local SQL producer/consumer preflight PASS; normal role-driver cleanup correction independently reviewed. Source-only GO, future actual case/result bindings absent; NOT_NATIVE_ADMITTED.",
       "stop": "No normalpasswordPOST untilfreshspecificoperatorauthorization; no repeatinitializedpasswordreset; anyunconfirmednormaltransaction retainsactualstate/no retry/fenceremoval"
     },
     "source_publication_refusal": {
@@ -10820,7 +10823,51 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
       "correction": "ExactownerUATidentifierkeptprivate; genericpubliclabel. Rejectedlocalcommitpreserved; newredactedpubliclineagefromlastremotefeee88a withoutreset/amend/force/historyrewrite",
       "affected_retest": "publicationguardPASS +docguardPASS +workorderIN_PROGRESS",
       "native_effect": "NONE",
-      "normal_replacement_delivery": "PENDING"
+      "normal_replacement_delivery": "PASS signed b689b40 normal hooks/security and fresh origin exact parity; rejected private ancestry remains unpublished"
+    },
+    "fixture_factor_exposure": {
+      "state": "EXPOSED",
+      "record": "private continuation01/http-reconcile01/factor-exposure01.json",
+      "raw_material_copied_or_replayed": false,
+      "mutation": "NONE",
+      "required_disposition": "Human classified isolated disposable-fixture factor exposure with no broader suspicion in same existing controlled-custody case. Fresh signed approval and private RECOVER/RECONCILE still required; no automatic reset, rotation or release.",
+      "owner_uat": "Unchanged private owner selection; no owner credential action",
+      "human_classification": "RECEIVED_DIRECT_HUMAN; private case review records classification only, not a replacement dispatch"
+    },
+    "current_idempotency_measurement": {
+      "state": "PASS_SCOPED_CURRENT_STATE_ONLY",
+      "consumer_sha256": "a2c63ee6d58ca825c193635d779a830524cd49fd0fafec9f70bf06a4907f38a5",
+      "wrapper_sha256": "3899a66656968735b0f6949ecc212b32e160673cd12d849c354236bb00e9ac7d",
+      "authority": "Directoperatorretry; boundedretestofuntrustedown-requestidempotencyafterreadonlystate reconciliation; no credential/factor operation",
+      "prerequisites": "currentexactrequestSHA/case/revision1; matchingprojectionabsent; twoactiveepoch0sessions/savedcookie2context; sameUA+privateCSRF; sameprofile/factor/replay; durablebefore+intent priorPOST",
+      "operation": "exactlyonePOST/settings/authenticator revision1/actionrequest usingexistingcookie2; noGET/login/OTP/password/factor/epoch/config/servicechanges; normalownlast_seen/auditpossible",
+      "bound_seconds": 112,
+      "expected": "HTTP200+independentdurableafterexactrequestbytehash+ID/revision/timestamps unchanged; scopespecificPASSonly",
+      "stop": "NoautomaticHTTPretry; preservebefore/intent/after andoriginalaggregateUNCONFIRMED; uncertainreadbackreconcilewithoutresubmission",
+      "result": "PASS 1.101s, one POST200, exact durable request bytes/revision/case unchanged; epoch/factor/replay/non-target session records preserved. Original aggregate UNCONFIRMED and historical equality NOT_OBSERVED.",
+      "evidence": "private http-reconcile01/new-idempotency-receipts/result.json SHAc3b9f8640324be8ca6ca2a5c2144bbf49cc79806d49443fbb067355e3f519638; independent review SHA7feb2b255dc846941779e1e94749de045f4af2b946a9da48a62474234f77734f"
+    },
+    "future_input_wrapper": {
+      "scope": "Future fresh baseline only; not rerun on current retained state",
+      "source_sha256": "25f56bd50f327699ffa8efda7f32aa9ec7c801835c934cbf59dd9d69ee4c050f",
+      "evidence": "Three local PTY controls PASS; private baseline02-policy-pty01/result.json SHAa43e6c98b75a585c3585de6e8066173c70034d6bd929c9764b8be8f873250d94",
+      "limit": "Synthetic early input reproduced old wrapper behaviour; human input timing and original SSH cause remain UNKNOWN"
+    },
+    "recovery_before_probe": {
+      "state": "PASS_SCOPED_PRECONTAINMENT_ONLY",
+      "source_sha256": "33cf2717af17e1fc015599752013675c4b2341dbabdbfbc310d0358b8cd1e61f",
+      "wrapper_sha256": "8b5be70b634ee1aa0fe0de24d4fc1efc424b3222e5c504d5f88bdc5c736f9bdb",
+      "failure": "Original probe refused idle-expired first session with zero HTTP; retained under recovery-probe-refused6fb and before-cookie-probe-result.json. Native age observation explained refusal. No product two-live-session threshold exists.",
+      "correction": "Preserve both nonrevoked records; expired record metadata-only, present only live cookie. No timeout/session rewrite/new authentication.",
+      "evidence": "Focused 3 controls PASS; actual retest 1.164s, one GET200, known2/live1/idle1; private http-reconcile01/before-current-inventory-result.json and root before-pass receipt",
+      "attribution": "Only prior live200 to post-containment denial can prove causal revocation; expired record is not that proof",
+      "next": "Future Pending/post/persistence source controls independently PASS; actual recovery effects NOT_RUN, fresh human signature/private decisions next."
+    },
+    "recovery_callback_source_review": {
+      "state": "GO_SOURCE_ONLY",
+      "evidence": "private recovery-modes-qa01/independent-review02.json SHA6cbd032c7900d12eb692926169722861dd8394e7c3f3730812510256da88bf6d; exact source33cf/wrapper8b5; prior review retained, timing wording corrected without retest",
+      "scope": "Actual Rust marker producer/consumer, Pending/old-factor refusal, replacement303 session/replay, unexpected200 issued-cookie preservation, persistence consumer and private TTY cleanup. Synthetic controls only; separate parent restart proof required.",
+      "native": "NOT_RUN; no identity signature/window or recovery dispatch created by source QA"
     }
   }
 }

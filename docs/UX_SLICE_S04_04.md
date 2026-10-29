@@ -531,3 +531,74 @@ preserved on a private local ref and verified Git bundle. A redacted replacement
 starts from the last GitHub-saved checkpoint; no rejected ancestry is published,
 no history is rewritten and no guard or normal hook is bypassed. The affected
 publication, documentation and work-order checks passed after correction.
+
+
+### Actual HTTPS baseline partial result and bounded reconciliation
+
+The first real baseline produced two303 logins with distinct accepted counters
+and actual epoch0 session bindings. Both Settings entries, qualified factor
+metadata, five refusal controls, Requested-only state and stale revision refusal
+passed their observations. The final idempotent POST returned200, then its
+read-only SSH observation failed255 (zero stdout,91 stderr bytes). The raw
+transport text was not retained; its underlying cause remains UNKNOWN. Preserve
+the original aggregate UNCONFIRMED. A repeated full command refused existing
+state before any HTTP request and did not repeat authentication.
+
+The exact frozen read-only observer subsequently passed in0.342s. It confirmed
+two active epoch0 sessions, current Requested revision1, unchanged replay and
+preserved other-session controls. The original before/final request frames were
+RAM-only, so historical byte equality remains NOT_OBSERVED. A separately defined
+one-POST idempotency test of the CURRENT known record subsequently passed in
+1.101s: HTTP200, durable exact request byte equality, unchanged revision/case,
+factor/epoch/replay and other-account/session records. This is its own passing
+measurement; it cannot rewrite that historical result.
+
+The private enrollment material was pasted into chat. The disposable factor is
+now flagged EXPOSED; no seed, QR or code is copied into project evidence or used
+for OTP derivation/replay. The human classified isolated
+fixture-factor exposure with no broader suspicion in the same existing private
+controlled-custody case. Fresh human-signed recovery approval and private
+RECOVER/RECONCILE decisions are still required before replacement/release;
+no automatic rotation or release is authorized. The owner UAT selection is
+unchanged. Broader password/account/mail compromise is not established by this
+transcript, and whole-account safety is not inferred.
+
+A separate input-timing discriminator reproduced early input echo and queued
+consumption during the old wrapper's wait, using only public synthetic input.
+This is not evidence of the human transcript's exact timing or the SSH cause.
+A future-only entry wrapper preserves echo-off through waits, flushes queued
+input before prompts and restores terminal state. It does not rerun this baseline.
+
+
+The corrected future-only entry wrapper passed three local private-terminal
+controls: early input remains hidden and is discarded before the next prompt,
+signal interruption restores terminal state, and readiness refusal makes zero
+authentication requests. This is wrapper evidence, not another native baseline.
+
+The first recovery BEFORE probe refused an already idle-expired session before
+HTTP. Read-only age reconciliation explained that refusal. T03 requires actual
+account containment and session revocation; it does not require two currently
+live sessions. The smallest supported probe correction preserves both original
+records, presents only the still-live cookie before containment and labels the
+expired record as metadata-only. Independent focused controls passed. Actual
+retest then passed in1.164s: exactly one protected GET200, one live record and
+one already idle-expired record, both still nonrevoked. The live200-to-denied
+transition can supply causal revocation evidence after actual recovery; the
+expired-cookie denial cannot. No timeout, session authority or account state
+was rewritten to manufacture a baseline.
+
+Next is one independently human-signed controlled recovery, paused at the
+maintained private RECONCILE prompt for Pending-state observations. Replacement,
+old-factor refusal, new-factor success, restart persistence, authoritative
+password preservation, later separately authorized ordinary password change and
+independent preservation/acceptance remain unfinished. Complete T04/T05/T08/T09
+remain NOT_RUN. Public mail services and the deferred S05-02 checkout are outside
+these actions.
+
+
+Focused callback source qualification passed before any signature window began:
+actual Rust marker bytes through the real consumer, Pending cookie/login refusal,
+replay-admissible obsolete-factor refusal, replacement login/session binding,
+unexpected HTTP200 cookie preservation, persistence readback and private-terminal
+cleanup. These are source/local controls only. Actual Pending, factor replacement,
+post-release authentication and restart observations are still NOT_RUN.

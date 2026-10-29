@@ -7,8 +7,14 @@ verified factor custody/digest. Its temporary LOCAL Web profile and reserved-onl
 native authority are active with epoch0/active and no recovery case; all54 loaded
 environment fields match and17 roles passed. The whole-Web auth/mailbox route is
 local during this controlled interval; the prior bridge profile is backed up for
-guarded restoration. Actual authenticated HTTPS/session/recovery and independent
-human identity/acceptance remain unqualified. Manual fixture initialization and
+guarded restoration. Two actual baseline logins and nine controls passed, but
+the aggregate remains UNCONFIRMED after a final SSH observation failure. A new
+bounded current-state idempotency check passed separately. The fixture factor
+is EXPOSED; the human classified isolated factor exposure with no broader
+suspicion, requiring the existing fresh human-signed recovery path. One live
+cookie passed pre-containment GET200; the other original session had already
+idle-expired. Native containment, actual replacement/refusal/restart, complete
+recovery and independent human acceptance remain unqualified. Manual fixture initialization and
 factor enrollment do not qualify product lost-password recovery. Lost-password,
 missing-factor and already-partial cases continue to require manual review.
 OSMAP admission/browser-session containment does not prove termination of public
