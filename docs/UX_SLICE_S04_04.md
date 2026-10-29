@@ -503,3 +503,31 @@ this checkpoint establishes preparation only. The temporary whole-Web LOCAL
 route remains active pending the controlled journey and guarded bridge restore.
 Private actual receipts are under `continuation01/profile-activation01/` and
 `active-profile-readback01.json`; their scalar observer is `profile-activation01.json`.
+
+
+The operator selected the owner UAT account for later human review; its exact
+identifier is retained in the private UAT selection record. This
+selection does not mark T09 complete or change the disposable engineering target.
+The actual bounded HTTPS readiness probe subsequently passed in0.882s, with
+read-only native observations and HTTPS `/login`200; no login POST or credential/
+factor material read occurred. The reviewed two-code private baseline command
+has been provided, with its actual execution outcome pending.
+
+T04 retains both required boundaries: factor-only recovery preserves the current
+password authority, then a separately authorized ordinary password-change
+transaction must remain usable. A fresh read-only original-local SQL observation
+passed native producer/parser checks and still matches initialization; the
+post-change policy correctly refused that unchanged credential as completion.
+It supplies no ordinary password-change result. That future action-specific
+authorization has not been requested, and its post-transaction config guard and
+role driver still require independent admission before the fresh identity window.
+
+
+The normal readiness-checkpoint push passed the Rust suite but was refused by
+the publication guard because the draft included a real mailbox identifier.
+The exact selection is now retained only in the private UAT record and public
+wording uses an owner-account label. The rejected unpublished checkpoint was
+preserved on a private local ref and verified Git bundle. A redacted replacement
+starts from the last GitHub-saved checkpoint; no rejected ancestry is published,
+no history is rewritten and no guard or normal hook is bypassed. The affected
+publication, documentation and work-order checks passed after correction.

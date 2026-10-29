@@ -10282,7 +10282,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "slice": "S04-04",
     "specification": {
       "path": "docs/UX_SLICE_S04_04.md",
-      "sha256": "134bd45cbb0c23211700c50f0b04ee5c68651bf3eb470b684d482fcade25ebfe"
+      "sha256": "cb40199f911d001b79085abd32da336c6153110f91bb6f89ac007c86dba0659f"
     },
     "design": {
       "journey": "Operator-assisted lost-authenticator recovery progresses requested, identity reviewed, contained, sessions revoked, factor replacement, reconciled; account Settings reflects actual state.",
@@ -10362,8 +10362,8 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "kind": "positive",
         "level": "native",
         "prerequisites": "Supported factor-only case and authoritative password baseline.",
-        "action": "Verify password preservation and ordinary authentication after recovery.",
-        "expected": "Password remains unchanged; lost-password cases refuse/escalate without alternate password authority.",
+        "action": "Verify authoritative password preservation through factor recovery, then one separately authorized ordinary own-password change on the recovered account.",
+        "expected": "Factor-only recovery preserves password/modified. Existing own-password change completes through the ordinary product after recovery; lost-password reset remains unsupported/manual.",
         "preserved": "Accepted password/contact paths, authoritative password, unrelated accounts, OpenPGP bindings and mail availability.",
         "owner": "/root",
         "reviewer": "/root/recovery_policy_review",
@@ -10672,7 +10672,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "reserved_account": "osmap-helper-validation@blackbagsecurity.com",
     "actual": "configuredfactorverified; LOCALWebprofile54/54loadedfieldsmatch; reservednativeActiveepoch0 no case; actualHTTPlogin/Settings/recoverynotrun",
     "local_instance": "actual obsd1/originalsocket/3306/datadirvarmysql/server1/read_onlyOFF; numeric-only observerFAIL retained andsame-output canonicalOFF correctionPASS",
-    "routing": "actual auth/mailbox Toronto relays retained; no newremote requests; localSQL row is not mailbox-route qualification; metadataquery unavailable toexistingclient, causeUNKNOWN/no widenedgrants",
+    "routing": "CURRENT temporarywholeWebLOCALauth/mailboxroute; reservednativeActive0; actualloaded54/54candidatefields and17roleshealthy. OriginalToronto relayservices remainrunning but WebcurrentlyselectsLOCAL; oldprofilebackedupforguardedrestore.",
     "required_human_input": "Human enrollment complete; retainProtonPassbaseline retry02entry. LaterfreshHTTPcodes andfreshindependentidentity/privateRECOVER/RECONCILE/T09.",
     "next_plan": "private controlled-recovery-journey-proposal01.md SHAde4e9f9b32903b72526af7d788cdca8ea97262e4ad3b59f8a5ec57dada894864",
     "conditional_actor": "private controlled-baseline-actor01.md SHA1bcfa0df1ae2574be5e756e54664678182740a7a09e396cf1349dcfef451395a; NOT_DISPATCHABLE, no SQLwrites/reset/delete or owner/globalroute substitution",
@@ -10682,7 +10682,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
       "S04-04-T08",
       "S04-04-T09"
     ],
-    "current_next_plan": "private continuation01/credential-init-authorization.md (credential-only) and controlled-fixture-init01.md (subsequent baseline/profile scope); old draft digest references are historical, not execution admissions."
+    "current_next_plan": "NEXT private actualHTTPSbaseline: twohumanfresh-code sessions, Settings/request/refusals andpreservation; freshidentity/privateRECOVER/RECONCILE onlyafteractualbaseline+reviewedpostcaserestore. SETTLEDcredentialinit andenrollment/profilepreparationarecomplete; do notrepeat."
   },
   "operator_followup": {
     "custody": "CONFIRMED_DIRECT_HUMAN_RESERVED_DISPOSABLE_FIXTURE",
@@ -10778,6 +10778,49 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
       "actual_elapsed_seconds": 5.097,
       "current_profile": "TEMPORARY_WHOLE_WEB_LOCAL_AUTH_MAILBOX_RESERVED_NATIVE_SELECTOR",
       "restoration": "NOT_NEEDED_ON_ACTIVATION_SUCCESS; bridge restore afterjourneyrequiresappropriateactive/reconciledguard; prep-onlyrestoreforbidsrecoverycase"
+    },
+    "human_uat": {
+      "selected_account": "owner UAT account",
+      "selection": "directoperator2026-10-29",
+      "status": "ACCOUNT_SELECTED_UAT_NOT_RUN",
+      "engineering_fixture": "osmap-helper-validation@blackbagsecurity.com remainscontrolledqualificationtarget",
+      "readiness": "FinishactualengineeringandindependentreviewbeforeconciseownerUAT; exactaccount/profile/factor/epochreadinessandrequestedhumanexercise mustbeboundbeforeanylivefactororpasswordoperation",
+      "acceptance": "NOT_GRANTED_BY_ACCOUNT_SELECTION",
+      "private_selection_record": "private continuation01/uat-account-selection.json"
+    },
+    "https_baseline": {
+      "state": "READY_READONLY_NATIVE_PASS_PRIVATE_HUMAN_INPUT_PENDING",
+      "owner": "/root",
+      "author": "/root/recovery_engineer",
+      "independent_qa": "/root/recovery_qa",
+      "target": "osmap-helper-validation@blackbagsecurity.com onobsd1 HTTPSactualapp",
+      "consumer_sha256": "882bbfa4f709144a7671d200416858bdd5b9f06f2295eb7c7f8dfb2e186e83f1",
+      "private_wrapper_sha256": "37a336d51c90bf6d2fc0d2ca41f2b90e142512a481122be9be6eafe2a23319f7",
+      "native_readiness": "private continuation01/http-ready01/result.json PASS0.882s exit0stderr0 actualreadonlyrootmetadata+HTTPSGETlogin200; no credentials/factorcontentread orsessioncreation",
+      "scope": "twohumanfreshcodes, twoordinaryHTTPSlogins, twoepoch0sessions retainedrootprivate, actualSettingsentries/qualifiedfactorwindow/selectedHTTPrefusals andoneuntrustedRequested record; noSQL/factor/epoch/config/service mutation; normalappsession/replay/audit/noticeeffects expected",
+      "preservation_scope": "epochbytes/factormetadata +non-targetsessionauthority/inventory withvalidmonotoniclast_seen; separateSQL/settings/PGP/mailbox observationsrequiredforbroaderclaims",
+      "bound": "eachNodephase180s body +outer190+kill20=210s; nativecarrier12+kill2; atmost24HTTPrequests perconsumer, fixedworkflow2loginPOSTs; humanentrywaitexcluded, distinctcounterwait31-62s",
+      "failure_stop": "firstfixedcause retained; validissuedcookieonHTTP200savedandreportedUNCONFIRMED; noautomaticloginresubmission; retainedownedrootstage/session/privatecookieevidence; nofactorseedread/OTPderive",
+      "required_scenarios": "T07/T08supportinginstalledboundary; doesnotcompleteT03/T04/T05/T08/T09recovery",
+      "human_execution": "PENDING"
+    },
+    "ordinary_password_followup": {
+      "required_scenario": "S04-04-T04 preservespasswordthroughrecoveryANDexistingown-passwordchangeusableafterrecovery",
+      "status": "NOT_RUN_ACTION_SPECIFIC_AUTHORIZATION_NOT_REQUESTED",
+      "action_packet": "private continuation01/ordinary-password-change-authorization-DRAFT.md SHAc3caae7fd01770f853528ab4dd8e7d99d02e18a3cd0a2994a55cddc479621310; NOT_DISPATCHABLE untilactualrecoveredepoch1/session/form andfinal reviewedimplementation",
+      "readonly_native_sql_prerequisite": "private ordinary-sql-native-preflight02/result.json capturePASS0.595s160bytes/noSQLwrite; actual-producer-consumer.json PASS6+4originalinstance/currentinitfingerprint/time; fullpostchangepolicycorrectlyrefusesunchangedcredential",
+      "guard_preparation": "Currentprivate092cad5epoch1 and6ff07e5epoch2 config-onlyguards: diagnostic-onlybootstrapcorrection andmechanicalpinupdate overhistorical8d4c255/0055c16 proofs; functionalpredicatesunchanged. Source-reviewedNOT_ADMITTED/nativeNOT_RUN; role-driverindependentreviewpending. NotproductPASS.",
+      "stop": "No normalpasswordPOST untilfreshspecificoperatorauthorization; no repeatinitializedpasswordreset; anyunconfirmednormaltransaction retainsactualstate/no retry/fenceremoval"
+    },
+    "source_publication_refusal": {
+      "rejected_local_commit": "4d476e6bc309671b85e7716f279c37ef22069753",
+      "actual_result": "normalpushFAILexit1 atpublicationhygiene; precedingRust2002PASS/0FAIL/73ignored",
+      "cause": "PUBLICATION_GUARD_DISALLOWED_REAL_PRIMARY_MAILBOX_IDENTIFIER",
+      "private_preservation": "continuation01/publication-refusal01/preservation.json; localprivate ref andverifiedGitbundle SHA0e4687aa5d1fe8ed12d62d60628dff026c7dee4068e27afaa18153b132374113",
+      "correction": "ExactownerUATidentifierkeptprivate; genericpubliclabel. Rejectedlocalcommitpreserved; newredactedpubliclineagefromlastremotefeee88a withoutreset/amend/force/historyrewrite",
+      "affected_retest": "publicationguardPASS +docguardPASS +workorderIN_PROGRESS",
+      "native_effect": "NONE",
+      "normal_replacement_delivery": "PENDING"
     }
   }
 }
