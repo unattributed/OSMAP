@@ -10398,7 +10398,7 @@
       "fail_closed_relevance": "high",
       "file": "src/account_recovery_operator.rs",
       "kind": "unwrap_call",
-      "line": 340
+      "line": 415
     },
     {
       "classification": "production_adjacent_assumption",
@@ -10406,7 +10406,87 @@
       "fail_closed_relevance": "high",
       "file": "src/account_recovery_operator.rs",
       "kind": "unwrap_call",
-      "line": 360
+      "line": 427
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/account_recovery_operator.rs",
+      "kind": "unwrap_call",
+      "line": 436
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/account_recovery_operator.rs",
+      "kind": "unwrap_call",
+      "line": 455
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/account_recovery_operator.rs",
+      "kind": "unwrap_call",
+      "line": 473
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/account_recovery_operator.rs",
+      "kind": "unwrap_call",
+      "line": 491
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/account_recovery_operator.rs",
+      "kind": "unwrap_call",
+      "line": 493
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/account_recovery_operator.rs",
+      "kind": "unwrap_call",
+      "line": 508
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/account_recovery_operator.rs",
+      "kind": "unwrap_call",
+      "line": 520
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/account_recovery_operator.rs",
+      "kind": "unwrap_call",
+      "line": 534
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/account_recovery_operator.rs",
+      "kind": "unwrap_call",
+      "line": 541
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/account_recovery_operator.rs",
+      "kind": "unwrap_call",
+      "line": 561
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -82889,7 +82969,7 @@
       "line": 521
     }
   ],
-  "generated_at_utc": "2026-10-29T09:20:25Z",
+  "generated_at_utc": "2026-10-29T09:37:59Z",
   "non_claims": [
     "This audit does not claim that all Rust assumptions are safe.",
     "This audit does not claim that production request paths are panic-free.",
@@ -82929,12 +83009,12 @@
     "by_classification": {
       "control_flow_invariant": 7,
       "panic_path_assumption": 88,
-      "production_adjacent_assumption": 2561,
+      "production_adjacent_assumption": 2571,
       "startup_or_global_invariant": 10,
       "test_or_fixture_assumption": 7695
     },
     "by_fail_closed_relevance": {
-      "high": 2649,
+      "high": 2659,
       "low": 7695,
       "medium": 17
     },
@@ -82942,14 +83022,14 @@
       "expect_call": 1122,
       "panic_macro": 308,
       "unreachable_macro": 27,
-      "unwrap_call": 8904
+      "unwrap_call": 8914
     },
     "classification_complete": true,
-    "inventory_sha256": "132bfa93b18f7a7cdd9f3cb8e1b7922e50e3b4b405570b1b1cc6102a73e698cb",
+    "inventory_sha256": "fdd5d3dc3f1161284ddc682177f07055d8cdd8765b5ef1121690f38db8820fba",
     "live_host_state_changed": false,
     "product_behavior_changed": false,
     "production_state_changed": false,
     "slice0_carried_forward_rust_assumption_count": 712,
-    "total_count": 10361
+    "total_count": 10371
   }
 }

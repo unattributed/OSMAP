@@ -254,3 +254,48 @@ well as the existing<3-second bound for the signed one-second remainder. The
 exact local test passed1.00second after independent review. A new signed native
 candidate must execute that stronger test and the remaining groups before any
 native-component completion claim. Evidence: `native01/` under the sprint root.
+
+### Native02 and installed admission boundary — 2026-10-29
+
+Signed test candidate `93cbb888595c9d36eec8176087c3d5843b7bb663` completed
+the corrected isolated native action in154seconds: coordinator15, session11,
+authenticator12 and bounded input1 PASS. Its matching native libtest then passed
+the exact root-only cross-owner session test in0.175seconds, including explicit
+fixture cleanup. Independent QA verified all40 component observations and the
+source/artifact bindings. The root evidence stage remains intentionally retained.
+The new nonroot TMPDIR contains private synthetic fixture residue and is retained;
+only the two older independently identified empty temporary directories were
+removed. Native01 remains FAIL. The native02 launch observer's30-second SSH
+timeout remains separate from the later same-stage successful result; no second
+dispatch occurred. These results qualify components, not configured recovery.
+
+Further source review found that helper allowlist membership does not establish
+frontend epoch coverage: an explicitly selected rollout account leaves other
+accounts on the legacy admission path, and a disabled profile has no epoch
+authority. The operator now reuses the existing account-profile parser on the
+same trusted service environment. Mutations require the exact local native
+admission/mutation sockets, root helper peers and either the selected account or
+a complete global native profile. Disabled, partial, malformed and foreign
+profiles refuse before coordinator effects or status publication. Read-only
+status remains available for reconciliation. This check does not activate or
+widen frontend rollout; installed qualification still requires the matching
+running process, environment and authority.
+
+Fresh read-only obsd1 inspection found the accepted S04-03 Web executable still
+installed, while the current environment has no account-runtime fields. The
+recovery executable and case directory are absent. The reserved historical
+rehearsal account is outside the current seven-account helper allowlist. The
+environment differs from the accepted S04-03 evidence; the reason is UNKNOWN.
+No environment restoration, account enrollment, factor operation, installation
+or service change was performed.
+
+The next installed qualification must identify a disposable local canonical
+account and a frontend profile that actually enforces its epoch, preserve the
+current owner environment and unrelated account/key/mail state, and bind the
+reviewed source and native artifacts before installation. Prepare the helper
+and Web binaries independently. Then verify actual admission refusal, account
+session revocation, old/new-factor authentication, password preservation,
+Settings status, restart persistence and cleanup. A human must independently
+authorize/sign the identity decision and perform the private RECOVER and
+RECONCILE confirmations. Do not substitute the owner's account, change global
+rollout or manufacture identity evidence to satisfy this prerequisite.

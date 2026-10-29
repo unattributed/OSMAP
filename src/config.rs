@@ -342,7 +342,7 @@ fn validate_single_host_account_runtime(
     Ok(())
 }
 
-fn parse_account_runtime(
+pub(crate) fn parse_account_runtime(
     env: &BTreeMap<String, String>,
 ) -> Result<Option<AccountRuntimeConfig>, BootstrapError> {
     const FIELDS: [&str; 7] = [

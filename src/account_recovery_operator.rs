@@ -41,6 +41,12 @@ pub(crate) struct RuntimePaths {
     pub revoked_directory: PathBuf,
     pub settings_directory: PathBuf,
 }
+struct RuntimeConfiguration {
+    paths: RuntimePaths,
+    // An invalid/disabled frontend profile must not hide read-only recovery
+    // state. Only mutating operations require this independently checked fence.
+    frontend_account_runtime: Result<Option<crate::config::AccountRuntimeConfig>, Error>,
+}
 
 fn safe_path(value: &str) -> bool {
     value.starts_with('/')
@@ -55,7 +61,7 @@ fn safe_path(value: &str) -> bool {
 
 /// Parse the fixed service's literal assignments; never source shell text or
 /// use this operator process's environment as the runtime configuration.
-fn parse_runtime_paths(bytes: &[u8]) -> Result<RuntimePaths, Error> {
+fn parse_runtime_paths(bytes: &[u8]) -> Result<RuntimeConfiguration, Error> {
     let text = std::str::from_utf8(bytes).map_err(|_| Error::StateUnavailable)?;
     let mut fields = BTreeMap::new();
     for line in text.lines().map(str::trim) {
@@ -97,15 +103,24 @@ fn parse_runtime_paths(bytes: &[u8]) -> Result<RuntimePaths, Error> {
     if revoked_directory == factor_directory {
         return Err(Error::StateUnavailable);
     }
-    Ok(RuntimePaths {
+    let paths = RuntimePaths {
         session_directory: select("OSMAP_SESSION_DIR", "sessions")?,
         factor_directory,
         revoked_directory,
         settings_directory: select("OSMAP_SETTINGS_DIR", "settings")?,
+    };
+    let account_fields = fields
+        .into_iter()
+        .map(|(name, value)| (name.to_owned(), value.to_owned()))
+        .collect();
+    Ok(RuntimeConfiguration {
+        paths,
+        frontend_account_runtime: crate::config::parse_account_runtime(&account_fields)
+            .map_err(|_| Error::StateUnavailable),
     })
 }
 
-fn runtime_paths(runtime_gid: u32) -> Result<RuntimePaths, Error> {
+fn runtime_paths(runtime_gid: u32) -> Result<RuntimeConfiguration, Error> {
     ancestors(Path::new("/etc/osmap"), 0, false)?;
     let mut file = OpenOptions::new()
         .read(true)
@@ -131,6 +146,52 @@ fn runtime_paths(runtime_gid: u32) -> Result<RuntimePaths, Error> {
         return Err(Error::StateUnavailable);
     }
     parse_runtime_paths(&bytes)
+}
+
+fn frontend_admission(
+    configured: &Result<Option<crate::config::AccountRuntimeConfig>, Error>,
+    account: &str,
+) -> Result<(), Error> {
+    let profile = configured
+        .as_ref()
+        .map_err(|_| Error::StateUnavailable)?
+        .as_ref()
+        .ok_or(Error::Unauthorized)?;
+    // This coordinator changes the fixed native service's epoch store. A
+    // foreign relay/helper profile is not evidence of the same authority.
+    if profile.admission_socket != Path::new(crate::config::LOCAL_ACCOUNT_ADMISSION_SOCKET)
+        || profile.mutation_socket != Path::new(crate::config::LOCAL_ACCOUNT_MUTATION_SOCKET)
+        || profile.admission_helper_uid != 0
+        || profile.mutation_helper_uid != 0
+        || profile
+            .rollout_account
+            .as_deref()
+            .is_some_and(|selected| selected != account)
+    {
+        return Err(Error::Unauthorized);
+    }
+    Ok(())
+}
+
+fn dispatch_mutation(
+    coordinator: &Coordinator,
+    configured: &Result<Option<crate::config::AccountRuntimeConfig>, Error>,
+    verb: &str,
+    request: &Request,
+    now: u64,
+    deadline: Instant,
+) -> Result<Result<crate::account_recovery::Status, Error>, Error> {
+    // This check precedes case locks/creation, epoch containment, session
+    // revocation and release. Allowlist membership alone cannot supply a fence.
+    frontend_admission(configured, &request.account)?;
+    // Outer refusal means no coordinator operation was admitted. Inner errors
+    // follow actual dispatch and retain the existing readback/publication path.
+    Ok(match verb {
+        "begin" => coordinator.begin(request, now, deadline),
+        "prepare-factor" => coordinator.prepare_factor(request, now, deadline),
+        "reconcile" => coordinator.reconcile(request, now, deadline),
+        _ => Err(Error::InvalidRequest),
+    })
 }
 
 fn ancestors(path: &Path, runtime_uid: u32, allow_absent_leaf: bool) -> Result<(), Error> {
@@ -241,7 +302,8 @@ pub fn run_cli() -> Result<(), Error> {
     let bytes = bounded_input()?;
     let config = operator_configuration()?;
     let (runtime_uid, runtime_gid) = runtime_identity()?;
-    let paths = runtime_paths(runtime_gid)?;
+    let runtime = runtime_paths(runtime_gid)?;
+    let paths = &runtime.paths;
     ancestors(Path::new(EPOCH), 0, false)?;
     for path in [
         &paths.session_directory,
@@ -281,12 +343,14 @@ pub fn run_cli() -> Result<(), Error> {
         if !config.accounts.contains(&request.account) {
             return Err(Error::Unauthorized);
         }
-        let result = match verb {
-            "begin" => coordinator.begin(&request, now, deadline),
-            "prepare-factor" => coordinator.prepare_factor(&request, now, deadline),
-            "reconcile" => coordinator.reconcile(&request, now, deadline),
-            _ => return Err(Error::InvalidRequest),
-        };
+        let result = dispatch_mutation(
+            &coordinator,
+            &runtime.frontend_account_runtime,
+            verb,
+            &request,
+            now,
+            deadline,
+        )?;
         let mut status = match result {
             Ok(status) => status,
             Err(error) => {
@@ -318,7 +382,7 @@ pub fn run_cli() -> Result<(), Error> {
     }
     let output = serde_json::to_vec(&Output {
         status: &status,
-        runtime_paths: &paths,
+        runtime_paths: paths,
     })
     .map_err(|_| Error::StateUnavailable)?;
     let mut stdout = std::io::stdout().lock();
@@ -334,10 +398,147 @@ pub fn run_cli() -> Result<(), Error> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    const ALICE: &str = "alice@recovery.invalid";
+    const BOB: &str = "bob@recovery.invalid";
+    const NATIVE_ACCOUNT: &str = concat!(
+        "OSMAP_ACCOUNT_ADMISSION_SOCKET=/var/run/osmap-account-admission/admission.sock\n",
+        "OSMAP_ACCOUNT_ADMISSION_KEY_FILE=/etc/osmap/account-admission.key\n",
+        "OSMAP_ACCOUNT_ADMISSION_HELPER_UID=0\n",
+        "OSMAP_ACCOUNT_MUTATION_SOCKET=/var/run/osmap-account-mutation/mutation.sock\n",
+        "OSMAP_ACCOUNT_MUTATION_KEY_FILE=/etc/osmap/account-runtime/mutation.key\n",
+        "OSMAP_ACCOUNT_MUTATION_SESSION_PROOF_KEY_FILE=/etc/osmap/account-runtime/session-proof.key\n",
+        "OSMAP_ACCOUNT_MUTATION_HELPER_UID=0\n",
+    );
+
+    #[test]
+    fn frontend_epoch_coverage_preserves_global_scoped_disabled_and_invalid_semantics() {
+        let global = parse_runtime_paths(NATIVE_ACCOUNT.as_bytes()).unwrap();
+        assert_eq!(
+            frontend_admission(&global.frontend_account_runtime, ALICE),
+            Ok(())
+        );
+        assert_eq!(
+            frontend_admission(&global.frontend_account_runtime, BOB),
+            Ok(())
+        );
+        let selected = parse_runtime_paths(
+            format!("{NATIVE_ACCOUNT}OSMAP_ACCOUNT_ROLLOUT_ACCOUNT={ALICE}\n").as_bytes(),
+        )
+        .unwrap();
+        assert_eq!(
+            frontend_admission(&selected.frontend_account_runtime, ALICE),
+            Ok(())
+        );
+        assert_eq!(
+            frontend_admission(&selected.frontend_account_runtime, BOB),
+            Err(Error::Unauthorized)
+        );
+        let disabled = parse_runtime_paths(b"OSMAP_STATE_DIR=/var/lib/custom\n").unwrap();
+        assert_eq!(
+            disabled.paths.session_directory,
+            Path::new("/var/lib/custom/sessions")
+        );
+        assert_eq!(
+            frontend_admission(&disabled.frontend_account_runtime, ALICE),
+            Err(Error::Unauthorized)
+        );
+        for text in [
+            format!("{NATIVE_ACCOUNT}OSMAP_ACCOUNT_ROLLOUT_ACCOUNT=\n"),
+            format!("OSMAP_ACCOUNT_ROLLOUT_ACCOUNT={ALICE}\n"),
+            "OSMAP_ACCOUNT_ADMISSION_SOCKET=/var/run/osmap-account-admission/admission.sock\n"
+                .into(),
+            NATIVE_ACCOUNT.replace(
+                "OSMAP_ACCOUNT_ADMISSION_HELPER_UID=0",
+                "OSMAP_ACCOUNT_ADMISSION_HELPER_UID=00",
+            ),
+        ] {
+            let config = parse_runtime_paths(text.as_bytes()).unwrap();
+            // Status can still select trusted paths, but no mutation is admitted.
+            assert_eq!(
+                config.paths.session_directory,
+                Path::new("/var/lib/osmap/sessions")
+            );
+            assert_eq!(
+                frontend_admission(&config.frontend_account_runtime, ALICE),
+                Err(Error::StateUnavailable)
+            );
+        }
+        for text in [
+            NATIVE_ACCOUNT.replace("admission.sock", "foreign.sock"),
+            NATIVE_ACCOUNT.replace(
+                "OSMAP_ACCOUNT_MUTATION_HELPER_UID=0",
+                "OSMAP_ACCOUNT_MUTATION_HELPER_UID=1001",
+            ),
+        ] {
+            let config = parse_runtime_paths(text.as_bytes()).unwrap();
+            assert_eq!(
+                frontend_admission(&config.frontend_account_runtime, ALICE),
+                Err(Error::Unauthorized)
+            );
+        }
+    }
+
+    #[test]
+    fn uncovered_mutation_verbs_refuse_before_any_coordinator_or_publication_effect() {
+        struct Scratch(PathBuf);
+        impl Drop for Scratch {
+            fn drop(&mut self) {
+                let _ = fs::remove_dir_all(&self.0);
+            }
+        }
+        let scratch = Scratch(std::env::temp_dir().join(format!(
+            "osmap-recovery-coverage-{}",
+            crate::draft::generate_draft_id().unwrap()
+        )));
+        fs::create_dir(&scratch.0).unwrap();
+        let coordinator = Coordinator::new(Paths {
+            epoch: scratch.0.join("epoch"),
+            cases: scratch.0.join("cases"),
+            sessions: scratch.0.join("sessions"),
+            factors: scratch.0.join("factors"),
+            revoked: scratch.0.join("revoked"),
+            operator_uid: crate::openbsd::effective_uid(),
+            runtime_uid: crate::openbsd::effective_uid(),
+            runtime_gid: crate::openbsd::effective_gid(),
+        });
+        let request: Request = serde_json::from_value(serde_json::json!({
+            "schema":SCHEMA,"account":ALICE,"case_id":"coverage-case","expected_epoch":3,
+            "previous_factor_sha256":"a".repeat(64),"approval_sha256":"b".repeat(64),
+            "identity_method":"in_person","identity_case":"coverage-identity","issued_at":900,"expires_at":1800,
+        })).unwrap();
+        for (text, expected) in [
+            (String::new(), Error::Unauthorized),
+            (
+                format!("{NATIVE_ACCOUNT}OSMAP_ACCOUNT_ROLLOUT_ACCOUNT={BOB}\n"),
+                Error::Unauthorized,
+            ),
+            (
+                format!("{NATIVE_ACCOUNT}OSMAP_ACCOUNT_ROLLOUT_ACCOUNT=\n"),
+                Error::StateUnavailable,
+            ),
+        ] {
+            let config = parse_runtime_paths(text.as_bytes()).unwrap();
+            for verb in ["begin", "prepare-factor", "reconcile"] {
+                assert_eq!(
+                    dispatch_mutation(
+                        &coordinator,
+                        &config.frontend_account_runtime,
+                        verb,
+                        &request,
+                        1000,
+                        Instant::now() + Duration::from_secs(1)
+                    )
+                    .err(),
+                    Some(expected)
+                );
+                assert_eq!(fs::read_dir(&scratch.0).unwrap().count(), 0, "admission refusal must precede case, epoch, session and publication operations");
+            }
+        }
+    }
 
     #[test]
     fn actual_custom_state_paths_override_stale_defaults_without_shell_execution() {
-        let paths = parse_runtime_paths(b"OSMAP_STATE_DIR=/var/lib/osmap-s04-02/state\nOSMAP_SESSION_DIR=/var/lib/osmap-s04-02/state/sessions\nOSMAP_TOTP_SECRET_DIR=/var/lib/osmap-s04-02/state/secrets/totp\n").unwrap();
+        let paths = parse_runtime_paths(b"OSMAP_STATE_DIR=/var/lib/osmap-s04-02/state\nOSMAP_SESSION_DIR=/var/lib/osmap-s04-02/state/sessions\nOSMAP_TOTP_SECRET_DIR=/var/lib/osmap-s04-02/state/secrets/totp\n").unwrap().paths;
         assert_eq!(
             paths.session_directory,
             Path::new("/var/lib/osmap-s04-02/state/sessions")
@@ -357,7 +558,8 @@ mod tests {
         let explicit = parse_runtime_paths(
             b"OSMAP_STATE_DIR=/var/lib/custom\nOSMAP_SETTINGS_DIR=/var/lib/other/settings\n",
         )
-        .unwrap();
+        .unwrap()
+        .paths;
         assert_eq!(
             explicit.settings_directory,
             Path::new("/var/lib/other/settings")
