@@ -495,6 +495,16 @@ fn signed_expiry_bounds_real_lock_wait_without_account_or_factor_effects() {
     let c = s.coordinator();
     let mut request = s.request();
     request.expires_at = 1001;
+    // Establish the actual factor/epoch/case read path before holding the lock.
+    // A fixture ownership or I/O refusal must not masquerade as lock expiry.
+    let preflight = c.status(ALICE, until()).unwrap();
+    assert_eq!(preflight.state, "active");
+    assert_eq!(preflight.epoch, request.expected_epoch);
+    assert_eq!(
+        preflight.existing_factor_sha256.as_deref(),
+        Some(request.previous_factor_sha256.as_str())
+    );
+    assert_eq!(preflight.case_state, None);
     let epoch_bytes = s.epoch_record(ALICE);
     let epoch = c.epoch().unwrap();
     let _held = epoch.lock_before(ALICE, until()).unwrap();
@@ -504,8 +514,13 @@ fn signed_expiry_bounds_real_lock_wait_without_account_or_factor_effects() {
             .err(),
         Some(Error::StateUnavailable)
     );
+    let elapsed = began.elapsed();
     assert!(
-        began.elapsed() < Duration::from_secs(3),
+        elapsed >= Duration::from_millis(900),
+        "the held epoch lock must be the refusal boundary"
+    );
+    assert!(
+        elapsed < Duration::from_secs(3),
         "signed one-second remainder must bound the four-second operation"
     );
     assert_eq!(s.epoch_record(ALICE), epoch_bytes);

@@ -10264,7 +10264,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "owner": "/root",
     "functional_exit": "Working governed factor recovery through actual account/session/factor authority and truthful Settings; human judgment remains separate.",
     "elapsed_scope": "wall_clock",
-    "history_reference": "Starts after accepted S04-03; S05-02 remains deferred and untouched in original checkout. Initial discovery found external-only containment attestations and incompatible stopped-Web rehearsal. Retained source failures: test identity assumption, anonymous GET-body fixture, concurrent renderer compilation; review corrections include schema/state/account response binding, final private release decision, release uncertainty, pinned publication and repeat-request lifecycle. Normal source01 gate1998PASS/1FAIL/72ignored: superseded unknown-enrollment literal; independently reviewed affected test corrected, focused1PASS. No product guard weakened. Source02 fullRust1999PASS/0FAIL/72ignored and assurancePASS, then Clippy manual_clamp refusal. Fixed bounded poll timeout expression to clamp; affected Clippy PASS. Native root ownership discriminator added explicitly ignored until exact privileged temporary-store execution. Source03 Rust1999PASS/0FAIL/73ignored, Clippy rejected cfg constant in ignored native test; semantic OS assertion correction affected ClippyPASS. Publication guard refused new test use of legacy dummy seed; replaced with public RFC test vector, focused coordinator15PASS and actual codec/adapter14PASS repeated, no waiver. Read-only environment640 exact runtimeGID contract correction independentlyGO. Independent combined review GO for source/native compiler recipe. Source04 Rust1999PASS/0FAIL/73ignored, Clippy/fmt/assurancePASS; supply-chain refused Cargo manifest hash for new binary target. Parsed baseline/current dependency/target dependency tables and lock unchanged; updated admission binding with explicit manifest-only target review, no dependency waiver. Source05 unmodified public-admin socket test returnedUnavailable vsStale; exact isolated rerunPASS, causeUNKNOWN retained, no S05 edits. Source06 wholeRust1999PASS/0FAIL/73ignored and supply-chain/V14 passed; WSTG route inventory refused missing GET/POST authenticator rows. Added exact route/form fields and mapped auth/session/input/business checks; no target network assurance inferred. Source07 wholeRust1999PASS/0FAIL/73ignored and WSTG route inventoryPASS; TLS static keyword guard matched account-lookup prose. Reworded to authentication-required without security change; TLSguardPASS. Targeted CWE/architecture scan then identified new unsafe blocks outside mandatory openbsd.rs boundary; root acknowledged integration miss and assigned bounded relocation into existing safe FFI layer without exception. No source/native admission until corrected. FFI correction uses existing descriptor open/rename/unlink and narrow safe runtime/mkdir/chown/input wrappers in openbsd.rs; affected core15/session11/authenticator12 and boundedinput1PASS, native root1ignored. Exact unsafe predicate and ClippyPASS; fixture-only helper scope lint preserved/corrected. QA receipt ffi-isolation-review.json sha33c2ac78e102127f26ebdc2332d28847ad19e094bcca0934a0c89a3cb7797666; independent source GO. Normal source08 pending. Source08 security-check complete/PASS; outer acceptance V10 coupled rust scanner count/hash stale. Metadata-only correction to10360/hash6c7de4\u2026 and affected v10-checkPASS. AggregateFAIL retained, constituent observations separate; no redundant aggregate-only retry. Mandatory normal push hook still required.",
+    "history_reference": "Starts after accepted S04-03; S05-02 remains deferred and untouched in original checkout. Initial discovery found external-only containment attestations and incompatible stopped-Web rehearsal. Retained source failures: test identity assumption, anonymous GET-body fixture, concurrent renderer compilation; review corrections include schema/state/account response binding, final private release decision, release uncertainty, pinned publication and repeat-request lifecycle. Normal source01 gate1998PASS/1FAIL/72ignored: superseded unknown-enrollment literal; independently reviewed affected test corrected, focused1PASS. No product guard weakened. Source02 fullRust1999PASS/0FAIL/72ignored and assurancePASS, then Clippy manual_clamp refusal. Fixed bounded poll timeout expression to clamp; affected Clippy PASS. Native root ownership discriminator added explicitly ignored until exact privileged temporary-store execution. Source03 Rust1999PASS/0FAIL/73ignored, Clippy rejected cfg constant in ignored native test; semantic OS assertion correction affected ClippyPASS. Publication guard refused new test use of legacy dummy seed; replaced with public RFC test vector, focused coordinator15PASS and actual codec/adapter14PASS repeated, no waiver. Read-only environment640 exact runtimeGID contract correction independentlyGO. Independent combined review GO for source/native compiler recipe. Source04 Rust1999PASS/0FAIL/73ignored, Clippy/fmt/assurancePASS; supply-chain refused Cargo manifest hash for new binary target. Parsed baseline/current dependency/target dependency tables and lock unchanged; updated admission binding with explicit manifest-only target review, no dependency waiver. Source05 unmodified public-admin socket test returnedUnavailable vsStale; exact isolated rerunPASS, causeUNKNOWN retained, no S05 edits. Source06 wholeRust1999PASS/0FAIL/73ignored and supply-chain/V14 passed; WSTG route inventory refused missing GET/POST authenticator rows. Added exact route/form fields and mapped auth/session/input/business checks; no target network assurance inferred. Source07 wholeRust1999PASS/0FAIL/73ignored and WSTG route inventoryPASS; TLS static keyword guard matched account-lookup prose. Reworded to authentication-required without security change; TLSguardPASS. Targeted CWE/architecture scan then identified new unsafe blocks outside mandatory openbsd.rs boundary; root acknowledged integration miss and assigned bounded relocation into existing safe FFI layer without exception. No source/native admission until corrected. FFI correction uses existing descriptor open/rename/unlink and narrow safe runtime/mkdir/chown/input wrappers in openbsd.rs; affected core15/session11/authenticator12 and boundedinput1PASS, native root1ignored. Exact unsafe predicate and ClippyPASS; fixture-only helper scope lint preserved/corrected. QA receipt ffi-isolation-review.json sha33c2ac78e102127f26ebdc2332d28847ad19e094bcca0934a0c89a3cb7797666; independent source GO. Normal source08 pending. Source08 security-check complete/PASS; outer acceptance V10 coupled rust scanner count/hash stale. Metadata-only correction to10360/hash6c7de4\u2026 and affected v10-checkPASS. AggregateFAIL retained, constituent observations separate; no redundant aggregate-only retry. Mandatory normal push hook still required. Signed source3f8c2b3 GoodShopkeeper, normalpush security-checkcompletePASS, fresh origin exact3f8c/0ahead0behind/clean. Next bounded nonroot native component recipe bound to signed source/archive/manifest/actor; stage created private via checked obsd1 hostname, no code/account/service action yet. Native01 successful binary/libtest build, recovery4PASS11FAIL earlyStateUnavailable; strict factor_gid correctly refused inheritedTMPgid0 vsruntime1000. Numeric causal observation and SAME-binary onepositive02PASS after freshTMPgroup provision. No whole retry before causal discriminator. Expiry falsepositive markedNOT_QUALIFIED; strengthened onlytest source preflight+minwait, exactlocal1PASS1.00s independentGO. Next signed test-only candidate+correctedTMP recipe required; laternativegroups/root/installed/human remainNOT_RUN.",
     "investigation": {
       "owner": "/root",
       "timebox_seconds": 5400,
@@ -10281,7 +10281,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "slice": "S04-04",
     "specification": {
       "path": "docs/UX_SLICE_S04_04.md",
-      "sha256": "0fc7e447b72ba0f13291e4b73411b7dc92b8f6ee223313a32b3a87cb9a09d078"
+      "sha256": "b80148e4f28cf02b7301111ce081b2f36ed9381391c6cdb90bac30207c3896e4"
     },
     "design": {
       "journey": "Operator-assisted lost-authenticator recovery progresses requested, identity reviewed, contained, sessions revoked, factor replacement, reconciled; account Settings reflects actual state.",
@@ -10512,12 +10512,49 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "security_check": "PASS",
     "v10_governance": "PASS_AFTER_METADATA_CORRECTION",
     "acceptance_source08_aggregate": "FAIL_RETAINED",
-    "signature": "PENDING",
-    "github_parity": "PENDING",
-    "native_components": "NOT_RUN",
+    "signature": "PASS_SHOPKEEPER_3f8c2b3664561b1edca8e0cf031a33f815e7fbc5",
+    "github_parity": "PASS_FRESH_HEAD_ORIGIN_EQUAL_0_0",
+    "native_components": "FAIL_NATIVE01_RETAINED_POSITIVE_DISCRIMINATOR_PASS_REMAINDER_NOT_RUN",
     "installed": "NOT_RUN",
     "human": "NOT_RUN"
-  }
+  },
+  "planned_native_action": {
+    "id": "S04-04-native-components01",
+    "source_commit": "3f8c2b3664561b1edca8e0cf031a33f815e7fbc5",
+    "target": "obsd1.blackbagsecurity.com",
+    "address": "192.168.1.44",
+    "stage": "/home/foo/.osmap-s04-04.fMMEgwiL",
+    "actor_sha256": "24bf93976ddc8bd1253fb1487af14be0c57af95990e07abbfdb31d9da372ec66",
+    "archive_sha256": "5987946628f17932c0e2bd2acd85f98085a8b2e8eb36a9b60076dbcc1ab797f0",
+    "manifest_sha256": "8bebf94b261d38f45329dc721657c32c5af8f3db4e9b2098d6cb1ed7bfae4173",
+    "max_seconds": 1500,
+    "privilege": "operator_user_only",
+    "expected": "Locked/offline native binary+libtest build and actual isolated recovery/session/authenticator/input tests; no installation or live-account effects.",
+    "prerequisites": "Verified Shopkeeper source, normal push hookPASS and fresh exact0/0 parity, independent source/actorGO, fresh actual host/compiler/cache custody observation.",
+    "cleanup": "Retain source/artifacts/logs; remove only exact-owned empty short TMPDIR after durable local evidence readback. Unknown residue is retained.",
+    "validator": "Existing --work-order-only for S04-04; S04-02-only --pre-action is not claimed or extended."
+  },
+  "native_observations": [
+    {
+      "id": "S04-04-native-components01",
+      "source": "3f8c2b3664561b1edca8e0cf031a33f815e7fbc5",
+      "result": "FAIL",
+      "phase": "account_recovery",
+      "reported_tests": "4PASS/11FAIL; expiry lock-wait proof NOT_QUALIFIED",
+      "elapsed_seconds": 154,
+      "binary_sha256": "fb814564b8a76bf302f1d60d9eb4143143c7ef9b2bc14af67a9a8261f2dd3752",
+      "libtest_sha256": "c0fba7a9b2cc963d63c1ad98584abda70082d9610fe268b15cbe269002a7a028",
+      "cause": "fixture group inherited0 versus configured runtime1000; numeric observation, no production check relaxation",
+      "evidence": "native01/result.json and group-inheritance-diagnosis.json under osmap-ux-s04/s04-04; original failure preserved"
+    },
+    {
+      "id": "S04-04-native-positive02",
+      "result": "PASS",
+      "scope": "one exact positive SAME signed native libtest with corrected fresh TMP700/gid1000",
+      "evidence": "native01/positive02.json/log",
+      "live_account_effects": false
+    }
+  ]
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->

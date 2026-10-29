@@ -232,3 +232,25 @@ the native ownership boundary. Configured-account recovery still requires its
 exact action-specific authority, human-signed identity decision and private
 terminal. On native failure retain the first cause and exact-owned resources,
 make the smallest supported correction and retest that boundary.
+
+### Native01 failure and causal correction — 2026-10-29
+
+Signed source `3f8c2b3664561b1edca8e0cf031a33f815e7fbc5` built the native
+operator binary and libtest successfully. The first recovery test group reported
+4PASS/11FAIL with early StateUnavailable; the action stopped before later groups.
+The aggregate remains FAIL. Numeric native observation found TMP/file GID0 while
+the fixture configured effective GID1000. OpenBSD inherited the parent group;
+the strict production factor metadata check correctly refused the mismatch.
+
+One exact positive case then passed using the SAME signed native libtest with a
+fresh owned0700 temporary directory explicitly assigned to GID1000 before any
+fixture children. The production ownership checks were not relaxed. The corrected
+compiler recipe now establishes and verifies the temporary UID/GID/mode.
+
+The original expiry test's reported native pass did not establish lock waiting:
+the whole group completed0.07seconds. Its source now first verifies actual
+factor/active-epoch/empty-case status, then requires>=900ms of real waiting as
+well as the existing<3-second bound for the signed one-second remainder. The
+exact local test passed1.00second after independent review. A new signed native
+candidate must execute that stronger test and the remaining groups before any
+native-component completion claim. Evidence: `native01/` under the sprint root.
