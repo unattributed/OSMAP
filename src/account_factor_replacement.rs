@@ -451,8 +451,13 @@ struct Directory {
 }
 impl Directory {
     fn open(path: &Path, owner: u32, group: u32) -> Result<Self, Error> {
-        for parent in path.ancestors() {
-            let m = fs::symlink_metadata(parent).map_err(|_| Error::StateUnavailable)?;
+        for (index, parent) in path.ancestors().enumerate() {
+            let m = if index == 0 {
+                fs::symlink_metadata(parent)
+            } else {
+                crate::account_password_custody::ancestor_metadata(parent)
+            }
+            .map_err(|_| Error::StateUnavailable)?;
             let sticky = m.uid() == 0 && m.mode() & 0o1000 != 0;
             if !m.is_dir()
                 || m.file_type().is_symlink()

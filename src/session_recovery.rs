@@ -110,7 +110,8 @@ impl Operation<'_> {
             return Err(());
         }
         for parent in self.store.session_dir.ancestors().skip(1) {
-            let metadata = fs::symlink_metadata(parent).map_err(|_| ())?;
+            let metadata =
+                crate::account_password_custody::ancestor_metadata(parent).map_err(|_| ())?;
             let root_sticky = metadata.uid() == 0 && metadata.mode() & 0o1000 != 0;
             if !metadata.is_dir()
                 || (metadata.uid() != 0 && metadata.uid() != self.owner)

@@ -330,7 +330,7 @@ impl RecoveryContactStore {
             return Err(RecoveryContactError::Unavailable);
         }
         for path in self.directory.ancestors().skip(1) {
-            let metadata = match fs::symlink_metadata(path) {
+            let metadata = match crate::account_password_custody::ancestor_metadata(path) {
                 Ok(value) => value,
                 Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(false),
                 Err(error) => return Err(error.into()),

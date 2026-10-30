@@ -5,7 +5,7 @@ use crate::account_recovery::{Coordinator, Paths, SCHEMA};
 pub use crate::account_recovery::{Error, IdentityMethod, Request};
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
-use std::fs::{self, OpenOptions};
+use std::fs::OpenOptions;
 use std::io::{Read, Write};
 use std::os::unix::fs::{MetadataExt, OpenOptionsExt};
 use std::path::{Path, PathBuf};
@@ -241,7 +241,7 @@ fn ancestors(path: &Path, runtime_uid: u32, allow_absent_leaf: bool) -> Result<(
         return Err(Error::StateUnavailable);
     }
     for (index, part) in path.ancestors().enumerate() {
-        let m = match fs::symlink_metadata(part) {
+        let m = match crate::account_password_custody::ancestor_metadata(part) {
             Ok(m) => m,
             Err(error)
                 if index == 0
@@ -439,6 +439,7 @@ pub fn run_cli() -> Result<(), Error> {
 
 #[cfg(test)]
 mod tests {
+    use std::fs;
     #[test]
     fn browser_recovery_reads_the_actual_configured_idle_key() {
         let config = super::parse_runtime_paths(b"OSMAP_SESSION_IDLE_TIMEOUT_SECS=900\n").unwrap();

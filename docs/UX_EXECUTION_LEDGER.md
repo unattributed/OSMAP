@@ -10201,6 +10201,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "src/account_password_backend_tests.rs",
     "src/account_password_confinement.rs",
     "src/account_password_connection.rs",
+    "src/account_password_custody.rs",
     "src/account_password_runtime.rs",
     "src/account_password_state.rs",
     "src/account_password_state_tests.rs",
@@ -10310,7 +10311,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "slice": "S04-04",
     "specification": {
       "path": "docs/UX_SLICE_S04_04.md",
-      "sha256": "5871ab856dea6ace738ff60f731d8ebeaf4d23925383ec022f3f3cda621e283c"
+      "sha256": "331a950ba1ca056102423524e41fdcbba472b3f29ce9165cf8a09e107710d570"
     },
     "design": {
       "journey": "Fresh current-password/TOTP confirmation -> new QR and code confirmation -> factor replacement; login-page email recovery -> expiring one-use code -> restricted password and replacement TOTP setup -> fresh normal sign-in.",
@@ -11161,14 +11162,43 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "components_actor_sha256": "aaa882d2d1a34330ecda973eeacf46d3ae88e4a5406381e371e78f7d18e33d66",
     "archive_sha256": "74964af9ad44e6dcc99bed62c92271766c43075fd0d38674f53c2a3c1d876fae",
     "root_actor_sha256": "53e45d18b68fc2c539d4340a9a148da9218f51e9c629ce5bcd28e163fc317115",
-    "component_status": "RUNNING",
-    "root_status": "NOT_RUN",
+    "component_status": "PASS",
+    "root_status": "FAIL",
     "native_build_max_seconds": 1800,
     "root_component_max_seconds": 90,
     "live_account_effects": false,
     "installation_performed": false,
     "runtime_source_matches_current": true,
-    "post_source_delta": "guard source review pin and exact test registration only"
+    "post_source_delta": "guard source review pin and exact test registration only",
+    "failure": {
+      "phase": "snapshot_current_code",
+      "category": "StateUnavailable",
+      "native_receipt_sha256": "babfab447d5989b53826c47577232aeb446ab619dcc1a2e83518c44bac8637bb",
+      "retained_temporary_fixture": true,
+      "live_account_effects": false,
+      "read_only_reassessment": "libc realpath and direct directory open PASS; pathname ancestor stat is masked by the exact unveil policy; held vnode identity preserved"
+    },
+    "transport_note": "One supplemental SCP log copy timed out after completed native build; a single read-only aggregate transfer recovered the remaining logs. Build and transport results remain separate."
+  },
+  "current_browser_source_checkpoint": {
+    "commit": "efd41d19cd9f3ef5a2ed9eb41afce009515c812b",
+    "signature": "Good Shopkeeper",
+    "normal_pre_commit": "PASS",
+    "normal_pre_push": "PASS",
+    "fresh_remote_equality": true,
+    "ahead": 0,
+    "behind": 0,
+    "installed": false
+  },
+  "current_browser_native_correction": {
+    "scope": "held ancestor vnode metadata after actual confinement; same caller custody checks; production capture policy unchanged",
+    "focused_source_tests": {
+      "passed": 28,
+      "existing_native_ignored": 2
+    },
+    "clippy_all_targets": "PASS",
+    "native_retest": "NOT_RUN",
+    "installation": "NOT_RUN"
   }
 }
 ```

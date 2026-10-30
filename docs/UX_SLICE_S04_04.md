@@ -123,6 +123,26 @@ Production scanning and the guard algorithm remain unchanged.
 
 
 
+### Current native qualification checkpoint
+
+The first signed browser-recovery source checkpoint passed the normal commit and
+push hooks and was preserved at `efd41d19cd9f3ef5a2ed9eb41afce009515c812b`
+with fresh exact remote parity. Native compilation of all three binaries and the
+seven affected component groups passed. The first sealed mixed-owner qualifier
+then failed before effects at `snapshot_current_code` with `StateUnavailable`;
+its synthetic fixture and fixed failure receipt were retained.
+
+A read-only native discriminator observed successful libc `realpath`, direct
+private-directory open and unchanged held-directory identities. Pathname stats
+of the deliberately hidden ancestor directories returned ENOENT after unveil.
+The supported correction uses the existing held custody witnesses for those
+ancestor checks, preserving the callers' ownership and mode requirements and
+refusing an uncaptured ancestor after sealing. The earlier Python realpath
+probe also failed under unveil, but that implementation differs from libc and
+is not the Rust failure's cause. Focused corrected-source checks pass 28 tests (two existing native-only ignores),
+and all-target Clippy passes with warnings denied. Retesting the corrected native
+boundary remains required before installation. No live account operation occurred.
+
 ## Historical observable outcome and authority
 
 Deliver the D04 controlled recovery coordinator: requested -> identity reviewed

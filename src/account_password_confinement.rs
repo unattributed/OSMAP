@@ -63,7 +63,7 @@ impl ParentPlan {
             rules,
             promises: CString::new(access_promises()).map_err(|_| Unavailable)?,
             exec_promises: CString::new(STOCK_PARENT_EXEC_PROMISES).map_err(|_| Unavailable)?,
-            custody: Custody::capture(&["/tmp"], deadline)?,
+            custody: Custody::capture_access_fixture(root, deadline)?,
             seal: None,
             legacy_metadata: false,
         })
