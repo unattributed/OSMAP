@@ -53,9 +53,9 @@ mod routes_sent_copy;
 mod routes_sent_location;
 mod routes_timezone;
 pub(crate) use folder_tree::FolderTree;
+#[path = "http/routes_access_recovery.rs"]
+mod routes_access_recovery;
 mod routes_all_search;
-#[path = "http/routes_authenticator.rs"]
-mod routes_authenticator;
 mod routes_bulk_delete;
 mod routes_delete;
 mod routes_folder_create;
@@ -904,6 +904,9 @@ mod tests {
     mod password_tests {
         include!("http/password_tests.rs");
     }
+    mod access_recovery_tests {
+        include!("http/access_recovery_tests.rs");
+    }
     mod recovery_contact_tests {
         include!("http/recovery_contact_tests.rs");
     }
@@ -1072,6 +1075,20 @@ mod tests {
     use std::thread;
     use std::time::Duration;
 
+    type AccessViewQueue = Arc<
+        Mutex<
+            std::collections::VecDeque<
+                Result<crate::browser_access::AccessView, crate::browser_access::AccessError>,
+            >,
+        >,
+    >;
+    type AccessOutcomeQueue = Arc<
+        Mutex<
+            std::collections::VecDeque<
+                Result<crate::browser_access::AccessOutcome, crate::browser_access::AccessError>,
+            >,
+        >,
+    >;
     type SyntheticFlagStates = BTreeMap<(String, String, u64), Vec<String>>;
 
     #[derive(Debug, Clone)]
@@ -1083,6 +1100,9 @@ mod tests {
 
     #[derive(Debug, Clone)]
     struct StubGateway {
+        access_views: AccessViewQueue,
+        access_outcomes: AccessOutcomeQueue,
+        access_calls: Arc<Mutex<Vec<String>>>,
         authenticator_snapshot: Option<crate::authenticator::Snapshot>,
         authenticator_store_root: Option<PathBuf>,
         authenticator_calls: Arc<Mutex<Vec<(String, u64)>>>,
@@ -1163,6 +1183,9 @@ mod tests {
     impl Default for StubGateway {
         fn default() -> Self {
             Self {
+                access_views: Default::default(),
+                access_outcomes: Default::default(),
+                access_calls: Default::default(),
                 authenticator_snapshot: None,
                 authenticator_store_root: None,
                 authenticator_calls: Default::default(),
@@ -1301,6 +1324,35 @@ mod tests {
     }
 
     impl BrowserGateway for StubGateway {
+        fn access_view(
+            &self,
+            _: &AuthenticationContext,
+            _: crate::browser_access::AccessAuthority<'_>,
+            _: &str,
+        ) -> Result<crate::browser_access::AccessView, crate::browser_access::AccessError> {
+            self.access_calls.lock().unwrap().push("view".into());
+            self.access_views
+                .lock()
+                .unwrap()
+                .pop_front()
+                .unwrap_or(Err(crate::browser_access::AccessError::Unavailable))
+        }
+        fn access_action(
+            &self,
+            _: &AuthenticationContext,
+            _: crate::browser_access::AccessAuthority<'_>,
+            _: &str,
+            action: crate::browser_access::AccessAction<'_>,
+            _: std::time::Instant,
+        ) -> Result<crate::browser_access::AccessOutcome, crate::browser_access::AccessError>
+        {
+            self.access_calls.lock().unwrap().push(action.kind().into());
+            self.access_outcomes
+                .lock()
+                .unwrap()
+                .pop_front()
+                .unwrap_or(Err(crate::browser_access::AccessError::Unavailable))
+        }
         fn authenticator(
             &self,
             session: &ValidatedSession,
@@ -5887,7 +5939,9 @@ mod tests {
         assert!(body.contains("Session Secured"));
         assert!(body.contains("totp_code"));
         assert!(!body.contains("Remember this device"));
-        assert!(!body.contains("Forgot password"));
+        // Oct30 operator-directed recovery is reachable before authentication.
+        assert!(body.contains("Forgot password or lost your authenticator?"));
+        assert!(body.contains("href=\"/recover\""));
     }
 
     #[test]

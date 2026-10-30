@@ -46,6 +46,7 @@ struct RuntimeConfiguration {
     // An invalid/disabled frontend profile must not hide read-only recovery
     // state. Only mutating operations require this independently checked fence.
     frontend_account_runtime: Result<Option<crate::config::AccountRuntimeConfig>, Error>,
+    session_idle_seconds: u64,
 }
 
 fn safe_path(value: &str) -> bool {
@@ -109,12 +110,21 @@ fn parse_runtime_paths(bytes: &[u8]) -> Result<RuntimeConfiguration, Error> {
         revoked_directory,
         settings_directory: select("OSMAP_SETTINGS_DIR", "settings")?,
     };
+    let session_idle_seconds = fields
+        .get("OSMAP_SESSION_IDLE_TIMEOUT_SECS")
+        .map(|s| s.parse::<u64>().map_err(|_| Error::StateUnavailable))
+        .transpose()?
+        .unwrap_or(crate::session::DEFAULT_SESSION_IDLE_TIMEOUT_SECONDS);
+    if session_idle_seconds == 0 {
+        return Err(Error::StateUnavailable);
+    }
     let account_fields = fields
         .into_iter()
         .map(|(name, value)| (name.to_owned(), value.to_owned()))
         .collect();
     Ok(RuntimeConfiguration {
         paths,
+        session_idle_seconds,
         frontend_account_runtime: crate::config::parse_account_runtime(&account_fields)
             .map_err(|_| Error::StateUnavailable),
     })
@@ -146,6 +156,38 @@ fn runtime_paths(runtime_gid: u32) -> Result<RuntimeConfiguration, Error> {
         return Err(Error::StateUnavailable);
     }
     parse_runtime_paths(&bytes)
+}
+
+/// Fixed root-owned Web configuration used by the native account service for
+/// its browser recovery adapter. It never accepts request-selected paths.
+pub(crate) fn browser_recovery_paths(
+) -> Result<(RuntimePaths, u32, u32, Option<String>, u64), Error> {
+    let (uid, gid) = runtime_identity()?;
+    let (paths, selected, idle) = browser_recovery_fence(gid)?;
+    Ok((paths, uid, gid, selected, idle))
+}
+/// Recheck the fixed frontend fence after unveil without repeating user-db
+/// discovery; the native service already captured its trusted runtime identity.
+pub(crate) fn browser_recovery_fence(
+    runtime_gid: u32,
+) -> Result<(RuntimePaths, Option<String>, u64), Error> {
+    let config = runtime_paths(runtime_gid)?;
+    let frontend = config
+        .frontend_account_runtime
+        .map_err(|_| Error::StateUnavailable)?
+        .ok_or(Error::Unauthorized)?;
+    if frontend.admission_socket != Path::new(crate::config::LOCAL_ACCOUNT_ADMISSION_SOCKET)
+        || frontend.mutation_socket != Path::new(crate::config::LOCAL_ACCOUNT_MUTATION_SOCKET)
+        || frontend.admission_helper_uid != 0
+        || frontend.mutation_helper_uid != 0
+    {
+        return Err(Error::Unauthorized);
+    }
+    Ok((
+        config.paths,
+        frontend.rollout_account,
+        config.session_idle_seconds,
+    ))
 }
 
 fn frontend_admission(
@@ -397,6 +439,13 @@ pub fn run_cli() -> Result<(), Error> {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn browser_recovery_reads_the_actual_configured_idle_key() {
+        let config = super::parse_runtime_paths(b"OSMAP_SESSION_IDLE_TIMEOUT_SECS=900\n").unwrap();
+        assert_eq!(config.session_idle_seconds, 900);
+        assert!(super::parse_runtime_paths(b"OSMAP_SESSION_IDLE_TIMEOUT_SECS=0\n").is_err());
+    }
+
     use super::*;
     const ALICE: &str = "alice@recovery.invalid";
     const BOB: &str = "bob@recovery.invalid";

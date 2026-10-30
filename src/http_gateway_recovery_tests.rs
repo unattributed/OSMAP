@@ -737,3 +737,184 @@ fn main() -> std::io::Result<()> {
     drop(app);
     drop(owned);
 }
+
+#[test]
+fn browser_recovery_runtime_delegates_signed_frames_and_refuses_synthetic_success() {
+    use crate::access_recovery_protocol::{Action, Authority as WireAuthority, Request, Response};
+    use crate::browser_access::{
+        AccessAction, AccessAuthority, AccessCookie, AccessError, AccessOutcome, AccessView,
+    };
+    use std::os::unix::net::UnixListener;
+    use std::time::{Duration, Instant};
+
+    // Reuse the existing owned recovery fixture and paired Runtime clients.
+    // Only the socket peer is synthetic; Runtime, transport, framing, signing,
+    // strict producer/consumer and response stage validation are actual code.
+    for mode in ["view", "reset", "wrong-mac", "unsigned"] {
+        let fixture = Fixture::new();
+        let admission_path = fixture.root.join("admission.sock");
+        let mutation_path = fixture.root.join("mutation.sock");
+        let _admission_listener = UnixListener::bind(&admission_path).unwrap();
+        let listener = UnixListener::bind(&mutation_path).unwrap();
+        for path in [&admission_path, &mutation_path] {
+            fs::set_permissions(path, fs::Permissions::from_mode(0o660)).unwrap();
+        }
+        for (name, byte) in [
+            ("admission.key", 29u8),
+            ("mutation.key", 31),
+            ("proof.key", 37),
+        ] {
+            fs::write(fixture.root.join(name), [byte; 32]).unwrap();
+            fs::set_permissions(fixture.root.join(name), fs::Permissions::from_mode(0o600))
+                .unwrap();
+        }
+        let uid = crate::openbsd::effective_uid();
+        let client = crate::account_mutation_client::Client::stored_fixture_files(
+            &mutation_path,
+            &fixture.root.join("mutation.key"),
+            &fixture.root.join("proof.key"),
+            uid,
+        )
+        .unwrap();
+        client.enable_access_fixture().unwrap();
+        let gateway = RuntimeBrowserGateway::for_test(&fixture.root).with_account_fixture_clients(
+            crate::account_admission_runtime::Client::paired_fixture_files(
+                &admission_path,
+                &fixture.root.join("admission.key"),
+                uid,
+            )
+            .unwrap(),
+            client,
+        );
+        let csrf = fixture.session.record.csrf_token.clone();
+        let expected_session_id = fixture.session.record.session_id.clone();
+        let expected_csrf = csrf.clone();
+        listener.set_nonblocking(true).unwrap();
+        let server = std::thread::spawn(move || {
+            let deadline = Instant::now() + Duration::from_secs(3);
+            let mut stream = loop {
+                match listener.accept() {
+                    Ok((stream, _)) => break stream,
+                    Err(error)
+                        if error.kind() == std::io::ErrorKind::WouldBlock
+                            && Instant::now() < deadline =>
+                    {
+                        std::thread::sleep(Duration::from_millis(1))
+                    }
+                    Err(error) => {
+                        panic!("bounded recovery fixture accept failed: {:?}", error.kind())
+                    }
+                }
+            };
+            let raw = crate::openpgp_inventory_runtime::read_frame(
+                &mut stream,
+                crate::access_recovery_protocol::MAX_FRAME,
+                deadline,
+            )
+            .unwrap();
+            let now = SystemTimeProvider.unix_timestamp();
+            let request = Request::parse(&raw, &[31; 32], now).unwrap();
+            assert_eq!(request.csrf(), expected_csrf);
+            assert_eq!(request.source(), "127.0.0.1");
+            match request.authority() {
+                WireAuthority::Session {
+                    account,
+                    epoch,
+                    session_id,
+                } => {
+                    assert_eq!(account, ACCOUNT);
+                    assert_eq!(*epoch, 3);
+                    assert_eq!(session_id, &expected_session_id);
+                }
+                _ => panic!("Runtime must preserve actual validated session authority"),
+            }
+            let view = if mode == "view" {
+                assert!(matches!(request.action(), Action::View {}));
+                AccessView::TotpResetStart {
+                    account: ACCOUNT.into(),
+                    csrf: expected_csrf,
+                }
+            } else {
+                match request.action() {
+                    Action::BeginReset { password, totp } => {
+                        assert_eq!(password, "public synthetic passphrase");
+                        assert_eq!(totp, "123456");
+                    }
+                    _ => panic!("Runtime action mapping changed"),
+                }
+                AccessView::TotpReplacement {
+                    account: ACCOUNT.into(),
+                    csrf: expected_csrf,
+                    enrollment: crate::totp_enrollment::PendingEnrollment {
+                        id: "a".repeat(64),
+                        revision: 1,
+                        secret_base32: "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ".into(),
+                        otpauth_uri:
+                            "otpauth://totp/PublicFixture?secret=GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ"
+                                .into(),
+                        expires_at: now + 600,
+                    },
+                }
+            };
+            let reply = if mode == "unsigned" {
+                br#"{"view":{"kind":"complete"},"grant_cookie":{"kind":"clear"}}"#.to_vec()
+            } else {
+                let response = Response::issue(
+                    &request,
+                    Ok(AccessOutcome {
+                        view,
+                        grant_cookie: AccessCookie::Unchanged,
+                    }),
+                    &[31; 32],
+                    now,
+                )
+                .unwrap();
+                let mut value: serde_json::Value =
+                    serde_json::from_slice(&response.bytes().unwrap()).unwrap();
+                if mode == "wrong-mac" {
+                    value["signature"] = serde_json::Value::String("0".repeat(64));
+                }
+                serde_json::to_vec(&value).unwrap()
+            };
+            crate::openpgp_inventory_runtime::write_frame(&mut stream, &reply, deadline).unwrap();
+        });
+        if mode == "view" {
+            let view = BrowserGateway::access_view(
+                &gateway,
+                &fixture.context,
+                AccessAuthority::Session(&fixture.session),
+                &csrf,
+            )
+            .unwrap();
+            assert!(matches!(view, AccessView::TotpResetStart { .. }));
+        } else {
+            let result = BrowserGateway::access_action(
+                &gateway,
+                &fixture.context,
+                AccessAuthority::Session(&fixture.session),
+                &csrf,
+                AccessAction::BeginTotpReset {
+                    current_password: "public synthetic passphrase",
+                    current_totp_code: "123456",
+                },
+                Instant::now() + Duration::from_secs(3),
+            );
+            if mode == "reset" {
+                let result = result.unwrap();
+                assert!(matches!(result.view, AccessView::TotpReplacement { .. }));
+                assert!(matches!(result.grant_cookie, AccessCookie::Unchanged));
+            } else {
+                assert!(matches!(result, Err(AccessError::Unconfirmed)));
+            }
+        }
+        server.join().unwrap();
+        // The fixture began with one ordinary session. Recovery transport may
+        // return setup presentation, never create a new authenticated session.
+        let session_files = fs::read_dir(fixture.root.join("sessions"))
+            .unwrap()
+            .filter_map(Result::ok)
+            .filter(|v| v.path().extension().is_some_and(|e| e == "session"))
+            .count();
+        assert_eq!(session_files, 1);
+    }
+}

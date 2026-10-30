@@ -518,8 +518,45 @@ fn counters_for_time(timestamp: u64, policy: TotpPolicy) -> Vec<u64> {
     counters
 }
 
+/// Checks an enrollment proof without consuming the active factor's replay
+/// counter. The caller must bind the returned counter to its one-use candidate.
+pub(crate) fn enrollment_counter(secret: &[u8], code: &str, now: u64) -> Option<u64> {
+    if secret.len() < MIN_TOTP_SECRET_BYTES
+        || code.len() != 6
+        || !code.bytes().all(|byte| byte.is_ascii_digit())
+    {
+        return None;
+    }
+    let policy = TotpPolicy::default();
+    counters_for_time(now, policy).into_iter().find(|counter| {
+        generate_totp_code(secret, *counter, policy)
+            .is_ok_and(|expected| constant_time_eq(expected.as_bytes(), code.as_bytes()))
+    })
+}
+
+/// Canonical unpadded RFC 4648 representation for newly generated secrets.
+pub(crate) fn encode_base32(bytes: &[u8]) -> String {
+    const ALPHABET: &[u8; 32] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+    let mut output = String::with_capacity((bytes.len() * 8).div_ceil(5));
+    let mut value = 0_u32;
+    let mut bits = 0_u32;
+    for byte in bytes {
+        value = (value << 8) | u32::from(*byte);
+        bits += 8;
+        while bits >= 5 {
+            bits -= 5;
+            output.push(ALPHABET[((value >> bits) & 31) as usize] as char);
+        }
+        value &= (1 << bits) - 1;
+    }
+    if bits > 0 {
+        output.push(ALPHABET[((value << (5 - bits)) & 31) as usize] as char);
+    }
+    output
+}
+
 /// Generates a TOTP code from the secret bytes and counter.
-fn generate_totp_code(
+pub(crate) fn generate_totp_code(
     secret_bytes: &[u8],
     counter: u64,
     policy: TotpPolicy,
@@ -542,7 +579,7 @@ fn generate_totp_code(
 }
 
 /// Parses the contents of a TOTP secret file.
-fn parse_secret_file(content: &str) -> Result<Option<TotpSecret>, TotpSecretStoreError> {
+pub(crate) fn parse_secret_file(content: &str) -> Result<Option<TotpSecret>, TotpSecretStoreError> {
     let mut secret_value = None;
 
     for raw_line in content.lines() {
@@ -579,7 +616,7 @@ fn parse_secret_file(content: &str) -> Result<Option<TotpSecret>, TotpSecretStor
 }
 
 /// Decodes RFC 4648 base32 text while tolerating spaces and hyphens.
-fn decode_base32(value: &str) -> Result<Vec<u8>, String> {
+pub(crate) fn decode_base32(value: &str) -> Result<Vec<u8>, String> {
     let mut bits = 0_u32;
     let mut bit_count = 0_u32;
     let mut output = Vec::new();

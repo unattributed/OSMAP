@@ -135,7 +135,40 @@ impl<E: CommandExecutor> Backend<E> {
         {
             return Err(Error::Refused);
         }
-        let hash_input = format!("{}\n{}\n", request.new_password(), request.new_password());
+        self.replace_validated(snapshot, request.new_password(), deadline, before_write)
+    }
+
+    /// Only native recovery composition calls this while consuming a genuine
+    /// one-use email recovery grant and holding the account containment guard.
+    /// It shares the exact existing hash/CAS writer without inventing a current
+    /// password or a normal login/session proof.
+    pub(crate) fn reset_after_recovery(
+        &self,
+        snapshot: Snapshot,
+        grant: &crate::access_recovery::GrantBinding,
+        new_password: &str,
+        confirmation: &str,
+        deadline: Instant,
+        before_write: impl FnOnce() -> Result<(), Error>,
+    ) -> Result<WriteReceipt, Error> {
+        if snapshot.account != grant.account
+            || grant.purpose != crate::access_recovery::Purpose::AccountRecoverySetup
+            || !crate::password_change::valid_new_password(new_password, confirmation)
+        {
+            return Err(Error::Refused);
+        }
+        self.replace_validated(snapshot, new_password, deadline, before_write)
+    }
+
+    fn replace_validated(
+        &self,
+        snapshot: Snapshot,
+        new_password: &str,
+        deadline: Instant,
+        before_write: impl FnOnce() -> Result<(), Error>,
+    ) -> Result<WriteReceipt, Error> {
+        check_deadline(deadline)?;
+        let hash_input = format!("{new_password}\n{new_password}\n");
         let hash_text = self.run(
             HASH_PROGRAM,
             HASH_ARGS,
@@ -150,8 +183,8 @@ impl<E: CommandExecutor> Backend<E> {
         }
         let query = format!(
             "START TRANSACTION;\nUPDATE mailbox SET password={},modified=UTC_TIMESTAMP() WHERE BINARY username=BINARY {} AND active=1 AND smtp_active={} AND BINARY password=BINARY {} AND modified=STR_TO_DATE('{}','%Y%m%d%H%i%s');\nSELECT ROW_COUNT();\nSELECT HEX(password),DATE_FORMAT(modified,'%Y%m%d%H%i%s') FROM mailbox WHERE BINARY username=BINARY {};\nCOMMIT;\n",
-            sql_hex(hashed), sql_hex(request.account()), u8::from(snapshot.smtp_active),
-            sql_hex(&snapshot.password_hash), snapshot.modified, sql_hex(request.account())
+            sql_hex(hashed), sql_hex(&snapshot.account), u8::from(snapshot.smtp_active),
+            sql_hex(&snapshot.password_hash), snapshot.modified, sql_hex(&snapshot.account)
         );
         // Callback errors are necessarily before credential dispatch. A callback
         // cannot turn a pre-write refusal into a claimed database write.

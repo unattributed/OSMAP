@@ -247,6 +247,31 @@ impl<F: Effects> Dependencies for Connected<'_, F> {
 /// by the frame. The caller owns listener/custody admission before this entry.
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn serve_once<E: CommandExecutor, F: Effects, C: TimeProvider>(
+    stream: UnixStream,
+    trusted_peer_uid: u32,
+    store: &Store,
+    backend: &Backend<E>,
+    effects: &F,
+    clock: &C,
+    keys: &Keys,
+    original_outer_deadline: Instant,
+) -> Result<(), Error> {
+    serve_once_with_access(
+        stream,
+        trusted_peer_uid,
+        store,
+        backend,
+        effects,
+        clock,
+        keys,
+        original_outer_deadline,
+        None,
+    )
+}
+
+type AccessHandler<'a> = &'a dyn Fn(&[u8], &[u8], Instant) -> Result<Vec<u8>, Error>;
+#[allow(clippy::too_many_arguments)] // Existing authorities plus narrowly typed recovery dispatcher.
+pub(crate) fn serve_once_with_access<E: CommandExecutor, F: Effects, C: TimeProvider>(
     mut stream: UnixStream,
     trusted_peer_uid: u32,
     store: &Store,
@@ -255,6 +280,7 @@ pub(crate) fn serve_once<E: CommandExecutor, F: Effects, C: TimeProvider>(
     clock: &C,
     keys: &Keys,
     original_outer_deadline: Instant,
+    access: Option<AccessHandler<'_>>,
 ) -> Result<(), Error> {
     let deadline = original_outer_deadline.min(Instant::now() + Duration::from_secs(60));
     remaining(deadline)?;
@@ -270,6 +296,24 @@ pub(crate) fn serve_once<E: CommandExecutor, F: Effects, C: TimeProvider>(
         crate::account_guarded_mutation::MAX_FRAME,
         deadline,
     )?;
+    // Recovery is a separate strict MAC domain, never a password-change proof.
+    // The same kernel peer/capacity/closed frame/deadline checks apply first.
+    let is_access = serde_json::from_slice::<serde_json::Value>(&raw)
+        .ok()
+        .and_then(|v| v.get("schema").and_then(|s| s.as_str()).map(str::to_owned))
+        .as_deref()
+        == Some(crate::access_recovery_protocol::SCHEMA);
+    if is_access {
+        require_eof(&mut stream, deadline)?;
+        let response = access.ok_or(Error::Authentication)?(&raw, &keys.mutation, deadline)?;
+        remaining(deadline)?;
+        return write_frame(
+            &mut stream,
+            &response,
+            crate::access_recovery_protocol::MAX_FRAME,
+            deadline,
+        );
+    }
     // Reading consumes the outer budget. These two samples define only the
     // conversion of the already-signed absolute deadline, never a fresh lease.
     let received = Instant::now();

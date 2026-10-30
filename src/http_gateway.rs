@@ -388,6 +388,54 @@ impl RuntimeBrowserGateway {
 }
 
 impl BrowserGateway for RuntimeBrowserGateway {
+    fn access_view(
+        &self,
+        context: &AuthenticationContext,
+        authority: crate::browser_access::AccessAuthority<'_>,
+        csrf: &str,
+    ) -> Result<crate::browser_access::AccessView, crate::browser_access::AccessError> {
+        use crate::browser_access::{AccessAuthority, AccessError, AccessView};
+        if matches!(authority, AccessAuthority::Unauthenticated) {
+            return Ok(AccessView::RecoveryEmail { csrf: csrf.into() });
+        }
+        self.account_runtime
+            .ready()
+            .ok_or(AccessError::Unavailable)?
+            .mutation()
+            .access_exchange(
+                authority,
+                None,
+                csrf,
+                &context.remote_addr,
+                std::time::Instant::now() + std::time::Duration::from_secs(30),
+            )
+            .map(|outcome| outcome.view)
+    }
+    fn access_action(
+        &self,
+        context: &AuthenticationContext,
+        authority: crate::browser_access::AccessAuthority<'_>,
+        csrf: &str,
+        action: crate::browser_access::AccessAction<'_>,
+        deadline: std::time::Instant,
+    ) -> Result<crate::browser_access::AccessOutcome, crate::browser_access::AccessError> {
+        use crate::browser_access::{AccessAuthority, AccessError};
+        if let AccessAuthority::Session(session) = &authority {
+            self.ready_account_runtime(&session.record.canonical_username)
+                .ok_or(AccessError::Unavailable)?;
+        }
+        self.account_runtime
+            .ready()
+            .ok_or(AccessError::Unavailable)?
+            .mutation()
+            .access_exchange(
+                authority,
+                Some(&action),
+                csrf,
+                &context.remote_addr,
+                deadline,
+            )
+    }
     fn authenticator(
         &self,
         session: &ValidatedSession,

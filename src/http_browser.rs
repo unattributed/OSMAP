@@ -17,6 +17,24 @@ pub enum BrowserSendRecoveryDecision {
 }
 
 pub trait BrowserGateway {
+    fn access_view(
+        &self,
+        _context: &AuthenticationContext,
+        _authority: crate::browser_access::AccessAuthority<'_>,
+        _csrf: &str,
+    ) -> Result<crate::browser_access::AccessView, crate::browser_access::AccessError> {
+        Err(crate::browser_access::AccessError::Unavailable)
+    }
+    fn access_action(
+        &self,
+        _context: &AuthenticationContext,
+        _authority: crate::browser_access::AccessAuthority<'_>,
+        _csrf: &str,
+        _action: crate::browser_access::AccessAction<'_>,
+        _deadline: std::time::Instant,
+    ) -> Result<crate::browser_access::AccessOutcome, crate::browser_access::AccessError> {
+        Err(crate::browser_access::AccessError::Unavailable)
+    }
     fn authenticator(
         &self,
         _session: &ValidatedSession,

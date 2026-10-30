@@ -296,12 +296,91 @@ impl Record {
 #[derive(Debug, Clone)]
 pub struct RecoveryContactStore {
     file: PrivateAccountFile,
+    directory: PathBuf,
 }
 impl RecoveryContactStore {
     pub fn new(directory: impl Into<PathBuf>) -> Self {
+        let directory = directory.into();
         Self {
-            file: PrivateAccountFile::new(directory.into(), "osmap-recovery-contact-v1", MAX_BYTES),
+            file: PrivateAccountFile::new(
+                directory.clone(),
+                "osmap-recovery-contact-v1",
+                MAX_BYTES,
+            ),
+            directory,
         }
+    }
+    /// Native recovery uses this read-only observation solely as a veto against
+    /// an obsolete independently registered address. It never promotes a Web
+    /// record into recovery authority and never creates a lock or directory.
+    #[cfg(unix)]
+    pub(crate) fn registered_consistency(
+        &self,
+        account: &str,
+        now: u64,
+        expected_email: &str,
+        owner: u32,
+        group: u32,
+    ) -> Result<bool, RecoveryContactError> {
+        use std::fs::{self, OpenOptions};
+        use std::os::unix::fs::{MetadataExt, OpenOptionsExt};
+        canonical(account)?;
+        email(expected_email)?;
+        if !self.directory.is_absolute() {
+            return Err(RecoveryContactError::Unavailable);
+        }
+        for path in self.directory.ancestors().skip(1) {
+            let metadata = match fs::symlink_metadata(path) {
+                Ok(value) => value,
+                Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(false),
+                Err(error) => return Err(error.into()),
+            };
+            let root_sticky = metadata.uid() == 0 && metadata.mode() & 0o1000 != 0;
+            if !metadata.is_dir()
+                || metadata.file_type().is_symlink()
+                || (metadata.uid() != 0 && metadata.uid() != owner)
+                || (metadata.mode() & 0o022 != 0 && !root_sticky)
+            {
+                return Err(RecoveryContactError::Unavailable);
+            }
+        }
+        let directory = match OpenOptions::new()
+            .read(true)
+            .custom_flags(libc::O_DIRECTORY | libc::O_NOFOLLOW | libc::O_NONBLOCK | libc::O_CLOEXEC)
+            .open(&self.directory)
+        {
+            Ok(value) => value,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(false),
+            Err(error) => return Err(error.into()),
+        };
+        let held = directory.metadata()?;
+        if (held.uid(), held.gid(), held.mode() & 0o7777) != (owner, group, 0o700) {
+            return Err(RecoveryContactError::Unavailable);
+        }
+        let mut hash = Sha256::new();
+        hash.update(b"osmap-recovery-contact-v1\0");
+        hash.update(account.as_bytes());
+        let path = self.directory.join(format!("{:x}.json", hash.finalize()));
+        let Some(raw) = crate::private_account_file::read_record_owned(&path, MAX_BYTES, owner)?
+        else {
+            return Ok(false);
+        };
+        let record_metadata = fs::symlink_metadata(&path)?;
+        let current = fs::symlink_metadata(&self.directory)?;
+        if record_metadata.gid() != group
+            || (
+                current.dev(),
+                current.ino(),
+                current.uid(),
+                current.gid(),
+                current.mode(),
+            ) != (held.dev(), held.ino(), held.uid(), held.gid(), held.mode())
+        {
+            return Err(RecoveryContactError::Unavailable);
+        }
+        Ok(decode(account, Some(raw), now)?
+            .verified
+            .is_some_and(|v| v.email == expected_email))
     }
     pub fn snapshot(
         &self,

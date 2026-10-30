@@ -50,6 +50,8 @@ struct ClientState {
     state: Mutex<State>,
     cleanup_unconfirmed: AtomicBool,
     #[cfg(test)]
+    fixture_access: AtomicBool,
+    #[cfg(test)]
     fixture_native_replay: AtomicBool,
     #[cfg(test)]
     fixture_native_replay_refusal: Mutex<Option<&'static str>>,
@@ -64,6 +66,99 @@ impl std::fmt::Debug for Client {
 }
 
 impl Client {
+    /// Strict recovery actions share the fixed native service and its protected
+    /// purpose key. No session or SQL authority is created by this transport.
+    pub(crate) fn access_exchange(
+        &self,
+        authority: crate::browser_access::AccessAuthority<'_>,
+        action: Option<&crate::browser_access::AccessAction<'_>>,
+        csrf: &str,
+        source: &str,
+        workflow_deadline: Instant,
+    ) -> Result<crate::browser_access::AccessOutcome, crate::browser_access::AccessError> {
+        use crate::access_recovery_protocol::{
+            Request as AccessRequest, Response as AccessResponse,
+        };
+        use crate::browser_access::AccessError;
+        let deadline = workflow_deadline.min(Instant::now() + Duration::from_secs(30));
+        let endpoint_allowed = self.0.helper_uid == 0
+            && self.0.socket == Path::new(crate::config::LOCAL_ACCOUNT_MUTATION_SOCKET);
+        #[cfg(test)]
+        let endpoint_allowed = endpoint_allowed || self.0.fixture_access.load(Ordering::SeqCst);
+        if Instant::now() >= deadline || !endpoint_allowed {
+            return Err(AccessError::Unavailable);
+        }
+        let clock = SystemTimeProvider;
+        let request = AccessRequest::from_browser(
+            &authority,
+            action,
+            csrf,
+            source,
+            clock.unix_timestamp(),
+            &self.0.key,
+        )
+        .map_err(|_| AccessError::Refused)?;
+        let expires = request
+            .issued()
+            .checked_add(
+                remaining(deadline)
+                    .map_err(|_| AccessError::Expired)?
+                    .as_secs(),
+            )
+            .ok_or(AccessError::Expired)?
+            .min(request.expires());
+        let request = request
+            .bound_expiry(expires, &self.0.key)
+            .map_err(|_| AccessError::Expired)?;
+        let request_bytes = request.bytes().map_err(|_| AccessError::Refused)?;
+        let _permit = self
+            .enter(&format!("recovery:{csrf}"))
+            .map_err(|_| AccessError::Throttled)?;
+        self.0
+            .paths
+            .recheck()
+            .map_err(|_| AccessError::Unavailable)?;
+        let mut stream = crate::openbsd::connect_unix_before(&self.0.socket, deadline)
+            .map_err(|_| AccessError::Unavailable)?;
+        if crate::openbsd::unix_stream_peer_uid(&stream).map_err(|_| AccessError::Unavailable)?
+            != self.0.helper_uid
+        {
+            return Err(AccessError::Unavailable);
+        }
+        self.0
+            .paths
+            .recheck()
+            .map_err(|_| AccessError::Unavailable)?;
+        // No reconnect/retry after even a partial frame submission.
+        write_frame(&mut stream, &request_bytes, deadline).map_err(|_| AccessError::Unconfirmed)?;
+        stream
+            .shutdown(std::net::Shutdown::Write)
+            .map_err(|_| AccessError::Unconfirmed)?;
+        let raw = read_frame(
+            &mut stream,
+            crate::access_recovery_protocol::MAX_FRAME,
+            deadline,
+        )
+        .map_err(|_| AccessError::Unconfirmed)?;
+        stream
+            .set_read_timeout(Some(
+                remaining(deadline).map_err(|_| AccessError::Unconfirmed)?,
+            ))
+            .map_err(|_| AccessError::Unconfirmed)?;
+        let mut extra = [0; 1];
+        if stream
+            .read(&mut extra)
+            .map_err(|_| AccessError::Unconfirmed)?
+            != 0
+        {
+            return Err(AccessError::Unconfirmed);
+        }
+        if Instant::now() >= deadline {
+            return Err(AccessError::Unconfirmed);
+        }
+        AccessResponse::verify(&raw, &request, &self.0.key, clock.unix_timestamp())
+            .map_err(|_| AccessError::Unconfirmed)?
+    }
     pub(crate) fn preflight_serve(
         &self,
         config: &crate::config::AccountRuntimeConfig,
@@ -169,6 +264,8 @@ impl Client {
             }),
             cleanup_unconfirmed: AtomicBool::new(false),
             #[cfg(test)]
+            fixture_access: AtomicBool::new(false),
+            #[cfg(test)]
             fixture_native_replay: AtomicBool::new(false),
             #[cfg(test)]
             fixture_native_replay_refusal: Mutex::new(None),
@@ -220,6 +317,20 @@ impl Client {
         helper_uid: u32,
     ) -> Result<Self, Error> {
         Self::qualified_files_with_proof(socket, key, Some(proof_key), helper_uid)
+    }
+
+    /// Opt in only an existing verified private fixture. Production builds
+    /// contain neither this method nor the endpoint allowance flag.
+    #[cfg(test)]
+    pub(crate) fn enable_access_fixture(&self) -> Result<(), Error> {
+        self.0.paths.recheck().map_err(|_| Error::Unavailable)?;
+        if self.0.helper_uid != crate::openbsd::effective_uid()
+            || self.0.session_proof_key.is_none()
+        {
+            return Err(Error::Unavailable);
+        }
+        self.0.fixture_access.store(true, Ordering::SeqCst);
+        Ok(())
     }
 
     pub fn execute(
@@ -637,7 +748,16 @@ impl Client {
         if state.quarantine.contains(account) {
             return Err(Error::Uncertain);
         }
-        if state.active.len() >= 2 || !state.active.insert(account.to_owned()) {
+        // One public recovery exchange leaves the second mutation slot and
+        // the native admission workers available for ordinary account work.
+        if (account.starts_with("recovery:")
+            && state
+                .active
+                .iter()
+                .any(|active| active.starts_with("recovery:")))
+            || state.active.len() >= 2
+            || !state.active.insert(account.to_owned())
+        {
             return Err(Error::Capacity);
         }
         Ok(Permit {

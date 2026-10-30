@@ -744,3 +744,32 @@ fn native_parent_sealed_sql_hash_cas_preserves_bob_and_contains_alice() -> Resul
     println!("native_sql_hash_component phase={phase:?} result={} alice_state={:?} epoch={} performed_write_time_known={} bob_epoch_preserved=true credential_retry=false full_workflow_qualified=false", if result.is_ok() {"PASS"} else {"FAIL"}, alice_status.state, alice_status.epoch, alice_status.changed_at.is_some());
     result
 }
+
+#[test]
+fn recovery_writer_shares_real_cas_without_fabricating_current_password() {
+    let grant = crate::access_recovery::GrantBinding {
+        account: ACCOUNT.into(),
+        epoch: 3,
+        purpose: crate::access_recovery::Purpose::AccountRecoverySetup,
+        expires_at: 1000,
+        flow_sha256: "a".repeat(64),
+        existing_factor_sha256: "b".repeat(64),
+    };
+    let backend = Backend::new(Executor::new(vec![row(), hash(), receipt("1")]));
+    let snapshot = backend.read(ACCOUNT, deadline()).unwrap();
+    let receipt = backend
+        .reset_after_recovery(snapshot, &grant, PASSWORD, PASSWORD, deadline(), || Ok(()))
+        .unwrap();
+    assert_eq!(receipt.changed_at(), NEXT);
+    let calls = backend.executor.calls.borrow();
+    assert_eq!(calls.len(), 3);
+    assert!(calls[2].input.starts_with(b"START TRANSACTION;"));
+    assert!(String::from_utf8_lossy(&calls[2].input).contains(&sql_hex(ACCOUNT)));
+    drop(calls);
+    let refused = Backend::new(Executor::new(vec![row()]));
+    let snapshot = refused.read(ACCOUNT, deadline()).unwrap();
+    assert!(refused
+        .reset_after_recovery(snapshot, &grant, "short", "short", deadline(), || Ok(()))
+        .is_err());
+    assert_eq!(refused.executor.calls.borrow().len(), 1);
+}

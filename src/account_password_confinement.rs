@@ -12,6 +12,9 @@ pub(crate) const STOCK_PARENT_PROMISES: &str =
     "stdio rpath wpath cpath fattr flock unix proc exec prot_exec id getpw ps tty";
 pub(crate) const STOCK_PARENT_EXEC_PROMISES: &str =
     "stdio rpath wpath cpath fattr flock unix proc exec prot_exec id getpw ps tty error";
+fn access_promises() -> String {
+    format!("{STOCK_PARENT_PROMISES} inet chown")
+}
 
 pub(crate) struct ParentPlan {
     rules: Vec<(CString, CString)>,
@@ -22,6 +25,49 @@ pub(crate) struct ParentPlan {
     legacy_metadata: bool,
 }
 impl ParentPlan {
+    /// One ignored native test uses real pledge/unveil with the same optional
+    /// access syscall promises and a freshly owned synthetic namespace only.
+    /// This constructor is absent from application and helper binaries.
+    #[cfg(test)]
+    pub(crate) fn access_fixture(
+        root: &std::path::Path,
+        deadline: Instant,
+    ) -> Result<Self, Unavailable> {
+        use std::os::unix::fs::MetadataExt as _;
+        if !crate::openbsd::password_native_authority()
+            || Instant::now() >= deadline
+            || root.parent() != Some(std::path::Path::new("/tmp"))
+            || !root
+                .file_name()
+                .and_then(|v| v.to_str())
+                .is_some_and(|v| v.starts_with("osmap-factor-"))
+            || root.canonicalize().map_err(|_| Unavailable)? != root
+        {
+            return Err(Unavailable);
+        }
+        let metadata = std::fs::symlink_metadata(root).map_err(|_| Unavailable)?;
+        if !metadata.is_dir() || metadata.uid() != 0 || metadata.mode() & 0o7777 != 0o700 {
+            return Err(Unavailable);
+        }
+        let mut rules = vec![(
+            CString::new(root.as_os_str().as_encoded_bytes()).map_err(|_| Unavailable)?,
+            CString::new("rwc").map_err(|_| Unavailable)?,
+        )];
+        for parent in root.ancestors().skip(1) {
+            rules.push((
+                CString::new(parent.as_os_str().as_encoded_bytes()).map_err(|_| Unavailable)?,
+                CString::new("").map_err(|_| Unavailable)?,
+            ));
+        }
+        Ok(Self {
+            rules,
+            promises: CString::new(access_promises()).map_err(|_| Unavailable)?,
+            exec_promises: CString::new(STOCK_PARENT_EXEC_PROMISES).map_err(|_| Unavailable)?,
+            custody: Custody::capture(&["/tmp"], deadline)?,
+            seal: None,
+            legacy_metadata: false,
+        })
+    }
     #[allow(dead_code)] // Historical private-ingress parent; stock uses prepare_stock.
     pub(crate) fn prepare(deadline: Instant) -> Result<Self, Unavailable> {
         if !crate::openbsd::password_native_authority() || Instant::now() >= deadline {
@@ -189,6 +235,14 @@ impl ParentPlan {
         // path is selected; read custody only, no IMAP spawn authority.
         add("/usr/local/libexec/dovecot/imap", "r");
         add("/etc/dovecot/conf.d", "r");
+        let access = crate::account_access_service::NativeAccess::from_operator()
+            .map_err(|_| Unavailable)?;
+        if let Some(access) = &access {
+            for (path, permissions) in access.rules() {
+                let path = path.to_str().ok_or(Unavailable)?;
+                add(path, permissions);
+            }
+        }
         let paths = rules.keys().map(String::as_str).collect::<Vec<_>>();
         let custody = Custody::capture(&paths, deadline).inspect_err(|_| {
             trace.metadata("metadata_parent_custody_unknown");
@@ -205,7 +259,12 @@ impl ParentPlan {
             .collect::<Result<_, Unavailable>>()?;
         Ok(Self {
             rules,
-            promises: CString::new(STOCK_PARENT_PROMISES).map_err(|_| Unavailable)?,
+            promises: CString::new(if access.is_some() {
+                access_promises()
+            } else {
+                STOCK_PARENT_PROMISES.into()
+            })
+            .map_err(|_| Unavailable)?,
             exec_promises: CString::new(STOCK_PARENT_EXEC_PROMISES).map_err(|_| Unavailable)?,
             custody,
             seal: None,

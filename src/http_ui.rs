@@ -39,7 +39,7 @@ use crate::mailbox::{
 use crate::message_metadata::{MessageFlag, MessageMetadata};
 use crate::mime::{AttachmentMetadata, DEFAULT_MIME_PARTS_MAX};
 use crate::rendering::{HtmlDisplayPreference, RenderedMessageView};
-pub(crate) use authenticator_ui::{authenticator_summary, render_authenticator_page};
+pub(crate) use authenticator_ui::authenticator_summary;
 pub(crate) use settings_ui::render_openpgp_settings;
 #[cfg(test)]
 pub(crate) use settings_ui::render_security_page;
@@ -724,6 +724,7 @@ pub(crate) fn render_login_page(error_message: Option<&str>) -> TrustedHtml {
             "<div class=\"login-field\"><label for=\"login-totp\">TOTP Code</label><svg aria-hidden=\"true\" viewBox=\"0 0 24 24\"><path d=\"M12 3 19 6v5c0 5-2.6 8.5-7 10-4.4-1.5-7-5-7-10V6l7-3Z\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/><path d=\"m9 12 2 2 4-5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/></svg><input id=\"login-totp\" type=\"text\" name=\"totp_code\" inputmode=\"numeric\" autocomplete=\"one-time-code\" placeholder=\"Enter 6-digit code from authenticator\"></div>",
             "<button class=\"primary-button\" type=\"submit\"><svg class=\"login-lock\" aria-hidden=\"true\" viewBox=\"0 0 24 24\"><rect x=\"5\" y=\"10\" width=\"14\" height=\"10\" rx=\"2\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/><path d=\"M8 10V7a4 4 0 0 1 8 0v3\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/></svg>Sign In</button>",
             "<p id=\"login-help\" class=\"login-help\">Password and TOTP are both required.</p>",
+            "<p class=\"login-help\"><a href=\"/recover\">Forgot password or lost your authenticator?</a></p>",
             "</form>",
             "<div class=\"security-grid\" aria-label=\"Security indicators\">",
             "<div class=\"security-item\"><svg aria-hidden=\"true\" viewBox=\"0 0 24 24\"><rect x=\"5\" y=\"10\" width=\"14\" height=\"10\" rx=\"2\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/><path d=\"M8 10V7a4 4 0 0 1 8 0v3\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/></svg><div><strong>TLS Protected</strong><span>Encrypted in transit</span></div></div>",

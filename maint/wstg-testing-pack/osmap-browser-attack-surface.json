@@ -18,10 +18,16 @@
       "query_fields": [],
       "form_fields": [
         "csrf_token",
+        "action",
+        "current_password",
+        "current_totp_code",
+        "enrollment_id",
         "revision",
-        "action"
+        "new_totp_code"
       ],
       "wstg_test_ids": [
+        "OSMAP-WSTG-ATHN-002",
+        "OSMAP-WSTG-ATHN-003",
         "OSMAP-WSTG-ATHZ-001",
         "OSMAP-WSTG-SESS-004",
         "OSMAP-WSTG-INPV-003",
@@ -1655,6 +1661,76 @@
         "confirm"
       ],
       "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/recover",
+      "query_fields": [],
+      "form_fields": [],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHN-002",
+        "OSMAP-WSTG-ATHN-003",
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/recover",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "action",
+        "email",
+        "challenge_id",
+        "code"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHN-002",
+        "OSMAP-WSTG-ATHN-003",
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/recover/setup",
+      "query_fields": [],
+      "form_fields": [],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHN-002",
+        "OSMAP-WSTG-ATHN-003",
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/recover/setup",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "action",
+        "enrollment_id",
+        "revision",
+        "new_password",
+        "confirmation",
+        "new_totp_code"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHN-002",
+        "OSMAP-WSTG-ATHN-003",
         "OSMAP-WSTG-ATHZ-001",
         "OSMAP-WSTG-SESS-004",
         "OSMAP-WSTG-INPV-003",

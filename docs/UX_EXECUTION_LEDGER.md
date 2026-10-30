@@ -1,3 +1,13 @@
+2026-10-30 (America/Toronto) — **S04-04 requirements corrected by operator.**
+
+Current work implements browser access recovery and authenticated TOTP replacement.
+Automated onboarding, initial enrollment, saved backup-code issuance and
+recovery-email verification belong to a separate sprint; new users are manually
+onboarded meanwhile. The revised contract and work packages are in
+`docs/UX_SLICE_S04_04.md`. Prior request-only/source/native results below remain
+historical; revised functional/native/installed/UAT results are NOT_RUN until
+actual matching evidence exists. Login-page changes are expressly authorized.
+
 # OSMAP UX execution ledger
 
 2026-10-29 (America/Toronto) — **S04-04 source checkpoint; native acceptance open.**
@@ -10153,63 +10163,89 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     ]
   },
   "allowed_paths": [
-    "docs/UX_SLICE_S04_04.md",
-    "docs/UX_EXECUTION_LEDGER.md",
-    "docs/CURRENT_PROJECT_STATUS.md",
-    "docs/KNOWN_LIMITATIONS.md",
-    "docs/DECISION_LOG.md",
-    "docs/README.md",
-    "src/lib.rs",
+    "Cargo.lock",
     "Cargo.toml",
-    "src/account_recovery.rs",
-    "src/account_recovery_tests.rs",
-    "src/account_recovery_operator.rs",
-    "src/bin/account_recovery.rs",
-    "src/account_password_state.rs",
-    "src/session.rs",
-    "src/session_recovery.rs",
-    "src/session_recovery_tests.rs",
-    "src/settings_security_ui.rs",
-    "src/settings_recovery_ui.rs",
-    "src/http_ui.rs",
-    "src/http.rs",
-    "src/http/routes.rs",
-    "src/http/routes_settings.rs",
-    "src/http/gateway.rs",
-    "src/http/gateway_runtime.rs",
-    "src/http_gateway.rs",
-    "src/http_gateway_runtime.rs",
-    "src/totp.rs",
-    "src/http/account_recovery_tests.rs",
-    "src/account_recovery_status.rs",
-    "maint/live/osmap-recover-totp-over-ssh.sh",
-    "maint/live/osmap-totp-recovery-approval.py",
-    "maint/security/test-osmap-totp-recovery.py",
-    "maint/security/v10-rust-assumption-audit.json",
-    "maint/security/v10-fail-closed-remediation.json",
-    "maint/security/v10-claims-boundary.json",
+    "docs/CURRENT_PROJECT_STATUS.md",
+    "docs/DECISION_LOG.md",
+    "docs/KNOWN_LIMITATIONS.md",
+    "docs/README.md",
+    "docs/UX_EXECUTION_LEDGER.md",
+    "docs/UX_SLICE_S04_04.md",
     "maint/live/osmap-coordinate-recovery-over-ssh.sh",
+    "maint/live/osmap-recover-totp-over-ssh.sh",
+    "maint/live/osmap-rotate-totp-over-ssh.sh",
+    "maint/live/osmap-totp-recovery-approval.py",
+    "maint/security/osmap-security-check.sh",
     "maint/security/test-osmap-account-recovery-coordinator.py",
+    "maint/security/test-osmap-totp-recovery.py",
+    "maint/security/test-osmap-totp-rotation.py",
+    "maint/security/v10-claims-boundary.json",
+    "maint/security/v10-fail-closed-remediation.json",
+    "maint/security/v10-rust-assumption-audit.json",
+    "maint/security/v15-dependency-admission.json",
+    "maint/wstg-testing-pack/osmap-browser-attack-surface.json",
+    "src/access_recovery.rs",
+    "src/access_recovery_mail.rs",
+    "src/access_recovery_protocol.rs",
+    "src/access_recovery_protocol_tests.rs",
+    "src/access_recovery_tests.rs",
+    "src/access_recovery_ui.rs",
+    "src/account_access_service.rs",
+    "src/account_access_service_tests.rs",
+    "src/account_factor_replacement.rs",
+    "src/account_mutation_client.rs",
+    "src/account_mutation_client_tests.rs",
+    "src/account_password_backend.rs",
+    "src/account_password_backend_tests.rs",
+    "src/account_password_confinement.rs",
+    "src/account_password_connection.rs",
+    "src/account_password_runtime.rs",
+    "src/account_password_state.rs",
+    "src/account_password_state_tests.rs",
+    "src/account_recovery.rs",
+    "src/account_recovery_operator.rs",
+    "src/account_recovery_status.rs",
+    "src/account_recovery_tests.rs",
     "src/authenticator.rs",
     "src/authenticator_publish.rs",
     "src/authenticator_ui.rs",
-    "src/http/authenticator_tests.rs",
-    "src/http/routes_authenticator.rs",
-    "maint/security/osmap-security-check.sh",
-    "src/http_browser.rs",
-    "src/http_runtime.rs",
-    "src/private_account_file.rs",
-    "src/http/security_settings_tests.rs",
-    "maint/security/v15-dependency-admission.json",
-    "maint/wstg-testing-pack/osmap-browser-attack-surface.json",
-    "src/openbsd.rs",
+    "src/bin/account_recovery.rs",
+    "src/browser_access.rs",
     "src/config.rs",
-    "maint/live/osmap-rotate-totp-over-ssh.sh",
-    "maint/security/test-osmap-totp-rotation.py"
+    "src/http.rs",
+    "src/http/access_recovery_tests.rs",
+    "src/http/account_recovery_tests.rs",
+    "src/http/authenticator_tests.rs",
+    "src/http/gateway.rs",
+    "src/http/gateway_runtime.rs",
+    "src/http/routes.rs",
+    "src/http/routes_access_recovery.rs",
+    "src/http/routes_authenticator.rs",
+    "src/http/routes_settings.rs",
+    "src/http/security_settings_tests.rs",
+    "src/http_browser.rs",
+    "src/http_gateway.rs",
+    "src/http_gateway_recovery_tests.rs",
+    "src/http_gateway_runtime.rs",
+    "src/http_runtime.rs",
+    "src/http_ui.rs",
+    "src/lib.rs",
+    "src/openbsd.rs",
+    "src/password_change.rs",
+    "src/private_account_file.rs",
+    "src/recovery_contact.rs",
+    "src/recovery_contact_tests.rs",
+    "src/session.rs",
+    "src/session_recovery.rs",
+    "src/session_recovery_tests.rs",
+    "src/settings_recovery_ui.rs",
+    "src/settings_security_ui.rs",
+    "src/totp.rs",
+    "src/totp_enrollment.rs"
   ],
   "outcomes": [
     {
-      "id": "governed-factor-recovery",
+      "id": "browser-access-recovery",
       "requirement_ids": [
         "R2-10-004",
         "R2-10-008",
@@ -10219,19 +10255,19 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "R2-23-010"
       ],
       "owner": "/root",
-      "frontend_backend_outcome": "D04 governed recovery coordinator performs actual containment/session effects and guarded factor replacement; Settings exposes accurate factor status/lifecycle without browser administrative authority.",
+      "frontend_backend_outcome": "Fresh current-password/TOTP confirmation -> new QR and code confirmation -> factor replacement; login-page email recovery -> expiring one-use code -> restricted password and replacement TOTP setup -> fresh normal sign-in.",
       "dependencies": [
         {
           "owner": "/root/recovery_policy_review",
-          "condition": "Independent D04 policy/interface review identifies supported lost-authenticator case and required human identity boundary.",
-          "status": "PASS",
-          "next_action": "Preserve independently reviewed lost-authenticator/no-compromise scope; real identity and applicable broader mail controls remain human/native qualification boundaries."
+          "condition": "Independent source review of native authority, bounded proof/grant transport and same-fence commit.",
+          "status": "PENDING",
+          "next_action": "Complete bounded-store source review and native mixed-owner qualifier before installed qualification."
         }
       ],
-      "essential_qa": "S04-04-T01 through T09, matching source/native/installed scope and independent review; no test-custody identity claim.",
+      "essential_qa": "S04-04-T01 through T09 revised contract. Actual work package -> scenarios -> evidence; automated onboarding excluded.",
       "stages": {
         "implementation": "PASS",
-        "source_tests": "PASS",
+        "source_tests": "PENDING",
         "native_tests": "PENDING",
         "deployed_qa": "PENDING",
         "independent_review": "PENDING",
@@ -10240,32 +10276,20 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
       "evidence": [
         {
           "stage": "implementation",
-          "reference": "Native operator/core, additive recovery epoch API, guarded actual session store, signed identity adapter, real Runtime/BrowserApp request/status path; independent source GO."
-        },
-        {
-          "stage": "source_tests",
-          "reference": "Focused core15, session11, metadata/BrowserApp12, identity/adapter14 and existing password-state8 PASS. Normal delivery gates pending."
-        },
-        {
-          "stage": "independent_review",
-          "reference": "/root/recovery_policy_review source GO; actual symlink root/cases refusal regression PASS and release-uncertainty wording corrected. Native and installed review pending."
-        },
-        {
-          "stage": "source_tests",
-          "reference": "Source08 normal security-check complete/PASS including Rust2000PASS/0FAIL/73explicit native-fixture ignores, Clippy/fmt/RustSec/supply-chain/WSTG/TLS/CWE/all mandatory guards; outer acceptance aggregate failed stale coupled V10 count/hash. Corrected metadata-only v10-check PASS, code unchanged. Earlier aggregate remains FAIL. Exact actual-codec Python14PASS includes no skips."
+          "reference": "Current browser routes/UI, native email challenge/grant, enrollment and actual factor/session/epoch adapter composed with existing password CAS. Focused source and temporary-file integration passes are bounded evidence; normal delivery/native/installed pending."
         }
       ],
-      "next_action": "Sign and synchronize reviewed source; then reviewed isolated native component recipe, without installation or live credential effects."
+      "next_action": "Finish changed-boundary source checks and signed preservation, then native isolated qualification and installed user journey."
     }
   ],
   "human_acceptance": {
     "status": "PENDING",
     "reference": ""
   },
-  "next_action": "Complete normal signed Git preservation and fresh origin parity; use normal browser sign-in for selected-owner local UAT. No retired fixture scripts or owner credential mutation; complete recovery qualification remains open.",
+  "next_action": "Finish revised S04-04 browser access recovery. Manual onboarding remains separate; no newly issued backup-code prerequisite. Preserve old failed/partial evidence and S05-02 unchanged.",
   "accountability": {
     "owner": "/root",
-    "functional_exit": "Working governed factor recovery through actual account/session/factor authority and truthful Settings; human judgment remains separate.",
+    "functional_exit": "Fresh current-password/TOTP confirmation -> new QR and code confirmation -> factor replacement; login-page email recovery -> expiring one-use code -> restricted password and replacement TOTP setup -> fresh normal sign-in.",
     "elapsed_scope": "wall_clock",
     "history_reference": "Starts after accepted S04-03; S05-02 remains deferred and untouched in original checkout. Initial discovery found external-only containment attestations and incompatible stopped-Web rehearsal. Retained source failures: test identity assumption, anonymous GET-body fixture, concurrent renderer compilation; review corrections include schema/state/account response binding, final private release decision, release uncertainty, pinned publication and repeat-request lifecycle. Normal source01 gate1998PASS/1FAIL/72ignored: superseded unknown-enrollment literal; independently reviewed affected test corrected, focused1PASS. No product guard weakened. Source02 fullRust1999PASS/0FAIL/72ignored and assurancePASS, then Clippy manual_clamp refusal. Fixed bounded poll timeout expression to clamp; affected Clippy PASS. Native root ownership discriminator added explicitly ignored until exact privileged temporary-store execution. Source03 Rust1999PASS/0FAIL/73ignored, Clippy rejected cfg constant in ignored native test; semantic OS assertion correction affected ClippyPASS. Publication guard refused new test use of legacy dummy seed; replaced with public RFC test vector, focused coordinator15PASS and actual codec/adapter14PASS repeated, no waiver. Read-only environment640 exact runtimeGID contract correction independentlyGO. Independent combined review GO for source/native compiler recipe. Source04 Rust1999PASS/0FAIL/73ignored, Clippy/fmt/assurancePASS; supply-chain refused Cargo manifest hash for new binary target. Parsed baseline/current dependency/target dependency tables and lock unchanged; updated admission binding with explicit manifest-only target review, no dependency waiver. Source05 unmodified public-admin socket test returnedUnavailable vsStale; exact isolated rerunPASS, causeUNKNOWN retained, no S05 edits. Source06 wholeRust1999PASS/0FAIL/73ignored and supply-chain/V14 passed; WSTG route inventory refused missing GET/POST authenticator rows. Added exact route/form fields and mapped auth/session/input/business checks; no target network assurance inferred. Source07 wholeRust1999PASS/0FAIL/73ignored and WSTG route inventoryPASS; TLS static keyword guard matched account-lookup prose. Reworded to authentication-required without security change; TLSguardPASS. Targeted CWE/architecture scan then identified new unsafe blocks outside mandatory openbsd.rs boundary; root acknowledged integration miss and assigned bounded relocation into existing safe FFI layer without exception. No source/native admission until corrected. FFI correction uses existing descriptor open/rename/unlink and narrow safe runtime/mkdir/chown/input wrappers in openbsd.rs; affected core15/session11/authenticator12 and boundedinput1PASS, native root1ignored. Exact unsafe predicate and ClippyPASS; fixture-only helper scope lint preserved/corrected. QA receipt ffi-isolation-review.json sha33c2ac78e102127f26ebdc2332d28847ad19e094bcca0934a0c89a3cb7797666; independent source GO. Normal source08 pending. Source08 security-check complete/PASS; outer acceptance V10 coupled rust scanner count/hash stale. Metadata-only correction to10360/hash6c7de4\u2026 and affected v10-checkPASS. AggregateFAIL retained, constituent observations separate; no redundant aggregate-only retry. Mandatory normal push hook still required. Signed source3f8c2b3 GoodShopkeeper, normalpush security-checkcompletePASS, fresh origin exact3f8c/0ahead0behind/clean. Next bounded nonroot native component recipe bound to signed source/archive/manifest/actor; stage created private via checked obsd1 hostname, no code/account/service action yet. Native01 successful binary/libtest build, recovery4PASS11FAIL earlyStateUnavailable; strict factor_gid correctly refused inheritedTMPgid0 vsruntime1000. Numeric causal observation and SAME-binary onepositive02PASS after freshTMPgroup provision. No whole retry before causal discriminator. Expiry falsepositive markedNOT_QUALIFIED; strengthened onlytest source preflight+minwait, exactlocal1PASS1.00s independentGO. Next signed test-only candidate+correctedTMP recipe required; laternativegroups/root/installed/human remainNOT_RUN.",
     "investigation": {
@@ -10284,89 +10308,77 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "slice": "S04-04",
     "specification": {
       "path": "docs/UX_SLICE_S04_04.md",
-      "sha256": "c3990c8f9619150a3505bc3b09176639132ee7e44494dc995deaa4b6ebedd9d9"
+      "sha256": "23a701aaf955a35f5921b2f791a7ecd6369bca705ed07ca401f8a8f0d85a0447"
     },
     "design": {
-      "journey": "Operator-assisted lost-authenticator recovery progresses requested, identity reviewed, contained, sessions revoked, factor replacement, reconciled; account Settings reflects actual state.",
-      "frontend": "Existing Security and Authentication & Recovery pages show current factor metadata and actual supported lifecycle entry; no browser admin mutation authority.",
-      "backend": "Native typed operator adapter composes actual account epoch/session/factor operations and durably records the recovery case before effects.",
-      "interfaces": "Existing private atomic store, epoch store, guarded session revocation, pinned-signature verifier and private-terminal TOTP tooling.",
-      "persistence": "Bounded account-scoped durable case with revision, exact account/case/epoch/factor bindings and sticky uncertain-attempt state.",
-      "security": "Independent human identity approval; no email-only bypass, agent-signed approval, private output or arbitrary command/SQL channel.",
-      "failure_recovery": "Persist irreversible dispatch before effects; failures before release retain containment. An interrupted release reports actual account state as uncertain until read-only reconciliation; never automatically retry, restore old factor or release by declaration."
+      "journey": "Fresh current-password/TOTP confirmation -> new QR and code confirmation -> factor replacement; login-page email recovery -> expiring one-use code -> restricted password and replacement TOTP setup -> fresh normal sign-in.",
+      "frontend": "Simple browser forms on /recover, /recover/setup and /settings/authenticator. The request-only handoff and terminal procedure are retired from the user journey.",
+      "backend": "Reuse the existing native account socket, authoritative password CAS writer, account epoch fence, session store and typed factor replacement; no new daemon or arbitrary SQL/command authority.",
+      "interfaces": "Strict MAC/replay/deadline-bound recovery frame, native-owned registered-email proof/grant, bound enrollment candidate, actual stored-session lease and existing native file primitives.",
+      "persistence": "Bounded private native challenge, grant, replay and candidate records; exact account/flow/epoch/prior factor binding; irreversible effects persist Pending and retain uncertainty.",
+      "security": "One-use expiring registered-email code with generic account responses and rate limits; fresh password/TOTP for signed-in reset; CSRF/origin and restricted-cookie separation; locally rendered QR; no mailbox authority from recovery grant.",
+      "failure_recovery": "Wrong or incomplete candidate preserves current factor. No automatic credential retry or old-factor restore after uncertainty; durable native state and fixed diagnostics distinguish completion from cleanup."
     },
     "tests": [
       {
         "id": "S04-04-T01",
         "outcome_ids": [
-          "governed-factor-recovery"
+          "browser-access-recovery"
         ],
         "kind": "positive",
         "level": "source",
-        "prerequisites": "Supported case and independent identity decision.",
-        "action": "Admit exact case after signed human decision; compare absent/insufficient decisions.",
-        "expected": "Only valid exact authorization advances; no agent-generated identity attestation.",
-        "preserved": "Accepted password/contact paths, authoritative password, unrelated accounts, OpenPGP bindings and mail availability.",
+        "prerequisites": "Registered recovery address and working login-page entry",
+        "action": "Registered recovery address and working login-page entry; exercise the exact revised browser/native interface and matching refusal boundary.",
+        "expected": "Generic response and one-use emailed code issue only a restricted setup grant; email input never selects a delivery address.",
+        "preserved": "Matching source, bounded outcome and first failure; native/installed/UAT evidence remains separate. No secrets or private account identifiers in public artifacts.",
         "owner": "/root",
         "reviewer": "/root/recovery_policy_review",
-        "status": "PASS",
-        "evidence": [
-          "Source scope: focused coordinator/operator, session, authenticator BrowserApp/Runtime, signed-identity adapter and existing password-state controls PASS; affected final operator4PASS in frontend-coverage-source-tests.log.",
-          "Current native03 signed122b0b36:17recovery/operator+11session+12authenticator+1input=41PASS; unchanged root ownership1 explicitly reused from93cbb888. Independent native03 review32a04a69 retained.",
-          "Installed executable readiness and712-record preservation PASS; configured scenario/human identity/complete T08 not inferred."
-        ]
+        "status": "NOT_RUN",
+        "evidence": []
       },
       {
         "id": "S04-04-T02",
         "outcome_ids": [
-          "governed-factor-recovery"
+          "browser-access-recovery"
         ],
         "kind": "negative",
         "level": "source",
-        "prerequisites": "Bound current account/case/epoch/factor and serialized state.",
-        "action": "Submit foreign/stale/replayed decisions and repeat after restart.",
-        "expected": "No foreign or repeated effect; durable state remains authoritative.",
-        "preserved": "Accepted password/contact paths, authoritative password, unrelated accounts, OpenPGP bindings and mail availability.",
+        "prerequisites": "Bound challenge/grant/candidate and exact current account/flow/epoch/factor",
+        "action": "Bound challenge/grant/candidate and exact current account/flow/epoch/factor; exercise the exact revised browser/native interface and matching refusal boundary.",
+        "expected": "Foreign, expired, replayed, wrong-code and stale forms cannot replace credentials; attempts and stores remain bounded.",
+        "preserved": "Matching source, bounded outcome and first failure; native/installed/UAT evidence remains separate. No secrets or private account identifiers in public artifacts.",
         "owner": "/root",
         "reviewer": "/root/recovery_policy_review",
-        "status": "PASS",
-        "evidence": [
-          "Source scope: focused coordinator/operator, session, authenticator BrowserApp/Runtime, signed-identity adapter and existing password-state controls PASS; affected final operator4PASS in frontend-coverage-source-tests.log.",
-          "Current native03 signed122b0b36:17recovery/operator+11session+12authenticator+1input=41PASS; unchanged root ownership1 explicitly reused from93cbb888. Independent native03 review32a04a69 retained.",
-          "Installed executable readiness and712-record preservation PASS; configured scenario/human identity/complete T08 not inferred."
-        ]
+        "status": "NOT_RUN",
+        "evidence": []
       },
       {
         "id": "S04-04-T03",
         "outcome_ids": [
-          "governed-factor-recovery"
+          "browser-access-recovery"
         ],
         "kind": "positive",
         "level": "source",
-        "prerequisites": "Authorized case with actual private epoch/session records.",
-        "action": "Contain account and revoke exact-account sessions; inspect control account.",
-        "expected": "Admission refuses during recovery; old sessions revoked; other accounts preserved.",
-        "preserved": "Accepted password/contact paths, authoritative password, unrelated accounts, OpenPGP bindings and mail availability.",
+        "prerequisites": "Native final session/grant authority and physical account/session stores",
+        "action": "Native final session/grant authority and physical account/session stores; exercise the exact revised browser/native interface and matching refusal boundary.",
+        "expected": "Persist containment before effects, revoke actual old browser sessions, preserve another account and release only after readback.",
+        "preserved": "Matching source, bounded outcome and first failure; native/installed/UAT evidence remains separate. No secrets or private account identifiers in public artifacts.",
         "owner": "/root",
         "reviewer": "/root/recovery_policy_review",
-        "status": "PASS",
-        "evidence": [
-          "Source scope: focused coordinator/operator, session, authenticator BrowserApp/Runtime, signed-identity adapter and existing password-state controls PASS; affected final operator4PASS in frontend-coverage-source-tests.log.",
-          "Current native03 signed122b0b36:17recovery/operator+11session+12authenticator+1input=41PASS; unchanged root ownership1 explicitly reused from93cbb888. Independent native03 review32a04a69 retained.",
-          "Installed executable readiness and712-record preservation PASS; configured scenario/human identity/complete T08 not inferred."
-        ]
+        "status": "NOT_RUN",
+        "evidence": []
       },
       {
         "id": "S04-04-T04",
         "outcome_ids": [
-          "governed-factor-recovery"
+          "browser-access-recovery"
         ],
         "kind": "positive",
         "level": "native",
-        "prerequisites": "Supported factor-only case and authoritative password baseline.",
-        "action": "Verify authoritative password preservation through factor recovery, then one separately authorized ordinary own-password change on the recovered account.",
-        "expected": "Factor-only recovery preserves password/modified. Existing own-password change completes through the ordinary product after recovery; lost-password reset remains unsupported/manual.",
-        "preserved": "Accepted password/contact paths, authoritative password, unrelated accounts, OpenPGP bindings and mail availability.",
+        "prerequisites": "Verified one-use email recovery grant and actual password authority",
+        "action": "Verified one-use email recovery grant and actual password authority; exercise the exact revised browser/native interface and matching refusal boundary.",
+        "expected": "Reset the authoritative password under the same factor/session fence using real CAS; cache invalidation and new-password authentication precede release.",
+        "preserved": "Matching source, bounded outcome and first failure; native/installed/UAT evidence remains separate. No secrets or private account identifiers in public artifacts.",
         "owner": "/root",
         "reviewer": "/root/recovery_policy_review",
         "status": "NOT_RUN",
@@ -10375,14 +10387,14 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
       {
         "id": "S04-04-T05",
         "outcome_ids": [
-          "governed-factor-recovery"
+          "browser-access-recovery"
         ],
         "kind": "positive",
         "level": "native",
-        "prerequisites": "Contained case, revocation and human private-terminal decision.",
-        "action": "Use actual guarded factor replacement and verify old/new authentication.",
-        "expected": "New factor works, old factor refuses, no auto restore and unrelated state preserved.",
-        "preserved": "Accepted password/contact paths, authoritative password, unrelated accounts, OpenPGP bindings and mail availability.",
+        "prerequisites": "Fresh existing password/current TOTP or genuine email recovery grant; bound replacement candidate",
+        "action": "Fresh existing password/current TOTP or genuine email recovery grant; bound replacement candidate; exercise the exact revised browser/native interface and matching refusal boundary.",
+        "expected": "New QR requires a valid six-digit candidate code; actual new factor works and old factor refuses after completion.",
+        "preserved": "Matching source, bounded outcome and first failure; native/installed/UAT evidence remains separate. No secrets or private account identifiers in public artifacts.",
         "owner": "/root",
         "reviewer": "/root/recovery_policy_review",
         "status": "NOT_RUN",
@@ -10391,54 +10403,46 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
       {
         "id": "S04-04-T06",
         "outcome_ids": [
-          "governed-factor-recovery"
+          "browser-access-recovery"
         ],
         "kind": "recovery",
         "level": "source",
-        "prerequisites": "Actual changed case/state/session effect boundaries.",
-        "action": "Interrupt before/after effect dispatch; reopen and inspect read-only.",
-        "expected": "No blind replay or automatic release. Failures before release retain containment; interrupted release preserves ReleasePending with actual epoch/state separately and requires read-only reconciliation.",
-        "preserved": "Accepted password/contact paths, authoritative password, unrelated accounts, OpenPGP bindings and mail availability.",
+        "prerequisites": "Changed native persistence and credential/factor effect boundaries",
+        "action": "Changed native persistence and credential/factor effect boundaries; exercise the exact revised browser/native interface and matching refusal boundary.",
+        "expected": "Interrupted or uncertain dispatch remains sticky and cannot be replayed automatically; first failure is retained separately from cleanup.",
+        "preserved": "Matching source, bounded outcome and first failure; native/installed/UAT evidence remains separate. No secrets or private account identifiers in public artifacts.",
         "owner": "/root",
         "reviewer": "/root/recovery_policy_review",
-        "status": "PASS",
-        "evidence": [
-          "Source scope: focused coordinator/operator, session, authenticator BrowserApp/Runtime, signed-identity adapter and existing password-state controls PASS; affected final operator4PASS in frontend-coverage-source-tests.log.",
-          "Current native03 signed122b0b36:17recovery/operator+11session+12authenticator+1input=41PASS; unchanged root ownership1 explicitly reused from93cbb888. Independent native03 review32a04a69 retained.",
-          "Installed executable readiness and712-record preservation PASS; configured scenario/human identity/complete T08 not inferred."
-        ]
+        "status": "NOT_RUN",
+        "evidence": []
       },
       {
         "id": "S04-04-T07",
         "outcome_ids": [
-          "governed-factor-recovery"
+          "browser-access-recovery"
         ],
         "kind": "negative",
         "level": "source",
-        "prerequisites": "Coordinator/Settings changed interfaces and unavailable/foreign fixtures.",
-        "action": "Exercise isolation, hostile input, races, stale state and applicable request protections.",
-        "expected": "No cross-account disclosure or secret evidence; bounded truthful errors.",
-        "preserved": "Accepted password/contact paths, authoritative password, unrelated accounts, OpenPGP bindings and mail availability.",
+        "prerequisites": "Changed public/restricted/signed-in browser routes and native socket",
+        "action": "Changed public/restricted/signed-in browser routes and native socket; exercise the exact revised browser/native interface and matching refusal boundary.",
+        "expected": "CSRF/origin, malformed/extra fields, account isolation, MAC/peer/replay/deadline, stored-session revocation and secret-free errors are enforced.",
+        "preserved": "Matching source, bounded outcome and first failure; native/installed/UAT evidence remains separate. No secrets or private account identifiers in public artifacts.",
         "owner": "/root",
         "reviewer": "/root/recovery_policy_review",
-        "status": "PASS",
-        "evidence": [
-          "Source scope: focused coordinator/operator, session, authenticator BrowserApp/Runtime, signed-identity adapter and existing password-state controls PASS; affected final operator4PASS in frontend-coverage-source-tests.log.",
-          "Current native03 signed122b0b36:17recovery/operator+11session+12authenticator+1input=41PASS; unchanged root ownership1 explicitly reused from93cbb888. Independent native03 review32a04a69 retained.",
-          "Installed executable readiness and712-record preservation PASS; configured scenario/human identity/complete T08 not inferred."
-        ]
+        "status": "NOT_RUN",
+        "evidence": []
       },
       {
         "id": "S04-04-T08",
         "outcome_ids": [
-          "governed-factor-recovery"
+          "browser-access-recovery"
         ],
         "kind": "positive",
         "level": "deployed",
-        "prerequisites": "Matching signed native source/artifacts and actual configured Runtime.",
-        "action": "Exercise recovery journey and both Settings entries, status and restart.",
-        "expected": "Real lifecycle and truthful factor/last use, independent account/audit/preservation evidence.",
-        "preserved": "Accepted password/contact paths, authoritative password, unrelated accounts, OpenPGP bindings and mail availability.",
+        "prerequisites": "Matching signed code, native binary and installed configuration",
+        "action": "Matching signed code, native binary and installed configuration; exercise the exact revised browser/native interface and matching refusal boundary.",
+        "expected": "Exercise real browser/native/mail/factor/password paths and persistence with actual evidence; local source tests alone do not qualify installed behavior.",
+        "preserved": "Matching source, bounded outcome and first failure; native/installed/UAT evidence remains separate. No secrets or private account identifiers in public artifacts.",
         "owner": "/root",
         "reviewer": "/root/recovery_policy_review",
         "status": "NOT_RUN",
@@ -10447,14 +10451,14 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
       {
         "id": "S04-04-T09",
         "outcome_ids": [
-          "governed-factor-recovery"
+          "browser-access-recovery"
         ],
         "kind": "usability",
         "level": "human",
-        "prerequisites": "Required engineering evidence and independent review pass.",
-        "action": "Authorized human judges identity and completes concise scoped acceptance.",
-        "expected": "Human-only decision recorded separately; no automated acceptance claim.",
-        "preserved": "Accepted password/contact paths, authoritative password, unrelated accounts, OpenPGP bindings and mail availability.",
+        "prerequisites": "Required engineering evidence and independent review; concise human browser test",
+        "action": "Required engineering evidence and independent review; concise human browser test; exercise the exact revised browser/native interface and matching refusal boundary.",
+        "expected": "Record real human outcome separately; no agent acceptance and no onboarding, S05-02 or whole-epic completion claim.",
+        "preserved": "Matching source, bounded outcome and first failure; native/installed/UAT evidence remains separate. No secrets or private account identifiers in public artifacts.",
         "owner": "/root",
         "reviewer": "/root/recovery_policy_review",
         "status": "NOT_RUN",
@@ -10928,7 +10932,226 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
       "effects": "No recovery begin/prepare/reconcile, factor/password write or explicit session-revocation operation. Selector changes native admission; old cookies can require fresh login.",
       "limits": "Configured local browser walkthrough only; fullT04/T05/T08/T09 notqualified; no Toronto mailbox-sync or real-person identity claim. Fixture-only old actors not applicable to owner."
     }
-  }
+  },
+  "historical_2026_10_29_contract": {
+    "original_requirement": "Controlled real-user recovery coordinator joining identity verification, containment, session revocation and TOTP tooling",
+    "design": {
+      "journey": "Operator-assisted lost-authenticator recovery progresses requested, identity reviewed, contained, sessions revoked, factor replacement, reconciled; account Settings reflects actual state.",
+      "frontend": "Existing Security and Authentication & Recovery pages show current factor metadata and actual supported lifecycle entry; no browser admin mutation authority.",
+      "backend": "Native typed operator adapter composes actual account epoch/session/factor operations and durably records the recovery case before effects.",
+      "interfaces": "Existing private atomic store, epoch store, guarded session revocation, pinned-signature verifier and private-terminal TOTP tooling.",
+      "persistence": "Bounded account-scoped durable case with revision, exact account/case/epoch/factor bindings and sticky uncertain-attempt state.",
+      "security": "Independent human identity approval; no email-only bypass, agent-signed approval, private output or arbitrary command/SQL channel.",
+      "failure_recovery": "Persist irreversible dispatch before effects; failures before release retain containment. An interrupted release reports actual account state as uncertain until read-only reconciliation; never automatically retry, restore old factor or release by declaration."
+    },
+    "tests": [
+      {
+        "id": "S04-04-T01",
+        "outcome_ids": [
+          "governed-factor-recovery"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Registered recovery address and working login-page entry",
+        "action": "Admit exact case after signed human decision; compare absent/insufficient decisions.",
+        "expected": "Generic response and one-use emailed code issue only a restricted setup grant; email input never selects a delivery address.",
+        "preserved": "Accepted password/contact paths, authoritative password, unrelated accounts, OpenPGP bindings and mail availability.",
+        "owner": "/root",
+        "reviewer": "/root/recovery_policy_review",
+        "status": "NOT_RUN",
+        "evidence": [],
+        "current_contract": "Registered recovery address and working login-page entry; Generic response and one-use emailed code issue only a restricted setup grant; email input never selects a delivery address."
+      },
+      {
+        "id": "S04-04-T02",
+        "outcome_ids": [
+          "governed-factor-recovery"
+        ],
+        "kind": "negative",
+        "level": "source",
+        "prerequisites": "Bound challenge/grant/candidate and exact current account/flow/epoch/factor",
+        "action": "Submit foreign/stale/replayed decisions and repeat after restart.",
+        "expected": "Foreign, expired, replayed, wrong-code and stale forms cannot replace credentials; attempts and stores remain bounded.",
+        "preserved": "Accepted password/contact paths, authoritative password, unrelated accounts, OpenPGP bindings and mail availability.",
+        "owner": "/root",
+        "reviewer": "/root/recovery_policy_review",
+        "status": "NOT_RUN",
+        "evidence": [],
+        "current_contract": "Bound challenge/grant/candidate and exact current account/flow/epoch/factor; Foreign, expired, replayed, wrong-code and stale forms cannot replace credentials; attempts and stores remain bounded."
+      },
+      {
+        "id": "S04-04-T03",
+        "outcome_ids": [
+          "governed-factor-recovery"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Native final session/grant authority and physical account/session stores",
+        "action": "Contain account and revoke exact-account sessions; inspect control account.",
+        "expected": "Persist containment before effects, revoke actual old browser sessions, preserve another account and release only after readback.",
+        "preserved": "Accepted password/contact paths, authoritative password, unrelated accounts, OpenPGP bindings and mail availability.",
+        "owner": "/root",
+        "reviewer": "/root/recovery_policy_review",
+        "status": "NOT_RUN",
+        "evidence": [],
+        "current_contract": "Native final session/grant authority and physical account/session stores; Persist containment before effects, revoke actual old browser sessions, preserve another account and release only after readback."
+      },
+      {
+        "id": "S04-04-T04",
+        "outcome_ids": [
+          "governed-factor-recovery"
+        ],
+        "kind": "positive",
+        "level": "native",
+        "prerequisites": "Verified one-use email recovery grant and actual password authority",
+        "action": "Verify authoritative password preservation through factor recovery, then one separately authorized ordinary own-password change on the recovered account.",
+        "expected": "Reset the authoritative password under the same factor/session fence using real CAS; cache invalidation and new-password authentication precede release.",
+        "preserved": "Accepted password/contact paths, authoritative password, unrelated accounts, OpenPGP bindings and mail availability.",
+        "owner": "/root",
+        "reviewer": "/root/recovery_policy_review",
+        "status": "NOT_RUN",
+        "evidence": [],
+        "current_contract": "Verified one-use email recovery grant and actual password authority; Reset the authoritative password under the same factor/session fence using real CAS; cache invalidation and new-password authentication precede release."
+      },
+      {
+        "id": "S04-04-T05",
+        "outcome_ids": [
+          "governed-factor-recovery"
+        ],
+        "kind": "positive",
+        "level": "native",
+        "prerequisites": "Fresh existing password/current TOTP or genuine email recovery grant; bound replacement candidate",
+        "action": "Use actual guarded factor replacement and verify old/new authentication.",
+        "expected": "New QR requires a valid six-digit candidate code; actual new factor works and old factor refuses after completion.",
+        "preserved": "Accepted password/contact paths, authoritative password, unrelated accounts, OpenPGP bindings and mail availability.",
+        "owner": "/root",
+        "reviewer": "/root/recovery_policy_review",
+        "status": "NOT_RUN",
+        "evidence": [],
+        "current_contract": "Fresh existing password/current TOTP or genuine email recovery grant; bound replacement candidate; New QR requires a valid six-digit candidate code; actual new factor works and old factor refuses after completion."
+      },
+      {
+        "id": "S04-04-T06",
+        "outcome_ids": [
+          "governed-factor-recovery"
+        ],
+        "kind": "recovery",
+        "level": "source",
+        "prerequisites": "Changed native persistence and credential/factor effect boundaries",
+        "action": "Interrupt before/after effect dispatch; reopen and inspect read-only.",
+        "expected": "Interrupted or uncertain dispatch remains sticky and cannot be replayed automatically; first failure is retained separately from cleanup.",
+        "preserved": "Accepted password/contact paths, authoritative password, unrelated accounts, OpenPGP bindings and mail availability.",
+        "owner": "/root",
+        "reviewer": "/root/recovery_policy_review",
+        "status": "NOT_RUN",
+        "evidence": [],
+        "current_contract": "Changed native persistence and credential/factor effect boundaries; Interrupted or uncertain dispatch remains sticky and cannot be replayed automatically; first failure is retained separately from cleanup."
+      },
+      {
+        "id": "S04-04-T07",
+        "outcome_ids": [
+          "governed-factor-recovery"
+        ],
+        "kind": "negative",
+        "level": "source",
+        "prerequisites": "Changed public/restricted/signed-in browser routes and native socket",
+        "action": "Exercise isolation, hostile input, races, stale state and applicable request protections.",
+        "expected": "CSRF/origin, malformed/extra fields, account isolation, MAC/peer/replay/deadline, stored-session revocation and secret-free errors are enforced.",
+        "preserved": "Accepted password/contact paths, authoritative password, unrelated accounts, OpenPGP bindings and mail availability.",
+        "owner": "/root",
+        "reviewer": "/root/recovery_policy_review",
+        "status": "NOT_RUN",
+        "evidence": [],
+        "current_contract": "Changed public/restricted/signed-in browser routes and native socket; CSRF/origin, malformed/extra fields, account isolation, MAC/peer/replay/deadline, stored-session revocation and secret-free errors are enforced."
+      },
+      {
+        "id": "S04-04-T08",
+        "outcome_ids": [
+          "governed-factor-recovery"
+        ],
+        "kind": "positive",
+        "level": "deployed",
+        "prerequisites": "Matching signed code, native binary and installed configuration",
+        "action": "Exercise recovery journey and both Settings entries, status and restart.",
+        "expected": "Exercise real browser/native/mail/factor/password paths and persistence with actual evidence; local source tests alone do not qualify installed behavior.",
+        "preserved": "Accepted password/contact paths, authoritative password, unrelated accounts, OpenPGP bindings and mail availability.",
+        "owner": "/root",
+        "reviewer": "/root/recovery_policy_review",
+        "status": "NOT_RUN",
+        "evidence": [],
+        "current_contract": "Matching signed code, native binary and installed configuration; Exercise real browser/native/mail/factor/password paths and persistence with actual evidence; local source tests alone do not qualify installed behavior."
+      },
+      {
+        "id": "S04-04-T09",
+        "outcome_ids": [
+          "governed-factor-recovery"
+        ],
+        "kind": "usability",
+        "level": "human",
+        "prerequisites": "Required engineering evidence and independent review; concise human browser test",
+        "action": "Authorized human judges identity and completes concise scoped acceptance.",
+        "expected": "Record real human outcome separately; no agent acceptance and no onboarding, S05-02 or whole-epic completion claim.",
+        "preserved": "Accepted password/contact paths, authoritative password, unrelated accounts, OpenPGP bindings and mail availability.",
+        "owner": "/root",
+        "reviewer": "/root/recovery_policy_review",
+        "status": "NOT_RUN",
+        "evidence": [],
+        "current_contract": "Required engineering evidence and independent review; concise human browser test; Record real human outcome separately; no agent acceptance and no onboarding, S05-02 or whole-epic completion claim."
+      }
+    ],
+    "outcomes": [
+      {
+        "id": "governed-factor-recovery",
+        "requirement_ids": [
+          "R2-10-004",
+          "R2-10-008",
+          "R2-20-003",
+          "R2-20-004",
+          "R2-20-009",
+          "R2-23-010"
+        ],
+        "owner": "/root",
+        "frontend_backend_outcome": "D04 governed recovery coordinator performs actual containment/session effects and guarded factor replacement; Settings exposes accurate factor status/lifecycle without browser administrative authority.",
+        "dependencies": [
+          {
+            "owner": "/root/recovery_policy_review",
+            "condition": "Independent D04 policy/interface review identifies supported lost-authenticator case and required human identity boundary.",
+            "status": "PASS",
+            "next_action": "Preserve independently reviewed lost-authenticator/no-compromise scope; real identity and applicable broader mail controls remain human/native qualification boundaries."
+          }
+        ],
+        "essential_qa": "S04-04-T01 through T09, matching source/native/installed scope and independent review; no test-custody identity claim.",
+        "stages": {
+          "implementation": "PASS",
+          "source_tests": "PASS",
+          "native_tests": "PENDING",
+          "deployed_qa": "PENDING",
+          "independent_review": "PENDING",
+          "recovery": "PENDING"
+        },
+        "evidence": [
+          {
+            "stage": "implementation",
+            "reference": "Native operator/core, additive recovery epoch API, guarded actual session store, signed identity adapter, real Runtime/BrowserApp request/status path; independent source GO."
+          },
+          {
+            "stage": "source_tests",
+            "reference": "Focused core15, session11, metadata/BrowserApp12, identity/adapter14 and existing password-state8 PASS. Normal delivery gates pending."
+          },
+          {
+            "stage": "independent_review",
+            "reference": "/root/recovery_policy_review source GO; actual symlink root/cases refusal regression PASS and release-uncertainty wording corrected. Native and installed review pending."
+          },
+          {
+            "stage": "source_tests",
+            "reference": "Source08 normal security-check complete/PASS including Rust2000PASS/0FAIL/73explicit native-fixture ignores, Clippy/fmt/RustSec/supply-chain/WSTG/TLS/CWE/all mandatory guards; outer acceptance aggregate failed stale coupled V10 count/hash. Corrected metadata-only v10-check PASS, code unchanged. Earlier aggregate remains FAIL. Exact actual-codec Python14PASS includes no skips."
+          }
+        ],
+        "next_action": "Sign and synchronize reviewed source; then reviewed isolated native component recipe, without installation or live credential effects."
+      }
+    ]
+  },
+  "current_operator_requirement": "Operator-directed browser access recovery and authenticated replacement TOTP; automated onboarding is a separate sprint and new users are manually onboarded."
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->

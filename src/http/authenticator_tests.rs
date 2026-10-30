@@ -61,278 +61,62 @@ fn form(revision: u64) -> String {
     format!("csrf_token={CSRF}&revision={revision}&action=request")
 }
 
+// The request-only operator UI was retired by the Oct30 browser recovery scope.
+// Keep native metadata/store delegation below; current route contracts are tested
+// in access_recovery_tests, including fresh reauthentication and grant isolation.
 #[test]
-fn authenticator_navigation_reports_account_metadata_and_real_lifecycle_entry_from_both_settings() {
+fn retired_operator_request_action_never_dispatches_or_writes_request() {
+    let scratch = Scratch::new();
+    let app = scratch.app();
+    let mut value = post(&form(0));
+    value.headers.insert(
+        "cookie".into(),
+        format!(
+            "osmap_session={}; __Host-osmap_recovery_csrf={CSRF}",
+            "a".repeat(64)
+        ),
+    );
+    let result = app.handle_request(&value, "127.0.0.1");
+    assert_eq!(result.response.status_code, 400);
+    assert!(app.gateway.authenticator_calls.lock().unwrap().is_empty());
+    assert!(app.gateway.access_calls.lock().unwrap().is_empty());
+    assert!(scratch.store().read_request(ACCOUNT).unwrap().is_none());
+}
+
+#[test]
+fn authenticator_metadata_in_both_settings_entries_remains_account_scoped() {
     let scratch = Scratch::new();
     let app = scratch.app();
     for path in [
-        "/settings/authenticator",
         "/settings?section=security",
         "/settings?section=authentication",
     ] {
-        let result = app.handle_request(
-            &request("GET", path, &authenticated_same_origin_headers(), ""),
+        let response = app.handle_request(
+            &request("GET", path, &authenticated_headers(), ""),
             "127.0.0.1",
         );
-        assert_eq!(result.response.status_code, 200, "{path}");
-        let html = body_text(&result);
-        assert!(html.contains("Enrolled"), "{path}");
-        assert!(html.contains("2023-11-14T22:13:00Z"), "{path}");
-        assert!(html.contains("2023-11-14T22:13:29Z"), "{path}");
-        assert!(
-            html.contains("exact verification time is not recorded"),
-            "{path}"
-        );
-        assert!(html.contains("/settings/authenticator"), "{path}");
+        assert_eq!(response.response.status_code, 200);
+        let html = body_text(&response);
+        assert!(html.contains("Enrolled"));
+        assert!(html.contains("/settings/authenticator"));
+        assert!(html.contains("exact verification time is not recorded"));
         assert!(!html.contains("Last use: just now"));
     }
     assert!(app.gateway.authenticator_calls.lock().unwrap().is_empty());
     assert!(scratch.store().read_request(ACCOUNT).unwrap().is_none());
+}
+
+#[test]
+fn anonymous_authenticator_reset_never_reads_account_or_dispatches() {
+    let scratch = Scratch::new();
+    let app = scratch.app();
     let result = app.handle_request(
-        &request(
-            "GET",
-            "/settings/authenticator",
-            &authenticated_same_origin_headers(),
-            "",
-        ),
+        &request("GET", "/settings/authenticator", &[], ""),
         "127.0.0.1",
     );
-    let html = body_text(&result);
-    for text in [
-        "independently verify identity",
-        "does not prove identity or bypass MFA",
-        "private terminal",
-        "preserves your current password",
-    ] {
-        assert!(html.contains(text), "{text}");
-    }
-    for secret_field in [
-        "name=\"password\"",
-        "name=\"current_password\"",
-        "name=\"totp_code\"",
-        "name=\"token\"",
-        "name=\"identity_method\"",
-        "name=\"account\"",
-    ] {
-        assert!(!html.contains(secret_field));
-    }
-}
-
-#[test]
-fn authenticator_post_persists_only_an_untrusted_own_account_request_and_repeated_request_is_idempotent(
-) {
-    let scratch = Scratch::new();
-    let app = scratch.app();
-    let result = app.handle_request(&post(&form(0)), "127.0.0.1");
-    assert_eq!(result.response.status_code, 200);
-    let first = scratch.store().read_request(ACCOUNT).unwrap().unwrap();
-    assert_eq!(first.account, ACCOUNT);
-    assert_eq!(first.state, "requested");
-    assert!(first.account_epoch.is_none());
-    assert!(first.account_state.is_none());
-    assert!(scratch.store().read_case(ACCOUNT).unwrap().is_none());
-    assert!(scratch
-        .store()
-        .read_request("bob@example.com")
-        .unwrap()
-        .is_none());
-    assert!(body_text(&result).contains("supplies no recovery authorization"));
-    let retry = app.handle_request(&post(&form(1)), "127.0.0.1");
-    assert_eq!(retry.response.status_code, 200);
-    assert_eq!(
-        scratch.store().read_request(ACCOUNT).unwrap(),
-        Some(first.clone())
-    );
-    let stale = app.handle_request(&post(&form(0)), "127.0.0.1");
-    assert_eq!(stale.response.status_code, 409);
-    assert_eq!(scratch.store().read_request(ACCOUNT).unwrap(), Some(first));
-    assert_eq!(
-        *app.gateway.authenticator_calls.lock().unwrap(),
-        [
-            (ACCOUNT.into(), 0),
-            (ACCOUNT.into(), 1),
-            (ACCOUNT.into(), 0)
-        ]
-    );
-    for event in result
-        .audit_events
-        .into_iter()
-        .chain(retry.audit_events)
-        .chain(stale.audit_events)
-    {
-        let debug = format!("{event:?}");
-        assert!(!debug.contains(CSRF));
-        assert!(!debug.contains("account_epoch=0"));
-    }
-}
-
-#[test]
-fn authenticator_route_refuses_csrf_origin_query_duplicate_and_extra_account_before_request_dispatch(
-) {
-    let scratch = Scratch::new();
-    let app = scratch.app();
-    let good = form(0);
-    let mut foreign = post(&good);
-    foreign
-        .headers
-        .insert("origin".into(), "https://foreign.example.test".into());
-    let cases = [
-        foreign,
-        post(&good.replace(CSRF, "wrong")),
-        post(&(good.clone() + "&account=bob%40example.com")),
-        post(&(good.clone() + "&current_password=synthetic-secret-do-not-echo")),
-        post(&(good.clone() + "&identity_method=in_person")),
-        post(&(good.clone() + "&action=request")),
-        post(&good.replace("revision=0", "revision=invalid")),
-        post(&good.replace("action=request", "action=recover")),
-        request(
-            "GET",
-            "/settings/authenticator?account=bob%40example.com",
-            &authenticated_same_origin_headers(),
-            "",
-        ),
-    ];
-    for value in cases {
-        let response = app.handle_request(&value, "127.0.0.1");
-        assert_ne!(response.response.status_code, 200);
-        assert!(!body_text(&response).contains("synthetic-secret-do-not-echo"));
-        assert!(app.gateway.authenticator_calls.lock().unwrap().is_empty());
-    }
-    assert!(scratch.store().read_request(ACCOUNT).unwrap().is_none());
-    assert!(scratch.store().read_case(ACCOUNT).unwrap().is_none());
-}
-
-#[test]
-fn authenticator_foreign_or_unavailable_snapshot_is_unknown_and_cannot_save_request() {
-    let scratch = Scratch::new();
-    for state in [None, Some(snapshot("bob@example.com"))] {
-        let app = BrowserApp::new(
-            HttpPolicy::default(),
-            StubGateway {
-                authenticator_snapshot: state,
-                authenticator_store_root: Some(scratch.0.clone()),
-                ..StubGateway::default()
-            },
-        );
-        let result = app.handle_request(
-            &request(
-                "GET",
-                "/settings/authenticator",
-                &authenticated_same_origin_headers(),
-                "",
-            ),
-            "127.0.0.1",
-        );
-        assert_eq!(result.response.status_code, 503);
-        let html = body_text(&result);
-        assert!(html.contains("Unknown"));
-        assert!(html.contains(" disabled"));
-        assert!(!html.contains("2023-11-14T22:13:00Z"));
-        let result = app.handle_request(&post(&form(0)), "127.0.0.1");
-        assert_eq!(result.response.status_code, 503);
-        assert!(app.gateway.authenticator_calls.lock().unwrap().is_empty());
-        for path in [
-            "/settings?section=security",
-            "/settings?section=authentication",
-        ] {
-            let result = app.handle_request(
-                &request("GET", path, &authenticated_same_origin_headers(), ""),
-                "127.0.0.1",
-            );
-            assert_eq!(result.response.status_code, 200);
-            assert!(body_text(&result).contains("Unknown"));
-            assert!(!body_text(&result).contains("2023-11-14T22:13:00Z"));
-        }
-    }
-}
-
-#[test]
-fn authenticator_malformed_foreign_or_unavailable_private_records_fail_closed_through_real_store() {
-    for kind in ["invalid-json", "foreign-record", "symlink", "permissive"] {
-        let scratch = Scratch::new();
-        let store = crate::private_account_file::PrivateAccountFile::new(
-            scratch.0.join("cases"),
-            crate::authenticator::NAMESPACE,
-            4096,
-        );
-        let guard = store.lock(ACCOUNT).unwrap();
-        let mut record = crate::authenticator::RequestRecord {
-            account: ACCOUNT.into(),
-            case_id: "synthetic-case".into(),
-            state: "contained".into(),
-            revision: 1,
-            requested_at: 100,
-            updated_at: 100,
-            account_state: Some("contained".into()),
-            account_epoch: Some(3),
-        };
-        if kind == "foreign-record" {
-            record.account = "bob@example.com".into();
-        }
-        guard
-            .write(
-                if kind == "invalid-json" {
-                    b"not-json".to_vec()
-                } else {
-                    serde_json::to_vec(&record).unwrap()
-                }
-                .as_slice(),
-            )
-            .unwrap();
-        drop(guard);
-        let path = fs::read_dir(scratch.0.join("cases"))
-            .unwrap()
-            .map(|v| v.unwrap().path())
-            .find(|p| p.extension().is_some_and(|v| v == "json"))
-            .unwrap();
-        if kind == "permissive" {
-            fs::set_permissions(&path, fs::Permissions::from_mode(0o644)).unwrap();
-        }
-        if kind == "symlink" {
-            let real = scratch.0.join("untrusted-record");
-            fs::rename(&path, &real).unwrap();
-            std::os::unix::fs::symlink(&real, &path).unwrap();
-        }
-        let app = scratch.app();
-        let result = app.handle_request(
-            &request(
-                "GET",
-                "/settings/authenticator",
-                &authenticated_same_origin_headers(),
-                "",
-            ),
-            "127.0.0.1",
-        );
-        assert_eq!(result.response.status_code, 503, "{kind}");
-        assert!(!body_text(&result).contains("synthetic-case"));
-        let result = app.handle_request(&post(&form(0)), "127.0.0.1");
-        assert_eq!(result.response.status_code, 503, "{kind}");
-        assert!(app.gateway.authenticator_calls.lock().unwrap().is_empty());
-        assert!(scratch.store().read_request(ACCOUNT).unwrap().is_none());
-    }
-}
-
-#[test]
-fn authenticator_anonymous_navigation_never_reads_account_metadata_or_dispatches_request() {
-    let scratch = Scratch::new();
-    let app = scratch.app();
-    for method in ["GET", "POST"] {
-        let body = if method == "POST" {
-            form(0)
-        } else {
-            String::new()
-        };
-        let mut value = request(method, "/settings/authenticator", &[], &body);
-        value.headers.insert(
-            "content-type".into(),
-            "application/x-www-form-urlencoded".into(),
-        );
-        let result = app.handle_request(&value, "127.0.0.1");
-        assert_ne!(result.response.status_code, 200);
-        assert!(!body_text(&result).contains("2023-11-14T22:13:00Z"));
-    }
+    assert_ne!(result.response.status_code, 200);
     assert!(app.gateway.authenticator_reads.lock().unwrap().is_empty());
-    assert!(app.gateway.authenticator_calls.lock().unwrap().is_empty());
+    assert!(app.gateway.access_calls.lock().unwrap().is_empty());
 }
 
 #[test]

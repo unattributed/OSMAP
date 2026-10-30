@@ -34,8 +34,8 @@ pub use session_password_cleanup::BrowserRevocation;
 mod session_recovery;
 #[cfg(unix)]
 pub(crate) use session_recovery::{
-    revoke_recovery_sessions, verify_recovery_sessions, RecoveryRevocation,
-    RecoveryRevocationFailure, RecoveryRevocationStage,
+    revoke_recovery_sessions, validate_recovery_session, verify_recovery_sessions,
+    RecoveryRevocation, RecoveryRevocationFailure, RecoveryRevocationStage, RecoverySessionLease,
 };
 
 /// Conservative token size for opaque browser sessions.

@@ -21,6 +21,14 @@ pub enum Error {
     Stale,
     Expired,
 }
+/// Shared password policy for own-account change and independently authorized
+/// recovery. It carries no authentication or mutation authority.
+pub(crate) fn valid_new_password(new: &str, confirmation: &str) -> bool {
+    (15..=128).contains(&new.chars().count())
+        && new.len() <= 512
+        && !new.chars().any(char::is_control)
+        && new == confirmation
+}
 pub struct Request<'a> {
     current: &'a str,
     new: &'a str,
@@ -37,10 +45,7 @@ impl<'a> Request<'a> {
         if current.is_empty()
             || current.len() > 1024
             || current.chars().any(char::is_control)
-            || !(15..=128).contains(&new.chars().count())
-            || new.len() > 512
-            || new.chars().any(char::is_control)
-            || new != confirmation
+            || !valid_new_password(new, confirmation)
             || current == new
             || totp.len() != 6
             || !totp.bytes().all(|b| b.is_ascii_digit())

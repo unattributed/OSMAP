@@ -464,6 +464,26 @@ impl Guard<'_> {
         self.operation = None;
         self.status()
     }
+    /// Native recovery calls this only with the timestamp of its actual
+    /// conditional password write and readback, while the same case is fenced.
+    pub(crate) fn record_recovery_password_write(
+        &mut self,
+        expected_epoch: u64,
+        intent: &str,
+        owned: RecoveryMarker,
+        changed_at: &str,
+    ) -> Result<(), Error> {
+        self.check_recovery(expected_epoch, intent, owned)?;
+        if self.finished
+            || self.record.state != State::Pending
+            || !crate::account_mutation::changed_at_valid(changed_at)
+        {
+            return Err(Error::Refused);
+        }
+        let mut pending = self.record.clone();
+        pending.changed_at = Some(changed_at.into());
+        self.write(pending)
+    }
     /// Allowed only for this guard's own independently verified zero-write
     /// refusal. Never use for a transport error or ambiguous dispatch.
     pub(crate) fn known_refused(&mut self) -> Result<(), Error> {

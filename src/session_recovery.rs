@@ -54,6 +54,12 @@ struct RecoveryLock {
     lock_identity: Identity,
 }
 
+/// Move-only custody of the physical session-store lock after validating the
+/// exact session. Keep it through epoch containment; drop before revocation.
+pub(crate) struct RecoverySessionLease {
+    _locked: RecoveryLock,
+}
+
 struct Entry {
     record: SessionRecord,
     bytes: Vec<u8>,
@@ -499,6 +505,57 @@ pub(crate) fn verify_recovery_sessions(
         newly_revoked: 0,
         verified: matched,
     })
+}
+
+/// Read the exact stored session through the same descriptor/custody checks
+/// used by native revocation. This creates no session and changes no metadata.
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn validate_recovery_session(
+    session_dir: &Path,
+    runtime_uid: u32,
+    runtime_gid: u32,
+    account: &str,
+    expected_epoch: u64,
+    session_id: &str,
+    csrf: &str,
+    now: u64,
+    idle_seconds: u64,
+    deadline: Instant,
+) -> Result<RecoverySessionLease, RecoveryRevocationFailure> {
+    let operation = operation(
+        session_dir,
+        runtime_uid,
+        runtime_gid,
+        account,
+        expected_epoch,
+        now,
+        deadline,
+    )?;
+    let failure = || operation.failure(RecoveryRevocationStage::Snapshot);
+    if session_id.len() != SESSION_ID_HEX_LEN || !session_id.bytes().all(|b| b.is_ascii_hexdigit())
+    {
+        return Err(failure());
+    }
+    let locked = operation
+        .lock()
+        .map_err(|_| operation.failure(RecoveryRevocationStage::Lock))?;
+    let records = operation.snapshot(&locked).map_err(|_| failure())?;
+    let record = &records.get(session_id).ok_or_else(failure)?.record;
+    if record.session_id != session_id
+        || record.canonical_username != account
+        || record.account_epoch != Some(expected_epoch)
+        || record.revoked_at.is_some()
+        || record.factor != RequiredSecondFactor::Totp
+        || record.csrf_token != csrf
+        || now < record.issued_at
+        || now < record.last_seen_at
+        || now > record.expires_at
+        || now.saturating_sub(record.last_seen_at) > idle_seconds
+    {
+        return Err(failure());
+    }
+    operation.custody(&locked).map_err(|_| failure())?;
+    Ok(RecoverySessionLease { _locked: locked })
 }
 
 #[cfg(test)]

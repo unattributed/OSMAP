@@ -94,6 +94,48 @@ fn until() -> Instant {
 }
 
 #[test]
+fn validated_session_lease_holds_real_store_lock_until_drop() {
+    let scratch = Scratch::new();
+    scratch.populate();
+    let (uid, gid) = scratch.owner();
+    let before = scratch.bytes('a');
+    let lease = validate_recovery_session(
+        &scratch.0,
+        uid,
+        gid,
+        ALICE,
+        3,
+        &"a".repeat(64),
+        &"f".repeat(64),
+        100,
+        1800,
+        until(),
+    )
+    .unwrap();
+    let operation = operation(&scratch.0, uid, gid, ALICE, 3, 100, until()).unwrap();
+    assert!(operation.lock().is_err());
+    assert_eq!(scratch.bytes('a'), before);
+    drop(lease);
+    assert!(operation.lock().is_ok());
+    let mut logged_out = scratch.store().load(&"a".repeat(64)).unwrap().unwrap();
+    logged_out.revoked_at = Some(101);
+    scratch.store().save(&logged_out).unwrap();
+    assert!(validate_recovery_session(
+        &scratch.0,
+        uid,
+        gid,
+        ALICE,
+        3,
+        &"a".repeat(64),
+        &"f".repeat(64),
+        102,
+        1800,
+        until(),
+    )
+    .is_err());
+}
+
+#[test]
 fn revokes_legacy_and_bound_target_sessions_with_owned_readback_and_foreign_preservation() {
     let scratch = Scratch::new();
     scratch.populate();

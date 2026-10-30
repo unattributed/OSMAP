@@ -622,3 +622,95 @@ fn native_local_client_refuses_unsupported_or_root_context_before_materials() {
         assert!(!NATIVE_CONFINEMENT_QUALIFIED);
     }
 }
+
+#[test]
+fn recovery_transport_wrong_peer_refuses_before_any_frame() {
+    use crate::browser_access::{AccessAction, AccessAuthority, AccessError};
+    let scratch = Scratch::new();
+    let socket = scratch.0.join("recovery.sock");
+    let listener = UnixListener::bind(&socket).unwrap();
+    std::fs::set_permissions(&socket, std::fs::Permissions::from_mode(0o660)).unwrap();
+    for (name, value) in [("key", 17u8), ("proof", 19u8)] {
+        std::fs::write(scratch.0.join(name), [value; 32]).unwrap();
+        std::fs::set_permissions(scratch.0.join(name), std::fs::Permissions::from_mode(0o600))
+            .unwrap();
+    }
+    let mut client = Client::stored_fixture_files(
+        &socket,
+        &scratch.0.join("key"),
+        &scratch.0.join("proof"),
+        crate::openbsd::effective_uid(),
+    )
+    .unwrap();
+    client.enable_access_fixture().unwrap();
+    // Corrupt the expected process principal only after protected path capture,
+    // exactly as the existing ordinary mutation peer discriminator does.
+    Arc::get_mut(&mut client.0).unwrap().helper_uid =
+        crate::openbsd::effective_uid().wrapping_add(1);
+    listener.set_nonblocking(true).unwrap();
+    let server = std::thread::spawn(move || {
+        let deadline = Instant::now() + Duration::from_secs(2);
+        let mut stream = loop {
+            match listener.accept() {
+                Ok((stream, _)) => break stream,
+                Err(error)
+                    if error.kind() == std::io::ErrorKind::WouldBlock
+                        && Instant::now() < deadline =>
+                {
+                    std::thread::sleep(Duration::from_millis(1))
+                }
+                Err(error) => panic!("bounded fixture accept failed: {:?}", error.kind()),
+            }
+        };
+        stream
+            .set_read_timeout(Some(Duration::from_secs(1)))
+            .unwrap();
+        let mut bytes = Vec::new();
+        stream.read_to_end(&mut bytes).unwrap();
+        assert!(
+            bytes.is_empty(),
+            "principal refusal must precede private frame dispatch"
+        );
+    });
+    let action = AccessAction::SendRecoveryCode { email: ACCOUNT };
+    assert!(matches!(
+        client.access_exchange(
+            AccessAuthority::Unauthenticated,
+            Some(&action),
+            &"b".repeat(64),
+            "127.0.0.1",
+            Instant::now() + Duration::from_secs(3)
+        ),
+        Err(AccessError::Unavailable)
+    ));
+    server.join().unwrap();
+}
+
+#[test]
+fn one_recovery_exchange_leaves_an_ordinary_mutation_slot_and_releases_capacity() {
+    let scratch = Scratch::new();
+    let (client, _listener) = scratch.client();
+    let recovery = client.enter("recovery:public-flow-one").unwrap();
+    assert!(matches!(
+        client.enter("recovery:public-flow-two"),
+        Err(Error::Capacity)
+    ));
+    let ordinary = client.enter(ACCOUNT).unwrap();
+    assert!(matches!(
+        client.enter("bob@example.test"),
+        Err(Error::Capacity)
+    ));
+    assert_eq!(client.0.state.lock().unwrap().active.len(), 2);
+    drop(recovery);
+    let next_recovery = client.enter("recovery:public-flow-two").unwrap();
+    assert!(matches!(
+        client.enter("recovery:public-flow-three"),
+        Err(Error::Capacity)
+    ));
+    drop(ordinary);
+    let next_ordinary = client.enter("bob@example.test").unwrap();
+    drop(next_recovery);
+    drop(next_ordinary);
+    assert!(client.0.state.lock().unwrap().active.is_empty());
+    assert!(client.enter("recovery:public-flow-one").is_ok());
+}

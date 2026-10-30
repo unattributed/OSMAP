@@ -135,6 +135,12 @@ where
             },
             (HttpMethod::Get, "/login") => self.handle_login_form(&context),
             (HttpMethod::Post, "/login") => self.handle_login(request, &context),
+            (HttpMethod::Get | HttpMethod::Post, "/recover") => {
+                self.handle_access_recovery(request, &context)
+            }
+            (HttpMethod::Get | HttpMethod::Post, "/recover/setup") => {
+                self.handle_access_recovery(request, &context)
+            }
             (HttpMethod::Get, "/") => self.handle_root_redirect(request, &context),
             (HttpMethod::Get, "/mailboxes") => self.handle_mailboxes(request, &context),
             (HttpMethod::Get, "/folders") => self.handle_settings_page(request, &context),
@@ -242,7 +248,7 @@ where
             }
             (HttpMethod::Get, "/settings") => self.handle_settings_page(request, &context),
             (HttpMethod::Get | HttpMethod::Post, "/settings/authenticator") => {
-                self.handle_authenticator(request, &context)
+                self.handle_access_recovery(request, &context)
             }
             (HttpMethod::Get | HttpMethod::Post, "/settings/recovery") => {
                 self.handle_recovery_contact(request, &context)

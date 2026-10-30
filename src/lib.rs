@@ -4,9 +4,18 @@
 //! goal is to prove a maintainable starting point before any mail-specific or
 //! browser-facing complexity is added.
 
+pub mod access_recovery;
+#[cfg(unix)]
+mod access_recovery_mail;
+pub mod access_recovery_protocol;
+mod access_recovery_ui;
+#[cfg(unix)]
+mod account_access_service;
 pub mod account_admission;
 #[cfg(unix)]
 pub mod account_admission_runtime;
+#[cfg(unix)]
+mod account_factor_replacement;
 #[cfg(unix)]
 pub mod account_guarded_mutation;
 pub mod account_mutation;
@@ -28,6 +37,7 @@ pub mod authenticator;
 pub mod autosave;
 pub mod bin_folder;
 pub mod bootstrap;
+pub mod browser_access;
 mod charset;
 pub mod compose_format;
 mod compose_result_ui;
@@ -85,6 +95,7 @@ pub mod state;
 pub mod throttle;
 pub mod timezone;
 pub mod totp;
+pub mod totp_enrollment;
 
 mod send_journal;
 mod send_recovery;

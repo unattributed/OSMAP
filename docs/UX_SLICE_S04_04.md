@@ -1,9 +1,117 @@
-# S04-04 — Governed account recovery
+# S04-04 — User access recovery and authenticator replacement
 
 Started 2026-10-29 (America/Toronto) from accepted S04-03 source
 `6c509a542dfc30129e23b838b1faf7cd01608f4e`.
 
-## Observable outcome and authority
+
+## Current operator-directed scope — 2026-10-30
+
+The operator rejected the request-only Settings experience and the multi-terminal
+fixture procedure. The following current contract supersedes the older
+operator-only recovery, no-login-change and no-new-dependency restrictions below
+for this slice. Historical results remain historical and are not reclassified.
+
+Deliver two working browser journeys:
+
+1. In Settings, freshly confirm the current password and TOTP, show a new secret
+   and locally rendered QR, then validate the new six-digit code before replacing
+   the active factor. An incomplete or invalid candidate preserves the old factor.
+2. From a login-page recovery link, enter the account email, receive a one-use
+   expiring code at its existing registered recovery email, and verify that code.
+   Permit only password recovery and replacement-authenticator setup until the
+   replacement code validates; finish with a fresh ordinary sign-in. A recovery
+   request alone cannot change a credential or admit a mailbox session.
+
+Onboarding is a **separate sprint**: initial TOTP enrollment, issuing saved
+one-use backup codes and recovery-email verification are excluded here. New
+accounts are onboarded manually for now. This slice must not introduce an
+onboarding wizard, provision users or require newly issued backup codes.
+Existing manually established account/factor/recovery-contact prerequisites
+remain explicit. No S05-02 work is included.
+
+Root owns integration, Git and any host action; recovery_engineer owns candidate
+and native factor replacement; recovery_policy_review owns one-use recovery
+proofs and protocol; recovery_qa owns browser forms/routes and independent
+review. Reuse the existing account service, bounded private stores, factor
+verification and password CAS writer. No new daemon or general command channel.
+Use one small QR encoder instead of maintaining QR mathematics or an external
+secret-rendering command pipeline; review and pin it through normal dependency
+admission.
+
+The revised packages and required scenarios are:
+
+| Package | Required T0# scenarios | Completion evidence |
+| --- | --- | --- |
+| Replacement enrollment | T02/T05/T07 | Actual candidate store, current-factor reauthentication, valid new-code activation, stale/foreign/replayed candidate refusal; old factor preserved until success. |
+| Login recovery | T01/T02/T04/T07 | Registered-destination delivery, generic account response, expiry/attempt/rate limits, one-use recovery proof, restricted setup, actual password reset and fresh sign-in. |
+| Native commit and interruption | T03/T05/T06/T07 | Real epoch/factor/session boundary, durable attempt before effects, old sessions refused after completion, no automatic ambiguous write retry, unrelated accounts preserved. |
+| Installed browser journey | T08/T09 | Matching signed artifacts and configuration, independent functional/security checks, concise human UAT; source-only tests cannot close it. |
+
+Implement -> test -> preserve/analyse any failure -> smallest supported correction
+-> retest the affected boundary -> advance. Revised-flow source/native/installed
+results start NOT_RUN. Required negative checks include CSRF/origin, malformed or
+cross-account fields, expired and replayed proofs, concurrency, delivery failure,
+secret-free diagnostics and inability to use a recovery grant for mail.
+Source work is authorized; live credential writes remain scoped actual actions.
+No public mail daemon restart, configuration change or downtime is required.
+
+### Existing-account prerequisites and installation
+
+This revision uses accounts that already have a password, active TOTP and a
+verified recovery contact. Initial onboarding remains manual. The privileged
+service reads `/etc/osmap/account-runtime/access-recovery.json` (root-owned,
+0600), containing version 1 and `contacts` entries with `account`, `email`,
+`revision` and `verified_at`. The administrator registers destinations already
+verified during manual setup; a browser cannot choose this address. The existing
+Web contact record acts only as a veto: removal, mismatch or unsafe storage
+prevents use of a stale destination. It cannot promote a new privileged address.
+Updating this trusted registration is an administrator task until the separate
+onboarding/contact integration sprint supplies its own qualified flow.
+
+Prepare `/var/db/osmap-account/access-recovery` as root-owned 0700 and preserve
+the configured runtime-owned 0700 session, factor and revoked-factor directories
+before enabling that file. The native service checks them before sealing, uses
+the actual Web environment paths, local account endpoint and rollout selection,
+and refuses a changed frontend fence until configuration is reconciled.
+Only the optional recovery profile adds fixed-loopback SMTP and ownership-change
+syscalls; child execution promises and the ordinary no-recovery profile remain
+unchanged. No public mail configuration or mail-service downtime is needed.
+
+Recovery mail is submitted only to the existing `127.0.0.1:25` MTA, requires its
+advertised DSN capability and requests `NOTIFY=NEVER`. A queue reply is distinct
+from delivery to the recipient. The registered recipient must confirm actual
+receipt in installed qualification. Source-native proof stores and replay
+records have fixed capacity; throttled sources are rejected before the common
+account-response delay. One recovery exchange leaves ordinary mutation/admission
+capacity available.
+
+Focused local evidence currently covers candidate8, native-adapter8, account
+state9, physical session12 (plus one historical ignored native test), browser
+routes9, authenticator4, actual Runtime/socket2, core17, protocol10, SMTP3,
+read-only contact consistency2, capacity1, and composed service2. These are
+source/temporary-file results, not installed recovery or UAT acceptance. The
+single new ignored mixed-owner qualifier uses an actual OpenBSD pledge/unveil
+seal and freshly owned synthetic files; its native execution is still NOT_RUN.
+The two composed service tests initially exposed fixture errors: malformed code
+outside the wire schema, inconsistent synthetic/current clocks and an absent
+existing verified-contact record. Independent reassessment supported the
+fixture-only corrections; the affected composed boundary then passed 2/2.
+Normal mandatory delivery gates and installed qualification remain required.
+
+The first full local delivery run exposed two test assumptions: a one-second
+fixture deadline was exhausted before the intended peer check, and the old login
+assertion forbade the newly required recovery link. The focused corrections
+preserve production deadlines and all normal login requirements. The second run
+observed 2,065 Rust passes, zero failures and 74 explicit ignores, then stopped
+when the TLS guard enumerated an unstaged deleted route. Staging the reviewed
+source inventory resolved that failure. Its next findings were the new authority
+identifier matching the guard's global cipher-word rule; the unpublished protocol
+now consistently calls that authority `Unauthenticated`. The unchanged TLS guard
+and refreshed V10 registers pass. Original failed gate logs remain preserved;
+these constituent results do not turn either failed aggregate into PASS.
+
+
+## Historical observable outcome and authority
 
 Deliver the D04 controlled recovery coordinator: requested -> identity reviewed
 -> contained -> sessions revoked -> factor replacement -> reconciled. The

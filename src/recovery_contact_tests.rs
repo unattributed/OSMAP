@@ -607,3 +607,121 @@ fn notifier_returning_accepted_after_original_deadline_is_unconfirmed() {
         Err(RecoveryContactError::DeliveryUnconfirmed)
     );
 }
+
+#[cfg(unix)]
+#[test]
+fn registered_consistency_consumes_real_verified_records_without_creating_locks_or_files() {
+    use std::os::unix::fs::MetadataExt;
+    fn remove_fixture_lock(root: &std::path::Path) {
+        for entry in fs::read_dir(root).unwrap() {
+            let path = entry.unwrap().path();
+            if path.extension().is_some_and(|ext| ext == "lock") {
+                fs::remove_file(path).unwrap();
+            }
+        }
+    }
+    fn observed(
+        root: &std::path::Path,
+    ) -> std::collections::BTreeMap<PathBuf, (Vec<u8>, u64, u64, u32)> {
+        fs::read_dir(root)
+            .unwrap()
+            .map(|entry| {
+                let path = entry.unwrap().path();
+                let metadata = fs::symlink_metadata(&path).unwrap();
+                (
+                    path.clone(),
+                    (
+                        fs::read(&path).unwrap(),
+                        metadata.dev(),
+                        metadata.ino(),
+                        metadata.mode(),
+                    ),
+                )
+            })
+            .collect()
+    }
+    let f = Fixture::new();
+    let uid = crate::openbsd::effective_uid();
+    let gid = crate::openbsd::effective_gid();
+    assert_eq!(
+        f.store
+            .registered_consistency(ACCOUNT, 100, FIRST, uid, gid),
+        Ok(false)
+    );
+    assert!(
+        !f._scratch.0.exists(),
+        "read-only missing observation must not create a store"
+    );
+    f.begin(ACCOUNT, 0, 100, FIRST);
+    f.verify(1, 101);
+    remove_fixture_lock(&f._scratch.0);
+    let before = observed(&f._scratch.0);
+    assert!(!before.is_empty());
+    assert_eq!(
+        f.store
+            .registered_consistency(ACCOUNT, 102, FIRST, uid, gid),
+        Ok(true)
+    );
+    assert_eq!(
+        f.store
+            .registered_consistency(ACCOUNT, 102, SECOND, uid, gid),
+        Ok(false)
+    );
+    assert_eq!(
+        f.store.registered_consistency(OTHER, 102, FIRST, uid, gid),
+        Ok(false)
+    );
+    assert_eq!(
+        observed(&f._scratch.0),
+        before,
+        "veto must not publish or lock even a missing account"
+    );
+    f.change(ACCOUNT, 2, 103, RecoveryContactAction::Remove)
+        .unwrap();
+    remove_fixture_lock(&f._scratch.0);
+    let removed = observed(&f._scratch.0);
+    assert_eq!(
+        f.store
+            .registered_consistency(ACCOUNT, 104, FIRST, uid, gid),
+        Ok(false)
+    );
+    assert_eq!(observed(&f._scratch.0), removed);
+}
+
+#[cfg(unix)]
+#[test]
+fn registered_consistency_refuses_wrong_group_permissive_directory_and_symlink_record() {
+    use std::os::unix::fs::PermissionsExt;
+    let f = Fixture::new();
+    f.begin(ACCOUNT, 0, 100, FIRST);
+    f.verify(1, 101);
+    let uid = crate::openbsd::effective_uid();
+    let gid = crate::openbsd::effective_gid();
+    assert_eq!(
+        f.store
+            .registered_consistency(ACCOUNT, 102, FIRST, uid, gid.wrapping_add(1)),
+        Err(RecoveryContactError::Unavailable)
+    );
+    fs::set_permissions(&f._scratch.0, fs::Permissions::from_mode(0o750)).unwrap();
+    assert_eq!(
+        f.store
+            .registered_consistency(ACCOUNT, 102, FIRST, uid, gid),
+        Err(RecoveryContactError::Unavailable)
+    );
+    fs::set_permissions(&f._scratch.0, fs::Permissions::from_mode(0o700)).unwrap();
+    let path = fs::read_dir(&f._scratch.0)
+        .unwrap()
+        .map(|entry| entry.unwrap().path())
+        .find(|path| path.extension().is_some_and(|ext| ext == "json"))
+        .unwrap();
+    let retained = path.with_extension("retained");
+    fs::rename(&path, &retained).unwrap();
+    std::os::unix::fs::symlink(&retained, &path).unwrap();
+    assert_eq!(
+        f.store
+            .registered_consistency(ACCOUNT, 102, FIRST, uid, gid),
+        Err(RecoveryContactError::Unavailable)
+    );
+    assert!(fs::symlink_metadata(path).unwrap().file_type().is_symlink());
+    assert!(retained.is_file());
+}

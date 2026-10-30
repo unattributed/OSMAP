@@ -293,3 +293,45 @@ fn preexisting_uncertainty_marker_blocks_active_record_and_is_never_removed() {
     assert_eq!(guard.complete(), Err(Error::Refused));
     assert_eq!(fs::read(&path).unwrap(), before);
 }
+
+#[test]
+fn recovery_password_timestamp_requires_same_owned_marker_and_does_not_release() {
+    let scratch = Scratch::new();
+    scratch.provision(ALICE, 7, Some("20261017120000"));
+    let store = scratch.store();
+    let mut guard = store.lock_before(ALICE, until()).unwrap();
+    let marker = guard.begin_recovery(7, INTENT, 1000).unwrap();
+    assert_eq!(
+        guard.record_recovery_password_write(7, &"b".repeat(64), marker, STAMP),
+        Err(Error::Refused)
+    );
+    assert_eq!(
+        guard.record_recovery_password_write(
+            7,
+            INTENT,
+            RecoveryMarker {
+                device: marker.device,
+                inode: marker.inode + 1
+            },
+            STAMP
+        ),
+        Err(Error::Refused)
+    );
+    assert_eq!(
+        guard.record_recovery_password_write(7, INTENT, marker, "bad-time"),
+        Err(Error::Refused)
+    );
+    assert_eq!(
+        guard.status().unwrap().changed_at.as_deref(),
+        Some("20261017120000")
+    );
+    guard
+        .record_recovery_password_write(7, INTENT, marker, STAMP)
+        .unwrap();
+    assert_eq!(guard.status().unwrap().state, State::Pending);
+    assert_eq!(guard.admission(Some(7)), Err(Error::Refused));
+    assert_eq!(guard.known_refused(), Err(Error::Refused));
+    let completed = guard.complete_recovery(7, INTENT, marker).unwrap();
+    assert_eq!(completed.epoch, 8);
+    assert_eq!(completed.changed_at.as_deref(), Some(STAMP));
+}

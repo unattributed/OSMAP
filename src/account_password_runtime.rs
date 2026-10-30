@@ -276,6 +276,7 @@ pub(crate) struct StockRuntime {
     admission_key: Vec<u8>,
     connector_uid: u32,
     peer: Arc<crate::account_password_peer::StockPeer>,
+    access: Option<crate::account_access_service::NativeAccess>,
 }
 impl StockRuntime {
     #[allow(clippy::too_many_arguments)] // Original authority inputs plus shared startup provenance.
@@ -311,6 +312,8 @@ impl StockRuntime {
             admission_key: admission_key.into(),
             connector_uid,
             peer,
+            access: crate::account_access_service::NativeAccess::from_operator()
+                .map_err(|_| Unavailable)?,
         })
     }
     pub(crate) fn admission<E: CommandExecutor>(
@@ -362,7 +365,22 @@ impl StockRuntime {
                 deadline,
             );
         }
-        account_password_connection::serve_once(
+        let access = |raw: &[u8], key: &[u8], inherited: Instant| {
+            self.peer
+                .recheck(inherited)
+                .map_err(|_| account_password_connection::Error::Unavailable)?;
+            crate::account_access_service::NativeAccess::exchange(
+                self.access.as_ref(),
+                raw,
+                key,
+                self.store.as_ref(),
+                &self.accounts,
+                backend,
+                primary,
+                inherited,
+            )
+        };
+        account_password_connection::serve_once_with_access(
             stream,
             self.connector_uid,
             self.store.as_ref(),
@@ -371,6 +389,7 @@ impl StockRuntime {
             &SystemTimeProvider,
             &self.keys,
             deadline,
+            Some(&access),
         )
     }
 }
