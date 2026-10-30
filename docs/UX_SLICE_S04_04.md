@@ -250,9 +250,31 @@ no executor permission is widened. The actual verified SQL receipt is now saved
 to both the case and Pending epoch before cache/authentication checks, and fixed
 stage diagnostics preserve later failure boundaries. All-target/all-feature
 Clippy passes after a logging-only `inspect_err` correction; the initial lint
-failure remains retained. Native refresh and exact-case administrative
-reconciliation remain pending at this source checkpoint. No successful account
-recovery or owner acceptance is claimed.
+failure remains retained. Signed source `5e3ebb5` passes the normal push gate
+with 2076 Rust tests, zero failures and 74 ignored. The exact native artifacts
+qualify 109 unique component tests plus the sealed root check. An initial native
+job stopped before compilation because the temporary filesystem was full; three
+completed PASS test copies were preserved on the home filesystem before removing
+their old temporary copies. A subsequent socket fixture exceeded OpenBSD's path
+limit under a long home TMPDIR. Its original failure is retained; only that
+9-test group and the previously unrun mapper test were executed again, using the
+same libtest and a short private home directory. The seven passed groups and
+compilation were not repeated.
+
+The corrected binaries are installed. Only the two OSMAP roles were restarted;
+the refresh's protected records are byte-identical and no account operation was
+performed by installation. A separate reviewed, one-shot administrative repair
+then revalidated the exact failed case, marker, factor/archive hashes, original
+19 revoked sessions, authoritative password row and protected cache-zero
+configuration. It recorded the existing SQL timestamp, completed the same owned
+epoch from 3 to 4, removed its exact marker and marked the same case and Processing
+grant Complete. The repair performs no SQL credential, factor or session rewrite
+and creates no grant or session. Independent readback confirms active epoch 4,
+marker absence, unchanged password/factor and all original revoked records.
+Original primary-password verification remains NOT_CAPTURED; the repair does not
+retroactively claim it passed. Fresh owner login with the new values, signed-in
+replacement and a successful unassisted recovery journey remain required for
+owner acceptance. Keep setup QR/secrets and codes private during those tests.
 
 
 ## Historical observable outcome and authority

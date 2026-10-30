@@ -10313,7 +10313,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "slice": "S04-04",
     "specification": {
       "path": "docs/UX_SLICE_S04_04.md",
-      "sha256": "837d52bd626bfede2acfa1d606add453470d2b9e2e2c6e18717922b46462d38c"
+      "sha256": "8f8d899615d7341b1be7045f584ec971605e0dac126d52b5b24f98c90894101a"
     },
     "design": {
       "journey": "Fresh current-password/TOTP confirmation -> new QR and code confirmation -> factor replacement; login-page email recovery -> expiring one-use code -> restricted password and replacement TOTP setup -> fresh normal sign-in.",
@@ -11294,17 +11294,17 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "refresh_protected_records_preserved": 734
   },
   "current_browser_runtime_source_checkpoint": {
-    "commit": "a77bb9c296100d029dd71891457d81b5e7f87823",
-    "signature": "Good Shopkeeper",
+    "commit": "5e3ebb5d2e3a82823f44854f7a249c361da69dfe",
     "normal_pre_commit": "PASS",
     "normal_pre_push": "PASS",
-    "rust_passed": 2073,
+    "rust_passed": 2076,
     "rust_failed": 0,
     "rust_ignored": 74,
     "fresh_remote_equality": true,
     "ahead": 0,
     "behind": 0,
-    "installed": true
+    "installed": true,
+    "signature": "Good Shopkeeper"
   },
   "current_browser_work_packages": [
     {
@@ -11315,7 +11315,12 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "T07"
       ],
       "engineering": "IMPLEMENTED_AND_NATIVE_TESTED",
-      "completion": "OWNER_UAT_PENDING"
+      "completion": "OWNER_UAT_PENDING",
+      "current_evidence": {
+        "source_commit": "5e3ebb5d2e3a82823f44854f7a249c361da69dfe",
+        "native_qualification_sha256": "bee5a8c3910dc9a9f39869d11df2e13e861cb48bc9ef72b17351e98a87fa7f87",
+        "installed_refresh_sha256": "5d44bb90af661359a697c10f179a0514347d68616eafee347a294b740a470396"
+      }
     },
     {
       "package": "login_recovery",
@@ -11325,8 +11330,13 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "T04",
         "T07"
       ],
-      "engineering": "PUBLIC_NATIVE_BOUNDARY_QUALIFIED",
-      "completion": "REGISTERED_DELIVERY_AND_POSITIVE_OWNER_UAT_PENDING"
+      "engineering": "REGISTERED_EMAIL_RECEIVED_PROOF_ACCEPTED_PARTIAL_CASE_ADMINISTRATIVELY_RECONCILED",
+      "completion": "POSITIVE_UNASSISTED_RECOVERY_AND_FRESH_LOGIN_PENDING",
+      "current_evidence": {
+        "source_commit": "5e3ebb5d2e3a82823f44854f7a249c361da69dfe",
+        "native_qualification_sha256": "bee5a8c3910dc9a9f39869d11df2e13e861cb48bc9ef72b17351e98a87fa7f87",
+        "installed_refresh_sha256": "5d44bb90af661359a697c10f179a0514347d68616eafee347a294b740a470396"
+      }
     },
     {
       "package": "native_commit_and_interruption",
@@ -11336,8 +11346,13 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "T06",
         "T07"
       ],
-      "engineering": "SYNTHETIC_NATIVE_SEALED_QUALIFIED",
-      "completion": "REAL_ACCOUNT_EFFECT_OBSERVATION_PENDING"
+      "engineering": "ACTUAL_INTERRUPTED_CASE_CONTAINMENT_AND_EXACT_RECONCILIATION_OBSERVED",
+      "completion": "FRESH_OWNER_AUTHENTICATION_PENDING",
+      "current_evidence": {
+        "source_commit": "5e3ebb5d2e3a82823f44854f7a249c361da69dfe",
+        "native_qualification_sha256": "bee5a8c3910dc9a9f39869d11df2e13e861cb48bc9ef72b17351e98a87fa7f87",
+        "installed_refresh_sha256": "5d44bb90af661359a697c10f179a0514347d68616eafee347a294b740a470396"
+      }
     },
     {
       "package": "installed_browser_journey",
@@ -11345,8 +11360,13 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "T08",
         "T09"
       ],
-      "engineering": "INSTALLED_PUBLIC_QUALIFIED",
-      "completion": "OWNER_ACCEPTANCE_PENDING"
+      "engineering": "ORIGIN_CORRECTION_AND_NATIVE_POSTWRITE_FIX_INSTALLED",
+      "completion": "POSITIVE_OWNER_RETEST_PENDING",
+      "current_evidence": {
+        "source_commit": "5e3ebb5d2e3a82823f44854f7a249c361da69dfe",
+        "native_qualification_sha256": "bee5a8c3910dc9a9f39869d11df2e13e861cb48bc9ef72b17351e98a87fa7f87",
+        "installed_refresh_sha256": "5d44bb90af661359a697c10f179a0514347d68616eafee347a294b740a470396"
+      }
     }
   ],
   "deferred_original_checkout_preservation": {
@@ -11434,23 +11454,129 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     },
     "automatic_credential_retry": false,
     "root_cause": "unsupported cache flush requested through stock primary role",
-    "source_correction": "IMPLEMENTED_FOCUSED_AND_CLIPPY_PASS",
-    "account_reconciliation": "PENDING",
-    "acceptance": "FAIL",
+    "source_correction": "SIGNED_PUSHED_NATIVE_QUALIFIED_INSTALLED",
+    "account_reconciliation": "PASS_ADMINISTRATIVE_NO_CREDENTIAL_RETRY",
+    "acceptance": "PENDING_POSITIVE_OWNER_RETEST",
     "focused_service_passes": 3,
     "focused_factor_adapter_passes": 9,
     "actual_stock_mapper_passes": 1,
     "all_target_all_feature_clippy": "PASS",
-    "new_native_qualification": "NOT_RUN",
+    "new_native_qualification": "PASS_109_UNIQUE_PLUS_ROOT_1",
     "no_permission_widening": true,
     "actual_write_receipt_saved_before_postchecks": true,
     "original_postwrite_stage_trace": "NOT_CAPTURED"
   },
   "current_browser_postwrite_native_recipe": {
-    "actor_sha256": "87f30845de8e36e1ff03aedf66eb521c1b9f5403af31289796c0e1711398c1c2",
-    "change": "one exact stock mapper selector appended to previously reviewed component loop",
-    "execution": "NOT_RUN",
-    "live_account_effects": false
+    "actor_sha256": "bb70e04159a667dbcd634f825c29c4f876aca35faefdfb5c6069f2867cac7f31",
+    "change": "same9selectors and bounds; shell/compiler/test temporary files use exact private home stage",
+    "execution": "PASS_WITH_AFFECTED_CONTINUATION",
+    "live_account_effects": false,
+    "previous_actor_sha256": "87f30845de8e36e1ff03aedf66eb521c1b9f5403af31289796c0e1711398c1c2",
+    "first_dispatch": "FAILED_BEFORE_COMPILATION_TMP_ENOSPC_NO_PRODUCT_EFFECTS",
+    "unique_component_passes": 109,
+    "root_qualifier": "PASS",
+    "same_libtest_affected_continuation": "authenticator9+mapper1 under short private home TMPDIR; seven groups not repeated",
+    "qualification_sha256": "bee5a8c3910dc9a9f39869d11df2e13e861cb48bc9ef72b17351e98a87fa7f87"
+  },
+  "current_browser_postwrite_source_checkpoint": {
+    "commit": "5e3ebb5d2e3a82823f44854f7a249c361da69dfe",
+    "normal_pre_commit": "PASS",
+    "normal_pre_push": "PASS",
+    "rust_passed": 2076,
+    "rust_failed": 0,
+    "rust_ignored": 74,
+    "fresh_remote_equality": true,
+    "ahead": 0,
+    "behind": 0,
+    "installed": true,
+    "signature": "Good Shopkeeper"
+  },
+  "current_browser_postwrite_temporary_storage_repair": {
+    "action": "relocate only three completed PASS root test copies to home filesystem",
+    "source_artifacts_verified": true,
+    "copy_all_fsync_verify_before_exact_source_removal": true,
+    "failed_evidence_or_unrelated_temporary_paths_removed": false,
+    "actor_sha256": "82a7d74e00803c918cebfff4ee37d123e072a750ac0b95abaa929b28d6c841b9",
+    "status": "PASS",
+    "retained_bytes": 231338412,
+    "receipt_sha256": "9cba650355c9271125ba50312127229b3accedb2ea879e6efba28a7980b120ac"
+  },
+  "current_browser_postwrite_refresh": {
+    "source_commit": "5e3ebb5d2e3a82823f44854f7a249c361da69dfe",
+    "fresh_remote_parity": true,
+    "normal_push_hook": "PASS",
+    "native_component_qualification": "PASS_WITH_AFFECTED_CONTINUATION",
+    "native_unique_passes": 109,
+    "sealed_root_qualifier": "PASS",
+    "actor_sha256": "ef40118fc2bf0da71f22442aa966d1a85c6d489ca0e07e99461f5c2141398b23",
+    "independent_review_sha256": "4be5f13e163d3b7410cb3c1ee31280117a13095142fb1e0965337d46223e97f8",
+    "target": "obsd1.blackbagsecurity.com",
+    "permitted_service_actions": [
+      "osmap_serve",
+      "osmap_account_password"
+    ],
+    "primary_max_seconds": 240,
+    "cleanup_max_seconds": 180,
+    "outer_max_seconds": 450,
+    "configuration_write": false,
+    "credential_or_factor_operation": false,
+    "new_artifacts": {
+      "osmap": "e1165fcfcdfa4503b6d260c0b2d824838233df279381bd164793f7f2e1bd25c8",
+      "account-passwd": "7182a804dfc9584a517980906149272a10fe1559c84c1e5679edc5cef94e3b17",
+      "account-recovery": "63192a33ef25f7b0b4729ecedb71ea16281783fba27c7b1d52e7d389f7eaae1e"
+    },
+    "status": "PASS",
+    "receipt_sha256": "5d44bb90af661359a697c10f179a0514347d68616eafee347a294b740a470396",
+    "protected_before_after_sha256": "16339ca5198c51fd0bb5348b3334276ad73373e184e68cf4b30de82e5b1ae497",
+    "observed_elapsed_seconds": 16.689
+  },
+  "current_browser_owned_administrative_reconciliation": {
+    "schema": "osmap-exact-owned-recovery-administrative-reconciliation-v1",
+    "status": "PASS",
+    "actor_sha256": "d65966d0ed5f5da673a1a316a8394c0d7bd9ef66fd695b284e77ca1e5b97d84c",
+    "collector_sha256": "5f2a1aaf8407859acd088b23337b1ea91349f8d12495a2f57b14029fd042e7a6",
+    "actual_readonly_capture_sha256": "22690b443fc9756b0182c50a41b546e23293d619b07b22a6555421ef41ff97fd",
+    "independent_review_sha256": "eff088dfe98ab6a7b5bd958406d046556feeb82bdc603bc5551c8fc2792239e1",
+    "original_epoch": 3,
+    "new_epoch": 4,
+    "effects": [
+      "record existing authoritative password timestamp",
+      "same case ReleasePending",
+      "same epoch active at4",
+      "unlink exact owned uncertainty marker",
+      "same case Complete",
+      "same Processing grant Complete"
+    ],
+    "credential_factor_session_rewrite": false,
+    "grant_or_session_issued": false,
+    "primary_plaintext_authentication": "NOT_RUN",
+    "cache_observation": "protected current cache-zero configuration; loaded-daemon state not claimed",
+    "operation_max_seconds": 45,
+    "outer_max_seconds": 55,
+    "automatic_retry": false,
+    "result_receipt_sha256": "9e9387bf02819d9e24630ed7ac402ad1ab348ea1839eaac5cc4b9c4eb6bec3cb",
+    "independent_readback_sha256": "47d8688887969edc80c43ff4556604bd369abc095c581917d3a1c02b1773609d",
+    "actual_state": "active",
+    "actual_epoch": 4,
+    "case_phase": "Complete",
+    "grant_state": "Complete",
+    "marker_absent": true,
+    "original_revoked_session_records_unchanged": 19,
+    "owner_fresh_login": "PENDING",
+    "owner_acceptance": "PENDING"
+  },
+  "prior_browser_runtime_source_checkpoint": {
+    "commit": "a77bb9c296100d029dd71891457d81b5e7f87823",
+    "signature": "Good Shopkeeper",
+    "normal_pre_commit": "PASS",
+    "normal_pre_push": "PASS",
+    "rust_passed": 2073,
+    "rust_failed": 0,
+    "rust_ignored": 74,
+    "fresh_remote_equality": true,
+    "ahead": 0,
+    "behind": 0,
+    "installed": true
   }
 }
 ```
