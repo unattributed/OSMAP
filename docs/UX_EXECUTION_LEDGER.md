@@ -10312,7 +10312,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "slice": "S04-04",
     "specification": {
       "path": "docs/UX_SLICE_S04_04.md",
-      "sha256": "d2d30cb8c741eaf884e456c4fa7565a8afe47c9552fffd3743d543c9adcae991"
+      "sha256": "ac44541d649b5dd08e95e92ed24aa79789afa9466983d9d28af893dcd1ed8eda"
     },
     "design": {
       "journey": "Fresh current-password/TOTP confirmation -> new QR and code confirmation -> factor replacement; login-page email recovery -> expiring one-use code -> restricted password and replacement TOTP setup -> fresh normal sign-in.",
@@ -11244,10 +11244,115 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "native_ignored": 1,
     "all_target_clippy": "PASS",
     "independent_source_review": "GO",
-    "native_sealed_reader": "NOT_RUN",
-    "installed_public_retest": "NOT_RUN",
+    "native_sealed_reader": "PASS",
+    "installed_public_retest": "PASS",
     "original_runtime_stage": "NOT_CAPTURED",
-    "scope": "fixed native recovery configuration reader with held ancestor checks; OpenPGP/shared unveil unchanged"
+    "scope": "fixed native recovery configuration reader with held ancestor checks; OpenPGP/shared unveil unchanged",
+    "native_source_commit": "2cdaf8c6d986cb47ed9f7af34ab94db31f4fce53"
+  },
+  "current_browser_refresh_action": {
+    "source_commit": "2cdaf8c6d986cb47ed9f7af34ab94db31f4fce53",
+    "fresh_remote_parity": true,
+    "normal_push_hook": "PASS",
+    "native_components": "PASS",
+    "sealed_native_reader_and_replacement": "PASS",
+    "actor_sha256": "56c2b03d8338e4deb3007d7d8a7ab57b4041b5371acbbce1175041dbeff90943",
+    "target": "obsd1.blackbagsecurity.com",
+    "permitted_service_actions": [
+      "osmap_serve",
+      "osmap_account_password"
+    ],
+    "primary_max_seconds": 240,
+    "cleanup_max_seconds": 180,
+    "outer_max_seconds": 450,
+    "configuration_write": false,
+    "credential_or_factor_operation": false,
+    "artifacts": {
+      "osmap": "d4a707fa7d4bc4940f944cf3e3a8edb9a690ab1caaae655e16fc545ea95e55cc",
+      "account-passwd": "b86c12c284e238c6f88f8da3ff4ae13413276167a91e88367e0400032913797a",
+      "account-recovery": "e113a8a6d2cc32a19ad31434779557dcb2c3db62d7a1997382ac6adf00dba01b"
+    },
+    "status": "PASS",
+    "observed_elapsed_seconds": 16.682,
+    "receipt_sha256": "bcaa9ea4b1124e62c1e54595b6f42682936660bb355511610995c0b4f50dcf5d"
+  },
+  "current_browser_installed_public_qualification": {
+    "source_commit": "2cdaf8c6d986cb47ed9f7af34ab94db31f4fce53",
+    "status": "PASS",
+    "controls_passed": 8,
+    "normal_session_issued": false,
+    "registered_recipient_used": false,
+    "credential_or_factor_operation": false,
+    "receipt_sha256": "f6926f970e70079875f7416fc2b774b49f52fc201c6fcc459e06e25639e7f2f7",
+    "installed_roles_healthy": 17,
+    "configured_web_fields_loaded": 54,
+    "positive_owner_uat": "PENDING",
+    "scope": "current selected-account local UAT profile on obsd1",
+    "independent_QA": "GO_INSTALLED_AND_PUBLIC_BOUNDARY_ONLY",
+    "independent_receipt_sha256": "83f57993d4aa3d18e8f3fa27343721e91953f59ee25c561a59596b70b534ed9f",
+    "refresh_protected_records_preserved": 734
+  },
+  "current_browser_runtime_source_checkpoint": {
+    "commit": "2cdaf8c6d986cb47ed9f7af34ab94db31f4fce53",
+    "signature": "Good Shopkeeper",
+    "normal_pre_commit": "PASS",
+    "normal_pre_push": "PASS",
+    "rust_passed": 2069,
+    "rust_failed": 0,
+    "rust_ignored": 74,
+    "fresh_remote_equality": true,
+    "ahead": 0,
+    "behind": 0,
+    "installed": true
+  },
+  "current_browser_work_packages": [
+    {
+      "package": "replacement_enrollment",
+      "required_scenarios": [
+        "T02",
+        "T05",
+        "T07"
+      ],
+      "engineering": "IMPLEMENTED_AND_NATIVE_TESTED",
+      "completion": "OWNER_UAT_PENDING"
+    },
+    {
+      "package": "login_recovery",
+      "required_scenarios": [
+        "T01",
+        "T02",
+        "T04",
+        "T07"
+      ],
+      "engineering": "PUBLIC_NATIVE_BOUNDARY_QUALIFIED",
+      "completion": "REGISTERED_DELIVERY_AND_POSITIVE_OWNER_UAT_PENDING"
+    },
+    {
+      "package": "native_commit_and_interruption",
+      "required_scenarios": [
+        "T03",
+        "T05",
+        "T06",
+        "T07"
+      ],
+      "engineering": "SYNTHETIC_NATIVE_SEALED_QUALIFIED",
+      "completion": "REAL_ACCOUNT_EFFECT_OBSERVATION_PENDING"
+    },
+    {
+      "package": "installed_browser_journey",
+      "required_scenarios": [
+        "T08",
+        "T09"
+      ],
+      "engineering": "INSTALLED_PUBLIC_QUALIFIED",
+      "completion": "OWNER_ACCEPTANCE_PENDING"
+    }
+  ],
+  "deferred_original_checkout_preservation": {
+    "head_unchanged": true,
+    "status_unchanged": true,
+    "file_hashes_unchanged": 7,
+    "S05_02_work_performed": false
   }
 }
 ```

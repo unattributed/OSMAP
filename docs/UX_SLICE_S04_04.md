@@ -166,9 +166,32 @@ all-target Clippy. The existing ignored qualifier now exercises the actual
 reader under the seal, including exact byte readback and a mode-0640 refusal.
 Independent review approved the fixed path/custody reader and failure-only stage
 diagnostics. Review also restored the existing service module's `cfg(unix)`
-attribute after adding the new reader module. Corrected native/public execution
-remains pending; source analysis does not retrospectively supply the original
-503's missing runtime-stage observation.
+attribute after adding the new reader module. The rebuilt source
+`2cdaf8c6d986cb47ed9f7af34ab94db31f4fce53` passed all eight
+native component groups and the actual sealed configuration-reader/factor
+qualifier. The ordinary push gate passed 2,069 Rust tests with zero failures and
+74 explicit ignores, plus its remaining required checks; fresh remote parity
+was exact. Source analysis does not retrospectively supply the original 503's
+missing runtime-stage observation.
+
+The binary-only refresh then passed in 16.682 seconds, preserving the existing
+configuration, environment, state and archive. Its exact three artifact hashes
+and loaded Web/helper inodes were read back. The affected installed HTTPS test
+passed all eight controls: login link/fields, private recovery form/cookies,
+restricted setup denial, origin refusal, extra account-field refusal, real native
+generic unknown-account response, fake-code refusal and no ordinary mail session.
+The original failed public run remains preserved separately. A final read-only
+observation found all 17 service roles healthy and all 54 Web environment fields
+loaded as configured.
+
+This qualifies the installed public boundary and synthetic native effects on the
+current selected-account local UAT profile. Actual receipt at the registered
+recovery inbox, successful real-account password/factor recovery and fresh sign-in,
+and signed-in authenticator replacement still require private browser UAT. The
+operator has been given the concise browser journey. No owner acceptance or
+whole-slice completion is recorded in its absence. Onboarding remains manual and
+outside this sprint. The original checkout's deferred S05-02 HEAD, status and
+seven file hashes were independently rechecked unchanged.
 
 ## Historical observable outcome and authority
 
