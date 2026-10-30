@@ -21,6 +21,10 @@ TOP25_VERSION = "MITRE CWE Top 25 2025"
 # These files are compiled exclusively through cfg(test) modules. Verify the
 # registration before excluding their native-fixture process calls.
 TEST_ONLY_RUST_PATHS = {
+    "src/account_access_service_tests.rs": (
+        "src/account_access_service.rs",
+        '#[cfg(test)]\n#[path = "account_access_service_tests.rs"]\nmod tests;',
+    ),
     "src/account_password_transaction_tests.rs": (
         "src/account_password_server.rs",
         '#[cfg(test)]\n#[path = "account_password_transaction_tests.rs"]\nmod transaction_tests;',
@@ -57,7 +61,7 @@ TEST_ONLY_RUST_PATHS = {
 # Other production rules continue to scan the entire file.
 REVIEWED_SQL_RUST_PATHS = {
     "src/account_password_backend.rs":
-        "5424f0703d702816928b9eada964dfb5de8818a19b9c13189966339216b8cfae",
+        "31f6fd1f8b2a4b4b53235d98ad9490053eeaf25757da662e528922c8b709e1ba",
 }
 
 

@@ -10175,8 +10175,10 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "maint/live/osmap-recover-totp-over-ssh.sh",
     "maint/live/osmap-rotate-totp-over-ssh.sh",
     "maint/live/osmap-totp-recovery-approval.py",
+    "maint/security/osmap-cwe-top25-guard.py",
     "maint/security/osmap-security-check.sh",
     "maint/security/test-osmap-account-recovery-coordinator.py",
+    "maint/security/test-osmap-cwe-top25-guard.sh",
     "maint/security/test-osmap-totp-recovery.py",
     "maint/security/test-osmap-totp-rotation.py",
     "maint/security/v10-claims-boundary.json",
@@ -10308,7 +10310,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "slice": "S04-04",
     "specification": {
       "path": "docs/UX_SLICE_S04_04.md",
-      "sha256": "23a701aaf955a35f5921b2f791a7ecd6369bca705ed07ca401f8a8f0d85a0447"
+      "sha256": "5871ab856dea6ace738ff60f731d8ebeaf4d23925383ec022f3f3cda621e283c"
     },
     "design": {
       "journey": "Fresh current-password/TOTP confirmation -> new QR and code confirmation -> factor replacement; login-page email recovery -> expiring one-use code -> restricted password and replacement TOTP setup -> fresh normal sign-in.",
@@ -11151,7 +11153,23 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
       }
     ]
   },
-  "current_operator_requirement": "Operator-directed browser access recovery and authenticated replacement TOTP; automated onboarding is a separate sprint and new users are manually onboarded."
+  "current_operator_requirement": "Operator-directed browser access recovery and authenticated replacement TOTP; automated onboarding is a separate sprint and new users are manually onboarded.",
+  "current_browser_native_action": {
+    "source_commit": "d9dd4692658e88099362d77d2028aebb4a334dc7",
+    "target": "obsd1.blackbagsecurity.com",
+    "scope": "isolated build and synthetic temporary-store qualification only",
+    "components_actor_sha256": "aaa882d2d1a34330ecda973eeacf46d3ae88e4a5406381e371e78f7d18e33d66",
+    "archive_sha256": "74964af9ad44e6dcc99bed62c92271766c43075fd0d38674f53c2a3c1d876fae",
+    "root_actor_sha256": "53e45d18b68fc2c539d4340a9a148da9218f51e9c629ce5bcd28e163fc317115",
+    "component_status": "RUNNING",
+    "root_status": "NOT_RUN",
+    "native_build_max_seconds": 1800,
+    "root_component_max_seconds": 90,
+    "live_account_effects": false,
+    "installation_performed": false,
+    "runtime_source_matches_current": true,
+    "post_source_delta": "guard source review pin and exact test registration only"
+  }
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->

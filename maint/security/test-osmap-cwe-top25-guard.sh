@@ -160,10 +160,9 @@ assert_fails_with "$unknown_sql_repo" "CWE-89"
 
 # Each external fixture exclusion depends on its real cfg(test) parent marker.
 # Losing the marker must expose the child to normal production scanning.
-for stem in backend native policy_endpoint process; do
-    registered_repo=$(make_repo "registered_password_$stem")
-    parent="account_password_$stem.rs"
-    fixture="account_password_${stem}_tests.rs"
+for parent in account_password_backend.rs account_password_native.rs account_password_policy_endpoint.rs account_password_process.rs account_access_service.rs; do
+    registered_repo=$(make_repo "registered_${parent%.rs}")
+    fixture="${parent%.rs}_tests.rs"
     cp "$repo_root/src/$parent" "$registered_repo/src/$parent"
     cat > "$registered_repo/src/$fixture" <<'EOF'
 pub fn hostile_scanner_fixture() {

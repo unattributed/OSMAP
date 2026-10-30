@@ -109,6 +109,18 @@ identifier matching the guard's global cipher-word rule; the unpublished protoco
 now consistently calls that authority `Unauthenticated`. The unchanged TLS guard
 and refreshed V10 registers pass. Original failed gate logs remain preserved;
 these constituent results do not turn either failed aggregate into PASS.
+The first normal push then stopped at the password SQL adapter's source-review
+pin. Independent review confirmed that recovery reuses the same fixed programs,
+query shapes, conditional write and uncertain-outcome handling; ordinary password
+change retains its existing proof checks. Only the exact reviewed adapter digest
+was renewed. That push failure remains distinct from source and native results.
+The affected guard then identified the new external test module's fake SQL input.
+Independent review confirmed its sole `cfg(test)` registration. Its exact
+parent/marker coupling was added alongside existing external-test registrations;
+the coupled regression also checks that losing `cfg(test)` restores rejection.
+Production scanning and the guard algorithm remain unchanged.
+
+
 
 
 ## Historical observable outcome and authority
