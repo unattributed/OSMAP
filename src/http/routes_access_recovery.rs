@@ -4,6 +4,7 @@ use crate::browser_access::{
     AccessAction, AccessAuthority, AccessCookie, AccessError, AccessOutcome, AccessView,
     RECOVERY_COOKIE, RECOVERY_CSRF_COOKIE,
 };
+use crate::logging::EventCategory;
 use crate::session::{RandomSource, SystemRandomSource};
 
 fn hex_token(value: &str) -> bool {
@@ -33,6 +34,41 @@ fn failure(error: AccessError) -> HttpResponse {
         "Recovery unavailable",
         crate::access_recovery_ui::render_access_failure(message),
     )
+}
+// Native same-origin forms need a non-opaque Origin on submission. Keep
+// no-referrer on non-form errors/completion and every unrelated application page.
+fn rendered_access_response(
+    status: u16,
+    reason: &'static str,
+    title: &str,
+    body: crate::html::TrustedHtml,
+    view: &AccessView,
+) -> HttpResponse {
+    let mut response = html_response(status, reason, title, body);
+    if matches!(
+        view,
+        AccessView::RecoveryEmail { .. }
+            | AccessView::RecoveryCode { .. }
+            | AccessView::RecoverySetup { .. }
+            | AccessView::TotpResetStart { .. }
+            | AccessView::TotpReplacement { .. }
+    ) {
+        response
+            .headers
+            .retain(|(name, _)| !name.eq_ignore_ascii_case("referrer-policy"));
+        response = response.with_header("Referrer-Policy", "same-origin");
+    }
+    response
+}
+fn local_post_refusal(context: &AuthenticationContext, reason: &'static str) -> LogEvent {
+    LogEvent::new(
+        LogLevel::Warn,
+        EventCategory::Http,
+        "http_recovery_post_refused",
+        "recovery POST refused before gateway action",
+    )
+    .with_field("request_id", context.request_id.clone())
+    .with_field("reason", reason)
 }
 fn nonce() -> Result<String, AccessError> {
     let mut bytes = [0; 32];
@@ -211,6 +247,7 @@ impl<G: BrowserGateway> BrowserApp<G> {
                 Err(error) => return reply(failure(error), audit_events),
             }
         } else {
+            audit_events.push(local_post_refusal(context, "csrf"));
             return reply(failure(AccessError::Refused), audit_events);
         };
         let outcome = if request.method == HttpMethod::Get {
@@ -226,6 +263,7 @@ impl<G: BrowserGateway> BrowserApp<G> {
                     request.headers.get("content-type").map(String::as_str),
                 )
             {
+                audit_events.push(local_post_refusal(context, "origin_or_content_type"));
                 return reply(failure(AccessError::Refused), audit_events);
             }
             let form = match parse_urlencoded_form(&request.body, 7, 8192) {
@@ -251,6 +289,7 @@ impl<G: BrowserGateway> BrowserApp<G> {
                     .get("csrf_token")
                     .is_some_and(|v| constant_time_eq(v.as_bytes(), csrf.as_bytes()))
             {
+                audit_events.push(local_post_refusal(context, "csrf"));
                 return reply(failure(AccessError::Refused), audit_events);
             }
             let Some(action) = parse_action(&request.path, &form) else {
@@ -301,7 +340,7 @@ impl<G: BrowserGateway> BrowserApp<G> {
                     ) && view.bind_csrf(&csrf)
                     {
                         if let Ok(body) = crate::access_recovery_ui::render_access_page(&view, Some("The details could not be verified. Check the latest code and try again.")) {
-                            return reply(html_response(403, "Forbidden", "Verification failed", body), audit_events);
+                            return reply(rendered_access_response(403, "Forbidden", "Verification failed", body, &view), audit_events);
                         }
                     }
                 }
@@ -330,8 +369,9 @@ impl<G: BrowserGateway> BrowserApp<G> {
             Ok(body) => body,
             Err(error) => return reply(failure(error), audit_events),
         };
-        let mut response = html_response(200, "OK", "Account recovery", body)
-            .with_header("Set-Cookie", cookie(RECOVERY_CSRF_COOKIE, &csrf, false));
+        let mut response =
+            rendered_access_response(200, "OK", "Account recovery", body, &outcome.view)
+                .with_header("Set-Cookie", cookie(RECOVERY_CSRF_COOKIE, &csrf, false));
         match outcome.grant_cookie {
             AccessCookie::Unchanged => {}
             AccessCookie::Set(token) => {

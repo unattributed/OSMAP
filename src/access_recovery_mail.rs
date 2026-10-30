@@ -3,11 +3,77 @@
 //! accepted from a browser; SMTP transcripts and proof values are never logged.
 use crate::access_recovery::Notifier;
 use crate::recovery_contact::RecoveryContactDelivery as Delivery;
+use sha2::{Digest, Sha256};
 use std::io::{BufRead, BufReader, Read, Write};
 use std::net::{Ipv4Addr, SocketAddr, SocketAddrV4, TcpStream};
 use std::time::{Duration, Instant};
 
 pub(crate) struct NativeSmtp;
+#[derive(Clone, Copy)]
+enum Phase {
+    Validate,
+    Deadline,
+    Connect,
+    Greeting,
+    Ehlo,
+    Sender,
+    Recipient,
+    Data,
+    Body,
+    Queue,
+}
+impl Phase {
+    fn code(self) -> &'static str {
+        match self {
+            Self::Validate => "validate",
+            Self::Deadline => "deadline",
+            Self::Connect => "connect",
+            Self::Greeting => "greeting",
+            Self::Ehlo => "ehlo",
+            Self::Sender => "sender",
+            Self::Recipient => "recipient",
+            Self::Data => "data",
+            Self::Body => "body",
+            Self::Queue => "queue",
+        }
+    }
+}
+fn audit_reference() -> String {
+    let mut nonce = [0u8; 32];
+    if getrandom::getrandom(&mut nonce).is_err() {
+        // Observability must not become another mail-admission prerequisite.
+        return "unavailable".into();
+    }
+    let mut digest = Sha256::new();
+    digest.update(b"osmap-recovery-mail-audit-v1\0");
+    digest.update(nonce);
+    format!("{:x}", digest.finalize())
+}
+fn audited_attempt<F, E>(reference: &str, attempt: F, mut emit: E) -> Delivery
+where
+    F: FnOnce(&mut Phase) -> Delivery,
+    E: FnMut(&str),
+{
+    let reference = if reference.len() == 64
+        && reference
+            .bytes()
+            .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+    {
+        reference
+    } else {
+        "unavailable"
+    };
+    emit(&format!("account_recovery_mail event=attempt audit_ref={reference} phase=validate disposition=attempt recipient_receipt=not_observed"));
+    let mut phase = Phase::Validate;
+    let result = attempt(&mut phase);
+    let disposition = match result {
+        Delivery::Accepted => "queue_accepted",
+        Delivery::Refused => "refused",
+        Delivery::Unconfirmed => "unconfirmed",
+    };
+    emit(&format!("account_recovery_mail event=outcome audit_ref={reference} phase={} disposition={disposition} recipient_receipt=not_observed automatic_retry=false",phase.code()));
+    result
+}
 impl Notifier for NativeSmtp {
     fn deliver(
         &self,
@@ -17,22 +83,34 @@ impl Notifier for NativeSmtp {
         _: u64,
         deadline: Instant,
     ) -> Delivery {
-        if !address(account)
-            || !address(email)
-            || code.len() != 6
-            || !code.bytes().all(|b| b.is_ascii_digit())
-        {
-            return Delivery::Refused;
-        }
-        let deadline = deadline.min(Instant::now() + Duration::from_secs(10));
-        let Some(timeout) = deadline.checked_duration_since(Instant::now()) else {
-            return Delivery::Refused;
-        };
-        let target = SocketAddr::V4(SocketAddrV4::new(Ipv4Addr::LOCALHOST, 25));
-        let Ok(stream) = TcpStream::connect_timeout(&target, timeout) else {
-            return Delivery::Refused;
-        };
-        transaction(stream, account, email, code, deadline)
+        audited_attempt(
+            &audit_reference(),
+            |phase| {
+                if !address(account)
+                    || !address(email)
+                    || code.len() != 6
+                    || !code.bytes().all(|b| b.is_ascii_digit())
+                {
+                    return Delivery::Refused;
+                }
+                *phase = Phase::Deadline;
+                let deadline = deadline.min(Instant::now() + Duration::from_secs(10));
+                let Some(timeout) = deadline.checked_duration_since(Instant::now()) else {
+                    return Delivery::Refused;
+                };
+                let target = SocketAddr::V4(SocketAddrV4::new(Ipv4Addr::LOCALHOST, 25));
+                *phase = Phase::Connect;
+                let Ok(stream) = TcpStream::connect_timeout(&target, timeout) else {
+                    return Delivery::Refused;
+                };
+                transaction(stream, account, email, code, deadline, phase)
+            },
+            |line| {
+                // Same native application stderr destination, without allowing a
+                // logging write failure to change the SMTP result or retry it.
+                let _ = writeln!(std::io::stderr().lock(), "{line}");
+            },
+        )
     }
 }
 fn address(value: &str) -> bool {
@@ -101,6 +179,7 @@ fn transaction<S: Channel>(
     email: &str,
     code: &str,
     deadline: Instant,
+    phase: &mut Phase,
 ) -> Delivery {
     let mut io = BufReader::new(stream);
     let before_data = |value: Option<u16>, expected: u16| -> Result<(), Delivery> {
@@ -110,9 +189,11 @@ fn transaction<S: Channel>(
             _ => Err(Delivery::Unconfirmed),
         }
     };
+    *phase = Phase::Greeting;
     if let Err(d) = before_data(reply(&mut io, deadline), 220) {
         return d;
     }
+    *phase = Phase::Ehlo;
     if !send(&mut io, b"EHLO localhost\r\n", deadline) {
         return Delivery::Unconfirmed;
     }
@@ -121,11 +202,16 @@ fn transaction<S: Channel>(
         Some((400..=599, _)) | Some((250, false)) => return Delivery::Refused,
         _ => return Delivery::Unconfirmed,
     }
-    for (command, expected) in [
-        (format!("MAIL FROM:<{account}>\r\n"), 250),
-        (format!("RCPT TO:<{email}> NOTIFY=NEVER\r\n"), 250),
-        ("DATA\r\n".to_owned(), 354),
+    for (command, expected, current_phase) in [
+        (format!("MAIL FROM:<{account}>\r\n"), 250, Phase::Sender),
+        (
+            format!("RCPT TO:<{email}> NOTIFY=NEVER\r\n"),
+            250,
+            Phase::Recipient,
+        ),
+        ("DATA\r\n".to_owned(), 354, Phase::Data),
     ] {
+        *phase = current_phase;
         if !send(&mut io, command.as_bytes(), deadline) {
             return Delivery::Unconfirmed;
         }
@@ -135,9 +221,11 @@ fn transaction<S: Channel>(
     }
     let body = format!("From: {account}\r\nTo: {email}\r\nSubject: Your OSMAP recovery code\r\nAuto-Submitted: auto-generated\r\nX-Auto-Response-Suppress: All\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=utf-8\r\n\r\nUse this one-time code on the OSMAP recovery page:\r\n\r\n{code}\r\n\r\nThis code expires in 10 minutes. If you did not request recovery, ignore this message.\r\n.\r\n");
     // From this point a timeout/disconnect cannot prove nonacceptance.
+    *phase = Phase::Body;
     if !send(&mut io, body.as_bytes(), deadline) {
         return Delivery::Unconfirmed;
     }
+    *phase = Phase::Queue;
     if reply(&mut io, deadline) == Some(250) && Instant::now() < deadline {
         // Queue acceptance is the result; QUIT success is not delivery evidence.
         let _ = send(&mut io, b"QUIT\r\n", deadline);
@@ -153,6 +241,7 @@ mod tests {
     struct Fixture {
         input: Cursor<Vec<u8>>,
         output: Rc<RefCell<Vec<u8>>>,
+        fail_body: bool,
     }
     impl Read for Fixture {
         fn read(&mut self, b: &mut [u8]) -> std::io::Result<usize> {
@@ -161,6 +250,9 @@ mod tests {
     }
     impl Write for Fixture {
         fn write(&mut self, b: &[u8]) -> std::io::Result<usize> {
+            if self.fail_body && b.starts_with(b"From:") {
+                return Err(std::io::ErrorKind::BrokenPipe.into());
+            }
             self.output.borrow_mut().extend_from_slice(b);
             Ok(b.len())
         }
@@ -182,11 +274,13 @@ mod tests {
             Fixture {
                 input: Cursor::new(input.as_bytes().to_vec()),
                 output: Default::default(),
+                fail_body: false,
             },
             "account@example.test",
             "recovery@example.test",
             "123456",
             Instant::now() + Duration::from_secs(1),
+            &mut Phase::Validate,
         )
     }
     #[test]
@@ -220,9 +314,11 @@ mod tests {
                 Fixture {
                     input: Cursor::new(format!("220 ready\r\n{ehlo}250 sender\r\n250 recipient\r\n354 data\r\n250 queued\r\n").into_bytes()),
                     output: output.clone(),
+                    fail_body: false,
                 },
                 "account@example.test", "recovery@example.test", "123456",
                 Instant::now() + Duration::from_secs(1),
+                &mut Phase::Validate,
             );
             assert_eq!(result, expected);
             let wire = String::from_utf8(output.borrow().clone()).unwrap();
@@ -255,5 +351,106 @@ mod tests {
             ),
             Delivery::Refused
         );
+    }
+    #[test]
+    fn smtp_producer_outcomes_emit_two_private_correlated_audit_events() {
+        let accepted="220 ready\r\n250-private-password-fixture\r\n250 DSN\r\n250 sender\r\n250 recipient\r\n354 data\r\n250 account@example.test recovery@example.test 123456 queued\r\n";
+        for (input, fail_body, expected, expected_phase) in [
+            (accepted, false, Delivery::Accepted, "queue"),
+            (
+                "220 ready\r\n250 DSN\r\n250 sender\r\n550 private-password-fixture\r\n",
+                false,
+                Delivery::Refused,
+                "recipient",
+            ),
+            (
+                "220 ready\r\n250 no-dsn\r\n",
+                false,
+                Delivery::Refused,
+                "ehlo",
+            ),
+            ("220 malformed\n", false, Delivery::Unconfirmed, "greeting"),
+            (
+                "220 ready\r\n250 DSN\r\n250 sender\r\n250 recipient\r\n354 data\r\n",
+                false,
+                Delivery::Unconfirmed,
+                "queue",
+            ),
+            (accepted, true, Delivery::Unconfirmed, "body"),
+        ] {
+            let wire = Rc::new(RefCell::new(Vec::new()));
+            let mut events = Vec::new();
+            let reference = "a".repeat(64);
+            let result = audited_attempt(
+                &reference,
+                |phase| {
+                    transaction(
+                        Fixture {
+                            input: Cursor::new(input.as_bytes().to_vec()),
+                            output: wire.clone(),
+                            fail_body,
+                        },
+                        "account@example.test",
+                        "recovery@example.test",
+                        "123456",
+                        Instant::now() + Duration::from_secs(1),
+                        phase,
+                    )
+                },
+                |line| events.push(line.to_owned()),
+            );
+            assert_eq!(result, expected);
+            assert_eq!(events.len(), 2);
+            assert!(events[0].contains("event=attempt"));
+            assert!(events[1].contains("event=outcome"));
+            assert!(events[1].contains(&format!("phase={expected_phase} ")));
+            let disposition = match expected {
+                Delivery::Accepted => "queue_accepted",
+                Delivery::Refused => "refused",
+                Delivery::Unconfirmed => "unconfirmed",
+            };
+            assert!(events[1].contains(&format!("disposition={disposition} ")));
+            for event in &events {
+                assert!(event.contains(&format!("audit_ref={reference} ")));
+                assert!(event.contains("recipient_receipt=not_observed"));
+                for private in [
+                    "account@example.test",
+                    "recovery@example.test",
+                    "123456",
+                    "private-password-fixture",
+                    "EHLO",
+                    "RCPT",
+                    "Subject:",
+                ] {
+                    assert!(!event.contains(private));
+                }
+                assert!(event.len() < 256);
+            }
+            let output = String::from_utf8(wire.borrow().clone()).unwrap();
+            assert!(output.matches("DATA\r\n").count() <= 1);
+            assert!(output.matches("\r\n123456\r\n").count() <= 1);
+            if expected == Delivery::Accepted {
+                assert!(output.contains("\r\n123456\r\n"));
+            }
+        }
+    }
+    #[test]
+    fn unavailable_audit_reference_does_not_gate_existing_result_or_echo_input() {
+        let mut events = Vec::new();
+        let result = audited_attempt(
+            "private-invalid-reference",
+            |phase| {
+                *phase = Phase::Connect;
+                Delivery::Refused
+            },
+            |line| events.push(line.to_owned()),
+        );
+        assert_eq!(result, Delivery::Refused);
+        assert_eq!(events.len(), 2);
+        assert!(events
+            .iter()
+            .all(|line| line.contains("audit_ref=unavailable ")
+                && !line.contains("private-invalid-reference")));
+        assert!(events[1].contains("phase=connect disposition=refused"));
     }
 }

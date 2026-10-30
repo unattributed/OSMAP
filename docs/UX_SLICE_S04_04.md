@@ -193,6 +193,41 @@ whole-slice completion is recorded in its absence. Onboarding remains manual and
 outside this sprint. The original checkout's deferred S05-02 HEAD, status and
 seven file hashes were independently rechecked unchanged.
 
+## Owner UAT failure and browser-origin correction — 2026-10-30
+
+Owner UAT failed both journeys: the signed-in replacement submission was refused,
+and the public recovery submission was refused without a received recovery email.
+The previous authenticator still allowed normal login. The actual server trace
+shows successful GETs followed by immediate POST 403 responses, rather than a
+failed Settings GET. No replacement activation is evidenced by those requests.
+The earlier UAT-ready assessment exceeded the anonymous test's coverage.
+
+A fresh isolated browser reproduced the live recovery form's POST 403 with
+`Origin: null`, ordinary URL-encoded content and no manually supplied headers.
+The response used the global `Referrer-Policy: no-referrer`; the Fetch standard's
+Origin serialization explains this browser behaviour. The strict recovery origin
+check rejects the browser-generated value before native/email dispatch. The
+previous Python probe supplied the HTTPS Origin itself, so its eight passes did
+not qualify native browser form submission or either positive owner journey.
+
+The supported correction is response-only `Referrer-Policy: same-origin` on
+rendered recovery/TOTP form pages. Global defaults, errors, completion pages,
+strict origin rejection and CSRF validation stay in force. Owner acceptance is
+FAIL until affected browser and owner tests pass. Onboarding remains manual and
+separate; S05-02 remains deferred.
+
+Affected route tests pass 11/11, including a production-issued stored session's
+GET/form/CSRF round trip and missing/null/foreign-origin refusal. SMTP transaction
+and bounded audit tests pass 5/5. All-target Clippy passes after correcting an
+explicit production import that a test-only parent import had masked; its initial
+failure is preserved. Local POST refusal events now record a generated request
+reference and static refusal reason. Native SMTP emits independent, non-authorizing
+attempt/outcome references and fixed phase/disposition fields, without account,
+recipient, code or message contents. Queue acceptance remains distinct from actual
+recipient receipt. Logging or audit-reference failure cannot gate mail or retry it.
+The actual browser regression remains pending the corrected installation.
+
+
 ## Historical observable outcome and authority
 
 Deliver the D04 controlled recovery coordinator: requested -> identity reviewed

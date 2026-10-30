@@ -10312,7 +10312,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "slice": "S04-04",
     "specification": {
       "path": "docs/UX_SLICE_S04_04.md",
-      "sha256": "ac44541d649b5dd08e95e92ed24aa79789afa9466983d9d28af893dcd1ed8eda"
+      "sha256": "fd53042d4facb19913bb99b169d14559ebe5d4aa51af8382eedc2b6a527e8dd2"
     },
     "design": {
       "journey": "Fresh current-password/TOTP confirmation -> new QR and code confirmation -> factor replacement; login-page email recovery -> expiring one-use code -> restricted password and replacement TOTP setup -> fresh normal sign-in.",
@@ -11286,7 +11286,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "receipt_sha256": "f6926f970e70079875f7416fc2b774b49f52fc201c6fcc459e06e25639e7f2f7",
     "installed_roles_healthy": 17,
     "configured_web_fields_loaded": 54,
-    "positive_owner_uat": "PENDING",
+    "positive_owner_uat": "FAIL",
     "scope": "current selected-account local UAT profile on obsd1",
     "independent_QA": "GO_INSTALLED_AND_PUBLIC_BOUNDARY_ONLY",
     "independent_receipt_sha256": "83f57993d4aa3d18e8f3fa27343721e91953f59ee25c561a59596b70b534ed9f",
@@ -11353,6 +11353,28 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "status_unchanged": true,
     "file_hashes_unchanged": 7,
     "S05_02_work_performed": false
+  },
+  "current_browser_owner_uat": {
+    "status": "FAIL",
+    "signed_in_replacement": "POST_REFUSED_BEFORE_ACTIVATION",
+    "email_recovery": "POST_REFUSED_NO_RECOVERY_EMAIL_RECEIVED",
+    "previous_factor_login": "USER_OBSERVED_WORKING",
+    "actual_browser_regression": "Origin:null -> 403 with existing no-referrer response policy",
+    "automated_test_gap": "manual Origin header bypassed browser serialization",
+    "source_runtime": "2cdaf8c6d986cb47ed9f7af34ab94db31f4fce53",
+    "evidence_sha256": "e9c54ce57b05e12e7922febda27c39609ae39b65837af8ddd6eb490d7343ac70",
+    "source_correction": "IMPLEMENTED_SOURCE_REVIEW_GO",
+    "acceptance": "FAIL",
+    "focused_route_tests_passed": 11,
+    "focused_mail_tests_passed": 5,
+    "combined_all_target_clippy": "PASS",
+    "original_factor_state_readback": {
+      "state": "active",
+      "epoch": 3,
+      "factor_hash_unchanged": true,
+      "case_present": false
+    },
+    "corrected_installed_browser_test": "NOT_RUN"
   }
 }
 ```
