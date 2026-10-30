@@ -10041,9 +10041,30 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "ACCEPTED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/s04-04/owner-uat-failure02/push02.log",
+            "scope": "2076PASS/0FAIL/74ignored at signed5e3ebb5; qualified factor metadata/replay-window source and native controls; missing metadata remains unavailable. Current operator-revised browser contract, not the superseded terminal identity procedure."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/s04-04/browser-native06/combined-qualification.json",
+            "scope": "browser-native06/combined-qualification.json SHA256 bee5a8c3910dc9a9f39869d11df2e13e861cb48bc9ef72b17351e98a87fa7f87:109unique native componentPASS plus sealed root1PASS; same libtest affected continuation, retained original failures."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/s04-04/owner-uat-failure02/installed-and-admin-repair-independent-reconciliation.json",
+            "scope": "owner-uat-failure02/installed-and-admin-repair-independent-reconciliation.json SHA256 a8c3eef55a820964b7a58f425a776de0223b04777d52f2e8285a6138a2af6b3c; independent reviewed source, native, installed and prior exact-case administrative recovery only."
+          },
+          {
+            "kind": "human_uat",
+            "path": "/home/foo/Downloads/osmap-ux-s04/s04-04/owner-uat-pass01/owner-acceptance.json",
+            "scope": "2026-10-30 owner explicitly confirmed the complete browser recovery workflow and S04-04 positive browser UAT = PASS; private owner-uat-pass01/owner-acceptance.json SHA256 d85a99142d5e8dec5c119a2e68aedfec676c63e0f2aea2dd68d47ce18fda18ab Aggregate owner acceptance of the revised slice; separate per-control human negatives/Settings branch are not claimed."
+          }
+        ]
       }
     },
     {
@@ -10251,9 +10272,30 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "ACCEPTED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/s04-04/owner-uat-failure02/push02.log",
+            "scope": "2076PASS/0FAIL/74ignored at signed5e3ebb5; authorized browser TOTP lifecycle; current-session/native boundary controls and owner recovered-factor login. Current operator-revised browser contract, not the superseded terminal identity procedure."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/s04-04/browser-native06/combined-qualification.json",
+            "scope": "browser-native06/combined-qualification.json SHA256 bee5a8c3910dc9a9f39869d11df2e13e861cb48bc9ef72b17351e98a87fa7f87:109unique native componentPASS plus sealed root1PASS; same libtest affected continuation, retained original failures."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/s04-04/owner-uat-failure02/installed-and-admin-repair-independent-reconciliation.json",
+            "scope": "owner-uat-failure02/installed-and-admin-repair-independent-reconciliation.json SHA256 a8c3eef55a820964b7a58f425a776de0223b04777d52f2e8285a6138a2af6b3c; independent reviewed source, native, installed and prior exact-case administrative recovery only."
+          },
+          {
+            "kind": "human_uat",
+            "path": "/home/foo/Downloads/osmap-ux-s04/s04-04/owner-uat-pass01/owner-acceptance.json",
+            "scope": "2026-10-30 owner explicitly confirmed the complete browser recovery workflow and S04-04 positive browser UAT = PASS; private owner-uat-pass01/owner-acceptance.json SHA256 d85a99142d5e8dec5c119a2e68aedfec676c63e0f2aea2dd68d47ce18fda18ab Aggregate owner acceptance of the revised slice; separate per-control human negatives/Settings branch are not claimed."
+          }
+        ]
       }
     },
     {
@@ -17563,9 +17605,30 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "ACCEPTED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/s04-04/owner-uat-failure02/push02.log",
+            "scope": "2076PASS/0FAIL/74ignored at signed5e3ebb5; actual factor/last-accepted-window metadata without a fabricated current-factor verification timestamp. Current operator-revised browser contract, not the superseded terminal identity procedure."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/s04-04/browser-native06/combined-qualification.json",
+            "scope": "browser-native06/combined-qualification.json SHA256 bee5a8c3910dc9a9f39869d11df2e13e861cb48bc9ef72b17351e98a87fa7f87:109unique native componentPASS plus sealed root1PASS; same libtest affected continuation, retained original failures."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/s04-04/owner-uat-failure02/installed-and-admin-repair-independent-reconciliation.json",
+            "scope": "owner-uat-failure02/installed-and-admin-repair-independent-reconciliation.json SHA256 a8c3eef55a820964b7a58f425a776de0223b04777d52f2e8285a6138a2af6b3c; independent reviewed source, native, installed and prior exact-case administrative recovery only."
+          },
+          {
+            "kind": "human_uat",
+            "path": "/home/foo/Downloads/osmap-ux-s04/s04-04/owner-uat-pass01/owner-acceptance.json",
+            "scope": "2026-10-30 owner explicitly confirmed the complete browser recovery workflow and S04-04 positive browser UAT = PASS; private owner-uat-pass01/owner-acceptance.json SHA256 d85a99142d5e8dec5c119a2e68aedfec676c63e0f2aea2dd68d47ce18fda18ab Aggregate owner acceptance of the revised slice; separate per-control human negatives/Settings branch are not claimed."
+          }
+        ]
       }
     },
     {
@@ -17600,9 +17663,30 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "ACCEPTED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/s04-04/owner-uat-failure02/push02.log",
+            "scope": "2076PASS/0FAIL/74ignored at signed5e3ebb5; replacement candidate requires valid new six-digit proof before activation. Current operator-revised browser contract, not the superseded terminal identity procedure."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/s04-04/browser-native06/combined-qualification.json",
+            "scope": "browser-native06/combined-qualification.json SHA256 bee5a8c3910dc9a9f39869d11df2e13e861cb48bc9ef72b17351e98a87fa7f87:109unique native componentPASS plus sealed root1PASS; same libtest affected continuation, retained original failures."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/s04-04/owner-uat-failure02/installed-and-admin-repair-independent-reconciliation.json",
+            "scope": "owner-uat-failure02/installed-and-admin-repair-independent-reconciliation.json SHA256 a8c3eef55a820964b7a58f425a776de0223b04777d52f2e8285a6138a2af6b3c; independent reviewed source, native, installed and prior exact-case administrative recovery only."
+          },
+          {
+            "kind": "human_uat",
+            "path": "/home/foo/Downloads/osmap-ux-s04/s04-04/owner-uat-pass01/owner-acceptance.json",
+            "scope": "2026-10-30 owner explicitly confirmed the complete browser recovery workflow and S04-04 positive browser UAT = PASS; private owner-uat-pass01/owner-acceptance.json SHA256 d85a99142d5e8dec5c119a2e68aedfec676c63e0f2aea2dd68d47ce18fda18ab Aggregate owner acceptance of the revised slice; separate per-control human negatives/Settings branch are not claimed."
+          }
+        ]
       }
     },
     {
@@ -17924,9 +18008,30 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "ACCEPTED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/s04-04/owner-uat-failure02/push02.log",
+            "scope": "2076PASS/0FAIL/74ignored at signed5e3ebb5; current browser recovery boundaries and truthful completion/uncertain failure copy. Current operator-revised browser contract, not the superseded terminal identity procedure."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/s04-04/browser-native06/combined-qualification.json",
+            "scope": "browser-native06/combined-qualification.json SHA256 bee5a8c3910dc9a9f39869d11df2e13e861cb48bc9ef72b17351e98a87fa7f87:109unique native componentPASS plus sealed root1PASS; same libtest affected continuation, retained original failures."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/s04-04/owner-uat-failure02/installed-and-admin-repair-independent-reconciliation.json",
+            "scope": "owner-uat-failure02/installed-and-admin-repair-independent-reconciliation.json SHA256 a8c3eef55a820964b7a58f425a776de0223b04777d52f2e8285a6138a2af6b3c; independent reviewed source, native, installed and prior exact-case administrative recovery only."
+          },
+          {
+            "kind": "human_uat",
+            "path": "/home/foo/Downloads/osmap-ux-s04/s04-04/owner-uat-pass01/owner-acceptance.json",
+            "scope": "2026-10-30 owner explicitly confirmed the complete browser recovery workflow and S04-04 positive browser UAT = PASS; private owner-uat-pass01/owner-acceptance.json SHA256 d85a99142d5e8dec5c119a2e68aedfec676c63e0f2aea2dd68d47ce18fda18ab Aggregate owner acceptance of the revised slice; separate per-control human negatives/Settings branch are not claimed."
+          }
+        ]
       }
     },
     {
@@ -20469,9 +20574,30 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "ACCEPTED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/s04-04/owner-uat-failure02/push02.log",
+            "scope": "2076PASS/0FAIL/74ignored at signed5e3ebb5; email proof grants restricted setup only; new validated TOTP and fresh ordinary login are required for mailbox access. Current operator-revised browser contract, not the superseded terminal identity procedure."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/s04-04/browser-native06/combined-qualification.json",
+            "scope": "browser-native06/combined-qualification.json SHA256 bee5a8c3910dc9a9f39869d11df2e13e861cb48bc9ef72b17351e98a87fa7f87:109unique native componentPASS plus sealed root1PASS; same libtest affected continuation, retained original failures."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s04/s04-04/owner-uat-failure02/installed-and-admin-repair-independent-reconciliation.json",
+            "scope": "owner-uat-failure02/installed-and-admin-repair-independent-reconciliation.json SHA256 a8c3eef55a820964b7a58f425a776de0223b04777d52f2e8285a6138a2af6b3c; independent reviewed source, native, installed and prior exact-case administrative recovery only."
+          },
+          {
+            "kind": "human_uat",
+            "path": "/home/foo/Downloads/osmap-ux-s04/s04-04/owner-uat-pass01/owner-acceptance.json",
+            "scope": "2026-10-30 owner explicitly confirmed the complete browser recovery workflow and S04-04 positive browser UAT = PASS; private owner-uat-pass01/owner-acceptance.json SHA256 d85a99142d5e8dec5c119a2e68aedfec676c63e0f2aea2dd68d47ce18fda18ab Aggregate owner acceptance of the revised slice; separate per-control human negatives/Settings branch are not claimed."
+          }
+        ]
       }
     },
     {

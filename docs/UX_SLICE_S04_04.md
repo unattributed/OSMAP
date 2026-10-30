@@ -4,6 +4,39 @@ Started 2026-10-29 (America/Toronto) from accepted S04-03 source
 `6c509a542dfc30129e23b838b1faf7cd01608f4e`.
 
 
+## Owner acceptance — 2026-10-30 (America/Toronto)
+
+**S04-04 positive browser UAT: PASS. Current revised slice: ACCEPTED.**
+
+The owner explicitly confirms that the user completed the login recovery workflow,
+received the registered-address recovery email, verified the one-use code, reset
+the password, enrolled and validated the replacement TOTP, saw **Access updated**,
+and signed in successfully to the mailbox with the new values. The eight supplied
+screenshots and confirmation are preserved privately; raw images include setup
+material and codes and are excluded from Git. No displayed secret was decoded or
+used by an agent.
+
+Read-only corroboration observes active epoch5 and the corrected native stages:
+actual SQL receipt recorded, protected cache-zero recheck confirmed and new-password
+authentication confirmed. This later successful browser journey is distinct from
+the preserved earlier503 and its one-shot administrative repair at epoch4.
+
+| Work package | Required scenarios | Actual evidence and completion |
+| --- | --- | --- |
+| Replacement enrollment | T02/T05/T07 | Source/native candidate, session and factor-reader controls; owner verified the replacement and logged in. Complete for accepted scope. |
+| Login recovery | T01/T02/T04/T07 | Registered email receipt, proof, actual password/TOTP update and fresh login; native post-write stages confirmed. Complete. |
+| Native commit and interruption | T03/T05/T06/T07 | 109 native component passes, root qualifier, actual retained partial-state failure and exact repair; later successful normal commit. Complete. |
+| Installed browser journey | T08/T09 | Matching deployed5e3ebb5 code, eight private screenshots and explicit owner UAT PASS. Accepted. |
+
+Acceptance is for the current selected-account local-development/UAT profile on
+obsd1. Separate human execution of signed-in Settings replacement and a human
+old-factor negative attempt is not shown in this screenshot set; source/native
+controls remain their stated evidence. No such human execution is invented or
+required as an additional acceptance ceremony. The functional UAT PASS does not
+make the setup material shown in screenshots private again; replace that entry
+privately through Settings. Automated onboarding remains a separate sprint;
+S05-02 and the whole Sprint/epic remain outside this acceptance.
+
 ## Current operator-directed scope — 2026-10-30
 
 The operator rejected the request-only Settings experience and the multi-terminal
@@ -272,9 +305,9 @@ grant Complete. The repair performs no SQL credential, factor or session rewrite
 and creates no grant or session. Independent readback confirms active epoch 4,
 marker absence, unchanged password/factor and all original revoked records.
 Original primary-password verification remains NOT_CAPTURED; the repair does not
-retroactively claim it passed. Fresh owner login with the new values, signed-in
-replacement and a successful unassisted recovery journey remain required for
-owner acceptance. Keep setup QR/secrets and codes private during those tests.
+retroactively claim it passed. At that checkpoint owner acceptance was still pending. The later complete
+owner journey and explicit PASS are recorded in the acceptance section above;
+the original failure and administrative repair remain historical evidence.
 
 
 ## Historical observable outcome and authority

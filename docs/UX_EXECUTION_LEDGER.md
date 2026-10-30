@@ -1,3 +1,11 @@
+2026-10-30 (America/Toronto) — **S04-04 ACCEPTED; positive browser UAT PASS.**
+
+Owner confirms registered-email recovery, password reset, replacement-TOTP
+validation, Access updated and fresh mailbox login. Matching installed source
+5e3ebb5 and read-only native activeepoch5/post-write stages corroborate the
+new successful journey. Prior failed attempts remain historical; onboarding
+separate and S05-02 deferred. See the current accepted work order and slice spec.
+
 2026-10-30 (America/Toronto) — **S04-04 requirements corrected by operator.**
 
 Current work implements browser access recovery and authenticated TOTP replacement.
@@ -10137,7 +10145,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
   "slice": "S04-04",
   "original_requirement": "Controlled real-user recovery coordinator joining identity verification, containment, session revocation and TOTP tooling",
   "source_baseline": "6c509a542dfc30129e23b838b1faf7cd01608f4e",
-  "state": "IN_PROGRESS",
+  "state": "ACCEPTED",
   "integration_owner": "/root",
   "roles": {
     "project_manager": [
@@ -10185,6 +10193,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "maint/security/v10-fail-closed-remediation.json",
     "maint/security/v10-rust-assumption-audit.json",
     "maint/security/v15-dependency-admission.json",
+    "maint/ux/acceptance.json",
     "maint/wstg-testing-pack/osmap-browser-attack-surface.json",
     "src/access_recovery.rs",
     "src/access_recovery_mail.rs",
@@ -10265,33 +10274,53 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         {
           "owner": "/root/recovery_policy_review",
           "condition": "Independent source review of native authority, bounded proof/grant transport and same-fence commit.",
-          "status": "PENDING",
-          "next_action": "Complete bounded-store source review and native mixed-owner qualifier before installed qualification."
+          "status": "PASS",
+          "next_action": "Independent source/native/installed review is retained; owner positive browser acceptance is recorded."
         }
       ],
       "essential_qa": "S04-04-T01 through T09 revised contract. Actual work package -> scenarios -> evidence; automated onboarding excluded.",
       "stages": {
         "implementation": "PASS",
-        "source_tests": "PENDING",
-        "native_tests": "PENDING",
-        "deployed_qa": "PENDING",
-        "independent_review": "PENDING",
-        "recovery": "PENDING"
+        "source_tests": "PASS",
+        "native_tests": "PASS",
+        "deployed_qa": "PASS",
+        "independent_review": "PASS",
+        "recovery": "PASS"
       },
       "evidence": [
         {
           "stage": "implementation",
-          "reference": "Current browser routes/UI, native email challenge/grant, enrollment and actual factor/session/epoch adapter composed with existing password CAS. Focused source and temporary-file integration passes are bounded evidence; normal delivery/native/installed pending."
+          "reference": "Native/browser implementation in signed5e3ebb5."
+        },
+        {
+          "stage": "source_tests",
+          "reference": "Signed runtime source5e3ebb5; normal owner-uat-failure02/push02.log:2076PASS/0FAIL/74ignored; source/runtime strict role, CSRF/origin, grant, candidate and interruption regressions."
+        },
+        {
+          "stage": "native_tests",
+          "reference": "browser-native06/combined-qualification.json SHA256 bee5a8c3910dc9a9f39869d11df2e13e861cb48bc9ef72b17351e98a87fa7f87:109unique native componentPASS plus sealed root1PASS; same libtest affected continuation, retained original failures."
+        },
+        {
+          "stage": "deployed_qa",
+          "reference": "browser-refresh05-run01/result.json SHA256 5d44bb90af661359a697c10f179a0514347d68616eafee347a294b740a470396: exact three installed artifacts and twoOSMAProles; protected records identical; no public mail-service action."
+        },
+        {
+          "stage": "independent_review",
+          "reference": "owner-uat-failure02/installed-and-admin-repair-independent-reconciliation.json SHA256 a8c3eef55a820964b7a58f425a776de0223b04777d52f2e8285a6138a2af6b3c; independent reviewed source, native, installed and prior exact-case administrative recovery only."
+        },
+        {
+          "stage": "recovery",
+          "reference": "Original503 and stickyPending preserved separately; owner-uat-failure02/post-reconciliation-readback.json SHA256 47d8688887969edc80c43ff4556604bd369abc095c581917d3a1c02b1773609d; no automatic credential retry."
         }
       ],
-      "next_action": "Finish changed-boundary source checks and signed preservation, then native isolated qualification and installed user journey."
+      "next_action": "Accepted owner browser outcome; no further action under this slice without a new operator direction."
     }
   ],
   "human_acceptance": {
-    "status": "PENDING",
-    "reference": ""
+    "status": "PASS",
+    "reference": "2026-10-30 owner explicitly confirmed the complete browser recovery workflow and S04-04 positive browser UAT = PASS; private owner-uat-pass01/owner-acceptance.json SHA256 d85a99142d5e8dec5c119a2e68aedfec676c63e0f2aea2dd68d47ce18fda18ab"
   },
-  "next_action": "Finish revised S04-04 browser access recovery. Manual onboarding remains separate; no newly issued backup-code prerequisite. Preserve old failed/partial evidence and S05-02 unchanged.",
+  "next_action": "S04-04 accepted by owner for the revised local browser recovery contract; preserve signed synchronization and await the operator sprint direction. Onboarding separate; S05-02 deferred.",
   "accountability": {
     "owner": "/root",
     "functional_exit": "Fresh current-password/TOTP confirmation -> new QR and code confirmation -> factor replacement; login-page email recovery -> expiring one-use code -> restricted password and replacement TOTP setup -> fresh normal sign-in.",
@@ -10313,7 +10342,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "slice": "S04-04",
     "specification": {
       "path": "docs/UX_SLICE_S04_04.md",
-      "sha256": "8f8d899615d7341b1be7045f584ec971605e0dac126d52b5b24f98c90894101a"
+      "sha256": "de13777550b2c666153e64edeb46aaeec726bdfa21a58605bc31e1bfc1d1ad4f"
     },
     "design": {
       "journey": "Fresh current-password/TOTP confirmation -> new QR and code confirmation -> factor replacement; login-page email recovery -> expiring one-use code -> restricted password and replacement TOTP setup -> fresh normal sign-in.",
@@ -10338,8 +10367,12 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "preserved": "Matching source, bounded outcome and first failure; native/installed/UAT evidence remains separate. No secrets or private account identifiers in public artifacts.",
         "owner": "/root",
         "reviewer": "/root/recovery_policy_review",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "PASS",
+        "evidence": [
+          "Signed runtime source5e3ebb5; normal owner-uat-failure02/push02.log:2076PASS/0FAIL/74ignored; source/runtime strict role, CSRF/origin, grant, candidate and interruption regressions.",
+          "browser-native06/combined-qualification.json SHA256 bee5a8c3910dc9a9f39869d11df2e13e861cb48bc9ef72b17351e98a87fa7f87:109unique native componentPASS plus sealed root1PASS; same libtest affected continuation, retained original failures.",
+          "2026-10-30 owner explicitly confirmed the complete browser recovery workflow and S04-04 positive browser UAT = PASS; private owner-uat-pass01/owner-acceptance.json SHA256 d85a99142d5e8dec5c119a2e68aedfec676c63e0f2aea2dd68d47ce18fda18ab"
+        ]
       },
       {
         "id": "S04-04-T02",
@@ -10354,8 +10387,11 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "preserved": "Matching source, bounded outcome and first failure; native/installed/UAT evidence remains separate. No secrets or private account identifiers in public artifacts.",
         "owner": "/root",
         "reviewer": "/root/recovery_policy_review",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "PASS",
+        "evidence": [
+          "Signed runtime source5e3ebb5; normal owner-uat-failure02/push02.log:2076PASS/0FAIL/74ignored; source/runtime strict role, CSRF/origin, grant, candidate and interruption regressions.",
+          "browser-native06/combined-qualification.json SHA256 bee5a8c3910dc9a9f39869d11df2e13e861cb48bc9ef72b17351e98a87fa7f87:109unique native componentPASS plus sealed root1PASS; same libtest affected continuation, retained original failures."
+        ]
       },
       {
         "id": "S04-04-T03",
@@ -10370,8 +10406,11 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "preserved": "Matching source, bounded outcome and first failure; native/installed/UAT evidence remains separate. No secrets or private account identifiers in public artifacts.",
         "owner": "/root",
         "reviewer": "/root/recovery_policy_review",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "PASS",
+        "evidence": [
+          "browser-native06/combined-qualification.json SHA256 bee5a8c3910dc9a9f39869d11df2e13e861cb48bc9ef72b17351e98a87fa7f87:109unique native componentPASS plus sealed root1PASS; same libtest affected continuation, retained original failures.",
+          "Original503 and stickyPending preserved separately; owner-uat-failure02/post-reconciliation-readback.json SHA256 47d8688887969edc80c43ff4556604bd369abc095c581917d3a1c02b1773609d; no automatic credential retry."
+        ]
       },
       {
         "id": "S04-04-T04",
@@ -10382,12 +10421,17 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "level": "native",
         "prerequisites": "Verified one-use email recovery grant and actual password authority",
         "action": "Verified one-use email recovery grant and actual password authority; exercise the exact revised browser/native interface and matching refusal boundary.",
-        "expected": "Reset the authoritative password under the same factor/session fence using real CAS; cache invalidation and new-password authentication precede release.",
+        "expected": "Reset the authoritative password under the same factor/session fence using real CAS; protected stock cache-zero recheck and new-password authentication precede release.",
         "preserved": "Matching source, bounded outcome and first failure; native/installed/UAT evidence remains separate. No secrets or private account identifiers in public artifacts.",
         "owner": "/root",
         "reviewer": "/root/recovery_policy_review",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "PASS",
+        "evidence": [
+          "Signed runtime source5e3ebb5; normal owner-uat-failure02/push02.log:2076PASS/0FAIL/74ignored; source/runtime strict role, CSRF/origin, grant, candidate and interruption regressions.",
+          "browser-native06/combined-qualification.json SHA256 bee5a8c3910dc9a9f39869d11df2e13e861cb48bc9ef72b17351e98a87fa7f87:109unique native componentPASS plus sealed root1PASS; same libtest affected continuation, retained original failures.",
+          "owner-uat-pass01/native-readonly-corroboration.json SHA256 ee2bb1a11ec1671ec5a1912315c5f2b6fb301680e66c39feb9a6a9514738de0e: activeepoch5; actual password receipt recorded, protected cache-zero check confirmed and new-password authentication confirmed; read-only capture.",
+          "2026-10-30 owner explicitly confirmed the complete browser recovery workflow and S04-04 positive browser UAT = PASS; private owner-uat-pass01/owner-acceptance.json SHA256 d85a99142d5e8dec5c119a2e68aedfec676c63e0f2aea2dd68d47ce18fda18ab"
+        ]
       },
       {
         "id": "S04-04-T05",
@@ -10402,8 +10446,13 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "preserved": "Matching source, bounded outcome and first failure; native/installed/UAT evidence remains separate. No secrets or private account identifiers in public artifacts.",
         "owner": "/root",
         "reviewer": "/root/recovery_policy_review",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "PASS",
+        "evidence": [
+          "Signed runtime source5e3ebb5; normal owner-uat-failure02/push02.log:2076PASS/0FAIL/74ignored; source/runtime strict role, CSRF/origin, grant, candidate and interruption regressions.",
+          "browser-native06/combined-qualification.json SHA256 bee5a8c3910dc9a9f39869d11df2e13e861cb48bc9ef72b17351e98a87fa7f87:109unique native componentPASS plus sealed root1PASS; same libtest affected continuation, retained original failures.",
+          "2026-10-30 owner explicitly confirmed the complete browser recovery workflow and S04-04 positive browser UAT = PASS; private owner-uat-pass01/owner-acceptance.json SHA256 d85a99142d5e8dec5c119a2e68aedfec676c63e0f2aea2dd68d47ce18fda18ab",
+          "Human separate Settings branch and human old-factor negative are NOT_OBSERVED; native factor replacement/readback/reader separation and owner new-factor login are the stated coverage."
+        ]
       },
       {
         "id": "S04-04-T06",
@@ -10418,8 +10467,12 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "preserved": "Matching source, bounded outcome and first failure; native/installed/UAT evidence remains separate. No secrets or private account identifiers in public artifacts.",
         "owner": "/root",
         "reviewer": "/root/recovery_policy_review",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "PASS",
+        "evidence": [
+          "Signed runtime source5e3ebb5; normal owner-uat-failure02/push02.log:2076PASS/0FAIL/74ignored; source/runtime strict role, CSRF/origin, grant, candidate and interruption regressions.",
+          "browser-native06/combined-qualification.json SHA256 bee5a8c3910dc9a9f39869d11df2e13e861cb48bc9ef72b17351e98a87fa7f87:109unique native componentPASS plus sealed root1PASS; same libtest affected continuation, retained original failures.",
+          "Original503 and stickyPending preserved separately; owner-uat-failure02/post-reconciliation-readback.json SHA256 47d8688887969edc80c43ff4556604bd369abc095c581917d3a1c02b1773609d; no automatic credential retry."
+        ]
       },
       {
         "id": "S04-04-T07",
@@ -10434,8 +10487,12 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "preserved": "Matching source, bounded outcome and first failure; native/installed/UAT evidence remains separate. No secrets or private account identifiers in public artifacts.",
         "owner": "/root",
         "reviewer": "/root/recovery_policy_review",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "PASS",
+        "evidence": [
+          "Signed runtime source5e3ebb5; normal owner-uat-failure02/push02.log:2076PASS/0FAIL/74ignored; source/runtime strict role, CSRF/origin, grant, candidate and interruption regressions.",
+          "browser-native06/combined-qualification.json SHA256 bee5a8c3910dc9a9f39869d11df2e13e861cb48bc9ef72b17351e98a87fa7f87:109unique native componentPASS plus sealed root1PASS; same libtest affected continuation, retained original failures.",
+          "browser-refresh05-run01/result.json SHA256 5d44bb90af661359a697c10f179a0514347d68616eafee347a294b740a470396: exact three installed artifacts and twoOSMAProles; protected records identical; no public mail-service action."
+        ]
       },
       {
         "id": "S04-04-T08",
@@ -10450,8 +10507,12 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "preserved": "Matching source, bounded outcome and first failure; native/installed/UAT evidence remains separate. No secrets or private account identifiers in public artifacts.",
         "owner": "/root",
         "reviewer": "/root/recovery_policy_review",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "PASS",
+        "evidence": [
+          "browser-refresh05-run01/result.json SHA256 5d44bb90af661359a697c10f179a0514347d68616eafee347a294b740a470396: exact three installed artifacts and twoOSMAProles; protected records identical; no public mail-service action.",
+          "owner-uat-pass01/native-readonly-corroboration.json SHA256 ee2bb1a11ec1671ec5a1912315c5f2b6fb301680e66c39feb9a6a9514738de0e: activeepoch5; actual password receipt recorded, protected cache-zero check confirmed and new-password authentication confirmed; read-only capture.",
+          "2026-10-30 owner explicitly confirmed the complete browser recovery workflow and S04-04 positive browser UAT = PASS; private owner-uat-pass01/owner-acceptance.json SHA256 d85a99142d5e8dec5c119a2e68aedfec676c63e0f2aea2dd68d47ce18fda18ab"
+        ]
       },
       {
         "id": "S04-04-T09",
@@ -10466,12 +10527,15 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "preserved": "Matching source, bounded outcome and first failure; native/installed/UAT evidence remains separate. No secrets or private account identifiers in public artifacts.",
         "owner": "/root",
         "reviewer": "/root/recovery_policy_review",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "PASS",
+        "evidence": [
+          "2026-10-30 owner explicitly confirmed the complete browser recovery workflow and S04-04 positive browser UAT = PASS; private owner-uat-pass01/owner-acceptance.json SHA256 d85a99142d5e8dec5c119a2e68aedfec676c63e0f2aea2dd68d47ce18fda18ab",
+          "owner-uat-pass01/native-readonly-corroboration.json SHA256 ee2bb1a11ec1671ec5a1912315c5f2b6fb301680e66c39feb9a6a9514738de0e: activeepoch5; actual password receipt recorded, protected cache-zero check confirmed and new-password authentication confirmed; read-only capture."
+        ]
       }
     ],
     "engineering_exit": "All required source/native/installed scenarios pass with actual effects, independent review and signed synchronized delivery; failed history remains preserved.",
-    "human_exit": "Authorized human independently judges real identity and confirms defined recovery outcome after engineering qualification."
+    "human_exit": "Owner completes the login-entry recovery/password/replacement-TOTP/fresh-login browser journey and explicitly accepts the current revised scope; raw credentials and setup material stay private."
   },
   "work_packages": [
     {
@@ -10481,7 +10545,8 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "S04-04-T01",
         "S04-04-T02"
       ],
-      "evidence": "Independent D04 source policy GO and read-only actual installed configuration contract; human claimant identity remains separate."
+      "evidence": "Independent D04 source policy GO and read-only actual installed configuration contract; human claimant identity remains separate.",
+      "historical_superseded_contract": true
     },
     {
       "id": "WP02",
@@ -10491,7 +10556,8 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "S04-04-T02",
         "S04-04-T07"
       ],
-      "evidence": "Source signature/case/replay and actual Runtime tests PASS; current native components PASS including frontend coverage refusal. Real identity and configured journey remain pending."
+      "evidence": "Source signature/case/replay and actual Runtime tests PASS; current native components PASS including frontend coverage refusal. Real identity and configured journey remain pending.",
+      "historical_superseded_contract": true
     },
     {
       "id": "WP03",
@@ -10500,7 +10566,8 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "S04-04-T03",
         "S04-04-T07"
       ],
-      "evidence": "Actual native epoch/session files and reused exactroot cross-owner replacement PASS. Installed helper/Web preserve sessions/state; actual selected-account admission/refusal during configured recovery remains pending. Actual retained baseline now has one live protected-cookie GET200 and one already idle-expired original record; both physically nonrevoked. Native governed revocation/Pending admission and positive other-account usability remain pending."
+      "evidence": "Actual native epoch/session files and reused exactroot cross-owner replacement PASS. Installed helper/Web preserve sessions/state; actual selected-account admission/refusal during configured recovery remains pending. Actual retained baseline now has one live protected-cookie GET200 and one already idle-expired original record; both physically nonrevoked. Native governed revocation/Pending admission and positive other-account usability remain pending.",
+      "historical_superseded_contract": true
     },
     {
       "id": "WP04",
@@ -10509,7 +10576,8 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "S04-04-T04",
         "S04-04-T05"
       ],
-      "evidence": "Source adapter and native temporary-store components PASS; reserved fixture password/factor/epoch0 manually initialized and independently verified. Factor now EXPOSED with direct human isolated-factor classification; actual governed replacement and post-recovery own-password journey NOT_RUN."
+      "evidence": "Source adapter and native temporary-store components PASS; reserved fixture password/factor/epoch0 manually initialized and independently verified. Factor now EXPOSED with direct human isolated-factor classification; actual governed replacement and post-recovery own-password journey NOT_RUN.",
+      "historical_superseded_contract": true
     },
     {
       "id": "WP05",
@@ -10518,7 +10586,8 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "S04-04-T06",
         "S04-04-T07"
       ],
-      "evidence": "Changed durable case/epoch/session and before/after dispatch/release uncertainty boundaries PASS at source/native component scope. Actual configured integration remains pending."
+      "evidence": "Changed durable case/epoch/session and before/after dispatch/release uncertainty boundaries PASS at source/native component scope. Actual configured integration remains pending.",
+      "historical_superseded_contract": true
     },
     {
       "id": "WP06",
@@ -10527,7 +10596,8 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "S04-04-T08",
         "S04-04-T09"
       ],
-      "evidence": "Normal functional source hookPASS/GitHubparity0/0; native current41PASS+unchangedroot1, installed Web/helper/readiness/712-record preservation PASS. Complete T08 and separate T09 NOT_RUN; no readiness/acceptance claim."
+      "evidence": "Normal functional source hookPASS/GitHubparity0/0; native current41PASS+unchangedroot1, installed Web/helper/readiness/712-record preservation PASS. Complete T08 and separate T09 NOT_RUN; no readiness/acceptance claim.",
+      "historical_superseded_contract": true
     }
   ],
   "source_delivery": {
@@ -10693,7 +10763,8 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
       "S04-04-T08",
       "S04-04-T09"
     ],
-    "current_next_plan": "Owner browser preview on local obsd1; all complete T04/T05/T08/T09 remain NOT_RUN. Retired fixture launchers/restoration/signing drafts are not owner execution methods."
+    "current_next_plan": "Owner browser preview on local obsd1; all complete T04/T05/T08/T09 remain NOT_RUN. Retired fixture launchers/restoration/signing drafts are not owner execution methods.",
+    "historical_superseded_contract": true
   },
   "operator_followup": {
     "custody": "CONFIRMED_DIRECT_HUMAN_RESERVED_DISPOSABLE_FIXTURE",
@@ -10936,7 +11007,8 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
       "evidence": "private continuation01/real-account-readiness01/{installed-runtime,owner-status,selector-deployment,post-switch-health}.json",
       "effects": "No recovery begin/prepare/reconcile, factor/password write or explicit session-revocation operation. Selector changes native admission; old cookies can require fresh login.",
       "limits": "Configured local browser walkthrough only; fullT04/T05/T08/T09 notqualified; no Toronto mailbox-sync or real-person identity claim. Fixture-only old actors not applicable to owner."
-    }
+    },
+    "historical_superseded_contract": true
   },
   "historical_2026_10_29_contract": {
     "original_requirement": "Controlled real-user recovery coordinator joining identity verification, containment, session revocation and TOTP tooling",
@@ -11315,11 +11387,14 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "T07"
       ],
       "engineering": "IMPLEMENTED_AND_NATIVE_TESTED",
-      "completion": "OWNER_UAT_PENDING",
+      "completion": "COMPLETE_ACCEPTED_SCOPE",
       "current_evidence": {
         "source_commit": "5e3ebb5d2e3a82823f44854f7a249c361da69dfe",
         "native_qualification_sha256": "bee5a8c3910dc9a9f39869d11df2e13e861cb48bc9ef72b17351e98a87fa7f87",
-        "installed_refresh_sha256": "5d44bb90af661359a697c10f179a0514347d68616eafee347a294b740a470396"
+        "installed_refresh_sha256": "5d44bb90af661359a697c10f179a0514347d68616eafee347a294b740a470396",
+        "owner_uat": "PASS",
+        "owner_uat_sha256": "d85a99142d5e8dec5c119a2e68aedfec676c63e0f2aea2dd68d47ce18fda18ab",
+        "native_postwrite_corroboration_sha256": "ee2bb1a11ec1671ec5a1912315c5f2b6fb301680e66c39feb9a6a9514738de0e"
       }
     },
     {
@@ -11331,11 +11406,14 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "T07"
       ],
       "engineering": "REGISTERED_EMAIL_RECEIVED_PROOF_ACCEPTED_PARTIAL_CASE_ADMINISTRATIVELY_RECONCILED",
-      "completion": "POSITIVE_UNASSISTED_RECOVERY_AND_FRESH_LOGIN_PENDING",
+      "completion": "COMPLETE_ACCEPTED_SCOPE",
       "current_evidence": {
         "source_commit": "5e3ebb5d2e3a82823f44854f7a249c361da69dfe",
         "native_qualification_sha256": "bee5a8c3910dc9a9f39869d11df2e13e861cb48bc9ef72b17351e98a87fa7f87",
-        "installed_refresh_sha256": "5d44bb90af661359a697c10f179a0514347d68616eafee347a294b740a470396"
+        "installed_refresh_sha256": "5d44bb90af661359a697c10f179a0514347d68616eafee347a294b740a470396",
+        "owner_uat": "PASS",
+        "owner_uat_sha256": "d85a99142d5e8dec5c119a2e68aedfec676c63e0f2aea2dd68d47ce18fda18ab",
+        "native_postwrite_corroboration_sha256": "ee2bb1a11ec1671ec5a1912315c5f2b6fb301680e66c39feb9a6a9514738de0e"
       }
     },
     {
@@ -11347,11 +11425,14 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "T07"
       ],
       "engineering": "ACTUAL_INTERRUPTED_CASE_CONTAINMENT_AND_EXACT_RECONCILIATION_OBSERVED",
-      "completion": "FRESH_OWNER_AUTHENTICATION_PENDING",
+      "completion": "COMPLETE_ACCEPTED_SCOPE",
       "current_evidence": {
         "source_commit": "5e3ebb5d2e3a82823f44854f7a249c361da69dfe",
         "native_qualification_sha256": "bee5a8c3910dc9a9f39869d11df2e13e861cb48bc9ef72b17351e98a87fa7f87",
-        "installed_refresh_sha256": "5d44bb90af661359a697c10f179a0514347d68616eafee347a294b740a470396"
+        "installed_refresh_sha256": "5d44bb90af661359a697c10f179a0514347d68616eafee347a294b740a470396",
+        "owner_uat": "PASS",
+        "owner_uat_sha256": "d85a99142d5e8dec5c119a2e68aedfec676c63e0f2aea2dd68d47ce18fda18ab",
+        "native_postwrite_corroboration_sha256": "ee2bb1a11ec1671ec5a1912315c5f2b6fb301680e66c39feb9a6a9514738de0e"
       }
     },
     {
@@ -11361,11 +11442,14 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
         "T09"
       ],
       "engineering": "ORIGIN_CORRECTION_AND_NATIVE_POSTWRITE_FIX_INSTALLED",
-      "completion": "POSITIVE_OWNER_RETEST_PENDING",
+      "completion": "COMPLETE_ACCEPTED_SCOPE",
       "current_evidence": {
         "source_commit": "5e3ebb5d2e3a82823f44854f7a249c361da69dfe",
         "native_qualification_sha256": "bee5a8c3910dc9a9f39869d11df2e13e861cb48bc9ef72b17351e98a87fa7f87",
-        "installed_refresh_sha256": "5d44bb90af661359a697c10f179a0514347d68616eafee347a294b740a470396"
+        "installed_refresh_sha256": "5d44bb90af661359a697c10f179a0514347d68616eafee347a294b740a470396",
+        "owner_uat": "PASS",
+        "owner_uat_sha256": "d85a99142d5e8dec5c119a2e68aedfec676c63e0f2aea2dd68d47ce18fda18ab",
+        "native_postwrite_corroboration_sha256": "ee2bb1a11ec1671ec5a1912315c5f2b6fb301680e66c39feb9a6a9514738de0e"
       }
     }
   ],
@@ -11395,7 +11479,9 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
       "factor_hash_unchanged": true,
       "case_present": false
     },
-    "corrected_installed_browser_test": "PASS_UNKNOWN_ACCOUNT_NATIVE_FORM_ONLY"
+    "corrected_installed_browser_test": "PASS_UNKNOWN_ACCOUNT_NATIVE_FORM_ONLY",
+    "historical_failed_attempt": true,
+    "superseded_acceptance_reference": "current_browser_owner_uat_pass; original execution result unchanged"
   },
   "current_browser_owner_uat_refresh": {
     "source_commit": "a77bb9c296100d029dd71891457d81b5e7f87823",
@@ -11456,7 +11542,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "root_cause": "unsupported cache flush requested through stock primary role",
     "source_correction": "SIGNED_PUSHED_NATIVE_QUALIFIED_INSTALLED",
     "account_reconciliation": "PASS_ADMINISTRATIVE_NO_CREDENTIAL_RETRY",
-    "acceptance": "PENDING_POSITIVE_OWNER_RETEST",
+    "acceptance": "SUPERSEDED_BY_OWNER_POSITIVE_UAT_PASS",
     "focused_service_passes": 3,
     "focused_factor_adapter_passes": 9,
     "actual_stock_mapper_passes": 1,
@@ -11464,7 +11550,9 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "new_native_qualification": "PASS_109_UNIQUE_PLUS_ROOT_1",
     "no_permission_widening": true,
     "actual_write_receipt_saved_before_postchecks": true,
-    "original_postwrite_stage_trace": "NOT_CAPTURED"
+    "original_postwrite_stage_trace": "NOT_CAPTURED",
+    "historical_failed_attempt": true,
+    "superseded_acceptance_reference": "current_browser_owner_uat_pass; original execution result unchanged"
   },
   "current_browser_postwrite_native_recipe": {
     "actor_sha256": "bb70e04159a667dbcd634f825c29c4f876aca35faefdfb5c6069f2867cac7f31",
@@ -11562,8 +11650,8 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "grant_state": "Complete",
     "marker_absent": true,
     "original_revoked_session_records_unchanged": 19,
-    "owner_fresh_login": "PENDING",
-    "owner_acceptance": "PENDING"
+    "owner_fresh_login": "PASS_SUBSEQUENT_OWNER_JOURNEY",
+    "owner_acceptance": "PASS_SUBSEQUENT_OWNER_JOURNEY"
   },
   "prior_browser_runtime_source_checkpoint": {
     "commit": "a77bb9c296100d029dd71891457d81b5e7f87823",
@@ -11577,6 +11665,28 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "ahead": 0,
     "behind": 0,
     "installed": true
+  },
+  "work_packages_scope": "Historical operator-only WP01-WP06 records are retained below; current_browser_work_packages define completion of the accepted revised contract.",
+  "current_browser_owner_uat_pass": {
+    "status": "PASS",
+    "acceptance": "ACCEPTED",
+    "date": "2026-10-30",
+    "timezone": "America/Toronto",
+    "reference": "2026-10-30 owner explicitly confirmed the complete browser recovery workflow and S04-04 positive browser UAT = PASS; private owner-uat-pass01/owner-acceptance.json SHA256 d85a99142d5e8dec5c119a2e68aedfec676c63e0f2aea2dd68d47ce18fda18ab",
+    "source_runtime": "5e3ebb5d2e3a82823f44854f7a249c361da69dfe",
+    "registered_email_received": true,
+    "new_password_and_totp_confirmed": true,
+    "access_updated_page_observed": true,
+    "fresh_new_values_login": "PASS",
+    "mailbox_page_observed": true,
+    "native_epoch": 5,
+    "native_state": "active",
+    "native_postwrite_corroboration_sha256": "ee2bb1a11ec1671ec5a1912315c5f2b6fb301680e66c39feb9a6a9514738de0e",
+    "raw_private_screenshot_count": 8,
+    "separate_settings_human_branch": "NOT_OBSERVED",
+    "human_old_factor_negative": "NOT_OBSERVED",
+    "onboarding": "SEPARATE_SPRINT_MANUAL_NOW",
+    "S05_02": "DEFERRED"
   }
 }
 ```
