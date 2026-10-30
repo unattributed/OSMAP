@@ -10203,6 +10203,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "src/account_password_confinement.rs",
     "src/account_password_connection.rs",
     "src/account_password_custody.rs",
+    "src/account_password_native_tests.rs",
     "src/account_password_runtime.rs",
     "src/account_password_state.rs",
     "src/account_password_state_tests.rs",
@@ -10312,7 +10313,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "slice": "S04-04",
     "specification": {
       "path": "docs/UX_SLICE_S04_04.md",
-      "sha256": "fd53042d4facb19913bb99b169d14559ebe5d4aa51af8382eedc2b6a527e8dd2"
+      "sha256": "837d52bd626bfede2acfa1d606add453470d2b9e2e2c6e18717922b46462d38c"
     },
     "design": {
       "journey": "Fresh current-password/TOTP confirmation -> new QR and code confirmation -> factor replacement; login-page email recovery -> expiring one-use code -> restricted password and replacement TOTP setup -> fresh normal sign-in.",
@@ -11293,11 +11294,11 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "refresh_protected_records_preserved": 734
   },
   "current_browser_runtime_source_checkpoint": {
-    "commit": "2cdaf8c6d986cb47ed9f7af34ab94db31f4fce53",
+    "commit": "a77bb9c296100d029dd71891457d81b5e7f87823",
     "signature": "Good Shopkeeper",
     "normal_pre_commit": "PASS",
     "normal_pre_push": "PASS",
-    "rust_passed": 2069,
+    "rust_passed": 2073,
     "rust_failed": 0,
     "rust_ignored": 74,
     "fresh_remote_equality": true,
@@ -11374,7 +11375,82 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
       "factor_hash_unchanged": true,
       "case_present": false
     },
-    "corrected_installed_browser_test": "NOT_RUN"
+    "corrected_installed_browser_test": "PASS_UNKNOWN_ACCOUNT_NATIVE_FORM_ONLY"
+  },
+  "current_browser_owner_uat_refresh": {
+    "source_commit": "a77bb9c296100d029dd71891457d81b5e7f87823",
+    "fresh_remote_parity": true,
+    "normal_push_hook": "PASS",
+    "native_components": "PASS",
+    "sealed_native_qualifier": "PASS",
+    "actor_sha256": "12305600fb11950b822b6e40eb4535dcd262b7392033600edff68b4662ffb1a0",
+    "target": "obsd1.blackbagsecurity.com",
+    "permitted_service_actions": [
+      "osmap_serve",
+      "osmap_account_password"
+    ],
+    "primary_max_seconds": 240,
+    "cleanup_max_seconds": 180,
+    "outer_max_seconds": 450,
+    "configuration_write": false,
+    "credential_or_factor_operation": false,
+    "new_artifacts": {
+      "osmap": "4479b2a77737eec0e726a60fb26ac8c5284d310e7f4879c8e28fadb7c1c9a8bc",
+      "account-passwd": "7da2b18a49f3b9de27e553eaaafc8bb84fa99c40aeda14024b4d2f6860db8613",
+      "account-recovery": "1724af88850c5e857565fbe1698db86393ea096a541757c11b7b705c87739a2e"
+    },
+    "status": "PASS",
+    "observed_elapsed_seconds": 16.232,
+    "receipt_sha256": "52e75ce8442859834eeb6032a17c6924a408f126826df7f2b45cd44cb02e2529",
+    "protected_record_count": 745,
+    "protected_before_after_sha256": "c7c48a119e80aca274142bde5d05d54e7f2c812e5a4b32b230c135f37b42754c",
+    "unique_native_component_passes": 106,
+    "sealed_native_root_passes": 1
+  },
+  "current_browser_origin_regression": {
+    "source_commit": "a77bb9c296100d029dd71891457d81b5e7f87823",
+    "status": "PASS",
+    "before": "native form Origin:null -> HTTP403",
+    "after": "native form expected HTTPS Origin -> HTTP200 email-code page",
+    "headers_overridden": false,
+    "registered_account_used": false,
+    "receipt_sha256": "aa16afab056b7c299b41e8b644ae6e14d009e05a9b5656380c6b3093488e0902",
+    "independent_QA_sha256": "8af19c51c5d5da578cb392a5964304d3ab560506d948792db16e23d70d5614e0"
+  },
+  "current_browser_owner_uat_after_origin_fix": {
+    "status": "FAIL_PARTIAL_UPDATE_CONTAINED",
+    "registered_recovery_email_receipt": "OWNER_OBSERVED_PASS",
+    "email_proof_and_setup_display": "OWNER_OBSERVED_PASS",
+    "final_confirmation": "HTTP503_UNCONFIRMED",
+    "read_only_reconciliation": {
+      "phase": "FactorReplaced",
+      "failure": "PasswordReset",
+      "epoch_state": "pending",
+      "epoch": 3,
+      "revoked_browser_sessions": 19,
+      "factor_matches_durable_replacement": true,
+      "authoritative_password_modified_at_matches_dispatch": true,
+      "receipt_sha256": "2fcec99a254e6607d23130fa5af2b79a2842697366f83cff577227725353ee93"
+    },
+    "automatic_credential_retry": false,
+    "root_cause": "unsupported cache flush requested through stock primary role",
+    "source_correction": "IMPLEMENTED_FOCUSED_AND_CLIPPY_PASS",
+    "account_reconciliation": "PENDING",
+    "acceptance": "FAIL",
+    "focused_service_passes": 3,
+    "focused_factor_adapter_passes": 9,
+    "actual_stock_mapper_passes": 1,
+    "all_target_all_feature_clippy": "PASS",
+    "new_native_qualification": "NOT_RUN",
+    "no_permission_widening": true,
+    "actual_write_receipt_saved_before_postchecks": true,
+    "original_postwrite_stage_trace": "NOT_CAPTURED"
+  },
+  "current_browser_postwrite_native_recipe": {
+    "actor_sha256": "87f30845de8e36e1ff03aedf66eb521c1b9f5403af31289796c0e1711398c1c2",
+    "change": "one exact stock mapper selector appended to previously reviewed component loop",
+    "execution": "NOT_RUN",
+    "live_account_effects": false
   }
 }
 ```

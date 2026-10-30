@@ -182,7 +182,7 @@ impl Coordinator {
         before_release: F,
     ) -> Result<Receipt, Error>
     where
-        F: FnOnce() -> Result<Option<String>, Error>,
+        F: FnOnce(&mut dyn FnMut(&str) -> Result<(), Error>) -> Result<Option<String>, Error>,
     {
         self.replace_inner(verified, None, now, deadline, before_release)
     }
@@ -199,7 +199,7 @@ impl Coordinator {
         before_release: F,
     ) -> Result<Receipt, Error>
     where
-        F: FnOnce() -> Result<Option<String>, Error>,
+        F: FnOnce(&mut dyn FnMut(&str) -> Result<(), Error>) -> Result<Option<String>, Error>,
     {
         self.replace_inner(
             verified,
@@ -218,7 +218,7 @@ impl Coordinator {
         before_release: F,
     ) -> Result<Receipt, Error>
     where
-        F: FnOnce() -> Result<Option<String>, Error>,
+        F: FnOnce(&mut dyn FnMut(&str) -> Result<(), Error>) -> Result<Option<String>, Error>,
     {
         self.check_owner()?;
         if now == 0 || now >= verified.expires_at() {
@@ -384,7 +384,25 @@ impl Coordinator {
         save(&locked, &case)?;
         // Real password reset/readback/cache cleanup, if requested, occurs under
         // this same durable fence; no success Boolean or fake SQL write exists.
-        case.password_changed_at = before_release()
+        let callback_result = {
+            let mut record_stamp = |stamp: &str| {
+                if !crate::account_mutation::changed_at_valid(stamp) {
+                    return Err(Error::PasswordReset);
+                }
+                // Preserve the actual verified SQL receipt before cache/auth
+                // checks. A later failure must not discard this durable fact.
+                case.password_changed_at = Some(stamp.into());
+                save(&locked, &case)?;
+                let mut guard = epoch
+                    .lock_before(&binding.account, deadline)
+                    .map_err(|_| Error::StateUnavailable)?;
+                guard
+                    .record_recovery_password_write(binding.epoch, &case.intent, marker, stamp)
+                    .map_err(|_| Error::PasswordReset)
+            };
+            before_release(&mut record_stamp)
+        };
+        case.password_changed_at = callback_result
             .map_err(|error| fail(&locked, &mut case, error))?
             .or(case.password_changed_at);
         save(&locked, &case)?;
@@ -789,7 +807,7 @@ mod tests {
                     if reason == "idle" { 60 } else { 1800 },
                     120,
                     deadline(),
-                    || {
+                    |_| {
                         called.set(true);
                         Ok(None)
                     },
@@ -810,7 +828,7 @@ mod tests {
         let f = Fixture::new();
         let receipt = f
             .coordinator()
-            .replace_session(f.proof(), &"f".repeat(64), 1800, 120, deadline(), || {
+            .replace_session(f.proof(), &"f".repeat(64), 1800, 120, deadline(), |_| {
                 assert_eq!(f.status().state, State::Pending);
                 assert!(f
                     .sessions()
@@ -839,7 +857,7 @@ mod tests {
         .unwrap();
         let receipt = f
             .coordinator()
-            .replace(proof, 120, deadline(), || {
+            .replace(proof, 120, deadline(), |_| {
                 assert_eq!(f.status().state, State::Pending);
                 assert_eq!(f.status().epoch, 3);
                 assert!(f
@@ -888,7 +906,7 @@ mod tests {
         let proof = f.proof();
         let receipt = f
             .coordinator()
-            .replace(proof, 120, deadline(), || {
+            .replace(proof, 120, deadline(), |_| {
                 assert_eq!(f.status().state, State::Pending);
                 Ok(Some("20261030090000".into()))
             })
@@ -906,7 +924,7 @@ mod tests {
         let proof = f.proof();
         assert_eq!(
             f.coordinator()
-                .replace(proof, 120, deadline(), || Err(Error::PasswordReset)),
+                .replace(proof, 120, deadline(), |_| Err(Error::PasswordReset)),
             Err(Error::PasswordReset)
         );
         assert_eq!(f.status().state, State::Pending);
@@ -925,6 +943,28 @@ mod tests {
         );
     }
     #[test]
+    fn confirmed_password_stamp_survives_later_callback_failure() {
+        let f = Fixture::new();
+        assert_eq!(
+            f.coordinator()
+                .replace(f.proof(), 120, deadline(), |record_stamp| {
+                    record_stamp("20261030090000")?;
+                    assert_eq!(f.status().state, State::Pending);
+                    assert_eq!(f.status().changed_at.as_deref(), Some("20261030090000"));
+                    Err(Error::PasswordReset)
+                }),
+            Err(Error::PasswordReset)
+        );
+        assert_eq!(f.status().state, State::Pending);
+        assert_eq!(f.status().epoch, 3);
+        let store = PrivateAccountFile::new(f.root.join("cases"), SCHEMA, 16384);
+        let lock = store.lock(ACCOUNT).unwrap();
+        let case: Case = serde_json::from_slice(&lock.read().unwrap().unwrap()).unwrap();
+        assert_eq!(case.password_changed_at.as_deref(), Some("20261030090000"));
+        assert_eq!(case.failure, Some(Error::PasswordReset));
+        assert!(case.phase == Phase::FactorReplaced);
+    }
+    #[test]
     fn factor_race_or_expired_proof_has_no_active_effects() {
         let f = Fixture::new();
         let proof = f.proof();
@@ -934,7 +974,7 @@ mod tests {
             b"# concurrent public fixture\nsecret=GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ\n",
         );
         assert_eq!(
-            f.coordinator().replace(proof, 120, deadline(), || {
+            f.coordinator().replace(proof, 120, deadline(), |_| {
                 called.set(true);
                 Ok(None)
             }),
@@ -947,7 +987,7 @@ mod tests {
         let expires = proof.expires_at();
         assert_eq!(
             g.coordinator()
-                .replace(proof, expires, deadline(), || Ok(None)),
+                .replace(proof, expires, deadline(), |_| Ok(None)),
             Err(Error::Expired)
         );
         assert_eq!(fs::read(g.factor()).unwrap(), OLD);
@@ -962,7 +1002,8 @@ mod tests {
         fs::create_dir(&target).unwrap();
         symlink(&target, f.root.join("archive")).unwrap();
         assert_eq!(
-            f.coordinator().replace(proof, 120, deadline(), || Ok(None)),
+            f.coordinator()
+                .replace(proof, 120, deadline(), |_| Ok(None)),
             Err(Error::FactorWrite)
         );
         assert_eq!(fs::read(f.factor()).unwrap(), OLD);
@@ -1125,7 +1166,7 @@ mod tests {
             phase.set("native_activation");
             let callback_seen = Cell::new(false);
             let receipt = coordinator
-                .replace_session(verified, &"f".repeat(64), 1800, now, deadline(), || {
+                .replace_session(verified, &"f".repeat(64), 1800, now, deadline(), |_| {
                     phase.set("pending_callback");
                     assert_eq!(f.status().state, State::Pending);
                     assert_eq!(f.status().epoch, 3);

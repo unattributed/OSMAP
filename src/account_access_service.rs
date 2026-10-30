@@ -202,6 +202,7 @@ impl NativeAccess {
         accounts: &BTreeSet<String>,
         backend: &Backend<E>,
         primary: &P,
+        stock_peer: &crate::account_password_peer::StockPeer,
         deadline: Instant,
     ) -> Result<Vec<u8>, crate::account_password_connection::Error> {
         use crate::account_password_connection::Error as ConnectionError;
@@ -218,7 +219,20 @@ impl NativeAccess {
                     .checked_sub(now)
                     .ok_or(AccessError::Expired)?;
                 let deadline = deadline.min(Instant::now() + Duration::from_secs(remaining));
-                service.execute(&request, epochs, accounts, backend, primary, now, deadline)
+                service.execute(
+                    &request,
+                    epochs,
+                    accounts,
+                    backend,
+                    primary,
+                    &|budget| {
+                        stock_peer
+                            .recheck(budget)
+                            .map_err(|_| AccessError::Unavailable)
+                    },
+                    now,
+                    deadline,
+                )
             }),
         };
         Response::issue(&parsed, outcome, key, SystemTimeProvider.unix_timestamp())
@@ -268,6 +282,7 @@ impl NativeAccess {
         accounts: &BTreeSet<String>,
         backend: &Backend<E>,
         primary: &P,
+        cache_zero: &impl Fn(Instant) -> Result<(), AccessError>,
         now: u64,
         deadline: Instant,
     ) -> Result<AccessOutcome, AccessError> {
@@ -490,7 +505,7 @@ impl NativeAccess {
                         self.session_idle_seconds,
                         now,
                         deadline,
-                        || Ok(None),
+                        |_| Ok(None),
                     )
                     .map_err(factor_error)?;
                 Ok(AccessOutcome {
@@ -531,7 +546,8 @@ impl NativeAccess {
                 self.recovery()
                     .consume_grant(token, csrf, now, deadline, &authority, |grant| {
                         self.factor()
-                            .replace(verified, now, deadline, || {
+                            .replace(verified, now, deadline, |record_stamp| {
+                                eprintln!("account_access_service stage=password_write result=dispatch");
                                 let receipt = backend
                                     .reset_after_recovery(
                                         snapshot,
@@ -541,23 +557,36 @@ impl NativeAccess {
                                         deadline,
                                         || Ok(()),
                                     )
-                                    .map_err(|_| FactorError::PasswordReset)?;
-                                crate::account_password_mail::flush(
-                                    primary,
-                                    &grant.account,
-                                    deadline,
-                                )
-                                .map_err(|_| FactorError::PasswordReset)?;
+                                    .map_err(|_| {
+                                        eprintln!("account_access_service stage=password_write result=unconfirmed");
+                                        FactorError::PasswordReset
+                                    })?;
+                                record_stamp(receipt.changed_at()).inspect_err(|_| {
+                                    eprintln!("account_access_service stage=password_receipt result=unavailable");
+                                })?;
+                                eprintln!("account_access_service stage=password_receipt result=recorded");
+                                // Stock Dovecot uses the same protected cache-zero
+                                // witness as ordinary password changes, not FLUSH.
+                                cache_zero(deadline).map_err(|_| {
+                                    eprintln!("account_access_service stage=cache_zero result=unavailable");
+                                    FactorError::PasswordReset
+                                })?;
+                                eprintln!("account_access_service stage=cache_zero result=confirmed");
                                 if !crate::account_password_mail::primary(
                                     primary,
                                     &grant.account,
                                     password,
                                     deadline,
                                 )
-                                .map_err(|_| FactorError::PasswordReset)?
+                                .map_err(|_| {
+                                    eprintln!("account_access_service stage=password_auth result=unavailable");
+                                    FactorError::PasswordReset
+                                })?
                                 {
+                                    eprintln!("account_access_service stage=password_auth result=refused");
                                     return Err(FactorError::PasswordReset);
                                 }
+                                eprintln!("account_access_service stage=password_auth result=confirmed");
                                 Ok(Some(receipt.changed_at().into()))
                             })
                             .map_err(|_| recovery::Error::Unconfirmed)?;

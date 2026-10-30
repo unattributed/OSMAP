@@ -225,7 +225,34 @@ reference and static refusal reason. Native SMTP emits independent, non-authoriz
 attempt/outcome references and fixed phase/disposition fields, without account,
 recipient, code or message contents. Queue acceptance remains distinct from actual
 recipient receipt. Logging or audit-reference failure cannot gate mail or retry it.
-The actual browser regression remains pending the corrected installation.
+The correction is installed from signed source `a77bb9c`. A real isolated browser
+now follows the login link and submits its native recovery form with the expected
+HTTPS Origin, receiving HTTP 200 and the email-code page. No headers were forced.
+This synthetic unknown-account check qualifies form submission only. All eight
+native component groups pass (106 unique tests, including one audit-interleaved
+pass corrected in an additive receipt), and the sealed root qualifier passes.
+The normal push gate passes 2073 Rust tests with zero failures and 74 ignored.
+The refresh preserves all 745 protected records byte-for-byte and restarts only
+the two OSMAP roles. Onboarding and S05-02 remain unchanged.
+
+The subsequent owner attempt confirms recovery email receipt, proof acceptance
+and replacement setup display. Its final confirmation returns HTTP 503. Read-only
+reconciliation finds `FactorReplaced` / `PasswordReset`, Pending at the original
+epoch, 19 revoked browser sessions and an authoritative password modification
+matching the dispatch time. The replacement factor matches the durable case.
+This is a partial committed update, not a pre-dispatch refusal; no credential
+operation is repeated. Source diagnosis finds that the new recovery callback
+requested a cache flush through a stock primary role that intentionally cannot
+execute that command. The ordinary stock password flow instead rechecks its
+protected cache-zero witness. The correction now passes 3 focused service tests, 9 factor-adapter tests and
+one actual stock command-mapper test. Production supplies the typed StockPeer;
+no executor permission is widened. The actual verified SQL receipt is now saved
+to both the case and Pending epoch before cache/authentication checks, and fixed
+stage diagnostics preserve later failure boundaries. All-target/all-feature
+Clippy passes after a logging-only `inspect_err` correction; the initial lint
+failure remains retained. Native refresh and exact-case administrative
+reconciliation remain pending at this source checkpoint. No successful account
+recovery or owner acceptance is claimed.
 
 
 ## Historical observable outcome and authority

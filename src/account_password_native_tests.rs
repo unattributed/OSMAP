@@ -307,6 +307,59 @@ fn selected_parent_refuses_failed_backend_graph_and_original_deadline() {
 }
 
 #[test]
+fn stock_primary_command_mapping_refuses_cache_flush_before_native_dispatch() {
+    // Only exercise the production command mapper here. These inert fields do
+    // not attest native custody and must never be used to prepare/spawn a child.
+    let profile = NativeProfile {
+        role: Role::StockPrimary,
+        original_deadline: Instant::now() + Duration::from_secs(1),
+        observed: Observation {
+            ids: (0, 0),
+            public: Vec::new(),
+            private_ancestry: Vec::new(),
+            endpoints: Vec::new(),
+            null: (Vec::new(), Vec::new()),
+        },
+        primary: None,
+        control: None,
+        startup: None,
+        stock: None,
+    };
+    let arguments = |prefix: &[&str]| {
+        prefix
+            .iter()
+            .map(|value| (*value).to_owned())
+            .chain(std::iter::once("alice@example.test".to_owned()))
+            .collect::<Vec<_>>()
+    };
+    let primary = arguments(crate::account_password_mail::PRIMARY);
+    let mapped = profile.command_args(&primary).unwrap();
+    assert_eq!(mapped[6], crate::account_password_mail::STOCK_AUTH);
+    assert!(matches_command(
+        Role::StockPrimary,
+        crate::account_password_backend::HASH_PROGRAM,
+        &mapped
+    ));
+
+    // This syntactically valid control command was incorrectly sent through
+    // the selected primary-only executor after the recovery SQL commit.
+    let private_flush = arguments(crate::account_password_mail::FLUSH);
+    assert!(matches_command(
+        Role::Control,
+        crate::account_password_backend::HASH_PROGRAM,
+        &private_flush
+    ));
+    assert!(profile.command_args(&private_flush).is_err());
+    let stock_flush = crate::account_password_mail::stock_args(&private_flush, false).unwrap();
+    assert!(profile.command_args(&stock_flush).is_err());
+    assert!(!matches_command(
+        Role::StockPrimary,
+        crate::account_password_backend::HASH_PROGRAM,
+        &stock_flush
+    ));
+}
+
+#[test]
 fn stock_primary_role_keeps_fixed_socket_command_and_separate_material() {
     use crate::account_password_backend::{HASH_PROGRAM, SQL_PROGRAM};
     let mut original = crate::account_password_mail::PRIMARY

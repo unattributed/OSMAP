@@ -377,6 +377,7 @@ impl StockRuntime {
                 &self.accounts,
                 backend,
                 primary,
+                &self.peer,
                 inherited,
             )
         };

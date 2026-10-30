@@ -2,7 +2,7 @@ use super::*;
 use crate::auth::{CommandExecution, CommandExecutionError, RequiredSecondFactor};
 use crate::recovery_contact::RecoveryContactDelivery;
 use crate::session::{FileSessionStore, SessionRecord, SessionStore};
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::fs;
 use std::os::unix::fs::{MetadataExt, PermissionsExt};
 
@@ -23,6 +23,8 @@ struct Fixture {
     root: PathBuf,
     service: NativeAccess,
     accounts: BTreeSet<String>,
+    cache_checks: Cell<usize>,
+    refuse_cache: Cell<bool>,
 }
 impl Fixture {
     fn new() -> Self {
@@ -119,6 +121,8 @@ impl Fixture {
             root,
             service,
             accounts: [ACCOUNT.into(), OTHER.into()].into_iter().collect(),
+            cache_checks: Cell::new(0),
+            refuse_cache: Cell::new(false),
         }
     }
     fn epochs(&self) -> EpochStore {
@@ -139,6 +143,15 @@ impl Fixture {
             &self.accounts,
             db,
             primary,
+            &|budget| {
+                assert!(budget > Instant::now());
+                self.cache_checks.set(self.cache_checks.get() + 1);
+                if self.refuse_cache.get() {
+                    Err(AccessError::Unavailable)
+                } else {
+                    Ok(())
+                }
+            },
             now(),
             deadline(),
         )
@@ -232,7 +245,9 @@ impl CommandExecutor for Commands {
         } else if args.iter().any(|s| s == "pw") {
             format!("{}\n", new_hash())
         } else if args.iter().any(|s| s == "cache") {
-            "0 cache entries flushed\n".into()
+            return Err(CommandExecutionError {
+                reason: "unsupported stock FLUSH".into(),
+            });
         } else {
             format!("auth succeeded\nuser={ACCOUNT}\n")
         };
@@ -339,6 +354,53 @@ impl recovery::Notifier for Mail {
 #[test]
 fn email_grant_commits_password_and_factor_under_one_native_fence() {
     let f = Fixture::new();
+    let (token, enrollment) = email_enrollment(&f);
+    let db = Backend::new(Commands::default());
+    let primary = Commands::default();
+    let result = f
+        .action(
+            Authority::Grant {
+                token: token.clone(),
+            },
+            Action::Confirm {
+                enrollment_id: enrollment.id.clone(),
+                revision: enrollment.revision,
+                code: code(&enrollment),
+                password: Some(NEW_PASSWORD.into()),
+                confirmation: Some(NEW_PASSWORD.into()),
+            },
+            &db,
+            &primary,
+        )
+        .unwrap();
+    assert!(matches!(result.view, AccessView::Complete));
+    f.assert_active(4);
+    let epochs = f.epochs();
+    let eligible = Eligible {
+        service: &f.service,
+        accounts: &f.accounts,
+        epochs: &epochs,
+    };
+    assert!(f
+        .service
+        .recovery()
+        .lookup_grant(&token, CSRF, now(), deadline(), &eligible)
+        .is_err());
+    assert_eq!(f.cache_checks.get(), 1);
+    assert_ne!(f.current_factor(), BASELINE.as_bytes());
+    assert_eq!(
+        f.epochs()
+            .lock_before(ACCOUNT, deadline())
+            .unwrap()
+            .status()
+            .unwrap()
+            .changed_at
+            .as_deref(),
+        Some(STAMP)
+    );
+}
+
+fn email_enrollment(f: &Fixture) -> (String, PendingEnrollment) {
     let epochs = f.epochs();
     let eligible = Eligible {
         service: &f.service,
@@ -379,40 +441,36 @@ fn email_grant_commits_password_and_factor_under_one_native_fence() {
         .binding(ACCOUNT, &sha(grant.token().as_bytes()), 3, deadline())
         .unwrap();
     let enrollment = f.service.begin(binding, now(), deadline()).unwrap();
+    (grant.token().into(), enrollment)
+}
+
+#[test]
+fn cache_zero_refusal_preserves_confirmed_sql_stamp_without_releasing_or_retrying() {
+    let f = Fixture::new();
+    let (token, enrollment) = email_enrollment(&f);
     let db = Backend::new(Commands::default());
     let primary = Commands::default();
-    let result = f
-        .action(
-            Authority::Grant {
-                token: grant.token().into(),
-            },
-            Action::Confirm {
-                enrollment_id: enrollment.id.clone(),
-                revision: enrollment.revision,
-                code: code(&enrollment),
-                password: Some(NEW_PASSWORD.into()),
-                confirmation: Some(NEW_PASSWORD.into()),
-            },
-            &db,
-            &primary,
-        )
-        .unwrap();
-    assert!(matches!(result.view, AccessView::Complete));
-    f.assert_active(4);
-    assert!(f
-        .service
-        .recovery()
-        .lookup_grant(grant.token(), CSRF, now(), deadline(), &eligible)
-        .is_err());
-    assert_ne!(f.current_factor(), BASELINE.as_bytes());
-    assert_eq!(
-        f.epochs()
-            .lock_before(ACCOUNT, deadline())
-            .unwrap()
-            .status()
-            .unwrap()
-            .changed_at
-            .as_deref(),
-        Some(STAMP)
+    f.refuse_cache.set(true);
+    let result = f.action(
+        Authority::Grant { token },
+        Action::Confirm {
+            enrollment_id: enrollment.id.clone(),
+            revision: enrollment.revision,
+            code: code(&enrollment),
+            password: Some(NEW_PASSWORD.into()),
+            confirmation: Some(NEW_PASSWORD.into()),
+        },
+        &db,
+        &primary,
     );
+    assert!(matches!(result, Err(AccessError::Unconfirmed)));
+    assert_eq!(f.cache_checks.get(), 1);
+    assert_eq!(*primary.calls.borrow(), 0);
+    let store = f.epochs();
+    let guard = store.lock_before(ACCOUNT, deadline()).unwrap();
+    let status = guard.status().unwrap();
+    assert_eq!(status.state, crate::account_password_state::State::Pending);
+    assert_eq!(status.epoch, 3);
+    assert_eq!(status.changed_at.as_deref(), Some(STAMP));
+    assert_ne!(f.current_factor(), BASELINE.as_bytes());
 }
