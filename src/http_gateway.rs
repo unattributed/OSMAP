@@ -400,7 +400,10 @@ impl BrowserGateway for RuntimeBrowserGateway {
         }
         self.account_runtime
             .ready()
-            .ok_or(AccessError::Unavailable)?
+            .ok_or_else(|| {
+                eprintln!("account_access_gateway stage=runtime_ready result=unavailable");
+                AccessError::Unavailable
+            })?
             .mutation()
             .access_exchange(
                 authority,
@@ -426,7 +429,10 @@ impl BrowserGateway for RuntimeBrowserGateway {
         }
         self.account_runtime
             .ready()
-            .ok_or(AccessError::Unavailable)?
+            .ok_or_else(|| {
+                eprintln!("account_access_gateway stage=runtime_ready result=unavailable");
+                AccessError::Unavailable
+            })?
             .mutation()
             .access_exchange(
                 authority,

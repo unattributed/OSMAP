@@ -1042,6 +1042,9 @@ mod tests {
                 runtime_uid: uid,
                 runtime_gid: gid,
             });
+            let config_fixture = f.root.join("access-config.fixture.json");
+            let config_bytes = b"{\"version\":1,\"contacts\":[]}\n";
+            f.write(&config_fixture, config_bytes);
             phase.set("parent_seal");
             let mut parent = crate::account_password_confinement::ParentPlan::access_fixture(
                 &f.root,
@@ -1056,6 +1059,20 @@ mod tests {
             parent
                 .recheck(deadline())
                 .expect("NATIVE_PARENT_CUSTODY_REFUSED");
+            phase.set("sealed_config_reader");
+            assert!(
+                crate::account_access_config::read_native_fixture(&config_fixture)
+                    .expect("NATIVE_CONFIG_READ_REFUSED")
+                    .is_some_and(|bytes| bytes == config_bytes)
+            );
+            fs::set_permissions(&config_fixture, fs::Permissions::from_mode(0o640)).unwrap();
+            assert_eq!(
+                crate::account_access_config::read_native_fixture(&config_fixture)
+                    .unwrap_err()
+                    .stage,
+                crate::account_access_config::Stage::Custody
+            );
+            fs::set_permissions(&config_fixture, fs::Permissions::from_mode(0o600)).unwrap();
             phase.set("snapshot_current_code");
             assert_eq!(
                 coordinator.snapshot(ACCOUNT, deadline()).unwrap(),

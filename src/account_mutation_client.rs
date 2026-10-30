@@ -117,7 +117,10 @@ impl Client {
         self.0
             .paths
             .recheck()
-            .map_err(|_| AccessError::Unavailable)?;
+            .map_err(|_| {
+                eprintln!("account_access_client stage=custody_preconnect result=unavailable native_errno=not_observed");
+                AccessError::Unavailable
+            })?;
         let mut stream = crate::openbsd::connect_unix_before(&self.0.socket, deadline)
             .map_err(|_| AccessError::Unavailable)?;
         if crate::openbsd::unix_stream_peer_uid(&stream).map_err(|_| AccessError::Unavailable)?
@@ -128,7 +131,10 @@ impl Client {
         self.0
             .paths
             .recheck()
-            .map_err(|_| AccessError::Unavailable)?;
+            .map_err(|_| {
+                eprintln!("account_access_client stage=custody_postconnect result=unavailable native_errno=not_observed");
+                AccessError::Unavailable
+            })?;
         // No reconnect/retry after even a partial frame submission.
         write_frame(&mut stream, &request_bytes, deadline).map_err(|_| AccessError::Unconfirmed)?;
         stream

@@ -10192,6 +10192,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "src/access_recovery_protocol_tests.rs",
     "src/access_recovery_tests.rs",
     "src/access_recovery_ui.rs",
+    "src/account_access_config.rs",
     "src/account_access_service.rs",
     "src/account_access_service_tests.rs",
     "src/account_factor_replacement.rs",
@@ -10311,7 +10312,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
     "slice": "S04-04",
     "specification": {
       "path": "docs/UX_SLICE_S04_04.md",
-      "sha256": "331a950ba1ca056102423524e41fdcbba472b3f29ce9165cf8a09e107710d570"
+      "sha256": "d2d30cb8c741eaf884e456c4fa7565a8afe47c9552fffd3743d543c9adcae991"
     },
     "design": {
       "journey": "Fresh current-password/TOTP confirmation -> new QR and code confirmation -> factor replacement; login-page email recovery -> expiring one-use code -> restricted password and replacement TOTP setup -> fresh normal sign-in.",
@@ -11197,8 +11198,56 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
       "existing_native_ignored": 2
     },
     "clippy_all_targets": "PASS",
-    "native_retest": "NOT_RUN",
-    "installation": "NOT_RUN"
+    "native_retest": "PASS",
+    "installation": "NOT_RUN",
+    "native_source_commit": "4d00385ca49c4be8f60651dc2baf98e528d4f195"
+  },
+  "current_browser_install_action": {
+    "source_commit": "4d00385ca49c4be8f60651dc2baf98e528d4f195",
+    "source_remote_parity": true,
+    "normal_push_hook": "PASS",
+    "native_component": "PASS",
+    "sealed_native_qualifier": "PASS",
+    "actor_sha256": "ddb8772d64df7e291c301269d3d7d9f579ac9308eb51bddb268891546531394a",
+    "target": "obsd1.blackbagsecurity.com",
+    "service_actions": [
+      "osmap_serve",
+      "osmap_account_password"
+    ],
+    "scope": "replace matching three binaries and enable already manually qualified recovery registration; preserve Web environment and public mail services",
+    "primary_max_seconds": 240,
+    "cleanup_max_seconds": 180,
+    "outer_max_seconds": 450,
+    "credential_or_factor_operation": false,
+    "status": "PASS",
+    "artifacts": {
+      "osmap": "b028a7153e1a07ab4db1df8614ef7a8755fc1dca6a677eaa3bf39c281b3dd4d3",
+      "account-passwd": "266f49c4b9db3ad27cd8d0c1eee57bb24ff0e2f782f4f53ef22e476f20359e26",
+      "account-recovery": "bdda33bf5d246de3ca4776bcb47d1294b07817fdd0c74384080c3f199fd10771"
+    },
+    "observed_elapsed_seconds": 16.735,
+    "receipt_sha256": "919e09d4a2c9592197b755db050a8e1c4a5f81347f71fc930f597f959fb069fa"
+  },
+  "current_browser_public_https_first": {
+    "status": "FAIL",
+    "completed_controls": 5,
+    "phase": "generic_unknown_start",
+    "http_status": 503,
+    "normal_session_issued": false,
+    "registered_recipient_used": false,
+    "credential_or_factor_operation": false,
+    "receipt_sha256": "17a7ecab657eef6c7e854c9aee1a48a5e0a9e823514fbdf92759b4d1d2b91c31",
+    "reassessment": "fixed configuration reader used pathname ancestor checks after seal; direct leaf open succeeds, ancestor pathname checks fail ENOENT; localized reader correction and sealed proof pending"
+  },
+  "current_browser_config_reader_correction": {
+    "source_tests_passed": 15,
+    "native_ignored": 1,
+    "all_target_clippy": "PASS",
+    "independent_source_review": "GO",
+    "native_sealed_reader": "NOT_RUN",
+    "installed_public_retest": "NOT_RUN",
+    "original_runtime_stage": "NOT_CAPTURED",
+    "scope": "fixed native recovery configuration reader with held ancestor checks; OpenPGP/shared unveil unchanged"
   }
 }
 ```

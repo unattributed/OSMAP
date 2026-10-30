@@ -10,6 +10,8 @@ mod access_recovery_mail;
 pub mod access_recovery_protocol;
 mod access_recovery_ui;
 #[cfg(unix)]
+mod account_access_config;
+#[cfg(unix)]
 mod account_access_service;
 pub mod account_admission;
 #[cfg(unix)]

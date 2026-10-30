@@ -15,11 +15,10 @@ use crate::totp_enrollment::{
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
 use std::collections::BTreeSet;
-use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
 
-const CONFIG: &str = "/etc/osmap/account-runtime/access-recovery.json";
+const CONFIG: &str = crate::account_access_config::PATH;
 const ROOT: &str = "/var/db/osmap-account/access-recovery";
 const EPOCH: &str = "/var/db/osmap-account/epoch";
 #[derive(Deserialize)]
@@ -53,24 +52,13 @@ fn sha(bytes: &[u8]) -> String {
     format!("{:x}", Sha256::digest(bytes))
 }
 fn config_bytes() -> Result<Option<Vec<u8>>, AccessError> {
-    // Existing guarded reader checks root ownership, single-link and private
-    // mode; no user-supplied filename or Web-owned verified flag is admitted.
-    if !Path::new(CONFIG)
-        .try_exists()
-        .map_err(|_| AccessError::Unavailable)?
-    {
-        return Ok(None);
-    }
-    let mut bytes = Vec::new();
-    crate::openpgp_inventory_runtime::file(Path::new(CONFIG), 0, false, 32768)
-        .map_err(|_| AccessError::Unavailable)?
-        .take(32769)
-        .read_to_end(&mut bytes)
-        .map_err(|_| AccessError::Unavailable)?;
-    if bytes.len() > 32768 {
-        return Err(AccessError::Unavailable);
-    }
-    Ok(Some(bytes))
+    crate::account_access_config::read().map_err(|failure| {
+        eprintln!(
+            "account_access_service stage=config_read check={:?} errno={:?}",
+            failure.stage, failure.errno
+        );
+        AccessError::Unavailable
+    })
 }
 impl NativeAccess {
     /// Called before the native parent is sealed. Absence leaves the existing
@@ -190,11 +178,16 @@ impl NativeAccess {
     fn check(&self) -> Result<(), AccessError> {
         let (paths, selected, idle) =
             crate::account_recovery_operator::browser_recovery_fence(self.gid)
-                .map_err(|_| AccessError::Unavailable)?;
+                .map_err(|_| {
+                    eprintln!("account_access_service stage=fence_read result=unavailable native_errno=not_observed");
+                    AccessError::Unavailable
+                })?;
         if paths != self.paths || selected != self.selected || idle != self.session_idle_seconds {
+            eprintln!("account_access_service stage=fence_binding result=unavailable");
             return Err(AccessError::Unavailable);
         }
         if config_bytes()?.is_none_or(|b| sha(&b) != self.config_sha256) {
+            eprintln!("account_access_service stage=config_hash result=unavailable");
             Err(AccessError::Unavailable)
         } else {
             Ok(())

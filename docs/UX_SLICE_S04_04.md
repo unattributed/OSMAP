@@ -140,8 +140,35 @@ ancestor checks, preserving the callers' ownership and mode requirements and
 refusing an uncaptured ancestor after sealing. The earlier Python realpath
 probe also failed under unveil, but that implementation differs from libc and
 is not the Rust failure's cause. Focused corrected-source checks pass 28 tests (two existing native-only ignores),
-and all-target Clippy passes with warnings denied. Retesting the corrected native
-boundary remains required before installation. No live account operation occurred.
+and all-target Clippy passes with warnings denied. Rebuilt native components and
+the corrected sealed mixed-owner qualifier then passed on source
+`4d00385ca49c4be8f60651dc2baf98e528d4f195`. Its normal delivery gate and fresh
+remote equality passed. The first installation completed in 16.735 seconds:
+matching three binaries, actual loaded Web/helper inodes and unchanged protected
+state except the planned configuration/directories. Only the two OSMAP roles
+were restarted; the Web environment and public mail services were preserved.
+
+The first installed public HTTPS test passed login/recovery form, secure cookie,
+unauthorized setup, origin and extra-field controls, then received 503 for the
+synthetic unknown-account start before the response floor. No registered
+recipient, normal session or credential operation was involved. Native proof
+state remained empty. Independent source analysis and a read-only native probe
+identified the recovery configuration reader's reused OpenPGP pathname-ancestor
+checks as incompatible with the exact seal. The supported follow-up is a fixed,
+recovery-local reader using held ancestor witnesses and the same protected leaf
+contract, with an actual sealed reader proof before another public-boundary
+execution. This installed failure remains separate from the earlier qualifier
+failure and from accepted constituent controls. No live account operation
+occurred.
+
+The localized configuration reader and its callers pass 15 affected tests and
+all-target Clippy. The existing ignored qualifier now exercises the actual
+reader under the seal, including exact byte readback and a mode-0640 refusal.
+Independent review approved the fixed path/custody reader and failure-only stage
+diagnostics. Review also restored the existing service module's `cfg(unix)`
+attribute after adding the new reader module. Corrected native/public execution
+remains pending; source analysis does not retrospectively supply the original
+503's missing runtime-stage observation.
 
 ## Historical observable outcome and authority
 
