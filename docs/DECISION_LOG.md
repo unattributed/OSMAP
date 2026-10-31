@@ -1,5 +1,12 @@
 # Decision Log
 
+2026-10-31 — S05-02 final engineering/installed QA passed after the actual
+Welcome-placeholder and temporal-expiry regressions were corrected. Preserve
+all original failures, reuse unchanged native key-effect evidence, install only
+the matching Web, and advance31 mutable controls to QA_VERIFIED. Protected
+state/helpers/environment and mail availability pass. Owner T09 remains pending;
+no clipboard, arbitrary-correspondent crypto authority or production claim.
+
 2026-10-31 — S05-02 follows the operator's practical key-management direction:
 make imported keys, exact approved email identities and applied policies the
 primary view. Reuse existing Rust actions, revisioned stores and authenticated

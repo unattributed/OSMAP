@@ -1,4 +1,4 @@
-2026-10-31 (America/Toronto) — **S05-02 IN_PROGRESS: practical key, email and policy management.**
+2026-10-31 (America/Toronto) — **S05-02 UAT_READY: practical key, email and policy management installed.**
 
 The operator acknowledged S05-01 closeout and authorized this visual/functional
 slice using the same failure-analysis method. See
@@ -11,7 +11,7 @@ slice using the same failure-analysis method. See
   "slice": "S05-02",
   "original_requirement": "Public-key import/list/remove, full-fingerprint binding, explicit recipient trust, capability/policy UI and private-key provisioning SOP",
   "source_baseline": "279df22e6ceb384410b151a4acc9134e67dc3e25",
-  "state": "IN_PROGRESS",
+  "state": "UAT_READY",
   "integration_owner": "/root",
   "roles": {
     "project_manager": [
@@ -110,7 +110,7 @@ slice using the same failure-analysis method. See
       ],
       "frontend_backend_outcome": "Signed-in user sees imported keys with exact email associations and applied policy, and can manage public import/bind/policy/remove through fresh authorization.",
       "essential_qa": "T01-T08 source/native/browser/installed checks and independent review; actual visual owner T09 separate.",
-      "next_action": "Build current Web after Welcome correction; final gates, Web-only install/readback, owner T09.",
+      "next_action": "Record and independently verify signed branch delivery; owner T09 live browser walkthrough remains pending.",
       "dependencies": [
         {
           "owner": "/root",
@@ -123,22 +123,34 @@ slice using the same failure-analysis method. See
         "implementation": "PASS",
         "source_tests": "PASS",
         "native_tests": "PASS",
-        "deployed_qa": "PENDING",
-        "independent_review": "PENDING",
-        "recovery": "PENDING"
+        "deployed_qa": "PASS",
+        "independent_review": "PASS",
+        "recovery": "PASS"
       },
       "evidence": [
         {
           "stage": "implementation",
-          "reference": "Practical Rust key renderer/editor and genuine-token session lease; no new dependency."
+          "reference": "Signed831516b practicalkeys, Welcomeprojection/expiry, discovery notice and rotation/CAS proof. Existing Rust stores/helpers reused."
         },
         {
           "stage": "source_tests",
-          "reference": "Private keys-source.log18PASS/0failed/1nativeignore; Runtime guard5PASS; renderer9PASS/settings3PASS. Actual browser-cua-results.json and desktop/mobile screenshots retain matching UI observations."
+          "reference": "Private acceptance04.log2095PASS/0failed/75ignored; security/V10-V13PASS; v14-finalPASS, focused tests and strictClippyPASS."
         },
         {
           "stage": "native_tests",
-          "reference": "Signedfa26102/nativebuild164.63s; exact public-admin store and RuntimejourneyPASS; native-functional01.log plus native-artifact-readback.log/dispatch and freshscratchabsence. Syntheticprimaryprocess, not ownerDovecot qualification."
+          "reference": "Actual two exact native public-admin/Runtime casesPASS; current13effectinputs unchangedfa26102; root/native/security independent reviews, exactfixturecleanup and freshabsencePASS."
+        },
+        {
+          "stage": "deployed_qa",
+          "reference": "Actual install-final.actual.log/installed-final-readback.log loadedWebfe44b3/inode129966/loopback/HTTPS200/8roles; installed-read-after.log same2keys/rev5/policies/preflight/RAMencrypt. Synthetic CUA browser+Welcome results/JPEG; owner browser session remains T09."
+        },
+        {
+          "stage": "independent_review",
+          "reference": "Final actual-security-independent-review.json SHA45ddce76abdbe1d3c13d8028103c0ceae9a5a3a4076bc2dd60b64430e07b70b9 GO_ENGINEERING_AND_INSTALLED_QA; all31 bounded controls reconciled; ownerT09NOT_RUN."
+        },
+        {
+          "stage": "recovery",
+          "reference": "Actual protected.before/after manifest d9f3a0ceef1799355e1dae6d0bb21e58eeb45130359395159f64fdc5bf12f43a equal; env/helpers preserved; exactscratch/probe absent. Verified oldWeb backup/guardedrollback reviewed; rollback notneeded. Preview outer143causeUNKNOWN, actualobservations and absence separate."
         }
       ]
     }
@@ -147,13 +159,13 @@ slice using the same failure-analysis method. See
     "owner": "/root",
     "functional_exit": "Signed-in user sees imported keys with exact email associations and applied policy, and can manage public import/bind/policy/remove through fresh authorization.",
     "elapsed_scope": "wall_clock",
-    "history_reference": "S05-01 acknowledged and preserved. Retained identity-renderer work ported from original checkout; no owner keys/credentials/policy or public mail mutation inferred. Acceptance03 normal gatePASS after two recordedtest-inventory refusals/combinedreview. Independentcontrolaudit thenfound inheritedWelcomeOpenPGPplaceholders forfiveS05-02controls and missingexplicitdiscoveryOff copy; sourcecorrectionrequiredbeforeinstallation. No oldcandidateinstalled.",
+    "history_reference": "S05-01 acknowledged and preserved. Retained identity-renderer work ported from original checkout; no owner keys/credentials/policy or public mail mutation inferred. Acceptance03 normal gatePASS after two recordedtest-inventory refusals/combinedreview. Independentcontrolaudit thenfound inheritedWelcomeOpenPGPplaceholders forfiveS05-02controls and missingexplicitdiscoveryOff copy; sourcecorrectionrequiredbeforeinstallation. No oldcandidateinstalled. Final actual normalgate/install/helperreadback/independentreviewPASS; originalfailures and preview143UNKNOWN diagnostic retained. No ownercredential/key/policy action or mailservice restart.",
     "investigation": {
       "owner": "/root",
       "timebox_seconds": 14400,
       "started_at": "2026-10-31T14:33:23Z",
-      "elapsed_status": "UNKNOWN",
-      "elapsed_seconds": null
+      "elapsed_status": "MEASURED",
+      "elapsed_seconds": 3672.074
     },
     "attempts": [],
     "next_attempt": null
@@ -163,7 +175,7 @@ slice using the same failure-analysis method. See
     "slice": "S05-02",
     "specification": {
       "path": "docs/UX_SLICE_S05_02.md",
-      "sha256": "6a1efcf239220dac7e846c4c956de710bc343c97ee97f0bd517972152b5c6f69"
+      "sha256": "84fb95a083f45ed15bf3dc3da7932f1b5a53de1094313ee19c6c761c5a9e0787"
     },
     "design": {
       "journey": "Signed-in user sees imported keys with exact email associations and applied policy, and can manage public import/bind/policy/remove through fresh authorization.",
@@ -188,8 +200,11 @@ slice using the same failure-analysis method. See
         "preserved": "S04/S05-01 acceptance, all original obligations, owner keys/credentials/policy and mail availability.",
         "owner": "/root",
         "reviewer": "/root/s05_protocol_review",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "PASS",
+        "evidence": [
+          "docs/UX_SLICE_S05_02.md#engineering-and-installed-closeout--2026-10-31",
+          "Private acceptance04.log2095PASS/0failed/75ignored; security/V10-V13PASS; v14-finalPASS, focused tests and strictClippyPASS."
+        ]
       },
       {
         "id": "S05-02-T02",
@@ -204,8 +219,11 @@ slice using the same failure-analysis method. See
         "preserved": "S04/S05-01 acceptance, all original obligations, owner keys/credentials/policy and mail availability.",
         "owner": "/root",
         "reviewer": "/root/s05_protocol_review",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "PASS",
+        "evidence": [
+          "docs/UX_SLICE_S05_02.md#engineering-and-installed-closeout--2026-10-31",
+          "Actual two exact native public-admin/Runtime casesPASS; current13effectinputs unchangedfa26102; root/native/security independent reviews, exactfixturecleanup and freshabsencePASS."
+        ]
       },
       {
         "id": "S05-02-T03",
@@ -220,8 +238,11 @@ slice using the same failure-analysis method. See
         "preserved": "S04/S05-01 acceptance, all original obligations, owner keys/credentials/policy and mail availability.",
         "owner": "/root",
         "reviewer": "/root/s05_protocol_review",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "PASS",
+        "evidence": [
+          "docs/UX_SLICE_S05_02.md#engineering-and-installed-closeout--2026-10-31",
+          "Private acceptance04.log2095PASS/0failed/75ignored; security/V10-V13PASS; v14-finalPASS, focused tests and strictClippyPASS."
+        ]
       },
       {
         "id": "S05-02-T04",
@@ -236,8 +257,11 @@ slice using the same failure-analysis method. See
         "preserved": "S04/S05-01 acceptance, all original obligations, owner keys/credentials/policy and mail availability.",
         "owner": "/root",
         "reviewer": "/root/s05_protocol_review",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "PASS",
+        "evidence": [
+          "docs/UX_SLICE_S05_02.md#engineering-and-installed-closeout--2026-10-31",
+          "Actual two exact native public-admin/Runtime casesPASS; current13effectinputs unchangedfa26102; root/native/security independent reviews, exactfixturecleanup and freshabsencePASS."
+        ]
       },
       {
         "id": "S05-02-T05",
@@ -252,8 +276,11 @@ slice using the same failure-analysis method. See
         "preserved": "S04/S05-01 acceptance, all original obligations, owner keys/credentials/policy and mail availability.",
         "owner": "/root",
         "reviewer": "/root/s05_protocol_review",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "PASS",
+        "evidence": [
+          "docs/UX_SLICE_S05_02.md#engineering-and-installed-closeout--2026-10-31",
+          "Private acceptance04.log2095PASS/0failed/75ignored; security/V10-V13PASS; v14-finalPASS, focused tests and strictClippyPASS."
+        ]
       },
       {
         "id": "S05-02-T06",
@@ -268,8 +295,11 @@ slice using the same failure-analysis method. See
         "preserved": "S04/S05-01 acceptance, all original obligations, owner keys/credentials/policy and mail availability.",
         "owner": "/root",
         "reviewer": "/root/s05_protocol_review",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "PASS",
+        "evidence": [
+          "docs/UX_SLICE_S05_02.md#engineering-and-installed-closeout--2026-10-31",
+          "Private acceptance04.log2095PASS/0failed/75ignored; security/V10-V13PASS; v14-finalPASS, focused tests and strictClippyPASS."
+        ]
       },
       {
         "id": "S05-02-T07",
@@ -284,8 +314,11 @@ slice using the same failure-analysis method. See
         "preserved": "S04/S05-01 acceptance, all original obligations, owner keys/credentials/policy and mail availability.",
         "owner": "/root",
         "reviewer": "/root/s05_protocol_review",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "PASS",
+        "evidence": [
+          "docs/UX_SLICE_S05_02.md#engineering-and-installed-closeout--2026-10-31",
+          "Actual two exact native public-admin/Runtime casesPASS; current13effectinputs unchangedfa26102; root/native/security independent reviews, exactfixturecleanup and freshabsencePASS."
+        ]
       },
       {
         "id": "S05-02-T08",
@@ -300,8 +333,11 @@ slice using the same failure-analysis method. See
         "preserved": "S04/S05-01 acceptance, all original obligations, owner keys/credentials/policy and mail availability.",
         "owner": "/root",
         "reviewer": "/root/s05_protocol_review",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "PASS",
+        "evidence": [
+          "docs/UX_SLICE_S05_02.md#engineering-and-installed-closeout--2026-10-31",
+          "Actual install-final.actual.log/installed-final-readback.log loadedWebfe44b3/inode129966/loopback/HTTPS200/8roles; installed-read-after.log same2keys/rev5/policies/preflight/RAMencrypt. Synthetic CUA browser+Welcome results/JPEG; owner browser session remains T09."
+        ]
       },
       {
         "id": "S05-02-T09",
@@ -325,9 +361,9 @@ slice using the same failure-analysis method. See
   },
   "human_acceptance": {
     "status": "PENDING",
-    "reference": "Actual visual/functional UAT follows engineer/installed readiness."
+    "reference": "Owner actual login/view/selectedfresh-auth save follows completed engineering/installed QA; T09NOT_RUN."
   },
-  "next_action": "Build current Web after Welcome correction; final gates, Web-only install/readback, owner T09."
+  "next_action": "Record and independently verify signed branch delivery; owner T09 live browser walkthrough remains pending."
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->

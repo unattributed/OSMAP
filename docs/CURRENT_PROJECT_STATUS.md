@@ -1,5 +1,22 @@
 # Current Project Status
 
+2026-10-31 (America/Toronto) — **S05-02 installed on obsd1 and ready for owner T09.**
+Imported keys show approved email identities and applied policies directly;
+technical details remain expandable. Existing recipient policy/key editing,
+explicit discovery-Off explanation and actual Welcome key/policy/default state
+are implemented using existing Rust stores/helpers. Full normal acceptance
+passes2,095Rust/0failures/75explicit ignores, security/V10–V13 and final V14.
+Actual native public-admin and Runtime mutation journeys pass; current browser
+QA and independent final engineering/installed review pass. Matching signed
+831516b Webfe44b3d20b4f518eccd6ad6a829b74459f6f66681b404b8b514bd91ded54f1a7
+is loaded; HTTPS200/eight roles/protected-state/env/helper preservation pass.
+Only Web restarted. Existing two keys, own binding and Proton Required policy
+remain; no owner key/policy/credential or public mail-service mutation ran.
+31 mutable controls are QA_VERIFIED; three frozen legacy records remain intact.
+Owner live-browser T09 remains NOT_RUN. New-correspondent crypto allowlisting,
+private-key provisioning execution and production release remain separate. See
+[the current slice record](UX_SLICE_S05_02.md).
+
 2026-10-31 (America/Toronto) — **S05-02 implementation and focused browser QA complete; native/install qualification in progress.**
 Imported keys now show approved email identities and applied encryption policies
 without expanding technical details. Existing recipient actions support a

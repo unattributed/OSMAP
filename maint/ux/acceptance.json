@@ -2233,9 +2233,20 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "QA_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/acceptance04.log",
+            "scope": "Current normal final gate2095PASS/0failed/75explicit ignores plus security/V10-V13. Control-specific current source cases: src/welcome_ui.rs:openpgp_summary; src/http/routes_mail.rs; src/http/key_management_route_tests.rs:welcome_loads_actual_owned_key_and_composition_defaults_without_mutation; src/http/key_management_route_tests.rs:welcome_owned_missing_unavailable_foreign_and_required_policies_are_truthful; src/http/key_management_route_tests.rs:welcome_composition_defaults_are_loaded_from_owned_store_and_preserved. Bounded compositional engineering proof; no owner acceptance inferred."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/actual-security-independent-review.json",
+            "scope": "Independent final GO_ENGINEERING_AND_INSTALLED_QA SHA45ddce76abdbe1d3c13d8028103c0ceae9a5a3a4076bc2dd60b64430e07b70b9. Reviewed this control at stated source/native/browser levels, matching831516b/Webfe44b3 installation, actual owner-helper readback and protected preservation. Browser uses synthetic account; owner Web view/save is T09. Full fingerprint selectable; no clipboard API success or arbitrary new correspondent crypto authority claimed."
+          }
+        ]
       }
     },
     {
@@ -2270,9 +2281,20 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "QA_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/acceptance04.log",
+            "scope": "Current normal final gate2095PASS/0failed/75explicit ignores plus security/V10-V13. Control-specific current source cases: src/welcome_ui.rs:openpgp_summary; src/http/routes_mail.rs; src/http/key_management_route_tests.rs:welcome_loads_actual_owned_key_and_composition_defaults_without_mutation; src/http/key_management_route_tests.rs:welcome_owned_missing_unavailable_foreign_and_required_policies_are_truthful; src/http/key_management_route_tests.rs:welcome_composition_defaults_are_loaded_from_owned_store_and_preserved. Bounded compositional engineering proof; no owner acceptance inferred."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/actual-security-independent-review.json",
+            "scope": "Independent final GO_ENGINEERING_AND_INSTALLED_QA SHA45ddce76abdbe1d3c13d8028103c0ceae9a5a3a4076bc2dd60b64430e07b70b9. Reviewed this control at stated source/native/browser levels, matching831516b/Webfe44b3 installation, actual owner-helper readback and protected preservation. Browser uses synthetic account; owner Web view/save is T09. Full fingerprint selectable; no clipboard API success or arbitrary new correspondent crypto authority claimed."
+          }
+        ]
       }
     },
     {
@@ -2307,9 +2329,20 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "QA_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/acceptance04.log",
+            "scope": "Current normal final gate2095PASS/0failed/75explicit ignores plus security/V10-V13. Control-specific current source cases: src/welcome_ui.rs:openpgp_summary; src/http/routes_mail.rs; src/http/key_management_route_tests.rs:welcome_loads_actual_owned_key_and_composition_defaults_without_mutation; src/http/key_management_route_tests.rs:welcome_owned_missing_unavailable_foreign_and_required_policies_are_truthful; src/http/key_management_route_tests.rs:welcome_composition_defaults_are_loaded_from_owned_store_and_preserved. Bounded compositional engineering proof; no owner acceptance inferred."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/actual-security-independent-review.json",
+            "scope": "Independent final GO_ENGINEERING_AND_INSTALLED_QA SHA45ddce76abdbe1d3c13d8028103c0ceae9a5a3a4076bc2dd60b64430e07b70b9. Reviewed this control at stated source/native/browser levels, matching831516b/Webfe44b3 installation, actual owner-helper readback and protected preservation. Browser uses synthetic account; owner Web view/save is T09. Full fingerprint selectable; no clipboard API success or arbitrary new correspondent crypto authority claimed."
+          }
+        ]
       }
     },
     {
@@ -2344,9 +2377,20 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "QA_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/acceptance04.log",
+            "scope": "Current normal final gate2095PASS/0failed/75explicit ignores plus security/V10-V13. Control-specific current source cases: src/welcome_ui.rs:openpgp_summary; src/http/routes_mail.rs; src/http/key_management_route_tests.rs:welcome_loads_actual_owned_key_and_composition_defaults_without_mutation; src/http/key_management_route_tests.rs:welcome_owned_missing_unavailable_foreign_and_required_policies_are_truthful; src/http/key_management_route_tests.rs:welcome_composition_defaults_are_loaded_from_owned_store_and_preserved. Bounded compositional engineering proof; no owner acceptance inferred."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/actual-security-independent-review.json",
+            "scope": "Independent final GO_ENGINEERING_AND_INSTALLED_QA SHA45ddce76abdbe1d3c13d8028103c0ceae9a5a3a4076bc2dd60b64430e07b70b9. Reviewed this control at stated source/native/browser levels, matching831516b/Webfe44b3 installation, actual owner-helper readback and protected preservation. Browser uses synthetic account; owner Web view/save is T09. Full fingerprint selectable; no clipboard API success or arbitrary new correspondent crypto authority claimed."
+          }
+        ]
       }
     },
     {
@@ -2381,9 +2425,20 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "QA_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/acceptance04.log",
+            "scope": "Current normal final gate2095PASS/0failed/75explicit ignores plus security/V10-V13. Control-specific current source cases: src/welcome_ui.rs:openpgp_summary; src/http/routes_mail.rs; src/http/key_management_route_tests.rs:welcome_loads_actual_owned_key_and_composition_defaults_without_mutation; src/http/key_management_route_tests.rs:welcome_owned_missing_unavailable_foreign_and_required_policies_are_truthful; src/http/key_management_route_tests.rs:welcome_composition_defaults_are_loaded_from_owned_store_and_preserved. Bounded compositional engineering proof; no owner acceptance inferred."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/actual-security-independent-review.json",
+            "scope": "Independent final GO_ENGINEERING_AND_INSTALLED_QA SHA45ddce76abdbe1d3c13d8028103c0ceae9a5a3a4076bc2dd60b64430e07b70b9. Reviewed this control at stated source/native/browser levels, matching831516b/Webfe44b3 installation, actual owner-helper readback and protected preservation. Browser uses synthetic account; owner Web view/save is T09. Full fingerprint selectable; no clipboard API success or arbitrary new correspondent crypto authority claimed."
+          }
+        ]
       }
     },
     {
@@ -2418,9 +2473,20 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "QA_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/acceptance04.log",
+            "scope": "Current normal final gate2095PASS/0failed/75explicit ignores plus security/V10-V13. Control-specific current source cases: src/welcome_ui.rs:render_mailboxes_page_with_policy; src/http_inventory_tests.rs:inventory_routes_require_session_and_reject_mutation_or_account_selection. Bounded compositional engineering proof; no owner acceptance inferred."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/actual-security-independent-review.json",
+            "scope": "Independent final GO_ENGINEERING_AND_INSTALLED_QA SHA45ddce76abdbe1d3c13d8028103c0ceae9a5a3a4076bc2dd60b64430e07b70b9. Reviewed this control at stated source/native/browser levels, matching831516b/Webfe44b3 installation, actual owner-helper readback and protected preservation. Browser uses synthetic account; owner Web view/save is T09. Full fingerprint selectable; no clipboard API success or arbitrary new correspondent crypto authority claimed."
+          }
+        ]
       }
     },
     {
@@ -10004,9 +10070,20 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "QA_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/acceptance04.log",
+            "scope": "Current normal final gate2095PASS/0failed/75explicit ignores plus security/V10-V13. Control-specific current source cases: src/http/key_management_route_tests.rs:security_overview_loads_owned_public_binding_and_opens_real_key_management; src/http/key_management_route_tests.rs:security_overview_unknown_foreign_and_ineligible_public_states_do_not_claim_readiness. Bounded compositional engineering proof; no owner acceptance inferred."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/actual-security-independent-review.json",
+            "scope": "Independent final GO_ENGINEERING_AND_INSTALLED_QA SHA45ddce76abdbe1d3c13d8028103c0ceae9a5a3a4076bc2dd60b64430e07b70b9. Reviewed this control at stated source/native/browser levels, matching831516b/Webfe44b3 installation, actual owner-helper readback and protected preservation. Browser uses synthetic account; owner Web view/save is T09. Full fingerprint selectable; no clipboard API success or arbitrary new correspondent crypto authority claimed."
+          }
+        ]
       }
     },
     {
@@ -10235,9 +10312,20 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "QA_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/acceptance04.log",
+            "scope": "Current normal final gate2095PASS/0failed/75explicit ignores plus security/V10-V13. Control-specific current source cases: src/http/key_management_route_tests.rs:security_overview_loads_owned_public_binding_and_opens_real_key_management; src/http_gateway_keys_tests.rs:native_runtime_key_management_journey. Bounded compositional engineering proof; no owner acceptance inferred."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/actual-security-independent-review.json",
+            "scope": "Independent final GO_ENGINEERING_AND_INSTALLED_QA SHA45ddce76abdbe1d3c13d8028103c0ceae9a5a3a4076bc2dd60b64430e07b70b9. Reviewed this control at stated source/native/browser levels, matching831516b/Webfe44b3 installation, actual owner-helper readback and protected preservation. Browser uses synthetic account; owner Web view/save is T09. Full fingerprint selectable; no clipboard API success or arbitrary new correspondent crypto authority claimed."
+          }
+        ]
       }
     },
     {
@@ -17084,9 +17172,20 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "QA_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/acceptance04.log",
+            "scope": "Current normal final gate2095PASS/0failed/75explicit ignores plus security/V10-V13. Control-specific current source cases: src/settings_openpgp_ui.rs:openpgp_settings_saved_values_link_to_real_account_policy_and_compose_workflows; src/settings_openpgp_ui.rs:openpgp_settings_runtime_unavailable_keeps_existing_binding_and_policy_truthful. Bounded compositional engineering proof; no owner acceptance inferred."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/actual-security-independent-review.json",
+            "scope": "Independent final GO_ENGINEERING_AND_INSTALLED_QA SHA45ddce76abdbe1d3c13d8028103c0ceae9a5a3a4076bc2dd60b64430e07b70b9. Reviewed this control at stated source/native/browser levels, matching831516b/Webfe44b3 installation, actual owner-helper readback and protected preservation. Browser uses synthetic account; owner Web view/save is T09. Full fingerprint selectable; no clipboard API success or arbitrary new correspondent crypto authority claimed."
+          }
+        ]
       }
     },
     {
@@ -17121,9 +17220,20 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "QA_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/acceptance04.log",
+            "scope": "Current normal final gate2095PASS/0failed/75explicit ignores plus security/V10-V13. Control-specific current source cases: src/settings_openpgp_ui.rs:openpgp_settings_saved_values_link_to_real_account_policy_and_compose_workflows; src/http_inventory_tests.rs:inventory_routes_project_only_session_owned_metadata_and_keep_capabilities_disabled. Bounded compositional engineering proof; no owner acceptance inferred."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/actual-security-independent-review.json",
+            "scope": "Independent final GO_ENGINEERING_AND_INSTALLED_QA SHA45ddce76abdbe1d3c13d8028103c0ceae9a5a3a4076bc2dd60b64430e07b70b9. Reviewed this control at stated source/native/browser levels, matching831516b/Webfe44b3 installation, actual owner-helper readback and protected preservation. Browser uses synthetic account; owner Web view/save is T09. Full fingerprint selectable; no clipboard API success or arbitrary new correspondent crypto authority claimed."
+          }
+        ]
       }
     },
     {
@@ -17279,9 +17389,20 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "QA_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/acceptance04.log",
+            "scope": "Current normal final gate2095PASS/0failed/75explicit ignores plus security/V10-V13. Control-specific current source cases: src/settings_openpgp_ui.rs:openpgp_settings_saved_values_link_to_real_account_policy_and_compose_workflows; src/http_gateway_keys_tests.rs:native_runtime_key_management_journey. Bounded compositional engineering proof; no owner acceptance inferred."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/actual-security-independent-review.json",
+            "scope": "Independent final GO_ENGINEERING_AND_INSTALLED_QA SHA45ddce76abdbe1d3c13d8028103c0ceae9a5a3a4076bc2dd60b64430e07b70b9. Reviewed this control at stated source/native/browser levels, matching831516b/Webfe44b3 installation, actual owner-helper readback and protected preservation. Browser uses synthetic account; owner Web view/save is T09. Full fingerprint selectable; no clipboard API success or arbitrary new correspondent crypto authority claimed."
+          }
+        ]
       }
     },
     {
@@ -17316,9 +17437,25 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "QA_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/acceptance04.log",
+            "scope": "Current normal final gate2095PASS/0failed/75explicit ignores plus security/V10-V13. Control-specific current source cases: src/key_management_tests.rs:key_management_binding_changes_require_fresh_same_request_and_cas; src/http/routes_keys.rs:action; src/http_gateway_keys_tests.rs:native_runtime_key_management_journey. Bounded compositional engineering proof; no owner acceptance inferred."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/actual-security-independent-review.json",
+            "scope": "Independent final GO_ENGINEERING_AND_INSTALLED_QA SHA45ddce76abdbe1d3c13d8028103c0ceae9a5a3a4076bc2dd60b64430e07b70b9. Reviewed this control at stated source/native/browser levels, matching831516b/Webfe44b3 installation, actual owner-helper readback and protected preservation. Browser uses synthetic account; owner Web view/save is T09. Full fingerprint selectable; no clipboard API success or arbitrary new correspondent crypto authority claimed."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/native-functional01.log",
+            "scope": "Actual exact native public-admin store and Runtime key-management casesPASS, exact-owned cleanup and freshabsencePASS. Unchangedfa26102 key-effect inputs reviewed reusable under831516b Web. Controlled primary process is synthetic, not ownerDovecot credential verification. Different-primary rotation/stale-CAS is additionally exercised by the current actual BindingStore/mutate source regression."
+          }
+        ]
       }
     },
     {
@@ -17390,9 +17527,20 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "QA_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/acceptance04.log",
+            "scope": "Current normal final gate2095PASS/0failed/75explicit ignores plus security/V10-V13. Control-specific current source cases: src/settings_openpgp_ui.rs:render_openpgp_settings; src/http_inventory_tests.rs:inventory_routes_project_only_session_owned_metadata_and_keep_capabilities_disabled; maint/openpgp-runtime/crypto.c. Bounded compositional engineering proof; no owner acceptance inferred."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/actual-security-independent-review.json",
+            "scope": "Independent final GO_ENGINEERING_AND_INSTALLED_QA SHA45ddce76abdbe1d3c13d8028103c0ceae9a5a3a4076bc2dd60b64430e07b70b9. Reviewed this control at stated source/native/browser levels, matching831516b/Webfe44b3 installation, actual owner-helper readback and protected preservation. Browser uses synthetic account; owner Web view/save is T09. Full fingerprint selectable; no clipboard API success or arbitrary new correspondent crypto authority claimed."
+          }
+        ]
       }
     },
     {
@@ -17427,9 +17575,20 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "QA_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/acceptance04.log",
+            "scope": "Current normal final gate2095PASS/0failed/75explicit ignores plus security/V10-V13. Control-specific current source cases: src/settings_openpgp_ui.rs:render_openpgp_settings; maint/openpgp-runtime/deployment.md; docs/UX_SLICE_S05_01.md. Bounded compositional engineering proof; no owner acceptance inferred."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/actual-security-independent-review.json",
+            "scope": "Independent final GO_ENGINEERING_AND_INSTALLED_QA SHA45ddce76abdbe1d3c13d8028103c0ceae9a5a3a4076bc2dd60b64430e07b70b9. Reviewed this control at stated source/native/browser levels, matching831516b/Webfe44b3 installation, actual owner-helper readback and protected preservation. Browser uses synthetic account; owner Web view/save is T09. Full fingerprint selectable; no clipboard API success or arbitrary new correspondent crypto authority claimed."
+          }
+        ]
       }
     },
     {
@@ -18076,9 +18235,20 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "QA_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/acceptance04.log",
+            "scope": "Current normal final gate2095PASS/0failed/75explicit ignores plus security/V10-V13. Control-specific current source cases: src/key_inventory_ui.rs:render_key_management_panel; src/http/key_management_route_tests.rs:security_overview_loads_owned_public_binding_and_opens_real_key_management. Bounded compositional engineering proof; no owner acceptance inferred."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/actual-security-independent-review.json",
+            "scope": "Independent final GO_ENGINEERING_AND_INSTALLED_QA SHA45ddce76abdbe1d3c13d8028103c0ceae9a5a3a4076bc2dd60b64430e07b70b9. Reviewed this control at stated source/native/browser levels, matching831516b/Webfe44b3 installation, actual owner-helper readback and protected preservation. Browser uses synthetic account; owner Web view/save is T09. Full fingerprint selectable; no clipboard API success or arbitrary new correspondent crypto authority claimed."
+          }
+        ]
       }
     },
     {
@@ -18128,9 +18298,25 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "QA_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/acceptance04.log",
+            "scope": "Current normal final gate2095PASS/0failed/75explicit ignores plus security/V10-V13. Control-specific current source cases: src/http_gateway_keys_tests.rs:native_runtime_key_management_journey; src/openpgp_public_admin.rs; src/key_management.rs:validate_public_certificate. Bounded compositional engineering proof; no owner acceptance inferred."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/actual-security-independent-review.json",
+            "scope": "Independent final GO_ENGINEERING_AND_INSTALLED_QA SHA45ddce76abdbe1d3c13d8028103c0ceae9a5a3a4076bc2dd60b64430e07b70b9. Reviewed this control at stated source/native/browser levels, matching831516b/Webfe44b3 installation, actual owner-helper readback and protected preservation. Browser uses synthetic account; owner Web view/save is T09. Full fingerprint selectable; no clipboard API success or arbitrary new correspondent crypto authority claimed."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/native-functional01.log",
+            "scope": "Actual exact native public-admin store and Runtime key-management casesPASS, exact-owned cleanup and freshabsencePASS. Unchangedfa26102 key-effect inputs reviewed reusable under831516b Web. Controlled primary process is synthetic, not ownerDovecot credential verification. Different-primary rotation/stale-CAS is additionally exercised by the current actual BindingStore/mutate source regression."
+          }
+        ]
       }
     },
     {
@@ -18180,9 +18366,25 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "QA_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/acceptance04.log",
+            "scope": "Current normal final gate2095PASS/0failed/75explicit ignores plus security/V10-V13. Control-specific current source cases: src/key_management_tests.rs:key_management_binding_changes_require_fresh_same_request_and_cas; src/http_gateway_keys_tests.rs:native_runtime_key_management_journey; src/key_inventory_ui.rs:practical_page_preserves_default_and_prefills_current_recipient_for_safe_edit. Bounded compositional engineering proof; no owner acceptance inferred."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/actual-security-independent-review.json",
+            "scope": "Independent final GO_ENGINEERING_AND_INSTALLED_QA SHA45ddce76abdbe1d3c13d8028103c0ceae9a5a3a4076bc2dd60b64430e07b70b9. Reviewed this control at stated source/native/browser levels, matching831516b/Webfe44b3 installation, actual owner-helper readback and protected preservation. Browser uses synthetic account; owner Web view/save is T09. Full fingerprint selectable; no clipboard API success or arbitrary new correspondent crypto authority claimed."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/native-functional01.log",
+            "scope": "Actual exact native public-admin store and Runtime key-management casesPASS, exact-owned cleanup and freshabsencePASS. Unchangedfa26102 key-effect inputs reviewed reusable under831516b Web. Controlled primary process is synthetic, not ownerDovecot credential verification. Different-primary rotation/stale-CAS is additionally exercised by the current actual BindingStore/mutate source regression."
+          }
+        ]
       }
     },
     {
@@ -18227,9 +18429,20 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "QA_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/acceptance04.log",
+            "scope": "Current normal final gate2095PASS/0failed/75explicit ignores plus security/V10-V13. Control-specific current source cases: src/key_inventory_ui.rs:key_management_page_preserves_two_cards_and_truthful_configured_status; src/key_inventory_ui.rs:saved_missing_keys_and_unavailable_inventory_remain_visible_without_foreign_leakage. Bounded compositional engineering proof; no owner acceptance inferred."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/actual-security-independent-review.json",
+            "scope": "Independent final GO_ENGINEERING_AND_INSTALLED_QA SHA45ddce76abdbe1d3c13d8028103c0ceae9a5a3a4076bc2dd60b64430e07b70b9. Reviewed this control at stated source/native/browser levels, matching831516b/Webfe44b3 installation, actual owner-helper readback and protected preservation. Browser uses synthetic account; owner Web view/save is T09. Full fingerprint selectable; no clipboard API success or arbitrary new correspondent crypto authority claimed."
+          }
+        ]
       }
     },
     {
@@ -18264,9 +18477,20 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "QA_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/acceptance04.log",
+            "scope": "Current normal final gate2095PASS/0failed/75explicit ignores plus security/V10-V13. Control-specific current source cases: src/key_inventory_ui.rs:practical_inventory_pairs_email_policy_only_with_exact_approved_primary; src/http/routes_keys.rs:action; src/http_gateway_keys_tests.rs:native_runtime_key_management_journey. Bounded compositional engineering proof; no owner acceptance inferred."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/actual-security-independent-review.json",
+            "scope": "Independent final GO_ENGINEERING_AND_INSTALLED_QA SHA45ddce76abdbe1d3c13d8028103c0ceae9a5a3a4076bc2dd60b64430e07b70b9. Reviewed this control at stated source/native/browser levels, matching831516b/Webfe44b3 installation, actual owner-helper readback and protected preservation. Browser uses synthetic account; owner Web view/save is T09. Full fingerprint selectable; no clipboard API success or arbitrary new correspondent crypto authority claimed."
+          }
+        ]
       }
     },
     {
@@ -18311,9 +18535,20 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "QA_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/acceptance04.log",
+            "scope": "Current normal final gate2095PASS/0failed/75explicit ignores plus security/V10-V13. Control-specific current source cases: src/key_inventory_ui.rs:practical_inventory_pairs_email_policy_only_with_exact_approved_primary; src/key_inventory_ui.rs:material. Bounded compositional engineering proof; no owner acceptance inferred."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/actual-security-independent-review.json",
+            "scope": "Independent final GO_ENGINEERING_AND_INSTALLED_QA SHA45ddce76abdbe1d3c13d8028103c0ceae9a5a3a4076bc2dd60b64430e07b70b9. Reviewed this control at stated source/native/browser levels, matching831516b/Webfe44b3 installation, actual owner-helper readback and protected preservation. Browser uses synthetic account; owner Web view/save is T09. Full fingerprint selectable; no clipboard API success or arbitrary new correspondent crypto authority claimed."
+          }
+        ]
       }
     },
     {
@@ -18358,9 +18593,20 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "QA_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/acceptance04.log",
+            "scope": "Current normal final gate2095PASS/0failed/75explicit ignores plus security/V10-V13. Control-specific current source cases: src/key_inventory_ui.rs:adapter_owner_empty_unavailable_and_metadata; src/key_inventory_ui.rs:material; src/openpgp_inventory.rs. Bounded compositional engineering proof; no owner acceptance inferred."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/actual-security-independent-review.json",
+            "scope": "Independent final GO_ENGINEERING_AND_INSTALLED_QA SHA45ddce76abdbe1d3c13d8028103c0ceae9a5a3a4076bc2dd60b64430e07b70b9. Reviewed this control at stated source/native/browser levels, matching831516b/Webfe44b3 installation, actual owner-helper readback and protected preservation. Browser uses synthetic account; owner Web view/save is T09. Full fingerprint selectable; no clipboard API success or arbitrary new correspondent crypto authority claimed."
+          }
+        ]
       }
     },
     {
@@ -18405,9 +18651,20 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "QA_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/acceptance04.log",
+            "scope": "Current normal final gate2095PASS/0failed/75explicit ignores plus security/V10-V13. Control-specific current source cases: src/key_inventory_ui.rs:adapter_owner_empty_unavailable_and_metadata; src/key_inventory_ui.rs:date. Bounded compositional engineering proof; no owner acceptance inferred."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/actual-security-independent-review.json",
+            "scope": "Independent final GO_ENGINEERING_AND_INSTALLED_QA SHA45ddce76abdbe1d3c13d8028103c0ceae9a5a3a4076bc2dd60b64430e07b70b9. Reviewed this control at stated source/native/browser levels, matching831516b/Webfe44b3 installation, actual owner-helper readback and protected preservation. Browser uses synthetic account; owner Web view/save is T09. Full fingerprint selectable; no clipboard API success or arbitrary new correspondent crypto authority claimed."
+          }
+        ]
       }
     },
     {
@@ -18452,9 +18709,20 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "QA_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/acceptance04.log",
+            "scope": "Current normal final gate2095PASS/0failed/75explicit ignores plus security/V10-V13. Control-specific current source cases: src/key_inventory_ui.rs:adapter_owner_empty_unavailable_and_metadata; src/openpgp_bindings_tests.rs:inventory_expiry_revocation_weak_keys_and_ambiguity_block_selected_protection. Bounded compositional engineering proof; no owner acceptance inferred."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/actual-security-independent-review.json",
+            "scope": "Independent final GO_ENGINEERING_AND_INSTALLED_QA SHA45ddce76abdbe1d3c13d8028103c0ceae9a5a3a4076bc2dd60b64430e07b70b9. Reviewed this control at stated source/native/browser levels, matching831516b/Webfe44b3 installation, actual owner-helper readback and protected preservation. Browser uses synthetic account; owner Web view/save is T09. Full fingerprint selectable; no clipboard API success or arbitrary new correspondent crypto authority claimed."
+          }
+        ]
       }
     },
     {
@@ -18499,9 +18767,20 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "QA_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/acceptance04.log",
+            "scope": "Current normal final gate2095PASS/0failed/75explicit ignores plus security/V10-V13. Control-specific current source cases: src/key_inventory_ui.rs:material; src/openpgp_bindings_tests.rs:reported_usage_flags_cannot_override_algorithm_purpose. Bounded compositional engineering proof; no owner acceptance inferred."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/actual-security-independent-review.json",
+            "scope": "Independent final GO_ENGINEERING_AND_INSTALLED_QA SHA45ddce76abdbe1d3c13d8028103c0ceae9a5a3a4076bc2dd60b64430e07b70b9. Reviewed this control at stated source/native/browser levels, matching831516b/Webfe44b3 installation, actual owner-helper readback and protected preservation. Browser uses synthetic account; owner Web view/save is T09. Full fingerprint selectable; no clipboard API success or arbitrary new correspondent crypto authority claimed."
+          }
+        ]
       }
     },
     {
@@ -18536,9 +18815,20 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "QA_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/acceptance04.log",
+            "scope": "Current normal final gate2095PASS/0failed/75explicit ignores plus security/V10-V13. Control-specific current source cases: src/key_inventory_ui.rs:practical_inventory_pairs_email_policy_only_with_exact_approved_primary; src/http_gateway_keys_tests.rs:native_runtime_key_management_journey. Bounded compositional engineering proof; no owner acceptance inferred."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/actual-security-independent-review.json",
+            "scope": "Independent final GO_ENGINEERING_AND_INSTALLED_QA SHA45ddce76abdbe1d3c13d8028103c0ceae9a5a3a4076bc2dd60b64430e07b70b9. Reviewed this control at stated source/native/browser levels, matching831516b/Webfe44b3 installation, actual owner-helper readback and protected preservation. Browser uses synthetic account; owner Web view/save is T09. Full fingerprint selectable; no clipboard API success or arbitrary new correspondent crypto authority claimed."
+          }
+        ]
       }
     },
     {
@@ -18573,9 +18863,20 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "QA_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/acceptance04.log",
+            "scope": "Current normal final gate2095PASS/0failed/75explicit ignores plus security/V10-V13. Control-specific current source cases: src/key_inventory_ui.rs:material; src/key_inventory_ui.rs:render_key_management_panel. Bounded compositional engineering proof; no owner acceptance inferred."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/actual-security-independent-review.json",
+            "scope": "Independent final GO_ENGINEERING_AND_INSTALLED_QA SHA45ddce76abdbe1d3c13d8028103c0ceae9a5a3a4076bc2dd60b64430e07b70b9. Reviewed this control at stated source/native/browser levels, matching831516b/Webfe44b3 installation, actual owner-helper readback and protected preservation. Browser uses synthetic account; owner Web view/save is T09. Full fingerprint selectable; no clipboard API success or arbitrary new correspondent crypto authority claimed."
+          }
+        ]
       }
     },
     {
@@ -18625,9 +18926,25 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "QA_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/acceptance04.log",
+            "scope": "Current normal final gate2095PASS/0failed/75explicit ignores plus security/V10-V13. Control-specific current source cases: src/key_management_tests.rs:recipient_rotation_changes_exact_key_and_preserves_other_bindings_on_stale_retry; src/protected_submission_tests.rs:stale_missing_foreign_binding_and_missing_inventory_refuse_before_engine; src/http_gateway_keys_tests.rs:native_runtime_key_management_journey. Bounded compositional engineering proof; no owner acceptance inferred."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/actual-security-independent-review.json",
+            "scope": "Independent final GO_ENGINEERING_AND_INSTALLED_QA SHA45ddce76abdbe1d3c13d8028103c0ceae9a5a3a4076bc2dd60b64430e07b70b9. Reviewed this control at stated source/native/browser levels, matching831516b/Webfe44b3 installation, actual owner-helper readback and protected preservation. Browser uses synthetic account; owner Web view/save is T09. Full fingerprint selectable; no clipboard API success or arbitrary new correspondent crypto authority claimed."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/native-functional01.log",
+            "scope": "Actual exact native public-admin store and Runtime key-management casesPASS, exact-owned cleanup and freshabsencePASS. Unchangedfa26102 key-effect inputs reviewed reusable under831516b Web. Controlled primary process is synthetic, not ownerDovecot credential verification. Different-primary rotation/stale-CAS is additionally exercised by the current actual BindingStore/mutate source regression."
+          }
+        ]
       }
     },
     {
@@ -18677,9 +18994,25 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "QA_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/acceptance04.log",
+            "scope": "Current normal final gate2095PASS/0failed/75explicit ignores plus security/V10-V13. Control-specific current source cases: src/key_management_tests.rs:key_management_atomic_cleanup_recovers_multiple_unavailable_bound_keys; src/key_management_tests.rs:key_management_explicit_recipient_binding_and_policy_roundtrip_no_uid_guessing; src/http_gateway_keys_tests.rs:native_runtime_key_management_journey. Bounded compositional engineering proof; no owner acceptance inferred."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/actual-security-independent-review.json",
+            "scope": "Independent final GO_ENGINEERING_AND_INSTALLED_QA SHA45ddce76abdbe1d3c13d8028103c0ceae9a5a3a4076bc2dd60b64430e07b70b9. Reviewed this control at stated source/native/browser levels, matching831516b/Webfe44b3 installation, actual owner-helper readback and protected preservation. Browser uses synthetic account; owner Web view/save is T09. Full fingerprint selectable; no clipboard API success or arbitrary new correspondent crypto authority claimed."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/native-functional01.log",
+            "scope": "Actual exact native public-admin store and Runtime key-management casesPASS, exact-owned cleanup and freshabsencePASS. Unchangedfa26102 key-effect inputs reviewed reusable under831516b Web. Controlled primary process is synthetic, not ownerDovecot credential verification. Different-primary rotation/stale-CAS is additionally exercised by the current actual BindingStore/mutate source regression."
+          }
+        ]
       }
     },
     {
@@ -18729,9 +19062,25 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "QA_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/acceptance04.log",
+            "scope": "Current normal final gate2095PASS/0failed/75explicit ignores plus security/V10-V13. Control-specific current source cases: src/key_inventory_ui.rs:practical_inventory_pairs_email_policy_only_with_exact_approved_primary; src/key_inventory_ui.rs:displayed_applied_policy_agrees_with_both_backend_encryption_choices; src/http_gateway_keys_tests.rs:native_runtime_key_management_journey. Bounded compositional engineering proof; no owner acceptance inferred."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/actual-security-independent-review.json",
+            "scope": "Independent final GO_ENGINEERING_AND_INSTALLED_QA SHA45ddce76abdbe1d3c13d8028103c0ceae9a5a3a4076bc2dd60b64430e07b70b9. Reviewed this control at stated source/native/browser levels, matching831516b/Webfe44b3 installation, actual owner-helper readback and protected preservation. Browser uses synthetic account; owner Web view/save is T09. Full fingerprint selectable; no clipboard API success or arbitrary new correspondent crypto authority claimed."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/native-functional01.log",
+            "scope": "Actual exact native public-admin store and Runtime key-management casesPASS, exact-owned cleanup and freshabsencePASS. Unchangedfa26102 key-effect inputs reviewed reusable under831516b Web. Controlled primary process is synthetic, not ownerDovecot credential verification. Different-primary rotation/stale-CAS is additionally exercised by the current actual BindingStore/mutate source regression."
+          }
+        ]
       }
     },
     {
@@ -18766,9 +19115,20 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "QA_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/acceptance04.log",
+            "scope": "Current normal final gate2095PASS/0failed/75explicit ignores plus security/V10-V13. Control-specific current source cases: src/key_inventory_ui.rs:saved_missing_keys_and_unavailable_inventory_remain_visible_without_foreign_leakage; src/openpgp_bindings_tests.rs:inventory_expiry_revocation_weak_keys_and_ambiguity_block_selected_protection. Bounded compositional engineering proof; no owner acceptance inferred."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/actual-security-independent-review.json",
+            "scope": "Independent final GO_ENGINEERING_AND_INSTALLED_QA SHA45ddce76abdbe1d3c13d8028103c0ceae9a5a3a4076bc2dd60b64430e07b70b9. Reviewed this control at stated source/native/browser levels, matching831516b/Webfe44b3 installation, actual owner-helper readback and protected preservation. Browser uses synthetic account; owner Web view/save is T09. Full fingerprint selectable; no clipboard API success or arbitrary new correspondent crypto authority claimed."
+          }
+        ]
       }
     },
     {
@@ -18813,9 +19173,20 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "QA_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/acceptance04.log",
+            "scope": "Current normal final gate2095PASS/0failed/75explicit ignores plus security/V10-V13. Control-specific current source cases: src/key_inventory_ui.rs:practical_page_preserves_default_and_prefills_current_recipient_for_safe_edit; src/settings_openpgp_ui.rs:render_openpgp_settings. Bounded compositional engineering proof; no owner acceptance inferred."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/actual-security-independent-review.json",
+            "scope": "Independent final GO_ENGINEERING_AND_INSTALLED_QA SHA45ddce76abdbe1d3c13d8028103c0ceae9a5a3a4076bc2dd60b64430e07b70b9. Reviewed this control at stated source/native/browser levels, matching831516b/Webfe44b3 installation, actual owner-helper readback and protected preservation. Browser uses synthetic account; owner Web view/save is T09. Full fingerprint selectable; no clipboard API success or arbitrary new correspondent crypto authority claimed."
+          }
+        ]
       }
     },
     {

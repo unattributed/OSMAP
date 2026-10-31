@@ -7,7 +7,7 @@ method. This slice has a real visual/functional browser UAT.
 
 ## User outcome and design
 
-Settings -> Encryption and keys shows imported public keys, the email addresses
+Settings -> OpenPGP -> Manage Keys shows imported public keys, the email addresses
 they are approved for, and the policies actually applied. Email identities and
 policies are visible without expanding cryptographic details. Full fingerprints,
 algorithm/creation/expiry/subkeys remain available under Details. An imported
@@ -199,3 +199,49 @@ fingerprint in the saved screenshot. CUA's unsupported DOM selection observation
 and failed copy-shortcut dispatch are retained as QA-tool limitations; no
 clipboard-API success or clipboard read is claimed. Final installed owner UAT
 remains the browser acceptance boundary.
+
+
+## Engineering and installed closeout — 2026-10-31
+
+**S05-02 is ready for owner T09.** Engineering T01–T08 pass at their recorded
+source/native/browser/installed levels; T09 is NOT_RUN and human acceptance is
+pending. All31 mutable mapped controls are QA_VERIFIED with scoped evidence;
+all403 obligations and the110 original legacy case bytes remain preserved.
+
+Final production source is signed `831516bff45677411f7622b05a299a8ae928d40a`.
+The matching obsd1 Web build passed in48.858seconds; installed/loaded SHA256 is
+`fe44b3d20b4f518eccd6ad6a829b74459f6f66681b404b8b514bd91ded54f1a7`.
+Only Web was replaced/restarted. Loaded inode129966, loopback listener, public
+CA-verified HTTPS login200 and all eight checked service roles pass. Actual
+protected manifests before/after are byte-identical, SHA256
+`d9f3a0ceef1799355e1dae6d0bb21e58eeb45130359395159f64fdc5bf12f43a`.
+Environment, account/PGP helper binaries, sessions, factors/revoked factors,
+replay, recovery, settings, drafts and key homes remain preserved. Verified old
+Web backup and reviewed guarded restoration are retained; rollback was not
+needed. No public mail-service restart or database/owner credential change ran.
+
+Post-install helper/state/preflight/RAM-encryption results are byte-identical to
+pre-install: two public keys, binding revision5, owned account and Proton
+association, account Optional policies and Proton recipient Required. No SMTP
+submission, key/policy write or owner browser credential use occurred. Exact
+probe and native scratch absence were freshly checked.
+
+Current normal acceptance passes2,095Rust tests/0failures/75explicit ignores,
+security and V10–V13; final V14/UI/accessibility and full validator checks pass.
+Native key-effect proof remains bound to unchanged qualified fa26102 inputs;
+only the final Welcome/read-only UI required the subsequent Web rebuild.
+Independent final review is GO_ENGINEERING_AND_INSTALLED_QA, receipt SHA256
+`45ddce76abdbe1d3c13d8028103c0ceae9a5a3a4076bc2dd60b64430e07b70b9`.
+
+The browser observations use a disposable authenticated synthetic account.
+The actual installed owner-state read uses authenticated helper clients as the
+Web principal; it does not fabricate an owner Web session. The owner's live
+login, view and selected authenticated save are the remaining T09 walkthrough.
+Original source/gate/fixture/observer failures stay retained. Preview outer
+execution reported143 despite successful libtest logs and fresh listener
+absence; its parent signal cause is UNKNOWN without a captured signal trace.
+Actual CUA observations stand independently; overall preview-carrier PASS and
+clipboard-API success are not claimed. Arbitrary new-correspondent crypto-service
+authorization, private-key provisioning/unlock execution and production release
+remain outside this closeout. Signed branch synchronization will be separately
+verified by the final delivery receipt.
