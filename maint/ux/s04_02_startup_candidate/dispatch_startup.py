@@ -13,7 +13,7 @@ SOURCE_FILES={
     'sources/backend/stock_qualification.py','sources/backend/stock_schema.py',
     'sources/frontend/native_http_front_driver.py','sources/frontend/native_http_password_driver.py',
     'sources/frontend/native_http_web_guardian.py'}
-VALIDATOR_SHA256='1a08edebf49a265e389f3f71a51d1dfcedc039ce9189210f96101c5bd07ecc76'
+VALIDATOR_SHA256='5d86b28eb4f747a416288b512822718a592e41944ecae879b69ec86f62e29b85'
 
 
 def sha(raw):return hashlib.sha256(raw).hexdigest()

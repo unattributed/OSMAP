@@ -131,6 +131,11 @@ impl Request {
         key: &[u8],
     ) -> Result<Self, Error> {
         CanonicalUsername::parse(account).map_err(|_| Error::Invalid)?;
+        // Refuse oversized or malformed operations before cloning their content.
+        operation.validate().map_err(|error| match error {
+            CryptoError::Limit => Error::Limit,
+            _ => Error::Invalid,
+        })?;
         let (name, signer, recipients, data, signature) = match operation {
             Operation::Decrypt { ciphertext, .. } => {
                 ("decrypt", None, Vec::new(), ciphertext.clone(), Vec::new())
@@ -425,6 +430,103 @@ mod tests {
             data: b"MIME bytes\r\n".to_vec(),
         }
     }
+    #[test]
+    fn invalid_local_decryption_selection_is_refused_before_request_issuance() {
+        for fingerprints in [Vec::new(), vec!["not-a-fingerprint".into()]] {
+            let operation = Operation::Decrypt {
+                allowed_primary_fingerprints: fingerprints,
+                ciphertext: b"synthetic ciphertext".to_vec(),
+            };
+            assert!(matches!(
+                Request::issue("alice", &operation, 100, &[7; 32]),
+                Err(Error::Invalid)
+            ));
+        }
+    }
+
+    #[test]
+    fn request_issuance_preserves_content_and_recipient_limit_errors() {
+        let oversized = Operation::Encrypt {
+            recipient_fingerprints: vec!["A".repeat(40)],
+            data: vec![0; MAX_CONTENT + 1],
+        };
+        assert!(matches!(
+            Request::issue("alice", &oversized, 100, &[7; 32]),
+            Err(Error::Limit)
+        ));
+        let too_many = Operation::Encrypt {
+            recipient_fingerprints: (0..51).map(|n| format!("{n:040X}")).collect(),
+            data: b"synthetic".to_vec(),
+        };
+        assert!(matches!(
+            Request::issue("alice", &too_many, 100, &[7; 32]),
+            Err(Error::Limit)
+        ));
+    }
+
+    #[test]
+    fn supported_operations_preserve_binary_content_and_separate_signature() {
+        let data = vec![0, 255, b'\r', b'\n', 128];
+        let signature = vec![255, 0, 1];
+        let fingerprint = "A".repeat(40);
+        let operations = [
+            Operation::Encrypt {
+                recipient_fingerprints: vec![fingerprint.clone()],
+                data: data.clone(),
+            },
+            Operation::Decrypt {
+                allowed_primary_fingerprints: vec![fingerprint.clone()],
+                ciphertext: data.clone(),
+            },
+            Operation::Sign {
+                signer_fingerprint: fingerprint,
+                data: data.clone(),
+            },
+            Operation::Verify {
+                data: data.clone(),
+                signature: signature.clone(),
+            },
+        ];
+        for operation in operations {
+            let request = Request::issue("alice", &operation, 100, &[7; 32]).unwrap();
+            let parsed = Verifier::default()
+                .request(&request.to_bytes().unwrap(), &[7; 32], 101)
+                .unwrap();
+            assert!(parsed.data == data);
+            assert!(parsed.signature == operation.signature());
+            assert_eq!(parsed.header.operation, operation.name());
+        }
+    }
+
+    #[test]
+    fn authenticated_unknown_errors_and_error_content_are_refused() {
+        let key = [7; 32];
+        let operation = op();
+        let request = Request::issue("alice", &operation, 100, &key).unwrap();
+        let bytes = response(&request, Err(CryptoError::Locked), &key, 101).unwrap();
+        let (metadata, _) = split(&bytes).unwrap();
+        let original: ResponseHeader = serde_json::from_slice(metadata).unwrap();
+        for (error, content) in [
+            ("unknown_result", Vec::new()),
+            ("locked", b"must not escape an error".to_vec()),
+        ] {
+            let mut header = original.clone();
+            header.error = Some(error.into());
+            header.content_len = content.len();
+            header.mac = hex(
+                &authenticate(&key, &header.payload().unwrap(), &content, &[])
+                    .unwrap()
+                    .finalize()
+                    .into_bytes(),
+            );
+            let invalid = frame(&header, &content, &[]).unwrap();
+            assert!(matches!(
+                Verifier::default().response(&request, &invalid, &operation, &key, 102),
+                Err(Error::Invalid)
+            ));
+        }
+    }
+
     #[test]
     fn authenticated_binary_body_rejects_tamper_wrong_key_expiry_replay_and_paths() {
         let key = [7; 32];

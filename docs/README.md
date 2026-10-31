@@ -1,5 +1,8 @@
 # Documentation
 
+- `UX_SLICE_S05_01.md` — [S05-01 existing Rust crypto-helper path](UX_SLICE_S05_01.md):
+  T01–T09, bounded source/native verification and preservation of S04 acceptance.
+
 - `UX_SLICE_S04_04.md` — [S04-04 governed account recovery](UX_SLICE_S04_04.md): ordered work packages,
   T01–T09, source implementation/evidence and remaining native/human qualification.
 

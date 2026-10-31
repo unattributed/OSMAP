@@ -153,11 +153,57 @@ class WorkOrderTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "outside active work order"):
             self.check(self.order, ["src/unassigned-product-change.rs"])
         order = copy.deepcopy(self.order)
-        missing = order["outcomes"][0]["requirement_ids"][0]
-        for outcome in order["outcomes"]:
-            outcome["requirement_ids"] = [identifier for identifier in outcome["requirement_ids"] if identifier != missing]
-        order["outcomes"] = [outcome for outcome in order["outcomes"] if outcome["requirement_ids"]]
+        # A current infrastructure slice may have no page-control rows. Keep
+        # this omission counterexample bound to a genuinely mapped slice.
+        order["slice"] = "S04-04"
+        order.pop("scope_revision", None)
+        order["original_requirement"] = dict(re.findall(
+            r"^\| (S\d{2}-\d{2}) \| ([^|]+) \|", self.catalogue, re.MULTILINE
+        ))["S04-04"].strip()
+        mapped = sorted(row["id"] for key in ("cases", "approved_control_cases")
+                        for row in self.matrix[key] if "S04-04" in row["owning_slices"])
+        self.assertGreater(len(mapped), 1)
+        order["outcomes"] = [order["outcomes"][0]]
+        order["outcomes"][0]["requirement_ids"] = mapped[1:]
         with self.assertRaisesRegex(ValueError, "all original mapped obligations"):
+            self.check(order)
+
+    def test_catalogued_infrastructure_slice_without_page_rows_keeps_functional_contract(self):
+        order = copy.deepcopy(self.order)
+        order["slice"] = "S05-01"
+        order.pop("scope_revision", None)
+        order["original_requirement"] = dict(re.findall(
+            r"^\| (S\d{2}-\d{2}) \| ([^|]+) \|", self.catalogue, re.MULTILINE
+        ))["S05-01"].strip()
+        order["state"] = "IN_PROGRESS"
+        order["human_acceptance"] = {"status": "PENDING"}
+        order["slice_contract"]["slice"] = "S05-01"
+        for outcome in order["outcomes"]:
+            outcome["requirement_ids"] = []
+        report = self.check(order)
+        self.assertEqual(report["required_obligations"], 0)
+        self.assertIn("no evidence truth or functional acceptance", report["claim"])
+        with self.subTest("invented mapping"):
+            invented = copy.deepcopy(order)
+            invented["outcomes"][0]["requirement_ids"] = [self.matrix["approved_control_cases"][0]["id"]]
+            with self.assertRaisesRegex(ValueError, "unmapped scope"):
+                self.check(invented)
+        with self.subTest("missing functional outcomes"):
+            missing = copy.deepcopy(order)
+            missing["outcomes"] = []
+            with self.assertRaisesRegex(ValueError, "functional outcomes required"):
+                self.check(missing)
+
+    def test_mapped_slice_cannot_use_empty_obligations(self):
+        order = copy.deepcopy(self.order)
+        order["slice"] = "S04-04"
+        order.pop("scope_revision", None)
+        order["original_requirement"] = dict(re.findall(
+            r"^\| (S\d{2}-\d{2}) \| ([^|]+) \|", self.catalogue, re.MULTILINE
+        ))["S04-04"].strip()
+        for outcome in order["outcomes"]:
+            outcome["requirement_ids"] = []
+        with self.assertRaisesRegex(ValueError, "unmapped scope"):
             self.check(order)
 
     def test_unfinished_or_failed_scope_cannot_close(self):

@@ -69998,7 +69998,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openpgp_crypto_protocol.rs",
       "kind": "unwrap_call",
-      "line": 431
+      "line": 491
     },
     {
       "classification": "production_adjacent_assumption",
@@ -70006,7 +70006,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openpgp_crypto_protocol.rs",
       "kind": "unwrap_call",
-      "line": 432
+      "line": 493
     },
     {
       "classification": "production_adjacent_assumption",
@@ -70014,7 +70014,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openpgp_crypto_protocol.rs",
       "kind": "unwrap_call",
-      "line": 436
+      "line": 494
     },
     {
       "classification": "production_adjacent_assumption",
@@ -70022,111 +70022,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openpgp_crypto_protocol.rs",
       "kind": "unwrap_call",
-      "line": 439
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/openpgp_crypto_protocol.rs",
-      "kind": "unwrap_call",
-      "line": 445
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/openpgp_crypto_protocol.rs",
-      "kind": "unwrap_call",
-      "line": 446
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/openpgp_crypto_protocol.rs",
-      "kind": "unwrap_call",
-      "line": 449
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/openpgp_crypto_protocol.rs",
-      "kind": "unwrap_call",
-      "line": 460
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/openpgp_crypto_protocol.rs",
-      "kind": "unwrap_call",
-      "line": 461
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/openpgp_crypto_protocol.rs",
-      "kind": "unwrap_call",
-      "line": 462
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/openpgp_crypto_protocol.rs",
-      "kind": "unwrap_call",
-      "line": 466
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/openpgp_crypto_protocol.rs",
-      "kind": "unwrap_call",
-      "line": 478
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/openpgp_crypto_protocol.rs",
-      "kind": "unwrap_call",
-      "line": 479
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/openpgp_crypto_protocol.rs",
-      "kind": "unwrap_call",
-      "line": 487
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/openpgp_crypto_protocol.rs",
-      "kind": "unwrap_call",
-      "line": 488
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/openpgp_crypto_protocol.rs",
-      "kind": "unwrap_call",
-      "line": 490
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/openpgp_crypto_protocol.rs",
-      "kind": "unwrap_call",
-      "line": 497
+      "line": 505
     },
     {
       "classification": "production_adjacent_assumption",
@@ -70135,6 +70031,190 @@
       "file": "src/openpgp_crypto_protocol.rs",
       "kind": "unwrap_call",
       "line": 506
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/openpgp_crypto_protocol.rs",
+      "kind": "unwrap_call",
+      "line": 507
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/openpgp_crypto_protocol.rs",
+      "kind": "unwrap_call",
+      "line": 508
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/openpgp_crypto_protocol.rs",
+      "kind": "unwrap_call",
+      "line": 517
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/openpgp_crypto_protocol.rs",
+      "kind": "unwrap_call",
+      "line": 518
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/openpgp_crypto_protocol.rs",
+      "kind": "unwrap_call",
+      "line": 522
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/openpgp_crypto_protocol.rs",
+      "kind": "unwrap_call",
+      "line": 533
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/openpgp_crypto_protocol.rs",
+      "kind": "unwrap_call",
+      "line": 534
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/openpgp_crypto_protocol.rs",
+      "kind": "unwrap_call",
+      "line": 538
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/openpgp_crypto_protocol.rs",
+      "kind": "unwrap_call",
+      "line": 541
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/openpgp_crypto_protocol.rs",
+      "kind": "unwrap_call",
+      "line": 547
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/openpgp_crypto_protocol.rs",
+      "kind": "unwrap_call",
+      "line": 548
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/openpgp_crypto_protocol.rs",
+      "kind": "unwrap_call",
+      "line": 551
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/openpgp_crypto_protocol.rs",
+      "kind": "unwrap_call",
+      "line": 562
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/openpgp_crypto_protocol.rs",
+      "kind": "unwrap_call",
+      "line": 563
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/openpgp_crypto_protocol.rs",
+      "kind": "unwrap_call",
+      "line": 564
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/openpgp_crypto_protocol.rs",
+      "kind": "unwrap_call",
+      "line": 568
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/openpgp_crypto_protocol.rs",
+      "kind": "unwrap_call",
+      "line": 580
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/openpgp_crypto_protocol.rs",
+      "kind": "unwrap_call",
+      "line": 581
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/openpgp_crypto_protocol.rs",
+      "kind": "unwrap_call",
+      "line": 589
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/openpgp_crypto_protocol.rs",
+      "kind": "unwrap_call",
+      "line": 590
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/openpgp_crypto_protocol.rs",
+      "kind": "unwrap_call",
+      "line": 592
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/openpgp_crypto_protocol.rs",
+      "kind": "unwrap_call",
+      "line": 599
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/openpgp_crypto_protocol.rs",
+      "kind": "unwrap_call",
+      "line": 608
     },
     {
       "classification": "startup_or_global_invariant",
@@ -86153,7 +86233,7 @@
       "line": 521
     }
   ],
-  "generated_at_utc": "2026-10-30T13:06:35Z",
+  "generated_at_utc": "2026-10-31T13:14:57Z",
   "non_claims": [
     "This audit does not claim that all Rust assumptions are safe.",
     "This audit does not claim that production request paths are panic-free.",
@@ -86193,12 +86273,12 @@
     "by_classification": {
       "control_flow_invariant": 7,
       "panic_path_assumption": 88,
-      "production_adjacent_assumption": 2749,
+      "production_adjacent_assumption": 2759,
       "startup_or_global_invariant": 10,
       "test_or_fixture_assumption": 7915
     },
     "by_fail_closed_relevance": {
-      "high": 2837,
+      "high": 2847,
       "low": 7915,
       "medium": 17
     },
@@ -86206,14 +86286,14 @@
       "expect_call": 1142,
       "panic_macro": 314,
       "unreachable_macro": 27,
-      "unwrap_call": 9286
+      "unwrap_call": 9296
     },
     "classification_complete": true,
-    "inventory_sha256": "62e141a28b4be0722daf2021119420a739aee135a0b0cdecae6d5c09a7e1c136",
+    "inventory_sha256": "9b3bddc08a82f05fc1874824accb25bc487033f3da876d04444aed02d58a8bc7",
     "live_host_state_changed": false,
     "product_behavior_changed": false,
     "production_state_changed": false,
     "slice0_carried_forward_rust_assumption_count": 712,
-    "total_count": 10769
+    "total_count": 10779
   }
 }

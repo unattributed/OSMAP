@@ -1,3 +1,264 @@
+2026-10-31 (America/Toronto) — **S05-01 IN_PROGRESS: qualify the existing Rust crypto-helper path.**
+
+The operator resumes S05-01 with the successful S04 failure-analysis method.
+S04-04 acceptance and separate S05-02 work are preserved. See
+[the slice specification](UX_SLICE_S05_01.md).
+
+<!-- OSMAP_ACTIVE_WORK_ORDER -->
+```json
+{
+  "version": 1,
+  "slice": "S05-01",
+  "original_requirement": "Extend versioned bounded helper protocol for real operations with narrow authorized data transport and separate metadata",
+  "source_baseline": "35719f01b36b67d11a567c8cebed09a209773102",
+  "state": "IN_PROGRESS",
+  "integration_owner": "/root",
+  "roles": {
+    "project_manager": [
+      "/root"
+    ],
+    "scrum_lead": [
+      "/root"
+    ],
+    "developers": [
+      "/root",
+      "/root/s05_scope_qa"
+    ],
+    "qa": [
+      "/root/s05_protocol_review",
+      "/root/s05_scope_qa"
+    ],
+    "security_review": [
+      "/root/s05_protocol_review"
+    ],
+    "technical_writer": [
+      "/root"
+    ]
+  },
+  "allowed_paths": [
+    "src/openpgp_crypto_protocol.rs",
+    "docs/UX_SLICE_S05_01.md",
+    "docs/UX_EXECUTION_LEDGER.md",
+    "docs/README.md",
+    "docs/CURRENT_PROJECT_STATUS.md",
+    "docs/DECISION_LOG.md",
+    "maint/ux/validate_acceptance.py",
+    "maint/ux/test_validate_acceptance.py",
+    "maint/ux/s04_02_startup_candidate/dispatch_startup.py",
+    "maint/openpgp-runtime/s05-01-native.ksh",
+    "maint/security/v10-rust-assumption-audit.json",
+    "maint/security/v10-fail-closed-remediation.json",
+    "maint/security/v10-claims-boundary.json"
+  ],
+  "outcomes": [
+    {
+      "id": "rust-crypto-transport",
+      "owner": "/root",
+      "requirement_ids": [],
+      "frontend_backend_outcome": "Authenticated Runtime -> typed Rust request -> account-mapped helper -> fixed GPGME worker -> validated result.",
+      "essential_qa": "T01-T08 current source/native checks and review; T09 separate owner acceptance.",
+      "next_action": "Run focused regression, smallest correction, native disposable gateway proof.",
+      "dependencies": [],
+      "stages": {
+        "implementation": "PENDING",
+        "source_tests": "PENDING",
+        "native_tests": "PENDING",
+        "deployed_qa": "PENDING",
+        "independent_review": "PENDING",
+        "recovery": "PENDING"
+      },
+      "evidence": []
+    }
+  ],
+  "human_acceptance": {
+    "status": "PENDING",
+    "reference": "Separate owner acceptance after engineering completion."
+  },
+  "next_action": "Complete source correction and bounded disposable obsd1 native integration.",
+  "accountability": {
+    "owner": "/root",
+    "functional_exit": "Authenticated Runtime -> typed Rust request -> account-mapped helper -> fixed GPGME worker -> validated result.",
+    "elapsed_scope": "wall_clock",
+    "history_reference": "Accepted S04-04 preserved below. Historical October1 reviews retained; missing raw local directory is not new native evidence. New work uses no owner keys/credentials. Focused invalid decrypt selection regression RED then corrected; crypto19PASS/3explicitnativeignores, scope56PASS, bins/check/fmt/strictClippyPASS. Normal acceptance01 stopped in carrier118 beforeCargo because the coupled validator-source pin was stale after the infrastructure mapping correction; exact pin refreshed, actual failed pin case and CarrierClosureTests8PASS. Aggregate failure preserved; current source/runner independently GO.",
+    "investigation": {
+      "owner": "/root",
+      "timebox_seconds": 10800,
+      "started_at": "2026-10-31T13:13:08Z",
+      "elapsed_status": "UNKNOWN",
+      "elapsed_seconds": null
+    },
+    "attempts": [],
+    "next_attempt": null
+  },
+  "slice_contract": {
+    "version": 1,
+    "slice": "S05-01",
+    "specification": {
+      "path": "docs/UX_SLICE_S05_01.md",
+      "sha256": "ef146a550b87dcc656019300896680d8e78ac1482cd2279d837f994d055cebb8"
+    },
+    "design": {
+      "journey": "Authenticated Runtime -> typed Rust request -> account-mapped helper -> fixed GPGME worker -> validated result.",
+      "frontend": "Reuse existing application consumers without new browser UI.",
+      "backend": "Existing Rust protocol/client/service and bounded worker execution; reject invalid operations before cloning.",
+      "interfaces": "Versioned binary content and metadata, HMAC/nonce/account/operation binding, peer UID.",
+      "persistence": "No new store; transient content, preserved owner bindings and policies.",
+      "security": "Existing limits and account/key authorization; no caller-selected paths or commands.",
+      "failure_recovery": "Typed bounded errors, no fallback or ambiguous automatic retry, retained first failure and exact-owned fixture cleanup."
+    },
+    "tests": [
+      {
+        "id": "S05-01-T01",
+        "outcome_ids": [
+          "rust-crypto-transport"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Current source and interface inspected; actual native prerequisites checked before host use.",
+        "action": "Inspect existing source/tests/reviews.",
+        "expected": "Actual gaps separated from implemented capability.",
+        "preserved": "S04 acceptance, unrelated S05-02 work, owner keys/credentials/policies and public mail availability.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      },
+      {
+        "id": "S05-01-T02",
+        "outcome_ids": [
+          "rust-crypto-transport"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Current source and interface inspected; actual native prerequisites checked before host use.",
+        "action": "Build locked affected Rust targets; check format/lint.",
+        "expected": "Current components compile and preserve valid contracts.",
+        "preserved": "S04 acceptance, unrelated S05-02 work, owner keys/credentials/policies and public mail availability.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      },
+      {
+        "id": "S05-01-T03",
+        "outcome_ids": [
+          "rust-crypto-transport"
+        ],
+        "kind": "negative",
+        "level": "source",
+        "prerequisites": "Current source and interface inspected; actual native prerequisites checked before host use.",
+        "action": "Run real wire binary round trips and malformed/unknown/error-content regressions.",
+        "expected": "Exact content preserved and invalid operations/results refused.",
+        "preserved": "S04 acceptance, unrelated S05-02 work, owner keys/credentials/policies and public mail availability.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      },
+      {
+        "id": "S05-01-T04",
+        "outcome_ids": [
+          "rust-crypto-transport"
+        ],
+        "kind": "negative",
+        "level": "source",
+        "prerequisites": "Current source and interface inspected; actual native prerequisites checked before host use.",
+        "action": "Run MAC/expiry/replay/account/fingerprint authorization tests.",
+        "expected": "Unauthorized work refused before worker; historical separate-principal evidence only reused.",
+        "preserved": "S04 acceptance, unrelated S05-02 work, owner keys/credentials/policies and public mail availability.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      },
+      {
+        "id": "S05-01-T05",
+        "outcome_ids": [
+          "rust-crypto-transport"
+        ],
+        "kind": "positive",
+        "level": "native",
+        "prerequisites": "Current source and interface inspected; actual native prerequisites checked before host use.",
+        "action": "Run existing native production gateway using isolated helpers and loopback sink.",
+        "expected": "Actual application/client/worker composition returns independently checked bytes.",
+        "preserved": "S04 acceptance, unrelated S05-02 work, owner keys/credentials/policies and public mail availability.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      },
+      {
+        "id": "S05-01-T06",
+        "outcome_ids": [
+          "rust-crypto-transport"
+        ],
+        "kind": "negative",
+        "level": "native",
+        "prerequisites": "Current source and interface inspected; actual native prerequisites checked before host use.",
+        "action": "Run current native deadline/duplex/output/concurrency regressions.",
+        "expected": "Existing limits enforced with observed cleanup disposition.",
+        "preserved": "S04 acceptance, unrelated S05-02 work, owner keys/credentials/policies and public mail availability.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      },
+      {
+        "id": "S05-01-T07",
+        "outcome_ids": [
+          "rust-crypto-transport"
+        ],
+        "kind": "negative",
+        "level": "source",
+        "prerequisites": "Current source and interface inspected; actual native prerequisites checked before host use.",
+        "action": "Run locked/unavailable/malformed result and process failure checks.",
+        "expected": "No error content release, downgrade or false success.",
+        "preserved": "S04 acceptance, unrelated S05-02 work, owner keys/credentials/policies and public mail availability.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      },
+      {
+        "id": "S05-01-T08",
+        "outcome_ids": [
+          "rust-crypto-transport"
+        ],
+        "kind": "positive",
+        "level": "native",
+        "prerequisites": "Current source and interface inspected; actual native prerequisites checked before host use.",
+        "action": "Run fresh disposable-key authenticated Rust client/service on obsd1.",
+        "expected": "Actual native round trip and exact output comparison; live services preserved.",
+        "preserved": "S04 acceptance, unrelated S05-02 work, owner keys/credentials/policies and public mail availability.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      },
+      {
+        "id": "S05-01-T09",
+        "outcome_ids": [
+          "rust-crypto-transport"
+        ],
+        "kind": "usability",
+        "level": "human",
+        "prerequisites": "Current source and interface inspected; actual native prerequisites checked before host use.",
+        "action": "Review signed synchronized result and accept infrastructure scope.",
+        "expected": "Owner acceptance remains separate; no invented manual crypto ceremony.",
+        "preserved": "S04 acceptance, unrelated S05-02 work, owner keys/credentials/policies and public mail availability.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      }
+    ],
+    "engineering_exit": "Current Rust build/source/native functional and security checks, independent review and signed synchronization; isolated native deployment scope explicit.",
+    "human_exit": "Owner accepts the infrastructure result; no S05-02 UI or production release acceptance inferred."
+  }
+}
+```
+<!-- /OSMAP_ACTIVE_WORK_ORDER -->
+
 2026-10-30 (America/Toronto) — **S04-04 ACCEPTED; positive browser UAT PASS.**
 
 Owner confirms registered-email recovery, password reset, replacement-TOTP
@@ -10138,7 +10399,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
 
 ## S04-04 active delivery — 2026-10-29
 
-<!-- OSMAP_ACTIVE_WORK_ORDER -->
+<!-- OSMAP_ARCHIVED_S04_04_WORK_ORDER -->
 ```json
 {
   "version": 1,
@@ -11690,7 +11951,7 @@ All prior attempts below are retained; S04-01 is accepted under its historical w
   }
 }
 ```
-<!-- /OSMAP_ACTIVE_WORK_ORDER -->
+<!-- /OSMAP_ARCHIVED_S04_04_WORK_ORDER -->
 
 ## Accepted S04-03 work order preserved
 

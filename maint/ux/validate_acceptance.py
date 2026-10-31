@@ -599,7 +599,10 @@ def validate_work_order(order, matrix, catalogue, changed_paths, pre_action=Fals
         require(text(outcome.get("owner")) and any(outcome["owner"] in owners for owners in roles.values()), "named outcome owner required")
         require(all(text(outcome.get(key)) for key in ("frontend_backend_outcome", "essential_qa", "next_action")), "concrete outcome, QA and next action required")
         obligations = outcome.get("requirement_ids")
-        require(isinstance(obligations, list) and obligations and set(obligations) <= expected, "outcome contains unmapped scope")
+        # Infrastructure slices can have no page-control rows in the register.
+        # Their functional outcomes/tests remain mandatory below.
+        require(isinstance(obligations, list) and (obligations or not expected)
+                and set(obligations) <= expected, "outcome contains unmapped scope")
         if revision == "R4":
             require(len(obligations) == len(set(obligations)) and not covered.intersection(obligations), "duplicate R4 work-order obligation")
         covered.update(obligations)
