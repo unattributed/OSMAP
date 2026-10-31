@@ -1,4 +1,4 @@
-2026-10-31 (America/Toronto) — **S05-01 IN_PROGRESS: qualify the existing Rust crypto-helper path.**
+2026-10-31 (America/Toronto) — **S05-01 ENGINEERING_COMPLETE: existing Rust path natively qualified; T09 pending.**
 
 The operator resumes S05-01 with the successful S04 failure-analysis method.
 S04-04 acceptance and separate S05-02 work are preserved. See
@@ -11,7 +11,7 @@ S04-04 acceptance and separate S05-02 work are preserved. See
   "slice": "S05-01",
   "original_requirement": "Extend versioned bounded helper protocol for real operations with narrow authorized data transport and separate metadata",
   "source_baseline": "35719f01b36b67d11a567c8cebed09a209773102",
-  "state": "IN_PROGRESS",
+  "state": "ENGINEERING_COMPLETE",
   "integration_owner": "/root",
   "roles": {
     "project_manager": [
@@ -57,29 +57,54 @@ S04-04 acceptance and separate S05-02 work are preserved. See
       "requirement_ids": [],
       "frontend_backend_outcome": "Authenticated Runtime -> typed Rust request -> account-mapped helper -> fixed GPGME worker -> validated result.",
       "essential_qa": "T01-T08 current source/native checks and review; T09 separate owner acceptance.",
-      "next_action": "Run focused regression, smallest correction, native disposable gateway proof.",
+      "next_action": "Owner acceptance of infrastructure result; S05-02 UI and production deployment remain separate.",
       "dependencies": [],
       "stages": {
-        "implementation": "PENDING",
-        "source_tests": "PENDING",
-        "native_tests": "PENDING",
-        "deployed_qa": "PENDING",
-        "independent_review": "PENDING",
-        "recovery": "PENDING"
+        "implementation": "PASS",
+        "source_tests": "PASS",
+        "native_tests": "PASS",
+        "deployed_qa": "PASS",
+        "independent_review": "PASS",
+        "recovery": "PASS"
       },
-      "evidence": []
+      "evidence": [
+        {
+          "stage": "implementation",
+          "reference": "src/openpgp_crypto_protocol.rs; signed8577e12; four real producer/consumer regressions."
+        },
+        {
+          "stage": "source_tests",
+          "reference": "Private acceptance02.log exit0:2080RustPASS/0FAIL/74ignored; crypto-green19PASS; scope56PASS; strictClippy/build/fmtPASS."
+        },
+        {
+          "stage": "native_tests",
+          "reference": "Private native-result.json SHA99c1362bdd887a54ef42aa91bcc3dcafcd3ac29cb895ef035aea513c14b4e037; focused19PASS; two exact native Rust cases executedPASS."
+        },
+        {
+          "stage": "deployed_qa",
+          "reference": "ISOLATED native candidate: actual production Rust gateway/helper/Cworker with loopback sink and controlled Sent, not a replacement of live Web or public-MTA proof. functional.log SHAc3fa0d54a597e1b3e395b0a5467d10f235e8631476758c1aa1b3eb90b3f11b48."
+        },
+        {
+          "stage": "independent_review",
+          "reference": "/root/s05_protocol_review source/runner GO and actual-chain review; /root/s05_scope_qa actual register/S04 archive/source/gate review; root independently reviewed validator correction. Actual reviewer artifact SHA314d9fbc874395ec9c78aea015543de9f63a92e77479e9a169390d0f7971f11e; four before/after installed hashes match, baseline provenance root preflight observations."
+        },
+        {
+          "stage": "recovery",
+          "reference": "functional.log exact-home agent-socket disappearance and cleanupPASS; independent installed-after.log fixtureABSENT/eightroleshealthy/HTTPS200. Original failures retained."
+        }
+      ]
     }
   ],
   "human_acceptance": {
     "status": "PENDING",
     "reference": "Separate owner acceptance after engineering completion."
   },
-  "next_action": "Complete source correction and bounded disposable obsd1 native integration.",
+  "next_action": "Finish normal signed synchronization and report T01-T08 engineering/nativePASS with T09 owner acceptance pending; do not begin S05-02 without operator direction.",
   "accountability": {
     "owner": "/root",
     "functional_exit": "Authenticated Runtime -> typed Rust request -> account-mapped helper -> fixed GPGME worker -> validated result.",
     "elapsed_scope": "wall_clock",
-    "history_reference": "Accepted S04-04 preserved below. Historical October1 reviews retained; missing raw local directory is not new native evidence. New work uses no owner keys/credentials. Focused invalid decrypt selection regression RED then corrected; crypto19PASS/3explicitnativeignores, scope56PASS, bins/check/fmt/strictClippyPASS. Normal acceptance01 stopped in carrier118 beforeCargo because the coupled validator-source pin was stale after the infrastructure mapping correction; exact pin refreshed, actual failed pin case and CarrierClosureTests8PASS. Aggregate failure preserved; current source/runner independently GO.",
+    "history_reference": "Accepted S04-04 preserved below. Historical October1 reviews retained; missing raw local directory is not new native evidence. New work uses no owner keys/credentials. Focused invalid decrypt selection regression RED then corrected; crypto19PASS/3explicitnativeignores, scope56PASS, bins/check/fmt/strictClippyPASS. Normal acceptance01 stopped in carrier118 beforeCargo because the coupled validator-source pin was stale after the infrastructure mapping correction; exact pin refreshed, actual failed pin case and CarrierClosureTests8PASS. Aggregate failure preserved; current source/runner independently GO. Nativebuild01SIGABRT earliestallocationunder1.5GiB retained. Build02 same signedRust/source passed164.677s using priorS04native06 compilerprofile4GiB/jobs1/privatehomeTMPDIR; stack/systempolicy unchanged. Native focused19/0/3ignored, then exactauthenticated andgatewaytestsPASS16.396s; exactownedfixture cleanup+freshABSENT; eightroleshealthy/HTTPS200. Acceptance02PASS2080/0/74. An intermediate V14 check refused a stale specification hash immediately after documentation update; refreshed actual spec binding, no product test ran in that refusal. V14 second aggregate reached passing component gates, then refused an extra EOF blank in DECISION_LOG; exact whitespace removed and stale discovery wording made historical before the final changed-document check.",
     "investigation": {
       "owner": "/root",
       "timebox_seconds": 10800,
@@ -95,7 +120,7 @@ S04-04 acceptance and separate S05-02 work are preserved. See
     "slice": "S05-01",
     "specification": {
       "path": "docs/UX_SLICE_S05_01.md",
-      "sha256": "ef146a550b87dcc656019300896680d8e78ac1482cd2279d837f994d055cebb8"
+      "sha256": "47c9861721052a1277336d0a1069b969a62e6f0a42f89fa681133e79f1957bf8"
     },
     "design": {
       "journey": "Authenticated Runtime -> typed Rust request -> account-mapped helper -> fixed GPGME worker -> validated result.",
@@ -120,8 +145,11 @@ S04-04 acceptance and separate S05-02 work are preserved. See
         "preserved": "S04 acceptance, unrelated S05-02 work, owner keys/credentials/policies and public mail availability.",
         "owner": "/root",
         "reviewer": "/root/s05_protocol_review",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "PASS",
+        "evidence": [
+          "docs/UX_SLICE_S05_01.md#actual-implementation-and-qualification--2026-10-31",
+          "Private acceptance02.log exit0:2080RustPASS/0FAIL/74ignored; crypto-green19PASS; scope56PASS; strictClippy/build/fmtPASS."
+        ]
       },
       {
         "id": "S05-01-T02",
@@ -136,8 +164,11 @@ S04-04 acceptance and separate S05-02 work are preserved. See
         "preserved": "S04 acceptance, unrelated S05-02 work, owner keys/credentials/policies and public mail availability.",
         "owner": "/root",
         "reviewer": "/root/s05_protocol_review",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "PASS",
+        "evidence": [
+          "docs/UX_SLICE_S05_01.md#actual-implementation-and-qualification--2026-10-31",
+          "Private acceptance02.log exit0:2080RustPASS/0FAIL/74ignored; crypto-green19PASS; scope56PASS; strictClippy/build/fmtPASS."
+        ]
       },
       {
         "id": "S05-01-T03",
@@ -152,8 +183,11 @@ S04-04 acceptance and separate S05-02 work are preserved. See
         "preserved": "S04 acceptance, unrelated S05-02 work, owner keys/credentials/policies and public mail availability.",
         "owner": "/root",
         "reviewer": "/root/s05_protocol_review",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "PASS",
+        "evidence": [
+          "docs/UX_SLICE_S05_01.md#actual-implementation-and-qualification--2026-10-31",
+          "Private acceptance02.log exit0:2080RustPASS/0FAIL/74ignored; crypto-green19PASS; scope56PASS; strictClippy/build/fmtPASS."
+        ]
       },
       {
         "id": "S05-01-T04",
@@ -168,8 +202,11 @@ S04-04 acceptance and separate S05-02 work are preserved. See
         "preserved": "S04 acceptance, unrelated S05-02 work, owner keys/credentials/policies and public mail availability.",
         "owner": "/root",
         "reviewer": "/root/s05_protocol_review",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "PASS",
+        "evidence": [
+          "docs/UX_SLICE_S05_01.md#actual-implementation-and-qualification--2026-10-31",
+          "Private acceptance02.log exit0:2080RustPASS/0FAIL/74ignored; crypto-green19PASS; scope56PASS; strictClippy/build/fmtPASS."
+        ]
       },
       {
         "id": "S05-01-T05",
@@ -184,8 +221,11 @@ S04-04 acceptance and separate S05-02 work are preserved. See
         "preserved": "S04 acceptance, unrelated S05-02 work, owner keys/credentials/policies and public mail availability.",
         "owner": "/root",
         "reviewer": "/root/s05_protocol_review",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "PASS",
+        "evidence": [
+          "docs/UX_SLICE_S05_01.md#actual-implementation-and-qualification--2026-10-31",
+          "Private native-result.json SHA99c1362bdd887a54ef42aa91bcc3dcafcd3ac29cb895ef035aea513c14b4e037; focused19PASS; two exact native Rust cases executedPASS."
+        ]
       },
       {
         "id": "S05-01-T06",
@@ -200,8 +240,11 @@ S04-04 acceptance and separate S05-02 work are preserved. See
         "preserved": "S04 acceptance, unrelated S05-02 work, owner keys/credentials/policies and public mail availability.",
         "owner": "/root",
         "reviewer": "/root/s05_protocol_review",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "PASS",
+        "evidence": [
+          "docs/UX_SLICE_S05_01.md#actual-implementation-and-qualification--2026-10-31",
+          "Private native-result.json SHA99c1362bdd887a54ef42aa91bcc3dcafcd3ac29cb895ef035aea513c14b4e037; focused19PASS; two exact native Rust cases executedPASS."
+        ]
       },
       {
         "id": "S05-01-T07",
@@ -216,8 +259,11 @@ S04-04 acceptance and separate S05-02 work are preserved. See
         "preserved": "S04 acceptance, unrelated S05-02 work, owner keys/credentials/policies and public mail availability.",
         "owner": "/root",
         "reviewer": "/root/s05_protocol_review",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "PASS",
+        "evidence": [
+          "docs/UX_SLICE_S05_01.md#actual-implementation-and-qualification--2026-10-31",
+          "Private acceptance02.log exit0:2080RustPASS/0FAIL/74ignored; crypto-green19PASS; scope56PASS; strictClippy/build/fmtPASS."
+        ]
       },
       {
         "id": "S05-01-T08",
@@ -232,8 +278,11 @@ S04-04 acceptance and separate S05-02 work are preserved. See
         "preserved": "S04 acceptance, unrelated S05-02 work, owner keys/credentials/policies and public mail availability.",
         "owner": "/root",
         "reviewer": "/root/s05_protocol_review",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "PASS",
+        "evidence": [
+          "docs/UX_SLICE_S05_01.md#actual-implementation-and-qualification--2026-10-31",
+          "Private native-result.json SHA99c1362bdd887a54ef42aa91bcc3dcafcd3ac29cb895ef035aea513c14b4e037; focused19PASS; two exact native Rust cases executedPASS."
+        ]
       },
       {
         "id": "S05-01-T09",

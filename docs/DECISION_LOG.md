@@ -14041,3 +14041,26 @@ same pre-execution refusal assertion; do not exempt tests or weaken the guard.
 The native normal Web build f48d0446 remains bound to signed16d7bf4. This follow-up
 changes only the cfg(test) input plus derived maps and records; production source
 used by that ordinary binary is identical and no new native build is required.
+## S05-01: reuse and qualify the existing Rust helper route — 2026-10-31
+
+The operator resumed S05-01 using the successful S04 failure-analysis method.
+Retain the typed Rust client/service, account/fingerprint authority, bounded
+worker transport and existing GPGME engine. The demonstrated correction validates
+an operation before cloning its content; do not replace the protocol or engine
+without an observed requirement. New regression RED/GREEN and actual native
+client/gateway tests qualify the affected boundary with disposable keys.
+
+S05-01 has no page-control rows in the original register. Permit empty IDs only
+for genuinely unmapped infrastructure scope while retaining mandatory functional
+outcomes/tests and every mapped obligation. This bookkeeping correction supplies
+no product or audit PASS; its coupled source pin and regressions remain checked.
+
+Reuse the actual successful S04 compiler profile after the inherited data-limit
+allocation failure. Do not introduce a system-wide limit, free-memory floor,
+backend downtime, new test framework or owner credential/key mutation. Record
+failed attempts separately from successful verification and cleanup.
+
+Qualification is current source and isolated native application composition.
+Live Web/helpers remain unchanged. S05-02 owns the practical imported-key/email/
+policy list with encryption off by default; final integrated review before
+production release and owner acceptance remain separate.

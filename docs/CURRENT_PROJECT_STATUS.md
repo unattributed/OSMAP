@@ -1,5 +1,21 @@
 # Current Project Status
 
+2026-10-31 (America/Toronto) — **S05-01 engineering/native qualification complete; owner acceptance separate.**
+The existing Rust crypto-helper path was reused. Requests now validate their
+operation before cloning content, preserving typed limit/refusal errors. Current
+source and native crypto groups each pass19 tests. Fresh disposable native Rust
+client/service and production-gateway protected round trips both pass; exact
+fixture cleanup and fresh absence readback pass. Normal acceptance passes2,080
+Rust tests/0failures/74explicit ignores plus V10/V12/V13; independent review
+confirms the bounded source and actual native chain. Original request-regression,
+stale validator-pin and compiler-allocation failures remain preserved.
+No live binary/profile, owner key/policy or mail-service configuration changed;
+eight checked roles remain healthy and HTTPS login returns200. S04-04 remains
+accepted. T09 owner acceptance, S05-02 practical key-management UI and production
+release remain separate. See [the slice record](UX_SLICE_S05_01.md). Final normal
+signed synchronization is checked in the delivery receipt, independently of
+these functional observations.
+
 2026-10-29 (America/Toronto) — **S04-04 code running on obsd1; selected owner account configured for local browser UAT.**
 Fresh checks matched installed Web/recovery/password-helper artifacts and actual
 loaded images. All17 roles are healthy, public HTTPS login returns200 and all54
