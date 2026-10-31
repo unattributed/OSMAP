@@ -83,7 +83,7 @@ diagnose and make the smallest correction before retrying.
 Private evidence root:
 `/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/`.
 Engineering, installed readiness, signed synchronization and owner acceptance
-remain separate. Current source/native/installed results begin NOT_RUN.
+remain separate. Native and source results below record actual execution; installed and owner acceptance remain separate.
 
 ## Bounded results and downstream limits
 
@@ -112,3 +112,90 @@ field typo was fixed before host use. The first browser launcher lacked the
 optional Playwright module, so the existing Rust preview and CUA were used.
 An expired preview and an incorrect theme-control locator are QA failures, not
 product failures. A fresh bounded preview completed the actual browser checks.
+
+
+## Native execution — 2026-10-31
+
+Signed source `fa26102d5c2603cc5c298c845910a01ae072766c` was archived and
+built on obsd1 with the previously qualified one-job/private-home-TMP/4GiB DATA
+profile. Actual native libtest and Web compilation passed in164.63seconds.
+Web SHA256 is
+`179342ac1db9eb7043db5be7ee933249533c13ca785111e50096c731e2d96f16`;
+libtest SHA256 is
+`97f9db144d2c8b26c18e3ef0478647d5f314fea83f82e4701497f76e91e8b88b`.
+
+The exact native public-admin store transaction and Runtime key-management
+journey both passed. The runner verifies exact test listing before selection,
+so a zero-test execution cannot count. Fresh authorization/replay/policy state
+was used for Runtime after the store transaction restored its correspondent
+certificate. Actual Runtime mutations, TOTP replay refusal, policy preflight,
+recipient removal, public removal/reimport and revoked-session refusal passed.
+Private/trustdb bytes were preserved; disposable agents and scratch were cleaned,
+with a fresh absence check. Primary password verification used the real process
+adapter with a synthetic credential backend, not an owner Dovecot credential.
+Per-test private logs were removed with successful disposable cleanup; the fixed
+stage summary, binary/runner hashes, root dispatch record and absence readback
+remain. Unchanged separate-principal confinement evidence is reused from S05/S04;
+this fixture does not claim a new cross-UID qualification.
+
+The current installed read-only helper probe also passed: two public keys,
+confirmed account binding, one Proton recipient, binding revision5, account
+signing/encryption Optional and the preserved Proton recipient Required.
+Actual native encryption of fixed synthetic RAM data passed without SMTP or
+key/policy/credential mutation. This is current helper/state compatibility;
+matching new Web installation remains separate.
+
+Full source tests passed2,091/0failed/75explicit ignores. The initial security
+gate identified the new cfg(test) fixture's process calls as unregistered. After
+the existing CWE test-only mapping was updated, the redundant shell scanner
+reported the same omitted test-file entry. Both failures remain preserved.
+Combined independent review checked the exact test-only registration and
+negative controls before the matching existing scanner lists were corrected;
+production rules and process admission are unchanged. Normal gates run again
+against the final correction; passing Rust tests alone did not close that gate.
+
+
+## Owner T09 walkthrough after installed readiness
+
+1. Sign in normally at `https://obsd1.blackbagsecurity.com` and open
+   `/settings/keys`. Check that the first visible section is Imported keys,
+   showing the expected own-account and Proton email associations.
+2. Confirm the existing policy values: the account remains Off by default and
+   the previously saved Proton recipient remains Require encryption. Default
+   applies to new unset choices; existing explicit policies are preserved.
+3. Expand Details and key actions to inspect/select the complete fingerprint.
+   The primary fingerprint remains the trust identity; technical metadata is
+   secondary. Keyboard expansion and a narrow viewport should remain usable.
+4. Open Edit policy or replace key for an existing recipient. The current key
+   and policy must be selected, with empty current-password/authenticator fields.
+   For a deliberately selected functional change, use the owner's current
+   password and a fresh code in the browser, submit once, and confirm the saved
+   identity/policy after reload. An uncertain result requires reconciliation.
+5. Confirm a new compose draft begins Not encrypted when no saved policy or
+   explicit message choice requires protection. This walkthrough sends no mail.
+
+Owner feedback closes T09; the engineering/native tests do not fabricate that
+human result. No private-key import/export or broad binding reset is required.
+
+
+## Inherited status gap corrected before installation
+
+The complete mapped-control review found that Welcome still displayed hardcoded
+Unknown for five OpenPGP controls. An authenticated configured-state route test
+reproduced that failure. Welcome now projects the existing owned key-management
+state and saved composition defaults. Full saved fingerprints remain visible;
+unavailable/foreign/missing/adverse key states and private readiness are distinct.
+The change uses existing Gateway reads and preserves their audit events, with no
+new store or effect path. New configured/negative/composition-persistence route
+checks pass. A narrow timestamp-expiry check complements reported key flags.
+The missing explicit discovery-Off notice was restored and a real recipient
+rotation/CAS test added; neither required changing key effect semantics.
+
+Actual CUA Welcome navigation now shows configured status, complete saved
+fingerprint, Optional/off-by-default signing/encryption and self default, the
+Required variant and truthful unavailable/foreign variants. Desktop and mobile
+have no horizontal overflow. Double-click selection visibly highlights the full
+fingerprint in the saved screenshot. CUA's unsupported DOM selection observation
+and failed copy-shortcut dispatch are retained as QA-tool limitations; no
+clipboard-API success or clipboard read is claimed. Final installed owner UAT
+remains the browser acceptance boundary.

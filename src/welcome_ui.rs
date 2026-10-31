@@ -12,8 +12,13 @@ pub(crate) fn render_mailboxes_page_with_policy(
     sent_count: Option<usize>,
     activity: &crate::http::BrowserSessionListDecision,
     open_on_select: bool,
+    openpgp: (
+        &crate::key_management::State,
+        Option<crate::composition_preferences::OpenPgpDefaults>,
+    ),
 ) -> TrustedHtml {
     let (summaries, snooze_notice) = summaries;
+    let key_summary = openpgp_summary(canonical_username, openpgp.0, openpgp.1);
     let has = |name: &str| mailboxes.iter().any(|mailbox| mailbox.name == name);
     let inbox = has("INBOX");
     let sent = has("Sent");
@@ -149,13 +154,96 @@ pub(crate) fn render_mailboxes_page_with_policy(
         "<nav class=\"welcome-shortcuts\" aria-label=\"Workspace shortcuts\">{shortcuts}</nav>",
         "<div class=\"welcome-primary-grid\"><section class=\"welcome-panel welcome-messages\" aria-labelledby=\"welcome-messages-title\"><div class=\"welcome-panel-heading\"><h2 id=\"welcome-messages-title\">Recent Messages</h2>{view_all}</div>{recent}<details class=\"welcome-browse\"><summary id=\"welcome-mailboxes\">Browse your mailboxes</summary><div class=\"welcome-folder-scroll\" tabindex=\"0\" role=\"region\" aria-labelledby=\"welcome-mailboxes\"><ul>{folders}</ul></div>{limit}</details></section>",
         "<section class=\"welcome-panel welcome-account-security\" aria-labelledby=\"welcome-security-title\"><div class=\"welcome-panel-heading\"><h2 id=\"welcome-security-title\">Account Security</h2></div><div class=\"welcome-protection\">{shield}<div><strong>Protected by Default</strong><p>Remote images and active content are blocked.</p></div></div><div class=\"welcome-security-detail\"><h3>Authenticated session</h3><p>Password and TOTP were required at sign-in.</p><a href=\"/sessions\">Manage sessions <span aria-hidden=\"true\">→</span></a></div></section>",
-        "<section class=\"welcome-panel welcome-openpgp\" aria-labelledby=\"welcome-openpgp-title\"><div class=\"welcome-panel-heading\"><h2 id=\"welcome-openpgp-title\">OpenPGP Status</h2></div><div class=\"welcome-key-state\">{shield}<div><strong>Unknown</strong><p>Account key status is unavailable here.</p></div></div><dl class=\"welcome-key-details\"><div><dt>Key fingerprint</dt><dd>Unavailable</dd></div><div><dt>Signing</dt><dd>Unknown</dd></div><div><dt>Encryption</dt><dd>Unknown</dd></div><div><dt>Encrypt-to-self</dt><dd>Unknown</dd></div></dl><a class=\"button-link\" href=\"/settings/keys\">Manage Keys</a></section></div>",
+        "{key_summary}</div>",
         "<div class=\"welcome-secondary-grid\"><section class=\"welcome-panel welcome-activity\" aria-labelledby=\"welcome-activity-title\"><div class=\"welcome-panel-heading\"><h2 id=\"welcome-activity-title\">Recent Activity</h2></div>{activity_rows}</section>",
         "<div class=\"welcome-middle-stack\"><section class=\"welcome-panel welcome-actions\" aria-labelledby=\"welcome-actions-title\"><div class=\"welcome-panel-heading\"><h2 id=\"welcome-actions-title\">Quick Actions</h2></div><div class=\"welcome-action-grid\"><a href=\"/search\">{search_icon}<strong>Search</strong><span>Find messages</span></a><a href=\"{filter_target}\">{filter_icon}<strong>Filters</strong><span>{filter_description}</span></a><a href=\"/labels\">{label_icon}<strong>Labels</strong><span>Organize messages</span></a><details><summary>{more_icon}<strong>More</strong><span>Available tools</span></summary><div><a href=\"/contacts\">Contacts</a><a href=\"/sessions\">Sessions</a><a href=\"/drafts\">Saved drafts</a></div></details></div>{search}</section>",
         "<section class=\"welcome-panel welcome-storage\" aria-labelledby=\"welcome-storage-title\"><div class=\"welcome-panel-heading\"><h2 id=\"welcome-storage-title\">Storage Usage</h2></div><div class=\"welcome-storage-body\"><div><strong>Usage and quota unknown</strong><p>Mailbox, document and other storage totals are unavailable.</p></div><button type=\"button\" disabled>Manage Storage</button></div></section></div>",
         "<section class=\"welcome-panel welcome-system\" aria-labelledby=\"welcome-system-title\"><div class=\"welcome-panel-heading\"><h2 id=\"welcome-system-title\">System Status</h2></div><ul>{system}</ul><p class=\"welcome-note\">Service health and backup results are unavailable here.</p></section></div>",
         "<footer class=\"welcome-footer\"><span>OSMAP · Secure by Design. Private by Default.</span><span>System health unavailable</span><span aria-disabled=\"true\">Help unavailable</span><span aria-disabled=\"true\">Feedback unavailable</span></footer></main>"
-    ), header=app_header(canonical_username,csrf_token,"mailboxes"), account=escape_html(canonical_username), metrics=metrics, recent=recent, shortcuts=shortcuts, view_all=view_all, folders=folders, limit=limit, shield=shell_icon("shield"), activity_rows=activity_rows(canonical_username, activity), search_icon=shell_icon("search"), filter_icon=shell_icon("inbox"), label_icon=shell_icon("drafts"), more_icon=shell_icon("menu"), filter_target=if inbox { "/mailbox?name=INBOX&filter=unread" } else { "/search" }, filter_description=if inbox { "Unread in Inbox" } else { "Search mail" }, search=search, system=system))
+    ), header=app_header(canonical_username,csrf_token,"mailboxes"), account=escape_html(canonical_username), metrics=metrics, recent=recent, shortcuts=shortcuts, view_all=view_all, folders=folders, limit=limit, shield=shell_icon("shield"), key_summary=key_summary, activity_rows=activity_rows(canonical_username, activity), search_icon=shell_icon("search"), filter_icon=shell_icon("inbox"), label_icon=shell_icon("drafts"), more_icon=shell_icon("menu"), filter_target=if inbox { "/mailbox?name=INBOX&filter=unread" } else { "/search" }, filter_description=if inbox { "Unread in Inbox" } else { "Search mail" }, search=search, system=system))
+}
+
+fn openpgp_summary(
+    account: &str,
+    state: &crate::key_management::State,
+    defaults: Option<crate::composition_preferences::OpenPgpDefaults>,
+) -> String {
+    let record = (state.canonical_username == account)
+        .then_some(state.bindings.as_ref())
+        .flatten()
+        .filter(|record| record.ensure_account(account).is_ok());
+    let binding = record.and_then(|record| record.account_binding.as_ref());
+    let keys = state
+        .inventory
+        .as_ref()
+        .and_then(|inventory| inventory.keys());
+    let now = crate::totp::TimeProvider::unix_timestamp(&crate::totp::SystemTimeProvider);
+    let status = match (record, binding, keys) {
+        (None, _, _) => "Account key status unavailable",
+        (Some(_), _, None) => "Public inventory unavailable",
+        (Some(_), None, Some(_)) => "No account key selected",
+        (Some(_), Some(binding), Some(keys)) => {
+            match keys
+                .iter()
+                .find(|key| key.primary.fingerprint == binding.primary_fingerprint)
+            {
+                None => "Selected account key missing",
+                Some(_) if now == 0 => "Account key status unavailable",
+                Some(key)
+                    if key.primary.revoked
+                        || key.primary.expired
+                        || key.primary.disabled
+                        || key.primary.invalid
+                        || key.primary.created > now
+                        || key.primary.expires != 0 && key.primary.expires <= now =>
+                {
+                    "Account key needs attention"
+                }
+                Some(_) => "Account key configured",
+            }
+        }
+    };
+    let fingerprint = binding
+        .map(|binding| format!("<code>{}</code>", escape_html(&binding.primary_fingerprint),))
+        .unwrap_or_else(|| {
+            if record.is_some() {
+                "Not configured"
+            } else {
+                "Unavailable"
+            }
+            .into()
+        });
+    let policy = |requirement, selected| match requirement {
+        crate::openpgp_bindings::Requirement::Required => "Required",
+        crate::openpgp_bindings::Requirement::Disabled => "Disabled",
+        crate::openpgp_bindings::Requirement::Optional => match selected {
+            Some(true) => "Optional; on by default",
+            Some(false) => "Optional; off by default",
+            None => "Optional; compose default unavailable",
+        },
+    };
+    let signing = record
+        .map(|record| policy(record.policy.signing, defaults.map(|value| value.sign)))
+        .unwrap_or("Unavailable");
+    let encryption = record
+        .map(|record| {
+            policy(
+                record.policy.encryption,
+                defaults.map(|value| value.encrypt),
+            )
+        })
+        .unwrap_or("Unavailable");
+    let self_default = match defaults {
+        Some(value) if value.encrypt_to_self => "On by default; choose per message",
+        Some(_) => "Off by default; choose per message",
+        None => "Compose default unavailable; choose per message",
+    };
+    format!(concat!(
+        "<section class=\"welcome-panel welcome-openpgp\" aria-labelledby=\"welcome-openpgp-title\"><div class=\"welcome-panel-heading\"><h2 id=\"welcome-openpgp-title\">OpenPGP Status</h2></div>",
+        "<div class=\"welcome-key-state\">{}<div><strong>{status}</strong><p>Public metadata only; private-key readiness is checked when an operation runs.</p></div></div>",
+        "<dl class=\"welcome-key-details\"><div><dt>Saved account fingerprint</dt><dd>{fingerprint}</dd></div><div><dt>Signing</dt><dd>{signing}</dd></div><div><dt>Encryption</dt><dd>{encryption}</dd></div><div><dt>Encrypt-to-self</dt><dd>{self_default}</dd></div></dl>",
+        "<a class=\"button-link\" href=\"/settings/keys\">Manage Keys</a></section>"
+    ), shell_icon("shield"), status=status, fingerprint=fingerprint, signing=signing, encryption=encryption, self_default=self_default)
 }
 
 fn recent_rows(

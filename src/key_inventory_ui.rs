@@ -709,7 +709,7 @@ pub(crate) fn render_key_management_panel(
         "<div class=\"key-management-grid\"><section class=\"key-management-card\"><h2>Your email key and account policies</h2>{overview}{account_actions}{policy_summary}",
         "<details id=\"account-binding\"{account_open}><summary>{account_action}</summary>{account_form}</details><details id=\"protection-policy\"{policy_open}><summary>Protection policy</summary>{policy_form}</details><details><summary>Recover from unavailable or expired bindings</summary>{cleanup}</details></section>",
         "<section class=\"key-management-card\"><h2>Recipient keys and policies</h2>{recipients}<details id=\"recipient-binding\"{recipient_open}><summary>Associate an email address with a key</summary>{recipient_form}</details>",
-        "<p class=\"key-inventory-notice\">Confirm full fingerprints through a trusted channel. Each saved change requires your current mailbox password and a fresh authenticator code. A public key does not establish private-key availability.</p>",
+        "<p class=\"key-inventory-notice\">Automatic key discovery is off. Importing a key does not approve it for an email address. Confirm full fingerprints through a trusted channel. Each saved change requires your current mailbox password and a fresh authenticator code. A public key does not establish private-key availability.</p>",
         "<details id=\"public-import\"{import_open}><summary>Import public key</summary>{import_form}</details></section></div></main>"
     ),account_open=opened("account"),policy_open=opened("policy"),recipient_open=opened("recipient"),import_open=opened("import"),notice=notice,revision=revision,account_form=account_form,account_actions=account_actions,policy_summary=policy_summary,policy_form=policy_form,cleanup=cleanup,recipients=recipients,recipient_form=recipient_form,rows=rows,overview=overview,account_action=if bound.is_some(){"Change account key"}else{"Choose account key"},header=app_header(account,csrf,"security"),state_label=if ready{"Verified public inventory and confirmed binding store"}else{"Binding changes unavailable"},toolbar_actions=toolbar_actions,import_form=import_form,public_state=public_state))
 }
@@ -1001,6 +1001,7 @@ mod binding_page_tests {
             .unwrap();
         assert!(add.contains("<option value=\"optional\" selected>Off by default</option>"));
         assert!(!html.contains("name=\"pgp_encrypt\""));
+        assert!(html.contains("Automatic key discovery is off. Importing a key does not approve it for an email address."));
         assert_eq!(
             before,
             serde_json::to_vec(state.bindings.as_ref().unwrap()).unwrap()

@@ -49,6 +49,10 @@ TEST_ONLY_RUST_PATHS = {
         "src/openpgp_public_admin.rs",
         '#[cfg(test)]\n#[path = "openpgp_public_admin_tests.rs"]\nmod tests;',
     ),
+    "src/http_gateway_keys_tests.rs": (
+        "src/http_gateway_keys.rs",
+        '#[cfg(test)]\n#[path = "http_gateway_keys_tests.rs"]\nmod tests;',
+    ),
     "src/http/protected_send_gateway_native_tests.rs": (
         "src/http_gateway_mail.rs",
         'include!("http/protected_send_gateway_native_tests.rs");',

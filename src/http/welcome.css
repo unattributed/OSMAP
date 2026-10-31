@@ -48,7 +48,7 @@
 .welcome-key-details { margin: .5rem .9rem; font-size: .75rem; }
 .welcome-key-details > div { display: flex; gap: .5rem; justify-content: space-between; padding: .4rem 0; }
 .welcome-key-details dt, .welcome-key-details dd { margin: 0; }
-.welcome-key-details dd { color: var(--muted); }
+.welcome-key-details dd { color: var(--muted); min-width: 0; overflow-wrap: anywhere; }
 .welcome-openpgp > button { display: block; width: auto; margin: .5rem .85rem .8rem auto; max-width: calc(100% - 1.7rem); font-size: .7rem; padding: .45rem .55rem; }
 .welcome-secondary-grid { display: grid; grid-template-columns: minmax(0,.9fr) minmax(0,1.05fr) minmax(0,1fr); gap: 1rem; }
 .welcome-activity-empty { padding: 1.4rem .9rem; }

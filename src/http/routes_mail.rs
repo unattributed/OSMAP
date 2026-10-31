@@ -604,6 +604,13 @@ where
                     self.welcome_data(context, &validated_session, &mailboxes, &mut audit_events);
                 let activity = self.gateway.list_sessions(context, &validated_session);
                 audit_events.extend(activity.audit_events);
+                let keys = self.gateway.key_management(context, &validated_session);
+                audit_events.extend(keys.audit_events);
+                let openpgp_defaults = self
+                    .gateway
+                    .load_composition_preferences(context, &validated_session)
+                    .ok()
+                    .map(|preferences| preferences.openpgp);
                 let visible_mailboxes = filter_user_visible_mailboxes(&mailboxes);
                 HandledHttpResponse {
                     response: html_response(
@@ -623,6 +630,7 @@ where
                                 .is_ok_and(|preference| {
                                     preference.policy == crate::mark_read::Policy::OnOpen
                                 }),
+                            (&keys.state, openpgp_defaults),
                         ),
                     ),
                     audit_events,

@@ -4,6 +4,13 @@ struct KeyChangeSpy {
     calls: Arc<AtomicUsize>,
 }
 impl BrowserGateway for KeyChangeSpy {
+    fn load_composition_preferences(
+        &self,
+        context: &AuthenticationContext,
+        session: &ValidatedSession,
+    ) -> std::io::Result<crate::composition_preferences::CompositionPreferences> {
+        self.inner.load_composition_preferences(context, session)
+    }
     fn key_management(
         &self,
         context: &AuthenticationContext,
@@ -611,14 +618,25 @@ fn security_overview_key_state(account: &str, mode: &str) -> crate::key_manageme
             decrypt_primary_fingerprints: vec!["A".repeat(40)],
         });
     }
+    if mode.ends_with("required") {
+        record.policy.signing = crate::openpgp_bindings::Requirement::Required;
+        record.policy.encryption = crate::openpgp_bindings::Requirement::Required;
+    }
+    if mode.ends_with("disabled") {
+        record.policy.signing = crate::openpgp_bindings::Requirement::Disabled;
+        record.policy.encryption = crate::openpgp_bindings::Requirement::Disabled;
+    }
     state.bindings = Some(record);
+    if mode.ends_with("inventory-down-required") {
+        return state;
+    }
     let keys = if mode.ends_with("missing-key") {
         vec![]
     } else {
         vec![serde_json::json!({
             "primary": {
                 "fingerprint": "A".repeat(40), "algorithm": 1, "bits": 3072,
-                "created": 1, "expires": 0, "revoked": mode.ends_with("revoked"),
+                "created": 1, "expires": if mode.ends_with("past-expiry") { 2 } else { 0 }, "revoked": mode.ends_with("revoked"),
                 "expired": false, "disabled": false, "invalid": false,
                 "can_sign": true, "can_encrypt": false, "can_certify": true,
                 "can_authenticate": false,
@@ -690,6 +708,171 @@ fn security_overview_loads_owned_public_binding_and_opens_real_key_management() 
         0,
         "overview/navigation must not mutate keys"
     );
+}
+
+#[test]
+fn welcome_loads_actual_owned_key_and_composition_defaults_without_mutation() {
+    let calls = Arc::new(AtomicUsize::new(0));
+    let browser = BrowserApp::new(
+        HttpPolicy::default(),
+        KeyChangeSpy {
+            inner: StubGateway::default(),
+            calls: calls.clone(),
+        },
+    );
+    let mut req = request("GET", "/mailboxes", &authenticated_headers(), "");
+    req.headers
+        .insert("user-agent".into(), "OSMAP/SecurityKeys-configured".into());
+    let result = browser.handle_request(&req, "127.0.0.1");
+    assert_eq!(result.response.status_code, 200);
+    let html = body_text(&result);
+    assert!(html.contains("Account key configured"));
+    assert!(html.contains(&"A".repeat(40)));
+    assert!(html.contains("Optional; off by default"));
+    assert!(html.contains("Off by default; choose per message"));
+    assert!(html.contains("private-key readiness is checked when an operation runs"));
+    assert_eq!(calls.load(Ordering::SeqCst), 0);
+}
+
+#[test]
+fn welcome_owned_missing_unavailable_foreign_and_required_policies_are_truthful() {
+    let calls = Arc::new(AtomicUsize::new(0));
+    let browser = BrowserApp::new(
+        HttpPolicy::default(),
+        KeyChangeSpy {
+            inner: StubGateway::default(),
+            calls: calls.clone(),
+        },
+    );
+    for (mode, status, fingerprint, policy) in [
+        (
+            "unavailable",
+            "Account key status unavailable",
+            false,
+            "Unavailable",
+        ),
+        (
+            "foreign-state",
+            "Account key status unavailable",
+            false,
+            "Unavailable",
+        ),
+        (
+            "foreign-binding",
+            "Account key status unavailable",
+            false,
+            "Unavailable",
+        ),
+        (
+            "unbound",
+            "No account key selected",
+            false,
+            "Optional; off by default",
+        ),
+        (
+            "missing-key",
+            "Selected account key missing",
+            true,
+            "Optional; off by default",
+        ),
+        (
+            "revoked",
+            "Account key needs attention",
+            true,
+            "Optional; off by default",
+        ),
+        (
+            "past-expiry",
+            "Account key needs attention",
+            true,
+            "Optional; off by default",
+        ),
+        (
+            "inventory-down-required",
+            "Public inventory unavailable",
+            true,
+            "Required",
+        ),
+        ("disabled", "Account key configured", true, "Disabled"),
+    ] {
+        let mut req = request("GET", "/mailboxes", &authenticated_headers(), "");
+        req.headers
+            .insert("user-agent".into(), format!("OSMAP/SecurityKeys-{mode}"));
+        let result = browser.handle_request(&req, "127.0.0.1");
+        assert_eq!(result.response.status_code, 200, "{mode}");
+        let html = body_text(&result);
+        assert!(html.contains(status), "{mode}");
+        assert_eq!(html.contains(&"A".repeat(40)), fingerprint, "{mode}");
+        assert!(
+            html.contains(&format!("<dt>Signing</dt><dd>{policy}</dd>")),
+            "{mode}"
+        );
+        assert!(
+            html.contains(&format!("<dt>Encryption</dt><dd>{policy}</dd>")),
+            "{mode}"
+        );
+        assert!(!html.contains("private key is unlocked"), "{mode}");
+    }
+    let result = browser.handle_request(&request("GET", "/mailboxes", &[], ""), "127.0.0.1");
+    assert_eq!(result.response.status_code, 303);
+    assert!(!body_text(&result).contains(&"A".repeat(40)));
+    assert_eq!(calls.load(Ordering::SeqCst), 0);
+}
+
+#[test]
+fn welcome_composition_defaults_are_loaded_from_owned_store_and_preserved() {
+    use crate::composition_preferences::{
+        CompositionPreferences, CompositionPreferencesStore, OpenPgpDefaults,
+    };
+    let root = temp_dir("welcome-openpgp-defaults");
+    let store = CompositionPreferencesStore::new(root.join("preferences"));
+    let saved = CompositionPreferences {
+        openpgp: OpenPgpDefaults {
+            sign: true,
+            encrypt: true,
+            encrypt_to_self: true,
+        },
+        ..CompositionPreferences::default()
+    };
+    store.save("alice@example.com", saved).unwrap();
+    let browser = BrowserApp::new(
+        HttpPolicy::default(),
+        KeyChangeSpy {
+            inner: StubGateway {
+                composition_preferences_store: Some(store.clone()),
+                ..StubGateway::default()
+            },
+            calls: Arc::new(AtomicUsize::new(0)),
+        },
+    );
+    for mode in [
+        "configured",
+        "required",
+        "configured-CompositionUnavailable",
+    ] {
+        let mut req = request("GET", "/mailboxes", &authenticated_headers(), "");
+        req.headers
+            .insert("user-agent".into(), format!("OSMAP/SecurityKeys-{mode}"));
+        let result = browser.handle_request(&req, "127.0.0.1");
+        assert_eq!(result.response.status_code, 200);
+        let html = body_text(&result);
+        let policy = if mode.ends_with("CompositionUnavailable") {
+            "Optional; compose default unavailable"
+        } else if mode == "required" {
+            "Required"
+        } else {
+            "Optional; on by default"
+        };
+        assert!(html.contains(&format!("<dt>Signing</dt><dd>{policy}</dd>")));
+        assert!(html.contains(&format!("<dt>Encryption</dt><dd>{policy}</dd>")));
+        assert!(html.contains(if mode.ends_with("CompositionUnavailable") {
+            "Compose default unavailable; choose per message"
+        } else {
+            "On by default; choose per message"
+        }));
+        assert_eq!(store.load("alice@example.com").unwrap(), saved);
+    }
+    fs::remove_dir_all(root).unwrap();
 }
 
 #[test]

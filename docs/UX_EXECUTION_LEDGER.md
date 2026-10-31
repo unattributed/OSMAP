@@ -60,7 +60,13 @@ slice using the same failure-analysis method. See
     "maint/ux/acceptance.json",
     "maint/security/v10-claims-boundary.json",
     "maint/security/v10-rust-assumption-audit.json",
-    "maint/security/v10-fail-closed-remediation.json"
+    "maint/security/v10-fail-closed-remediation.json",
+    "maint/security/osmap-cwe-top25-guard.py",
+    "maint/security/osmap-security-check.sh",
+    "src/welcome_ui.rs",
+    "src/http/routes_mail.rs",
+    "src/http/welcome.css",
+    "src/key_management_tests.rs"
   ],
   "outcomes": [
     {
@@ -104,7 +110,7 @@ slice using the same failure-analysis method. See
       ],
       "frontend_backend_outcome": "Signed-in user sees imported keys with exact email associations and applied policy, and can manage public import/bind/policy/remove through fresh authorization.",
       "essential_qa": "T01-T08 source/native/browser/installed checks and independent review; actual visual owner T09 separate.",
-      "next_action": "Finish practical renderer and actual session guard, then native/browser/install qualification.",
+      "next_action": "Build current Web after Welcome correction; final gates, Web-only install/readback, owner T09.",
       "dependencies": [
         {
           "owner": "/root",
@@ -116,7 +122,7 @@ slice using the same failure-analysis method. See
       "stages": {
         "implementation": "PASS",
         "source_tests": "PASS",
-        "native_tests": "PENDING",
+        "native_tests": "PASS",
         "deployed_qa": "PENDING",
         "independent_review": "PENDING",
         "recovery": "PENDING"
@@ -129,6 +135,10 @@ slice using the same failure-analysis method. See
         {
           "stage": "source_tests",
           "reference": "Private keys-source.log18PASS/0failed/1nativeignore; Runtime guard5PASS; renderer9PASS/settings3PASS. Actual browser-cua-results.json and desktop/mobile screenshots retain matching UI observations."
+        },
+        {
+          "stage": "native_tests",
+          "reference": "Signedfa26102/nativebuild164.63s; exact public-admin store and RuntimejourneyPASS; native-functional01.log plus native-artifact-readback.log/dispatch and freshscratchabsence. Syntheticprimaryprocess, not ownerDovecot qualification."
         }
       ]
     }
@@ -137,7 +147,7 @@ slice using the same failure-analysis method. See
     "owner": "/root",
     "functional_exit": "Signed-in user sees imported keys with exact email associations and applied policy, and can manage public import/bind/policy/remove through fresh authorization.",
     "elapsed_scope": "wall_clock",
-    "history_reference": "S05-01 acknowledged and preserved. Retained identity-renderer work ported from original checkout; no owner keys/credentials/policy or public mail mutation inferred.",
+    "history_reference": "S05-01 acknowledged and preserved. Retained identity-renderer work ported from original checkout; no owner keys/credentials/policy or public mail mutation inferred. Acceptance03 normal gatePASS after two recordedtest-inventory refusals/combinedreview. Independentcontrolaudit thenfound inheritedWelcomeOpenPGPplaceholders forfiveS05-02controls and missingexplicitdiscoveryOff copy; sourcecorrectionrequiredbeforeinstallation. No oldcandidateinstalled.",
     "investigation": {
       "owner": "/root",
       "timebox_seconds": 14400,
@@ -153,7 +163,7 @@ slice using the same failure-analysis method. See
     "slice": "S05-02",
     "specification": {
       "path": "docs/UX_SLICE_S05_02.md",
-      "sha256": "beb643d46eb660ac60128d6eee28f72c2a28d1011b37e990dde23366ea0a9c8b"
+      "sha256": "6a1efcf239220dac7e846c4c956de710bc343c97ee97f0bd517972152b5c6f69"
     },
     "design": {
       "journey": "Signed-in user sees imported keys with exact email associations and applied policy, and can manage public import/bind/policy/remove through fresh authorization.",
@@ -317,7 +327,7 @@ slice using the same failure-analysis method. See
     "status": "PENDING",
     "reference": "Actual visual/functional UAT follows engineer/installed readiness."
   },
-  "next_action": "Qualify exact signed source using native public-admin/Runtime runner; Web-only install then owner T09."
+  "next_action": "Build current Web after Welcome correction; final gates, Web-only install/readback, owner T09."
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->

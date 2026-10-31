@@ -342,6 +342,90 @@ fn key_management_explicit_recipient_binding_and_policy_roundtrip_no_uid_guessin
         .recipient_bindings
         .is_empty());
 }
+
+#[test]
+fn recipient_rotation_changes_exact_key_and_preserves_other_bindings_on_stale_retry() {
+    let root = Scratch::new();
+    let store = BindingStore::new(root.0.join("bindings"));
+    let backend = backend();
+    let context = context();
+    let session = session();
+    let original = "A".repeat(40);
+    let replacement = "B".repeat(40);
+    let change = |address, fingerprint, encryption, revision| {
+        mutate(
+            &backend,
+            &store,
+            proof(&context, &session),
+            &context,
+            &session,
+            &request(
+                Action::SetRecipient {
+                    address,
+                    primary_fingerprint: fingerprint,
+                    encryption,
+                },
+                revision,
+            ),
+            59,
+        )
+    };
+    assert_eq!(
+        change(
+            "recipient@example.test",
+            &original,
+            Requirement::Optional,
+            0
+        ),
+        Ok(())
+    );
+    assert_eq!(
+        change("other@example.test", &original, Requirement::Required, 1),
+        Ok(())
+    );
+    let before = store.load("alice@example.test").unwrap();
+    let other = before
+        .recipient_bindings
+        .iter()
+        .find(|binding| binding.address == "other@example.test")
+        .unwrap()
+        .clone();
+    assert_eq!(
+        change(
+            "recipient@example.test",
+            &replacement,
+            Requirement::Required,
+            2
+        ),
+        Ok(())
+    );
+    let rotated = store.load("alice@example.test").unwrap();
+    assert_eq!(rotated.revision, before.revision + 1);
+    assert_eq!(rotated.recipient_bindings.len(), 2);
+    let recipient = rotated
+        .recipient_bindings
+        .iter()
+        .find(|binding| binding.address == "recipient@example.test")
+        .unwrap();
+    assert_eq!(recipient.primary_fingerprint, replacement);
+    assert_eq!(recipient.encryption, Requirement::Required);
+    assert!(rotated
+        .recipient_bindings
+        .iter()
+        .any(|binding| binding == &other));
+    assert_eq!(
+        change(
+            "recipient@example.test",
+            &original,
+            Requirement::Optional,
+            2
+        ),
+        Err(Error::Stale)
+    );
+    assert_eq!(store.load("alice@example.test").unwrap(), rotated);
+    assert_eq!(store.load("bob@example.test").unwrap().revision, 0);
+}
+
 #[test]
 fn key_management_public_writes_unavailable_and_invalid_key_never_committed() {
     let root = Scratch::new();
