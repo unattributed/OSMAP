@@ -233,6 +233,7 @@ pub trait BrowserGateway {
         &self,
         _context: &AuthenticationContext,
         _session: &ValidatedSession,
+        _token: &SessionToken,
         _request: crate::key_management::MutationRequest<'_>,
     ) -> crate::key_management::MutationOutcome {
         crate::key_management::MutationOutcome {

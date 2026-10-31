@@ -198,9 +198,23 @@ impl<G: BrowserGateway> BrowserApp<G> {
         let result = match action(form) {
             Err(e) => Err(e),
             Ok((action, expected_revision, expected_public_revision)) => {
+                let Some(token) = session_cookie_value(request, self.policy.session_cookie_name)
+                    .and_then(|value| SessionToken::new(value).ok())
+                else {
+                    return HandledHttpResponse {
+                        response: html_response(
+                            401,
+                            "Unauthorized",
+                            "Sign In Required",
+                            "<p>Sign in again before changing keys or protection policy.</p>",
+                        ),
+                        audit_events,
+                    };
+                };
                 let outcome = self.gateway.change_keys(
                     context,
                     &session,
+                    &token,
                     MutationRequest {
                         action,
                         expected_revision,

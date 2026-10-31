@@ -5,6 +5,9 @@ use crate::key_management::{
     self, Error, MutationOutcome, MutationRequest, PublicKeyBackend, State, StateOutcome,
 };
 use crate::openpgp_bindings::BindingStore;
+#[cfg(test)]
+#[path = "http_gateway_keys_tests.rs"]
+mod tests;
 struct KeyBackend<'a> {
     inventory: Option<&'a crate::openpgp_inventory_runtime::Client>,
     admin: Option<&'a crate::openpgp_public_admin_runtime::Client>,
@@ -25,11 +28,16 @@ fn admin_error(error: crate::openpgp_public_admin_protocol::Error) -> Error {
 impl PublicKeyBackend for KeyBackend<'_> {
     fn read(&self, account: &str) -> Result<crate::openpgp_inventory::Inventory, Error> {
         if let Some(admin) = self.admin {
-            return admin
-                .snapshot(account)
-                .map(|snapshot| snapshot.inventory)
-                .map_err(admin_error);
+            let snapshot = admin.snapshot(account).map_err(admin_error);
+            match snapshot {
+                Ok(snapshot) if snapshot.inventory.keys().is_some() => {
+                    return Ok(snapshot.inventory);
+                }
+                Err(error) if self.inventory.is_none() => return Err(error),
+                _ => {}
+            }
         }
+        // Match the page's read-only fallback. Mutations never retry through it.
         self.inventory
             .ok_or(Error::Unavailable)?
             .read(account)
@@ -106,65 +114,79 @@ impl RuntimeBrowserGateway {
         &self,
         context: &AuthenticationContext,
         session: &ValidatedSession,
+        token: &SessionToken,
         request: MutationRequest<'_>,
     ) -> MutationOutcome {
         let mut audit_events = Vec::new();
-        let result = (|| {
-            let account = CanonicalUsername::parse(&session.record.canonical_username)
-                .map_err(|_| Error::Invalid)?;
-            let inventory = self.inventory_client();
-            let admin = self.admin_client();
-            let backend = KeyBackend {
-                inventory: inventory.as_ref(),
-                admin: admin.as_ref(),
-            };
-            let throttle = self.build_login_throttle_service();
-            let check = throttle
-                .check(context, account.as_str())
-                .map_err(|_| Error::Unavailable)?;
-            audit_events.extend(check.audit_events);
-            if matches!(check.decision, LoginThrottleDecision::Throttled { .. }) {
-                return Err(Error::Throttled);
-            }
-            let stepup = key_management::verify_fresh(
-                &self.build_auth_service(),
-                &self.build_factor_service(),
-                context,
-                session,
-                (request.password, request.totp),
-                crate::totp::TimeProvider::unix_timestamp(&SystemTimeProvider),
-            );
-            audit_events.extend(stepup.audit_events);
-            let authorization = match stepup.authorization {
-                Ok(a) => a,
-                Err(Error::Authentication) => {
-                    let failure = throttle
-                        .record_failure(context, account.as_str())
-                        .map_err(|_| Error::Unavailable)?;
-                    audit_events.extend(failure.audit_events);
-                    return Err(if failure.lockout_engaged {
-                        Error::Throttled
-                    } else {
-                        Error::Authentication
-                    });
+        let sessions = self.build_session_service();
+        let result = sessions
+            .with_guarded_session_lease(context, token, |current, _lease| {
+                if current.record.session_id != session.record.session_id
+                    || current.record.canonical_username != session.record.canonical_username
+                    || current.record.account_epoch != session.record.account_epoch
+                {
+                    return Err(Error::Stale);
                 }
-                Err(e) => return Err(e),
-            };
-            audit_events.extend(
-                throttle
-                    .clear_success(context, account.as_str())
-                    .map_err(|_| Error::Unavailable)?,
-            );
-            key_management::mutate(
-                &backend,
-                &BindingStore::new(self.settings_dir.join("openpgp-bindings")),
-                authorization,
-                context,
-                session,
-                &request,
-                crate::totp::TimeProvider::unix_timestamp(&SystemTimeProvider),
-            )
-        })();
+                let account = CanonicalUsername::parse(&current.record.canonical_username)
+                    .map_err(|_| Error::Invalid)?;
+                let inventory = self.inventory_client();
+                let admin = self.admin_client();
+                let backend = KeyBackend {
+                    inventory: inventory.as_ref(),
+                    admin: admin.as_ref(),
+                };
+                let throttle = self.build_login_throttle_service();
+                let check = throttle
+                    .check(context, account.as_str())
+                    .map_err(|_| Error::Unavailable)?;
+                audit_events.extend(check.audit_events);
+                if matches!(check.decision, LoginThrottleDecision::Throttled { .. }) {
+                    return Err(Error::Throttled);
+                }
+                let stepup = key_management::verify_fresh(
+                    &self.build_auth_service(),
+                    &self.build_factor_service(),
+                    context,
+                    &current,
+                    (request.password, request.totp),
+                    crate::totp::TimeProvider::unix_timestamp(&SystemTimeProvider),
+                );
+                audit_events.extend(stepup.audit_events);
+                let authorization = match stepup.authorization {
+                    Ok(a) => a,
+                    Err(Error::Authentication) => {
+                        let failure = throttle
+                            .record_failure(context, account.as_str())
+                            .map_err(|_| Error::Unavailable)?;
+                        audit_events.extend(failure.audit_events);
+                        return Err(if failure.lockout_engaged {
+                            Error::Throttled
+                        } else {
+                            Error::Authentication
+                        });
+                    }
+                    Err(e) => return Err(e),
+                };
+                audit_events.extend(
+                    throttle
+                        .clear_success(context, account.as_str())
+                        .map_err(|_| Error::Unavailable)?,
+                );
+                sessions
+                    .recheck_guarded_session(&current)
+                    .map_err(guarded_error)?;
+                key_management::mutate(
+                    &backend,
+                    &BindingStore::new(self.settings_dir.join("openpgp-bindings")),
+                    authorization,
+                    context,
+                    &current,
+                    &request,
+                    crate::totp::TimeProvider::unix_timestamp(&SystemTimeProvider),
+                )
+            })
+            .map_err(guarded_error)
+            .and_then(std::convert::identity);
         audit_events.push(build_http_info_event(
             if result.is_ok() {
                 "openpgp_key_change_confirmed"
@@ -178,5 +200,12 @@ impl RuntimeBrowserGateway {
             result,
             audit_events,
         }
+    }
+}
+
+fn guarded_error(error: crate::session::GuardedSessionError) -> Error {
+    match error {
+        crate::session::GuardedSessionError::Inactive => Error::Authentication,
+        crate::session::GuardedSessionError::Unavailable => Error::Unavailable,
     }
 }

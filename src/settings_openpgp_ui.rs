@@ -1,11 +1,11 @@
 //! PAGE19 account OpenPGP capability, projected from authenticated public state.
 use super::*;
 
-fn requirement(value: crate::openpgp_bindings::Requirement) -> &'static str {
+fn signing_requirement(value: crate::openpgp_bindings::Requirement) -> &'static str {
     match value {
-        crate::openpgp_bindings::Requirement::Required => "Required",
-        crate::openpgp_bindings::Requirement::Optional => "Optional",
-        crate::openpgp_bindings::Requirement::Disabled => "Disabled",
+        crate::openpgp_bindings::Requirement::Required => "Require signing",
+        crate::openpgp_bindings::Requirement::Optional => "Choose per message",
+        crate::openpgp_bindings::Requirement::Disabled => "Do not sign",
     }
 }
 
@@ -44,8 +44,8 @@ pub(crate) fn render_openpgp_settings(
     let (signing, encryption) = capability
         .map(|view| {
             (
-                requirement(view.policy.signing),
-                requirement(view.policy.encryption),
+                signing_requirement(view.policy.signing),
+                crate::http_ui::key_inventory_ui::encryption_policy_label(view.policy.encryption),
             )
         })
         .unwrap_or(("Unavailable", "Unavailable"));
@@ -124,8 +124,8 @@ mod tests {
         assert!(html.contains(&format!(
             "id=\"account-key\" readonly value=\"{fingerprint}\""
         )));
-        assert!(html.contains("id=\"signing-setting\" readonly value=\"Optional\""));
-        assert!(html.contains("id=\"encryption-setting\" readonly value=\"Required\""));
+        assert!(html.contains("id=\"signing-setting\" readonly value=\"Choose per message\""));
+        assert!(html.contains("id=\"encryption-setting\" readonly value=\"Require encryption\""));
         capability.account_binding = None;
         let missing_runtime = render_openpgp_settings(account, "fixture", &view, Some(&capability));
         assert!(missing_runtime.as_str().contains("OpenPGP unavailable"));
@@ -179,8 +179,8 @@ mod tests {
         assert!(html.contains(&format!(
             "id=\"account-key\" readonly value=\"{fingerprint}\""
         )));
-        assert!(html.contains("id=\"signing-setting\" readonly value=\"Optional\""));
-        assert!(html.contains("id=\"encryption-setting\" readonly value=\"Required\""));
+        assert!(html.contains("id=\"signing-setting\" readonly value=\"Choose per message\""));
+        assert!(html.contains("id=\"encryption-setting\" readonly value=\"Require encryption\""));
         assert!(html.contains("href=\"/settings/keys?panel=account\">Choose account key"));
         assert!(html
             .contains("href=\"/settings/keys?panel=policy\" aria-label=\"Edit signing policy\""));

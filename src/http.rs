@@ -3509,17 +3509,36 @@ mod tests {
                 &context.user_agent,
                 &session.record.canonical_username,
             );
-            let interactive = context.user_agent == "KeyInventoryInteractive";
+            let practical = context.user_agent.starts_with("KeyInventoryPractical");
+            let interactive = context.user_agent == "KeyInventoryInteractive" || practical;
             crate::key_management::StateOutcome {
                 state: crate::key_management::State {
-                    canonical_username: inventory.canonical_username,
+                    canonical_username: inventory.canonical_username.clone(),
                     inventory: inventory.inventory,
-                    bindings: interactive.then(|| {
+                    bindings: practical.then(|| {
+                        let primary = "0123456789ABCDEF0123456789ABCDEF01234567";
+                        serde_json::from_value(serde_json::json!({
+                            "version": 1,
+                            "canonical_username": inventory.canonical_username,
+                            "revision": 7,
+                            "account_binding": {
+                                "primary_fingerprint": primary,
+                                "signing_fingerprint": primary,
+                                "decrypt_primary_fingerprints": [primary]
+                            },
+                            "recipient_bindings": [
+                                {"address":"recipient@example.test","primary_fingerprint":primary,"encryption":"required"},
+                                {"address":"optional@example.test","primary_fingerprint":if context.user_agent == "KeyInventoryPracticalMissing" {"FEDCBA9876543210FEDCBA9876543210FEDCBA98"} else {primary},"encryption":"optional"},
+                                {"address":"blocked@example.test","primary_fingerprint":primary,"encryption":"disabled"}
+                            ],
+                            "policy": {"signing":"optional","encryption":if context.user_agent == "KeyInventoryPracticalRequired" {"required"} else {"optional"}}
+                        })).unwrap()
+                    }).or_else(|| interactive.then(|| {
                         crate::openpgp_bindings::BindingRecord::empty(
                             &session.record.canonical_username,
                         )
                         .unwrap()
-                    }),
+                    })),
                     binding_changes_available: interactive,
                     public_key_changes_available: interactive,
                     public_inventory_revision: interactive.then(|| "a".repeat(64)),

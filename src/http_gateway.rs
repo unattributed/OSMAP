@@ -623,9 +623,10 @@ impl BrowserGateway for RuntimeBrowserGateway {
         &self,
         context: &AuthenticationContext,
         session: &ValidatedSession,
+        token: &SessionToken,
         request: crate::key_management::MutationRequest<'_>,
     ) -> crate::key_management::MutationOutcome {
-        self.change_keys_impl(context, session, request)
+        self.change_keys_impl(context, session, token, request)
     }
     fn compose_protection(
         &self,

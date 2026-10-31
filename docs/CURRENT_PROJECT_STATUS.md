@@ -1,5 +1,17 @@
 # Current Project Status
 
+2026-10-31 (America/Toronto) — **S05-02 implementation and focused browser QA complete; native/install qualification in progress.**
+Imported keys now show approved email identities and applied encryption policies
+without expanding technical details. Existing recipient actions support a
+prefilled policy/key editor. Encryption is Off by default; account overrides and
+conflicts are visible. The actual stored-session lease protects the existing
+fresh-password/TOTP mutation path. Focused source tests and independent source
+review pass. Real synthetic-browser checks pass at desktop/tablet/mobile widths,
+in light/dark themes, including keyboard editing, missing/unavailable/foreign
+states and an unencrypted new compose draft. Native Runtime/helper mutation and
+Web-only installation remain pending. S05-01 was acknowledged for transition;
+S04 remains accepted. See [the current slice record](UX_SLICE_S05_02.md).
+
 2026-10-31 (America/Toronto) — **S05-01 engineering/native qualification complete; owner acceptance separate.**
 The existing Rust crypto-helper path was reused. Requests now validate their
 operation before cloning content, preserving typed limit/refusal errors. Current

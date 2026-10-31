@@ -1,5 +1,8 @@
 # Documentation
 
+- `UX_SLICE_S05_02.md` — [S05-02 practical key and email-policy management](UX_SLICE_S05_02.md):
+  visible imported identities/policies, existing Rust actions and visual/native qualification.
+
 - `UX_SLICE_S05_01.md` — [S05-01 existing Rust crypto-helper path](UX_SLICE_S05_01.md):
   T01–T09, bounded source/native verification and preservation of S04 acceptance.
 

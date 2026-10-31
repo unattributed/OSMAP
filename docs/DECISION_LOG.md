@@ -1,5 +1,16 @@
 # Decision Log
 
+2026-10-31 — S05-02 follows the operator's practical key-management direction:
+make imported keys, exact approved email identities and applied policies the
+primary view. Reuse existing Rust actions, revisioned stores and authenticated
+helpers; no new daemon, dependency or automatic certificate-identity trust.
+Hold the genuine stored-session lease across fresh authorization and effects.
+Optional encryption is labelled Off by default; preserve existing explicit
+settings and display account overrides/conflicts. Qualify mutations with
+disposable native material, deploy Web only, and leave actual owner acceptance
+separate. The crypto worker's operator recipient allowlist is an existing
+downstream constraint: public import/binding does not provision that authority.
+
 2026-10-29 — S04-04 initial factor and profile preparation passed: reconcile the
 final human receipt and independent configured-factor header/custody/digest,
 then execute the unchanged reviewed local-profile actor once. Actual activation

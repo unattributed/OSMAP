@@ -1,3 +1,48 @@
-.key-management-toolbar{display:flex;justify-content:space-between;align-items:center;margin:0 0 10px;min-height:35px;gap:12px}.key-management-toolbar p{font-size:.8rem;color:var(--muted);margin:0}.key-management-toolbar>div,.key-management-actions{display:flex;gap:8px;flex-wrap:wrap}.key-management-page button{font-size:.8rem;min-height:35px;padding:.4rem .75rem}.key-management-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.key-management-card{border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:16px;min-width:0;min-height:362px}.key-management-card h2{font-size:1.2rem;margin:0 0 12px}.key-account-state{border:1px solid var(--line);background:var(--panel-soft);padding:12px;border-radius:9px;display:flex;flex-direction:column;font-size:.875rem;margin-bottom:10px;overflow-wrap:anywhere}.key-account-state span{font-size:.75rem;color:var(--muted)}.key-management-card dl{display:grid;grid-template-columns:45% 55%;gap:7px 0;font-size:.875rem;margin:10px 0 16px}.key-management-card dt,.key-management-card dd{margin:0;min-width:0;overflow-wrap:anywhere}.key-inventory-notice{border:1px solid var(--line);background:var(--panel-soft);border-radius:9px;padding:12px;font-size:.875rem;line-height:1.3;margin-top:12px}.public-key-row{border-bottom:1px solid var(--line);padding:10px 0}.public-key-row summary{cursor:pointer;overflow-wrap:anywhere;font-size:.875rem}.public-key-row summary>span:last-child{color:var(--muted);margin-left:8px}.public-key-fingerprint{font-family:monospace}.public-key-details{padding:12px 0}.public-key-details input{width:100%;font-family:monospace;font-size:.8rem}.public-key-details h3{font-size:.9rem}.key-inventory-state{min-height:154px;line-height:1.5}.key-management-page .page-intro{margin-bottom:9px}@media(max-width:900px){.key-management-grid{grid-template-columns:1fr}.key-management-toolbar{align-items:flex-start;flex-wrap:wrap}.key-management-card{min-height:0}}@media(forced-colors:active){.key-management-card,.key-account-state,.key-inventory-notice{background:Canvas;color:CanvasText;border-color:CanvasText}.public-key-row{border-color:CanvasText}.public-key-row summary:focus-visible{outline:2px solid Highlight}}
-.key-management-page textarea{width:100%;max-width:100%;min-height:120px;resize:vertical}
-.key-management-toolbar .button-link{min-height:35px;padding:.4rem .75rem;font-size:.8rem}
+.key-management-toolbar{display:flex;justify-content:space-between;align-items:center;margin:0 0 16px;gap:12px;flex-wrap:wrap}
+.key-management-toolbar p{font-size:.875rem;color:var(--muted);margin:0}
+.key-management-toolbar>div,.key-management-actions{display:flex;gap:12px;flex-wrap:wrap}
+.key-management-page button,.key-management-toolbar .button-link{font-size:.875rem;min-height:40px;padding:.5rem .8rem}
+.key-management-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
+.key-management-card{border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:20px;min-width:0}
+.key-management-card h2{font-size:1.2rem;margin:0 0 12px}
+.key-management-card p{line-height:1.5}
+.key-management-card details{margin-top:14px}
+.key-management-card summary{cursor:pointer;min-height:36px;padding:6px 0;overflow-wrap:anywhere}
+.key-management-card summary:focus-visible,.key-management-actions a:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.key-management-card fieldset{min-width:0}
+.key-management-card label{display:block;margin:12px 0}
+.key-management-card input,.key-management-card select,.key-management-card textarea{max-width:100%;width:100%;min-width:0}
+.key-management-page textarea{min-height:120px;resize:vertical}
+.key-management-card dl{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,3fr);gap:10px;font-size:.875rem;margin:14px 0}
+.key-management-card dt,.key-management-card dd{margin:0;min-width:0;overflow-wrap:anywhere}
+.key-management-card dt{color:var(--muted)}
+.key-account-state{border:1px solid var(--line);background:var(--panel-soft);padding:12px;border-radius:9px;display:flex;flex-direction:column;gap:4px;font-size:1rem;margin-bottom:10px;overflow-wrap:anywhere}
+.key-account-state span{font-size:.875rem;color:var(--muted)}
+.key-inventory-list{margin-bottom:20px}
+.imported-key-card{border:1px solid var(--line);border-radius:9px;background:var(--panel-soft);margin-top:14px;padding:16px;min-width:0}
+.key-status{font-size:.875rem;color:var(--muted);margin:0 0 10px}
+.public-key-bindings ul{list-style:none;padding:0;margin:0}
+.public-key-bindings li{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;padding:10px 0}
+.public-key-bindings li+li{border-top:1px solid var(--line)}
+.key-email-identity,.key-applied-policy{display:flex;flex-direction:column;gap:5px;min-width:0;overflow-wrap:anywhere}
+.key-email-identity strong{font-size:1rem}
+.key-email-identity span,.key-applied-policy{font-size:.875rem}
+.key-email-identity span,.key-applied-policy>span:last-child{color:var(--muted)}
+.key-unassigned{font-weight:600}
+.public-key-row{border-top:1px solid var(--line);padding-top:8px}
+.public-key-row summary{font-size:.875rem}
+.public-key-fingerprint{font-family:monospace}
+.public-key-details{padding:8px 0}
+.public-key-details input,#account-fingerprint{font-family:monospace;font-size:.875rem}
+.public-key-details h3{font-size:1rem;margin-top:20px}
+.public-key-details label{overflow-wrap:anywhere}
+.recipient-key-card{border-bottom:1px solid var(--line);padding:12px 0 18px}
+.recipient-key-card h3{font-size:1rem;overflow-wrap:anywhere;margin:0 0 8px}
+.recipient-key-card p{margin:7px 0}
+.key-policy-note{font-size:.875rem;color:var(--muted)}
+.key-inventory-notice{border:1px solid var(--line);background:var(--panel-soft);border-radius:9px;padding:12px;font-size:.875rem;line-height:1.5;margin-top:16px}
+.key-inventory-state{line-height:1.5}
+.key-management-page .page-intro{margin-bottom:12px}
+@media(max-width:900px){.key-management-grid{grid-template-columns:minmax(0,1fr)}.key-management-toolbar{align-items:flex-start}}
+@media(max-width:580px){.key-management-card{padding:14px}.imported-key-card{padding:12px}.public-key-bindings li{grid-template-columns:minmax(0,1fr)}.key-management-card dl{grid-template-columns:minmax(0,1fr);gap:4px}.key-management-card dd{margin-bottom:8px}.key-management-actions{flex-direction:column;align-items:flex-start}}
+@media(forced-colors:active){.key-management-card,.key-account-state,.key-inventory-notice,.imported-key-card{background:Canvas;color:CanvasText;border-color:CanvasText}.public-key-row,.recipient-key-card,.public-key-bindings li+li{border-color:CanvasText}.key-management-card summary:focus-visible,.key-management-actions a:focus-visible{outline-color:Highlight}}

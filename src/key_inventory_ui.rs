@@ -63,6 +63,49 @@ fn material(key: &PublicKeyMaterialView) -> String {
     .collect::<Vec<_>>();
     format!("<label>Full public fingerprint<input readonly value=\"{}\" spellcheck=\"false\" autocomplete=\"off\"></label><dl><dt>Algorithm</dt><dd>{} · {} bits</dd><dt>Created</dt><dd>{}</dd><dt>Expires</dt><dd>{}</dd><dt>Reported state</dt><dd>{}</dd><dt>Public capability flags</dt><dd>{}</dd></dl>",escape_html(&key.fingerprint),escape_html(&key.algorithm),key.bits,date(key.created),match key.expires{PublicExpiry::Unknown=>"Unknown".into(),PublicExpiry::Never=>"Does not expire".into(),PublicExpiry::At(v)=>date(Some(v))},if flags.is_empty(){"No adverse flags reported".into()}else{flags.join(", ")},if capabilities.is_empty(){"None reported".into()}else{capabilities.join(", ")})
 }
+fn binding_identities(
+    account: &str,
+    record: Option<&crate::openpgp_bindings::BindingRecord>,
+    primary_fingerprint: &str,
+) -> String {
+    let Some(record) = record.filter(|record| record.ensure_account(account).is_ok()) else {
+        return "<section class=\"public-key-bindings\"><h3 class=\"sr-only\">OSMAP-bound email addresses</h3><p>Email associations unavailable.</p></section>".into();
+    };
+    let mut identities = Vec::new();
+    if record
+        .account_binding
+        .as_ref()
+        .is_some_and(|binding| binding.primary_fingerprint == primary_fingerprint)
+    {
+        identities.push(format!(
+            "<li><div class=\"key-email-identity\"><strong>{}</strong><span>Your account</span></div><div class=\"key-applied-policy\"><span>Encryption: <strong>{}</strong></span><span>Signing: {}</span></div></li>",
+            escape_html(account), encryption_policy_label(record.policy.encryption),
+            signing_policy_label(record.policy.signing)
+        ));
+    }
+    identities.extend(
+        record
+            .recipient_bindings
+            .iter()
+            .filter(|binding| binding.primary_fingerprint == primary_fingerprint)
+            .map(|binding| {
+                format!(
+                    "<li><div class=\"key-email-identity\"><strong>{}</strong><span>Recipient</span></div><div class=\"key-applied-policy\"><span>Encryption: <strong>{}</strong></span><span>Recipient policy: {}</span></div></li>",
+                    escape_html(&binding.address),
+                    applied_encryption_policy(record.policy.encryption, binding.encryption),
+                    encryption_policy_label(binding.encryption)
+                )
+            }),
+    );
+    if identities.is_empty() {
+        "<section class=\"public-key-bindings\"><h3 class=\"sr-only\">OSMAP-bound email addresses</h3><p class=\"key-unassigned\">No email address is bound to this primary fingerprint.</p><p>No policy is applied to this imported key until an email association is approved.</p></section>".into()
+    } else {
+        format!(
+            "<section class=\"public-key-bindings\"><h3 class=\"sr-only\">OSMAP-bound email addresses</h3><ul>{}</ul></section>",
+            identities.join("")
+        )
+    }
+}
 #[cfg(test)]
 pub(crate) fn render_key_inventory(
     account: &str,
@@ -264,18 +307,51 @@ fn requirement_label(value: crate::openpgp_bindings::Requirement) -> &'static st
         Disabled => "disabled",
     }
 }
+pub(crate) fn encryption_policy_label(value: crate::openpgp_bindings::Requirement) -> &'static str {
+    use crate::openpgp_bindings::Requirement::*;
+    match value {
+        Required => "Require encryption",
+        Optional => "Off by default",
+        Disabled => "Do not encrypt",
+    }
+}
+fn signing_policy_label(value: crate::openpgp_bindings::Requirement) -> &'static str {
+    use crate::openpgp_bindings::Requirement::*;
+    match value {
+        Required => "Require signing",
+        Optional => "Choose per message",
+        Disabled => "Do not sign",
+    }
+}
+fn applied_encryption_policy(
+    account: crate::openpgp_bindings::Requirement,
+    recipient: crate::openpgp_bindings::Requirement,
+) -> &'static str {
+    use crate::openpgp_bindings::Requirement::*;
+    match (account, recipient) {
+        (Required, Disabled) | (Disabled, Required) => "Conflicting policies: sending blocked",
+        (Required, Optional) => "Require encryption (account policy)",
+        (Disabled, Optional) => "Do not encrypt (account policy)",
+        (Optional, policy) | (Required, policy @ Required) | (Disabled, policy @ Disabled) => {
+            encryption_policy_label(policy)
+        }
+    }
+}
 fn requirement_select(name: &str, selected: crate::openpgp_bindings::Requirement) -> String {
+    use crate::openpgp_bindings::Requirement::{Disabled, Optional, Required};
     format!(
         "<select name=\"{}\">{}</select>",
         escape_html(name),
-        ["optional", "required", "disabled"]
+        [Optional, Required, Disabled]
             .into_iter()
-            .map(|v| format!(
-                "<option value=\"{v}\"{}>{v}</option>",
-                if v == requirement_label(selected) {
-                    " selected"
+            .map(|value| format!(
+                "<option value=\"{}\"{}>{}</option>",
+                requirement_label(value),
+                if value == selected { " selected" } else { "" },
+                if name == "encryption" {
+                    encryption_policy_label(value)
                 } else {
-                    ""
+                    signing_policy_label(value)
                 }
             ))
             .collect::<String>()
@@ -337,6 +413,20 @@ fn inventoried_key_select(
         if required { " required" } else { "" }
     )
 }
+fn recipient_fields(
+    address: &str,
+    fingerprint: &str,
+    policy: crate::openpgp_bindings::Requirement,
+    keys: &[PublicKeyView],
+) -> String {
+    format!(
+        "<label>Email address<input type=\"email\" name=\"address\" value=\"{}\" maxlength=\"254\" required{}></label>{}<label>Encryption policy{}</label><p>Compare the full fingerprint through a trusted channel before approving a key for this address.</p>",
+        escape_html(address), if address.is_empty() { "" } else { " readonly" },
+        inventoried_key_select("primary_fingerprint", "Public key (full fingerprint)", fingerprint,
+            keys.iter().map(|key| key.primary.fingerprint.clone()), true),
+        requirement_select("encryption", policy)
+    )
+}
 fn key_status(status: crate::openpgp_bindings::KeyStatus) -> &'static str {
     use crate::openpgp_bindings::KeyStatus::*;
     match status {
@@ -386,7 +476,8 @@ pub(crate) fn render_key_management_panel(
         && record.is_some()
         && matches!(inventory, PublicInventoryView::Verified { .. });
     let public_revision = state.public_inventory_revision.as_deref().filter(|value| {
-        value.len() == 64
+        owned
+            && value.len() == 64
             && value
                 .bytes()
                 .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
@@ -458,34 +549,33 @@ pub(crate) fn render_key_management_panel(
         }),
         _ => None,
     };
-    let addresses = record
-        .map(|r| {
-            r.recipient_bindings
-                .iter()
-                .map(|b| b.address.clone())
-                .collect::<Vec<_>>()
-        })
-        .unwrap_or_default();
-    let assessment = record
-        .zip(state.inventory.as_ref().filter(|_| owned))
-        .and_then(|(r, i)| {
-            crate::openpgp_bindings::evaluate(
-                account,
-                r,
-                i,
-                crate::openpgp_bindings::Recipients {
-                    to: &addresses,
-                    cc: &[],
-                    bcc: &[],
-                },
-                crate::openpgp_bindings::Selections::default(),
-                crate::totp::TimeProvider::unix_timestamp(&crate::totp::SystemTimeProvider),
-            )
-            .ok()
-        });
+    let now = crate::totp::TimeProvider::unix_timestamp(&crate::totp::SystemTimeProvider);
+    // Assess one identity at a time: a saved list is not a composed message,
+    // and can contain zero or more than the per-message recipient limit.
+    let assess = |address: &str| {
+        record
+            .zip(state.inventory.as_ref().filter(|_| owned))
+            .and_then(|(r, i)| {
+                let addresses = [address.to_owned()];
+                crate::openpgp_bindings::evaluate(
+                    account,
+                    r,
+                    i,
+                    crate::openpgp_bindings::Recipients {
+                        to: &addresses,
+                        cc: &[],
+                        bcc: &[],
+                    },
+                    crate::openpgp_bindings::Selections::default(),
+                    now,
+                )
+                .ok()
+            })
+    };
+    let assessment = assess(account);
     let overview = if let Some(b) = bound {
         let metadata=account_key.map(|k|format!("<dt>Algorithm</dt><dd>{} · {} bits</dd><dt>Created</dt><dd>{}</dd><dt>Expires</dt><dd>{}</dd><dt>Public capabilities</dt><dd>{}</dd>",escape_html(&k.primary.algorithm),k.primary.bits,date(k.primary.created),match k.primary.expires{PublicExpiry::Unknown=>"Unknown".into(),PublicExpiry::Never=>"Does not expire".into(),PublicExpiry::At(v)=>date(Some(v))},[(k.primary.can_sign,"Sign"),(k.primary.can_encrypt,"Encrypt")].into_iter().filter_map(|(v,l)|v.then_some(l)).collect::<Vec<_>>().join(", "))).unwrap_or_else(||"<dt>Public key metadata</dt><dd>Unavailable</dd>".into());
-        format!("<div class=\"key-account-state\"><strong>Configured</strong><span>Bound to {}</span></div><dl><dt>Full fingerprint</dt><dd><input id=\"account-fingerprint\" readonly value=\"{}\" spellcheck=\"false\" autocomplete=\"off\"></dd>{}<dt>Signing public key</dt><dd>{}</dd><dt>Encryption public key</dt><dd>{}</dd><dt>Binding status</dt><dd>Confirmed account binding</dd></dl>",escape_html(account),escape_html(&b.primary_fingerprint),metadata,assessment.as_ref().map(|a|key_status(a.signing)).unwrap_or("Unavailable"),assessment.as_ref().map(|a|key_status(a.self_encryption)).unwrap_or("Unavailable"))
+        format!("<div class=\"key-account-state\"><strong>{}</strong><span>{}</span></div><p class=\"key-status\">Signing: {} · Encryption: {}</p><details class=\"account-key-details\"><summary>Account key details</summary><dl><dt>Full fingerprint</dt><dd><input id=\"account-fingerprint\" aria-label=\"Full account fingerprint\" readonly value=\"{}\" spellcheck=\"false\" autocomplete=\"off\"></dd>{}<dt>Binding status</dt><dd>Confirmed account binding</dd></dl></details>",if account_key.is_some(){"Configured"}else{"Saved account key unavailable"},escape_html(account),assessment.as_ref().map(|a|key_status(a.signing)).unwrap_or("Unavailable"),assessment.as_ref().map(|a|key_status(a.self_encryption)).unwrap_or("Unavailable"),escape_html(&b.primary_fingerprint),metadata)
     } else {
         format!("<div class=\"key-account-state\"><strong>{}</strong><span>{}</span></div><dl><dt>Full fingerprint</dt><dd>Unavailable</dd><dt>Algorithm</dt><dd>Unknown</dd><dt>Created</dt><dd>Unknown</dd><dt>Expires</dt><dd>Unknown</dd><dt>Binding status</dt><dd>Unconfirmed</dd></dl>",if record.is_some(){"Not configured"}else{"Account binding unavailable"},escape_html(account))
     };
@@ -497,26 +587,47 @@ pub(crate) fn render_key_management_panel(
     let mut recipients = String::new();
     if let Some(r) = record {
         for b in &r.recipient_bindings {
-            recipients.push_str(&format!("<details><summary>{} · {}</summary><p>Full primary fingerprint: <code>{}</code></p><p>Encryption: {}</p>{}</details>",escape_html(&b.address),assessment.as_ref().and_then(|a|a.recipients.iter().find(|r|r.address==b.address)).map(|r|key_status(r.state)).unwrap_or("Unavailable"),escape_html(&b.primary_fingerprint),requirement_label(b.encryption),binding_form(csrf,revision,"remove_recipient",&format!("<input type=\"hidden\" name=\"address\" value=\"{}\">",escape_html(&b.address)),"Remove recipient binding",ready)));
+            let status = assess(&b.address)
+                .and_then(|view| view.recipients.first().map(|recipient| recipient.state))
+                .map(key_status)
+                .unwrap_or("Unavailable");
+            let edit = binding_form(
+                csrf,
+                revision,
+                "set_recipient",
+                &recipient_fields(&b.address, &b.primary_fingerprint, b.encryption, keys),
+                "Save recipient key and policy",
+                ready,
+            );
+            let remove = binding_form(csrf, revision, "remove_recipient",
+                &format!("<input type=\"hidden\" name=\"address\" value=\"{}\"><p>This removes the email association and its recipient policy. The imported public key remains.</p>", escape_html(&b.address)),
+                "Remove email association", ready);
+            recipients.push_str(&format!(
+                "<article class=\"recipient-key-card\"><h3>{}</h3><p class=\"key-status\">{status}</p><p>Encryption: <strong>{}</strong></p><p class=\"key-policy-note\">Recipient policy: {}</p><details><summary>Edit policy or replace key</summary>{edit}</details><details><summary>Remove email association</summary>{remove}</details></article>",
+                escape_html(&b.address), applied_encryption_policy(r.policy.encryption, b.encryption),
+                encryption_policy_label(b.encryption)));
         }
     }
     if recipients.is_empty() {
         recipients.push_str(if record.is_some() {
-            "<p>No recipient bindings are confirmed.</p>"
+            "<p>No recipient email associations are approved.</p>"
         } else {
-            "<p>Recipient bindings unavailable.</p>"
+            "<p>Recipient email associations unavailable.</p>"
         });
     }
-    let recipient_fields=format!("<label>Exact recipient email address<input type=\"email\" name=\"address\" maxlength=\"254\" required></label>{}<label>Encryption policy{}</label>",fingerprint_input("primary_fingerprint","Full recipient primary fingerprint","",true),requirement_select("encryption",crate::openpgp_bindings::Requirement::Optional));
     let recipient_form = binding_form(
         csrf,
         revision,
         "set_recipient",
-        &recipient_fields,
-        "Save recipient binding",
+        &recipient_fields("", "", crate::openpgp_bindings::Requirement::Optional, keys),
+        "Approve recipient key",
         ready,
     );
     let policy = record.map(|r| r.policy).unwrap_or_default();
+    let policy_summary = record.map(|r| format!(
+        "<dl class=\"key-policy-summary\"><dt>Encryption for this account</dt><dd>{}</dd><dt>Signing for this account</dt><dd>{}</dd></dl><p>Off by default permits an explicit encryption choice for a message. Account and recipient policies both apply; conflicting policies block sending.</p>",
+        encryption_policy_label(r.policy.encryption), signing_policy_label(r.policy.signing)))
+        .unwrap_or_else(|| "<p>Account policies unavailable.</p>".into());
     let policy_fields = format!(
         "<label>Signing policy{}</label><label>Encryption policy{}</label>",
         requirement_select("signing", policy.signing),
@@ -531,7 +642,7 @@ pub(crate) fn render_key_management_panel(
         "Save protection policy",
         ready,
     );
-    let import_fields = format!("{public_revision_field}<label>OpenPGP public certificate (ASCII armoured)<textarea name=\"certificate\" maxlength=\"65536\" spellcheck=\"false\" autocomplete=\"off\" required></textarea></label>{}<p>Import stores public material only. Confirm the full primary fingerprint through a trusted channel, then create a separate account or recipient binding.</p>", fingerprint_input("expected_primary_fingerprint", "Expected full primary fingerprint", "", true));
+    let import_fields = format!("{public_revision_field}<label>OpenPGP public certificate (ASCII armoured)<textarea name=\"certificate\" maxlength=\"65536\" spellcheck=\"false\" autocomplete=\"off\" required></textarea></label>{}<p>Public keys only, up to 64 KiB. Importing a key does not enable encryption. Confirm the full primary fingerprint through a trusted channel, then approve its email association.</p>", fingerprint_input("expected_primary_fingerprint", "Expected full primary fingerprint", "", true));
     let import_form = binding_form(
         csrf,
         revision,
@@ -543,19 +654,25 @@ pub(crate) fn render_key_management_panel(
     let mut rows = String::new();
     match inventory {
         PublicInventoryView::Unavailable => {
-            rows.push_str("<p role=\"status\">Public inventory unavailable.</p>")
+            rows.push_str("<p role=\"status\">Public inventory unavailable. Saved email associations and policies are shown below when available.</p>")
         }
         PublicInventoryView::Verified { keys, .. } => {
             if keys.is_empty() {
                 rows.push_str("<p>No public keys were reported.</p>");
             }
             for key in keys.iter().take(128) {
-                rows.push_str(&format!("<details class=\"public-key-row\"><summary><span class=\"public-key-fingerprint\">{}</span><span>{}</span></summary><div class=\"public-key-details\">{}",escape_html(&key.primary.fingerprint),escape_html(&key.primary.algorithm),material(&key.primary)));
+                let public_status = if key.primary.revoked { "Revoked" }
+                    else if key.primary.expired || matches!(key.primary.expires, PublicExpiry::At(expiry) if expiry <= now) { "Expired" }
+                    else if key.primary.invalid || key.primary.disabled { "Unavailable" }
+                    else { "Imported public key" };
+                rows.push_str(&format!(
+                    "<article class=\"imported-key-card\"><p class=\"key-status\">{public_status}</p>{}<details class=\"public-key-row\"><summary>Details and key actions</summary><div class=\"public-key-details\">{}",
+                    binding_identities(account, record, &key.primary.fingerprint), material(&key.primary)));
                 for sub in key.subkeys.iter().take(32) {
                     rows.push_str(&format!("<h3>Public subkey</h3>{}", material(sub)));
                 }
                 let remove_fields = format!("{public_revision_field}<input type=\"hidden\" name=\"primary_fingerprint\" value=\"{}\"><p>Remove account and recipient bindings first. The server checks binding and private-key use again before removal.</p>", escape_html(&key.primary.fingerprint));
-                rows.push_str(&format!("<details><summary>Remove public certificate</summary>{}</details></div></details>", binding_form(csrf, revision, "remove_public", &remove_fields, "Remove public certificate", public_ready)));
+                rows.push_str(&format!("<details><summary>Remove public certificate</summary>{}</details></div></details></article>", binding_form(csrf, revision, "remove_public", &remove_fields, "Remove public certificate", public_ready)));
             }
         }
     }
@@ -573,9 +690,9 @@ pub(crate) fn render_key_management_panel(
         "<button disabled>Import public key</button>"
     };
     let binding_link = if ready {
-        "<a class=\"button-link\" href=\"/settings/keys?panel=recipient#recipient-binding\">+ Add binding</a>"
+        "<a class=\"button-link\" href=\"/settings/keys?panel=recipient#recipient-binding\">+ Associate email</a>"
     } else {
-        "<button disabled>+ Add binding</button>"
+        "<button disabled>+ Associate email</button>"
     };
     let toolbar_actions = format!("<div>{import_link}{binding_link}</div>");
     let public_state = if public_ready {
@@ -583,7 +700,18 @@ pub(crate) fn render_key_management_panel(
     } else {
         "Public certificate import and removal are unavailable. Existing binding changes are available when the verified inventory is present."
     };
-    TrustedHtml::from_template(format!(concat!("{header}<main id=\"main-content\" class=\"page-shell key-management-page\" tabindex=\"-1\"><div class=\"page-intro\"><h1>OpenPGP Key Management</h1><p>Manage public keys, account bindings and key policy.</p>{notice}</div><div class=\"key-management-toolbar\"><p><a href=\"/settings?section=security\">Security</a> / <a href=\"/settings?section=openpgp\">OpenPGP</a> / Keys</p>{toolbar_actions}</div><p class=\"sr-only\" role=\"status\">{state_label} · Binding revision {revision}</p><div class=\"key-management-grid\"><section class=\"key-management-card\"><h2>Primary Account Key</h2>{overview}{account_actions}<details id=\"account-binding\"{account_open}><summary>{account_action}</summary>{account_form}</details><details id=\"protection-policy\"{policy_open}><summary>Protection policy</summary>{policy_form}</details><details><summary>Recover from unavailable or expired bindings</summary>{cleanup}</details></section><section class=\"key-management-card\"><h2>Recipient / Contact Keys</h2>{recipients}<details id=\"recipient-binding\"{recipient_open}><summary>Add or replace a recipient binding</summary>{recipient_form}</details><p class=\"key-inventory-notice\">Confirm full fingerprints through a trusted channel. OSMAP does not automatically trust keys discovered by email address. Each saved change requires your current mailbox password and a fresh authenticator code.</p><details id=\"public-import\"{import_open}><summary>Import public key</summary>{import_form}</details><details id=\"public-inventory\"{inventory_open}><summary>Public key inventory</summary>{rows}</details><p>{public_state}</p></section></div></main>"),account_open=opened("account"),policy_open=opened("policy"),recipient_open=opened("recipient"),import_open=opened("import"),inventory_open=opened("inventory"),notice=notice,revision=revision,account_form=account_form,account_actions=account_actions,policy_form=policy_form,cleanup=cleanup,recipients=recipients,recipient_form=recipient_form,rows=rows,overview=overview,account_action=if bound.is_some(){"Rotate binding"}else{"Add account binding"},header=app_header(account,csrf,"security"),state_label=if ready{"Verified public inventory and confirmed binding store"}else{"Binding changes unavailable"},toolbar_actions=toolbar_actions,import_form=import_form,public_state=public_state))
+    TrustedHtml::from_template(format!(concat!(
+        "{header}<main id=\"main-content\" class=\"page-shell key-management-page\" tabindex=\"-1\">",
+        "<div class=\"page-intro\"><h1>OpenPGP Key Management</h1><p>See imported keys, the email addresses they are used for, and the policies that apply.</p>{notice}</div>",
+        "<div class=\"key-management-toolbar\"><p><a href=\"/settings?section=security\">Security</a> / <a href=\"/settings?section=openpgp\">OpenPGP</a> / Keys</p>{toolbar_actions}</div>",
+        "<p class=\"sr-only\" role=\"status\">{state_label} · Binding revision {revision}</p>",
+        "<section id=\"public-inventory\" class=\"key-management-card key-inventory-list\" aria-labelledby=\"imported-keys-heading\"><h2 id=\"imported-keys-heading\">Imported keys</h2><p>Importing a key does not enable encryption or approve an email association. Only your saved OSMAP associations are listed.</p>{rows}<p>{public_state}</p></section>",
+        "<div class=\"key-management-grid\"><section class=\"key-management-card\"><h2>Your email key and account policies</h2>{overview}{account_actions}{policy_summary}",
+        "<details id=\"account-binding\"{account_open}><summary>{account_action}</summary>{account_form}</details><details id=\"protection-policy\"{policy_open}><summary>Protection policy</summary>{policy_form}</details><details><summary>Recover from unavailable or expired bindings</summary>{cleanup}</details></section>",
+        "<section class=\"key-management-card\"><h2>Recipient keys and policies</h2>{recipients}<details id=\"recipient-binding\"{recipient_open}><summary>Associate an email address with a key</summary>{recipient_form}</details>",
+        "<p class=\"key-inventory-notice\">Confirm full fingerprints through a trusted channel. Each saved change requires your current mailbox password and a fresh authenticator code. A public key does not establish private-key availability.</p>",
+        "<details id=\"public-import\"{import_open}><summary>Import public key</summary>{import_form}</details></section></div></main>"
+    ),account_open=opened("account"),policy_open=opened("policy"),recipient_open=opened("recipient"),import_open=opened("import"),notice=notice,revision=revision,account_form=account_form,account_actions=account_actions,policy_summary=policy_summary,policy_form=policy_form,cleanup=cleanup,recipients=recipients,recipient_form=recipient_form,rows=rows,overview=overview,account_action=if bound.is_some(){"Change account key"}else{"Choose account key"},header=app_header(account,csrf,"security"),state_label=if ready{"Verified public inventory and confirmed binding store"}else{"Binding changes unavailable"},toolbar_actions=toolbar_actions,import_form=import_form,public_state=public_state))
 }
 
 #[cfg(test)]
@@ -599,6 +727,13 @@ mod binding_page_tests {
             signing_fingerprint: Some(fp.clone()),
             decrypt_primary_fingerprints: vec![fp.clone()],
         });
+        bindings
+            .recipient_bindings
+            .push(crate::openpgp_bindings::RecipientBinding {
+                address: "bob@example.test".into(),
+                primary_fingerprint: fp.clone(),
+                encryption: crate::openpgp_bindings::Requirement::Required,
+            });
         bindings.revision = 1;
         let inventory=crate::openpgp_inventory::Inventory::parse(&serde_json::to_vec(&serde_json::json!({"version":1,"ok":true,"protocol":"openpgp","gpgme_version":"2.0.1","engine_version":"2.4.8","keys":[{"primary":{"fingerprint":fp,"algorithm":1,"bits":3072,"created":1704067200u64,"expires":0,"revoked":false,"expired":false,"disabled":false,"invalid":false,"can_encrypt":true,"can_sign":true,"can_certify":true,"can_authenticate":false},"subkeys":[]}]})).unwrap()).unwrap();
         let mut state = crate::key_management::State {
@@ -616,7 +751,9 @@ mod binding_page_tests {
         assert!(body.contains("RSA · 3072 bits"));
         assert!(body.contains("Does not expire"));
         assert!(body.contains("Confirmed account binding"));
-        assert!(body.contains("id=\"account-binding\"><summary>Rotate binding</summary>"));
+        assert!(body.contains("<strong>alice@example.test</strong><span>Your account</span>"));
+        assert!(body.contains("<strong>bob@example.test</strong><span>Recipient</span>"));
+        assert!(body.contains("id=\"account-binding\"><summary>Change account key</summary>"));
         assert!(body.contains("id=\"protection-policy\"><summary>Protection policy</summary>"));
         assert!(body.contains("<button disabled>Import public key</button>"));
         assert!(body.contains("id=\"account-fingerprint\""));
@@ -633,7 +770,6 @@ mod binding_page_tests {
             ("policy", "protection-policy"),
             ("recipient", "recipient-binding"),
             ("import", "public-import"),
-            ("inventory", "public-inventory"),
         ] {
             let opened = render_key_management_panel(account, "test", &state, None, Some(panel))
                 .as_str()
@@ -642,6 +778,7 @@ mod binding_page_tests {
             assert_eq!(opened.matches(" open>").count(), 1);
         }
         assert!(enabled.contains("name=\"certificate\""));
+        assert!(enabled.contains("<section id=\"public-inventory\""));
         assert!(enabled.contains("name=\"public_inventory_revision\" value=\"aaaaaaaa"));
         assert!(enabled.contains("<summary>Remove public certificate</summary>"));
         assert!(!enabled.contains("<button disabled>Import public key</button>"));
@@ -657,5 +794,273 @@ mod binding_page_tests {
         assert!(!body.contains("<strong>Configured</strong>"));
         assert!(body.contains("<fieldset disabled>"));
         assert!(!body.contains(&"A".repeat(40)));
+    }
+
+    #[test]
+    fn key_management_inventory_marks_unbound_and_refuses_foreign_state() {
+        let account = "alice@example.test";
+        let fp = "A".repeat(40);
+        let bindings = crate::openpgp_bindings::BindingRecord::empty(account);
+        assert!(bindings.is_ok());
+        let Ok(mut bindings) = bindings else {
+            return;
+        };
+        bindings.revision = 1;
+        let encoded = serde_json::to_vec(
+            &serde_json::json!({"version":1,"ok":true,"protocol":"openpgp","gpgme_version":"2.0.1","engine_version":"2.4.8","keys":[{"primary":{"fingerprint":fp,"algorithm":1,"bits":3072,"created":1704067200u64,"expires":0,"revoked":false,"expired":false,"disabled":false,"invalid":false,"can_encrypt":true,"can_sign":true,"can_certify":true,"can_authenticate":false},"subkeys":[]}]}),
+        );
+        assert!(encoded.is_ok());
+        let Ok(encoded) = encoded else {
+            return;
+        };
+        let inventory = crate::openpgp_inventory::Inventory::parse(&encoded);
+        assert!(inventory.is_ok());
+        let Ok(inventory) = inventory else {
+            return;
+        };
+        let state = crate::key_management::State {
+            canonical_username: account.into(),
+            inventory: Some(inventory),
+            bindings: Some(bindings),
+            binding_changes_available: true,
+            public_key_changes_available: false,
+            public_inventory_revision: None,
+        };
+        let unbound = render_key_management(account, "test", &state, None)
+            .as_str()
+            .to_owned();
+        assert!(unbound.contains("No email address is bound to this primary fingerprint."));
+        let foreign = render_key_management("mallory@example.test", "test", &state, None)
+            .as_str()
+            .to_owned();
+        assert!(!foreign.contains("alice@example.test"));
+        assert!(!foreign.contains(&"A".repeat(40)));
+    }
+
+    fn practical_state() -> crate::key_management::State {
+        use crate::openpgp_bindings::{
+            AccountBinding, BindingRecord, RecipientBinding, Requirement,
+        };
+        let account = "alice@example.test";
+        let mut bindings = BindingRecord::empty(account).unwrap();
+        bindings.revision = 41;
+        bindings.account_binding = Some(AccountBinding {
+            primary_fingerprint: "A".repeat(40),
+            signing_fingerprint: Some("A".repeat(40)),
+            decrypt_primary_fingerprints: vec!["A".repeat(40)],
+        });
+        bindings.recipient_bindings = vec![RecipientBinding {
+            address: "bob@example.test".into(),
+            primary_fingerprint: "B".repeat(40),
+            encryption: Requirement::Optional,
+        }];
+        let keys = ['A', 'B', 'C'].map(|letter| {
+            serde_json::json!({
+                "primary": {"fingerprint": letter.to_string().repeat(40), "algorithm":1,
+                    "bits":3072, "created":1704067200u64, "expires":0,
+                    "revoked":false,"expired":false,"disabled":false,"invalid":false,
+                    "can_encrypt":true,"can_sign":true,"can_certify":true,"can_authenticate":false},
+                "subkeys":[]
+            })
+        });
+        let inventory = crate::openpgp_inventory::Inventory::parse(
+            &serde_json::to_vec(&serde_json::json!({
+                "version":1,"ok":true,"protocol":"openpgp","gpgme_version":"2.0.1",
+                "engine_version":"2.5.18","keys": keys
+            }))
+            .unwrap(),
+        )
+        .unwrap();
+        crate::key_management::State {
+            canonical_username: account.into(),
+            inventory: Some(inventory),
+            bindings: Some(bindings),
+            binding_changes_available: true,
+            public_key_changes_available: true,
+            public_inventory_revision: Some("a".repeat(64)),
+        }
+    }
+
+    #[test]
+    fn practical_inventory_pairs_email_policy_only_with_exact_approved_primary() {
+        let state = practical_state();
+        let record = state.bindings.as_ref();
+        let account = binding_identities("alice@example.test", record, &"A".repeat(40));
+        let recipient = binding_identities("alice@example.test", record, &"B".repeat(40));
+        let unbound = binding_identities("alice@example.test", record, &"C".repeat(40));
+        assert!(account.contains("<strong>alice@example.test</strong>"));
+        assert!(!account.contains("bob@example.test"));
+        assert!(recipient.contains("<strong>bob@example.test</strong>"));
+        assert!(recipient.contains("Encryption: <strong>Off by default</strong>"));
+        assert!(!recipient.contains("alice@example.test"));
+        assert!(unbound.contains("No email address is bound to this primary fingerprint."));
+        assert!(!unbound.contains("alice@example.test"));
+        assert!(!unbound.contains("bob@example.test"));
+        let short = binding_identities("alice@example.test", record, &"B".repeat(16));
+        assert!(!short.contains("bob@example.test"));
+        let foreign = binding_identities("mallory@example.test", record, &"B".repeat(40));
+        assert!(foreign.contains("Email associations unavailable."));
+        assert!(!foreign.contains("bob@example.test"));
+    }
+
+    #[test]
+    fn displayed_applied_policy_agrees_with_both_backend_encryption_choices() {
+        use crate::openpgp_bindings::{
+            evaluate, PreflightState, Recipients, Requirement::*, Selections,
+        };
+        let state = practical_state();
+        for account_policy in [Optional, Required, Disabled] {
+            for recipient_policy in [Optional, Required, Disabled] {
+                let mut record = state.bindings.as_ref().unwrap().clone();
+                record.policy.encryption = account_policy;
+                record.recipient_bindings[0].encryption = recipient_policy;
+                let allowed = |encrypt| {
+                    evaluate(
+                        "alice@example.test",
+                        &record,
+                        state.inventory.as_ref().unwrap(),
+                        Recipients {
+                            to: &["bob@example.test".into()],
+                            cc: &[],
+                            bcc: &[],
+                        },
+                        Selections {
+                            sign: false,
+                            encrypt,
+                            encrypt_to_self: false,
+                        },
+                        1800000000,
+                    )
+                    .unwrap()
+                    .state
+                        != PreflightState::Blocked
+                };
+                let applied = applied_encryption_policy(account_policy, recipient_policy);
+                match (allowed(false), allowed(true)) {
+                    (true, true) => assert_eq!(applied, "Off by default"),
+                    (false, true) => assert!(applied.starts_with("Require encryption")),
+                    (true, false) => assert!(applied.starts_with("Do not encrypt")),
+                    (false, false) => assert_eq!(applied, "Conflicting policies: sending blocked"),
+                }
+                let identities =
+                    binding_identities("alice@example.test", Some(&record), &"B".repeat(40));
+                assert!(identities.contains(&format!("Encryption: <strong>{applied}</strong>")));
+                assert!(identities.contains(&format!(
+                    "Recipient policy: {}",
+                    encryption_policy_label(recipient_policy)
+                )));
+            }
+        }
+    }
+
+    #[test]
+    fn practical_page_preserves_default_and_prefills_current_recipient_for_safe_edit() {
+        let mut state = practical_state();
+        state.bindings.as_mut().unwrap().recipient_bindings[0].encryption =
+            crate::openpgp_bindings::Requirement::Required;
+        let before = serde_json::to_vec(state.bindings.as_ref().unwrap()).unwrap();
+        let html = render_key_management("alice@example.test", "fixture-csrf", &state, None)
+            .as_str()
+            .to_owned();
+        let imported = html
+            .split("<section id=\"public-inventory\"")
+            .nth(1)
+            .unwrap()
+            .split("<div class=\"key-management-grid\"")
+            .next()
+            .unwrap();
+        assert!(imported.contains("<h2 id=\"imported-keys-heading\">Imported keys</h2>"));
+        assert!(imported.contains("<strong>bob@example.test</strong>"));
+        assert!(imported.contains("Encryption: <strong>Require encryption</strong>"));
+        assert!(!imported.contains("<details id=\"public-inventory\""));
+        assert!(!imported.contains("class=\"public-key-row\" open"));
+        let editor = html
+            .split("<article class=\"recipient-key-card\"><h3>bob@example.test</h3>")
+            .nth(1)
+            .unwrap()
+            .split("</article>")
+            .next()
+            .unwrap();
+        assert!(editor.contains("name=\"key_action\" value=\"set_recipient\""));
+        assert!(editor.contains(
+            "name=\"address\" value=\"bob@example.test\" maxlength=\"254\" required readonly"
+        ));
+        assert!(editor.contains(&format!("<option value=\"{}\" selected>", "B".repeat(40))));
+        assert!(editor.contains("<option value=\"required\" selected>Require encryption</option>"));
+        assert!(editor.contains("name=\"binding_revision\" value=\"41\""));
+        assert!(editor.contains("name=\"csrf_token\" value=\"fixture-csrf\""));
+        assert!(
+            editor.contains("name=\"current_password\" autocomplete=\"current-password\" required")
+        );
+        let add = html
+            .split("id=\"recipient-binding\"")
+            .nth(1)
+            .unwrap()
+            .split("</details>")
+            .next()
+            .unwrap();
+        assert!(add.contains("<option value=\"optional\" selected>Off by default</option>"));
+        assert!(!html.contains("name=\"pgp_encrypt\""));
+        assert_eq!(
+            before,
+            serde_json::to_vec(state.bindings.as_ref().unwrap()).unwrap()
+        );
+    }
+
+    #[test]
+    fn saved_missing_keys_and_unavailable_inventory_remain_visible_without_foreign_leakage() {
+        let mut state = practical_state();
+        state.bindings.as_mut().unwrap().recipient_bindings[0].primary_fingerprint = "D".repeat(40);
+        let missing = render_key_management("alice@example.test", "fixture", &state, None)
+            .as_str()
+            .to_owned();
+        assert!(missing
+            .contains("<h3>bob@example.test</h3><p class=\"key-status\">Missing public key</p>"));
+        assert!(missing.contains(&format!(
+            "Current binding: {} (unavailable)",
+            "D".repeat(40)
+        )));
+        state.inventory = None;
+        let unavailable = render_key_management("alice@example.test", "fixture", &state, None)
+            .as_str()
+            .to_owned();
+        assert!(unavailable.contains("Public inventory unavailable."));
+        assert!(unavailable.contains("<h3>bob@example.test</h3>"));
+        assert!(unavailable.contains("Recipient policy: Off by default"));
+        let foreign = render_key_management("mallory@example.test", "fixture", &state, None)
+            .as_str()
+            .to_owned();
+        assert!(!foreign.contains("bob@example.test"));
+        assert!(!foreign.contains(&"D".repeat(40)));
+        assert!(!foreign.contains(&"a".repeat(64)));
+    }
+
+    #[test]
+    fn approved_addresses_are_escaped_and_list_size_is_not_a_message_recipient_limit() {
+        let mut state = practical_state();
+        let record = state.bindings.as_mut().unwrap();
+        record.recipient_bindings[0].address = "bob&tag@example.test".into();
+        for n in 0..55 {
+            record
+                .recipient_bindings
+                .push(crate::openpgp_bindings::RecipientBinding {
+                    address: format!("recipient{n}@example.test"),
+                    primary_fingerprint: "B".repeat(40),
+                    encryption: crate::openpgp_bindings::Requirement::Optional,
+                });
+        }
+        let html = render_key_management("alice@example.test", "fixture", &state, None)
+            .as_str()
+            .to_owned();
+        assert!(html.contains("bob&amp;tag@example.test"));
+        assert!(!html.contains("bob&tag@example.test"));
+        assert!(html.contains(
+            "<h3>recipient54@example.test</h3><p class=\"key-status\">Ready public key</p>"
+        ));
+        state.bindings.as_mut().unwrap().recipient_bindings.clear();
+        let account_only = render_key_management("alice@example.test", "fixture", &state, None)
+            .as_str()
+            .to_owned();
+        assert!(account_only.contains("Signing: Ready public key · Encryption: Ready public key"));
     }
 }

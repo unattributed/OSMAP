@@ -1,17 +1,341 @@
+2026-10-31 (America/Toronto) — **S05-02 IN_PROGRESS: practical key, email and policy management.**
+
+The operator acknowledged S05-01 closeout and authorized this visual/functional
+slice using the same failure-analysis method. See
+[the slice specification](UX_SLICE_S05_02.md).
+
+<!-- OSMAP_ACTIVE_WORK_ORDER -->
+```json
+{
+  "version": 1,
+  "slice": "S05-02",
+  "original_requirement": "Public-key import/list/remove, full-fingerprint binding, explicit recipient trust, capability/policy UI and private-key provisioning SOP",
+  "source_baseline": "279df22e6ceb384410b151a4acc9134e67dc3e25",
+  "state": "IN_PROGRESS",
+  "integration_owner": "/root",
+  "roles": {
+    "project_manager": [
+      "/root"
+    ],
+    "scrum_lead": [
+      "/root"
+    ],
+    "developers": [
+      "/root",
+      "/root/s05_scope_qa",
+      "/root/s05_runtime_engineer"
+    ],
+    "qa": [
+      "/root/s05_protocol_review"
+    ],
+    "security_review": [
+      "/root/s05_protocol_review"
+    ],
+    "technical_writer": [
+      "/root"
+    ]
+  },
+  "allowed_paths": [
+    "src/key_inventory_ui.rs",
+    "src/http/key_inventory.css",
+    "src/settings_openpgp_ui.rs",
+    "src/http_gateway_keys.rs",
+    "src/http_gateway_keys_tests.rs",
+    "src/http_browser.rs",
+    "src/http_gateway.rs",
+    "src/http/routes_keys.rs",
+    "src/http/key_management_route_tests.rs",
+    "src/http.rs",
+    "src/http/key_inventory_fixture.rs",
+    "maint/ux/key_inventory_workflows.py",
+    "maint/ux/openpgp_settings_workflows.py",
+    "maint/openpgp-runtime/s05-02-native.ksh",
+    "maint/openpgp-runtime/deployment.md",
+    "docs/UX_SLICE_S05_02.md",
+    "docs/UX_SLICE_S05_01.md",
+    "docs/UX_EXECUTION_LEDGER.md",
+    "docs/CURRENT_PROJECT_STATUS.md",
+    "docs/DECISION_LOG.md",
+    "docs/README.md",
+    "maint/ux/acceptance.json",
+    "maint/security/v10-claims-boundary.json",
+    "maint/security/v10-rust-assumption-audit.json",
+    "maint/security/v10-fail-closed-remediation.json"
+  ],
+  "outcomes": [
+    {
+      "id": "practical-key-management",
+      "owner": "/root",
+      "requirement_ids": [
+        "UX09-004",
+        "UX09-005",
+        "UX09-006",
+        "R2-01-015",
+        "R2-01-016",
+        "R2-01-017",
+        "R2-01-018",
+        "R2-01-019",
+        "R2-01-020",
+        "R2-10-003",
+        "R2-10-007",
+        "R2-19-001",
+        "R2-19-002",
+        "R2-19-006",
+        "R2-19-007",
+        "R2-19-009",
+        "R2-19-010",
+        "R2-21-001",
+        "R2-21-002",
+        "R2-21-003",
+        "R2-21-004",
+        "R2-21-005",
+        "R2-21-006",
+        "R2-21-007",
+        "R2-21-008",
+        "R2-21-009",
+        "R2-21-010",
+        "R2-21-011",
+        "R2-21-012",
+        "R2-21-013",
+        "R2-21-014",
+        "R2-21-015",
+        "R2-21-016",
+        "R2-21-017"
+      ],
+      "frontend_backend_outcome": "Signed-in user sees imported keys with exact email associations and applied policy, and can manage public import/bind/policy/remove through fresh authorization.",
+      "essential_qa": "T01-T08 source/native/browser/installed checks and independent review; actual visual owner T09 separate.",
+      "next_action": "Finish practical renderer and actual session guard, then native/browser/install qualification.",
+      "dependencies": [
+        {
+          "owner": "/root",
+          "condition": "S05-01 existing Rust transport qualified and acknowledged.",
+          "status": "PASS",
+          "next_action": "Reuse matching protocol and unchanged native evidence."
+        }
+      ],
+      "stages": {
+        "implementation": "PASS",
+        "source_tests": "PASS",
+        "native_tests": "PENDING",
+        "deployed_qa": "PENDING",
+        "independent_review": "PENDING",
+        "recovery": "PENDING"
+      },
+      "evidence": [
+        {
+          "stage": "implementation",
+          "reference": "Practical Rust key renderer/editor and genuine-token session lease; no new dependency."
+        },
+        {
+          "stage": "source_tests",
+          "reference": "Private keys-source.log18PASS/0failed/1nativeignore; Runtime guard5PASS; renderer9PASS/settings3PASS. Actual browser-cua-results.json and desktop/mobile screenshots retain matching UI observations."
+        }
+      ]
+    }
+  ],
+  "accountability": {
+    "owner": "/root",
+    "functional_exit": "Signed-in user sees imported keys with exact email associations and applied policy, and can manage public import/bind/policy/remove through fresh authorization.",
+    "elapsed_scope": "wall_clock",
+    "history_reference": "S05-01 acknowledged and preserved. Retained identity-renderer work ported from original checkout; no owner keys/credentials/policy or public mail mutation inferred.",
+    "investigation": {
+      "owner": "/root",
+      "timebox_seconds": 14400,
+      "started_at": "2026-10-31T14:33:23Z",
+      "elapsed_status": "UNKNOWN",
+      "elapsed_seconds": null
+    },
+    "attempts": [],
+    "next_attempt": null
+  },
+  "slice_contract": {
+    "version": 1,
+    "slice": "S05-02",
+    "specification": {
+      "path": "docs/UX_SLICE_S05_02.md",
+      "sha256": "beb643d46eb660ac60128d6eee28f72c2a28d1011b37e990dde23366ea0a9c8b"
+    },
+    "design": {
+      "journey": "Signed-in user sees imported keys with exact email associations and applied policy, and can manage public import/bind/policy/remove through fresh authorization.",
+      "frontend": "Practical primary key list, global policy summary and responsive native HTML forms/details; technical metadata expandable.",
+      "backend": "Existing Rust management/admin/inventory plus genuine-token stored-session guard; no new daemon or dependency.",
+      "interfaces": "Existing strict key_action fields, full fingerprints, revisions, fresh password/TOTP and authenticated helper frames.",
+      "persistence": "Current account-owned bindings and native public-keybox CAS; no migration; preserve private files/trustdb.",
+      "security": "Account/session/CSRF/origin/replay checks, public-only bounded import, exact key identity and truthful effective encryption policy.",
+      "failure_recovery": "Preserve state on refusal, no automatic uncertain retry, exact-owned native cleanup and hashed Web-only rollback."
+    },
+    "tests": [
+      {
+        "id": "S05-02-T01",
+        "outcome_ids": [
+          "practical-key-management"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Existing Rust interfaces checked; actual source/native/install prerequisites precede each dependent operation.",
+        "action": "Exercise identity/policy rendering including hostile, foreign, unassigned and unavailable states.",
+        "expected": "Recognizable owned email/policy rows with safe exact identities.",
+        "preserved": "S04/S05-01 acceptance, all original obligations, owner keys/credentials/policy and mail availability.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      },
+      {
+        "id": "S05-02-T02",
+        "outcome_ids": [
+          "practical-key-management"
+        ],
+        "kind": "negative",
+        "level": "native",
+        "prerequisites": "Existing Rust interfaces checked; actual source/native/install prerequisites precede each dependent operation.",
+        "action": "Run actual public import with valid and malformed/secret/stale cases.",
+        "expected": "Only bounded valid public material commits; import never enables encryption.",
+        "preserved": "S04/S05-01 acceptance, all original obligations, owner keys/credentials/policy and mail availability.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      },
+      {
+        "id": "S05-02-T03",
+        "outcome_ids": [
+          "practical-key-management"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Existing Rust interfaces checked; actual source/native/install prerequisites precede each dependent operation.",
+        "action": "Exercise revisioned bindings/policy forms and actual Rust authorization/store.",
+        "expected": "Saved state and account/recipient effective policy agree.",
+        "preserved": "S04/S05-01 acceptance, all original obligations, owner keys/credentials/policy and mail availability.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      },
+      {
+        "id": "S05-02-T04",
+        "outcome_ids": [
+          "practical-key-management"
+        ],
+        "kind": "negative",
+        "level": "native",
+        "prerequisites": "Existing Rust interfaces checked; actual source/native/install prerequisites precede each dependent operation.",
+        "action": "Run actual public remove/reimport, in-use/private guards and stale CAS.",
+        "expected": "Safe mutations work and refusals preserve private/trust bytes.",
+        "preserved": "S04/S05-01 acceptance, all original obligations, owner keys/credentials/policy and mail availability.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      },
+      {
+        "id": "S05-02-T05",
+        "outcome_ids": [
+          "practical-key-management"
+        ],
+        "kind": "negative",
+        "level": "source",
+        "prerequisites": "Existing Rust interfaces checked; actual source/native/install prerequisites precede each dependent operation.",
+        "action": "Exercise genuine-token session lease, revoked/foreign/CSRF/origin/replay/stale fields.",
+        "expected": "Unauthorized or revoked authority cannot reach key/policy effect.",
+        "preserved": "S04/S05-01 acceptance, all original obligations, owner keys/credentials/policy and mail availability.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      },
+      {
+        "id": "S05-02-T06",
+        "outcome_ids": [
+          "practical-key-management"
+        ],
+        "kind": "negative",
+        "level": "source",
+        "prerequisites": "Existing Rust interfaces checked; actual source/native/install prerequisites precede each dependent operation.",
+        "action": "Exercise missing helpers/store and invalid requests.",
+        "expected": "Truthful bounded feedback preserves existing state and unsent work.",
+        "preserved": "S04/S05-01 acceptance, all original obligations, owner keys/credentials/policy and mail availability.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      },
+      {
+        "id": "S05-02-T07",
+        "outcome_ids": [
+          "practical-key-management"
+        ],
+        "kind": "recovery",
+        "level": "native",
+        "prerequisites": "Existing Rust interfaces checked; actual source/native/install prerequisites precede each dependent operation.",
+        "action": "Verify private custody procedure/disposable material and real profile/state preservation.",
+        "expected": "No owner private-key change, correct persistence and exact-owned cleanup.",
+        "preserved": "S04/S05-01 acceptance, all original obligations, owner keys/credentials/policy and mail availability.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      },
+      {
+        "id": "S05-02-T08",
+        "outcome_ids": [
+          "practical-key-management"
+        ],
+        "kind": "positive",
+        "level": "deployed",
+        "prerequisites": "Existing Rust interfaces checked; actual source/native/install prerequisites precede each dependent operation.",
+        "action": "Run real browser keyboard/mobile/theme checks, then matching Web-only install/readback.",
+        "expected": "Practical installed page, expected real identity/policy facts and healthy services.",
+        "preserved": "S04/S05-01 acceptance, all original obligations, owner keys/credentials/policy and mail availability.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      },
+      {
+        "id": "S05-02-T09",
+        "outcome_ids": [
+          "practical-key-management"
+        ],
+        "kind": "usability",
+        "level": "human",
+        "prerequisites": "Existing Rust interfaces checked; actual source/native/install prerequisites precede each dependent operation.",
+        "action": "Owner completes installed key/email/policy inspection and selected fresh-auth management actions.",
+        "expected": "Actual visual and functional acceptance after engineering checks.",
+        "preserved": "S04/S05-01 acceptance, all original obligations, owner keys/credentials/policy and mail availability.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      }
+    ],
+    "engineering_exit": "Current source/native and browser checks pass, matching Web installed, preserved state/rollback and independent review plus normal signed synchronization.",
+    "human_exit": "Owner accepts actual installed key/email/policy journey with selected authenticated actions."
+  },
+  "human_acceptance": {
+    "status": "PENDING",
+    "reference": "Actual visual/functional UAT follows engineer/installed readiness."
+  },
+  "next_action": "Qualify exact signed source using native public-admin/Runtime runner; Web-only install then owner T09."
+}
+```
+<!-- /OSMAP_ACTIVE_WORK_ORDER -->
+
 2026-10-31 (America/Toronto) — **S05-01 ENGINEERING_COMPLETE: existing Rust path natively qualified; T09 pending.**
 
 The operator resumes S05-01 with the successful S04 failure-analysis method.
 S04-04 acceptance and separate S05-02 work are preserved. See
 [the slice specification](UX_SLICE_S05_01.md).
 
-<!-- OSMAP_ACTIVE_WORK_ORDER -->
+<!-- OSMAP_ARCHIVED_S05_01_WORK_ORDER -->
 ```json
 {
   "version": 1,
   "slice": "S05-01",
   "original_requirement": "Extend versioned bounded helper protocol for real operations with narrow authorized data transport and separate metadata",
   "source_baseline": "35719f01b36b67d11a567c8cebed09a209773102",
-  "state": "ENGINEERING_COMPLETE",
+  "state": "ACCEPTED",
   "integration_owner": "/root",
   "roles": {
     "project_manager": [
@@ -96,10 +420,10 @@ S04-04 acceptance and separate S05-02 work are preserved. See
     }
   ],
   "human_acceptance": {
-    "status": "PENDING",
-    "reference": "Separate owner acceptance after engineering completion."
+    "status": "PASS",
+    "reference": "2026-10-31 operator acknowledged S05-01 engineering closeout after clarification that no visual UAT was required, then explicitly directed slice02."
   },
-  "next_action": "Finish normal signed synchronization and report T01-T08 engineering/nativePASS with T09 owner acceptance pending; do not begin S05-02 without operator direction.",
+  "next_action": "Preserve infrastructure closeout and continue separately authorized S05-02.",
   "accountability": {
     "owner": "/root",
     "functional_exit": "Authenticated Runtime -> typed Rust request -> account-mapped helper -> fixed GPGME worker -> validated result.",
@@ -297,8 +621,10 @@ S04-04 acceptance and separate S05-02 work are preserved. See
         "preserved": "S04 acceptance, unrelated S05-02 work, owner keys/credentials/policies and public mail availability.",
         "owner": "/root",
         "reviewer": "/root/s05_protocol_review",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "PASS",
+        "evidence": [
+          "2026-10-31 operator acknowledged S05-01 engineering closeout after clarification that no visual UAT was required, then explicitly directed slice02."
+        ]
       }
     ],
     "engineering_exit": "Current Rust build/source/native functional and security checks, independent review and signed synchronization; isolated native deployment scope explicit.",
@@ -306,7 +632,7 @@ S04-04 acceptance and separate S05-02 work are preserved. See
   }
 }
 ```
-<!-- /OSMAP_ACTIVE_WORK_ORDER -->
+<!-- /OSMAP_ARCHIVED_S05_01_WORK_ORDER -->
 
 2026-10-30 (America/Toronto) — **S04-04 ACCEPTED; positive browser UAT PASS.**
 

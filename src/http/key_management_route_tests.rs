@@ -259,6 +259,7 @@ impl BrowserGateway for KeyChangeSpy {
         &self,
         _context: &AuthenticationContext,
         _session: &ValidatedSession,
+        _token: &SessionToken,
         _request: crate::key_management::MutationRequest<'_>,
     ) -> crate::key_management::MutationOutcome {
         self.calls.fetch_add(1, Ordering::SeqCst);
@@ -366,7 +367,13 @@ fn key_management_panel_navigation_opens_forms_without_mutating_state() {
     for (panel, id) in [("account", "account-binding"), ("policy", "protection-policy"), ("recipient", "recipient-binding"), ("import", "public-import"), ("inventory", "public-inventory")] {
         let response = app.handle_request(&request("GET", &format!("/settings/keys?panel={panel}"), &headers, ""), "127.0.0.1");
         assert_eq!(response.response.status_code, 200);
-        assert!(body_text(&response).contains(&format!("<details id=\"{id}\" open>")));
+        let body = body_text(&response);
+        if panel == "inventory" {
+            assert!(body.contains("<section id=\"public-inventory\""));
+            assert!(!body.contains("<details id=\"public-inventory\""));
+        } else {
+            assert!(body.contains(&format!("<details id=\"{id}\" open>")));
+        }
     }
     for query in ["panel=invalid", "panel=import&extra=1", "panel="] {
         let response = app.handle_request(&request("GET", &format!("/settings/keys?{query}"), &headers, ""), "127.0.0.1");

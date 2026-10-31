@@ -1,5 +1,13 @@
 # OpenPGP development service preparation on obsd1
 
+S05-02 management uses the existing public administration, inventory and binding
+interfaces. Its disposable native runner is `s05-02-native.ksh`; it does not
+provision the installed owner account. Importing and associating a public key
+does not extend the crypto worker's operator-configured recipient allowlist or
+establish private-key availability. A newly approved correspondent therefore
+needs separate downstream crypto-service qualification before a protected send
+can be claimed. The private-key custody procedure below remains operator-only.
+
 This bundle prepares `obsd1.blackbagsecurity.com` (`192.168.1.44`). It does not
 contact the production mail host, replace the running web binary, change its
 environment, start/enable services, or import/export private keys. The separate
