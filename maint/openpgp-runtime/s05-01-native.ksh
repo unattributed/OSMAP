@@ -3,27 +3,8 @@
 set -eu
 # Bound this exact fixture and its process group. This does not supervise live services.
 if [[ ${OSMAP_S05_NATIVE_BOUND:-no} != yes ]]; then
-    exec /usr/local/bin/python3 - "$0" "$@" <<'PY'
-import os, signal, subprocess, sys
-env = dict(os.environ, OSMAP_S05_NATIVE_BOUND="yes")
-child = subprocess.Popen(["/bin/ksh", *sys.argv[1:]], env=env, start_new_session=True)
-try:
-    result = child.wait(timeout=240)
-except subprocess.TimeoutExpired:
-    # A timed-out, unreaped direct child still reserves this process-group ID.
-    os.killpg(child.pid, signal.SIGTERM)
-    try:
-        child.wait(timeout=10)
-    except subprocess.TimeoutExpired:
-        os.killpg(child.pid, signal.SIGKILL)
-        try:
-            child.wait(timeout=5)
-        except subprocess.TimeoutExpired:
-            pass
-    print("NATIVE_OUTER_DEADLINE=EXPIRED; RETAINED_FIXTURE_REQUIRES_RECONCILIATION", flush=True)
-    result = 124
-sys.exit(result if result >= 0 else 128 - result)
-PY
+    exec /usr/bin/timeout -k 15 240 /usr/bin/env OSMAP_S05_NATIVE_BOUND=yes \
+        /bin/ksh "$0" "$@"
 fi
 umask 077
 ulimit -c 0
@@ -35,6 +16,7 @@ source_root=$(cd "$1" && pwd -P)
 test_binary=$2
 [[ "$source_root" = "$1" && -x "$test_binary" && "$test_binary" = /* ]] || exit 64
 fixture=$(mktemp -d /tmp/osmap-crypto-fixture-XXXXXXXX)
+print "DISPOSABLE_FIXTURE=$fixture"
 stage=prepare
 complete=no
 cleanup() {
