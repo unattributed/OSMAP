@@ -1,6 +1,6 @@
 # Documentation
 
-- [F3 account-relative Welcome status correction](UX_FOLLOWUP_F3_ACCOUNT_STATUS.md):
+- `UX_FOLLOWUP_F3_ACCOUNT_STATUS.md` — [F3 account-relative Welcome status correction](UX_FOLLOWUP_F3_ACCOUNT_STATUS.md):
   current-user observations and explicit unmeasured service scope.
 
 - `UX_SLICE_S05_03.md` — [S05-03 existing runtime lifecycle and recovery](UX_SLICE_S05_03.md):

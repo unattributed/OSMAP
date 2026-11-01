@@ -115,3 +115,11 @@ observations, not full host monitoring; no broader control/parent closure is
 claimed. The accepted S04-01 R4 core and S05-03 remain accepted. Ordinary hooks,
 verified signatures and fresh exact GitHub parity are final delivery conditions,
 retained in a separate private receipt after execution; no hook bypass.
+
+
+The first ordinary delivery push stops after161.738seconds: main Rust2148PASS/
+0failed/77ignored, but documentation governance requires the new index entry
+also contain its literal backtick filename. The index link existed; its required
+filename format was missing. The smallest documentation-only correction adds
+that literal filename, with no guard exception or product/native/installed change.
+The original failed push log is retained; a second ordinary push is required.

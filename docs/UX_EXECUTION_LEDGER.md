@@ -121,6 +121,10 @@ slice using the same failure-analysis method. See
         {
           "stage": "recovery",
           "reference": "Bothprotectedmanifests3cf8d41b6bbcc9d274b49412dc47099fbb41f092848df37665f1df4cb6f26f4c; unchangedenv/helpers/config; temporarycandidate/restoreabsent, oldWebrootbackupretained/rollbacknotneeded. Syntheticlistener/statecleanedafter5durableartifacthashes."
+        },
+        {
+          "stage": "source_tests",
+          "reference": "FirstordinarypushFAIL161.738s after2148RustPASS/0failed/77ignored; docsindex literalbacktickfilename missing. Exactindexformat corrected, no product/native/installedchange; secondnormaldeliverypending. Failurelogretained."
         }
       ]
     },
@@ -220,7 +224,7 @@ slice using the same failure-analysis method. See
     "slice": "S04-01",
     "specification": {
       "path": "docs/UX_FOLLOWUP_F3_ACCOUNT_STATUS.md",
-      "sha256": "a7e3b5ae62ced6a5a888105123eaf24c52afefccf2e84ccb2f808ec2139c48d5"
+      "sha256": "a8f7720c5834079df97e36bd0e9b0ca180cdf8335e039d08b9405139b5a44be2"
     },
     "design": {
       "journey": "Current signed-in account sees verified mailbox/public-inventory observations and explicit unmeasured scope in System Status.",
