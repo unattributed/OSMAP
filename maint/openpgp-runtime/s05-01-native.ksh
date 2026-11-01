@@ -112,7 +112,11 @@ run_native() {
     "$test_binary" --list --exact "$2" >"$fixture/listing" 2>>"$fixture/commands.log"
     # Refuse a zero-test selection before interpreting libtest exit status.
     /usr/bin/grep -Fx "$2: test" "$fixture/listing" >/dev/null
-    "$test_binary" --exact "$2" --ignored >"$fixture/$stage.log" 2>&1
+    if [[ "$stage" = SAME_SERVICE_AGENT_RECOVERY ]]; then
+        "$test_binary" --exact "$2" --ignored --nocapture >"$fixture/$stage.log" 2>&1
+    else
+        "$test_binary" --exact "$2" --ignored >"$fixture/$stage.log" 2>&1
+    fi
     /usr/bin/grep -Eq '^test result: ok\. 1 passed; 0 failed;' "$fixture/$stage.log"
     print "$stage=PASS"
     /usr/bin/grep '^test result:' "$fixture/$stage.log"
