@@ -1,5 +1,15 @@
 # Current Project Status
 
+2026-11-02 (Asia/Bangkok) — **Bounded F3 account-relative Welcome repair ACCEPTED.**
+The owner explicitly reports Accepted and supplies two installed-page captures
+showing the current account,4importedpublickeys and expanded status details.
+F3-T01–T09 PASS; engineering/native/installed QA and normal runtime delivery
+already passed. This acceptance-record update changes no code or live state.
+R2-01-028 remains PARTIALLY_VERIFIED for scoped application observations; broader
+host monitoring, backup/update controls and other parent obligations stay open.
+Accepted S04-01 R4 core and S05-03 remain intact. See
+[owner acceptance](UX_FOLLOWUP_F3_ACCOUNT_STATUS.md#owner-acceptance--2026-11-02).
+
 2026-11-02 — **Account-relative Welcome status correction installed; owner review pending.**
 The dashboard uses the authenticated mailbox result and current owned public-key
 inventory. It reports mailbox access, imported-key count and OSMAP session

@@ -1,5 +1,12 @@
 # Decision Log
 
+2026-11-02 (Asia/Bangkok) — Record owner Accepted for the bounded F3 Welcome
+status repair, backed by two screenshots from the actual signed-in account.
+Close that requested repair with F3-T01–T09 PASS; preserve original evidence and
+the distinct scope of missing host-monitoring, backup/update and other retained
+requirements. R2-01-028 stays PARTIALLY_VERIFIED; accepted S04-01 R4/S05-03
+are unchanged. No new engineering, host action or further owner UAT is required.
+
 2026-11-02 — Correct Welcome System Status through the signed-in account’s
 existing verified mailbox listing, current public inventory and authenticated
 session, with unavailable/empty/foreign states distinguished. Add native scoped

@@ -2849,6 +2849,11 @@
             "kind": "qa_execution",
             "path": "/home/foo/Downloads/osmap-ux-followups/system-status-20261102/installed-independent-review.json",
             "scope": "Independent boundedF3 GO SHA5f2445f383925c719d8790e7af27e339b527ba7f381eb6fb0f64b7d33a03deca; nativeWeb1737 loadedPID86633/inode129979/HTTPS200/eightroles/protected3cf8preserved. Fullhostmonitoring/backup/update sources remain absent, ownerF3acceptancepending."
+          },
+          {
+            "kind": "human_uat",
+            "path": "/home/foo/Downloads/osmap-ux-followups/system-status-20261102/owner-acceptance-20261102/acceptance.json",
+            "scope": "OwnerexplicitAccepted on2026-11-02Asia/Bangkok;2actualaccount screenshots show4importedpublickeys/verifiedmailbox/currentOSMAPsession/scopeddetails. SHA256 607a196f3f6366d99c7b7d846bceb5a6feb83dbedf027fc17b3b3d84f66d6b0b. Accepts boundedF3repair; resultstaysPARTIALLY_VERIFIED for broadercontrol, backup/update providersremainabsent."
           }
         ]
       }

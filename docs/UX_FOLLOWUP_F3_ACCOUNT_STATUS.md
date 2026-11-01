@@ -1,5 +1,7 @@
 # F3 — Account-relative Welcome status correction
 
+**Bounded repair ACCEPTED by the owner — 2026-11-02 (Asia/Bangkok).**
+
 ## Observable outcome and source
 
 The user explicitly directs correction of the Welcome System Status panel and
@@ -123,3 +125,30 @@ also contain its literal backtick filename. The index link existed; its required
 filename format was missing. The smallest documentation-only correction adds
 that literal filename, with no guard exception or product/native/installed change.
 The original failed push log is retained; a second ordinary push is required.
+
+
+## Owner acceptance — 2026-11-02
+
+The owner explicitly reports **Accepted**, with a cropped System Status capture
+and a full `/mailboxes` screenshot from the installed account. The expanded
+status details identify the signed-in account. The visible values are mailbox
+access verified,4importedpublickeys, OSMAPsessionverified, and explicit absence
+of backup/update reports. This is actual owner-page evidence, separate from the
+earlier synthetic Alice browser proof.
+
+Private acceptance receipt:
+`/home/foo/Downloads/osmap-ux-followups/system-status-20261102/owner-acceptance-20261102/acceptance.json`,
+SHA256`607a196f3f6366d99c7b7d846bceb5a6feb83dbedf027fc17b3b3d84f66d6b0b`. Both original screenshots are privately retained and
+hash-verified; unrelated account/session details are not published as raw images.
+
+F3-T01–T09 are PASS for this bounded repair. Previous normal signed runtime
+preservation completed at`9a914934e550c48b8f4602905170cfb0fa510f80` in440.817seconds,
+with2148RusttestsPASS/0failed/77ignored, full security gate success, verified
+signatures and exact clean GitHub equality. This acceptance-only closeout makes
+no code or live-system change. Its own normal signed preservation remains the
+final record-delivery step, evidenced separately after execution.
+
+The requested account-relative display repair is accepted. R2-01-028 remains
+PARTIALLY_VERIFIED for scoped application observations: full host monitoring is
+not inferred. Backup/update controls remain BLOCKED, the parent retains its other
+56original obligations, and accepted S04-01 R4 core/S05-03 remain unchanged.

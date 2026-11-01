@@ -1,3 +1,5 @@
+2026-11-02 (Asia/Bangkok) — **Bounded F3 account-relative dashboard repair ACCEPTED by owner.** F3-T01–T09 PASS; parent/unrelated host-monitoring obligations remain separate. Acceptance-record update only.
+
 2026-11-02 — **F3 account-relative dashboard status correction IN_PROGRESS.** S05-03 remains ACCEPTED. Exact statuscontrolR2-01-028 follows retained S04-01/F3; S01 supplies presentation.
 
 2026-11-01 (America/Toronto) — **S05-03 ACCEPTED: owner `S05-03 T09 = PASS`.** Three-recipient recipient-side UAT evidence and relay acceptance retained; T01–T09 PASS. Acceptance-record update only.
@@ -80,7 +82,7 @@ slice using the same failure-analysis method. See
       ],
       "frontend_backend_outcome": "Current signed-in account sees verified mailbox/public-inventory observations and explicit unmeasured scope in System Status.",
       "essential_qa": "Distinguishing realrouteRED/GREEN, isolation/authnegatives, syntheticvisual, matchingnativeWeb+installedpreservation and independentreview.",
-      "next_action": "Complete normal signed delivery; owner reviews bounded F3 dashboard repair. Other original obligations remain retained, not dispatched or closed.",
+      "next_action": "No remaining work for the accepted bounded F3 dashboard repair. Preserve signed acceptance records; other original S04-01 obligations remain in their separate scopes.",
       "dependencies": [
         {
           "owner": "/root",
@@ -125,6 +127,10 @@ slice using the same failure-analysis method. See
         {
           "stage": "source_tests",
           "reference": "FirstordinarypushFAIL161.738s after2148RustPASS/0failed/77ignored; docsindex literalbacktickfilename missing. Exactindexformat corrected, no product/native/installedchange; secondnormaldeliverypending. Failurelogretained."
+        },
+        {
+          "stage": "deployed_qa",
+          "reference": "OwnerAccepted with2actualinstalledaccount screenshots on2026-11-02Asia/Bangkok:4importedpublickeys/currentaccount/scopeddetails. PrivateacceptancereceiptSHA256 607a196f3f6366d99c7b7d846bceb5a6feb83dbedf027fc17b3b3d84f66d6b0b. BoundedF3only."
         }
       ]
     },
@@ -224,7 +230,7 @@ slice using the same failure-analysis method. See
     "slice": "S04-01",
     "specification": {
       "path": "docs/UX_FOLLOWUP_F3_ACCOUNT_STATUS.md",
-      "sha256": "a8f7720c5834079df97e36bd0e9b0ca180cdf8335e039d08b9405139b5a44be2"
+      "sha256": "2b4883870fdd87b0ac1bfb36ebf452da5bf794c4a91d0be8d8eb76f189e4ffb3"
     },
     "design": {
       "journey": "Current signed-in account sees verified mailbox/public-inventory observations and explicit unmeasured scope in System Status.",
@@ -375,9 +381,9 @@ slice using the same failure-analysis method. See
         "preserved": "Accepted S04/S05, all403controls/110legacy, ownercredentials/privatekeys/contacts/policies/mail and publicmail availability.",
         "owner": "/root",
         "reviewer": "/root/s05_protocol_review",
-        "status": "PARTIAL",
+        "status": "PASS",
         "evidence": [
-          "Independent source/security GO; actual native/installed review and ordinary signed delivery pending."
+          "Prior normal delivery440.817s fullsecuritygate/2148RustPASS0fail77ignored,3signatures verified and fresh0/0clean GitHub equality9a914934; independentinstalledreview5f2445f3."
         ]
       },
       {
@@ -393,8 +399,10 @@ slice using the same failure-analysis method. See
         "preserved": "Accepted S04/S05, all403controls/110legacy, ownercredentials/privatekeys/contacts/policies/mail and publicmail availability.",
         "owner": "/root",
         "reviewer": "/root/s05_protocol_review",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "PASS",
+        "evidence": [
+          "ExplicitownerAccepted plus2installedaccount screenshots; privateacceptancereceiptSHA256 607a196f3f6366d99c7b7d846bceb5a6feb83dbedf027fc17b3b3d84f66d6b0b."
+        ]
       },
       {
         "id": "F3-T10",
@@ -433,10 +441,10 @@ slice using the same failure-analysis method. See
     "human_exit": "Owner accepts new installed account-relative rows, separately from S04parent/backup/update orproductionacceptance."
   },
   "human_acceptance": {
-    "status": "PENDING",
-    "reference": "New dashboardcorrection ownerreviewpending; existingacceptedS04/S05 remains."
+    "status": "PASS",
+    "reference": "OwnerexplicitAccepted on2026-11-02Asia/Bangkok for boundedF3statusrepair;2ownerpage screenshots showcurrentaccount/4importedpublickeys/scopeddetails. PrivateacceptancereceiptSHA256 607a196f3f6366d99c7b7d846bceb5a6feb83dbedf027fc17b3b3d84f66d6b0b. Doesnotacceptallparent57controls/hostmonitoring."
   },
-  "next_action": "Complete normal signed delivery; owner reviews bounded F3 dashboard repair. Other original obligations remain retained, not dispatched or closed."
+  "next_action": "No remaining work for the accepted bounded F3 dashboard repair. Preserve signed acceptance records; other original S04-01 obligations remain in their separate scopes."
 }
 ```
 
