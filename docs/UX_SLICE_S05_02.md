@@ -1,6 +1,6 @@
 # S05-02 — Practical public-key and email-policy management
 
-**Current 2026-11-01: credential routing and native private-file creation corrections are installed. Full HTTP/native and actual running-helper import/remove checks pass. Owner T09 remains FAIL pending a fresh browser retest; S05-02 is open.**
+**Current 2026-11-01: owner confirms ASC import, automatic email recognition and Off default work. The Compose imported-recipient integration is installed and agent-qualified; its owner usability check remains pending. Historical failures are retained.**
 
 Started 2026-10-31 (America/Toronto) from signed S05-01 closeout
 `279df22e6ceb384410b151a4acc9134e67dc3e25`. The operator acknowledged the
@@ -9,12 +9,14 @@ method. This slice has a real visual/functional browser UAT.
 
 ## User outcome and design
 
-Settings -> OpenPGP -> Manage Keys shows imported public keys, the email addresses
-they are approved for, and the policies actually applied. Email identities and
-policies are visible without expanding cryptographic details. Full fingerprints,
-algorithm/creation/expiry/subkeys remain available under Details. An imported
-certificate without an approved email association is clearly unassigned; its
-certificate user IDs cannot establish OSMAP trust.
+Settings -> OpenPGP -> Manage Keys shows imported public keys, their usable email
+identities and the policies actually applied. ASC upload extracts those identities
+without a separate manual address-binding step. New unique matches default Off;
+saved policies retain precedence and ambiguous matches require correction. Email
+identities and policies are visible without expanding cryptographic details.
+Full fingerprints, algorithms, dates and subkeys remain available under Details.
+A certificate without a usable email identity is shown unassigned. Selecting an
+address does not enable encryption or grant private-key operations.
 
 The latest operator direction makes the practical list primary, superseding the
 old diagnostic-heavy presentation while retaining full-fingerprint authority,
@@ -716,3 +718,58 @@ key/crypto/helper qualification. Root owns routes/integration/Git/host; runtime
 engineer owns snapshot/core/view/fixtures; QA owns renderer and visual tests;
 protocol reviewer independently reviews source/results/recipe. Normal signed
 checks/preservation apply, no owner drafts/contacts/messages are mutated.
+
+## Compose picker installed — 2026-11-01
+
+Contacts belong to S03-01, specifically the S03-01B account-private contacts
+checkpoint. S05-02 supplies imported OpenPGP identities; this correction joins
+those existing functions. S09-03 retains final approved-reference reconciliation.
+The `/contacts` page remains the saved address book. Compose's **Choose a
+recipient** control groups saved contacts and imported public-key emails, with
+saved labels preferred for duplicate addresses. No second contact-store write or
+persistent synchronization is introduced. Selecting a recipient saves the draft
+through the existing To/Cc/Bcc path and preserves content and protection choices.
+
+Signed production source `e08068a4fa55c8990b6c68b24b681f75b41eb4e6` builds Web
+`39f374975117b05eb3d5a54797c057dd3db75c54ed415af4207237a0e1e98b34`.
+Focused source checks cover core7, routes9, rendering4, Runtime13, preflight3,
+draft16, send-journal7 and send-result2; strict Clippy/fmt pass. Actual CUA at
+1264px confirms imported selection alongside an existing recipient, saved draft,
+retained subject/body and all three protection flags Off. The initial long-label
+overlap was corrected with one short summary string and retested visually.
+
+Actual native core7/UI4/contact9 and MAC Runtime projection1 pass. The initial
+native contact fixture used ambient0755 and correctly failed private-store
+admission after its draft assertions passed. Signed test-only correction
+`a7343798e07d6817a85df14258bcdec05778babd` makes that fixture root0700; corrected
+native libtest SHA305dc9ca46d07528f9e559571d324f73a36a76bac612aa638394a0c6b3c8ea53
+passes9/0. Production sources remain identical, so the Web/observer builds are
+reused. A zero-test exact selector is excluded; actual native `--list` and
+one-match guard select the MAC projection test, which then executes1/0.
+Earlier route-shadow and lazy-store cleanup failures remain retained separately.
+
+The Web-only update is loaded on obsd1 as PID44195/inode129979. CA-verified HTTPS
+login returns200 and eight roles are healthy. Environment8edd312f, both inventory
+workers710485f5, all three Rust helpers and crypto configuratione20954f5 remain
+unchanged. Protected before/after manifests both hash9e72c1387ea9832a168b38b203230ee3ba51d1416af271c9f7fe89142d16aaa5.
+The current `_osmap` native-RPC/owned-record observer confirms four keys, four
+imported choices and one saved contact; both recent imported recipients are
+selectable, foreign selection is refused, and contacts/bindings remain unchanged.
+No owner session was fabricated and no owner draft, contact, key/policy or mail
+mutation ran. The observer is absent; failed public fixture cleanup is exact and
+separate from its failed test. Rollback binary remains retained; no rollback was
+needed. No public mail service was restarted or reconfigured.
+
+Independent review108465a22e5339d498c8b14fb13bd55af24f4d44d7b9e057aca033ebcaf3706a
+checks actual source/native/installed evidence and retained failures. Private
+`compose-picker-installed-evidence.json` hashes every matching record. The normal
+push hook and fresh signed GitHub equality remain final delivery prerequisites,
+recorded in the final delivery receipt after execution. They are not inferred
+from these component results.
+
+Owner's fresh import/automatic-email/Off-default confirmation is PASS for that
+journey. The new picker usability check remains PENDING: refresh Compose, open
+**Choose a recipient**, choose an imported public-key address and save the draft;
+confirm the selected To/Cc/Bcc address and retained content/protection choices.
+Sending mail is unnecessary. S05-02 remains separate from whole-epic acceptance
+and production release.

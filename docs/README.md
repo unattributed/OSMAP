@@ -1,7 +1,8 @@
 # Documentation
 
 - `UX_SLICE_S05_02.md` — [S05-02 practical key and email-policy management](UX_SLICE_S05_02.md):
-  visible imported identities/policies, existing Rust actions and visual/native qualification.
+  visible imported identities/policies, ASC-derived emails and Compose recipient selection;
+  [installed integration and remaining owner check](UX_SLICE_S05_02.md#compose-picker-installed--2026-11-01).
 
 - `UX_SLICE_S05_01.md` — [S05-01 existing Rust crypto-helper path](UX_SLICE_S05_01.md):
   T01–T09, bounded source/native verification and preservation of S04 acceptance.

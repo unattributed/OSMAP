@@ -5379,9 +5379,15 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "NOT_YET_ACCEPTED",
-        "executed": false,
-        "evidence": []
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
+        "evidence": [
+          {
+            "kind": "qa_execution",
+            "path": "docs/UX_SLICE_S05_02.md",
+            "scope": "Nov1 current saved/imported recipient projection: actual source routes9/native9, UI4/native4, core7 and exact native MACRuntime1 pass. Actual CUA saves imported recipient alongside original with retained content/Off flags. Installed owned native projection confirms4choices/1savedcontact; owner Compose usability/final-reference comparison remain pending. No contact synchronization or mail send."
+          }
+        ]
       }
     },
     {
@@ -18298,7 +18304,7 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "PARTIALLY_VERIFIED",
+        "status": "QA_VERIFIED",
         "executed": true,
         "evidence": [
           {
@@ -18340,6 +18346,11 @@
             "kind": "native_execution",
             "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-import-20261101/auto-email-installed-independent-review.json",
             "scope": "Owner-directed ordinarymanualassociation replaced by certificate-derived recipient matching; no freetextemail input. Native2valid/revoked/mixedcase/automaticresolve/actualcryptoRPCtrue+emptylistPASS; installedBOTHexactUIDRPCs/actualsavedselection/targetRAMencrypt/preservationPASS. Rust5e8f44c+correctedC160652b/worker710; reviewd09b261a. Existingpolicies/privategrants preserved; ambiguity/tamperedpair/freshinventory/cleanup tested. NewownerUATNOT_RUN; historicalfailures retained. Fullnormalpushrequired beforedelivery."
+          },
+          {
+            "kind": "human_uat",
+            "path": "docs/UX_SLICE_S05_02.md",
+            "scope": "Nov1 owner explicitly reports fresh public key imported successfully, email recognized/included, encryption Off by default; screenshot confirms imported identity. This is positive functional UAT for import/automatic identity/default, without whole-slice/epic or new Compose-picker acceptance. Prior failed attempts and matching native/security evidence remain retained."
           }
         ]
       }

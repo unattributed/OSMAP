@@ -1,5 +1,18 @@
 # Current Project Status
 
+2026-11-01 (America/Toronto) — **Compose offers imported-key email recipients.**
+Owner confirms fresh ASC import, automatic email recognition and default Off.
+The missing S03-01B/S05-02 Compose connection is installed: Choose a recipient
+lists saved contacts plus imported public-key emails without persistent contact
+synchronization. Current source/browser/native checks pass; Web39f374 is loaded
+on obsd1 with HTTPS200/eight roles and unchanged protected state/helpers/config.
+Actual owned-data projection confirms4keys/4choices/1savedcontact and both recent
+imports. Sourcee08068a plus test-only fixture correctiona734379 are signed.
+Independent installed review108465a2 passes; retained failures remain history.
+New picker owner T09 is PENDING. Final normal hook/GitHub equality is checked in
+the delivery receipt; whole-epic and production release remain separate. See
+[the installed integration record](UX_SLICE_S05_02.md#compose-picker-installed--2026-11-01).
+
 2026-11-01 (America/Toronto) — **Automatic certificate email matching installed on obsd1.**
 ASC import reads certificate emails and resolves recipients without a separate
 manual binding step. New matches default Off; saved policies are preserved and

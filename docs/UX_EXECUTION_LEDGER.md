@@ -1,3 +1,5 @@
+2026-11-01 (America/Toronto) — **Compose imported-recipient picker installed; owner import succeeds, picker usability check pending.**
+
 2026-11-01 (America/Toronto) — **Automatic certificate-email workflow installed; owner acceptance pending.**
 
 2026-11-01 (America/Toronto) — **ASC file upload installed; owner import confirmation remains open.**
@@ -17,7 +19,7 @@ slice using the same failure-analysis method. See
   "slice": "S05-02",
   "original_requirement": "Public-key import/list/remove, full-fingerprint binding, explicit recipient trust, capability/policy UI and private-key provisioning SOP",
   "source_baseline": "fe500fb9c3232c0507d5023365e0ef543d9e09d4",
-  "state": "IN_PROGRESS",
+  "state": "UAT_READY",
   "integration_owner": "/root",
   "roles": {
     "project_manager": [
@@ -143,7 +145,7 @@ slice using the same failure-analysis method. See
       ],
       "frontend_backend_outcome": "Signed-in user sees imported keys with exact email associations and applied policy, and can manage public import/bind/policy/remove through fresh authorization.",
       "essential_qa": "T01-T08 source/native/browser/installed checks and independent review; actual visual owner T09 separate.",
-      "next_action": "Connect Compose recipient picker to owned derived public-key email choices without contact-book writes; qualify selected draft recipient path and deploy matching Web only.",
+      "next_action": "Owner checks installed Compose Choose a recipient imported-public-key option and saved draft; normal signed GitHub synchronization is finalized in delivery receipt.",
       "dependencies": [
         {
           "owner": "/root",
@@ -153,11 +155,11 @@ slice using the same failure-analysis method. See
         }
       ],
       "stages": {
-        "implementation": "PENDING",
-        "source_tests": "PENDING",
+        "implementation": "PASS",
+        "source_tests": "PASS",
         "native_tests": "PASS",
-        "deployed_qa": "PENDING",
-        "independent_review": "PENDING",
+        "deployed_qa": "PASS",
+        "independent_review": "PASS",
         "recovery": "PASS"
       },
       "evidence": [
@@ -296,6 +298,30 @@ slice using the same failure-analysis method. See
         {
           "stage": "deployed_qa",
           "reference": "Ownerpositive freshimport/automaticemail/Offdefault confirmed screenshotuser4-6pO. SeparateComposepickerbug sourcecontactbook-only confirmed; newS03-01B/S05-02 read-onlyderivedpickerintegrationauthorised, no persistentcontactwrite."
+        },
+        {
+          "stage": "implementation",
+          "reference": "Signed e08068a read-only owned imported-recipient projection and fresh selection; test-only a734379 fixture0700 follows native0755 failure, production effect bytes unchanged."
+        },
+        {
+          "stage": "source_tests",
+          "reference": "Focused core7/routes9/UI4/Runtime13/preflight3/draft16/sendjournal7/sendresult2 +strictClippy/fmt; final CUA1264 draft selection and compact control pass. Normal finalpush hook remains separate delivery prerequisite."
+        },
+        {
+          "stage": "native_tests",
+          "reference": "Current native core7/UI4/contact9/exact MACRuntime1 PASS; native-4 zero tests excluded and correct --list one-match execution retained. Unchanged key/crypto qualification reused."
+        },
+        {
+          "stage": "deployed_qa",
+          "reference": "Web39f374 PID44195/inode129979/HTTPS200/eightroles; actual owned InventoryRPC+records\u21924choices/4keys/1contact, both recent imports/foreign refusal/no writes. Owner HTTP picker mutation not performed."
+        },
+        {
+          "stage": "recovery",
+          "reference": "Protected manifests both9e72c138; env8edd/helpers/workers710/confige209 unchanged. Exact failed public fixture and readonly probe absent, CUA listeners absent; guarded oldWeb backup retained, no rollback needed."
+        },
+        {
+          "stage": "independent_review",
+          "reference": "Actual compose-picker-installed-independent-review.json SHA108465a22e5339d498c8b14fb13bd55af24f4d44d7b9e057aca033ebcaf3706a GO source/native/installed; retained failures and owner importPASS/newpickerPENDING distinguish actual scopes."
         }
       ]
     }
@@ -321,7 +347,7 @@ slice using the same failure-analysis method. See
     "slice": "S05-02",
     "specification": {
       "path": "docs/UX_SLICE_S05_02.md",
-      "sha256": "7d6fc518f10ce36409130f9aef72d4f49bb18e3c3ddd9b7706661005271132b0"
+      "sha256": "a6f482c1e79d8dbb7ce459ca3bcc4f290d6a9f42c1bfb637ff15c28ae05485ba"
     },
     "design": {
       "journey": "Signed-in user sees imported keys with exact email associations and applied policy, and can manage public import/bind/policy/remove through fresh authorization.",
@@ -349,7 +375,8 @@ slice using the same failure-analysis method. See
         "status": "PASS",
         "evidence": [
           "docs/UX_SLICE_S05_02.md#engineering-and-installed-closeout--2026-10-31",
-          "Private acceptance04.log2095PASS/0failed/75ignored; security/V10-V13PASS; v14-finalPASS, focused tests and strictClippyPASS."
+          "Private acceptance04.log2095PASS/0failed/75ignored; security/V10-V13PASS; v14-finalPASS, focused tests and strictClippyPASS.",
+          "Compose integration current source/native/installed/independent review PASS; see UX_SLICE_S05_02.md#compose-picker-installed--2026-11-01; no owner Compose selection by agent."
         ]
       },
       {
@@ -371,7 +398,8 @@ slice using the same failure-analysis method. See
           "Actual two exact native public-admin/Runtime casesPASS; current13effectinputs unchangedfa26102; root/native/security independent reviews, exactfixturecleanup and freshabsencePASS.",
           "Nov1ownerimportfailure; liveaudit04:02:50/04:06:34UTC acceptsprimaryandTOTPthen503. Privateevidence s05-02-import-20261101.",
           "Nov1correction currentnativepaddedRuntimeimport/gates/matchingWeb/preservationPASS; ownerbrowserT09FAILpendingfreshretest, oldpayloadUNKNOWN.",
-          "Nov1correctedselectedprimary/capturedEpoch/nativeambient022/fullHTTP/livecontrolledhelper/preservation/gatesPASS aslatestUX_SLICE_S05_02record; ownerT09FAILremains."
+          "Nov1correctedselectedprimary/capturedEpoch/nativeambient022/fullHTTP/livecontrolledhelper/preservation/gatesPASS aslatestUX_SLICE_S05_02record; ownerT09FAILremains.",
+          "Compose integration current source/native/installed/independent review PASS; see UX_SLICE_S05_02.md#compose-picker-installed--2026-11-01; no owner Compose selection by agent."
         ]
       },
       {
@@ -430,7 +458,8 @@ slice using the same failure-analysis method. See
         "evidence": [
           "docs/UX_SLICE_S05_02.md#engineering-and-installed-closeout--2026-10-31",
           "Private acceptance04.log2095PASS/0failed/75ignored; security/V10-V13PASS; v14-finalPASS, focused tests and strictClippyPASS.",
-          "Nov1correctedselectedprimary/capturedEpoch/nativeambient022/fullHTTP/livecontrolledhelper/preservation/gatesPASS aslatestUX_SLICE_S05_02record; ownerT09FAILremains."
+          "Nov1correctedselectedprimary/capturedEpoch/nativeambient022/fullHTTP/livecontrolledhelper/preservation/gatesPASS aslatestUX_SLICE_S05_02record; ownerT09FAILremains.",
+          "Compose integration current source/native/installed/independent review PASS; see UX_SLICE_S05_02.md#compose-picker-installed--2026-11-01; no owner Compose selection by agent."
         ]
       },
       {
@@ -450,7 +479,8 @@ slice using the same failure-analysis method. See
         "evidence": [
           "docs/UX_SLICE_S05_02.md#engineering-and-installed-closeout--2026-10-31",
           "Private acceptance04.log2095PASS/0failed/75ignored; security/V10-V13PASS; v14-finalPASS, focused tests and strictClippyPASS.",
-          "Nov1correctedselectedprimary/capturedEpoch/nativeambient022/fullHTTP/livecontrolledhelper/preservation/gatesPASS aslatestUX_SLICE_S05_02record; ownerT09FAILremains."
+          "Nov1correctedselectedprimary/capturedEpoch/nativeambient022/fullHTTP/livecontrolledhelper/preservation/gatesPASS aslatestUX_SLICE_S05_02record; ownerT09FAILremains.",
+          "Compose integration current source/native/installed/independent review PASS; see UX_SLICE_S05_02.md#compose-picker-installed--2026-11-01; no owner Compose selection by agent."
         ]
       },
       {
@@ -470,7 +500,8 @@ slice using the same failure-analysis method. See
         "evidence": [
           "docs/UX_SLICE_S05_02.md#engineering-and-installed-closeout--2026-10-31",
           "Actual two exact native public-admin/Runtime casesPASS; current13effectinputs unchangedfa26102; root/native/security independent reviews, exactfixturecleanup and freshabsencePASS.",
-          "Nov1correctedselectedprimary/capturedEpoch/nativeambient022/fullHTTP/livecontrolledhelper/preservation/gatesPASS aslatestUX_SLICE_S05_02record; ownerT09FAILremains."
+          "Nov1correctedselectedprimary/capturedEpoch/nativeambient022/fullHTTP/livecontrolledhelper/preservation/gatesPASS aslatestUX_SLICE_S05_02record; ownerT09FAILremains.",
+          "Compose integration current source/native/installed/independent review PASS; see UX_SLICE_S05_02.md#compose-picker-installed--2026-11-01; no owner Compose selection by agent."
         ]
       },
       {
@@ -492,7 +523,8 @@ slice using the same failure-analysis method. See
           "Actual install-final.actual.log/installed-final-readback.log loadedWebfe44b3/inode129966/loopback/HTTPS200/8roles; installed-read-after.log same2keys/rev5/policies/preflight/RAMencrypt. Synthetic CUA browser+Welcome results/JPEG; owner browser session remains T09.",
           "Actualownerpublicimportfails; successfulUI/readiness/readcompatibilitydoesnotproveinstalledmutation.",
           "Nov1correction currentnativepaddedRuntimeimport/gates/matchingWeb/preservationPASS; ownerbrowserT09FAILpendingfreshretest, oldpayloadUNKNOWN.",
-          "Nov1correctedselectedprimary/capturedEpoch/nativeambient022/fullHTTP/livecontrolledhelper/preservation/gatesPASS aslatestUX_SLICE_S05_02record; ownerT09FAILremains."
+          "Nov1correctedselectedprimary/capturedEpoch/nativeambient022/fullHTTP/livecontrolledhelper/preservation/gatesPASS aslatestUX_SLICE_S05_02record; ownerT09FAILremains.",
+          "Compose integration current source/native/installed/independent review PASS; see UX_SLICE_S05_02.md#compose-picker-installed--2026-11-01; no owner Compose selection by agent."
         ]
       },
       {
@@ -508,10 +540,11 @@ slice using the same failure-analysis method. See
         "preserved": "S04/S05-01 acceptance, all original obligations, owner keys/credentials/policy and mail availability.",
         "owner": "/root",
         "reviewer": "/root/s05_protocol_review",
-        "status": "FAIL",
+        "status": "PARTIAL",
         "evidence": [
           "Nov1ownerimportfailure; liveaudit04:02:50/04:06:34UTC acceptsprimaryandTOTPthen503. Privateevidence s05-02-import-20261101.",
-          "Later05:26primary403 and05:33acceptedfactor503retained; nativepermission+primaryroutecorrectionsnowinstalled/controlledlivePASS; freshownerbrowserretestpending,noownerimportbyagent."
+          "Later05:26primary403 and05:33acceptedfactor503retained; nativepermission+primaryroutecorrectionsnowinstalled/controlledlivePASS; freshownerbrowserretestpending,noownerimportbyagent.",
+          "Owner explicitly confirms new ASC import/automatic email/Off default successful. New installed Compose picker T09 remains pending; prior failures retained as history."
         ]
       }
     ],
@@ -519,10 +552,10 @@ slice using the same failure-analysis method. See
     "human_exit": "Owner accepts actual installed key/email/policy journey with selected authenticated actions."
   },
   "human_acceptance": {
-    "status": "FAIL",
-    "reference": "2026-11-01 ownerreports publickey02B34119C22074FC68B10E23E3294DF8DE68C834 importgenericUnavailable; bothfactorsacceptedliveaudit, nochangeconfirmed. Ownercredentials/proofmustnotbereplayed. Latest06:45primaryrefusal beforefactor/native remainsUNKNOWN; ASCuploadinstalled, newordinaryownerfileimportnotyetperformed. Newownerrequestedautomatic-emailflowinstalledandagentqualified; owneracceptanceofnewflowNOT_RUN. Historicalfailuresretained; current3key/rev6readback isnotnewbrowserUAT. OwnerNOWconfirmsnewkeyimport+automaticemail+OffdefaultPASS screenshotuser4-6pO; fullsliceacceptanceseparate. Composepickerstillmissingimportedkeyaddresses, activeintegrationcorrection."
+    "status": "PENDING",
+    "reference": "Owner confirms fresh ASC import, automatic email identity and Off default PASS. Prior import failures retained below. New Compose picker engineering/native/installed QA PASS; owner selection-and-draft usability confirmation PENDING; no agent owner-session fabrication."
   },
-  "next_action": "Connect Compose recipient picker to owned derived public-key email choices without contact-book writes; qualify selected draft recipient path and deploy matching Web only."
+  "next_action": "Owner checks installed Compose Choose a recipient imported-public-key option and saved draft; normal signed GitHub synchronization is finalized in delivery receipt."
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->

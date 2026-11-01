@@ -14119,3 +14119,20 @@ Qualification is current source and isolated native application composition.
 Live Web/helpers remain unchanged. S05-02 owns the practical imported-key/email/
 policy list with encryption off by default; final integrated review before
 production release and owner acceptance remain separate.
+
+## Compose recipient selection reuses imported identities — 2026-11-01
+
+S03-01B owns saved contacts; S05-02 owns imported key/email policy facts. Project
+current account-owned certificate identities into Compose's existing recipient
+picker. Prefer saved contact labels when addresses coincide. Recheck current
+owned address/fingerprint membership on selection and use existing draft-save.
+Do not create a second durable contact write, background synchronization, new
+protocol or encryption-policy side effect. Ambiguous/removed/rebound choices
+refuse before draft mutation; saved-contact revisions remain enforced.
+
+Actual browser review caught a crowded long label; shorten only its summary.
+Native qualification caught a fixture0755 directory; make only that fixture0700,
+retaining private-store refusal. A zero-test native selector is excluded and its
+intended test executed by an observed fully-qualified name. Retain all failures,
+match actual source/artifact scope, reuse unchanged Web/helper evidence, and
+keep owner import PASS distinct from new-picker UAT and production release.
