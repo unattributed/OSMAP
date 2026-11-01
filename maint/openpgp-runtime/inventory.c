@@ -67,10 +67,11 @@ static int emit_emails(gpgme_key_t key) {
  const char *addresses[16];unsigned count=0,scanned=0;gpgme_user_id_t uid=key->uids;
  for(;uid&&scanned<32;uid=uid->next,scanned++) {
   if(uid->revoked||uid->invalid)continue;
-  /* address is GPGME's parsed addr-spec. Older/incomplete UID metadata may
-   * leave it empty; email is its parsed legacy equivalent, never raw uid. */
-  const char *address=uid->address&&*uid->address?uid->address:uid->email;
-  if(!mailbox(address))continue;
+  /* Preserve certificate local-part case from GPGME's parsed email field;
+   * address may be normalized. Fall back only if email is unsupported/absent.
+   * Neither field is a raw display UID, which is never parsed here. */
+  const char *address=uid->email;
+  if(!mailbox(address)){address=uid->address;if(!mailbox(address))continue;}
   int duplicate=0;for(unsigned i=0;i<count;i++)if(same_mailbox(addresses[i],address)){duplicate=1;break;}
   if(!duplicate){if(count==16)return 0;addresses[count++]=address;}
  }

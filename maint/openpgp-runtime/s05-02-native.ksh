@@ -87,6 +87,10 @@ for account in alice bob; do
     [[ ${#fingerprint} -eq 40 && "$fingerprint" != *[!A-F0-9]* ]]
     print '' | gpg_fixture "$home_dir" --quick-add-key "$fingerprint" cv25519 encrypt 0 \
         >>"$fixture/commands.log" 2>&1
+    if [[ "$account" = alice ]]; then
+        print '' | gpg_fixture "$home_dir" --quick-add-uid "$fingerprint" cAsE.Check@example.test \
+            >>"$fixture/commands.log" 2>&1
+    fi
     if [[ "$account" = bob ]]; then
         for address in bob.alias@example.test revoked@example.test; do
             print '' | gpg_fixture "$home_dir" --quick-add-uid "$fingerprint" "$address" \
@@ -99,6 +103,11 @@ for account in alice bob; do
     gpg_fixture "$home_dir" --export "$fingerprint" </dev/null \
         >"$fixture/$account.public" 2>>"$fixture/commands.log"
 done
+stage=certificate_email_case
+"$fixture/inventory" "$fixture/alice" >"$fixture/email-case.json" 2>>"$fixture/commands.log"
+# GPGME address normalizes local case; the original parsed email must survive.
+/usr/bin/grep -F '"cAsE.Check@example.test"' "$fixture/email-case.json" >/dev/null
+print 'NATIVE_EMAIL_CASE_PRESERVATION=PASS'
 stage=disposable_public_exchange
 /usr/local/bin/gpg --no-options --homedir "$fixture/alice" --batch --import \
     "$fixture/bob.public" >>"$fixture/commands.log" 2>&1

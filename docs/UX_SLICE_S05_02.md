@@ -635,3 +635,16 @@ Native effect inputs and native journey remain byte-identical to6c799d92; reuse
 that executed qualification while rebuilding matching final Web/helpers/probe
 from the reviewed UI checkpoint. No native transaction retry is warranted by
 this HTML-only guard. Retain earlier compile/test/lint/visual failures separately.
+
+Installed readback caught a real mixed-case identity defect before readiness:
+GPGME address normalized cBwZTCpU to lowercase, conflicting with the existing
+case-preserving mailbox matcher. Preserve first TARGET_CERTIFICATE_EMAIL_MISSING
+probe failure and metadata observation. Prefer supported parsed uid.email, with
+parsed address fallback; never use display UID or filename. Private actual-C
+case regression is RED then GREEN. The existing native runner now includes a
+mixed-case Alice UID and asserts its literal spelling through real GPGME output.
+Qualify the C-only correction with the current Rust libtest, controlled native
+journeys and actual target readonly worker read; then atomically update only
+the two same-schema inventory workers without restarting the loaded helpers.
+Re-run the identical installed Rust RPC/actual-policy/RAM-encryption probe. No
+new owner import, credential operation or public mail change is involved.

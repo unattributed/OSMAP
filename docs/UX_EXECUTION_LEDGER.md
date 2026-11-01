@@ -269,6 +269,10 @@ slice using the same failure-analysis method. See
         {
           "stage": "native_tests",
           "reference": "auto-email-native-functional.log source6c799d92 exactpublicadmin+Runtime multipart/UID(twoValid+revokedexcluded)/actualcryptoRPC true+emptyallowlistPASS; otherhome/absent/subkey/privategrantnegatives included; cleanupPASS. UI-onlyownchooserfix focused13+actualCUAPASS; nativeeffectsourcesunchanged, matchingfinalartifactsrebuildpending."
+        },
+        {
+          "stage": "deployed_qa",
+          "reference": "Coordinatedinstallactual all4Rustloaded/8roles/envprivatestatePASS, but postprobeTARGET_CERTIFICATE_EMAIL_MISSING; currentGPGMEaddress lowercasescBwlocal. Preservefirstfailure; Cparsedemailfirst RED\u2192GREEN; nativecasepersistentregression/C-only2workerqualificationpending. NoinstalledfunctionalPASSclaimed."
         }
       ]
     }
@@ -294,7 +298,7 @@ slice using the same failure-analysis method. See
     "slice": "S05-02",
     "specification": {
       "path": "docs/UX_SLICE_S05_02.md",
-      "sha256": "eeae24b4d79739a7e81fdd03b88e1431636a3ce8d62e254e0a9bb898131ad9b7"
+      "sha256": "fa0a022abb8885f809a5a1d9bd130cf2949bce13e9b90900d83268e10034e94e"
     },
     "design": {
       "journey": "Signed-in user sees imported keys with exact email associations and applied policy, and can manage public import/bind/policy/remove through fresh authorization.",
