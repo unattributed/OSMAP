@@ -122,6 +122,10 @@ slice using the same failure-analysis method. See
         {
           "stage": "independent_review",
           "reference": "Source96f773c9+recipea33e8908GO checkpoint/build/native; installerbaselinepending\u2192mv findingcorrected. Actualnative/installed/finalreviewnotyetasserted."
+        },
+        {
+          "stage": "native_tests",
+          "reference": "Firstnative28focusedPASS; 3realpositivephasesPASS; recoveryinitialsignFAILbeforeagentmutation. Aliceprivatefiles0/Bob2 confirms priorgatewaysecretdeletion; runner-onlyordercorrectionpendingfreshfixture, productionartifactsunchanged. Ownedagentsstopped/fixture retained."
         }
       ]
     }
@@ -146,7 +150,7 @@ slice using the same failure-analysis method. See
     "slice": "S05-03",
     "specification": {
       "path": "docs/UX_SLICE_S05_03.md",
-      "sha256": "cb64def0710485f645a7b260d8662503d9c0f0956c270db5f529320f0ac1e439"
+      "sha256": "7189461c36906e8c110eb43054c2b8aabb3ec579f3b594289c90bbffabd1256f"
     },
     "design": {
       "journey": "Authorized existing Rust/GPGME operation completes correctly or refuses within bounds with truthful cleanup; confirmed recovery permits the next valid request.",

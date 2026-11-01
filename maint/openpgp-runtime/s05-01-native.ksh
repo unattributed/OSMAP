@@ -127,12 +127,14 @@ if [[ ${OSMAP_S05_LIFECYCLE:-no} = yes ]]; then
 fi
 run_native AUTHENTICATED_RUST_ROUNDTRIP \
     openpgp_crypto_runtime::tests::native_crypto_authenticated_service_client
-run_native PRODUCTION_GATEWAY_ROUNDTRIP \
-    http::http_gateway::http_gateway_mail::tests::protected_send_native::native_crypto_gateway_protected_send_roundtrip
 if [[ ${OSMAP_S05_LIFECYCLE:-no} = yes ]]; then
     run_native SAME_SERVICE_AGENT_RECOVERY \
         openpgp_crypto_runtime::lifecycle_tests::native_same_service_recovers_stale_private_agent_without_disrupting_public_encrypt
     /usr/bin/grep '^same_service_initial_sign=' "$fixture/$stage.log"
 fi
+# The gateway case deletes disposable Alice secret keys to prove public-only
+# encryption. Keep that destructive fixture operation after private-key tests.
+run_native PRODUCTION_GATEWAY_ROUNDTRIP \
+    http::http_gateway::http_gateway_mail::tests::protected_send_native::native_crypto_gateway_protected_send_roundtrip
 complete=yes
 print 'S05_01_NATIVE_FUNCTIONAL=PASS'

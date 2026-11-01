@@ -174,3 +174,21 @@ approve the signed checkpoint and native build/fixture. The installer review
 caught partial baseline publication; it now captures a pending file and atomically
 publishes the baseline only after success, with honest rollback status if absent.
 Installation remains conditional on matching native results and artifact scalars.
+
+
+## First native integration failure and smallest correction
+
+The matching OpenBSD build passes (167.651seconds) and28focused native
+checks pass. Public-admin, authenticated Rust crypto and production gateway
+roundtrips each pass in the first disposable integration run. The following
+same-Service recovery case fails on its initial sign before agent mutation
+with an authenticated inner Unavailable result. Cleanup confirms owned agents
+stopped; the failed fixture and original diagnostics are retained separately.
+
+Source analysis finds that the preceding gateway test deliberately deletes
+Alice's disposable secret keys and never restores them. Filesystem-only native
+readback confirms Alice has0private-key files while Bob has2. The smallest
+correction moves recovery before the destructive gateway case, keeping gateway
+last. Production Rust/C and all compiled artifact bytes remain unchanged.
+A fresh disposable integration fixture will distinguish the corrected order;
+the28matching focused checks do not need repetition. No installed change yet.
