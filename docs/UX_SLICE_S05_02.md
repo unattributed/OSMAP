@@ -403,3 +403,38 @@ state. Any negative or uncertain reply is reconciled read-only; no mutation
 retry or speculative cleanup is allowed. Bound the whole probe to90seconds,
 retain failures, expected test nonce/keybox history and exact cleanup disposition.
 Owner keybox, bindings, policy and credentials are excluded from mutation.
+
+
+## Native permission failure reproduced — 2026-11-01
+
+The isolated actual-daemon test accepted the known normalized660-byte public
+certificate for the controlled test account, then returned Unavailable. A
+read-only reconciliation showed its original two keys and no target; the owner
+key/binding manifest, test trustdb/backup and agent cleanup were independently
+verified unchanged. Metadata-only trace shows native worker and GPG success,
+then helper refusal at staged-keybox file metadata admission, before publication.
+
+A two-case direct test of the unchanged installed worker confirmed the cause:
+ambient022 produced0644 `pubring.kbx`, while077 produced0600. Both native calls
+returned0 with exactly the same three public keys and unchanged trustdb. The
+actual launcher omitted an explicit mask; earlier native/clone fixtures used077.
+The strict private-file predicate correctly refuses group/world permission bits.
+The correction sets0077 at the isolated worker entry, before GPG children, and
+adds077 to the generated launcher. It does not weaken file admission or change
+the multithreaded Rust process's global mask. The existing native runner now
+uses ambient022 immediately before its two effect tests, after private fixture
+creation, to qualify the worker's ownership of its permission policy.
+
+Actual old-worker differential evidence is private
+`umask-differential.actual.log`; actual daemon refusal is `live-test.actual.log`.
+The controlled probe's combined exit1 reflects functional refusal; cleanup was
+checked separately through manifests, original test inventory and absence of
+its homespecific agent/private directory, temporary client and certificate.
+No automatic import/remove retry or live owner key mutation occurred.
+
+Fixed-worker native qualification, atomic installation, actual-daemon retest and
+owner browser acceptance remain pending. Only the admin worker and its launcher
+need native replacement; the running helper can retain its process and load the
+new isolated worker on its next call. Web routing/diagnostics candidate comes
+from signed03eb8ad; later changes to that Rust module are confined to its test
+fixture. Public Dovecot, Postfix and MariaDB remain outside restart/config scope.

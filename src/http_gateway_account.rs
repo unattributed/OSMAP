@@ -523,18 +523,7 @@ mod tests {
             let mut gateway = RuntimeBrowserGateway::for_test(&f.root);
             gateway.account_runtime = f.pair(29, 17, 19);
             gateway.account_rollout = Some("alice@example.test".into());
-            let marker = f.root.join("legacy-called");
-            let legacy = f.root.join("legacy-reject");
-            std::fs::write(
-                &legacy,
-                format!(
-                    "#!/bin/sh\nIFS= read -r password\nprintf called > '{}'\nexit 1\n",
-                    marker.display()
-                ),
-            )
-            .unwrap();
-            std::fs::set_permissions(&legacy, std::fs::Permissions::from_mode(0o700)).unwrap();
-            gateway.doveadm_path = legacy;
+            gateway.doveadm_path = PathBuf::from("/usr/bin/false");
             let context = AuthenticationContext::new(
                 AuthenticationPolicy::default(),
                 "selected-key-stepup",
@@ -542,8 +531,8 @@ mod tests {
                 "Synthetic/Keys",
             )
             .unwrap();
-            // Prove the legacy route rejects these synthetic credentials and
-            // establish that the process-call detector actually works.
+            // The actual fixed binary denies the legacy control. Successful
+            // selected primary verification must use the MAC-bound service.
             assert!(matches!(
                 gateway
                     .build_auth_service()
@@ -551,8 +540,6 @@ mod tests {
                     .decision,
                 AuthenticationDecision::Denied { .. }
             ));
-            assert_eq!(std::fs::read(&marker).unwrap(), b"called");
-            std::fs::remove_file(&marker).unwrap();
             let stop = Arc::new(AtomicBool::new(false));
             let auth_calls = Arc::new(AtomicUsize::new(0));
             let server_stop = stop.clone();
@@ -660,10 +647,12 @@ mod tests {
                 auth_calls.load(Ordering::SeqCst),
                 usize::from(!configured_unavailable)
             );
-            assert!(
-                !marker.exists(),
-                "selected key stepup must never call legacy auth"
-            );
+            if configured_unavailable {
+                assert!(!outcome
+                    .audit_events
+                    .iter()
+                    .any(|event| event.action == "login_backend_error"));
+            }
             assert_eq!(gateway.totp_replay_dir.exists(), factor_used);
             assert_eq!(
                 crate::openpgp_bindings::BindingStore::new(

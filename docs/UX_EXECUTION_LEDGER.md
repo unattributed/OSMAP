@@ -71,7 +71,9 @@ slice using the same failure-analysis method. See
     "src/key_management_tests.rs",
     "src/key_management.rs",
     "src/http_gateway_auth.rs",
-    "src/http_gateway_account.rs"
+    "src/http_gateway_account.rs",
+    "maint/openpgp-runtime/inventory.c",
+    "maint/openpgp-runtime/deployment_admin_prepare.py"
   ],
   "outcomes": [
     {
@@ -115,7 +117,7 @@ slice using the same failure-analysis method. See
       ],
       "frontend_backend_outcome": "Signed-in user sees imported keys with exact email associations and applied policy, and can manage public import/bind/policy/remove through fresh authorization.",
       "essential_qa": "T01-T08 source/native/browser/installed checks and independent review; actual visual owner T09 separate.",
-      "next_action": "Correct selected-account fresh-primary routing with captured epoch and qualify native composition; independently investigate latest accepted-factor import503 before owner retest.",
+      "next_action": "Qualify private creation mask at native worker boundary under ambient022, atomically install worker/launcher and Web only, verify actual controlled daemon import/remove before owner browser retest.",
       "dependencies": [
         {
           "owner": "/root",
@@ -192,6 +194,10 @@ slice using the same failure-analysis method. See
         {
           "stage": "implementation",
           "reference": "Nov1sharedselectedprimaryroute+caturedactualepochbeforefactor, focusedRED/GREEN andlegacycompatibilitycorrection; fullHTTPselectednativeextension andfixedenum/bytecountaudit independentlyreviewed. Latestowneracceptedfactor503notyetresolved."
+        },
+        {
+          "stage": "native_tests",
+          "reference": "Nov1oldinstalledworker ambient022creates0644vs077creates0600 withbothnativeEXIT0/same3keys/trustunchanged; actualcontrolleddaemon022UnavailableafterGPGsuccess; owneroriginalstatepreserved. FixedworkerqualificationPENDING; nohelperrestartrequired."
         }
       ]
     }
@@ -217,7 +223,7 @@ slice using the same failure-analysis method. See
     "slice": "S05-02",
     "specification": {
       "path": "docs/UX_SLICE_S05_02.md",
-      "sha256": "f197ec0c4a5c56e24a26603c21525e58e0aad0ed3fe9ec2e02eade2599ce8c99"
+      "sha256": "6e2a292409aefbe45f8ea6e24924eef962b4547c49e270946f4c7600f0059055"
     },
     "design": {
       "journey": "Signed-in user sees imported keys with exact email associations and applied policy, and can manage public import/bind/policy/remove through fresh authorization.",
@@ -411,7 +417,7 @@ slice using the same failure-analysis method. See
     "status": "FAIL",
     "reference": "2026-11-01 ownerreports publickey02B34119C22074FC68B10E23E3294DF8DE68C834 importgenericUnavailable; bothfactorsacceptedliveaudit, nochangeconfirmed. Ownercredentials/proofmustnotbereplayed."
   },
-  "next_action": "Correct selected-account fresh-primary routing with captured epoch and qualify native composition; independently investigate latest accepted-factor import503 before owner retest."
+  "next_action": "Qualify private creation mask at native worker boundary under ambient022, atomically install worker/launcher and Web only, verify actual controlled daemon import/remove before owner browser retest."
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->

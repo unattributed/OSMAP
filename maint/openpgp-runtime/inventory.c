@@ -158,6 +158,9 @@ done:
  if(key)gpgme_key_unref(key);return ok;
 }
 int main(int argc,char **argv) {
+ /* Native GPG children must create private staging files regardless of the
+  * launcher's inherited mask. This worker is a separate, single-use process. */
+ umask(0077);
 #ifdef __OpenBSD__
  closefrom(3);
 #endif

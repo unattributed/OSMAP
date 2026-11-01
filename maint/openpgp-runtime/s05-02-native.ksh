@@ -115,6 +115,9 @@ run_native() {
 # The first test restores the correspondent certificate and removes its own
 # public-admin-state. The Runtime test creates fresh sessions, factors, bindings
 # and public-admin replay state below runtime-keys; it does not reuse authority.
+# Qualify the worker's private-file policy under an ordinary daemon mask. The
+# fixture's key creation above remains private; product children own their mask.
+umask 022
 run_native PUBLIC_ADMIN_STORE_TRANSACTION \
     openpgp_public_admin::tests::native_crypto_public_admin_store_transaction
 stage=runtime_fresh_state

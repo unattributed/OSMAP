@@ -144,7 +144,7 @@ def main():
     }
     exclusive(config, (json.dumps(settings, indent=2) + "\n").encode(), helper.pw_uid, group.gr_gid)
     wrapper_text = (
-        "#!/bin/ksh\nset -eu\nulimit -c 0\n"
+        "#!/bin/ksh\nset -eu\numask 077\nulimit -c 0\n"
         f'socket="{ROOT}/run/admin.sock"\n[ ! -e "$socket" ] || exit 1\n'
         f'"{binary}" "{config}" "{helper_key}" &\n'
         'child=$!\ncleanup() { kill "$child" 2>/dev/null || true; wait "$child" 2>/dev/null || true; [ ! -S "$socket" ] || rm -f "$socket"; }\n'
