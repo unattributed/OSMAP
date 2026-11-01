@@ -1,5 +1,16 @@
 # Current Project Status
 
+2026-11-02 — **Account-relative Welcome status correction installed; owner review pending.**
+The dashboard uses the authenticated mailbox result and current owned public-key
+inventory. It reports mailbox access, imported-key count and OSMAP session
+verification, with native details explaining limits. Backup/update measurements
+remain explicitly absent. Source, synthetic browser and current OpenBSD route
+checks pass; Web1737 is loaded with HTTPS200/eight healthy roles and matching
+protected state. Independent review5f2445f3 is GO; normal signed delivery is the
+final preservation step. Exact controlR2-01-028/F3 is PARTIALLY_VERIFIED; backup/
+update controls and unrelated obligations remain open. S05-03 remains ACCEPTED.
+See [F3 evidence and scope](UX_FOLLOWUP_F3_ACCOUNT_STATUS.md).
+
 2026-11-01 (America/Toronto) — **S05-03 ACCEPTED: T01–T09 PASS.**
 The owner explicitly reports `S05-03 T09 = PASS` and supplies three recipient
 mailbox screenshots showing the readable test message. Pasted Postfix evidence

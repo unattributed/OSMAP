@@ -1,5 +1,14 @@
 # Decision Log
 
+2026-11-02 — Correct Welcome System Status through the signed-in account’s
+existing verified mailbox listing, current public inventory and authenticated
+session, with unavailable/empty/foreign states distinguished. Add native scoped
+details instead of another health service or host probe. Preserve absent backup/
+update sources and private-key/SMTP limits. Broad presentation is S01; exact
+service-status controlR2-01-028 remains required S04-01/F3. Current native/Web-only
+installation and independent review pass; bounded owner review remains pending.
+Accepted S04-01 R4 core/S05-03 and unrelated privacy/notification work are intact.
+
 2026-11-01 — Record explicit owner `S05-03 T09 = PASS`, closing S05-03 with
 T01–T09 PASS. Retain the supplied three-recipient readable-message screenshots
 privately, with sanitized repository provenance. Treat Postfix queue8EEE63CEA7A

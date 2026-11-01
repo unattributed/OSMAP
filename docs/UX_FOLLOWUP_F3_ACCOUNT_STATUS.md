@@ -81,3 +81,37 @@ will build current libtest and Web with the existing600-second/jobs1/debug0/
 4GiBdata/privateTMP profile, run current changed route/Welcome tests, then install
 only Web with hashed root-custody backup, atomic publication and guarded rollback.
 Use pending→atomic baseline capture. Public mail and helper roles are not stopped.
+
+
+## Native and installed result
+
+Signed source`cfa8efdfa599e4c6baf9c89b8c294c0495cb9816` builds native Web and
+libtest successfully (168.816seconds outer,167.268seconds actor). Actual native
+new-route1PASS is included in the13key-route cases;11Welcome cases also pass.
+These groups overlap and are not reported as25unique tests.
+
+Web-only installation passes in3.472seconds; fresh readback passes in0.601seconds.
+Loaded WebSHA256`1737cfcd656e3954314634f4196c83adfcbc7257f4313398d8145271bdaba0ca`
+uses PID86633/inode129979, listens on loopback and serves CA-verified HTTPS200.
+All8roles remain healthy. Environment, helpers, configuration and quiescent
+protected state are unchanged. Both protected manifests hash to
+`3cf8d41b6bbcc9d274b49412dc47099fbb41f092848df37665f1df4cb6f26f4c`.
+Exact candidate/restore paths are absent. The root-owned old Web backup is
+retained; rollback was not required. Public mail and helper roles were not
+restarted. No owner credential, key, contact, policy or mail mutation occurred.
+
+Independent installed/security review
+`5f2445f383925c719d8790e7af27e339b527ba7f381eb6fb0f64b7d33a03deca`
+is GO for this bounded F3 correction. Source/recipe reviewa5177423 remains an
+immutable separate record. Browser images and original failures are retained
+privately. The optional-wrapper import and declaration-format/evidence-kind
+refusals are recorded as tooling/declaration failures, not product failures.
+
+The account-relative correction is ready for owner visual review after normal
+signed delivery: refresh `/mailboxes`, inspect current statuses and use
+View status details. Backup/update sources remain absent and their controls
+remain BLOCKED. R2-01-028 is PARTIALLY_VERIFIED for the measured application
+observations, not full host monitoring; no broader control/parent closure is
+claimed. The accepted S04-01 R4 core and S05-03 remain accepted. Ordinary hooks,
+verified signatures and fresh exact GitHub parity are final delivery conditions,
+retained in a separate private receipt after execution; no hook bypass.

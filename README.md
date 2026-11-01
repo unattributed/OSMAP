@@ -1,5 +1,7 @@
 # OSMAP
 
+**2026-11-02: Account-relative Welcome status installed on obsd1.** Mailbox and public-key status now reflect the signed-in account’s current observations, with explicit limits and native details. Current source/browser/native/Web-only installation and independent checks pass; owner review remains separate. See [F3 evidence](docs/UX_FOLLOWUP_F3_ACCOUNT_STATUS.md).
+
 **2026-11-01: S05-03 accepted — T01–T09 PASS.** The owner reports `S05-03 T09 = PASS` after a three-recipient functional test, with recipient-side screenshots and successful relay-submission evidence. Runtime lifecycle engineering, native recovery, matching installed QA and normal signed delivery pass. See [S05-03 acceptance and evidence](docs/UX_SLICE_S05_03.md#owner-t09-acceptance--2026-11-01).
 
 **2026-11-01: People-style Contacts owner UAT PASS on obsd1.** The people sidebar icon opens a searchable table of saved contacts and imported-key email identities, their effective encryption policies and practical Write/Add name/Edit actions. Focused source, browser, native and installed checks pass; the owner has accepted the Contacts/Compose handoff with `UAT = PASS`. See the [Contacts delivery record](docs/UX_SLICE_S05_02.md#people-style-contacts-installed--2026-11-01).

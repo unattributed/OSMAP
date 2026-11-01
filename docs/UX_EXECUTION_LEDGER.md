@@ -80,7 +80,7 @@ slice using the same failure-analysis method. See
       ],
       "frontend_backend_outcome": "Current signed-in account sees verified mailbox/public-inventory observations and explicit unmeasured scope in System Status.",
       "essential_qa": "Distinguishing realrouteRED/GREEN, isolation/authnegatives, syntheticvisual, matchingnativeWeb+installedpreservation and independentreview.",
-      "next_action": "Qualify current native libtest/Web and install matching Web only after reviewed recipe, then verify installed projection and preservation.",
+      "next_action": "Complete normal signed delivery; owner reviews bounded F3 dashboard repair. Other original obligations remain retained, not dispatched or closed.",
       "dependencies": [
         {
           "owner": "/root",
@@ -92,10 +92,10 @@ slice using the same failure-analysis method. See
       "stages": {
         "implementation": "PASS",
         "source_tests": "PASS",
-        "native_tests": "PENDING",
-        "deployed_qa": "PENDING",
-        "independent_review": "PENDING",
-        "recovery": "PENDING"
+        "native_tests": "PASS",
+        "deployed_qa": "PASS",
+        "independent_review": "PASS",
+        "recovery": "PASS"
       },
       "evidence": [
         {
@@ -105,6 +105,22 @@ slice using the same failure-analysis method. See
         {
           "stage": "source_tests",
           "reference": "ActualrouteRED1FAIL11.158s\u2192GREEN1PASS; keyroutes13PASS/welcome11PASS; singularrefreshPASS; strictClippy/fmt/V10PASS. ActualCUAowned/foreign/empty/unavailable/mailboxdenied+keyboard+desktop/mobilelightdarkPASS; networktracepartialexplicit."
+        },
+        {
+          "stage": "native_tests",
+          "reference": "Actualnativebuild168.816s sourcecfa8 Web1737/libtest4c105; exactnewroute1PASS(in13module)/Welcome11PASS, overlapexplicit."
+        },
+        {
+          "stage": "deployed_qa",
+          "reference": "install.actual3.472s+freshreadback0.601s Web1737/PID86633/inode129979/loopback/HTTPS200/eightroles; accountrelativepureprojectionmatchingnativebuild installed."
+        },
+        {
+          "stage": "independent_review",
+          "reference": "installed-independent-review.json SHA5f2445f383925c719d8790e7af27e339b527ba7f381eb6fb0f64b7d33a03deca GO boundedF3; normaldeliverypending/ownervisualreviewpending."
+        },
+        {
+          "stage": "recovery",
+          "reference": "Bothprotectedmanifests3cf8d41b6bbcc9d274b49412dc47099fbb41f092848df37665f1df4cb6f26f4c; unchangedenv/helpers/config; temporarycandidate/restoreabsent, oldWebrootbackupretained/rollbacknotneeded. Syntheticlistener/statecleanedafter5durableartifacthashes."
         }
       ]
     },
@@ -204,7 +220,7 @@ slice using the same failure-analysis method. See
     "slice": "S04-01",
     "specification": {
       "path": "docs/UX_FOLLOWUP_F3_ACCOUNT_STATUS.md",
-      "sha256": "94789a2c5ad5e4432c10562a6336acefb4d1f90e68d2f41d5fc6cfeb0c2330c7"
+      "sha256": "a7e3b5ae62ced6a5a888105123eaf24c52afefccf2e84ccb2f808ec2139c48d5"
     },
     "design": {
       "journey": "Current signed-in account sees verified mailbox/public-inventory observations and explicit unmeasured scope in System Status.",
@@ -337,8 +353,10 @@ slice using the same failure-analysis method. See
         "preserved": "Accepted S04/S05, all403controls/110legacy, ownercredentials/privatekeys/contacts/policies/mail and publicmail availability.",
         "owner": "/root",
         "reviewer": "/root/s05_protocol_review",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "PASS",
+        "evidence": [
+          "Matchingnative/Web-onlyloadedidentity, HTTPS/eightroles/preservation and independentactualreview in F3spec/privateevidence."
+        ]
       },
       {
         "id": "F3-T08",
@@ -414,7 +432,7 @@ slice using the same failure-analysis method. See
     "status": "PENDING",
     "reference": "New dashboardcorrection ownerreviewpending; existingacceptedS04/S05 remains."
   },
-  "next_action": "Qualify current native libtest/Web and install matching Web only after reviewed recipe, then verify installed projection and preservation."
+  "next_action": "Complete normal signed delivery; owner reviews bounded F3 dashboard repair. Other original obligations remain retained, not dispatched or closed."
 }
 ```
 

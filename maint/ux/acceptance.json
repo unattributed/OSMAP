@@ -2827,13 +2827,28 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "BLOCKED",
-        "executed": false,
+        "status": "PARTIALLY_VERIFIED",
+        "executed": true,
         "evidence": [
           {
-            "kind": "gap",
-            "path": "docs/UX_SLICE_S04_01.md",
-            "scope": "Current Welcome/General expose Unknown; no measured service/detail, backup record or version-feed positive evidenced. S04-01 original requirement remains open. This records a demonstrated gap or missing exact evidence, not implementation absence inferred from an empty register. Timezone and Reset await new actual root-owned results; other stopped slices are not restarted."
+            "kind": "source_execution",
+            "path": "/home/foo/Downloads/osmap-ux-followups/system-status-20261102/source-results.json",
+            "scope": "Actual scoped status route RED then GREEN,13keyroutes/11Welcome regressions; account-owned current mailbox/inventory observations and denied/foreign/no-zero fallback. Source baselinecfa8; earlier gap preserved in95ed history."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-followups/system-status-20261102/native-functional.log",
+            "scope": "Current exact newroute1PASS overlaps keymodule13PASS; Welcome11PASS (not25unique). No owner credentials/private operation or host health inference."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-followups/system-status-20261102/browser-result.json",
+            "scope": "Synthetic Alice current2keys/empty/foreign/unavailable/mailboxdenied, keyboarddetails,360lightdarknooverflow. Networkevents retained/truncated; no whole-session network-completeness claim."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "/home/foo/Downloads/osmap-ux-followups/system-status-20261102/installed-independent-review.json",
+            "scope": "Independent boundedF3 GO SHA5f2445f383925c719d8790e7af27e339b527ba7f381eb6fb0f64b7d33a03deca; nativeWeb1737 loadedPID86633/inode129979/HTTPS200/eightroles/protected3cf8preserved. Fullhostmonitoring/backup/update sources remain absent, ownerF3acceptancepending."
           }
         ]
       }
@@ -2877,6 +2892,11 @@
             "kind": "gap",
             "path": "docs/UX_SLICE_S04_01.md",
             "scope": "Current Welcome/General expose Unknown; no measured service/detail, backup record or version-feed positive evidenced. S04-01 original requirement remains open. This records a demonstrated gap or missing exact evidence, not implementation absence inferred from an empty register. Timezone and Reset await new actual root-owned results; other stopped slices are not restarted."
+          },
+          {
+            "kind": "gap",
+            "path": "docs/UX_FOLLOWUP_F3_ACCOUNT_STATUS.md",
+            "scope": "F3 now explicitly labels this information unreported or unchecked. No measured backup outcomes/timestamps/scope source exists; this control remains BLOCKED, not qualified by a label change."
           }
         ]
       }
@@ -2920,6 +2940,11 @@
             "kind": "gap",
             "path": "docs/UX_SLICE_S04_01.md",
             "scope": "Current Welcome/General expose Unknown; no measured service/detail, backup record or version-feed positive evidenced. S04-01 original requirement remains open. This records a demonstrated gap or missing exact evidence, not implementation absence inferred from an empty register. Timezone and Reset await new actual root-owned results; other stopped slices are not restarted."
+          },
+          {
+            "kind": "gap",
+            "path": "docs/UX_FOLLOWUP_F3_ACCOUNT_STATUS.md",
+            "scope": "F3 now explicitly labels this information unreported or unchecked. No measured installed-versus-available update metadata source exists; this control remains BLOCKED, not qualified by a label change."
           }
         ]
       }
