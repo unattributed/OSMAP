@@ -327,10 +327,12 @@ fn imported_selection_rechecks_ownership_and_current_membership_before_draft_wri
 
 #[test]
 fn unavailable_contact_book_does_not_block_current_imported_recipient() {
+    use std::os::unix::fs::PermissionsExt as _;
     let (mut app,root,store)=fixture();
     let snapshot=imported_recipient_fixture("alice@example.com","key@example.test",&['A']);
     let id=snapshot.choices[0].id.clone();
     std::fs::create_dir_all(&root).unwrap();
+    std::fs::set_permissions(&root, std::fs::Permissions::from_mode(0o700)).unwrap();
     std::fs::write(root.join("blocked-contact-store"),b"public fixture, not a directory").unwrap();
     app.gateway.contacts_store=Some(ContactStore::new(root.join("blocked-contact-store")));
     app.gateway.compose_imported_recipients=Some(snapshot);
