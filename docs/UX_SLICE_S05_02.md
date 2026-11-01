@@ -1,6 +1,6 @@
 # S05-02 — Practical public-key and email-policy management
 
-**Current 2026-11-01: owner confirms ASC import, automatic email recognition and Off default work. The Compose imported-recipient integration and the new People-style Contacts directory are installed and agent-qualified; their owner usability checks remain pending. Historical failures are retained.**
+**Current 2026-11-01: owner confirms ASC import, automatic email recognition and Off default work. The owner has now reported `UAT = PASS` for the installed People-style Contacts and Compose handoff. Historical failures are retained.**
 
 Started 2026-10-31 (America/Toronto) from signed S05-01 closeout
 `279df22e6ceb384410b151a4acc9134e67dc3e25`. The operator acknowledged the
@@ -916,3 +916,20 @@ stale refined source-inventory hash: the test-only assertions shifted two existi
 changes only those locations, timestamps and coupled hashes; counts and runtime
 classifications are unchanged. Focused V11 and V10 governance checks pass.
 The full gate is retried only after this demonstrated metadata correction.
+
+
+## Contacts and Compose owner acceptance — 2026-11-01
+
+Following the completed installed Contacts/Compose handoff, the owner replied
+exactly **`UAT = PASS`**. Record PASS for that final walkthrough: the People
+sidebar entry, dedicated contact/name/email/policy table, imported and saved
+recipients, search and the linked Compose flow. The earlier explicit successful
+ASC import/automatic identity/default-Off result remains preserved, as do all
+historical failed attempts and their corrected engineering evidence.
+
+This closes the requested Contacts/Compose human acceptance step and accepts
+Contacts-selection control R2-04-009. It does not bulk-promote the other mapped
+S05 controls, accept the whole epic or approve production release. No new product
+code, host action or credential-backed test is needed to record the owner result.
+The existing four signed delivery commits through121b39f and installed Webfe193
+remain the functional basis; this update changes acceptance records only.

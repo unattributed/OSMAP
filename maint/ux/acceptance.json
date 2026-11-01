@@ -5379,7 +5379,7 @@
       ],
       "legacy_case_ids": [],
       "result": {
-        "status": "PARTIALLY_VERIFIED",
+        "status": "ACCEPTED",
         "executed": true,
         "evidence": [
           {
@@ -5391,6 +5391,11 @@
             "kind": "qa_execution",
             "path": "docs/UX_SLICE_S05_02.md",
             "scope": "Nov1 owner Outlook People reference implemented at signed2e1ddb: dedicated table/people icon/name/email/effective encryption, search/filter, safe WriteGET/Addname and existing CRUD. Native core12/routes14/UI4 actualPASS; actual synthetic browser functional/persistence/RemoveKeep and six-layoutPASS. Matching Webfe193 installed; owned Directory4rows/4keys/1contact, preservednames/records/policy, foreignrefusal. Owner new Contacts/Compose and final-reference acceptance pending; remains PARTIALLY_VERIFIED."
+          },
+          {
+            "kind": "human_uat",
+            "path": "docs/UX_SLICE_S05_02.md",
+            "scope": "2026-11-01 owner explicitly states UAT = PASS after final installed People-style Contacts/Compose handoff. Accepts delivered Contacts/recipient-selection walkthrough alongside existing source/negative/native/browser/installed evidence. Historical failures preserved; other mapped controls/epic/production release not accepted by inference."
           }
         ]
       }

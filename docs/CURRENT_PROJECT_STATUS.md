@@ -1,5 +1,13 @@
 # Current Project Status
 
+2026-11-01 (America/Toronto) — **Contacts/Compose owner UAT PASS.**
+The owner explicitly reports `UAT = PASS` after the installed People-style
+Contacts and Compose handoff. The latest T09 walkthrough is PASS and Contacts
+selection R2-04-009 is ACCEPTED. Earlier public import/automatic email/default-Off
+PASS and historical failures remain recorded. This acceptance-only update leaves
+other mapped S05 controls, whole-epic acceptance and production release separate.
+No product code or live account/state change is performed.
+
 2026-11-01 (America/Toronto) — **People-style Contacts directory installed on obsd1.**
 The sidebar people icon opens a dedicated table of names, email addresses and
 effective encryption policies. Saved contacts and imported-key identities are

@@ -1,5 +1,12 @@
 # Decision Log
 
+2026-11-01 — Record the owner’s explicit `UAT = PASS` for the delivered People
+Contacts/Compose walkthrough. Accept the existing Contacts-selection control,
+retain prior import success and failure history, and preserve all other mapped
+control statuses. This is an acceptance-record update; no additional owner test,
+product change or host operation is required. Whole-slice/epic and production
+release claims retain their original acceptance boundaries.
+
 2026-11-01 — Follow the owner’s Outlook People reference for a dedicated Contacts
 table and compact people navigation icon. Read the existing owned contact/key
 sources together rather than copying imported addresses into another durable

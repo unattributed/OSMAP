@@ -1,3 +1,5 @@
+2026-11-01 (America/Toronto) — **Contacts/Compose owner UAT PASS.** Owner explicitly reports `UAT = PASS` for the delivered People-style Contacts and Compose walkthrough. Other mapped control statuses remain unchanged; no whole-epic or production approval inferred.
+
 2026-11-01 (America/Toronto) — **People-style Contacts UAT_READY: dedicated table and people icon installed; owner check pending.**
 
 2026-11-01 (America/Toronto) — **Compose imported-recipient picker installed; owner import succeeds, picker usability check pending.**
@@ -153,7 +155,7 @@ slice using the same failure-analysis method. See
       ],
       "frontend_backend_outcome": "Signed-in user sees imported keys with exact email associations and applied policy, and can manage public import/bind/policy/remove through fresh authorization.",
       "essential_qa": "T01-T08 source/native/browser/installed checks and independent review; actual visual owner T09 separate.",
-      "next_action": "Owner checks installed People-style Contacts table, real imported/saved rows and encryption policies, search and Write/Add name; prior import PASS retained. Normal signed GitHub delivery checked in final receipt; whole epic/production release separate.",
+      "next_action": "Owner-requested Contacts/Compose walkthrough accepted; record-only signed synchronization. Preserve remaining mapped S05 control acceptance boundaries; no additional Contacts UAT, product or host action required.",
       "dependencies": [
         {
           "owner": "/root",
@@ -391,7 +393,7 @@ slice using the same failure-analysis method. See
     "slice": "S05-02",
     "specification": {
       "path": "docs/UX_SLICE_S05_02.md",
-      "sha256": "bc6eb73b8a16bdc1a267867f17006ce9ed15a8a97665b4a56142993b82212aa5"
+      "sha256": "946141ea060f127defb634fa1b5fb9a440aec6391751fac84dd6007c7b46092b"
     },
     "design": {
       "journey": "Signed-in user sees imported keys with exact email associations and applied policy, and can manage public import/bind/policy/remove through fresh authorization.",
@@ -592,13 +594,14 @@ slice using the same failure-analysis method. See
         "preserved": "S04/S05-01 acceptance, all original obligations, owner keys/credentials/policy and mail availability.",
         "owner": "/root",
         "reviewer": "/root/s05_protocol_review",
-        "status": "PARTIAL",
+        "status": "PASS",
         "evidence": [
           "Nov1ownerimportfailure; liveaudit04:02:50/04:06:34UTC acceptsprimaryandTOTPthen503. Privateevidence s05-02-import-20261101.",
           "Later05:26primary403 and05:33acceptedfactor503retained; nativepermission+primaryroutecorrectionsnowinstalled/controlledlivePASS; freshownerbrowserretestpending,noownerimportbyagent.",
           "Owner explicitly confirms new ASC import/automatic email/Off default successful. New installed Compose picker T09 remains pending; prior failures retained as history.",
           "Prior import ownerPASS remains; Contacts page usability explicitly rejected. Outlook-style directory revision pending agent implementation/qualification and human acceptance.",
-          "New People-style Contacts directory installed and agent-qualified; owner check pending; old page rejection and prior key import PASS preserved."
+          "New People-style Contacts directory installed and agent-qualified; owner check pending; old page rejection and prior key import PASS preserved.",
+          "2026-11-01 explicit owner `UAT = PASS` after delivered Contacts/Compose T09 walkthrough; current People directory/recipient flow accepted, prior import PASS and historical failures preserved. Other mapped control statuses not promoted."
         ]
       }
     ],
@@ -606,10 +609,10 @@ slice using the same failure-analysis method. See
     "human_exit": "Owner accepts actual installed key/email/policy journey with selected authenticated actions."
   },
   "human_acceptance": {
-    "status": "PENDING",
-    "reference": "Owner rejected the historical plain Contacts page; new Outlook People-style directory is installed and agent-qualified. New directory/Compose owner UAT pending; prior import/automatic email/Off default owner PASS preserved."
+    "status": "PASS",
+    "reference": "2026-11-01 owner explicitly replies `UAT = PASS` to final installed People-style Contacts/Compose T09 handoff. Scope is that requested walkthrough; prior import/automatic identity/default-Off PASS and earlier failures retained. No bulk acceptance of other mapped controls or production release."
   },
-  "next_action": "Owner checks installed People-style Contacts table, real imported/saved rows and encryption policies, search and Write/Add name; prior import PASS retained. Normal signed GitHub delivery checked in final receipt; whole epic/production release separate."
+  "next_action": "Owner-requested Contacts/Compose walkthrough accepted; record-only signed synchronization. Preserve remaining mapped S05 control acceptance boundaries; no additional Contacts UAT, product or host action required."
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->
