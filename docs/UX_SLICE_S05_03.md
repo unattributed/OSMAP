@@ -264,3 +264,13 @@ added. Focused process9PASS/2fixturesignored, CWE and raw constructor scans pass
 generated maps are refreshed to the actual source. Current native libtest and a
 targeted descendant proof will check this test-only composition; the matching
 installed three production binaries need no rebuild or reinstallation.
+
+
+The current signed test-only correction7e51aac builds the native libtest in
+118.325seconds (actor117.804seconds). The exact duplex/descendant case actually
+runs1test and passes in0.32seconds (outer0.696seconds), reporting
+`DESCENDANT_ABSENCE=CONFIRMED`. This qualifies the changed test composition;
+matching production69f712 source and installed artifacts are reused. T01–T08
+remain PASS and infrastructure T09 remains NOT RUN. The second normal push and
+fresh GitHub equality are the final delivery conditions; their actual outcome
+is recorded separately after execution, without erasing the first failed gate.

@@ -27,7 +27,7 @@ slice using the same failure-analysis method. See
   "slice": "S05-03",
   "original_requirement": "GPGME execution, account isolation, resource-limited workers, cancellation and redacted errors",
   "source_baseline": "5ebe610204b602a2c715a8854164b42495d92ffc",
-  "state": "IN_PROGRESS",
+  "state": "UAT_READY",
   "integration_owner": "/root",
   "roles": {
     "project_manager": [
@@ -88,7 +88,7 @@ slice using the same failure-analysis method. See
       "requirement_ids": [],
       "frontend_backend_outcome": "Authorized existing Rust/GPGME operation completes correctly or refuses within bounds with truthful cleanup; confirmed recovery permits the next valid request.",
       "essential_qa": "Focused changed-boundary Rust tests and actual native service/worker recovery plus independent review; normal signed delivery.",
-      "next_action": "Finish test-only existing-fixture dispatch correction after ordinary CWE refusal, qualify native changed test composition, repeat normal signed delivery; T09 pending.",
+      "next_action": "Complete second ordinary signed GitHub delivery after actual native test-only correction PASS; owner T09 infrastructure acceptance follows.",
       "dependencies": [
         {
           "owner": "/root",
@@ -149,6 +149,10 @@ slice using the same failure-analysis method. See
         {
           "stage": "source_tests",
           "reference": "FirstnormalpushFAIL232.221s after2147RustPASS77ignored/clippyfmtV10V11V13PASS; CWEnewtestdirectconstructorrefusal. Reuseexistingauthfixturefactory/testonlydispatch; focusedprocess9PASS2ignored/CWE/rawboundaryPASS, currentnativeandnormalpushpending. Productionlogicunchanged."
+        },
+        {
+          "stage": "native_tests",
+          "reference": "Signed7e51testonlyfactorycorrection actualcurrentnativeLIBTESTbuildPASS118.325s; exactduplex/descendant1PASS0.32s+DESCENDANT_ABSENCE=CONFIRMED. Production69fcode/installed3binariesunchanged; no reinstall. Ordinarypush02pending; firstpushFAILretained."
         }
       ]
     }
@@ -163,7 +167,7 @@ slice using the same failure-analysis method. See
       "timebox_seconds": 14400,
       "started_at": "2026-11-01T14:54:17Z",
       "elapsed_status": "MEASURED",
-      "elapsed_seconds": 4874
+      "elapsed_seconds": 5671
     },
     "attempts": [],
     "next_attempt": null
@@ -173,7 +177,7 @@ slice using the same failure-analysis method. See
     "slice": "S05-03",
     "specification": {
       "path": "docs/UX_SLICE_S05_03.md",
-      "sha256": "1f91cba51198a821911c580b117a64bdaf0cc39eaf8ad33052d79539d4a62e12"
+      "sha256": "46d36fa44c9e8660d4587423311ba367f8e9bafe43a54ca543c87963452af81d"
     },
     "design": {
       "journey": "Authorized existing Rust/GPGME operation completes correctly or refuses within bounds with truthful cleanup; confirmed recovery permits the next valid request.",
@@ -358,7 +362,7 @@ slice using the same failure-analysis method. See
     "status": "PENDING",
     "reference": "New S05-03 infrastructure acceptance follows agent-owned completion; prior Contacts/Compose UAT PASS preserved."
   },
-  "next_action": "Finish test-only existing-fixture dispatch correction after ordinary CWE refusal, qualify native changed test composition, repeat normal signed delivery; T09 pending."
+  "next_action": "Complete second ordinary signed GitHub delivery after actual native test-only correction PASS; owner T09 infrastructure acceptance follows."
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->
