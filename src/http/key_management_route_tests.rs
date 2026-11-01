@@ -1,4 +1,8 @@
 use super::*;
+// Parser-boundary fixture only; actual key packets are exercised by the native journey.
+const UPLOAD_CERTIFICATE: &str =
+    "-----BEGIN PGP PUBLIC KEY BLOCK-----\r\n\r\nYWJj+ZGVm\r\n-----END PGP PUBLIC KEY BLOCK-----";
+const UPLOAD_PASSWORD: &str = "public +&= café upload password";
 struct KeyChangeSpy {
     inner: StubGateway,
     calls: Arc<AtomicUsize>,
@@ -264,12 +268,36 @@ impl BrowserGateway for KeyChangeSpy {
     }
     fn change_keys(
         &self,
-        _context: &AuthenticationContext,
+        context: &AuthenticationContext,
         _session: &ValidatedSession,
         _token: &SessionToken,
-        _request: crate::key_management::MutationRequest<'_>,
+        request: crate::key_management::MutationRequest<'_>,
     ) -> crate::key_management::MutationOutcome {
         self.calls.fetch_add(1, Ordering::SeqCst);
+        if context.user_agent == "OSMAP/KeyUpload" {
+            let result = if request.password != UPLOAD_PASSWORD || request.totp != "123456" {
+                Err(crate::key_management::Error::Authentication)
+            } else if let crate::key_management::Action::ImportPublic {
+                certificate,
+                expected_primary_fingerprint,
+            } = request.action
+            {
+                crate::key_management::validate_public_certificate(
+                    certificate,
+                    expected_primary_fingerprint,
+                )
+                .map(|()| {
+                    assert_eq!(certificate, UPLOAD_CERTIFICATE.as_bytes());
+                    assert_eq!(expected_primary_fingerprint, "A".repeat(40));
+                })
+            } else {
+                panic!("multipart route delegated a non-import action");
+            };
+            return crate::key_management::MutationOutcome {
+                result,
+                audit_events: vec![],
+            };
+        }
         crate::key_management::MutationOutcome {
             result: Err(crate::key_management::Error::Unavailable),
             audit_events: vec![],
@@ -362,8 +390,167 @@ fn key_management_post_reaches_gateway_only_after_session_csrf_and_strict_fields
         &request("POST", "/settings/keys/change", &headers, &import),
         "127.0.0.1",
     );
-    assert_eq!(accepted_form.response.status_code, 503);
-    assert_eq!(calls.load(Ordering::SeqCst), 2);
+    assert_eq!(accepted_form.response.status_code, 400);
+    assert_eq!(calls.load(Ordering::SeqCst), 1);
+}
+
+#[test]
+fn key_management_multipart_upload_routes_exact_bytes_and_rejects_ambiguous_input() {
+    fn upload(fields: &[(&str, &str)], files: &[(&str, &str)], close: bool) -> HttpRequest {
+        let boundary = "osmap-key-upload-test";
+        let mut body = String::new();
+        for (name, value) in fields {
+            body.push_str(&format!("--{boundary}\r\nContent-Disposition: form-data; name=\"{name}\"\r\n\r\n{value}\r\n"));
+        }
+        for (filename, bytes) in files {
+            body.push_str(&format!("--{boundary}\r\nContent-Disposition: form-data; name=\"attachment\"; filename=\"{filename}\"\r\nContent-Type: application/pgp-keys\r\n\r\n{bytes}\r\n"));
+        }
+        if close {
+            body.push_str(&format!("--{boundary}--\r\n"));
+        }
+        let raw = format!("POST /settings/keys/change HTTP/1.1\r\nHost: localhost\r\nOrigin: https://localhost\r\nUser-Agent: OSMAP/KeyUpload\r\nCookie: osmap_session={}\r\nContent-Type: multipart/form-data; boundary={boundary}\r\nContent-Length: {}\r\n\r\n{body}", "a".repeat(64), body.len());
+        crate::http_parse::parse_http_request(&raw, &HttpPolicy::default()).unwrap()
+    }
+    let calls = Arc::new(AtomicUsize::new(0));
+    let app = BrowserApp::new(
+        HttpPolicy::default(),
+        KeyChangeSpy {
+            inner: StubGateway::default(),
+            calls: calls.clone(),
+        },
+    );
+    let revision = "a".repeat(64);
+    let fingerprint = "A".repeat(40);
+    let fields = [
+        ("key_action", "import_public"),
+        ("binding_revision", "0"),
+        ("public_inventory_revision", revision.as_str()),
+        ("expected_primary_fingerprint", fingerprint.as_str()),
+        (
+            "csrf_token",
+            "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210",
+        ),
+        ("current_password", UPLOAD_PASSWORD),
+        ("totp_code", "123456"),
+    ];
+    let valid = upload(
+        &fields,
+        &[(
+            "publickey.cBwZTCpU@protonmail.com-02b34119c22074fc68b10e23e3294df8de68c834.asc",
+            UPLOAD_CERTIFICATE,
+        )],
+        true,
+    );
+    let result = app.handle_request(&valid, "127.0.0.1");
+    assert_eq!(result.response.status_code, 303);
+    assert_eq!(calls.load(Ordering::SeqCst), 1);
+    // Structural refusals must never delegate to the mutation boundary.
+    let oversized = "A".repeat(64 * 1024 + 1);
+    let mut mixed_fields = fields.to_vec();
+    mixed_fields.push(("certificate", UPLOAD_CERTIFICATE));
+    for (label, req) in [
+        ("missing", upload(&fields, &[], true)),
+        ("empty", upload(&fields, &[("key.asc", "")], true)),
+        (
+            "two",
+            upload(
+                &fields,
+                &[
+                    ("one.asc", UPLOAD_CERTIFICATE),
+                    ("two.asc", UPLOAD_CERTIFICATE),
+                ],
+                true,
+            ),
+        ),
+        (
+            "oversized",
+            upload(&fields, &[("key.asc", &oversized)], true),
+        ),
+        (
+            "suffix",
+            upload(&fields, &[("key.txt", UPLOAD_CERTIFICATE)], true),
+        ),
+        (
+            "malformed",
+            upload(&fields, &[("key.asc", UPLOAD_CERTIFICATE)], false),
+        ),
+        (
+            "mixed",
+            upload(&mixed_fields, &[("key.asc", UPLOAD_CERTIFICATE)], true),
+        ),
+    ] {
+        let result = app.handle_request(&req, "127.0.0.1");
+        assert_eq!(result.response.status_code, 400, "{label}");
+        assert_eq!(calls.load(Ordering::SeqCst), 1, "{label}");
+        assert!(!body_text(&result).contains(UPLOAD_PASSWORD), "{label}");
+        assert!(!body_text(&result).contains("YWJj+ZGVm"), "{label}");
+    }
+    let no_csrf = fields
+        .iter()
+        .copied()
+        .filter(|(name, _)| *name != "csrf_token")
+        .collect::<Vec<_>>();
+    for (label, mut req) in [
+        (
+            "no-csrf",
+            upload(&no_csrf, &[("key.asc", UPLOAD_CERTIFICATE)], true),
+        ),
+        ("csrf", valid.clone()),
+        ("origin", valid.clone()),
+        ("session", valid.clone()),
+    ] {
+        match label {
+            "csrf" => {
+                req.body = String::from_utf8(req.body)
+                    .unwrap()
+                    .replace(fields[4].1, &"d".repeat(64))
+                    .into_bytes()
+            }
+            "origin" => {
+                req.headers
+                    .insert("origin".into(), "https://foreign.example.test".into());
+            }
+            "session" => {
+                req.headers.remove("cookie");
+            }
+            _ => {}
+        }
+        let result = app.handle_request(&req, "127.0.0.1");
+        if label == "session" {
+            assert_eq!(result.response.status_code, 303);
+            assert_eq!(location_header(&result), "/login");
+        } else {
+            assert_eq!(result.response.status_code, 403, "{label}");
+        }
+        assert_eq!(calls.load(Ordering::SeqCst), 1, "{label}");
+    }
+    // These are transport/gateway-adapter assertions. Real factor/password
+    // refusal and private-key authority remain covered at their existing seams.
+    for (name, wrong) in [
+        ("current_password", "wrong public password"),
+        ("totp_code", "000000"),
+    ] {
+        let changed = fields
+            .iter()
+            .map(|(key, value)| (*key, if *key == name { wrong } else { *value }))
+            .collect::<Vec<_>>();
+        let result = app.handle_request(
+            &upload(&changed, &[("key.asc", UPLOAD_CERTIFICATE)], true),
+            "127.0.0.1",
+        );
+        assert_eq!(result.response.status_code, 403);
+        assert!(!body_text(&result).contains(UPLOAD_PASSWORD));
+        assert!(!body_text(&result).contains(wrong));
+    }
+    assert_eq!(calls.load(Ordering::SeqCst), 3);
+    let private =
+        "-----BEGIN PGP PRIVATE KEY BLOCK-----\r\nfixture\r\n-----END PGP PRIVATE KEY BLOCK-----";
+    let result = app.handle_request(
+        &upload(&fields, &[("private.asc", private)], true),
+        "127.0.0.1",
+    );
+    assert_eq!(result.response.status_code, 400);
+    assert!(!body_text(&result).contains("PRIVATE KEY BLOCK"));
 }
 
 #[test]
@@ -685,11 +872,16 @@ fn security_overview_loads_owned_public_binding_and_opens_real_key_management() 
         use std::io::Write as _;
         let mut options = std::fs::OpenOptions::new();
         options.write(true).create_new(true);
-        #[cfg(unix)] {
+        #[cfg(unix)]
+        {
             use std::os::unix::fs::OpenOptionsExt as _;
             options.mode(0o600);
         }
-        options.open(path).unwrap().write_all(html.as_bytes()).unwrap();
+        options
+            .open(path)
+            .unwrap()
+            .write_all(html.as_bytes())
+            .unwrap();
     }
     assert!(html.contains("Account binding configured"));
     assert!(html.contains(&"A".repeat(40)));

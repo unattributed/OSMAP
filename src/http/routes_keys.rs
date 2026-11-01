@@ -4,6 +4,58 @@ use crate::key_management::{Action, Error, MutationRequest};
 use crate::openpgp_bindings::Requirement;
 use std::collections::BTreeMap;
 
+fn key_form(body: &[u8], content_type: Option<&str>) -> Result<BTreeMap<String, String>, Error> {
+    if content_type.is_some_and(crate::http_form::is_multipart_form_data) {
+        let limit = crate::key_management::MAX_PUBLIC_CERTIFICATE;
+        let mut parsed = parse_compose_form(
+            body,
+            content_type,
+            12,
+            256 * 1024,
+            ComposePolicy {
+                max_attachments: 1,
+                attachment_max_bytes: limit,
+                total_attachment_max_bytes: limit,
+                ..ComposePolicy::default()
+            },
+        )
+        .map_err(|_| Error::Invalid)?;
+        if parsed.upload_error.is_some()
+            || parsed.fields.contains_key("certificate")
+            || parsed.fields.get("key_action").map(String::as_str) != Some("import_public")
+            || parsed.attachments.len() != 1
+        {
+            return Err(Error::Invalid);
+        }
+        let upload = parsed.attachments.pop().ok_or(Error::Invalid)?;
+        if upload.body.is_empty()
+            || upload.body.len() > limit
+            || !upload.body.is_ascii()
+            || !upload
+                .filename
+                .rsplit_once('.')
+                .is_some_and(|(_, suffix)| suffix.eq_ignore_ascii_case("asc"))
+        {
+            return Err(Error::Invalid);
+        }
+        // The filename and MIME type are upload metadata, never key authority
+        // or filesystem paths. Existing native inspection validates the packets.
+        let certificate = String::from_utf8(upload.body).map_err(|_| Error::Invalid)?;
+        parsed.fields.insert("certificate".into(), certificate);
+        Ok(parsed.fields)
+    } else if allows_urlencoded_request_body(content_type) {
+        let form = parse_urlencoded_form(body, 12, 256 * 1024).map_err(|_| Error::Invalid)?;
+        if form.get("key_action").map(String::as_str) == Some("import_public")
+            || form.contains_key("certificate")
+        {
+            return Err(Error::Invalid);
+        }
+        Ok(form)
+    } else {
+        Err(Error::Invalid)
+    }
+}
+
 fn requirement(value: &str) -> Result<Requirement, Error> {
     match value {
         "required" => Ok(Requirement::Required),
@@ -152,11 +204,12 @@ impl<G: BrowserGateway> BrowserApp<G> {
             Ok(v) => v,
             Err(r) => return r,
         };
-        let mut form = if request.query_params.is_empty()
-            && allows_urlencoded_request_body(
+        let mut form = if request.query_params.is_empty() {
+            key_form(
+                &request.body,
                 request.headers.get("content-type").map(String::as_str),
-            ) {
-            parse_urlencoded_form(&request.body, 12, 256 * 1024).ok()
+            )
+            .ok()
         } else {
             None
         };
@@ -166,7 +219,7 @@ impl<G: BrowserGateway> BrowserApp<G> {
                     400,
                     "Bad Request",
                     "Key Change Not Saved",
-                    "<p>The key management form could not be read. Reload before retrying.</p>",
+                    "<p>The key management form could not be read. Reload before retrying. To import a public key, choose one nonempty .asc file up to 64 KiB. Pasted certificates are not accepted.</p>",
                 ),
                 audit_events,
             };
@@ -279,6 +332,105 @@ mod tests {
             ("binding_revision".into(), "0".into()),
         ]
         .into()
+    }
+    fn upload_form(fields: &[(&str, &str)], files: &[(&str, &[u8])]) -> Vec<u8> {
+        let mut body = Vec::new();
+        for (name, value) in fields {
+            body.extend_from_slice(format!("--key-upload\r\nContent-Disposition: form-data; name=\"{name}\"\r\n\r\n{value}\r\n").as_bytes());
+        }
+        for (filename, bytes) in files {
+            body.extend_from_slice(format!("--key-upload\r\nContent-Disposition: form-data; name=\"attachment\"; filename=\"{filename}\"\r\nContent-Type: application/octet-stream\r\n\r\n").as_bytes());
+            body.extend_from_slice(bytes);
+            body.extend_from_slice(b"\r\n");
+        }
+        body.extend_from_slice(b"--key-upload--\r\n");
+        body
+    }
+    const UPLOAD_TYPE: Option<&str> = Some("multipart/form-data; boundary=key-upload");
+    #[test]
+    fn public_key_upload_preserves_file_and_credentials_without_filename_authority() {
+        let armor = b"-----BEGIN PGP PUBLIC KEY BLOCK-----\r\n\r\nYWJj+ZGVm\r\n-----END PGP PUBLIC KEY BLOCK-----\r\n";
+        let fields = [
+            ("key_action", "import_public"),
+            ("binding_revision", "0"),
+            ("public_inventory_revision", &"a".repeat(64)),
+            ("expected_primary_fingerprint", &"A".repeat(40)),
+            ("current_password", "synthetic +&= café"),
+            ("totp_code", "123456"),
+            ("csrf_token", "synthetic-csrf"),
+        ];
+        let parsed = key_form(
+            &upload_form(&fields, &[("publickey.cBwZTCpU@protonmail.com-02b34119c22074fc68b10e23e3294df8de68c834.asc", armor)]),
+            UPLOAD_TYPE,
+        )
+        .unwrap();
+        assert_eq!(parsed.get("certificate").unwrap().as_bytes(), armor);
+        assert_eq!(
+            parsed.get("current_password").unwrap(),
+            "synthetic +&= café"
+        );
+        assert!(!parsed.contains_key("attachment"));
+        assert!(!parsed.contains_key("filename"));
+        assert!(
+            matches!(action(&parsed).unwrap().0, Action::ImportPublic { certificate, .. } if certificate == armor)
+        );
+    }
+    #[test]
+    fn public_key_upload_requires_one_bounded_ascii_asc_file_and_no_mixed_source() {
+        let fields = [("key_action", "import_public")];
+        let limit = crate::key_management::MAX_PUBLIC_CERTIFICATE;
+        assert!(key_form(
+            &upload_form(&fields, &[("key.ASC", &vec![b'A'; limit])]),
+            UPLOAD_TYPE
+        )
+        .is_ok());
+        for files in [
+            vec![],
+            vec![("key.asc", b"".as_slice())],
+            vec![("key.txt", b"public".as_slice())],
+            vec![("../key.asc", b"public".as_slice())],
+            vec![("key.asc", b"\xff".as_slice())],
+            vec![
+                ("one.asc", b"first".as_slice()),
+                ("two.asc", b"second".as_slice()),
+            ],
+        ] {
+            assert_eq!(
+                key_form(&upload_form(&fields, &files), UPLOAD_TYPE).err(),
+                Some(Error::Invalid)
+            );
+        }
+        let oversized = vec![b'A'; limit + 1];
+        assert!(key_form(
+            &upload_form(&fields, &[("key.asc", &oversized)]),
+            UPLOAD_TYPE
+        )
+        .is_err());
+        for fields in [
+            vec![("key_action", "import_public"), ("certificate", "pasted")],
+            vec![
+                ("key_action", "import_public"),
+                ("key_action", "import_public"),
+            ],
+            vec![("key_action", "clear_account")],
+        ] {
+            assert!(key_form(
+                &upload_form(&fields, &[("key.asc", b"public")]),
+                UPLOAD_TYPE
+            )
+            .is_err());
+        }
+        assert!(key_form(
+            b"key_action=import_public&certificate=pasted",
+            Some("application/x-www-form-urlencoded")
+        )
+        .is_err());
+        let ordinary = key_form(
+            b"key_action=clear_account&binding_revision=0",
+            Some("application/x-www-form-urlencoded"),
+        )
+        .unwrap();
+        assert!(matches!(action(&ordinary).unwrap().0, Action::ClearAccount));
     }
     #[test]
     fn key_management_form_rejects_authority_fields_and_noncanonical_revision() {

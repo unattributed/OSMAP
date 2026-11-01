@@ -5,7 +5,7 @@ use std::fs;
 use std::os::unix::fs::PermissionsExt;
 
 const ACCOUNT: &str = "alice@example.test";
-const PASSWORD: &str = "public synthetic key fixture password";
+const PASSWORD: &str = "public synthetic +&= café key fixture password";
 const RFC_SECRET: &[u8] = b"12345678901234567890";
 
 struct Fixture {
@@ -473,27 +473,14 @@ fn native_runtime_key_management_journey() {
         .unwrap()
         .iter()
         .any(|k| k.primary.fingerprint == bob_fp));
-    // Exercise the actual parsed HTTP/form -> selected Runtime -> factor ->
-    // native RPC path. Encode '+' and CRLF literally rather than relying on a
-    // direct MutationRequest to stand in for the browser's form submission.
-    let pasted_certificate = format!(
-        " \r\n{}\r\n\t",
-        std::str::from_utf8(&certificate.stdout).unwrap()
-    );
-    let encode = |value: &str| {
-        value
-            .bytes()
-            .map(|byte| {
-                if byte.is_ascii_alphanumeric() {
-                    char::from(byte).to_string()
-                } else {
-                    format!("%{byte:02X}")
-                }
-            })
-            .collect::<String>()
-    };
+    // Exercise an actual multipart .asc upload through parsed HTTP -> selected
+    // Runtime -> factor -> native RPC. Text parts retain '+', '&', '=' and UTF-8
+    // literally; they must never receive URL-form decoding.
+    let uploaded_certificate = std::str::from_utf8(&certificate.stdout).unwrap();
+    let boundary = "osmap-native-key-upload";
     let fresh_code = next_code();
-    let body = [
+    let mut body = String::new();
+    for (name, value) in [
         ("key_action", "import_public"),
         ("binding_revision", "3"),
         (
@@ -501,18 +488,18 @@ fn native_runtime_key_management_journey() {
             removed.public_inventory_revision.as_deref().unwrap(),
         ),
         ("expected_primary_fingerprint", bob_fp.as_str()),
-        ("certificate", pasted_certificate.as_str()),
         ("current_password", PASSWORD),
         ("totp_code", fresh_code.as_str()),
         ("csrf_token", f.session.record.csrf_token.as_str()),
-    ]
-    .into_iter()
-    .map(|(name, value)| format!("{name}={}", encode(value)))
-    .collect::<Vec<_>>()
-    .join("&");
+    ] {
+        body.push_str(&format!(
+            "--{boundary}\r\nContent-Disposition: form-data; name=\"{name}\"\r\n\r\n{value}\r\n"
+        ));
+    }
+    body.push_str(&format!("--{boundary}\r\nContent-Disposition: form-data; name=\"attachment\"; filename=\"publickey.cBwZTCpU@protonmail.com-02b34119c22074fc68b10e23e3294df8de68c834.asc\"\r\nContent-Type: application/pgp-keys\r\n\r\n{uploaded_certificate}\r\n--{boundary}--\r\n"));
     let policy = crate::http::HttpPolicy::default();
     let raw = format!(
-        "POST /settings/keys/change HTTP/1.1\r\nHost: localhost\r\nOrigin: https://localhost\r\nUser-Agent: Synthetic/Keys-HTTP\r\nCookie: osmap_session={}\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: {}\r\n\r\n{}",
+        "POST /settings/keys/change HTTP/1.1\r\nHost: localhost\r\nOrigin: https://localhost\r\nUser-Agent: Synthetic/Keys-HTTP\r\nCookie: osmap_session={}\r\nContent-Type: multipart/form-data; boundary={boundary}\r\nContent-Length: {}\r\n\r\n{}",
         f.token.as_str(), body.len(), body,
     );
     let parsed = crate::http_parse::parse_http_request(&raw, &policy).unwrap();
@@ -530,7 +517,7 @@ fn native_runtime_key_management_journey() {
         ("native_result", "Ok(())".to_string()),
         (
             "public_certificate_bytes",
-            pasted_certificate.trim().len().to_string(),
+            uploaded_certificate.trim().len().to_string(),
         ),
     ] {
         assert!(diagnostic

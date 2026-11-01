@@ -73,7 +73,9 @@ slice using the same failure-analysis method. See
     "src/http_gateway_auth.rs",
     "src/http_gateway_account.rs",
     "maint/openpgp-runtime/inventory.c",
-    "maint/openpgp-runtime/deployment_admin_prepare.py"
+    "maint/openpgp-runtime/deployment_admin_prepare.py",
+    "src/send.rs",
+    "src/http_form.rs"
   ],
   "outcomes": [
     {
@@ -117,7 +119,7 @@ slice using the same failure-analysis method. See
       ],
       "frontend_backend_outcome": "Signed-in user sees imported keys with exact email associations and applied policy, and can manage public import/bind/policy/remove through fresh authorization.",
       "essential_qa": "T01-T08 source/native/browser/installed checks and independent review; actual visual owner T09 separate.",
-      "next_action": "Final independently reviewed signed GitHub preservation, then one owner fresh browser import retest. Native permission and selected-primary corrections installed; S05-02/T09 remain open.",
+      "next_action": "Implement and qualify bounded .asc file upload with exact original filename, preserve current credential-refusal UNKNOWN, deploy matching Web only and complete normal signed delivery.",
       "dependencies": [
         {
           "owner": "/root",
@@ -127,11 +129,11 @@ slice using the same failure-analysis method. See
         }
       ],
       "stages": {
-        "implementation": "PASS",
-        "source_tests": "PASS",
-        "native_tests": "PASS",
-        "deployed_qa": "PASS",
-        "independent_review": "PASS",
+        "implementation": "PENDING",
+        "source_tests": "PENDING",
+        "native_tests": "PENDING",
+        "deployed_qa": "PENDING",
+        "independent_review": "PENDING",
         "recovery": "PASS"
       },
       "evidence": [
@@ -218,6 +220,10 @@ slice using the same failure-analysis method. See
         {
           "stage": "independent_review",
           "reference": "NEW routing-umask-independent-review.json SHA47a60aa20750ea0846b52239664f45cb91f3cc34bf20ec7905c71579a7f96186 GO_AGENT_OWNED_CORRECTION_INSTALLED_QA; actual18filehashes/signedsource/native/installed/preservation reconciled. OwnerT09FAIL/importPARTIALLY_VERIFIED/S05open. Originaldaemonexactmasknotmeasured; explicit022/077differentialisobserved."
+        },
+        {
+          "stage": "deployed_qa",
+          "reference": "Newowner06:45primary403beforefactor/native, manualcorrectProtonentrycopyconfirmed. Nativeprivate-maskfixremainsinstalled; keyboxunchanged/epoch6ActiveOct30unchanged. Explicitoperatorrequestnow.ascfileuploadinsteadtextarea; exactfilename@sharedvalidatorREDretained."
         }
       ]
     }
@@ -243,7 +249,7 @@ slice using the same failure-analysis method. See
     "slice": "S05-02",
     "specification": {
       "path": "docs/UX_SLICE_S05_02.md",
-      "sha256": "50a8611fa9abeacab91923bd2c3f1b12252848a2e86f378c5b8067e918afae86"
+      "sha256": "3b424d2dd1b1ef28fc0e02dbf1ff8bf033f35079d7bc15acf2a0f5153a898eaf"
     },
     "design": {
       "journey": "Signed-in user sees imported keys with exact email associations and applied policy, and can manage public import/bind/policy/remove through fresh authorization.",
@@ -444,7 +450,7 @@ slice using the same failure-analysis method. See
     "status": "FAIL",
     "reference": "2026-11-01 ownerreports publickey02B34119C22074FC68B10E23E3294DF8DE68C834 importgenericUnavailable; bothfactorsacceptedliveaudit, nochangeconfirmed. Ownercredentials/proofmustnotbereplayed."
   },
-  "next_action": "Final independently reviewed signed GitHub preservation, then one owner fresh browser import retest. Native permission and selected-primary corrections installed; S05-02/T09 remain open."
+  "next_action": "Implement and qualify bounded .asc file upload with exact original filename, preserve current credential-refusal UNKNOWN, deploy matching Web only and complete normal signed delivery."
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->

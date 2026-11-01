@@ -1480,7 +1480,7 @@ fn hex_encode(bytes: &[u8]) -> String {
 
 /// Allowed characters for the current narrow uploaded-attachment file names.
 fn is_allowed_attachment_filename_char(ch: char) -> bool {
-    ch.is_ascii_alphanumeric() || matches!(ch, '.' | '_' | '-' | '+' | ' ' | '(' | ')')
+    ch.is_ascii_alphanumeric() || matches!(ch, '.' | '_' | '-' | '+' | '@' | ' ' | '(' | ')')
 }
 
 /// Allowed token characters for a narrow MIME content type parser.

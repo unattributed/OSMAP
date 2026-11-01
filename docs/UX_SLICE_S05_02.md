@@ -501,3 +501,39 @@ with owner T09 still failed pending a fresh result. New private review receipt
 Its precise scope distinguishes the historical primary-refusal JSON from the
 later accepted-factor503, and explicit mask differential from the unmeasured
 original live inherited mask. Prior review/evidence files remain unchanged.
+
+
+## Owner-requested ASC file upload — 2026-11-01
+
+The owner explicitly requests selecting the exported `.asc` file instead of
+printing/copying armor into a textarea. Replace only the import form with a
+bounded multipart file upload. Reuse the existing multipart parser, one-file
+64KiB policy, strict action/CSRF/origin/revisions and the same fresh primary/TOTP
+and native public-packet/full-fingerprint transaction. Filename/MIME are metadata
+only; no browser filename becomes a server path, and no uploaded file or credential
+is persisted by the web process. Other key/policy actions stay URL encoded.
+
+Required tests: actual supplied filename and661-byte public file are accepted by
+file transport; missing/empty/multiple/oversized/private or mixed text/file inputs
+fail without effect; existing selected Runtime/full HTTP native journey uses
+multipart and the previously qualified private-mask worker. Reject legacy pasted
+imports to keep one ordinary UI route. Existing attachment filename policy rejects
+`@` in the owner's exported filename; permit this ordinary metadata character
+while retaining all path/control/header/length restrictions, verified by the exact
+filename regression. No new parser, dependency, service or credential storage.
+
+The newest owner attempt is a separate failure boundary: sign-in at06:44:35UTC
+accepted both factors, then06:45:34/06:45:52UTC import confirmations were rejected
+at primary verification, before factor/native dispatch. The owner confirms manual
+clipboard transfer from the correct Proton Pass entry. Current account epoch6 is
+Active with unchanged Oct30 state/changed-at and no uncertainty marker; the owner
+keybox is unchanged. The file-upload change does not establish resolution of that
+primary refusal. Preserve it as UNKNOWN pending a successful ordinary browser
+confirmation; do not capture/replay owner secrets or reset credentials.
+
+Root owns one native/deployment queue, matching signed source and Web-only
+installation. Native build retains proven4GiB/jobs1/debug0/private-home TMP with
+600s per build; native fixture240s; Web-only installer360s with guarded rollback.
+Two same-boundary failures require combined independent reassessment before a
+changed test. Existing native worker077/atomic keybox/policy/credential/mail
+availability boundaries remain. Owner T09 and S05-02 remain open.

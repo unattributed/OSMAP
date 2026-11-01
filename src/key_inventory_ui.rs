@@ -365,7 +365,7 @@ fn binding_form(
     label: &str,
     available: bool,
 ) -> String {
-    format!(concat!("<form method=\"post\" action=\"/settings/keys/change\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"binding_revision\" value=\"{}\"><input type=\"hidden\" name=\"key_action\" value=\"{}\"><fieldset{}>{}<label>Current mailbox password<input type=\"password\" name=\"current_password\" autocomplete=\"current-password\" required maxlength=\"1024\"></label><label>Fresh authenticator code<input name=\"totp_code\" inputmode=\"numeric\" autocomplete=\"one-time-code\" pattern=\"[0-9]{{6}}\" maxlength=\"6\" required></label><button type=\"submit\">{}</button></fieldset></form>"),escape_html(csrf),revision,escape_html(action),if available{""}else{" disabled"},fields,escape_html(label))
+    format!(concat!("<form method=\"post\" action=\"/settings/keys/change\"{}><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"binding_revision\" value=\"{}\"><input type=\"hidden\" name=\"key_action\" value=\"{}\"><fieldset{}>{}<label>Current mailbox password<input type=\"password\" name=\"current_password\" autocomplete=\"current-password\" required maxlength=\"1024\"></label><label>Fresh authenticator code<input name=\"totp_code\" inputmode=\"numeric\" autocomplete=\"one-time-code\" pattern=\"[0-9]{{6}}\" maxlength=\"6\" required></label><button type=\"submit\">{}</button></fieldset></form>"),if action == "import_public" { " enctype=\"multipart/form-data\"" } else { "" },escape_html(csrf),revision,escape_html(action),if available{""}else{" disabled"},fields,escape_html(label))
 }
 fn fingerprint_input(name: &str, label: &str, value: &str, required: bool) -> String {
     format!("<label>{}<input name=\"{}\" value=\"{}\" maxlength=\"40\" pattern=\"[A-Fa-f0-9]{{40}}\" autocomplete=\"off\" spellcheck=\"false\"{}></label>",escape_html(label),escape_html(name),escape_html(value),if required{" required"}else{""})
@@ -642,7 +642,7 @@ pub(crate) fn render_key_management_panel(
         "Save protection policy",
         ready,
     );
-    let import_fields = format!("{public_revision_field}<label>OpenPGP public certificate (ASCII armoured)<textarea name=\"certificate\" maxlength=\"65536\" spellcheck=\"false\" autocomplete=\"off\" required></textarea></label>{}<p>Public keys only, up to 64 KiB. Importing a key does not enable encryption. Confirm the full primary fingerprint through a trusted channel, then approve its email association.</p>", fingerprint_input("expected_primary_fingerprint", "Expected full primary fingerprint", "", true));
+    let import_fields = format!("{public_revision_field}<label>OpenPGP public key file (.asc)<input type=\"file\" name=\"attachment\" accept=\".asc,application/pgp-keys\" required></label>{}<p>Choose one ASCII-armoured public key file, up to 64 KiB. Importing a key does not enable encryption. Confirm the full primary fingerprint through a trusted channel, then approve its email association.</p>", fingerprint_input("expected_primary_fingerprint", "Expected full primary fingerprint", "", true));
     let import_form = binding_form(
         csrf,
         revision,
@@ -777,7 +777,14 @@ mod binding_page_tests {
             assert!(opened.contains(&format!("<details id=\"{id}\" open>")));
             assert_eq!(opened.matches(" open>").count(), 1);
         }
-        assert!(enabled.contains("name=\"certificate\""));
+        assert!(enabled.contains(
+            "type=\"file\" name=\"attachment\" accept=\".asc,application/pgp-keys\" required"
+        ));
+        assert_eq!(
+            enabled.matches("enctype=\"multipart/form-data\"").count(),
+            1
+        );
+        assert!(!enabled.contains("name=\"certificate\""));
         assert!(enabled.contains("<section id=\"public-inventory\""));
         assert!(enabled.contains("name=\"public_inventory_revision\" value=\"aaaaaaaa"));
         assert!(enabled.contains("<summary>Remove public certificate</summary>"));
