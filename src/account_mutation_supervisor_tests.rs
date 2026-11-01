@@ -20,26 +20,42 @@ fn actual_owned_group_killed_direct_child_reaped_and_group_absent_within_origina
 }
 #[test]
 fn kill_permission_unknown_group_and_late_cleanup_are_never_success_proofs() {
-    let mut child = sleeper();
+    let mut denied = sleeper();
     let deadline = Instant::now() + Duration::from_millis(100);
     assert!(cleanup_owned_group_with(
-        &mut child,
+        &mut denied,
         deadline,
         |_| Err(std::io::Error::from_raw_os_error(libc::EPERM)),
         |_| Ok(false)
     )
     .is_err());
+    cleanup_owned_group_before(&mut denied, Instant::now() + Duration::from_millis(100)).unwrap();
+    let mut unknown = sleeper();
     assert!(cleanup_owned_group_with(
-        &mut child,
-        deadline,
+        &mut unknown,
+        Instant::now() + Duration::from_millis(100),
         crate::openbsd::kill_process_group,
         |_| Err(std::io::Error::from_raw_os_error(libc::EPERM))
     )
     .is_err());
-    cleanup_owned_group_before(&mut child, Instant::now() + Duration::from_millis(100)).unwrap();
+    // The injected existence error may follow successful leader reaping. Only
+    // reconcile after its already-issued kill; never signal that PID again.
+    let deadline = Instant::now() + Duration::from_millis(100);
+    while unknown.try_wait().unwrap().is_none() && Instant::now() < deadline {
+        std::thread::sleep(Duration::from_millis(2));
+    }
+    assert!(unknown.try_wait().unwrap().is_some());
+    assert!(!crate::openbsd::process_group_exists(unknown.id()).unwrap());
+    let mut late = sleeper();
     assert!(
-        cleanup_owned_group_before(&mut child, Instant::now() - Duration::from_millis(1)).is_err()
+        cleanup_owned_group_before(&mut late, Instant::now() - Duration::from_millis(1)).is_err()
     );
+    let deadline = Instant::now() + Duration::from_millis(100);
+    while late.try_wait().unwrap().is_none() && Instant::now() < deadline {
+        std::thread::sleep(Duration::from_millis(2));
+    }
+    assert!(late.try_wait().unwrap().is_some());
+    assert!(!crate::openbsd::process_group_exists(late.id()).unwrap());
 }
 #[test]
 fn mutation_profile_never_renews_original_deadline_and_enforces_frame_limits() {

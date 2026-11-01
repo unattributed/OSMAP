@@ -13,6 +13,7 @@ use std::time::{Duration, Instant};
 static CLEANUP_UNCONFIRMED: AtomicBool = AtomicBool::new(false);
 static UNREAPED: Mutex<Vec<Child>> = Mutex::new(Vec::new());
 
+#[cfg(test)]
 pub(crate) fn execute(
     worker: &Path,
     engine: &Path,
@@ -20,11 +21,36 @@ pub(crate) fn execute(
     operation: &Operation,
     deadline: Instant,
 ) -> Result<Outcome, Error> {
+    execute_cancellable(worker, engine, home, operation, deadline, || Ok(false))
+}
+pub(crate) fn execute_cancellable(
+    worker: &Path,
+    engine: &Path,
+    home: &Path,
+    operation: &Operation,
+    deadline: Instant,
+    mut cancelled: impl FnMut() -> Result<bool, Error>,
+) -> Result<Outcome, Error> {
+    if cancelled()? {
+        return Err(Error::Unavailable);
+    }
     let frame = operation.worker_frame()?;
     let command = crate::auth::crypto_worker_command(worker, engine, home);
-    let (bytes, success) = run(command, &frame, deadline)?;
+    let (bytes, success) = run_limited_with_group_ops(
+        command,
+        &frame,
+        deadline,
+        RunProfile {
+            output_limit: MAX_CONTENT + MAX_METADATA + 8,
+            operation_limit: Duration::from_secs(10),
+            strict_group: false,
+        },
+        GroupOps::native(),
+        &mut cancelled,
+    )?;
     Outcome::worker_result(operation, &bytes, success)
 }
+#[cfg(test)]
 fn run(command: Command, input: &[u8], deadline: Instant) -> Result<(Vec<u8>, bool), Error> {
     run_bounded(command, input, deadline, MAX_CONTENT + MAX_METADATA + 8)
 }
@@ -90,6 +116,7 @@ pub(crate) fn run_account_mutation(
     Ok(output)
 }
 
+#[cfg(test)]
 fn cleanup_owned_group_before(child: &mut Child, deadline: Instant) -> Result<(), Error> {
     cleanup_owned_group_with(
         child,
@@ -105,11 +132,7 @@ fn cleanup_owned_group_with(
     exists: impl Fn(u32) -> std::io::Result<bool>,
 ) -> Result<(), Error> {
     let pid = child.id();
-    match kill(pid) {
-        Ok(()) => {}
-        Err(e) if e.raw_os_error() == Some(libc::ESRCH) => {}
-        Err(_) => return Err(Error::Unavailable),
-    }
+    signal_owned_group_with(child, kill)?;
     while Instant::now() < deadline {
         let reaped = child.try_wait().map_err(|_| Error::Unavailable)?.is_some();
         let absent = !exists(pid).map_err(|_| Error::Unavailable)?;
@@ -120,6 +143,41 @@ fn cleanup_owned_group_with(
         std::thread::sleep(remaining.min(Duration::from_millis(2)));
     }
     Err(Error::Unavailable)
+}
+fn signal_owned_group_with(
+    child: &Child,
+    kill: impl Fn(u32) -> std::io::Result<()>,
+) -> Result<(), Error> {
+    // WNOWAIT proves that this process still owns the unreaped leader. A
+    // historical Child::id after reaping is never authority to signal a group.
+    crate::openbsd::owned_child_exited_without_reap(child.id()).map_err(|_| Error::Unavailable)?;
+    let pid = child.id();
+    match kill(pid) {
+        Ok(()) => {}
+        Err(e) if e.raw_os_error() == Some(libc::ESRCH) => {}
+        Err(_) => return Err(Error::Unavailable),
+    }
+    Ok(())
+}
+
+#[derive(Clone, Copy)]
+struct RunProfile {
+    output_limit: usize,
+    operation_limit: Duration,
+    strict_group: bool,
+}
+#[derive(Clone, Copy)]
+struct GroupOps<'a> {
+    kill: &'a dyn Fn(u32) -> std::io::Result<()>,
+    exists: &'a dyn Fn(u32) -> std::io::Result<bool>,
+}
+impl GroupOps<'static> {
+    fn native() -> Self {
+        Self {
+            kill: &crate::openbsd::kill_process_group,
+            exists: &crate::openbsd::process_group_exists,
+        }
+    }
 }
 
 fn run_bounded(
@@ -138,21 +196,45 @@ fn run_bounded(
     )
 }
 fn run_limited(
-    mut command: Command,
+    command: Command,
     input: &[u8],
     deadline: Instant,
     output_limit: usize,
     operation_limit: Duration,
     strict_group: bool,
 ) -> Result<(Vec<u8>, bool), Error> {
+    run_limited_with_group_ops(
+        command,
+        input,
+        deadline,
+        RunProfile {
+            output_limit,
+            operation_limit,
+            strict_group,
+        },
+        GroupOps::native(),
+        || Ok(false),
+    )
+}
+fn run_limited_with_group_ops(
+    mut command: Command,
+    input: &[u8],
+    deadline: Instant,
+    profile: RunProfile,
+    group: GroupOps<'_>,
+    mut cancelled: impl FnMut() -> Result<bool, Error>,
+) -> Result<(Vec<u8>, bool), Error> {
     if CLEANUP_UNCONFIRMED.load(Ordering::SeqCst) {
         return Err(Error::Unavailable);
     }
-    let deadline = deadline.min(Instant::now() + operation_limit);
+    let deadline = deadline.min(Instant::now() + profile.operation_limit);
     if deadline.saturating_duration_since(Instant::now()) <= Duration::from_millis(100) {
         return Err(Error::Expired);
     }
     let command_deadline = deadline - Duration::from_millis(100);
+    if cancelled()? {
+        return Err(Error::Unavailable);
+    }
     command
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
@@ -160,6 +242,7 @@ fn run_limited(
         .process_group(0);
     let mut child = command.spawn().map_err(|_| Error::Unavailable)?;
     let pid = child.id();
+    let mut group_signalled = false;
     let result = (|| {
         let input_pipe = child.stdin.take().ok_or(Error::Unavailable)?;
         let mut stdout = child.stdout.take().ok_or(Error::Unavailable)?;
@@ -180,8 +263,10 @@ fn run_limited(
         let mut written = 0usize;
         let mut out_done = false;
         let mut err_done = false;
-        let mut status = None;
         loop {
+            if cancelled()? {
+                return Err(Error::Unavailable);
+            }
             if Instant::now() >= command_deadline {
                 return Err(Error::Expired);
             }
@@ -198,7 +283,7 @@ fn run_limited(
                 }
             }
             if !out_done {
-                out_done = drain(&mut stdout, &mut output, output_limit, false)?;
+                out_done = drain(&mut stdout, &mut output, profile.output_limit, false)?;
             }
             if !err_done {
                 let mut bytes = Vec::new();
@@ -210,7 +295,7 @@ fn run_limited(
                 )?;
                 discarded += bytes.len();
             }
-            if strict_group && out_done && err_done {
+            if profile.strict_group && out_done && err_done {
                 // Do not reap/release the leader PID before the owned group
                 // kill. The true exit status is reconciled after strict cleanup.
                 return if written == input.len() {
@@ -219,20 +304,24 @@ fn run_limited(
                     Err(Error::Unavailable)
                 };
             }
-            if !strict_group && status.is_none() {
-                status = child.try_wait().map_err(|_| Error::Unavailable)?;
-            }
-            if let Some(status) = status {
-                if !strict_group {
-                    let _ = crate::openbsd::kill_process_group(pid);
+            if !profile.strict_group
+                && crate::openbsd::owned_child_exited_without_reap(pid)
+                    .map_err(|_| Error::Unavailable)?
+            {
+                if !group_signalled {
+                    signal_owned_group_with(&child, group.kill)?;
+                    group_signalled = true;
                 }
                 if out_done && err_done {
                     return if written == input.len() {
-                        Ok((output, status.success()))
+                        Ok((output, true))
                     } else {
                         Err(Error::Unavailable)
                     };
                 }
+            }
+            if cancelled()? {
+                return Err(Error::Unavailable);
             }
             crate::openbsd::wait_worker_pipes(
                 stdin.as_ref().map(AsRawFd::as_raw_fd),
@@ -249,34 +338,63 @@ fn run_limited(
             })?;
         }
     })();
-    if strict_group {
-        if cleanup_owned_group_before(&mut child, deadline).is_ok() {
-            let confirmed_status = child.try_wait().ok().flatten();
-            if let Some(status) = confirmed_status {
-                if Instant::now() < deadline {
-                    return result.map(|(output, _)| (output, status.success()));
-                }
+    if cleanup_owned_group_with(
+        &mut child,
+        deadline,
+        |pid| {
+            if group_signalled {
+                Ok(())
+            } else {
+                (group.kill)(pid)
             }
-        }
-        CLEANUP_UNCONFIRMED.store(true, Ordering::SeqCst);
-        if let Ok(mut children) = UNREAPED.try_lock() {
-            children.push(child);
-        }
-        return Err(Error::Unavailable);
-    }
-    let _ = crate::openbsd::kill_process_group(pid);
-    while Instant::now() < deadline {
-        match child.try_wait() {
-            Ok(Some(_)) => return result,
-            Ok(None) => std::thread::sleep(Duration::from_millis(2)),
-            Err(_) => break,
+        },
+        group.exists,
+    )
+    .is_ok()
+    {
+        let confirmed_status = child.try_wait().ok().flatten();
+        if let Some(status) = confirmed_status {
+            if Instant::now() < deadline {
+                if result.is_ok() && cancelled()? {
+                    return Err(Error::Unavailable);
+                }
+                return result.map(|(output, _)| (output, status.success()));
+            }
         }
     }
     CLEANUP_UNCONFIRMED.store(true, Ordering::SeqCst);
-    if let Ok(mut children) = UNREAPED.lock() {
+    if let Ok(mut children) = UNREAPED.try_lock() {
         children.push(child);
     }
     Err(Error::Unavailable)
+}
+
+/// Test-only current-executable adapter; it shares the production crypto cap,
+/// cancellation checks and cleanup without pretending fixture bytes are crypto.
+#[cfg(test)]
+pub(crate) fn run_cancellable_fixture(
+    mode: &str,
+    input: &[u8],
+    deadline: Instant,
+    cancelled: impl FnMut() -> Result<bool, Error>,
+    ready: Option<&Path>,
+) -> Result<(Vec<u8>, bool), Error> {
+    let mut command = crate::auth::crypto_fixture_command(mode);
+    if let Some(path) = ready {
+        command.env("OSMAP_CRYPTO_PROCESS_READY", path);
+    }
+    run_limited_with_group_ops(
+        command,
+        input,
+        deadline,
+        RunProfile {
+            output_limit: 4096,
+            operation_limit: Duration::from_secs(10),
+            strict_group: false,
+        },
+        GroupOps::native(),
+        cancelled,
+    )
 }
 fn drain(
     reader: &mut impl Read,
@@ -316,6 +434,32 @@ mod tests {
             .unwrap()
             .as_str()
         {
+            "runtime_service_hold" => {
+                crate::openpgp_crypto_runtime::lifecycle_tests::serve_hold_child();
+            }
+            mode @ ("cancellable_hold" | "cancellable_hold_short") => {
+                if let Some(path) = std::env::var_os("OSMAP_CRYPTO_PROCESS_READY") {
+                    use std::os::unix::fs::OpenOptionsExt as _;
+                    let path = std::path::PathBuf::from(path);
+                    crate::private_account_file::check_directory(path.parent().unwrap()).unwrap();
+                    let staged = path.with_extension("ready-stage");
+                    let mut marker = std::fs::OpenOptions::new()
+                        .write(true)
+                        .create_new(true)
+                        .mode(0o600)
+                        .open(&staged)
+                        .unwrap();
+                    writeln!(marker, "{}", std::process::id()).unwrap();
+                    marker.sync_all().unwrap();
+                    std::fs::hard_link(&staged, &path).unwrap();
+                    std::fs::remove_file(&staged).unwrap();
+                }
+                std::thread::sleep(Duration::from_secs(if mode == "cancellable_hold_short" {
+                    3
+                } else {
+                    30
+                }));
+            }
             "blocked_stdin" => std::thread::sleep(Duration::from_secs(5)),
             "closed_output_running" => {
                 // Exact existing disposable test child only. EOF precedes exit;
@@ -416,15 +560,7 @@ mod tests {
         )
         .unwrap();
         assert!(success && output.len() >= 256 * 1024);
-        let start = Instant::now();
-        let (output, success) = run(
-            fixture("descendant"),
-            &[1],
-            Instant::now() + Duration::from_millis(500),
-        )
-        .unwrap();
-        assert!(success && output.windows(8).any(|s| s == b"complete"));
-        assert!(start.elapsed() < Duration::from_secs(1));
+        super::lifecycle_tests::assert_isolated_descendant_cleanup();
         let limited = run(
             fixture("stdout_limit"),
             &[1],
@@ -481,3 +617,7 @@ mod tests {
 #[cfg(test)]
 #[path = "account_mutation_supervisor_tests.rs"]
 mod mutation_supervisor_tests;
+
+#[cfg(test)]
+#[path = "openpgp_crypto_lifecycle_tests.rs"]
+mod lifecycle_tests;

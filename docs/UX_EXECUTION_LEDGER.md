@@ -1,3 +1,5 @@
+2026-11-01 (America/Toronto) — **S05-03 IN_PROGRESS: existing OpenPGP runtime lifecycle and recovery; user approves reuse-first T01–T09 route.** Contacts/Compose UAT PASS and original obligations are preserved.
+
 2026-11-01 (America/Toronto) — **Contacts/Compose owner UAT PASS.** Owner explicitly reports `UAT = PASS` for the delivered People-style Contacts and Compose walkthrough. Other mapped control statuses remain unchanged; no whole-epic or production approval inferred.
 
 2026-11-01 (America/Toronto) — **People-style Contacts UAT_READY: dedicated table and people icon installed; owner check pending.**
@@ -17,6 +19,314 @@ slice using the same failure-analysis method. See
 [the slice specification](UX_SLICE_S05_02.md).
 
 <!-- OSMAP_ACTIVE_WORK_ORDER -->
+```json
+{
+  "version": 1,
+  "slice": "S05-03",
+  "original_requirement": "GPGME execution, account isolation, resource-limited workers, cancellation and redacted errors",
+  "source_baseline": "5ebe610204b602a2c715a8854164b42495d92ffc",
+  "state": "IN_PROGRESS",
+  "integration_owner": "/root",
+  "roles": {
+    "project_manager": [
+      "/root"
+    ],
+    "scrum_lead": [
+      "/root"
+    ],
+    "developers": [
+      "/root",
+      "/root/s05_runtime_engineer",
+      "/root/s05_scope_qa"
+    ],
+    "qa": [
+      "/root/s05_protocol_review"
+    ],
+    "security_review": [
+      "/root/s05_protocol_review"
+    ],
+    "technical_writer": [
+      "/root"
+    ]
+  },
+  "allowed_paths": [
+    "src/openpgp_crypto.rs",
+    "src/openpgp_crypto_protocol.rs",
+    "src/openpgp_crypto_runtime.rs",
+    "src/openpgp_crypto_process.rs",
+    "src/openpgp_crypto_lifecycle_tests.rs",
+    "src/openpgp_crypto_runtime_lifecycle_tests.rs",
+    "src/openbsd.rs",
+    "src/auth.rs",
+    "src/bin/osmap_crypto_helper.rs",
+    "src/account_mutation_supervisor_tests.rs",
+    "maint/openpgp-runtime/crypto.c",
+    "maint/openpgp-runtime/crypto_engine.c",
+    "maint/openpgp-runtime/s05-01-native.ksh",
+    "maint/openpgp-runtime/deployment.md",
+    "maint/openpgp-runtime/deployment_unlock.py",
+    "maint/openpgp-runtime/deployment_unlock_test.py",
+    "maint/openpgp-runtime/crypto_outbound_native_test.py",
+    "maint/openpgp-runtime/crypto_principal_test.py",
+    "docs/UX_SLICE_S05_03.md",
+    "docs/UX_EXECUTION_LEDGER.md",
+    "docs/CURRENT_PROJECT_STATUS.md",
+    "docs/DECISION_LOG.md",
+    "README.md",
+    "maint/ux/acceptance.json",
+    "maint/security/v10-claims-boundary.json",
+    "maint/security/v10-fail-closed-remediation.json",
+    "maint/security/v10-rust-assumption-audit.json"
+  ],
+  "outcomes": [
+    {
+      "id": "crypto-runtime-lifecycle",
+      "owner": "/root",
+      "requirement_ids": [],
+      "frontend_backend_outcome": "Authorized existing Rust/GPGME operation completes correctly or refuses within bounds with truthful cleanup; confirmed recovery permits the next valid request.",
+      "essential_qa": "Focused changed-boundary Rust tests and actual native service/worker recovery plus independent review; normal signed delivery.",
+      "next_action": "Reproduce uncovered cancellation/cleanup boundary using existing fixtures and make smallest demonstrated correction.",
+      "dependencies": [
+        {
+          "owner": "/root",
+          "condition": "Existing S05-01/02 source/native crypto transport and current installed healthy obsd1 baseline.",
+          "status": "PASS",
+          "next_action": "Reuse matching unchanged proof; verify changed lifecycle under current native semantics."
+        }
+      ],
+      "stages": {
+        "implementation": "PASS",
+        "source_tests": "PASS",
+        "native_tests": "PENDING",
+        "deployed_qa": "PENDING",
+        "independent_review": "PENDING",
+        "recovery": "PENDING"
+      },
+      "evidence": [
+        {
+          "stage": "implementation",
+          "reference": "InitialcausalownershipRED and peerprimitive1PASS retained in existing spec/privateevidence; no native/deployed lifecycle claim yet."
+        },
+        {
+          "stage": "source_tests",
+          "reference": "Focused lifecycle source corrections actualRED/GREEN recorded in spec; strictClippy test-onlyunbufferedread refusal retained, minimalbufferedcorrectionpending. Native/deployed results not asserted."
+        },
+        {
+          "stage": "implementation",
+          "reference": "ExistingRust/GPGMEretained; WNOWAITownedgroupcleanup, IPCcancellation, orderedhelperstopand31explicitrecoveryguards implemented. Native/deployed qualification stillpending."
+        },
+        {
+          "stage": "source_tests",
+          "reference": "Actualprocess9/runtimefinal5/authority4/protocol7/outcome2/peer1PASS; Pythonnormal/-O9PASS2nativeignored; ClippyPASSaftertestBufReaderfix, fmtPASSafterwrapping; actual3bins+CargoartifactconsumerPASS/V10PASS. FirstRED/lint/formatfailuresretained. Normalfullpushgatependingdelivery."
+        },
+        {
+          "stage": "independent_review",
+          "reference": "Source96f773c9+recipea33e8908GO checkpoint/build/native; installerbaselinepending\u2192mv findingcorrected. Actualnative/installed/finalreviewnotyetasserted."
+        }
+      ]
+    }
+  ],
+  "accountability": {
+    "owner": "/root",
+    "functional_exit": "Authorized existing Rust/GPGME operation completes correctly or refuses within bounds with truthful cleanup; confirmed recovery permits the next valid request.",
+    "elapsed_scope": "wall_clock",
+    "history_reference": "Prior S04/S05 failures and source/native passes preserved in existing ledger/specs. S05-02 Contacts/Compose ownerPASS remains; new S05-03 lifecycle scope explicitly approved. No earlier failure recast or whole-epic acceptance inferred.",
+    "investigation": {
+      "owner": "/root",
+      "timebox_seconds": 14400,
+      "started_at": "2026-11-01T14:54:17Z",
+      "elapsed_status": "UNMEASURED",
+      "elapsed_seconds": null
+    },
+    "attempts": [],
+    "next_attempt": null
+  },
+  "slice_contract": {
+    "version": 1,
+    "slice": "S05-03",
+    "specification": {
+      "path": "docs/UX_SLICE_S05_03.md",
+      "sha256": "cb64def0710485f645a7b260d8662503d9c0f0956c270db5f529320f0ac1e439"
+    },
+    "design": {
+      "journey": "Authorized existing Rust/GPGME operation completes correctly or refuses within bounds with truthful cleanup; confirmed recovery permits the next valid request.",
+      "frontend": "Reuse current typed application crypto consumer; no new page or script.",
+      "backend": "Existing Rust protocol/service/process runner plus fixed GPGME C worker and native safe wrappers.",
+      "interfaces": "Retain bounded authenticated request/response schema and configured account/grants; cancellation bound to original owned work.",
+      "persistence": "Transient operation buffers only; existing owner contact/key/policy/private material preserved, no new store.",
+      "security": "Existing peer/account/MAC/replay/fingerprint/resource/custody checks, no prompts or permissive fallback, no partial sensitive content.",
+      "failure_recovery": "Bounded owned termination with earliest error separate from cleanup; uncertain cleanup refuses new work, disposable recovery then fresh operation."
+    },
+    "tests": [
+      {
+        "id": "S05-03-T01",
+        "outcome_ids": [
+          "crypto-runtime-lifecycle"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Current existing source, relevant installed utility/configuration contract and matching reused evidence checked before dependent execution.",
+        "action": "Reconcile actual source/evidence before selecting changed tests.",
+        "expected": "reuse inventory: Authorized existing Rust/GPGME operation completes correctly or refuses within bounds with truthful cleanup; confirmed recovery permits the next valid request.",
+        "preserved": "Contacts/Compose and S04/S05 acceptance, owner credentials/private keys/contact/key/policy data, existing public mail services/configuration and shared account process profiles.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "Actual source/preflight review and unchanged8577e12 crypto primitives/protocol; S05-01actual review/native logs readable. Contract reviewer GO; uncovered PID/PGID/disconnect/recovery cases explicitly named."
+        ]
+      },
+      {
+        "id": "S05-03-T02",
+        "outcome_ids": [
+          "crypto-runtime-lifecycle"
+        ],
+        "kind": "positive",
+        "level": "native",
+        "prerequisites": "Current existing source, relevant installed utility/configuration contract and matching reused evidence checked before dependent execution.",
+        "action": "Run existing actual service/client disposable sign/verify/encrypt/decrypt and tamper checks.",
+        "expected": "real crypto correctness: Authorized existing Rust/GPGME operation completes correctly or refuses within bounds with truthful cleanup; confirmed recovery permits the next valid request.",
+        "preserved": "Contacts/Compose and S04/S05 acceptance, owner credentials/private keys/contact/key/policy data, existing public mail services/configuration and shared account process profiles.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      },
+      {
+        "id": "S05-03-T03",
+        "outcome_ids": [
+          "crypto-runtime-lifecycle"
+        ],
+        "kind": "negative",
+        "level": "source",
+        "prerequisites": "Current existing source, relevant installed utility/configuration contract and matching reused evidence checked before dependent execution.",
+        "action": "Exercise account/peer/MAC/fingerprint/expiry/replay refusal before execution.",
+        "expected": "authority: Authorized existing Rust/GPGME operation completes correctly or refuses within bounds with truthful cleanup; confirmed recovery permits the next valid request.",
+        "preserved": "Contacts/Compose and S04/S05 acceptance, owner credentials/private keys/contact/key/policy data, existing public mail services/configuration and shared account process profiles.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "Current source authority4/protocol7PASS; no native separate-principal rerun inferred, matching existing authority proof reused."
+        ]
+      },
+      {
+        "id": "S05-03-T04",
+        "outcome_ids": [
+          "crypto-runtime-lifecycle"
+        ],
+        "kind": "negative",
+        "level": "source",
+        "prerequisites": "Current existing source, relevant installed utility/configuration contract and matching reused evidence checked before dependent execution.",
+        "action": "Reproduce blocked/hung/disconnected/leader-descendant cases; verify bounds, owned cleanup and shared profile compatibility.",
+        "expected": "lifecycle cancellation: Authorized existing Rust/GPGME operation completes correctly or refuses within bounds with truthful cleanup; confirmed recovery permits the next valid request.",
+        "preserved": "Contacts/Compose and S04/S05 acceptance, owner credentials/private keys/contact/key/policy data, existing public mail services/configuration and shared account process profiles.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "Actual process-ownership-red.log current1caseFAIL post-reap signalattempts2,11.091s; callbackrefusesunownedkill; smallestWNOWAITcorrection pending.",
+          "OwnershipGREEN1 and fullprocess9PASS/2fixtures, runtimeIPCRED9.957s\u2192GREEN3, actualSIGTERMRED workerAliveAtHelperExittrue/naturalabsenceconfirmed\u2192GREENfalse/absenceconfirmed; finalruntime5PASS1nativeignored. Alllogs retained private."
+        ]
+      },
+      {
+        "id": "S05-03-T05",
+        "outcome_ids": [
+          "crypto-runtime-lifecycle"
+        ],
+        "kind": "recovery",
+        "level": "native",
+        "prerequisites": "Current existing source, relevant installed utility/configuration contract and matching reused evidence checked before dependent execution.",
+        "action": "Exercise missing/locked/stale disposable agent then bounded repair and a new valid service request.",
+        "expected": "agent recovery: Authorized existing Rust/GPGME operation completes correctly or refuses within bounds with truthful cleanup; confirmed recovery permits the next valid request.",
+        "preserved": "Contacts/Compose and S04/S05 acceptance, owner credentials/private keys/contact/key/policy data, existing public mail services/configuration and shared account process profiles.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      },
+      {
+        "id": "S05-03-T06",
+        "outcome_ids": [
+          "crypto-runtime-lifecycle"
+        ],
+        "kind": "negative",
+        "level": "source",
+        "prerequisites": "Current existing source, relevant installed utility/configuration contract and matching reused evidence checked before dependent execution.",
+        "action": "Exercise output/input/stderr/concurrency limits and admission release without changing current caps.",
+        "expected": "resource bounds: Authorized existing Rust/GPGME operation completes correctly or refuses within bounds with truthful cleanup; confirmed recovery permits the next valid request.",
+        "preserved": "Contacts/Compose and S04/S05 acceptance, owner credentials/private keys/contact/key/policy data, existing public mail services/configuration and shared account process profiles.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "Current process9PASS/2fixtures includes unchanged10/30/60s profile/limits and concurrent runtime admission4source tests; native resource evidence remains separate."
+        ]
+      },
+      {
+        "id": "S05-03-T07",
+        "outcome_ids": [
+          "crypto-runtime-lifecycle"
+        ],
+        "kind": "negative",
+        "level": "source",
+        "prerequisites": "Current existing source, relevant installed utility/configuration contract and matching reused evidence checked before dependent execution.",
+        "action": "Exercise spawn/crash/malformed/unknown output with synthetic secret markers and truthful no-content refusal.",
+        "expected": "safe errors: Authorized existing Rust/GPGME operation completes correctly or refuses within bounds with truthful cleanup; confirmed recovery permits the next valid request.",
+        "preserved": "Contacts/Compose and S04/S05 acceptance, owner credentials/private keys/contact/key/policy data, existing public mail services/configuration and shared account process profiles.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "Current outcomes2/protocol7/sharedprocess9PASS no partial output/typed-error regression; optimized recoveryguardRED\u2192explicit31conditions ASTidentical, ordinaryandoptimized9PASS2nativeignored."
+        ]
+      },
+      {
+        "id": "S05-03-T08",
+        "outcome_ids": [
+          "crypto-runtime-lifecycle"
+        ],
+        "kind": "positive",
+        "level": "deployed",
+        "prerequisites": "Current existing source, relevant installed utility/configuration contract and matching reused evidence checked before dependent execution.",
+        "action": "Run changed production native path and if necessary install matching reviewed artifacts with preservation/readiness.",
+        "expected": "native installed qualification: Authorized existing Rust/GPGME operation completes correctly or refuses within bounds with truthful cleanup; confirmed recovery permits the next valid request.",
+        "preserved": "Contacts/Compose and S04/S05 acceptance, owner credentials/private keys/contact/key/policy data, existing public mail services/configuration and shared account process profiles.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      },
+      {
+        "id": "S05-03-T09",
+        "outcome_ids": [
+          "crypto-runtime-lifecycle"
+        ],
+        "kind": "usability",
+        "level": "human",
+        "prerequisites": "Current existing source, relevant installed utility/configuration contract and matching reused evidence checked before dependent execution.",
+        "action": "Owner accepts independently reviewed delivered infrastructure result; no invented UI or production acceptance.",
+        "expected": "infrastructure acceptance: Authorized existing Rust/GPGME operation completes correctly or refuses within bounds with truthful cleanup; confirmed recovery permits the next valid request.",
+        "preserved": "Contacts/Compose and S04/S05 acceptance, owner credentials/private keys/contact/key/policy data, existing public mail services/configuration and shared account process profiles.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      }
+    ],
+    "engineering_exit": "Current source/native/installed changed-boundary evidence and independent review pass, normal signed delivery complete with preserved state and honest limitations.",
+    "human_exit": "Owner accepts this infrastructure result separately from source, native, installed and whole-epic/production acceptance."
+  },
+  "human_acceptance": {
+    "status": "PENDING",
+    "reference": "New S05-03 infrastructure acceptance follows agent-owned completion; prior Contacts/Compose UAT PASS preserved."
+  },
+  "next_action": "Reuse matching crypto evidence, reproduce uncovered lifecycle failures, apply minimal correction and verify actual native service recovery."
+}
+```
+<!-- /OSMAP_ACTIVE_WORK_ORDER -->
+
+<!-- OSMAP_ARCHIVED_S05_02_WORK_ORDER -->
 ```json
 {
   "version": 1,
@@ -615,7 +925,7 @@ slice using the same failure-analysis method. See
   "next_action": "Owner-requested Contacts/Compose walkthrough accepted; record-only signed synchronization. Preserve remaining mapped S05 control acceptance boundaries; no additional Contacts UAT, product or host action required."
 }
 ```
-<!-- /OSMAP_ACTIVE_WORK_ORDER -->
+<!-- /OSMAP_ARCHIVED_S05_02_WORK_ORDER -->
 
 2026-10-31 (America/Toronto) — **S05-01 ENGINEERING_COMPLETE: existing Rust path natively qualified; T09 pending.**
 

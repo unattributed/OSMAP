@@ -29,16 +29,25 @@ PINENTRY_PROGRAM = "/usr/local/bin/pinentry-tty"
 LAUNCHER_LOCK = pathlib.Path("/var/run/osmap-duncan-agent-unlock.lock")
 
 
+class AgentGuardError(AssertionError):
+    """An explicit operational guard, active even with Python optimization."""
+
+
+def require(condition, message):
+    if not condition:
+        raise AgentGuardError(message)
+
+
 @contextlib.contextmanager
 def launcher_lock(path=LAUNCHER_LOCK):
     fd = os.open(path, os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW | os.O_NONBLOCK | os.O_CLOEXEC, 0o600)
     try:
         original = os.fstat(fd)
-        assert stat.S_ISREG(original.st_mode) and original.st_uid == os.geteuid()
-        assert stat.S_IMODE(original.st_mode) == 0o600 and original.st_nlink == 1
+        require(stat.S_ISREG(original.st_mode) and original.st_uid == os.geteuid(), "mailbox agent guard refused")
+        require(stat.S_IMODE(original.st_mode) == 0o600 and original.st_nlink == 1, "mailbox agent guard refused")
         fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
         current = path.lstat()
-        assert (current.st_dev, current.st_ino) == (original.st_dev, original.st_ino)
+        require((current.st_dev, current.st_ino) == (original.st_dev, original.st_ino), "mailbox agent guard refused")
         yield
     finally:
         os.close(fd)
@@ -56,41 +65,41 @@ def peer_uid(peer):
         libc = ctypes.CDLL(None, use_errno=True)
         libc.getpeereid.argtypes = [ctypes.c_int, ctypes.POINTER(ctypes.c_uint), ctypes.POINTER(ctypes.c_uint)]
         libc.getpeereid.restype = ctypes.c_int
-        assert libc.getpeereid(peer.fileno(), ctypes.byref(uid), ctypes.byref(gid)) == 0
+        require(libc.getpeereid(peer.fileno(), ctypes.byref(uid), ctypes.byref(gid)) == 0, "mailbox agent guard refused")
         return uid.value
     # Local socket-only tests; the operator entrypoint itself admits obsd1 only.
-    assert sys.platform.startswith("linux")
+    require(sys.platform.startswith("linux"), "mailbox agent guard refused")
     return struct.unpack("3i", peer.getsockopt(socket.SOL_SOCKET, socket.SO_PEERCRED, 12))[1]
 
 
 def agent_endpoint(home, deadline=None):
     home_info = home.lstat()
-    assert home.resolve() == home and stat.S_ISDIR(home_info.st_mode)
-    assert stat.S_IMODE(home_info.st_mode) == 0o700
+    require(home.resolve() == home and stat.S_ISDIR(home_info.st_mode), "mailbox agent guard refused")
+    require(stat.S_IMODE(home_info.st_mode) == 0o700, "mailbox agent guard refused")
     path = home / "S.gpg-agent"
     try:
         before = path.lstat()
     except FileNotFoundError:
         return None
-    assert stat.S_ISSOCK(before.st_mode) and before.st_uid == home_info.st_uid and before.st_nlink == 1
+    require(stat.S_ISSOCK(before.st_mode) and before.st_uid == home_info.st_uid and before.st_nlink == 1, "mailbox agent guard refused")
     with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as peer:
         remaining = 0.25 if deadline is None else min(0.25, deadline - time.monotonic())
-        assert remaining > 0, "mailbox agent socket did not close"
+        require(remaining > 0, "mailbox agent socket did not close")
         peer.settimeout(remaining)
         try:
             peer.connect(str(path))
         except OSError as error:
             if error.errno == errno.ENOENT:
-                assert not path.exists() and not path.is_symlink(), "mailbox agent socket changed during check"
-                assert identity(home.lstat())[:5] == identity(home_info)[:5], "mailbox home changed during agent check"
+                require(not path.exists() and not path.is_symlink(), "mailbox agent socket changed during check")
+                require(identity(home.lstat())[:5] == identity(home_info)[:5], "mailbox home changed during agent check")
                 return None
-            assert error.errno == errno.ECONNREFUSED, "mailbox agent state is uncertain"
+            require(error.errno == errno.ECONNREFUSED, "mailbox agent state is uncertain")
             live = False
         else:
-            assert peer_uid(peer) == home_info.st_uid, "foreign mailbox agent peer"
+            require(peer_uid(peer) == home_info.st_uid, "foreign mailbox agent peer")
             live = True
-    assert identity(home.lstat())[:5] == identity(home_info)[:5], "mailbox home changed during agent check"
-    assert identity(path.lstat()) == identity(before), "mailbox agent socket changed during check"
+    require(identity(home.lstat())[:5] == identity(home_info)[:5], "mailbox home changed during agent check")
+    require(identity(path.lstat()) == identity(before), "mailbox agent socket changed during check")
     return before, live
 
 
@@ -102,9 +111,9 @@ def remove_stale_agent_socket(home, deadline=None):
     if live:
         return False
     path = home / "S.gpg-agent"
-    assert identity(path.lstat()) == identity(before), "mailbox agent socket replaced before removal"
+    require(identity(path.lstat()) == identity(before), "mailbox agent socket replaced before removal")
     path.unlink()
-    assert not path.exists(), "mailbox agent socket reappeared"
+    require(not path.exists(), "mailbox agent socket reappeared")
     return True
 
 
@@ -113,7 +122,7 @@ def require_stopped_helpers(env, run=subprocess.run):
         result = run(["/usr/sbin/rcctl", "check", service], stdin=subprocess.DEVNULL,
                      stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                      env=env, timeout=15)
-        assert result.returncode == 1, "stop OpenPGP helpers before mailbox agent replacement"
+        require(result.returncode == 1, "stop OpenPGP helpers before mailbox agent replacement")
 
 
 def restart_bounded_agent(home, env, demote, run=subprocess.run):
@@ -124,10 +133,10 @@ def restart_bounded_agent(home, env, demote, run=subprocess.run):
                   stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
                   stderr=subprocess.DEVNULL, env=env, cwd=home,
                   preexec_fn=demote, timeout=15)
-    assert stopped.returncode == 0, "mailbox agent stop refused"
+    require(stopped.returncode == 0, "mailbox agent stop refused")
     until = time.monotonic() + 5
     while not remove_stale_agent_socket(home, until):
-        assert time.monotonic() < until, "mailbox agent socket did not close"
+        require(time.monotonic() < until, "mailbox agent socket did not close")
         time.sleep(0.02)
     agent = run(["/usr/local/bin/gpg-agent", "--no-options", "--homedir", str(home),
                  # Plain tty Pinentry does not depend on TERM/terminfo or the
@@ -139,26 +148,26 @@ def restart_bounded_agent(home, env, demote, run=subprocess.run):
                 stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL, env=env, cwd=home,
                 preexec_fn=demote, timeout=15)
-    assert agent.returncode == 0, "bounded mailbox agent startup refused"
+    require(agent.returncode == 0, "bounded mailbox agent startup refused")
 
 
 def main():
-    assert os.geteuid() == 0 and socket.gethostname() == "obsd1.blackbagsecurity.com"
+    require(os.geteuid() == 0 and socket.gethostname() == "obsd1.blackbagsecurity.com", "mailbox agent guard refused")
     with launcher_lock():
         warm_mailbox_agent()
 
 
 def warm_mailbox_agent():
-    assert os.geteuid() == 0 and socket.gethostname() == "obsd1.blackbagsecurity.com"
-    assert os.isatty(0), "use the operator SSH terminal, not a captured tool/log session"
+    require(os.geteuid() == 0 and socket.gethostname() == "obsd1.blackbagsecurity.com", "mailbox agent guard refused")
+    require(os.isatty(0), "use the operator SSH terminal, not a captured tool/log session")
     tty = pathlib.Path(os.ttyname(0))
     original = tty.lstat()
-    assert stat.S_ISCHR(original.st_mode) and not tty.is_symlink()
-    assert (original.st_dev, original.st_ino) == (os.fstat(0).st_dev, os.fstat(0).st_ino)
+    require(stat.S_ISCHR(original.st_mode) and not tty.is_symlink(), "mailbox agent guard refused")
+    require((original.st_dev, original.st_ino) == (os.fstat(0).st_dev, os.fstat(0).st_ino), "mailbox agent guard refused")
     helper = pwd.getpwnam("_osmapgpg")
-    assert HOME.resolve() == HOME and HOME.stat().st_uid == helper.pw_uid and HOME.stat().st_mode & 0o777 == 0o700
+    require(HOME.resolve() == HOME and HOME.stat().st_uid == helper.pw_uid and HOME.stat().st_mode & 0o777 == 0o700, "mailbox agent guard refused")
     for name in ("gpg.conf", "common.conf", "gpg-agent.conf"):
-        assert not (HOME / name).exists()
+        require(not (HOME / name).exists(), "mailbox agent guard refused")
     resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
     env = {"PATH": "/usr/local/bin:/usr/bin:/bin", "LC_ALL": "C", "HOME": str(HOME), "GNUPGHOME": str(HOME), "GPG_TTY": str(tty)}
     require_stopped_helpers(env)
@@ -172,7 +181,7 @@ def warm_mailbox_agent():
         result = subprocess.run(["/usr/local/bin/gpg", "--no-options", "--homedir", str(HOME), "--no-autostart"] + arguments,
                                 input=data, stdout=subprocess.PIPE if capture else subprocess.DEVNULL,
                                 env=env, cwd=HOME, preexec_fn=demote, timeout=300)
-        assert result.returncode == 0, "mailbox key operation refused"
+        require(result.returncode == 0, "mailbox key operation refused")
         return result.stdout
 
     def interrupted(signum, _frame):
@@ -188,10 +197,10 @@ def warm_mailbox_agent():
         restart_bounded_agent(HOME, env, demote)
         listed = gpg(["--batch", "--with-colons", "--list-secret-keys", PRIMARY], capture=True).decode()
         fingerprints = [line.split(":")[9] for line in listed.splitlines() if line.startswith("fpr:")]
-        assert PRIMARY in fingerprints and SIGNER in fingerprints, "matching mailbox secret key has not been imported"
+        require(PRIMARY in fingerprints and SIGNER in fingerprints, "matching mailbox secret key has not been imported")
         gpg(["--local-user", SIGNER + "!", "--digest-algo", "SHA256", "--detach-sign", "--output", "/dev/null", "/dev/null"])
         ciphertext = gpg(["--batch", "--trust-model", "always", "--cipher-algo", "AES256", "--recipient", PRIMARY, "--encrypt"], b"Disposable mailbox unlock check.\n", capture=True)
-        assert len(ciphertext) < 65536
+        require(len(ciphertext) < 65536, "mailbox agent guard refused")
         gpg(["--output", "/dev/null", "--decrypt"], ciphertext)
         print("mailbox_signing_and_decryption_agent_warmed=PASS")
     finally:

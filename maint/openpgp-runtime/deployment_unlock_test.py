@@ -13,6 +13,7 @@ import select
 import socket
 import struct
 import subprocess
+import sys
 import tempfile
 import termios
 import time
@@ -26,6 +27,25 @@ SPEC.loader.exec_module(unlock)
 
 
 class AgentPolicyTests(unittest.TestCase):
+    def test_agent_guards_are_enforced_with_python_optimization(self):
+        code = '''
+import importlib.util, pathlib, tempfile, sys
+spec = importlib.util.spec_from_file_location("unlock", sys.argv[1])
+unlock = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(unlock)
+with tempfile.TemporaryDirectory(prefix="osmap-unlock-optimized-") as directory:
+    home = pathlib.Path(directory)
+    home.chmod(0o755)
+    try:
+        unlock.agent_endpoint(home)
+    except AssertionError:
+        raise SystemExit(0)
+    raise SystemExit("optimized interpreter bypassed the private-home guard")
+'''
+        result = subprocess.run([sys.executable, "-O", "-c", code, str(SOURCE)],
+                                capture_output=True, timeout=5)
+        self.assertEqual(result.returncode, 0, result.stderr.decode())
+
     def test_stopped_helpers_are_checked_without_secret_input(self):
         calls = []
 

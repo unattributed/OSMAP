@@ -3,7 +3,9 @@
 set -eu
 # Bound this exact fixture and its process group. This does not supervise live services.
 if [[ ${OSMAP_S05_NATIVE_BOUND:-no} != yes ]]; then
-    exec /usr/bin/timeout -k 15 240 /usr/bin/env OSMAP_S05_NATIVE_BOUND=yes \
+    bound=240
+    [[ ${OSMAP_S05_LIFECYCLE:-no} != yes ]] || bound=300
+    exec /usr/bin/timeout -k 15 "$bound" /usr/bin/env OSMAP_S05_NATIVE_BOUND=yes \
         /bin/ksh "$0" "$@"
 fi
 umask 077
@@ -111,11 +113,26 @@ run_native() {
     # Refuse a zero-test selection before interpreting libtest exit status.
     /usr/bin/grep -Fx "$2: test" "$fixture/listing" >/dev/null
     "$test_binary" --exact "$2" --ignored >"$fixture/$stage.log" 2>&1
+    /usr/bin/grep -Eq '^test result: ok\. 1 passed; 0 failed;' "$fixture/$stage.log"
     print "$stage=PASS"
+    /usr/bin/grep '^test result:' "$fixture/$stage.log"
 }
+if [[ ${OSMAP_S05_LIFECYCLE:-no} = yes ]]; then
+    export OSMAP_CRYPTO_NATIVE_UNLOCK_SOURCE=$source_root/maint/openpgp-runtime/deployment_unlock.py
+    export OSMAP_CRYPTO_NATIVE_UNLOCK_SOURCE_SHA256=$(sha256 -q "$OSMAP_CRYPTO_NATIVE_UNLOCK_SOURCE")
+    # The shared worker runner also owns public-admin child cleanup. This
+    # existing transaction restores its disposable correspondent certificate.
+    run_native PUBLIC_ADMIN_SHARED_RUNNER \
+        openpgp_public_admin::tests::native_crypto_public_admin_store_transaction
+fi
 run_native AUTHENTICATED_RUST_ROUNDTRIP \
     openpgp_crypto_runtime::tests::native_crypto_authenticated_service_client
 run_native PRODUCTION_GATEWAY_ROUNDTRIP \
     http::http_gateway::http_gateway_mail::tests::protected_send_native::native_crypto_gateway_protected_send_roundtrip
+if [[ ${OSMAP_S05_LIFECYCLE:-no} = yes ]]; then
+    run_native SAME_SERVICE_AGENT_RECOVERY \
+        openpgp_crypto_runtime::lifecycle_tests::native_same_service_recovers_stale_private_agent_without_disrupting_public_encrypt
+    /usr/bin/grep '^same_service_initial_sign=' "$fixture/$stage.log"
+fi
 complete=yes
 print 'S05_01_NATIVE_FUNCTIONAL=PASS'

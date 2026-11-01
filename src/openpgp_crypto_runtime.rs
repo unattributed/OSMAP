@@ -14,6 +14,7 @@ use std::io::{Read, Write};
 use std::os::unix::fs::PermissionsExt;
 use std::os::unix::net::{UnixListener, UnixStream};
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
@@ -217,7 +218,34 @@ impl Service {
         });
         wire::response(&request, outcome, &self.key, now()?)
     }
-    fn connection(&self, mut stream: UnixStream) -> Result<(), Error> {
+    #[cfg(test)]
+    fn connection(&self, stream: UnixStream) -> Result<(), Error> {
+        self.connection_with_executor(
+            stream,
+            &AtomicBool::new(false),
+            |worker, engine, home, operation, deadline, cancelled| {
+                crate::openpgp_crypto_process::execute_cancellable(
+                    worker, engine, home, operation, deadline, cancelled,
+                )
+            },
+        )
+    }
+    fn connection_with_executor(
+        &self,
+        mut stream: UnixStream,
+        stopped: &AtomicBool,
+        execute: impl FnOnce(
+            &Path,
+            &Path,
+            &Path,
+            &Operation,
+            Instant,
+            &mut dyn FnMut() -> Result<bool, CryptoError>,
+        ) -> Result<Outcome, CryptoError>,
+    ) -> Result<(), Error> {
+        if stopped.load(Ordering::SeqCst) {
+            return Err(Error::Unavailable);
+        }
         let deadline = Instant::now() + Duration::from_secs(10);
         if crate::openbsd::unix_stream_peer_uid(&stream).map_err(|_| Error::Authentication)?
             != self.config.trusted_web_uid
@@ -225,7 +253,25 @@ impl Service {
             return Err(Error::Authentication);
         }
         let bytes = read_frame(&mut stream, deadline)?;
-        let result = self.process(&bytes, deadline, crate::openpgp_crypto_process::execute)?;
+        // After the sole complete request, this connection carries no further
+        // input. EOF or unexpected input cancels owned work without a new frame.
+        let mut cancelled = || {
+            if stopped.load(Ordering::SeqCst) {
+                return Ok(true);
+            }
+            crate::openbsd::completed_request_peer_closed(&stream)
+                .map_err(|_| CryptoError::Unavailable)
+        };
+        let result = self.process(
+            &bytes,
+            deadline,
+            |worker, engine, home, operation, deadline| {
+                execute(worker, engine, home, operation, deadline, &mut cancelled)
+            },
+        )?;
+        if cancelled().unwrap_or(true) {
+            return Err(Error::Unavailable);
+        }
         write_frame(&mut stream, &result, deadline)
     }
     pub fn serve(self) -> Result<(), Error> {
@@ -247,30 +293,115 @@ impl Service {
             ),
         )
         .map_err(|_| Error::Unavailable)?;
-        let service = Arc::new(self);
-        let active = Arc::new(std::sync::atomic::AtomicUsize::new(0));
-        for incoming in listener.incoming() {
-            let stream = incoming.map_err(|_| Error::Unavailable)?;
-            if active
-                .fetch_update(
-                    std::sync::atomic::Ordering::SeqCst,
-                    std::sync::atomic::Ordering::SeqCst,
-                    |v| (v < 2).then_some(v + 1),
+        self.serve_loop(
+            listener,
+            |worker, engine, home, operation, deadline, cancelled| {
+                crate::openpgp_crypto_process::execute_cancellable(
+                    worker, engine, home, operation, deadline, cancelled,
                 )
-                .is_err()
-            {
+            },
+        )
+    }
+    fn serve_loop<E>(self, listener: UnixListener, execute: E) -> Result<(), Error>
+    where
+        E: Fn(
+                &Path,
+                &Path,
+                &Path,
+                &Operation,
+                Instant,
+                &mut dyn FnMut() -> Result<bool, CryptoError>,
+            ) -> Result<Outcome, CryptoError>
+            + Send
+            + Sync
+            + 'static,
+    {
+        let signals =
+            crate::openbsd::CryptoTerminationSignals::install().map_err(|_| Error::Unavailable)?;
+        let stopped = signals.stop_flag();
+        listener
+            .set_nonblocking(true)
+            .map_err(|_| Error::Unavailable)?;
+        let service = Arc::new(self);
+        let execute = Arc::new(execute);
+        let mut active: Vec<std::thread::JoinHandle<()>> = Vec::new();
+        let mut failed = false;
+        while !stopped.load(Ordering::SeqCst) {
+            let mut index = 0;
+            while index < active.len() {
+                if active[index].is_finished() {
+                    if active.swap_remove(index).join().is_err() {
+                        failed = true;
+                        stopped.store(true, Ordering::SeqCst);
+                    }
+                } else {
+                    index += 1;
+                }
+            }
+            if stopped.load(Ordering::SeqCst) {
+                break;
+            }
+            let stream = match listener.accept() {
+                Ok((stream, _)) => stream,
+                Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
+                    std::thread::sleep(Duration::from_millis(20));
+                    continue;
+                }
+                Err(error) if error.kind() == std::io::ErrorKind::Interrupted => continue,
+                Err(_) => {
+                    failed = true;
+                    break;
+                }
+            };
+            if active.len() >= 2 {
                 continue;
             }
+            // OpenBSD may inherit the listener's nonblocking flag on accept.
+            if stream.set_nonblocking(false).is_err() {
+                failed = true;
+                break;
+            }
             let service = service.clone();
-            let active = active.clone();
-            std::thread::spawn(move || {
-                let _ = service.connection(stream);
-                active.fetch_sub(1, std::sync::atomic::Ordering::SeqCst);
+            let execute = execute.clone();
+            let thread = std::thread::Builder::new().spawn(move || {
+                let _ = service.connection_with_executor(
+                    stream,
+                    stopped,
+                    |worker, engine, home, operation, deadline, cancelled| {
+                        execute(worker, engine, home, operation, deadline, cancelled)
+                    },
+                );
             });
+            match thread {
+                Ok(thread) => active.push(thread),
+                Err(_) => {
+                    failed = true;
+                    break;
+                }
+            }
         }
-        Err(Error::Unavailable)
+        // Stop admission first, then cancel and join the existing two bounded
+        // connections. Partial frames retain their original ten-second budget;
+        // active workers observe this flag through the same owned cleanup path.
+        stopped.store(true, Ordering::SeqCst);
+        drop(listener);
+        for thread in active {
+            if thread.join().is_err() {
+                failed = true;
+            }
+        }
+        drop(signals);
+        if failed {
+            Err(Error::Unavailable)
+        } else {
+            Ok(())
+        }
     }
 }
+
+#[cfg(test)]
+#[path = "openpgp_crypto_runtime_lifecycle_tests.rs"]
+pub(crate) mod lifecycle_tests;
 struct ClientState {
     socket: PathBuf,
     helper_uid: u32,

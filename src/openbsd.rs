@@ -46,6 +46,11 @@ pub struct AccountAdmissionSignals {
     previous: [(libc::c_int, libc::sighandler_t); 2],
     installed: usize,
 }
+/// The same process-owned signal guard is reusable by the isolated crypto
+/// helper. Its state is local to that helper process, never shared with the
+/// separately running account service.
+#[cfg(unix)]
+pub type CryptoTerminationSignals = AccountAdmissionSignals;
 #[cfg(unix)]
 impl AccountAdmissionSignals {
     pub fn install() -> io::Result<Self> {
@@ -315,6 +320,14 @@ pub(crate) fn password_shutdown_imap_io(io: &ReceivedImapIo) -> io::Result<()> {
 /// Observe only the private lifetime-control socket; never read/peek mail data.
 #[cfg(unix)]
 pub(crate) fn password_imap_control_eof(stream: &UnixStream) -> io::Result<bool> {
+    completed_request_peer_closed(stream)
+}
+
+/// Check a completed one-request IPC exchange without consuming bytes. The
+/// peer must retain its write side until the response; EOF cancels its request,
+/// while extra input is invalid rather than a second operation.
+#[cfg(unix)]
+pub(crate) fn completed_request_peer_closed(stream: &UnixStream) -> io::Result<bool> {
     let mut byte = 0u8;
     let count = unsafe {
         libc::recv(
@@ -3034,6 +3047,28 @@ pub(crate) fn fixture_t04_terminate_owned_group(pid: u32) -> io::Result<()> {
 
 #[cfg(test)]
 mod tests {
+    #[cfg(unix)]
+    #[test]
+    fn completed_request_peer_check_is_nonblocking_nonconsuming_and_fail_closed() {
+        use std::io::{Read as _, Write as _};
+        let (mut reader, mut writer) = std::os::unix::net::UnixStream::pair().unwrap();
+        assert!(!super::completed_request_peer_closed(&reader).unwrap());
+        writer.write_all(b"x").unwrap();
+        assert_eq!(
+            super::completed_request_peer_closed(&reader)
+                .unwrap_err()
+                .kind(),
+            std::io::ErrorKind::InvalidData
+        );
+        let mut byte = [0];
+        reader.read_exact(&mut byte).unwrap();
+        assert_eq!(byte, *b"x");
+        assert!(!super::completed_request_peer_closed(&reader).unwrap());
+        writer.shutdown(std::net::Shutdown::Write).unwrap();
+        assert!(super::completed_request_peer_closed(&reader).unwrap());
+        drop(writer);
+        assert!(super::completed_request_peer_closed(&reader).unwrap());
+    }
     #[cfg(unix)]
     #[test]
     fn operator_input_keeps_original_byte_and_deadline_bounds() {
