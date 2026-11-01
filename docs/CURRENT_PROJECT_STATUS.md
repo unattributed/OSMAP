@@ -1,5 +1,17 @@
 # Current Project Status
 
+2026-11-01 (America/Toronto) — **ASC file upload installed on obsd1; owner confirmation remains open.**
+Public-key import now selects one exported `.asc` file, using the existing Rust
+multipart parser and authenticated native transaction. The supplied filename
+with `@` is supported; pasted armor is removed. Signed7fd9c42 builds Web049d17,
+loadedPID60249/textinode129979. Actual native multipart, synthetic chooser,
+2,101Rust/0fail/75ignored, security/V10–V14 and Web-only installation pass.
+HTTPS200/eightroles, unchanged environment/helpers/protected files and owner
+two-key inventory/revision5/policies are confirmed. Latest owner password
+confirmation refusal remains UNKNOWN; no owner credential or key mutation was
+performed. Owner T09FAIL/importPARTIALLY_VERIFIED/S05-02open remain truthful.
+See [the installed upload record](UX_SLICE_S05_02.md#asc-upload-installed-owner-confirmation-remains-open--2026-11-01).
+
 2026-11-01 (America/Toronto) — **S05-02 native permission and credential-route corrections installed; owner retest pending.**
 The running helper's reproduced import failure was a file-creation mask mismatch:
 GPG produced0644 staging keyboxes under022, correctly refused by strict private

@@ -18330,6 +18330,11 @@
             "kind": "native_execution",
             "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-import-20261101/routing-umask-evidence.json",
             "scope": "Nov1actualoldmask0220644metadatarefusal reproduced; fixedworkerab1samePID34710controlledaccount known660-byteimport3keys/remove2originalsPASS, noownerwrite. Correctedambient022selectedfullHTTPnativePASS; source03eb8ad/617e11f, installedWeb5a325/workerab1/preservation/2098Rust0failed75ignored+securityV10-V14PASS. PriorownerT09FAILawaitsfreshbrowserresult; statusremainsPARTIALLY_VERIFIED."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-import-20261101/asc-upload-installed-evidence.json",
+            "scope": "Signed7fd9c42 boundedASCfile transport; exactfilename@RED-GREEN; actualnative multipart/selectedRuntime/TOTP/Cworker transactionPASS;2101/0/75+securityV10-V14; matchingWeb049d17installed/preservation/helperreadbackPASS. RootCUA enabledchooser selected providedoriginalfile, no submission. OwnerlatestprimaryrefusalUNKNOWN/T09FAIL remains; no ownerkeymutation and statusPARTIALLY_VERIFIED."
           }
         ]
       }

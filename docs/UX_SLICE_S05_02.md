@@ -537,3 +537,41 @@ installation. Native build retains proven4GiB/jobs1/debug0/private-home TMP with
 Two same-boundary failures require combined independent reassessment before a
 changed test. Existing native worker077/atomic keybox/policy/credential/mail
 availability boundaries remain. Owner T09 and S05-02 remain open.
+
+## ASC upload installed; owner confirmation remains open — 2026-11-01
+
+Signed source7fd9c424a425f3d916c00fc72021d42090051390 replaces the armor
+textarea with one required `.asc` file chooser. Root's actual CUA check selected
+the supplied original filename, confirmed the enabled control and zero armor
+textareas, and stopped/reaped its synthetic fixture with fresh listener absence.
+No owner credentials or import submission were used. Two Python fixture-import
+preparation failures and a zero-test selection remain excluded from browser PASS.
+
+Normal acceptance passes2,101 Rust tests/0failed/75explicit ignores, strict
+Clippy/formatting/security/V10–V13; V14 passes separately. The exact OpenBSD
+public-admin transaction and Runtime journey now pass actual multipart file
+transport into the existing native consumer under ambient022. Disposable state
+cleanup and a separate fresh absence check pass. Native build took163.987s.
+
+Matching Web049d17c1e8bd16290c148175883a37e3713170582f8514ab42d4aa31e12ba14e
+is loaded on obsd1 (PID60249/textinode129979), HTTPSlogin200 and all eight roles
+healthy. Only Web restarted. Environment/helpers and protected file manifests
+are unchanged (before/after328a9ba2ba62195862a1503d225c082a01280f370b27e530261f0bf805866c95).
+Post-install helper readback confirms the original two public keys, revision5,
+Optional account policy and Required Proton recipient policy; RAM-only native
+encryption passes without sending mail. The readonly probe is removed.
+
+Private `asc-upload-installed-evidence.json` SHA256
+06ba6936d8d6e39da965003361214da692a607ca59166cfa633548f3886c71db
+binds retained source/native/browser/install/normal-gate evidence. Source review
+`asc-upload-independent-review.json` SHA256
+ed0ad612295558374da316fb3f1ec05989c7ccdf7a2ca5323ba93cc5e101b622
+is GO; final actual-result independent review is recorded separately.
+The latest owner primary-confirmation refusal remains UNKNOWN, not repaired by
+file transport. Owner T09 remains FAIL pending one successful ordinary browser
+file import; import control remains PARTIALLY_VERIFIED and S05-02 IN_PROGRESS.
+
+Final installed independent review `asc-upload-installed-independent-review.json`
+SHA256 bc4ca497d9e7f86e5c21795a1bcba1873fcc0c2bacc379aaa861cf12856b9d3d
+is GO for agent-owned ASC engineering/native/installed QA, with owner primary
+UNKNOWN and acceptance still open. No production-release assurance is inferred.

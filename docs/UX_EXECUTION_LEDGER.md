@@ -1,3 +1,5 @@
+2026-11-01 (America/Toronto) — **ASC file upload installed; owner import confirmation remains open.**
+
 2026-11-01 (America/Toronto) — **S05-02 reopened: owner public-key import UAT failed; correction in progress.**
 
 2026-10-31 (America/Toronto) — **S05-02 UAT_READY: practical key, email and policy management installed.**
@@ -119,7 +121,7 @@ slice using the same failure-analysis method. See
       ],
       "frontend_backend_outcome": "Signed-in user sees imported keys with exact email associations and applied policy, and can manage public import/bind/policy/remove through fresh authorization.",
       "essential_qa": "T01-T08 source/native/browser/installed checks and independent review; actual visual owner T09 separate.",
-      "next_action": "Implement and qualify bounded .asc file upload with exact original filename, preserve current credential-refusal UNKNOWN, deploy matching Web only and complete normal signed delivery.",
+      "next_action": "Complete reviewed signed GitHub preservation of ASC upload; owner ordinary browser import retest. Latest primary refusal UNKNOWN; T09FAIL/importPARTIALLY_VERIFIED/S05open.",
       "dependencies": [
         {
           "owner": "/root",
@@ -129,11 +131,11 @@ slice using the same failure-analysis method. See
         }
       ],
       "stages": {
-        "implementation": "PENDING",
-        "source_tests": "PENDING",
-        "native_tests": "PENDING",
-        "deployed_qa": "PENDING",
-        "independent_review": "PENDING",
+        "implementation": "PASS",
+        "source_tests": "PASS",
+        "native_tests": "PASS",
+        "deployed_qa": "PASS",
+        "independent_review": "PASS",
         "recovery": "PASS"
       },
       "evidence": [
@@ -224,6 +226,26 @@ slice using the same failure-analysis method. See
         {
           "stage": "deployed_qa",
           "reference": "Newowner06:45primary403beforefactor/native, manualcorrectProtonentrycopyconfirmed. Nativeprivate-maskfixremainsinstalled; keyboxunchanged/epoch6ActiveOct30unchanged. Explicitoperatorrequestnow.ascfileuploadinsteadtextarea; exactfilename@sharedvalidatorREDretained."
+        },
+        {
+          "stage": "implementation",
+          "reference": "Signed7fd9c42 requiredASCfile/multipart existingparser; exactexportbasename@RED-GREEN; no dependency/authbypass."
+        },
+        {
+          "stage": "source_tests",
+          "reference": "asc-acceptance.log exit0 2101PASS/0failed/75ignored strictClippy/fmt/securityV10-V13; asc-v14.logPASS."
+        },
+        {
+          "stage": "native_tests",
+          "reference": "asc-native-functional.log exact2nativecasesPASS inclRuntime multipart/literalcredentials/nativeC; ambient022; asc-native-cleanup.log freshabsencePASS."
+        },
+        {
+          "stage": "deployed_qa",
+          "reference": "asc-install.actual.log Web049d17/PID60249/inode129979/HTTPS200/eightroles; asc-post-install-read.log2keys/rev5/accountOptional/ProtonRequired/RAMencrypt/preservation/probeabsentPASS. RootCUAfilechooser selected originalASC,no submission."
+        },
+        {
+          "stage": "independent_review",
+          "reference": "asc-upload-installed-independent-review.json SHAbc4ca497d9e7f86e5c21795a1bcba1873fcc0c2bacc379aaa861cf12856b9d3d GO_AGENT_OWNED_ASC_ENGINEERING_NATIVE_INSTALLED_QA; ownerprimaryUNKNOWN/T09FAIL/importPARTIAL/S05open preserved."
         }
       ]
     }
@@ -249,7 +271,7 @@ slice using the same failure-analysis method. See
     "slice": "S05-02",
     "specification": {
       "path": "docs/UX_SLICE_S05_02.md",
-      "sha256": "3b424d2dd1b1ef28fc0e02dbf1ff8bf033f35079d7bc15acf2a0f5153a898eaf"
+      "sha256": "d947aafe454fcb33e8e44e55f4bfdf37c70e8c619a1e86d64415be51606f9d57"
     },
     "design": {
       "journey": "Signed-in user sees imported keys with exact email associations and applied policy, and can manage public import/bind/policy/remove through fresh authorization.",
@@ -448,9 +470,9 @@ slice using the same failure-analysis method. See
   },
   "human_acceptance": {
     "status": "FAIL",
-    "reference": "2026-11-01 ownerreports publickey02B34119C22074FC68B10E23E3294DF8DE68C834 importgenericUnavailable; bothfactorsacceptedliveaudit, nochangeconfirmed. Ownercredentials/proofmustnotbereplayed."
+    "reference": "2026-11-01 ownerreports publickey02B34119C22074FC68B10E23E3294DF8DE68C834 importgenericUnavailable; bothfactorsacceptedliveaudit, nochangeconfirmed. Ownercredentials/proofmustnotbereplayed. Latest06:45primaryrefusal beforefactor/native remainsUNKNOWN; ASCuploadinstalled, newordinaryownerfileimportnotyetperformed."
   },
-  "next_action": "Implement and qualify bounded .asc file upload with exact original filename, preserve current credential-refusal UNKNOWN, deploy matching Web only and complete normal signed delivery."
+  "next_action": "Complete reviewed signed GitHub preservation of ASC upload; owner ordinary browser import retest. Latest primary refusal UNKNOWN; T09FAIL/importPARTIALLY_VERIFIED/S05open."
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->

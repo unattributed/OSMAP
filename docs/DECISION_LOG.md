@@ -1,5 +1,13 @@
 # Decision Log
 
+2026-11-01 — Replace pasted OpenPGP armor with one bounded `.asc` upload, as
+requested by the owner. Reuse the Rust multipart parser, literal in-memory
+bytes and existing fresh primary/TOTP/native validation. Permit `@` in safe
+filename metadata after the exact original basename regression failed; retain
+path/control/length guards. Native multipart and matching Web-only installation
+pass without credential/trust changes. Preserve the newest primary refusal as
+UNKNOWN; file transport does not prove it fixed. Owner acceptance stays open.
+
 2026-11-01 — Actual running-helper import RED→GREEN establishes native creation
 mask as a reproducible failure: old022 produces0644, old077 produces0600, both
 with native import success; strict helper custody rejects0644 before publication.
