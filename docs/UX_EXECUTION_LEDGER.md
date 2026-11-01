@@ -1,4 +1,4 @@
-2026-11-01 (America/Toronto) — **Contacts directory revision in progress: owner requests Outlook People-style table, people icon and policy visibility.**
+2026-11-01 (America/Toronto) — **People-style Contacts UAT_READY: dedicated table and people icon installed; owner check pending.**
 
 2026-11-01 (America/Toronto) — **Compose imported-recipient picker installed; owner import succeeds, picker usability check pending.**
 
@@ -21,7 +21,7 @@ slice using the same failure-analysis method. See
   "slice": "S05-02",
   "original_requirement": "Public-key import/list/remove, full-fingerprint binding, explicit recipient trust, capability/policy UI and private-key provisioning SOP",
   "source_baseline": "5edc57acc6bd8a3b504ffc6a85fc69ba0d896ac1",
-  "state": "IN_PROGRESS",
+  "state": "UAT_READY",
   "integration_owner": "/root",
   "roles": {
     "project_manager": [
@@ -107,7 +107,8 @@ slice using the same failure-analysis method. See
     "src/http/contacts_ui.rs",
     "src/http/contacts.css",
     "src/http/routes_compose.rs",
-    "src/http_support.rs"
+    "src/http_support.rs",
+    "README.md"
   ],
   "outcomes": [
     {
@@ -151,7 +152,7 @@ slice using the same failure-analysis method. See
       ],
       "frontend_backend_outcome": "Signed-in user sees imported keys with exact email associations and applied policy, and can manage public import/bind/policy/remove through fresh authorization.",
       "essential_qa": "T01-T08 source/native/browser/installed checks and independent review; actual visual owner T09 separate.",
-      "next_action": "Deliver owner-requested Outlook People-style Contacts table with names/emails/current encryption policies, search and secure Write/CRUD actions; qualify and update obsd1 Web only.",
+      "next_action": "Owner checks installed People-style Contacts table, real imported/saved rows and encryption policies, search and Write/Add name; prior import PASS retained. Normal signed GitHub delivery checked in final receipt; whole epic/production release separate.",
       "dependencies": [
         {
           "owner": "/root",
@@ -161,11 +162,11 @@ slice using the same failure-analysis method. See
         }
       ],
       "stages": {
-        "implementation": "PENDING",
-        "source_tests": "PENDING",
-        "native_tests": "PENDING",
-        "deployed_qa": "PENDING",
-        "independent_review": "PENDING",
+        "implementation": "PASS",
+        "source_tests": "PASS",
+        "native_tests": "PASS",
+        "deployed_qa": "PASS",
+        "independent_review": "PASS",
         "recovery": "PASS"
       },
       "evidence": [
@@ -332,6 +333,30 @@ slice using the same failure-analysis method. See
         {
           "stage": "deployed_qa",
           "reference": "Owner explicitly rejects plain Contacts form/list (screenshots Nov1 08:04/08:07 America/Toronto) and requests Outlook People-style table/peopleicon with contact/email/encryptionpolicy. Prior Compose integration remains installed/passing; this directory revision is not yet executed."
+        },
+        {
+          "stage": "implementation",
+          "reference": "Signed2e1ddb5 People sidebar/dedicated Contacts table; existing owned readonly directory combines saved/imported identities and effective policy; no new persistence/dependency/helper."
+        },
+        {
+          "stage": "source_tests",
+          "reference": "Focusedcore12/routes14/UI4/Runtime13/preflight3/Clippy/fmtPASS; actual syntheticCUA functional/restart/RemoveKeep and six360/768/1440dark/light layoutsPASS. Retained initialclockoverlap/compilefailure/expiredpreview; oneinitialerror-tabpolicyblocked."
+        },
+        {
+          "stage": "native_tests",
+          "reference": "contacts-directory-build-receipt.json source2e1ddb/archivec2de currentWeb/libtest/readonlyprobe166.762s; actual native.log core12/routes14/UI4 all0failed/countguardPASS."
+        },
+        {
+          "stage": "deployed_qa",
+          "reference": "contacts-directory-install.actual.log Webfe193/PID31119/textinode130022/HTTPS200/eightroles; actual owned readonly Directory4rows/4keys/1savedcontact/currentRequired andOffByDefault/namespreserved/foreignrefusal/no writes."
+        },
+        {
+          "stage": "recovery",
+          "reference": "Protectedbeforeafter0062e1c8 equal; env8edd/helpers/workers710/confige209 unchanged; readonlyprobeabsent; finalbrowserfixture/listener/currenttabsabsent. ExacthashedWebbackup/guardedrollbackretained,notneeded."
+        },
+        {
+          "stage": "independent_review",
+          "reference": "contacts-directory-source-independent-review.json SHAd93280f9 GO; contacts-directory-installed-independent-review.json SHA9eab993390767e4d813ba1de4bc8521b0b747d059a36e94ce2a0f7c6c8edfcf3 GO reconciles native/build/install/readback and limits. Normal full push gate/Git equality separate final delivery receipt."
         }
       ]
     }
@@ -357,7 +382,7 @@ slice using the same failure-analysis method. See
     "slice": "S05-02",
     "specification": {
       "path": "docs/UX_SLICE_S05_02.md",
-      "sha256": "b1e13cf5962458a77e1c5ff3857c1364884966f1fe3d2228a49fec03303976d1"
+      "sha256": "e97f6a8fb86b8c7c4bac9b887c9be4ba54e92a7bf4f90fed23f8fcc5d315fcca"
     },
     "design": {
       "journey": "Signed-in user sees imported keys with exact email associations and applied policy, and can manage public import/bind/policy/remove through fresh authorization.",
@@ -386,7 +411,8 @@ slice using the same failure-analysis method. See
         "evidence": [
           "docs/UX_SLICE_S05_02.md#engineering-and-installed-closeout--2026-10-31",
           "Private acceptance04.log2095PASS/0failed/75ignored; security/V10-V13PASS; v14-finalPASS, focused tests and strictClippyPASS.",
-          "Compose integration current source/native/installed/independent review PASS; see UX_SLICE_S05_02.md#compose-picker-installed--2026-11-01; no owner Compose selection by agent."
+          "Compose integration current source/native/installed/independent review PASS; see UX_SLICE_S05_02.md#compose-picker-installed--2026-11-01; no owner Compose selection by agent.",
+          "Contacts directory changed-boundary source/native/browser and installed readonly qualification PASS at signed2e1ddb/Webfe193; see People-style Contacts installed record. Matching unchanged key-effect evidence reused."
         ]
       },
       {
@@ -409,7 +435,8 @@ slice using the same failure-analysis method. See
           "Nov1ownerimportfailure; liveaudit04:02:50/04:06:34UTC acceptsprimaryandTOTPthen503. Privateevidence s05-02-import-20261101.",
           "Nov1correction currentnativepaddedRuntimeimport/gates/matchingWeb/preservationPASS; ownerbrowserT09FAILpendingfreshretest, oldpayloadUNKNOWN.",
           "Nov1correctedselectedprimary/capturedEpoch/nativeambient022/fullHTTP/livecontrolledhelper/preservation/gatesPASS aslatestUX_SLICE_S05_02record; ownerT09FAILremains.",
-          "Compose integration current source/native/installed/independent review PASS; see UX_SLICE_S05_02.md#compose-picker-installed--2026-11-01; no owner Compose selection by agent."
+          "Compose integration current source/native/installed/independent review PASS; see UX_SLICE_S05_02.md#compose-picker-installed--2026-11-01; no owner Compose selection by agent.",
+          "Contacts directory changed-boundary source/native/browser and installed readonly qualification PASS at signed2e1ddb/Webfe193; see People-style Contacts installed record. Matching unchanged key-effect evidence reused."
         ]
       },
       {
@@ -429,7 +456,8 @@ slice using the same failure-analysis method. See
         "evidence": [
           "docs/UX_SLICE_S05_02.md#engineering-and-installed-closeout--2026-10-31",
           "Private acceptance04.log2095PASS/0failed/75ignored; security/V10-V13PASS; v14-finalPASS, focused tests and strictClippyPASS.",
-          "Nov1correctedselectedprimary/capturedEpoch/nativeambient022/fullHTTP/livecontrolledhelper/preservation/gatesPASS aslatestUX_SLICE_S05_02record; ownerT09FAILremains."
+          "Nov1correctedselectedprimary/capturedEpoch/nativeambient022/fullHTTP/livecontrolledhelper/preservation/gatesPASS aslatestUX_SLICE_S05_02record; ownerT09FAILremains.",
+          "Contacts directory changed-boundary source/native/browser and installed readonly qualification PASS at signed2e1ddb/Webfe193; see People-style Contacts installed record. Matching unchanged key-effect evidence reused."
         ]
       },
       {
@@ -448,7 +476,8 @@ slice using the same failure-analysis method. See
         "status": "PASS",
         "evidence": [
           "docs/UX_SLICE_S05_02.md#engineering-and-installed-closeout--2026-10-31",
-          "Actual two exact native public-admin/Runtime casesPASS; current13effectinputs unchangedfa26102; root/native/security independent reviews, exactfixturecleanup and freshabsencePASS."
+          "Actual two exact native public-admin/Runtime casesPASS; current13effectinputs unchangedfa26102; root/native/security independent reviews, exactfixturecleanup and freshabsencePASS.",
+          "Contacts directory changed-boundary source/native/browser and installed readonly qualification PASS at signed2e1ddb/Webfe193; see People-style Contacts installed record. Matching unchanged key-effect evidence reused."
         ]
       },
       {
@@ -469,7 +498,8 @@ slice using the same failure-analysis method. See
           "docs/UX_SLICE_S05_02.md#engineering-and-installed-closeout--2026-10-31",
           "Private acceptance04.log2095PASS/0failed/75ignored; security/V10-V13PASS; v14-finalPASS, focused tests and strictClippyPASS.",
           "Nov1correctedselectedprimary/capturedEpoch/nativeambient022/fullHTTP/livecontrolledhelper/preservation/gatesPASS aslatestUX_SLICE_S05_02record; ownerT09FAILremains.",
-          "Compose integration current source/native/installed/independent review PASS; see UX_SLICE_S05_02.md#compose-picker-installed--2026-11-01; no owner Compose selection by agent."
+          "Compose integration current source/native/installed/independent review PASS; see UX_SLICE_S05_02.md#compose-picker-installed--2026-11-01; no owner Compose selection by agent.",
+          "Contacts directory changed-boundary source/native/browser and installed readonly qualification PASS at signed2e1ddb/Webfe193; see People-style Contacts installed record. Matching unchanged key-effect evidence reused."
         ]
       },
       {
@@ -490,7 +520,8 @@ slice using the same failure-analysis method. See
           "docs/UX_SLICE_S05_02.md#engineering-and-installed-closeout--2026-10-31",
           "Private acceptance04.log2095PASS/0failed/75ignored; security/V10-V13PASS; v14-finalPASS, focused tests and strictClippyPASS.",
           "Nov1correctedselectedprimary/capturedEpoch/nativeambient022/fullHTTP/livecontrolledhelper/preservation/gatesPASS aslatestUX_SLICE_S05_02record; ownerT09FAILremains.",
-          "Compose integration current source/native/installed/independent review PASS; see UX_SLICE_S05_02.md#compose-picker-installed--2026-11-01; no owner Compose selection by agent."
+          "Compose integration current source/native/installed/independent review PASS; see UX_SLICE_S05_02.md#compose-picker-installed--2026-11-01; no owner Compose selection by agent.",
+          "Contacts directory changed-boundary source/native/browser and installed readonly qualification PASS at signed2e1ddb/Webfe193; see People-style Contacts installed record. Matching unchanged key-effect evidence reused."
         ]
       },
       {
@@ -511,7 +542,8 @@ slice using the same failure-analysis method. See
           "docs/UX_SLICE_S05_02.md#engineering-and-installed-closeout--2026-10-31",
           "Actual two exact native public-admin/Runtime casesPASS; current13effectinputs unchangedfa26102; root/native/security independent reviews, exactfixturecleanup and freshabsencePASS.",
           "Nov1correctedselectedprimary/capturedEpoch/nativeambient022/fullHTTP/livecontrolledhelper/preservation/gatesPASS aslatestUX_SLICE_S05_02record; ownerT09FAILremains.",
-          "Compose integration current source/native/installed/independent review PASS; see UX_SLICE_S05_02.md#compose-picker-installed--2026-11-01; no owner Compose selection by agent."
+          "Compose integration current source/native/installed/independent review PASS; see UX_SLICE_S05_02.md#compose-picker-installed--2026-11-01; no owner Compose selection by agent.",
+          "Contacts directory changed-boundary source/native/browser and installed readonly qualification PASS at signed2e1ddb/Webfe193; see People-style Contacts installed record. Matching unchanged key-effect evidence reused."
         ]
       },
       {
@@ -534,7 +566,8 @@ slice using the same failure-analysis method. See
           "Actualownerpublicimportfails; successfulUI/readiness/readcompatibilitydoesnotproveinstalledmutation.",
           "Nov1correction currentnativepaddedRuntimeimport/gates/matchingWeb/preservationPASS; ownerbrowserT09FAILpendingfreshretest, oldpayloadUNKNOWN.",
           "Nov1correctedselectedprimary/capturedEpoch/nativeambient022/fullHTTP/livecontrolledhelper/preservation/gatesPASS aslatestUX_SLICE_S05_02record; ownerT09FAILremains.",
-          "Compose integration current source/native/installed/independent review PASS; see UX_SLICE_S05_02.md#compose-picker-installed--2026-11-01; no owner Compose selection by agent."
+          "Compose integration current source/native/installed/independent review PASS; see UX_SLICE_S05_02.md#compose-picker-installed--2026-11-01; no owner Compose selection by agent.",
+          "Contacts directory changed-boundary source/native/browser and installed readonly qualification PASS at signed2e1ddb/Webfe193; see People-style Contacts installed record. Matching unchanged key-effect evidence reused."
         ]
       },
       {
@@ -555,7 +588,8 @@ slice using the same failure-analysis method. See
           "Nov1ownerimportfailure; liveaudit04:02:50/04:06:34UTC acceptsprimaryandTOTPthen503. Privateevidence s05-02-import-20261101.",
           "Later05:26primary403 and05:33acceptedfactor503retained; nativepermission+primaryroutecorrectionsnowinstalled/controlledlivePASS; freshownerbrowserretestpending,noownerimportbyagent.",
           "Owner explicitly confirms new ASC import/automatic email/Off default successful. New installed Compose picker T09 remains pending; prior failures retained as history.",
-          "Prior import ownerPASS remains; Contacts page usability explicitly rejected. Outlook-style directory revision pending agent implementation/qualification and human acceptance."
+          "Prior import ownerPASS remains; Contacts page usability explicitly rejected. Outlook-style directory revision pending agent implementation/qualification and human acceptance.",
+          "New People-style Contacts directory installed and agent-qualified; owner check pending; old page rejection and prior key import PASS preserved."
         ]
       }
     ],
@@ -563,10 +597,10 @@ slice using the same failure-analysis method. See
     "human_exit": "Owner accepts actual installed key/email/policy journey with selected authenticated actions."
   },
   "human_acceptance": {
-    "status": "FAIL",
-    "reference": "Owner rejects form-first Contacts page and supplies Outlook People reference: people icon, table listing, added contact, email and encryption policy. Prior key import/automatic identity/Off default remains owner PASS; new directory acceptance pending."
+    "status": "PENDING",
+    "reference": "Owner rejected the historical plain Contacts page; new Outlook People-style directory is installed and agent-qualified. New directory/Compose owner UAT pending; prior import/automatic email/Off default owner PASS preserved."
   },
-  "next_action": "Deliver owner-requested Outlook People-style Contacts table with names/emails/current encryption policies, search and secure Write/CRUD actions; qualify and update obsd1 Web only."
+  "next_action": "Owner checks installed People-style Contacts table, real imported/saved rows and encryption policies, search and Write/Add name; prior import PASS retained. Normal signed GitHub delivery checked in final receipt; whole epic/production release separate."
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->

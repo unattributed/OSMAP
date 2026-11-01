@@ -1,6 +1,6 @@
 # S05-02 — Practical public-key and email-policy management
 
-**Current 2026-11-01: owner confirms ASC import, automatic email recognition and Off default work. The Compose imported-recipient integration is installed and agent-qualified; its owner usability check remains pending. Historical failures are retained.**
+**Current 2026-11-01: owner confirms ASC import, automatic email recognition and Off default work. The Compose imported-recipient integration and the new People-style Contacts directory are installed and agent-qualified; their owner usability checks remain pending. Historical failures are retained.**
 
 Started 2026-10-31 (America/Toronto) from signed S05-01 closeout
 `279df22e6ceb384410b151a4acc9134e67dc3e25`. The operator acknowledged the
@@ -834,3 +834,62 @@ expired error tab remains blocked by browser URL policy; no bypass was attempted
 and its eventual automatic disposal is not yet observed. No owner state or SMTP
 operation is part of these synthetic checks. Final native/install qualification
 and normal delivery gates remain pending.
+
+
+## People-style Contacts installed — 2026-11-01
+
+The owner rejected the old form-first Contacts page and supplied Outlook People
+as the practical reference. Signed source `2e1ddb551586cb6db9b894693acdc2e83a0a94c5`
+adds a compact people icon in the existing sidebar and a dedicated `/contacts`
+page with Name, Email address, Encryption policy and Actions columns. Search and
+Saved/Imported filters operate on the bounded owned directory. Imported public
+key emails appear immediately alongside saved contacts; matching rows merge and
+saved names win. Add name prefills the current imported address and requires an
+explicit existing contact save. New contact, edit and confirmed removal use the
+existing store, session, Origin, CSRF and revision checks. Write revalidates the
+current saved revision or imported identity before in-memory Compose prefill;
+GET does not save a draft or send mail. Public-key readiness and the combined
+account/recipient policy are shown separately. Missing policy stays unavailable.
+
+No new dependency, helper protocol, database, synchronization job or private-key
+authority is added. The actual installed readonly directory reports four rows
+from four public keys and one saved contact. The known cBw recipient is Required;
+the recent user4 recipient is OffByDefault. Saved labels survive and foreign
+records are refused; contacts and bindings are unchanged after readback.
+
+Focused source checks pass: core12, routes14, UI4, Runtime13 and preflight3;
+strict Clippy and formatting pass. Native OpenBSD execution passes core12,
+routes14 and UI4 with actual count guards. The current signed archive built
+libtest, Web and the readonly observer in166.762seconds. Browser checks use
+controlled synthetic data: Add name/save/merged row/search/Write To with Off
+flags/edit cancel, saved-name persistence across restart, and actual Remove
+confirmation/Keep. All six360/768/1440 dark/light layouts have no overflow or
+clock/control overlap. The initial overlap and TrustedHtml compilation failure
+are retained with their corrections. The initial180-second preview expiry is a
+QA limitation; final fixture/listener/tabs and viewport/media reset pass. One
+initial expired error tab remains URL-policy blocked and is not claimed closed.
+
+Web `fe193cdf6296c9d9c78475d94de9a4e1df3f286f44446573880590e7fbb36c8e`
+is loaded on obsd1, PID31119/text inode130022, with loopback listener, CA-verified
+HTTPS login200 and all eight roles healthy. Only OSMAP Web restarted. Environment,
+helpers, inventory workers and crypto configuration are unchanged; protected
+before/after manifests both hash `0062e1c872f085e86bac0ac3712e03a4fadea58ace19955d42cec2a350af6994`.
+The verified readonly observer is removed; the hashed old-Web rollback backup is
+retained and rollback was not needed. Actual-data readback is not an owner HTTP
+session or owner contact mutation. Prior owner import/identity/default-Off PASS
+remains; owner acceptance of this new directory and Compose usability is pending.
+
+Private evidence uses the existing `s05-02-import-20261101/contacts-directory-*`
+prefix: source/installed independent reviews, build receipt, native log, actual
+installation and readonly readback, browser result/layout and final screenshot.
+The final ordinary push runs normal full delivery gates; GitHub equality and
+those actual outcomes are retained in the final delivery receipt. No whole-epic
+acceptance or production release is claimed. Minimal owner check: open Contacts
+from the people icon, inspect real address/policy rows, search for an import,
+and use Write or explicitly save a name if desired.
+
+Independent installed review `9eab993390767e4d813ba1de4bc8521b0b747d059a36e94ce2a0f7c6c8edfcf3`
+confirms the engineering/native/installed outcome and retained limits. A closeout
+editor indentation error and missing README scope entry were corrected before
+validation; no product/runtime bytes changed. Traceability and work-order checks
+pass403 approved controls/110 unchanged legacy cases/34 current obligations.

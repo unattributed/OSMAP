@@ -1,5 +1,17 @@
 # Current Project Status
 
+2026-11-01 (America/Toronto) — **People-style Contacts directory installed on obsd1.**
+The sidebar people icon opens a dedicated table of names, email addresses and
+effective encryption policies. Saved contacts and imported-key identities are
+listed together, with search, source filters, Write, Add name and existing
+confirmed contact editing/removal. Source2e1ddb5/native30/browser six-layout
+checks and matching Webfe193 installation pass. Actual readonly4-row/4-key/
+1-contact readback preserves saved labels and records; HTTPS200/eight roles,
+protected manifests0062e1c8 and unchanged helpers/environment/config pass.
+Owner import PASS is retained; new directory/Compose usability T09 is pending.
+Normal signed GitHub delivery is verified separately in the final receipt.
+See [the installed Contacts record](UX_SLICE_S05_02.md#people-style-contacts-installed--2026-11-01).
+
 2026-11-01 (America/Toronto) — **Compose offers imported-key email recipients.**
 Owner confirms fresh ASC import, automatic email recognition and default Off.
 The missing S03-01B/S05-02 Compose connection is installed: Choose a recipient

@@ -1,5 +1,14 @@
 # Decision Log
 
+2026-11-01 — Follow the owner’s Outlook People reference for a dedicated Contacts
+table and compact people navigation icon. Read the existing owned contact/key
+sources together rather than copying imported addresses into another durable
+store. Preserve saved names, exact email local-part case, current effective
+policy and independent unavailable states. Reuse the existing contact mutation
+and fresh Compose recipient validation; Add name is explicit and GET only
+prefills. Native and synthetic browser journeys plus Web-only installation and
+readonly owner-data verification pass; new owner acceptance stays separate.
+
 2026-11-01 — Owner directs eliminating manual email binding after import.
 Derive recipients from bounded native certificate emails using one shared Rust
 resolver; avoid another durable transaction. Preserve saved policy and explicit

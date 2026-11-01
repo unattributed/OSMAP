@@ -5386,6 +5386,11 @@
             "kind": "qa_execution",
             "path": "docs/UX_SLICE_S05_02.md",
             "scope": "Nov1 current saved/imported recipient projection: actual source routes9/native9, UI4/native4, core7 and exact native MACRuntime1 pass. Actual CUA saves imported recipient alongside original with retained content/Off flags. Installed owned native projection confirms4choices/1savedcontact; owner Compose usability/final-reference comparison remain pending. No contact synchronization or mail send."
+          },
+          {
+            "kind": "qa_execution",
+            "path": "docs/UX_SLICE_S05_02.md",
+            "scope": "Nov1 owner Outlook People reference implemented at signed2e1ddb: dedicated table/people icon/name/email/effective encryption, search/filter, safe WriteGET/Addname and existing CRUD. Native core12/routes14/UI4 actualPASS; actual synthetic browser functional/persistence/RemoveKeep and six-layoutPASS. Matching Webfe193 installed; owned Directory4rows/4keys/1contact, preservednames/records/policy, foreignrefusal. Owner new Contacts/Compose and final-reference acceptance pending; remains PARTIALLY_VERIFIED."
           }
         ]
       }

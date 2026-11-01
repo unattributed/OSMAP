@@ -1,5 +1,7 @@
 # OSMAP
 
+**2026-11-01: People-style Contacts installed on obsd1.** The people sidebar icon opens a searchable table of saved contacts and imported-key email identities, their effective encryption policies and practical Write/Add name/Edit actions. Focused source, browser, native and installed checks pass; owner acceptance of the new page remains pending. See the [Contacts delivery record](docs/UX_SLICE_S05_02.md#people-style-contacts-installed--2026-11-01).
+
 **2026-10-17: S04-01 complete (R4 narrowed scope).** Settings/sessions engineering, matching installed QA, independent audit and operator `S04_01_UAT=PASS` are recorded in the [slice checklist](docs/UX_SLICE_S04_01.md). Eleven required follow-up controls remain open; Sprint S04 and the epic are incomplete. Password change, TOTP management and recovery are separate work. All other stopped slices remain stopped. See [current status](docs/CURRENT_PROJECT_STATUS.md).
 
 **OpenBSD Secure Mail Access Platform** is a small, security-focused webmail
