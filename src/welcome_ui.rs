@@ -134,17 +134,38 @@ pub(crate) fn render_mailboxes_page_with_policy(
     } else {
         "<a href=\"#welcome-mailboxes\">Browse mailboxes</a>"
     };
+    let imported_keys = (openpgp.0.canonical_username == canonical_username
+        && openpgp
+            .0
+            .bindings
+            .as_ref()
+            .is_none_or(|record| record.ensure_account(canonical_username).is_ok()))
+    .then(|| {
+        openpgp
+            .0
+            .inventory
+            .as_ref()
+            .and_then(|inventory| inventory.keys())
+    })
+    .flatten();
+    let public_key_status = match imported_keys {
+        Some([]) => "No public keys imported".into(),
+        Some([_]) => "1 imported public key".into(),
+        Some(keys) => format!("{} imported public keys", keys.len()),
+        None => "Public key status unavailable".into(),
+    };
     let mut system = String::new();
-    for (label, icon) in [
-        ("Mail server", "inbox"),
-        ("OpenPGP", "shield"),
-        ("Security services", "shield"),
-        ("Backup", "archive"),
-        ("System updates", "settings"),
+    for (label, icon, status) in [
+        ("Mail server", "inbox", "Mailbox access verified"),
+        ("OpenPGP", "shield", public_key_status.as_str()),
+        ("Security services", "shield", "OSMAP session verified"),
+        ("Backup", "archive", "Not reported by OSMAP"),
+        ("System updates", "settings", "Not checked by OSMAP"),
     ] {
         system.push_str(&format!(
-            "<li><span>{}{label}</span><span>Unknown</span></li>",
-            shell_icon(icon)
+            "<li><span>{}{label}</span><span>{}</span></li>",
+            shell_icon(icon),
+            escape_html(status)
         ));
     }
     let search = format!("<details class=\"welcome-search\"><summary>Search all mailboxes</summary><form class=\"search-row\" method=\"get\" action=\"/search\"><label for=\"mailbox-global-search\">Search all mailboxes<input id=\"mailbox-global-search\" type=\"text\" name=\"q\" autocomplete=\"off\" maxlength=\"256\" required></label>{}<button type=\"submit\">Search</button></form></details>", render_search_field_select(MessageSearchField::All));
@@ -158,8 +179,8 @@ pub(crate) fn render_mailboxes_page_with_policy(
         "<div class=\"welcome-secondary-grid\"><section class=\"welcome-panel welcome-activity\" aria-labelledby=\"welcome-activity-title\"><div class=\"welcome-panel-heading\"><h2 id=\"welcome-activity-title\">Recent Activity</h2></div>{activity_rows}</section>",
         "<div class=\"welcome-middle-stack\"><section class=\"welcome-panel welcome-actions\" aria-labelledby=\"welcome-actions-title\"><div class=\"welcome-panel-heading\"><h2 id=\"welcome-actions-title\">Quick Actions</h2></div><div class=\"welcome-action-grid\"><a href=\"/search\">{search_icon}<strong>Search</strong><span>Find messages</span></a><a href=\"{filter_target}\">{filter_icon}<strong>Filters</strong><span>{filter_description}</span></a><a href=\"/labels\">{label_icon}<strong>Labels</strong><span>Organize messages</span></a><details><summary>{more_icon}<strong>More</strong><span>Available tools</span></summary><div><a href=\"/contacts\">Contacts</a><a href=\"/sessions\">Sessions</a><a href=\"/drafts\">Saved drafts</a></div></details></div>{search}</section>",
         "<section class=\"welcome-panel welcome-storage\" aria-labelledby=\"welcome-storage-title\"><div class=\"welcome-panel-heading\"><h2 id=\"welcome-storage-title\">Storage Usage</h2></div><div class=\"welcome-storage-body\"><div><strong>Usage and quota unknown</strong><p>Mailbox, document and other storage totals are unavailable.</p></div><button type=\"button\" disabled>Manage Storage</button></div></section></div>",
-        "<section class=\"welcome-panel welcome-system\" aria-labelledby=\"welcome-system-title\"><div class=\"welcome-panel-heading\"><h2 id=\"welcome-system-title\">System Status</h2></div><ul>{system}</ul><p class=\"welcome-note\">Service health and backup results are unavailable here.</p></section></div>",
-        "<footer class=\"welcome-footer\"><span>OSMAP · Secure by Design. Private by Default.</span><span>System health unavailable</span><span aria-disabled=\"true\">Help unavailable</span><span aria-disabled=\"true\">Feedback unavailable</span></footer></main>"
+        "<section class=\"welcome-panel welcome-system\" aria-labelledby=\"welcome-system-title\"><div class=\"welcome-panel-heading\"><h2 id=\"welcome-system-title\">System Status</h2></div><ul>{system}</ul><details><summary>View status details</summary><p class=\"welcome-note\">Checks apply to <strong>{account}</strong> at page load. Mailbox listing does not verify SMTP or message delivery. Public key inventory does not verify private-key readiness. Session verification does not report every security service. OSMAP does not report host backup or system-update results.</p></details></section></div>",
+        "<footer class=\"welcome-footer\"><span>OSMAP · Secure by Design. Private by Default.</span><span>Limited status checks</span><span aria-disabled=\"true\">Help unavailable</span><span aria-disabled=\"true\">Feedback unavailable</span></footer></main>"
     ), header=app_header(canonical_username,csrf_token,"mailboxes"), account=escape_html(canonical_username), metrics=metrics, recent=recent, shortcuts=shortcuts, view_all=view_all, folders=folders, limit=limit, shield=shell_icon("shield"), key_summary=key_summary, activity_rows=activity_rows(canonical_username, activity), search_icon=shell_icon("search"), filter_icon=shell_icon("inbox"), label_icon=shell_icon("drafts"), more_icon=shell_icon("menu"), filter_target=if inbox { "/mailbox?name=INBOX&filter=unread" } else { "/search" }, filter_description=if inbox { "Unread in Inbox" } else { "Search mail" }, search=search, system=system))
 }
 

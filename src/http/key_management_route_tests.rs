@@ -556,10 +556,36 @@ fn key_management_multipart_upload_routes_exact_bytes_and_rejects_ambiguous_inpu
 #[test]
 fn key_management_panel_navigation_opens_forms_without_mutating_state() {
     let calls = Arc::new(AtomicUsize::new(0));
-    let app = BrowserApp::new(HttpPolicy::default(), KeyChangeSpy { inner: StubGateway::default(), calls: calls.clone() });
-    let headers = [("User-Agent", "Firefox/Test"), ("Cookie", "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")];
-    for (panel, id) in [("account", "account-binding"), ("policy", "protection-policy"), ("recipient", "recipient-binding"), ("import", "public-import"), ("inventory", "public-inventory")] {
-        let response = app.handle_request(&request("GET", &format!("/settings/keys?panel={panel}"), &headers, ""), "127.0.0.1");
+    let app = BrowserApp::new(
+        HttpPolicy::default(),
+        KeyChangeSpy {
+            inner: StubGateway::default(),
+            calls: calls.clone(),
+        },
+    );
+    let headers = [
+        ("User-Agent", "Firefox/Test"),
+        (
+            "Cookie",
+            "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        ),
+    ];
+    for (panel, id) in [
+        ("account", "account-binding"),
+        ("policy", "protection-policy"),
+        ("recipient", "recipient-binding"),
+        ("import", "public-import"),
+        ("inventory", "public-inventory"),
+    ] {
+        let response = app.handle_request(
+            &request(
+                "GET",
+                &format!("/settings/keys?panel={panel}"),
+                &headers,
+                "",
+            ),
+            "127.0.0.1",
+        );
         assert_eq!(response.response.status_code, 200);
         let body = body_text(&response);
         if panel == "inventory" {
@@ -573,7 +599,10 @@ fn key_management_panel_navigation_opens_forms_without_mutating_state() {
         }
     }
     for query in ["panel=invalid", "panel=import&extra=1", "panel="] {
-        let response = app.handle_request(&request("GET", &format!("/settings/keys?{query}"), &headers, ""), "127.0.0.1");
+        let response = app.handle_request(
+            &request("GET", &format!("/settings/keys?{query}"), &headers, ""),
+            "127.0.0.1",
+        );
         assert_eq!(response.response.status_code, 400);
     }
     assert_eq!(calls.load(Ordering::SeqCst), 0);
@@ -581,8 +610,8 @@ fn key_management_panel_navigation_opens_forms_without_mutating_state() {
 
 fn compose_protection_model() -> crate::http_ui::ComposePageModel<'static> {
     crate::http_ui::ComposePageModel {
- sender_choices: None,
- selected_sender_id: None,
+        sender_choices: None,
+        selected_sender_id: None,
         protection: crate::send::ProtectionIntent::default(),
         openpgp: Some(ComposeProtectionView {
             imported_recipients: None,
@@ -629,20 +658,24 @@ fn evaluated_recipient_protection(
     bound: bool,
 ) -> crate::openpgp_bindings::Preflight {
     use crate::openpgp_bindings::{BindingRecord, RecipientBinding, Recipients, Selections};
-    let key = |fingerprint: &str, encrypt: bool| serde_json::json!({
-        "fingerprint": fingerprint, "algorithm": 1, "bits": 3072,
-        "created": 1, "expires": 0, "revoked": false, "expired": false,
-        "disabled": false, "invalid": false, "can_sign": !encrypt,
-        "can_encrypt": encrypt, "can_certify": false, "can_authenticate": false,
-    });
+    let key = |fingerprint: &str, encrypt: bool| {
+        serde_json::json!({
+            "fingerprint": fingerprint, "algorithm": 1, "bits": 3072,
+            "created": 1, "expires": 0, "revoked": false, "expired": false,
+            "disabled": false, "invalid": false, "can_sign": !encrypt,
+            "can_encrypt": encrypt, "can_certify": false, "can_authenticate": false,
+        })
+    };
     let inventory = crate::openpgp_inventory::Inventory::parse(
         &serde_json::to_vec(&serde_json::json!({
             "version": 1, "ok": true, "protocol": "openpgp",
             "gpgme_version": "2.0.1", "engine_version": "2.4.8",
             "keys": [{"primary": key(&"D".repeat(40), false),
                 "subkeys": [key(&"F".repeat(40), true)]}],
-        })).unwrap(),
-    ).unwrap();
+        }))
+        .unwrap(),
+    )
+    .unwrap();
     let mut record = BindingRecord::empty("alice@example.test").unwrap();
     // A configured binding record has a persisted revision; revision zero is
     // reserved by the production validator for an empty initial record.
@@ -656,16 +689,30 @@ fn evaluated_recipient_protection(
     }
     let to = ["bob@example.test".to_string()];
     crate::openpgp_bindings::evaluate(
-        "alice@example.test", &record, &inventory,
-        Recipients { to: &to, cc: &[], bcc: &[] },
-        Selections { sign: false, encrypt, encrypt_to_self: false }, 100,
-    ).unwrap()
+        "alice@example.test",
+        &record,
+        &inventory,
+        Recipients {
+            to: &to,
+            cc: &[],
+            bcc: &[],
+        },
+        Selections {
+            sign: false,
+            encrypt,
+            encrypt_to_self: false,
+        },
+        100,
+    )
+    .unwrap()
 }
 
 // The policy notice must be outside every collapsed disclosure, not merely
 // present somewhere in the page source. Public readiness remains a snapshot.
 fn visible_protection_notice(body: &str) -> &str {
-    let (_, notice) = body.split_once("<div class=\"notice compose-protection-requirements\"").unwrap();
+    let (_, notice) = body
+        .split_once("<div class=\"notice compose-protection-requirements\"")
+        .unwrap();
     notice.split_once("</div>").unwrap().0
 }
 
@@ -677,7 +724,9 @@ fn compose_live_protection_controls_are_direct_and_preserve_selection() {
         .to_owned();
     assert!(body.contains("<label class=\"compose-protection-choice\"><span>Sign</span>"));
     assert!(body.contains("<label class=\"compose-protection-choice\"><span>Encrypt</span>"));
-    assert!(body.contains("<label class=\"compose-protection-choice\"><span>Encrypt to self</span>"));
+    assert!(
+        body.contains("<label class=\"compose-protection-choice\"><span>Encrypt to self</span>")
+    );
     assert!(!body.contains("<details name=\"compose-policy\">"));
     assert!(!body.contains("name=\"pgp_sign\" checked"));
     assert!(!body.contains("name=\"pgp_encrypt\" checked"));
@@ -690,9 +739,13 @@ fn compose_live_protection_controls_are_direct_and_preserve_selection() {
     model.protection.sign = false;
     model.to_value = "bob@example.test";
     model.openpgp.as_mut().unwrap().preflight = Some(evaluated_recipient_protection(
-        crate::openpgp_bindings::Requirement::Required, false, true,
+        crate::openpgp_bindings::Requirement::Required,
+        false,
+        true,
     ));
-    let body = crate::http_ui::render_compose_page(&model).as_str().to_owned();
+    let body = crate::http_ui::render_compose_page(&model)
+        .as_str()
+        .to_owned();
     assert!(body.contains("<strong>Blocked</strong>"));
     assert!(body.contains("bob@example.test</span>: Public key eligible; Encryption required"));
     assert!(body.contains("A recipient binding requires encryption. Select Encrypt on send"));
@@ -705,24 +758,35 @@ fn compose_required_recipient_policy_is_visible_without_changing_intent() {
     let mut model = compose_protection_model();
     model.to_value = "bob@example.test";
     model.openpgp.as_mut().unwrap().preflight = Some(evaluated_recipient_protection(
-        crate::openpgp_bindings::Requirement::Required, false, true,
+        crate::openpgp_bindings::Requirement::Required,
+        false,
+        true,
     ));
-    let body = crate::http_ui::render_compose_page(&model).as_str().to_owned();
+    let body = crate::http_ui::render_compose_page(&model)
+        .as_str()
+        .to_owned();
     let notice = visible_protection_notice(&body);
     assert!(notice.contains("<strong>Blocked</strong>"));
     assert!(notice.contains("bob@example.test</span>: Encryption required"));
     assert!(notice.contains("Select Encrypt on send"));
     assert!(notice.contains("signing optional; encryption optional"));
     assert!(body.contains("<strong>Blocked</strong></summary>"));
-    let before_notice = body.split_once("<div class=\"notice compose-protection-requirements\"").unwrap().0;
+    let before_notice = body
+        .split_once("<div class=\"notice compose-protection-requirements\"")
+        .unwrap()
+        .0;
     assert!(before_notice.ends_with("</div></section>"));
     assert!(!body.contains("name=\"pgp_sign\" checked"));
     assert!(!body.contains("name=\"pgp_encrypt\" checked"));
     assert!(!body.contains("name=\"pgp_self\" checked"));
     // This snapshot must not disable Send after the operator changes choices.
     assert!(body.contains("type=\"submit\" aria-label=\"Send Message\""));
-    let check = body.find("aria-describedby=\"compose-pre-send-description\"").unwrap();
-    let menu = body.find("<details class=\"compose-send-options\"").unwrap();
+    let check = body
+        .find("aria-describedby=\"compose-pre-send-description\"")
+        .unwrap();
+    let menu = body
+        .find("<details class=\"compose-send-options\"")
+        .unwrap();
     assert!(check < menu);
     assert_eq!(body.matches(">Pre-send check</button>").count(), 1);
 }
@@ -745,7 +809,9 @@ fn compose_encrypt_only_and_optional_plain_choices_match_evaluated_policy() {
         assert!(!plan.encrypt_to_self);
         assert_eq!(plan.recipient_fingerprints.len(), usize::from(encrypt));
         model.openpgp.as_mut().unwrap().preflight = Some(preflight);
-        let body = crate::http_ui::render_compose_page(&model).as_str().to_owned();
+        let body = crate::http_ui::render_compose_page(&model)
+            .as_str()
+            .to_owned();
         let notice = visible_protection_notice(&body);
         assert!(notice.contains(&format!("<strong>{state}</strong>")));
         assert!(!notice.contains("Blocked"));
@@ -760,15 +826,21 @@ fn compose_encrypt_only_and_optional_plain_choices_match_evaluated_policy() {
 #[test]
 fn compose_missing_key_unchecked_stale_and_unconfirmed_states_remain_honest() {
     let mut model = compose_protection_model();
-    let body = crate::http_ui::render_compose_page(&model).as_str().to_owned();
+    let body = crate::http_ui::render_compose_page(&model)
+        .as_str()
+        .to_owned();
     assert!(visible_protection_notice(&body).contains("Recipient protection not checked"));
     assert!(body.contains("<strong>Not checked</strong></summary>"));
     model.to_value = "bob@example.test";
     model.protection.encrypt = true;
     model.openpgp.as_mut().unwrap().preflight = Some(evaluated_recipient_protection(
-        crate::openpgp_bindings::Requirement::Optional, true, false,
+        crate::openpgp_bindings::Requirement::Optional,
+        true,
+        false,
     ));
-    let body = crate::http_ui::render_compose_page(&model).as_str().to_owned();
+    let body = crate::http_ui::render_compose_page(&model)
+        .as_str()
+        .to_owned();
     let notice = visible_protection_notice(&body);
     assert!(notice.contains("<strong>Blocked</strong>"));
     assert!(notice.contains("no eligible approved encryption key"));
@@ -777,7 +849,9 @@ fn compose_missing_key_unchecked_stale_and_unconfirmed_states_remain_honest() {
     model.openpgp.as_mut().unwrap().revision = Some(1);
     model.draft_id = Some("0");
     model.draft_revision = None;
-    let body = crate::http_ui::render_compose_page(&model).as_str().to_owned();
+    let body = crate::http_ui::render_compose_page(&model)
+        .as_str()
+        .to_owned();
     assert!(visible_protection_notice(&body).contains("Keys changed — review required"));
     assert!(body.contains("type=\"submit\" disabled aria-label=\"Send Message\""));
     assert!(body.contains("type=\"submit\" disabled formaction=\"/drafts/save\" name=\"compose_action\" value=\"preflight\" aria-describedby"));
@@ -821,7 +895,16 @@ fn security_overview_key_state(account: &str, mode: &str) -> crate::key_manageme
     if mode.ends_with("inventory-down-required") {
         return state;
     }
-    let keys = if mode.ends_with("missing-key") {
+    if mode.ends_with("reported-down") {
+        state.inventory = Some(
+            crate::openpgp_inventory::Inventory::parse(
+                br#"{"version":1,"ok":false,"error":"inventory_unavailable"}"#,
+            )
+            .unwrap(),
+        );
+        return state;
+    }
+    let mut keys = if mode.ends_with("missing-key") || mode.ends_with("empty-no-bindings") {
         vec![]
     } else {
         vec![serde_json::json!({
@@ -834,6 +917,11 @@ fn security_overview_key_state(account: &str, mode: &str) -> crate::key_manageme
             }, "subkeys": [],
         })]
     };
+    if mode.ends_with("multiple-keys") {
+        let mut second = keys[0].clone();
+        second["primary"]["fingerprint"] = serde_json::json!("B".repeat(40));
+        keys.push(second);
+    }
     state.inventory = Some(
         crate::openpgp_inventory::Inventory::parse(
             &serde_json::to_vec(&serde_json::json!({
@@ -844,6 +932,9 @@ fn security_overview_key_state(account: &str, mode: &str) -> crate::key_manageme
         )
         .unwrap(),
     );
+    if mode.ends_with("no-bindings") {
+        state.bindings = None;
+    }
     state
 }
 
@@ -927,6 +1018,86 @@ fn welcome_loads_actual_owned_key_and_composition_defaults_without_mutation() {
     assert!(html.contains("Optional; off by default"));
     assert!(html.contains("Off by default; choose per message"));
     assert!(html.contains("private-key readiness is checked when an operation runs"));
+    assert_eq!(calls.load(Ordering::SeqCst), 0);
+}
+
+#[test]
+fn welcome_system_status_reports_only_verified_account_scoped_observations() {
+    let calls = Arc::new(AtomicUsize::new(0));
+    let browser = BrowserApp::new(
+        HttpPolicy::default(),
+        KeyChangeSpy {
+            inner: StubGateway::default(),
+            calls: calls.clone(),
+        },
+    );
+    for (mode, expected) in [
+        ("configured", "1 imported public key"),
+        ("multiple-keys", "2 imported public keys"),
+        ("unbound", "1 imported public key"),
+        ("revoked", "1 imported public key"),
+        ("missing-key", "No public keys imported"),
+        ("no-bindings", "1 imported public key"),
+        ("empty-no-bindings", "No public keys imported"),
+        ("unavailable", "Public key status unavailable"),
+        ("reported-down", "Public key status unavailable"),
+        ("inventory-down-required", "Public key status unavailable"),
+        ("foreign-state", "Public key status unavailable"),
+        ("foreign-binding", "Public key status unavailable"),
+    ] {
+        let mut req = request("GET", "/mailboxes", &authenticated_headers(), "");
+        req.headers
+            .insert("user-agent".into(), format!("OSMAP/SecurityKeys-{mode}"));
+        let result = browser.handle_request(&req, "127.0.0.1");
+        assert_eq!(result.response.status_code, 200, "{mode}");
+        let html = body_text(&result);
+        let system = html
+            .split_once("<section class=\"welcome-panel welcome-system\"")
+            .unwrap()
+            .1
+            .split_once("</section>")
+            .unwrap()
+            .0;
+        for status in [
+            "Mailbox access verified",
+            expected,
+            "OSMAP session verified",
+            "Not reported by OSMAP",
+            "Not checked by OSMAP",
+        ] {
+            assert!(system.contains(status), "{mode}: missing {status}");
+        }
+        assert!(!system.contains("Unknown"), "{mode}");
+        assert!(!system.contains(&"A".repeat(40)), "{mode}");
+        if expected == "Public key status unavailable" {
+            assert!(!system.contains("1 imported public key"), "{mode}");
+            assert!(!system.contains("No public keys imported"), "{mode}");
+        }
+        for detail in [
+            "<summary>View status details</summary>",
+            "alice@example.com",
+            "at page load",
+            "Mailbox listing does not verify SMTP or message delivery.",
+            "Public key inventory does not verify private-key readiness.",
+            "Session verification does not report every security service.",
+            "OSMAP does not report host backup or system-update results.",
+        ] {
+            assert!(system.contains(detail), "{mode}: missing {detail}");
+        }
+        assert!(!html.contains("System health unavailable"), "{mode}");
+    }
+    let mut foreign = request("GET", "/mailboxes", &authenticated_headers(), "");
+    foreign
+        .headers
+        .insert("user-agent".into(), "WelcomeWrongAccount".into());
+    let denied = browser.handle_request(&foreign, "127.0.0.1");
+    assert_eq!(denied.response.status_code, 503);
+    assert!(!body_text(&denied).contains("Mailbox access verified"));
+    assert!(!body_text(&denied).contains("OSMAP session verified"));
+    let unauthenticated =
+        browser.handle_request(&request("GET", "/mailboxes", &[], ""), "127.0.0.1");
+    assert_eq!(unauthenticated.response.status_code, 303);
+    assert!(!body_text(&unauthenticated).contains("OSMAP session verified"));
     assert_eq!(calls.load(Ordering::SeqCst), 0);
 }
 

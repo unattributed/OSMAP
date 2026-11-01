@@ -1,3 +1,5 @@
+2026-11-02 — **F3 account-relative dashboard status correction IN_PROGRESS.** S05-03 remains ACCEPTED. Exact statuscontrolR2-01-028 follows retained S04-01/F3; S01 supplies presentation.
+
 2026-11-01 (America/Toronto) — **S05-03 ACCEPTED: owner `S05-03 T09 = PASS`.** Three-recipient recipient-side UAT evidence and relay acceptance retained; T01–T09 PASS. Acceptance-record update only.
 
 2026-11-01 (America/Toronto) — **S05-03 UAT_READY: engineering/native/installed QA PASS; infrastructure T09 pending signed delivery.** Three matching Rust binaries are installed; private evidence retains actual failures, preservation and independent review.
@@ -23,6 +25,402 @@ slice using the same failure-analysis method. See
 [the slice specification](UX_SLICE_S05_02.md).
 
 <!-- OSMAP_ACTIVE_WORK_ORDER -->
+```json
+{
+  "version": 1,
+  "slice": "S04-01",
+  "original_requirement": "Distinct approved Settings 10\u201320, section search/navigation, profile/preferences and accurate status; sessions page 24",
+  "source_baseline": "95ed861a92bb72b6a52f5f352af0fcc1114e3beb",
+  "state": "IN_PROGRESS",
+  "integration_owner": "/root",
+  "roles": {
+    "project_manager": [
+      "/root"
+    ],
+    "scrum_lead": [
+      "/root"
+    ],
+    "developers": [
+      "/root",
+      "/root/s05_runtime_engineer",
+      "/root/s05_scope_qa"
+    ],
+    "qa": [
+      "/root/s05_protocol_review"
+    ],
+    "security_review": [
+      "/root/s05_protocol_review"
+    ],
+    "technical_writer": [
+      "/root"
+    ]
+  },
+  "allowed_paths": [
+    "src/welcome_ui.rs",
+    "src/http/key_management_route_tests.rs",
+    "src/http/welcome.css",
+    "maint/ux/welcome_workflows.py",
+    "docs/UX_FOLLOWUP_F3_ACCOUNT_STATUS.md",
+    "docs/UX_EXECUTION_LEDGER.md",
+    "docs/CURRENT_PROJECT_STATUS.md",
+    "docs/DECISION_LOG.md",
+    "docs/README.md",
+    "README.md",
+    "maint/ux/acceptance.json",
+    "maint/security/v10-claims-boundary.json",
+    "maint/security/v10-fail-closed-remediation.json",
+    "maint/security/v10-rust-assumption-audit.json"
+  ],
+  "outcomes": [
+    {
+      "id": "account-relative-status",
+      "owner": "/root",
+      "requirement_ids": [
+        "R2-01-028"
+      ],
+      "frontend_backend_outcome": "Current signed-in account sees verified mailbox/public-inventory observations and explicit unmeasured scope in System Status.",
+      "essential_qa": "Distinguishing realrouteRED/GREEN, isolation/authnegatives, syntheticvisual, matchingnativeWeb+installedpreservation and independentreview.",
+      "next_action": "Qualify current native libtest/Web and install matching Web only after reviewed recipe, then verify installed projection and preservation.",
+      "dependencies": [
+        {
+          "owner": "/root",
+          "condition": "Existing authenticated ownedmailbox route and fresh key_management state already supplied to renderer.",
+          "status": "PASS",
+          "next_action": "Reuse current request observations without newbackendroundtrip."
+        }
+      ],
+      "stages": {
+        "implementation": "PASS",
+        "source_tests": "PASS",
+        "native_tests": "PENDING",
+        "deployed_qa": "PENDING",
+        "independent_review": "PENDING",
+        "recovery": "PENDING"
+      },
+      "evidence": [
+        {
+          "stage": "implementation",
+          "reference": "WelcomeexistingownedListed+accountmatchedInventory projection; boundedcount/fixedscopedstatus/details/footer; noI/O/API/helper/statechange."
+        },
+        {
+          "stage": "source_tests",
+          "reference": "ActualrouteRED1FAIL11.158s\u2192GREEN1PASS; keyroutes13PASS/welcome11PASS; singularrefreshPASS; strictClippy/fmt/V10PASS. ActualCUAowned/foreign/empty/unavailable/mailboxdenied+keyboard+desktop/mobilelightdarkPASS; networktracepartialexplicit."
+        }
+      ]
+    },
+    {
+      "id": "retained-s04-original-obligations",
+      "owner": "/root",
+      "requirement_ids": [
+        "UX09-001",
+        "UX09-002",
+        "UX11-001",
+        "R2-01-014",
+        "R2-01-026",
+        "R2-01-027",
+        "R2-01-029",
+        "R2-01-030",
+        "R2-10-001",
+        "R2-10-002",
+        "R2-10-011",
+        "R2-10-012",
+        "R2-11-004",
+        "R2-11-005",
+        "R2-11-007",
+        "R2-11-008",
+        "R2-11-009",
+        "R2-11-010",
+        "R2-11-011",
+        "R2-11-012",
+        "R2-11-013",
+        "R2-11-019",
+        "R2-11-020",
+        "R2-11-021",
+        "R2-11-022",
+        "R2-11-024",
+        "R2-11-025",
+        "R2-11-026",
+        "R2-11-030",
+        "R2-11-031",
+        "R2-12-005",
+        "R2-12-006",
+        "R2-12-007",
+        "R2-12-008",
+        "R2-12-009",
+        "R2-12-010",
+        "R2-12-011",
+        "R2-14-001",
+        "R2-14-011",
+        "R2-14-012",
+        "R2-15-002",
+        "R2-15-003",
+        "R2-16-005",
+        "R2-16-006",
+        "R2-16-007",
+        "R2-16-008",
+        "R2-20-005",
+        "R2-20-006",
+        "R2-24-001",
+        "R2-24-002",
+        "R2-24-003",
+        "R2-24-004",
+        "R2-24-005",
+        "R2-24-006",
+        "R2-24-007",
+        "R2-24-008"
+      ],
+      "frontend_backend_outcome": "Preserve every original S04-01 obligation and accepted R4core status; unrelated followups remain in their existing owning scope.",
+      "essential_qa": "Existing accepted artifacts remain evidence; this bounded repair does not fabricate retesting or whole-parent closure.",
+      "next_action": "Retain original acceptance mapping; no unrelated workflow is dispatched for this fix.",
+      "dependencies": [],
+      "stages": {
+        "implementation": "PENDING",
+        "source_tests": "PENDING",
+        "native_tests": "PENDING",
+        "deployed_qa": "PENDING",
+        "independent_review": "PENDING",
+        "recovery": "PENDING"
+      },
+      "evidence": []
+    }
+  ],
+  "accountability": {
+    "owner": "/root",
+    "functional_exit": "Current signed-in account sees verified mailbox/public-inventory observations and explicit unmeasured scope in System Status.",
+    "elapsed_scope": "wall_clock",
+    "history_reference": "Accepted S05-03 archived intact; R4core remains accepted. User explicitly directs account-relative dashboard status correction; no other workflow added.",
+    "investigation": {
+      "owner": "/root",
+      "timebox_seconds": 14400,
+      "started_at": "2026-11-01T17:12:33Z",
+      "elapsed_status": "UNMEASURED",
+      "elapsed_seconds": null
+    },
+    "attempts": [],
+    "next_attempt": null
+  },
+  "slice_contract": {
+    "version": 1,
+    "slice": "S04-01",
+    "specification": {
+      "path": "docs/UX_FOLLOWUP_F3_ACCOUNT_STATUS.md",
+      "sha256": "94789a2c5ad5e4432c10562a6336acefb4d1f90e68d2f41d5fc6cfeb0c2330c7"
+    },
+    "design": {
+      "journey": "Current signed-in account sees verified mailbox/public-inventory observations and explicit unmeasured scope in System Status.",
+      "frontend": "Existing nativeWelcome rows and expandable scoped details.",
+      "backend": "Reuse current authenticated ownedmailbox result and accountmatched publicinventory state.",
+      "interfaces": "No new API/command/model; fixed labels and bounded publiccount.",
+      "persistence": "Read-only projection; no new stored data.",
+      "security": "Auth/ownership isolation; no privatekeyreadiness or blankethoststatus inference.",
+      "failure_recovery": "Unavailable evidence staysunavailable; no retainedsuccess fromanotheraccount."
+    },
+    "tests": [
+      {
+        "id": "F3-T01",
+        "outcome_ids": [
+          "account-relative-status"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Current owned route contract/source checked; dependent native actions require actual installed prerequisites and pinned source/artifacts.",
+        "action": "Inspect actual current route, state and control mapping.",
+        "expected": "No invented status source or authority.",
+        "preserved": "Accepted S04/S05, all403controls/110legacy, ownercredentials/privatekeys/contacts/policies/mail and publicmail availability.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "Actual source/preflight/RED-GREEN and scoped browser evidence in UX_FOLLOWUP_F3_ACCOUNT_STATUS.md/privateevidence; no native/installedclaim."
+        ]
+      },
+      {
+        "id": "F3-T02",
+        "outcome_ids": [
+          "account-relative-status"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Current owned route contract/source checked; dependent native actions require actual installed prerequisites and pinned source/artifacts.",
+        "action": "Run actual configured route distinguishingRED thenGREEN.",
+        "expected": "Owned mailbox/inventory observations replace unconditionalUnknown.",
+        "preserved": "Accepted S04/S05, all403controls/110legacy, ownercredentials/privatekeys/contacts/policies/mail and publicmail availability.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "Actual source/preflight/RED-GREEN and scoped browser evidence in UX_FOLLOWUP_F3_ACCOUNT_STATUS.md/privateevidence; no native/installedclaim."
+        ]
+      },
+      {
+        "id": "F3-T03",
+        "outcome_ids": [
+          "account-relative-status"
+        ],
+        "kind": "negative",
+        "level": "source",
+        "prerequisites": "Current owned route contract/source checked; dependent native actions require actual installed prerequisites and pinned source/artifacts.",
+        "action": "Exercise empty/missing/foreign inventory and foreignbindings.",
+        "expected": "Empty distinctfromunavailable; no crossaccountcount/FP/policy.",
+        "preserved": "Accepted S04/S05, all403controls/110legacy, ownercredentials/privatekeys/contacts/policies/mail and publicmail availability.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "Actual source/preflight/RED-GREEN and scoped browser evidence in UX_FOLLOWUP_F3_ACCOUNT_STATUS.md/privateevidence; no native/installedclaim."
+        ]
+      },
+      {
+        "id": "F3-T04",
+        "outcome_ids": [
+          "account-relative-status"
+        ],
+        "kind": "negative",
+        "level": "source",
+        "prerequisites": "Current owned route contract/source checked; dependent native actions require actual installed prerequisites and pinned source/artifacts.",
+        "action": "Inspect details and request-controlled data attempts.",
+        "expected": "No privatekey/SMTP/generalhosthealth claimed; absentproviders explicit.",
+        "preserved": "Accepted S04/S05, all403controls/110legacy, ownercredentials/privatekeys/contacts/policies/mail and publicmail availability.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "Actual source/preflight/RED-GREEN and scoped browser evidence in UX_FOLLOWUP_F3_ACCOUNT_STATUS.md/privateevidence; no native/installedclaim."
+        ]
+      },
+      {
+        "id": "F3-T05",
+        "outcome_ids": [
+          "account-relative-status"
+        ],
+        "kind": "negative",
+        "level": "source",
+        "prerequisites": "Current owned route contract/source checked; dependent native actions require actual installed prerequisites and pinned source/artifacts.",
+        "action": "Reuse matching session/mailbox canonical-owner denialtests.",
+        "expected": "Denied request has no status dashboard.",
+        "preserved": "Accepted S04/S05, all403controls/110legacy, ownercredentials/privatekeys/contacts/policies/mail and publicmail availability.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "Actual source/preflight/RED-GREEN and scoped browser evidence in UX_FOLLOWUP_F3_ACCOUNT_STATUS.md/privateevidence; no native/installedclaim."
+        ]
+      },
+      {
+        "id": "F3-T06",
+        "outcome_ids": [
+          "account-relative-status"
+        ],
+        "kind": "usability",
+        "level": "source",
+        "prerequisites": "Current owned route contract/source checked; dependent native actions require actual installed prerequisites and pinned source/artifacts.",
+        "action": "Use existing synthetic accountfixture and desktop/mobile details.",
+        "expected": "Keyboardusable, bounded nooverflow/noexternalrequests/nosends.",
+        "preserved": "Accepted S04/S05, all403controls/110legacy, ownercredentials/privatekeys/contacts/policies/mail and publicmail availability.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PASS",
+        "evidence": [
+          "Actual source/preflight/RED-GREEN and scoped browser evidence in UX_FOLLOWUP_F3_ACCOUNT_STATUS.md/privateevidence; no native/installedclaim."
+        ]
+      },
+      {
+        "id": "F3-T07",
+        "outcome_ids": [
+          "account-relative-status"
+        ],
+        "kind": "positive",
+        "level": "deployed",
+        "prerequisites": "Current owned route contract/source checked; dependent native actions require actual installed prerequisites and pinned source/artifacts.",
+        "action": "Build matching native test/Web and install Webonly if nativepasses.",
+        "expected": "Current route tests, loadedidentity/HTTPS/protectedpreservation pass.",
+        "preserved": "Accepted S04/S05, all403controls/110legacy, ownercredentials/privatekeys/contacts/policies/mail and publicmail availability.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      },
+      {
+        "id": "F3-T08",
+        "outcome_ids": [
+          "account-relative-status"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Current owned route contract/source checked; dependent native actions require actual installed prerequisites and pinned source/artifacts.",
+        "action": "Independent review and normal signed preservation.",
+        "expected": "Actual scoped engineering delivery complete without bypass.",
+        "preserved": "Accepted S04/S05, all403controls/110legacy, ownercredentials/privatekeys/contacts/policies/mail and publicmail availability.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "PARTIAL",
+        "evidence": [
+          "Independent source/security GO; actual native/installed review and ordinary signed delivery pending."
+        ]
+      },
+      {
+        "id": "F3-T09",
+        "outcome_ids": [
+          "account-relative-status"
+        ],
+        "kind": "usability",
+        "level": "human",
+        "prerequisites": "Current owned route contract/source checked; dependent native actions require actual installed prerequisites and pinned source/artifacts.",
+        "action": "Owner reviews installed signed-in status rows.",
+        "expected": "Human acceptance remains separate from engineering.",
+        "preserved": "Accepted S04/S05, all403controls/110legacy, ownercredentials/privatekeys/contacts/policies/mail and publicmail availability.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      },
+      {
+        "id": "F3-T10",
+        "outcome_ids": [
+          "retained-s04-original-obligations"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Current owned route contract/source checked; dependent native actions require actual installed prerequisites and pinned source/artifacts.",
+        "action": "Carry forward existing unrelated originalrequirements.",
+        "expected": "No acceptance downgrade or invented fullparentPASS.",
+        "preserved": "Accepted S04/S05, all403controls/110legacy, ownercredentials/privatekeys/contacts/policies/mail and publicmail availability.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      },
+      {
+        "id": "F3-T11",
+        "outcome_ids": [
+          "retained-s04-original-obligations"
+        ],
+        "kind": "negative",
+        "level": "source",
+        "prerequisites": "Current owned route contract/source checked; dependent native actions require actual installed prerequisites and pinned source/artifacts.",
+        "action": "Refuse to close otherfollowups from this partial status observation.",
+        "expected": "Backup/update and unrelated obligations retain existingscope.",
+        "preserved": "Accepted S04/S05, all403controls/110legacy, ownercredentials/privatekeys/contacts/policies/mail and publicmail availability.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      }
+    ],
+    "engineering_exit": "Bounded F3projection passes source/browser/native/installed/review/signeddelivery; parentunrelatedrequirements remain explicitlyopen.",
+    "human_exit": "Owner accepts new installed account-relative rows, separately from S04parent/backup/update orproductionacceptance."
+  },
+  "human_acceptance": {
+    "status": "PENDING",
+    "reference": "New dashboardcorrection ownerreviewpending; existingacceptedS04/S05 remains."
+  },
+  "next_action": "Qualify current native libtest/Web and install matching Web only after reviewed recipe, then verify installed projection and preservation."
+}
+```
+
+<!-- /OSMAP_ACTIVE_WORK_ORDER -->
+
+<!-- OSMAP_ARCHIVED_S05_03_WORK_ORDER -->
 ```json
 {
   "version": 1,
@@ -373,7 +771,7 @@ slice using the same failure-analysis method. See
   "next_action": "No remaining S05-03 engineering or owner acceptance work. Preserve signed acceptance records; S05-04 remains separate."
 }
 ```
-<!-- /OSMAP_ACTIVE_WORK_ORDER -->
+<!-- /OSMAP_ARCHIVED_S05_03_WORK_ORDER -->
 
 <!-- OSMAP_ARCHIVED_S05_02_WORK_ORDER -->
 ```json
