@@ -69,7 +69,9 @@ slice using the same failure-analysis method. See
     "src/http/routes_mail.rs",
     "src/http/welcome.css",
     "src/key_management_tests.rs",
-    "src/key_management.rs"
+    "src/key_management.rs",
+    "src/http_gateway_auth.rs",
+    "src/http_gateway_account.rs"
   ],
   "outcomes": [
     {
@@ -113,7 +115,7 @@ slice using the same failure-analysis method. See
       ],
       "frontend_backend_outcome": "Signed-in user sees imported keys with exact email associations and applied policy, and can manage public import/bind/policy/remove through fresh authorization.",
       "essential_qa": "T01-T08 source/native/browser/installed checks and independent review; actual visual owner T09 separate.",
-      "next_action": "Verify normal signed branch delivery, then one owner fresh browser import retest; S05-02 acceptance remains open.",
+      "next_action": "Correct selected-account fresh-primary routing with captured epoch and qualify native composition; independently investigate latest accepted-factor import503 before owner retest.",
       "dependencies": [
         {
           "owner": "/root",
@@ -124,10 +126,10 @@ slice using the same failure-analysis method. See
       ],
       "stages": {
         "implementation": "PASS",
-        "source_tests": "PASS",
-        "native_tests": "PASS",
-        "deployed_qa": "PASS",
-        "independent_review": "PASS",
+        "source_tests": "PENDING",
+        "native_tests": "PENDING",
+        "deployed_qa": "PENDING",
+        "independent_review": "PENDING",
         "recovery": "PASS"
       },
       "evidence": [
@@ -182,6 +184,14 @@ slice using the same failure-analysis method. See
         {
           "stage": "recovery",
           "reference": "Nov1protectedmanifestsbothf4a623e21f6eac8692d07242005e9c139ae577d26169362e48cdb429e53368ab; nativefixtureabsent;4exactpublicclonescleanedafterdurablesanitizedreadback; oldWebbackupguardretained,no rollbackrequired."
+        },
+        {
+          "stage": "deployed_qa",
+          "reference": "Nov1ownerretry05:26:13/05:26:42UTC primary403; latest05:33:35UTC primary+TOTPaccepted then503326ms. Earliernativequalificationdoesnotprovecurrentownerimport. Samepasswordintentconfirmed; source selector mismatch observed; latestnativefailurecauseUNKNOWN."
+        },
+        {
+          "stage": "implementation",
+          "reference": "Nov1sharedselectedprimaryroute+caturedactualepochbeforefactor, focusedRED/GREEN andlegacycompatibilitycorrection; fullHTTPselectednativeextension andfixedenum/bytecountaudit independentlyreviewed. Latestowneracceptedfactor503notyetresolved."
         }
       ]
     }
@@ -190,7 +200,7 @@ slice using the same failure-analysis method. See
     "owner": "/root",
     "functional_exit": "Signed-in user sees imported keys with exact email associations and applied policy, and can manage public import/bind/policy/remove through fresh authorization.",
     "elapsed_scope": "wall_clock",
-    "history_reference": "S05-01 acknowledged and preserved. Retained identity-renderer work ported from original checkout; no owner keys/credentials/policy or public mail mutation inferred. Acceptance03 normal gatePASS after two recordedtest-inventory refusals/combinedreview. Independentcontrolaudit thenfound inheritedWelcomeOpenPGPplaceholders forfiveS05-02controls and missingexplicitdiscoveryOff copy; sourcecorrectionrequiredbeforeinstallation. No oldcandidateinstalled. Final actual normalgate/install/helperreadback/independentreviewPASS; originalfailures and preview143UNKNOWN diagnostic retained. No ownercredential/key/policy action or mailservice restart. Nov1reopenedactualownerimportfailure; nativepubliccloneexactcert andCRLFpass,leadingblankvariantfailswhileRustvalidatoraccepts; minimalnormalizationcorrectionunderway. No liveownerimport/password/TOTPreplay, nohelperrestart. Nov1correction engineering/native/installPASS, butownerT09FAIL remains andimportcontrolPARTIALLY_VERIFIED untilfreshbrowserpass. Historicalcalendaridle doesnotexpireoperatorauthority.",
+    "history_reference": "S05-01 acknowledged and preserved. Retained identity-renderer work ported from original checkout; no owner keys/credentials/policy or public mail mutation inferred. Acceptance03 normal gatePASS after two recordedtest-inventory refusals/combinedreview. Independentcontrolaudit thenfound inheritedWelcomeOpenPGPplaceholders forfiveS05-02controls and missingexplicitdiscoveryOff copy; sourcecorrectionrequiredbeforeinstallation. No oldcandidateinstalled. Final actual normalgate/install/helperreadback/independentreviewPASS; originalfailures and preview143UNKNOWN diagnostic retained. No ownercredential/key/policy action or mailservice restart. Nov1reopenedactualownerimportfailure; nativepubliccloneexactcert andCRLFpass,leadingblankvariantfailswhileRustvalidatoraccepts; minimalnormalizationcorrectionunderway. No liveownerimport/password/TOTPreplay, nohelperrestart. Nov1correction engineering/native/installPASS, butownerT09FAIL remains andimportcontrolPARTIALLY_VERIFIED untilfreshbrowserpass. Historicalcalendaridle doesnotexpireoperatorauthority. Latest owner retry primary403 then accepted-factor503 retained separately. Selected-runtime vs legacy step-up routing defect under correction; no assumption of password error or complete503 remediation.",
     "investigation": {
       "owner": "/root",
       "timebox_seconds": 14400,
@@ -207,7 +217,7 @@ slice using the same failure-analysis method. See
     "slice": "S05-02",
     "specification": {
       "path": "docs/UX_SLICE_S05_02.md",
-      "sha256": "d2beb7905e7df39604714b1bb2062a6f17e2539b31b791fcf7ca1e213cfe523d"
+      "sha256": "f197ec0c4a5c56e24a26603c21525e58e0aad0ed3fe9ec2e02eade2599ce8c99"
     },
     "design": {
       "journey": "Signed-in user sees imported keys with exact email associations and applied policy, and can manage public import/bind/policy/remove through fresh authorization.",
@@ -401,7 +411,7 @@ slice using the same failure-analysis method. See
     "status": "FAIL",
     "reference": "2026-11-01 ownerreports publickey02B34119C22074FC68B10E23E3294DF8DE68C834 importgenericUnavailable; bothfactorsacceptedliveaudit, nochangeconfirmed. Ownercredentials/proofmustnotbereplayed."
   },
-  "next_action": "Verify normal signed branch delivery, then one owner fresh browser import retest; S05-02 acceptance remains open."
+  "next_action": "Correct selected-account fresh-primary routing with captured epoch and qualify native composition; independently investigate latest accepted-factor import503 before owner retest."
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->

@@ -104,8 +104,9 @@ impl Drop for NativeService {
     }
 }
 
-/// Current application adapter and real factor/session/admin stores. The
-/// primary-credential process is deliberately synthetic, not live Dovecot.
+/// Selected admission over actual MAC-bound Unix RPC and real factor/session/
+/// admin stores. Primary authority is a same-UID synthetic responder, not live
+/// Dovecot or the root-owned native-local account service.
 #[test]
 #[ignore = "requires disposable OpenBSD keyboxes and real public-admin worker"]
 fn native_runtime_key_management_journey() {
@@ -140,6 +141,133 @@ fn native_runtime_key_management_journey() {
         .starts_with("osmap-crypto-fixture-"));
     assert!(alice.starts_with(fixture) && bob.starts_with(fixture));
     let mut f = Fixture::at(fixture.join("runtime-keys"));
+    // Keep the established legacy process marker as a forbidden-route detector.
+    use std::sync::{
+        atomic::{AtomicBool, AtomicUsize, Ordering},
+        Arc,
+    };
+    struct SelectedPrimary {
+        stop: Arc<AtomicBool>,
+        thread: Option<std::thread::JoinHandle<()>>,
+    }
+    impl Drop for SelectedPrimary {
+        fn drop(&mut self) {
+            self.stop.store(true, Ordering::SeqCst);
+            if let Some(thread) = self.thread.take() {
+                let result = thread.join();
+                if !std::thread::panicking() {
+                    assert!(
+                        result.is_ok(),
+                        "synthetic selected admission responder failed"
+                    );
+                }
+            }
+        }
+    }
+    let admission_socket = f.root.join("admission.sock");
+    let mutation_socket = f.root.join("mutation.sock");
+    let admission_listener = std::os::unix::net::UnixListener::bind(&admission_socket).unwrap();
+    let mutation_listener = std::os::unix::net::UnixListener::bind(&mutation_socket).unwrap();
+    for path in [&admission_socket, &mutation_socket] {
+        fs::set_permissions(path, fs::Permissions::from_mode(0o660)).unwrap();
+    }
+    admission_listener.set_nonblocking(true).unwrap();
+    mutation_listener.set_nonblocking(true).unwrap();
+    for (name, byte) in [
+        ("admission.key", 29),
+        ("mutation.key", 17),
+        ("proof.key", 19),
+    ] {
+        let path = f.root.join(name);
+        fs::write(&path, [byte; 32]).unwrap();
+        fs::set_permissions(path, fs::Permissions::from_mode(0o600)).unwrap();
+    }
+    let uid = crate::openbsd::effective_uid();
+    f.gateway = f.gateway.clone().with_account_fixture_clients(
+        crate::account_admission_runtime::Client::paired_fixture_files(
+            &admission_socket,
+            &f.root.join("admission.key"),
+            uid,
+        )
+        .unwrap(),
+        crate::account_mutation_client::Client::stored_fixture_files(
+            &mutation_socket,
+            &f.root.join("mutation.key"),
+            &f.root.join("proof.key"),
+            uid,
+        )
+        .unwrap(),
+    );
+    f.gateway.account_rollout = Some(ACCOUNT.into());
+    fs::write(
+        &f.gateway.doveadm_path,
+        format!(
+            "#!/bin/sh\nprintf called > '{}'\nexit 1\n",
+            f.root.join("primary-called").display()
+        ),
+    )
+    .unwrap();
+    let stop = Arc::new(AtomicBool::new(false));
+    let authenticate_count = Arc::new(AtomicUsize::new(0));
+    let admit_count = Arc::new(AtomicUsize::new(0));
+    let selected_primary = SelectedPrimary {
+        stop: stop.clone(),
+        thread: Some(std::thread::spawn({
+            let authenticate_count = authenticate_count.clone();
+            let admit_count = admit_count.clone();
+            move || {
+                use crate::openpgp_inventory_runtime::{now, read_frame, write_frame};
+                let end = Instant::now() + Duration::from_secs(150);
+                let mut verifier = crate::account_admission::Verifier::default();
+                while !stop.load(Ordering::SeqCst) {
+                    assert!(Instant::now() < end, "synthetic admission fixture deadline");
+                    let mut stream = match admission_listener.accept() {
+                        Ok((stream, _)) => stream,
+                        Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
+                            std::thread::sleep(Duration::from_millis(5));
+                            continue;
+                        }
+                        Err(_) => panic!("synthetic admission fixture accept failed"),
+                    };
+                    assert_eq!(crate::openbsd::unix_stream_peer_uid(&stream).unwrap(), uid);
+                    let deadline = Instant::now() + Duration::from_secs(3);
+                    let bytes =
+                        read_frame(&mut stream, crate::account_admission::MAX_FRAME, deadline)
+                            .unwrap();
+                    let request = verifier.request(&bytes, &[29; 32], now().unwrap()).unwrap();
+                    assert_eq!(request.account(), ACCOUNT);
+                    match request.operation() {
+                        crate::account_admission::Operation::Authenticate { password } => {
+                            assert!(
+                                password == PASSWORD,
+                                "unexpected synthetic primary credential"
+                            );
+                            authenticate_count.fetch_add(1, Ordering::SeqCst);
+                        }
+                        crate::account_admission::Operation::Admit { epoch } => {
+                            assert_eq!(*epoch, 7);
+                            admit_count.fetch_add(1, Ordering::SeqCst);
+                        }
+                    }
+                    let response = request
+                        .response(Some(7), &[29; 32], now().unwrap())
+                        .unwrap();
+                    write_frame(&mut stream, &response, deadline).unwrap();
+                }
+            }
+        })),
+    };
+    let issued = f
+        .gateway
+        .build_session_service()
+        .issue_with_epoch(&f.context, ACCOUNT, RequiredSecondFactor::Totp, Some(7))
+        .unwrap();
+    f.session = ValidatedSession {
+        record: issued.record,
+        audit_event: issued.audit_event,
+    };
+    f.token = issued.token;
+    assert_eq!(f.session.record.account_epoch, Some(7));
     let state_dir = f.root.join("admin-state");
     fs::create_dir(&state_dir).unwrap();
     fs::set_permissions(&state_dir, fs::Permissions::from_mode(0o700)).unwrap();
@@ -345,25 +473,74 @@ fn native_runtime_key_management_journey() {
         .unwrap()
         .iter()
         .any(|k| k.primary.fingerprint == bob_fp));
-    // Exercise the browser paste representation through the actual Runtime/RPC
-    // path: outer whitespace is accepted, interior armor bytes are untouched.
+    // Exercise the actual parsed HTTP/form -> selected Runtime -> factor ->
+    // native RPC path. Encode '+' and CRLF literally rather than relying on a
+    // direct MutationRequest to stand in for the browser's form submission.
     let pasted_certificate = format!(
         " \r\n{}\r\n\t",
         std::str::from_utf8(&certificate.stdout).unwrap()
     );
-    assert_eq!(
-        change(
-            key_management::Action::ImportPublic {
-                certificate: pasted_certificate.as_bytes(),
-                expected_primary_fingerprint: &bob_fp,
-            },
-            3,
-            removed.public_inventory_revision.as_deref(),
-            &next_code()
-        )
-        .result,
-        Ok(())
+    let encode = |value: &str| {
+        value
+            .bytes()
+            .map(|byte| {
+                if byte.is_ascii_alphanumeric() {
+                    char::from(byte).to_string()
+                } else {
+                    format!("%{byte:02X}")
+                }
+            })
+            .collect::<String>()
+    };
+    let fresh_code = next_code();
+    let body = [
+        ("key_action", "import_public"),
+        ("binding_revision", "3"),
+        (
+            "public_inventory_revision",
+            removed.public_inventory_revision.as_deref().unwrap(),
+        ),
+        ("expected_primary_fingerprint", bob_fp.as_str()),
+        ("certificate", pasted_certificate.as_str()),
+        ("current_password", PASSWORD),
+        ("totp_code", fresh_code.as_str()),
+        ("csrf_token", f.session.record.csrf_token.as_str()),
+    ]
+    .into_iter()
+    .map(|(name, value)| format!("{name}={}", encode(value)))
+    .collect::<Vec<_>>()
+    .join("&");
+    let policy = crate::http::HttpPolicy::default();
+    let raw = format!(
+        "POST /settings/keys/change HTTP/1.1\r\nHost: localhost\r\nOrigin: https://localhost\r\nUser-Agent: Synthetic/Keys-HTTP\r\nCookie: osmap_session={}\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: {}\r\n\r\n{}",
+        f.token.as_str(), body.len(), body,
     );
+    let parsed = crate::http_parse::parse_http_request(&raw, &policy).unwrap();
+    let response = crate::http::BrowserApp::new(policy, f.gateway.clone())
+        .handle_request(&parsed, "127.0.0.1");
+    assert_eq!(response.response.status_code, 303);
+    let diagnostic = response
+        .audit_events
+        .iter()
+        .find(|event| event.action == "openpgp_key_change_confirmed")
+        .unwrap();
+    for (name, value) in [
+        ("result", "Ok(())".to_string()),
+        ("native_operation", "import_public".to_string()),
+        ("native_result", "Ok(())".to_string()),
+        (
+            "public_certificate_bytes",
+            pasted_certificate.trim().len().to_string(),
+        ),
+    ] {
+        assert!(diagnostic
+            .fields
+            .iter()
+            .any(|field| field.key == name && field.value == value));
+    }
+    let diagnostic_text = format!("{diagnostic:?}");
+    assert!(!diagnostic_text.contains(PASSWORD));
+    assert!(!diagnostic_text.contains("BEGIN PGP"));
     let restored = f.gateway.key_management_state(&f.context, &f.session).state;
     assert!(restored
         .inventory
@@ -395,6 +572,17 @@ fn native_runtime_key_management_journey() {
         change(key_management::Action::ClearAllBindings, 3, None, "000000").result,
         Err(Error::Authentication)
     );
+    assert!(authenticate_count.load(Ordering::SeqCst) > 0);
+    assert!(admit_count.load(Ordering::SeqCst) > 0);
+    assert!(
+        !f.root.join("primary-called").exists(),
+        "selected step-up used legacy primary route"
+    );
+    assert_eq!(
+        mutation_listener.accept().unwrap_err().kind(),
+        std::io::ErrorKind::WouldBlock
+    );
+    drop(selected_primary);
     drop(service);
 }
 impl Drop for Fixture {
@@ -425,6 +613,19 @@ fn current_stored_session_reaches_fresh_auth_without_claiming_missing_key_backen
         .gateway
         .change_keys_impl(&f.context, &f.session, &f.token, f.request(&f.code()));
     assert_eq!(result.result, Err(Error::Unavailable));
+    let diagnostic = result
+        .audit_events
+        .iter()
+        .find(|event| event.action == "openpgp_key_change_refused")
+        .unwrap();
+    assert!(diagnostic
+        .fields
+        .iter()
+        .any(|field| field.key == "result" && field.value == "Err(Unavailable)"));
+    assert!(!diagnostic
+        .fields
+        .iter()
+        .any(|field| field.key == "native_operation"));
     assert_eq!(fs::read(f.root.join("primary-called")).unwrap(), b"called");
 }
 
@@ -537,9 +738,11 @@ fn failed_cached_admin_can_use_independently_authenticated_read_only_inventory()
         }
         false
     });
+    let diagnostic = std::cell::Cell::new(None);
     let backend = KeyBackend {
         inventory: Some(&inventory),
         admin: Some(&admin),
+        diagnostic: &diagnostic,
     };
     let result = backend.read(ACCOUNT);
     let served = server.join().unwrap();

@@ -499,6 +499,185 @@ mod tests {
     }
 
     #[test]
+    fn key_stepup_uses_selected_primary_and_checks_its_epoch_before_factor() {
+        use crate::account_admission::Operation;
+        use crate::key_management::{Action, Error, MutationRequest};
+        use crate::openpgp_inventory_runtime::{now, read_frame, write_frame};
+        use crate::totp::TimeProvider as _;
+        use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+        use std::sync::Arc;
+        use std::time::{Duration, Instant};
+        const PASSWORD: &str = "public selected-account fixture password";
+        for (primary_epoch, configured_unavailable, expected, factor_used) in [
+            (Some(7), false, Error::Unavailable, true),
+            (Some(8), false, Error::Stale, false),
+            (None, false, Error::Authentication, false),
+            (Some(7), true, Error::Unavailable, false),
+        ] {
+            let f = Fixture::new();
+            for name in ["sessions", "cache", "settings"] {
+                let path = f.root.join(name);
+                std::fs::create_dir(&path).unwrap();
+                std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o700)).unwrap();
+            }
+            let mut gateway = RuntimeBrowserGateway::for_test(&f.root);
+            gateway.account_runtime = f.pair(29, 17, 19);
+            gateway.account_rollout = Some("alice@example.test".into());
+            let marker = f.root.join("legacy-called");
+            let legacy = f.root.join("legacy-reject");
+            std::fs::write(
+                &legacy,
+                format!(
+                    "#!/bin/sh\nIFS= read -r password\nprintf called > '{}'\nexit 1\n",
+                    marker.display()
+                ),
+            )
+            .unwrap();
+            std::fs::set_permissions(&legacy, std::fs::Permissions::from_mode(0o700)).unwrap();
+            gateway.doveadm_path = legacy;
+            let context = AuthenticationContext::new(
+                AuthenticationPolicy::default(),
+                "selected-key-stepup",
+                "127.0.0.1",
+                "Synthetic/Keys",
+            )
+            .unwrap();
+            // Prove the legacy route rejects these synthetic credentials and
+            // establish that the process-call detector actually works.
+            assert!(matches!(
+                gateway
+                    .build_auth_service()
+                    .authenticate(&context, "alice@example.test", PASSWORD)
+                    .decision,
+                AuthenticationDecision::Denied { .. }
+            ));
+            assert_eq!(std::fs::read(&marker).unwrap(), b"called");
+            std::fs::remove_file(&marker).unwrap();
+            let stop = Arc::new(AtomicBool::new(false));
+            let auth_calls = Arc::new(AtomicUsize::new(0));
+            let server_stop = stop.clone();
+            let server_auth_calls = auth_calls.clone();
+            let listener = f.listeners[0].try_clone().unwrap();
+            let server = std::thread::spawn(move || {
+                let deadline = Instant::now() + Duration::from_secs(10);
+                while !server_stop.load(Ordering::SeqCst) {
+                    let mut stream = match listener.accept() {
+                        Ok((stream, _)) => stream,
+                        Err(error)
+                            if error.kind() == std::io::ErrorKind::WouldBlock
+                                && Instant::now() < deadline =>
+                        {
+                            std::thread::sleep(Duration::from_millis(1));
+                            continue;
+                        }
+                        Err(error) => panic!("bounded key stepup admission failed: {error}"),
+                    };
+                    let raw =
+                        read_frame(&mut stream, crate::account_admission::MAX_FRAME, deadline)
+                            .unwrap();
+                    let request = crate::account_admission::Verifier::default()
+                        .request(&raw, &[29; 32], now().unwrap())
+                        .unwrap();
+                    assert_eq!(request.account(), "alice@example.test");
+                    let admitted = match request.operation() {
+                        Operation::Authenticate { password } => {
+                            assert_eq!(password, PASSWORD);
+                            server_auth_calls.fetch_add(1, Ordering::SeqCst);
+                            primary_epoch
+                        }
+                        Operation::Admit { epoch } => {
+                            assert_eq!(*epoch, 7);
+                            Some(7)
+                        }
+                    };
+                    let reply = request
+                        .response(admitted, &[29; 32], now().unwrap())
+                        .unwrap();
+                    write_frame(&mut stream, &reply, deadline).unwrap();
+                }
+            });
+            let issued = gateway
+                .build_session_service()
+                .issue_with_epoch(
+                    &context,
+                    "alice@example.test",
+                    RequiredSecondFactor::Totp,
+                    Some(7),
+                )
+                .unwrap();
+            let session = ValidatedSession {
+                record: issued.record,
+                audit_event: issued.audit_event,
+            };
+            std::fs::create_dir(&gateway.totp_secret_dir).unwrap();
+            std::fs::set_permissions(
+                &gateway.totp_secret_dir,
+                std::fs::Permissions::from_mode(0o700),
+            )
+            .unwrap();
+            let secret = FileTotpSecretStore::new(&gateway.totp_secret_dir)
+                .secret_path_for_username("alice@example.test");
+            std::fs::write(&secret, b"secret=GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ\n").unwrap();
+            std::fs::set_permissions(secret, std::fs::Permissions::from_mode(0o600)).unwrap();
+            let code = crate::totp::generate_totp_code(
+                b"12345678901234567890",
+                SystemTimeProvider.unix_timestamp() / 30,
+                TotpPolicy::default(),
+            )
+            .unwrap();
+            if configured_unavailable {
+                gateway.account_runtime = AccountRuntimeCapability::ConfiguredUnavailable;
+            }
+            let outcome = gateway.change_keys_impl(
+                &context,
+                &session,
+                &issued.token,
+                MutationRequest {
+                    action: Action::ClearAccount,
+                    expected_revision: 0,
+                    expected_public_revision: None,
+                    password: PASSWORD,
+                    totp: &code,
+                },
+            );
+            stop.store(true, Ordering::SeqCst);
+            server.join().unwrap();
+            assert_eq!(outcome.result, Err(expected));
+            if primary_epoch.is_some() && !configured_unavailable {
+                assert!(outcome
+                    .audit_events
+                    .iter()
+                    .any(|event| event.action == "login_mfa_required"));
+            }
+            assert_eq!(
+                outcome
+                    .audit_events
+                    .iter()
+                    .any(|event| event.action == "second_factor_accepted"),
+                factor_used
+            );
+            assert_eq!(
+                auth_calls.load(Ordering::SeqCst),
+                usize::from(!configured_unavailable)
+            );
+            assert!(
+                !marker.exists(),
+                "selected key stepup must never call legacy auth"
+            );
+            assert_eq!(gateway.totp_replay_dir.exists(), factor_used);
+            assert_eq!(
+                crate::openpgp_bindings::BindingStore::new(
+                    gateway.settings_dir.join("openpgp-bindings")
+                )
+                .load("alice@example.test")
+                .unwrap()
+                .revision,
+                0
+            );
+        }
+    }
+
+    #[test]
     fn password_status_runtime_delegates_authenticated_time_and_preserves_storage() {
         use crate::openpgp_inventory_runtime::{now, read_frame, write_frame};
         use std::time::{Duration, Instant};

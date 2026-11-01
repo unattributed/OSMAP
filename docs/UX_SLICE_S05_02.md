@@ -1,6 +1,6 @@
 # S05-02 — Practical public-key and email-policy management
 
-**Current 2026-11-01: paste correction installed and engineering-verified; owner import T09 remains failed pending one fresh browser retest. S05-02 remains open. Historical Oct31 closeout is retained below.**
+**Current 2026-11-01: owner import retry remains failed. A selected-account reauthentication routing defect is under correction; the latest accepted-factor import also returned unavailable and remains under investigation. S05-02 is open.**
 
 Started 2026-10-31 (America/Toronto) from signed S05-01 closeout
 `279df22e6ceb384410b151a4acc9134e67dc3e25`. The operator acknowledged the
@@ -336,3 +336,70 @@ response; reconcile the new result first. The old submitted payload remains
 unknown; this correction does not retrospectively prove its exact cause.
 T09 and the owner import control remain unaccepted until that ordinary browser
 path succeeds. Final GitHub preservation is verified separately by delivery receipt.
+
+
+## Owner retry reconciliation and selected credential routing — 2026-11-01
+
+Live sign-in at05:25:24UTC accepted both factors. Import requests at05:26:13
+and05:26:42UTC were rejected at primary verification (403), before factor or
+key effect. The owner confirmed both hosts intentionally use the same password.
+The subsequent05:33:35UTC import accepted both primary and TOTP, then returned
+503 in326ms. This later failure must not be attributed to the earlier primary
+refusals or declared fixed by the routing correction.
+
+Source inspection found sign-in selects `authenticate_account_primary`, including
+the configured account-runtime admission service, whereas key-management step-up
+unconditionally called the legacy Dovecot backend. Active obsd1 configuration
+selects Duncan for the native-local account pair; the legacy auth path remains
+`/var/run/osmap-auth`. Reuse the existing selector for fresh key authorization,
+bind its captured authenticated account/epoch to the guarded session before
+factor verification, and preserve no-fallback, replay, session and CAS checks.
+No new daemon, dependency, credential storage or authentication bypass is needed.
+
+Expected correction evidence: a distinguishing selected-accept/legacy-refuse
+regression is RED before and GREEN after; unavailable and epoch mismatch refuse
+before factor/effect; the existing native Runtime key journey uses selected
+MAC-bound synthetic primary admission, real stored epoch session and TOTP plus
+the actual public-admin/C import effects. Synthetic primary is not owner Dovecot
+qualification. Reuse unchanged existing helper evidence and normal delivery gates.
+Per native build remains bounded600s, fixture240s and Web-only install360s. Stop
+on uncertain owner mutation; no repeated owner import is dispatched by agents.
+Retain failures and actual elapsed history; a second same-boundary engineering
+failure requires combined independent reassessment before a changed test.
+
+Fresh readback after the primary refusals still reported two public keys,
+binding revision5, Optional account policies and the original Proton Required
+recipient policy. Existing RAM-only encryption passed, with no SMTP submission.
+The latest503 requires another state reconciliation before any owner retry.
+Private sanitized retry evidence is retained under the existing sprint root in
+`s05-02-import-20261101/owner-retry-auth-reconciliation.json`. T09 remains FAIL.
+
+
+The current correction also records only fixed result/native-error enums and
+normalized public-certificate byte counts in the existing key-change audit event.
+It does not retain certificate bodies, credentials, factors, grants or arbitrary
+native diagnostics. Full HTTP percent decoding is covered in the existing native
+journey rather than assumed from direct Runtime tests.
+
+The latest public block supplied by the owner is byte-for-byte the original
+661-byte `.asc` file, SHA256
+`a2e0df77497fd625df11c4e4774cfa898d1d5a8ae9803d77e300c7ca522ef690`;
+disposable public inspection confirms the expected primary and encryption subkey.
+This still does not establish the bytes of the earlier HTTP submissions. The
+latest live helper's durable mutation nonce was written at05:33:35UTC, so its503
+occurred after authenticated helper mutation admission. Its loaded executable
+inode matches disk; configured worker/engine/mapping files predate helper startup.
+No automatic helper restart or owner mutation is justified by these observations.
+
+A further discriminator may use the existing controlled `osmap-test` account
+through the actual running admin daemon as Web UID1001. Prerequisites are exact
+operator mapping, two original public keys, no target key or binding, and an
+existing native removal guard proven before import. A homespecific temporary
+GPG agent may supply the controlled public-only test home's guard prerequisite;
+record and stop only that newly created agent. One confirmed import of the
+normalized660-byte certificate may be followed by one removal of that newly
+added test key, then readback of original inventory and unchanged trust/private
+state. Any negative or uncertain reply is reconciled read-only; no mutation
+retry or speculative cleanup is allowed. Bound the whole probe to90seconds,
+retain failures, expected test nonce/keybox history and exact cleanup disposition.
+Owner keybox, bindings, policy and credentials are excluded from mutation.

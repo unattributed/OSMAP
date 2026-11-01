@@ -62,7 +62,7 @@ impl RuntimeBrowserGateway {
         }
     }
 
-    fn authenticate_account_primary(
+    pub(super) fn authenticate_account_primary(
         &self,
         context: &AuthenticationContext,
         username: &str,

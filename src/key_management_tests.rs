@@ -200,6 +200,31 @@ fn key_management_fresh_verification_is_account_bound_and_backend_outage_distinc
     assert!(!audit.contains("654321"));
 }
 #[test]
+fn selected_primary_constraint_refuses_before_factor_and_retains_actual_audit() {
+    let c = context();
+    let s = session();
+    let factor = SecondFactorService::new(AuthenticationPolicy::default(), Factor(Cell::new(0)));
+    for expected in [Error::Stale, Error::Unavailable] {
+        let out = verify_fresh_with_primary(
+            |context, account, password| {
+                (
+                    primary("alice@example.test").authenticate(context, account, password),
+                    Err(expected),
+                )
+            },
+            &factor,
+            &c,
+            &s,
+            ("fixture-password", "123456"),
+            59,
+        );
+        assert!(matches!(out.authorization, Err(error) if error == expected));
+        assert_eq!(out.audit_events.len(), 1);
+        assert_eq!(out.audit_events[0].action, "login_mfa_required");
+    }
+}
+
+#[test]
 fn key_management_binding_changes_require_fresh_same_request_and_cas() {
     let root = Scratch::new();
     let store = BindingStore::new(root.0.join("bindings"));

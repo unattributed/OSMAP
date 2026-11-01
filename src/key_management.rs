@@ -1,8 +1,9 @@
 //! Fresh authenticated, account-bound public binding changes. Passwords and
 //! factor codes have no Debug/serialization/persistence representation here.
 use crate::auth::{
-    AuthenticationContext, AuthenticationDecision, AuthenticationService, PrimaryCredentialBackend,
-    PublicFailureReason, RequiredSecondFactor, SecondFactorService, SecondFactorVerifier,
+    AuthenticationContext, AuthenticationDecision, AuthenticationOutcome, AuthenticationService,
+    PrimaryCredentialBackend, PublicFailureReason, RequiredSecondFactor, SecondFactorService,
+    SecondFactorVerifier,
 };
 use crate::identity::CanonicalUsername;
 use crate::logging::LogEvent;
@@ -128,6 +129,31 @@ pub fn verify_fresh<P: PrimaryCredentialBackend, F: SecondFactorVerifier>(
     credentials: (&str, &str),
     now: u64,
 ) -> StepUpOutcome {
+    verify_fresh_with_primary(
+        |context, account, password| (primary.authenticate(context, account, password), Ok(())),
+        factor,
+        context,
+        session,
+        credentials,
+        now,
+    )
+}
+
+/// Reuses the caller's actual primary-credential route while retaining the
+/// account/session checks and fresh second-factor verification here. The
+/// additional constraint binds selected primary admission to the session epoch.
+pub(crate) fn verify_fresh_with_primary<F: SecondFactorVerifier>(
+    primary: impl FnOnce(
+        &AuthenticationContext,
+        &str,
+        &str,
+    ) -> (AuthenticationOutcome, Result<(), Error>),
+    factor: &SecondFactorService<F>,
+    context: &AuthenticationContext,
+    session: &ValidatedSession,
+    credentials: (&str, &str),
+    now: u64,
+) -> StepUpOutcome {
     let mut events = Vec::new();
     let result = (|| {
         let account = CanonicalUsername::parse(&session.record.canonical_username)
@@ -140,7 +166,7 @@ pub fn verify_fresh<P: PrimaryCredentialBackend, F: SecondFactorVerifier>(
         {
             return Err(Error::Authentication);
         }
-        let outcome = primary.authenticate(context, account.as_str(), credentials.0);
+        let (outcome, constraint) = primary(context, account.as_str(), credentials.0);
         events.push(outcome.audit_event);
         if matches!(
             outcome.decision,
@@ -160,6 +186,7 @@ pub fn verify_fresh<P: PrimaryCredentialBackend, F: SecondFactorVerifier>(
         if canonical_username != account.as_str() {
             return Err(Error::Authentication);
         }
+        constraint?;
         let outcome = factor.verify(
             context,
             account.as_str(),

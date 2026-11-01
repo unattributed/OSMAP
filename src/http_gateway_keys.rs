@@ -11,7 +11,13 @@ mod tests;
 struct KeyBackend<'a> {
     inventory: Option<&'a crate::openpgp_inventory_runtime::Client>,
     admin: Option<&'a crate::openpgp_public_admin_runtime::Client>,
+    diagnostic: &'a std::cell::Cell<Option<NativeDiagnostic>>,
 }
+type NativeDiagnostic = (
+    &'static str,
+    Result<(), crate::openpgp_public_admin_protocol::Error>,
+    Option<usize>,
+);
 fn admin_error(error: crate::openpgp_public_admin_protocol::Error) -> Error {
     use crate::openpgp_public_admin_protocol::Error as Native;
     match error {
@@ -50,7 +56,8 @@ impl PublicKeyBackend for KeyBackend<'_> {
         primary_fingerprint: &str,
         certificate: &[u8],
     ) -> Result<(), Error> {
-        self.admin
+        let result = self
+            .admin
             .ok_or(Error::Unavailable)?
             .import_public(
                 account,
@@ -58,8 +65,10 @@ impl PublicKeyBackend for KeyBackend<'_> {
                 primary_fingerprint,
                 certificate,
             )
-            .map(|_| ())
-            .map_err(admin_error)
+            .map(|_| ());
+        self.diagnostic
+            .set(Some(("import_public", result, Some(certificate.len()))));
+        result.map_err(admin_error)
     }
     fn remove_public(
         &self,
@@ -67,11 +76,13 @@ impl PublicKeyBackend for KeyBackend<'_> {
         expected_public_revision: &str,
         primary_fingerprint: &str,
     ) -> Result<(), Error> {
-        self.admin
+        let result = self
+            .admin
             .ok_or(Error::Unavailable)?
             .remove_public(account, expected_public_revision, primary_fingerprint)
-            .map(|_| ())
-            .map_err(admin_error)
+            .map(|_| ());
+        self.diagnostic.set(Some(("remove_public", result, None)));
+        result.map_err(admin_error)
     }
 }
 impl RuntimeBrowserGateway {
@@ -118,6 +129,7 @@ impl RuntimeBrowserGateway {
         request: MutationRequest<'_>,
     ) -> MutationOutcome {
         let mut audit_events = Vec::new();
+        let native_diagnostic = std::cell::Cell::new(None);
         let sessions = self.build_session_service();
         let result = sessions
             .with_guarded_session_lease(context, token, |current, _lease| {
@@ -134,6 +146,7 @@ impl RuntimeBrowserGateway {
                 let backend = KeyBackend {
                     inventory: inventory.as_ref(),
                     admin: admin.as_ref(),
+                    diagnostic: &native_diagnostic,
                 };
                 let throttle = self.build_login_throttle_service();
                 let check = throttle
@@ -143,8 +156,37 @@ impl RuntimeBrowserGateway {
                 if matches!(check.decision, LoginThrottleDecision::Throttled { .. }) {
                     return Err(Error::Throttled);
                 }
-                let stepup = key_management::verify_fresh(
-                    &self.build_auth_service(),
+                let stepup = key_management::verify_fresh_with_primary(
+                    |context, username, password| {
+                        let captured = std::sync::Arc::new(std::sync::Mutex::new(None));
+                        let outcome = self.authenticate_account_primary(
+                            context,
+                            username,
+                            password,
+                            captured.clone(),
+                        );
+                        let constraint = if self.ready_account_runtime(username).is_some()
+                            && matches!(
+                                outcome.decision,
+                                AuthenticationDecision::MfaRequired { .. }
+                            ) {
+                            match captured.lock() {
+                                Ok(admission)
+                                    if admission.as_ref().is_some_and(|admission| {
+                                        admission.account == current.record.canonical_username
+                                            && Some(admission.epoch) == current.record.account_epoch
+                                    }) =>
+                                {
+                                    Ok(())
+                                }
+                                Ok(_) => Err(Error::Stale),
+                                Err(_) => Err(Error::Unavailable),
+                            }
+                        } else {
+                            Ok(())
+                        };
+                        (outcome, constraint)
+                    },
                     &self.build_factor_service(),
                     context,
                     &current,
@@ -187,7 +229,7 @@ impl RuntimeBrowserGateway {
             })
             .map_err(guarded_error)
             .and_then(std::convert::identity);
-        audit_events.push(build_http_info_event(
+        let mut event = build_http_info_event(
             if result.is_ok() {
                 "openpgp_key_change_confirmed"
             } else {
@@ -195,7 +237,19 @@ impl RuntimeBrowserGateway {
             },
             "OpenPGP key management evaluated",
             context,
-        ));
+        )
+        .with_field("result", format!("{result:?}"));
+        if let Some((operation, native_result, certificate_bytes)) = native_diagnostic.get() {
+            // Only source-owned enums and bounded byte accounting. Never log
+            // certificate bodies, credentials, factors, grants or native text.
+            event = event
+                .with_field("native_operation", operation)
+                .with_field("native_result", format!("{native_result:?}"));
+            if let Some(bytes) = certificate_bytes {
+                event = event.with_field("public_certificate_bytes", bytes.to_string());
+            }
+        }
+        audit_events.push(event);
         MutationOutcome {
             result,
             audit_events,
