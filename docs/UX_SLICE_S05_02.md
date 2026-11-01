@@ -893,3 +893,19 @@ confirms the engineering/native/installed outcome and retained limits. A closeou
 editor indentation error and missing README scope entry were corrected before
 validation; no product/runtime bytes changed. Traceability and work-order checks
 pass403 approved controls/110 unchanged legacy cases/34 current obligations.
+
+
+The first current ordinary push gate passed all2139 Rust unit tests (75 explicit
+ignores) but stopped at V4 hostile-content assurance: the added inert People
+navigation SVG raised the actual pre-main shell count from16 to17. The test
+adapter’s fixed16-icon ceiling left one validated application icon visible to
+its hostile-content counter. Independent actual-HTML inspection confirmed17
+geometry-only shell SVGs. An initial diagnostic extraction accidentally split
+on a CSS left property, stopped before editing, and the outer shell then reran
+the unchanged failing integration test; both failures are retained. Combined
+reassessment approved the smallest test-only correction: cap17 plus explicit
+17-positive/18th-observable assertions. Existing geometry/attribute checks and
+message-content SVG refusal are unchanged. Corrected focused V4 integration
+passes both cases, including the actual hostile corpus. Production source and
+installed Web remain byte-identical; no native rebuild or reinstall is needed.
+The corrected ordinary full gate and GitHub parity remain final delivery checks.

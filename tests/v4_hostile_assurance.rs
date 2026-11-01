@@ -705,7 +705,7 @@ fn remove_inert_shell_vectors(html: &str) -> String {
         let Some((geometry, after)) = tail.split_once("</svg>") else {
             break;
         };
-        if !inert_vector_geometry(geometry) || count >= 16 {
+        if !inert_vector_geometry(geometry) || count >= 17 {
             break;
         }
         output.push_str(before);
@@ -782,6 +782,22 @@ fn shell_vector_exception_is_geometry_only_and_never_applies_to_message_content(
         assert!(!inert_vector_geometry(content), "{content}");
     }
     let icon = "<svg class=\"shell-icon\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M3 3h18\"/></svg>";
+    // The application shell includes Contacts alongside its existing navigation.
+    // Keep a finite geometry-only budget; an additional SVG remains observable.
+    let shell_page = |count| {
+        format!(
+            "<header>{}</header><main id=\"main-content\"></main>",
+            icon.repeat(count)
+        )
+    };
+    assert_eq!(
+        observe_browser_boundary(&shell_page(17)).auto_fetch_surfaces,
+        0
+    );
+    assert_eq!(
+        observe_browser_boundary(&shell_page(18)).auto_fetch_surfaces,
+        1
+    );
     let page = format!("<header>{icon}</header><main id=\"main-content\">{icon}</main>");
     let observations = observe_browser_boundary(&page);
     assert_eq!(

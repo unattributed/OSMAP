@@ -108,7 +108,8 @@ slice using the same failure-analysis method. See
     "src/http/contacts.css",
     "src/http/routes_compose.rs",
     "src/http_support.rs",
-    "README.md"
+    "README.md",
+    "tests/v4_hostile_assurance.rs"
   ],
   "outcomes": [
     {
@@ -357,6 +358,10 @@ slice using the same failure-analysis method. See
         {
           "stage": "independent_review",
           "reference": "contacts-directory-source-independent-review.json SHAd93280f9 GO; contacts-directory-installed-independent-review.json SHA9eab993390767e4d813ba1de4bc8521b0b747d059a36e94ce2a0f7c6c8edfcf3 GO reconciles native/build/install/readback and limits. Normal full push gate/Git equality separate final delivery receipt."
+        },
+        {
+          "stage": "source_tests",
+          "reference": "Firstordinarypush unit2139/0/75PASS then V4adaptercap16/actual17shellSVGFAIL; diagnosticeditfailure+unchangedrepeatFAILretained. Independentcombinedreassessment confirms17inertpre-mainicons; TEST-ONLYcap17+17/18boundaryassertions, existinghostile/mainnegativesunchanged. CorrectedV4focused2PASS; installed2e/Webfe193unchanged. Fullnormalpushretryrequired."
         }
       ]
     }
@@ -382,7 +387,7 @@ slice using the same failure-analysis method. See
     "slice": "S05-02",
     "specification": {
       "path": "docs/UX_SLICE_S05_02.md",
-      "sha256": "e97f6a8fb86b8c7c4bac9b887c9be4ba54e92a7bf4f90fed23f8fcc5d315fcca"
+      "sha256": "c74e327e726fbcdff22934a71f0cd5d42e2439232935f564b06d743cb36e1b82"
     },
     "design": {
       "journey": "Signed-in user sees imported keys with exact email associations and applied policy, and can manage public import/bind/policy/remove through fresh authorization.",
