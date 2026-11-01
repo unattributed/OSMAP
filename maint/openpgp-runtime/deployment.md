@@ -206,3 +206,26 @@ public bindings, preparation receipt, and existing web rollback build. Do not
 rerun preparation over existing custody state or remove unrelated mail services.
 A future update replaces only stopped helper binaries from a reviewed build and
 refreshes their non-secret hashes; it preserves homes and grants.
+
+
+## S05-03 runtime lifecycle
+
+The existing crypto helper observes completed-request IPC disconnects and helper
+termination. It stops admission, cancels bounded owned work, joins its connection
+threads and only then returns. The process runner retains an unreaped leader
+until signalling is complete and requires both child reap and process-group
+absence; unconfirmed cleanup quarantines subsequent work. The crypto/admin
+10-second deadline and shared account-operation limits remain unchanged.
+
+This is IPC cancellation; browser-abort propagation is not qualified. Private
+operations still require configured grants and a usable mailbox agent. Public
+inventory is not private readiness. The existing recovery utility uses explicit
+checks under Python optimization, but remains an operator-owned action; do not
+infer authority to restart an owner agent from an unavailable operation.
+
+Native qualification uses `OSMAP_S05_LIFECYCLE=yes` with the existing
+`s05-01-native.ksh`. It runs recovery before the gateway case, which deliberately
+deletes disposable sender private keys. It imports the bounded repair function
+only for the validated disposable Alice home; no owner launcher or passphrase.
+See the [current slice evidence](../../docs/UX_SLICE_S05_03.md) for actual results,
+matching installation, preservation and remaining infrastructure acceptance.

@@ -1,5 +1,18 @@
 # Current Project Status
 
+2026-11-01 (America/Toronto) — **S05-03 engineering/native/installed QA PASS.**
+Existing Rust/GPGME runtime now cancels owned work on IPC disconnect, retains
+leader ownership until safe group termination, confirms cleanup or quarantines,
+and stops admission/cancels/joins before helper exit. Recovery utility guards
+remain effective under Python optimization. Actual OpenBSD 28 focused checks
+and 4 integration cases pass, including same-service stale-agent recovery. Three
+matching Rust binaries are loaded on obsd1; public verification through its
+configured service, HTTPS200/eight roles and protected-state preservation pass.
+Independent security review 7c340016 is GO. Normal signed GitHub delivery is the
+final delivery condition; owner infrastructure T09 remains pending. No new UI,
+owner private-key operation or production approval. Accepted Contacts/Compose
+remains intact. See [S05-03 evidence and limits](UX_SLICE_S05_03.md).
+
 2026-11-01 (America/Toronto) — **Contacts/Compose owner UAT PASS.**
 The owner explicitly reports `UAT = PASS` after the installed People-style
 Contacts and Compose handoff. The latest T09 walkthrough is PASS and Contacts

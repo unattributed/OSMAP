@@ -1,5 +1,15 @@
 # Decision Log
 
+2026-11-01 — Complete S05-03 through reproduced process-ownership, IPC-disconnect,
+helper-stop and optimized-recovery-guard failures. Reuse existing Rust/GPGME
+protocol and native primitives; add no service, database, dependency or crypto
+engine. Preserve deadlines and private grants. Order private-key native tests
+before the existing gateway fixture deliberately deletes disposable secret
+keys. Current 28 native checks/four real integrations and matching three-binary
+installation pass with preserved state. Independent review 7c340016 is GO;
+normal signed delivery and owner infrastructure acceptance remain distinct.
+IPC cancellation does not claim browser-abort propagation or S05-04 completion.
+
 2026-11-01 — Record the owner’s explicit `UAT = PASS` for the delivered People
 Contacts/Compose walkthrough. Accept the existing Contacts-selection control,
 retain prior import success and failure history, and preserve all other mapped

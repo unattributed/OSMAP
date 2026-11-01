@@ -187,8 +187,63 @@ stopped; the failed fixture and original diagnostics are retained separately.
 
 Source analysis finds that the preceding gateway test deliberately deletes
 Alice's disposable secret keys and never restores them. Filesystem-only native
-readback confirms Alice has0private-key files while Bob has2. The smallest
+readback confirms Alice has 0 private-key files while Bob has 2. The smallest
 correction moves recovery before the destructive gateway case, keeping gateway
 last. Production Rust/C and all compiled artifact bytes remain unchanged.
 A fresh disposable integration fixture will distinguish the corrected order;
 the28matching focused checks do not need repetition. No installed change yet.
+
+
+## Engineering and installed result — 2026-11-01
+
+T01–T08 pass against production source69f712b4d50ac00646da4f2f1d459ce401f8e49d.
+Runner-only checkpointddb44fb corrects fixture order and successful libtest
+marker capture; no production input changed after the native build. Actual
+native build 167.651 seconds, corrected integration 6.494 seconds, installation
+6.217 seconds and installed probe 0.737 seconds are retained. Earlier compute/model
+cost is UNKNOWN; these measured invocations do not imply total effort.
+
+| Test | Result and distinguishing evidence |
+| --- | --- |
+| T01 reuse | Current contracts/configuration checked; unchanged S05-01 crypto primitive evidence reused. |
+| T02 real crypto | Four exact native cases each run 1 test: public-admin transaction, authenticated Rust sign/verify/encrypt/decrypt, same-service recovery and production gateway protected send. |
+| T03 authority | Actual native authority 4 / protocol 7 PASS; account/peer/MAC/fingerprint/replay refusals retained. No grants expanded. |
+| T04 lifecycle | Actual native process 9 / runtime 5 PASS: ownership-safe group cleanup, caller disconnect, stop-entry/ordered helper shutdown and no late output. Shared account profiles preserved. |
+| T05 recovery | Same Service signs, refuses stale-agent private signing as Locked, continues public encryption, then signs/verifies after bounded disposable repair. |
+| T06 bounds | Existing protocol/content/output/concurrency limits retained; changed lifecycle checks pass on OpenBSD. Native fixture limits remain bounded; no new resource requirement. |
+| T07 errors | Typed/no-content failures and cleanup quarantine tests pass.31 explicit recovery guards preserve their conditions under ordinary and optimized Python 9 PASS each. |
+| T08 installed | Three matching Rust binaries loaded, real configured public Verify returns expected Signature refusal, HTTPS200/eight roles, preservation and exact temporary cleanup pass. |
+| T09 owner | NOT RUN: infrastructure acceptance remains with the owner after signed normal delivery. No new visual page or browser ceremony. |
+
+Installed hashes: Webe6ecd591c9108451e573d8f096b79cfa687155861fbaab36382396e6f32cce9a,
+public-admin54805ad9ed119419b8a6e223afc3449520a0f91f72eea04a4009eca7bec16d31,
+cryptof020b4f7d7e16fc387589993f82e7ad0efea404cf705e73e6056fb8046f6b952.
+Loaded text proof retains WebPID87085/inode130023, adminPID30401/inode3758804
+and cryptoPID9847/inode3758806 at installation. Later PIDs may change normally.
+
+Installation and public-probe protected manifests all hash to
+`d124a7b81d25620db522125c1ae86be03a1a52f4ed39ee87545d0c91e89193d0`.
+Environment, configuration, C workers/engines and inventory remain unchanged.
+No owner credential, session, key, contact or policy mutation was performed;
+public mail services were neither restarted nor reconfigured. The installed
+probe performs public verification only; private/recovery operations were
+proved with disposable keys. Operator recovery launcher changes were source
+and disposable-function tested, not installed or executed against the owner.
+
+The failed fixture was removed only after 5 private logs were durably copied and
+hash-verified, exact root identity and no socket/process were checked. Both
+fixture paths, published probe and exact bootstrap candidate are absent.
+Root-owned old-binary backups remain available; rollback was not required.
+The initial native failure remains FAIL and is not converted to a PASS by cleanup.
+
+Independent installed/security review
+`7c3400163eb1e64a6101a873586fb57738f1043fce618fb3846941b4a61d17de`
+is GO for engineering/native/installed QA. Source/recipe/runner reviews remain
+separate immutable records in the private evidence root. Normal commit/push
+hooks and exact GitHub equality are final delivery conditions, recorded in the
+private delivery receipt after execution; no hook bypass or production approval.
+
+This slice proves IPC cancellation, not browser-abort propagation. It does not
+qualify a separate-UID crypto topology, invent private-key readiness from public
+inventory, complete S05-04, or claim whole-sprint/epic/production acceptance.
+The accepted Contacts/Compose experience and all frozen obligations remain intact.

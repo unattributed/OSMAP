@@ -1,3 +1,5 @@
+2026-11-01 (America/Toronto) — **S05-03 UAT_READY: engineering/native/installed QA PASS; infrastructure T09 pending signed delivery.** Three matching Rust binaries are installed; private evidence retains actual failures, preservation and independent review.
+
 2026-11-01 (America/Toronto) — **S05-03 IN_PROGRESS: existing OpenPGP runtime lifecycle and recovery; user approves reuse-first T01–T09 route.** Contacts/Compose UAT PASS and original obligations are preserved.
 
 2026-11-01 (America/Toronto) — **Contacts/Compose owner UAT PASS.** Owner explicitly reports `UAT = PASS` for the delivered People-style Contacts and Compose walkthrough. Other mapped control statuses remain unchanged; no whole-epic or production approval inferred.
@@ -25,7 +27,7 @@ slice using the same failure-analysis method. See
   "slice": "S05-03",
   "original_requirement": "GPGME execution, account isolation, resource-limited workers, cancellation and redacted errors",
   "source_baseline": "5ebe610204b602a2c715a8854164b42495d92ffc",
-  "state": "IN_PROGRESS",
+  "state": "UAT_READY",
   "integration_owner": "/root",
   "roles": {
     "project_manager": [
@@ -76,7 +78,8 @@ slice using the same failure-analysis method. See
     "maint/ux/acceptance.json",
     "maint/security/v10-claims-boundary.json",
     "maint/security/v10-fail-closed-remediation.json",
-    "maint/security/v10-rust-assumption-audit.json"
+    "maint/security/v10-rust-assumption-audit.json",
+    "docs/README.md"
   ],
   "outcomes": [
     {
@@ -85,7 +88,7 @@ slice using the same failure-analysis method. See
       "requirement_ids": [],
       "frontend_backend_outcome": "Authorized existing Rust/GPGME operation completes correctly or refuses within bounds with truthful cleanup; confirmed recovery permits the next valid request.",
       "essential_qa": "Focused changed-boundary Rust tests and actual native service/worker recovery plus independent review; normal signed delivery.",
-      "next_action": "Reproduce uncovered cancellation/cleanup boundary using existing fixtures and make smallest demonstrated correction.",
+      "next_action": "Complete normal signed GitHub delivery; owner T09 infrastructure acceptance follows. No new UI or repeated Contacts UAT required.",
       "dependencies": [
         {
           "owner": "/root",
@@ -97,10 +100,10 @@ slice using the same failure-analysis method. See
       "stages": {
         "implementation": "PASS",
         "source_tests": "PASS",
-        "native_tests": "PENDING",
-        "deployed_qa": "PENDING",
-        "independent_review": "PENDING",
-        "recovery": "PENDING"
+        "native_tests": "PASS",
+        "deployed_qa": "PASS",
+        "independent_review": "PASS",
+        "recovery": "PASS"
       },
       "evidence": [
         {
@@ -126,6 +129,22 @@ slice using the same failure-analysis method. See
         {
           "stage": "native_tests",
           "reference": "Firstnative28focusedPASS; 3realpositivephasesPASS; recoveryinitialsignFAILbeforeagentmutation. Aliceprivatefiles0/Bob2 confirms priorgatewaysecretdeletion; runner-onlyordercorrectionpendingfreshfixture, productionartifactsunchanged. Ownedagentsstopped/fixture retained."
+        },
+        {
+          "stage": "native_tests",
+          "reference": "Actualbuild167.651s/28focusednativePASS; corrected4exactintegrationcasesPASS6.494s including sameService staleLocked/publicEncrypt/boundedrepair/freshSignVerify. PriorfixtureorderingFAIL retained; runner-onlyddb44fb productioninputsunchanged."
+        },
+        {
+          "stage": "deployed_qa",
+          "reference": "install.actual.log exit0/6.217s3loadedtextWebe6ecd/admin54805/cryptof020b; installedconfiguredpublicVerify typedSignaturePASS0.737s, HTTPS200/8roles, noownerprivateoperation."
+        },
+        {
+          "stage": "independent_review",
+          "reference": "installed-independent-review.json SHA7c3400163eb1e64a6101a873586fb57738f1043fce618fb3846941b4a61d17de GOengineering/native/installed; normalfinalGitdeliveryseparate/T09pending."
+        },
+        {
+          "stage": "recovery",
+          "reference": "All4protectedmanifestd124a7b81d25620db522125c1ae86be03a1a52f4ed39ee87545d0c91e89193d0; env/config/workersunchanged.5failedfixturelogsdurablehashverified beforeexactcleanup; bothfixtures/probe/bootstrapcandidateabsent. Old3binarybackupsretained/rollbacknotneeded."
         }
       ]
     }
@@ -139,8 +158,8 @@ slice using the same failure-analysis method. See
       "owner": "/root",
       "timebox_seconds": 14400,
       "started_at": "2026-11-01T14:54:17Z",
-      "elapsed_status": "UNMEASURED",
-      "elapsed_seconds": null
+      "elapsed_status": "MEASURED",
+      "elapsed_seconds": 4874
     },
     "attempts": [],
     "next_attempt": null
@@ -150,7 +169,7 @@ slice using the same failure-analysis method. See
     "slice": "S05-03",
     "specification": {
       "path": "docs/UX_SLICE_S05_03.md",
-      "sha256": "7189461c36906e8c110eb43054c2b8aabb3ec579f3b594289c90bbffabd1256f"
+      "sha256": "870fc8657f3edc28df3a8d6c9bef93b8e2bf0c344308a4eb89540385476ea0e4"
     },
     "design": {
       "journey": "Authorized existing Rust/GPGME operation completes correctly or refuses within bounds with truthful cleanup; confirmed recovery permits the next valid request.",
@@ -193,8 +212,10 @@ slice using the same failure-analysis method. See
         "preserved": "Contacts/Compose and S04/S05 acceptance, owner credentials/private keys/contact/key/policy data, existing public mail services/configuration and shared account process profiles.",
         "owner": "/root",
         "reviewer": "/root/s05_protocol_review",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "PASS",
+        "evidence": [
+          "Actualnative authenticatedRust+gateway+publicadmin each1PASS; currentworkerandRustproduction inputs unchanged69f712; correctedrunner4phasePASS6.494s."
+        ]
       },
       {
         "id": "S05-03-T03",
@@ -211,7 +232,8 @@ slice using the same failure-analysis method. See
         "reviewer": "/root/s05_protocol_review",
         "status": "PASS",
         "evidence": [
-          "Current source authority4/protocol7PASS; no native separate-principal rerun inferred, matching existing authority proof reused."
+          "Current source authority4/protocol7PASS; no native separate-principal rerun inferred, matching existing authority proof reused.",
+          "Matching actual OpenBSD focused28PASS confirms changed source boundary; source/native review7c340016 and firstfailures retained."
         ]
       },
       {
@@ -230,7 +252,8 @@ slice using the same failure-analysis method. See
         "status": "PASS",
         "evidence": [
           "Actual process-ownership-red.log current1caseFAIL post-reap signalattempts2,11.091s; callbackrefusesunownedkill; smallestWNOWAITcorrection pending.",
-          "OwnershipGREEN1 and fullprocess9PASS/2fixtures, runtimeIPCRED9.957s\u2192GREEN3, actualSIGTERMRED workerAliveAtHelperExittrue/naturalabsenceconfirmed\u2192GREENfalse/absenceconfirmed; finalruntime5PASS1nativeignored. Alllogs retained private."
+          "OwnershipGREEN1 and fullprocess9PASS/2fixtures, runtimeIPCRED9.957s\u2192GREEN3, actualSIGTERMRED workerAliveAtHelperExittrue/naturalabsenceconfirmed\u2192GREENfalse/absenceconfirmed; finalruntime5PASS1nativeignored. Alllogs retained private.",
+          "Matching actual OpenBSD focused28PASS confirms changed source boundary; source/native review7c340016 and firstfailures retained."
         ]
       },
       {
@@ -246,8 +269,10 @@ slice using the same failure-analysis method. See
         "preserved": "Contacts/Compose and S04/S05 acceptance, owner credentials/private keys/contact/key/policy data, existing public mail services/configuration and shared account process profiles.",
         "owner": "/root",
         "reviewer": "/root/s05_protocol_review",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "PASS",
+        "evidence": [
+          "Actualnative sameService1PASS initialSign/staleLocked/publicEncrypt/boundeddisposablerepair/freshSignVerify; optimizedPython9PASS2nativeignored and31conditionASTidentity retained."
+        ]
       },
       {
         "id": "S05-03-T06",
@@ -264,7 +289,8 @@ slice using the same failure-analysis method. See
         "reviewer": "/root/s05_protocol_review",
         "status": "PASS",
         "evidence": [
-          "Current process9PASS/2fixtures includes unchanged10/30/60s profile/limits and concurrent runtime admission4source tests; native resource evidence remains separate."
+          "Current process9PASS/2fixtures includes unchanged10/30/60s profile/limits and concurrent runtime admission4source tests; native resource evidence remains separate.",
+          "Matching actual OpenBSD focused28PASS confirms changed source boundary; source/native review7c340016 and firstfailures retained."
         ]
       },
       {
@@ -282,7 +308,8 @@ slice using the same failure-analysis method. See
         "reviewer": "/root/s05_protocol_review",
         "status": "PASS",
         "evidence": [
-          "Current outcomes2/protocol7/sharedprocess9PASS no partial output/typed-error regression; optimized recoveryguardRED\u2192explicit31conditions ASTidentical, ordinaryandoptimized9PASS2nativeignored."
+          "Current outcomes2/protocol7/sharedprocess9PASS no partial output/typed-error regression; optimized recoveryguardRED\u2192explicit31conditions ASTidentical, ordinaryandoptimized9PASS2nativeignored.",
+          "Matching actual OpenBSD focused28PASS confirms changed source boundary; source/native review7c340016 and firstfailures retained."
         ]
       },
       {
@@ -298,8 +325,10 @@ slice using the same failure-analysis method. See
         "preserved": "Contacts/Compose and S04/S05 acceptance, owner credentials/private keys/contact/key/policy data, existing public mail services/configuration and shared account process profiles.",
         "owner": "/root",
         "reviewer": "/root/s05_protocol_review",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "PASS",
+        "evidence": [
+          "Actual3matchingRustloadedtext/HTTPS200/8roles; configuredpublicVerifytypedSignaturePASS; all4protectedmanifestsd124a7, unchangedenv/config/workers, exacttemporarycleanup and independentinstalledreview7c340016GO."
+        ]
       },
       {
         "id": "S05-03-T09",
@@ -325,7 +354,7 @@ slice using the same failure-analysis method. See
     "status": "PENDING",
     "reference": "New S05-03 infrastructure acceptance follows agent-owned completion; prior Contacts/Compose UAT PASS preserved."
   },
-  "next_action": "Reuse matching crypto evidence, reproduce uncovered lifecycle failures, apply minimal correction and verify actual native service recovery."
+  "next_action": "Complete normal signed GitHub delivery; owner T09 infrastructure acceptance follows. No new UI or repeated Contacts UAT required."
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->

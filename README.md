@@ -1,5 +1,7 @@
 # OSMAP
 
+**2026-11-01: S05-03 runtime lifecycle qualified and installed on obsd1.** Existing Rust/GPGME operations now support bounded IPC cancellation, ownership-safe worker cleanup and ordered helper shutdown. Actual OpenBSD checks and same-service stale-agent recovery pass; three matching Rust binaries are loaded with preserved state and healthy services. Owner T09 is infrastructure acceptance; normal signed delivery remains a separate final condition. See [S05-03 evidence and limits](docs/UX_SLICE_S05_03.md).
+
 **2026-11-01: People-style Contacts owner UAT PASS on obsd1.** The people sidebar icon opens a searchable table of saved contacts and imported-key email identities, their effective encryption policies and practical Write/Add name/Edit actions. Focused source, browser, native and installed checks pass; the owner has accepted the Contacts/Compose handoff with `UAT = PASS`. See the [Contacts delivery record](docs/UX_SLICE_S05_02.md#people-style-contacts-installed--2026-11-01).
 
 **2026-10-17: S04-01 complete (R4 narrowed scope).** Settings/sessions engineering, matching installed QA, independent audit and operator `S04_01_UAT=PASS` are recorded in the [slice checklist](docs/UX_SLICE_S04_01.md). Eleven required follow-up controls remain open; Sprint S04 and the epic are incomplete. Password change, TOTP management and recovery are separate work. All other stopped slices remain stopped. See [current status](docs/CURRENT_PROJECT_STATUS.md).
