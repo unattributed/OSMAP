@@ -77,7 +77,18 @@ slice using the same failure-analysis method. See
     "maint/openpgp-runtime/inventory.c",
     "maint/openpgp-runtime/deployment_admin_prepare.py",
     "src/send.rs",
-    "src/http_form.rs"
+    "src/http_form.rs",
+    "src/openpgp_inventory.rs",
+    "src/openpgp_inventory_tests.rs",
+    "src/openpgp_bindings.rs",
+    "src/openpgp_bindings_tests.rs",
+    "src/http_gateway_mail.rs",
+    "src/protected_submission.rs",
+    "src/openpgp_crypto_runtime.rs",
+    "src/http/compose_protection.rs",
+    "src/bin/osmap_public_inventory_helper.rs",
+    "src/bin/osmap_public_admin_helper.rs",
+    "src/bin/osmap_crypto_helper.rs"
   ],
   "outcomes": [
     {
@@ -121,7 +132,7 @@ slice using the same failure-analysis method. See
       ],
       "frontend_backend_outcome": "Signed-in user sees imported keys with exact email associations and applied policy, and can manage public import/bind/policy/remove through fresh authorization.",
       "essential_qa": "T01-T08 source/native/browser/installed checks and independent review; actual visual owner T09 separate.",
-      "next_action": "Complete reviewed signed GitHub preservation of ASC upload; owner ordinary browser import retest. Latest primary refusal UNKNOWN; T09FAIL/importPARTIALLY_VERIFIED/S05open.",
+      "next_action": "Implement certificate-derived recipient associations with no ordinary manual binding, preserve saved policies, validate real encrypted preparation and final-send inventory freshness, coordinated OSMAP helper deployment and signed delivery.",
       "dependencies": [
         {
           "owner": "/root",
@@ -131,11 +142,11 @@ slice using the same failure-analysis method. See
         }
       ],
       "stages": {
-        "implementation": "PASS",
-        "source_tests": "PASS",
-        "native_tests": "PASS",
-        "deployed_qa": "PASS",
-        "independent_review": "PASS",
+        "implementation": "PENDING",
+        "source_tests": "PENDING",
+        "native_tests": "PENDING",
+        "deployed_qa": "PENDING",
+        "independent_review": "PENDING",
         "recovery": "PASS"
       },
       "evidence": [
@@ -246,6 +257,14 @@ slice using the same failure-analysis method. See
         {
           "stage": "independent_review",
           "reference": "asc-upload-installed-independent-review.json SHAbc4ca497d9e7f86e5c21795a1bcba1873fcc0c2bacc379aaa861cf12856b9d3d GO_AGENT_OWNED_ASC_ENGINEERING_NATIVE_INSTALLED_QA; ownerprimaryUNKNOWN/T09FAIL/importPARTIAL/S05open preserved."
+        },
+        {
+          "stage": "implementation",
+          "reference": "Owner explicitly requests automatic email extraction/association, removes manualbindingwrongaddressrisk. Current screenshotshowsnewcBwrecipientRequired; newworkflowimplementationpending. Independentarchitecture review favors sharedresolver/no2nddurablewrite, identifieshelperconsumercompatibility and finalsendrevision asrequired integration."
+        },
+        {
+          "stage": "implementation",
+          "reference": "Actualstaticcrypto authority count2 excludesnew02B; smallestreviewed trustedoptin(defaultfalse) permitsnativeexactlocalpublicprimaryonly, privatepinsunchanged. IncludesactualRPCnativeRAMtest andcoordinatedhelper/configrollout, ownerkeys/policiespreserved."
         }
       ]
     }
@@ -271,7 +290,7 @@ slice using the same failure-analysis method. See
     "slice": "S05-02",
     "specification": {
       "path": "docs/UX_SLICE_S05_02.md",
-      "sha256": "d947aafe454fcb33e8e44e55f4bfdf37c70e8c619a1e86d64415be51606f9d57"
+      "sha256": "c144fa323fdc5854ab5a8085dd939ffe56573277656ac295dcf6d81d0b1198a4"
     },
     "design": {
       "journey": "Signed-in user sees imported keys with exact email associations and applied policy, and can manage public import/bind/policy/remove through fresh authorization.",
@@ -472,7 +491,7 @@ slice using the same failure-analysis method. See
     "status": "FAIL",
     "reference": "2026-11-01 ownerreports publickey02B34119C22074FC68B10E23E3294DF8DE68C834 importgenericUnavailable; bothfactorsacceptedliveaudit, nochangeconfirmed. Ownercredentials/proofmustnotbereplayed. Latest06:45primaryrefusal beforefactor/native remainsUNKNOWN; ASCuploadinstalled, newordinaryownerfileimportnotyetperformed."
   },
-  "next_action": "Complete reviewed signed GitHub preservation of ASC upload; owner ordinary browser import retest. Latest primary refusal UNKNOWN; T09FAIL/importPARTIALLY_VERIFIED/S05open."
+  "next_action": "Implement certificate-derived recipient associations with no ordinary manual binding, preserve saved policies, validate real encrypted preparation and final-send inventory freshness, coordinated OSMAP helper deployment and signed delivery."
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->

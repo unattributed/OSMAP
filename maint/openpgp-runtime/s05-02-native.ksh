@@ -53,7 +53,7 @@ cleanup() {
 trap cleanup EXIT
 trap 'exit 130' HUP INT TERM
 
-for unit in crypto_engine inventory; do
+for unit in crypto_engine inventory crypto; do
     stage=compile_$unit
     if [[ "$unit" = crypto_engine ]]; then
         cc -std=c99 -Wall -Wextra -Werror \
@@ -87,6 +87,14 @@ for account in alice bob; do
     [[ ${#fingerprint} -eq 40 && "$fingerprint" != *[!A-F0-9]* ]]
     print '' | gpg_fixture "$home_dir" --quick-add-key "$fingerprint" cv25519 encrypt 0 \
         >>"$fixture/commands.log" 2>&1
+    if [[ "$account" = bob ]]; then
+        for address in bob.alias@example.test revoked@example.test; do
+            print '' | gpg_fixture "$home_dir" --quick-add-uid "$fingerprint" "$address" \
+                >>"$fixture/commands.log" 2>&1
+        done
+        print '' | gpg_fixture "$home_dir" --quick-revoke-uid "$fingerprint" revoked@example.test \
+            >>"$fixture/commands.log" 2>&1
+    fi
     print -r -- "$fingerprint" >"$fixture/$account.fingerprint"
     gpg_fixture "$home_dir" --export "$fingerprint" </dev/null \
         >"$fixture/$account.public" 2>>"$fixture/commands.log"
@@ -98,6 +106,7 @@ stage=disposable_public_exchange
     "$fixture/alice.public" >>"$fixture/commands.log" 2>&1
 
 export OSMAP_CRYPTO_NATIVE_ENGINE=$fixture/crypto_engine
+export OSMAP_CRYPTO_NATIVE_WORKER=$fixture/crypto
 export OSMAP_CRYPTO_NATIVE_INVENTORY_WORKER=$fixture/inventory
 export OSMAP_CRYPTO_NATIVE_ALICE_HOME=$fixture/alice
 export OSMAP_CRYPTO_NATIVE_BOB_HOME=$fixture/bob

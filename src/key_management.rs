@@ -388,11 +388,35 @@ pub fn mutate<B: PublicKeyBackend>(
             request.expected_revision,
             update,
             || {
-                backend.read(account).map_err(|error| match error {
+                let inventory = backend.read(account).map_err(|error| match error {
                     Error::Stale => BindingError::Stale,
                     Error::Unconfirmed => BindingError::Unconfirmed,
                     _ => BindingError::Unavailable,
-                })
+                })?;
+                if let Action::SetRecipient {
+                    address,
+                    primary_fingerprint,
+                    ..
+                } = &request.action
+                {
+                    let compare = crate::mail_address::comparison_key(address);
+                    let saved_pair = old.recipient_bindings.iter().any(|binding| {
+                        crate::mail_address::comparison_key(&binding.address) == compare
+                            && binding.primary_fingerprint == *primary_fingerprint
+                    });
+                    let certificate_pair = inventory.keys().is_some_and(|keys| {
+                        keys.iter().any(|key| {
+                            key.primary.fingerprint == *primary_fingerprint
+                                && key.email_addresses.iter().any(|email| {
+                                    crate::mail_address::comparison_key(email) == compare
+                                })
+                        })
+                    });
+                    if !saved_pair && !certificate_pair {
+                        return Err(BindingError::InvalidKey);
+                    }
+                }
+                Ok(inventory)
             },
             now,
         )

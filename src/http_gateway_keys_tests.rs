@@ -116,18 +116,27 @@ fn native_runtime_key_management_journey() {
     const TEST: &str =
         "http::http_gateway::http_gateway_keys::tests::native_runtime_key_management_journey";
     assert_eq!(std::env::consts::OS, "openbsd");
-    if std::env::var_os("OSMAP_KEYS_NATIVE_SERVICE").is_some() {
-        crate::openpgp_public_admin_runtime::Service::from_operator_files(
-            &PathBuf::from(std::env::var_os("OSMAP_KEYS_NATIVE_CONFIG").unwrap()),
-            &PathBuf::from(std::env::var_os("OSMAP_KEYS_NATIVE_KEY").unwrap()),
-        )
-        .unwrap()
-        .serve()
-        .unwrap();
+    if let Ok(service) = std::env::var("OSMAP_KEYS_NATIVE_SERVICE") {
+        let config = PathBuf::from(std::env::var_os("OSMAP_KEYS_NATIVE_CONFIG").unwrap());
+        let key = PathBuf::from(std::env::var_os("OSMAP_KEYS_NATIVE_KEY").unwrap());
+        match service.as_str() {
+            "admin" => {
+                crate::openpgp_public_admin_runtime::Service::from_operator_files(&config, &key)
+                    .unwrap()
+                    .serve()
+                    .unwrap()
+            }
+            "crypto" => crate::openpgp_crypto_runtime::Service::from_operator_files(&config, &key)
+                .unwrap()
+                .serve()
+                .unwrap(),
+            _ => panic!("unknown native fixture service"),
+        }
         return;
     }
     let setting = |name| PathBuf::from(std::env::var_os(name).unwrap());
     let worker = setting("OSMAP_CRYPTO_NATIVE_INVENTORY_WORKER");
+    let crypto_worker = setting("OSMAP_CRYPTO_NATIVE_WORKER");
     let engine = setting("OSMAP_CRYPTO_NATIVE_ENGINE");
     let alice = setting("OSMAP_CRYPTO_NATIVE_ALICE_HOME");
     let bob = setting("OSMAP_CRYPTO_NATIVE_BOB_HOME");
@@ -140,6 +149,7 @@ fn native_runtime_key_management_journey() {
         .to_string_lossy()
         .starts_with("osmap-crypto-fixture-"));
     assert!(alice.starts_with(fixture) && bob.starts_with(fixture));
+    assert!(crypto_worker.starts_with(fixture));
     let mut f = Fixture::at(fixture.join("runtime-keys"));
     // Keep the established legacy process marker as a forbidden-route detector.
     use std::sync::{
@@ -473,6 +483,66 @@ fn native_runtime_key_management_journey() {
         .unwrap()
         .iter()
         .any(|k| k.primary.fingerprint == bob_fp));
+    // A fresh authenticated crypto helper opts in to local imported recipients
+    // with an EMPTY static recipient list. It grants no signing/decryption.
+    let crypto_socket = f.root.join("crypto.sock");
+    let crypto_config = f.root.join("crypto.json");
+    let crypto_key = f.root.join("crypto-grant");
+    let mut crypto_grant = [0; 32];
+    getrandom::getrandom(&mut crypto_grant).unwrap();
+    fs::write(&crypto_key, crypto_grant).unwrap();
+    fs::set_permissions(&crypto_key, fs::Permissions::from_mode(0o600)).unwrap();
+    fs::write(&crypto_config, serde_json::to_vec(&serde_json::json!({
+        "version":1,"worker":crypto_worker,"engine":engine,"socket":crypto_socket,"trusted_web_uid":uid,
+        "accounts":[{"account":ACCOUNT,"home":alice,"signer_fingerprint":null,"decrypt_fingerprints":[],"recipient_fingerprints":[],"allow_imported_recipients":true}],
+    })).unwrap()).unwrap();
+    fs::set_permissions(&crypto_config, fs::Permissions::from_mode(0o600)).unwrap();
+    let mut crypto_service = NativeService(
+        Command::new(std::env::current_exe().unwrap())
+            .args(["--exact", TEST, "--ignored"])
+            .env("OSMAP_KEYS_NATIVE_SERVICE", "crypto")
+            .env("OSMAP_KEYS_NATIVE_CONFIG", &crypto_config)
+            .env("OSMAP_KEYS_NATIVE_KEY", &crypto_key)
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .spawn()
+            .unwrap(),
+    );
+    let deadline = Instant::now() + Duration::from_secs(10);
+    while !crypto_socket.exists() {
+        assert!(crypto_service.0.try_wait().unwrap().is_none());
+        assert!(Instant::now() < deadline);
+        std::thread::sleep(Duration::from_millis(10));
+    }
+    let crypto_client = crate::openpgp_crypto_runtime::Client::from_operator_files(
+        &crypto_socket,
+        &crypto_key,
+        uid,
+    )
+    .unwrap();
+    let plaintext = b"Synthetic imported-recipient encryption proof; no mail delivery.";
+    let encrypt = |fingerprint: String| crate::openpgp_crypto::Operation::Encrypt {
+        recipient_fingerprints: vec![fingerprint],
+        data: plaintext.to_vec(),
+    };
+    let absent = "D".repeat(40);
+    assert!(!removed
+        .inventory
+        .as_ref()
+        .unwrap()
+        .keys()
+        .unwrap()
+        .iter()
+        .any(|key| key.primary.fingerprint == absent));
+    assert!(crypto_client
+        .execute(ACCOUNT, &encrypt(absent))
+        .unwrap()
+        .is_err());
+    // Bob exists in the OTHER fixture home, but was removed from mapped Alice.
+    assert!(crypto_client
+        .execute(ACCOUNT, &encrypt(bob_fp.clone()))
+        .unwrap()
+        .is_err());
     // Exercise an actual multipart .asc upload through parsed HTTP -> selected
     // Runtime -> factor -> native RPC. Text parts retain '+', '&', '=' and UTF-8
     // literally; they must never receive URL-form decoding.
@@ -547,6 +617,110 @@ fn native_runtime_key_management_journey() {
         restored.bindings.as_ref().unwrap().policy.encryption,
         Requirement::Required
     );
+    // A successful file import exposes the engine-parsed UID addr-spec. The
+    // recipient resolves without another SetRecipient/persisted binding step.
+    let inventory = restored.inventory.as_ref().unwrap();
+    let imported = inventory
+        .keys()
+        .unwrap()
+        .iter()
+        .find(|key| key.primary.fingerprint == bob_fp)
+        .unwrap();
+    assert_eq!(
+        imported
+            .email_addresses
+            .iter()
+            .map(String::as_str)
+            .collect::<std::collections::BTreeSet<_>>(),
+        std::collections::BTreeSet::from(["bob@example.test", "bob.alias@example.test"]),
+    );
+    let record = restored.bindings.as_ref().unwrap();
+    assert!(record.recipient_bindings.is_empty());
+    let automatic_recipients: Vec<String> =
+        vec!["bob@example.test".into(), "bob.alias@example.test".into()];
+    for address in &automatic_recipients {
+        assert_eq!(
+            record
+                .resolve_recipient(inventory, address)
+                .unwrap()
+                .primary_fingerprint,
+            bob_fp
+        );
+    }
+    assert!(matches!(
+        record.resolve_recipient(inventory, "revoked@example.test"),
+        Err(crate::openpgp_bindings::KeyStatus::MissingBinding)
+    ));
+    let automatic = crate::openpgp_bindings::evaluate(
+        ACCOUNT,
+        record,
+        inventory,
+        Recipients {
+            to: &automatic_recipients,
+            cc: &[],
+            bcc: &[],
+        },
+        Selections {
+            encrypt: true,
+            ..Selections::default()
+        },
+        SystemTimeProvider.unix_timestamp(),
+    )
+    .unwrap();
+    let plan = automatic
+        .plan
+        .expect("imported UID recipient must produce an encryption plan");
+    assert_eq!(
+        plan.recipient_fingerprints.as_slice(),
+        std::slice::from_ref(&bob_fp)
+    );
+    let encrypted = crypto_client
+        .execute(
+            ACCOUNT,
+            &crate::openpgp_crypto::Operation::Encrypt {
+                recipient_fingerprints: plan.recipient_fingerprints,
+                data: plaintext.to_vec(),
+            },
+        )
+        .unwrap()
+        .unwrap();
+    assert_eq!(encrypted.operation, "encrypt");
+    assert!(encrypted
+        .content
+        .starts_with(b"-----BEGIN PGP MESSAGE-----"));
+    assert!(encrypted.content != plaintext);
+    let encryption_subkey = imported.subkeys.iter().find(|key| key.can_encrypt).unwrap();
+    assert!(matches!(
+        crypto_client
+            .execute(ACCOUNT, &encrypt(encryption_subkey.fingerprint.clone()))
+            .unwrap(),
+        Err(crate::openpgp_crypto::Error::Unsupported)
+    ));
+    assert!(crypto_client
+        .execute(
+            ACCOUNT,
+            &crate::openpgp_crypto::Operation::Sign {
+                signer_fingerprint: bob_fp.clone(),
+                data: plaintext.to_vec()
+            }
+        )
+        .is_err());
+    assert!(crypto_client
+        .execute(
+            ACCOUNT,
+            &crate::openpgp_crypto::Operation::Decrypt {
+                allowed_primary_fingerprints: vec![bob_fp.clone()],
+                ciphertext: encrypted.content
+            }
+        )
+        .is_err());
+    assert!(crate::openpgp_bindings::BindingStore::new(
+        f.gateway.settings_dir.join("openpgp-bindings")
+    )
+    .load(ACCOUNT)
+    .unwrap()
+    .recipient_bindings
+    .is_empty());
     assert!(fs::read(alice.join("trustdb.gpg")).unwrap() == trustdb);
     for (path, bytes) in private {
         assert!(fs::read(path).unwrap() == bytes);
@@ -570,6 +744,7 @@ fn native_runtime_key_management_journey() {
         std::io::ErrorKind::WouldBlock
     );
     drop(selected_primary);
+    drop(crypto_service);
     drop(service);
 }
 impl Drop for Fixture {

@@ -28,6 +28,10 @@ struct Mapping {
     signer_fingerprint: Option<String>,
     decrypt_fingerprints: Vec<String>,
     recipient_fingerprints: Vec<String>,
+    /// Trusted operator opt-in: encryption may use suitable primary keys already
+    /// in this mapped account home. Native validation remains authoritative.
+    #[serde(default)]
+    allow_imported_recipients: bool,
 }
 fn valid_fingerprint(s: &str) -> bool {
     s.len() == 40
@@ -71,9 +75,10 @@ impl Mapping {
             Operation::Encrypt {
                 recipient_fingerprints,
                 ..
-            } if recipient_fingerprints
-                .iter()
-                .any(|fp| !self.recipient_fingerprints.contains(fp)) =>
+            } if !self.allow_imported_recipients
+                && recipient_fingerprints
+                    .iter()
+                    .any(|fp| !self.recipient_fingerprints.contains(fp)) =>
             {
                 return Err(Error::Authentication)
             }
@@ -438,8 +443,48 @@ mod tests {
             signer_fingerprint: Some("A".repeat(40)),
             decrypt_fingerprints: vec!["B".repeat(40)],
             recipient_fingerprints: vec!["C".repeat(40)],
+            allow_imported_recipients: false,
         }
     }
+    #[test]
+    fn imported_recipient_opt_in_is_default_off_and_never_changes_private_authority() {
+        let raw = serde_json::json!({"account":"alice","home":"/operator/only",
+            "signer_fingerprint":"A".repeat(40),"decrypt_fingerprints":["B".repeat(40)],"recipient_fingerprints":[]});
+        let mut mapping: Mapping = serde_json::from_value(raw).unwrap();
+        assert!(!mapping.allow_imported_recipients);
+        let key = [7; 32];
+        let encrypt = Operation::Encrypt {
+            recipient_fingerprints: vec!["D".repeat(40)],
+            data: b"public fixture".to_vec(),
+        };
+        let request = Request::issue("alice", &encrypt, 100, &key).unwrap();
+        assert!(mapping.authorize(&request).is_err());
+        mapping.allow_imported_recipients = true;
+        assert!(mapping.authorize(&request).is_ok()); // Native local-key checks still run after this boundary.
+        assert!(mapping
+            .authorize(&Request::issue("bob", &encrypt, 100, &key).unwrap())
+            .is_err());
+        let sign = Operation::Sign {
+            signer_fingerprint: "D".repeat(40),
+            data: b"fixture".to_vec(),
+        };
+        assert!(mapping
+            .authorize(&Request::issue("alice", &sign, 100, &key).unwrap())
+            .is_err());
+        let decrypt = Operation::Decrypt {
+            allowed_primary_fingerprints: vec!["D".repeat(40)],
+            ciphertext: b"fixture".to_vec(),
+        };
+        assert!(
+            matches!(mapping.authorize(&Request::issue("alice",&decrypt,100,&key).unwrap()).unwrap(),
+            Operation::Decrypt{allowed_primary_fingerprints,..} if allowed_primary_fingerprints==vec!["B".repeat(40)])
+        );
+        mapping.decrypt_fingerprints.clear();
+        assert!(mapping
+            .authorize(&Request::issue("alice", &decrypt, 100, &key).unwrap())
+            .is_err());
+    }
+
     #[test]
     fn authority_is_account_and_exact_fingerprint_bound() {
         let m = mapping();

@@ -852,3 +852,139 @@ fn foreign_account_bad_address_and_receiver_count_do_not_create_plan() {
         Err(BindingError::Quota)
     ));
 }
+
+#[test]
+fn certificate_emails_resolve_without_binding_write_and_default_to_plain() {
+    let mut raw = raw_inventory();
+    raw["keys"][1]["email_addresses"] = json!(["receiver@example.test", "second@example.test"]);
+    let inv = inventory(&raw);
+    let record = BindingRecord::empty("alice@example.test").unwrap();
+    let resolved = record.with_certificate_recipients(&inv).unwrap();
+    assert_eq!(resolved.len(), 2);
+    assert_eq!(record.revision, 0);
+    assert!(record.recipient_bindings.is_empty());
+    assert!(resolved
+        .iter()
+        .all(|b| b.primary_fingerprint == "D".repeat(40) && b.encryption == Requirement::Optional));
+    let plain = evaluate_to(&record, &inv, Selections::default());
+    assert!(plain.reasons.is_empty());
+    assert_eq!(plain.recipients[0].state, KeyStatus::Ready);
+    let encrypted = evaluate_to(
+        &record,
+        &inv,
+        Selections {
+            encrypt: true,
+            ..Default::default()
+        },
+    );
+    assert_eq!(
+        encrypted.plan.unwrap().recipient_fingerprints,
+        vec!["D".repeat(40)]
+    );
+}
+
+#[test]
+fn conflicting_certificate_emails_never_choose_by_order_or_expiry() {
+    let mut raw = raw_inventory();
+    raw["keys"][0]["email_addresses"] = json!(["receiver@example.test"]);
+    raw["keys"][1]["email_addresses"] = json!(["receiver@example.test"]);
+    raw["keys"][0]["primary"]["expired"] = json!(true);
+    let inv = inventory(&raw);
+    let empty = BindingRecord::empty("alice@example.test").unwrap();
+    assert!(matches!(
+        empty.resolve_recipient(&inv, "receiver@example.test"),
+        Err(KeyStatus::Ambiguous)
+    ));
+    assert!(empty.with_certificate_recipients(&inv).unwrap().is_empty());
+    assert!(evaluate_to(
+        &empty,
+        &inv,
+        Selections {
+            encrypt: true,
+            ..Default::default()
+        }
+    )
+    .plan
+    .is_none());
+    for policy in [Requirement::Required, Requirement::Disabled] {
+        let mut saved = record();
+        saved.recipient_bindings[0].encryption = policy;
+        let selected = saved
+            .resolve_recipient(&inv, "receiver@example.test")
+            .unwrap();
+        assert_eq!(selected.primary_fingerprint, "D".repeat(40));
+        assert_eq!(selected.encryption, policy);
+    }
+}
+
+#[test]
+fn absent_certificate_identity_never_invents_an_association() {
+    let empty = BindingRecord::empty("alice@example.test").unwrap();
+    let inv = inventory(&raw_inventory());
+    assert!(matches!(
+        empty.resolve_recipient(&inv, "receiver@example.test"),
+        Err(KeyStatus::MissingBinding)
+    ));
+    assert!(empty.with_certificate_recipients(&inv).unwrap().is_empty());
+}
+
+#[test]
+fn final_dispatch_checks_inventory_change_without_policy_revision_change() {
+    use std::cell::Cell;
+    let root = scratch();
+    let store = BindingStore::new(&root);
+    let before = inventory(&raw_inventory());
+    let revision = inventory_revision(&before).unwrap();
+    let calls = Cell::new(0);
+    let mut changed = raw_inventory();
+    changed["keys"][1]["email_addresses"] = json!(["added@example.test"]);
+    let after = inventory(&changed);
+    let dispatch = || {
+        calls.set(calls.get() + 1);
+    };
+    assert_eq!(
+        store.with_locked_inventory_revision(
+            "alice@example.test",
+            0,
+            Some(revision),
+            || Ok(after),
+            dispatch
+        ),
+        Err(BindingError::Stale)
+    );
+    assert_eq!(calls.get(), 0);
+    assert_eq!(
+        store.with_locked_inventory_revision(
+            "alice@example.test",
+            0,
+            Some(revision),
+            || Err(BindingError::Unavailable),
+            dispatch
+        ),
+        Err(BindingError::Unavailable)
+    );
+    assert_eq!(calls.get(), 0);
+    assert_eq!(
+        store.with_locked_inventory_revision(
+            "alice@example.test",
+            0,
+            Some(revision),
+            || Ok(before),
+            dispatch
+        ),
+        Ok(())
+    );
+    assert_eq!(calls.get(), 1);
+    assert_eq!(
+        store.with_locked_inventory_revision(
+            "alice@example.test",
+            0,
+            None,
+            || panic!("plaintext must not require inventory"),
+            dispatch
+        ),
+        Ok(())
+    );
+    assert_eq!(calls.get(), 2);
+    fs::remove_dir_all(root).unwrap();
+}

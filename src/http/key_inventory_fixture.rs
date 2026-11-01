@@ -21,17 +21,24 @@ pub(super) fn outcome(mode: &str, account: &str) -> BrowserPublicInventoryOutcom
                 "can_authenticate": false
             })
         };
+        let account_emails = if crate::identity::MailboxIdentity::parse(account).is_ok() {
+            vec![account]
+        } else {
+            Vec::new()
+        };
         let mut keys = if mode == "KeyInventoryEmpty" {
             vec![]
         } else {
             vec![serde_json::json!({
                 "primary": material("0123456789ABCDEF0123456789ABCDEF01234567", 0, true, false),
+                "email_addresses": account_emails,
                 "subkeys": [material("89ABCDEF0123456789ABCDEF0123456789ABCDEF", 1800000000, false, true)]
             })]
         };
         if mode.starts_with("KeyInventoryPractical") && mode != "KeyInventoryPracticalMissing" {
             keys.push(serde_json::json!({
                 "primary": material("FEDCBA9876543210FEDCBA9876543210FEDCBA98",0,true,false),
+                "email_addresses": ["recipient@example.test","second@example.test"],
                 "subkeys": [material("0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F",1800000000,false,true)]
             }));
         }

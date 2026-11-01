@@ -37,6 +37,50 @@ static int emit(gpgme_subkey_t k) {
  if(k->curve){size_t n=strlen(k->curve);if(!n||n>32)return 0;for(size_t i=0;i<n;i++){char c=k->curve[i];if(!((c>='a'&&c<='z')||(c>='A'&&c<='Z')||(c>='0'&&c<='9')||c=='-'||c=='_'||c=='.'))return 0;}}
  return append("{\"fingerprint\":\"%s\",\"algorithm\":%u,\"bits\":%u,\"curve\":%s%s%s,\"created\":%lu,\"expires\":%lu,\"revoked\":%s,\"expired\":%s,\"disabled\":%s,\"invalid\":%s,\"can_sign\":%s,\"can_encrypt\":%s,\"can_certify\":%s,\"can_authenticate\":%s}",k->fpr,(unsigned)k->pubkey_algo,k->length,k->curve?"\"":"",k->curve?k->curve:"null",k->curve?"\"":"",(unsigned long)k->timestamp,(unsigned long)k->expires,k->revoked?"true":"false",k->expired?"true":"false",k->disabled?"true":"false",k->invalid?"true":"false",k->can_sign?"true":"false",k->can_encrypt?"true":"false",k->can_certify?"true":"false",k->can_authenticate?"true":"false");
 }
+/* Match the conservative Rust MailboxIdentity profile. Unsupported UIDs are
+ * skipped, never displayed verbatim and never allowed to hide other keys. */
+static int mailbox(const char *value) {
+ size_t size=0;if(!value)return 0;while(size<=254&&value[size])size++;
+ if(!size||size>254)return 0;
+ const char *at=memchr(value,'@',size);if(!at||at==value||at==value+size-1||memchr(at+1,'@',(size_t)(value+size-at-1)))return 0;
+ if((size_t)(at-value)>64||value[0]=='.'||at[-1]=='.')return 0;
+ for(const char *p=value;p<at;p++){unsigned char c=(unsigned char)*p;if(!((c>='A'&&c<='Z')||(c>='a'&&c<='z')||(c>='0'&&c<='9')||strchr("!#$%&'*+-/=?^_`{|}~.",c))||(c=='.'&&p>value&&p[-1]=='.'))return 0;}
+ int dot=0;size_t label=0;for(const char *p=at+1;p<value+size;p++){unsigned char c=(unsigned char)*p;if(c=='.'){if(!label||p[-1]=='-')return 0;dot=1;label=0;continue;}if(!((c>='A'&&c<='Z')||(c>='a'&&c<='z')||(c>='0'&&c<='9')||c=='-')||(!label&&c=='-')||++label>63)return 0;}
+ return dot&&label&&value[size-1]!='-';
+}
+static int same_mailbox(const char *left,const char *right) {
+ const char *a=strchr(left,'@'),*b=strchr(right,'@');size_t local=(size_t)(a-left);
+ if(local!=(size_t)(b-right)||memcmp(left,right,local))return 0;
+ for(;*a&&*b;a++,b++){unsigned char x=(unsigned char)*a,y=(unsigned char)*b;if(x>='A'&&x<='Z')x=(unsigned char)(x-'A'+'a');if(y>='A'&&y<='Z')y=(unsigned char)(y-'A'+'a');if(x!=y)return 0;}
+ return *a==*b;
+}
+static int json_string(const char *value) {
+ if(!append("\""))return 0;
+ for(const unsigned char *p=(const unsigned char *)value;*p;p++) {
+  if(*p=='\"'||*p=='\\'){if(!append("\\%c",*p))return 0;}
+  else if(*p<32||*p>=127){if(!append("\\u%04x",(unsigned)*p))return 0;}
+  else if(!append("%c",*p))return 0;
+ }
+ return append("\"");
+}
+static int emit_emails(gpgme_key_t key) {
+ const char *addresses[16];unsigned count=0,scanned=0;gpgme_user_id_t uid=key->uids;
+ for(;uid&&scanned<32;uid=uid->next,scanned++) {
+  if(uid->revoked||uid->invalid)continue;
+  /* address is GPGME's parsed addr-spec. Older/incomplete UID metadata may
+   * leave it empty; email is its parsed legacy equivalent, never raw uid. */
+  const char *address=uid->address&&*uid->address?uid->address:uid->email;
+  if(!mailbox(address))continue;
+  int duplicate=0;for(unsigned i=0;i<count;i++)if(same_mailbox(addresses[i],address)){duplicate=1;break;}
+  if(!duplicate){if(count==16)return 0;addresses[count++]=address;}
+ }
+ /* A partial UID list could hide a second key's claim and turn ambiguity into
+  * a false unique match. Refuse overflow instead of publishing truncation. */
+ if(uid)return 0;
+ if(!append(",\"email_addresses\":["))return 0;
+ for(unsigned i=0;i<count;i++)if((i&&!append(","))||!json_string(addresses[i]))return 0;
+ return append("]");
+}
 static int private_file(const char *home,const char *name,int required) {
  char path[4096];struct stat st;int n=snprintf(path,sizeof(path),"%s/%s",home,name);
  if(n<0||(size_t)n>=sizeof(path))return 0;
@@ -188,7 +232,7 @@ int main(int argc,char **argv) {
   if(count==32||key->protocol!=GPGME_PROTOCOL_OpenPGP||!key->subkeys)goto done;
   if((count++&&!append(","))||!append("{\"primary\":")||!emit(key->subkeys)||!append(",\"subkeys\":["))goto done;
   unsigned subs=0;for(gpgme_subkey_t sub=key->subkeys->next;sub;sub=sub->next){if(subs==8||(subs++&&!append(","))||!emit(sub))goto done;}
-  if(!append("]}"))goto done;gpgme_key_unref(key);key=NULL;
+  if(!append("]")||!emit_emails(key)||!append("}"))goto done;gpgme_key_unref(key);key=NULL;
  }
  if(gpg_err_code(err)!=GPG_ERR_EOF||gpgme_op_keylist_end(ctx))goto done;
  gpgme_keylist_result_t result=gpgme_op_keylist_result(ctx);if(status_failed||!result||result->truncated||!append("]}\n"))goto done;

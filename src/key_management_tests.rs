@@ -121,7 +121,7 @@ impl PublicKeyBackend for InventoryBackend {
         if self.unavailable {
             return Err(Error::Unavailable);
         }
-        let k = |fp: char| serde_json::json!({"primary":{"fingerprint":fp.to_string().repeat(40),"algorithm":1,"bits":3072,"created":1,"expires":0,"revoked":false,"expired":false,"disabled":false,"invalid":false,"can_encrypt":true,"can_sign":true,"can_certify":true,"can_authenticate":false},"subkeys":[]});
+        let k = |fp: char| serde_json::json!({"email_addresses":if fp == 'B' {vec!["recipient@example.test"]} else {vec!["recipient@example.test", "other@example.test"]},"primary":{"fingerprint":fp.to_string().repeat(40),"algorithm":1,"bits":3072,"created":1,"expires":0,"revoked":false,"expired":false,"disabled":false,"invalid":false,"can_encrypt":true,"can_sign":true,"can_certify":true,"can_authenticate":false},"subkeys":[]});
         Inventory::parse(&serde_json::to_vec(&serde_json::json!({"version":1,"ok":true,"protocol":"openpgp","gpgme_version":"2.0.1","engine_version":"2.4.8","keys":[k('A'),k('B')]})).unwrap()).map_err(|_|Error::Unavailable)
     }
 }
@@ -293,7 +293,7 @@ fn key_management_binding_changes_require_fresh_same_request_and_cas() {
     assert_eq!(b.reads.get(), 1);
 }
 #[test]
-fn key_management_explicit_recipient_binding_and_policy_roundtrip_no_uid_guessing() {
+fn key_management_certificate_recipient_policy_roundtrip() {
     let root = Scratch::new();
     let store = BindingStore::new(root.0.join("bindings"));
     let b = backend();
@@ -868,4 +868,34 @@ fn key_management_atomic_cleanup_recovers_multiple_unavailable_bound_keys() {
     assert_eq!(record.revision, 3);
     assert!(record.account_binding.is_none());
     assert!(record.recipient_bindings.is_empty());
+}
+
+#[test]
+fn policy_change_rejects_address_not_in_certificate_without_writing() {
+    let root = Scratch::new();
+    let store = BindingStore::new(root.0.join("bindings"));
+    let b = backend();
+    let c = context();
+    let s = session();
+    let fp = "B".repeat(40);
+    assert_eq!(
+        mutate(
+            &b,
+            &store,
+            proof(&c, &s),
+            &c,
+            &s,
+            &request(
+                Action::SetRecipient {
+                    address: "wrong@example.test",
+                    primary_fingerprint: &fp,
+                    encryption: Requirement::Required,
+                },
+                0
+            ),
+            59
+        ),
+        Err(Error::InvalidKey)
+    );
+    assert_eq!(store.load("alice@example.test").unwrap().revision, 0);
 }

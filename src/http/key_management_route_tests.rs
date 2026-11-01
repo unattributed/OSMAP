@@ -565,6 +565,9 @@ fn key_management_panel_navigation_opens_forms_without_mutating_state() {
         if panel == "inventory" {
             assert!(body.contains("<section id=\"public-inventory\""));
             assert!(!body.contains("<details id=\"public-inventory\""));
+        } else if panel == "recipient" {
+            assert!(body.contains("<section id=\"recipient-binding\""));
+            assert!(!body.contains("<details id=\"recipient-binding\""));
         } else {
             assert!(body.contains(&format!("<details id=\"{id}\" open>")));
         }

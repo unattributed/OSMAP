@@ -170,6 +170,83 @@ impl BindingRecord {
             policy: ProtectionPolicy::default(),
         })
     }
+    /// Resolve a recipient from saved policy or certificate email identities.
+    /// Certificate ambiguity is decided before key readiness, so expiry never
+    /// silently chooses another key. Account private-key selection is untouched.
+    pub fn resolve_recipient(
+        &self,
+        inventory: &Inventory,
+        recipient: &str,
+    ) -> Result<RecipientBinding, KeyStatus> {
+        let compare = crate::mail_address::comparison_key(recipient);
+        if let Some(saved) = self
+            .recipient_bindings
+            .iter()
+            .find(|binding| crate::mail_address::comparison_key(&binding.address) == compare)
+        {
+            return Ok(saved.clone());
+        }
+        if compare == crate::mail_address::comparison_key(&self.canonical_username) {
+            if let Some(own) = &self.account_binding {
+                return Ok(RecipientBinding {
+                    address: recipient.into(),
+                    primary_fingerprint: own.primary_fingerprint.clone(),
+                    encryption: Requirement::Optional,
+                });
+            }
+        }
+        let keys = inventory.keys().ok_or(KeyStatus::InventoryUnavailable)?;
+        let mut matches = keys.iter().filter(|key| {
+            key.email_addresses
+                .iter()
+                .any(|email| crate::mail_address::comparison_key(email) == compare)
+        });
+        let key = matches.next().ok_or(KeyStatus::MissingBinding)?;
+        if matches.next().is_some() {
+            return Err(KeyStatus::Ambiguous);
+        }
+        Ok(RecipientBinding {
+            address: recipient.into(),
+            primary_fingerprint: key.primary.fingerprint.clone(),
+            encryption: Requirement::Optional,
+        })
+    }
+
+    /// Public UI projection only: no second persistent transaction after import.
+    /// Preserve the stored revision and every explicitly saved policy/key choice.
+    pub fn with_certificate_recipients(
+        &self,
+        inventory: &Inventory,
+    ) -> Result<Vec<RecipientBinding>, BindingError> {
+        let keys = inventory.keys().ok_or(BindingError::Unavailable)?;
+        let mut effective = self.clone();
+        let mut seen: BTreeSet<String> = effective
+            .recipient_bindings
+            .iter()
+            .map(|binding| crate::mail_address::comparison_key(&binding.address))
+            .collect();
+        for email in keys.iter().flat_map(|key| &key.email_addresses) {
+            let compare = crate::mail_address::comparison_key(email);
+            if seen.contains(&compare)
+                || (self.account_binding.is_some()
+                    && compare == crate::mail_address::comparison_key(&self.canonical_username))
+            {
+                continue;
+            }
+            if let Ok(binding) = self.resolve_recipient(inventory, email) {
+                if effective.recipient_bindings.len() >= MAX_BINDINGS {
+                    return Err(BindingError::Quota);
+                }
+                seen.insert(compare);
+                effective.recipient_bindings.push(binding);
+            }
+        }
+        effective
+            .recipient_bindings
+            .sort_by_key(|binding| crate::mail_address::comparison_key(&binding.address));
+        Ok(effective.recipient_bindings)
+    }
+
     pub fn ensure_account(&self, account: &str) -> Result<(), BindingError> {
         CanonicalUsername::parse(account).map_err(|_| BindingError::Invalid)?;
         if self.canonical_username != account {
@@ -259,6 +336,26 @@ impl BindingStore {
         drop(locked);
         outcome
     }
+    /// Serialize protected dispatch with stored policy AND current certificate
+    /// identities. Web public-key mutations hold this same account lock.
+    pub(crate) fn with_locked_inventory_revision<T>(
+        &self,
+        account: &str,
+        expected_revision: u64,
+        expected_inventory: Option<[u8; 32]>,
+        inventory: impl FnOnce() -> Result<Inventory, BindingError>,
+        dispatch: impl FnOnce() -> T,
+    ) -> Result<T, BindingError> {
+        self.with_locked_revision(account, expected_revision, |_| {
+            if let Some(expected) = expected_inventory {
+                if inventory_revision(&inventory()?)? != expected {
+                    return Err(BindingError::Stale);
+                }
+            }
+            Ok(dispatch())
+        })
+    }
+
     /// Must be invoked by the operator or an authenticated narrow helper after
     /// real fresh password/TOTP confirmation. Never exposes a web auth shortcut.
     /// Operator/helper entry point, not a browser authorization decision. The
@@ -359,6 +456,17 @@ fn decode(account: &str, bytes: Option<Vec<u8>>) -> Result<BindingRecord, Bindin
     record.ensure_account(account)?;
     Ok(record)
 }
+pub(crate) fn inventory_revision(inventory: &Inventory) -> Result<[u8; 32], BindingError> {
+    use sha2::Digest;
+    if inventory.keys().is_none() {
+        return Err(BindingError::Unavailable);
+    }
+    let bytes = inventory
+        .to_bytes()
+        .map_err(|_| BindingError::Unavailable)?;
+    Ok(sha2::Sha256::digest(bytes).into())
+}
+
 fn address(value: &str) -> Result<(), BindingError> {
     crate::mail_address::validate_address(crate::send::ComposePolicy::default(), value)
         .map_err(|_| BindingError::Invalid)
@@ -493,33 +601,24 @@ pub fn evaluate(
     let mut reasons = Vec::new();
     let mut recipient_fingerprints = BTreeSet::new();
     let mut seen_addresses = BTreeSet::new();
-    let own_address = crate::mail_address::comparison_key(account);
     for recipient in all {
         let compare = crate::mail_address::comparison_key(recipient);
         if !seen_addresses.insert(compare.clone()) {
             continue;
         }
-        let binding = record
-            .recipient_bindings
-            .iter()
-            .find(|b| crate::mail_address::comparison_key(&b.address) == compare);
-        // The account binding is an approved encryption destination for the
-        // exact account address. An explicit recipient binding, including its
-        // policy and fingerprint, always takes precedence over this fallback.
-        let fingerprint = binding.map(|b| &b.primary_fingerprint).or_else(|| {
-            if compare == own_address {
-                record
-                    .account_binding
-                    .as_ref()
-                    .map(|b| &b.primary_fingerprint)
-            } else {
-                None
-            }
-        });
-        let requirement = binding.map(|b| b.encryption).unwrap_or_default();
-        let state = fingerprint
-            .map(|fingerprint| status(encryption(inventory, fingerprint, now)))
-            .unwrap_or(KeyStatus::MissingBinding);
+        let binding = record.resolve_recipient(inventory, recipient);
+        let requirement = binding
+            .as_ref()
+            .map(|binding| binding.encryption)
+            .unwrap_or_default();
+        let fingerprint = binding
+            .as_ref()
+            .ok()
+            .map(|binding| &binding.primary_fingerprint);
+        let state = match &binding {
+            Ok(binding) => status(encryption(inventory, &binding.primary_fingerprint, now)),
+            Err(state) => *state,
+        };
         if requirement == Requirement::Required && !selection.encrypt {
             reasons.push(BlockReason::RecipientRequiresEncryption);
         }

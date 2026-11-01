@@ -33,7 +33,11 @@ pub(crate) fn render_openpgp_settings(
         .is_some_and(|view| view.runtime_configured && view.account_binding.is_none())
         && inventory_verified
     {
-        "<strong>Account binding needed</strong><span>Public keys are present, but no account key is approved for this identity.</span>".to_string()
+        if public_keys.is_some_and(|count| count > 0) {
+            "<strong>Public-key encryption available</strong><span>Email matches are read from imported keys. Choose encryption per message; key eligibility is checked before sending. No account key is selected for private signing or decryption.</span>".to_string()
+        } else {
+            "<strong>No public keys imported</strong><span>Import a public key to read its recipient email addresses automatically. No account key is selected for private signing or decryption.</span>".to_string()
+        }
     } else {
         "<strong>OpenPGP unavailable</strong><span>Runtime capability or verified public inventory could not be established.</span>".to_string()
     };
@@ -53,7 +57,7 @@ pub(crate) fn render_openpgp_settings(
         .map(|view| view.recipient_binding_count)
         .unwrap_or(0);
     let policies = [
-        ("Full fingerprint binding", "Approved account and recipient bindings use full fingerprints.", if configured { "Required" } else { "Unavailable" }),
+        ("Full fingerprint binding", "Saved key choices use full fingerprints. Recipient email addresses are read from imported public keys.", if inventory_verified { "Required" } else { "Unavailable" }),
         ("Missing recipient key", "A requested encrypted send stops if any recipient key is missing or ineligible.", if capability.is_some() { "Fail closed" } else { "Unavailable" }),
         ("Automatic key discovery", "Keys are never silently discovered or trusted.", "Off"),
         ("Private-key handling", "Private-key operations run outside the web process; readiness is confirmed on use.", if capability.is_some() { "Isolated" } else { "Unavailable" }),
@@ -67,7 +71,7 @@ pub(crate) fn render_openpgp_settings(
         "<div class=\"openpgp-setting-row\"><label for=\"signing-setting\">Signing policy</label><div><input id=\"signing-setting\" readonly value=\"{signing}\"><a href=\"/settings/keys?panel=policy\" aria-label=\"Edit signing policy\">Edit policy</a></div></div>",
         "<div class=\"openpgp-setting-row\"><label for=\"encryption-setting\">Encryption policy</label><div><input id=\"encryption-setting\" readonly value=\"{encryption}\"><a href=\"/settings/keys?panel=policy\" aria-label=\"Edit encryption policy\">Edit policy</a></div></div>",
         "<div class=\"openpgp-setting-row\"><label for=\"self-setting\">Encrypt to self</label><div><input id=\"self-setting\" readonly value=\"Selected per message\"><a href=\"/compose\">Choose for a message</a></div></div>",
-        "<p>{recipient_count} recipient bindings approved for this account.</p><a class=\"button-link openpgp-manage\" href=\"/settings/keys\">Manage Keys</a></section>",
+        "<p>{recipient_count} known recipient email addresses. Manage Keys shows current key matches and policies.</p><a class=\"button-link openpgp-manage\" href=\"/settings/keys\">Manage Keys</a></section>",
         "<section class=\"openpgp-settings-card\"><h2>Policy Behavior</h2><ul class=\"openpgp-policy-list\">{policies}</ul></section></div></div></main>"
     ), header=app_header(account,csrf,"settings-openpgp"),nav=settings_navigation("openpgp"),status=status,fingerprint=fingerprint,signing=signing,encryption=encryption,recipient_count=recipient_count,policies=policies))
 }
@@ -132,7 +136,13 @@ mod tests {
         assert!(!missing_runtime.as_str().contains("Account binding needed"));
         capability.runtime_configured = true;
         let missing_binding = render_openpgp_settings(account, "fixture", &view, Some(&capability));
-        assert!(missing_binding.as_str().contains("Account binding needed"));
+        assert!(missing_binding
+            .as_str()
+            .contains("Public-key encryption available"));
+        assert!(missing_binding
+            .as_str()
+            .contains("No account key is selected for private signing or decryption."));
+        assert!(!missing_binding.as_str().contains("Account binding needed"));
         assert!(!missing_binding.as_str().contains("OpenPGP configured"));
     }
 

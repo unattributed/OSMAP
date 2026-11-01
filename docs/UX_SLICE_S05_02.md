@@ -575,3 +575,54 @@ Final installed independent review `asc-upload-installed-independent-review.json
 SHA256 bc4ca497d9e7f86e5c21795a1bcba1873fcc0c2bacc379aaa861cf12856b9d3d
 is GO for agent-owned ASC engineering/native/installed QA, with owner primary
 UNKNOWN and acceptance still open. No production-release assurance is inferred.
+
+## Automatic certificate email associations — owner direction, 2026-11-01
+
+The owner directs removing separate manual email binding after ASC import.
+Observable exit: upload certificate once with existing fresh authorization; its
+usable certificate email addresses appear and resolve in actual compose without
+a SetRecipient step, default Optional/encryptionOff. Existing explicit policies
+and selected keys remain unchanged. Native GPGME supplies bounded email claims;
+no filename/display-name/armor parser determines identity. A shared Rust resolver
+deduplicates same-key addresses; different primaries claiming one address are
+Ambiguous, never selected by order or expiry. No-email keys show a clear state.
+Policy controls use certificate-derived pairs, validated against fresh inventory;
+resetting saved policy returns to automatic/default behaviour. Account private
+key selection and inbound verified-sender trust remain separate.
+
+Use derived associations rather than a second durable binding write after
+keybox publication. Final protected-send dispatch must detect an inventory
+change as well as stored policy revision, using the existing account lock and
+bounded reader. Optional metadata supports old workers; upgrade strict helper
+consumers before activating identity-emitting workers. Only OSMAP services may
+restart; public Dovecot/Postfix/MariaDB services and configuration are preserved.
+
+Root owns resolver/integration/ledger/Git/native queue; runtime engineer owns
+metadata/native-worker and native journey; scope QA owns practical UI/adapters;
+protocol reviewer independently reviews actual source, rollout and results.
+Required source tests cover exact UID association, multiple/no/invalid/revoked
+UIDs, cross-primary ambiguity, saved policy precedence, tampered policy pair,
+default plaintext/explicit encrypted use, stale inventory final dispatch and
+old-worker compatibility. Existing native multipart journey must import a real
+key and resolve/RAM-encrypt without a separate recipient binding mutation.
+Reuse current failure history and matching passes; run normal gates at delivery.
+Native build600s per phase/4GiB/jobs1/debug0, fixture240s and reviewed bounded
+OSMAP-only rollback/install remain. Two same-boundary failures require combined
+independent reassessment, no automatic uncertain credential/key retry.
+
+Actual installed crypto mapping has two static recipient fingerprints and does
+not authorize the newly imported02B34119 primary. Complete the practical import
+route with trusted per-account allow_imported_recipients(defaultfalse), bypassing
+only static Encrypt-list membership. Existing native worker requires the exact
+usable full primary already in the mapped account's local public keyring, offline
+with auto-retrieval/import disabled; it retains account confinement, MAC/replay,
+signer/decrypt/private limits. No C crypto relaxation or extra inventory race.
+Native journey must use actual authenticated crypto service with true and empty
+static list: other-home/missing/subkey/private authority negatives and post-import
+RAM encrypt positive. Coordinated rollout includes Web, inventory/admin/crypto
+helpers and two inventory workers; enable the flag only for Duncan's development
+mapping, preserving all other config fields/keys/bindings and mail services.
+Atomic backups and guarded whole-set rollback must include crypto helper/config
+pair. New post-install reader must use current metadata parser (old readonly
+probe is incompatible with identity-emitting workers). No live owner import or
+credential replay is required; existing imported identities need no migration.

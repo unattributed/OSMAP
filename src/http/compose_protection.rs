@@ -144,7 +144,13 @@ impl RuntimeBrowserGateway {
             preflight,
             account_binding: record.account_binding.clone(),
             policy: record.policy,
-            recipient_binding_count: record.recipient_bindings.len(),
+            // When inventory is unavailable, retain only the known saved
+            // choices; never imply that automatic matches were established.
+            recipient_binding_count: inventory
+                .as_ref()
+                .and_then(|inventory| record.with_certificate_recipients(inventory).ok())
+                .map(|recipients| recipients.len())
+                .unwrap_or(record.recipient_bindings.len()),
         })
     }
 }

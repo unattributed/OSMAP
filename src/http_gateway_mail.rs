@@ -1151,7 +1151,7 @@ impl RuntimeBrowserGateway {
                         };
                     }
                 };
-                let Some((prepared, binding_revision)) = prepared_wire.borrow_mut().take() else {
+                let Some((prepared, binding_revision, inventory_revision)) = prepared_wire.borrow_mut().take() else {
                     return crate::send_journal::AttemptOutcome::Unconfirmed;
                 };
                 // Serialize the final revision check and SMTP dispatch with
@@ -1161,14 +1161,16 @@ impl RuntimeBrowserGateway {
                 let outcome = match crate::openpgp_bindings::BindingStore::new(
                     self.settings_dir.join("openpgp-bindings"),
                 )
-                .with_locked_revision(account, binding_revision, |_| {
-                    Ok(submission.submit_prepared_for_validated_session(
+                .with_locked_inventory_revision(account, binding_revision, inventory_revision,
+                    || self.inventory_client().as_ref().ok_or(crate::openpgp_bindings::BindingError::Unavailable)?
+                        .read(account).map_err(|_| crate::openpgp_bindings::BindingError::Unavailable),
+                    || submission.submit_prepared_for_validated_session(
                         context,
                         validated_session,
                         &request,
                         &prepared,
-                    ))
-                }) {
+                    )
+                ) {
                     Ok(outcome) => outcome,
                     Err(_) => return crate::send_journal::AttemptOutcome::Unconfirmed,
                 };
@@ -1252,6 +1254,7 @@ impl RuntimeBrowserGateway {
         now: u64,
     ) -> Result<(crate::protected_submission::PreparedSubmission, u64), &'static str> {
         self.prepare_outbound_request(account, request, now)
+            .map(|(prepared, revision, _)| (prepared, revision))
     }
 
     fn prepare_outbound_request(
@@ -1259,7 +1262,14 @@ impl RuntimeBrowserGateway {
         account: &str,
         request: &ComposeRequest,
         now: u64,
-    ) -> Result<(crate::protected_submission::PreparedSubmission, u64), &'static str> {
+    ) -> Result<
+        (
+            crate::protected_submission::PreparedSubmission,
+            u64,
+            Option<[u8; 32]>,
+        ),
+        &'static str,
+    > {
         let account =
             crate::identity::CanonicalUsername::parse(account).map_err(|_| "invalid_request")?;
         self.sender_authority
@@ -1291,8 +1301,23 @@ impl RuntimeBrowserGateway {
                 now,
             ),
         };
+        let inventory_revision = if request.protection.sign
+            || request.protection.encrypt
+            || request.protection.encrypt_to_self
+        {
+            Some(
+                inventory
+                    .as_ref()
+                    .ok_or("openpgp_inventory_unavailable")
+                    .and_then(|inventory| {
+                        crate::openpgp_bindings::inventory_revision(inventory)
+                            .map_err(|_| "openpgp_inventory_unavailable")
+                    }),
+            )
+        } else {
+            None
+        };
         result
-            .map(|prepared| (prepared, record.revision))
             .map_err(|error| match error {
                 crate::protected_submission::SubmissionError::StaleBinding => {
                     "openpgp_binding_changed"
@@ -1337,6 +1362,7 @@ impl RuntimeBrowserGateway {
                 }
                 _ => "openpgp_submission_unavailable",
             })
+            .and_then(|prepared| Ok((prepared, record.revision, inventory_revision.transpose()?)))
     }
 
     pub(super) fn move_message_impl(

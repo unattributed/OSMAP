@@ -38,6 +38,11 @@ pub struct KeyMaterial {
 pub struct PublicKey {
     pub primary: KeyMaterial,
     pub subkeys: Vec<KeyMaterial>,
+    /// Engine-parsed public UID addr-specs, not display UIDs or verified trust.
+    /// Older workers omit this field. Unsupported printable mailbox syntax is
+    /// filtered on parse; control characters and exceeded bounds reject it.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub email_addresses: Vec<String>,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -69,8 +74,8 @@ impl Inventory {
         if bytes.len() > MAX_METADATA {
             return Err(Error::Limit);
         }
-        let raw: Raw = serde_json::from_slice(bytes).map_err(|_| Error::Invalid)?;
-        match &raw {
+        let mut raw: Raw = serde_json::from_slice(bytes).map_err(|_| Error::Invalid)?;
+        match &mut raw {
             Raw::Unavailable(v)
                 if v.version == 1 && !v.ok && v.error == "inventory_unavailable" => {}
             Raw::Available(v) if v.version == 1 && v.ok && v.protocol == "openpgp" => {
@@ -88,10 +93,28 @@ impl Inventory {
                     return Err(Error::Limit);
                 }
                 let mut seen = BTreeSet::new();
-                for key in &v.keys {
-                    if key.subkeys.len() > 8 {
+                for key in &mut v.keys {
+                    if key.subkeys.len() > 8 || key.email_addresses.len() > 16 {
                         return Err(Error::Limit);
                     }
+                    for address in &key.email_addresses {
+                        if address.len() > 254 {
+                            return Err(Error::Limit);
+                        }
+                        if address.chars().any(char::is_control) {
+                            return Err(Error::Invalid);
+                        }
+                    }
+                    let mut email_seen = BTreeSet::new();
+                    key.email_addresses.retain(|address| {
+                        crate::identity::MailboxIdentity::parse(address.clone()).is_ok()
+                            && crate::mail_address::validate_address(
+                                crate::send::ComposePolicy::default(),
+                                address,
+                            )
+                            .is_ok()
+                            && email_seen.insert(crate::mail_address::comparison_key(address))
+                    });
                     for k in std::iter::once(&key.primary).chain(&key.subkeys) {
                         if !matches!(k.fingerprint.len(), 40 | 64)
                             || !k
@@ -144,6 +167,133 @@ impl Inventory {
 #[cfg(test)]
 mod tests {
     use super::*;
+    fn public_metadata(addresses: Option<serde_json::Value>) -> Vec<u8> {
+        let mut key = serde_json::json!({"primary": {
+            "fingerprint":"A".repeat(40),"algorithm":1,"bits":3072,
+            "created":1,"expires":0,"revoked":false,"expired":false,
+            "disabled":false,"invalid":false,"can_encrypt":true,
+            "can_sign":true,"can_certify":false,"can_authenticate":false,
+        }, "subkeys":[]});
+        if let Some(addresses) = addresses {
+            key["email_addresses"] = addresses;
+        }
+        serde_json::to_vec(&serde_json::json!({
+            "version":1,"ok":true,"protocol":"openpgp",
+            "gpgme_version":"2.0.1","engine_version":"2.4.8","keys":[key],
+        }))
+        .unwrap()
+    }
+    #[test]
+    fn public_uid_emails_are_optional_bounded_addr_specs_not_display_identity() {
+        let old = Inventory::parse(&public_metadata(None)).unwrap();
+        assert!(old.keys().unwrap()[0].email_addresses.is_empty());
+        assert!(!String::from_utf8(old.to_bytes().unwrap())
+            .unwrap()
+            .contains("email_addresses"));
+        let inventory = Inventory::parse(&public_metadata(Some(serde_json::json!([
+            "Alice@EXAMPLE.test",
+            "Alice@example.TEST",
+            "alice@example.test",
+            "Display Name <mallory@example.test>",
+            "unsupported mailbox",
+            "álîce@example.test",
+            "bad@example",
+            "Alice+tag@example.test",
+            "slash/name@example.test",
+        ]))))
+        .unwrap();
+        assert_eq!(
+            inventory.keys().unwrap()[0].email_addresses,
+            [
+                "Alice@EXAMPLE.test",
+                "alice@example.test",
+                "Alice+tag@example.test",
+                "slash/name@example.test",
+            ]
+        );
+        let roundtrip = Inventory::parse(&inventory.to_bytes().unwrap()).unwrap();
+        assert_eq!(
+            roundtrip.keys().unwrap()[0].email_addresses,
+            inventory.keys().unwrap()[0].email_addresses
+        );
+    }
+    #[test]
+    fn public_uid_email_limits_and_hostile_strings_refuse_without_trusting_uids() {
+        for value in [
+            "a\nb@example.test",
+            "a\rb@example.test",
+            "a\tb@example.test",
+            "a\0b@example.test",
+            "a\u{007f}b@example.test",
+        ] {
+            assert_eq!(
+                Inventory::parse(&public_metadata(Some(serde_json::json!([value])))).unwrap_err(),
+                Error::Invalid
+            );
+        }
+        assert_eq!(
+            Inventory::parse(&public_metadata(Some(serde_json::json!(["x".repeat(255)]))))
+                .unwrap_err(),
+            Error::Limit
+        );
+        assert_eq!(
+            Inventory::parse(&public_metadata(Some(serde_json::json!([
+                "x".repeat(250) + "@a.b"
+            ]))))
+            .unwrap()
+            .keys()
+            .unwrap()[0]
+                .email_addresses
+                .len(),
+            0
+        );
+        let unsupported_labels = Inventory::parse(&public_metadata(Some(serde_json::json!([
+            "a..b@example.test",
+            ".ab@example.test",
+            "ab.@example.test",
+            "ab@-example.test",
+            "ab@example-.test",
+            "ab@example..test",
+        ]))))
+        .unwrap();
+        assert!(unsupported_labels.keys().unwrap()[0]
+            .email_addresses
+            .is_empty());
+        let sixteen = (0..16)
+            .map(|index| format!("uid{index}@example.test"))
+            .collect::<Vec<_>>();
+        assert_eq!(
+            Inventory::parse(&public_metadata(Some(serde_json::json!(sixteen))))
+                .unwrap()
+                .keys()
+                .unwrap()[0]
+                .email_addresses
+                .len(),
+            16
+        );
+        assert_eq!(
+            Inventory::parse(&public_metadata(Some(serde_json::json!(
+                vec!["a@example.test"; 17]
+            ))))
+            .unwrap_err(),
+            Error::Limit
+        );
+        for invalid in [
+            serde_json::json!("a@example.test"),
+            serde_json::json!([null]),
+            serde_json::json!([{}]),
+        ] {
+            assert!(Inventory::parse(&public_metadata(Some(invalid))).is_err());
+        }
+        // A printable unsupported UID must not make otherwise useful public
+        // key metadata unavailable, nor become a display-name-derived address.
+        let unsupported = Inventory::parse(&public_metadata(Some(serde_json::json!([
+            "Nobody <not-an-address>"
+        ]))))
+        .unwrap();
+        assert_eq!(unsupported.keys().unwrap().len(), 1);
+        assert!(unsupported.keys().unwrap()[0].email_addresses.is_empty());
+    }
     #[test]
     fn strict_inventory_boundaries() {
         let empty=br#"{"version":1,"ok":true,"protocol":"openpgp","gpgme_version":"2.0.1","engine_version":"2.5.18","keys":[]}"#;
