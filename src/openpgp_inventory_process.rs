@@ -81,6 +81,9 @@ mod tests {
             .unwrap()
             .as_str()
         {
+            "runtime_service_hold" => {
+                crate::openpgp_inventory_runtime::tests::serve_hold_child();
+            }
             "descendant_disposition" => descendant_disposition(),
             "absence_uncertain" => uncertain_group_absence(),
             "sleep" => std::thread::sleep(Duration::from_secs(5)),

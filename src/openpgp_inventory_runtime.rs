@@ -10,6 +10,7 @@ use std::io::{Read, Write};
 use std::os::unix::fs::{FileTypeExt, MetadataExt, OpenOptionsExt, PermissionsExt};
 use std::os::unix::net::{UnixListener, UnixStream};
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
@@ -178,7 +179,23 @@ impl Service {
         let inventory = execute(&self.config.worker, &mapping.home, deadline)?;
         request.response(&inventory, &self.key, now()?)
     }
-    fn connection(&self, mut stream: UnixStream) -> Result<(), Error> {
+    #[cfg(all(test, target_os = "openbsd"))]
+    fn connection(&self, stream: UnixStream) -> Result<(), Error> {
+        self.connection_with_executor(
+            stream,
+            &AtomicBool::new(false),
+            crate::openpgp_inventory_process::execute,
+        )
+    }
+    fn connection_with_executor(
+        &self,
+        mut stream: UnixStream,
+        stopped: &AtomicBool,
+        execute: impl FnOnce(&Path, &Path, Instant) -> Result<Inventory, Error>,
+    ) -> Result<(), Error> {
+        if stopped.load(Ordering::SeqCst) {
+            return Err(Error::Unavailable);
+        }
         let deadline = Instant::now() + Duration::from_secs(10);
         if crate::openbsd::unix_stream_peer_uid(&stream).map_err(|_| Error::Authentication)?
             != self.config.trusted_web_uid
@@ -186,7 +203,18 @@ impl Service {
             return Err(Error::Authentication);
         }
         let bytes = read_frame(&mut stream, 2048, deadline)?;
-        let response = self.process(&bytes, deadline, crate::openpgp_inventory_process::execute)?;
+        if stopped.load(Ordering::SeqCst) {
+            return Err(Error::Unavailable);
+        }
+        let response = self.process(&bytes, deadline, |worker, home, deadline| {
+            if stopped.load(Ordering::SeqCst) {
+                return Err(Error::Unavailable);
+            }
+            execute(worker, home, deadline)
+        })?;
+        if stopped.load(Ordering::SeqCst) {
+            return Err(Error::Unavailable);
+        }
         write_frame(&mut stream, &response, deadline)
     }
     /// Refuses activation until the separately reviewed native confinement gate is qualified.
@@ -210,28 +238,89 @@ impl Service {
             ),
         )
         .map_err(|_| Error::Unavailable)?;
+        self.serve_loop(listener, crate::openpgp_inventory_process::execute)
+    }
+    fn serve_loop<E>(self, listener: UnixListener, execute: E) -> Result<(), Error>
+    where
+        E: Fn(&Path, &Path, Instant) -> Result<Inventory, Error> + Send + Sync + 'static,
+    {
+        let signals =
+            crate::openbsd::CryptoTerminationSignals::install().map_err(|_| Error::Unavailable)?;
+        let stopped = signals.stop_flag();
+        listener
+            .set_nonblocking(true)
+            .map_err(|_| Error::Unavailable)?;
         let service = Arc::new(self);
-        let active = Arc::new(std::sync::atomic::AtomicUsize::new(0));
-        for incoming in listener.incoming() {
-            let stream = incoming.map_err(|_| Error::Unavailable)?;
-            if active
-                .fetch_update(
-                    std::sync::atomic::Ordering::SeqCst,
-                    std::sync::atomic::Ordering::SeqCst,
-                    |v| (v < 2).then_some(v + 1),
-                )
-                .is_err()
-            {
+        let execute = Arc::new(execute);
+        let mut active: Vec<std::thread::JoinHandle<()>> = Vec::new();
+        let mut failed = false;
+        while !stopped.load(Ordering::SeqCst) {
+            let mut index = 0;
+            while index < active.len() {
+                if active[index].is_finished() {
+                    if active.swap_remove(index).join().is_err() {
+                        failed = true;
+                        stopped.store(true, Ordering::SeqCst);
+                    }
+                } else {
+                    index += 1;
+                }
+            }
+            if stopped.load(Ordering::SeqCst) {
+                break;
+            }
+            let stream = match listener.accept() {
+                Ok((stream, _)) => stream,
+                Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
+                    std::thread::sleep(Duration::from_millis(20));
+                    continue;
+                }
+                Err(error) if error.kind() == std::io::ErrorKind::Interrupted => continue,
+                Err(_) => {
+                    failed = true;
+                    break;
+                }
+            };
+            if active.len() >= 2 {
                 continue;
             }
+            // OpenBSD may inherit the listener's nonblocking flag on accept.
+            if stream.set_nonblocking(false).is_err() {
+                failed = true;
+                break;
+            }
             let service = service.clone();
-            let active = active.clone();
-            std::thread::spawn(move || {
-                let _ = service.connection(stream);
-                active.fetch_sub(1, std::sync::atomic::Ordering::SeqCst);
+            let execute = execute.clone();
+            let thread = std::thread::Builder::new().spawn(move || {
+                let _ =
+                    service.connection_with_executor(stream, stopped, |worker, home, deadline| {
+                        execute(worker, home, deadline)
+                    });
             });
+            match thread {
+                Ok(thread) => active.push(thread),
+                Err(_) => {
+                    failed = true;
+                    break;
+                }
+            }
         }
-        Err(Error::Unavailable)
+        // Stop admission, then join the existing two bounded connections.
+        // Already-running inventory work drains under its original ten-second
+        // request deadline; the shared supervisor confirms owned cleanup.
+        stopped.store(true, Ordering::SeqCst);
+        drop(listener);
+        for thread in active {
+            if thread.join().is_err() {
+                failed = true;
+            }
+        }
+        drop(signals);
+        if failed {
+            Err(Error::Unavailable)
+        } else {
+            Ok(())
+        }
     }
 }
 struct ClientState {
@@ -359,4 +448,4 @@ pub(crate) fn write_frame(
 }
 #[cfg(test)]
 #[path = "openpgp_inventory_runtime_tests.rs"]
-mod tests;
+pub(crate) mod tests;

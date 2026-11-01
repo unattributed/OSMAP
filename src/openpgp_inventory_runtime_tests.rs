@@ -298,3 +298,189 @@ fn writable_ancestor_cannot_replace_valid_private_file() {
     assert!(secret(&private).is_ok());
     assert!(crate::openbsd::disable_core_dumps().is_ok());
 }
+
+// Isolated service child: real signed inventory admission and owned process
+// fixture only. This does not substitute fixture output for native GPG proof.
+pub(crate) fn serve_hold_child() {
+    let root = PathBuf::from(std::env::var_os("OSMAP_INVENTORY_SERVICE_FIXTURE_ROOT").unwrap());
+    assert!(
+        root.starts_with("/tmp")
+            && root
+                .file_name()
+                .unwrap()
+                .to_string_lossy()
+                .starts_with("osmap-public-runtime-")
+    );
+    assert_eq!(root.canonicalize().unwrap(), root);
+    assert!(private_dir(&root, crate::openbsd::effective_uid(), false).is_ok());
+    crate::openbsd::restore_crypto_termination_signal().unwrap();
+    let mut instance = service();
+    instance.config.socket = root.join("inventory.sock");
+    instance.config.accounts[0].home = root.clone();
+    let listener = UnixListener::bind(&instance.config.socket).unwrap();
+    fs::set_permissions(&instance.config.socket, fs::Permissions::from_mode(0o600)).unwrap();
+    instance
+        .serve_loop(listener, |_, home, deadline| {
+            match crate::openpgp_crypto_process::run_cancellable_fixture(
+                "cancellable_hold_short",
+                b"",
+                deadline,
+                || Ok(false),
+                Some(&home.join("worker.ready")),
+            ) {
+                Ok(_) => Inventory::parse(EMPTY),
+                Err(crate::openpgp_crypto::Error::Expired) => Err(Error::Expired),
+                Err(crate::openpgp_crypto::Error::Limit) => Err(Error::Limit),
+                Err(_) => Err(Error::Unavailable),
+            }
+        })
+        .unwrap();
+}
+fn inventory_worker_pid(path: &Path) -> Option<u32> {
+    let deadline = Instant::now() + Duration::from_secs(3);
+    loop {
+        if let Ok(text) = fs::read_to_string(path) {
+            return text.trim().parse::<u32>().ok().filter(|pid| *pid > 1);
+        }
+        if Instant::now() >= deadline {
+            return None;
+        }
+        std::thread::sleep(Duration::from_millis(2));
+    }
+}
+
+#[test]
+fn stopped_inventory_connection_refuses_before_frame_or_worker_admission() {
+    let instance = service();
+    let (mut client, server) = UnixStream::pair().unwrap();
+    client.write_all(&0u32.to_be_bytes()).unwrap();
+    assert!(matches!(
+        instance.connection_with_executor(
+            server,
+            &std::sync::atomic::AtomicBool::new(true),
+            |_, _, _| panic!("stopped inventory service dispatched a worker"),
+        ),
+        Err(Error::Unavailable)
+    ));
+    assert!(instance.admissions.enter("alice").is_ok());
+}
+
+#[test]
+fn live_inventory_connection_preserves_authenticated_response() {
+    let instance = service();
+    let (mut client, server) = UnixStream::pair().unwrap();
+    let thread = std::thread::spawn(move || {
+        instance.connection_with_executor(
+            server,
+            &std::sync::atomic::AtomicBool::new(false),
+            |_, _, _| Inventory::parse(EMPTY),
+        )
+    });
+    let request = Request::issue("alice", now().unwrap(), &[42; 32]).unwrap();
+    let deadline = Instant::now() + Duration::from_secs(3);
+    write_frame(&mut client, &request.to_bytes().unwrap(), deadline).unwrap();
+    let response = read_frame(&mut client, FRAME_LIMIT, deadline).unwrap();
+    assert!(Verifier::default()
+        .response(&request, &response, &[42; 32], now().unwrap())
+        .unwrap()
+        .keys()
+        .unwrap()
+        .is_empty());
+    assert!(thread.join().unwrap().is_ok());
+}
+
+#[test]
+fn helper_sigterm_joins_active_inventory_worker_before_helper_exit() {
+    use std::os::unix::process::CommandExt as _;
+    use std::process::Stdio;
+    let root = Scratch::new();
+    let mut command = crate::auth::inventory_fixture_command("runtime_service_hold");
+    command
+        .env("OSMAP_INVENTORY_SERVICE_FIXTURE_ROOT", &root.0)
+        .process_group(0)
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped());
+    let mut child = command.spawn().unwrap();
+    let connect_until = Instant::now() + Duration::from_secs(3);
+    let mut client = loop {
+        match UnixStream::connect(root.0.join("inventory.sock")) {
+            Ok(client) => break Some(client),
+            Err(_) if Instant::now() < connect_until => {
+                std::thread::sleep(Duration::from_millis(2))
+            }
+            Err(_) => break None,
+        }
+    };
+    let request = Request::issue("alice", now().unwrap(), &[42; 32]).unwrap();
+    let wrote = client.as_mut().is_some_and(|client| {
+        write_frame(
+            client,
+            &request.to_bytes().unwrap(),
+            Instant::now() + Duration::from_secs(3),
+        )
+        .is_ok()
+    });
+    let pid = if wrote {
+        inventory_worker_pid(&root.0.join("worker.ready"))
+    } else {
+        None
+    };
+    let signal = crate::openbsd::fixture_t04_terminate_owned_group(child.id());
+    let exit_until = Instant::now() + Duration::from_secs(5);
+    let mut status = loop {
+        match child.try_wait() {
+            Ok(Some(status)) => break Some(status),
+            Ok(None) if Instant::now() < exit_until => std::thread::sleep(Duration::from_millis(2)),
+            _ => break None,
+        }
+    };
+    // Observe the actual survivor before waiting for its short natural life.
+    // Never signal a historical grandchild/group after its owner has exited.
+    let alive_at_exit = status.is_some()
+        && pid
+            .map(|pid| crate::openbsd::process_group_exists(pid).unwrap())
+            .unwrap_or(false);
+    if status.is_none() && crate::openbsd::owned_child_exited_without_reap(child.id()).is_ok() {
+        let _ = child.kill();
+        status = child.wait().ok();
+    }
+    drop(client);
+    let gone_until = Instant::now() + Duration::from_secs(5);
+    let absent = loop {
+        let absent = pid
+            .map(|pid| !crate::openbsd::process_group_exists(pid).unwrap())
+            .unwrap_or(true);
+        if absent || Instant::now() >= gone_until {
+            break absent;
+        }
+        std::thread::sleep(Duration::from_millis(2));
+    };
+    let stdout_bytes = child
+        .stdout
+        .take()
+        .map(|output| std::io::BufReader::new(output).take(4097).bytes().count())
+        .unwrap_or(0);
+    let stderr_bytes = child
+        .stderr
+        .take()
+        .map(|output| std::io::BufReader::new(output).take(4097).bytes().count())
+        .unwrap_or(0);
+    println!("helper_exit_observed={} worker_alive_at_helper_exit={} worker_absent_after_natural_wait={} child_stdout_bytes={} child_stderr_bytes={}", status.is_some(), alive_at_exit, absent, stdout_bytes, stderr_bytes);
+    if !absent || status.is_none() {
+        println!("lifecycle_fixture_retained={}", root.0.display());
+        std::mem::forget(root);
+    }
+    assert!(
+        wrote && pid.is_some(),
+        "actual service worker start was not observed"
+    );
+    assert!(signal.is_ok(), "owned helper SIGTERM was not delivered");
+    assert!(!alive_at_exit, "worker survived helper SIGTERM");
+    assert!(absent, "worker cleanup remains unconfirmed");
+    assert!(
+        status.is_some_and(|status| status.success()),
+        "helper did not stop cleanly"
+    );
+    assert!(stdout_bytes <= 4096 && stderr_bytes <= 4096);
+}

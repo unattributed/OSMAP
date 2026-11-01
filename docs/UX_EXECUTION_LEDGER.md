@@ -73,7 +73,9 @@ slice using the same failure-analysis method. See
     "maint/ux/acceptance.json",
     "maint/security/v10-claims-boundary.json",
     "maint/security/v10-fail-closed-remediation.json",
-    "maint/security/v10-rust-assumption-audit.json"
+    "maint/security/v10-rust-assumption-audit.json",
+    "src/openpgp_inventory_runtime.rs",
+    "src/openpgp_inventory_runtime_tests.rs"
   ],
   "outcomes": [
     {
@@ -99,7 +101,15 @@ slice using the same failure-analysis method. See
         },
         {
           "stage": "source_tests",
-          "reference": "ActualownershipRED1FAIL2postreapsignals10.322s; GREEN3PASS1fixture11.840s; sharedprocess9PASS2fixtures11.297s; strictClippy12.209s/fmt1.982sPASS. Independent sourceGO."
+          "reference": "ActualownershipRED1FAIL2postreapsignals10.322s; GREEN3PASS1fixture11.840s; sharedprocess3PASS1fixture11.297s; strictClippy12.209s/fmt1.982sPASS. Independent sourceGO."
+        },
+        {
+          "stage": "implementation",
+          "reference": "ActiveinventorySIGTERMREDsurvivorconfirmed; combinedroot/independentreassessmentGO; commonterminationguard/nonblockingaccept/max2joinssmallestcorrection, no newcancellationAPI."
+        },
+        {
+          "stage": "source_tests",
+          "reference": "ActiveSIGTERMRED1FAIL15.218s naturalabsenceonlylater; GREENruntime8PASS1nativeignore14.238s workerAliveAtHelperExitfalse/absenceconfirmed. Firstnativebuild168.383s+inventory3PASS precedeslatestservicechange, notfinalqualification."
         }
       ]
     }
@@ -116,7 +126,152 @@ slice using the same failure-analysis method. See
       "elapsed_status": "UNMEASURED",
       "elapsed_seconds": null
     },
-    "attempts": [],
+    "attempts": [
+      {
+        "boundary": "native-isolation-qualification",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "elapsed_status": "MEASURED",
+        "success_chain_review": {
+          "reviewer": "/root/s05_protocol_review",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ],
+          "reference": "Independent source/actualfailure review and combined reassessment recorded in current S05-04 evidence; post-result reconciliation is not retrospective pre-action proof."
+        },
+        "id": "S05-04-ownership-red",
+        "result": "FAIL",
+        "elapsed_seconds": 10.322,
+        "source_revision": "6655b0ac9eabee505e1a6d472013cd82bd62ea5b061eba66b60b629f38399035",
+        "reference": "inventory-ownership-red.json/log:2postreap signalattempts safelyrefused.",
+        "change_reference": "First direct ownership discriminator on baseline runner."
+      },
+      {
+        "boundary": "native-isolation-qualification",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "elapsed_status": "MEASURED",
+        "success_chain_review": {
+          "reviewer": "/root/s05_protocol_review",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ],
+          "reference": "Independent source/actualfailure review and combined reassessment recorded in current S05-04 evidence; post-result reconciliation is not retrospective pre-action proof."
+        },
+        "id": "S05-04-ownership-green",
+        "result": "PASS",
+        "elapsed_seconds": 11.84,
+        "source_revision": "d6d11d8959e6b3c09962cddb7ee80a046ca9b7d5",
+        "reference": "inventory-green.json/log:3PASS1fixture.",
+        "change_reference": "Replace duplicate supervisor with established shared owned cleanup."
+      },
+      {
+        "boundary": "native-isolation-qualification",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "elapsed_status": "MEASURED",
+        "success_chain_review": {
+          "reviewer": "/root/s05_protocol_review",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ],
+          "reference": "Independent source/actualfailure review and combined reassessment recorded in current S05-04 evidence; post-result reconciliation is not retrospective pre-action proof."
+        },
+        "id": "S05-04-native-build01",
+        "result": "PASS",
+        "elapsed_seconds": 168.383,
+        "source_revision": "d6d11d8959e6b3c09962cddb7ee80a046ca9b7d5",
+        "reference": "native-build-result/receipt:libtest1ef059,inventory4324; precedes service correction.",
+        "change_reference": "Reviewed exact signed native build selector/profile; build only not product qualification."
+      },
+      {
+        "boundary": "native-isolation-qualification",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "elapsed_status": "MEASURED",
+        "success_chain_review": {
+          "reviewer": "/root/s05_protocol_review",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ],
+          "reference": "Independent source/actualfailure review and combined reassessment recorded in current S05-04 evidence; post-result reconciliation is not retrospective pre-action proof."
+        },
+        "id": "S05-04-native-inventory01",
+        "result": "PASS",
+        "elapsed_seconds": 0.903,
+        "source_revision": "d6d11d8959e6b3c09962cddb7ee80a046ca9b7d5",
+        "reference": "native-inventory-result/log:3PASS1fixture; actualdescendantabsence mandatory.",
+        "change_reference": "Run changed process boundary on exact native libtest."
+      },
+      {
+        "boundary": "native-isolation-qualification",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "elapsed_status": "MEASURED",
+        "success_chain_review": {
+          "reviewer": "/root/s05_protocol_review",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ],
+          "reference": "Independent source/actualfailure review and combined reassessment recorded in current S05-04 evidence; post-result reconciliation is not retrospective pre-action proof."
+        },
+        "id": "S05-04-shutdown-red",
+        "result": "FAIL",
+        "elapsed_seconds": 15.218,
+        "source_revision": "cf840f164c6a2aa22c3ba7c614a2df2595e1bb16d5ca0e1aac7d70d7b38afffb",
+        "reference": "inventory-shutdown-red.json/log:helperexittrue/workerAlivetrue;3snaturalabsencelater.",
+        "change_reference": "Distinct signed-request actual SIGTERM discriminator, no historical grandchild signals."
+      },
+      {
+        "boundary": "native-isolation-qualification",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "elapsed_status": "MEASURED",
+        "success_chain_review": {
+          "reviewer": "/root/s05_protocol_review",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ],
+          "reference": "Independent source/actualfailure review and combined reassessment recorded in current S05-04 evidence; post-result reconciliation is not retrospective pre-action proof."
+        },
+        "id": "S05-04-shutdown-green",
+        "result": "PASS",
+        "elapsed_seconds": 14.238,
+        "source_revision": "09c866b52c80f56347cafdfbafd2f105a522731a4b0c1e126b6a4ecd8ca217d2",
+        "reference": "inventory-shutdown-green.json/log:8PASS1ignore/workerAlivefalse/absenceconfirmed.",
+        "change_reference": "Reuse common termination guard/nonblocking admission/2joins; drain original10s requests.",
+        "reassessment": {
+          "reviewers": [
+            "/root",
+            "/root/s05_protocol_review"
+          ],
+          "reference": "Actual two distinct T07 failures jointly reassessed; ownershipfix qualified; detachedthread SIGTERM failure confirmed and smallest boundedjoin correction independentlyGO. Neitherfailure norcumulativeelapsed reset.",
+          "next_action": "One changed GREEN then refresh matching native artifact before independent principal qualification.",
+          "failed_attempt_ids": [
+            "S05-04-ownership-red",
+            "S05-04-shutdown-red"
+          ]
+        }
+      }
+    ],
     "next_attempt": null
   },
   "slice_contract": {
@@ -124,7 +279,7 @@ slice using the same failure-analysis method. See
     "slice": "S05-04",
     "specification": {
       "path": "docs/UX_SLICE_S05_04.md",
-      "sha256": "df67124f6ae91a7ed52a7f1154cfb9fbb8b459937502af8ed3e782cb140d4357"
+      "sha256": "7d61273fb641e4dd1ff4363fe522326d6c256c138923f1d986d71d5930e8b8d8"
     },
     "design": {
       "journey": "The existing OpenPGP helpers run under verified OpenBSD service boundaries, refuse unauthorized or unsafe work, and recover through a proven isolated restore without changing accepted user behaviour.",
