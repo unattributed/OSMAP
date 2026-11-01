@@ -1,5 +1,7 @@
 # OSMAP
 
+S05-04 native isolation qualification: engineering/native/installed QA PASS; owner infrastructure T09 pending. The qualified inventory helper is installed on obsd1. [Evidence, scope and acceptance](docs/UX_SLICE_S05_04.md). Normal signed GitHub delivery remains the publication gate.
+
 **2026-11-02: Account-relative Welcome status repair accepted.** The owner has accepted the installed dashboard, with account-specific mailbox/public-key/session observations and expanded details. F3-T01–T09 PASS; broader host monitoring and backup/update integrations remain separate. See [F3 owner acceptance](docs/UX_FOLLOWUP_F3_ACCOUNT_STATUS.md#owner-acceptance--2026-11-02).
 
 **2026-11-01: S05-03 accepted — T01–T09 PASS.** The owner reports `S05-03 T09 = PASS` after a three-recipient functional test, with recipient-side screenshots and successful relay-submission evidence. Runtime lifecycle engineering, native recovery, matching installed QA and normal signed delivery pass. See [S05-03 acceptance and evidence](docs/UX_SLICE_S05_03.md#owner-t09-acceptance--2026-11-01).

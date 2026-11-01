@@ -1,5 +1,7 @@
 # Current Project Status
 
+2026-11-02 (Asia/Bangkok) — **S05-04 engineering/native/installed QA PASS; owner infrastructure T09 pending.** Two reproduced inventory lifecycle defects are corrected with existing Rust supervisor/signal handling. Fresh distinct-principal native fixtures, real isolated restore, inventory-only installation, authenticated public readback, protected-state preservation and independent review pass. Qualified runtime source4c041501; installed inventory6853a100. Existing accepted user journeys remain intact. Normal signed GitHub publication and fresh equality gate the readiness notification. See [S05-04 qualification and limits](UX_SLICE_S05_04.md).
+
 2026-11-02 (Asia/Bangkok) — **S05-04 IN_PROGRESS.** Approved native isolation/dependency/recovery T01–T09 work is active. Fresh host preflight confirms current semantic capabilities and all eight roles healthy. Baseline inventory process ownership regression reproduces two post-reap signal attempts; smallest existing-supervisor correction is in progress. No new user page or owner mutation. See [S05-04 contract](UX_SLICE_S05_04.md).
 
 2026-11-02 (Asia/Bangkok) — **Bounded F3 account-relative Welcome repair ACCEPTED.**

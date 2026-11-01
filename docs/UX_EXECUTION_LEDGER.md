@@ -1,3 +1,5 @@
+2026-11-02 (Asia/Bangkok) — **S05-04 engineering/native/installed QA PASS; infrastructure T09 owner acceptance pending.** Only the qualified inventory helper is updated; ordinary signed GitHub delivery is the final publication gate before readiness notification.
+
 2026-11-02 (Asia/Bangkok) — **S05-04 IN_PROGRESS: approved T01–T09 native isolation, dependency and recovery qualification.** Accepted S05-03/F3 results preserved; no new user page.
 
 2026-11-02 (Asia/Bangkok) — **Bounded F3 account-relative dashboard repair ACCEPTED by owner.** F3-T01–T09 PASS; parent/unrelated host-monitoring obligations remain separate. Acceptance-record update only.
@@ -35,7 +37,7 @@ slice using the same failure-analysis method. See
   "slice": "S05-04",
   "original_requirement": "Native OpenBSD build/confinement/dependency qualification in authorized isolated environment",
   "source_baseline": "39d66ba8f8f26dbe75bdb5cab08bf17c8d7afd68",
-  "state": "IN_PROGRESS",
+  "state": "UAT_READY",
   "integration_owner": "/root",
   "roles": {
     "project_manager": [
@@ -84,15 +86,15 @@ slice using the same failure-analysis method. See
       "requirement_ids": [],
       "frontend_backend_outcome": "The existing OpenPGP helpers run under verified OpenBSD service boundaries, refuse unauthorized or unsafe work, and recover through a proven isolated restore without changing accepted user behaviour.",
       "essential_qa": "Fresh separate-principal, actual worker confinement/descriptor/core/refusal and owned lifecycle proof, matching native/installed custody, isolated restore and independent review.",
-      "next_action": "Establish exact installed capabilities and smallest changed native qualification.",
+      "next_action": "Complete ordinary signed GitHub publication and fresh parity; notify owner of infrastructure T09 readiness only after that gate passes.",
       "dependencies": [],
       "stages": {
         "implementation": "PASS",
         "source_tests": "PASS",
-        "native_tests": "PENDING",
-        "deployed_qa": "PENDING",
-        "independent_review": "PENDING",
-        "recovery": "PENDING"
+        "native_tests": "PASS",
+        "deployed_qa": "PASS",
+        "independent_review": "PASS",
+        "recovery": "PASS"
       },
       "evidence": [
         {
@@ -110,6 +112,22 @@ slice using the same failure-analysis method. See
         {
           "stage": "source_tests",
           "reference": "ActiveSIGTERMRED1FAIL15.218s naturalabsenceonlylater; GREENruntime8PASS1nativeignore14.238s workerAliveAtHelperExitfalse/absenceconfirmed. Firstnativebuild168.383s+inventory3PASS precedeslatestservicechange, notfinalqualification."
+        },
+        {
+          "stage": "native_tests",
+          "reference": "Final4c nativebuild169.444s/11focusedPASS; real distinctprincipalcrypto21/admin9BooleanchecksPASS3.720/2.920s, exactdurablescratchcleanup."
+        },
+        {
+          "stage": "deployed_qa",
+          "reference": "Actualinventory-onlyinstall4.694s+readback0.637s; qualified6853loadedPID28267/inode3758861,8roles/HTTPS200/protected3d13995c equality andunchangedothers. Source-pinnedreadonlypublicprobe2successrecords inconfiguredlog."
+        },
+        {
+          "stage": "recovery",
+          "reference": "Actualisolatedprevious4b81\u21926853candidate\u2192previous4b81 withauthorizedclients andstablefixturefiles; durableevidence/exactUIDscratchcleanup; exactinstalledprobe/publicationnamesabsent0.312s. Live rollbacknotneeded."
+        },
+        {
+          "stage": "independent_review",
+          "reference": "Independent source/combined5aeac5db\u2026 andrunnera52f6c1\u2026 plus actualinstalledQA896c65f4ee3d7826380ee4981c167e71a064a3e18c4974082f744dc6494209d9 GO; limitsandpendingowneracceptance explicit."
         }
       ]
     }
@@ -123,8 +141,8 @@ slice using the same failure-analysis method. See
       "owner": "/root",
       "timebox_seconds": 14400,
       "started_at": "2026-11-01T18:46:37Z",
-      "elapsed_status": "UNMEASURED",
-      "elapsed_seconds": null
+      "elapsed_status": "MEASURED",
+      "elapsed_seconds": 2489.799
     },
     "attempts": [
       {
@@ -270,6 +288,248 @@ slice using the same failure-analysis method. See
             "S05-04-shutdown-red"
           ]
         }
+      },
+      {
+        "boundary": "native-isolation-qualification",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "success_chain_review": {
+          "reviewer": "/root/s05_protocol_review",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ],
+          "reference": "Current actual source/native/installed reviews and precise scope/private evidence; failed consumer observation separately retained, no retrospective pre-action claim."
+        },
+        "source_revision": "4c041501b76996e6948deeea42a24e4db2d4c231",
+        "id": "S05-04-native-build02",
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 169.444,
+        "change_reference": "Finalruntime native build after actualSIGTERM correction.",
+        "reference": "refresh02/native-build-result/receipt:lib58ee/inventory6853."
+      },
+      {
+        "boundary": "native-isolation-qualification",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "success_chain_review": {
+          "reviewer": "/root/s05_protocol_review",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ],
+          "reference": "Current actual source/native/installed reviews and precise scope/private evidence; failed consumer observation separately retained, no retrospective pre-action claim."
+        },
+        "source_revision": "4c041501b76996e6948deeea42a24e4db2d4c231",
+        "id": "S05-04-native-focused02",
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 4.067,
+        "change_reference": "Current nativeprocess/runtime modules, actualshortworker SIGTERM.",
+        "reference": "refresh02/native-focused-result:3PASS1fixture+8PASS2nativeignores."
+      },
+      {
+        "boundary": "native-isolation-qualification",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "success_chain_review": {
+          "reviewer": "/root/s05_protocol_review",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ],
+          "reference": "Current actual source/native/installed reviews and precise scope/private evidence; failed consumer observation separately retained, no retrospective pre-action claim."
+        },
+        "source_revision": "4c041501b76996e6948deeea42a24e4db2d4c231",
+        "id": "S05-04-crypto-principal",
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 3.72,
+        "change_reference": "Reviewed exactrootscalarbindings and distinctUID actualclient/restore.",
+        "reference": "crypto-principal-result:21BooleanchecksPASS/servicesagentsUIDcleanupPASS."
+      },
+      {
+        "boundary": "native-isolation-qualification",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "success_chain_review": {
+          "reviewer": "/root/s05_protocol_review",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ],
+          "reference": "Current actual source/native/installed reviews and precise scope/private evidence; failed consumer observation separately retained, no retrospective pre-action claim."
+        },
+        "source_revision": "4c041501b76996e6948deeea42a24e4db2d4c231",
+        "id": "S05-04-scratch-consumer-refusal01",
+        "result": "FAIL",
+        "elapsed_status": "UNKNOWN",
+        "elapsed_seconds": null,
+        "change_reference": "Initial rootconsumer-only extra socketfilename predicate.",
+        "reference": "scratch-consumer-refusal01:stalesocketmetadata isnotliveendpoint, no mutation/cleanup attempted."
+      },
+      {
+        "boundary": "native-isolation-qualification",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "success_chain_review": {
+          "reviewer": "/root/s05_protocol_review",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ],
+          "reference": "Current actual source/native/installed reviews and precise scope/private evidence; failed consumer observation separately retained, no retrospective pre-action claim."
+        },
+        "source_revision": "4c041501b76996e6948deeea42a24e4db2d4c231",
+        "id": "S05-04-crypto-scratch-readback",
+        "result": "PASS",
+        "elapsed_status": "UNKNOWN",
+        "elapsed_seconds": null,
+        "change_reference": "Recordstalesockets, requireexactrootcustody+fstatabsence+durablehash thenexactremove.",
+        "reference": "crypto-principal-scratch-cleanup:log6f291a/manifest413751/exactremovalPASS; no workflowrerun."
+      },
+      {
+        "boundary": "native-isolation-qualification",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "success_chain_review": {
+          "reviewer": "/root/s05_protocol_review",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ],
+          "reference": "Current actual source/native/installed reviews and precise scope/private evidence; failed consumer observation separately retained, no retrospective pre-action claim."
+        },
+        "source_revision": "4c041501b76996e6948deeea42a24e4db2d4c231",
+        "id": "S05-04-admin-principal",
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 2.92,
+        "change_reference": "Reviewed exact adminclient/nativeC distinctUID fixture.",
+        "reference": "admin-principal-result:9BooleanchecksPASS+restartreplayrefusal+zerohelperservicelogs."
+      },
+      {
+        "boundary": "native-isolation-qualification",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "success_chain_review": {
+          "reviewer": "/root/s05_protocol_review",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ],
+          "reference": "Current actual source/native/installed reviews and precise scope/private evidence; failed consumer observation separately retained, no retrospective pre-action claim."
+        },
+        "source_revision": "4c041501b76996e6948deeea42a24e4db2d4c231",
+        "id": "S05-04-admin-scratch-readback",
+        "result": "PASS",
+        "elapsed_status": "UNKNOWN",
+        "elapsed_seconds": null,
+        "change_reference": "Samecorrected exactownedconsumer afterdurableevidence.",
+        "reference": "admin-principal-scratch-cleanup:log50c2e2/manifest0d4589/exactremovalPASS."
+      },
+      {
+        "boundary": "native-isolation-qualification",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "success_chain_review": {
+          "reviewer": "/root/s05_protocol_review",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ],
+          "reference": "Current actual source/native/installed reviews and precise scope/private evidence; failed consumer observation separately retained, no retrospective pre-action claim."
+        },
+        "source_revision": "4c041501b76996e6948deeea42a24e4db2d4c231",
+        "id": "S05-04-probe-compile",
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 0.943,
+        "change_reference": "Pinnedreadonlyclientsource+currentCargoRLIB, reviewedboundedcompiler.",
+        "reference": "probe-compile-receipt:source042a/rlib12a8/probecc26."
+      },
+      {
+        "boundary": "native-isolation-qualification",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "success_chain_review": {
+          "reviewer": "/root/s05_protocol_review",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ],
+          "reference": "Current actual source/native/installed reviews and precise scope/private evidence; failed consumer observation separately retained, no retrospective pre-action claim."
+        },
+        "source_revision": "4c041501b76996e6948deeea42a24e4db2d4c231",
+        "id": "S05-04-inventory-install",
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 4.694,
+        "change_reference": "Reviewed inventory-only replacement, pinnedrootpublisher and boundedrollback.",
+        "reference": "install-result/log01bc13:loaded6853,8roles,protectedstateequality; probemarkers redirectedtoactualconfiguredlog."
+      },
+      {
+        "boundary": "native-isolation-qualification",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "success_chain_review": {
+          "reviewer": "/root/s05_protocol_review",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ],
+          "reference": "Current actual source/native/installed reviews and precise scope/private evidence; failed consumer observation separately retained, no retrospective pre-action claim."
+        },
+        "source_revision": "4c041501b76996e6948deeea42a24e4db2d4c231",
+        "id": "S05-04-installed-readback",
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 0.637,
+        "change_reference": "Fresh actualloadedhash/inode/backups/unchangedmanifest+8roles+HTTPS.",
+        "reference": "installed-readback-result/log26e9b1:protected3d13995c equality/backupsverified."
+      },
+      {
+        "boundary": "native-isolation-qualification",
+        "owner": "/root",
+        "scope": "FIXTURE",
+        "adoption": "CURRENT",
+        "success_chain_review": {
+          "reviewer": "/root/s05_protocol_review",
+          "covers": [
+            "producer",
+            "cleanup",
+            "consumer"
+          ],
+          "reference": "Current actual source/native/installed reviews and precise scope/private evidence; failed consumer observation separately retained, no retrospective pre-action claim."
+        },
+        "source_revision": "4c041501b76996e6948deeea42a24e4db2d4c231",
+        "id": "S05-04-exact-probe-cleanup",
+        "result": "PASS",
+        "elapsed_status": "MEASURED",
+        "elapsed_seconds": 0.312,
+        "change_reference": "Durableactualevidence thenhash/custodychecked exactprobe removal.",
+        "reference": "installed-probe-cleanup-result/log2803fd:exactprobe/publicationnamesabsent."
       }
     ],
     "next_attempt": null
@@ -279,7 +539,7 @@ slice using the same failure-analysis method. See
     "slice": "S05-04",
     "specification": {
       "path": "docs/UX_SLICE_S05_04.md",
-      "sha256": "7d61273fb641e4dd1ff4363fe522326d6c256c138923f1d986d71d5930e8b8d8"
+      "sha256": "ab884fbd4a8bba49e982122abcb1212631ffba32b4cc5dcefefd7e9eb7729f78"
     },
     "design": {
       "journey": "The existing OpenPGP helpers run under verified OpenBSD service boundaries, refuse unauthorized or unsafe work, and recover through a proven isolated restore without changing accepted user behaviour.",
@@ -304,8 +564,10 @@ slice using the same failure-analysis method. See
         "preserved": "Accepted S04/S05/F3 user journeys; owner credentials/private keys/contact/key/policy/mail state; public mail configuration and availability.",
         "owner": "/root",
         "reviewer": "/root/s05_protocol_review",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "PASS",
+        "evidence": [
+          "Current source/frozenplan/real8role+UID/dependency/configuration preflight; S05-01/03/F3 proofs reconciled and fresh separate-principal gap explicitly qualified."
+        ]
       },
       {
         "id": "S05-04-T02",
@@ -320,8 +582,10 @@ slice using the same failure-analysis method. See
         "preserved": "Accepted S04/S05/F3 user journeys; owner credentials/private keys/contact/key/policy/mail state; public mail configuration and availability.",
         "owner": "/root",
         "reviewer": "/root/s05_protocol_review",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "PASS",
+        "evidence": [
+          "Finalsigned4c0415 build169.444s lib58ee/helper6853; currentnative3process+8runtimePASS; actual GPGME/public/crypto/admin clients in distinct-principal fixtures; lock/dependency observations retained."
+        ]
       },
       {
         "id": "S05-04-T03",
@@ -336,8 +600,10 @@ slice using the same failure-analysis method. See
         "preserved": "Accepted S04/S05/F3 user journeys; owner credentials/private keys/contact/key/policy/mail state; public mail configuration and availability.",
         "owner": "/root",
         "reviewer": "/root/s05_protocol_review",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "PASS",
+        "evidence": [
+          "Three actual temporaryUIDs eachfixture, socket660/helperownership, authorizedpositive plus reachable samegrant unauthorizedrefusal, wronghelperUID and crossaccount/DAC negatives;21/9 nativeBooleanchecksPASS."
+        ]
       },
       {
         "id": "S05-04-T04",
@@ -352,8 +618,10 @@ slice using the same failure-analysis method. See
         "preserved": "Accepted S04/S05/F3 user journeys; owner credentials/private keys/contact/key/policy/mail state; public mail configuration and availability.",
         "owner": "/root",
         "reviewer": "/root/s05_protocol_review",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "PASS",
+        "evidence": [
+          "Actual included-Cworkerconfinement functions denyprivate/outside/otherhome, execchilddenial and selectedpublicreadsuccess; realcrypto/inventorysuccessful afterconfinement. Foreignagentcustodyrefusalonly."
+        ]
       },
       {
         "id": "S05-04-T05",
@@ -368,8 +636,10 @@ slice using the same failure-analysis method. See
         "preserved": "Accepted S04/S05/F3 user journeys; owner credentials/private keys/contact/key/policy/mail state; public mail configuration and availability.",
         "owner": "/root",
         "reviewer": "/root/s05_protocol_review",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "PASS",
+        "evidence": [
+          "UsableprivateFDpositive thenactualworkerclosure/EBADF inparent/forkchild; legitimate GPGMEengine transport remainsfunctional inactualauthorizedcrypto cases."
+        ]
       },
       {
         "id": "S05-04-T06",
@@ -384,8 +654,10 @@ slice using the same failure-analysis method. See
         "preserved": "Accepted S04/S05/F3 user journeys; owner credentials/private keys/contact/key/policy/mail state; public mail configuration and availability.",
         "owner": "/root",
         "reviewer": "/root/s05_protocol_review",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "PASS",
+        "evidence": [
+          "Actualworker-entry inheritedcore0 check+syntheticSIGABRT/nocorefile, zerohelperservice stdout/stderr, boundedoutputs/failures/quarantine; utility44checkgroups ordinary/-O includeactualfixederrorconsumer."
+        ]
       },
       {
         "id": "S05-04-T07",
@@ -400,8 +672,10 @@ slice using the same failure-analysis method. See
         "preserved": "Accepted S04/S05/F3 user journeys; owner credentials/private keys/contact/key/policy/mail state; public mail configuration and availability.",
         "owner": "/root",
         "reviewer": "/root/s05_protocol_review",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "PASS",
+        "evidence": [
+          "TwoactualREDs retained+combinedreassessment; sourceandnativeownership/absence/unknownquarantine; actualSIGTERMworkerabsencebeforeexit; nativecandidateService request and idleactualrestart/restorefreshclientPASS."
+        ]
       },
       {
         "id": "S05-04-T08",
@@ -416,8 +690,10 @@ slice using the same failure-analysis method. See
         "preserved": "Accepted S04/S05/F3 user journeys; owner credentials/private keys/contact/key/policy/mail state; public mail configuration and availability.",
         "owner": "/root",
         "reviewer": "/root/s05_protocol_review",
-        "status": "NOT_RUN",
-        "evidence": []
+        "status": "PASS",
+        "evidence": [
+          "InstalledONLYinventory6853/source4c PID28267/inode3758861, before/after authenticatedpublicinventory inconfiguredlog, protected3d13995c equal,8roles/HTTPS200/unchangedotherartifacts/backups/exactprobeabsence. IsolatedoldcandidateoldactualrestorePASS; live rollbacknotneeded."
+        ]
       },
       {
         "id": "S05-04-T09",
@@ -441,9 +717,9 @@ slice using the same failure-analysis method. See
   },
   "human_acceptance": {
     "status": "PENDING",
-    "reference": "Owner T09 remains separate after engineering delivery."
+    "reference": "Owner infrastructure T09 remains separate; no new visual page or credential/key mutation walkthrough is required."
   },
-  "next_action": "Execute the approved S05-04 reuse-first native qualification through the existing failure-analysis loop."
+  "next_action": "Complete ordinary signed GitHub publication and fresh parity; notify owner of infrastructure T09 readiness only after that gate passes."
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->
