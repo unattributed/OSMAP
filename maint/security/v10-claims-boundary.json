@@ -88,8 +88,8 @@
     "audit_script": "maint/security/osmap-v10-rust-assumption-audit.py",
     "audit_script_present": true,
     "classification_complete": true,
-    "current_scanner_count": 11266,
-    "inventory_sha256": "2a8c00864e22c423e80756d605da75e2ace9cfde0bfd9ad0b01109f1f97110d4",
+    "current_scanner_count": 11268,
+    "inventory_sha256": "58b82dd8a6d17afc8509392cb77410dbc838ba86f6a1873c58fcd39aeddfe847",
     "live_host_state_changed": false,
     "product_behavior_changed": false,
     "production_state_changed": false,
@@ -123,11 +123,11 @@
   "targeted_fail_closed_remediation": {
     "classification_complete": true,
     "high_relevance_after": 0,
-    "high_relevance_before": 3006,
+    "high_relevance_before": 3008,
     "live_host_state_changed": false,
     "product_behavior_changed": false,
     "production_state_changed": false,
-    "refined_inventory_sha256": "5d8a1dfb85aed3824f91ab9ac97dfa132a6edf3f50f1fda49113a6dc82c73997",
+    "refined_inventory_sha256": "45081eebe4222ae0eae422e6efd387b1783bb20649e8ef6403a590fae74d6497",
     "remediation_document": "docs/V10_TARGETED_FAIL_CLOSED_REMEDIATION.md",
     "remediation_document_present": true,
     "remediation_register": "maint/security/v10-fail-closed-remediation.json",
@@ -135,6 +135,6 @@
     "remediation_script": "maint/security/osmap-v10-fail-closed-remediation.py",
     "remediation_script_present": true,
     "selected_target": "src_test_module_assumption_reclassification",
-    "source_test_module_assumption_count": 11181
+    "source_test_module_assumption_count": 11183
   }
 }

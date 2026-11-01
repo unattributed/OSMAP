@@ -68,6 +68,31 @@ pub(crate) fn run_public_admin(
     }
     Ok(output)
 }
+/// Inventory regression seam; production uses the existing public-admin API.
+#[cfg(test)]
+pub(crate) fn run_inventory_fixture_with_group_ops(
+    command: Command,
+    deadline: Instant,
+    kill: &dyn Fn(u32) -> std::io::Result<()>,
+    exists: &dyn Fn(u32) -> std::io::Result<bool>,
+) -> Result<Vec<u8>, Error> {
+    let (output, success) = run_limited_with_group_ops(
+        command,
+        b"",
+        deadline,
+        RunProfile {
+            output_limit: MAX_METADATA,
+            operation_limit: Duration::from_secs(10),
+            strict_group: false,
+        },
+        GroupOps { kill, exists },
+        || Ok(false),
+    )?;
+    if !success {
+        return Err(Error::Unavailable);
+    }
+    Ok(output)
+}
 /// Separate primary-auth profile: Dovecot may delay a failed credential by15s.
 /// Existing crypto/admin callers retain their original ten-second cap.
 pub(crate) fn run_account_admission(

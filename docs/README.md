@@ -3,6 +3,7 @@
 - `UX_FOLLOWUP_F3_ACCOUNT_STATUS.md` — [F3 account-relative Welcome status correction](UX_FOLLOWUP_F3_ACCOUNT_STATUS.md):
   current-user observations and explicit unmeasured service scope; bounded repair accepted by the owner on2026-11-02.
 
+- `UX_SLICE_S05_04.md` — [S05-04 native isolation qualification](UX_SLICE_S05_04.md): approved infrastructure T01–T09, native evidence and restore boundaries.
 - `UX_SLICE_S05_03.md` — [S05-03 existing runtime lifecycle and recovery](UX_SLICE_S05_03.md):
   owned cancellation/cleanup, helper shutdown, native recovery and matching installed proof;
   owner `S05-03 T09 = PASS` closes T01–T09; later-slice and production acceptance remain separate.

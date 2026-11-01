@@ -1,3 +1,5 @@
+2026-11-02 (Asia/Bangkok) — **S05-04 IN_PROGRESS: approved T01–T09 native isolation, dependency and recovery qualification.** Accepted S05-03/F3 results preserved; no new user page.
+
 2026-11-02 (Asia/Bangkok) — **Bounded F3 account-relative dashboard repair ACCEPTED by owner.** F3-T01–T09 PASS; parent/unrelated host-monitoring obligations remain separate. Acceptance-record update only.
 
 2026-11-02 — **F3 account-relative dashboard status correction IN_PROGRESS.** S05-03 remains ACCEPTED. Exact statuscontrolR2-01-028 follows retained S04-01/F3; S01 supplies presentation.
@@ -27,6 +29,271 @@ slice using the same failure-analysis method. See
 [the slice specification](UX_SLICE_S05_02.md).
 
 <!-- OSMAP_ACTIVE_WORK_ORDER -->
+```json
+{
+  "version": 1,
+  "slice": "S05-04",
+  "original_requirement": "Native OpenBSD build/confinement/dependency qualification in authorized isolated environment",
+  "source_baseline": "39d66ba8f8f26dbe75bdb5cab08bf17c8d7afd68",
+  "state": "IN_PROGRESS",
+  "integration_owner": "/root",
+  "roles": {
+    "project_manager": [
+      "/root"
+    ],
+    "scrum_lead": [
+      "/root"
+    ],
+    "developers": [
+      "/root",
+      "/root/s05_runtime_engineer",
+      "/root/s05_scope_qa"
+    ],
+    "qa": [
+      "/root/s05_protocol_review"
+    ],
+    "security_review": [
+      "/root/s05_protocol_review"
+    ],
+    "technical_writer": [
+      "/root"
+    ]
+  },
+  "allowed_paths": [
+    "src/openpgp_inventory_process.rs",
+    "src/openpgp_crypto_process.rs",
+    "maint/openpgp-runtime/crypto_principal_test.py",
+    "maint/openpgp-runtime/public_admin_principal_test.py",
+    "docs/UX_SLICE_S05_04.md",
+    "docs/UX_EXECUTION_LEDGER.md",
+    "docs/CURRENT_PROJECT_STATUS.md",
+    "docs/DECISION_LOG.md",
+    "docs/README.md",
+    "README.md",
+    "maint/ux/acceptance.json",
+    "maint/security/v10-claims-boundary.json",
+    "maint/security/v10-fail-closed-remediation.json",
+    "maint/security/v10-rust-assumption-audit.json"
+  ],
+  "outcomes": [
+    {
+      "id": "native-isolation-qualification",
+      "owner": "/root",
+      "requirement_ids": [],
+      "frontend_backend_outcome": "The existing OpenPGP helpers run under verified OpenBSD service boundaries, refuse unauthorized or unsafe work, and recover through a proven isolated restore without changing accepted user behaviour.",
+      "essential_qa": "Fresh separate-principal, actual worker confinement/descriptor/core/refusal and owned lifecycle proof, matching native/installed custody, isolated restore and independent review.",
+      "next_action": "Establish exact installed capabilities and smallest changed native qualification.",
+      "dependencies": [],
+      "stages": {
+        "implementation": "PASS",
+        "source_tests": "PASS",
+        "native_tests": "PENDING",
+        "deployed_qa": "PENDING",
+        "independent_review": "PENDING",
+        "recovery": "PENDING"
+      },
+      "evidence": [
+        {
+          "stage": "implementation",
+          "reference": "Existing inventory supervisor replaced with proven shared public-admin process profile; no C/protocol/API/capability change."
+        },
+        {
+          "stage": "source_tests",
+          "reference": "ActualownershipRED1FAIL2postreapsignals10.322s; GREEN3PASS1fixture11.840s; sharedprocess9PASS2fixtures11.297s; strictClippy12.209s/fmt1.982sPASS. Independent sourceGO."
+        }
+      ]
+    }
+  ],
+  "accountability": {
+    "owner": "/root",
+    "functional_exit": "The existing OpenPGP helpers run under verified OpenBSD service boundaries, refuse unauthorized or unsafe work, and recover through a proven isolated restore without changing accepted user behaviour.",
+    "elapsed_scope": "wall_clock",
+    "history_reference": "Accepted S05-03 and bounded F3 archived intact. Existing matching evidence reused without inferring fresh separate-principal qualification.",
+    "investigation": {
+      "owner": "/root",
+      "timebox_seconds": 14400,
+      "started_at": "2026-11-01T18:46:37Z",
+      "elapsed_status": "UNMEASURED",
+      "elapsed_seconds": null
+    },
+    "attempts": [],
+    "next_attempt": null
+  },
+  "slice_contract": {
+    "version": 1,
+    "slice": "S05-04",
+    "specification": {
+      "path": "docs/UX_SLICE_S05_04.md",
+      "sha256": "df67124f6ae91a7ed52a7f1154cfb9fbb8b459937502af8ed3e782cb140d4357"
+    },
+    "design": {
+      "journey": "The existing OpenPGP helpers run under verified OpenBSD service boundaries, refuse unauthorized or unsafe work, and recover through a proven isolated restore without changing accepted user behaviour.",
+      "frontend": "Preserve accepted pages; infrastructure qualification has no new visual control.",
+      "backend": "Existing Rust helpers, proven process supervisor and fixed native GPGME workers.",
+      "interfaces": "Retain authenticated bounded protocol, socket authority and exact account grants.",
+      "persistence": "Preserve existing public/private stores; only disposable synthetic fixture writes.",
+      "security": "Distinct principals, peer checks, actual worker confinement and descriptor/core boundaries.",
+      "failure_recovery": "Bounded owned cleanup, explicit uncertainty and isolated known-binary restore followed by fresh service request."
+    },
+    "tests": [
+      {
+        "id": "S05-04-T01",
+        "outcome_ids": [
+          "native-isolation-qualification"
+        ],
+        "kind": "positive",
+        "level": "source",
+        "prerequisites": "Current source and actual installed capabilities/custody checked before dependent execution; disposable fixture authority and matching pinned artifacts required.",
+        "action": "Reconcile source, installed identities and retained evidence; name only uncovered boundaries.",
+        "expected": "Baseline and evidence reuse: The existing OpenPGP helpers run under verified OpenBSD service boundaries, refuse unauthorized or unsafe work, and recover through a proven isolated restore without changing accepted user behaviour.",
+        "preserved": "Accepted S04/S05/F3 user journeys; owner credentials/private keys/contact/key/policy/mail state; public mail configuration and availability.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      },
+      {
+        "id": "S05-04-T02",
+        "outcome_ids": [
+          "native-isolation-qualification"
+        ],
+        "kind": "positive",
+        "level": "native",
+        "prerequisites": "Current source and actual installed capabilities/custody checked before dependent execution; disposable fixture authority and matching pinned artifacts required.",
+        "action": "Record current compiler, GPGME/GnuPG and linked dependencies; build and test matching changed native artifacts.",
+        "expected": "Native build and dependencies: The existing OpenPGP helpers run under verified OpenBSD service boundaries, refuse unauthorized or unsafe work, and recover through a proven isolated restore without changing accepted user behaviour.",
+        "preserved": "Accepted S04/S05/F3 user journeys; owner credentials/private keys/contact/key/policy/mail state; public mail configuration and availability.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      },
+      {
+        "id": "S05-04-T03",
+        "outcome_ids": [
+          "native-isolation-qualification"
+        ],
+        "kind": "negative",
+        "level": "native",
+        "prerequisites": "Current source and actual installed capabilities/custody checked before dependent execution; disposable fixture authority and matching pinned artifacts required.",
+        "action": "Use three disposable principals and actual signed clients; prove authorized success and reachable unauthorized peer refusal.",
+        "expected": "Privilege and socket authority: The existing OpenPGP helpers run under verified OpenBSD service boundaries, refuse unauthorized or unsafe work, and recover through a proven isolated restore without changing accepted user behaviour.",
+        "preserved": "Accepted S04/S05/F3 user journeys; owner credentials/private keys/contact/key/policy/mail state; public mail configuration and availability.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      },
+      {
+        "id": "S05-04-T04",
+        "outcome_ids": [
+          "native-isolation-qualification"
+        ],
+        "kind": "negative",
+        "level": "native",
+        "prerequisites": "Current source and actual installed capabilities/custody checked before dependent execution; disposable fixture authority and matching pinned artifacts required.",
+        "action": "Exercise actual pledge/unveil functions with allowed public access, denied private/foreign access and engine-child restrictions.",
+        "expected": "OpenBSD confinement: The existing OpenPGP helpers run under verified OpenBSD service boundaries, refuse unauthorized or unsafe work, and recover through a proven isolated restore without changing accepted user behaviour.",
+        "preserved": "Accepted S04/S05/F3 user journeys; owner credentials/private keys/contact/key/policy/mail state; public mail configuration and availability.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      },
+      {
+        "id": "S05-04-T05",
+        "outcome_ids": [
+          "native-isolation-qualification"
+        ],
+        "kind": "negative",
+        "level": "native",
+        "prerequisites": "Current source and actual installed capabilities/custody checked before dependent execution; disposable fixture authority and matching pinned artifacts required.",
+        "action": "Establish usable inherited descriptors before closure, then prove unneeded descriptors unavailable and real transport functional.",
+        "expected": "Descriptor isolation: The existing OpenPGP helpers run under verified OpenBSD service boundaries, refuse unauthorized or unsafe work, and recover through a proven isolated restore without changing accepted user behaviour.",
+        "preserved": "Accepted S04/S05/F3 user journeys; owner credentials/private keys/contact/key/policy/mail state; public mail configuration and availability.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      },
+      {
+        "id": "S05-04-T06",
+        "outcome_ids": [
+          "native-isolation-qualification"
+        ],
+        "kind": "negative",
+        "level": "native",
+        "prerequisites": "Current source and actual installed capabilities/custody checked before dependent execution; disposable fixture authority and matching pinned artifacts required.",
+        "action": "Exercise bounded failures and synthetic marker handling; verify zero core limits and no partial sensitive result or exported native diagnostics.",
+        "expected": "Crash core and log safety: The existing OpenPGP helpers run under verified OpenBSD service boundaries, refuse unauthorized or unsafe work, and recover through a proven isolated restore without changing accepted user behaviour.",
+        "preserved": "Accepted S04/S05/F3 user journeys; owner credentials/private keys/contact/key/policy/mail state; public mail configuration and availability.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      },
+      {
+        "id": "S05-04-T07",
+        "outcome_ids": [
+          "native-isolation-qualification"
+        ],
+        "kind": "recovery",
+        "level": "native",
+        "prerequisites": "Current source and actual installed capabilities/custody checked before dependent execution; disposable fixture authority and matching pinned artifacts required.",
+        "action": "Correct inventory process cleanup through the proven supervisor and exercise owned descendant absence, disposable stop/restart and fresh request.",
+        "expected": "Stop restart and recovery: The existing OpenPGP helpers run under verified OpenBSD service boundaries, refuse unauthorized or unsafe work, and recover through a proven isolated restore without changing accepted user behaviour.",
+        "preserved": "Accepted S04/S05/F3 user journeys; owner credentials/private keys/contact/key/policy/mail state; public mail configuration and availability.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      },
+      {
+        "id": "S05-04-T08",
+        "outcome_ids": [
+          "native-isolation-qualification"
+        ],
+        "kind": "recovery",
+        "level": "deployed",
+        "prerequisites": "Current source and actual installed capabilities/custody checked before dependent execution; disposable fixture authority and matching pinned artifacts required.",
+        "action": "Qualify matching installed artifacts and protected state; exercise actual disposable binary restore and install changed OSMAP artifacts only if needed.",
+        "expected": "Install preservation and rollback: The existing OpenPGP helpers run under verified OpenBSD service boundaries, refuse unauthorized or unsafe work, and recover through a proven isolated restore without changing accepted user behaviour.",
+        "preserved": "Accepted S04/S05/F3 user journeys; owner credentials/private keys/contact/key/policy/mail state; public mail configuration and availability.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      },
+      {
+        "id": "S05-04-T09",
+        "outcome_ids": [
+          "native-isolation-qualification"
+        ],
+        "kind": "usability",
+        "level": "human",
+        "prerequisites": "Current source and actual installed capabilities/custody checked before dependent execution; disposable fixture authority and matching pinned artifacts required.",
+        "action": "Review source/native/installed evidence and normal signed GitHub delivery; owner accepts this infrastructure result separately.",
+        "expected": "Independent delivery and owner acceptance: The existing OpenPGP helpers run under verified OpenBSD service boundaries, refuse unauthorized or unsafe work, and recover through a proven isolated restore without changing accepted user behaviour.",
+        "preserved": "Accepted S04/S05/F3 user journeys; owner credentials/private keys/contact/key/policy/mail state; public mail configuration and availability.",
+        "owner": "/root",
+        "reviewer": "/root/s05_protocol_review",
+        "status": "NOT_RUN",
+        "evidence": []
+      }
+    ],
+    "engineering_exit": "Matching native isolation/lifecycle/dependency/installed and recovery proof independently reviewed and normally signed/synchronized.",
+    "human_exit": "Owner accepts infrastructure result separately; no visual ceremony or inferred production release."
+  },
+  "human_acceptance": {
+    "status": "PENDING",
+    "reference": "Owner T09 remains separate after engineering delivery."
+  },
+  "next_action": "Execute the approved S05-04 reuse-first native qualification through the existing failure-analysis loop."
+}
+```
+<!-- /OSMAP_ACTIVE_WORK_ORDER -->
+
+<!-- OSMAP_ARCHIVED_F3_ACCEPTED_WORK_ORDER -->
 ```json
 {
   "version": 1,
@@ -448,7 +715,7 @@ slice using the same failure-analysis method. See
 }
 ```
 
-<!-- /OSMAP_ACTIVE_WORK_ORDER -->
+<!-- /OSMAP_ARCHIVED_F3_ACCEPTED_WORK_ORDER -->
 
 <!-- OSMAP_ARCHIVED_S05_03_WORK_ORDER -->
 ```json

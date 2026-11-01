@@ -1,137 +1,78 @@
 //! One bounded process group; nonblocking drains share the command deadline.
-use crate::openpgp_inventory::{Error, Inventory, MAX_METADATA};
-use std::io::{ErrorKind, Read};
-use std::os::fd::AsRawFd;
-use std::os::unix::process::CommandExt;
+use crate::openpgp_inventory::{Error, Inventory};
 use std::path::Path;
-use std::process::{Child, Command, Stdio};
-use std::sync::{
-    atomic::{AtomicBool, Ordering},
-    Mutex,
-};
-static CLEANUP_UNCONFIRMED: AtomicBool = AtomicBool::new(false);
-static UNREAPED: Mutex<Vec<Child>> = Mutex::new(Vec::new());
-use std::time::{Duration, Instant};
+use std::process::Command;
+use std::time::Instant;
 
 pub(crate) fn execute(worker: &Path, home: &Path, deadline: Instant) -> Result<Inventory, Error> {
     let command = crate::auth::public_inventory_command(worker, home);
     Inventory::parse(&run(command, deadline)?)
 }
-fn run(mut command: Command, deadline: Instant) -> Result<Vec<u8>, Error> {
-    if CLEANUP_UNCONFIRMED.load(Ordering::SeqCst) {
-        return Err(Error::Unavailable);
-    }
-    let deadline = deadline.min(Instant::now() + Duration::from_secs(10));
-    if deadline.saturating_duration_since(Instant::now()) <= Duration::from_millis(100) {
-        return Err(Error::Expired);
-    }
-    let command_deadline = deadline - Duration::from_millis(100);
-    command
-        .stdin(Stdio::null())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .process_group(0);
-    let mut child = command.spawn().map_err(|_| Error::Unavailable)?;
-    let pid = child.id();
-    let result = (|| {
-        let mut stdout = child.stdout.take().ok_or(Error::Unavailable)?;
-        let mut stderr = child.stderr.take().ok_or(Error::Unavailable)?;
-        crate::openbsd::set_descriptor_nonblocking(stdout.as_raw_fd())
-            .map_err(|_| Error::Unavailable)?;
-        crate::openbsd::set_descriptor_nonblocking(stderr.as_raw_fd())
-            .map_err(|_| Error::Unavailable)?;
-        let mut output = Vec::new();
-        let mut discarded = 0usize;
-        let mut out_done = false;
-        let mut err_done = false;
-        let mut status = None;
-        loop {
-            if Instant::now() >= command_deadline {
-                return Err(Error::Expired);
-            }
-            if !out_done {
-                out_done = drain(&mut stdout, &mut output, MAX_METADATA, false)?;
-            }
-            if !err_done {
-                let mut bytes = Vec::new();
-                err_done = drain(
-                    &mut stderr,
-                    &mut bytes,
-                    8192usize.saturating_sub(discarded),
-                    true,
-                )?;
-                discarded += bytes.len();
-            }
-            if status.is_none() {
-                status = child.try_wait().map_err(|_| Error::Unavailable)?;
-            }
-            if let Some(status) = status {
-                // Also stop descendants retaining stdout/stderr after the leader exits.
-                let _ = crate::openbsd::kill_process_group(pid);
-                if out_done && err_done {
-                    return if status.success() {
-                        Ok(output)
-                    } else {
-                        Err(Error::Unavailable)
-                    };
-                }
-            }
-            std::thread::sleep(Duration::from_millis(2));
-        }
-    })();
-    let _ = crate::openbsd::kill_process_group(pid);
-    while Instant::now() < deadline {
-        match child.try_wait() {
-            Ok(Some(_)) => return result,
-            Ok(None) => std::thread::sleep(Duration::from_millis(2)),
-            Err(_) => break,
-        }
-    }
-    quarantine(child);
-    Err(Error::Unavailable)
+fn run(command: Command, deadline: Instant) -> Result<Vec<u8>, Error> {
+    // The existing public-admin profile has the same ten-second cap and64KiB
+    // output bound. Reuse its owned cleanup instead of a second supervisor.
+    inventory_result(crate::openpgp_crypto_process::run_public_admin(
+        command, b"", deadline,
+    ))
 }
-fn quarantine(child: Child) {
-    // A group kill does not prove reaping. Stop all future worker admission in
-    // this service process and retain the child handle for operator recovery.
-    CLEANUP_UNCONFIRMED.store(true, Ordering::SeqCst);
-    if let Ok(mut pending) = UNREAPED.lock() {
-        pending.push(child);
-    }
+fn inventory_result(
+    result: Result<Vec<u8>, crate::openpgp_crypto::Error>,
+) -> Result<Vec<u8>, Error> {
+    result.map_err(|error| match error {
+        crate::openpgp_crypto::Error::Limit => Error::Limit,
+        crate::openpgp_crypto::Error::Expired => Error::Expired,
+        _ => Error::Unavailable,
+    })
 }
-fn drain(
-    reader: &mut impl Read,
-    output: &mut Vec<u8>,
-    max: usize,
-    discard: bool,
-) -> Result<bool, Error> {
-    let mut buffer = [0u8; 4096];
-    // Bound each turn so an endless writer cannot prevent deadline checks.
-    for _ in 0..17 {
-        match reader.read(&mut buffer) {
-            Ok(0) => return Ok(true),
-            Ok(n) => {
-                if output.len().saturating_add(n) > max {
-                    return Err(Error::Limit);
-                }
-                // Preserve only a byte count for stderr, never diagnostic contents.
-                if discard {
-                    output.resize(output.len() + n, 0);
-                } else {
-                    output.extend_from_slice(&buffer[..n]);
-                }
-            }
-            Err(e) if e.kind() == ErrorKind::WouldBlock => return Ok(false),
-            Err(e) if e.kind() == ErrorKind::Interrupted => continue,
-            Err(_) => return Err(Error::Unavailable),
-        }
-    }
-    Ok(false)
+#[cfg(test)]
+fn run_with_group_ops(
+    command: Command,
+    deadline: Instant,
+    kill: &dyn Fn(u32) -> std::io::Result<()>,
+    exists: &dyn Fn(u32) -> std::io::Result<bool>,
+) -> Result<Vec<u8>, Error> {
+    inventory_result(
+        crate::openpgp_crypto_process::run_inventory_fixture_with_group_ops(
+            command, deadline, kill, exists,
+        ),
+    )
 }
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::auth::inventory_fixture_command as fixture;
+    use crate::openpgp_inventory::MAX_METADATA;
     use std::io::Write;
+    use std::sync::atomic::{AtomicBool, AtomicU32, AtomicUsize, Ordering};
+    use std::time::Duration;
+
+    #[test]
+    fn inventory_signals_only_while_the_direct_child_still_leases_its_group() {
+        let unowned_signals = AtomicUsize::new(0);
+        let signals = AtomicUsize::new(0);
+        let kill = |pid| {
+            signals.fetch_add(1, Ordering::SeqCst);
+            // Refuse any real signal after direct-child ownership is gone.
+            if let Err(error) = crate::openbsd::owned_child_exited_without_reap(pid) {
+                unowned_signals.fetch_add(1, Ordering::SeqCst);
+                return Err(error);
+            }
+            crate::openbsd::kill_process_group(pid)
+        };
+        let result = run_with_group_ops(
+            fixture("success"),
+            Instant::now() + Duration::from_secs(2),
+            &kill,
+            &crate::openbsd::process_group_exists,
+        );
+        assert!(result.is_ok(), "known zero-exit inventory fixture failed");
+        assert!(signals.load(Ordering::SeqCst) > 0);
+        assert_eq!(
+            unowned_signals.load(Ordering::SeqCst),
+            0,
+            "inventory cleanup released its leader identity before signalling"
+        );
+    }
 
     #[test]
     #[ignore = "child process fixture; invoked by bounded process test"]
@@ -140,6 +81,8 @@ mod tests {
             .unwrap()
             .as_str()
         {
+            "descendant_disposition" => descendant_disposition(),
+            "absence_uncertain" => uncertain_group_absence(),
             "sleep" => std::thread::sleep(Duration::from_secs(5)),
             "descendant" => {
                 // Inherit this test child's process group and output descriptors.
@@ -168,17 +111,14 @@ mod tests {
             Err(Error::Expired)
         ));
         assert!(start.elapsed() < Duration::from_secs(1));
-        let start = Instant::now();
-        assert!(String::from_utf8(
-            run(
-                fixture("descendant"),
-                Instant::now() + Duration::from_millis(500)
-            )
-            .unwrap()
+        let output = run(
+            fixture("descendant_disposition"),
+            Instant::now() + Duration::from_secs(3),
         )
-        .unwrap()
-        .contains("complete"));
-        assert!(start.elapsed() < Duration::from_secs(1));
+        .unwrap();
+        assert!(output
+            .windows(b"DESCENDANT_ABSENCE=".len())
+            .any(|bytes| bytes == b"DESCENDANT_ABSENCE="));
         assert!(matches!(
             run(
                 fixture("stdout_limit"),
@@ -194,19 +134,83 @@ mod tests {
             Err(Error::Limit)
         ));
         assert!(run(fixture("failure"), Instant::now() + Duration::from_secs(1)).is_err());
-        // Inject an uncertain-reap disposition: no subsequent command can run.
-        let child = fixture("success")
-            .process_group(0)
-            .stdout(Stdio::null())
-            .spawn()
-            .unwrap();
-        quarantine(child);
-        assert!(run(fixture("success"), Instant::now() + Duration::from_secs(1)).is_err());
-        assert!(CLEANUP_UNCONFIRMED.load(Ordering::SeqCst));
-        for mut child in UNREAPED.lock().unwrap().drain(..) {
-            let _ = child.kill();
-            let _ = child.wait();
+    }
+
+    #[test]
+    fn uncertain_group_absence_refuses_output_and_next_inventory_worker() {
+        let output = run(
+            fixture("absence_uncertain"),
+            Instant::now() + Duration::from_secs(3),
+        )
+        .unwrap();
+        assert!(output
+            .windows(b"UNCONFIRMED_CLEANUP=REFUSED".len())
+            .any(|bytes| bytes == b"UNCONFIRMED_CLEANUP=REFUSED"));
+    }
+
+    fn uncertain_group_absence() {
+        let pid = AtomicU32::new(0);
+        let exists = |group| {
+            pid.store(group, Ordering::SeqCst);
+            Ok(true)
+        };
+        assert!(matches!(
+            run_with_group_ops(
+                fixture("success"),
+                Instant::now() + Duration::from_millis(200),
+                &crate::openbsd::kill_process_group,
+                &exists,
+            ),
+            Err(Error::Unavailable)
+        ));
+        let pid = pid.load(Ordering::SeqCst);
+        assert!(pid > 1);
+        assert!(!crate::openbsd::process_group_exists(pid).unwrap());
+        assert!(matches!(
+            run(fixture("success"), Instant::now() + Duration::from_secs(1)),
+            Err(Error::Unavailable)
+        ));
+        println!("UNCONFIRMED_CLEANUP=REFUSED");
+    }
+
+    fn descendant_disposition() {
+        let pid = AtomicU32::new(0);
+        let present = AtomicBool::new(false);
+        let exists = |group| {
+            pid.store(group, Ordering::SeqCst);
+            let value = crate::openbsd::process_group_exists(group)?;
+            if value {
+                present.store(true, Ordering::SeqCst);
+            }
+            Ok(value)
+        };
+        let began = Instant::now();
+        let result = run_with_group_ops(
+            fixture("descendant"),
+            began + Duration::from_millis(500),
+            &crate::openbsd::kill_process_group,
+            &exists,
+        );
+        assert!(began.elapsed() < Duration::from_secs(1));
+        let pid = pid.load(Ordering::SeqCst);
+        assert!(pid > 1);
+        match result {
+            Ok(output) => {
+                assert!(output.windows(8).any(|bytes| bytes == b"complete"));
+                assert!(!crate::openbsd::process_group_exists(pid).unwrap());
+                println!("DESCENDANT_ABSENCE=CONFIRMED");
+            }
+            Err(Error::Unavailable) => {
+                assert!(present.load(Ordering::SeqCst));
+                assert!(matches!(
+                    run(fixture("success"), Instant::now() + Duration::from_secs(1)),
+                    Err(Error::Unavailable)
+                ));
+                println!("DESCENDANT_ABSENCE=UNCONFIRMED_FAIL_CLOSED");
+                #[cfg(target_os = "openbsd")]
+                panic!("native inventory qualification requires descendant group absence");
+            }
+            _ => panic!("unexpected inventory descendant disposition"),
         }
-        CLEANUP_UNCONFIRMED.store(false, Ordering::SeqCst); // Test-only cleanup.
     }
 }

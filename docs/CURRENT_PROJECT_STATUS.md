@@ -1,5 +1,7 @@
 # Current Project Status
 
+2026-11-02 (Asia/Bangkok) — **S05-04 IN_PROGRESS.** Approved native isolation/dependency/recovery T01–T09 work is active. Fresh host preflight confirms current semantic capabilities and all eight roles healthy. Baseline inventory process ownership regression reproduces two post-reap signal attempts; smallest existing-supervisor correction is in progress. No new user page or owner mutation. See [S05-04 contract](UX_SLICE_S05_04.md).
+
 2026-11-02 (Asia/Bangkok) — **Bounded F3 account-relative Welcome repair ACCEPTED.**
 The owner explicitly reports Accepted and supplies two installed-page captures
 showing the current account,4importedpublickeys and expanded status details.

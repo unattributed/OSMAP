@@ -14186,3 +14186,8 @@ retaining private-store refusal. A zero-test native selector is excluded and its
 intended test executed by an observed fully-qualified name. Retain all failures,
 match actual source/artifact scope, reuse unchanged Web/helper evidence, and
 keep owner import PASS distinct from new-picker UAT and production release.
+
+
+## 2026-11-02 — S05-04 reuse-first native qualification
+
+Owner approves the proposed T01–T09 infrastructure matrix. Reuse S05-01/S05-03 cryptographic and F3 installed evidence where inputs match; collect fresh distinct-principal/confinement/descriptor/core/restart/restore proof. Baseline inventory supervisor signals after leader reap; the focused regression safely refuses these signals and fails with2 attempts. Reuse the hardened existing supervisor, preserving limits and typed errors. Native test runners receive explicit guards and bounded private diagnostics; no new general QA system or public mail outage. Owner infrastructure acceptance remains separate.
