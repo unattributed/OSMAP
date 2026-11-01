@@ -626,3 +626,12 @@ Atomic backups and guarded whole-set rollback must include crypto helper/config
 pair. New post-install reader must use current metadata parser (old readonly
 probe is incompatible with identity-emitting workers). No live owner import or
 credential replay is required; existing imported identities need no migration.
+
+Actual source6c799d92 native public-admin and Runtime multipart/UID/crypto-RPC
+journeys PASS with exact cleanup. Root CUA then caught an own-account-only
+spurious recipient chooser; the single HTML projection guard is corrected,
+13UI tests and fresh CUA pass (no editable email inputs/ordinaryassociationlink).
+Native effect inputs and native journey remain byte-identical to6c799d92; reuse
+that executed qualification while rebuilding matching final Web/helpers/probe
+from the reviewed UI checkpoint. No native transaction retry is warranted by
+this HTML-only guard. Retain earlier compile/test/lint/visual failures separately.

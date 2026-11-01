@@ -142,9 +142,9 @@ slice using the same failure-analysis method. See
         }
       ],
       "stages": {
-        "implementation": "PENDING",
-        "source_tests": "PENDING",
-        "native_tests": "PENDING",
+        "implementation": "PASS",
+        "source_tests": "PASS",
+        "native_tests": "PASS",
         "deployed_qa": "PENDING",
         "independent_review": "PENDING",
         "recovery": "PASS"
@@ -265,6 +265,10 @@ slice using the same failure-analysis method. See
         {
           "stage": "implementation",
           "reference": "Actualstaticcrypto authority count2 excludesnew02B; smallestreviewed trustedoptin(defaultfalse) permitsnativeexactlocalpublicprimaryonly, privatepinsunchanged. IncludesactualRPCnativeRAMtest andcoordinatedhelper/configrollout, ownerkeys/policiespreserved."
+        },
+        {
+          "stage": "native_tests",
+          "reference": "auto-email-native-functional.log source6c799d92 exactpublicadmin+Runtime multipart/UID(twoValid+revokedexcluded)/actualcryptoRPC true+emptyallowlistPASS; otherhome/absent/subkey/privategrantnegatives included; cleanupPASS. UI-onlyownchooserfix focused13+actualCUAPASS; nativeeffectsourcesunchanged, matchingfinalartifactsrebuildpending."
         }
       ]
     }
@@ -290,7 +294,7 @@ slice using the same failure-analysis method. See
     "slice": "S05-02",
     "specification": {
       "path": "docs/UX_SLICE_S05_02.md",
-      "sha256": "c144fa323fdc5854ab5a8085dd939ffe56573277656ac295dcf6d81d0b1198a4"
+      "sha256": "eeae24b4d79739a7e81fdd03b88e1431636a3ce8d62e254e0a9bb898131ad9b7"
     },
     "design": {
       "journey": "Signed-in user sees imported keys with exact email associations and applied policy, and can manage public import/bind/policy/remove through fresh authorization.",

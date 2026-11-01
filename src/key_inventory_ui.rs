@@ -662,6 +662,12 @@ pub(crate) fn render_key_management_panel(
         let mut recipient_rows = effective_recipients.clone();
         for key in keys.iter().filter(|_| !projection_unavailable) {
             for address in &key.email_addresses {
+                if crate::mail_address::comparison_key(address)
+                    == crate::mail_address::comparison_key(account)
+                    && raw_record.is_some_and(|record| record.account_binding.is_some())
+                {
+                    continue;
+                }
                 if !recipient_rows.iter().any(|binding| {
                     crate::mail_address::comparison_key(&binding.address)
                         == crate::mail_address::comparison_key(address)
@@ -1146,6 +1152,8 @@ mod binding_page_tests {
         );
         assert!(cards[0].contains("Your account"));
         assert!(!cards[0].contains("No unique recipient key"));
+        assert!(!html.contains("<h3>alice@example.test</h3>"));
+        assert!(!html.contains("Choose a key for this email"));
         assert_eq!(
             cards[1]
                 .matches("<strong>bob@example.test</strong>")
