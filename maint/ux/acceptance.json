@@ -18335,6 +18335,11 @@
             "kind": "native_execution",
             "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-import-20261101/asc-upload-installed-evidence.json",
             "scope": "Signed7fd9c42 boundedASCfile transport; exactfilename@RED-GREEN; actualnative multipart/selectedRuntime/TOTP/Cworker transactionPASS;2101/0/75+securityV10-V14; matchingWeb049d17installed/preservation/helperreadbackPASS. RootCUA enabledchooser selected providedoriginalfile, no submission. OwnerlatestprimaryrefusalUNKNOWN/T09FAIL remains; no ownerkeymutation and statusPARTIALLY_VERIFIED."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-import-20261101/auto-email-installed-independent-review.json",
+            "scope": "Owner-directed ordinarymanualassociation replaced by certificate-derived recipient matching; no freetextemail input. Native2valid/revoked/mixedcase/automaticresolve/actualcryptoRPCtrue+emptylistPASS; installedBOTHexactUIDRPCs/actualsavedselection/targetRAMencrypt/preservationPASS. Rust5e8f44c+correctedC160652b/worker710; reviewd09b261a. Existingpolicies/privategrants preserved; ambiguity/tamperedpair/freshinventory/cleanup tested. NewownerUATNOT_RUN; historicalfailures retained. Fullnormalpushrequired beforedelivery."
           }
         ]
       }
@@ -18403,6 +18408,11 @@
             "kind": "native_execution",
             "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/native-functional01.log",
             "scope": "Actual exact native public-admin store and Runtime key-management casesPASS, exact-owned cleanup and freshabsencePASS. Unchangedfa26102 key-effect inputs reviewed reusable under831516b Web. Controlled primary process is synthetic, not ownerDovecot credential verification. Different-primary rotation/stale-CAS is additionally exercised by the current actual BindingStore/mutate source regression."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-import-20261101/auto-email-installed-independent-review.json",
+            "scope": "Owner-directed ordinarymanualassociation replaced by certificate-derived recipient matching; no freetextemail input. Native2valid/revoked/mixedcase/automaticresolve/actualcryptoRPCtrue+emptylistPASS; installedBOTHexactUIDRPCs/actualsavedselection/targetRAMencrypt/preservationPASS. Rust5e8f44c+correctedC160652b/worker710; reviewd09b261a. Existingpolicies/privategrants preserved; ambiguity/tamperedpair/freshinventory/cleanup tested. NewownerUATNOT_RUN; historicalfailures retained. Fullnormalpushrequired beforedelivery."
           }
         ]
       }
@@ -19099,6 +19109,11 @@
             "kind": "native_execution",
             "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/native-functional01.log",
             "scope": "Actual exact native public-admin store and Runtime key-management casesPASS, exact-owned cleanup and freshabsencePASS. Unchangedfa26102 key-effect inputs reviewed reusable under831516b Web. Controlled primary process is synthetic, not ownerDovecot credential verification. Different-primary rotation/stale-CAS is additionally exercised by the current actual BindingStore/mutate source regression."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-import-20261101/auto-email-installed-independent-review.json",
+            "scope": "Owner-directed ordinarymanualassociation replaced by certificate-derived recipient matching; no freetextemail input. Native2valid/revoked/mixedcase/automaticresolve/actualcryptoRPCtrue+emptylistPASS; installedBOTHexactUIDRPCs/actualsavedselection/targetRAMencrypt/preservationPASS. Rust5e8f44c+correctedC160652b/worker710; reviewd09b261a. Existingpolicies/privategrants preserved; ambiguity/tamperedpair/freshinventory/cleanup tested. NewownerUATNOT_RUN; historicalfailures retained. Fullnormalpushrequired beforedelivery."
           }
         ]
       }
@@ -19147,6 +19162,11 @@
             "kind": "qa_execution",
             "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/actual-security-independent-review.json",
             "scope": "Independent final GO_ENGINEERING_AND_INSTALLED_QA SHA45ddce76abdbe1d3c13d8028103c0ceae9a5a3a4076bc2dd60b64430e07b70b9. Reviewed this control at stated source/native/browser levels, matching831516b/Webfe44b3 installation, actual owner-helper readback and protected preservation. Browser uses synthetic account; owner Web view/save is T09. Full fingerprint selectable; no clipboard API success or arbitrary new correspondent crypto authority claimed."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-import-20261101/auto-email-installed-independent-review.json",
+            "scope": "Owner-directed ordinarymanualassociation replaced by certificate-derived recipient matching; no freetextemail input. Native2valid/revoked/mixedcase/automaticresolve/actualcryptoRPCtrue+emptylistPASS; installedBOTHexactUIDRPCs/actualsavedselection/targetRAMencrypt/preservationPASS. Rust5e8f44c+correctedC160652b/worker710; reviewd09b261a. Existingpolicies/privategrants preserved; ambiguity/tamperedpair/freshinventory/cleanup tested. NewownerUATNOT_RUN; historicalfailures retained. Fullnormalpushrequired beforedelivery."
           }
         ]
       }
@@ -19205,6 +19225,11 @@
             "kind": "qa_execution",
             "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-20261031/actual-security-independent-review.json",
             "scope": "Independent final GO_ENGINEERING_AND_INSTALLED_QA SHA45ddce76abdbe1d3c13d8028103c0ceae9a5a3a4076bc2dd60b64430e07b70b9. Reviewed this control at stated source/native/browser levels, matching831516b/Webfe44b3 installation, actual owner-helper readback and protected preservation. Browser uses synthetic account; owner Web view/save is T09. Full fingerprint selectable; no clipboard API success or arbitrary new correspondent crypto authority claimed."
+          },
+          {
+            "kind": "native_execution",
+            "path": "/home/foo/Downloads/osmap-ux-s05/s05-02-import-20261101/auto-email-installed-independent-review.json",
+            "scope": "Owner-directed ordinarymanualassociation replaced by certificate-derived recipient matching; no freetextemail input. Native2valid/revoked/mixedcase/automaticresolve/actualcryptoRPCtrue+emptylistPASS; installedBOTHexactUIDRPCs/actualsavedselection/targetRAMencrypt/preservationPASS. Rust5e8f44c+correctedC160652b/worker710; reviewd09b261a. Existingpolicies/privategrants preserved; ambiguity/tamperedpair/freshinventory/cleanup tested. NewownerUATNOT_RUN; historicalfailures retained. Fullnormalpushrequired beforedelivery."
           }
         ]
       }

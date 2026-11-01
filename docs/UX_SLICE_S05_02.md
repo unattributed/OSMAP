@@ -648,3 +648,44 @@ journeys and actual target readonly worker read; then atomically update only
 the two same-schema inventory workers without restarting the loaded helpers.
 Re-run the identical installed Rust RPC/actual-policy/RAM-encryption probe. No
 new owner import, credential operation or public mail change is involved.
+
+## Automatic email workflow installed — 2026-11-01
+
+The owner-directed ordinary flow is now ASC upload with fresh authorization,
+then automatic certificate-email recognition and recipient resolution. No free
+email entry or separate association action remains. Multiple valid identities
+are supported, duplicate same-key claims deduplicate and cross-key conflicts
+require a deliberate existing per-email key choice. New matches default Optional
+(encryptionOff); saved choices/Required/Disabled policies retain precedence.
+Existing imported certificates need no reimport or binding migration.
+
+Final Rust Web/helpers/probe use signed5e8f44c; case-preserving inventory worker
+and durable mixed-case native regression use signed160652b7c5ad93202b99e5b423ed482d6663fc6a.
+Loaded Web91a0c8b8239c9ac848d4f973553f5c04b2fe0f2ab28d0c8b2a0529ce2931a557
+and both workers710485f5d0901531bffc81e2f2a5ca82fc5fa3cb3ed2c72fb3f7cfaf3c7abcec
+are qualified. Coordinated4OSMAP-role install preserves public mail services;
+C-only correction preserves all four running PIDs. Protected worker-update
+manifests both66d29b95ee4f7cfce686304d14eb5feea72b20ca7dc2f251f946ee1c6047c842.
+The crypto config changes only Duncan's trusted local-import recipient option;
+its new SHAe20954f584c872ca93c8ff5d5b13fcc0b74723e9fc3794ea1b5ea0daddee7670.
+Signer/decryption grants and static entries remain unchanged.
+
+The identical installed Rust probe that first refused the normalized case now
+passes: BOTH Inventory/Admin RPCs return exactcBwZTCpU identity; virtual empty
+record derives the correct primary/Optional default without a binding write;
+actual saved record selects that same key; installed crypto helper encrypts to
+it in RAM despite absence from the static recipient list. No SMTP/key/policy
+mutation. Three public keys, revision6, two saved recipient policies, Optional
+account protection and ProtonRequired are preserved; owner keybox40b478 unchanged.
+Readonly probe and both native fixtures are confirmed absent.
+
+Current focused/CUA and frozen V10–V13 checks pass. Earlier broad gate ran
+2,113Rust/0fail/75ignored before generated drift during the final UI correction;
+that failure remains a failure. Final normal signed pre-push must run complete
+current-source Rust/security checks before delivery. Unchanged V14 evidence is
+reused with current13UI/CUA results. Source/native review and installed review
+are independent; installed reviewd09b261a9c0f44d51a131c1301303f04c51479f5d2e19a97976a53a3b877d3b2
+binds root evidence4b3c9f4b7f2638b4218ecc46c5c7671b06c8f661ed1b3052c7af8562bb18b555.
+Owner acceptance of the new workflow remains NOT_RUN; prior T09FAIL and primary
+refusal history are retained, not treated as new-workflow success. S05-02 remains
+IN_PROGRESS/importPARTIALLY_VERIFIED pending owner result.

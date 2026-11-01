@@ -1,3 +1,5 @@
+2026-11-01 (America/Toronto) — **Automatic certificate-email workflow installed; owner acceptance pending.**
+
 2026-11-01 (America/Toronto) — **ASC file upload installed; owner import confirmation remains open.**
 
 2026-11-01 (America/Toronto) — **S05-02 reopened: owner public-key import UAT failed; correction in progress.**
@@ -132,7 +134,7 @@ slice using the same failure-analysis method. See
       ],
       "frontend_backend_outcome": "Signed-in user sees imported keys with exact email associations and applied policy, and can manage public import/bind/policy/remove through fresh authorization.",
       "essential_qa": "T01-T08 source/native/browser/installed checks and independent review; actual visual owner T09 separate.",
-      "next_action": "Implement certificate-derived recipient associations with no ordinary manual binding, preserve saved policies, validate real encrypted preparation and final-send inventory freshness, coordinated OSMAP helper deployment and signed delivery.",
+      "next_action": "Complete normal signed GitHub delivery including full current-source security hook; then owner ordinary ASC import/automatic-email acceptance. HistoricalT09FAIL retained/newworkflowNOT_RUN/S05open.",
       "dependencies": [
         {
           "owner": "/root",
@@ -145,8 +147,8 @@ slice using the same failure-analysis method. See
         "implementation": "PASS",
         "source_tests": "PASS",
         "native_tests": "PASS",
-        "deployed_qa": "PENDING",
-        "independent_review": "PENDING",
+        "deployed_qa": "PASS",
+        "independent_review": "PASS",
         "recovery": "PASS"
       },
       "evidence": [
@@ -273,6 +275,14 @@ slice using the same failure-analysis method. See
         {
           "stage": "deployed_qa",
           "reference": "Coordinatedinstallactual all4Rustloaded/8roles/envprivatestatePASS, but postprobeTARGET_CERTIFICATE_EMAIL_MISSING; currentGPGMEaddress lowercasescBwlocal. Preservefirstfailure; Cparsedemailfirst RED\u2192GREEN; nativecasepersistentregression/C-only2workerqualificationpending. NoinstalledfunctionalPASSclaimed."
+        },
+        {
+          "stage": "deployed_qa",
+          "reference": "Correctedidenticalprobe53b PASS BOTHexactcBwUIDRPCs,virtualemptyautoOptional+actualsavedtarget/RAMcrypto,3keysrev6/2policies/keybox40b/preservation/probeabsent;6binary+configinstallthenC-only2workerfix710 preserves4PIDs/8roles/no mail restart."
+        },
+        {
+          "stage": "independent_review",
+          "reference": "auto-email-installed-independent-review.json SHAd09b261a9c0f44d51a131c1301303f04c51479f5d2e19a97976a53a3b877d3b2 GOsource/native/installed with failedmixedgate andinitialnormalized-caseprobe retained; finalfullnormalpush/ownernewworkflowpending."
         }
       ]
     }
@@ -298,7 +308,7 @@ slice using the same failure-analysis method. See
     "slice": "S05-02",
     "specification": {
       "path": "docs/UX_SLICE_S05_02.md",
-      "sha256": "fa0a022abb8885f809a5a1d9bd130cf2949bce13e9b90900d83268e10034e94e"
+      "sha256": "b8f4578ed9eb091700204330bd5fdde7698ba4d1a157bb50a62c4a3337eb44dd"
     },
     "design": {
       "journey": "Signed-in user sees imported keys with exact email associations and applied policy, and can manage public import/bind/policy/remove through fresh authorization.",
@@ -497,9 +507,9 @@ slice using the same failure-analysis method. See
   },
   "human_acceptance": {
     "status": "FAIL",
-    "reference": "2026-11-01 ownerreports publickey02B34119C22074FC68B10E23E3294DF8DE68C834 importgenericUnavailable; bothfactorsacceptedliveaudit, nochangeconfirmed. Ownercredentials/proofmustnotbereplayed. Latest06:45primaryrefusal beforefactor/native remainsUNKNOWN; ASCuploadinstalled, newordinaryownerfileimportnotyetperformed."
+    "reference": "2026-11-01 ownerreports publickey02B34119C22074FC68B10E23E3294DF8DE68C834 importgenericUnavailable; bothfactorsacceptedliveaudit, nochangeconfirmed. Ownercredentials/proofmustnotbereplayed. Latest06:45primaryrefusal beforefactor/native remainsUNKNOWN; ASCuploadinstalled, newordinaryownerfileimportnotyetperformed. Newownerrequestedautomatic-emailflowinstalledandagentqualified; owneracceptanceofnewflowNOT_RUN. Historicalfailuresretained; current3key/rev6readback isnotnewbrowserUAT."
   },
-  "next_action": "Implement certificate-derived recipient associations with no ordinary manual binding, preserve saved policies, validate real encrypted preparation and final-send inventory freshness, coordinated OSMAP helper deployment and signed delivery."
+  "next_action": "Complete normal signed GitHub delivery including full current-source security hook; then owner ordinary ASC import/automatic-email acceptance. HistoricalT09FAIL retained/newworkflowNOT_RUN/S05open."
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->

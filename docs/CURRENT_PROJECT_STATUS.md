@@ -1,5 +1,20 @@
 # Current Project Status
 
+2026-11-01 (America/Toronto) — **Automatic certificate email matching installed on obsd1.**
+ASC import reads certificate emails and resolves recipients without a separate
+manual binding step. New matches default Off; saved policies are preserved and
+cross-key ambiguity blocks automatic selection. Readonly policy editors cannot
+introduce unrelated addresses. Trusted Duncan-only crypto opt-in permits usable
+local imported primaries while private grants remain pinned. Finalsend checks
+public inventory freshness under the existing policy lock. Rustsource5e8f44c/
+Web91a0c8 plus case-corrected workers710485 pass current native/installed checks.
+Both RPCs preserve exactcBw identity; actual saved selection and installed RAM
+encryption pass;3keys/rev6/settings/keybox and public mail services are preserved.
+Initial lowercase-probe and mixed-register gate failures are retained. Final
+normal full-source push hook remains a delivery prerequisite; new owner UAT is
+NOT_RUN, historical T09FAIL/importPARTIAL/S05open retained. See
+[the installed workflow record](UX_SLICE_S05_02.md#automatic-email-workflow-installed--2026-11-01).
+
 2026-11-01 (America/Toronto) — **ASC file upload installed on obsd1; owner confirmation remains open.**
 Public-key import now selects one exported `.asc` file, using the existing Rust
 multipart parser and authenticated native transaction. The supplied filename

@@ -1,5 +1,16 @@
 # Decision Log
 
+2026-11-01 — Owner directs eliminating manual email binding after import.
+Derive recipients from bounded native certificate emails using one shared Rust
+resolver; avoid another durable transaction. Preserve saved policy and explicit
+key choices, default new matches Optional, refuse ambiguity and validate policy
+pairs. Add final protected-send inventory freshness and a defaultfalse trusted
+crypto local-import option, enabled only for Duncan's development mapping.
+Installed qualification exposed normalized local-part case loss; prefer parsed
+original email and add a durable real-GPGME mixed-case regression. Corrected
+readback/native encryption pass without owner key/policy/credential writes or
+public mail restart. No production release or owner acceptance is inferred.
+
 2026-11-01 — Replace pasted OpenPGP armor with one bounded `.asc` upload, as
 requested by the owner. Reuse the Rust multipart parser, literal in-memory
 bytes and existing fresh primary/TOTP/native validation. Permit `@` in safe
