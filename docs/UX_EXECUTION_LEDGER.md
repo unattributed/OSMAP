@@ -117,7 +117,7 @@ slice using the same failure-analysis method. See
       ],
       "frontend_backend_outcome": "Signed-in user sees imported keys with exact email associations and applied policy, and can manage public import/bind/policy/remove through fresh authorization.",
       "essential_qa": "T01-T08 source/native/browser/installed checks and independent review; actual visual owner T09 separate.",
-      "next_action": "Qualify private creation mask at native worker boundary under ambient022, atomically install worker/launcher and Web only, verify actual controlled daemon import/remove before owner browser retest.",
+      "next_action": "Final independently reviewed signed GitHub preservation, then one owner fresh browser import retest. Native permission and selected-primary corrections installed; S05-02/T09 remain open.",
       "dependencies": [
         {
           "owner": "/root",
@@ -128,10 +128,10 @@ slice using the same failure-analysis method. See
       ],
       "stages": {
         "implementation": "PASS",
-        "source_tests": "PENDING",
-        "native_tests": "PENDING",
-        "deployed_qa": "PENDING",
-        "independent_review": "PENDING",
+        "source_tests": "PASS",
+        "native_tests": "PASS",
+        "deployed_qa": "PASS",
+        "independent_review": "PASS",
         "recovery": "PASS"
       },
       "evidence": [
@@ -197,7 +197,27 @@ slice using the same failure-analysis method. See
         },
         {
           "stage": "native_tests",
-          "reference": "Nov1oldinstalledworker ambient022creates0644vs077creates0600 withbothnativeEXIT0/same3keys/trustunchanged; actualcontrolleddaemon022UnavailableafterGPGsuccess; owneroriginalstatepreserved. FixedworkerqualificationPENDING; nohelperrestartrequired."
+          "reference": "Nov1oldinstalledworker ambient022creates0644vs077creates0600 withbothnativeEXIT0/same3keys/trustunchanged; actualcontrolleddaemonUnavailableafterGPGsuccess; exactoriginaldaemonmasknotmeasured; owneroriginalstatepreserved. FixedworkerqualificationPENDING; nohelperrestartrequired."
+        },
+        {
+          "stage": "source_tests",
+          "reference": "Currentnormal2098PASS0failed75ignored/securityV10-V13+V14PASS; shellfixturecorrectedwithoutcheckerexception; parallelRPCcauseUNKNOWNretained/isolation+serialfullgatePASS."
+        },
+        {
+          "stage": "native_tests",
+          "reference": "fixed-native-functional.log actualambient022publicstore+parsedHTTPselectedRuntime/TOTP/adminPASS; worker-and-live-fixed.actual.log SAMEPID34710fixedworkerab1known660import3/remove2originalsPASS."
+        },
+        {
+          "stage": "deployed_qa",
+          "reference": "routing-install.actual.log Web5a325/PID93496/inode129966/HTTPS200/eightroles; routing-post-install-read.log owner2originalkeys/rev5/policies/RAMencryptPASS; workerab1/wrapperb83,env8edd unchanged."
+        },
+        {
+          "stage": "recovery",
+          "reference": "CworkerandWebprotectedbeforeaftermatchf94ae.../893534...; livecontrolledtestoriginalpublicmetadata/trust/backup/defaultbindings restored,agent/private/tempclientsabsent; umaskclonesexactcleanedafterdurablereadback, nativefixtureabsent; oldbinaries/guardedrollbackretainednotexecuted."
+        },
+        {
+          "stage": "independent_review",
+          "reference": "NEW routing-umask-independent-review.json SHA47a60aa20750ea0846b52239664f45cb91f3cc34bf20ec7905c71579a7f96186 GO_AGENT_OWNED_CORRECTION_INSTALLED_QA; actual18filehashes/signedsource/native/installed/preservation reconciled. OwnerT09FAIL/importPARTIALLY_VERIFIED/S05open. Originaldaemonexactmasknotmeasured; explicit022/077differentialisobserved."
         }
       ]
     }
@@ -206,7 +226,7 @@ slice using the same failure-analysis method. See
     "owner": "/root",
     "functional_exit": "Signed-in user sees imported keys with exact email associations and applied policy, and can manage public import/bind/policy/remove through fresh authorization.",
     "elapsed_scope": "wall_clock",
-    "history_reference": "S05-01 acknowledged and preserved. Retained identity-renderer work ported from original checkout; no owner keys/credentials/policy or public mail mutation inferred. Acceptance03 normal gatePASS after two recordedtest-inventory refusals/combinedreview. Independentcontrolaudit thenfound inheritedWelcomeOpenPGPplaceholders forfiveS05-02controls and missingexplicitdiscoveryOff copy; sourcecorrectionrequiredbeforeinstallation. No oldcandidateinstalled. Final actual normalgate/install/helperreadback/independentreviewPASS; originalfailures and preview143UNKNOWN diagnostic retained. No ownercredential/key/policy action or mailservice restart. Nov1reopenedactualownerimportfailure; nativepubliccloneexactcert andCRLFpass,leadingblankvariantfailswhileRustvalidatoraccepts; minimalnormalizationcorrectionunderway. No liveownerimport/password/TOTPreplay, nohelperrestart. Nov1correction engineering/native/installPASS, butownerT09FAIL remains andimportcontrolPARTIALLY_VERIFIED untilfreshbrowserpass. Historicalcalendaridle doesnotexpireoperatorauthority. Latest owner retry primary403 then accepted-factor503 retained separately. Selected-runtime vs legacy step-up routing defect under correction; no assumption of password error or complete503 remediation.",
+    "history_reference": "S05-01 acknowledged and preserved. Retained identity-renderer work ported from original checkout; no owner keys/credentials/policy or public mail mutation inferred. Acceptance03 normal gatePASS after two recordedtest-inventory refusals/combinedreview. Independentcontrolaudit thenfound inheritedWelcomeOpenPGPplaceholders forfiveS05-02controls and missingexplicitdiscoveryOff copy; sourcecorrectionrequiredbeforeinstallation. No oldcandidateinstalled. Final actual normalgate/install/helperreadback/independentreviewPASS; originalfailures and preview143UNKNOWN diagnostic retained. No ownercredential/key/policy action or mailservice restart. Nov1reopenedactualownerimportfailure; nativepubliccloneexactcert andCRLFpass,leadingblankvariantfailswhileRustvalidatoraccepts; minimalnormalizationcorrectionunderway. No liveownerimport/password/TOTPreplay, nohelperrestart. Nov1correction engineering/native/installPASS, butownerT09FAIL remains andimportcontrolPARTIALLY_VERIFIED untilfreshbrowserpass. Historicalcalendaridle doesnotexpireoperatorauthority. Latest owner retry primary403 then accepted-factor503 retained separately. Selected-runtime vs legacy step-up routing defect under correction; no assumption of password error or complete503 remediation. Actualoldworkerumaskdifferential andsameparentdaemoncontrolledimportRED\u2192fixedchildGREEN established. Nativeworker+wrapperatomicallyreplacedwithouthelperrestart, matchingWebonlyrestarted; protectedownerstatepreserved. NormalgateparallelfixturefailurecauseUNKNOWN retained; isolationandserialfullgatePASS. OwnerT09FAIL remains untilordinarybrowserretest. Newepisodewholecumulativeelapsed/costUNKNOWN; measurednativebuild165.466s andfullserialRust108.43s retained, priorhistorynotreset. Explicit022/077 differential ismeasured; oldliveinheritedmaskexactvalueUNKNOWN.",
     "investigation": {
       "owner": "/root",
       "timebox_seconds": 14400,
@@ -223,7 +243,7 @@ slice using the same failure-analysis method. See
     "slice": "S05-02",
     "specification": {
       "path": "docs/UX_SLICE_S05_02.md",
-      "sha256": "6e2a292409aefbe45f8ea6e24924eef962b4547c49e270946f4c7600f0059055"
+      "sha256": "50a8611fa9abeacab91923bd2c3f1b12252848a2e86f378c5b8067e918afae86"
     },
     "design": {
       "journey": "Signed-in user sees imported keys with exact email associations and applied policy, and can manage public import/bind/policy/remove through fresh authorization.",
@@ -272,7 +292,8 @@ slice using the same failure-analysis method. See
           "docs/UX_SLICE_S05_02.md#engineering-and-installed-closeout--2026-10-31",
           "Actual two exact native public-admin/Runtime casesPASS; current13effectinputs unchangedfa26102; root/native/security independent reviews, exactfixturecleanup and freshabsencePASS.",
           "Nov1ownerimportfailure; liveaudit04:02:50/04:06:34UTC acceptsprimaryandTOTPthen503. Privateevidence s05-02-import-20261101.",
-          "Nov1correction currentnativepaddedRuntimeimport/gates/matchingWeb/preservationPASS; ownerbrowserT09FAILpendingfreshretest, oldpayloadUNKNOWN."
+          "Nov1correction currentnativepaddedRuntimeimport/gates/matchingWeb/preservationPASS; ownerbrowserT09FAILpendingfreshretest, oldpayloadUNKNOWN.",
+          "Nov1correctedselectedprimary/capturedEpoch/nativeambient022/fullHTTP/livecontrolledhelper/preservation/gatesPASS aslatestUX_SLICE_S05_02record; ownerT09FAILremains."
         ]
       },
       {
@@ -291,7 +312,8 @@ slice using the same failure-analysis method. See
         "status": "PASS",
         "evidence": [
           "docs/UX_SLICE_S05_02.md#engineering-and-installed-closeout--2026-10-31",
-          "Private acceptance04.log2095PASS/0failed/75ignored; security/V10-V13PASS; v14-finalPASS, focused tests and strictClippyPASS."
+          "Private acceptance04.log2095PASS/0failed/75ignored; security/V10-V13PASS; v14-finalPASS, focused tests and strictClippyPASS.",
+          "Nov1correctedselectedprimary/capturedEpoch/nativeambient022/fullHTTP/livecontrolledhelper/preservation/gatesPASS aslatestUX_SLICE_S05_02record; ownerT09FAILremains."
         ]
       },
       {
@@ -329,7 +351,8 @@ slice using the same failure-analysis method. See
         "status": "PASS",
         "evidence": [
           "docs/UX_SLICE_S05_02.md#engineering-and-installed-closeout--2026-10-31",
-          "Private acceptance04.log2095PASS/0failed/75ignored; security/V10-V13PASS; v14-finalPASS, focused tests and strictClippyPASS."
+          "Private acceptance04.log2095PASS/0failed/75ignored; security/V10-V13PASS; v14-finalPASS, focused tests and strictClippyPASS.",
+          "Nov1correctedselectedprimary/capturedEpoch/nativeambient022/fullHTTP/livecontrolledhelper/preservation/gatesPASS aslatestUX_SLICE_S05_02record; ownerT09FAILremains."
         ]
       },
       {
@@ -348,7 +371,8 @@ slice using the same failure-analysis method. See
         "status": "PASS",
         "evidence": [
           "docs/UX_SLICE_S05_02.md#engineering-and-installed-closeout--2026-10-31",
-          "Private acceptance04.log2095PASS/0failed/75ignored; security/V10-V13PASS; v14-finalPASS, focused tests and strictClippyPASS."
+          "Private acceptance04.log2095PASS/0failed/75ignored; security/V10-V13PASS; v14-finalPASS, focused tests and strictClippyPASS.",
+          "Nov1correctedselectedprimary/capturedEpoch/nativeambient022/fullHTTP/livecontrolledhelper/preservation/gatesPASS aslatestUX_SLICE_S05_02record; ownerT09FAILremains."
         ]
       },
       {
@@ -367,7 +391,8 @@ slice using the same failure-analysis method. See
         "status": "PASS",
         "evidence": [
           "docs/UX_SLICE_S05_02.md#engineering-and-installed-closeout--2026-10-31",
-          "Actual two exact native public-admin/Runtime casesPASS; current13effectinputs unchangedfa26102; root/native/security independent reviews, exactfixturecleanup and freshabsencePASS."
+          "Actual two exact native public-admin/Runtime casesPASS; current13effectinputs unchangedfa26102; root/native/security independent reviews, exactfixturecleanup and freshabsencePASS.",
+          "Nov1correctedselectedprimary/capturedEpoch/nativeambient022/fullHTTP/livecontrolledhelper/preservation/gatesPASS aslatestUX_SLICE_S05_02record; ownerT09FAILremains."
         ]
       },
       {
@@ -388,7 +413,8 @@ slice using the same failure-analysis method. See
           "docs/UX_SLICE_S05_02.md#engineering-and-installed-closeout--2026-10-31",
           "Actual install-final.actual.log/installed-final-readback.log loadedWebfe44b3/inode129966/loopback/HTTPS200/8roles; installed-read-after.log same2keys/rev5/policies/preflight/RAMencrypt. Synthetic CUA browser+Welcome results/JPEG; owner browser session remains T09.",
           "Actualownerpublicimportfails; successfulUI/readiness/readcompatibilitydoesnotproveinstalledmutation.",
-          "Nov1correction currentnativepaddedRuntimeimport/gates/matchingWeb/preservationPASS; ownerbrowserT09FAILpendingfreshretest, oldpayloadUNKNOWN."
+          "Nov1correction currentnativepaddedRuntimeimport/gates/matchingWeb/preservationPASS; ownerbrowserT09FAILpendingfreshretest, oldpayloadUNKNOWN.",
+          "Nov1correctedselectedprimary/capturedEpoch/nativeambient022/fullHTTP/livecontrolledhelper/preservation/gatesPASS aslatestUX_SLICE_S05_02record; ownerT09FAILremains."
         ]
       },
       {
@@ -406,7 +432,8 @@ slice using the same failure-analysis method. See
         "reviewer": "/root/s05_protocol_review",
         "status": "FAIL",
         "evidence": [
-          "Nov1ownerimportfailure; liveaudit04:02:50/04:06:34UTC acceptsprimaryandTOTPthen503. Privateevidence s05-02-import-20261101."
+          "Nov1ownerimportfailure; liveaudit04:02:50/04:06:34UTC acceptsprimaryandTOTPthen503. Privateevidence s05-02-import-20261101.",
+          "Later05:26primary403 and05:33acceptedfactor503retained; nativepermission+primaryroutecorrectionsnowinstalled/controlledlivePASS; freshownerbrowserretestpending,noownerimportbyagent."
         ]
       }
     ],
@@ -417,7 +444,7 @@ slice using the same failure-analysis method. See
     "status": "FAIL",
     "reference": "2026-11-01 ownerreports publickey02B34119C22074FC68B10E23E3294DF8DE68C834 importgenericUnavailable; bothfactorsacceptedliveaudit, nochangeconfirmed. Ownercredentials/proofmustnotbereplayed."
   },
-  "next_action": "Qualify private creation mask at native worker boundary under ambient022, atomically install worker/launcher and Web only, verify actual controlled daemon import/remove before owner browser retest."
+  "next_action": "Final independently reviewed signed GitHub preservation, then one owner fresh browser import retest. Native permission and selected-primary corrections installed; S05-02/T09 remain open."
 }
 ```
 <!-- /OSMAP_ACTIVE_WORK_ORDER -->

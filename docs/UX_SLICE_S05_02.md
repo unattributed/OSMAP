@@ -1,6 +1,6 @@
 # S05-02 — Practical public-key and email-policy management
 
-**Current 2026-11-01: owner import retry remains failed. A selected-account reauthentication routing defect is under correction; the latest accepted-factor import also returned unavailable and remains under investigation. S05-02 is open.**
+**Current 2026-11-01: credential routing and native private-file creation corrections are installed. Full HTTP/native and actual running-helper import/remove checks pass. Owner T09 remains FAIL pending a fresh browser retest; S05-02 is open.**
 
 Started 2026-10-31 (America/Toronto) from signed S05-01 closeout
 `279df22e6ceb384410b151a4acc9134e67dc3e25`. The operator acknowledged the
@@ -438,3 +438,66 @@ need native replacement; the running helper can retain its process and load the
 new isolated worker on its next call. Web routing/diagnostics candidate comes
 from signed03eb8ad; later changes to that Rust module are confined to its test
 fixture. Public Dovecot, Postfix and MariaDB remain outside restart/config scope.
+
+
+## Permission and credential-route corrections installed — 2026-11-01
+
+Signed03eb8ad supplies the installed Web5a325daa69dbeb2577f104cf222c5778fdaee845b547f30d62e92c5936a6aae8.
+Signed617e11f supplies native-worker sourcec6b54f14 and launcher generation.
+The Rust production path is unchanged between those commits; the later Rust
+diff is inside the account module's test fixture, replacing its rejected shell
+fixture with `/usr/bin/false` without a checker exception.
+
+- Current normal acceptance:2098Rust PASS,0failed,75explicit ignores, security
+  andV10–V13 PASS; V14 PASS. Strict Clippy/formatting PASS. An earlier shellscan
+  refusal and a parallel stale-RPC fixture result remain retained; the latter's
+  precise cause is UNKNOWN. The same exact isolated case passed, followed by
+  the full unchanged assertions with standard `RUST_TEST_THREADS=1`.
+- Actual native two-case runner PASS with ambient022, including selected
+  MAC-bound synthetic primary, genuine epoch session, real TOTP/replay, parsed
+  HTTP form and native public-admin/C effects. This is a same-UID synthetic
+  primary fixture, not the owner's Dovecot/browser authentication.
+- New admin workerab1da8bb1b50e75805916f8927818e548f128a90ab3ccd8c1cffa36262a36e14
+  and launcherb83b127db084a3d6155f0825989ec650dc55442e5aa024ec8991f49217a7f4f2
+  installed atomically. Running helper PID34710 stayed unchanged, retaining the
+  failing ambient mask; no helper or public mail-service restart was needed.
+- The same actual running helper, WebUID1001 and controlled test account now
+  import the exact normalized660-byte target successfully:2→3keys, exact target
+  present, original metadata unchanged. One confirmed removal restores the two
+  original keys; trustdb, backup, empty binding record and owned-agent cleanup
+  pass. This is the changed-worker live RED→GREEN discriminator.
+- Matching Web installed, loaded PID93496/textinode129966/loopback/CA-verified
+  HTTPSlogin200/eightroles PASS. Only Web restarted. Its protected before/after
+  manifests match893534a76314e04e4cfaea20d165324867d44f91c468cedcef3c5f9873cb9c39;
+  worker installation manifests matchf94ae0d951f425c4a6c5259458e544201dc830d6bdc8656b72479478993abbcb.
+- Post-install owner readback still has the two original public keys and revision5,
+  Optional account policies and the original Proton Required policy. RAM-only
+  encryption passes. No owner key/binding/policy/password/factor mutation or SMTP
+  submission was performed. The two public-only umask clones were removed after
+  durable sanitized readback; native scratch, test agent and temporary clients
+  are absent. Old binaries/launcher and guarded rollback are retained; no rollback
+  was executed.
+
+Current private actual evidence is bound by `routing-umask-evidence.json`, including
+`fixed-native-functional.log`, `worker-and-live-fixed.actual.log`,
+`routing-install.actual.log` and `routing-post-install-read.log`. Independent
+review and final normal signed GitHub delivery are reconciled separately.
+
+Owner retest: reload `/settings/keys?panel=import`, paste only BEGIN…END armor
+from the original `.asc`, set full expected02B34119C22074FC68B10E23E3294DF8DE68C834,
+use current OSMAP password and a fresh unused TOTP, and submit once. The expected
+result is a third imported key with no approved email association yet; its Details
+show the full fingerprint. Import alone does not bind email or enable encryption.
+An unavailable or unconfirmed result requires read-only reconciliation before
+another attempt. Owner T09 remains FAIL from the prior attempts until this
+ordinary browser journey passes; import control stays PARTIALLY_VERIFIED and
+the slice remains open.
+
+
+Independent final correction/installed review is GO for agent-owned engineering,
+with owner T09 still failed pending a fresh result. New private review receipt
+`routing-umask-independent-review.json` has SHA256
+`47a60aa20750ea0846b52239664f45cb91f3cc34bf20ec7905c71579a7f96186`.
+Its precise scope distinguishes the historical primary-refusal JSON from the
+later accepted-factor503, and explicit mask differential from the unmeasured
+original live inherited mask. Prior review/evidence files remain unchanged.

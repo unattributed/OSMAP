@@ -1,5 +1,15 @@
 # Decision Log
 
+2026-11-01 — Actual running-helper import RED→GREEN establishes native creation
+mask as a reproducible failure: old022 produces0644, old077 produces0600, both
+with native import success; strict helper custody rejects0644 before publication.
+Set077 inside the isolated C worker and generated launcher; preserve strict
+checks and avoid a Rust process-global mask change. Native022/fullHTTP and same
+running-helper controlled import/remove PASS after atomic worker replacement.
+Separately reuse selected primary authority for key step-up, binding captured
+account/epoch before factor. Web-only restart and normal gates pass. No owner
+import or acceptance is inferred; retain previous failures and source identities.
+
 2026-11-01 — Reopen S05-02 after actual owner import failure. Both factors
 were accepted; exact-file native clone/RPC imports pass. Correct the measured
 validator/dispatch whitespace mismatch by forwarding the validated slice after

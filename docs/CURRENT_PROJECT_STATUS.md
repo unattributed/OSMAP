@@ -1,5 +1,19 @@
 # Current Project Status
 
+2026-11-01 (America/Toronto) — **S05-02 native permission and credential-route corrections installed; owner retest pending.**
+The running helper's reproduced import failure was a file-creation mask mismatch:
+GPG produced0644 staging keyboxes under022, correctly refused by strict private
+file admission. The isolated worker now sets077; its launcher also sets077.
+Old022/077 differential and corrected022 native/fullHTTP checks pass. The same
+running daemon now confirms controlled test-account import and removal of the
+exact public key; owner keys and policies remain unchanged. Web step-up also
+reuses sign-in's selected authority with captured account/epoch before TOTP.
+Installed Web5a325 and workerab1da8 are qualified; only Web restarted, with
+HTTPS200/eightroles/preservation PASS. Normal2098Rust/0fail/75ignored, security
+andV10–V14 PASS. Owner browser T09 remains FAIL pending a fresh retest; S05-02
+is open and import control remains PARTIALLY_VERIFIED. See
+[the current correction record](UX_SLICE_S05_02.md#permission-and-credential-route-corrections-installed--2026-11-01).
+
 2026-11-01 (America/Toronto) — **S05-02 paste correction installed; owner import retest pending.**
 Actual owner import failed after accepted password/TOTP. The exact public key
 passes installed-helper clone import; a leading-whitespace contract defect was
