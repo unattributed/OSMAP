@@ -362,6 +362,10 @@ slice using the same failure-analysis method. See
         {
           "stage": "source_tests",
           "reference": "Firstordinarypush unit2139/0/75PASS then V4adaptercap16/actual17shellSVGFAIL; diagnosticeditfailure+unchangedrepeatFAILretained. Independentcombinedreassessment confirms17inertpre-mainicons; TEST-ONLYcap17+17/18boundaryassertions, existinghostile/mainnegativesunchanged. CorrectedV4focused2PASS; installed2e/Webfe193unchanged. Fullnormalpushretryrequired."
+        },
+        {
+          "stage": "source_tests",
+          "reference": "Secondnormalpush unit2139/0/75 andactualV4PASS thenV11refinedhashdriftFAIL205.259s. Testeditshifted2expectlocations16lines; refreshONLYexisting3registerlinepins/timestamp/coupledhashes, counts/classificationsunchanged. ActualV11/V10focusedPASS; fullnormaldeliverypending."
         }
       ]
     }
@@ -387,7 +391,7 @@ slice using the same failure-analysis method. See
     "slice": "S05-02",
     "specification": {
       "path": "docs/UX_SLICE_S05_02.md",
-      "sha256": "c74e327e726fbcdff22934a71f0cd5d42e2439232935f564b06d743cb36e1b82"
+      "sha256": "bc6eb73b8a16bdc1a267867f17006ce9ed15a8a97665b4a56142993b82212aa5"
     },
     "design": {
       "journey": "Signed-in user sees imported keys with exact email associations and applied policy, and can manage public import/bind/policy/remove through fresh authorization.",

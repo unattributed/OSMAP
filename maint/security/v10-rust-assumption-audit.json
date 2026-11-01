@@ -88758,7 +88758,7 @@
       "fail_closed_relevance": "low",
       "file": "tests/v4_hostile_assurance.rs",
       "kind": "expect_call",
-      "line": 830
+      "line": 846
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -88766,7 +88766,7 @@
       "fail_closed_relevance": "low",
       "file": "tests/v4_hostile_assurance.rs",
       "kind": "expect_call",
-      "line": 863
+      "line": 879
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -89265,7 +89265,7 @@
       "line": 521
     }
   ],
-  "generated_at_utc": "2026-11-01T13:35:04Z",
+  "generated_at_utc": "2026-11-01T14:00:23Z",
   "non_claims": [
     "This audit does not claim that all Rust assumptions are safe.",
     "This audit does not claim that production request paths are panic-free.",
@@ -89321,7 +89321,7 @@
       "unwrap_call": 9666
     },
     "classification_complete": true,
-    "inventory_sha256": "76a20a26e1ee88ab96c37a097c335f0b4a6d24e84017b64f293138ea34cd47e9",
+    "inventory_sha256": "f28ec72c446216bde8142660ce90b1cb15164a7a7c36723eb80dcf6a76101e74",
     "live_host_state_changed": false,
     "product_behavior_changed": false,
     "production_state_changed": false,

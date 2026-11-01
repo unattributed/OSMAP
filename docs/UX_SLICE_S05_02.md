@@ -909,3 +909,10 @@ message-content SVG refusal are unchanged. Corrected focused V4 integration
 passes both cases, including the actual hostile corpus. Production source and
 installed Web remain byte-identical; no native rebuild or reinstall is needed.
 The corrected ordinary full gate and GitHub parity remain final delivery checks.
+
+The next normal gate passed2139/0/75 and the V4 integration, then refused the
+stale refined source-inventory hash: the test-only assertions shifted two existing
+`expect` locations by16 lines. Refreshing the existing three assurance records
+changes only those locations, timestamps and coupled hashes; counts and runtime
+classifications are unchanged. Focused V11 and V10 governance checks pass.
+The full gate is retried only after this demonstrated metadata correction.
